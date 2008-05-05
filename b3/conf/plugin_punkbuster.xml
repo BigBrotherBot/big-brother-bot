@@ -1,0 +1,7 @@
+<configuration plugin="punkbuster">
+	<settings name="settings">
+		<set name="bans_file">~/cod/pb/pbbans.dat</set>
+		<!-- crontab like time settings for when to rebuild bans file, 0 for never -->
+		<set name="rebuild_bans">0 0 * * *</set>
+	</settings>
+</configuration>

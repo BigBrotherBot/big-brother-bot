@@ -1,0 +1,7 @@
+<configuration plugin="spamcontrol">
+	<settings name="settings">
+		<set name="max_spamins">10</set>
+		<set name="mod_level">20</set>
+		<set name="falloff_rate">6.5</set>
+	</settings>
+</configuration>

@@ -1,0 +1,276 @@
+<configuration plugin="censor">
+	<settings name="settings">
+		<set name="max_level">40</set>
+	</settings>
+	<badwords>
+		<penalty type="warning" reasonkeyword="cuss"/>
+		<!--
+		The lang attribute uses the iso639a standard abbreviations, http://www.oasis-open.org/cover/iso639a.html. In a couple places I used the full word cause I actually don't know what language it is. I'll get clarification later.
+		-->
+		<badword name="shit" lang="en">
+			<penalty type="warning" reason="^7Please don't use profanity" duration="1d"/>
+			<regexp>[s$]h[i!1\*]t\s</regexp>
+		</badword>
+		<badword name="ass" lang="en">
+			<word>ass</word>
+		</badword>
+		<badword name="asshole" lang="en">
+			<regexp>[a@][s$]{2}h[o0]le</regexp>
+		</badword>
+		<badword name="fuck" lang="en">
+			<penalty type="tempban" reasonkeyword="cuss" duration="2m"/>
+			<regexp>f[uo0\*]ck</regexp>
+		</badword>
+		<badword name="fuc" lang="en">
+			<penalty type="tempban" reasonkeyword="cuss" duration="2m"/>
+			<regexp>f[uo0\*][ck]\s</regexp>
+		</badword>
+		<badword name="cunt" lang="en">
+			<regexp>\scunt\s</regexp>
+		</badword>
+		<badword name="cock" lang="en">
+			<regexp>\sc[o0]ck\s</regexp>
+		</badword>
+		<badword name="dick" lang="en">
+			<regexp>\sd[i!1*]ck\s</regexp>
+		</badword>
+		<badword name="bitch" lang="en">
+			<regexp>b[i!1*]tch</regexp>
+		</badword>
+		<badword name="biatch" lang="en">
+			<regexp>b[i!1*].tch</regexp>
+		</badword>
+		<badword name="fag" lang="en">
+			<regexp>\sf[a@]g\s</regexp>
+		</badword>
+		<badword name="nigger" lang="en">
+			<regexp>n[i!1]gger</regexp>
+		</badword>
+		<badword name="pussy" lang="en">
+			<regexp>pu[s$]{2}y</regexp>
+		</badword>
+		<badword name="lul" lang="nl">
+			<regexp>lul$\s</regexp>
+		</badword>
+		<badword name="flikker" lang="nl">
+			<regexp>\sfl[i!1]kker\s</regexp>
+		</badword>
+		<badword name="homo" lang="nl">
+			<regexp>h[o0]m[o0]</regexp>
+		</badword>
+		<badword name="kanker" lang="nl">
+			<regexp>k[a@]nker</regexp>
+		</badword>
+		<badword name="teringlijer" lang="nl">
+			<regexp>ter[i!1]ngl[i!1]j.*r</regexp>
+		</badword>
+		<badword name="kut" lang="nl">
+			<regexp>\skut</regexp>
+		</badword>
+		<badword name="hoer" lang="nl">
+			<regexp>h[o0]er[^a]</regexp>
+		</badword>
+		<badword name="neuk" lang="nl">
+			<regexp>[^k]neuk</regexp>
+		</badword>
+		<badword name="vittu" lang="skandinavian">
+			<regexp>\sv[i!1]ttu</regexp>
+		</badword>
+		<badword name="paskiainen" lang="skandinavian">
+			<regexp>pa[s$]k[i!1][a@][i!1]nen</regexp>
+		</badword>
+		<badword name="kusipaeae" lang="skandinavian">
+			<regexp>ku[s$][i!1]p[a@]e[a@]e</regexp>
+		</badword>
+		<badword name="fitte" lang="skandinavian">
+			<regexp>f[i!1]tte\s</regexp>
+		</badword>
+		<badword name="pikk" lang="skandinavian">
+			<regexp>p[i!1]kk\s</regexp>
+		</badword>
+		<badword name="hore" lang="skandinavian">
+			<regexp>h[o0]re\s</regexp>
+		</badword>
+		<badword name="fitta" lang="skandinavian">
+			<regexp>f[i!1]tt[a@]</regexp>
+		</badword>
+		<badword name="knullare" lang="skandinavian">
+			<regexp>knull[a@]re</regexp>
+		</badword>
+		<badword name="kuksugare" lang="skandinavian">
+			<regexp>kuk[s$]ug[a@]re</regexp>
+		</badword>
+		<badword name="huora" lang="skandinavian">
+			<regexp>hu[o0]r[a@]</regexp>
+		</badword>
+		<badword name="spica" lang="es">
+			<regexp>\sp[i!1]ca\s</regexp>
+		</badword>
+		<badword name="piroca" lang="es">
+			<regexp>p[i!1]r[o0]ca</regexp>
+		</badword>
+		<badword name="caralho" lang="es">
+			<regexp>c[a@]r[a@]lh[o0]</regexp>
+		</badword>
+		<badword name="puta" lang="es">
+			<comment>From {AS}Gringo: "puto" is the same but directed towards a man.</comment>
+			<regexp>\sput[a@o]\s</regexp>
+		</badword>
+		<badword name="cabra" lang="es">
+			<regexp>c[a@]br[a@]</regexp>
+		</badword>
+		<badword name="maricon" lang="es">
+			<comment>From {AS}Gringo: "maricon" has only one "r".</comment>
+			<regexp>m[a@]rr?ic[o0]n</regexp>
+		</badword>
+		<badword name="pinche" lang="es">
+			<comment>From {AS}Gringo</comment>
+			<regexp>p[i1!]nch[e3]</regexp>
+		</badword>
+		<badword name="batard" lang="fr">
+			<regexp>\sb[a@]t[a@]rd\s</regexp>
+		</badword>
+		<badword name="encule" lang="fr">
+			<regexp>\sencule\s</regexp>
+		</badword>
+		<badword name="merde" lang="fr">
+			<regexp>\smerde\s</regexp>
+		</badword>
+		<badword name="putain" lang="fr">
+			<regexp>put[a@][i!1]n</regexp>
+		</badword>
+		<badword name="salaud" lang="fr">
+			<regexp>[s$][a@]l[a@]ud</regexp>
+		</badword>
+		<badword name="connard" lang="fr">
+			<regexp>c[o0]nn[a@]rd</regexp>
+		</badword>
+		<badword name="salopard" lang="fr">
+			<regexp>[s$][a@]l[o0]p[a@]rd</regexp>
+		</badword>
+		<badword name="salope" lang="fr">
+			<regexp>[s$][a@]l[o0]pe</regexp>
+		</badword>
+		<badword name="scheisse" lang="de">
+			<regexp>[s$][c]?he[i!1][s$]{1,2}e</regexp>
+		</badword>
+		<badword name="arsch" lang="de">
+			<regexp>\s[a@]r[s$]ch\s</regexp>
+		</badword>
+		<badword name="huendin" lang="de">
+			<regexp>huend[i!1]n</regexp>
+		</badword>
+		<badword name="kopulieren" lang="de">
+			<regexp>k[o0]pul[i!1]eren</regexp>
+		</badword>
+		<badword name="fick" lang="de">
+			<regexp>f[i!1]c[kh]</regexp>
+		</badword>
+		<badword name="chuj" lang="pl">
+			<regexp>c?huj(a|e|u|ow)?</regexp>
+		</badword>
+		<badword name="kutas" lang="pl">
+			<regexp>(ku|qu?)tas(a|ie|ow|y)?</regexp>
+		</badword>
+		<badword name="fiut" lang="pl">
+			<regexp>fiu(cie|t(a|ek|y|ow)?)</regexp>
+		</badword>
+		<badword name="pedal" lang="pl">
+			<regexp>pedal(a|e|y|ow)?</regexp>
+		</badword>
+		<badword name="cipa" lang="pl">
+			<regexp>cip(a|o|y)</regexp>
+		</badword>
+		<badword name="pizda" lang="pl">
+			<regexp>pizd(a|o|y)</regexp>
+		</badword>
+		<badword name="ciota" lang="pl">
+			<regexp>ciot(a|o|y)</regexp>
+		</badword>
+		<badword name="dupek" lang="pl">
+			<regexp>dup(ek|ku|ow)</regexp>
+		</badword>
+		<badword name="kurwa" lang="pl">
+			<comment>Most offensive and by some ppl used as comma :)</comment>
+			<regexp>(k(u|o)|qu?)rw(a|o|y)?</regexp>
+		</badword>
+		<badword name="skurwysyn" lang="pl">
+			<regexp>s(k(u|o)|qu?)rw(iel(a|e|i|ow)?|ysyn(a|ow)?)</regexp>
+		</badword>
+		<badword name="zajebac" lang="pl">
+			<regexp>za?jeb(a(ny|c)?|ow)?</regexp>
+		</badword>
+		<badword name="pojebac" lang="pl">
+			<regexp>pojeb(an(y|iec)|ow)?</regexp>
+		</badword>
+		<badword name="wyjebac" lang="pl">
+			<regexp>wyjeb(a(c|ny|lo))</regexp>
+		</badword>
+		<badword name="pierdolic" lang="pl">
+			<regexp>s?pierd(ala(j|j?my)|ol(a|ic|ec)?)</regexp>
+		</badword>
+		<badword name="rozpierdalac" lang="pl">
+			<regexp>rozpierd(alaj|ol(a|ic)?)</regexp>
+		</badword>
+		<badword name="popierdolony" lang="pl">
+			<regexp>popierdol(on(a|y)|ilo)</regexp>
+		</badword>
+		<badword name="wypierdalac" lang="pl">
+			<regexp>wypierd(ala(j|c|my)|ol(ic|my)?)</regexp>
+		</badword>
+	</badwords>
+	<badnames>
+		<penalty type="warning" reasonkeyword="badname"/>
+		<badname name="doublecolor">
+			<regexp>\^{2}(\d)\1</regexp>
+		</badname>
+		<badname name="ass">
+			<regexp>\s[a@][s$]{2}\s</regexp>
+		</badname>
+		<badname name="fuck">
+			<regexp>f[u*.]ck</regexp>
+		</badname>
+		<badname name="shit">
+			<regexp>sh[i1!.]t</regexp>
+		</badname>
+		<badname name="bitch">
+			<regexp>b[i1!*.]tch</regexp>
+		</badname>
+		<badname name="pussy">
+			<regexp>pu[s$][s$]y</regexp>
+		</badname>
+		<badname name="nigger">
+			<regexp>n[1i!.]gger</regexp>
+		</badname>
+		<badname name="cunt">
+			<word>cunt</word>
+		</badname>
+		<badname name="nazi">
+			<regexp>n[a@]z[1i!]</regexp>
+		</badname>
+		<badname name="jihad">
+			<regexp>j[i1!]h[a@]d</regexp>
+		</badname>
+		<badname name="admin">
+			<regexp>[a@]dm[1i!]n</regexp>
+		</badname>
+		<badname name="hitler">
+			<regexp>H[i1!]t[l1][e3.]r</regexp>
+		</badname>
+		<badname name="asshole">
+			<regexp>[a@][s$]{2}h[o0]le</regexp>
+		</badname>
+		<badname name="kut">
+			<regexp>kut</regexp>
+		</badname>
+		<badname name="hoer">
+			<regexp>h[o0]er[^a]</regexp>
+		</badname>
+		<badname name="huor">
+			<regexp>hu[o0]r[a@]</regexp>
+		</badname>
+		<badname name="puta">
+			<regexp>put[a@]</regexp>
+		</badname>
+	</badnames>
+</configuration>

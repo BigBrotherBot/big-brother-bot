@@ -1,0 +1,7 @@
+<configuration plugin="pingwatch">
+	<settings name="settings">
+		<set name="interval">30</set>
+		<set name="max_ping">500</set>
+		<set name="max_ping_duration">90</set>
+	</settings>
+</configuration>

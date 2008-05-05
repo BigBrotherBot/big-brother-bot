@@ -1,0 +1,39 @@
+<configuration plugin="welcome">
+	<settings name="settings">
+		<!--
+		who to welcome
+		1 = welcome newb
+		2 = welcome announce_user
+		4 = welcome first
+		8 = welcome announce_first
+		16 = welcome user
+		32 = custom greetings
+		add numbers, 63 = all
+		-->
+		<set name="flags">63</set>
+		<!-- Maximum number of connections a user has to be considere a newb for the newb message -->
+		<set name="newb_connections">15</set>
+	</settings>
+	<settings name="messages">
+		<!--
+		Welcome messages
+		$name = player name
+		$id = player id
+		$lastVisit = last visit time (only on welcome_user and welcome_newb)
+		$group = players group (only on welcome_user)
+		$connections = number of times a user has connected (only on welcome_user and welcome_announce_user)
+		-->
+		<!-- displayed to admins and regs -->
+		<set name="user">^7[^2Authed^7] Welcome back $name ^7(^3@$id^7), last visit ^3$lastVisit^7, you're a ^2$group^7, played $connections times</set>
+		<!-- displayed to users who have not yet registered -->
+		<set name="newb">^7[^2Authed^7] Welcome back $name ^7(^3@$id^7), last visit ^3$lastVisit. Type !register in chat to register. Type !help for help</set>
+		<!-- displayed to everyone when a player with less than 15 connections joins -->
+		<set name="announce_user">^7Everyone welcome back $name^7, player number ^3#$id^7, to the server, played $connections times</set>
+		<!-- displayed to a user on his first connection -->
+		<set name="first">^7Welcome $name^7, this must be your first visit, you are player ^3#$id. Type !help for help</set>
+		<!-- displayed to everyone when a player joins for the first time -->
+		<set name="announce_first">^7Everyone welcome $name^7, player number ^3#$id^7, to the server</set>
+		<!-- displayed if a user has a greeting -->
+		<set name="greeting">^7$name^7 joined: $greeting</set>
+	</settings>
+</configuration>

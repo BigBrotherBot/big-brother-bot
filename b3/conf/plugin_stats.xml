@@ -1,0 +1,5 @@
+<configuration plugin="stats">
+	<settings name="settings">
+		<set name="min_level">1</set>
+	</settings>
+</configuration>

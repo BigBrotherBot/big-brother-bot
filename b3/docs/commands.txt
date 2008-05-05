@@ -1,0 +1,69 @@
+Levels   0 -   0
+	register - register youself as a basic user
+
+Levels   0 - 100
+	help (h) [<command|level>] - get info on how to use a command, you can use *<command> for partial matches
+
+Levels   1 - 100
+	regtest - display your current user status
+	time - display the servers current time
+
+Levels   2 - 100
+	maps - list the server's map rotation
+	nextmap - display the next map in rotation
+	seen <name> - when was this player last seen?
+
+Levels  20 - 100
+	admins - lists all the online admins
+	b3 - say b3's version info
+	greeting [<greeting>] - set or list your greeting
+	list - list all connected players
+	say - say a message to all players
+	spam (s) <name> <message> - spam a predefined message
+	spams - list spam messages
+	warn (w) <name> [<warning>] - warn user
+	warninfo (wi) <name> - display how many warning points a user has
+	warnremove (wr) <name> - remove a users last warning
+	warns - list warnings
+	warntest (wt) <warning> - test a warning
+
+Levels  40 - 100
+	admintest - display your current user status
+	aliases (alias) <name> - list a players aliases
+	baninfo (bi) <name> - display how many bans a user has
+	find <name> - test to find a connected player
+	kick (k) <name> [<reason>] - kick a player
+	leveltest (lt) [<name>] - display a user's status
+	scream <message> - yell a message to all player
+	tempban (tb) <name> <duration> [<reason>] - temporarily ban a player
+
+Levels  60 - 100
+	ban (b) <name> [<reason>] - ban a player
+	spank (sp) <name> [<reason>] - spank a player, naughty boy!
+	unban <name> - un-ban a player
+
+Levels  80 - 100
+	clear [<player>] - clear all tk points and warnings
+	lookup (l) <name> - lookup a player in the database
+	makereg (mr) <name> <group> - make a name a regular
+	map <map> - switch current map
+	restart - restart b3
+	warnclear (wc) <name> - clear all of a users warnings
+
+Levels  90 - 100
+	clientinfo <name> <field> - get info about a client
+	cmdlevel <command> <level> - set a commands level
+	delgroup <group> - remove a group and remove all clients from the group
+	editgroup <group> <-n|-k|-l> <value> - change a group's settings
+	groups <name> - lists all the player's groups
+	newgroup <keyword> <level> <name> - create a new group
+	pause <duration> - pause the bot from parsing
+	putgroup <client> <group> - add a client to a group
+	rebuild - sync up connected players
+	ungroup <client> <group> - remove a client from a group
+
+Levels 100 - 100
+	die - shutdown b3
+	disable <plugin> - disable a plugin
+	enable <plugin> - enable a disabled plugin
+	reconfig - re-load all configs
