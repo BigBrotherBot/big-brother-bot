@@ -19,7 +19,7 @@
 # $Id: game.py 6 2005-11-18 05:36:17Z thorn $
 
 __author__  = 'ThorN'
-__version__ = '1.1.1'
+__version__ = '1.2.0'
 
 import time
 
@@ -35,7 +35,8 @@ class Game(object):
 	gameName = None
 	modName = None
 
-	def __init__(self, gameName):
+	def __init__(self, console, gameName):
+		self.console = console
 		self.gameName = gameName
 		self.startRound()
 
@@ -50,23 +51,23 @@ class Game(object):
 		return self.__dict__[key]
 
 	def mapTime(self):
-		return time.time()  - self._mapTimeStart
+		return self.console.time()  - self._mapTimeStart
 
 	def roundTime(self):
-		return time.time() - self._roundTimeStart
+		return self.console.time() - self._roundTimeStart
 
 	def startRound(self):
 		if not self._mapTimeStart:
 			self.startMap()
 
-		self._roundTimeStart = time.time()
+		self._roundTimeStart = self.console.time()
 		self.rounds = self.rounds + 1
 
 	def startMap(self, mapName=None):
 		if mapName:
 			self.mapName = mapName
 
-		self._mapTimeStart = time.time()
+		self._mapTimeStart = self.console.time()
 
 	def mapEnd(self):
 		pass

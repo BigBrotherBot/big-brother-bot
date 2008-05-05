@@ -22,6 +22,7 @@ __author__  = 'ThorN'
 __version__ = '1.1.0'
 
 import re, time
+import b3
 
 class Events:
 	def __init__(self):
@@ -104,7 +105,7 @@ class Events:
 
 class Event:
 	def __init__(self, type, data, client=None, target=None):
-		self.time = time.time() 
+		self.time = b3.console.time()
 		self.type = type
 		self.data = data
 		self.client = client

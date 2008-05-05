@@ -19,7 +19,7 @@
 # $Id: config.py 6 2005-11-18 05:36:17Z thorn $
 
 __author__  = 'ThorN'
-__version__ = '1.1.2'
+__version__ = '1.2.0'
 
 from elementtree import ElementTree
 import ConfigParser
@@ -214,3 +214,10 @@ def load(fileName):
 		return config
 	else:
 		return None
+
+if __name__ == '__main__':
+    c = load(r'c:\temp\cod.xml')
+    print c.get('server', 'punkbuster')
+
+    if not c.has_option('server', 'punkbuster') or c.getboolean('server', 'punkbuster'):
+        print 'Use PB'

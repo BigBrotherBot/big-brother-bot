@@ -35,11 +35,11 @@ import sys
 
 # use 'register upload' to upload to pypi
 if len(sys.argv) == 1:
-	sys.argv += ['dev', 'bdist_egg']
+	sys.argv += ['dev', 'sdist', '--formats=gztar']
 
 setup(
     name = "b3",
-    version = "1.1.2",
+    version = "1.1.3",
     packages = find_packages(),
 	extras_require = { 'mysql' : 'MySQL-python', 'elementtree' : 'elementtree' },
 	package_data = {

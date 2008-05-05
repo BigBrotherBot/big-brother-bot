@@ -1,6 +1,6 @@
 Metadata-Version: 1.0
 Name: b3
-Version: 1.1.2d-r103
+Version: 1.1.3d-r2
 Summary: BigBrotherBot (B3) is a cross-platform, cross-game game administration bot. Features in-game administration of game servers, multiple user access levels, and database storage. Currently include parsers for Call of Duty (CoD) and Call of Duty 2 (CoD2)
 Home-page: http://www.bigbrotherbot.com
 Author: Michael Thornton (ThorN), Tim ter Laak (ttlogic)

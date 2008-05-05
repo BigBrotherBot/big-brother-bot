@@ -28,7 +28,7 @@
 
 
 __author__  = 'ThorN'
-__version__ = '1.1.6'
+__version__ = '1.2.0'
 
 import re, string
 import b3
@@ -63,6 +63,7 @@ class Q3AParser(b3.parser.Parser):
 
     # remove the time off of the line
     _lineClear = re.compile(r'^(?:[0-9:]+\s?)?')
+    _lineTime  = re.compile(r'^(?P<minutes>[0-9]+):(?P<seconds>[0-9]+).*')
 
     _lineFormats = (
         #1579:03ConnectInfo: 0: E24F9B2702B9E4A1223E905BF597FA92: ^w[^2AS^w]^2Lead: 3: 3: 24.153.180.106:2794
@@ -107,10 +108,10 @@ class Q3AParser(b3.parser.Parser):
             client = None
             target = None
             return (m, m.group('action').lower(), m.group('data').strip(), client, target)
-        else:
-            return None
+        elif '------' not in line:
+            self.verbose('line did not match format: %s' % line)
 
-    def parseLine(self, line):
+    def parseLine(self, line):           
         m = self.getLineParts(line)
         if not m:
             return False
@@ -139,6 +140,15 @@ class Q3AParser(b3.parser.Parser):
                     target
                 ))
 
+    def getClient(self, match=None, attacker=None, victim=None):
+        """Get a client object using the best availible data"""
+        if attacker:
+            return self.clients.getByCID(attacker.group('acid'))
+        elif victim:
+            return self.clients.getByCID(victim.group('cid'))
+        elif match:
+            return self.clients.getByCID(match.group('cid'))
+
     #----------------------------------
     def OnSay(self, action, data, match=None):
         """\
@@ -160,7 +170,7 @@ class Q3AParser(b3.parser.Parser):
         return b3.events.Event(b3.events.EVT_CLIENT_SAY, msg[1], client)
 
     def OnClientdisconnect(self, action, data, match=None):
-        client = self.clients.getByCID(data)
+        client = self.getClient(match)
         if client: client.disconnect()
         return None
 
@@ -181,10 +191,9 @@ class Q3AParser(b3.parser.Parser):
         return b3.events.Event(b3.events.EVT_GAME_EXIT, None)
 
     def OnItem(self, action, data, match=None):
-        cid, item = string.split(data, ' ', 1)
-        client = self.clients.getByCID(cid)
+        client = self.getClient(match)
         if client:
-            return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, item, client)
+            return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, match.group('text'), client)
         return None
 
     def OnClientbegin(self, action, data, match=None):
@@ -249,12 +258,13 @@ class Q3AParser(b3.parser.Parser):
         #Kill: 1022 0 6: <world> killed <-NoX-ThorN-> by MOD_FALLING
         #20:26.59 Kill: 3 2 9: ^9n^2@^9ps killed [^0BsD^7:^0Und^7erKo^0ver^7] by MOD_MP40
         #m = re.match(r'^([0-9]+)\s([0-9]+)\s([0-9]+): (.*?) killed (.*?) by ([A-Z_]+)$', data)
-        attacker = self.clients.getByCID(match.group('acid'))
+
+        attacker = self.getClient(attacker=match)
         if not attacker:
             self.bot('No attacker')
             return None
 
-        victim = self.clients.getByCID(match.group('cid'))
+        victim = self.getClient(victim=match)
         if not victim:
             self.bot('No victim')
             return None

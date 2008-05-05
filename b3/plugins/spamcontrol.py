@@ -23,7 +23,7 @@
 #	Converted to use new event handlers
 
 __author__  = 'ThorN'
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 
 
@@ -65,8 +65,8 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
 			if sclient.maxLevel >= self._modLevel:
 				cmd.sayLoudOrPM(client, '%s ^7is too cool to spam' % sclient.exactName)
 			else:
-				last_message_time = sclient.var(self, 'last_message_time', time.time()).value
-				gap	              = (time.time() - last_message_time)
+				last_message_time = sclient.var(self, 'last_message_time', self.console.time()).value
+				gap	              = (self.console.time() - last_message_time)
 
 				maxspamins = spamins = sclient.var(self, 'spamins', 0).value
 				spamins -= int(gap / self._falloffRate)
@@ -80,10 +80,10 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
 		if not event.client or event.client.maxLevel >= self._modLevel:
 			return
 
-		last_message_time = event.client.var(self, 'last_message_time', time.time()).value
+		last_message_time = event.client.var(self, 'last_message_time', self.console.time()).value
 		last_message      = event.client.var(self, 'last_message').value
 		spamins           = event.client.var(self, 'spamins', 0).value
-		gap	              = (time.time() - last_message_time)
+		gap	              = (self.console.time() - last_message_time)
 
 		color = re.match(r'\^[0-9]', event.data)
 
@@ -109,16 +109,16 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
 			spamins = 0
 
 		event.client.setvar(self, 'spamins', spamins)
-		event.client.setvar(self, 'last_message_time', time.time())
+		event.client.setvar(self, 'last_message_time', self.console.time())
 		event.client.setvar(self, 'last_message', event.data)
 
 		if spamins >= self._maxSpamins:
-			event.client.setvar(self, 'ignore_till', time.time() + 30)
+			event.client.setvar(self, 'ignore_till', self.console.time() + 30)
 			self._adminPlugin.warnClient(event.client, 'spam')
 			spamins = int(spamins / 1.5)
 			event.client.setvar(self, 'spamins', spamins)
 			raise b3.events.VetoEvent
-		elif event.client.var(self, 'ignore_till').value > time.time():
+		elif event.client.var(self, 'ignore_till').value > self.console.time():
 			#ignore the user
 			raise b3.events.VetoEvent
 

@@ -29,7 +29,7 @@
 #    Added ci command
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.3.2'
+__version__ = '1.3.3'
 __author__  = 'ThorN'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
@@ -80,6 +80,12 @@ class AdminPlugin(b3.plugin.Plugin):
                 func = self.getCmd(cmd)
                 if func:
                     self.registerCommand(self, cmd, level, func, alias)
+
+        if not self._commands.has_key('iamgod'):
+            superadmins = self.console.clients.lookupSuperAdmins()
+            if len(superadmins) == 0:
+                # There are no superadmins, enable the !iamgod command
+                self.registerCommand(self, 'iamgod', 0, self.getCmd('iamgod'))
 
     def registerCommand(self, plugin, command, level, handler, alias=None, secretLevel=None):
         if not handler:
@@ -259,8 +265,11 @@ class AdminPlugin(b3.plugin.Plugin):
                         event.client.setvar(self, 'noCommand', 0)
                         self.warnClient(event.client, 'nocmd', None, False)
                         return
-
-                event.client.message('^7You do not have sufficient access to use %s%s' % (self.cmdPrefix, cmd))
+                
+                if command.level == None:
+                    event.client.message('^7%s%s command is disabled' % (self.cmdPrefix, cmd))
+                else:
+                    event.client.message('^7You do not have sufficient access to use %s%s' % (self.cmdPrefix, cmd))
 
     def getCmd(self, cmd):
         cmd = 'cmd_%s' % cmd
@@ -371,7 +380,7 @@ class AdminPlugin(b3.plugin.Plugin):
         except ConfigParser.NoOptionError:
             return None
         except Exception, msg:
-            self.error('getSpam: Could not get spam: %s\n%s', msg, traceback.extract_tb(sys.exc_info()[2]))
+            self.error('getSpam: Could not get spam "%s": %s\n%s', spam, msg, traceback.extract_tb(sys.exc_info()[2]))
             return None
 
     def getWarning(self, warning):
@@ -397,7 +406,7 @@ class AdminPlugin(b3.plugin.Plugin):
         except ConfigParser.NoOptionError:
             return None
         except Exception, msg:
-            self.error('getSpam: Could not get spam: %s\n%s', msg, traceback.extract_tb(sys.exc_info()[2]))
+            self.error('getWarning: Could not get warning "%s": %s\n%s', warning, msg, traceback.extract_tb(sys.exc_info()[2]))
             return None
 
     def assert_commandData(self, data, client, cmd, *formatArgs):
@@ -1051,6 +1060,13 @@ class AdminPlugin(b3.plugin.Plugin):
         """\
         - register yourself as the super admin
         """
+        superadmins = self.console.clients.lookupSuperAdmins()
+        if len(superadmins) > 1:
+            # There are already superadmins, disable this command
+            if self._commands.has_key('iamgod'):
+                self._commands.pop('iamgod')
+            return
+
         try:
             group = clients.Group(keyword='superadmin')
             group = self.console.storage.getGroup(group)

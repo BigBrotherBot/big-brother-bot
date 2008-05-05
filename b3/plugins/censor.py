@@ -27,7 +27,7 @@
 #	Put censored message/name in the warning data
 
 __author__  = 'ThorN'
-__version__ = '2.0.2'
+__version__ = '2.1.0'
 
 import b3, re, traceback, sys, threading
 import b3.events
@@ -148,12 +148,18 @@ class CensorPlugin(b3.plugin.Plugin):
 			if len(event.data) > 3:
 				if event.type == b3.events.EVT_CLIENT_SAY or \
 				   event.type == b3.events.EVT_CLIENT_TEAM_SAY:
-					sentance = ' ' + self.clean(event.data) + ' '
+					raw = ' ' + event.data + ' '
+					cleaned = ' ' + self.clean(event.data) + ' '
+
 					for w in self._badWords:
-						if w.regexp.search(sentance):
-							self.penalizeClient(w.penalty, event.client, '%s => %s' % (event.data, sentance))
+						if w.regexp.search(cleaned):
+							self.penalizeClient(w.penalty, event.client, '%s => %s' % (event.data, cleaned))
 							raise b3.events.VetoEvent
-							return
+						elif raw != cleaned and w.regexp.search(raw):
+			                # Data has special characters, check those too
+							self.penalizeClient(w.penalty, event.client, event.data)
+							raise b3.events.VetoEvent
+                            
 				elif event.type == b3.events.EVT_CLIENT_NAME_CHANGE:
 					self.checkBadName(event.client)
 

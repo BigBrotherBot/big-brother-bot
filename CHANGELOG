@@ -1,0 +1,9 @@
+1.1.3
+-----
+- Added COD4 parser
+    - COD4 parser uses GUID instead of CID from the log files
+    - COD4 parser uses GUID in log files as PBID
+    - Does not use the team from a kill event if it's empty, instead relies on team from previous events - TK plugin works again!
+- Made !iamgod work automatically when there are no superadmins in the database, can be completely disabled by adding <set name="iamgod">none</set> to plugin_admin.xml
+- Fixed: getWarning errors had the text "getSpam" instead of "getWarning"
+- Added a replay log mode. Simply set the config to an old game log and server.replay to on in b3.xml. Only works for COD4 log files. Used to debug b3.

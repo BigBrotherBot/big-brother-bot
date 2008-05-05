@@ -1,7 +1,5 @@
 <configuration plugin="admin">
 	<settings name="commands">
-		<set name="iamgod">none</set>
-
 		<set name="enable">100</set>
 		<set name="disable">100</set>
 		<set name="die">100</set>

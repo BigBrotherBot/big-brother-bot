@@ -710,7 +710,6 @@ class DatabaseStorage(Storage):
         return self._groups
 
     def getGroup(self, group):
-        self.console.debug('Storage: getGroup %s' % group.keyword)
         q = QueryBuilder(self.db).SelectQuery('*', 'groups', { 'keyword' : group.keyword }, None, 1)
         self.console.debug(q)
         cursor = self.query(q)

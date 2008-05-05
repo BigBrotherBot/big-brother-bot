@@ -22,7 +22,7 @@
 #    Added damage type to Damage and Kill event data
 
 __author__  = 'ThorN'
-__version__ = '1.2.5'
+__version__ = '1.3.0'
 
 
 
@@ -93,31 +93,15 @@ class CodParser(b3.parsers.q3a.Q3AParser):
         if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
             self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
 
-    def getLineParts(self, line):
-        line = re.sub(self._lineClear, '', line, 1)
-
-        for f in self._lineFormats:
-            m = re.match(f, line)
-            if m:
-                #self.debug('line matched %s' % f.pattern)
-                break
-
-        if m:
-            client = None
-            target = None
-            return (m, m.group('action').lower(), m.group('data').strip(), client, target)
-        else:
-            self.verbose('line did not match format: %s' % line)
-
     # kill
     def OnK(self, action, data, match=None):
-        victim = self.clients.getByCID(match.group('cid'))
+        victim = self.getClient(victim=match)
         if not victim:
             self.debug('No victim')
             self.OnJ(action, data, match)
             return None
 
-        attacker = self.clients.getByCID(match.group('acid'))
+        attacker = self.getClient(attacker=match)
         if not attacker:
             self.debug('No attacker')
             return None
@@ -139,13 +123,13 @@ class CodParser(b3.parsers.q3a.Q3AParser):
 
     # damage
     def OnD(self, action, data, match=None):
-        victim = self.clients.getByCID(match.group('cid'))
+        victim = self.getClient(victim=match)
         if not victim:
             self.debug('No victim - attempt join')
             self.OnJ(action, data, match)
             return None
 
-        attacker = self.clients.getByCID(match.group('acid'))
+        attacker = self.getClient(attacker=match)
         if not attacker:
             self.debug('No attacker')
             return None
@@ -165,7 +149,7 @@ class CodParser(b3.parsers.q3a.Q3AParser):
 
     # disconnect
     def OnQ(self, action, data, match=None):
-        client = self.clients.getByCID(match.group('cid'))
+        client = self.getClient(match)
         if client: client.disconnect()
         return None
 
@@ -176,7 +160,7 @@ class CodParser(b3.parsers.q3a.Q3AParser):
             # invalid guid
             codguid = None
 
-        client = self.clients.getByCID(match.group('cid'))
+        client = self.getClient(match)
 
         if client:
             # update existing client
@@ -199,12 +183,12 @@ class CodParser(b3.parsers.q3a.Q3AParser):
     # action
     def OnA(self, action, data, match=None):
         #A;136528;6;allies;{^6AS^7}^6Honey;re_pickup
-        client = self.clients.getByCID(match.group('cid'))
+        client = self.getClient(match)
         if not client:
             self.debug('No client - attempt join')
             self.OnJ(action, data, match)
             
-            client = self.clients.getByCID(match.group('cid'))
+            client = self.getClient(match)
 
             if not client:
                 return None
@@ -215,12 +199,12 @@ class CodParser(b3.parsers.q3a.Q3AParser):
 
     def OnSay(self, action, data, match=None):
         #3:12 say: <-{AS}-ThorN->: sfs
-        client = self.clients.getByCID(match.group('cid'))
+        client = self.getClient(match)
         if not client:
             self.debug('No client - attempt join')
             self.OnJ(action, data, match)
             
-            client = self.clients.getByCID(match.group('cid'))
+            client = self.getClient(match)
 
             if not client:
                 return None
@@ -234,12 +218,12 @@ class CodParser(b3.parsers.q3a.Q3AParser):
 
     def OnSayteam(self, action, data, match=None):
         #3:12 sayteam: <-{AS}-ThorN->: sfs
-        client = self.clients.getByCID(match.group('cid'))
+        client = self.getClient(match)
         if not client:
             self.debug('No client - attempt join')
             self.OnJ(action, data, match)
             
-            client = self.clients.getByCID(match.group('cid'))
+            client = self.getClient(match)
 
             if not client:
                 return None
@@ -255,14 +239,14 @@ class CodParser(b3.parsers.q3a.Q3AParser):
 
     def OnTell(self, action, data, match=None):
         #4197:48tell;465030;2;ThorN;465030;2;ThorN;testing
-        client = self.clients.getByCID(match.group('cid'))
-        tclient = self.clients.getByCID(match.group('acid'))
+        client = self.getClient(match)
+        tclient = self.getClient(attacker=match)
 
         if not client:
             self.debug('No client - attempt join')
             self.OnJ(action, data, match)
             
-            client = self.clients.getByCID(match.group('cid'))
+            client = self.getClient(match)
 
             if not client:
                 return None

@@ -28,7 +28,7 @@
 #    Added data parameter to Client.tempban()
 
 __author__  = 'ThorN'
-__version__ = '1.2.3'
+__version__ = '1.2.4'
 
 import b3, string, re, time, functions, threading, weakref, traceback, sys
 
@@ -604,7 +604,7 @@ class Client(object):
         self.console.bot('New alias for %s: %s', str(self.id), alias.alias)
 
     def save(self, console=None):
-        self.timeEdit = self.console.time()
+        self.timeEdit = time.time()
 
         if self.guid == None or str(self.guid) == '0':
             # can't save a client without a guid
@@ -980,6 +980,28 @@ class Clients(dict):
                 if len(clients) == 5:
                     break
 
+            return clients
+
+    def lookupSuperAdmins(self):
+        try:
+            group = Group(keyword='superadmin')
+            group = self.console.storage.getGroup(group)
+        except Exception, e:
+            self.console.error('^7Could not get superadmin group: %s', e)
+            return False
+
+        sclient = self.console.storage.getClientsMatching({ '&group_bits' : group.id })
+
+        if not sclient:
+            return []
+        else:
+            clients = []
+            for c in sclient:
+                c.clients = self
+                c.console = self.console
+                c.exactName = c.name
+                clients.append(c)
+ 
             return clients
 
     def disconnect(self, client):

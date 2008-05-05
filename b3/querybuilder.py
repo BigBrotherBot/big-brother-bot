@@ -19,7 +19,7 @@
 # $Id: querybuilder.py 6 2005-11-18 05:36:17Z thorn $
 
 __author__  = 'ThorN'
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 class QueryBuilder(object):
 	def __init__(self, db=None):
@@ -158,6 +158,10 @@ class QueryBuilder(object):
 				return '`' +  field[:-1].strip() + '` LIKE "' + value[1:-1] + '%"'
 			elif field[0] == '%':
 				return '`' +  field[1:].strip() + '` LIKE "%' + value[1:-1] + '"'
+			elif field[0] == '&':
+				return '`' +  field[1:].strip() + '` & ' + value
+			elif field[0] == '|':
+				return '`' +  field[1:].strip() + '` | ' + value
 
 		return '`' + field + '` = ' + value
 
