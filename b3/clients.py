@@ -19,6 +19,8 @@
 # $Id: clients.py 102 2006-04-14 06:46:03Z thorn $
 #
 # CHANGELOG
+#    5/6/2008 - 1.2.5 - xlr8or
+#    Client object now saves the current IP in auth function
 #    10/29/2005 - 1.2.0 - ThorN
 #    Removed direct references to PunkBuster. Authorization is now proxied
 #     through the console.
@@ -28,7 +30,7 @@
 #    Added data parameter to Client.tempban()
 
 __author__  = 'ThorN'
-__version__ = '1.2.4'
+__version__ = '1.2.5'
 
 import b3, string, re, time, functions, threading, weakref, traceback, sys
 
@@ -617,6 +619,7 @@ class Client(object):
             self.authorizing = True
 
             name = self.name
+            ip = self.ip
             try:
                 inStorage = self.console.storage.getClient(self)
             except KeyError, msg:
@@ -637,6 +640,7 @@ class Client(object):
             self.connections = int(self.connections) + 1
             self.authed = True
             self.name = name
+            self.ip = ip
             self.save()
 
             self.console.debug('Client Authorized: [%s] %s - %s', self.cid, self.name, self.guid)

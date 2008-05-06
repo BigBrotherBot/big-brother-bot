@@ -19,6 +19,8 @@
 # $Id: q3a.py 103 2006-04-14 16:23:10Z thorn $
 #
 # CHANGELOG
+#    5/6/2008 - 1.2.1 - xlr8or
+#    Modified _reColor to strip Ascii > 127 also
 #    12/2/2005 - 1.1.0 - ThorN
 #    Fixed getCvar() regular expression
 #    11/29/2005 - 1.1.0 - ThorN
@@ -28,7 +30,7 @@
 
 
 __author__  = 'ThorN'
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 import re, string
 import b3
@@ -82,7 +84,7 @@ class Q3AParser(b3.parser.Parser):
     #--- ----- ---- ------ --------------- ------- --------------------- ----- -----
     #2     0   29 465030 <-{^4AS^7}-^3ThorN^7->^7       50 68.63.6.62:-32085      6597  5000
     _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
-    _reColor = re.compile(r'\^[0-9a-z]')
+    _reColor = re.compile(r'(\^[0-9a-z])|[\x80-\xff]')
     _reCvarName = re.compile(r'^[a-z0-9_.]+$', re.I)
     _reCvar = re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?"\s+default:\s*"(?P<default>.*?)(\^7)?"$', re.I)
 
