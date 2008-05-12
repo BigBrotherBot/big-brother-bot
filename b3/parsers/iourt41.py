@@ -1,6 +1,6 @@
 #
-# BigBrotherBot(B3) (www.bigbrotherbot.com)
-# Copyright (C) 2005 Michael "ThorN" Thornton
+# ioUrT Parser for BigBrotherBot(B3) (www.bigbrotherbot.com)
+# Copyright (C) 2008 Mark Weirath (xlr8or@xlr8or.com)
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,13 +20,13 @@
 # CHANGELOG
 # v1.0.3 - Courgette added support for banlist.txt
 #          xlr8or added parsing Damage (OnHit)
-
+# v1.0.4 - xlr8or added EVT_CLIENT_TEAM_CHANGE in OnKill
 
 __author__  = 'xlr8or'
-__version__ = '1.0.3'
+__version__ = '1.0.4'
 
 import b3.parsers.q3a
-import re, string
+import re, string, threading, time
 import b3
 import b3.events
 
@@ -307,6 +307,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
     # kill
     #6:37 Kill: 0 1 16: XLR8or killed =lvl1=Cheetah by UT_MOD_SPAS
+    #6:37 Kill: 7 7 10: Mike_PL killed Mike_PL by MOD_CHANGE_TEAM
     #kill: acid cid aweap: <text>
     def OnKill(self, action, data, match=None):
         victim = self.clients.getByCID(match.group('cid'))
@@ -320,16 +321,25 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             self.debug('No attacker')
             return None
 
+        weapon = int(match.group('aweap'))
+        if not weapon:
+            self.debug('No weapon')
+            return None
+
         event = b3.events.EVT_CLIENT_KILL
 
         if attacker.cid == victim.cid:
-            event = b3.events.EVT_CLIENT_SUICIDE
+            if weapon == 10:
+                event = b3.events.EVT_CLIENT_TEAM_CHANGE
+                self.verbose('Team Change Event Caught')
+            else:
+                event = b3.events.EVT_CLIENT_SUICIDE
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
             event = b3.events.EVT_CLIENT_KILL_TEAM
 
         victim.state = b3.STATE_DEAD
         # need to pass some amount of damage for the teamkill plugin - 100 is a kill
-        return b3.events.Event(event, (100, match.group('aweap'), None), attacker, victim)
+        return b3.events.Event(event, (100, weapon, None), attacker, victim)
 
     # disconnect
     def OnClientdisconnect(self, action, data, match=None):
@@ -538,5 +548,17 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         self.debug('EFFECTIVE UNBAN : %s',self.getCommand('unbanByIp', ip=client.ip, reason=reason))
         self.write(self.getCommand('unbanByIp', ip=client.ip, reason=reason))
         if admin:
-            admin.message('^3Unbanned^7: ^1%s^7 (^2@%s^7). His last ip (^1%s^7) has been removed from banlist'%(client.exactName, client.id, client.ip))
+            admin.message('^3Unbanned^7: ^1%s^7 (^2@%s^7). His last ip (^1%s^7) has been removed from banlist. Trying to remove duplicates...' % (client.exactName, client.id, client.ip))
+        t1 = threading.Timer(1, self._unbanmultiple, (client, admin))
+        t1.start()
+
+    def _unbanmultiple(self, client, admin=None):
+        # UrT adds multiple instances to banlist.txt Make sure we remove up to 4 remaining duplicates in a separate thread
+        c = 0
+        while c < 4:
+            self.write(self.getCommand('unbanByIp', ip=client.ip))
+            time.sleep(2)
+            c+=1
+        if admin:
+            admin.message('^3Unbanned^7: ^1%s^7. Up to 4 possible duplicate entries removed from banlist' % client.exactName )
 
