@@ -7,3 +7,7 @@
 - Made !iamgod work automatically when there are no superadmins in the database, can be completely disabled by adding <set name="iamgod">none</set> to plugin_admin.xml
 - Fixed: getWarning errors had the text "getSpam" instead of "getWarning"
 - Added a replay log mode. Simply set the config to an old game log and server.replay to on in b3.xml. Only works for COD4 log files. Used to debug b3.
+- Fixed client.py to save the last used ip. Fixes empty ip fields in clientrecords and the countryfilter plugin to work properly.
+- Added ioUrT41 parser (Urban Terror)
+- Added WoP parser (World of Padman)
+- Replaced xlrstats plugin with latest version 0.6.0

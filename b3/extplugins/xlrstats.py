@@ -8,16 +8,19 @@
 # the GNU General Public License (GPL), version 2.
 #
 ##################################################################
+# CHANGELOG
+#    5/6/2008 - 0.6.0 - Mark Weirath (xlr8or@xlr8or.com)
+#                       Added weapon replacements
+#                       Added commands !xlrtopstats and !xlrhide
 
 __author__  = 'Tim ter Laak'
-__version__ = '0.5.0'
+__version__ = '0.6.0'
 
 # Version = major.minor.patches
 
 # emacs-mode: -*- python-*-
 
-import string
-import time
+import string, time, re, thread
 
 import b3
 import b3.events
@@ -59,6 +62,68 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     mapstats_table = None
     playermaps_table = None
     
+
+    def startup(self):
+
+        # get the admin plugin so we can register commands
+        self._adminPlugin = self.console.getPlugin('admin')
+        if not self._adminPlugin:
+            # something is wrong, can't start without admin plugin
+            self.error('Could not find admin plugin')
+            return False
+
+        # register our commands
+        if 'commands' in self.config.sections():
+            for cmd in self.config.options('commands'):
+                level = self.config.get('commands', cmd)
+                sp = cmd.split('-')
+                alias = None
+                if len(sp) == 2:
+                    cmd, alias = sp
+
+                func = self.getCmd(cmd)
+                if func:
+                    self._adminPlugin.registerCommand(self, cmd, level, func, alias)
+
+
+        #define a shortcut to the storage.query function
+        self.query = self.console.storage.query
+        
+        # initialize tablenames
+        PlayerStats._table = self.playerstats_table
+        WeaponStats._table = self.weaponstats_table
+        WeaponUsage._table = self.weaponusage_table
+        Bodyparts._table = self.bodyparts_table
+        PlayerBody._table = self.playerbody_table
+        Opponents._table = self.opponents_table
+        MapStats._table = self.mapstats_table
+        PlayerMaps._table = self.playermaps_table
+        
+        #--OBSOLETE
+        # create tables if necessary
+        # This needs to be done here, because table names were loaded from config
+        #PlayerStats.createTable(ifNotExists=True)
+        #WeaponStats.createTable(ifNotExists=True)
+        #WeaponUsage.createTable(ifNotExists=True)
+        #Bodyparts.createTable(ifNotExists=True)
+        #PlayerBody.createTable(ifNotExists=True)
+        #Opponents.createTable(ifNotExists=True)
+        #MapStats.createTable(ifNotExists=True)
+        #PlayerMaps.createTable(ifNotExists=True)
+        #--end OBS
+
+        # register the events we're interested in. 
+        self.registerEvent(b3.events.EVT_CLIENT_JOIN)
+        self.registerEvent(b3.events.EVT_CLIENT_KILL)
+        self.registerEvent(b3.events.EVT_CLIENT_KILL_TEAM)
+        self.registerEvent(b3.events.EVT_CLIENT_SUICIDE)
+        self.registerEvent(b3.events.EVT_GAME_ROUND_START)
+        
+        # get the Client.id for the bot itself (guid: WORLD)
+        sclient = self.console.clients.getByGUID("WORLD");
+        if (sclient != None):
+            self._world_clientid = sclient.id
+        self.debug('Got client id for WORLD: %s', self._world_clientid)
 
     def onLoadConfig(self):
         try:
@@ -174,50 +239,14 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         return
     
 
+    def getCmd(self, cmd):
+        cmd = 'cmd_%s' % cmd
+        if hasattr(self, cmd):
+            func = getattr(self, cmd)
+            return func
+    
+        return None
 
-    def onStartup(self):
-        #define a shortcut to the storage.query function
-        self.query = self.console.storage.query
-        
-        # initialize tablenames
-        PlayerStats._table = self.playerstats_table
-        WeaponStats._table = self.weaponstats_table
-        WeaponUsage._table = self.weaponusage_table
-        Bodyparts._table = self.bodyparts_table
-        PlayerBody._table = self.playerbody_table
-        Opponents._table = self.opponents_table
-        MapStats._table = self.mapstats_table
-        PlayerMaps._table = self.playermaps_table
-        
-        #--OBSOLETE
-        # create tables if necessary
-        # This needs to be done here, because table names were loaded from config
-        #PlayerStats.createTable(ifNotExists=True)
-        #WeaponStats.createTable(ifNotExists=True)
-        #WeaponUsage.createTable(ifNotExists=True)
-        #Bodyparts.createTable(ifNotExists=True)
-        #PlayerBody.createTable(ifNotExists=True)
-        #Opponents.createTable(ifNotExists=True)
-        #MapStats.createTable(ifNotExists=True)
-        #PlayerMaps.createTable(ifNotExists=True)
-        #--end OBS
-
-        # register the events we're interested in. 
-        self.registerEvent(b3.events.EVT_CLIENT_JOIN)
-        self.registerEvent(b3.events.EVT_CLIENT_KILL)
-        self.registerEvent(b3.events.EVT_CLIENT_KILL_TEAM)
-        self.registerEvent(b3.events.EVT_CLIENT_SUICIDE)
-        self.registerEvent(b3.events.EVT_GAME_ROUND_START)
-        
-        # get the Client.id for the bot itself (guid: WORLD)
-        sclient = self.console.clients.getByGUID("WORLD");
-        if (sclient != None):
-            self._world_clientid = sclient.id
-        self.debug('Got client id for WORLD: %s', self._world_clientid)
-
-        self._adminPlugin = self.console.getPlugin('admin')
-        if self._adminPlugin:
-            self._adminPlugin.registerCommand(self, 'xlrstats', self.minlevel, self.cmd_stats)
 
     def onEvent(self, event):
 
@@ -269,6 +298,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             s.winstreak = r['winstreak']
             s.losestreak = r['losestreak']
             s.rounds = r['rounds']
+            s.hide = r['hide']
             return s
         elif ( (client is None) or (client.maxLevel >= self.minlevel) ):
             s = PlayerStats()
@@ -470,14 +500,21 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             if (victimstats == None):
                 return
 
-            
         #calculate winning probabilities for both players
         killer_prob = self.win_prob(killerstats.skill, victimstats.skill)
         victim_prob = self.win_prob(victimstats.skill, killerstats.skill)
 
+        #get applicable weapon replacement
+        actualweapon = data[1]
+        for r in data:
+            try:
+                actualweapon = self.config.get('replacements', r)
+            except:
+                pass
+
         #get applicable weapon multiplier
         try:
-            weapon_factor = self.config.getfloat('weapons', data[1])
+            weapon_factor = self.config.getfloat('weapons', actualweapon)
         except:
             weapon_factor = 1.0
          
@@ -550,7 +587,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.save_Stat(retal)
             
         #adjust weapon statistics
-        weaponstats = self.get_WeaponStats(name=data[1])
+        weaponstats = self.get_WeaponStats(name=actualweapon)
         if (weaponstats):
             weaponstats.kills += 1
             self.save_Stat(weaponstats)
@@ -619,8 +656,16 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         playerstats.skill = (1 - (self.suicide_penalty_percent / 100.0) ) * float(playerstats.skill)
         self.save_Stat(playerstats)
             
+        #get applicable weapon replacement
+        actualweapon = data[1]
+        for r in data:
+            try:
+                actualweapon = self.config.get('replacements', r)
+            except:
+                pass
+
         #update weapon stats
-        weaponstats = self.get_WeaponStats(name=data[1])
+        weaponstats = self.get_WeaponStats(name=actualweapon)
         if (weaponstats):
             weaponstats.suicides += 1
             self.save_Stat(weaponstats)
@@ -700,8 +745,16 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         # do not register a teamkill in the "opponents" table
             
+        #get applicable weapon replacement
+        actualweapon = data[1]
+        for r in data:
+            try:
+                actualweapon = self.config.get('replacements', r)
+            except:
+                pass
+
         #adjust weapon statistics
-        weaponstats = self.get_WeaponStats(name=data[1])
+        weaponstats = self.get_WeaponStats(name=actualweapon)
         if (weaponstats):
             weaponstats.teamkills += 1
             self.save_Stat(weaponstats)
@@ -782,7 +835,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         return
 
-    def cmd_stats(self, data, client, cmd=None):
+    def cmd_xlrstats(self, data, client, cmd=None):
         """\
         [<name>] - list a players XLR stats
         """
@@ -795,10 +848,95 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         stats = self.get_PlayerStats(sclient)
 
         if stats:        
-            message = '^3XLR Stats: ^7%s ^7: K ^2%s ^7D ^3%s ^7TK ^1%s ^7Ratio ^5%1.02f ^7Skill ^3%1.02f' % (sclient.exactName, stats.kills, stats.deaths, stats.teamkills, stats.ratio, stats.skill)
-            cmd.sayLoudOrPM(client, message)
+            if stats.hide == 1:
+                client.message('^3XLR Stats: ^7Stats for %s are not available (hidden).' % sclient.exactName)
+                return None
+            else:
+                message = '^3XLR Stats: ^7%s ^7: K ^2%s ^7D ^3%s ^7TK ^1%s ^7Ratio ^5%1.02f ^7Skill ^3%1.02f' % (sclient.exactName, stats.kills, stats.deaths, stats.teamkills, stats.ratio, stats.skill)
+                cmd.sayLoudOrPM(client, message)
         else:
             client.message('^3XLR Stats: ^7Could not find stats for %s' % sclient.exactName)
+        
+        return
+
+    # Start a thread to get the top players
+    def cmd_xlrtopstats(self, data, client, cmd=None):
+        """\
+        [<#>] - list the top # players.
+        """
+        thread.start_new_thread(self.doTopList, (data, client, cmd))
+
+        return
+
+    # Retrieves the Top # Players
+    def doTopList(self, data, client, cmd=None):
+        if data:
+            if re.match('^[0-9]+$', data, re.I):
+                limit = int(data)
+                if limit > 10:
+                    limit = 10
+        else:
+            limit = 3
+
+        q = 'SELECT * FROM %s INNER JOIN `clients` ON (`%s`.`client_id` = `clients`.`id`) WHERE (`%s`.`hide` <> 1) ORDER BY `%s`.`skill` DESC LIMIT %s' % (self.playerstats_table, self.playerstats_table, self.playerstats_table, self.playerstats_table, limit)
+
+        cursor = self.query(q)
+        if (cursor and (cursor.rowcount > 0) ):
+            message = '^3XLR Stats Top %s Players:' % (limit)
+            cmd.sayLoudOrPM(client, message)
+            c = 1
+            while not cursor.EOF:
+                r = cursor.getRow()
+                message = '^3# %s: ^7%s ^7: Skill ^3%1.02f ^7Ratio ^5%1.02f ^7Kills: ^2%s' % (c, r['name'], r['skill'], r['ratio'], r['kills'])
+                cmd.sayLoudOrPM(client, message)
+                cursor.moveNext()
+                c += 1
+                time.sleep(1)
+        else:
+            return None
+
+        return
+
+    def cmd_xlrhide(self, data, client, cmd=None):
+        """\
+        <player> <on/off> - Hide/unhide a player from the stats
+        """
+        # this will split the player name and the message
+        input = self._adminPlugin.parseUserCmd(data)
+        if input:
+            # input[0] is the player id
+            sclient = self._adminPlugin.findClientPrompt(input[0], client)
+            if not sclient:
+                # a player matchin the name was not found, a list of closest matches will be displayed
+                # we can exit here and the user will retry with a more specific player
+                return False
+        else:
+            client.message('^7Invalid data, try !help xlrhide')
+            return False
+    
+        if not len(input[1]):
+            client.message('^7Missing data, try !help xlrhide')
+            return False
+        
+        m = input[1]
+        if m in ('on','1'):
+            sclient.message('^3You are invisible in xlrstats!')
+            client.message('^3%s INVISIBLE in xlrstats!' % sclient.exactName)
+            hide = 1
+        elif m in ('off', '0'):
+            sclient.message('^3You are visible in xlrstats!')
+            client.message('^3%s VISIBLE in xlrstats!' % sclient.exactName)
+            hide = 0
+        else:
+            client.message('^7Invalid or missing data, try !help xlrhide')
+
+        player = self.get_PlayerStats(sclient)
+        if (player):
+            player.hide = int(hide)
+            self.save_Stat(player)
+            
+        return
+
 
 # This is an abstract class. Do not call directly.
 class StatObject(object):
@@ -828,17 +966,17 @@ class PlayerStats(StatObject):
     winstreak = 0
     losestreak = 0
     rounds = 0
+    hide = 0    
     
     # the following fields are used only by the PHP presentation code
-    hide = 0    
     fixed_name = "" 
 
     def _insertquery(self):
-        q = 'INSERT INTO %s ( client_id, kills, deaths, teamkills, teamdeaths, suicides, ratio, skill, curstreak, winstreak, losestreak, rounds ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)' % (self._table, self.client_id, self.kills, self.deaths,  self.teamkills, self.teamdeaths, self.suicides, self.ratio, self.skill, self.curstreak, self.winstreak, self.losestreak, self.rounds)
+        q = 'INSERT INTO %s ( client_id, kills, deaths, teamkills, teamdeaths, suicides, ratio, skill, curstreak, winstreak, losestreak, rounds, hide ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)' % (self._table, self.client_id, self.kills, self.deaths,  self.teamkills, self.teamdeaths, self.suicides, self.ratio, self.skill, self.curstreak, self.winstreak, self.losestreak, self.rounds, self.hide)
         return q
         
     def _updatequery(self):
-        q = 'UPDATE %s SET client_id=%s, kills=%s, deaths=%s, teamkills=%s, teamdeaths=%s, suicides=%s, ratio=%s, skill=%s, curstreak=%s, winstreak=%s, losestreak=%s, rounds=%s WHERE id=%s' % (self._table, self.client_id, self.kills, self.deaths, self.teamkills, self.teamdeaths, self.suicides, self.ratio, self.skill, self.curstreak, self.winstreak, self.losestreak, self.rounds, self.id)
+        q = 'UPDATE %s SET client_id=%s, kills=%s, deaths=%s, teamkills=%s, teamdeaths=%s, suicides=%s, ratio=%s, skill=%s, curstreak=%s, winstreak=%s, losestreak=%s, rounds=%s, hide=%s WHERE id=%s' % (self._table, self.client_id, self.kills, self.deaths, self.teamkills, self.teamdeaths, self.suicides, self.ratio, self.skill, self.curstreak, self.winstreak, self.losestreak, self.rounds, self.hide, self.id)
         return q
          
 
