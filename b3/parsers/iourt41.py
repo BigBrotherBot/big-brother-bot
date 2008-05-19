@@ -21,9 +21,10 @@
 # v1.0.3 - Courgette added support for banlist.txt
 #          xlr8or added parsing Damage (OnHit)
 # v1.0.4 - xlr8or added EVT_CLIENT_TEAM_CHANGE in OnKill
+# v1.0.5 - xlr8or added hitloc and damageType info to accomodate XLRstats
 
 __author__  = 'xlr8or'
-__version__ = '1.0.4'
+__version__ = '1.0.5'
 
 import b3.parsers.q3a
 import re, string, threading, time
@@ -301,9 +302,10 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
             event = b3.events.EVT_CLIENT_DAMAGE_TEAM
 
+        victim.hitloc = match.group('hitloc')
         #victim.state = b3.STATE_ALIVE
         # need to pass some amount of damage for the teamkill plugin - 15 seems okay
-        return b3.events.Event(event, (15, match.group('aweap'), match.group('hitloc')), attacker, victim)
+        return b3.events.Event(event, (15, match.group('aweap'), victim.hitloc), attacker, victim)
 
     # kill
     #6:37 Kill: 0 1 16: XLR8or killed =lvl1=Cheetah by UT_MOD_SPAS
@@ -321,15 +323,20 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             self.debug('No attacker')
             return None
 
-        weapon = int(match.group('aweap'))
+        weapon = match.group('aweap')
         if not weapon:
             self.debug('No weapon')
+            return None
+
+        dType = match.group('text').split()[-1:][0]
+        if not dType:
+            self.debug('No damageType')
             return None
 
         event = b3.events.EVT_CLIENT_KILL
 
         if attacker.cid == victim.cid:
-            if weapon == 10:
+            if int(weapon) == 10:
                 event = b3.events.EVT_CLIENT_TEAM_CHANGE
                 self.verbose('Team Change Event Caught')
             else:
@@ -337,9 +344,14 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
             event = b3.events.EVT_CLIENT_KILL_TEAM
 
+        # if not logging damage we need a general hitloc (for xlrstats)
+        if not hasattr(victim, 'hitloc'):
+            victim.hitloc = 'body'
+        
         victim.state = b3.STATE_DEAD
+        #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (victim.name, attacker.name, weapon, victim.hitloc, dType))
         # need to pass some amount of damage for the teamkill plugin - 100 is a kill
-        return b3.events.Event(event, (100, weapon, None), attacker, victim)
+        return b3.events.Event(event, (100, weapon, victim.hitloc, dType), attacker, victim)
 
     # disconnect
     def OnClientdisconnect(self, action, data, match=None):
