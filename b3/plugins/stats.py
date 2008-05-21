@@ -166,9 +166,9 @@ class StatsPlugin(b3.plugin.Plugin):
 		"""
 
 		scores = []
-		for client in self.console.clients.getList():
-			if client.isvar(self, 'points'):
-				scores.append((client.exactName, round(client.var(self, 'points', self._startPoints).value, 2)))
+		for c in self.console.clients.getList():
+			if c.isvar(self, 'points'):
+				scores.append((c.exactName, round(c.var(self, 'points', self._startPoints).value, 2)))
 		
 		if len(scores):
 			tmplist = [(x[1], x) for x in scores]
