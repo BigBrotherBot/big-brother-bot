@@ -1060,7 +1060,7 @@ class Clients(dict):
         for cid, c in plist.iteritems():
             client = self.getByCID(cid)
             if client:
-                if client.haskey('guid'):
+                if client.guid and c.has_key('guid'):
                     if client.guid == c['guid']:
                         # player matches
                         self.console.debug('in-sync %s == %s', client.guid, c['guid'])
@@ -1068,7 +1068,7 @@ class Clients(dict):
                     else:
                         self.console.debug('no-sync %s <> %s', client.guid, c['guid'])
                         client.disconnect()
-                elif client.has_key('ip'):
+                elif client.ip and c.has_key('ip'):
                     if client.ip == c['ip']:
                         # player matches
                         self.console.debug('in-sync %s == %s', client.ip, c['ip'])
