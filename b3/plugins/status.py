@@ -19,17 +19,20 @@
 # $Id: status.py 31 2005-12-01 04:32:27Z thorn $
 #
 # CHANGELOG
+# 12/03/2008 - 1.2.4 - Courgette
+# Properly escape strings to ensure valid xml
 #	11/30/2005 - 1.2.3 - ThorN
 #	Use PluginCronTab instead of CronTab
 #	8/29/2005 - 1.2.0 - ThorN
 #	Converted to use new event handlers
 
 __author__  = 'ThorN'
-__version__ = '1.2.3'
+__version__ = '1.2.4'
 
 import b3, time, os
 import b3.plugin
 import b3.cron
+from cgi import escape
 
 #--------------------------------------------------------------------------------------------------
 class StatusPlugin(b3.plugin.Plugin):
@@ -58,10 +61,10 @@ class StatusPlugin(b3.plugin.Plugin):
 
 		for c in clients:
 			try:
-				xml += '<Client Name="%s" ColorName="%s" DBID="%s" Connections="%s" CID="%s" Level="%s" GUID="%s" PBID="%s" IP="%s" Team="%s" Joined="%s" Updated="%s">\n' % (c.name, c.exactName, c.id, c.connections, c.cid, c.maxLevel, c.guid, c.pbid, c.ip, c.team, time.ctime(c.timeAdd), time.ctime(c.timeEdit))
+				xml += '<Client Name="%s" ColorName="%s" DBID="%s" Connections="%s" CID="%s" Level="%s" GUID="%s" PBID="%s" IP="%s" Team="%s" Joined="%s" Updated="%s">\n' % (escape("%s"%c.name), escape("%s"%c.exactName), c.id, c.connections, c.cid, c.maxLevel, c.guid, c.pbid, c.ip, escape("%s"%c.team), time.ctime(c.timeAdd), time.ctime(c.timeEdit))
 
 				for k,v in c.data.iteritems():
-					xml += '<Data Name="%s" Value="%s"/>' % (k, v)
+					xml += '<Data Name="%s" Value="%s"/>' % (escape("%s"%k), escape("%s"%v))
 						
 				if self._tkPlugin:
 					if hasattr(c, 'tkplugin_points'):				
@@ -69,7 +72,7 @@ class StatusPlugin(b3.plugin.Plugin):
 						if hasattr(c, 'tkplugin_attackers'):
 							for acid,points in c.var(self, 'attackers').value.items():
 								try:
-									xml += '<Attacker Name="%s" CID="%s" Points="%s"/>\n' % (self.console.clients[acid].name, acid, points)
+									xml += '<Attacker Name="%s" CID="%s" Points="%s"/>\n' % (escape("%s"%self.console.clients[acid].name), acid, points)
 								except:
 									pass
 								
@@ -80,10 +83,10 @@ class StatusPlugin(b3.plugin.Plugin):
 				pass
 
 		c = self.console.game
-		xml += '</Clients>\n<Game Name="%s" Type="%s" Map="%s" TimeLimit="%s" FragLimit="%s" CaptureLimit="%s" Rounds="%s">\n' % (c.gameName, c.gameType, c.mapName, c.timeLimit, c.fragLimit, c.captureLimit, c.rounds)
+		xml += '</Clients>\n<Game Name="%s" Type="%s" Map="%s" TimeLimit="%s" FragLimit="%s" CaptureLimit="%s" Rounds="%s">\n' % (escape("%s"%c.gameName), escape("%s"%c.gameType), escape("%s"%c.mapName), c.timeLimit, c.fragLimit, c.captureLimit, c.rounds)
 
 		for k,v in self.console.game.__dict__.items():
-			xml += '<Data Name="%s" Value="%s"/>\n' % (k, v)
+			xml += '<Data Name="%s" Value="%s"/>\n' % (escape("%s"%k), escape("%s"%v))
 		xml += '</Game>\n</B3Status>'
 				
 

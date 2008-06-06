@@ -337,8 +337,9 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
         if attacker.cid == victim.cid:
             if int(weapon) == 10:
-                event = b3.events.EVT_CLIENT_TEAM_CHANGE
-                self.verbose('Team Change Event Caught')
+                #event = b3.events.EVT_CLIENT_TEAM_CHANGE
+                self.verbose('Team Change Event Caught, exiting')
+                return None
             else:
                 event = b3.events.EVT_CLIENT_SUICIDE
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:

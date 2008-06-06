@@ -1060,13 +1060,25 @@ class Clients(dict):
         for cid, c in plist.iteritems():
             client = self.getByCID(cid)
             if client:
-                if client.guid == c['guid']:
-                    # player matches
-                    self.console.debug('in-sync %s == %s', client.guid, c['guid'])
-                    mlist[str(cid)] = client
+                if client.haskey('guid'):
+                    if client.guid == c['guid']:
+                        # player matches
+                        self.console.debug('in-sync %s == %s', client.guid, c['guid'])
+                        mlist[str(cid)] = client
+                    else:
+                        self.console.debug('no-sync %s <> %s', client.guid, c['guid'])
+                        client.disconnect()
+                elif client.has_key('ip'):
+                    if client.ip == c['ip']:
+                        # player matches
+                        self.console.debug('in-sync %s == %s', client.ip, c['ip'])
+                        mlist[str(cid)] = client
+                    else:
+                        self.console.debug('no-sync %s <> %s', client.ip, c['ip'])
+                        client.disconnect()
                 else:
-                    self.console.debug('no-sync %s <> %s', client.guid, c['guid'])
-                    client.disconnect()
+                    self.console.debug('no-sync: no guid or ip found.')
+
 
         # remove existing clients
         self.clear()
