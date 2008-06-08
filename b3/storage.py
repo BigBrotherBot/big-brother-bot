@@ -408,11 +408,6 @@ class DatabaseStorage(Storage):
             if hasattr(alias, self.getVar(f)):
                 data[f] = getattr(alias, self.getVar(f))
 
-        if hasattr(data, 'num_used'):        
-            data['num_used'] = int(data['num_used']) + 1
-        else:
-            data['num_used'] = 1;
-
         self.console.debug('Storage: setClientAlias data %s' % str(data))
         if alias.id:
             self.query(QueryBuilder(self.db).UpdateQuery(data, 'aliases', { 'id' : alias.id }))

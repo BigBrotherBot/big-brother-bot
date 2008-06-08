@@ -107,6 +107,40 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
     PunkBuster = None
 
+    ## kill modes
+    MOD_WATER='1'
+    MOD_LAVA='3'
+    MOD_TELEFRAG='5'
+    MOD_FALLING='6'
+    MOD_SUICIDE='7'
+    MOD_TRIGGER_HURT='9'
+    MOD_CHANGE_TEAM='10'
+    UT_MOD_KNIFE='12'
+    UT_MOD_KNIFE_THROWN='13'
+    UT_MOD_BERETTA='14'
+    UT_MOD_DEAGLE='15'
+    UT_MOD_SPAS='16'
+    UT_MOD_UMP45='17'
+    UT_MOD_MP5K='18'
+    UT_MOD_LR300='19'
+    UT_MOD_G36='20'
+    UT_MOD_PSG1='21'
+    UT_MOD_HK69='22'
+    UT_MOD_BLED='23'
+    UT_MOD_KICKED='24'
+    UT_MOD_HEGRENADE='25'
+    UT_MOD_SR8='28'
+    UT_MOD_AK103='30'
+    UT_MOD_SPLODED='31'
+    UT_MOD_SLAPPED='32'
+    UT_MOD_BOMBED='33'
+    UT_MOD_NUKED='34'
+    UT_MOD_NEGEV='35'
+    UT_MOD_HK69_HIT='37'
+    UT_MOD_M4='38'
+    UT_MOD_FLAG='39'
+    UT_MOD_GOOMBA='40'
+    
     def startup(self):
         # add the world client
         client = self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
@@ -312,15 +346,47 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     #6:37 Kill: 7 7 10: Mike_PL killed Mike_PL by MOD_CHANGE_TEAM
     #kill: acid cid aweap: <text>
     def OnKill(self, action, data, match=None):
+        # kill modes caracteristics :
+        """
+        1:      MOD_WATER === exclusive attackers : , 1022(<world>), 0(<non-client>)
+        3:      MOD_LAVA === exclusive attackers : , 1022(<world>), 0(<non-client>)
+        5:      MOD_TELEFRAG --- normal kill line
+        6:      MOD_FALLING === exclusive attackers : , 1022(<world>), 0(<non-client>)
+        7:      MOD_SUICIDE ===> attacker is always the victim
+        9:      MOD_TRIGGER_HURT === exclusive attackers : , 1022(<world>)
+        10:     MOD_CHANGE_TEAM ===> attacker is always the victim
+        12:     UT_MOD_KNIFE --- normal kill line
+        13:     UT_MOD_KNIFE_THROWN --- normal kill line
+        14:     UT_MOD_BERETTA --- normal kill line
+        15:     UT_MOD_DEAGLE --- normal kill line
+        16:     UT_MOD_SPAS --- normal kill line
+        17:     UT_MOD_UMP45 --- normal kill line
+        18:     UT_MOD_MP5K --- normal kill line
+        19:     UT_MOD_LR300 --- normal kill line
+        20:     UT_MOD_G36 --- normal kill line
+        21:     UT_MOD_PSG1 --- normal kill line
+        22:     UT_MOD_HK69 --- normal kill line
+        23:     UT_MOD_BLED --- normal kill line
+        24:     UT_MOD_KICKED --- normal kill line
+        25:     UT_MOD_HEGRENADE --- normal kill line
+        28:     UT_MOD_SR8 --- normal kill line
+        30:     UT_MOD_AK103 --- normal kill line
+        31:     UT_MOD_SPLODED ===> attacker is always the victim
+        32:     UT_MOD_SLAPPED ===> attacker is always the victim
+        33:     UT_MOD_BOMBED --- normal kill line
+        34:     UT_MOD_NUKED --- normal kill line
+        35:     UT_MOD_NEGEV --- normal kill line
+        37:     UT_MOD_HK69_HIT --- normal kill line
+        38:     UT_MOD_M4 --- normal kill line
+        39:     UT_MOD_FLAG === exclusive attackers : , 0(<non-client>)
+        40:     UT_MOD_GOOMBA --- normal kill line
+        """
+        self.debug('OnKill: %s (%s)'%(match.group('aweap'),match.group('text')))
+        
         victim = self.clients.getByCID(match.group('cid'))
         if not victim:
             self.debug('No victim')
             #self.OnClientuserinfo(action, data, match)
-            return None
-
-        attacker = self.clients.getByCID(match.group('acid'))
-        if not attacker:
-            self.debug('No attacker')
             return None
 
         weapon = match.group('aweap')
@@ -328,16 +394,36 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             self.debug('No weapon')
             return None
 
+        ## Fix attacker
+        if match.group('aweap') in (self.UT_MOD_SLAPPED,self.UT_MOD_NUKED):
+            self.debug('OnKill: slap/nuke => attacker should be None')
+            attacker = None
+        elif match.group('aweap') in (self.MOD_WATER,self.MOD_LAVA,self.MOD_FALLING,self.MOD_TRIGGER_HURT,self.UT_MOD_BOMBED,self.UT_MOD_FLAG):
+            # those kills should be considered suicides
+            self.debug('OnKill: water/lava/falling/trigger_hurt/bombed/flag should be suicides')
+            attacker = victim
+        else:
+            attacker = self.clients.getByCID(match.group('acid'))
+        ## end fix attacker
+          
+        if not attacker:
+            self.debug('No attacker')
+            return None
+
         dType = match.group('text').split()[-1:][0]
         if not dType:
-            self.debug('No damageType')
+            self.debug('No damageType, weapon: %s' % weapon)
             return None
 
         event = b3.events.EVT_CLIENT_KILL
 
+        # fix event for team change and suicides and tk
         if attacker.cid == victim.cid:
-            if int(weapon) == 10:
-                #event = b3.events.EVT_CLIENT_TEAM_CHANGE
+            if weapon == self.MOD_CHANGE_TEAM:
+                """
+                Do not pass a teamchange event here. That event is passed
+                shortly after the kill.
+                """
                 self.verbose('Team Change Event Caught, exiting')
                 return None
             else:
@@ -494,15 +580,19 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         self.verbose('Current gameType: %s' % self.game.gameType)
         self.game.startMap()
 
+        self.game.rounds = 0
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
 
 
     # Warmup
     def OnWarmup(self, action, data, match=None):
+        self.debug('EVENT: OnWarmup')
+        self.game.rounds = 0
         return b3.events.Event(b3.events.EVT_GAME_WARMUP, data)
 
     # Start Round
-    def OnInitRound(self, action, data, match=None):
+    def OnInitround(self, action, data, match=None):
+        self.debug('EVENT: OnInitround')
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)
 
         for o in options:
@@ -574,4 +664,3 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             c+=1
         if admin:
             admin.message('^3Unbanned^7: ^1%s^7. Up to 4 possible duplicate entries removed from banlist' % client.exactName )
-
