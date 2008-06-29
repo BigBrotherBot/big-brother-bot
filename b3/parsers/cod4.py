@@ -26,6 +26,7 @@ import re
 
 class Cod4Parser(b3.parsers.cod2.Cod2Parser):
     gameName = 'cod4'
+
     def getClient(self, match=None, attacker=None, victim=None):
         """Get a client object using the best availible data.
         Prefer GUID first, then Client ID (CID)
@@ -43,10 +44,11 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
             client = m(match.group(k))
             if client:
                 return client
+
     # join
     def OnJ(self, action, data, match=None):
         # COD4 stores the PBID in the log file
-        pbid = match.group('guid')
+        pbguid = match.group('guid')
 
         client = self.getClient(match)
 
@@ -59,10 +61,11 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
             # make a new client
             if self.PunkBuster:        
                 # we will use punkbuster's guid
-                guid = pbid
+                guid = None # Set to none so PB_SV_PLIST is triggered in clients.authorizeClients for the ip address
+                pbid = pbguid
             else:
                 # use cod guid - is this reliable without punkbuster?
-                guid = pbid 
+                guid = pbguid 
 
             client = self.clients.newClient(match.group('cid'), name=match.group('name'), state=b3.STATE_ALIVE, guid=guid)
 
