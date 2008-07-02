@@ -16,8 +16,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-# $Id: publist.py 43 2005-12-06 02:17:55Z thorn $
-#
 # CHANGELOG
 #	11/30/2005 - 1.0.3 - ThorN
 #	Use PluginCronTab instead of CronTab

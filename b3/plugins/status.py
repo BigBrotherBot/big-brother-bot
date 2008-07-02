@@ -16,8 +16,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-# $Id: status.py 31 2005-12-01 04:32:27Z thorn $
-#
 # CHANGELOG
 # 12/03/2008 - 1.2.4 - Courgette
 # Properly escape strings to ensure valid xml

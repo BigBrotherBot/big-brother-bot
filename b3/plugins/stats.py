@@ -16,8 +16,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-# $Id: stats.py 6 2005-11-18 05:36:17Z thorn $
-#
 # CHANGELOG
 #	9/5/2005 - 1.2.0 - ThorN
 #	Added !topstats command

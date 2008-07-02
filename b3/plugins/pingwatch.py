@@ -16,8 +16,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-# $Id: pingwatch.py 81 2006-01-02 16:29:19Z thorn $
-#
 # CHANGELOG
 #	11/30/2005 - 1.1.3 - ThorN
 #	Use PluginCronTab instead of CronTab

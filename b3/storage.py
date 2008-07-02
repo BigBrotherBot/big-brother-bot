@@ -16,8 +16,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-# $Id: storage.py 102 2006-04-14 06:46:03Z thorn $
-#
 # CHANGELOG
 #   01/23/2006 - 1.5.0 - ThorN
 #   Added SQLite support, set "database" to "sqlite:///path/to/database.db"

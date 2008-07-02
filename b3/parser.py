@@ -16,7 +16,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-# $Id: parser.py 102 2006-04-14 06:46:03Z thorn $
 #
 # CHANGELOG
 #    11/29/2005 - 1.7.0 - ThorN

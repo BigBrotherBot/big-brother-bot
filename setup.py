@@ -16,8 +16,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-# $Id: setup.py 103 2006-04-14 16:23:10Z thorn $
-#
 # Example:
 # setup.py dev sdist
 # setup.py dev bdist_egg

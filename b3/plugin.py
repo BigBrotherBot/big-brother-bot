@@ -16,7 +16,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-# $Id: plugin.py 31 2005-12-01 04:32:27Z thorn $
 #
 # CHANGELOG
 #	11/29/2005 - 1.3.0 - ThorN

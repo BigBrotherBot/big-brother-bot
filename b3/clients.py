@@ -16,8 +16,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-# $Id: clients.py 102 2006-04-14 06:46:03Z thorn $
-#
 # CHANGELOG
 #    5/6/2008 - 1.2.5 - xlr8or
 #    Client object now saves the current IP in auth function

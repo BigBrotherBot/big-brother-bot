@@ -15,8 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-# $Id: cod.py 103 2006-04-14 16:23:10Z thorn $
-#
 # CHANGELOG
 #    7/23/2005 - 1.1.0
 #    Added damage type to Damage and Kill event data

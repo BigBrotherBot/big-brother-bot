@@ -16,7 +16,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-# $Id: querybuilder.py 6 2005-11-18 05:36:17Z thorn $
 
 __author__  = 'ThorN'
 __version__ = '1.0.1'

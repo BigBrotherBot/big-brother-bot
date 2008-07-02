@@ -16,8 +16,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-# $Id: cron.py 34 2005-12-01 21:49:34Z ttlogic $
-#
 # CHANGELOG
 #	11/30/2005 - 1.3.0 - ThorN
 #	Added PluginCronTab
