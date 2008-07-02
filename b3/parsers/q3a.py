@@ -535,3 +535,45 @@ class Q3AParser(b3.parser.Parser):
 
     def getMaps(self):
         return None
+
+    def sync(self):
+        plist = self.getPlayerList()
+        mlist = {}
+
+        for cid, c in plist.iteritems():
+            client = self.clients.getByCID(cid)
+            if client:
+                if client.guid and c.has_key('guid'):
+                    if client.guid == c['guid']:
+                        # player matches
+                        self.debug('in-sync %s == %s', client.guid, c['guid'])
+                        mlist[str(cid)] = client
+                    else:
+                        self.debug('no-sync %s <> %s', client.guid, c['guid'])
+                        client.disconnect()
+                elif client.ip and c.has_key('ip'):
+                    if client.ip == c['ip']:
+                        # player matches
+                        self.debug('in-sync %s == %s', client.ip, c['ip'])
+                        mlist[str(cid)] = client
+                    else:
+                        self.debug('no-sync %s <> %s', client.ip, c['ip'])
+                        client.disconnect()
+                else:
+                    self.debug('no-sync: no guid or ip found.')
+        
+        return mlist
+
+    def authorizeClients(self):
+        players = self.getPlayerList()
+        self.verbose('authorizeClients() = %s' % players)
+
+        for cid, p in players.iteritems():
+            sp = self.clients.getByCID(cid)
+            if sp:
+                # Only set provided data, otherwise use the currently set data
+                sp.ip   = p.get('ip', sp.ip)
+                sp.pbid = p.get('pbid', sp.pbid)
+                sp.guid = p.get('guid', sp.guid)
+                sp.data = p
+                sp.auth()

@@ -19,7 +19,7 @@
 # $Id: functions.py 102 2006-04-14 06:46:03Z thorn $
 
 __author__  = 'ThorN'
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 
 import re
 
@@ -113,5 +113,59 @@ def minutesStr(timeStr):
 def vars2printf(inputStr):
 	return re.sub(r'\$([a-zA-Z]+)', r'%(\1)s', inputStr)
 	
+def levenshteinDistance(a,b):
+    c = {}
+    n = len(a); m = len(b)
+
+    for i in range(0,n+1):
+        c[i,0] = i
+    for j in range(0,m+1):
+        c[0,j] = j
+
+    for i in range(1,n+1):
+        for j in range(1,m+1):
+            x = c[i-1,j]+1
+            y = c[i,j-1]+1
+            if a[i-1] == b[j-1]:
+                z = c[i-1,j-1]
+            else:
+                z = c[i-1,j-1]+1
+            c[i,j] = min(x,y,z)
+    return c[n,m]
+
+def fuzzyGuidMatch(a, b):
+    a = a.upper()
+    b = b.upper()
+
+    if a == b:
+        return True
+    
+    # put the longest first
+    if len(b) > len(a):
+        a, b = b, a
+
+    if len(a) == 32 and len(b) == 31:
+        # Looks like a truncated id, check using levenshtein
+        # Use levenshteinDistance to find GUIDs off by 1 char, as caused by a bug in COD Punkbuster
+        distance = levenshteinDistance(a, b)
+        if distance <= 1:
+            return True
+    
+    return False
+
 if __name__ == '__main__':
     print splitDSN('sqlite://c|/mydatabase/test.db')
+
+    compare = [
+        ('098f6bcd4621d373cade4e832627b4f6', '098f6bcd4621d373cade4e832627b4f6'),
+        ('098f6bcd4621d373cade4e832627b4f6', '098f6bcd4621d373cade4e832627b4f'),
+        ('098f6bcd4621d373cade4e832627bf6', '098f6bcd4621d373cade4e832627b4f6'),
+        ('098f6bcd4621d373cade4e832627b4f6', '098f6bcd4621d373cde4e832627b4f6'),
+        ('098f6bcd4621d373cade4e832627b4f6', '098f6bcd46d373cade4e832627b4f6'),
+        ('098f6bcd4621d373cade4832627b4f6', '098f6bcd4621d73cade4e832627b4f6'),
+        ('098F6BCD4621D373CADE4E832627B4F6', '098f6bcd4621d373cade4e832627b4f6'),
+    ]
+
+
+    for a,b in compare:
+        print '%s <> %s = %s' % (a, b, fuzzyGuidMatch(a,b))

@@ -944,10 +944,12 @@ class Clients(dict):
         except:
             for cid,c in self.items():
                 if c.guid and c.guid == guid:
-                    #self.console.debug('Found client by GUID %s = %s', guid, c.name)
                     self._guidIndex[guid] = c.cid
                     return weakref.ref(c)()
-
+                elif functions.fuzzyGuidMatch(c.guid, guid):
+                    # Found by fuzzy matching, don't index
+                    return weakref.ref(c)()
+                    
         return None
 
     def getByCID(self, cid):
@@ -1054,31 +1056,7 @@ class Clients(dict):
                 del self[cid]
 
     def sync(self):
-        plist = self.console.getPlayerList()
-        mlist = {}
-
-        for cid, c in plist.iteritems():
-            client = self.getByCID(cid)
-            if client:
-                if client.guid and c.has_key('guid'):
-                    if client.guid == c['guid']:
-                        # player matches
-                        self.console.debug('in-sync %s == %s', client.guid, c['guid'])
-                        mlist[str(cid)] = client
-                    else:
-                        self.console.debug('no-sync %s <> %s', client.guid, c['guid'])
-                        client.disconnect()
-                elif client.ip and c.has_key('ip'):
-                    if client.ip == c['ip']:
-                        # player matches
-                        self.console.debug('in-sync %s == %s', client.ip, c['ip'])
-                        mlist[str(cid)] = client
-                    else:
-                        self.console.debug('no-sync %s <> %s', client.ip, c['ip'])
-                        client.disconnect()
-                else:
-                    self.console.debug('no-sync: no guid or ip found.')
-
+        mlist = self.console.sync()
 
         # remove existing clients
         self.clear()
@@ -1097,16 +1075,5 @@ class Clients(dict):
             t.start()
 
     def _authorizeClients(self):
+        self.console.authorizeClients()
         self._authorizing = False
-
-        players = self.console.getPlayerList()
-        self.console.verbose('Clients._authorizeClients() = %s' % players)
-
-        for cid, p in players.iteritems():
-            sp = self.getByCID(cid)
-            if sp:
-                sp.ip   = p['ip']
-                sp.pbid = p['pbid']
-                sp.guid = p['guid']
-                sp.data = p
-                sp.auth()
