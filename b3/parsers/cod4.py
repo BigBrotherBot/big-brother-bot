@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 __author__  = 'ThorN'
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
@@ -144,6 +144,13 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
             if self.PunkBuster:
                 # Use guid since we already get the guid in the log file
                 sp = self.clients.getByGUID(p['guid'])
+
+                # Don't use invalid guid/pbid
+                if len(p['guid']) < 32:
+                    del p['guid']
+
+                if len(p['pbid']) < 32:
+                    del p['pbid']
             else:
                 sp = self.clients.getByCID(cid)
 
