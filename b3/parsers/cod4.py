@@ -66,7 +66,7 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
                 # use cod guid - is this reliable without punkbuster?
                 guid = pbguid 
 
-            client = self.clients.newClient(match.group('cid'), name=match.group('name'), state=b3.STATE_ALIVE, guid=guid)
+            client = self.clients.newClient(match.group('cid'), name=match.group('name'), state=b3.STATE_ALIVE, guid=guid, pbid=pbguid)
 
         return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
 
