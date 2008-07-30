@@ -22,9 +22,10 @@
 #          xlr8or added parsing Damage (OnHit)
 # v1.0.4 - xlr8or added EVT_CLIENT_TEAM_CHANGE in OnKill
 # v1.0.5 - xlr8or added hitloc and damageType info to accomodate XLRstats
+# v1.0.6 - Fixed a bug where the parser wouldn't parse the shutdowngame and warmup functions.
 
 __author__  = 'xlr8or'
-__version__ = '1.0.5'
+__version__ = '1.0.6'
 
 import b3.parsers.q3a
 import re, string, threading, time
