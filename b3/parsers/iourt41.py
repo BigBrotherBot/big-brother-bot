@@ -25,7 +25,7 @@
 # v1.0.6 - Fixed a bug where the parser wouldn't parse the shutdowngame and warmup functions.
 
 __author__  = 'xlr8or'
-__version__ = '1.0.6'
+__version__ = '1.0.7'
 
 import b3.parsers.q3a
 import re, string, threading, time
@@ -96,8 +96,10 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     # 23:17:32 map: ut4_casa
     # num score ping name            lastmsg address               qport rate
     # --- ----- ---- --------------- ------- --------------------- ----- -----
-    #   2     0   19 ^1XLR^78^8^9or^7        0 145.99.135.227:27960  41893  8000
-    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+    #   2     0   19 ^1XLR^78^8^9or^7        0 145.99.135.227:27960  41893  8000  # player with a live ping
+    #   4     0 CNCT Dz!k^7                450 83.175.191.27:64459   50308 20000  # connecting player (or inbetween rounds)
+    #   9     0 ZMBI ^7                   1900 81.178.80.68:27960    10801  8000  # zombies (need to be disconnected!)
+    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+|CNCT|ZMBI)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
     _reCvarName = re.compile(r'^[a-z0-9_.]+$', re.I)
     _reCvar = (
         #"sv_maxclients" is:"16^7" default:"8^7"
@@ -583,6 +585,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
     # Startgame
     def OnInitgame(self, action, data, match=None):
+        self.debug('EVENT: OnInitgame')
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)
 
         # capturelimit / fraglimit / timelimit
@@ -639,6 +642,9 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
         self.verbose('Current gameType: %s' % self.game.gameType)
         self.game.startRound()
+        
+        self.clients.sync()
+        self.debug('Synchronizing client info')
 
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
 
@@ -696,3 +702,35 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             c+=1
         if admin:
             admin.message('^3Unbanned^7: ^1%s^7. Up to 4 possible duplicate entries removed from banlist' % client.exactName )
+
+    def sync(self):
+        plist = self.getPlayerList()
+        mlist = {}
+
+        for cid, c in plist.iteritems():
+            client = self.clients.getByCID(cid)
+            if client:
+                # Disconnect the zombies first
+                if c['ping'] == 'ZMBI':
+                    self.debug('zombie found: %s - disconnecting', c['ip'])
+                    client.disconnect()
+                elif client.guid and c.has_key('guid'):
+                    if client.guid == c['guid']:
+                        # player matches
+                        self.debug('in-sync %s == %s', client.guid, c['guid'])
+                        mlist[str(cid)] = client
+                    else:
+                        self.debug('no-sync %s <> %s', client.guid, c['guid'])
+                        client.disconnect()
+                elif client.ip and c.has_key('ip'):
+                    if client.ip == c['ip']:
+                        # player matches
+                        self.debug('in-sync %s == %s', client.ip, c['ip'])
+                        mlist[str(cid)] = client
+                    else:
+                        self.debug('no-sync %s <> %s', client.ip, c['ip'])
+                        client.disconnect()
+                else:
+                    self.debug('no-sync: no guid or ip found.')
+        
+        return mlist
