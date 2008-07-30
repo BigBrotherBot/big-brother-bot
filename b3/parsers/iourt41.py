@@ -53,8 +53,8 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     _commands['unbanByIp'] = 'removeip %(ip)s'
 
     _eventMap = {
-        'warmup' : b3.events.EVT_GAME_WARMUP,
-        'shutdowngame' : b3.events.EVT_GAME_ROUND_END
+        #'warmup' : b3.events.EVT_GAME_WARMUP,
+        #'shutdowngame' : b3.events.EVT_GAME_ROUND_END
     }
 
     # remove the time off of the line
@@ -87,7 +87,9 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<name>[^:]+):\s+(?P<text>.*))$', re.IGNORECASE),
 
         #Falling thru? Item stuff and so forth... still need some other actions from CTF and other gametypes to compare.  
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>.*)$', re.IGNORECASE)
+        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>.*)$', re.IGNORECASE),
+        #Shutdowngame and Warmup... the one word lines
+        re.compile(r'^(?P<action>[a-z]+):$', re.IGNORECASE)
     )
     
     # 23:17:32 map: ut4_casa
@@ -160,8 +162,12 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if m:
             client = None
             target = None
-            return (m, m.group('action').lower(), m.group('data').strip(), client, target)
-        else:
+            try:
+                data = m.group('data').strip()
+            except:
+                data = None
+            return (m, m.group('action').lower(), data, client, target)
+        elif '------' not in line:
             self.verbose('line did not match format: %s' % line)
 
     def parseUserInfo(self, info):
@@ -264,6 +270,15 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         
         #self.debug('_gameType: %s' % _gameType)
         return _gameType
+
+    # self.console.broadcast, a variant on self.console.say in UrT. This will print to upper left, the server message area.
+    def broadcast(self, msg):
+        lines = []
+        for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+            lines.append(self.getCommand('broadcast', prefix=self.msgPrefix, message=line))
+
+        if len(lines):        
+            self.writelines(lines)
 
 #----------------------------------------------------------------------------------
 
@@ -548,9 +563,11 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         -------------------------------------------------------------------------------"""
 
     # endmap/shutdown
-    def OnShutdownGame(self, action, data, match=None):
+    def OnShutdowngame(self, action, data=None, match=None):
+        self.debug('EVENT: OnShutdowngame')
         self.game.mapEnd()
-        #self.clients.sync()
+        self.clients.sync()
+        self.debug('Synchronizing client info')
         return b3.events.Event(b3.events.EVT_GAME_EXIT, data)
 
     # item
@@ -567,6 +584,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     def OnInitgame(self, action, data, match=None):
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)
 
+        # capturelimit / fraglimit / timelimit
         for o in options:
             if o[0] == 'mapname':
                 self.game.mapName = o[1]
@@ -574,6 +592,12 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                 self.game.gameType = self.defineGameType(o[1])
             elif o[0] == 'fs_game':
                 self.game.modName = o[1]
+            elif o[0] == 'capturelimit':
+                self.game.captureLimit = o[1]
+            elif o[0] == 'fraglimit':
+                self.game.fragLimit = o[1]
+            elif o[0] == 'timelimit':
+                self.game.timeLimit = o[1]
             else:
                 setattr(self.game, o[0], o[1])
 
@@ -585,7 +609,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
 
     # Warmup
-    def OnWarmup(self, action, data, match=None):
+    def OnWarmup(self, action, data=None, match=None):
         self.debug('EVENT: OnWarmup')
         self.game.rounds = 0
         return b3.events.Event(b3.events.EVT_GAME_WARMUP, data)
@@ -595,6 +619,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         self.debug('EVENT: OnInitround')
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)
 
+        # capturelimit / fraglimit / timelimit
         for o in options:
             if o[0] == 'mapname':
                 self.game.mapName = o[1]
@@ -602,6 +627,12 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                 self.game.gameType = self.defineGameType(o[1])
             elif o[0] == 'fs_game':
                 self.game.modName = o[1]
+            elif o[0] == 'capturelimit':
+                self.game.captureLimit = o[1]
+            elif o[0] == 'fraglimit':
+                self.game.fragLimit = o[1]
+            elif o[0] == 'timelimit':
+                self.game.timeLimit = o[1]
             else:
                 setattr(self.game, o[0], o[1])
 
