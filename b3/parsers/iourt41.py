@@ -722,6 +722,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             if m:
                 if m.group('ping') == 'ZMBI' or m.group('ping') == 'CNCT':
                     # ignore them, let them not bother us with errors
+                    pass
                 else:    
                     players[str(m.group('slot'))] = int(m.group('ping'))
 
