@@ -22,10 +22,14 @@
 #          xlr8or added parsing Damage (OnHit)
 # v1.0.4 - xlr8or added EVT_CLIENT_TEAM_CHANGE in OnKill
 # v1.0.5 - xlr8or added hitloc and damageType info to accomodate XLRstats
-# v1.0.6 - Fixed a bug where the parser wouldn't parse the shutdowngame and warmup functions.
+# v1.0.6 - Fixed a bug where the parser wouldn't parse the shutdowngame and warmup functions
+# v1.0.7 - Better synchronizing and identification of connecting players and zombies
+# v1.0.8 - Better Zombie handling (Zombies being a result of: sv_zombietime (default 2 seconds)) 
+#          (Zombie time is the time after a disconnect that the slot cannot be used and thus is in Zombie state)
+#          Added functionality to use ip's only, not using the guid at all (experimental)
 
 __author__  = 'xlr8or'
-__version__ = '1.0.7'
+__version__ = '1.0.8'
 
 import b3.parsers.q3a
 import re, string, threading, time
@@ -35,6 +39,7 @@ import b3.events
 #----------------------------------------------------------------------------------------------------------------------------------------------
 class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     gameName = 'iourt41'
+    IpsOnly = False # Experimental: setting True will use ip's only for identification.
 
     _settings = {}
     _settings['line_length'] = 65
@@ -320,8 +325,11 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                     self.debug('Client disconnected. Ignoring.')
                     return None
                 
+                # overide the guid... use ip's only if self.console.IpsOnly is set True.
+                if self.IpsOnly:
+                    guid = bclient['ip']
                 # seems Quake clients don't have a cl_guid, we'll use ip instead!
-                if guid == 'unknown':
+                elif guid == 'unknown':
                     guid = bclient['ip']
 
                 client = self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid })
@@ -569,8 +577,8 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     def OnShutdowngame(self, action, data=None, match=None):
         self.debug('EVENT: OnShutdowngame')
         self.game.mapEnd()
-        self.clients.sync()
-        self.debug('Synchronizing client info')
+        # self.clients.sync()
+        # self.debug('Synchronizing client info')
         return b3.events.Event(b3.events.EVT_GAME_EXIT, data)
 
     # item
@@ -703,6 +711,22 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if admin:
             admin.message('^3Unbanned^7: ^1%s^7. Up to 4 possible duplicate entries removed from banlist' % client.exactName )
 
+    def getPlayerPings(self):
+        data = self.write('status')
+        if not data:
+            return {}
+
+        players = {}
+        for line in data.split('\n'):
+            m = re.match(self._regPlayer, line.strip())
+            if m:
+                if m.group('ping') == 'ZMBI' or m.group('ping') == 'CNCT':
+                    # ignore them, let them not bother us with errors
+                else:    
+                    players[str(m.group('slot'))] = int(m.group('ping'))
+
+        return players
+
     def sync(self):
         plist = self.getPlayerList()
         mlist = {}
@@ -712,8 +736,11 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             if client:
                 # Disconnect the zombies first
                 if c['ping'] == 'ZMBI':
-                    self.debug('zombie found: %s - disconnecting', c['ip'])
-                    client.disconnect()
+                    self.debug('slot is in state zombie: %s - ignoring', c['ip'])
+                    # client.disconnect()
+                elif c['ping'] == 'CNCT':
+                    self.debug('Client is connecting: %s - ignoring', c['ip'])
+                    # client.disconnect()
                 elif client.guid and c.has_key('guid'):
                     if client.guid == c['guid']:
                         # player matches
@@ -734,3 +761,33 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                     self.debug('no-sync: no guid or ip found.')
         
         return mlist
+
+""" A little documentation on the ClientSlot states in relation to ping positions in the status response
+
+UrT ClientSlot states: 
+CS_FREE,     // can be reused for a new connection
+CS_ZOMBIE,   // client has been disconnected, but don't reuse
+             // connection for a couple seconds
+CS_CONNECTED // has been assigned to a client_t, but no gamestate yet
+CS_PRIMED,   // gamestate has been sent, but client hasn't sent a usercmd
+CS_ACTIVE    // client is fully in game
+
+Snippet 1:
+if (cl->state == CS_CONNECTED)
+            Com_Printf ("CNCT ");
+        else if (cl->state == CS_ZOMBIE)
+            Com_Printf ("ZMBI ");
+        else
+        {
+            ping = cl->ping < 9999 ? cl->ping : 9999;
+            Com_Printf ("%4i ", ping);
+        }
+
+Snippet 2:
+if (cl->state == CS_ZOMBIE && cl->lastPacketTime < zombiepoint) {
+  // using the client id cause the cl->name is empty at this point
+  Com_DPrintf( "Going from CS_ZOMBIE to CS_FREE for client %d\n", i );
+  cl->state = CS_FREE; // can now be reused
+}
+
+"""
