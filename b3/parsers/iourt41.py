@@ -100,7 +100,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         re.compile(r'^(?P<action>[a-z]+):$', re.IGNORECASE)
     )
     
-    # 23:17:32 map: ut4_casa
+    # map: ut4_casa
     # num score ping name            lastmsg address               qport rate
     # --- ----- ---- --------------- ------- --------------------- ----- -----
     #   2     0   19 ^1XLR^78^8^9or^7        0 145.99.135.227:27960  41893  8000  # player with a live ping
@@ -108,6 +108,14 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     #   9     0 ZMBI ^7                   1900 81.178.80.68:27960    10801  8000  # zombies (need to be disconnected!)
     _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+|CNCT|ZMBI)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
     _reMapNameFromStatus = re.compile(r'^map:\s+(?P<map>.+)$', re.I)
+
+    # Map: ut4_algiers
+    # Players: 8
+    # Scores: R:97 B:98
+    # 0:  FREE k:0 d:0 ping:0
+    # 4: yene RED k:16 d:8 ping:50 92.104.110.192:63496
+    _reTeamScores = re.compile(r'^Scores:\s+R:(?P<RedScore>.+)\s+B:(?P<BlueScore>.+)$', re.I)
+
     _reCvarName = re.compile(r'^[a-z0-9_.]+$', re.I)
     _reCvar = (
         #"sv_maxclients" is:"16^7" default:"8^7"
@@ -782,7 +790,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             if client:
                 scorelist[str(cid)] = c['score']
         return scorelist
-    
+
     def getMap(self):
         data = self.write('status')
         if not data:
@@ -796,8 +804,21 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             return str(m.group('map'))
                     
         return None
+
+    def getTeamScores(self):
+        data = self.write('players')
+        if not data:
+            return None
+
+        line = data.split('\n')[2] 
         
-        
+        m = re.match(self._reTeamScores, line.strip())
+        if m:
+            return [int(m.group('RedScore')), int(m.group('BlueScore'))]
+                    
+        return None
+
+
 """ A little documentation on the ClientSlot states in relation to ping positions in the status response
 
 UrT ClientSlot states: 
