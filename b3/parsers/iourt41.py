@@ -27,9 +27,11 @@
 # v1.0.8 - Better Zombie handling (Zombies being a result of: sv_zombietime (default 2 seconds)) 
 #          (Zombie time is the time after a disconnect that the slot cannot be used and thus is in Zombie state)
 #          Added functionality to use ip's only, not using the guid at all (experimental)
+# v1.0.9 - Try to get the map name at start
+#           Provide getPlayerScores method
 
 __author__  = 'xlr8or'
-__version__ = '1.0.8'
+__version__ = '1.0.9'
 
 import b3.parsers.q3a
 import re, string, threading, time
@@ -105,6 +107,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     #   4     0 CNCT Dz!k^7                450 83.175.191.27:64459   50308 20000  # connecting player (or inbetween rounds)
     #   9     0 ZMBI ^7                   1900 81.178.80.68:27960    10801  8000  # zombies (need to be disconnected!)
     _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+|CNCT|ZMBI)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+    _reMapNameFromStatus = re.compile(r'^map:\s+(?P<map>.+)$', re.I)
     _reCvarName = re.compile(r'^[a-z0-9_.]+$', re.I)
     _reCvar = (
         #"sv_maxclients" is:"16^7" default:"8^7"
@@ -158,6 +161,13 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
             self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
 
+        # get map from the status rcon command
+        map = self.getMap()
+        if map:
+            self.game.mapName = map
+            self.info('map is: %s'%self.game.mapName)
+            
+         
     def getLineParts(self, line):
         line = re.sub(self._lineClear, '', line, 1)
 
@@ -762,7 +772,32 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                     self.debug('no-sync: no guid or ip found.')
         
         return mlist
+        
+    def getPlayerScores(self):
+        plist = self.getPlayerList()
+        scorelist = {}
 
+        for cid, c in plist.iteritems():
+            client = self.clients.getByCID(cid)
+            if client:
+                scorelist[str(cid)] = c['score']
+        return scorelist
+    
+    def getMap(self):
+        data = self.write('status')
+        if not data:
+            return None
+
+        line = data.split('\n')[0] 
+        #self.debug('[%s]'%line.strip())
+        
+        m = re.match(self._reMapNameFromStatus, line.strip())
+        if m:
+            return str(m.group('map'))
+                    
+        return None
+        
+        
 """ A little documentation on the ClientSlot states in relation to ping positions in the status response
 
 UrT ClientSlot states: 
