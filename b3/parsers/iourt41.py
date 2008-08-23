@@ -29,9 +29,10 @@
 #          Added functionality to use ip's only, not using the guid at all (experimental)
 # v1.0.9 - Try to get the map name at start
 #           Provide getPlayerScores method
+# v1.0.10 - Modified _reColor so name sanitation is the same as UrT. Here it does more than just remove color.
 
 __author__  = 'xlr8or'
-__version__ = '1.0.9'
+__version__ = '1.0.10'
 
 import b3.parsers.q3a
 import re, string, threading, time
@@ -107,6 +108,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     #   4     0 CNCT Dz!k^7                450 83.175.191.27:64459   50308 20000  # connecting player (or inbetween rounds)
     #   9     0 ZMBI ^7                   1900 81.178.80.68:27960    10801  8000  # zombies (need to be disconnected!)
     _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+|CNCT|ZMBI)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+    _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
     _reMapNameFromStatus = re.compile(r'^map:\s+(?P<map>.+)$', re.I)
 
     # Map: ut4_algiers
