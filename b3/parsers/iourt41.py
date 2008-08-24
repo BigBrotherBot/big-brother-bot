@@ -30,9 +30,10 @@
 # v1.0.9 - Try to get the map name at start
 #           Provide getPlayerScores method
 # v1.0.10 - Modified _reColor so name sanitation is the same as UrT. Here it does more than just remove color.
+# v1.0.11 - Courgette - Add getScores  # NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
 
 __author__  = 'xlr8or'
-__version__ = '1.0.10'
+__version__ = '1.0.11'
 
 import b3.parsers.q3a
 import re, string, threading, time
@@ -117,6 +118,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     # 0:  FREE k:0 d:0 ping:0
     # 4: yene RED k:16 d:8 ping:50 92.104.110.192:63496
     _reTeamScores = re.compile(r'^Scores:\s+R:(?P<RedScore>.+)\s+B:(?P<BlueScore>.+)$', re.I)
+    _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): (?P<name>.*) k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) (?P<ping>[0-9]+|CNCT|ZMBI) (?P<ip>[0-9.]+):(?P<port>[0-9-]+)$', re.I) # NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
 
     _reCvarName = re.compile(r'^[a-z0-9_.]+$', re.I)
     _reCvar = (
@@ -820,6 +822,30 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                     
         return None
 
+    def getScores(self):
+        """
+        NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
+        """
+        data = self.write('players')
+        if not data:
+            return None
+
+        
+        scores = {'red':None, 'blue':None, 'players':{}}
+        
+        line = data.split('\n')[2] 
+        m = re.match(self._reTeamScores, line.strip())
+        if m:
+            scores['red'] = int(m.group('RedScore'))
+            scores['blue'] = int(m.group('BlueScore'))
+                   
+        for line in data.split('\n')[3:]:
+          m = re.match(self._rePlayerScore, line.strip())
+          if m:
+              scores['players'][int(m.group('slot'))] = {'kills':int(m.group('kill')), 'deaths':int(m.group('death'))}
+                    
+        return scores
+      
 
 """ A little documentation on the ClientSlot states in relation to ping positions in the status response
 
