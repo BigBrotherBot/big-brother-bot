@@ -31,9 +31,10 @@
 #           Provide getPlayerScores method
 # v1.0.10 - Modified _reColor so name sanitation is the same as UrT. Here it does more than just remove color.
 # v1.0.11 - Courgette - Add getScores  # NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
+# v1.0.12 - Courgette - Fix regex that failed to parse chat lines when player's name ends with ':'
 
 __author__  = 'xlr8or'
-__version__ = '1.0.11'
+__version__ = '1.0.12'
 
 import b3.parsers.q3a
 import re, string, threading, time
@@ -85,7 +86,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         #Processing chats and tell events...
         #5:39 saytell: 15 16 repelSteeltje: nno
         #5:39 saytell: 15 15 repelSteeltje: nno
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<name>[^:]+):\s+(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<name>.+(?<!:\s)):\s+(?P<text>.*))$', re.IGNORECASE),
 
         # We're not using tell in this form so this one is disabled
         #5:39 tell: repelSteeltje to B!K!n1: nno
@@ -94,7 +95,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         #3:53 say: 8 denzel: lol
         #15:37 say: 9 .:MS-T:.BstPL: this name is quite a challenge
         #2:28 sayteam: 12 New_UrT_Player_v4.1: woekele
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<name>[^:]+):\s+(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<name>.+(?<!:\s)):\s+(?P<text>.*))$', re.IGNORECASE),
 
         #Falling thru? Item stuff and so forth... still need some other actions from CTF and other gametypes to compare.  
         re.compile(r'^(?P<action>[a-z]+):\s(?P<data>.*)$', re.IGNORECASE),
