@@ -32,12 +32,13 @@
 # v1.0.10 - Modified _reColor so name sanitation is the same as UrT. Here it does more than just remove color.
 # v1.0.11 - Courgette - Add getScores  # NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
 # v1.0.12 - Courgette - Fix regex that failed to parse chat lines when player's name ends with ':'
+# v1.0.13 - xlr8or - support for !maps and !nextmap command 
 
 __author__  = 'xlr8or'
-__version__ = '1.0.12'
+__version__ = '1.0.13'
 
 import b3.parsers.q3a
-import re, string, threading, time
+import re, string, threading, time, os
 import b3
 import b3.events
 
@@ -179,7 +180,14 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if map:
             self.game.mapName = map
             self.info('map is: %s'%self.game.mapName)
-            
+
+        # get gamepaths/vars
+        self.game.fs_game = self.getCvar('fs_game').getString()
+        self.game.fs_basepath = self.getCvar('fs_basepath').getString().rstrip('/')
+        self.debug('fs_basepath: %s' % self.game.fs_basepath)
+        self.game.fs_homepath = self.getCvar('fs_homepath').getString().rstrip('/')
+        self.debug('fs_homepath: %s' % self.game.fs_homepath)
+
          
     def getLineParts(self, line):
         line = re.sub(self._lineClear, '', line, 1)
@@ -809,6 +817,72 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             return str(m.group('map'))
                     
         return None
+
+    _reMap = re.compile(r'map ([a-z0-9_-]+)', re.I)
+    def getMaps(self):
+        mapcycle = self.getCvar('g_mapcycle').getString()
+        mapfile = self.game.fs_basepath + '/' + self.game.fs_game + '/' + mapcycle
+        if not os.path.isfile(mapfile):
+            mapfile = self.game.fs_homepath + '/' + self.game.fs_game + '/' + mapcycle
+
+        mapstring = open(mapfile, 'r')
+        maps = mapstring.read().strip('\n').split('\n')
+
+        nmaps = []
+        if maps:
+            for m in maps:
+                if m[:4] == 'ut4_':
+                    m = m[4:]
+                elif m[:3] == 'ut_':
+                    m = m[3:]
+                nmaps.append(m.title())
+        return nmaps
+
+    def getNextMap(self):
+        # let's first check if a vote passed for the next map
+        nmap = self.getCvar('g_nextmap').getString()
+        self.debug('g_nextmap: %s' % nmap)
+        if nmap != "":
+            if nmap[:4] == 'ut4_': nmap = nmap[4:]
+            elif nmap[:3] == 'ut_': nmap = nmap[3:]
+            return nmap.title()
+
+        # seek the next map from the mapcyle file
+        if not self.game.mapName: return None
+        
+        mapcycle = self.getCvar('g_mapcycle').getString()
+        mapfile = self.game.fs_basepath + '/' + self.game.fs_game + '/' + mapcycle
+        if not os.path.isfile(mapfile):
+            mapfile = self.game.fs_homepath + '/' + self.game.fs_game + '/' + mapcycle
+
+        mapstring = open(mapfile, 'r')
+        maps = mapstring.read().strip('\n').split('\n')
+
+        if maps:
+            gmap = self.game.mapName.strip().lower()
+
+            found = False
+            for nmap in maps:
+                nmap = nmap.strip().lower()
+                if found:
+                    found = nmap
+                    break
+                elif nmap == gmap:
+                    # current map, break on next map
+                    found = True
+
+            if found == True:
+                # map is first map in rotation
+                nmap = maps[0].strip().lower()
+
+            if found:
+                if nmap[:4] == 'ut4_': nmap = nmap[4:]
+                elif nmap[:3] == 'ut_': nmap = nmap[3:]
+                return nmap.title()
+
+            return None
+        else:
+            return None
 
     def getTeamScores(self):
         data = self.write('players')

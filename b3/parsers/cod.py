@@ -313,7 +313,7 @@ class CodParser(b3.parsers.q3a.Q3AParser):
 
             if found == True:
                 # map is first map in rotation
-                found = maps[0].strip().lower()
+                nmap = maps[0].strip().lower()
 
             if found:
                 if nmap[:3] == 'mp_': nmap = nmap[3:]

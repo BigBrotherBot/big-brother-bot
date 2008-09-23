@@ -16,16 +16,21 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+# $Id: censor.py 6 2005-11-18 05:36:17Z thorn $
+#
 # CHANGELOG
-#	8/13/2005 - 2.0.0 - ThorN
-#	Converted to use XML config
-#	Allow custom penalties for words and names
-#	7/23/2005 - 1.1.0 - ThorN
-#	Added data column to penalties table
-#	Put censored message/name in the warning data
+# 9/20/2008 - 2.1.1 - xlr8or
+# conversion tabs to spaces
+# Added muting for Urban Terror
+# 8/13/2005 - 2.0.0 - ThorN
+# Converted to use XML config
+# Allow custom penalties for words and names
+# 7/23/2005 - 1.1.0 - ThorN
+# Added data column to penalties table
+# Put censored message/name in the warning data
 
 __author__  = 'ThorN'
-__version__ = '2.1.0'
+__version__ = '2.1.1'
 
 import b3, re, traceback, sys, threading
 import b3.events
@@ -33,166 +38,216 @@ import b3.plugin
 from b3 import functions
 
 class PenaltyData:
-	def __init__(self, **kwargs):
-		for k, v in kwargs.iteritems():
-			setattr(self, k, v)
+  def __init__(self, **kwargs):
+    for k, v in kwargs.iteritems():
+      setattr(self, k, v)
 
-	type = None
-	reason = None
-	keyword = None
-	duration = 0
+  type = None
+  reason = None
+  keyword = None
+  duration = 0
 
 class CensorData:
-	def __init__(self, **kwargs):
-		for k, v in kwargs.iteritems():
-			setattr(self, k, v)
+  def __init__(self, **kwargs):
+    for k, v in kwargs.iteritems():
+      setattr(self, k, v)
 
-	penalty = None
-	regexp = None
+  penalty = None
+  regexp = None
 
 #--------------------------------------------------------------------------------------------------
 class CensorPlugin(b3.plugin.Plugin):
-	_adminPlugin = None
-	_reClean = re.compile(r'[^0-9a-z ]+', re.I)
-	_defaultBadWordPenalty = None
-	_defaultBadNamePenalty = None
-	_maxLevel = 0
+  _adminPlugin = None
+  _reClean = re.compile(r'[^0-9a-z ]+', re.I)
+  _defaultBadWordPenalty = None
+  _defaultBadNamePenalty = None
+  _maxLevel = 0
+  _mute = False
+  _muteduration1 = 0
+  _muteduration2 = 0
+  _muteduration3 = 0
+  _muteonly = False
 
-	def onStartup(self):
-		self._adminPlugin = self.console.getPlugin('admin')
-		if not self._adminPlugin:
-			return False
+  def onStartup(self):
+    self._adminPlugin = self.console.getPlugin('admin')
+    if not self._adminPlugin:
+      return False
 
-		self.registerEvent(b3.events.EVT_CLIENT_SAY)
-		self.registerEvent(b3.events.EVT_CLIENT_TEAM_SAY)
+    self.registerEvent(b3.events.EVT_CLIENT_SAY)
+    self.registerEvent(b3.events.EVT_CLIENT_TEAM_SAY)
 
-	def onLoadConfig(self):
-		self._maxLevel = self.config.getint('settings', 'max_level')
+  def onLoadConfig(self):
+    self._maxLevel = self.config.getint('settings', 'max_level')
 
-		penalty = self.config.get('badwords/penalty')[0]
+    try:
+      self._mute = self.config.getboolean('urbanterror', 'mute')
+    except:
+      pass
+    try:
+      self._muteduration1 = self.config.getint('urbanterror', 'muteduration1')
+    except:
+      pass
+    try:
+      self._muteduration2 = self.config.getint('urbanterror', 'muteduration2')
+    except:
+      pass
+    try:
+      self._muteduration3 = self.config.getint('urbanterror', 'muteduration3')
+    except:
+      pass
+    try:
+      self._muteonly = self.config.getboolean('urbanterror', 'mute_only')
+    except:
+      pass
 
-		self._defaultBadWordPenalty = PenaltyData(type = penalty.get('type'),
-							reason = penalty.get('reason'),
-							keyword = penalty.get('reasonkeyword'),
-							duration = functions.time2minutes(penalty.get('duration')))
+    penalty = self.config.get('badwords/penalty')[0]
 
-		penalty = self.config.get('badnames/penalty')[0]
+    self._defaultBadWordPenalty = PenaltyData(type = penalty.get('type'),
+              reason = penalty.get('reason'),
+              keyword = penalty.get('reasonkeyword'),
+              duration = functions.time2minutes(penalty.get('duration')))
 
-		self._defaultBadNamePenalty = PenaltyData(type = penalty.get('type'),
-							reason = penalty.get('reason'),
-							keyword = penalty.get('reasonkeyword'),
-							duration = functions.time2minutes(penalty.get('duration')))
+    penalty = self.config.get('badnames/penalty')[0]
 
-		# load bad words into memory
-		self._badWords = []
+    self._defaultBadNamePenalty = PenaltyData(type = penalty.get('type'),
+              reason = penalty.get('reason'),
+              keyword = penalty.get('reasonkeyword'),
+              duration = functions.time2minutes(penalty.get('duration')))
 
-		for e in self.config.get('badwords/badword'):
-			regexp  = e.find('regexp')
-			word    = e.find('word')
-			penalty = e.find('penalty')
+    # load bad words into memory
+    self._badWords = []
 
-			if regexp != None:
-				# has a regular expression
-				self._badWords.append(self._getCensorData(e.get('name'), regexp.text.strip(), penalty, self._defaultBadWordPenalty))
+    for e in self.config.get('badwords/badword'):
+      regexp  = e.find('regexp')
+      word    = e.find('word')
+      penalty = e.find('penalty')
 
-			if word != None:
-				# has a plain word
-				self._badWords.append(self._getCensorData(e.get('name'), '\\s' + word.text.strip() + '\\s', penalty, self._defaultBadWordPenalty))
+      if regexp != None:
+        # has a regular expression
+        self._badWords.append(self._getCensorData(e.get('name'), regexp.text.strip(), penalty, self._defaultBadWordPenalty))
 
-		# load bad names into memory
-		self._badNames = []
+      if word != None:
+        # has a plain word
+        self._badWords.append(self._getCensorData(e.get('name'), '\\s' + word.text.strip() + '\\s', penalty, self._defaultBadWordPenalty))
 
-		for e in self.config.get('badnames/badname'):
-			regexp  = e.find('regexp')
-			word    = e.find('word')
-			penalty = e.find('penalty')
+    # load bad names into memory
+    self._badNames = []
 
-			if regexp != None:
-				# has a regular expression
-				self._badNames.append(self._getCensorData(e.get('name'), regexp.text.strip(), penalty, self._defaultBadNamePenalty))
+    for e in self.config.get('badnames/badname'):
+      regexp  = e.find('regexp')
+      word    = e.find('word')
+      penalty = e.find('penalty')
 
-			if word != None:
-				# has a plain word
-				self._badNames.append(self._getCensorData(e.get('name'), '\\s' + word.text.strip() + '\\s', penalty, self._defaultBadNamePenalty))
+      if regexp != None:
+        # has a regular expression
+        self._badNames.append(self._getCensorData(e.get('name'), regexp.text.strip(), penalty, self._defaultBadNamePenalty))
 
-	def _getCensorData(self, name, regexp, penalty, defaultPenalty):
-		try:
-			regexp = re.compile(regexp, re.I)
-		except re.error, e:
-			self.error('Invalid regular expression: %s - %s' % (name, regexp))
-			raise
+      if word != None:
+        # has a plain word
+        self._badNames.append(self._getCensorData(e.get('name'), '\\s' + word.text.strip() + '\\s', penalty, self._defaultBadNamePenalty))
 
-		if penalty:
-			pd = PenaltyData(type = penalty.get('type'),
-							reason = penalty.get('reason'),
-							keyword = penalty.get('reasonkeyword'),
-							duration = functions.time2minutes(penalty.get('duration')))
-		else:
-			pd = defaultPenalty
+  def _getCensorData(self, name, regexp, penalty, defaultPenalty):
+    try:
+      regexp = re.compile(regexp, re.I)
+    except re.error, e:
+      self.error('Invalid regular expression: %s - %s' % (name, regexp))
 
-		return CensorData(penalty = pd, regexp = regexp)
+      raise
 
-	def onEvent(self, event):
-		try:
-			if not event.client:
-				return
-			elif event.client.cid == None:
-				return
-			elif event.client.maxLevel > self._maxLevel:
-				return
-			elif not event.client.connected:
-				return
+    if penalty:
+      pd = PenaltyData(type = penalty.get('type'),
+              reason = penalty.get('reason'),
+              keyword = penalty.get('reasonkeyword'),
+              duration = functions.time2minutes(penalty.get('duration')))
+    else:
+      pd = defaultPenalty
 
-			if len(event.data) > 3:
-				if event.type == b3.events.EVT_CLIENT_SAY or \
-				   event.type == b3.events.EVT_CLIENT_TEAM_SAY:
-					raw = ' ' + event.data + ' '
-					cleaned = ' ' + self.clean(event.data) + ' '
+    return CensorData(penalty = pd, regexp = regexp)
 
-					for w in self._badWords:
-						if w.regexp.search(cleaned):
-							self.penalizeClient(w.penalty, event.client, '%s => %s' % (event.data, cleaned))
-							raise b3.events.VetoEvent
-						elif raw != cleaned and w.regexp.search(raw):
-			                # Data has special characters, check those too
-							self.penalizeClient(w.penalty, event.client, event.data)
-							raise b3.events.VetoEvent
+  def onEvent(self, event):
+    try:
+      if not event.client:
+        return
+      elif event.client.cid == None:
+        return
+      elif event.client.maxLevel > self._maxLevel:
+        return
+      elif not event.client.connected:
+        return
+
+      if len(event.data) > 3:
+        if event.type == b3.events.EVT_CLIENT_SAY or \
+           event.type == b3.events.EVT_CLIENT_TEAM_SAY:
+          raw = ' ' + event.data + ' '
+          cleaned = ' ' + self.clean(event.data) + ' '
+
+          for w in self._badWords:
+            if w.regexp.search(cleaned):
+              self.penalizeClient(w.penalty, event.client, '%s => %s' % (event.data, cleaned))
+              raise b3.events.VetoEvent
+            elif raw != cleaned and w.regexp.search(raw):
+                      # Data has special characters, check those too
+              self.penalizeClient(w.penalty, event.client, event.data)
+              raise b3.events.VetoEvent
                             
-				elif event.type == b3.events.EVT_CLIENT_NAME_CHANGE:
-					self.checkBadName(event.client)
+        elif event.type == b3.events.EVT_CLIENT_NAME_CHANGE:
+          self.checkBadName(event.client)
 
-		except b3.events.VetoEvent:
-			raise
-		except Exception, msg:
-			self.error('Censor plugin error: %s - %s', msg, traceback.extract_tb(sys.exc_info()[2]))
+    except b3.events.VetoEvent:
+      raise
+    except Exception, msg:
+      self.error('Censor plugin error: %s - %s', msg, traceback.extract_tb(sys.exc_info()[2]))
 
-	def penalizeClient(self, penalty, client, data=''):
-		self._adminPlugin.penalizeClient(penalty.type, client, penalty.reason, penalty.keyword, penalty.duration, None, data)
+  def penalizeClient(self, penalty, client, data=''):
+    # addition to mute players in Urban Terror
+    if self.console.gameName[:5] == 'iourt' and self._mute:
+      if not hasattr(client, 'langWarnings'):
+        client.langWarnings = 1
+      else:
+        client.langWarnings += 1
+      if client.langWarnings == 1:
+        if self._muteduration1 != 0:
+          self.debug('Muting %s for %s minutes.' % (client.name, self._muteduration1))
+          self.console.say('Muting %s for %s minutes.' % (client.name, self._muteduration1))
+          self.console.write('mute %s %s' % (client.cid, self._muteduration1))
+      elif client.langWarnings == 2:
+        if self._muteduration2 != 0:
+          self.debug('Muting %s for %s minutes.' % (client.name, self._muteduration2))
+          self.console.say('Muting %s for %s minutes.' % (client.name, self._muteduration2))
+          self.console.write('mute %s %s' % (client.cid, self._muteduration2))     
+      else:
+        self.debug('Muting %s for %s minutes.' % (client.name, self._muteduration3))
+        self.console.say('Muting %s for %s minutes.' % (client.name, self._muteduration3))
+        self.console.write('mute %s %s' % (client.cid, self._muteduration3))     
+      if not self._muteonly:
+        self._adminPlugin.penalizeClient(penalty.type, client, penalty.reason, penalty.keyword, penalty.duration, None, data)
+    else:
+      self._adminPlugin.penalizeClient(penalty.type, client, penalty.reason, penalty.keyword, penalty.duration, None, data)
 
-	def checkBadName(self, client):
-		if not client.connected:
-			return
+  def checkBadName(self, client):
+    if not client.connected:
+      return
 
-		name = ' ' + self.clean(client.exactName) + ' '
-		for w in self._badNames:
-			if w.regexp.search(name):
-				self.penalizeClient(w.penalty, client, '%s => %s' % (client.exactName, name))
+    name = ' ' + self.clean(client.exactName) + ' '
+    for w in self._badNames:
+      if w.regexp.search(name):
+        self.penalizeClient(w.penalty, client, '%s => %s' % (client.exactName, name))
 
-				t = threading.Timer(300, self.checkBadName, (client,))
-				t.start()
-				return
+        t = threading.Timer(300, self.checkBadName, (client,))
+        t.start()
+        return
 
-		if name != client.exactName:
-			# name has special characters, check those too
-			name = client.exactName
-			for w in self._badNames:
-				if w.regexp.search(name):
-					self.penalizeClient(w.penalty, client, client.exactName)
+    if name != client.exactName:
+      # name has special characters, check those too
+      name = client.exactName
+      for w in self._badNames:
+        if w.regexp.search(name):
+          self.penalizeClient(w.penalty, client, client.exactName)
 
-					t = threading.Timer(300, self.checkBadName, (client,))
-					t.start()
+          t = threading.Timer(300, self.checkBadName, (client,))
+          t.start()
 
-					return
+          return
 
-	def clean(self, data):
-		return re.sub(self._reClean, ' ', self.console.stripColors(data.lower()))
+  def clean(self, data):
+    return re.sub(self._reClean, ' ', self.console.stripColors(data.lower()))
