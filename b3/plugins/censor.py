@@ -75,6 +75,7 @@ class CensorPlugin(b3.plugin.Plugin):
 
     self.registerEvent(b3.events.EVT_CLIENT_SAY)
     self.registerEvent(b3.events.EVT_CLIENT_TEAM_SAY)
+    self.registerEvent(b3.events.EVT_GAME_ROUND_START)
 
   def onLoadConfig(self):
     self._maxLevel = self.config.getint('settings', 'max_level')
@@ -84,15 +85,15 @@ class CensorPlugin(b3.plugin.Plugin):
     except:
       pass
     try:
-      self._muteduration1 = self.config.getint('urbanterror', 'muteduration1')
+      self._muteduration1 = self.config.getfloat('urbanterror', 'muteduration1')
     except:
       pass
     try:
-      self._muteduration2 = self.config.getint('urbanterror', 'muteduration2')
+      self._muteduration2 = self.config.getfloat('urbanterror', 'muteduration2')
     except:
       pass
     try:
-      self._muteduration3 = self.config.getint('urbanterror', 'muteduration3')
+      self._muteduration3 = self.config.getfloat('urbanterror', 'muteduration3')
     except:
       pass
     try:
@@ -192,6 +193,12 @@ class CensorPlugin(b3.plugin.Plugin):
                             
         elif event.type == b3.events.EVT_CLIENT_NAME_CHANGE:
           self.checkBadName(event.client)
+        elif event.type == b3.events.EVT_GAME_ROUND_START and self.console.gameName[:5] == 'iourt' and self._mute:
+          # auto muting mechanism for Urban Terror. On map start, ioUrtded unmute players
+          clients = self.console.clients.getList()
+          for c in clients:
+            if hasattr(c, 'langMuted'):
+              client.langMuted = False
 
     except b3.events.VetoEvent:
       raise
@@ -201,29 +208,49 @@ class CensorPlugin(b3.plugin.Plugin):
   def penalizeClient(self, penalty, client, data=''):
     # addition to mute players in Urban Terror
     if self.console.gameName[:5] == 'iourt' and self._mute:
-      if not hasattr(client, 'langWarnings'):
-        client.langWarnings = 1
+      if hasattr(client, 'langMuted') and client.langMuted:
+        self.debug('%s is already muted'%client.name)
       else:
-        client.langWarnings += 1
-      if client.langWarnings == 1:
-        if self._muteduration1 != 0:
-          self.debug('Muting %s for %s minutes.' % (client.name, self._muteduration1))
-          self.console.say('Muting %s for %s minutes.' % (client.name, self._muteduration1))
-          self.console.write('mute %s %s' % (client.cid, self._muteduration1))
-      elif client.langWarnings == 2:
-        if self._muteduration2 != 0:
-          self.debug('Muting %s for %s minutes.' % (client.name, self._muteduration2))
-          self.console.say('Muting %s for %s minutes.' % (client.name, self._muteduration2))
-          self.console.write('mute %s %s' % (client.cid, self._muteduration2))     
-      else:
-        self.debug('Muting %s for %s minutes.' % (client.name, self._muteduration3))
-        self.console.say('Muting %s for %s minutes.' % (client.name, self._muteduration3))
-        self.console.write('mute %s %s' % (client.cid, self._muteduration3))     
-      if not self._muteonly:
-        self._adminPlugin.penalizeClient(penalty.type, client, penalty.reason, penalty.keyword, penalty.duration, None, data)
+        if not hasattr(client, 'langWarnings'):
+          client.langWarnings = 1
+        else:
+          client.langWarnings += 1
+        if client.langWarnings == 1:
+          if self._muteduration1 != 0:
+            self.debug('Muting %s for %s minutes.' % (client.name, self._muteduration1))
+            self.console.say('Muting %s for %s minutes.' % (client.name, self._muteduration1))
+            self.console.write('mute %s' % client.cid)
+            client.langMuted = True
+            t = threading.Timer(self._muteduration1 * 60, self.unmutePlayer, (client,))
+            t.start()
+        elif client.langWarnings == 2:
+          if self._muteduration2 != 0:
+            self.debug('Muting %s for %s minutes.' % (client.name, self._muteduration2))
+            self.console.say('Muting %s for %s minutes.' % (client.name, self._muteduration2))
+            self.console.write('mute %s' % client.cid)  
+            client.langMuted = True
+            t = threading.Timer(self._muteduration2 * 60, self.unmutePlayer, (client,))
+            t.start()
+        else:
+          self.debug('Muting %s for %s minutes.' % (client.name, self._muteduration3))
+          self.console.say('Muting %s for %s minutes.' % (client.name, self._muteduration3))
+          self.console.write('mute %s' % client.cid)
+          client.langMuted = True
+          t = threading.Timer(self._muteduration3 * 60, self.unmutePlayer, (client,))
+          t.start()
+
+        if not self._muteonly:
+          self._adminPlugin.penalizeClient(penalty.type, client, penalty.reason, penalty.keyword, penalty.duration, None, data)
     else:
       self._adminPlugin.penalizeClient(penalty.type, client, penalty.reason, penalty.keyword, penalty.duration, None, data)
 
+  def unmutePlayer(self, client):
+    if client.langMuted:
+      client.langMuted = False
+      # note: "/rcon mute <player> 0" ensures unmuting
+      self.console.write('mute %s 0' % client.cid)
+      client.message('^7unmuted. watch your mouth')
+      
   def checkBadName(self, client):
     if not client.connected:
       return
