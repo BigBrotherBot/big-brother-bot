@@ -832,19 +832,19 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if maps:
             _settings = False
             for m in maps:
-              	if m == '}':
-                		_settings = False
-                		continue
-              	elif m == '{':
-                		_settings = True
+                if m == '}':
+                    _settings = False
+                    continue
+                elif m == '{':
+                    _settings = True
                 elif m[:4] == 'ut4_':
                     m = m[4:]
                 elif m[:3] == 'ut_':
                     m = m[3:]
-              	if not _settings:
-                		m = m.title().strip()
-                		if m != '':
-                  			nmaps.append(m)
+                if not _settings:
+                    m = m.title().strip()
+                    if m != '':
+                        nmaps.append(m)
         return nmaps
 
     def getNextMap(self):
