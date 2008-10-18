@@ -865,7 +865,20 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             mapfile = self.game.fs_homepath + '/' + self.game.fs_game + '/' + mapcycle
 
         mapstring = open(mapfile, 'r')
-        maps = mapstring.read().strip('\n').split('\n')
+        tmaps = mapstring.read().strip('\n').split('\n')
+        maps = []
+        if tmaps:
+            _settings = False
+            for m in tmaps:
+                if m == '}':
+                    _settings = False
+                    continue
+                elif m == '{':
+                    _settings = True
+                if not _settings:
+                    m = m.strip()
+                    if m != '':
+                        maps.append(m)
 
         if maps:
             gmap = self.game.mapName.strip().lower()
