@@ -33,9 +33,10 @@
 # v1.0.11 - Courgette - Add getScores  # NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
 # v1.0.12 - Courgette - Fix regex that failed to parse chat lines when player's name ends with ':'
 # v1.0.13 - xlr8or - support for !maps and !nextmap command 
+# v1.0.14 - xlr8or - better understanding of mapcycle.txt 
 
 __author__  = 'xlr8or'
-__version__ = '1.0.13'
+__version__ = '1.0.14'
 
 import b3.parsers.q3a
 import re, string, threading, time, os
@@ -818,7 +819,6 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                     
         return None
 
-    _reMap = re.compile(r'map ([a-z0-9_-]+)', re.I)
     def getMaps(self):
         mapcycle = self.getCvar('g_mapcycle').getString()
         mapfile = self.game.fs_basepath + '/' + self.game.fs_game + '/' + mapcycle
@@ -830,12 +830,21 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
         nmaps = []
         if maps:
+            _settings = False
             for m in maps:
-                if m[:4] == 'ut4_':
+              	if m == '}':
+                		_settings = False
+                		continue
+              	elif m == '{':
+                		_settings = True
+                elif m[:4] == 'ut4_':
                     m = m[4:]
                 elif m[:3] == 'ut_':
                     m = m[3:]
-                nmaps.append(m.title())
+              	if not _settings:
+                		m = m.title().strip()
+                		if m != '':
+                  			nmaps.append(m)
         return nmaps
 
     def getNextMap(self):
