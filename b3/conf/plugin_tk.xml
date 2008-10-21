@@ -4,6 +4,7 @@
 		<set name="levels">0,1,2,20,40</set>
 		<set name="round_grace">7</set>
 		<set name="issue_warning">sfire</set>
+		<set name="grudge_enable">True</set>
 	</settings>
 	<settings name="messages">
 		<set name="ban">^7team damage over limit</set>

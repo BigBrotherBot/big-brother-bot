@@ -17,12 +17,15 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    10/20/2008 - 1.1.6b0 - mindriot
+#    * in clientDamage, kill and damage mutlipliers were reversed - changed if killed: to [0] and else: to [1]
+#    * added grudge_enable to control grudge command registration
 #    8/29/2005 - 1.1.0 - ThorN
-#    Converted to use new event handlers
+#    * Converted to use new event handlers
 #    7/23/2005 - 1.0.2 - ThorN
-#    Changed temp ban duration to be based on ban_length times the number of victims
+#    * Changed temp ban duration to be based on ban_length times the number of victims
 
-__version__ = '1.1.5'
+__version__ = '1.1.6b0'
 __author__  = 'ThorN'
 
 import b3, string, re, threading
@@ -139,7 +142,8 @@ class TkPlugin(b3.plugin.Plugin):
     _adminPlugin = None
     _maxLevel = 0
     _maxPoints = 0
-
+    _grudge_enable = True
+    
     def onStartup(self):
         self.registerEvent(b3.events.EVT_CLIENT_DAMAGE_TEAM)
         self.registerEvent(b3.events.EVT_CLIENT_KILL_TEAM)
@@ -155,7 +159,16 @@ class TkPlugin(b3.plugin.Plugin):
             self._adminPlugin.registerCommand(self, 'forgiveinfo', 20, self.cmd_forgiveinfo, 'fi')
             self._adminPlugin.registerCommand(self, 'forgiveclear', 60, self.cmd_forgiveclear, 'fc')
             self._adminPlugin.registerCommand(self, 'forgiveprev', 0, self.cmd_forgivelast, 'fp')
-            self._adminPlugin.registerCommand(self, 'grudge', 0, self.cmd_grudge, 'grudge')
+
+            #    10/20/2008 - 1.1.6b0 - mindriot
+            #    * added grudge_enable to control grudge command registration
+            try:
+                grudge_enable = self.config.getboolean('settings', 'grudge_enable')
+            except:
+                grudge_enable = self._grudge_enable
+                self.debug('Using default value (%s) for grudge_enable', self._grudge_enable)
+            if grudge_enable:
+                self._adminPlugin.registerCommand(self, 'grudge', 0, self.cmd_grudge, 'grudge')
 
 
     def onLoadConfig(self):
@@ -283,10 +296,12 @@ class TkPlugin(b3.plugin.Plugin):
         a = self.getClientTkInfo(attacker)
         v = self.getClientTkInfo(victim)
 
+        #    10/20/2008 - 1.1.6b0 - mindriot
+        #    * in clientDamage, kill and damage mutlipliers were reversed - changed if killed: to [0] and else: to [1]
         if killed:        
-            points = int(round(points * self.getMultipliers(attacker)[1]))
-        else:
             points = int(round(points * self.getMultipliers(attacker)[0]))
+        else:
+            points = int(round(points * self.getMultipliers(attacker)[1]))
 
         a.damage(v.cid, points)
         v.damaged(a.cid, points)
@@ -375,14 +390,14 @@ class TkPlugin(b3.plugin.Plugin):
         elif data == 'last':
             self.grudge(v.lastAttacker, client)
         elif re.match(r'^[0-9]+$', data):
-            self.grudge(data, client)
+                self.grudge(data, client)
         else:
             data = data.lower()
             for cid, points in v.attackers.items():
                 c = self.console.clients.getByCID(cid)
                 if c and c.name.lower().find(data) != -1:
                     self.grudge(c.cid, client)
-                    
+
     def cmd_forgive(self, data, client, cmd=None):
         """\
         <name> - forgive a player for team damaging
