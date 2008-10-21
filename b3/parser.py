@@ -18,12 +18,14 @@
 #
 #
 # CHANGELOG
+#    10/20/2008 - 1.9.1b0 - mindriot
+#    * fixed slight typo of b3.events.EVT_UNKOWN to b3.events.EVT_UNKNOWN
 #    11/29/2005 - 1.7.0 - ThorN
 #    Added atexit handlers
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN'
-__version__ = '1.9.0'
+__version__ = '1.9.1b0'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit
@@ -469,7 +471,7 @@ class Parser(object):
         m = re.match(self._lineFormat, line)
         if m:
             self.queueEvent(b3.events.Event(
-                    b3.events.EVT_UNKOWN,
+                    b3.events.EVT_UNKNOWN,
                     m.group(2)[:1]
                 ))
 
