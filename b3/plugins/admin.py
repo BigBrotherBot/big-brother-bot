@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    10/05/2008 - 1.3.4b0 - mindriot
+#      * Removed hard code of 1 day for long_tempban_level - now controlled with new setting 'long_tempban_max_duration'
 #    8/29/2005 - 1.2.2 - ThorN
 #    Moved pbss command to punkbuster plugin
 #    8/13/2005 - 1.2.1 - ThorN
@@ -27,7 +29,7 @@
 #    Added ci command
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.3.3'
+__version__ = '1.3.4b0'
 __author__  = 'ThorN'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
@@ -45,6 +47,7 @@ class AdminPlugin(b3.plugin.Plugin):
     _commands = {}
     _parseUserCmdRE = re.compile(r'^(?P<cid>\'[^\']{2,}\'|[0-9]+|[^\s]{2,}|@[0-9]+)\s?(?P<parms>.*)$')
     _maxCiPing = 500
+    _long_tempban_max_duration = 1440 # 60m/h x 24h = 1440m = 1d
 
     cmdPrefix = '!'
     cmdPrefixLoud = '@'
@@ -1922,11 +1925,19 @@ class AdminPlugin(b3.plugin.Plugin):
 
         duration, keyword = m.groups()
         duration = functions.time2minutes(duration)
+        #    10/05/2008 - 1.3.4b0 - mindriot
+        #      * Removed hard code of 1 day for long_tempban_level - now controlled with new setting 'long_tempban_max_duration'
+        try:
+            long_tempban_max_duration = self.config.getDuration('settings', 'long_tempban_max_duration')
+        except:
+            long_tempban_max_duration = self._long_tempban_max_duration
+            self.debug('Using default value (%s) for long_tempban_max_duration', self._long_tempban_max_duration)
 
-        if client.maxLevel < self.config.getint('settings', 'long_tempban_level') and duration > (60 * 24):
-            # cant temp ban for more than 1 day
-            duration = 60 * 24
+        if client.maxLevel < self.config.getint('settings', 'long_tempban_level') and duration > long_tempban_max_duration:
+            # temp ban for maximum specified in settings
+            duration = long_tempban_max_duration
 
+        
         reason = self.getReason(keyword)
 
         if not reason and client.maxLevel < self.config.getint('settings', 'noreason_level'):

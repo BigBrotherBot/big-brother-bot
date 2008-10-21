@@ -79,6 +79,7 @@
 		<set name="noreason_level">100</set>
 		<set name="hidecmd_level">60</set>
 		<set name="long_tempban_level">80</set>
+		<set name="long_tempban_max_duration">3h</set>
 		<set name="command_prefix">!</set>
 		<set name="command_prefix_loud">@</set>
 		<set name="admins_level">20</set>
@@ -128,12 +129,14 @@
 		<set name="warn_ban_alert">^1ALERT^7: $name^7 auto-ban from warnings if not cleared (^3$warnings^7)</set>
 	</settings>
 	<settings name="warn">
+<!-- THESE APPEAR TO BE OBSOLETE - DO NOT USE - mindriot - 10/20/2008
 		<set name="ban_reason">^7too many warnings ^1BANNED: $reason</set>
 		<set name="ban_num">5</set>
 		<set name="kick_num">3</set>
 		<set name="kick_duration">2</set>
 		<set name="ban_duration">1h</set>
 		<set name="kick_reason">^7too many warnings: $reason</set>
+-->
 
 		<set name="alert_kick_num">3</set>
 		<set name="instant_kick_num">5</set>
