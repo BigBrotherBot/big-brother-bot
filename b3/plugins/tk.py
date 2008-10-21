@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    10/20/2008 - 1.1.6b1 - mindriot
+#    * indentation fix
 #    10/20/2008 - 1.1.6b0 - mindriot
 #    * in clientDamage, kill and damage mutlipliers were reversed - changed if killed: to [0] and else: to [1]
 #    * added grudge_enable to control grudge command registration
@@ -390,7 +392,7 @@ class TkPlugin(b3.plugin.Plugin):
         elif data == 'last':
             self.grudge(v.lastAttacker, client)
         elif re.match(r'^[0-9]+$', data):
-                self.grudge(data, client)
+            self.grudge(data, client)
         else:
             data = data.lower()
             for cid, points in v.attackers.items():
