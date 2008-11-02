@@ -368,6 +368,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                     self.debug('Client disconnected. Ignoring.')
                     return None
                 
+                nguid = ''
                 # overide the guid... use ip's only if self.console.IpsOnly is set True.
                 if self.IpsOnly:
                     nguid = bclient['ip']
@@ -379,7 +380,9 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                 # Quake clients don't have a cl_guid, we'll use ip instead
                 elif guid == 'unknown':
                     nguid = bclient['ip']
-                guid = nguid
+
+                if nguid != '':
+                    guid = nguid
 
                 client = self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid })
 
