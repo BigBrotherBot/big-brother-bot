@@ -36,9 +36,11 @@
 # v1.0.14 - xlr8or - better understanding of mapcycle.txt 
 # 01-Nov-2008 - v1.0.15 - mindriot
 # * client with empty name ("") resulted in error and B3 not registering client - now given _empty_name_default
+# v1.0.16 - xlr8or - added IpCombi. Setting True will replace the last part of the guid with two segments of the ip
+#                    Increases security on admins who have cl_guidServerUniq set to 0 in client config (No cloning). 
 
 __author__  = 'xlr8or'
-__version__ = '1.0.15'
+__version__ = '1.0.16'
 
 import b3.parsers.q3a
 import re, string, threading, time, os
@@ -48,7 +50,8 @@ import b3.events
 #----------------------------------------------------------------------------------------------------------------------------------------------
 class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     gameName = 'iourt41'
-    IpsOnly = False # Experimental: setting True will use ip's only for identification.
+    IpsOnly = False  # Experimental: setting True will use ip's only for identification.
+    IpCombi = False  # Experimental: setting True will replace last part of the guid with 2 segments of the ip.
 
     _settings = {}
     _settings['line_length'] = 65
@@ -367,10 +370,16 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                 
                 # overide the guid... use ip's only if self.console.IpsOnly is set True.
                 if self.IpsOnly:
-                    guid = bclient['ip']
-                # seems Quake clients don't have a cl_guid, we'll use ip instead!
+                    nguid = bclient['ip']
+                # replace last part of the guid with two segments of the ip
+                elif self.IpCombi:
+                    i = bclient['ip'].split('.')
+                    d = len(i[0])+len(i[1])
+                    nguid = guid[:-d]+i[0]+i[1]
+                # Quake clients don't have a cl_guid, we'll use ip instead
                 elif guid == 'unknown':
-                    guid = bclient['ip']
+                    nguid = bclient['ip']
+                guid = nguid
 
                 client = self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid })
 
