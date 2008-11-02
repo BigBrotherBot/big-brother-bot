@@ -38,7 +38,7 @@
 # * client with empty name ("") resulted in error and B3 not registering client - now given _empty_name_default
 
 __author__  = 'xlr8or'
-__version__ = '1.0.14'
+__version__ = '1.0.15'
 
 import b3.parsers.q3a
 import re, string, threading, time, os
@@ -653,7 +653,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             else:
                 setattr(self.game, o[0], o[1])
 
-        self.verbose('Current gameType: %s' % self.game.gameType)
+        self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
         self.game.startMap()
 
         self.game.rounds = 0
@@ -688,7 +688,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             else:
                 setattr(self.game, o[0], o[1])
 
-        self.verbose('Current gameType: %s' % self.game.gameType)
+        self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
         self.game.startRound()
         
         self.clients.sync()
@@ -979,5 +979,58 @@ if (cl->state == CS_ZOMBIE && cl->lastPacketTime < zombiepoint) {
   Com_DPrintf( "Going from CS_ZOMBIE to CS_FREE for client %d\n", i );
   cl->state = CS_FREE; // can now be reused
 }
+
+#----- Available variables defined on Init -------------------------------------
+081027 14:53:22 DEBUG   EVENT: OnInitgame
+081027 14:53:22 VERBOSE ...self.console.game.sv_allowdownload: 0
+081027 14:53:22 VERBOSE ...self.console.game.g_matchmode: 0
+081027 14:53:22 VERBOSE ...self.console.game.sv_maxclients: 16
+081027 14:53:22 VERBOSE ...self.console.game.sv_floodprotect: 1
+081027 14:53:22 VERBOSE ...self.console.game.g_warmup: 15
+081027 14:53:22 VERBOSE ...self.console.game.captureLimit: 0
+081027 14:53:22 VERBOSE ...self.console.game.sv_hostname:   ^1[SNT]^7 TDM #4 Dungeon (B3)
+081027 14:53:22 VERBOSE ...self.console.game.g_followstrict: 1
+081027 14:53:22 VERBOSE ...self.console.game.fragLimit: 0
+081027 14:53:22 VERBOSE ...self.console.game.timeLimit: 15
+081027 14:53:22 VERBOSE ...self.console.game.g_cahtime: 60
+081027 14:53:22 VERBOSE ...self.console.game.g_swaproles: 0
+081027 14:53:22 VERBOSE ...self.console.game.g_roundtime: 3
+081027 14:53:22 VERBOSE ...self.console.game.g_bombexplodetime: 40
+081027 14:53:22 VERBOSE ...self.console.game.g_bombdefusetime: 10
+081027 14:53:22 VERBOSE ...self.console.game.g_hotpotato: 2
+081027 14:53:22 VERBOSE ...self.console.game.g_waverespawns: 0
+081027 14:53:22 VERBOSE ...self.console.game.g_redwave: 15
+081027 14:53:22 VERBOSE ...self.console.game.g_bluewave: 15
+081027 14:53:22 VERBOSE ...self.console.game.g_respawndelay: 3
+081027 14:53:22 VERBOSE ...self.console.game.g_suddendeath: 1
+081027 14:53:22 VERBOSE ...self.console.game.g_maxrounds: 0
+081027 14:53:22 VERBOSE ...self.console.game.g_friendlyfire: 1
+081027 14:53:22 VERBOSE ...self.console.game.g_allowvote: 536870920
+081027 14:53:22 VERBOSE ...self.console.game.g_armbands: 0
+081027 14:53:22 VERBOSE ...self.console.game.g_survivorrule: 0
+081027 14:53:22 VERBOSE ...self.console.game.g_gear: 0
+081027 14:53:22 VERBOSE ...self.console.game.g_deadchat: 1
+081027 14:53:22 VERBOSE ...self.console.game.g_maxGameClients: 0
+081027 14:53:22 VERBOSE ...self.console.game.sv_dlURL: sweetopia.snt.utwente.nl/xlr
+081027 14:53:22 VERBOSE ...self.console.game.sv_maxPing: 250
+081027 14:53:22 VERBOSE ...self.console.game.sv_minPing: 0
+081027 14:53:22 VERBOSE ...self.console.game.sv_maxRate: 0
+081027 14:53:22 VERBOSE ...self.console.game.sv_minRate: 0
+081027 14:53:22 VERBOSE ...self.console.game.dmflags: 0
+081027 14:53:22 VERBOSE ...self.console.game.version: ioq3 1.35urt linux-i386 Dec 20 2007
+081027 14:53:22 VERBOSE ...self.console.game.protocol: 68
+081027 14:53:22 VERBOSE ...self.console.game.mapName: ut4_turnpike
+081027 14:53:22 VERBOSE ...self.console.game.sv_privateClients: 4
+081027 14:53:22 VERBOSE ...self.console.game. Admin:  XLR8or
+081027 14:53:22 VERBOSE ...self.console.game. Email: admin@xlr8or.com
+081027 14:53:22 VERBOSE ...self.console.game.gamename: q3ut4
+081027 14:53:22 VERBOSE ...self.console.game.g_needpass: 1
+081027 14:53:22 VERBOSE ...self.console.game.g_enableDust: 0
+081027 14:53:22 VERBOSE ...self.console.game.g_enableBreath: 0
+081027 14:53:22 VERBOSE ...self.console.game.g_antilagvis: 0
+081027 14:53:22 VERBOSE ...self.console.game.g_survivor: 0
+081027 14:53:22 VERBOSE ...self.console.game.g_enablePrecip: 2
+081027 14:53:22 VERBOSE ...self.console.game.g_modversion: 4.1
+081027 14:53:22 VERBOSE ...self.console.game.gameType: tdm
 
 """
