@@ -34,6 +34,8 @@
 # v1.0.12 - Courgette - Fix regex that failed to parse chat lines when player's name ends with ':'
 # v1.0.13 - xlr8or - support for !maps and !nextmap command 
 # v1.0.14 - xlr8or - better understanding of mapcycle.txt 
+# 01-Nov-2008 - v1.0.15 - mindriot
+# * client with empty name ("") resulted in error and B3 not registering client - now given _empty_name_default
 
 __author__  = 'xlr8or'
 __version__ = '1.0.14'
@@ -51,6 +53,8 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     _settings = {}
     _settings['line_length'] = 65
     _settings['min_wrap_length'] = 100
+
+    _empty_name_default = 'EmptyNameDefault'
 
     _commands = {}
     _commands['broadcast'] = '%(prefix)s^7 %(message)s'
@@ -227,6 +231,10 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
         if data.has_key('n'):
             data['name'] = data['n']
+
+        # 01-Nov-2008 - v1.0.15 - mindriot
+        if not data.has_key('name'):
+            data['name'] = self._empty_name_default
 
         # split port from ip field
         if data.has_key('ip'):
