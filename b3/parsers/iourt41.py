@@ -34,13 +34,15 @@
 # v1.0.12 - Courgette - Fix regex that failed to parse chat lines when player's name ends with ':'
 # v1.0.13 - xlr8or - support for !maps and !nextmap command 
 # v1.0.14 - xlr8or - better understanding of mapcycle.txt 
-# 01-Nov-2008 - v1.0.15 - mindriot
+# v1.0.15 - mindriot - 01-Nov-2008
 # * client with empty name ("") resulted in error and B3 not registering client - now given _empty_name_default
 # v1.0.16 - xlr8or - added IpCombi. Setting True will replace the last part of the guid with two segments of the ip
 #                    Increases security on admins who have cl_guidServerUniq set to 0 in client config (No cloning). 
+# v1.0.17 - mindriot - 02-Nov-2008
+# * _empty_name_default now only given upon client connect, due to possibility of no name specified in ClientUserinfo at any time
 
 __author__  = 'xlr8or'
-__version__ = '1.0.16'
+__version__ = '1.0.17'
 
 import b3.parsers.q3a
 import re, string, threading, time, os
@@ -235,10 +237,6 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if data.has_key('n'):
             data['name'] = data['n']
 
-        # 01-Nov-2008 - v1.0.15 - mindriot
-        if not data.has_key('name'):
-            data['name'] = self._empty_name_default
-
         # split port from ip field
         if data.has_key('ip'):
             tip = string.split(data['ip'], ':', 1)
@@ -362,6 +360,10 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                     else:
                         guid = 'unknown' 
                 
+                # v1.0.17 - mindriot - 02-Nov-2008
+                if not bclient.has_key('name'):
+                    bclient['name'] = self._empty_name_default
+
                 if not bclient.has_key('ip') and guid == 'unknown':
                     # happens when a client is (temp)banned and got kicked so client was destroyed, but
                     # infoline was still waiting to be parsed.
