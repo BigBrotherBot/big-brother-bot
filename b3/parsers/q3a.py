@@ -16,7 +16,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+# $Id: q3a.py 103 2006-04-14 16:23:10Z thorn $
+#
 # CHANGELOG
+#    5/6/2008 - 1.2.2 - Anubis
+#    Added OnShutdowngame()
 #    5/6/2008 - 1.2.1 - xlr8or
 #    Modified _reColor to strip Ascii > 127 also
 #    12/2/2005 - 1.1.0 - ThorN
@@ -28,7 +32,7 @@
 
 
 __author__  = 'ThorN'
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
 import re, string
 import b3
@@ -81,7 +85,10 @@ class Q3AParser(b3.parser.Parser):
     #num score ping guid   name            lastmsg address               qport rate
     #--- ----- ---- ------ --------------- ------- --------------------- ----- -----
     #2     0   29 465030 <-{^4AS^7}-^3ThorN^7->^7       50 68.63.6.62:-32085      6597  5000
-    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+    #_regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9a-zA-Z]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+
+    _regPlayerShort = re.compile(r'\s+(?P<slot>[0-9]+)\s+(?P<score>[0-9]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*)\^7\s+', re.I)
     _reColor = re.compile(r'(\^[0-9a-z])|[\x80-\xff]')
     _reCvarName = re.compile(r'^[a-z0-9_.]+$', re.I)
     _reCvar = re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?"\s+default:\s*"(?P<default>.*?)(\^7)?"$', re.I)
@@ -119,6 +126,9 @@ class Q3AParser(b3.parser.Parser):
         match, action, data, client, target = m
 
         func = 'On%s' % action.capitalize()
+        
+        #self.debug("-==== FUNC!!: " + func)
+        
         if hasattr(self, func):
             func = getattr(self, func)
             event = func(action, data, match)
@@ -168,6 +178,11 @@ class Q3AParser(b3.parser.Parser):
         client = self.clients.getByExactName(msg[0])
 
         return b3.events.Event(b3.events.EVT_CLIENT_SAY, msg[1], client)
+
+    def OnShutdowngame(self, action, data, match=None):
+        #self.game.mapEnd()
+        #self.clients.sync()
+        return b3.events.Event(b3.events.EVT_GAME_ROUND_END, data)
 
     def OnClientdisconnect(self, action, data, match=None):
         client = self.getClient(match)
@@ -481,12 +496,46 @@ class Q3AParser(b3.parser.Parser):
 
         players = {}
         for line in data.split('\n'):
-            m = re.match(self._regPlayer, line.strip())
+            #self.debug('Line: ' + line + "-")
+            m = re.match(self._regPlayerShort, line)
+            if not m:
+                m = re.match(self._regPlayer, line.strip())
+            
             if m:
                 players[str(m.group('slot'))] = int(m.group('ping'))
-
+            else:
+                 self.error('getPlayerList() = Line did not match :%s' % line)
         return players
+        
+    def getPlayerScores(self):
+        data = self.write('status')
+        if not data:
+            return {}
 
+        players = {}
+        for line in data.split('\n'):
+            #self.debug('Line: ' + line + "-")
+            m = re.match(self._regPlayerShort, line)
+            if not m:
+                m = re.match(self._regPlayer, line.strip())
+            
+            if m:  
+                 players[str(m.group('slot'))] = int(m.group('score'))
+            else:
+                 self.error('getPlayerList() = Line did not match :%s' % line)
+        
+        return players
+        
+    def getPlayerScoressssss(self):
+        plist = self.getPlayerListRcon()
+        scorelist = {}
+
+        for cid, c in plist.iteritems():
+            client = self.clients.getByCID(cid)
+            if client:
+                scorelist[str(cid)] = c['score']
+        return scorelist
+        
     def getPlayerList(self):
         if self.PunkBuster:
             return self.PunkBuster.getPlayerList()

@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+# 21/11/2008 - 1.2.5 - Anubis
+# Added PlayerScores
 # 12/03/2008 - 1.2.4 - Courgette
 # Properly escape strings to ensure valid xml
 #	11/30/2005 - 1.2.3 - ThorN
@@ -25,7 +27,7 @@
 #	Converted to use new event handlers
 
 __author__  = 'ThorN'
-__version__ = '1.2.4'
+__version__ = '1.2.5'
 
 import b3, time, os
 import b3.plugin
@@ -53,16 +55,18 @@ class StatusPlugin(b3.plugin.Plugin):
 		pass
 
 	def update(self):
-		clients = self.console.clients.getList()
+		clients = self.console.clients.getList()  
+		
+		scoreList = self.console.getPlayerScores() 
+         
 		self.verbose('Building XML status')
 		xml = '<B3Status Time="%s">\n<Clients Total="%s">\n' % (time.asctime(), len(clients))
-
+			  
 		for c in clients:
-			try:
-				xml += '<Client Name="%s" ColorName="%s" DBID="%s" Connections="%s" CID="%s" Level="%s" GUID="%s" PBID="%s" IP="%s" Team="%s" Joined="%s" Updated="%s">\n' % (escape("%s"%c.name), escape("%s"%c.exactName), c.id, c.connections, c.cid, c.maxLevel, c.guid, c.pbid, c.ip, escape("%s"%c.team), time.ctime(c.timeAdd), time.ctime(c.timeEdit))
-
+			try:          
+				xml += '<Client Name="%s" ColorName="%s" DBID="%s" Connections="%s" CID="%s" Level="%s" GUID="%s" PBID="%s" IP="%s" Team="%s" Joined="%s" Updated="%s" Score="%s" State="%s">\n' % (escape("%s"%c.name), escape("%s"%c.exactName), c.id, c.connections, c.cid, c.maxLevel, c.guid, c.pbid, c.ip, escape("%s"%c.team), time.ctime(c.timeAdd), time.ctime(c.timeEdit) , scoreList[c.cid], c.state )
 				for k,v in c.data.iteritems():
-					xml += '<Data Name="%s" Value="%s"/>' % (escape("%s"%k), escape("%s"%v))
+					xml += '<Data Name="%s" Value="%s"/>' % (escape("%s"%k), escape("%s"%v)) 
 						
 				if self._tkPlugin:
 					if hasattr(c, 'tkplugin_points'):				
@@ -70,7 +74,7 @@ class StatusPlugin(b3.plugin.Plugin):
 						if hasattr(c, 'tkplugin_attackers'):
 							for acid,points in c.var(self, 'attackers').value.items():
 								try:
-									xml += '<Attacker Name="%s" CID="%s" Points="%s"/>\n' % (escape("%s"%self.console.clients[acid].name), acid, points)
+									xml += '<Attacker Name="%s" CID="%s" Points="%s"/>\n' % (self.console.clients[acid].name, acid, points)
 								except:
 									pass
 								
@@ -82,9 +86,8 @@ class StatusPlugin(b3.plugin.Plugin):
 
 		c = self.console.game
 		xml += '</Clients>\n<Game Name="%s" Type="%s" Map="%s" TimeLimit="%s" FragLimit="%s" CaptureLimit="%s" Rounds="%s">\n' % (escape("%s"%c.gameName), escape("%s"%c.gameType), escape("%s"%c.mapName), c.timeLimit, c.fragLimit, c.captureLimit, c.rounds)
-
 		for k,v in self.console.game.__dict__.items():
-			xml += '<Data Name="%s" Value="%s"/>\n' % (escape("%s"%k), escape("%s"%v))
+			xml += '<Data Name="%s" Value="%s"/>\n' % (escape("%s"%k), escape("%s"%v)) 
 		xml += '</Game>\n</B3Status>'
 				
 

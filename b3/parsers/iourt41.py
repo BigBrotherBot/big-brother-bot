@@ -817,15 +817,16 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         
         return mlist
         
-    def getPlayerScores(self):
-        plist = self.getPlayerList()
-        scorelist = {}
-
-        for cid, c in plist.iteritems():
-            client = self.clients.getByCID(cid)
-            if client:
-                scorelist[str(cid)] = c['score']
-        return scorelist
+#    Use the new function in the q3a parser instead
+#    def getPlayerScores(self):
+#        plist = self.getPlayerList()
+#        scorelist = {}
+#
+#        for cid, c in plist.iteritems():
+#            client = self.clients.getByCID(cid)
+#            if client:
+#                scorelist[str(cid)] = c['score']
+#        return scorelist
 
     def getMap(self):
         data = self.write('status')
