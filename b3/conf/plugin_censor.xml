@@ -2,18 +2,6 @@
 	<settings name="settings">
 		<set name="max_level">40</set>
 	</settings>
-	<settings name="urbanterror">
-		<!-- 
-    Muting is available in Urban Terror only,
-    muteduration is in minutes,
-    setting mute_only to True will disable the warnings completely
-    -->
-    <set name="mute">True</set>
-		<set name="muteduration1">0</set>
-		<set name="muteduration2">5</set>
-		<set name="muteduration3">10</set>
-		<set name="mute_only">False</set>
-	</settings>
 	<badwords>
 		<penalty type="warning" reasonkeyword="cuss"/>
 		<!--

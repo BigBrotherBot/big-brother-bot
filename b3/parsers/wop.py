@@ -21,7 +21,7 @@
 
 
 __author__  = 'xlr8or'
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 import b3.parsers.q3a
 import re, string
@@ -200,6 +200,11 @@ class WopParser(b3.parsers.q3a.Q3AParser):
         else:
             return None
 
+    # disconnect
+    def OnClientdisconnect(self, action, data, match=None):
+        client = self.clients.getByCID(data)
+        if client: client.disconnect()
+        return None
 
     def OnInitgame(self, action, data, match=None):
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)
@@ -251,6 +256,15 @@ class WopParser(b3.parsers.q3a.Q3AParser):
             self.verbose('No Client Found!')
             return None
 
+    # item
+    def OnItem(self, action, data, match=None):
+        #Item: 5 weapon_betty
+        cid, item = string.split(data, ' ', 1)
+        client = self.clients.getByCID(cid)
+        if client:
+            #self.verbose('OnItem: %s picked up %s' % (client.name, item) )
+            return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, item, client)
+        return None
 
     # Translate the gameType to a readable format
     # //WoP gametypes: 0=FFA / 1=1v1 / 2=SP / 3=SYC-FFA / 4=LPS / 5=TDM / 6=CTL / 7=SYC-TP / 8=BB
