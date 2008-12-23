@@ -18,6 +18,7 @@
 #
 #
 # CHANGELOG
+# 11/30/2008: 1.0.1: OnKill, kill modes and XLRstats compatibility 
 
 
 __author__  = 'xlr8or'
@@ -82,8 +83,38 @@ class WopParser(b3.parsers.q3a.Q3AParser):
     #  3     5  103 PadPlayer^7             0 77.41.107.169:27960   47612  5000
     #  4   154   50 WARR^7                 50 91.127.64.194:27960   39880 25000
     _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+    _reMapNameFromStatus = re.compile(r'^map:\s+(?P<map>.+)$', re.I)
+    _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
 
     PunkBuster = None
+
+    #kill modes
+    MOD_UNKNOWN='0'
+    MOD_SHOTGUN='1'
+    MOD_GAUNTLET='2'
+    MOD_MACHINEGUN='3'
+    MOD_GRENADE='4'
+    MOD_GRENADE_SPLASH='5'
+    MOD_ROCKET='6'
+    MOD_ROCKET_SPLASH='7'
+    MOD_PLASMA='8'
+    MOD_PLASMA_SPLASH='9'
+    MOD_RAILGUN='10'
+    MOD_LIGHTNING='11'
+    MOD_BFG='12'
+    MOD_BFG_SPLASH='13'
+    MOD_KILLERDUCKS='14'
+    MOD_WATER='15'
+    MOD_SLIME='16'
+    MOD_LAVA='17'
+    MOD_CRUSH='18'
+    MOD_TELEFRAG='19'
+    MOD_FALLING='20' # not used in wop
+    MOD_SUICIDE='21'
+    MOD_TARGET_LASER='22' # not used in wop
+    MOD_TRIGGER_HURT='23'
+    MOD_GRAPPLE='24' # not used in wop
+
 
     def startup(self):
         # add the world client
@@ -91,6 +122,12 @@ class WopParser(b3.parsers.q3a.Q3AParser):
 
         if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
             self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
+
+        # get map from the status rcon command
+        map = self.getMap()
+        if map:
+            self.game.mapName = map
+            self.info('map is: %s'%self.game.mapName)
 
     def getLineParts(self, line):
         line = re.sub(self._lineClear, '', line, 1)
@@ -256,6 +293,93 @@ class WopParser(b3.parsers.q3a.Q3AParser):
             self.verbose('No Client Found!')
             return None
 
+    # kill
+    #kill: acid cid aweap: <text>
+    def OnKill(self, action, data, match=None):
+        # kill modes caracteristics :
+        """
+         0:   MOD_UNKNOWN, Unknown Means od Death, shouldn't occur at all
+         1:   MOD_SHOTGUN, Pumper
+         2:   MOD_GAUNTLET, Punchy
+         3:   MOD_MACHINEGUN, Nipper
+         4:   MOD_GRENADE, Balloony
+         5:   MOD_GRENADE_SPLASH, Ballony Splashdamage
+         6:   MOD_ROCKET, Betty
+         7:   MOD_ROCKET_SPLASH, Betty Splashdamage
+         8:   MOD_PLASMA, BubbleG
+         9:   MOD_PLASMA_SPLASH, BubbleG Splashdamage
+        10:   MOD_RAILGUN, Splasher
+        11:   MOD_LIGHTNING, Boaster
+        12:   MOD_BFG, Imperius
+        13:   MOD_BFG_SPLASH, Imperius Splashdamage
+        14:   MOD_KILLERDUCKS, Killerducks
+        15:   MOD_WATER, Died in Water
+        16:   MOD_SLIME, Died in Slime
+        17:   MOD_LAVA, Died in Lava
+        18:   MOD_CRUSH, Killed by a Mover
+        19:   MOD_TELEFRAG, Killed by a Telefrag
+        20:   MOD_FALLING, Died due to falling damage, but there is no falling damage in WoP
+        21:   MOD_SUICIDE, Commited Suicide
+        22:   MOD_TARGET_LASER, Killed by a laser, which don't exist in WoP
+        23:   MOD_TRIGGER_HURT, Killed by a trigger_hurt
+        24:   MOD_GRAPPLE, Killed by grapple, not used in WoP
+        """
+        self.debug('OnKill: %s (%s)'%(match.group('aweap'),match.group('text')))
+        
+        victim = self.clients.getByCID(match.group('cid'))
+        if not victim:
+            self.debug('No victim')
+            #self.OnClientuserinfo(action, data, match)
+            return None
+
+        weapon = match.group('aweap')
+        if not weapon:
+            self.debug('No weapon')
+            return None
+
+        ## Fix attacker
+        if match.group('aweap') in (self.MOD_WATER,self.MOD_LAVA,self.MOD_FALLING,self.MOD_TRIGGER_HURT,):
+            # those kills should be considered suicides
+            self.debug('OnKill: water/lava/falling/trigger_hurt should be suicides')
+            attacker = victim
+        else:
+            attacker = self.clients.getByCID(match.group('acid'))
+        ## end fix attacker
+          
+        if not attacker:
+            self.debug('No attacker')
+            return None
+
+        dType = match.group('text').split()[-1:][0]
+        if not dType:
+            self.debug('No damageType, weapon: %s' % weapon)
+            return None
+
+        event = b3.events.EVT_CLIENT_KILL
+
+        # fix event for team change and suicides and tk
+        if attacker.cid == victim.cid:
+            if weapon == self.MOD_CHANGE_TEAM:
+                """
+                Do not pass a teamchange event here. That event is passed
+                shortly after the kill.
+                """
+                self.verbose('Team Change Event Caught, exiting')
+                return None
+            else:
+                event = b3.events.EVT_CLIENT_SUICIDE
+        elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
+            event = b3.events.EVT_CLIENT_KILL_TEAM
+
+        # if not logging damage we need a general hitloc (for xlrstats)
+        if not hasattr(victim, 'hitloc'):
+            victim.hitloc = 'body'
+        
+        victim.state = b3.STATE_DEAD
+        #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (victim.name, attacker.name, weapon, victim.hitloc, dType))
+        # need to pass some amount of damage for the teamkill plugin - 100 is a kill
+        return b3.events.Event(event, (100, weapon, victim.hitloc, dType), attacker, victim)
+
     # item
     def OnItem(self, action, data, match=None):
         #Item: 5 weapon_betty
@@ -295,4 +419,18 @@ class WopParser(b3.parsers.q3a.Q3AParser):
         
         #self.debug('_gameType: %s' % _gameType)
         return _gameType
+
+    def getMap(self):
+        data = self.write('status')
+        if not data:
+            return None
+
+        line = data.split('\n')[0] 
+        #self.debug('[%s]'%line.strip())
+        
+        m = re.match(self._reMapNameFromStatus, line.strip())
+        if m:
+            return str(m.group('map'))
+                    
+        return None
 
