@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
-#   12/23/2008 - 1.6.1 - xlr8or
+#   12/23/2008 - 1.6.2 - xlr8or
 #   Added fix to catch mySQL connnection error 'mySQL server has gone away' and reconnect
 #   01/23/2006 - 1.5.0 - ThorN
 #   Added SQLite support, set "database" to "sqlite:///path/to/database.db"
