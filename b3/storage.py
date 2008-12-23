@@ -220,8 +220,9 @@ class DatabaseStorage(Storage):
                 return self._query(query)
             except Exception, e:
                 # (2013, 'Lost connection to MySQL server during query')
+                # (2006, 'MySQL server has gone away')
 
-                if e[0] == 2013:
+                if e[0] == 2013 or e[0] == 2006:
                     self.console.error('Query failed, trying to reconnect - %s: %s' % (type(e), e))
 
                     # query failed, try to reconnect

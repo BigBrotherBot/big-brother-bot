@@ -33,19 +33,19 @@ import sys
 
 # use 'register upload' to upload to pypi
 if len(sys.argv) == 1:
-	sys.argv += ['dev', 'sdist', '--formats=gztar']
+    sys.argv += ['dev', 'sdist', '--formats=gztar']
 
 setup(
     name = "b3",
-    version = "1.1.3",
+    version = "1.1.4",
     packages = find_packages(),
-	extras_require = { 'mysql' : 'MySQL-python', 'elementtree' : 'elementtree' },
-	package_data = {
-		'': ['conf/*.xml', 'extplugins/conf/*.xml', 'docs/*', 'README']
-	},
+    extras_require = { 'mysql' : 'MySQL-python', 'elementtree' : 'elementtree' },
+    package_data = {
+        '': ['conf/*.xml', 'extplugins/conf/*.xml', 'docs/*', 'README']
+    },
     zip_safe = False,
     #download_url = 'http://b3.python-hosting.com/browser/releases/',
-	author = 'Michael Thornton (ThorN), Tim ter Laak (ttlogic)',
+    author = 'Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or)',
     author_email = "bigbrotherbot@gmail.com",
     description = "BigBrotherBot (B3) is a cross-platform, cross-game game administration bot. Features in-game administration of game servers, multiple user access levels, and database storage. Currently include parsers for Call of Duty (CoD) and Call of Duty 2 (CoD2)",
     long_description = """\
@@ -57,21 +57,21 @@ Plugins provide much of the functionality for B3. These plugins can easily be co
 """,
     license = "GPL",
     url = "http://www.bigbrotherbot.com",
-	entry_points = {
-		'console_scripts': [
-			'b3_run = b3.run:main',
-		]
-	},
+    entry_points = {
+        'console_scripts': [
+            'b3_run = b3.run:main',
+        ]
+    },
     classifiers = [
-		'Development Status :: 4 - Beta',
-		'Development Status :: 5 - Production/Stable',
-		'Environment :: Console',
-		'Intended Audience :: System Administrators',
-		'License :: OSI Approved :: GNU General Public License (GPL)',
-		'Natural Language :: English',
-		'Operating System :: OS Independent',
-		'Programming Language :: Python',
-		'Topic :: System :: Logging',
-		'Topic :: Utilities'
-	]
+        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
+        'Environment :: Console',
+        'Intended Audience :: System Administrators',
+        'License :: OSI Approved :: GNU General Public License (GPL)',
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Topic :: System :: Logging',
+        'Topic :: Utilities'
+    ]
 )
