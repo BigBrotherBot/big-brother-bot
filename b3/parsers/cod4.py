@@ -14,18 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
-# $Id: $
 
-__author__  = 'ThorN'
-__version__ = '1.0'
+__author__  = 'ThorN, xlr8or'
+__version__ = '1.1.2'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
+import b3.functions
 import re
 
 class Cod4Parser(b3.parsers.cod2.Cod2Parser):
     gameName = 'cod4'
+    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[a-z0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+
 
     def getClient(self, match=None, attacker=None, victim=None):
         """Get a client object using the best availible data.
@@ -49,6 +50,7 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
     def OnJ(self, action, data, match=None):
         # COD4 stores the PBID in the log file
         pbguid = match.group('guid')
+        cid = match.group('cid')
 
         client = self.getClient(match)
 
@@ -59,15 +61,31 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
             client.name = match.group('name')
         else:
             # make a new client
-            if self.PunkBuster:        
-                # we will use punkbuster's guid
-                guid = None # Set to none so PB_SV_PLIST is triggered in clients.authorizeClients for the ip address
+            if self.PunkBuster:
+                guid = pbguid
                 pbid = pbguid
             else:
-                # use cod guid - is this reliable without punkbuster?
                 guid = pbguid 
 
-            client = self.clients.newClient(match.group('cid'), name=match.group('name'), state=b3.STATE_ALIVE, guid=guid)
+            sp = self.connectClient(cid)
+            if sp:
+                #self.debug('sp: %s' % sp)
+                if self.PunkBuster:
+                    if len(guid) < 32:
+                        guid = sp['guid']
+                    if len(pbid) < 32:
+                        pbid = sp['pbid']
+                ip = sp['ip']
+            else:
+                ip = ''
+            if len(guid) < 32:
+                # break it of, we can't get a valid 32 character guid, attempt to join on a future event.
+                self.debug('Ignoring Client! pbguid: %s (%s), ip: %s' %(pbguid, len(pbguid), ip) )
+                return None
+            else:
+                self.debug('pbguid: %s (%s), ip: %s' %(pbguid, len(pbguid), ip) )
+            
+            client = self.clients.newClient(match.group('cid'), name=match.group('name'), ip=ip, state=b3.STATE_ALIVE, guid=guid, pbid=pbguid)
 
         return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
 
@@ -108,3 +126,68 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
 
         victim.state = b3.STATE_DEAD
         return b3.events.Event(event, (float(match.group('damage')), match.group('aweap'), match.group('dlocation'), match.group('dtype')), attacker, victim)
+
+    def sync(self):
+        plist = self.getPlayerList()
+        mlist = {}
+
+        for cid, c in plist.iteritems():
+            client = self.clients.getByCID(cid)
+            if client:
+                if client.guid and c.has_key('guid'):
+                    if functions.fuzzyGuidMatch(client.guid, c['guid']):
+                        # player matches
+                        self.debug('in-sync %s == %s', client.guid, c['guid'])
+                        mlist[str(cid)] = client
+                    else:
+                        self.debug('no-sync %s <> %s', client.guid, c['guid'])
+                        client.disconnect()
+                elif client.ip and c.has_key('ip'):
+                    if client.ip == c['ip']:
+                        # player matches
+                        self.debug('in-sync %s == %s', client.ip, c['ip'])
+                        mlist[str(cid)] = client
+                    else:
+                        self.debug('no-sync %s <> %s', client.ip, c['ip'])
+                        client.disconnect()
+                else:
+                    self.debug('no-sync: no guid or ip found.')
+        
+        return mlist
+
+    def authorizeClients(self):
+        players = self.getPlayerList()
+        self.verbose('authorizeClients() = %s' % players)
+
+        for cid, p in players.iteritems():
+            if self.PunkBuster:
+                # Use guid since we already get the guid in the log file
+                sp = self.clients.getByGUID(p['guid'])
+
+                # Don't use invalid guid/pbid
+                if len(p['guid']) < 32:
+                    del p['guid']
+
+                if len(p['pbid']) < 32:
+                    del p['pbid']
+            else:
+                sp = self.clients.getByCID(cid)
+
+            if sp:
+                # Only set provided data, otherwise use the currently set data
+                sp.ip   = p.get('ip', sp.ip)
+                sp.pbid = p.get('pbid', sp.pbid)
+                sp.guid = p.get('guid', sp.guid)
+                sp.data = p
+                sp.auth()
+
+
+    def connectClient(self, ccid):
+        players = self.getPlayerList()
+        self.verbose('connectClient() = %s' % players)
+
+        for cid, p in players.iteritems():
+            #self.debug('cid: %s, ccid: %s, p: %s' %(cid, ccid, p))
+            if int(cid) == int(ccid):
+                self.debug('Client found in status/playerList')
+                return p
