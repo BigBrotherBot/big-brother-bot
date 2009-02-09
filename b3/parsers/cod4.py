@@ -14,9 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# v1.1.2  : xlr8or - Alternate approach on the <32 character guid issue
+# v1.1.3  : xlr8or - Improved approach for non PB servers
+#         : Tighter regexp for playernames. _reColor strips ascii <33, 47 and >127
+#           This includes spaces and also the / is removed. 
+
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.1.2'
+__version__ = '1.1.3'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
@@ -25,6 +30,7 @@ import re
 
 class Cod4Parser(b3.parsers.cod2.Cod2Parser):
     gameName = 'cod4'
+    _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]|\x2f')
     _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[a-z0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
 
 
@@ -70,11 +76,10 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
             sp = self.connectClient(cid)
             if sp:
                 #self.debug('sp: %s' % sp)
-                if self.PunkBuster:
-                    if len(guid) < 32:
-                        guid = sp['guid']
-                    if len(pbid) < 32:
-                        pbid = sp['pbid']
+                if len(guid) < 32:
+                    guid = sp['guid']
+                if len(pbid) < 32:
+                    pbid = sp['pbid']
                 ip = sp['ip']
             else:
                 ip = ''

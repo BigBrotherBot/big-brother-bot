@@ -42,7 +42,7 @@
 # * _empty_name_default now only given upon client connect, due to possibility of no name specified in ClientUserinfo at any time
 
 __author__  = 'xlr8or'
-__version__ = '1.0.17'
+__version__ = '1.0.18'
 
 import b3.parsers.q3a
 import re, string, threading, time, os
@@ -333,9 +333,9 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
     # Connect/Join
     def OnClientconnect(self, action, data, match=None):
-        client = self.clients.getByCID(data)
-        return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
-
+        self.debug('Client Connected - ready to parse Userinfoline')
+        #client = self.clients.getByCID(data)
+        #return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
 
     # Parse Userinfo
     def OnClientuserinfo(self, action, data, match=None):
