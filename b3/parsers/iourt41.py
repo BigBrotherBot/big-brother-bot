@@ -705,8 +705,11 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
         self.game.startRound()
         
-        self.clients.sync()
         self.debug('Synchronizing client info')
+        self.clients.sync()
+
+        self.debug('Joining Players')
+        self.joinPlayers()
 
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
 
@@ -966,6 +969,18 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                     
         return scores
       
+    def joinPlayers(self):
+        plist = self.getPlayerList()
+
+        for cid, c in plist.iteritems():
+            client = self.clients.getByCID(cid)
+            if client:
+                self.debug('Joining %s' % client.name)
+                self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client))
+
+        return None
+
+
 
 """ A little documentation on the ClientSlot states in relation to ping positions in the status response
 
