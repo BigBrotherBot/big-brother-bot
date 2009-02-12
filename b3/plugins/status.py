@@ -34,6 +34,7 @@ __version__ = '1.2.6'
 import b3, time, os
 import b3.plugin
 import b3.cron
+from b3.functions import sanitizeMe
 from cgi import escape
 
 #--------------------------------------------------------------------------------------------------
@@ -65,10 +66,14 @@ class StatusPlugin(b3.plugin.Plugin):
     xml = '<B3Status Time="%s">\n<Clients Total="%s">\n' % (time.asctime(), len(clients))
         
     for c in clients:
+      if not c.name:
+        c.name = "@"+str(c.id)
+      if c.exactName == "^7":
+        c.exactName = "@"+str(c.id)+"^7"
       try:          
-        xml += '<Client Name="%s" ColorName="%s" DBID="%s" Connections="%s" CID="%s" Level="%s" GUID="%s" PBID="%s" IP="%s" Team="%s" Joined="%s" Updated="%s" Score="%s" State="%s">\n' % (escape("%s"%functions.sanitizeMe(c.name)), escape("%s"%functions.sanitizeMe(c.exactName)), c.id, c.connections, c.cid, c.maxLevel, c.guid, c.pbid, c.ip, escape("%s"%c.team), time.ctime(c.timeAdd), time.ctime(c.timeEdit) , scoreList[c.cid], c.state )
+        xml += '<Client Name="%s" ColorName="%s" DBID="%s" Connections="%s" CID="%s" Level="%s" GUID="%s" PBID="%s" IP="%s" Team="%s" Joined="%s" Updated="%s" Score="%s" State="%s">\n' % (escape("%s"%sanitizeMe(c.name)), escape("%s"%sanitizeMe(c.exactName)), c.id, c.connections, c.cid, c.maxLevel, c.guid, c.pbid, c.ip, escape("%s"%c.team), time.ctime(c.timeAdd), time.ctime(c.timeEdit) , scoreList[c.cid], c.state )
         for k,v in c.data.iteritems():
-          xml += '<Data Name="%s" Value="%s"/>' % (escape("%s"%k), escape("%s"%functions.sanitizeMe(v))) 
+          xml += '<Data Name="%s" Value="%s"/>' % (escape("%s"%k), escape("%s"%sanitizeMe(v))) 
             
         if self._tkPlugin:
           if hasattr(c, 'tkplugin_points'):       
