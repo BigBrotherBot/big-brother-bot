@@ -16,10 +16,27 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-__author__  = 'ThorN'
-__version__ = '1.2.0'
+# change log :
+# 22/02/2009 - 1.2.1 - Courgette
+# - fix the compatibility issue with ElementTree  and display an explicit
+#    error message to avoid noobish questions on B3 forums :P
 
-from elementtree import ElementTree
+__author__  = 'ThorN'
+__version__ = '1.2.1'
+
+import sys
+
+try:
+	from elementtree import ElementTree
+except ImportError, err:
+	from xml.etree import ElementTree
+except ImportError, err:
+	sys.stderr.write("""FATAL ERROR : Cannot load elementtree
+  Check that you have installed ElementTree.
+  On Linux Debian : apt-get install python-elementtree
+  """)
+	sys.exit(1)
+
 import ConfigParser
 import os
 import b3.functions
