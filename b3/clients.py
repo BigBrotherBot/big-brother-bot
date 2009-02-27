@@ -17,18 +17,20 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    2/26/2009 - 1.2.6 - xlr8or
+#     Changed lastVisit to a global client variable
 #    5/6/2008 - 1.2.5 - xlr8or
-#    Client object now saves the current IP in auth function
+#     Client object now saves the current IP in auth function
 #    10/29/2005 - 1.2.0 - ThorN
-#    Removed direct references to PunkBuster. Authorization is now proxied
-#     through the console.
+#     Removed direct references to PunkBuster. Authorization is now proxied
+#      through the console.
 #    7/23/2005 - 1.1.0 - ThorN
-#    Added data field to Penalty
-#    Added data parameter to Client.warn()
-#    Added data parameter to Client.tempban()
+#     Added data field to Penalty
+#     Added data parameter to Client.warn()
+#     Added data parameter to Client.tempban()
 
 __author__  = 'ThorN'
-__version__ = '1.2.5'
+__version__ = '1.2.6'
 
 import b3, string, re, time, functions, threading, weakref, traceback, sys
 
@@ -85,6 +87,7 @@ class Client(object):
     state = None
     authorizing = False
     connected = True
+    lastVisit = None
 
     _pluginData = None
     _timeAdd = 0
@@ -628,18 +631,18 @@ class Client(object):
                 self.authorizing = False
                 return False
 
-            lastVisit = None
+            #lastVisit = None
             if inStorage:
                 self.console.bot('Client found in storage %s, welcome back %s', str(self.id), self.name)
-                lastVisit = self.timeEdit
+                self.lastVisit = self.timeEdit
             else:
                 self.console.bot('Client not found in the storage %s, create new', str(self.guid))
 
             self.connections = int(self.connections) + 1
-            self.authed = True
             self.name = name
             self.ip = ip
             self.save()
+            self.authed = True
 
             self.console.debug('Client Authorized: [%s] %s - %s', self.cid, self.name, self.guid)
 
