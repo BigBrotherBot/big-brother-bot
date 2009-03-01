@@ -16,10 +16,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+# 2/28/2009 - 1.0.4 - xlr8or
+#  Removed error generated in welcoming thread on first time players
 # 2/26/2009 - 1.0.3 - xlr8or
 #  Do not welcome players that where already welcomed in the last hour
 
-__version__ = '1.0.3'
+__version__ = '1.0.4'
 __author__  = 'ThorN'
 
 import b3, threading, time
@@ -53,7 +55,11 @@ class WelcomePlugin(b3.plugin.Plugin):
       t.start()
 
   def welcome(self, client):
-    self.debug('LastVisit: %s' %(self.console.formatTime(client.lastVisit)))
+    if client.lastVisit:
+      self.debug('LastVisit: %s' %(self.console.formatTime(client.lastVisit)))
+    else:
+      self.debug('LastVisit not available. Must be the first time.')
+
     # don't need to welcome people who got kicked or where already welcomed in the last hour
     if client.connected and (time.time() - client.lastVisit > 3600):
       info = {

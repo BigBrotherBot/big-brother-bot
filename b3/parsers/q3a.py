@@ -19,6 +19,8 @@
 # $Id: q3a.py 103 2006-04-14 16:23:10Z thorn $
 #
 # CHANGELOG
+#    2/27/2009 - 1.2.3 - xlr8or
+#    Removed error message for getPlayerList(), getPlayerPings() and getPlayerScores()
 #    5/6/2008 - 1.2.2 - Anubis
 #    Added OnShutdowngame()
 #    5/6/2008 - 1.2.1 - xlr8or
@@ -32,7 +34,7 @@
 
 
 __author__  = 'ThorN'
-__version__ = '1.2.2'
+__version__ = '1.2.3'
 
 import re, string
 import b3
@@ -503,8 +505,9 @@ class Q3AParser(b3.parser.Parser):
             
             if m:
                 players[str(m.group('slot'))] = int(m.group('ping'))
-            else:
-                 self.error('getPlayerList() = Line did not match :%s' % line)
+            #elif '------' not in line and 'map: ' not in line and 'num score ping' not in line:
+                #self.verbose('getPlayerScores() = Line did not match format: %s' % line)
+        
         return players
         
     def getPlayerScores(self):
@@ -521,8 +524,8 @@ class Q3AParser(b3.parser.Parser):
             
             if m:  
                  players[str(m.group('slot'))] = int(m.group('score'))
-            else:
-                 self.error('getPlayerList() = Line did not match :%s' % line)
+            #elif '------' not in line and 'map: ' not in line and 'num score ping' not in line:
+                #self.verbose('getPlayerScores() = Line did not match format: %s' % line)
         
         return players
         
@@ -551,8 +554,8 @@ class Q3AParser(b3.parser.Parser):
                     d = m.groupdict()
                     d['pbid'] = None
                     players[str(m.group('slot'))] = d
-                else:
-                    self.error('getPlayerList() = Line did not match %s' % line)
+                #elif '------' not in line and 'map: ' not in line and 'num score ping' not in line:
+                    #self.verbose('getPlayerList() = Line did not match format: %s' % line)
 
         return players
 
