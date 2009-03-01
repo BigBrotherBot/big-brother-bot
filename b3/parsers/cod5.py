@@ -14,9 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#
+# 2/27/2009 - 1.0.1 - xlr8or
+#  Added connection counter to prevent infinite newPlayer() loop.
+#  Changed check on length of guid.
+#  Break off authentication if no codguid and no PB is available to prevent error flooding
 
 __author__  = 'xlr8or'
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
@@ -25,6 +30,7 @@ import re, threading
 
 class Cod5Parser(b3.parsers.cod2.Cod2Parser):
     gameName = 'cod5'
+    _counter = {}
 
     # join
     def OnJ(self, action, data, match=None):
@@ -32,8 +38,7 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
         cid = match.group('cid')
         name = match.group('name')
         
-        #CoD:WaW has a 10 number guid, don't you just love it when they change everything at each release? 
-        if len(codguid) < 10:
+        if len(codguid) < 9: # not sure what the min length of the guid is, seen 9 and 10 nr guids
             # invalid guid
             codguid = None
 
@@ -47,9 +52,11 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
             # Join-event for mapcount reasons and so forth
             return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
         else:
+            self._counter[cid] = 1
             t = threading.Timer(2, self.newPlayer, (cid, codguid, name))
             t.start()
-            self.debug('%s connected, waiting for Authentication...' %name)                
+            self.debug('%s connected, waiting for Authentication...' %name)
+            self.debug('Our Authentication queue: %s' % self._counter)
 
 
     # kill
@@ -65,7 +72,7 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
             self.debug('No attacker %s' % match.groupdict())
             return None
 
-        # COD4 doesn't report the team on kill, only use it if it's set
+        # COD5 doesn't report the team on kill, only use it if it's set
         # Hopefully the team has been set on another event
         if match.group('ateam'):
             attacker.team = self.getTeam(match.group('ateam'))
@@ -97,7 +104,7 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
         for cid, p in players.iteritems():
             #self.debug('cid: %s, ccid: %s, p: %s' %(cid, ccid, p))
             if int(cid) == int(ccid):
-                self.debug('Client found in status/playerList')
+                self.debug('%s found in status/playerList' %p['name'])
                 return p
 
     def newPlayer(self, cid, codguid, name):
@@ -108,13 +115,23 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
             self.debug('sp: %s' % sp)
             guid = sp['pbid']
             ip = sp['ip']
-        # PunBuster is not enabled, using codguid
+            self._counter.pop(cid)
+        # PunkBuster is not enabled, using codguid
         elif sp:
-            guid = codguid
-            ip = sp['ip']
+            if not codguid:
+                self.error('No CodGuid and no PunkBuster... cannot continue!')
+                return None
+            else:
+                guid = codguid
+                ip = sp['ip']
+                self._counter.pop(cid)
+        elif self._counter[cid] > 10:
+            self.debug('Couldn\'t Auth %s, we\'ll wait for another event, or he left the server. Giving up...' % name)
+            self._counter.pop(cid)
         # Player is not in the status response (yet), retry
         else:
-            self.debug('Player not yet fuly connected, retrying...')
+            self.debug('%s not yet fully connected, retrying...#:%s' %(name, self._counter[codguid]))
+            self._counter[cid] +=1
             t = threading.Timer(2, self.newPlayer, (cid, codguid, name))
             t.start()
             return None

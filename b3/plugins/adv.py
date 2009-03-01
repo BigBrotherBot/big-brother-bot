@@ -162,7 +162,7 @@ class AdvPlugin(b3.plugin.Plugin):
       if(ad == "@nextmap"):
         ad = "^2Next map: ^3" + self.console.getNextMap()
       elif(ad == "@time"):
-        ad = "^2Servertime: ^3" + self.console.formatTime(time.time())
+        ad = "^2Time: ^3" + self.console.formatTime(time.time())
       self.console.say(ad)  
         
   def cmd_advadd(self, data, client=None, cmd=None):
