@@ -16,6 +16,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+# 3/4/2009 - 1.0.6 - xlr8or
+#  Added welcome delay setting to config
 # 3/3/2009 - 1.0.5 - xlr8or
 #  Fixed another error that caused an exception on new users
 # 2/28/2009 - 1.0.4 - xlr8or
@@ -23,7 +25,7 @@
 # 2/26/2009 - 1.0.3 - xlr8or
 #  Do not welcome players that where already welcomed in the last hour
 
-__version__ = '1.0.5'
+__version__ = '1.0.6'
 __author__  = 'ThorN'
 
 import b3, threading, time
@@ -34,6 +36,7 @@ import b3.plugin
 class WelcomePlugin(b3.plugin.Plugin):
   _newbConnections = 0
   _welcomeFlags = 0
+  _welcomeDelay = 0
 
   def onStartup(self):
     self.registerEvent(b3.events.EVT_CLIENT_AUTH)
@@ -41,6 +44,13 @@ class WelcomePlugin(b3.plugin.Plugin):
   def onLoadConfig(self):
     self._welcomeFlags = self.config.getint('settings', 'flags')
     self._newbConnections = self.config.getint('settings', 'newb_connections')
+    try:
+      self._welcomeDelay = self.config.getint('settings', 'delay')
+      if self._welcomeDelay < 15 or self._welcomeDelay > 90:
+        self._welcomeDelay = 30
+        self.debug('Welcome delay not in range 15-90 using 30 instead.')
+    except:
+      self._welcomeDelay = 30
 
   def onEvent(self, event):
     if event.type == b3.events.EVT_CLIENT_AUTH:
@@ -53,7 +63,7 @@ class WelcomePlugin(b3.plugin.Plugin):
         self.console.upTime() < 300:
         return
 
-      t = threading.Timer(30, self.welcome, (event.client,))
+      t = threading.Timer(self._welcomeDelay, self.welcome, (event.client,))
       t.start()
 
   def welcome(self, client):

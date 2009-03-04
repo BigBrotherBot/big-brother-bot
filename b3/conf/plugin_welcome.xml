@@ -13,6 +13,8 @@
 		<set name="flags">63</set>
 		<!-- Maximum number of connections a user has to be considere a newb for the newb message -->
 		<set name="newb_connections">15</set>
+		<!-- Time in seconds after connection to display the message (range: 15-90) -->
+		<set name="delay">30</set>
 	</settings>
 	<settings name="messages">
 		<!--
