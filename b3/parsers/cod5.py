@@ -19,6 +19,8 @@
 #  Added connection counter to prevent infinite newPlayer() loop.
 #  Changed check on length of guid.
 #  Break off authentication if no codguid and no PB is available to prevent error flooding
+# 3/3/2009 - 1.0.2 - xlr8or
+#  Fixed typo causing Exception in newPlayer()
 
 __author__  = 'xlr8or'
 __version__ = '1.0.1'
@@ -130,7 +132,7 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
             self._counter.pop(cid)
         # Player is not in the status response (yet), retry
         else:
-            self.debug('%s not yet fully connected, retrying...#:%s' %(name, self._counter[codguid]))
+            self.debug('%s not yet fully connected, retrying...#:%s' %(name, self._counter[cid]))
             self._counter[cid] +=1
             t = threading.Timer(2, self.newPlayer, (cid, codguid, name))
             t.start()
