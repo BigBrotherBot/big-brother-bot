@@ -33,7 +33,7 @@ import sys
 
 # use 'register upload' to upload to pypi
 if len(sys.argv) == 1:
-    sys.argv += ['dev', 'sdist', '--formats=gztar']
+    sys.argv += ['beta', 'sdist', '--formats=gztar']
 
 setup(
     name = "b3",

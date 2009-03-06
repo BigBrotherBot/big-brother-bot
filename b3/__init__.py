@@ -28,7 +28,7 @@ import config
 
 versionOs = os.name
 versionId = 'v%s [%s]' % (__version__, versionOs)
-version = '^8www.BigBrotherBot.com ^0(^8b3^0) ^9%s ^9(^3Elasmotherium^9)^3' % versionId
+version = '^8www.BigBrotherBot.com ^0(^8b3^0) ^9%s ^9(^3Astridaria^9)^3' % versionId
 sversion = re.sub(r'\^[0-9a-z]', '', version)
 
 console = None

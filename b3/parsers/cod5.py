@@ -60,6 +60,18 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
             self.debug('%s connected, waiting for Authentication...' %name)
             self.debug('Our Authentication queue: %s' % self._counter)
 
+    # disconnect
+    def OnQ(self, action, data, match=None):
+        client = self.getClient(match)
+        if client:
+            client.disconnect()
+        else:
+            # Check if we're in the authentication queue
+            if match.group('cid') in self._counter:
+                # Flag it to remove from the queue
+                self._counter[cid] = 'Disconnected'
+                self.debug('slot %s has disconnected or was forwarded to our http download location, removing from authentication queue...' % cid)
+        return None
 
     # kill
     def OnK(self, action, data, match=None):
@@ -110,12 +122,17 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
                 return p
 
     def newPlayer(self, cid, codguid, name):
+        if self._counter[cid] == 'Disconnected':
+            self.debug('%s disconnected, removing from authentication queue' %name)
+            self._counter.pop(cid)
+            return None
         self.debug('newClient: %s, %s, %s' %(cid, codguid, name) )
         sp = self.connectClient(cid)
         # PunkBuster is enabled, using PB guid
         if sp and self.PunkBuster:
             self.debug('sp: %s' % sp)
             guid = sp['pbid']
+            pbid = guid # save pbid in both fields to be consistent with other pb enabled databases
             ip = sp['ip']
             self._counter.pop(cid)
         # PunkBuster is not enabled, using codguid
@@ -128,15 +145,16 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
                 ip = sp['ip']
                 self._counter.pop(cid)
         elif self._counter[cid] > 10:
-            self.debug('Couldn\'t Auth %s, we\'ll wait for another event, or he left the server. Giving up...' % name)
+            self.debug('Couldn\'t Auth %s, giving up...' % name)
             self._counter.pop(cid)
+            return None
         # Player is not in the status response (yet), retry
         else:
             self.debug('%s not yet fully connected, retrying...#:%s' %(name, self._counter[cid]))
             self._counter[cid] +=1
-            t = threading.Timer(2, self.newPlayer, (cid, codguid, name))
+            t = threading.Timer(4, self.newPlayer, (cid, codguid, name))
             t.start()
             return None
             
-        client = self.clients.newClient(cid, name=name, ip=ip, state=b3.STATE_ALIVE, guid=guid, data={ 'codguid' : codguid })
+        client = self.clients.newClient(cid, name=name, ip=ip, state=b3.STATE_ALIVE, guid=guid, pbid=pbid, data={ 'codguid' : codguid })
         return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)

@@ -1,4 +1,5 @@
-MANIFEST
+CHANGELOG
+MANIFEST.in
 README
 b3_run.py
 ez_setup.py
@@ -31,6 +32,7 @@ b3/conf/b3.xml
 b3/conf/plugin_admin.xml
 b3/conf/plugin_adv.xml
 b3/conf/plugin_censor.xml
+b3/conf/plugin_login.xml
 b3/conf/plugin_pingwatch.xml
 b3/conf/plugin_publist.xml
 b3/conf/plugin_punkbuster.xml
@@ -50,8 +52,8 @@ b3/extplugins/conf/xlrstats.xml
 b3/parsers/__init__.py
 b3/parsers/cod.py
 b3/parsers/cod2.py
-b3/parsers/cod4-bugged.py
 b3/parsers/cod4.py
+b3/parsers/cod5.py
 b3/parsers/et.py
 b3/parsers/iourt41.py
 b3/parsers/punkbuster.py
