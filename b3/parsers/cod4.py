@@ -18,10 +18,11 @@
 # v1.1.3  : xlr8or - Improved approach for non PB servers
 #         : Tighter regexp for playernames. _reColor strips ascii <33, 47 and >127
 #           This includes spaces and also the / is removed. 
+# v1.1.4  : xlr8or - Removed bug for non PB servers
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.1.3'
+__version__ = '1.1.4'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
@@ -55,7 +56,7 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
     # join
     def OnJ(self, action, data, match=None):
         # COD4 stores the PBID in the log file
-        pbguid = match.group('guid')
+        codguid = match.group('guid')
         cid = match.group('cid')
 
         client = self.getClient(match)
@@ -68,29 +69,38 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
         else:
             # make a new client
             if self.PunkBuster:
-                guid = pbguid
-                pbid = pbguid
+                guid = codguid
+                pbid = codguid
             else:
-                guid = pbguid 
+                guid = codguid 
 
             sp = self.connectClient(cid)
-            if sp:
+            if sp and self.punkbuster:
                 #self.debug('sp: %s' % sp)
                 if len(guid) < 32:
                     guid = sp['guid']
                 if len(pbid) < 32:
                     pbid = sp['pbid']
                 ip = sp['ip']
+            elif sp:
+                if not codguid:
+                    self.error('No CodGuid and no PunkBuster... cannot continue!')
+                    return None
+                else:
+                    if len(guid) < 32:
+                        guid = sp['guid']
+                    ip = sp['ip']
             else:
                 ip = ''
+
             if len(guid) < 32:
                 # break it of, we can't get a valid 32 character guid, attempt to join on a future event.
-                self.debug('Ignoring Client! pbguid: %s (%s), ip: %s' %(pbguid, len(pbguid), ip) )
+                self.debug('Ignoring Client! guid: %s (%s), ip: %s' %(guid, len(guid), ip) )
                 return None
             else:
-                self.debug('pbguid: %s (%s), ip: %s' %(pbguid, len(pbguid), ip) )
+                self.debug('guid: %s (%s), ip: %s' %(guid, len(guid), ip) )
             
-            client = self.clients.newClient(match.group('cid'), name=match.group('name'), ip=ip, state=b3.STATE_ALIVE, guid=guid, pbid=pbguid)
+            client = self.clients.newClient(match.group('cid'), name=match.group('name'), ip=ip, state=b3.STATE_ALIVE, guid=guid, pbid=pbid)
 
         return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
 
