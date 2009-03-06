@@ -1,0 +1,4 @@
+include *.txt *.py CHANGELOG README
+recursive-include b3/docs *.txt *.sql
+recursive-include b3/conf *.xml
+recursive-include b3/extplugins/conf *.xml
