@@ -76,7 +76,9 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
                 guid = codguid
 
             sp = self.connectClient(cid)
-            if sp and self.punkbuster:
+            if sp and self.PunkBuster:
+                if not sp['pbid']
+                    self.debug('PunkBuster is enabled in b3.xml, yet I cannot retrieve the PunkBuster Guid. Are you sure PB is enabled?')
                 #self.debug('sp: %s' % sp)
                 if len(guid) < 32:
                     guid = sp['guid']
@@ -199,6 +201,10 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
 
 
     def connectClient(self, ccid):
+        if self.PunkBuster
+            self.debug('Getting the (PunkBuster) Playerlist')
+        else:
+            self.debug('Getting the (status) Playerlist')
         players = self.getPlayerList()
         self.verbose('connectClient() = %s' % players)
 
