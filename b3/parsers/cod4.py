@@ -58,6 +58,7 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
         # COD4 stores the PBID in the log file
         codguid = match.group('guid')
         cid = match.group('cid')
+        pbid = ''
 
         client = self.getClient(match)
 
@@ -72,7 +73,7 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
                 guid = codguid
                 pbid = codguid
             else:
-                guid = codguid 
+                guid = codguid
 
             sp = self.connectClient(cid)
             if sp and self.punkbuster:
