@@ -115,5 +115,5 @@ class WelcomePlugin(b3.plugin.Plugin):
         info['greeting'] = client.greeting % info
         self.console.say(self.getMessage('greeting', info))
     else:
-      if not (time.time() - client.lastVisit > 3600):
+      if _timeDiff <= 3600:
         self.debug('Client already welcomed in the past hour')
