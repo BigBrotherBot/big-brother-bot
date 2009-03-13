@@ -47,11 +47,11 @@ setup(
     #download_url = 'http://b3.python-hosting.com/browser/releases/',
     author = 'Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or)',
     author_email = "bigbrotherbot@gmail.com",
-    description = "BigBrotherBot (B3) is a cross-platform, cross-game game administration bot. Features in-game administration of game servers, multiple user access levels, and database storage. Currently include parsers for Call of Duty (CoD) and Call of Duty 2 (CoD2)",
+    description = "BigBrotherBot (B3) is a cross-platform, cross-game game administration bot. Features in-game administration of game servers, multiple user access levels, and database storage. Currently include parsers for Call of Duty 1 to 5, Urban Terror (ioUrT), World of Padman ",
     long_description = """\
 Big Brother Bot B3 is a complete and total server administration package for online games. B3 is designed primarily to keep your server free from the derelicts of online gaming, but offers more, much more. With the stock configuration files, B3 will will keep your server free from offensive language, and team killers alike. A completely automated and customizable warning system will warn the offending players that this type of behavior is not allowed on your server, and ultimately kick, and or ban them for a predetermined time limit.
 
-B3 was designed to be easily ported to other online games. Currently, B3 is in production for Call of Duty and Call of Duty: United Offensive and Call of Duty 2. Since these games are based on the Quake III Arena engine, conversion to any game using the engine should be easy.
+B3 was designed to be easily ported to other online games. Currently, B3 is in production for the Call of Duty series, Urban Terror (ioUrT) and World of Padman since these games are based on the Quake III Arena engine, conversion to any game using the engine should be easy.
 
 Plugins provide much of the functionality for B3. These plugins can easily be configured. An SDK will be provided to make your own plugins.
 """,
