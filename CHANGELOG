@@ -2,6 +2,11 @@
 -----
 - Fixed CoD4 Parser
 - Added CoD5 Parser
+- Added sanitation code to status plugin
+- Added delay setting and fixed double welcoming to welcome plugin
+- Fixed MySQL reconnect for Error 2006: 'MySQL server has gone away'
+- In config.py, try to load ElementTree from elementtree, then retry from xml.etree or exit with an explicit message.
+- Multiple minor bugfixes 
 
 1.1.3
 -----
