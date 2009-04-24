@@ -31,7 +31,7 @@ import re
 
 class Cod4Parser(b3.parsers.cod2.Cod2Parser):
     gameName = 'cod4'
-    _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]|\x2f')
+    _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
     _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[a-z0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
 
 

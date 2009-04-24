@@ -40,9 +40,10 @@
 #                    Increases security on admins who have cl_guidServerUniq set to 0 in client config (No cloning). 
 # v1.0.17 - mindriot - 02-Nov-2008
 # * _empty_name_default now only given upon client connect, due to possibility of no name specified in ClientUserinfo at any time
+# v1.0.19 - xlr8or - Disabled PunkBuster default settings due to recent supportrequests in the forums with missing PB line in b3.xml
 
 __author__  = 'xlr8or'
-__version__ = '1.0.18'
+__version__ = '1.0.19'
 
 import b3.parsers.q3a
 import re, string, threading, time, os
@@ -182,8 +183,9 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         # add the world client
         client = self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
 
-        if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
-            self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
+        # PunkBuster for iourt is not supported!
+        #if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
+        #    self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
 
         # get map from the status rcon command
         map = self.getMap()
