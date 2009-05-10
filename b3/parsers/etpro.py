@@ -1,0 +1,405 @@
+# Enemy Territory ETPro parser for BigBrotherBot(B3) (www.bigbrotherbot.com)
+# Copyright (C) 2009 ailmanki
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
+#
+# CHANGELOG
+# 05/04/2009: 0.1.0: Updating so that it works for etpro
+#
+# CREDITS
+# Based on the version 0.0.1, thanks ThorN.
+# Copied alot from wop.py, thanks xlr8or.
+# Thanks for B3.
+#
+# NOTES
+# ETPro has not bots.
+# ETPro 3.2.6 - no additional LUA or QMM scripts used
+#
+#etpro:
+# - qsay (chat window,
+# - cpmsay (left popup area) available since 3.0.15+
+# - cp (center print)
+# - bp (banner print area, top of screen)
+# - say (chat window, with "console: " in front)
+
+
+__author__    = 'ailmanki, xlr8or'
+__version__ = '0.0.1'
+
+import re, string
+import b3
+import b3.events
+import b3.parsers.q3a
+import b3.parsers.punkbuster
+
+class EtproParser(b3.parsers.q3a.Q3AParser):
+    gameName = 'etpro'
+    IpsOnly = False    # Experimental: setting True will use ip's only for identification.
+    IpCombi = False    # Experimental: setting True will replace last part of the guid with 2 segments of the ip.
+
+    _settings = {}
+    _settings['line_length'] = 65
+    _settings['min_wrap_length'] = 100
+
+    _empty_name_default = 'EmptyNameDefault'
+
+    _commands = {}
+    _commands['message'] = 'm %(name)s %(prefix)s^7 %(message)s'
+    _commands['deadsay'] = 'm %(name)s %(prefix)s [DEAD]^7 %(message)s'
+    _commands['say'] = 'cpmsay %(prefix)s %(message)s'
+    _commands['set'] = 'set %(name)s "%(value)s"'
+    _commands['kick'] = 'clientkick %(cid)s'
+    _commands['ban'] = 'banid %(cid)s'
+    _commands['tempban'] = 'clientkick %(cid)s'
+
+    _eventMap = {
+        'warmup' : b3.events.EVT_GAME_WARMUP,
+        'restartgame' : b3.events.EVT_GAME_ROUND_END
+    }
+
+    # remove the time off of the line
+    _lineClear = re.compile(r'^(?:[0-9:.]+\s?)?')
+
+    _lineFormats = (
+        #1579:03 ConnectInfo: 0: E24F9B2702B9E4A1223E905BF597FA92: ^w[^2AS^w]^2Lead: 3: 3: 24.153.180.106:2794
+        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<pbid>[0-9A-Z]{32}):\s*(?P<name>[^:]+):\s*(?P<num1>[0-9]+):\s*(?P<num2>[0-9]+):\s*(?P<ip>[0-9.]+):(?P<port>[0-9]+))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<name>.+):\s+(?P<text>.*))$', re.IGNORECASE),
+
+        #1536:37Kill: 1 18 9: ^1klaus killed ^1[pura]fox.nl by MOD_MP40
+        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<aweap>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>.*)$', re.IGNORECASE),
+
+        #[QMM] lines:
+        #[QMM] Successfully hooked g_log file
+        re.compile(r'^\[(?P<action>[a-z]+)]\s(?P<data>.*)$', re.IGNORECASE),
+        # etpro lines:
+        # 16:33.29 etpro privmsg: xlr8or[*] to xlr8or: hi
+        re.compile(r'^(?P<action>[a-z]+)\s(?P<data>(?P<command>[a-z]+):\s(?P<origin>.*)\sto\s(?P<target>.*):\s(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+)\s(?P<data>(?P<command>[a-z]+):\s(?P<text>.*))$', re.IGNORECASE)
+    )
+
+    #15:11:15 map: goldrush
+    # num score ping name            lastmsg address               qport rate
+    # --- ----- ---- --------------- ------- --------------------- ----- -----
+    #   2     0   45 xlr8or[*]             0 145.99.135.227:27960  39678 25000
+    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+    _reMapNameFromStatus = re.compile(r'^map:\s+(?P<map>.+)$', re.I)
+    _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
+
+    PunkBuster = None
+
+    def startup(self):
+        # add the world client
+        
+        client = self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
+        #if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
+        #    self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
+
+        # get map from the status rcon command
+        map = self.getMap()
+        if map:
+            self.game.mapName = map
+            self.info('map is: %s'%self.game.mapName)
+
+#---------------------------------------------------------------------------------------------------
+
+    # Added for debugging and identifying/catching log lineparts
+    def getLineParts(self, line):
+        line = re.sub(self._lineClear, '', line, 1)
+
+        for f in self._lineFormats:
+            m = re.match(f, line)
+            if m:
+                #self.debug('XLR--------> line matched %s' % f.pattern)
+                break
+
+        if m:
+            client = None
+            target = None
+            return (m, m.group('action').lower(), m.group('data').strip(), client, target)
+        elif '------' not in line:
+            self.verbose('XLR--------> line did not match format: %s' % line)
+
+#---------------------------------------------------------------------------------------------------
+
+    def OnClientconnect(self, action, data, match=None):
+        self._clientConnectID = data
+        client = self.clients.getByCID(data)
+        return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
+
+    # Parse Userinfo
+    def OnClientuserinfo(self, action, data, match=None):
+        bclient = self.parseUserInfo(data)
+        self.verbose('Parsed user info %s' % bclient)
+        if bclient:
+            client = self.clients.getByCID(bclient['cid'])
+
+            if client:
+                # update existing client
+                for k, v in bclient.iteritems():
+                    setattr(client, k, v)
+            else:
+                #make a new client
+                if bclient.has_key('cl_guid'):
+                    guid = bclient['cl_guid']
+                else:
+                    guid = 'unknown' 
+                
+                if not bclient.has_key('name'):
+                    bclient['name'] = self._empty_name_default
+
+                if not bclient.has_key('ip') and guid == 'unknown':
+                    # happens when a client is (temp)banned and got kicked so client was destroyed, but
+                    # infoline was still waiting to be parsed.
+                    self.debug('Client disconnected. Ignoring.')
+                    return None
+                
+                nguid = ''
+                # overide the guid... use ip's only if self.console.IpsOnly is set True.
+                if self.IpsOnly:
+                    nguid = bclient['ip']
+                # replace last part of the guid with two segments of the ip
+                elif self.IpCombi:
+                    i = bclient['ip'].split('.')
+                    d = len(i[0])+len(i[1])
+                    nguid = guid[:-d]+i[0]+i[1]
+                # Fallback for clients that don't have a cl_guid, we'll use ip instead
+                elif guid == 'unknown':
+                    nguid = bclient['ip']
+
+                if nguid != '':
+                    guid = nguid
+
+                client = self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid })
+
+        return None
+
+    # disconnect
+    def OnClientdisconnect(self, action, data, match=None):
+        client = self.clients.getByCID(data)
+        if client: client.disconnect()
+        return None
+
+    # startgame
+    def OnInitgame(self, action, data, match=None):
+        options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)
+
+        for o in options:
+            if o[0] == 'mapname':
+                self.game.mapName = o[1]
+            elif o[0] == 'g_gametype':
+                self.game.gameType = o[1]
+            elif o[0] == 'fs_game':
+                self.game.modName = o[1]
+            else:
+                setattr(self.game, o[0], o[1])
+
+        self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
+        self.game.startRound()
+
+        self.debug('Synchronizing client info')
+        self.clients.sync()
+
+        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
+
+    def OnQmm(self, action, data, match=None):
+        #self.verbose('OnQmm: data: %s' %data)
+        return None
+
+    def OnEtpro(self, action, data, match=None):
+        #self.verbose('OnEtpro: data: %s' %data)
+        #self.verbose('OnEtpro: command = %s' %(match.group('command')))
+        if match.group('command') == 'privmsg':
+            self.OnPrivMsg(match.group('origin'), match.group('target'), match.group('text'))
+        elif match.group('command') == 'event':
+            self.verbose('event: %s' %(match.group('text')))
+        return None
+
+    def OnPrivMsg(self, origin, target, text):
+        client = self.clients.getByExactName(origin)
+        tclient = self.clients.getByExactName(target)
+
+        if not client:
+            #self.verbose('No Client Found')
+            return None
+
+        if text and ord(text[:1]) == 21:
+            text = text[1:]
+
+        #client.name = match.group('name')
+        self.verbose('text: %s, client: %s - %s, tclient: %s - %s' %(text, client.name, client.id, tclient.name, tclient.id))
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, text, client, tclient))
+
+#---------------------------------------------------------------------------------------------------
+
+    def parseUserInfo(self, info):
+        #2 n\peyote\t\3\c\0\r\0\m\0000000\s\0000000\dn\\dr\0\w\0\lw\0\sw\0\mu\0\ref\0\p\0\ss\0\sc\0\tv\0\lc\0
+        #0 \g_password\none\cl_guid\0A337702493AF67BB0B0F8565CE8BC6C\cl_wwwDownload\1\name\thorn\rate\25000\snaps\20\cl_anonymous\0\cl_punkbuster\1\password\test\protocol\83\qport\16735\challenge\-79719899\ip\69.85.205.66:27960
+        playerID, info = string.split(info, ' ', 1)
+
+        if info[:1] != '\\':
+            info = '\\' + info
+
+        options = re.findall(r'\\([^\\]+)\\([^\\]+)', info)
+
+        data = {}
+        for o in options:
+            data[o[0]] = o[1]
+
+        data['cid'] = playerID
+
+        if data.has_key('n'):
+            data['name'] = data['n']
+
+        # split port from ip field
+        if data.has_key('ip'):
+            tip = string.split(data['ip'], ':', 1)
+            data['ip'] = tip[0]
+            data['port'] = tip[1]
+
+        t = 0
+        if data.has_key('team'):
+            t = data['team']
+        elif data.has_key('t'):
+            t = data['t']
+
+        data['team'] = self.getTeam(t)
+        if data.has_key('cl_guid'):
+            data['cl_guid'] = data['cl_guid'].lower()
+
+        if data.has_key('pbid'):
+            data['pbid'] = data['pbid'].lower()
+
+        if data.has_key('cl_guid') and not data.has_key('pbid'):
+            data['pbid'] = data['cl_guid']
+        
+        return data
+
+    def getMap(self):
+        data = self.write('status')
+        if not data:
+            return None
+
+        line = data.split('\n')[0] 
+        #self.debug('[%s]'%line.strip())
+        
+        m = re.match(self._reMapNameFromStatus, line.strip())
+        if m:
+            return str(m.group('map'))
+                                
+        return None
+
+
+    def message(self, client, text):
+        try:
+            if client == None:
+                self.say(text)
+            elif client.cid == None:
+                pass
+            else:
+                lines = []
+                for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
+                    lines.append(self.getCommand('message', name=client.name, prefix=self.msgPrefix, message=line))
+
+                self.writelines(lines)
+        except:
+            pass
+
+    def sayDead(self, msg):
+        wrapped = self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length'])
+        lines = []
+        for client in self.clients.getClientsByState(b3.STATE_DEAD):
+            if client.cid:                
+                for line in wrapped:
+                    lines.append(self.getCommand('deadsay', name=client.name, prefix=self.msgPrefix, message=line))
+
+        if len(lines):        
+            self.writelines(lines)
+
+    def getTeam(self, team):
+        if team == 'red': team = 1
+        if team == 'blue': team = 2
+        team = int(team)
+        if team == 1:
+            #self.verbose('Team is Red')
+            return b3.TEAM_RED
+        elif team == 2:
+            #self.verbose('Team is Blue')
+            return b3.TEAM_BLUE
+        elif team == 3:
+            #self.verbose('Team is Spec')
+            return b3.TEAM_SPEC
+        else:
+            return b3.TEAM_UNKNOWN
+
+    # Translate the gameType to a readable format (also for teamkill plugin!)
+    def defineGameType(self, gameTypeInt):
+
+        _gameType = ''
+        _gameType = str(gameTypeInt)
+        #self.debug('gameTypeInt: %s' % gameTypeInt)
+        
+        if gameTypeInt == '0':
+            _gameType = 'dm'
+        elif gameTypeInt == '1':   # Dunno what this one is
+            _gameType = 'dm'
+        elif gameTypeInt == '2':   # Dunno either
+            _gameType = 'dm'
+        elif gameTypeInt == '3':
+            _gameType = 'tdm'
+        elif gameTypeInt == '4':
+            _gameType = 'ts'
+        elif gameTypeInt == '5':
+            _gameType = 'ftl'
+        elif gameTypeInt == '6':
+            _gameType = 'cah'
+        elif gameTypeInt == '7':
+            _gameType = 'ctf'
+        elif gameTypeInt == '8':
+            _gameType = 'bm'
+        
+        #self.debug('_gameType: %s' % _gameType)
+        return _gameType
+
+    def sync(self):
+        plist = self.getPlayerList()
+        mlist = {}
+
+        for cid, c in plist.iteritems():
+            client = self.clients.getByCID(cid)
+            if client:
+                if client.guid and c.has_key('guid'):
+                    if client.guid == c['guid']:
+                        # player matches
+                        self.debug('in-sync %s == %s', client.guid, c['guid'])
+                        mlist[str(cid)] = client
+                    else:
+                        self.debug('no-sync %s <> %s', client.guid, c['guid'])
+                        client.disconnect()
+                elif client.ip and c.has_key('ip'):
+                    if client.ip == c['ip']:
+                        # player matches
+                        self.debug('in-sync %s == %s', client.ip, c['ip'])
+                        mlist[str(cid)] = client
+                    else:
+                        self.debug('no-sync %s <> %s', client.ip, c['ip'])
+                        client.disconnect()
+                else:
+                    self.debug('no-sync: no guid or ip found.')
+        
+        return mlist
+
