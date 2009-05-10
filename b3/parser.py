@@ -18,6 +18,7 @@
 #
 #
 # CHANGELOG
+#    29/4/2009 - fixed ignored exit code (for restarts/shutdowns) - arbscht
 #    10/20/2008 - 1.9.1b0 - mindriot
 #    * fixed slight typo of b3.events.EVT_UNKOWN to b3.events.EVT_UNKNOWN
 #    11/29/2005 - 1.7.0 - ThorN
@@ -89,6 +90,53 @@ class Parser(object):
     _port = 0
 
     info = None
+
+    """\
+    === Exiting ===
+
+    The parser runs two threads: main and handler.  The main thread is
+    responsible for the main loop parsing and queuing events, and process
+    termination. The handler thread is responsible for processing queued events
+    including raising ``SystemExit'' when a user-requested exit is needed.
+
+    The ``SystemExit'' exception bubbles up only as far as the top of the handler
+    thread -- the ``handleEvents'' method.  To expose the exit status to the
+    ``run'' method in the main thread, we store the value in ``exitcode''.
+
+    Since the teardown steps in ``run'' and ``handleEvents'' would occur in
+    parallel, we use a lock (``exiting'') to ensure that ``run'' waits for
+    ``handleEvents'' to finish before proceeding.
+
+    How exiting works, in detail:
+
+      - the parallel loops in run() and handleEvents() are terminated only when
+          working==False.
+
+      - die() or restart() invokes shutdown() from the handler thread.
+
+      - the exiting lock is acquired by shutdown() in the handler thread before
+          it sets working=False to end both loops.
+
+      - die() or restart() raises SystemExit in the handler thread after
+          shutdown() and a few seconds delay.
+
+      - when SystemExit is caught by handleEvents(), its exit status is pushed to
+          the main context via exitcode.
+
+      - handleEvents() ensures the exiting lock is released when it finishes.
+
+      - run() waits to acquire the lock in the main thread before proceeding
+          with teardown, repeating sys.exit(exitcode) from the main thread if set.
+
+      In the case of an abnormal exception in the handler thread, ``exitcode''
+      will be None and the ``exiting'' lock will be released when``handleEvents''
+      finishes so the main thread can still continue.
+
+      Exits occurring in the main thread do not need to be synchronised.
+
+    """
+    exiting = thread.allocate_lock()
+    exitcode = None
 
     def __init__(self, config):
         self._timeStart = self.time()
@@ -463,8 +511,14 @@ class Parser(object):
             time.sleep(self.delay)
 
         self.bot('Stop reading.')
-        self.input.close()
-        self.output.close()
+
+        if self.exiting.acquire(1):
+            self.input.close()
+            self.output.close()
+
+            if self.exitcode:
+                sys.exit(self.exitcode)
+
 
     def parseLine(self, line):
         """Parse a single line from the log file"""
@@ -524,12 +578,15 @@ class Parser(object):
                         # plugin called for event hault, do not continue processing
                         self.bot('Event %s vetoed by %s', self.Events.getName(event.type), str(hfunc))
                         nomore = True
-                    except SystemExit:
-                        raise
+                    except SystemExit, e:
+                        self.exitcode = e.code
                     except Exception, msg:
                         self.error('handler %s could not handle event %s: %s: %s %s', hfunc.__class__.__name__, self.Events.getName(event.type), msg.__class__.__name__, msg, traceback.extract_tb(sys.exc_info()[2]))
 
         self.bot('Shutting down event handler')
+
+        if self.exiting.locked():
+            self.exiting.release()
 
     def write(self, msg):
         """Write a message to Rcon/Console"""
@@ -560,7 +617,7 @@ class Parser(object):
     def shutdown(self):
         """Shutdown B3"""
         try:
-            if self.working:
+            if self.working and self.exiting.acquire():
                 self.bot('Shutting down...')
                 self.working = False
                 for k,plugin in self._plugins.items():
