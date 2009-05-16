@@ -78,7 +78,8 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<name>.+):\s+(?P<text>.*))$', re.IGNORECASE),
 
         #1536:37Kill: 1 18 9: ^1klaus killed ^1[pura]fox.nl by MOD_MP40
-        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<aweap>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
+
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<text>.*))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>.*)$', re.IGNORECASE),
@@ -89,6 +90,7 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
         # etpro lines:
         # 16:33.29 etpro privmsg: xlr8or[*] to xlr8or: hi
         re.compile(r'^(?P<action>[a-z]+)\s(?P<data>(?P<command>[a-z]+):\s(?P<origin>.*)\sto\s(?P<target>.*):\s(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+)\s(?P<data>(?P<command>[a-z]+):\s(?P<origin>.*)\sto\s(?P<target>.*):)$', re.IGNORECASE), # in case there is no privmsg text entered
         re.compile(r'^(?P<action>[a-z]+)\s(?P<data>(?P<command>[a-z]+):\s(?P<text>.*))$', re.IGNORECASE)
     )
 
@@ -101,6 +103,90 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
     _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
 
     PunkBuster = None
+
+    ## kill mode constants: modNames[meansOfDeath]
+    MOD_UNKNOWN='0'
+    MOD_MACHINEGUN='1'
+    MOD_BROWNING='2'
+    MOD_MG42='3'
+    MOD_GRENADE='4'
+    MOD_ROCKET='5'
+    MOD_KNIFE='6'
+    MOD_LUGER='7'
+    MOD_COLT='8'
+    MOD_MP40='9'
+    MOD_THOMPSON='10'
+    MOD_STEN='11'
+    MOD_GARAND='12'
+    MOD_SNOOPERSCOPE='13'
+    MOD_SILENCER='14'
+    MOD_FG42='15'
+    MOD_FG42SCOPE='16'
+    MOD_PANZERFAUST='17'
+    MOD_GRENADE_LAUNCHER='18'
+    MOD_FLAMETHROWER='19'
+    MOD_GRENADE_PINEAPPLE='20'
+    MOD_CROSS='21'
+    MOD_MAPMORTAR='22'
+    MOD_MAPMORTAR_SPLASH='23'
+    MOD_KICKED='24'
+    MOD_GRABBER='25'
+    MOD_DYNAMITE='26'
+    MOD_AIRSTRIKE='27'
+    MOD_SYRINGE='28'
+    MOD_AMMO='29'
+    MOD_ARTY='30'
+    MOD_WATER='31'
+    MOD_SLIME='32'
+    MOD_LAVA='33'
+    MOD_CRUSH='34'
+    MOD_TELEFRAG='35'
+    MOD_FALLING='36'
+    MOD_SUICIDE='37'
+    MOD_TARGET_LASER='38'
+    MOD_TRIGGER_HURT='39'
+    MOD_EXPLOSIVE='40'
+    MOD_CARBINE='41'
+    MOD_KAR98='42'
+    MOD_GPG40='43'
+    MOD_M7='44'
+    MOD_LANDMINE='45'
+    MOD_SATCHEL='46'
+    MOD_TRIPMINE='47'
+    MOD_SMOKEBOMB='48'
+    MOD_MOBILE_MG42='49'
+    MOD_SILENCED_COLT='50'
+    MOD_GARAND_SCOPE='51'
+    MOD_CRUSH_CONSTRUCTION='52'
+    MOD_CRUSH_CONSTRUCTIONDEATH='53'
+    MOD_CRUSH_CONSTRUCTIONDEATH_NOATTACKER='54'
+    MOD_K43='55'
+    MOD_K43_SCOPE='56'
+    MOD_MORTAR='57'
+    MOD_AKIMBO_COLT='58'
+    MOD_AKIMBO_LUGER='59'
+    MOD_AKIMBO_SILENCEDCOLT='60'
+    MOD_AKIMBO_SILENCEDLUGER='61'
+    MOD_SMOKEGRENADE='62'
+    MOD_SWAP_PLACES='63'
+    MOD_SWITCHTEAM='64'
+
+    ## meansOfDeath to be considered suicides
+    Suicides = (
+        MOD_WATER,
+        MOD_SLIME,
+        MOD_LAVA,
+        MOD_CRUSH,
+        MOD_TELEFRAG,
+        MOD_FALLING,
+        MOD_SUICIDE,
+        MOD_TARGET_LASER,
+        MOD_TRIGGER_HURT,
+        MOD_LANDMINE,
+        MOD_TRIPMINE
+    )
+
+#---------------------------------------------------------------------------------------------------
 
     def startup(self):
         # add the world client
@@ -189,6 +275,63 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
         return None
 
     # disconnect
+    def OnKill(self, action, data, match=None):
+        self.debug('OnKill: %s (%s)'%(match.group('aweap'),match.group('text')))
+        
+        victim = self.clients.getByCID(match.group('cid'))
+        if not victim:
+            self.debug('No victim')
+            #self.OnClientuserinfo(action, data, match)
+            return None
+
+        weapon = match.group('aweap')
+        if not weapon:
+            self.debug('No weapon')
+            return None
+
+        ## Fix attacker
+        if match.group('aweap') in self.Suicides:
+            # those kills should be considered suicides
+            self.debug('OnKill: Fixed attacker, suicide detected: %s' %match.group('text'))
+            attacker = victim
+        else:
+            attacker = self.clients.getByCID(match.group('acid'))
+        ## end fix attacker
+          
+        if not attacker:
+            self.debug('No attacker')
+            return None
+
+        dType = match.group('text').split()[-1:][0]
+        if not dType:
+            self.debug('No damageType, weapon: %s' % weapon)
+            return None
+
+        event = b3.events.EVT_CLIENT_KILL
+
+        # fix event for team change and suicides and tk
+        if attacker.cid == victim.cid:
+            if weapon == self.MOD_SWITCHTEAM:
+                """
+                Do not pass a teamchange event here. That event is passed
+                shortly after the kill (in clients.py by adjusting the client object).
+                """
+                self.verbose('Team Change Event Caught, exiting')
+                return None
+            else:
+                event = b3.events.EVT_CLIENT_SUICIDE
+        elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
+            event = b3.events.EVT_CLIENT_KILL_TEAM
+
+        # if not defined we need a general hitloc (for xlrstats)
+        if not hasattr(victim, 'hitloc'):
+            victim.hitloc = 'body'
+        
+        victim.state = b3.STATE_DEAD
+        #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (victim.name, attacker.name, weapon, victim.hitloc, dType))
+        # need to pass some amount of damage for the teamkill plugin - 100 is a kill
+        return b3.events.Event(event, (100, weapon, victim.hitloc, dType), attacker, victim)
+
     def OnClientdisconnect(self, action, data, match=None):
         client = self.clients.getByCID(data)
         if client: client.disconnect()
@@ -224,17 +367,26 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
         #self.verbose('OnEtpro: data: %s' %data)
         #self.verbose('OnEtpro: command = %s' %(match.group('command')))
         if match.group('command') == 'privmsg':
-            self.OnPrivMsg(match.group('origin'), match.group('target'), match.group('text'))
+            try:
+                text = match.group('text')
+            except:
+                self.verbose('No message entered in privmsg!')
+                return None
+            self.OnPrivMsg(match.group('origin'), match.group('target'), text)
         elif match.group('command') == 'event':
             self.verbose('event: %s' %(match.group('text')))
         return None
 
     def OnPrivMsg(self, origin, target, text):
         client = self.clients.getByExactName(origin)
-        tclient = self.clients.getByExactName(target)
+        tclient = self.clients.getClientLikeName(target)
 
         if not client:
             #self.verbose('No Client Found')
+            return None
+
+        if not tclient:
+            client.message('Please be more specific providing the target, can\'t find it with given input!')
             return None
 
         if text and ord(text[:1]) == 21:
@@ -403,3 +555,30 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
         
         return mlist
 
+
+#---- Documentation --------------------------------------------------------------------------------
+"""
+
+//infos clienuserinfochanged
+//0 = player_ID
+//n = name
+//t = team
+//c = class
+//r = rank
+//m = medals
+//s = skills
+//dn = disguised name
+//dr = disguised rank
+//w = weapon
+//lw = weapon last used
+//sw = 2nd weapon (not sure)
+//mu = muted
+//ref = referee
+//lw = latched weapon (weapon on next spawn)
+//sw = latched secondary weapon (secondary weapon on next spawn)
+//p = privilege level (peon = 0, referee (vote), referee (password), semiadmin, rconauth) (etpro only)
+//ss = stats restored by stat saver (etpro only)
+//sc = shoutcaster status (etpro only)
+//tv = ETTV slave (etpro only)
+
+"""

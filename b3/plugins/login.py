@@ -76,7 +76,11 @@ class LoginPlugin(b3.plugin.Plugin):
 				client.message("You need a password to use all your privileges, but I have none on file. Ask the administrator to set a password for you.")
 				return
 			else:
-				client.message("Login via console: /tell %s !login yourpassword" % client.cid)
+				if self.console.gameName[:5] == 'etpro':
+				  message = "Login via console: /tell %s !login yourpassword" %client.name
+        else:
+          message = "Login via console: /tell %s !login yourpassword" %client.cid
+        client.message(message)
 				return
 
 	def cmd_login(self, data, client, cmd=None):
