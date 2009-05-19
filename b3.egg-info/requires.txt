@@ -1,7 +1,0 @@
-
-
-[elementtree]
-elementtree
-
-[mysql]
-MySQL-python
