@@ -35,7 +35,7 @@
 # - say (chat window, with "console: " in front)
 
 
-__author__    = 'ailmanki, xlr8or'
+__author__    = 'xlr8or, ailmanki'
 __version__ = '0.0.1'
 
 import re, string
@@ -46,8 +46,8 @@ import b3.parsers.punkbuster
 
 class EtproParser(b3.parsers.q3a.Q3AParser):
     gameName = 'etpro'
-    IpsOnly = False    # Experimental: setting True will use ip's only for identification.
-    IpCombi = False    # Experimental: setting True will replace last part of the guid with 2 segments of the ip.
+    IpsOnly = False    # Setting True will use ip's only for identification.
+    IpCombi = False    # Setting True will replace last part of the guid with 2 segments of the ip.
 
     _settings = {}
     _settings['line_length'] = 65
@@ -73,17 +73,27 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
     _lineClear = re.compile(r'^(?:[0-9:.]+\s?)?')
 
     _lineFormats = (
+        #-------ET Lines----------------------------------------------------------------------------
         #1579:03 ConnectInfo: 0: E24F9B2702B9E4A1223E905BF597FA92: ^w[^2AS^w]^2Lead: 3: 3: 24.153.180.106:2794
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<pbid>[0-9A-Z]{32}):\s*(?P<name>[^:]+):\s*(?P<num1>[0-9]+):\s*(?P<num2>[0-9]+):\s*(?P<ip>[0-9.]+):(?P<port>[0-9]+))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<name>.+):\s+(?P<text>.*))$', re.IGNORECASE),
-
+        #
         #1536:37Kill: 1 18 9: ^1klaus killed ^1[pura]fox.nl by MOD_MP40
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
-
+        #
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<text>.*))$', re.IGNORECASE),
-        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>.*)$', re.IGNORECASE),
-
+        #
+        # 5:41 Medic_Revive: 3 8
+        re.compile(r'^(?P<action>[a-z_]+):\s*(?P<data>(?P<acid>[0-9]+)\s(?P<cid>.*))$', re.IGNORECASE),
+        #
+        # 5:41 Dynamite_Plant: 3
+        re.compile(r'^(?P<action>[a-z_]+):\s*(?P<data>(?P<cid>[0-9]+))$', re.IGNORECASE),
+        #
+        # Falling through?
+        re.compile(r'^(?P<action>[a-z_]+):\s*(?P<data>.*)$', re.IGNORECASE),
+        #
+        #------ Addon / Mod Lines ------------------------------------------------------------------
         #[QMM] lines:
         #[QMM] Successfully hooked g_log file
         re.compile(r'^\[(?P<action>[a-z]+)]\s(?P<data>.*)$', re.IGNORECASE),
@@ -345,7 +355,7 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
             if o[0] == 'mapname':
                 self.game.mapName = o[1]
             elif o[0] == 'g_gametype':
-                self.game.gameType = o[1]
+                self.game.gameType = self.defineGameType(o[1])
             elif o[0] == 'fs_game':
                 self.game.modName = o[1]
             else:
@@ -366,15 +376,25 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
     def OnEtpro(self, action, data, match=None):
         #self.verbose('OnEtpro: data: %s' %data)
         #self.verbose('OnEtpro: command = %s' %(match.group('command')))
-        if match.group('command') == 'privmsg':
+        try:
+            command = match.group('command')
+        except:
+            self.debug('Etpro info line: %s' % match.group('data') )
+            return None
+
+        if command == 'privmsg':
             try:
                 text = match.group('text')
             except:
                 self.verbose('No message entered in privmsg!')
                 return None
             self.OnPrivMsg(match.group('origin'), match.group('target'), text)
-        elif match.group('command') == 'event':
+        # an example on how to catch other etpro events:
+        elif command == 'event':
             self.verbose('event: %s' %(match.group('text')))
+        else:
+            self.verbose('%s: %s' %(command, match.group('text')))
+
         return None
 
     def OnPrivMsg(self, origin, target, text):
@@ -506,26 +526,42 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
         #self.debug('gameTypeInt: %s' % gameTypeInt)
         
         if gameTypeInt == '0':
-            _gameType = 'dm'
-        elif gameTypeInt == '1':   # Dunno what this one is
-            _gameType = 'dm'
-        elif gameTypeInt == '2':   # Dunno either
-            _gameType = 'dm'
+            _gameType = 'sp'        # Single Player
+        elif gameTypeInt == '1':
+            _gameType = 'cp'        # Co-Op
+        elif gameTypeInt == '2':
+            _gameType = 'smo'       # Single Map Objective
         elif gameTypeInt == '3':
-            _gameType = 'tdm'
+            _gameType = 'sw'        # Stopwatch
         elif gameTypeInt == '4':
-            _gameType = 'ts'
+            _gameType = 'ca'        # Campaign
         elif gameTypeInt == '5':
-            _gameType = 'ftl'
-        elif gameTypeInt == '6':
-            _gameType = 'cah'
-        elif gameTypeInt == '7':
-            _gameType = 'ctf'
-        elif gameTypeInt == '8':
-            _gameType = 'bm'
+            _gameType = 'lms'       # Last Man Standing
         
         #self.debug('_gameType: %s' % _gameType)
         return _gameType
+
+    def getMap(self):
+        data = self.write('status')
+        if not data:
+            return None
+
+        line = data.split('\n')[0] 
+        #self.debug('[%s]'%line.strip())
+        
+        m = re.match(self._reMapNameFromStatus, line.strip())
+        if m:
+            return str(m.group('map'))
+                    
+        return None
+
+    def getMaps(self):
+        m=[]
+        m.append('Command not supported!')
+        return m
+
+    def getNextMap(self):
+        return 'Command not supported!'
 
     def sync(self):
         plist = self.getPlayerList()

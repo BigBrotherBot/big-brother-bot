@@ -21,9 +21,11 @@
 #  Break off authentication if no codguid and no PB is available to prevent error flooding
 # 3/3/2009 - 1.0.2 - xlr8or
 #  Fixed typo causing Exception in newPlayer()
+# 19/5/2009 - 1.0.3 - xlr8or
+#  Changed authentication queue to remove an Exception raised when the Key was no longer available
 
 __author__  = 'xlr8or'
-__version__ = '1.0.1'
+__version__ = '1.0.3'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
@@ -122,7 +124,10 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
                 return p
 
     def newPlayer(self, cid, codguid, name):
-        if self._counter[cid] == 'Disconnected':
+        if not self._counter.get(cid):
+            self.verbose('newPlayer thread no longer needed, Key no longer available')
+            return None
+        if self._counter.get(cid) == 'Disconnected':
             self.debug('%s disconnected, removing from authentication queue' %name)
             self._counter.pop(cid)
             return None

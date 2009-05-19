@@ -33,15 +33,15 @@ import sys
 
 # use 'register upload' to upload to pypi
 if len(sys.argv) == 1:
-    sys.argv += ['beta', 'sdist', '--formats=gztar']
+    sys.argv += ['beta', 'sdist', '--formats=zip']
 
 setup(
     name = "b3",
-    version = "1.1.4",
+    version = "1.1.5",
     packages = find_packages(),
     extras_require = { 'mysql' : 'MySQL-python', 'elementtree' : 'elementtree' },
     package_data = {
-        '': ['conf/*.xml', 'extplugins/conf/*.xml', 'docs/*', 'README']
+        '': ['conf/*.xml', 'extplugins/conf/*.xml', 'docs/*', 'CHANGELOG', 'README']
     },
     zip_safe = False,
     #download_url = 'http://b3.python-hosting.com/browser/releases/',
@@ -51,7 +51,7 @@ setup(
     long_description = """\
 Big Brother Bot B3 is a complete and total server administration package for online games. B3 is designed primarily to keep your server free from the derelicts of online gaming, but offers more, much more. With the stock configuration files, B3 will will keep your server free from offensive language, and team killers alike. A completely automated and customizable warning system will warn the offending players that this type of behavior is not allowed on your server, and ultimately kick, and or ban them for a predetermined time limit.
 
-B3 was designed to be easily ported to other online games. Currently, B3 is in production for the Call of Duty series, Urban Terror (ioUrT) and World of Padman since these games are based on the Quake III Arena engine, conversion to any game using the engine should be easy.
+B3 was designed to be easily ported to other online games. Currently, B3 is in production for the Call of Duty series, Urban Terror (ioUrT), etpro and World of Padman since these games are based on the Quake III Arena engine, conversion to any game using the engine should be easy.
 
 Plugins provide much of the functionality for B3. These plugins can easily be configured. An SDK will be provided to make your own plugins.
 """,
