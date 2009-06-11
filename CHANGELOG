@@ -2,6 +2,7 @@
 -----
 - Minor updates to CoD4 and CoD5 parsers
 - Added etpro parser (Enemy Territory with etpro mod installed - et does not support private messaging!)
+- Added Smoking Guns parser (Very limited engine, no PM's supported)
 - Minor change in login.py so it can be used for etpro
 - parser.py patched by 'arbscht' to support restarting
 
