@@ -14,40 +14,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
-#
-# CHANGELOG
-# 05/04/2009: 0.1.0: Updating so that it works for etpro
-#
-# CREDITS
-# Based on the version 0.0.1, thanks ThorN.
-# Copied alot from wop.py, thanks xlr8or.
-# Thanks for B3.
-#
-# NOTES
-# ETPro has not bots.
-# ETPro 3.2.6 - no additional LUA or QMM scripts used
-#
-#etpro:
-# - qsay (chat window,
-# - cpmsay (left popup area) available since 3.0.15+
-# - cp (center print)
-# - bp (banner print area, top of screen)
-# - say (chat window, with "console: " in front)
 
 
-__author__    = 'xlr8or, ailmanki'
+__author__  = 'xlr8or'
 __version__ = '0.0.1'
 
-import re, string
+import re, string, threading
 import b3
 import b3.events
 import b3.parsers.q3a
 import b3.parsers.punkbuster
 
-class EtproParser(b3.parsers.q3a.Q3AParser):
-    gameName = 'etpro'
-    IpsOnly = False    # Setting True will use ip's only for identification.
-    IpCombi = False    # Setting True will replace last part of the guid with 2 segments of the ip.
+class SmgParser(b3.parsers.q3a.Q3AParser):
+    gameName = 'smg'
+    _counter = {}
 
     _settings = {}
     _settings['line_length'] = 65
@@ -56,9 +36,11 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
     _empty_name_default = 'EmptyNameDefault'
 
     _commands = {}
-    _commands['message'] = 'm %(name)s %(prefix)s^7 %(message)s'
-    _commands['deadsay'] = 'm %(name)s %(prefix)s [DEAD]^7 %(message)s'
-    _commands['say'] = 'cpmsay %(prefix)s %(message)s'
+    #_commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
+    #_commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
+    _commands['message'] = '%(prefix)s ^3[pm]^7 %(message)s'
+    _commands['deadsay'] = '%(prefix)s [DEAD]^7 %(message)s'
+    _commands['say'] = 'say %(prefix)s %(message)s'
     _commands['set'] = 'set %(name)s "%(value)s"'
     _commands['kick'] = 'clientkick %(cid)s'
     _commands['ban'] = 'banid %(cid)s'
@@ -73,8 +55,6 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
     _lineClear = re.compile(r'^(?:[0-9:.]+\s?)?')
 
     _lineFormats = (
-        #-------ET Lines----------------------------------------------------------------------------
-        #1579:03 ConnectInfo: 0: E24F9B2702B9E4A1223E905BF597FA92: ^w[^2AS^w]^2Lead: 3: 3: 24.153.180.106:2794
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<pbid>[0-9A-Z]{32}):\s*(?P<name>[^:]+):\s*(?P<num1>[0-9]+):\s*(?P<num2>[0-9]+):\s*(?P<ip>[0-9.]+):(?P<port>[0-9]+))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<name>.+):\s+(?P<text>.*))$', re.IGNORECASE),
         #
@@ -84,31 +64,20 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<text>.*))$', re.IGNORECASE),
         #
-        # 5:41 Medic_Revive: 3 8
-        re.compile(r'^(?P<action>[a-z_]+):\s*(?P<data>(?P<acid>[0-9]+)\s(?P<cid>.*))$', re.IGNORECASE),
-        #
-        # 5:41 Dynamite_Plant: 3
-        re.compile(r'^(?P<action>[a-z_]+):\s*(?P<data>(?P<cid>[0-9]+))$', re.IGNORECASE),
-        #
         # Falling through?
-        re.compile(r'^(?P<action>[a-z_]+):\s*(?P<data>.*)$', re.IGNORECASE),
-        #
-        #------ Addon / Mod Lines ------------------------------------------------------------------
-        #[QMM] lines:
-        #[QMM] Successfully hooked g_log file
-        re.compile(r'^\[(?P<action>[a-z]+)]\s(?P<data>.*)$', re.IGNORECASE),
-        # etpro lines:
-        # 16:33.29 etpro privmsg: xlr8or[*] to xlr8or: hi
-        re.compile(r'^(?P<action>[a-z]+)\s(?P<data>(?P<command>[a-z]+):\s(?P<origin>.*)\sto\s(?P<target>.*):\s(?P<text>.*))$', re.IGNORECASE),
-        re.compile(r'^(?P<action>[a-z]+)\s(?P<data>(?P<command>[a-z]+):\s(?P<origin>.*)\sto\s(?P<target>.*):)$', re.IGNORECASE), # in case there is no privmsg text entered
-        re.compile(r'^(?P<action>[a-z]+)\s(?P<data>(?P<command>[a-z]+):\s(?P<text>.*))$', re.IGNORECASE)
+        # 1:05 ClientConnect: 3
+        # 1:05 ClientUserinfoChanged: 3 guid\CAB616192CB5652375401264987A23D0\n\xlr8or\t\0\model\wq_male2/red\g_redteam\\g_blueteam\\hc\100\w\0\l\0\tt\0\tl\0
+        re.compile(r'^(?P<action>[a-z_]+):\s*(?P<data>.*)$', re.IGNORECASE)
     )
 
-    #15:11:15 map: goldrush
-    # num score ping name            lastmsg address               qport rate
-    # --- ----- ---- --------------- ------- --------------------- ----- -----
-    #   2     0   45 xlr8or[*]             0 145.99.135.227:27960  39678 25000
+    #map: dm_fort
+    #num score ping name            lastmsg address               qport rate
+    #--- ----- ---- --------------- ------- --------------------- ----- -----
+    #  1     1    0 TheMexican^7          100 bot                       0 16384
+    #  2     1    0 Sentenza^7             50 bot                       0 16384
+    #  3     3   37 xlr8or^7                0 145.99.135.227:27960   3598 25000
     _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+    #_regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.:-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
     _reMapNameFromStatus = re.compile(r'^map:\s+(?P<map>.+)$', re.I)
     _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
 
@@ -116,70 +85,39 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
 
     ## kill mode constants: modNames[meansOfDeath]
     MOD_UNKNOWN='0'
-    MOD_MACHINEGUN='1'
-    MOD_BROWNING='2'
-    MOD_MG42='3'
-    MOD_GRENADE='4'
-    MOD_ROCKET='5'
-    MOD_KNIFE='6'
-    MOD_LUGER='7'
-    MOD_COLT='8'
-    MOD_MP40='9'
-    MOD_THOMPSON='10'
-    MOD_STEN='11'
-    MOD_GARAND='12'
-    MOD_SNOOPERSCOPE='13'
-    MOD_SILENCER='14'
-    MOD_FG42='15'
-    MOD_FG42SCOPE='16'
-    MOD_PANZERFAUST='17'
-    MOD_GRENADE_LAUNCHER='18'
-    MOD_FLAMETHROWER='19'
-    MOD_GRENADE_PINEAPPLE='20'
-    MOD_CROSS='21'
-    MOD_MAPMORTAR='22'
-    MOD_MAPMORTAR_SPLASH='23'
-    MOD_KICKED='24'
-    MOD_GRABBER='25'
-    MOD_DYNAMITE='26'
-    MOD_AIRSTRIKE='27'
-    MOD_SYRINGE='28'
-    MOD_AMMO='29'
-    MOD_ARTY='30'
-    MOD_WATER='31'
-    MOD_SLIME='32'
-    MOD_LAVA='33'
-    MOD_CRUSH='34'
-    MOD_TELEFRAG='35'
-    MOD_FALLING='36'
-    MOD_SUICIDE='37'
-    MOD_TARGET_LASER='38'
-    MOD_TRIGGER_HURT='39'
-    MOD_EXPLOSIVE='40'
-    MOD_CARBINE='41'
-    MOD_KAR98='42'
-    MOD_GPG40='43'
-    MOD_M7='44'
-    MOD_LANDMINE='45'
-    MOD_SATCHEL='46'
-    MOD_TRIPMINE='47'
-    MOD_SMOKEBOMB='48'
-    MOD_MOBILE_MG42='49'
-    MOD_SILENCED_COLT='50'
-    MOD_GARAND_SCOPE='51'
-    MOD_CRUSH_CONSTRUCTION='52'
-    MOD_CRUSH_CONSTRUCTIONDEATH='53'
-    MOD_CRUSH_CONSTRUCTIONDEATH_NOATTACKER='54'
-    MOD_K43='55'
-    MOD_K43_SCOPE='56'
-    MOD_MORTAR='57'
-    MOD_AKIMBO_COLT='58'
-    MOD_AKIMBO_LUGER='59'
-    MOD_AKIMBO_SILENCEDCOLT='60'
-    MOD_AKIMBO_SILENCEDLUGER='61'
-    MOD_SMOKEGRENADE='62'
-    MOD_SWAP_PLACES='63'
-    MOD_SWITCHTEAM='64'
+    #melee
+    MOD_KNIFE='1'
+    #pistols
+    MOD_REM58='2'
+    MOD_SCHOFIELD='3'
+    MOD_PEACEMAKER='4'
+    #rifles
+    MOD_WINCHESTER66='5'
+    MOD_LIGHTNING='6'
+    MOD_SHARPS='7'
+    #shotguns
+    MOD_REMINGTON_GAUGE='8'
+    MOD_SAWEDOFF='9'
+    MOD_WINCH97='10'
+    #automatics
+    MOD_GATLING='11'
+    #explosives
+    MOD_DYNAMITE='12'
+    MOD_MOLOTOV='13'
+    #misc
+    MOD_WATER='14'
+    MOD_SLIME='15'
+    MOD_LAVA='16'
+    MOD_CRUSH='17'
+    MOD_TELEFRAG='18'
+    MOD_FALLING='19'
+    MOD_SUICIDE='20'
+    MOD_WORLD_DAMAGE='21'
+    MOD_TRIGGER_HURT='22'
+    MOD_NAIL='23'
+    MOD_CHAINGUN='24'
+    MOD_PROXIMITY_MINE='25'
+    MOD_BOILER='26'
 
     ## meansOfDeath to be considered suicides
     Suicides = (
@@ -190,10 +128,11 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
         MOD_TELEFRAG,
         MOD_FALLING,
         MOD_SUICIDE,
-        MOD_TARGET_LASER,
         MOD_TRIGGER_HURT,
-        MOD_LANDMINE,
-        MOD_TRIPMINE
+        MOD_NAIL,
+        MOD_CHAINGUN,
+        MOD_PROXIMITY_MINE,
+        MOD_BOILER
     )
 
 #---------------------------------------------------------------------------------------------------
@@ -242,45 +181,31 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
         bclient = self.parseUserInfo(data)
         self.verbose('Parsed user info %s' % bclient)
         if bclient:
-            client = self.clients.getByCID(bclient['cid'])
+            cid = bclient['cid']
+            client = self.clients.getByCID(cid)
 
             if client:
                 # update existing client
                 for k, v in bclient.iteritems():
                     setattr(client, k, v)
             else:
-                #make a new client
-                if bclient.has_key('cl_guid'):
-                    guid = bclient['cl_guid']
-                else:
-                    guid = 'unknown' 
-                
                 if not bclient.has_key('name'):
                     bclient['name'] = self._empty_name_default
 
-                if not bclient.has_key('ip') and guid == 'unknown':
-                    # happens when a client is (temp)banned and got kicked so client was destroyed, but
-                    # infoline was still waiting to be parsed.
-                    self.debug('Client disconnected. Ignoring.')
+                if bclient.has_key('guid'):
+                    guid = bclient['guid']
+                else:
+                    #guid = 'BOT-' + str(bclient['name'])
+                    guid = 'BOT-' + str(cid)
+                    self.verbose('BOT connected!')
+                    client = self.clients.newClient(cid, name=bclient['name'], ip='0.0.0.0', state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid })
                     return None
-                
-                nguid = ''
-                # overide the guid... use ip's only if self.console.IpsOnly is set True.
-                if self.IpsOnly:
-                    nguid = bclient['ip']
-                # replace last part of the guid with two segments of the ip
-                elif self.IpCombi:
-                    i = bclient['ip'].split('.')
-                    d = len(i[0])+len(i[1])
-                    nguid = guid[:-d]+i[0]+i[1]
-                # Fallback for clients that don't have a cl_guid, we'll use ip instead
-                elif guid == 'unknown':
-                    nguid = bclient['ip']
 
-                if nguid != '':
-                    guid = nguid
-
-                client = self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid })
+                self._counter[cid] = 1
+                t = threading.Timer(2, self.newPlayer, (cid, guid, bclient['name']))
+                t.start()
+                self.debug('%s connected, waiting for Authentication...' %bclient['name'])
+                self.debug('Our Authentication queue: %s' % self._counter)
 
         return None
 
@@ -321,15 +246,7 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
 
         # fix event for team change and suicides and tk
         if attacker.cid == victim.cid:
-            if weapon == self.MOD_SWITCHTEAM:
-                """
-                Do not pass a teamchange event here. That event is passed
-                shortly after the kill (in clients.py by adjusting the client object).
-                """
-                self.verbose('Team Change Event Caught, exiting')
-                return None
-            else:
-                event = b3.events.EVT_CLIENT_SUICIDE
+            event = b3.events.EVT_CLIENT_SUICIDE
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
             event = b3.events.EVT_CLIENT_KILL_TEAM
 
@@ -341,9 +258,6 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
         #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (victim.name, attacker.name, weapon, victim.hitloc, dType))
         # need to pass some amount of damage for the teamkill plugin - 100 is a kill
         return b3.events.Event(event, (100, weapon, victim.hitloc, dType), attacker, victim)
-
-    def OnClientbegin(self, action, data, match=None):
-        return None
 
     def OnClientdisconnect(self, action, data, match=None):
         client = self.clients.getByCID(data)
@@ -372,52 +286,9 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
 
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
 
-    def OnQmm(self, action, data, match=None):
-        #self.verbose('OnQmm: data: %s' %data)
-        return None
-
-    def OnEtpro(self, action, data, match=None):
-        #self.verbose('OnEtpro: data: %s' %data)
-        #self.verbose('OnEtpro: command = %s' %(match.group('command')))
-        try:
-            command = match.group('command')
-        except:
-            self.debug('Etpro info line: %s' % match.group('data') )
-            return None
-
-        if command == 'privmsg':
-            try:
-                text = match.group('text')
-            except:
-                self.verbose('No message entered in privmsg!')
-                return None
-            self.OnPrivMsg(match.group('origin'), match.group('target'), text)
-        # an example on how to catch other etpro events:
-        elif command == 'event':
-            self.verbose('event: %s' %(match.group('text')))
-        else:
-            self.verbose('%s: %s' %(command, match.group('text')))
-
-        return None
-
-    def OnPrivMsg(self, origin, target, text):
-        client = self.clients.getByExactName(origin)
-        tclient = self.clients.getClientLikeName(target)
-
-        if not client:
-            #self.verbose('No Client Found')
-            return None
-
-        if not tclient:
-            client.message('Please be more specific providing the target, can\'t find it with given input!')
-            return None
-
-        if text and ord(text[:1]) == 21:
-            text = text[1:]
-
-        #client.name = match.group('name')
-        self.verbose('text: %s, client: %s - %s, tclient: %s - %s' %(text, client.name, client.id, tclient.name, tclient.id))
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, text, client, tclient))
+    def OnSayteam(self, action, data, match=None):
+        # Teaminfo does not exist in the sayteam logline. Parse it as a normal say line
+        return self.OnSay(action, data, match)
 
 #---------------------------------------------------------------------------------------------------
 
@@ -478,33 +349,6 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
                                 
         return None
 
-
-    def message(self, client, text):
-        try:
-            if client == None:
-                self.say(text)
-            elif client.cid == None:
-                pass
-            else:
-                lines = []
-                for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
-                    lines.append(self.getCommand('message', name=client.name, prefix=self.msgPrefix, message=line))
-
-                self.writelines(lines)
-        except:
-            pass
-
-    def sayDead(self, msg):
-        wrapped = self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length'])
-        lines = []
-        for client in self.clients.getClientsByState(b3.STATE_DEAD):
-            if client.cid:                
-                for line in wrapped:
-                    lines.append(self.getCommand('deadsay', name=client.name, prefix=self.msgPrefix, message=line))
-
-        if len(lines):        
-            self.writelines(lines)
-
     def getTeam(self, team):
         if team == 'red': team = 1
         if team == 'blue': team = 2
@@ -529,17 +373,15 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
         #self.debug('gameTypeInt: %s' % gameTypeInt)
         
         if gameTypeInt == '0':
-            _gameType = 'sp'        # Single Player
+            _gameType = 'dm'        # Deathmatch
         elif gameTypeInt == '1':
-            _gameType = 'cp'        # Co-Op
-        elif gameTypeInt == '2':
-            _gameType = 'smo'       # Single Map Objective
+            _gameType = 'du'        # Duel
         elif gameTypeInt == '3':
-            _gameType = 'sw'        # Stopwatch
+            _gameType = 'tdm'       # Team Death Match
         elif gameTypeInt == '4':
-            _gameType = 'ca'        # Campaign
+            _gameType = 'ts'        # Team Survivor (Round TDM)
         elif gameTypeInt == '5':
-            _gameType = 'lms'       # Last Man Standing
+            _gameType = 'br'        # Bank Robbery
         
         #self.debug('_gameType: %s' % _gameType)
         return _gameType
@@ -576,24 +418,67 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
                 if client.guid and c.has_key('guid'):
                     if client.guid == c['guid']:
                         # player matches
-                        self.debug('in-sync %s == %s (cid: %s - slotid: %s)', client.guid, c['guid'], client.cid, c['cid'] )
+                        self.debug('in-sync %s == %s', client.guid, c['guid'])
                         mlist[str(cid)] = client
                     else:
-                        self.debug('no-sync %s <> %s (disconnecting %s from slot %s)', client.guid, c['guid'], client.name, client.cid)
+                        self.debug('no-sync %s <> %s', client.guid, c['guid'])
                         client.disconnect()
                 elif client.ip and c.has_key('ip'):
                     if client.ip == c['ip']:
                         # player matches
-                        self.debug('in-sync %s == %s (cid: %s == slotid: %s)', client.ip, c['ip'], client.cid, c['cid'] )
+                        self.debug('in-sync %s == %s', client.ip, c['ip'])
                         mlist[str(cid)] = client
                     else:
-                        self.debug('no-sync %s <> %s (disconnecting %s from slot %s)', client.ip, c['ip'], client.name, client.cid)
+                        self.debug('no-sync %s <> %s', client.ip, c['ip'])
                         client.disconnect()
                 else:
                     self.debug('no-sync: no guid or ip found.')
         
         return mlist
 
+    def connectClient(self, ccid):
+        if self.PunkBuster:
+            self.debug('Getting the (PunkBuster) Playerlist')
+        else:
+            self.debug('Getting the (status) Playerlist')
+        players = self.getPlayerList()
+        self.verbose('connectClient() = %s' % players)
+
+        for cid, p in players.iteritems():
+            #self.debug('cid: %s, ccid: %s, p: %s' %(cid, ccid, p))
+            if int(cid) == int(ccid):
+                self.debug('Client found in status/playerList')
+                return p
+
+    def newPlayer(self, cid, guid, name):
+        if not self._counter.get(cid):
+            self.verbose('newPlayer thread no longer needed, Key no longer available')
+            return None
+        if self._counter.get(cid) == 'Disconnected':
+            self.debug('%s disconnected, removing from authentication queue' %name)
+            self._counter.pop(cid)
+            return None
+
+        self.debug('newClient: %s, %s, %s' %(cid, guid, name))
+        sp = self.connectClient(cid)
+
+        if sp:
+            ip = sp['ip']
+            self.verbose('ip = %s' %ip)
+            self._counter.pop(cid)
+        elif self._counter[cid] > 10:
+            self.debug('Couldn\'t Auth %s, giving up...' % name)
+            self._counter.pop(cid)
+            return None
+        # Player is not in the status response (yet), retry
+        else:
+            self.debug('%s not yet fully connected, retrying...#:%s' %(name, self._counter[cid]))
+            self._counter[cid] +=1
+            t = threading.Timer(4, self.newPlayer, (cid, guid, name))
+            t.start()
+            return None
+            
+        client = self.clients.newClient(cid, name=name, ip=ip, state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid })
 
 #---- Documentation --------------------------------------------------------------------------------
 """
