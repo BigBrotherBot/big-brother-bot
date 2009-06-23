@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+# 11/02/2009 - 1.2.7 - xlr8or
+# If masked show masked level instead of real level
 # 11/02/2009 - 1.2.6 - xlr8or
 # Sanitized xml data, cleaning ascii < 32 and > 126 (func is in functions.py)
 # 21/11/2008 - 1.2.5 - Anubis
@@ -29,7 +31,7 @@
 # Converted to use new event handlers
 
 __author__  = 'ThorN'
-__version__ = '1.2.6'
+__version__ = '1.2.7'
 
 import b3, time, os
 import b3.plugin
@@ -70,8 +72,14 @@ class StatusPlugin(b3.plugin.Plugin):
         c.name = "@"+str(c.id)
       if c.exactName == "^7":
         c.exactName = "@"+str(c.id)+"^7"
+
+      if not c.maskedLevel:
+        _level = c.maxLevel
+      else:
+        _level = c.maskedLevel
+
       try:          
-        xml += '<Client Name="%s" ColorName="%s" DBID="%s" Connections="%s" CID="%s" Level="%s" GUID="%s" PBID="%s" IP="%s" Team="%s" Joined="%s" Updated="%s" Score="%s" State="%s">\n' % (escape("%s"%sanitizeMe(c.name)), escape("%s"%sanitizeMe(c.exactName)), c.id, c.connections, c.cid, c.maxLevel, c.guid, c.pbid, c.ip, escape("%s"%c.team), time.ctime(c.timeAdd), time.ctime(c.timeEdit) , scoreList[c.cid], c.state )
+        xml += '<Client Name="%s" ColorName="%s" DBID="%s" Connections="%s" CID="%s" Level="%s" GUID="%s" PBID="%s" IP="%s" Team="%s" Joined="%s" Updated="%s" Score="%s" State="%s">\n' % (escape("%s"%sanitizeMe(c.name)), escape("%s"%sanitizeMe(c.exactName)), c.id, c.connections, c.cid, _level, c.guid, c.pbid, c.ip, escape("%s"%c.team), time.ctime(c.timeAdd), time.ctime(c.timeEdit) , scoreList[c.cid], c.state )
         for k,v in c.data.iteritems():
           xml += '<Data Name="%s" Value="%s"/>' % (escape("%s"%k), escape("%s"%sanitizeMe(v))) 
             
