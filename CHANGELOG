@@ -5,6 +5,7 @@
 - Added Smoking Guns parser (Very limited engine, no PM's supported)
 - Minor change in login.py so it can be used for etpro
 - parser.py patched by 'arbscht' to support restarting
+- status.py fixed for masked levels
 
 1.1.4
 -----
