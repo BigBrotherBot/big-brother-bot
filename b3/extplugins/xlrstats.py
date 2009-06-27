@@ -9,12 +9,16 @@
 #
 ##################################################################
 # CHANGELOG
-#    5/6/2008 - 0.6.0 - Mark Weirath (xlr8or@xlr8or.com)
-#                       Added weapon replacements
-#                       Added commands !xlrtopstats and !xlrhide
+# 5/6/2008 - 0.6.0 - Mark Weirath (xlr8or@xlr8or.com)
+#   Added weapon replacements
+#   Added commands !xlrtopstats and !xlrhide
+# 8/9/2008 - 0.6.1 - Mark Weirath (xlr8or@xlr8or.com)
+#   Added onemaponly for 24/7 servers to count rounds correct
+# 27/6/2009 - 0.6.5 - Mark Weirath (xlr8or@xlr8or.com)
+#   No longer save worldkills
 
 __author__  = 'Tim ter Laak'
-__version__ = '0.6.0'
+__version__ = '0.6.5'
 
 # Version = major.minor.patches
 
@@ -33,10 +37,12 @@ VICTIM = "victim"
 class XlrstatsPlugin(b3.plugin.Plugin):
     
     _world_clientid = None
+    _ffa = ['dm', 'ffa', 'syc-ffa']
 
     # config variables
     defaultskill = None
     minlevel = None
+    onemaponly = False
 
     Kfactor_high = None
     Kfactor_low = None
@@ -61,6 +67,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     opponents_table = None
     mapstats_table = None
     playermaps_table = None
+    clients_table = 'clients'
+    penalties_table = 'penalties'
     
 
     def startup(self):
@@ -126,6 +134,12 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         self.debug('Got client id for WORLD: %s', self._world_clientid)
 
     def onLoadConfig(self):
+        try:
+            self.onemaponly = self.config.getint('settings', 'onemaponly')    
+        except:
+            self.onemaponly = False
+            self.debug('Using default value (%i) for settings::onemaponly', self.onemaponly)
+
         try:
             self.minlevel = self.config.getint('settings', 'minlevel')    
         except:
@@ -255,7 +269,10 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         if (event.type == b3.events.EVT_CLIENT_KILL):
             self.kill(event.client, event.target, event.data)
         elif (event.type == b3.events.EVT_CLIENT_KILL_TEAM):
-            self.teamkill(event.client, event.target, event.data)
+            if self.console.game.gameType in self._ffa:
+                self.kill(event.client, event.target, event.data)
+            else:
+                self.teamkill(event.client, event.target, event.data)
         elif (event.type == b3.events.EVT_CLIENT_SUICIDE):
             self.suicide(event.client, event.target, event.data)
         elif (event.type == b3.events.EVT_GAME_ROUND_START):
@@ -450,7 +467,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def save_Stat(self, stat):
         #self.debug('Saving statistics for ', typeof(stat))
-        #self.debug9'Contents: ', stat)
+        #self.debug('Contents: ', stat)
         if hasattr(stat, '_new'):
             q = stat._insertquery()
             #self.debug('Inserting using: ', q)
@@ -471,7 +488,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         
 
     def kill(self, client, target, data):
-        if (client == None):
+        if (client == None) or (client.id == self._world_clientid):
             return
         if (target == None):
             return
@@ -821,7 +838,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.last_map = self.console.game.mapName
             #self.last_roundtime = self.console.game._roundTimeStart
         else:
-            if (  ( self.last_map == self.console.game.mapName) and  (self.console.game.roundTime() < self.prematch_maxtime) ):
+            if ( not self.onemaponly and ( self.last_map == self.console.game.mapName) and  (self.console.game.roundTime() < self.prematch_maxtime) ):
                   #( self.console.game._roundTimeStart - self.last_roundtime < self.prematch_maxtime) ):
                 return
             else:
@@ -862,7 +879,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     # Start a thread to get the top players
     def cmd_xlrtopstats(self, data, client, cmd=None):
         """\
-        [<#>] - list the top # players.
+        [<#>] - list the top # players of the last 14 days.
         """
         thread.start_new_thread(self.doTopList, (data, client, cmd))
 
@@ -878,7 +895,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         else:
             limit = 3
 
-        q = 'SELECT * FROM %s INNER JOIN `clients` ON (`%s`.`client_id` = `clients`.`id`) WHERE (`%s`.`hide` <> 1) ORDER BY `%s`.`skill` DESC LIMIT %s' % (self.playerstats_table, self.playerstats_table, self.playerstats_table, self.playerstats_table, limit)
+
+        q = 'SELECT `%s`.name, `%s`.time_edit, `%s`.id, kills, deaths, ratio, skill, winstreak, losestreak, rounds, fixed_name, ip FROM `%s`, `%s` WHERE (`%s`.id = `%s`.client_id) AND ((`%s`.kills > 1000) OR (`%s`.rounds > 50)) AND (`%s`.hide = 0) AND (UNIX_TIMESTAMP(NOW()) - `%s`.time_edit  < 14*60*60*24) AND `%s`.id NOT IN ( SELECT distinct(target.id) FROM `%s` as penalties, `%s` as target WHERE (penalties.type = "Ban" OR penalties.type = "TempBan") AND inactive = 0 AND penalties.client_id = target.id AND ( penalties.time_expire = -1 OR penalties.time_expire > UNIX_TIMESTAMP(NOW()) ) ) ORDER BY `%s`.`skill` DESC LIMIT %s' % (self.clients_table, self.clients_table, self.playerstats_table, self.clients_table, self.playerstats_table, self.clients_table, self.playerstats_table, self.playerstats_table, self.playerstats_table, self.playerstats_table, self.clients_table, self.clients_table, self.penalties_table, self.clients_table, self.playerstats_table, limit)
 
         cursor = self.query(q)
         if (cursor and (cursor.rowcount > 0) ):
