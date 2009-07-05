@@ -788,7 +788,10 @@ class AdminPlugin(b3.plugin.Plugin):
         if len(clist) > 0:
             nlist = []
             for c in clist:
-                nlist.append('%s^7 [^3%s^7]' % (c.exactName, c.maxLevel))
+                if c.maskGroup:
+                    nlist.append('%s^7 [^3%s^7]' % (c.exactName, c.maskGroup.level))
+                else:
+                    nlist.append('%s^7 [^3%s^7]' % (c.exactName, c.maxLevel))
 
             cmd.sayLoudOrPM(client, self.getMessage('admins', string.join(nlist, ', ')))
         else:

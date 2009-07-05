@@ -16,11 +16,12 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
-#    7/23/2005 - 1.1.0
+# 7/23/2005 - 1.1.0
 #    Added damage type to Damage and Kill event data
+# 27/6/2009 - 1.3.1 - xlr8or - Added Action Mechanism (event) for version 1.1.5 
 
 __author__  = 'ThorN'
-__version__ = '1.3.0'
+__version__ = '1.3.1'
 
 
 
@@ -192,8 +193,9 @@ class CodParser(b3.parsers.q3a.Q3AParser):
                 return None
 
         client.name = match.group('name')
-        data = match.group('data')
-        return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, data, client)
+        actiontype = match.group('type')
+        self.verbose('OnAction: %s: %s' % (client.name, actiontype) )
+        return b3.events.Event(b3.events.EVT_CLIENT_ACTION, actiontype, client)
 
     def OnSay(self, action, data, match=None):
         #3:12 say: <-{AS}-ThorN->: sfs

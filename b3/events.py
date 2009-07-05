@@ -15,9 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#
+# 27/6/2009 : xlr8or: added CLIENT_ACTION event
 
-__author__  = 'ThorN'
-__version__ = '1.1.0'
+__author__  = 'ThorN/xlr8or'
+__version__ = '1.1.1'
 
 import re, time
 import b3
@@ -51,6 +53,7 @@ class Events:
 			('EVT_CLIENT_NAME_CHANGE', 'Client Name Change'),
 			('EVT_CLIENT_TEAM_CHANGE', 'Client Team Change'),
 			('EVT_CLIENT_ITEM_PICKUP', 'Client Item Pickup'),
+			('EVT_CLIENT_ACTION', 'Client Action'),
 			('EVT_CLIENT_BAN', 'Client Banned'),
 			('EVT_CLIENT_BAN_TEMP', 'Client Temp Banned'),
 			('EVT_CLIENT_KICK', 'Client Kicked'),

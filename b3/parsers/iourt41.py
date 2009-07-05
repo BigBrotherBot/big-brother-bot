@@ -41,9 +41,11 @@
 # v1.0.17 - mindriot - 02-Nov-2008
 # * _empty_name_default now only given upon client connect, due to possibility of no name specified in ClientUserinfo at any time
 # v1.0.19 - xlr8or - Disabled PunkBuster default settings due to recent supportrequests in the forums with missing PB line in b3.xml
+#
+# v1.1.0 - xlr8or - Added Action Mechanism (event) for B3 v1.1.5+
 
 __author__  = 'xlr8or'
-__version__ = '1.0.19'
+__version__ = '1.1.0'
 
 import b3.parsers.q3a
 import re, string, threading, time, os
@@ -53,8 +55,8 @@ import b3.events
 #----------------------------------------------------------------------------------------------------------------------------------------------
 class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     gameName = 'iourt41'
-    IpsOnly = False  # Experimental: setting True will use ip's only for identification.
-    IpCombi = False  # Experimental: setting True will replace last part of the guid with 2 segments of the ip.
+    IpsOnly = False
+    IpCombi = False
 
     _settings = {}
     _settings['line_length'] = 65
@@ -94,7 +96,6 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         #2:56 Kill: 14 4 21: Qst killed Leftovercrack by UT_MOD_PSG1
         re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s+(?P<text>.*))$', re.IGNORECASE),
 
-
         #Processing chats and tell events...
         #5:39 saytell: 15 16 repelSteeltje: nno
         #5:39 saytell: 15 15 repelSteeltje: nno
@@ -109,7 +110,13 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         #2:28 sayteam: 12 New_UrT_Player_v4.1: woekele
         re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<name>[^ ]+):\s+(?P<text>.*))$', re.IGNORECASE),
 
-        #Falling thru? Item stuff and so forth... still need some other actions from CTF and other gametypes to compare.  
+        #Bombmode actions:
+        re.compile(r'^(?P<action>Bombholder)(?P<data>\sis\s(?P<cid>[0-9]))$', re.IGNORECASE),
+        #was planted, was defused, was tossed, has been collected (doh, how gramatically correct!)
+        re.compile(r'^(?P<action>Bomb)(?P<data>\swas\s(?P<subaction>[a-z])\sby\s(?P<cid>[0-9]).*)$', re.IGNORECASE),
+        re.compile(r'^(?P<action>Bomb)(?P<data>\shas\sbeen\s(?P<subaction>[a-z])\sby\s(?P<cid>[0-9]).*)$', re.IGNORECASE),
+
+        #Falling thru? Item stuff and so forth
         re.compile(r'^(?P<action>[a-z]+):\s(?P<data>.*)$', re.IGNORECASE),
         #Shutdowngame and Warmup... the one word lines
         re.compile(r'^(?P<action>[a-z]+):$', re.IGNORECASE)
@@ -178,7 +185,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     UT_MOD_M4='38'
     UT_MOD_FLAG='39'
     UT_MOD_GOOMBA='40'
-    
+
     def startup(self):
         # add the world client
         client = self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
@@ -529,24 +536,76 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if client: client.disconnect()
         return None
 
-    # Action - NOTDONE
-    def OnAction(self, action, data, match=None):
+#--- Action Mechanism (new in B3 version 1.1.5) --------------------------------
+    def OnFlag(self, action, data, match=None):
+        #Flag: 1 2: team_CTF_blueflag
+        #Flag: <_cid> <_subtype:0/1/2>: <text>
+        data = data.split(' ')
+        _cid = data[0]
+        _subtype = data[1].strip(':')
+        if _supbtype == 0:
+            _actiontype = 'flag_dropped'
+        elif _subtype == 1:
+            _actiontype = 'flag_returned'
+        elif _subtype == 2:
+            _actiontype = 'flag_captured'
+        else:
+            return None
+        self.OnAction(_cid, _actiontype, data)
+        return None
+
+    def OnBomb(self, action, data, match=None):
+        _cid = match.group('cid')
+        _subaction = match.group('subaction')
+        if _subaction == 'planted':
+            _actiontype = 'bomb_planted'
+        elif _subaction == 'defused':
+            _actiontype = 'bomb_defused'
+        elif _subaction == 'tossed':
+            _actiontype = 'bomb_tossed'
+        elif _subaction == 'collected':
+            _actiontype = 'bomb_collected'
+        else:
+            return None
+        self.OnAction(_cid, _actiontype, data)
+        return None
+
+    def OnBombholder(self, action, data, match=None):
+        _cid = match.group('cid')
+        _actiontype = 'bomb_holder_spawn'
+        self.OnAction(_cid, _actiontype, data)
+        return None
+
+    # Action
+    def OnAction(self, cid, actiontype, data, match=None):
         #Need example
-        client = self.clients.getByCID(match.group('cid'))
+        client = self.clients.getByCID(cid)
         if not client:
             self.debug('No client found')
             #self.OnClientuserinfo(action, data, match)
-            
-            client = self.clients.getByCID(match.group('cid'))
-
+            client = self.clients.getByCID(cid)
             if not client:
                 return None
+        self.verbose('OnAction: %s: %s' % (client.name, actiontype) )
+        return b3.events.Event(b3.events.EVT_CLIENT_ACTION, actiontype, client)
 
-        client.name = match.group('name')
-        data = match.group('data')
-        self.verbose('OnAction: %s picked up %s' % (client.name, data) )
-        return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, data, client)
+    # item
+    def OnItem(self, action, data, match=None):
+        #Item: 3 ut_item_helmet
+        #Item: 0 team_CTF_redflag
+        cid, item = string.split(data, ' ', 1)
+        client = self.clients.getByCID(cid)
+        if client:
+            #correct flag/bomb-pickups
+            if 'flag' in item or 'bomb' in item:
+                self.OnAction(cid, item, data)
+                self.verbose('Itempickup corrected to action: %s' %item)
+                return None
+            #self.verbose('OnItem: %s picked up %s' % (client.name, item) )
+            return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, item, client)
+        return None
 
+#-------------------------------------------------------------------------------
     # say
     def OnSay(self, action, data, match=None):
         #3:53 say: 8 denzel: lol
@@ -637,16 +696,6 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         # self.clients.sync()
         # self.debug('Synchronizing client info')
         return b3.events.Event(b3.events.EVT_GAME_EXIT, data)
-
-    # item
-    def OnItem(self, action, data, match=None):
-        #Item: 3 ut_item_helmet
-        cid, item = string.split(data, ' ', 1)
-        client = self.clients.getByCID(cid)
-        if client:
-            #self.verbose('OnItem: %s picked up %s' % (client.name, item) )
-            return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, item, client)
-        return None
 
     # Startgame
     def OnInitgame(self, action, data, match=None):
@@ -985,7 +1034,21 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
 
 
-""" A little documentation on the ClientSlot states in relation to ping positions in the status response
+""" 
+#----- Actions -----------------------------------------------------------------
+Item: 0 team_CTF_redflag -> Flag Taken/picked up
+Flag: 0 0: team_CTF_blueflag -> Flag Dropped
+Flag: 0 1: team_CTF_blueflag -> Flag Returned
+Flag: 0 2: team_CTF_blueflag -> Flag Captured
+
+Bombholder is 5 -> Spawn with the bomb
+Bomb was planted by 5 
+Bomb was defused by 6!
+Bomb was tossed by 4 -> either manually or by being killed
+Bomb has been collected by 6 -> Picking up a tossed bomb
+
+#----- Connection Info ---------------------------------------------------------
+A little documentation on the ClientSlot states in relation to ping positions in the status response
 
 UrT ClientSlot states: 
 CS_FREE,     // can be reused for a new connection
