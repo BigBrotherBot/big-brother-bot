@@ -573,7 +573,7 @@ class Q3AParser(b3.parser.Parser):
         return None
 
     def set(self, cvarName, value):
-        self.warning('Paser.set() is depreciated, use Paser.setCvar() instead')
+        self.warning('Parser.set() is depreciated, use Parser.setCvar() instead')
         self.setCvar(cvarName, value)
 
     def setCvar(self, cvarName, value):
