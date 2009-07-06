@@ -43,9 +43,11 @@
 # v1.0.19 - xlr8or - Disabled PunkBuster default settings due to recent supportrequests in the forums with missing PB line in b3.xml
 #
 # v1.1.0 - xlr8or - Added Action Mechanism (event) for B3 v1.1.5+
+# v1.1.1 - courgette 
+# * Debugged Action Mechanism (event) for B3 v1.1.5+
 
 __author__  = 'xlr8or'
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 
 import b3.parsers.q3a
 import re, string, threading, time, os
@@ -108,13 +110,18 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         #3:53 say: 8 denzel: lol
         #15:37 say: 9 .:MS-T:.BstPL: this name is quite a challenge
         #2:28 sayteam: 12 New_UrT_Player_v4.1: woekele
+        #16:33 Flag: 2 0: team_CTF_redflag
         re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<name>[^ ]+):\s+(?P<text>.*))$', re.IGNORECASE),
 
         #Bombmode actions:
+        #3:06 Bombholder is 2
         re.compile(r'^(?P<action>Bombholder)(?P<data>\sis\s(?P<cid>[0-9]))$', re.IGNORECASE),
         #was planted, was defused, was tossed, has been collected (doh, how gramatically correct!)
-        re.compile(r'^(?P<action>Bomb)(?P<data>\swas\s(?P<subaction>[a-z])\sby\s(?P<cid>[0-9]).*)$', re.IGNORECASE),
-        re.compile(r'^(?P<action>Bomb)(?P<data>\shas\sbeen\s(?P<subaction>[a-z])\sby\s(?P<cid>[0-9]).*)$', re.IGNORECASE),
+        #2:13 Bomb was tossed by 2
+        #2:32 Bomb was planted by 2
+        #3:01 Bomb was defused by 3!
+        #2:17 Bomb has been collected by 2
+        re.compile(r'^(?P<action>Bomb)\s(?P<data>(was|has been)\s(?P<subaction>[a-z]+)\sby\s(?P<cid>[0-9]+).*)$', re.IGNORECASE),
 
         #Falling thru? Item stuff and so forth
         re.compile(r'^(?P<action>[a-z]+):\s(?P<data>.*)$', re.IGNORECASE),
@@ -540,9 +547,11 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     def OnFlag(self, action, data, match=None):
         #Flag: 1 2: team_CTF_blueflag
         #Flag: <_cid> <_subtype:0/1/2>: <text>
-        data = data.split(' ')
-        _cid = data[0]
-        _subtype = data[1].strip(':')
+        
+        _cid = match.group('cid')
+        _subtype = int(match.group('name'))
+        data = match.group('text')
+
         if _subtype == 0:
             _actiontype = 'flag_dropped'
         elif _subtype == 1:
@@ -551,8 +560,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             _actiontype = 'flag_captured'
         else:
             return None
-        self.OnAction(_cid, _actiontype, data)
-        return None
+        return self.OnAction(_cid, _actiontype, data)
 
     def OnBomb(self, action, data, match=None):
         _cid = match.group('cid')
@@ -567,14 +575,12 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             _actiontype = 'bomb_collected'
         else:
             return None
-        self.OnAction(_cid, _actiontype, data)
-        return None
+        return self.OnAction(_cid, _actiontype, data)
 
     def OnBombholder(self, action, data, match=None):
         _cid = match.group('cid')
         _actiontype = 'bomb_holder_spawn'
-        self.OnAction(_cid, _actiontype, data)
-        return None
+        return self.OnAction(_cid, _actiontype, data)
 
     # Action
     def OnAction(self, cid, actiontype, data, match=None):
@@ -582,11 +588,8 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         client = self.clients.getByCID(cid)
         if not client:
             self.debug('No client found')
-            #self.OnClientuserinfo(action, data, match)
-            client = self.clients.getByCID(cid)
-            if not client:
-                return None
-        self.verbose('OnAction: %s: %s' % (client.name, actiontype) )
+            return None
+        self.verbose('OnAction: %s: %s %s' % (client.name, actiontype, data) )
         return b3.events.Event(b3.events.EVT_CLIENT_ACTION, actiontype, client)
 
     # item
@@ -598,9 +601,8 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if client:
             #correct flag/bomb-pickups
             if 'flag' in item or 'bomb' in item:
-                self.OnAction(cid, item, data)
                 self.verbose('Itempickup corrected to action: %s' %item)
-                return None
+                return self.OnAction(cid, item, data)
             #self.verbose('OnItem: %s picked up %s' % (client.name, item) )
             return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, item, client)
         return None
