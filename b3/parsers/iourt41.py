@@ -543,7 +543,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         data = data.split(' ')
         _cid = data[0]
         _subtype = data[1].strip(':')
-        if _supbtype == 0:
+        if _subtype == 0:
             _actiontype = 'flag_dropped'
         elif _subtype == 1:
             _actiontype = 'flag_returned'
