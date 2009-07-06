@@ -16,22 +16,38 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+# $Id: publist.py 43 2005-12-06 02:17:55Z thorn $
+#
 # CHANGELOG
 #	11/30/2005 - 1.0.3 - ThorN
 #	Use PluginCronTab instead of CronTab
+# 23:29 17/07/2008 - 1.1.6- Courgette
+#	Add specific user-agent
+#	url is now store in a property
+#	add info: version, parserversion, database, plugins, os
+#	cron job will trigger at a random minute time to avoid jamming
+#	22:58 18/07/2008 - 1.1.7 - Courgette
+#	add parser version and plugins' versions
 
-__version__ = '1.1.5'
+__version__ = '1.1.7'
 __author__  = 'ThorN'
 
 import urllib
-
-import b3
+import b3, os, random
 import b3.events
 import b3.plugin
+from b3 import functions
+
+# set up our URLopner so we can specify a custom User-Agent
+class PublistURLopener(urllib.FancyURLopener):
+		version = "B3 Publist plugin/%s" % __version__
+urllib._urlopener = PublistURLopener()
+
 
 #--------------------------------------------------------------------------------------------------
 class PublistPlugin(b3.plugin.Plugin):
 	_cronTab = None
+	_url='http://www.bigbrotherbot.com/serverping.php'
 
 	def onStartup(self):
 		# do instant update
@@ -49,6 +65,7 @@ class PublistPlugin(b3.plugin.Plugin):
 		cvars = ('.B3', '_B3')
 		for cvarName in cvars:
 			cvar = self.console.getCvar(cvarName)
+			self.debug("%s"%cvar)
 			if cvar:
 				break
 
@@ -58,20 +75,43 @@ class PublistPlugin(b3.plugin.Plugin):
 			cvar.value = 'B3 %s' % b3.versionId
 			cvar.save(self.console)
 			
-			self._cronTab = b3.cron.PluginCronTab(self, self.update, 0, 0, 0, '*', '*', '*')
+			rmin = random.randint(0,59)
+			rhour = random.randint(0,23)
+			self.debug("publist will ping at %s:%s every day" % (rhour,rmin))
+			self._cronTab = b3.cron.PluginCronTab(self, self.update, 0, rmin, rhour, '*', '*', '*')
 			self.console.cron + self._cronTab
 		else:
-			self.critical('You MUST have one of the B3 cvars (%s) set in your config to use the publist plugin. Example: sets .B3 = "true"', str(cvars))
+			self.critical('You MUST have one of the B3 cvars %s set in your config to use the publist plugin. Example: sets .B3 "true"' % str(cvars))
+			#self.error('You MUST have one of the B3 cvars (%s) set in your config to use the publist plugin. Example: sets .B3 = "true"' % str(cvars))
 
 	def update(self):
 		self.debug('Sending server list update to B3 master')
 		
+		
+		def getModule(name):
+			mod = __import__(name)
+			components = name.split('.')
+			for comp in components[1:]:
+				mod = getattr(mod, comp)
+			return mod
+			
+		plugins = []
+		for pname in self.console._pluginOrder:
+			plugins.append("%s/%s" % (pname, getattr(getModule(self.console.getPlugin(pname).__module__), '__version__', 'Unknown Version')))
+			
 		info = {
 			'ip' : self.console._publicIp,
 			'port' : self.console._port,
-			'type' : self.console.gameName
+			'version' : b3.versionId,
+			'parser' : self.console.gameName,
+			'parserversion' : getattr(getModule(self.console.__module__), '__version__', 'Unknown Version'),
+			'database' : functions.splitDSN(self.console.storage.dsn)['protocol'],
+			'plugins' : ','.join(plugins),
+			'os' : os.name
 		}
 
-		f = urllib.urlopen('http://www.bigbrotherbot.com/serverping.php?%s' % urllib.urlencode(info))
+		f = urllib.urlopen('%s?%s' % (self._url, urllib.urlencode(info)))
 		self.debug(f.read())
 		f.close()
+
+			
