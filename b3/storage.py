@@ -145,8 +145,11 @@ class DatabaseStorage(Storage):
         protocol = self.dsnDict['protocol']
 
         if protocol == 'mysql':
-            import MySQLdb
-            return MySQLdb.connect(host=self.dsnDict['host'], user=self.dsnDict['user'], passwd=self.dsnDict['password'], db=self.dsnDict['path'][1:]) 
+            try:
+                import MySQLdb
+                return MySQLdb.connect(host=self.dsnDict['host'], user=self.dsnDict['user'], passwd=self.dsnDict['password'], db=self.dsnDict['path'][1:]) 
+            except ImportError, err:
+              self.console.critical("%s. You need to install python-myqsldb. Look for 'dependencies' in B3 documentation.",err)
         elif protocol == 'sqlite':
             from b3 import sqlitethreadtunnel as sqlite
             path = self.dsnDict['path']
