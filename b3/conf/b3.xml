@@ -1,62 +1,55 @@
 <configuration>
-	<settings name="b3">
-		<set name="parser">cod</set>
-		<set name="database">mysql://b3:password@localhost/b3</set>
-		<set name="bot_name">b3</set>
-		<set name="bot_prefix">^0(^2b3^0)^7:</set>
-		<set name="time_format">%I:%M%p %Z %m/%d/%y</set>
-		<set name="time_zone">CST</set>
-		<!-- 9 = verbose, 10 = debug, 21 = bot, 22 = console -->
-		<set name="log_level">9</set>
-		<set name="logfile">b3.log</set>
-	</settings>
-	<settings name="server">
-		<set name="rcon_password">password</set>
-		<set name="port">28960</set>
-		<set name="game_log">games_mp.log</set>
-		<set name="public_ip">127.0.0.1</set>
-		<set name="rcon_ip">127.0.0.1</set>
-		<set name="punkbuster">on</set>
-	</settings>
-	<settings name="messages">
-		<set name="kicked_by">%s^7 was kicked by %s^7 %s</set>
-		<set name="kicked">%s^7 was kicked %s</set>
-		<set name="banned_by">%s^7 was banned by %s^7 %s</set>
-		<set name="banned">%s^7 was banned %s</set>
-		<set name="temp_banned_by">%s^7 was temp banned by %s^7 for %s^7 %s</set>
-		<set name="temp_banned">%s^7 was temp banned for %s^7 %s</set>
-		<set name="unbanned_by">%s^7 was un-banned by %s^7 %s</set>
-		<set name="unbanned">%s^7 was un-banned %s</set>
-	</settings>
-	<settings name="plugins">
-		<set name="external_dir">@b3/extplugins</set>
-	</settings>
-	<plugins>
-		<plugin name="censor" priority="1" config="@b3/conf/plugin_censor.xml"/>
-		<plugin name="spamcontrol" priority="2" config="@b3/conf/plugin_spamcontrol.xml"/>
-		<plugin name="admin" priority="3" config="@b3/conf/plugin_admin.xml"/>
-		<plugin name="tk" priority="4" config="@b3/conf/plugin_tk.xml"/>
-		<plugin name="stats" priority="5" config="@b3/conf/plugin_stats.xml"/>
-		<plugin name="pingwatch" priority="6" config="@b3/conf/plugin_pingwatch.xml"/>
-		<plugin name="adv" priority="7" config="@b3/conf/plugin_adv.xml"/>
-		<plugin name="status" priority="8" config="@b3/conf/plugin_status.xml"/>
-		<plugin name="welcome" priority="9" config="@b3/conf/plugin_welcome.xml"/>
-		<plugin name="punkbuster" priority="10" config="@b3/conf/plugin_punkbuster.xml"/>
+  <settings name="b3">
+    <!-- parser defines the game: cod/cod2/cod4/cod5/iourt41/etpro/wop/smg -->
+    <set name="parser">cod</set>
+    <set name="database">mysql://b3:password@localhost/b3</set>
+    <set name="bot_name">b3</set>
+    <set name="bot_prefix">^0(^2b3^0)^7:</set>
+    <set name="time_format">%I:%M%p %Z %m/%d/%y</set>
+    <set name="time_zone">CST</set>
+    <!-- 9 = verbose, 10 = debug, 21 = bot, 22 = console -->
+    <set name="log_level">9</set>
+    <set name="logfile">b3.log</set>
+  </settings>
+  <settings name="server">
+    <set name="rcon_password">password</set>
+    <set name="port">28960</set>
+    <set name="game_log">games_mp.log</set>
+    <set name="public_ip">127.0.0.1</set>
+    <set name="rcon_ip">127.0.0.1</set>
+    <set name="punkbuster">on</set>
+  </settings>
+  <settings name="messages">
+    <set name="kicked_by">%s^7 was kicked by %s^7 %s</set>
+    <set name="kicked">%s^7 was kicked %s</set>
+    <set name="banned_by">%s^7 was banned by %s^7 %s</set>
+    <set name="banned">%s^7 was banned %s</set>
+    <set name="temp_banned_by">%s^7 was temp banned by %s^7 for %s^7 %s</set>
+    <set name="temp_banned">%s^7 was temp banned for %s^7 %s</set>
+    <set name="unbanned_by">%s^7 was un-banned by %s^7 %s</set>
+    <set name="unbanned">%s^7 was un-banned %s</set>
+  </settings>
+  <settings name="plugins">
+    <set name="external_dir">@b3/extplugins</set>
+  </settings>
+  <plugins>
+    <plugin name="censor" priority="1" config="@b3/conf/plugin_censor.xml"/>
+    <plugin name="spamcontrol" priority="2" config="@b3/conf/plugin_spamcontrol.xml"/>
+    <plugin name="admin" priority="3" config="@b3/conf/plugin_admin.xml"/>
+    <plugin name="tk" priority="4" config="@b3/conf/plugin_tk.xml"/>
+    <plugin name="stats" priority="5" config="@b3/conf/plugin_stats.xml"/>
+    <plugin name="pingwatch" priority="6" config="@b3/conf/plugin_pingwatch.xml"/>
+    <plugin name="adv" priority="7" config="@b3/conf/plugin_adv.xml"/>
+    <plugin name="status" priority="8" config="@b3/conf/plugin_status.xml"/>
+    <plugin name="welcome" priority="9" config="@b3/conf/plugin_welcome.xml"/>
+    <plugin name="publist" priority="10" config="@b3/conf/plugin_publist.xml"/>
+    <plugin name="punkbuster" priority="11" config="@b3/conf/plugin_punkbuster.xml"/>
 
 <!-- 
-	This plugin will require an extra login password from your higher admins. You
-	can use this if you are concerned about people accidentally gaining admin rights
-	because of non-unique guids in Cod2.
-	For Cod1 and Cod:UO this is less of a concern, because they can use the 
-	Punkbuster IDs.
-		<plugin name="login" priority="12" config="@b3/conf/plugin_login.xml"/>
--->		
-		
-<!-- 
-	This is a non-standard plugin, and quite resource heavy. Please take a look in the 
-	B3 forums (look for XLR Extensions) for more information before enabling this.
-	Extra database tables are necessary.
-		<plugin name="xlrstats" priority="13" config="@b3/extplugins/conf/xlrstats.xml"/>
+  This is a non-standard plugin, and quite resource heavy. Please take a look in the 
+  B3 forums (look for XLR Extensions) for more information before enabling this.
+  Extra database tables are necessary.
+    <plugin name="xlrstats" priority="13" config="@b3/extplugins/conf/xlrstats.xml"/>
 -->
-	</plugins>
+  </plugins>
 </configuration>
