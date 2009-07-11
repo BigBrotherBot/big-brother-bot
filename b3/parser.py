@@ -360,7 +360,7 @@ class Parser(object):
             conf = p.get('config')
 
             if conf == None:
-                conf = '@b3/conf/plugin_%s.xml' % name
+                conf = '@b3/conf/plugin_%s.xml' % plugin
 
             plugins[priority] = (plugin, self.getAbsolutePath(conf))
             pluginSort.append(priority)
