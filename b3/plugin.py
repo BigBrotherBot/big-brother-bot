@@ -24,6 +24,7 @@
 __author__  = 'ThorN'
 __version__ = '1.3.0'
 
+import os
 import b3.config
 import b3.events
 
@@ -33,10 +34,11 @@ class Plugin:
 	events = []
 	config = None
 	working = True
+	requiresConfigFile = True
 
 	_messages = {}
 
-	def __init__(self, console, config):
+	def __init__(self, console, config=None):
 		self.console = console
 		self.loadConfig(config)
 
@@ -68,16 +70,20 @@ class Plugin:
 			return msg % args
 
 	def loadConfig(self, fileName=None):
-		if fileName:
+		if fileName and os.path.isfile(fileName):
 			self.bot('Loading config %s for %s', fileName, self.__class__.__name__)
 			self.config = b3.config.load(fileName)
 		elif self.config:
 			self.bot('Loading config %s for %s', self.config.fileName, self.__class__.__name__)
 			self.config = b3.config.load(self.config.fileName)
 		else:
-			self.error('Could not load config for %s', self.__class__.__name__)
-			return False
-
+			if self.requiresConfigFile:
+				self.error('Could not load config for %s', self.__class__.__name__)
+				return False
+			else:
+				self.bot('No config file found for %s. (was not required either)'%self.__class__.__name__)
+				return True
+				
 		# empty message cache
 		self._messages = {}
 
