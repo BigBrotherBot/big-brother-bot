@@ -50,37 +50,38 @@ urllib._urlopener = PublistURLopener()
 class PublistPlugin(b3.plugin.Plugin):
   _cronTab = None
   _url='http://www.bigbrotherbot.com/master/serverping.php'
+  requiresConfigFile = False
 
   def onStartup(self):
+    
     # get the plugin so we can register commands
     self._adminPlugin = self.console.getPlugin('admin')
     if not self._adminPlugin:
       # something is wrong, can't start without admin plugin
       self.error('Could not find admin plugin')
       return False
-    # send initial heartbeat
-    self.update()
-
-  def onLoadConfig(self):
-
+    
     try:
       self._advertise = self._adminPlugin.config.getboolean('server', 'list')
     except:
       pass
 
-    if self._cronTab:
-      # remove existing crontab
-      self.console.cron - self._cronTab
-
     # set cvar for advertising purposes
-    cvarValue = 'B3 %s' % b3.versionId
-    self.console.setCvar('_B3',cvarValue)
+    try:
+      cvarValue = 'B3 %s' % b3.versionId
+      self.console.setCvar('_B3',cvarValue)
+    except:
+      pass
     
     rmin = random.randint(0,59)
     rhour = random.randint(0,23)
-    self.debug("publist will update at %s:%s every day" % (rhour,rmin))
+    self.debug("publist will send heartbeat at %02d:%02d every day" % (rhour,rmin))
     self._cronTab = b3.cron.PluginCronTab(self, self.update, 0, rmin, rhour, '*', '*', '*')
     self.console.cron + self._cronTab
+    
+    # send initial heartbeat
+    self.update()
+    
 
   def update(self):
     self.debug('Sending heartbeat to B3 master...')
