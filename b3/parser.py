@@ -18,6 +18,7 @@
 #
 #
 # CHANGELOG
+#    10/7/2009 - added code to load publist by default - xlr8or
 #    29/4/2009 - fixed ignored exit code (for restarts/shutdowns) - arbscht
 #    10/20/2008 - 1.9.1b0 - mindriot
 #    * fixed slight typo of b3.events.EVT_UNKOWN to b3.events.EVT_UNKNOWN
@@ -26,7 +27,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN'
-__version__ = '1.9.1b0'
+__version__ = '1.9.2'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit
@@ -230,6 +231,8 @@ class Parser(object):
         self.loadEvents()
         self.clients  = b3.clients.Clients(self)
         self.loadPlugins()
+        self.loadArbPlugins()
+
         self.game = b3.game.Game(self, self.gameName)
         self.queue = Queue.Queue(15)    # event queue
 
@@ -385,6 +388,27 @@ class Parser(object):
             author  = getattr(pluginModule, '__author__', 'Unknown Author')
             
             self.bot('Plugin %s (%s - %s) loaded', p, version, author)
+
+    def loadArbPlugins(self):
+        """Load must have plugins and check for admin plugin"""
+
+        if 'publist' not in self._pluginOrder:
+            #self.debug('publist not found!')
+            p = 'publist'
+            conf = self.getAbsolutePath('@b3/conf/plugin_publist.xml')
+            self.bot('Loading Plugin %s [%s]', p, conf)
+            try:
+                pluginModule = self.pluginImport(p)
+                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title())(self, conf)
+                self._pluginOrder.append(p)
+                version = getattr(pluginModule, '__version__', 'Unknown Version')
+                author  = getattr(pluginModule, '__author__', 'Unknown Author')
+                self.bot('Plugin %s (%s - %s) loaded', p, version, author)
+            except Exception, msg:
+                self.verbose('Error loading plugin: %s', msg)
+        if 'admin' not in self._pluginOrder:
+            # critical will exit, admin plugin must be loaded!
+            self.critical('AdminPlugin is essential and MUST be loaded! Cannot continue without admin plugin.')
 
     def pluginImport(self, name):
         """Import a single plugin"""
