@@ -30,8 +30,10 @@
 # add parser version and plugins' versions
 # 7/7/2009 - 1.1.8 - xlr8or
 # removed cvar check and critical stop
+# 7/14/2009 - 1.1.9 - courgette
+# bot version sent is now only the version number
 
-__version__ = '1.1.8'
+__version__ = '1.1.9'
 __author__  = 'ThorN'
 
 import urllib
@@ -101,7 +103,7 @@ class PublistPlugin(b3.plugin.Plugin):
     info = {
       'ip' : self.console._publicIp,
       'port' : self.console._port,
-      'version' : b3.versionId,
+      'version' : getattr(b3, '__version__', 'Unknown Version'),
       'parser' : self.console.gameName,
       'parserversion' : getattr(getModule(self.console.__module__), '__version__', 'Unknown Version'),
       'database' : functions.splitDSN(self.console.storage.dsn)['protocol'],
