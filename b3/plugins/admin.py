@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    7/22/2009 - 1.3.5 - xlr8or
+#    Generate better documented error when groupstable is empty
 #    10/05/2008 - 1.3.4b0 - mindriot
 #      * Removed hard code of 1 day for long_tempban_level - now controlled with new setting 'long_tempban_max_duration'
 #    8/29/2005 - 1.2.2 - ThorN
@@ -29,7 +31,7 @@
 #    Added ci command
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.3.4b0'
+__version__ = '1.3.5'
 __author__  = 'ThorN'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
@@ -84,9 +86,13 @@ class AdminPlugin(b3.plugin.Plugin):
 
         if not self._commands.has_key('iamgod'):
             superadmins = self.console.clients.lookupSuperAdmins()
-            if len(superadmins) == 0:
-                # There are no superadmins, enable the !iamgod command
-                self.registerCommand(self, 'iamgod', 0, self.getCmd('iamgod'))
+            try:
+                if len(superadmins) == 0:
+                    # There are no superadmins, enable the !iamgod command
+                    self.registerCommand(self, 'iamgod', 0, self.getCmd('iamgod'))
+            except Exception, msg:
+                # no proper groups available, cannot continue
+                self.critical('Seems your groupstable in the database is empty. Please recreate your database using the proper sql syntax - use b3/docs/b3.sql - (%s)' %msg)
 
     def registerCommand(self, plugin, command, level, handler, alias=None, secretLevel=None):
         if not handler:
