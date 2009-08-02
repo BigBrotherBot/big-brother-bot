@@ -171,6 +171,7 @@ class Parser(object):
             self._rconIp = f.read().strip()
             f.close()
 
+        self.bot("%s", b3.sversion)
         self.bot('Starting %s server for %s:%s', self.__class__.__name__, self._rconIp, self._port)
 
         # get events
