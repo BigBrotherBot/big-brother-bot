@@ -1538,7 +1538,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         ws = []
         for w in self.config.options('warn_reasons'):
-            if w != 'defualt' and w != 'generic':
+            if w != 'default' and w != 'generic':
                 ws.append(w)
 
         client.message('^7Warnings: %s' % string.join(ws, ', '))
