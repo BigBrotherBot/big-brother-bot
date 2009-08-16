@@ -551,10 +551,16 @@ class AdminPlugin(b3.plugin.Plugin):
 
     def clearAll(self, sclient, client=None):
         for w in sclient.warnings:
-            admin = self.console.storage.getClient(clients.Client(id=w.adminId))
-            # client object needs console to get groups
-            admin.console = self.console
-            if admin.maxLevel <= client.maxLevel:
+            admin = None
+            try:
+                admin = self.console.storage.getClient(clients.Client(id=w.adminId))
+                # client object needs console to get groups
+                admin.console = self.console
+            except:
+                # warning given by the bot (censor, tk, etc) have adminId = 0 which match no client in storage
+                pass
+                
+            if admin is None or admin.maxLevel <= client.maxLevel:
                 w.inactive = 1
                 self.console.storage.setClientPenalty(w)
 
