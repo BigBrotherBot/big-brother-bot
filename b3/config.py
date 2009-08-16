@@ -157,6 +157,10 @@ class XmlConfigParser:
 		return os.path.normpath(os.path.expanduser(path))
 
 	def load(self, fileName):
+    
+		if not os.path.isfile(fileName):
+			raise ConfigFileNotFound(fileName)
+        
 		f = file(fileName, 'r')
 		self.readfp(f)
 		f.close()
@@ -230,6 +234,13 @@ def load(fileName):
 	else:
 		return None
 
+class ConfigFileNotFound(Exception):
+	def __init__(self, value):
+		self.value = value
+	def __str__(self):
+		return repr(self.value)
+
+		
 if __name__ == '__main__':
     c = load(r'c:\temp\cod.xml')
     print c.get('server', 'punkbuster')

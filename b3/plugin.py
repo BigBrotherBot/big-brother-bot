@@ -70,9 +70,17 @@ class Plugin:
 			return msg % args
 
 	def loadConfig(self, fileName=None):
-		if fileName and os.path.isfile(fileName):
+		if fileName:
 			self.bot('Loading config %s for %s', fileName, self.__class__.__name__)
-			self.config = b3.config.load(fileName)
+			try:
+				self.config = b3.config.load(fileName)
+			except b3.config.ConfigFileNotFound, e:
+				if self.requiresConfigFile:
+					self.critical('Could not find config file')
+					return False
+				else:
+					self.bot('No config file found for %s. (was not required either)'%self.__class__.__name__)
+					return True
 		elif self.config:
 			self.bot('Loading config %s for %s', self.config.fileName, self.__class__.__name__)
 			self.config = b3.config.load(self.config.fileName)
