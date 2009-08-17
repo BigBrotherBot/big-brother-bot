@@ -106,7 +106,6 @@ class CensorPlugin(b3.plugin.Plugin):
 			regexp  = e.find('regexp')
 			word    = e.find('word')
 			penalty = e.find('penalty')
-
 			if regexp != None:
 				# has a regular expression
 				self._badNames.append(self._getCensorData(e.get('name'), regexp.text.strip(), penalty, self._defaultBadNamePenalty))
@@ -122,7 +121,7 @@ class CensorPlugin(b3.plugin.Plugin):
 			self.error('Invalid regular expression: %s - %s' % (name, regexp))
 			raise
 
-		if penalty:
+		if penalty is not None:
 			pd = PenaltyData(type = penalty.get('type'),
 							reason = penalty.get('reason'),
 							keyword = penalty.get('reasonkeyword'),
@@ -167,6 +166,7 @@ class CensorPlugin(b3.plugin.Plugin):
 			self.error('Censor plugin error: %s - %s', msg, traceback.extract_tb(sys.exc_info()[2]))
 
 	def penalizeClient(self, penalty, client, data=''):
+		#self.debug("%s"%((penalty.type, penalty.reason, penalty.keyword, penalty.duration),))
 		self._adminPlugin.penalizeClient(penalty.type, client, penalty.reason, penalty.keyword, penalty.duration, None, data)
 
 	def checkBadName(self, client):
