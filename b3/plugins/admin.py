@@ -17,21 +17,24 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
-#    7/22/2009 - 1.3.5 - xlr8or
+#   8/19/2009 - 1.4.0 - courgette
+#    * penalizeClient() will try to delegate unknown penalty types to inflictCustomPenalty() of the current parser.
+#      Requires parser.py v1.10+
+#   7/22/2009 - 1.3.5 - xlr8or
 #    Generate better documented error when groupstable is empty
-#    10/05/2008 - 1.3.4b0 - mindriot
+#   10/05/2008 - 1.3.4b0 - mindriot
 #      * Removed hard code of 1 day for long_tempban_level - now controlled with new setting 'long_tempban_max_duration'
-#    8/29/2005 - 1.2.2 - ThorN
+#   8/29/2005 - 1.2.2 - ThorN
 #    Moved pbss command to punkbuster plugin
-#    8/13/2005 - 1.2.1 - ThorN
+#   8/13/2005 - 1.2.1 - ThorN
 #    Added penalizeClient()
 #    Moved greeting to welcome plugin
-#    7/23/2005 - 1.1.0 - ThorN
+#   7/23/2005 - 1.1.0 - ThorN
 #    Made it so registerCommand() will check a plugins config "commands" section for command level overrides
 #    Added ci command
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.3.5'
+__version__ = '1.4.0'
 __author__  = 'ThorN'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
@@ -1607,7 +1610,8 @@ class AdminPlugin(b3.plugin.Plugin):
         elif type == self.PENALTY_WARNING:
             self.warnClient(client, keyword, admin, True, data, duration)
         else:
-            self.error('penalizeClient(): type %s not found', type)
+            if self.console.inflictCustomPenalty(type, client=client, reason=reason, duration=duration, admin=admin, data=data) is not True:
+                self.error('penalizeClient(): type %s not found', type)
 
     def warnClient(self, sclient, keyword, admin=None, timer=True, data='', newDuration=None):
         try:
