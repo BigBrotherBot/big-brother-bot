@@ -45,9 +45,13 @@
 # v1.1.0 - xlr8or - Added Action Mechanism (event) for B3 v1.1.5+
 # v1.1.1 - courgette 
 # * Debugged Action Mechanism (event) for B3 v1.1.5+
+# v1.2.0 - 19/08/2009 - Courgette 
+# * adds slap, nuke, mute new custom penalty types (can be used in censor or admin plugin)
+# * requires admin plugin v1.4+ and parser.py v1.10+
+
 
 __author__  = 'xlr8or'
-__version__ = '1.1.1'
+__version__ = '1.2.0'
 
 import b3.parsers.q3a
 import re, string, threading, time, os
@@ -78,6 +82,9 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     _commands['tempban'] = 'clientkick %(cid)s'
     _commands['banByIp'] = 'addip %(ip)s'
     _commands['unbanByIp'] = 'removeip %(ip)s'
+    _commands['slap'] = 'slap %(cid)s'
+    _commands['nuke'] = 'nuke %(cid)s'
+    _commands['mute'] = 'mute %(cid)s %(seconds)s'
 
     _eventMap = {
         #'warmup' : b3.events.EVT_GAME_WARMUP,
@@ -346,6 +353,66 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if len(lines):        
             self.writelines(lines)
 
+    def inflictCustomPenalty(self, type, **kwargs):
+
+        client = None
+        if kwargs.has_key('client'):
+            client = kwargs['client']
+        
+        reason = None
+        if kwargs.has_key('reason'):
+            reason = kwargs['reason']
+        
+        duration = None
+        if kwargs.has_key('duration'):
+            duration = kwargs['duration']
+        
+        admin = None
+        if kwargs.has_key('admin'):
+            admin = kwargs['admin']
+        
+        data = None
+        if kwargs.has_key('data'):
+            data = kwargs['data']
+            
+                
+            
+        if type == 'slap' and client:
+            cmd = self.getCommand('slap', cid=client.cid)
+            self.write(cmd)
+            if reason:
+                client.message("%s" % reason)
+            return True
+            
+        elif type == 'nuke' and client:
+            cmd = self.getCommand('nuke', cid=client.cid)
+            self.write(cmd)
+            if reason:
+                client.message("%s" % reason)
+            return True
+            
+        elif type == 'mute' and client:
+            if duration is None:
+                seconds = 60
+            else:
+                seconds = round(float(b3.functions.time2minutes(duration) * 60), 0)
+                
+            # make sure to unmute first
+            cmd = self.getCommand('mute', cid=client.cid, seconds=0)
+            self.write(cmd)
+            # then mute
+            cmd = self.getCommand('mute', cid=client.cid, seconds=seconds)
+            self.write(cmd)
+            if reason:
+                client.message("%s" % reason)
+            return True
+            
+        # elif type == 'morron' and client:
+            # client.message('you morron')
+            # return True
+        
+
+    
 #----------------------------------------------------------------------------------
 
     # Connect/Join
