@@ -18,16 +18,18 @@
 #
 #
 # CHANGELOG
-#    10/7/2009 - added code to load publist by default - xlr8or
-#    29/4/2009 - fixed ignored exit code (for restarts/shutdowns) - arbscht
-#    10/20/2008 - 1.9.1b0 - mindriot
+#   19/08/2009 - v1.10.0 - courgette
+#    * adds the inflictCustomPenalty() that allows to define game specific penalties.
+#      requires admin.py v1.4+
+#   10/7/2009 - added code to load publist by default - xlr8or
+#   29/4/2009 - fixed ignored exit code (for restarts/shutdowns) - arbscht
+#   10/20/2008 - 1.9.1b0 - mindriot
 #    * fixed slight typo of b3.events.EVT_UNKOWN to b3.events.EVT_UNKNOWN
-#    11/29/2005 - 1.7.0 - ThorN
+#   11/29/2005 - 1.7.0 - ThorN
 #    Added atexit handlers
 #    Added warning, info, exception, and critical log handlers
-
 __author__  = 'ThorN'
-__version__ = '1.9.2'
+__version__ = '1.10.0'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit
@@ -466,7 +468,16 @@ class Parser(object):
             return None
 
         return cmd % kwargs
-
+        
+    def inflictCustomPenalty(self, type, **kwargs):
+        """
+        Called if b3.admin.penalizeClient() does not know a given penalty type. 
+        Overwrite this to add customized penalties for your game like 'slap', 'nuke', 
+        'mute' or anything you want.
+        /!\ This method must return True if the penalty was inflicted.
+        """
+        pass
+        
     def formatTime(self, gmttime, tzName=None):
         """Return a time string formated to local time in the b3 config time_format"""
 
