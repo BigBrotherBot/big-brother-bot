@@ -1,4 +1,16 @@
-1.1.5
+1.2.0
+----
+- Several Core enhancements!
+- A parser can now define game specific new penalty types that will be called by b3.admin.penalizeClient()
+- Fix custom penalty for censor plugin 
+- Fix !clear command that failed when a warning given by the bot was active
+- Load publist by default and added critical stop if admin plugin is not loaded
+- Plugins can specify that they do not require a config file
+- Fix default config file picking for plugins
+- Added action mechanism
+- If masked show masked level instead of real level
+
+1.1.5 (not released)
 -----
 - Minor updates to CoD4 and CoD5 parsers
 - Added etpro parser (Enemy Territory with etpro mod installed - et does not support private messaging!)
