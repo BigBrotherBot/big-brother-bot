@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    08/22/2009 - 1.2.1 - Courgette
+#    * fix bug in cmd_forgiveall
 #    08/22/2009 - 1.2.0b - Courgette
 #    * setting to choose if the bot should broadcast or send private messages (default send private)
 #    10/20/2008 - 1.1.6b1 - mindriot
@@ -29,7 +31,7 @@
 #    7/23/2005 - 1.0.2 - ThorN
 #    * Changed temp ban duration to be based on ban_length times the number of victims
 
-__version__ = '1.2.0b'
+__version__ = '1.2.1'
 __author__  = 'ThorN'
 
 import b3, string, re, threading
@@ -481,9 +483,9 @@ class TkPlugin(b3.plugin.Plugin):
 
             if len(forgave):
                 if self._private_messages and len(forgave)<3:
-                    v.message(self.getMessage('forgive_many', { 'vname' : client.exactName, 'attackers' : string.join(forgave, ', ') }))
+                    v.message(self.getMessage('forgive_many', { 'vname' : v.exactName, 'attackers' : string.join(forgave, ', ') }))
                     for attacker in forgave:
-                        attacker.message(self.getMessage('forgive_many', { 'vname' : client.exactName, 'attackers' : string.join(forgave, ', ') }))
+                        attacker.message(self.getMessage('forgive_many', { 'vname' : v.exactName, 'attackers' : string.join(forgave, ', ') }))
                 else:
                     self.console.say(self.getMessage('forgive_many', { 'vname' : client.exactName, 'attackers' : string.join(forgave, ', ') }))
             else:
