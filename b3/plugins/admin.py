@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   8/22/2009 - 1.4.1 - courgette
+#    * warning messages are shown only to the warned player. This is to prevent the bot from spaming the console.
 #   8/19/2009 - 1.4.0 - courgette
 #    * penalizeClient() will try to delegate unknown penalty types to inflictCustomPenalty() of the current parser.
 #      Requires parser.py v1.10+
@@ -34,7 +36,7 @@
 #    Added ci command
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.4.0'
+__version__ = '1.4.1'
 __author__  = 'ThorN'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
