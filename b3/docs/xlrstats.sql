@@ -1,13 +1,13 @@
 -- phpMyAdmin SQL Dump
--- version 2.6.1-rc2
+-- version 2.9.1.1-Debian-10
 -- http://www.phpmyadmin.net
 -- 
 -- Host: localhost
--- Generation Time: May 04, 2005 at 12:10 PM
--- Server version: 4.0.23
--- PHP Version: 4.3.10-12
+-- Generation Time: Jun 27, 2009 at 03:16 PM
+-- Server version: 5.0.32
+-- PHP Version: 5.2.0-8+etch13
 -- 
--- Database: `b3new`
+-- Database: `b3`
 -- 
 
 -- --------------------------------------------------------
@@ -16,7 +16,7 @@
 -- Table structure for table `bodyparts`
 -- 
 
-CREATE TABLE `xlr_bodyparts` (
+CREATE TABLE IF NOT EXISTS `xlr_bodyparts` (
   `id` tinyint(3) unsigned NOT NULL auto_increment,
   `name` varchar(25) NOT NULL default '',
   `kills` mediumint(8) unsigned NOT NULL default '0',
@@ -32,7 +32,7 @@ CREATE TABLE `xlr_bodyparts` (
 -- Table structure for table `mapstats`
 -- 
 
-CREATE TABLE `xlr_mapstats` (
+CREATE TABLE IF NOT EXISTS `xlr_mapstats` (
   `id` tinyint(3) unsigned NOT NULL auto_increment,
   `name` varchar(25) NOT NULL default '',
   `kills` mediumint(8) unsigned NOT NULL default '0',
@@ -49,7 +49,7 @@ CREATE TABLE `xlr_mapstats` (
 -- Table structure for table `opponents`
 -- 
 
-CREATE TABLE `xlr_opponents` (
+CREATE TABLE IF NOT EXISTS `xlr_opponents` (
   `id` mediumint(8) unsigned NOT NULL auto_increment,
   `target_id` smallint(5) unsigned NOT NULL default '0',
   `killer_id` smallint(5) unsigned NOT NULL default '0',
@@ -66,7 +66,7 @@ CREATE TABLE `xlr_opponents` (
 -- Table structure for table `playerbody`
 -- 
 
-CREATE TABLE `xlr_playerbody` (
+CREATE TABLE IF NOT EXISTS `xlr_playerbody` (
   `id` mediumint(8) unsigned NOT NULL auto_increment,
   `bodypart_id` tinyint(3) unsigned NOT NULL default '0',
   `player_id` smallint(5) unsigned NOT NULL default '0',
@@ -86,7 +86,7 @@ CREATE TABLE `xlr_playerbody` (
 -- Table structure for table `playermaps`
 -- 
 
-CREATE TABLE `xlr_playermaps` (
+CREATE TABLE IF NOT EXISTS `xlr_playermaps` (
   `id` mediumint(8) unsigned NOT NULL auto_increment,
   `map_id` tinyint(3) unsigned NOT NULL default '0',
   `player_id` smallint(5) unsigned NOT NULL default '0',
@@ -107,7 +107,7 @@ CREATE TABLE `xlr_playermaps` (
 -- Table structure for table `playerstats`
 -- 
 
-CREATE TABLE `xlr_playerstats` (
+CREATE TABLE IF NOT EXISTS `xlr_playerstats` (
   `id` smallint(5) unsigned NOT NULL auto_increment,
   `client_id` int(11) unsigned NOT NULL default '0',
   `kills` mediumint(8) unsigned NOT NULL default '0',
@@ -133,7 +133,7 @@ CREATE TABLE `xlr_playerstats` (
 -- Table structure for table `weaponstats`
 -- 
 
-CREATE TABLE `xlr_weaponstats` (
+CREATE TABLE IF NOT EXISTS `xlr_weaponstats` (
   `id` tinyint(3) unsigned NOT NULL auto_increment,
   `name` varchar(32) NOT NULL default '',
   `kills` mediumint(8) unsigned NOT NULL default '0',
@@ -149,7 +149,7 @@ CREATE TABLE `xlr_weaponstats` (
 -- Table structure for table `weaponusage`
 -- 
 
-CREATE TABLE `xlr_weaponusage` (
+CREATE TABLE IF NOT EXISTS `xlr_weaponusage` (
   `id` mediumint(8) unsigned NOT NULL auto_increment,
   `weapon_id` tinyint(3) unsigned NOT NULL default '0',
   `player_id` smallint(5) unsigned NOT NULL default '0',
@@ -162,3 +162,33 @@ CREATE TABLE `xlr_weaponusage` (
   KEY `weapon_id` (`weapon_id`),
   KEY `player_id` (`player_id`)
 ) TYPE=MyISAM;
+
+-- --------------------------------------------------------
+
+-- 
+-- Table structure for table `xlr_actionstats`
+-- 
+
+CREATE TABLE IF NOT EXISTS `xlr_actionstats` (
+  `id` tinyint(3) unsigned NOT NULL auto_increment,
+  `name` varchar(25) NOT NULL default '',
+  `count` mediumint(8) unsigned NOT NULL default '0',
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+-- 
+-- Table structure for table `xlr_playeractions`
+-- 
+
+CREATE TABLE IF NOT EXISTS `xlr_playeractions` (
+  `id` mediumint(8) unsigned NOT NULL auto_increment,
+  `action_id` tinyint(3) unsigned NOT NULL default '0',
+  `player_id` smallint(5) unsigned NOT NULL default '0',
+  `count` mediumint(8) unsigned NOT NULL default '0',
+  PRIMARY KEY  (`id`),
+  KEY `action_id` (`action_id`),
+  KEY `player_id` (`player_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
