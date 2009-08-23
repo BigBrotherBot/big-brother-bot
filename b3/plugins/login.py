@@ -16,10 +16,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-
+#
+#
+#	1.0.1 - 23/08/2009 - Courgette
+#		* fix indentation problem
+#	
 
 __author__  = 'Tim ter Laak'
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 # Version = major.minor.patches
 
@@ -77,10 +81,10 @@ class LoginPlugin(b3.plugin.Plugin):
 				return
 			else:
 				if self.console.gameName[:5] == 'etpro':
-				  message = "Login via console: /tell %s !login yourpassword" %client.name
-        else:
-          message = "Login via console: /tell %s !login yourpassword" %client.cid
-        client.message(message)
+					message = "Login via console: /tell %s !login yourpassword" %client.name
+				else:
+					message = "Login via console: /tell %s !login yourpassword" %client.cid
+				client.message(message)
 				return
 
 	def cmd_login(self, data, client, cmd=None):
