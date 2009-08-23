@@ -46,6 +46,7 @@ b3/docs/b3-db.sql
 b3/docs/b3.sql
 b3/docs/commands.txt
 b3/docs/recreate-xlrstats.sql
+b3/docs/xlrstats-update-to-v1.0.0.sql
 b3/docs/xlrstats.sql
 b3/extplugins/__init__.py
 b3/extplugins/xlrstats.py
