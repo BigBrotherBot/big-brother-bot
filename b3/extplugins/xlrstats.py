@@ -16,9 +16,11 @@
 #   Added onemaponly for 24/7 servers to count rounds correct
 # 27/6/2009 - 0.6.5 - Mark Weirath (xlr8or@xlr8or.com)
 #   No longer save worldkills
+# 28/6/2009 - 1.0.0 - Mark Weirath (xlr8or@xlr8or.com)
+#   Added Action classes
 
-__author__  = 'Tim ter Laak'
-__version__ = '0.6.5'
+__author__  = 'Tim ter Laak / Mark Weirath'
+__version__ = '1.0.0'
 
 # Version = major.minor.patches
 
@@ -67,6 +69,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     opponents_table = None
     mapstats_table = None
     playermaps_table = None
+    actionstats_table = None
+    playeractions_table = None
     clients_table = 'clients'
     penalties_table = 'penalties'
     
@@ -106,6 +110,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         Opponents._table = self.opponents_table
         MapStats._table = self.mapstats_table
         PlayerMaps._table = self.playermaps_table
+        ActionStats._table = self.actionstats_table
+        PlayerActions._table = self.playeractions_table
         
         #--OBSOLETE
         # create tables if necessary
@@ -126,6 +132,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         self.registerEvent(b3.events.EVT_CLIENT_KILL_TEAM)
         self.registerEvent(b3.events.EVT_CLIENT_SUICIDE)
         self.registerEvent(b3.events.EVT_GAME_ROUND_START)
+        self.registerEvent(b3.events.EVT_CLIENT_ACTION) #for game-events/actions
         
         # get the Client.id for the bot itself (guid: WORLD)
         sclient = self.console.clients.getByGUID("WORLD");
@@ -250,6 +257,18 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.playermaps_table = 'xlr_playermaps'
             self.debug('Using default value (%s) for tables::playermaps', self.playermaps_table)
                       
+        try:
+            self.actionstats_table = self.config.get('tables', 'actionstats')
+        except:
+            self.actionstats_table = 'xlr_actionstats'
+            self.debug('Using default value (%s) for tables::actionstats', self.actionstats_table)
+
+        try:
+            self.playeractions_table = self.config.get('tables', 'playeractions')
+        except:
+            self.playeractions_table = 'xlr_playeractions'
+            self.debug('Using default value (%s) for tables::playeractions', self.playeractions_table)
+
         return
     
 
@@ -277,6 +296,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.suicide(event.client, event.target, event.data)
         elif (event.type == b3.events.EVT_GAME_ROUND_START):
             self.roundstart()
+        elif (event.type == b3.events.EVT_CLIENT_ACTION):
+            self.action(event.client, event.data)
         else:       
             self.dumpEvent(event)
 
@@ -464,9 +485,41 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             s.map_id = mapid
             return s
 
+    def get_ActionStats(self, name):
+        s = ActionStats()
+        q = 'SELECT * from %s WHERE name = "%s" LIMIT 1' % (self.actionstats_table, name)
+        cursor = self.query(q)
+        if (cursor and (cursor.rowcount > 0) ):
+            r = cursor.getRow()
+            s.id = r['id']
+            s.name = r['name']
+            s.count = r['count']
+            return s
+        else:
+            s._new = True
+            s.name = name
+            return s
+
+    def get_PlayerActions(self, playerid, actionid):
+        s = PlayerActions()
+        q = 'SELECT * from %s WHERE action_id = %s AND player_id = %s LIMIT 1' % (self.playeractions_table, actionid, playerid)
+        cursor = self.query(q)
+        if (cursor and (cursor.rowcount > 0) ):
+            r = cursor.getRow()
+            s.id = r['id']
+            s.player_id = r['player_id']
+            s.action_id = r['action_id']            
+            s.count = r['count']
+            return s
+        else:
+            s._new = True
+            s.player_id = playerid
+            s.action_id = actionid
+            return s
+
 
     def save_Stat(self, stat):
-        #self.debug('Saving statistics for ', typeof(stat))
+        #self.debug('Saving statistics for ', type(stat))
         #self.debug('Contents: ', stat)
         if hasattr(stat, '_new'):
             q = stat._insertquery()
@@ -852,6 +905,53 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         return
 
+    def action(self, client, data):
+        self.debug('----> XLRstats: Entering actionfunc.')
+        if client == None:
+            return
+
+        action = self.get_ActionStats(name=data)
+        if action:
+            action.count += 1
+            #self.debug('----> XLRstats: Actioncount: %s' %action.count)
+            #self.debug('----> XLRstats: Actionname: %s' %action.name)
+            if hasattr(action, '_new'):
+                self.debug('----> XLRstats: insertquery: %s' %action._insertquery())
+            else:
+                self.debug('----> XLRstats: updatequery: %s' %action._updatequery())
+            self.save_Stat(action)
+
+        #is it an anonymous client, stop here
+        playerstats = self.get_PlayerStats(client)
+        if playerstats == None:
+            self.debug('----> XLRstats: Anonymous client')
+            return
+        
+        playeractions = self.get_PlayerActions(playerid=playerstats.id, actionid=action.id)
+        if playeractions:
+            playeractions.count += 1
+            #self.debug('----> XLRstats: Players Actioncount: %s' %playeractions.count)
+            if hasattr(playeractions, '_new'):
+                self.debug('----> XLRstats: insertquery: %s' %playeractions._insertquery())
+            else:
+                self.debug('----> XLRstats: updatequery: %s' %playeractions._updatequery())
+            self.save_Stat(playeractions)
+
+        #get applicable action bonus
+        try:
+            action_bonus = self.config.getfloat('actions', action.name)
+            self.debug('----> XLRstats: Found a bonus for %s: %s' %(action.name, action_bonus))
+        except:
+            action_bonus = 0
+        
+        if action_bonus:
+            self.debug('----> XLRstats: Old Skill: %s.' %playerstats.skill)
+            playerstats.skill += action_bonus
+            self.debug('----> XLRstats: New Skill: %s.' %playerstats.skill)
+            self.save_Stat(playerstats)
+
+        return
+
     def cmd_xlrstats(self, data, client, cmd=None):
         """\
         [<name>] - list a players XLR stats
@@ -1141,6 +1241,44 @@ class Opponents(StatObject):
     def _updatequery(self):
         q = 'UPDATE %s SET killer_id=%s, target_id=%s, kills=%s, retals=%s WHERE id=%s' % (self._table, self.killer_id, self.target_id, self.kills, self.retals, self.id)
         return q
+
+class ActionStats(StatObject):
+    #default name of the table for this data object
+    _table = 'actionstats'
+    
+    #fields of the table
+    id = None
+    name = ''
+    count = 0
+    
+    def _insertquery(self):
+        q = 'INSERT INTO %s (name, count) VALUES ("%s", %s)' % (self._table, self.name, self.count)
+        return q
+
+    def _updatequery(self):
+        q = 'UPDATE %s SET name="%s", count=%s WHERE id=%s' % (self._table, self.name, self.count, self.id)
+        return q
+
+class PlayerActions(StatObject):
+    #default name of the table for this data object
+    _table = 'playeractions'
+    
+    #fields of the table
+    id = None
+    player_id = 0
+    action_id = 0
+    count = 0
+
+    def _insertquery(self):
+        q = 'INSERT INTO %s ( player_id, action_id, count ) VALUES (%s, %s, %s)' % (self._table, self.player_id, self.action_id, self.count)
+        return q
+        
+    def _updatequery(self):
+        q = 'UPDATE %s SET player_id=%s, action_id=%s, count=%s WHERE id=%s' % (self._table, self.player_id, self.action_id, self.count, self.id)
+        return q
+    
+if __name__ == '__main__':
+    print '\nThis is version '+__version__+' by '+__author__+' for BigBrotherBot.\n'
 
 # local variables:
 # tab-width: 4
