@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   8/24/2009 - 1.4.2 - courgette
+#    * warning messages are also sent by pm to the admin that give them
 #   8/22/2009 - 1.4.1 - courgette
 #    * warning messages are shown only to the warned player. This is to prevent the bot from spaming the console.
 #   8/19/2009 - 1.4.0 - courgette
@@ -36,7 +38,7 @@
 #    Added ci command
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.4.1'
+__version__ = '1.4.2'
 __author__  = 'ThorN'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
@@ -1632,7 +1634,10 @@ class AdminPlugin(b3.plugin.Plugin):
             sclient.setvar(self, 'warnTime', self.console.time())
 
         warnings = sclient.numWarnings
-        sclient.message(self.config.getTextTemplate('warn', 'message', warnings=warnings, reason=warning))
+        msg = self.config.getTextTemplate('warn', 'message', warnings=warnings, reason=warning)
+        sclient.message(msg)
+        if admin:
+            admin.message(msg)
 
         if warnings >= self.config.getint('warn', 'instant_kick_num'):
             self.warnKick(sclient, admin)
