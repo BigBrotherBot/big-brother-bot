@@ -36,8 +36,8 @@ class PunkbusterPlugin(b3.plugin.Plugin):
 		self._adminPlugin = self.console.getPlugin('admin')
 	
 		if self._adminPlugin:
-			self._adminPlugin.registerCommand(self, 'pbss', 100, self.cmd_pbss)
-			self._adminPlugin.registerCommand(self, 'pbbuildbans', 100, self.cmd_pbbuildbans)
+			self._adminPlugin.registerCommand(self, 'pbss', self._adminPlugin.config.getint('commands', 'pbss'), self.cmd_pbss)
+			self._adminPlugin.registerCommand(self, 'pbbuildbans', self._adminPlugin.config.getint('commands', 'pbbuildbans'), self.cmd_pbbuildbans)
 
 	def onLoadConfig(self):
 		self._bansFile = self.console.getAbsolutePath(self.config.get('settings', 'bans_file'))
