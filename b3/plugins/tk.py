@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    08/22/2009 - 1.2.2 - Courgette
+#    * fix bug in cmd_forgiveall
 #    08/22/2009 - 1.2.1 - Courgette
 #    * fix bug in cmd_forgiveall
 #    08/22/2009 - 1.2.0b - Courgette
@@ -31,7 +33,7 @@
 #    7/23/2005 - 1.0.2 - ThorN
 #    * Changed temp ban duration to be based on ban_length times the number of victims
 
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 __author__  = 'ThorN'
 
 import b3, string, re, threading
@@ -480,12 +482,13 @@ class TkPlugin(b3.plugin.Plugin):
                 points = self.forgive(cid, client, True)
                 if attacker and points:
                     forgave.append('%s^7 (^3%s^7)' % (attacker.name, points))
+                    if self._private_messages:
+                        attacker.message(self.getMessage('forgive_many', { 'vname' : client.exactName, 'attackers' : attacker.exactName }))
+                
 
             if len(forgave):
-                if self._private_messages and len(forgave)<3:
-                    v.message(self.getMessage('forgive_many', { 'vname' : v.exactName, 'attackers' : string.join(forgave, ', ') }))
-                    for attacker in forgave:
-                        attacker.message(self.getMessage('forgive_many', { 'vname' : v.exactName, 'attackers' : string.join(forgave, ', ') }))
+                if self._private_messages:
+                    client.message(self.getMessage('forgive_many', { 'vname' : client.exactName, 'attackers' : string.join(forgave, ', ') }))
                 else:
                     self.console.say(self.getMessage('forgive_many', { 'vname' : client.exactName, 'attackers' : string.join(forgave, ', ') }))
             else:
