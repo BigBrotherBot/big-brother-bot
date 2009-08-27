@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   27/08/2009 - 1.0.9 - Bakes
+#   Use command levels set in punkbuster plugin config not admin plugin.
 #	11/30/2005 - 1.0.8 - ThorN
 #	Use PluginCronTab instead of CronTab
 
@@ -36,8 +38,8 @@ class PunkbusterPlugin(b3.plugin.Plugin):
 		self._adminPlugin = self.console.getPlugin('admin')
 	
 		if self._adminPlugin:
-			self._adminPlugin.registerCommand(self, 'pbss', self._adminPlugin.config.getint('commands', 'pbss'), self.cmd_pbss)
-			self._adminPlugin.registerCommand(self, 'pbbuildbans', self._adminPlugin.config.getint('commands', 'pbbuildbans'), self.cmd_pbbuildbans)
+			self._adminPlugin.registerCommand(self, 'pbss', self.config.getint('commands', 'pbss'), self.cmd_pbss)
+			self._adminPlugin.registerCommand(self, 'pbbuildbans', self.config.getint('commands', 'pbbuildbans'), self.cmd_pbbuildbans)
 
 	def onLoadConfig(self):
 		self._bansFile = self.console.getAbsolutePath(self.config.get('settings', 'bans_file'))
