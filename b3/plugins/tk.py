@@ -17,6 +17,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    08/22/2009 - 1.2.1 - Courgette
+#    * fix bug in cmd_forgiveall
+#    08/22/2009 - 1.2.0b - Courgette
+#    * setting to choose if the bot should broadcast or send private messages (default send private)
 #    10/20/2008 - 1.1.6b1 - mindriot
 #    * indentation fix
 #    10/20/2008 - 1.1.6b0 - mindriot
@@ -27,7 +31,7 @@
 #    7/23/2005 - 1.0.2 - ThorN
 #    * Changed temp ban duration to be based on ban_length times the number of victims
 
-__version__ = '1.1.6b0'
+__version__ = '1.2.1'
 __author__  = 'ThorN'
 
 import b3, string, re, threading
@@ -145,6 +149,7 @@ class TkPlugin(b3.plugin.Plugin):
     _maxLevel = 0
     _maxPoints = 0
     _grudge_enable = True
+    _private_messages = None
     
     def onStartup(self):
         self.registerEvent(b3.events.EVT_CLIENT_DAMAGE_TEAM)
@@ -191,6 +196,13 @@ class TkPlugin(b3.plugin.Plugin):
         except Exception, msg:
             self.error('There is an error with your TK Plugin config %s' % msg)
             return False
+            
+        try:
+            self._private_messages = self.config.getboolean('settings','private_messages')
+        except:
+            self._private_messages = True
+        self.debug('Send messages privately ? %s' % self._private_messages)
+        
 
     def onEvent(self, event):
         if self.console.game.gameType == 'dm':
@@ -335,9 +347,16 @@ class TkPlugin(b3.plugin.Plugin):
             a.forgiven(victim.cid)
 
             if not silent:
-                self.console.say(self.getMessage('forgive', { 'vname' : victim.exactName, 'aname' : attacker.name, 'points' : points }))
+                if self._private_messages:
+                    victim.message(self.getMessage('forgive', { 'vname' : victim.exactName, 'aname' : attacker.name, 'points' : points }))
+                    attacker.message(self.getMessage('forgive', { 'vname' : victim.exactName, 'aname' : attacker.name, 'points' : points }))
+                else:
+                    self.console.say(self.getMessage('forgive', { 'vname' : victim.exactName, 'aname' : attacker.name, 'points' : points }))
         elif not silent:
-            self.console.say(self.getMessage('forgive', { 'vname' : victim.exactName, 'aname' : acid, 'points' : points }))
+            if self._private_messages:
+                victim.message(self.getMessage('forgive', { 'vname' : victim.exactName, 'aname' : acid, 'points' : points }))
+            else:
+                self.console.say(self.getMessage('forgive', { 'vname' : victim.exactName, 'aname' : acid, 'points' : points }))
 
         return points
 
@@ -350,7 +369,11 @@ class TkPlugin(b3.plugin.Plugin):
                 v.grudge(attacker.cid)
 
                 if not silent:
-                    self.console.say(self.getMessage('grudged', { 'vname' : victim.exactName, 'aname' : attacker.name, 'points' : points }))
+                    if self._private_messages:
+                        victim.message(self.getMessage('grudged', { 'vname' : victim.exactName, 'aname' : attacker.name, 'points' : points }))
+                        attacker.message(self.getMessage('grudged', { 'vname' : victim.exactName, 'aname' : attacker.name, 'points' : points }))
+                    else:
+                        self.console.say(self.getMessage('grudged', { 'vname' : victim.exactName, 'aname' : attacker.name, 'points' : points }))
                 return points
             except:
                 pass
@@ -459,7 +482,12 @@ class TkPlugin(b3.plugin.Plugin):
                     forgave.append('%s^7 (^3%s^7)' % (attacker.name, points))
 
             if len(forgave):
-                self.console.say(self.getMessage('forgive_many', { 'vname' : client.exactName, 'attackers' : string.join(forgave, ', ') }))
+                if self._private_messages and len(forgave)<3:
+                    v.message(self.getMessage('forgive_many', { 'vname' : v.exactName, 'attackers' : string.join(forgave, ', ') }))
+                    for attacker in forgave:
+                        attacker.message(self.getMessage('forgive_many', { 'vname' : v.exactName, 'attackers' : string.join(forgave, ', ') }))
+                else:
+                    self.console.say(self.getMessage('forgive_many', { 'vname' : client.exactName, 'attackers' : string.join(forgave, ', ') }))
             else:
                 client.message(self.getMessage('no_forgive'))
         else:
@@ -548,6 +576,10 @@ class TkPlugin(b3.plugin.Plugin):
 
         if sclient:
             points = self.forgiveAll(sclient.cid)
-            self.console.say(self.getMessage('forgive_clear', { 'name' : sclient.exactName, 'points' : points }))
+            if self._private_messages:
+                client.message(self.getMessage('forgive_clear', { 'name' : sclient.exactName, 'points' : points }))
+                sclient.message(self.getMessage('forgive_clear', { 'name' : sclient.exactName, 'points' : points }))
+            else:
+                self.console.say(self.getMessage('forgive_clear', { 'name' : sclient.exactName, 'points' : points }))
 
             return True
