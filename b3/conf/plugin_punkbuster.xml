@@ -1,4 +1,8 @@
 <configuration plugin="punkbuster">
+	<settings name="commands">
+		<set name="pbss">20</set>
+		<set name="pbbuildbans">80</set>
+	</settings>
 	<settings name="settings">
 		<set name="bans_file">~/cod/pb/pbbans.dat</set>
 		<!-- crontab like time settings for when to rebuild bans file, 0 for never -->
