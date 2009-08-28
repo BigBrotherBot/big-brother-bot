@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   28/08/2009 - v1.11.0 - Bakes
+#    * adds Remote B3 thru FTP functionality.
 #   19/08/2009 - v1.10.0 - courgette
 #    * adds the inflictCustomPenalty() that allows to define game specific penalties.
 #      requires admin.py v1.4+
@@ -29,7 +31,7 @@
 #    Added atexit handlers
 #    Added warning, info, exception, and critical log handlers
 __author__  = 'ThorN'
-__version__ = '1.10.0'
+__version__ = '1.11.0'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit
@@ -44,7 +46,6 @@ import b3.cron
 import b3.parsers.q3a_rcon
 import b3.clients
 import b3.functions
-
 class Parser(object):
     _lineFormat = re.compile('^([a-z ]+): (.*?)', re.IGNORECASE)
 
@@ -208,8 +209,27 @@ class Parser(object):
         self.storage = b3.storage.getStorage('database', self.config.get('b3', 'database'), self)
 
         # open log file
-        self.bot('Game log %s', self.config.getpath('server', 'game_log'))
-        f = self.config.getpath('server', 'game_log')
+        if self.config.get('server','game_log')[0:6] == 'ftp://' :
+            self.bot('Game log %s', self.config.get('server', 'game_log'))
+            f = os.path.normpath(os.path.expanduser('games_mp.log'))
+            ftptempfile = open(f, "w")
+            ftptempfile.close()
+            from b3 import functions
+            from ftplib import FTP
+            def handleDownload(block):
+                self.file.write(block)
+                self.file.flush()
+            gamelog = self.config.get('server', 'game_log')
+            ftpconfig = functions.splitFTPDSN(gamelog)
+            ftp=FTP(ftpconfig['host'], ftpconfig['user'], ftpconfig['password'])
+            ftp.cwd(ftpconfig['path'])
+            self.file = open('games_mp.log', 'ab')
+            size=os.path.getsize(ftpconfig['filename'])
+            self.debug('Logfile updating, please wait')
+            ftp.retrbinary('RETR ' + ftpconfig['filename'], handleDownload, rest=size)          
+        else:
+            self.bot('Game log %s', self.config.getpath('server', 'game_log'))
+            f = self.config.getpath('server', 'game_log')
         self.bot('Starting bot reading file %s', f)
 
         if os.path.isfile(f):
@@ -401,6 +421,20 @@ class Parser(object):
             p = 'publist'
             conf = self.getAbsolutePath('@b3/conf/plugin_publist.xml')
             self.bot('Loading Plugin %s [%s]', p, conf)
+            try:
+                pluginModule = self.pluginImport(p)
+                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title())(self, conf)
+                self._pluginOrder.append(p)
+                version = getattr(pluginModule, '__version__', 'Unknown Version')
+                author  = getattr(pluginModule, '__author__', 'Unknown Author')
+                self.bot('Plugin %s (%s - %s) loaded', p, version, author)
+            except Exception, msg:
+                self.verbose('Error loading plugin: %s', msg)
+        if self.config.get('server','game_log')[0:6] == 'ftp://' :
+            #self.debug('ftpytail not found!')
+            p = 'ftpytail'
+            conf = self.getAbsolutePath('@b3/conf/plugin_publist.xml')
+            self.bot('Loading Plugin %s', p)
             try:
                 pluginModule = self.pluginImport(p)
                 self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title())(self, conf)
