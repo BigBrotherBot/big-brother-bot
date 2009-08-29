@@ -419,11 +419,10 @@ class Parser(object):
         if 'publist' not in self._pluginOrder:
             #self.debug('publist not found!')
             p = 'publist'
-            conf = self.getAbsolutePath('@b3/conf/plugin_publist.xml')
-            self.bot('Loading Plugin %s [%s]', p, conf)
+            self.bot('Loading Plugin %s', p)
             try:
                 pluginModule = self.pluginImport(p)
-                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title())(self, conf)
+                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title())(self)
                 self._pluginOrder.append(p)
                 version = getattr(pluginModule, '__version__', 'Unknown Version')
                 author  = getattr(pluginModule, '__author__', 'Unknown Author')
@@ -433,11 +432,10 @@ class Parser(object):
         if self.config.get('server','game_log')[0:6] == 'ftp://' :
             #self.debug('ftpytail not found!')
             p = 'ftpytail'
-            conf = self.getAbsolutePath('@b3/conf/plugin_ftpytail.xml')
             self.bot('Loading Plugin %s', p)
             try:
                 pluginModule = self.pluginImport(p)
-                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title())(self, conf)
+                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title()) (self)
                 self._pluginOrder.append(p)
                 version = getattr(pluginModule, '__version__', 'Unknown Version')
                 author  = getattr(pluginModule, '__author__', 'Unknown Author')

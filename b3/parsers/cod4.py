@@ -19,6 +19,7 @@
 #         : Tighter regexp for playernames. _reColor strips ascii <33, 47 and >127
 #           This includes spaces and also the / is removed. 
 # v1.1.4  : xlr8or - Removed bug for non PB servers
+# v1.1.5  : Bakes - Improved suicide code, now works with weapon suicides, not falling.
 
 
 __author__  = 'ThorN, xlr8or'
@@ -131,10 +132,10 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
 
         attacker.name = match.group('aname')
         victim.name = match.group('name')
-
+        
         event = b3.events.EVT_CLIENT_KILL
 
-        if attacker.cid == victim.cid:
+        if match.group('acid') == '-1':
             event = b3.events.EVT_CLIENT_SUICIDE
         elif attacker.team != b3.TEAM_UNKNOWN and \
              attacker.team and \

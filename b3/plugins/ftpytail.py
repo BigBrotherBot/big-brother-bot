@@ -46,13 +46,12 @@ class FtpytailPlugin(b3.plugin.Plugin):
     def handleDownload(block):
 	  self.file.write(block)
 	  self.file.flush()
+    ftp=FTP(self.ftpconfig['host'], self.ftpconfig['user'], self.ftpconfig['password'])
+    ftp.cwd(os.path.dirname(self.ftpconfig['path']))
+    self.file = open('games_mp.log', 'ab')
     while True:
-        ftp=FTP(self.ftpconfig['host'], self.ftpconfig['user'], self.ftpconfig['password'])
-        ftp.cwd(os.path.dirname(self.ftpconfig['path']))
-        self.file = open('games_mp.log', 'ab')
-        while True:
-          size=os.path.getsize('games_mp.log')
-          ftp.retrbinary('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload, rest=size)          
+      size=os.path.getsize('games_mp.log')
+      ftp.retrbinary('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload, rest=size)          
 
 
               
