@@ -433,7 +433,7 @@ class Parser(object):
         if self.config.get('server','game_log')[0:6] == 'ftp://' :
             #self.debug('ftpytail not found!')
             p = 'ftpytail'
-            conf = self.getAbsolutePath('@b3/conf/plugin_publist.xml')
+            conf = self.getAbsolutePath('@b3/conf/plugin_ftpytail.xml')
             self.bot('Loading Plugin %s', p)
             try:
                 pluginModule = self.pluginImport(p)
