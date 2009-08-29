@@ -38,7 +38,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
   def onStartup(self):
     if self.console.config.get('server','game_log')[0:6] == 'ftp://' :
         gamelog = self.console.config.get('server', 'game_log')
-        self.ftpconfig = functions.splitFTPDSN(gamelog)
+        self.ftpconfig = functions.splitDSN(gamelog)
         thread1 = threading.Thread( target=self.update)
         thread1.start()
 
@@ -48,11 +48,11 @@ class FtpytailPlugin(b3.plugin.Plugin):
 	  self.file.flush()
     while True:
         ftp=FTP(self.ftpconfig['host'], self.ftpconfig['user'], self.ftpconfig['password'])
-        ftp.cwd(self.ftpconfig['path'])
+        ftp.cwd(os.path.dirname(self.ftpconfig['path']))
         self.file = open('games_mp.log', 'ab')
         while True:
-          size=os.path.getsize(self.ftpconfig['filename'])
-          ftp.retrbinary('RETR ' + self.ftpconfig['filename'], handleDownload, rest=size)          
+          size=os.path.getsize('games_mp.log')
+          ftp.retrbinary('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload, rest=size)          
 
 
               

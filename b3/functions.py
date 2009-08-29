@@ -49,37 +49,6 @@ def splitDSN(url):
       g['host'] = None
 
   return g
-
-#--------------------------------------------------------------------------------------------------
-def splitFTPDSN(url):
-          m = re.match(r'^ftp://?(?:(?P<user>[^@:]+)(?::(?P<password>[^@]+))?@)?(?P<host>[^/:]+)?(?::(?P<port>\d+))?(?P<path>[^:]*):(?P<filename>.*)', url)
-          g = m.groupdict()
-          return g
-          if not m:
-            return None
-
-          g = m.groupdict()
-          if g['port']:
-            g['port'] = int(g['port'])
-
-          if not g['protocol']:
-            g['protocol'] = 'file'
-          if g['protocol'] == 'file':
-            if g['host'] and g['path']:
-              g['path'] = '%s%s' % (g['host'], g['path'])
-              g['host'] = None
-            elif g['host']:
-              g['path'] = g['host']
-              g['host'] = None
-          elif g['protocol'] == 'exec':
-            if g['host'] and g['path']:
-              g['path'] = '%s/%s' % (g['host'], g['path'])
-              g['host'] = None
-            elif g['host']:
-              g['path'] = g['host']
-              g['host'] = None
-
-          return g
 #--------------------------------------------------------------------------------------------------
 def minutes2int(mins):
   if re.match('^[0-9.]+$', mins):
