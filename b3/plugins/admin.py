@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   8/30/2009 - 1.4.3 - Bakes
+#    * cmd_aliases changed to allow the client to select how many aliases should be shown !aliases bakes 20
 #   8/24/2009 - 1.4.2 - courgette
 #    * warning messages are also sent by pm to the admin that give them
 #   8/22/2009 - 1.4.1 - courgette
@@ -38,7 +40,7 @@
 #    Added ci command
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.4.2'
+__version__ = '1.4.3'
 __author__  = 'ThorN'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
@@ -1519,15 +1521,17 @@ class AdminPlugin(b3.plugin.Plugin):
 
     def cmd_aliases(self, data, client=None, cmd=None):
         """\
-        <name> - list a players aliases
+        <name> [<limit>]- list a players aliases
         """
         m = self.parseUserCmd(data)
         if not m:
             client.message('^7Invalid parameters')
             return False
 
-        cid = m[0]
-
+        cid, limit = m
+        
+        if not limit:
+            limit = 10
         sclient = self.findClientPrompt(cid, client)
         if sclient:
             if sclient.maskGroup:
@@ -1536,7 +1540,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 myaliases = []
                 for a in sclient.aliases:
                     myaliases.append('%s^7' % a.alias)
-                    if len(myaliases) > 10:
+                    if len(myaliases) > int(limit)-1:
                         myaliases.append('^7[^2and more^7]')
                         break
 
