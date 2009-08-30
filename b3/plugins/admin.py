@@ -1634,11 +1634,13 @@ class AdminPlugin(b3.plugin.Plugin):
             sclient.setvar(self, 'warnTime', self.console.time())
 
         warnings = sclient.numWarnings
-        msg = self.config.getTextTemplate('warn', 'message', warnings=warnings, reason=warning)
-        sclient.message(msg)
-        if admin:
-            admin.message(msg)
-
+        if self.config.get('warn', 'pm_global') == '1':
+            msg = self.config.getTextTemplate('warn', 'message', warnings=warnings, reason=warning)
+            sclient.message(msg)
+            if admin:
+                admin.message(msg)
+        else:
+            self.console.say(self.config.getTextTemplate('warn', 'message', warnings=warnings, reason=warning))
         if warnings >= self.config.getint('warn', 'instant_kick_num'):
             self.warnKick(sclient, admin)
         elif warnings >= self.config.getint('warn', 'alert_kick_num'):
