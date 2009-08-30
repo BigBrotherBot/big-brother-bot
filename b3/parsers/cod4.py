@@ -28,6 +28,7 @@ import b3.parsers.cod2
 import b3.parsers.q3a
 import b3.functions
 import re
+from b3 import functions
 
 class Cod4Parser(b3.parsers.cod2.Cod2Parser):
     gameName = 'cod4'
