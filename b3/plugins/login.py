@@ -20,10 +20,11 @@
 #
 #	1.0.1 - 23/08/2009 - Courgette
 #		* fix indentation problem
-#	
+#	1.0.2 - 28/08/2009 - xlr8or
+#   * minor update
 
 __author__  = 'Tim ter Laak'
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 # Version = major.minor.patches
 
@@ -36,7 +37,9 @@ from b3.querybuilder import QueryBuilder
 
 class LoginPlugin(b3.plugin.Plugin):
 
-	def onLoadConfig(self):
+	_pmcomm = ''
+
+  def onLoadConfig(self):
 		try:
 			self.threshold = self.config.getint('settings', 'thresholdlevel') 
 		except:
@@ -56,6 +59,14 @@ class LoginPlugin(b3.plugin.Plugin):
 		if self._adminPlugin:
 			self._adminPlugin.registerCommand(self, 'login', 2, self.cmd_login, secretLevel=1)
 			self._adminPlugin.registerCommand(self, 'setpassword', self.passwdlevel, self.cmd_setpassword)
+
+    # Whats the command to send a private message?
+    if self.console.gameName[:5] == 'etpro':
+      self._pmcomm = '/m'
+    else:
+    	self._pmcomm = '/tell'
+    self.debug('Using "%s" as the private messaging command' %self._pmcomm)
+
 
 	def onEvent(self, event):
 		if (event.type == b3.events.EVT_CLIENT_AUTH):
@@ -77,13 +88,10 @@ class LoginPlugin(b3.plugin.Plugin):
 				client.groupBits = 2
 
 			if not client.password:
-				client.message("You need a password to use all your privileges, but I have none on file. Ask the administrator to set a password for you.")
+				client.message('You need a password to use all your privileges, but I have none on file. Ask the administrator to set a password for you.')
 				return
 			else:
-				if self.console.gameName[:5] == 'etpro':
-					message = "Login via console: /tell %s !login yourpassword" %client.name
-				else:
-					message = "Login via console: /tell %s !login yourpassword" %client.cid
+  			message = 'Login via console: %s %s !login yourpassword' %(self._pmcomm, client.cid)
 				client.message(message)
 				return
 
@@ -110,7 +118,8 @@ class LoginPlugin(b3.plugin.Plugin):
 				client.message('^1***Access denied***^7')
 				return
 		else:
-			client.message("Usage (via console): /tell %s !login yourpassword" % client.cid)
+			message = 'Usage (via console): %s %s !login yourpassword' %(self._pmcomm, client.cid)
+      client.message(message)
 			return
 		
 	def cmd_setpassword(self, data, client, cmd=None):
