@@ -1638,7 +1638,11 @@ class AdminPlugin(b3.plugin.Plugin):
             sclient.setvar(self, 'warnTime', self.console.time())
 
         warnings = sclient.numWarnings
-        if self.config.get('warn', 'pm_global') == '1':
+        try:
+            pmglobal = self.config.get('warn', 'pm_global')
+        except:
+            pmglobal = '0'
+        if pmglobal == '1':
             msg = self.config.getTextTemplate('warn', 'message', warnings=warnings, reason=warning)
             sclient.message(msg)
             if admin:
