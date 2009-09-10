@@ -29,6 +29,7 @@ import b3.events
 import b3.plugin
 import os.path
 from ftplib import FTP
+import time
  
 #--------------------------------------------------------------------------------------------------
 class FtpytailPlugin(b3.plugin.Plugin):
@@ -46,12 +47,24 @@ class FtpytailPlugin(b3.plugin.Plugin):
     def handleDownload(block):
 	  self.file.write(block)
 	  self.file.flush()
-    ftp=FTP(self.ftpconfig['host'], self.ftpconfig['user'], self.ftpconfig['password'])
-    ftp.cwd(os.path.dirname(self.ftpconfig['path']))
+    ftp = self.ftpconnect()
     self.file = open('games_mp.log', 'ab')
     while True:
-      size=os.path.getsize('games_mp.log')
-      ftp.retrbinary('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload, rest=size)          
+        try:
+            if ftp == False:
+                ftp = self.ftpconnect()
+            size=os.path.getsize('games_mp.log')
+            ftp.retrbinary('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload, rest=size)          
+            if self.console._paused == True:
+                self.console._paused = False
+        except:
+            self.debug('Lost connection to server, pausing until updated properly, Sleeping 10 seconds')
+            self.console._paused = True
+            ftp.close()
+            ftp = False
+            time.sleep(10)
 
-
-              
+  def ftpconnect(self):
+    ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'],timeout=5)
+    ftp.cwd(os.path.dirname(self.ftpconfig['path']))
+    return ftp
