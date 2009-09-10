@@ -65,6 +65,9 @@ class FtpytailPlugin(b3.plugin.Plugin):
             time.sleep(10)
 
   def ftpconnect(self):
-    ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'],timeout=5)
+    try:
+        ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'],timeout=5)
+    except:
+        ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'])
     ftp.cwd(os.path.dirname(self.ftpconfig['path']))
     return ftp
