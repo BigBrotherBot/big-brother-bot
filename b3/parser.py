@@ -220,13 +220,13 @@ class Parser(object):
                 self.file.write(block)
                 self.file.flush()
             gamelog = self.config.get('server', 'game_log')
-            ftpconfig = functions.splitFTPDSN(gamelog)
+            ftpconfig = functions.splitDSN(gamelog)
             ftp=FTP(ftpconfig['host'], ftpconfig['user'], ftpconfig['password'])
-            ftp.cwd(ftpconfig['path'])
+            ftp.cwd(os.path.dirname(ftpconfig['path']))
             self.file = open('games_mp.log', 'ab')
-            size=os.path.getsize(ftpconfig['filename'])
+            size=os.path.getsize('games_mp.log')
             self.debug('Logfile updating, please wait')
-            ftp.retrbinary('RETR ' + ftpconfig['filename'], handleDownload, rest=size)          
+            ftp.retrbinary('RETR ' + os.path.basename(ftpconfig['path']), handleDownload, rest=size)          
         else:
             self.bot('Game log %s', self.config.getpath('server', 'game_log'))
             f = self.config.getpath('server', 'game_log')
@@ -419,11 +419,10 @@ class Parser(object):
         if 'publist' not in self._pluginOrder:
             #self.debug('publist not found!')
             p = 'publist'
-            conf = self.getAbsolutePath('@b3/conf/plugin_publist.xml')
-            self.bot('Loading Plugin %s [%s]', p, conf)
+            self.bot('Loading Plugin %s', p)
             try:
                 pluginModule = self.pluginImport(p)
-                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title())(self, conf)
+                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title())(self)
                 self._pluginOrder.append(p)
                 version = getattr(pluginModule, '__version__', 'Unknown Version')
                 author  = getattr(pluginModule, '__author__', 'Unknown Author')
@@ -433,11 +432,10 @@ class Parser(object):
         if self.config.get('server','game_log')[0:6] == 'ftp://' :
             #self.debug('ftpytail not found!')
             p = 'ftpytail'
-            conf = self.getAbsolutePath('@b3/conf/plugin_publist.xml')
             self.bot('Loading Plugin %s', p)
             try:
                 pluginModule = self.pluginImport(p)
-                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title())(self, conf)
+                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title()) (self)
                 self._pluginOrder.append(p)
                 version = getattr(pluginModule, '__version__', 'Unknown Version')
                 author  = getattr(pluginModule, '__author__', 'Unknown Author')

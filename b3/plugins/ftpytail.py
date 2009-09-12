@@ -29,6 +29,7 @@ import b3.events
 import b3.plugin
 import os.path
 from ftplib import FTP
+import time
  
 #--------------------------------------------------------------------------------------------------
 class FtpytailPlugin(b3.plugin.Plugin):
@@ -38,7 +39,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
   def onStartup(self):
     if self.console.config.get('server','game_log')[0:6] == 'ftp://' :
         gamelog = self.console.config.get('server', 'game_log')
-        self.ftpconfig = functions.splitFTPDSN(gamelog)
+        self.ftpconfig = functions.splitDSN(gamelog)
         thread1 = threading.Thread( target=self.update)
         thread1.start()
 
@@ -46,13 +47,27 @@ class FtpytailPlugin(b3.plugin.Plugin):
     def handleDownload(block):
 	  self.file.write(block)
 	  self.file.flush()
+    ftp = self.ftpconnect()
+    self.file = open('games_mp.log', 'ab')
     while True:
-        ftp=FTP(self.ftpconfig['host'], self.ftpconfig['user'], self.ftpconfig['password'])
-        ftp.cwd(self.ftpconfig['path'])
-        self.file = open('games_mp.log', 'ab')
-        while True:
-          size=os.path.getsize(self.ftpconfig['filename'])
-          ftp.retrbinary('RETR ' + self.ftpconfig['filename'], handleDownload, rest=size)          
+        try:
+            if ftp == False:
+                ftp = self.ftpconnect()
+            size=os.path.getsize('games_mp.log')
+            ftp.retrbinary('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload, rest=size)          
+            if self.console._paused == True:
+                self.console._paused = False
+        except:
+            self.debug('Lost connection to server, pausing until updated properly, Sleeping 10 seconds')
+            self.console._paused = True
+            ftp.close()
+            ftp = False
+            time.sleep(10)
 
-
-              
+  def ftpconnect(self):
+    try:
+        ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'],timeout=5)
+    except:
+        ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'])
+    ftp.cwd(os.path.dirname(self.ftpconfig['path']))
+    return ftp

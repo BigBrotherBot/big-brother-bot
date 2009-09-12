@@ -19,9 +19,10 @@
 # 7/23/2005 - 1.1.0
 #    Added damage type to Damage and Kill event data
 # 27/6/2009 - 1.3.1 - xlr8or - Added Action Mechanism (event) for version 1.1.5 
+# 28/8/2009 - 1.3.2 - Bakes - added regexp for CoD4 suicides
 
 __author__  = 'ThorN'
-__version__ = '1.3.1'
+__version__ = '1.3.2'
 
 
 
@@ -61,6 +62,8 @@ class CodParser(b3.parsers.q3a.Q3AParser):
         re.compile(r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9-]{1,2});(?P<team>[a-z]+);(?P<name>[^;]+);(?P<aguid>[^;]*);(?P<acid>-1);(?P<ateam>world);(?P<aname>[^;]*);(?P<aweap>[a-z0-9_-]+);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$', re.IGNORECASE),
         # player kills/damage
         re.compile(r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]*);(?P<name>[^;]+);(?P<aguid>[^;]+);(?P<acid>[0-9]{1,2});(?P<ateam>[a-z]*);(?P<aname>[^;]+);(?P<aweap>[a-z0-9_-]+);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$', re.IGNORECASE),
+        # suicides (cod4)
+        re.compile(r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]*);(?P<name>[^;]+);(?P<aguid>[^;]*);(?P<acid>-1);(?P<ateam>[a-z]*);(?P<aname>[^;]+);(?P<aweap>[a-z0-9_-]+);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$', re.IGNORECASE),
         
         #A;168004;7;allies;^4[^9SaW^4] ^9|| ^1IvEl;bomb_plant
         #team actions

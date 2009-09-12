@@ -49,7 +49,6 @@ def splitDSN(url):
       g['host'] = None
 
   return g
-
 #--------------------------------------------------------------------------------------------------
 def splitFTPDSN(url):
           m = re.match(r'^ftp://?(?:(?P<user>[^@:]+)(?::(?P<password>[^@]+))?@)?(?P<host>[^/:]+)?(?::(?P<port>\d+))?(?P<path>[^:]*):(?P<filename>.*)', url)
