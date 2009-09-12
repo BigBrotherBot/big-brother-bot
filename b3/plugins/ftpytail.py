@@ -50,18 +50,23 @@ class FtpytailPlugin(b3.plugin.Plugin):
     ftp = self.ftpconnect()
     self.file = open('games_mp.log', 'ab')
     while True:
+        if ftp == False or ftp == True:
+           ftp = self.ftpconnect()
         try:
             if ftp == False:
+                self.debug('FTP connection set false, reconnecting to FTP!')
                 ftp = self.ftpconnect()
             size=os.path.getsize('games_mp.log')
             ftp.retrbinary('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload, rest=size)          
-            if self.console._paused == True:
-                self.console._paused = False
         except:
             self.debug('Lost connection to server, pausing until updated properly, Sleeping 10 seconds')
-            self.console._paused = True
-            ftp.close()
+            try:
+                ftp.close()
+                self.debug('FTP Connection Closed')
+            except:
+                self.debug('FTP does not appear to be open, so not closed')
             ftp = False
+            self.debug('FTP connection set false, sleeping for 10 seconds before retry')
             time.sleep(10)
 
   def ftpconnect(self):

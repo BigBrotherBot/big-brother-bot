@@ -10,8 +10,7 @@ Big Brother Bot
 1. Python 2.3+ - http://www.python.org
 2. MySQL-python (Tested with 0.9.2 and 1.0) - http://sourceforge.net/project/showfiles.php?group_id=22307&package_id=15775
 3. MySQL (Tested with 3.23) - http://www.mysql.com/
-4. Python Elementtree package - http://www.python.org/pypi/elementtree/1.2.6-20050316
-5. setuptools - http://peak.telecommunity.com/dist/ez_setup.py (download and run)
+4. setuptools - http://peak.telecommunity.com/dist/ez_setup.py (download and run)
 
 ### Assumptions
 
