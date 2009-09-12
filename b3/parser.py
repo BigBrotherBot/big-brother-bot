@@ -492,7 +492,7 @@ class Parser(object):
     def enablePlugins(self):
         """Enable all plugins except for publist, ftpytail and admin"""
         for k in self._pluginOrder:
-            if k not in ('admin', 'publist', 'ftpytail')
+            if k not in ('admin', 'publist', 'ftpytail'):
                 p = self._plugins[k]
                 self.bot('Enabling Plugin %s', k)
                 p.enable()
