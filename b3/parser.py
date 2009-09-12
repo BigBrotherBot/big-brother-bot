@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   12/09/2009 - v1.11.1 - xlr8or
+#    * Added few functions and prevent spamming b3.log on pause
 #   28/08/2009 - v1.11.0 - Bakes
 #    * adds Remote B3 thru FTP functionality.
 #   19/08/2009 - v1.10.0 - courgette
@@ -31,7 +33,7 @@
 #    Added atexit handlers
 #    Added warning, info, exception, and critical log handlers
 __author__  = 'ThorN'
-__version__ = '1.11.0'
+__version__ = '1.11.1'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit
@@ -53,6 +55,7 @@ class Parser(object):
     _plugins  = {}
     _pluginOrder = []
     _paused = False
+    _pauseNotice = False
     _events = {}
     _eventNames = {}
     _commands = {}
@@ -72,6 +75,7 @@ class Parser(object):
     output = None
     log = None
     replay = False
+    remoteLog = False
 
     # Time in seconds of epoch of game log
     logTime = 0
@@ -210,6 +214,8 @@ class Parser(object):
 
         # open log file
         if self.config.get('server','game_log')[0:6] == 'ftp://' :
+            self.remoteLog = True
+            self.bot('Working in Remote-Log-Mode')
             self.bot('Game log %s', self.config.get('server', 'game_log'))
             f = os.path.normpath(os.path.expanduser('games_mp.log'))
             ftptempfile = open(f, "w")
@@ -336,6 +342,7 @@ class Parser(object):
     def unpause(self):
         """Unpause B3 log parsing"""
         self._paused = False
+        self._pauseNotice = False
 
     def loadEvents(self):
         """Load events from event manager"""
@@ -474,6 +481,22 @@ class Parser(object):
             p.start()
             #time.sleep(1)    # give plugin time to crash, er...start
 
+    def disablePlugins(self):
+        """Disable all plugins except for publist, ftpytail and admin"""
+        for k in self._pluginOrder:
+            if k not in ('admin', 'publist', 'ftpytail')
+                p = self._plugins[k]
+                self.bot('Disabling Plugin %s', k)
+                p.disable()
+
+    def enablePlugins(self):
+        """Enable all plugins except for publist, ftpytail and admin"""
+        for k in self._pluginOrder:
+            if k not in ('admin', 'publist', 'ftpytail')
+                p = self._plugins[k]
+                self.bot('Enabling Plugin %s', k)
+                p.enable()
+
     def getMessage(self, msg, *args):
         """Return a message from the config file"""
         try:
@@ -541,7 +564,9 @@ class Parser(object):
         logTimeLast = 0
         while self.working:
             if self._paused:
-                self.bot('PAUSED')
+                if self._pauseNotice == False:
+                    self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
+                    self._pauseNotice = True
             else:
                 line = str(self.read()).strip()
 
