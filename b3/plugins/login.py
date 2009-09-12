@@ -39,7 +39,7 @@ class LoginPlugin(b3.plugin.Plugin):
 
 	_pmcomm = ''
 
-  def onLoadConfig(self):
+	def onLoadConfig(self):
 		try:
 			self.threshold = self.config.getint('settings', 'thresholdlevel') 
 		except:
