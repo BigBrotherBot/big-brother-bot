@@ -9,6 +9,9 @@
 - Fix default config file picking for plugins
 - Added action mechanism
 - If masked show masked level instead of real level
+- Warning Messages are now, by default, only sent to the warned player and the admin that sent the warning. This is a configurable option, in admin config.
+- Fixed !rebuild command for Call of Duty 4.
+- Punkbuster plugin now follows levels set in its configuration file.
 
 1.1.5 (not released)
 -----
