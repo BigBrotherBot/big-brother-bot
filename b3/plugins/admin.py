@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   9/1/2009 - 1.4.2 - xlr8or
+#    * check database connection before checking groups
 #   8/24/2009 - 1.4.2 - courgette
 #    * warning messages are also sent by pm to the admin that give them
 #   8/22/2009 - 1.4.1 - courgette
@@ -38,7 +40,7 @@
 #    Added ci command
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.4.2'
+__version__ = '1.4.3'
 __author__  = 'ThorN'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
@@ -91,7 +93,9 @@ class AdminPlugin(b3.plugin.Plugin):
                 if func:
                     self.registerCommand(self, cmd, level, func, alias)
 
-        if not self._commands.has_key('iamgod'):
+        if not self.console.storage.db:
+            self.error('There is no database connection! Cannot store or retrieve any information. Fix the database connection first!')
+        elif not self._commands.has_key('iamgod'):
             superadmins = self.console.clients.lookupSuperAdmins()
             try:
                 if len(superadmins) == 0:
@@ -1634,7 +1638,11 @@ class AdminPlugin(b3.plugin.Plugin):
             sclient.setvar(self, 'warnTime', self.console.time())
 
         warnings = sclient.numWarnings
-        if self.config.get('warn', 'pm_global') == '1':
+        try:
+            pmglobal = self.config.get('warn', 'pm_global')
+        except:
+            pmglobal = '0'
+        if pmglobal == '1':
             msg = self.config.getTextTemplate('warn', 'message', warnings=warnings, reason=warning)
             sclient.message(msg)
             if admin:
