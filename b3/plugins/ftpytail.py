@@ -28,9 +28,10 @@ from b3 import functions
 import b3.events
 import b3.plugin
 import os.path
-from b3.lib.ftplib import FTP
+from ftplib import FTP
 import time
- 
+import re
+import sys
 #--------------------------------------------------------------------------------------------------
 class FtpytailPlugin(b3.plugin.Plugin):
   requiresConfigFile = False
@@ -47,15 +48,13 @@ class FtpytailPlugin(b3.plugin.Plugin):
     def handleDownload(block):
 	  self.file.write(block)
 	  self.file.flush()
-    ftp = self.ftpconnect()
+    ftp = False
     self.file = open('games_mp.log', 'ab')
     while True:
         try:
-            if ftp == False or ftp == True:
-                self.debug('FTP connection set false, reconnecting to FTP!')
+            if ftp == False:
                 ftp = self.ftpconnect()
-                self.clients.sync()
-                self.console.unpause()
+                ftp.cwd(os.path.dirname(self.ftpconfig['path']))
             size=os.path.getsize('games_mp.log')
             ftp.retrbinary('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload, rest=size)          
         except:
@@ -67,9 +66,17 @@ class FtpytailPlugin(b3.plugin.Plugin):
             except:
                 self.debug('FTP does not appear to be open, so not closed')
             ftp = False
-            self.debug('FTP connection set false, sleeping for 10 seconds before retry')
             time.sleep(10)
 
   def ftpconnect(self):
-    ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'],timeout=5)
+    versionsearch = re.search("^((?P<mainversion>[0-9]).(?P<lowerversion>[0-9]+)?)", sys.version)
+    version = int(versionsearch.group(3))
+    if version < 6:
+        self.debug('Python Version %s.%s, so not setting timeout, update to 2.6 if you want B3 to autorestart quicker.' % (versionsearch.group(2), versionsearch.group(3)))
+        ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'])
+    else:
+        self.debug('Python Version %s.%s, so setting timeout of 5 seconds' % (versionsearch.group(2), versionsearch.group(3)))
+        ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'],timeout=5)
+    self.console.clients.sync()
+    self.console.unpause()
     return ftp
