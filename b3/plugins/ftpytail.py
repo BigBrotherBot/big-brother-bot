@@ -28,7 +28,7 @@ from b3 import functions
 import b3.events
 import b3.plugin
 import os.path
-from ftplib import FTP
+from b3.lib.ftplib import FTP
 import time
  
 #--------------------------------------------------------------------------------------------------
@@ -71,9 +71,5 @@ class FtpytailPlugin(b3.plugin.Plugin):
             time.sleep(10)
 
   def ftpconnect(self):
-    try:
-        ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'],timeout=5)
-    except:
-        ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'])
-    ftp.cwd(os.path.dirname(self.ftpconfig['path']))
+    ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'],timeout=5)
     return ftp
