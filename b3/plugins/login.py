@@ -141,4 +141,4 @@ class LoginPlugin(b3.plugin.Plugin):
     return
   
 # local variables:
-# tab-width: 4
+# tab-width: 2
