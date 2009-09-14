@@ -19,6 +19,7 @@
 __author__  = 'ThorN'
 
 import pkg_handler
+from b3.functions import main_is_frozen
 
 __version__ = pkg_handler.version(__name__)
 modulePath = pkg_handler.resource_directory(__name__)
@@ -55,11 +56,17 @@ def loadParser(pname):
 	return mod
 
 #-----------------------------------------------------------------------------------------------------------------------
+def getB3Path():
+	if main_is_frozen():
+		# which happens when running from the py2exe build
+		return os.path.dirname(sys.executable)
+	return os.path.join(modulePath, path[4:])
+
 def getAbsolutePath(path):
 	"""Return an absolute path name and expand the user prefix (~)"""
 	if path[0:4] == '@b3/':
-		# releative path to the b3 module directory
-		path = os.path.join(modulePath, path[4:])
+		#print "B3 path: %s" % getB3Path()
+		path = os.path.join(getB3Path(), path[4:])
 
 	return os.path.normpath(os.path.expanduser(path))
 

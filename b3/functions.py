@@ -20,6 +20,16 @@ __author__  = 'ThorN, xlr8or'
 __version__ = '1.2.0'
 
 import re
+import os
+import sys
+import imp
+
+def main_is_frozen():
+    """detect if b3 is running from b3_run.exe"""
+    return (hasattr(sys, "frozen") or # new py2exe
+        hasattr(sys, "importers") or # old py2exe
+        imp.is_frozen("__main__")) # tools/freeze
+
 
 #--------------------------------------------------------------------------------------------------
 def splitDSN(url):
