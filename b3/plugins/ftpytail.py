@@ -20,7 +20,7 @@
 # 17/06/2009 - 1.0 - Bakes
 # Initial Plugin, basic functionality.
  
-__version__ = '1.0'
+__version__ = '1.1'
 __author__ = 'Bakes'
  
 import b3, threading, time, re
@@ -29,6 +29,7 @@ import b3.events
 import b3.plugin
 import os.path
 from ftplib import FTP
+import ftplib
 import time
 import re
 import sys
@@ -48,15 +49,18 @@ class FtpytailPlugin(b3.plugin.Plugin):
     def handleDownload(block):
 	  self.file.write(block)
 	  self.file.flush()
-    ftp = False
+    ftp = None
     self.file = open('games_mp.log', 'ab')
     while True:
         try:
-            if ftp == False:
+            if not ftp:
+                self.debug('FTP connection not active, attempting to (re)connect')
                 ftp = self.ftpconnect()
-                ftp.cwd(os.path.dirname(self.ftpconfig['path']))
             size=os.path.getsize('games_mp.log')
             ftp.retrbinary('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload, rest=size)          
+            if self.console._paused:
+                self.console.unpause()
+                self.debug('Unpausing')
         except:
             self.debug('Lost connection to server, pausing until updated properly, Sleeping 10 seconds')
             self.console.pause()
@@ -65,7 +69,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
                 self.debug('FTP Connection Closed')
             except:
                 self.debug('FTP does not appear to be open, so not closed')
-            ftp = False
+            ftp = None
             time.sleep(10)
 
   def ftpconnect(self):
@@ -77,6 +81,6 @@ class FtpytailPlugin(b3.plugin.Plugin):
     else:
         self.debug('Python Version %s.%s, so setting timeout of 5 seconds' % (versionsearch.group(2), versionsearch.group(3)))
         ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'],timeout=5)
+    ftp.cwd(os.path.dirname(self.ftpconfig['path']))
     self.console.clients.sync()
-    self.console.unpause()
     return ftp
