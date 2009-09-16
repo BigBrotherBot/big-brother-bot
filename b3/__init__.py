@@ -60,7 +60,7 @@ def getB3Path():
 	if main_is_frozen():
 		# which happens when running from the py2exe build
 		return os.path.dirname(sys.executable)
-	return os.path.join(modulePath, path[4:])
+	return modulePath
 
 def getAbsolutePath(path):
 	"""Return an absolute path name and expand the user prefix (~)"""
