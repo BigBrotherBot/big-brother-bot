@@ -25,18 +25,16 @@ __author__ = 'Bakes'
  
 import b3, threading, time, re
 from b3 import functions
-import b3.events
 import b3.plugin
 import os.path
 from ftplib import FTP
 import ftplib
-import time
-import re
 import sys
 #--------------------------------------------------------------------------------------------------
 class FtpytailPlugin(b3.plugin.Plugin):
   requiresConfigFile = False
   ftpconfig = None
+  tempfile = None
   
   def onStartup(self):
     if self.console.config.get('server','game_log')[0:6] == 'ftp://' :
@@ -47,8 +45,10 @@ class FtpytailPlugin(b3.plugin.Plugin):
 
   def update(self):
     def handleDownload(block):
-	  self.file.write(block)
-	  self.file.flush()
+        if self.tempfile == None:
+            self.tempfile = block
+        else:
+            self.tempfile = self.tempfile + block
     ftp = None
     self.file = open('games_mp.log', 'ab')
     while True:
@@ -58,12 +58,22 @@ class FtpytailPlugin(b3.plugin.Plugin):
                 ftp = self.ftpconnect()
             size=os.path.getsize('games_mp.log')
             ftp.retrbinary('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload, rest=size)          
+            if self.tempfile:
+                self.file.write(self.tempfile)
+                self.tempfile = None
+                self.file.flush()
             if self.console._paused:
                 self.console.unpause()
                 self.debug('Unpausing')
         except:
             self.debug('Lost connection to server, pausing until updated properly, Sleeping 10 seconds')
             self.console.pause()
+            self.file.close()
+            self.file = open('games_mp.log', 'w')
+            self.file.close()
+            self.seektoend = True
+            self.file = open('games_mp.log', 'ab')
+            self.debug('Lost Connection, redownloading entire logfile')
             try:
                 ftp.close()
                 self.debug('FTP Connection Closed')

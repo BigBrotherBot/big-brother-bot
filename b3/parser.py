@@ -343,6 +343,7 @@ class Parser(object):
         """Unpause B3 log parsing"""
         self._paused = False
         self._pauseNotice = False
+        self.input.seek(0,2)
 
     def loadEvents(self):
         """Load events from event manager"""
