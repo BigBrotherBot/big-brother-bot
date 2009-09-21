@@ -25,10 +25,13 @@ __author__ = 'Bakes'
  
 import b3, threading, time, re
 from b3 import functions
+import b3.events
 import b3.plugin
 import os.path
 from ftplib import FTP
 import ftplib
+import time
+import re
 import sys
 #--------------------------------------------------------------------------------------------------
 class FtpytailPlugin(b3.plugin.Plugin):
@@ -56,6 +59,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
             if not ftp:
                 self.debug('FTP connection not active, attempting to (re)connect')
                 ftp = self.ftpconnect()
+                self.debug('FTP = %s' % str(ftp))
             size=os.path.getsize('games_mp.log')
             ftp.retrbinary('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload, rest=size)          
             if self.tempfile:
@@ -71,7 +75,6 @@ class FtpytailPlugin(b3.plugin.Plugin):
             self.file.close()
             self.file = open('games_mp.log', 'w')
             self.file.close()
-            self.seektoend = True
             self.file = open('games_mp.log', 'ab')
             self.debug('Lost Connection, redownloading entire logfile')
             try:
@@ -91,6 +94,9 @@ class FtpytailPlugin(b3.plugin.Plugin):
     else:
         self.debug('Python Version %s.%s, so setting timeout of 5 seconds' % (versionsearch.group(2), versionsearch.group(3)))
         ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'],timeout=5)
-    ftp.cwd(os.path.dirname(self.ftpconfig['path']))
+    try:
+        ftp.cwd(os.path.dirname(self.ftpconfig['path']))
+    except:
+        self.error('Cannot CWD to the correct directory, ftp connection has failed')
     self.console.clients.sync()
     return ftp
