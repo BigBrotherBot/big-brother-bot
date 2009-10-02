@@ -69,7 +69,8 @@ class FtpytailPlugin(b3.plugin.Plugin):
             if self.console._paused:
                 self.console.unpause()
                 self.debug('Unpausing')
-        except:
+        except ftplib.all_errors, e:
+            self.debug(str(e))
             self.debug('Lost connection to server, pausing until updated properly, Sleeping 10 seconds')
             self.console.pause()
             self.file.close()
@@ -89,11 +90,11 @@ class FtpytailPlugin(b3.plugin.Plugin):
     versionsearch = re.search("^((?P<mainversion>[0-9]).(?P<lowerversion>[0-9]+)?)", sys.version)
     version = int(versionsearch.group(3))
     if version < 6:
-        self.debug('Python Version %s.%s, so not setting timeout, update to 2.6 if you want B3 to autorestart quicker.' % (versionsearch.group(2), versionsearch.group(3)))
-        ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'])
+        self.debug('Python Version %s.%s, this is not supported and may lead to hangs. Please update Python to 2.6 if you want B3 to autorestart properly.' % (versionsearch.group(2), versionsearch.group(3)))
+        self.console.die('Python version is not new enough for FTPyTail, this will almost certainly lead to bot hangs. Please update your Python.')
     else:
-        self.debug('Python Version %s.%s, so setting timeout of 5 seconds' % (versionsearch.group(2), versionsearch.group(3)))
-        ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'],timeout=5)
+        self.debug('Python Version %s.%s, so setting timeout of 10 seconds' % (versionsearch.group(2), versionsearch.group(3)))
+        ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'],timeout=10)
     try:
         ftp.cwd(os.path.dirname(self.ftpconfig['path']))
     except:
