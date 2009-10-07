@@ -18,6 +18,10 @@
 #
 #
 # CHANGELOG
+#   12/09/2009 - v1.11.1 - xlr8or
+#    * Added few functions and prevent spamming b3.log on pause
+#   28/08/2009 - v1.11.0 - Bakes
+#    * adds Remote B3 thru FTP functionality.
 #   19/08/2009 - v1.10.0 - courgette
 #    * adds the inflictCustomPenalty() that allows to define game specific penalties.
 #      requires admin.py v1.4+
@@ -29,7 +33,7 @@
 #    Added atexit handlers
 #    Added warning, info, exception, and critical log handlers
 __author__  = 'ThorN'
-__version__ = '1.10.0'
+__version__ = '1.11.1'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit
@@ -44,7 +48,6 @@ import b3.cron
 import b3.parsers.q3a_rcon
 import b3.clients
 import b3.functions
-
 class Parser(object):
     _lineFormat = re.compile('^([a-z ]+): (.*?)', re.IGNORECASE)
 
@@ -52,6 +55,7 @@ class Parser(object):
     _plugins  = {}
     _pluginOrder = []
     _paused = False
+    _pauseNotice = False
     _events = {}
     _eventNames = {}
     _commands = {}
@@ -71,6 +75,7 @@ class Parser(object):
     output = None
     log = None
     replay = False
+    remoteLog = False
 
     # Time in seconds of epoch of game log
     logTime = 0
@@ -208,8 +213,29 @@ class Parser(object):
         self.storage = b3.storage.getStorage('database', self.config.get('b3', 'database'), self)
 
         # open log file
-        self.bot('Game log %s', self.config.getpath('server', 'game_log'))
-        f = self.config.getpath('server', 'game_log')
+        if self.config.get('server','game_log')[0:6] == 'ftp://' :
+            self.remoteLog = True
+            self.bot('Working in Remote-Log-Mode')
+            self.bot('Game log %s', self.config.get('server', 'game_log'))
+            f = os.path.normpath(os.path.expanduser('games_mp.log'))
+            ftptempfile = open(f, "w")
+            ftptempfile.close()
+            from b3 import functions
+            from ftplib import FTP
+            def handleDownload(block):
+                self.file.write(block)
+                self.file.flush()
+            gamelog = self.config.get('server', 'game_log')
+            ftpconfig = functions.splitDSN(gamelog)
+            ftp=FTP(ftpconfig['host'], ftpconfig['user'], ftpconfig['password'])
+            ftp.cwd(os.path.dirname(ftpconfig['path']))
+            self.file = open('games_mp.log', 'ab')
+            size=os.path.getsize('games_mp.log')
+            self.debug('Logfile updating, please wait')
+            ftp.retrbinary('RETR ' + os.path.basename(ftpconfig['path']), handleDownload, rest=size)          
+        else:
+            self.bot('Game log %s', self.config.getpath('server', 'game_log'))
+            f = self.config.getpath('server', 'game_log')
         self.bot('Starting bot reading file %s', f)
 
         if os.path.isfile(f):
@@ -316,6 +342,8 @@ class Parser(object):
     def unpause(self):
         """Unpause B3 log parsing"""
         self._paused = False
+        self._pauseNotice = False
+        self.input.seek(0,2)
 
     def loadEvents(self):
         """Load events from event manager"""
@@ -399,11 +427,23 @@ class Parser(object):
         if 'publist' not in self._pluginOrder:
             #self.debug('publist not found!')
             p = 'publist'
-            conf = self.getAbsolutePath('@b3/conf/plugin_publist.xml')
-            self.bot('Loading Plugin %s [%s]', p, conf)
+            self.bot('Loading Plugin %s', p)
             try:
                 pluginModule = self.pluginImport(p)
-                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title())(self, conf)
+                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title())(self)
+                self._pluginOrder.append(p)
+                version = getattr(pluginModule, '__version__', 'Unknown Version')
+                author  = getattr(pluginModule, '__author__', 'Unknown Author')
+                self.bot('Plugin %s (%s - %s) loaded', p, version, author)
+            except Exception, msg:
+                self.verbose('Error loading plugin: %s', msg)
+        if self.config.get('server','game_log')[0:6] == 'ftp://' :
+            #self.debug('ftpytail not found!')
+            p = 'ftpytail'
+            self.bot('Loading Plugin %s', p)
+            try:
+                pluginModule = self.pluginImport(p)
+                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title()) (self)
                 self._pluginOrder.append(p)
                 version = getattr(pluginModule, '__version__', 'Unknown Version')
                 author  = getattr(pluginModule, '__author__', 'Unknown Author')
@@ -441,6 +481,22 @@ class Parser(object):
             p.onStartup()
             p.start()
             #time.sleep(1)    # give plugin time to crash, er...start
+
+    def disablePlugins(self):
+        """Disable all plugins except for publist, ftpytail and admin"""
+        for k in self._pluginOrder:
+            if k not in ('admin', 'publist', 'ftpytail'):
+                p = self._plugins[k]
+                self.bot('Disabling Plugin %s', k)
+                p.disable()
+
+    def enablePlugins(self):
+        """Enable all plugins except for publist, ftpytail and admin"""
+        for k in self._pluginOrder:
+            if k not in ('admin', 'publist', 'ftpytail'):
+                p = self._plugins[k]
+                self.bot('Enabling Plugin %s', k)
+                p.enable()
 
     def getMessage(self, msg, *args):
         """Return a message from the config file"""
@@ -509,7 +565,9 @@ class Parser(object):
         logTimeLast = 0
         while self.working:
             if self._paused:
-                self.bot('PAUSED')
+                if self._pauseNotice == False:
+                    self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
+                    self._pauseNotice = True
             else:
                 line = str(self.read()).strip()
 
@@ -525,6 +583,7 @@ class Parser(object):
                             logTimeStart = logTimeCurrent
                             logTimeLast = 0
                             self.debug('Log time reset %d' % logTimeCurrent)
+                            self.input.seek(0,2)
                         elif not logTimeStart:
                             logTimeStart = logTimeCurrent
 

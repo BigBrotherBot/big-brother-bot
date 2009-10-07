@@ -27,7 +27,7 @@ __version__ = '1.2.1'
 import sys
 
 try:
-	from elementtree import ElementTree
+	from b3.lib.elementtree import ElementTree
 except ImportError, err:
 	from xml.etree import ElementTree
 except ImportError, err:

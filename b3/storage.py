@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   08/30/2009 - 1.6.3 - Bakes
+#   Removed limit to number of aliases selected.
 #   12/23/2008 - 1.6.2 - xlr8or
 #   Added fix to catch mySQL connnection error 'mySQL server has gone away' and reconnect
 #   01/23/2006 - 1.5.0 - ThorN
@@ -34,7 +36,7 @@
 #   Added data column to penalties table
 
 __author__  = 'ThorN'
-__version__ = '1.6.2'
+__version__ = '1.6.3'
 
 import re, time, traceback, sys, thread
 
@@ -450,8 +452,7 @@ class DatabaseStorage(Storage):
 
     def getClientAliases(self, client):
         self.console.debug('Storage: getClientAliases %s' % str(client))
-
-        cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'aliases', { 'client_id' : client.id }, 'id', 11))
+        cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'aliases', { 'client_id' : client.id }, 'id'))
 
         if not cursor:
             return ()
