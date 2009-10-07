@@ -37,7 +37,7 @@ if len(sys.argv) == 1:
 
 setup(
     name = "b3",
-    version = "1.2.0",
+    version = "1.2.1",
     packages = find_packages(),
     extras_require = { 'mysql' : 'MySQL-python', 'elementtree' : 'elementtree' },
     package_data = {
