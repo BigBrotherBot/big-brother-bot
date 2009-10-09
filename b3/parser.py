@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   09/10/2009 - v1.11.2 - xlr8or
+#    * Saved original sys.stdout to console.screen to aid communications to b3 screen
 #   12/09/2009 - v1.11.1 - xlr8or
 #    * Added few functions and prevent spamming b3.log on pause
 #   28/08/2009 - v1.11.0 - Bakes
@@ -33,7 +35,7 @@
 #    Added atexit handlers
 #    Added warning, info, exception, and critical log handlers
 __author__  = 'ThorN'
-__version__ = '1.11.1'
+__version__ = '1.11.2'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit
@@ -76,6 +78,7 @@ class Parser(object):
     log = None
     replay = False
     remoteLog = False
+    screen = None
 
     # Time in seconds of epoch of game log
     logTime = 0
@@ -157,6 +160,8 @@ class Parser(object):
         logfile = self.config.getpath('b3', 'logfile')
         self.log = b3.output.getInstance(logfile, self.config.getint('b3', 'log_level'))
 
+        # save screen output to self.screen
+        self.screen = sys.stdout
         print 'Redirect all output to %s' % logfile
         sys.stdout = b3.output.stdoutLogger(self.log)
         sys.stderr = b3.output.stderrLogger(self.log)
@@ -386,6 +391,7 @@ class Parser(object):
 
     def loadPlugins(self):
         """Load plugins specified in the config"""
+        self.screen.write('Loading Plugins...\n')
         plugins = {}
         pluginSort = []
 
@@ -475,6 +481,7 @@ class Parser(object):
 
     def startPlugins(self):
         """Start all loaded plugins"""
+        self.screen.write('Starting Plugins...\n')
         for k in self._pluginOrder:
             p = self._plugins[k]
             self.bot('Starting Plugin %s', k)
@@ -560,6 +567,8 @@ class Parser(object):
     def run(self):
         """Main worker thread for B3"""
         self.bot('Start reading...')
+        self.screen.write('Startup Complete, Working.\n')
+        #self.screen.flush()
 
         logTimeStart = None
         logTimeLast = 0
