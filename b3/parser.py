@@ -598,7 +598,7 @@ class Parser(object):
         """Main worker thread for B3"""
         self.bot('Start reading...')
         self.screen.write('Startup Complete : Let\'s get to work!\n\n')
-        self.screen.write('(Please refer to %s in the B3 root directory for more detailed info)\n' % self.config.getpath('b3', 'logfile'))
+        self.screen.write('(Please check %s in the B3 root directory for more detailed info)\n' % self.config.getpath('b3', 'logfile'))
         #self.screen.flush()
 
         logTimeStart = None
