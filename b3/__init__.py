@@ -46,59 +46,60 @@ STATE_UNKNOWN = 3
 
 #-----------------------------------------------------------------------------------------------------------------------
 def loadParser(pname):
-	name = 'b3.parsers.%s' % pname
-	mod = __import__(name)
-	components = name.split('.')
-	components.append('%sParser' % pname.title())
-	for comp in components[1:]:
-		mod = getattr(mod, comp)
+  name = 'b3.parsers.%s' % pname
+  mod = __import__(name)
+  components = name.split('.')
+  components.append('%sParser' % pname.title())
+  for comp in components[1:]:
+    mod = getattr(mod, comp)
 
-	return mod
+  return mod
 
 #-----------------------------------------------------------------------------------------------------------------------
 def getB3Path():
-	if main_is_frozen():
-		# which happens when running from the py2exe build
-		return os.path.dirname(sys.executable)
-	return modulePath
+  if main_is_frozen():
+    # which happens when running from the py2exe build
+    return os.path.dirname(sys.executable)
+  return modulePath
 
 def getAbsolutePath(path):
-	"""Return an absolute path name and expand the user prefix (~)"""
-	if path[0:4] == '@b3/':
-		#print "B3 path: %s" % getB3Path()
-		path = os.path.join(getB3Path(), path[4:])
+  """Return an absolute path name and expand the user prefix (~)"""
+  if path[0:4] == '@b3/':
+    #print "B3 path: %s" % getB3Path()
+    path = os.path.join(getB3Path(), path[4:])
 
-	return os.path.normpath(os.path.expanduser(path))
+  return os.path.normpath(os.path.expanduser(path))
 
 def start(configFile):
-	configFile = getAbsolutePath(configFile)
-	print 'Starting %s' % sversion
+  configFile = getAbsolutePath(configFile)
+  os.system('clear')
+  print 'Starting %s\n' % sversion
 
-	if os.path.exists(configFile):
-		print 'Using config file %s' % configFile
-		conf = config.load(configFile)
-	else:
-		raise SystemExit('Could not find config file %s' % configFile)
+  if os.path.exists(configFile):
+    print 'Using config file: %s' % configFile
+    conf = config.load(configFile)
+  else:
+    raise SystemExit('Could not find config file %s' % configFile)
 
-	parserType = conf.get('b3', 'parser')
+  parserType = conf.get('b3', 'parser')
 
-	if not parserType:
-		raise SystemExit('You must supply a parser')
+  if not parserType:
+    raise SystemExit('You must supply a parser')
 
-	parser = loadParser(parserType)
+  parser = loadParser(parserType)
 
-	global console
-	console = parser(conf)
+  global console
+  console = parser(conf)
 
-	try:
-		console.start()
-	except KeyboardInterrupt:
-		console.shutdown()
-		print 'Goodbye'
-		return
-	except SystemExit, msg:
-		print 'Exiting: %s' % msg
-		raise
-	except Exception, msg:
-		print 'Error: %s\n%s' % (msg, ''.join(traceback.format_list(traceback.extract_tb(sys.exc_info()[2]))))
-		sys.exit(223)
+  try:
+    console.start()
+  except KeyboardInterrupt:
+    console.shutdown()
+    print 'Goodbye'
+    return
+  except SystemExit, msg:
+    print 'Exiting: %s' % msg
+    raise
+  except Exception, msg:
+    print 'Error: %s\n%s' % (msg, ''.join(traceback.format_list(traceback.extract_tb(sys.exc_info()[2]))))
+    sys.exit(223)

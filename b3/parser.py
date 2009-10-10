@@ -162,7 +162,7 @@ class Parser(object):
 
         # save screen output to self.screen
         self.screen = sys.stdout
-        print 'Redirect all output to %s' % logfile
+        print 'Activating log   : %s' % logfile
         sys.stdout = b3.output.stdoutLogger(self.log)
         sys.stderr = b3.output.stderrLogger(self.log)
 
@@ -242,6 +242,7 @@ class Parser(object):
             self.bot('Game log %s', self.config.getpath('server', 'game_log'))
             f = self.config.getpath('server', 'game_log')
         self.bot('Starting bot reading file %s', f)
+        self.screen.write('Using Gamelog    : %s\n' % f)
 
         if os.path.isfile(f):
             self.output = None
@@ -262,8 +263,24 @@ class Parser(object):
 
         # setup rcon
         self.output = self.OutputClass(self, (self._rconIp, self._port), self.config.get('server', 'rcon_password'))
+        # testing rcon
+        res = self.output.write('Initiating %s' % self.config.get('b3', 'bot_name'))
+        self.output.flush()
+        self.screen.write('Testing RCON     : ')
+        self.screen.flush()
+        if res == 'Bad rconpassword.':
+            self.screen.write('>>> ERROR: Bad RCON password! This will lead to errors and render B3 without any power to interact!\n')
+            self.screen.flush()
+            time.sleep(10)
+        elif res == '':
+            self.screen.write('>>> ERROR: There is something wrong with the rcon connection to the server!\n>>> ERROR: Check your server-ip and port!\n')
+            self.screen.flush()
+            time.sleep(10)
+        else:
+            self.screen.write('OK\n')
 
         self.loadEvents()
+        self.screen.write('Loading Events   : %s events loaded\n' % len(self._events))
         self.clients  = b3.clients.Clients(self)
         self.loadPlugins()
         self.loadArbPlugins()
@@ -391,7 +408,8 @@ class Parser(object):
 
     def loadPlugins(self):
         """Load plugins specified in the config"""
-        self.screen.write('Loading Plugins...\n')
+        self.screen.write('Loading Plugins  : ')
+        self.screen.flush()
         plugins = {}
         pluginSort = []
 
@@ -426,6 +444,8 @@ class Parser(object):
             author  = getattr(pluginModule, '__author__', 'Unknown Author')
             
             self.bot('Plugin %s (%s - %s) loaded', p, version, author)
+            self.screen.write('.')
+            self.screen.flush()
 
     def loadArbPlugins(self):
         """Load must have plugins and check for admin plugin"""
@@ -441,6 +461,8 @@ class Parser(object):
                 version = getattr(pluginModule, '__version__', 'Unknown Version')
                 author  = getattr(pluginModule, '__author__', 'Unknown Author')
                 self.bot('Plugin %s (%s - %s) loaded', p, version, author)
+                self.screen.write('.')
+                self.screen.flush()
             except Exception, msg:
                 self.verbose('Error loading plugin: %s', msg)
         if self.config.get('server','game_log')[0:6] == 'ftp://' :
@@ -454,11 +476,15 @@ class Parser(object):
                 version = getattr(pluginModule, '__version__', 'Unknown Version')
                 author  = getattr(pluginModule, '__author__', 'Unknown Author')
                 self.bot('Plugin %s (%s - %s) loaded', p, version, author)
+                self.screen.write('.')
+                self.screen.flush()
             except Exception, msg:
                 self.verbose('Error loading plugin: %s', msg)
         if 'admin' not in self._pluginOrder:
             # critical will exit, admin plugin must be loaded!
             self.critical('AdminPlugin is essential and MUST be loaded! Cannot continue without admin plugin.')
+        self.screen.write(' (%s)\n' % len(self._pluginOrder))
+        self.screen.flush()
 
     def pluginImport(self, name):
         """Import a single plugin"""
@@ -481,13 +507,17 @@ class Parser(object):
 
     def startPlugins(self):
         """Start all loaded plugins"""
-        self.screen.write('Starting Plugins...\n')
+        self.screen.write('Starting Plugins : ')
+        self.screen.flush()
         for k in self._pluginOrder:
             p = self._plugins[k]
             self.bot('Starting Plugin %s', k)
             p.onStartup()
             p.start()
             #time.sleep(1)    # give plugin time to crash, er...start
+            self.screen.write('.')
+            self.screen.flush()
+        self.screen.write(' (%s)\n' % len(self._pluginOrder))
 
     def disablePlugins(self):
         """Disable all plugins except for publist, ftpytail and admin"""
@@ -567,7 +597,8 @@ class Parser(object):
     def run(self):
         """Main worker thread for B3"""
         self.bot('Start reading...')
-        self.screen.write('Startup Complete, Working.\n')
+        self.screen.write('Startup Complete : Let\'s get to work!\n\n')
+        self.screen.write('(Please refer to %s in the B3 root directory for more detailed info)\n' % self.config.getpath('b3', 'logfile'))
         #self.screen.flush()
 
         logTimeStart = None
