@@ -25,6 +25,7 @@ __author__  = 'ThorN'
 __version__ = '1.2.1'
 
 import sys
+import b3
 
 try:
 	from b3.lib.elementtree import ElementTree
@@ -150,9 +151,11 @@ class XmlConfigParser:
 		path = self.get(section, setting)
 
 		if path[0:3] == '@b3':
-			# releative path to the b3 module directory
+			# relative path to the b3 module directory
 			# TODO: use actual module path
 			path = path[1:]
+		elif path[0:6] == '@conf/' and b3.confDir is not None:
+			path = "%s/%s" % (b3.confDir, path[5:])
 
 		return os.path.normpath(os.path.expanduser(path))
 
@@ -195,6 +198,8 @@ class CfgConfigParser(ConfigParser.ConfigParser):
 			# releative path to the b3 module directory
 			# TODO: use actual module path
 			path = path[1:]
+		elif path[0:6] == '@conf/' and b3.confDir is not None:
+			path = "%s/%s" % (b3.confDir, path[5:])
 
 		return os.path.normpath(os.path.expanduser(path))
 
@@ -228,6 +233,9 @@ def load(fileName):
 		config = XmlConfigParser()
 	else:
 		config = CfgConfigParser()
+
+	if fileName[0:6] == '@conf\\' and b3.confDir is not None:
+		fileName = os.path.normpath(os.path.expanduser("%s/%s" % (b3.confDir, fileName[5:])))
 
 	if config.load(fileName):
 		return config

@@ -25,6 +25,7 @@ __version__ = pkg_handler.version(__name__)
 modulePath = pkg_handler.resource_directory(__name__)
 
 import os, re, sys, traceback
+import platform
 import config
 
 versionOs = os.name
@@ -33,6 +34,7 @@ version = '^8www.BigBrotherBot.com ^0(^8b3^0) ^9%s ^9(^3Daniel^9)^3' % versionId
 sversion = re.sub(r'\^[0-9a-z]', '', version)
 
 console = None
+confDir = None
 
 # some constants
 TEAM_UNKNOWN = -1
@@ -72,11 +74,15 @@ def getAbsolutePath(path):
 
 def start(configFile):
   configFile = getAbsolutePath(configFile)
-  os.system('clear')
+  if platform.system() != 'Windows':
+    os.system('clear')
   print 'Starting %s\n' % sversion
 
   if os.path.exists(configFile):
     print 'Using config file: %s' % configFile
+    global confDir
+    confDir = os.path.dirname(configFile)
+    print 'Conf dir is: %s' % confDir
     conf = config.load(configFile)
   else:
     raise SystemExit('Could not find config file %s' % configFile)
