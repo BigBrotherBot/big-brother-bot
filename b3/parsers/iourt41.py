@@ -63,6 +63,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     gameName = 'iourt41'
     IpsOnly = False
     IpCombi = False
+    _maplist = None 
 
     _settings = {}
     _settings['line_length'] = 65
@@ -209,6 +210,8 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         # PunkBuster for iourt is not supported!
         #if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
         #    self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
+
+        self._maplist = self.getMaps()
 
         # get map from the status rcon command
         map = self.getMap()
@@ -907,7 +910,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                     players[str(m.group('slot'))] = int(m.group('ping'))
 
         return players
-
+    
     def sync(self):
         plist = self.getPlayerList()
         mlist = {}
@@ -969,32 +972,22 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         return None
 
     def getMaps(self):
-        mapcycle = self.getCvar('g_mapcycle').getString()
-        mapfile = self.game.fs_basepath + '/' + self.game.fs_game + '/' + mapcycle
-        if not os.path.isfile(mapfile):
-            mapfile = self.game.fs_homepath + '/' + self.game.fs_game + '/' + mapcycle
+        if self._maplist is not None:
+            return self._maplist
+        
+        data = self.write('fdir *.bsp')
+        if not data:
+            return []
 
-        mapstring = open(mapfile, 'r')
-        maps = mapstring.read().strip('\n').split('\n')
+        mapregex = re.compile(r'^maps/(?P<map>.+)\.bsp$', re.I)
+        maps = []
+        for line in data.split('\n'):
+            m = re.match(mapregex, line.strip())
+            if m:
+                if m.group('map'):
+                    maps.append(m.group('map'))
 
-        nmaps = []
-        if maps:
-            _settings = False
-            for m in maps:
-                if m == '}':
-                    _settings = False
-                    continue
-                elif m == '{':
-                    _settings = True
-                elif m[:4] == 'ut4_':
-                    m = m[4:]
-                elif m[:3] == 'ut_':
-                    m = m[3:]
-                if not _settings:
-                    m = m.title().strip()
-                    if m != '':
-                        nmaps.append(m)
-        return nmaps
+        return maps
 
     def getNextMap(self):
         # let's first check if a vote passed for the next map
@@ -1102,7 +1095,6 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                 self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client))
 
         return None
-
 
 
 """ 
