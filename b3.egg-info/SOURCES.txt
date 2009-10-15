@@ -5,6 +5,7 @@ b3_run.py
 ez_setup.py
 setup.cfg
 setup.py
+setupPy2exe.py
 b3/__init__.py
 b3/clients.py
 b3/config.py
@@ -51,6 +52,19 @@ b3/docs/xlrstats.sql
 b3/extplugins/__init__.py
 b3/extplugins/xlrstats.py
 b3/extplugins/conf/xlrstats.xml
+b3/lib/__init__.py
+b3/lib/elementtree/ElementInclude.py
+b3/lib/elementtree/ElementIron.py
+b3/lib/elementtree/ElementPath.py
+b3/lib/elementtree/ElementTree.py
+b3/lib/elementtree/HTMLTreeBuilder.py
+b3/lib/elementtree/SgmlopXMLTreeBuilder.py
+b3/lib/elementtree/SimpleXMLTreeBuilder.py
+b3/lib/elementtree/SimpleXMLWriter.py
+b3/lib/elementtree/TidyHTMLTreeBuilder.py
+b3/lib/elementtree/TidyTools.py
+b3/lib/elementtree/XMLTreeBuilder.py
+b3/lib/elementtree/__init__.py
 b3/parsers/__init__.py
 b3/parsers/cod.py
 b3/parsers/cod2.py
@@ -69,6 +83,7 @@ b3/plugins/admin.py
 b3/plugins/adv.py
 b3/plugins/censor.py
 b3/plugins/codam.py
+b3/plugins/ftpytail.py
 b3/plugins/login.py
 b3/plugins/pingwatch.py
 b3/plugins/publist.py
@@ -82,3 +97,5 @@ examples/README.txt
 examples/bigbrotherbot.sh
 examples/ftptail-obj.sh
 examples/starter.sh
+py2exe_builder/gpl-2.0.txt
+py2exe_builder/readme.txt

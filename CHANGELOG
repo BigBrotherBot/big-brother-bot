@@ -1,3 +1,9 @@
+1.2.1
+----
+- B3 now supports connecting to Gameservers via an FTP connection. Read the manual for more details. (Python 2.6+ only!)
+- Small improvements to cod parser and cod4 parser
+- Added scripts for compiling wininstaller
+
 1.2.0
 ----
 - Several Core enhancements!

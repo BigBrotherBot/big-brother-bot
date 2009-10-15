@@ -32,8 +32,10 @@
 # removed cvar check and critical stop
 # 7/14/2009 - 1.1.9 - courgette
 # bot version sent is now only the version number
+# 10/5/2009 - 1.1.10 - xlr8or
+# made the urllib not exit on error when connection to masterserver is impossible
 
-__version__ = '1.1.9'
+__version__ = '1.1.10'
 __author__  = 'ThorN'
 
 import urllib
@@ -112,8 +114,11 @@ class PublistPlugin(b3.plugin.Plugin):
     }
     #self.debug(info)
 
-    f = urllib.urlopen('%s?%s' % (self._url, urllib.urlencode(info)))
-    self.debug(f.read())
-    f.close()
+    try:
+      f = urllib.urlopen('%s?%s' % (self._url, urllib.urlencode(info)))
+      self.debug(f.read())
+      f.close()
+    except:
+      self.error('Unable to reach B3 masterserver, maybe the service is down or internet was unavailable')
 
       

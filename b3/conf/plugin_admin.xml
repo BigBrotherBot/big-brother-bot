@@ -74,9 +74,6 @@
 		<set name="help-h">0</set>
 		<set name="register">0-0</set>
 		<set name="rules-r">0</set>
-
-		<set name="pbss">20</set>
-		<set name="pbbuildbans">80</set>
 	</settings>
 	<settings name="settings">
 		<set name="noreason_level">100</set>
@@ -173,7 +170,6 @@
 		<set name="rule8">^3Rule #8: No profanity or offensive language (in any language)</set>
 		<set name="rule9">^3Rule #9: Do ^1NOT ^3fire at teammates or within 10 seconds of spawning</set>
 		<set name="rule10">^3Rule #10: Offense players must play for the objective and support their team</set>
-		<set name="rule11">^3Rule #11: Do not piss off ^7[^2AS^7]^2Lead</set>
 	</settings>
 	<settings name="warn_reasons">
 		<set name="generic">1h, ^7</set>

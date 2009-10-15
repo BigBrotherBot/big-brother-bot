@@ -10,8 +10,7 @@ Big Brother Bot
 1. Python 2.3+ - http://www.python.org
 2. MySQL-python (Tested with 0.9.2 and 1.0) - http://sourceforge.net/project/showfiles.php?group_id=22307&package_id=15775
 3. MySQL (Tested with 3.23) - http://www.mysql.com/
-4. Python Elementtree package - http://www.python.org/pypi/elementtree/1.2.6-20050316
-5. setuptools - http://peak.telecommunity.com/dist/ez_setup.py (download and run)
+4. setuptools - http://peak.telecommunity.com/dist/ez_setup.py (download and run)
 
 ### Assumptions
 
@@ -23,6 +22,11 @@ each.
 
 You have two choices of installation for b3. You can use the easy to install
 Python Egg or the source distribution.
+
+#### Installing Source Distribution
+
+1. Download the latest source distribution from http://www.python.org/pypi/b3
+2. Extract the package to a suitable location, example: /usr/local/games/b3
 
 #### Installing Python Egg
 
@@ -43,10 +47,6 @@ can skip the 'Installing Source Distribution' section, and proceed to
 'Setting up MySQL'
 
 
-#### Installing Source Distribution
-
-1. Download the latest source distribution from http://www.python.org/pypi/b3
-2. Extract the package to a suitable location, example: /usr/local/games/b3
 
 ### Setting up MySQL
 
@@ -59,6 +59,12 @@ can skip the 'Installing Source Distribution' section, and proceed to
 2. Run the B3 database SQL script (b3/docs/b3.sql) on your B3 database.
 
 ### Setting up B3
+
+### FTP B3
+This is a new BETA feature of B3, and should be treated as such.
+To connect to a server which you only have FTP access to (ie one hosted by gameservers.com or similar)
+set game_log in the syntax ftp://username:password@ipaddress/path/to/games_mp.log
+This only works in Python 2.6.
 
 1. Create a directory to store your b3 log files and config files, example:
    /home/b3/conf
@@ -78,9 +84,6 @@ can skip the 'Installing Source Distribution' section, and proceed to
 
 	Leave log_level at 9 for debugging, If there is a bug found we will 
 	need your b3.log.
-4. If you left the publist plugin enabled (default), add "sets _B3 true" to 
-   your server config or B3 will exit. Alternatively, you can disable the
-   plugin by commenting out its entry in b3.xml.
    
 
 ### Running B3
