@@ -269,11 +269,11 @@ class Parser(object):
         self.screen.write('Testing RCON     : ')
         self.screen.flush()
         if res == 'Bad rconpassword.':
-            self.screen.write('>>> ERROR: Bad RCON password! This will lead to errors and render B3 without any power to interact!\n')
+            self.screen.write('>>> Oops: Bad RCON password\n>>> Hint: This will lead to errors and render B3 without any power to interact!\n')
             self.screen.flush()
             time.sleep(10)
         elif res == '':
-            self.screen.write('>>> ERROR: There is something wrong with the rcon connection to the server!\n>>> ERROR: Check your server-ip and port!\n')
+            self.screen.write('>>> Oops: No response\n>>> Could be something wrong with the rcon connection to the server!\n>>> Hint 1: The server is not running or it is changing maps.\n>>> Hint 2: Check your server-ip and port.\n')
             self.screen.flush()
             time.sleep(10)
         else:
