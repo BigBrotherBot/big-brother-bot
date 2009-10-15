@@ -23,6 +23,7 @@ import re
 import os
 import sys
 import imp
+import string
 
 def main_is_frozen():
     """detect if b3 is running from b3_run.exe"""
@@ -171,6 +172,31 @@ def levenshteinDistance(a,b):
                 z = c[i-1,j-1]+1
             c[i,j] = min(x,y,z)
     return c[n,m]
+
+
+def soundex(str):
+    """Return the soundex value to a string argument."""
+    
+    IGNORE = "~!@#$%^&*()_+=-`[]\|;:'/?.,<>\" \t\f\v"
+    TABLE  = string.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                          '01230120022455012623010202')
+
+    str = string.strip(string.upper(str))
+    if not str:
+        return "Z000"
+    str2 = str[0]
+    str = string.translate(str, TABLE, IGNORE)
+    if not str:
+        return "Z000"
+    prev = str[0]
+    for x in str[1:]:
+        if x != prev and x != "0":
+                str2 = str2 + x
+        prev = x
+    # pad with zeros
+    str2 = str2+"0000"
+    return str2[:4]
+
 
 def fuzzyGuidMatch(a, b):
     a = a.upper()
