@@ -64,6 +64,7 @@ class DatabaseStorage(Storage):
     _lastConnectAttempt = 0
     _connections = []
     _lock = None
+    _count = 0
 
     class Cursor:
         _cursor = None
@@ -183,6 +184,7 @@ class DatabaseStorage(Storage):
 
     def connect(self):
         self.console.bot('Attempting to connect to database %s://%s:******@%s%s...', self.dsnDict['protocol'], self.dsnDict['user'], self.dsnDict['host'], self.dsnDict['path'])
+        self._count += 1
 
         self.closeConnection()
 
@@ -196,9 +198,13 @@ class DatabaseStorage(Storage):
 
             self._connections.append(self.db)
             self._lastConnectAttempt = 0
-            self.console.bot('Connected to database')
+            self.console.bot('Connected to database [%s times]' % self._count)
+            if self._count == 1:
+                self.console.screen.write('Connecting to DB : OK\n')
         except Exception, e:
             self.console.error('Database connection failed, working in remote mode: %s - %s', e, traceback.extract_tb(sys.exc_info()[2]))
+            if self._count == 1:
+                self.console.screen.write('Connecting to DB : FAILED!\n')
             self.db = None
             self._lastConnectAttempt = time.time()
 
