@@ -165,6 +165,8 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         #"g_maxGameClients" is:"0^7", the default
         #latched: "1"
         re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?",\s+the\sdefault$', re.I | re.M),
+        #"mapname" is:"ut4_abbey^7"
+        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?"$', re.I | re.M),
     )
 
     PunkBuster = None
