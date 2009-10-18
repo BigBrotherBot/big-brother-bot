@@ -1008,47 +1008,51 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if not os.path.isfile(mapfile):
             mapfile = self.game.fs_homepath + '/' + self.game.fs_game + '/' + mapcycle
 
-        mapstring = open(mapfile, 'r')
-        tmaps = mapstring.read().strip('\n').split('\n')
+        firstmap = None
+        cyclemapfile = open(mapfile, 'r')
+        lines = cyclemapfile.readlines()
+        #self.debug(lines)
+        if len(lines) == 0:
+            return None
+            
+        # get maps 
         maps = []
-        if tmaps:
-            _settings = False
-            for m in tmaps:
-                if m == '}':
-                    _settings = False
-                    continue
-                elif m == '{':
-                    _settings = True
-                if not _settings:
-                    m = m.strip()
-                    if m != '':
-                        maps.append(m)
+        try:
+            while True:
+                tmp = lines.pop(0).strip()
+                if tmp[0] == '{':
+                    while tmp[0] != '}':
+                        tmp = lines.pop(0).strip()
+                    tmp = lines.pop(0).strip()
+                maps.append(tmp)
+        except IndexError:
+            pass
+        
+        #self.debug(maps)
 
-        if maps:
-            gmap = self.game.mapName.strip().lower()
-
-            found = False
-            for nmap in maps:
-                nmap = nmap.strip().lower()
-                if found:
-                    found = nmap
-                    break
-                elif nmap == gmap:
-                    # current map, break on next map
-                    found = True
-
-            if found == True:
-                # map is first map in rotation
-                nmap = maps[0].strip().lower()
-
-            if found:
-                if nmap[:4] == 'ut4_': nmap = nmap[4:]
-                elif nmap[:3] == 'ut_': nmap = nmap[3:]
-                return nmap.title()
-
+        if len(maps) == 0:
             return None
-        else:
-            return None
+        
+        firstmap = maps[0]
+        
+        # find current map
+        #currentmap = self.game.mapName.strip().lower() # this fails after a cyclemap
+        currentmap = self.getCvar('mapname').value
+        try:
+            tmp = maps.pop(0)
+            while currentmap != tmp:
+                tmp = maps.pop(0)
+            if currentmap == tmp:
+                #self.debug('found current map %s' % currentmap)
+                #self.debug(maps)
+                if len(maps) > 0:
+                    return maps.pop(0)
+                else:
+                    return firstmap
+        except IndexError:
+            self.debug('cannot find %s in cyclemap' %  currentmap)
+        return None
+
 
     def getTeamScores(self):
         data = self.write('players')
