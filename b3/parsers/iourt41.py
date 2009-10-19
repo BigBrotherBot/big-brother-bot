@@ -1050,8 +1050,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                 else:
                     return firstmap
         except IndexError:
-            self.debug('cannot find %s in cyclemap' %  currentmap)
-        return None
+            return firstmap
 
 
     def getTeamScores(self):
