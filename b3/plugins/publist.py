@@ -34,20 +34,24 @@
 # bot version sent is now only the version number
 # 10/5/2009 - 1.1.10 - xlr8or
 # made the urllib not exit on error when connection to masterserver is impossible
+# 10/19/2009 - 1.1.11 - Courgette
+# add a timeout to the HTTP call (need urllib2 for that)
+# initial call is now threaded
 
-__version__ = '1.1.10'
+
+__version__ = '1.1.11'
 __author__  = 'ThorN'
 
+import sys
+import thread
 import urllib
+import urllib2
+import socket
 import b3, os, random
 import b3.events
 import b3.plugin
 from b3 import functions
 
-# set up our URLopener so we can specify a custom User-Agent
-class PublistURLopener(urllib.FancyURLopener):
-    version = "B3 Publist plugin/%s" % __version__
-urllib._urlopener = PublistURLopener()
 
 
 #--------------------------------------------------------------------------------------------------
@@ -84,12 +88,13 @@ class PublistPlugin(b3.plugin.Plugin):
     self.console.cron + self._cronTab
     
     # send initial heartbeat
-    self.update()
+    thread.start_new_thread(self.update, ())
+    
     
 
   def update(self):
     self.debug('Sending heartbeat to B3 master...')
-    
+    socket.setdefaulttimeout(10)
     
     def getModule(name):
       mod = __import__(name)
@@ -114,11 +119,22 @@ class PublistPlugin(b3.plugin.Plugin):
     }
     #self.debug(info)
 
+
     try:
-      f = urllib.urlopen('%s?%s' % (self._url, urllib.urlencode(info)))
-      self.debug(f.read())
-      f.close()
+        request = urllib2.Request('%s?%s' % (self._url, urllib.urlencode(info)))
+        request.add_header('User-Agent', "B3 Publist plugin/%s" % __version__)
+        opener = urllib2.build_opener()
+        self.debug(opener.open(request).read())
+    except IOError, e:
+        if hasattr(e, 'reason'):
+            self.error('Unable to reach B3 masterserver, maybe the service is down or internet was unavailable')
+            self.debug(e.reason)
+        elif hasattr(e, 'code'):
+            self.error('Unable to reach B3 masterserver, maybe the service is down or internet was unavailable')
+            self.debug(e.code)
     except:
-      self.error('Unable to reach B3 masterserver, maybe the service is down or internet was unavailable')
+      self.error('Unable to reach B3 masterserver. unknown error')
+      print sys.exc_info()
+
 
       
