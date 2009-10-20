@@ -72,7 +72,7 @@
 		<set name="time">1</set>
 
 		<set name="help-h">0</set>
-		<set name="register">0-0</set>
+		<set name="register">0</set>
 		<set name="rules-r">0</set>
 	</settings>
 	<settings name="settings">
