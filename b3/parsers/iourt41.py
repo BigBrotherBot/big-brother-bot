@@ -48,10 +48,11 @@
 # v1.2.0 - 19/08/2009 - Courgette 
 # * adds slap, nuke, mute new custom penalty types (can be used in censor or admin plugin)
 # * requires admin plugin v1.4+ and parser.py v1.10+
-
+# v1.3.0 - 20/10/2009 - Courgette
+# * upon bot start, already connected players are correctly recognized
 
 __author__  = 'xlr8or'
-__version__ = '1.2.0'
+__version__ = '1.3.0'
 
 import b3.parsers.q3a
 import re, string, threading, time, os
@@ -228,7 +229,14 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         self.game.fs_homepath = self.getCvar('fs_homepath').getString().rstrip('/')
         self.debug('fs_homepath: %s' % self.game.fs_homepath)
 
-         
+        # initialize connected clients
+        plist = self.getPlayerList()
+        for cid, c in plist.iteritems():
+            userinfostring = self.queryClientUserInfoByCid(cid)
+            if userinfostring:
+                self.OnClientuserinfo(None, userinfostring)
+        
+        
     def getLineParts(self, line):
         line = re.sub(self._lineClear, '', line, 1)
 
@@ -1101,7 +1109,22 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
         return None
 
+    def queryClientUserInfoByCid(self, cid):
+        data = self.write('dumpuser %s' % cid)
+        if not data:
+            return None
 
+        datatransformed = str(cid).ljust(2)
+        for line in data.split('\n'):
+            if line.strip() == "userinfo" or line.strip() == "--------":
+                continue
+            
+            var = line[:20].strip()
+            val = line[20:].strip()
+            datatransformed += "\\%s\\%s" % (var, val)
+
+        return datatransformed
+            
 """ 
 #----- Actions -----------------------------------------------------------------
 Item: 0 team_CTF_redflag -> Flag Taken/picked up
