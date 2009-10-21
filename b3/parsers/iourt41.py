@@ -1114,7 +1114,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if not data:
             return None
 
-        datatransformed = str(cid).ljust(2)
+        datatransformed = "%s " % cid
         for line in data.split('\n'):
             if line.strip() == "userinfo" or line.strip() == "--------":
                 continue
