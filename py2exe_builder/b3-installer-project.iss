@@ -10,15 +10,15 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{F04D6FC4-CF46-4409-995A-04BEB0B219E6}
 AppName=BigBrotherBot
-AppVerName=BigBrotherBot 1.2.0b
+AppVerName=BigBrotherBot 1.2.1b
 AppPublisher=BigBrotherBot
 AppPublisherURL=http://www.bigbrotherbot.com/
 AppSupportURL=http://www.bigbrotherbot.com/forums/
 AppUpdatesURL=http://www.bigbrotherbot.com/
-DefaultDirName={pf}\BigBrotherBot_1.2.0b
+DefaultDirName={pf}\BigBrotherBot_1.2.1b
 DefaultGroupName=BigBrotherBot
 LicenseFile=gpl-2.0.txt
-OutputBaseFilename=BigBrotherBot-1.2.0b-win32
+OutputBaseFilename=BigBrotherBot-1.2.1b-win32
 Compression=lzma/ultra64
 SolidCompression=true
 InternalCompressLevel=normal
@@ -30,7 +30,7 @@ VersionInfoCopyright=Courgette
 AppCopyright=Copyright © 2005 Michael "ThorN" Thornton
 VersionInfoTextVersion=1.0
 VersionInfoProductName=BigBrotherBot
-VersionInfoProductVersion=1.2.0b
+VersionInfoProductVersion=1.2.1
 ExtraDiskSpaceRequired=8950624
 RestartIfNeededByRun=false
 PrivilegesRequired=none
