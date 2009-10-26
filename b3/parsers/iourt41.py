@@ -50,9 +50,11 @@
 # * requires admin plugin v1.4+ and parser.py v1.10+
 # v1.3.0 - 20/10/2009 - Courgette
 # * upon bot start, already connected players are correctly recognized
+# v1.4.0 - 26/10/2009 - Courgette
+# * when no client is found by cid, try to join the player using /rcon dumpuser <cid>
 
 __author__  = 'xlr8or'
-__version__ = '1.3.0'
+__version__ = '1.4.0'
 
 import b3.parsers.q3a
 import re, string, threading, time, os
