@@ -562,7 +562,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         """
         self.debug('OnKill: %s (%s)'%(match.group('aweap'),match.group('text')))
         
-        victim = self.clients.getByCID(match.group('cid'))
+        victim = self.getByCidOrJoinPlayer(match.group('cid'))
         if not victim:
             self.debug('No victim')
             #self.OnClientuserinfo(action, data, match)
@@ -582,7 +582,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             self.debug('OnKill: water/lava/falling/trigger_hurt/bombed/flag should be suicides')
             attacker = victim
         else:
-            attacker = self.clients.getByCID(match.group('acid'))
+            attacker = self.getByCidOrJoinPlayer(match.group('acid'))
         ## end fix attacker
           
         if not attacker:
@@ -679,7 +679,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         #Item: 3 ut_item_helmet
         #Item: 0 team_CTF_redflag
         cid, item = string.split(data, ' ', 1)
-        client = self.clients.getByCID(cid)
+        client = self.getByCidOrJoinPlayer(cid)
         if client:
             #correct flag/bomb-pickups
             if 'flag' in item or 'bomb' in item:
@@ -693,7 +693,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     # say
     def OnSay(self, action, data, match=None):
         #3:53 say: 8 denzel: lol
-        client = self.clients.getByCID(match.group('cid'))
+        client = self.getByCidOrJoinPlayer(match.group('cid'))
 
         if not client:
             self.verbose('No Client Found!')
@@ -713,7 +713,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     # sayteam
     def OnSayteam(self, action, data, match=None):
         #2:28 sayteam: 12 New_UrT_Player_v4.1: wokele
-        client = self.clients.getByCID(match.group('cid'))
+        client = self.getByCidOrJoinPlayer(match.group('cid'))
 
         if not client:
             self.verbose('No Client Found!')
@@ -737,7 +737,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         #if not len(data) >= 2 and not (data[:1] == '!' or data[:1] == '@') and match.group('cid') == match.group('acid'):
         #    return None
 
-        client = self.clients.getByCID(match.group('cid'))
+        client = self.getByCidOrJoinPlayer(match.group('cid'))
         tclient = self.clients.getByCID(match.group('acid'))
 
         if not client:
@@ -926,7 +926,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         mlist = {}
 
         for cid, c in plist.iteritems():
-            client = self.clients.getByCID(cid)
+            client = self.getByCidOrJoinPlayer(cid)
             if client:
                 # Disconnect the zombies first
                 if c['ping'] == 'ZMBI':
@@ -1125,6 +1125,16 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
         return datatransformed
             
+    def getByCidOrJoinPlayer(self, cid):
+        client = self.clients.getByCID(cid)
+        if client:
+            return client
+        else:
+            userinfostring = self.queryClientUserInfoByCid(cid)
+            if userinfostring:
+                self.OnClientuserinfo(None, userinfostring)
+            return self.clients.getByCID(cid)
+        
 """ 
 #----- Actions -----------------------------------------------------------------
 Item: 0 team_CTF_redflag -> Flag Taken/picked up
