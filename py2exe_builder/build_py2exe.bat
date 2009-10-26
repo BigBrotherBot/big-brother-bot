@@ -1,6 +1,6 @@
 @echo off
 
-set PYTHON_BIN="e:\Windows7\python2.5\python.exe"
+set PYTHON_BIN="c:\Python26\python.exe"
 
 cd ..
 rmdir dist_py2exe /Q /S
