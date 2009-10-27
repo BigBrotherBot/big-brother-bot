@@ -3,6 +3,9 @@
 - B3 now supports connecting to Gameservers via an FTP connection. Read the manual for more details. (Python 2.6+ only!)
 - Small improvements to cod parser and cod4 parser
 - Added scripts for compiling wininstaller
+- Improvements to ioUrT41 parser
+- Improvements to publist, will not error on network or server downage
+- The console screen now shows startup messages and checks
 
 1.2.0
 ----
