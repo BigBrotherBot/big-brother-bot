@@ -82,7 +82,7 @@ def start(configFile):
     print 'Using config file: %s' % configFile
     global confDir
     confDir = os.path.dirname(configFile)
-    print 'Conf dir is: %s' % confDir
+    #print 'Config dir is    : %s' % confDir
     conf = config.load(configFile)
   else:
     raise SystemExit('Could not find config file %s' % configFile)

@@ -68,6 +68,7 @@ b3/lib/elementtree/__init__.py
 b3/parsers/__init__.py
 b3/parsers/cod.py
 b3/parsers/cod2.py
+b3/parsers/cod21.py
 b3/parsers/cod4.py
 b3/parsers/cod5.py
 b3/parsers/et.py
