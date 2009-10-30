@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    10/30/2009 - 1.2.3 - xlr8or
+#    * Added a few ffa gametypes for bypassing tk handling
 #    08/22/2009 - 1.2.2 - Courgette
 #    * fix bug in cmd_forgiveall
 #    08/22/2009 - 1.2.1 - Courgette
@@ -33,7 +35,7 @@
 #    7/23/2005 - 1.0.2 - ThorN
 #    * Changed temp ban duration to be based on ban_length times the number of victims
 
-__version__ = '1.2.2'
+__version__ = '1.2.3'
 __author__  = 'ThorN'
 
 import b3, string, re, threading
@@ -152,6 +154,8 @@ class TkPlugin(b3.plugin.Plugin):
     _maxPoints = 0
     _grudge_enable = True
     _private_messages = None
+    _ffa = ['dm', 'ffa', 'syc-ffa']
+
     
     def onStartup(self):
         self.registerEvent(b3.events.EVT_CLIENT_DAMAGE_TEAM)
@@ -207,9 +211,8 @@ class TkPlugin(b3.plugin.Plugin):
         
 
     def onEvent(self, event):
-        if self.console.game.gameType == 'dm':
+        if self.console.game.gameType in self._ffa: 
             # game type is deathmatch, ignore
-            # TODO: have better handling for different games
             return
         elif event.type == b3.events.EVT_CLIENT_DAMAGE_TEAM:
             if event.client.maxLevel <= self._maxLevel:
