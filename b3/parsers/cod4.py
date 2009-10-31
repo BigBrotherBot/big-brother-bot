@@ -23,7 +23,7 @@
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.1.4'
+__version__ = '1.1.5'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
