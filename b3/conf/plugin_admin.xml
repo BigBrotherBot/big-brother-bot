@@ -132,7 +132,7 @@
 <!-- This setting determines whether the warning is sent to the the whole server, or just the player and admin, to reduce chatbox spam.
 0 is whole server, 1 is private.
 -->
-		<set name="pm_global">1</set>
+		<set name="pm_global">0</set>
 <!-- THESE APPEAR TO BE OBSOLETE - DO NOT USE - mindriot - 10/20/2008
 		<set name="ban_reason">^7too many warnings ^1BANNED: $reason</set>
 		<set name="ban_num">5</set>
