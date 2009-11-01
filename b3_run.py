@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.com)
 # Copyright (C) 2005 Michael "ThorN" Thornton
