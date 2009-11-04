@@ -125,7 +125,7 @@ class StatusPlugin(b3.plugin.Plugin):
       ftpfile = StringIO.StringIO()
       ftpfile.write(xml)
       ftpfile.seek(0)
-      ftp.storlines('STOR '+os.path.basename(self._ftpinfo['path']), ftpfile)
+      ftp.storbinary('STOR '+os.path.basename(self._ftpinfo['path']), ftpfile)
     else:
       self.debug('Writing XML status to %s', self._outputFile)
       f = file(self._outputFile, 'w')
