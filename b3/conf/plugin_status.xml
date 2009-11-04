@@ -1,6 +1,9 @@
 <configuration plugin="status">
 	<settings name="settings">
 		<set name="interval">60</set>
+		<!-- This can either be a path on  the local filesystem, or an ftp directory.
+		To use an ftp directory, use this syntax: ftp://username:password@host/path/to/status.xml
+		-->
 		<set name="output_file">~/status.xml</set>
 	</settings>
 </configuration>

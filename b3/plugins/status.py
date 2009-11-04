@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+# 03/11/2009 - 1.3.0 - Bakes
+# Combined statusftp and status. Use syntax ftp://user:password@host/path/to/status.xml
 # 11/02/2009 - 1.2.7 - xlr8or
 # If masked show masked level instead of real level
 # 11/02/2009 - 1.2.6 - xlr8or
@@ -31,23 +33,31 @@
 # Converted to use new event handlers
 
 __author__  = 'ThorN'
-__version__ = '1.2.7'
+__version__ = '1.3.0'
 
-import b3, time, os
+import b3, time, os, StringIO
 import b3.plugin
 import b3.cron
-from b3.functions import sanitizeMe
+import b3.functions
 from cgi import escape
+from ftplib import FTP
+from b3 import functions
 
 #--------------------------------------------------------------------------------------------------
 class StatusPlugin(b3.plugin.Plugin):
   _tkPlugin = None
   _cronTab = None
-
+  _ftpstatus = False
+  _ftpinfo = None
   def onLoadConfig(self):
+    if self.config.get('settings','output_file')[0:6] == 'ftp://':
+        self._ftpinfo = functions.splitDSN(self.config.get('settings','output_file'))
+        self._ftpstatus = True
+    else:    
+        self._outputFile = os.path.expanduser(self.config.get('settings', 'output_file'))
+        
     self._tkPlugin = self.console.getPlugin('tk')
     self._interval = self.config.getint('settings', 'interval')
-    self._outputFile = os.path.expanduser(self.config.get('settings', 'output_file'))
 
     if self._cronTab:
       # remove existing crontab
@@ -109,7 +119,16 @@ class StatusPlugin(b3.plugin.Plugin):
     self.writeXML(xml)
 
   def writeXML(self, xml):
-    self.debug('Writing XML status to %s', self._outputFile)
-    f = file(self._outputFile, 'w')
-    f.write(xml)
-    f.close()
+    if self._ftpstatus == True:
+      self.debug('Uploading XML status to FTP server')
+      ftp=FTP(self._ftpinfo['host'],self._ftpinfo['user'],passwd=self._ftpinfo['password'])
+      ftp.cwd(os.path.dirname(self._ftpinfo['path']))
+      ftpfile = StringIO.StringIO()
+      ftpfile.write(xml)
+      ftpfile.seek(0)
+      ftp.storlines('STOR '+os.path.basename(self._ftpinfo['path']), ftpfile)
+    else:
+      self.debug('Writing XML status to %s', self._outputFile)
+      f = file(self._outputFile, 'w')
+      f.write(xml)
+      f.close()
