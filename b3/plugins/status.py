@@ -38,7 +38,6 @@ __version__ = '1.3.0'
 import b3, time, os, StringIO
 import b3.plugin
 import b3.cron
-import b3.functions
 from cgi import escape
 from ftplib import FTP
 from b3 import functions
