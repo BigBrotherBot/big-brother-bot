@@ -9,24 +9,24 @@
 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # 3/4/2009 - 1.0.6 - xlr8or
-#  Added welcome delay setting to config
+#    Added welcome delay setting to config
 # 3/3/2009 - 1.0.5 - xlr8or
-#  Fixed another error that caused an exception on new users
+#    Fixed another error that caused an exception on new users
 # 2/28/2009 - 1.0.4 - xlr8or
-#  Removed error generated in welcoming thread on first time players
+#    Removed error generated in welcoming thread on first time players
 # 2/26/2009 - 1.0.3 - xlr8or
-#  Do not welcome players that where already welcomed in the last hour
+#    Do not welcome players that where already welcomed in the last hour
 
 __version__ = '1.0.6'
-__author__  = 'ThorN'
+__author__    = 'ThorN'
 
 import b3, threading, time
 import b3.events
@@ -34,86 +34,86 @@ import b3.plugin
 
 #--------------------------------------------------------------------------------------------------
 class WelcomePlugin(b3.plugin.Plugin):
-  _newbConnections = 0
-  _welcomeFlags = 0
-  _welcomeDelay = 0
+    _newbConnections = 0
+    _welcomeFlags = 0
+    _welcomeDelay = 0
 
-  def onStartup(self):
-    self.registerEvent(b3.events.EVT_CLIENT_AUTH)
+    def onStartup(self):
+        self.registerEvent(b3.events.EVT_CLIENT_AUTH)
 
-  def onLoadConfig(self):
-    self._welcomeFlags = self.config.getint('settings', 'flags')
-    self._newbConnections = self.config.getint('settings', 'newb_connections')
-    try:
-      self._welcomeDelay = self.config.getint('settings', 'delay')
-      if self._welcomeDelay < 15 or self._welcomeDelay > 90:
-        self._welcomeDelay = 30
-        self.debug('Welcome delay not in range 15-90 using 30 instead.')
-    except:
-      self._welcomeDelay = 30
+    def onLoadConfig(self):
+        self._welcomeFlags = self.config.getint('settings', 'flags')
+        self._newbConnections = self.config.getint('settings', 'newb_connections')
+        try:
+            self._welcomeDelay = self.config.getint('settings', 'delay')
+            if self._welcomeDelay < 15 or self._welcomeDelay > 90:
+                self._welcomeDelay = 30
+                self.debug('Welcome delay not in range 15-90 using 30 instead.')
+        except:
+            self._welcomeDelay = 30
 
-  def onEvent(self, event):
-    if event.type == b3.events.EVT_CLIENT_AUTH:
-      if  self._welcomeFlags < 1 or \
-        not event.client or \
-        not event.client.id or \
-        event.client.cid == None or \
-        not event.client.connected or \
-        event.client.pbid == 'WORLD' or \
-        self.console.upTime() < 300:
-        return
+    def onEvent(self, event):
+        if event.type == b3.events.EVT_CLIENT_AUTH:
+            if    self._welcomeFlags < 1 or \
+                not event.client or \
+                not event.client.id or \
+                event.client.cid == None or \
+                not event.client.connected or \
+                event.client.pbid == 'WORLD' or \
+                self.console.upTime() < 300:
+                return
 
-      t = threading.Timer(self._welcomeDelay, self.welcome, (event.client,))
-      t.start()
+            t = threading.Timer(self._welcomeDelay, self.welcome, (event.client,))
+            t.start()
 
-  def welcome(self, client):
-    _timeDiff = 0
-    if client.lastVisit:
-      self.debug('LastVisit: %s' %(self.console.formatTime(client.lastVisit)))
-      _timeDiff = time.time() - client.lastVisit
-    else:
-      self.debug('LastVisit not available. Must be the first time.')
-      _timeDiff = 1000000 # big enough so it will welcome new players
+    def welcome(self, client):
+        _timeDiff = 0
+        if client.lastVisit:
+            self.debug('LastVisit: %s' %(self.console.formatTime(client.lastVisit)))
+            _timeDiff = time.time() - client.lastVisit
+        else:
+            self.debug('LastVisit not available. Must be the first time.')
+            _timeDiff = 1000000 # big enough so it will welcome new players
 
-    # don't need to welcome people who got kicked or where already welcomed in the last hour
-    if client.connected and _timeDiff > 3600:
-      info = {
-        'name'  : client.exactName,
-        'id'  : str(client.id),
-        'connections' : str(client.connections)
-      }
+        # don't need to welcome people who got kicked or where already welcomed in the last hour
+        if client.connected and _timeDiff > 3600:
+            info = {
+                'name'    : client.exactName,
+                'id'    : str(client.id),
+                'connections' : str(client.connections)
+            }
 
-      if client.maskedGroup:
-        info['group'] = client.maskedGroup.name
-        info['level'] = str(client.maskedGroup.level)
-      else:
-        info['group'] = 'None'
-        info['level'] = '0'
+            if client.maskedGroup:
+                info['group'] = client.maskedGroup.name
+                info['level'] = str(client.maskedGroup.level)
+            else:
+                info['group'] = 'None'
+                info['level'] = '0'
 
-      if client.connections >= 2:
-        #info['lastVisit'] = self.console.formatTime(client.timeEdit)
-        info['lastVisit'] = self.console.formatTime(client.lastVisit)
-      else:
-        info['lastVisit'] = 'Unknown'
+            if client.connections >= 2:
+                #info['lastVisit'] = self.console.formatTime(client.timeEdit)
+                info['lastVisit'] = self.console.formatTime(client.lastVisit)
+            else:
+                info['lastVisit'] = 'Unknown'
 
-      if client.connections >= 2:
-        if client.maskedGroup:
-          if self._welcomeFlags & 16:
-            client.message(self.getMessage('user', info))
-        elif self._welcomeFlags & 1:
-            client.message(self.getMessage('newb', info))
+            if client.connections >= 2:
+                if client.maskedGroup:
+                    if self._welcomeFlags & 16:
+                        client.message(self.getMessage('user', info))
+                elif self._welcomeFlags & 1:
+                    client.message(self.getMessage('newb', info))
 
-        if self._welcomeFlags & 2 and client.connections < self._newbConnections:
-          self.console.say(self.getMessage('announce_user', info))
-      else:
-        if self._welcomeFlags & 4:
-          client.message(self.getMessage('first', info))
-        if self._welcomeFlags & 8:
-          self.console.say(self.getMessage('announce_first', info))
+                if self._welcomeFlags & 2 and client.connections < self._newbConnections:
+                    self.console.say(self.getMessage('announce_user', info))
+            else:
+                if self._welcomeFlags & 4:
+                    client.message(self.getMessage('first', info))
+                if self._welcomeFlags & 8:
+                    self.console.say(self.getMessage('announce_first', info))
 
-      if self._welcomeFlags & 32 and client.greeting:
-        info['greeting'] = client.greeting % info
-        self.console.say(self.getMessage('greeting', info))
-    else:
-      if _timeDiff <= 3600:
-        self.debug('Client already welcomed in the past hour')
+            if self._welcomeFlags & 32 and client.greeting:
+                info['greeting'] = client.greeting % info
+                self.console.say(self.getMessage('greeting', info))
+        else:
+            if _timeDiff <= 3600:
+                self.debug('Client already welcomed in the past hour')

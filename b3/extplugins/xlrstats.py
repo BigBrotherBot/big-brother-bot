@@ -315,9 +315,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     # Otherwise (also on error), it returns None.
     def get_PlayerStats(self, client=None):
         if (client is None):
-          id = self._world_clientid
+            id = self._world_clientid
         else:
-          id = client.id
+            id = client.id
         q = 'SELECT * from %s WHERE client_id = %s LIMIT 1' % (self.playerstats_table, id)
         cursor = self.query(q)
         if (cursor and (cursor.rowcount > 0) ):
@@ -892,7 +892,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             #self.last_roundtime = self.console.game._roundTimeStart
         else:
             if ( not self.onemaponly and ( self.last_map == self.console.game.mapName) and  (self.console.game.roundTime() < self.prematch_maxtime) ):
-                  #( self.console.game._roundTimeStart - self.last_roundtime < self.prematch_maxtime) ):
+                #( self.console.game._roundTimeStart - self.last_roundtime < self.prematch_maxtime) ):
                 return
             else:
                 self.last_map = self.console.game.mapName
@@ -1118,7 +1118,7 @@ class WeaponStats(StatObject):
         return q
         
 class WeaponUsage(StatObject):
-     #default name of the table for this data object
+    #default name of the table for this data object
     _table = 'weaponusage'
 
     #fields of the table

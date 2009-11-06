@@ -39,62 +39,62 @@ logging._srcfile = None
 
 #--------------------------------------------------------------------------------------------------
 class OutputHandler(logging.Logger):
-	def __init__(self, name, level=logging.NOTSET):
-		logging.Logger.__init__(self, name, level)
+    def __init__(self, name, level=logging.NOTSET):
+        logging.Logger.__init__(self, name, level)
 
-	def critical(self, msg, *args, **kwargs):
-		"""
-		Log 'msg % args' with severity 'CRITICAL' and exit.
-		"""
-		kwargs['exc_info'] = True
-		logging.Logger.critical(self, msg, *args, **kwargs)
-		sys.exit(220)
+    def critical(self, msg, *args, **kwargs):
+        """
+        Log 'msg % args' with severity 'CRITICAL' and exit.
+        """
+        kwargs['exc_info'] = True
+        logging.Logger.critical(self, msg, *args, **kwargs)
+        sys.exit(220)
 
-	def console(self, msg, *args, **kwargs):
-		"""
-		Log 'msg % args' with severity 'CONSOLE'.
-		"""
-		self.log(CONSOLE, msg, *args, **kwargs) 
+    def console(self, msg, *args, **kwargs):
+        """
+        Log 'msg % args' with severity 'CONSOLE'.
+        """
+        self.log(CONSOLE, msg, *args, **kwargs) 
 
-	def bot(self, msg, *args, **kwargs):
-		"""
-		Log 'msg % args' with severity 'BOT'.
-		"""
-		self.log(BOT, msg, *args, **kwargs) 
+    def bot(self, msg, *args, **kwargs):
+        """
+        Log 'msg % args' with severity 'BOT'.
+        """
+        self.log(BOT, msg, *args, **kwargs) 
 
-	def verbose(self, msg, *args, **kwargs):
-		"""
-		Log 'msg % args' with severity 'VERBOSE'.
-		"""
-		self.log(VERBOSE, msg, *args, **kwargs) 
+    def verbose(self, msg, *args, **kwargs):
+        """
+        Log 'msg % args' with severity 'VERBOSE'.
+        """
+        self.log(VERBOSE, msg, *args, **kwargs) 
 
-	def verbose2(self, msg, *args, **kwargs):
-		"""
-		Log 'msg % args' with severity 'VERBOSE2'.
-		"""
-		self.log(VERBOSE2, msg, *args, **kwargs) 
+    def verbose2(self, msg, *args, **kwargs):
+        """
+        Log 'msg % args' with severity 'VERBOSE2'.
+        """
+        self.log(VERBOSE2, msg, *args, **kwargs) 
 
-	def raiseError(self, raiseError, msg, *args, **kwargs):
-		"""
-		Log 'msg % args' with severity 'ERROR'. And raises
-		the exception.
-		"""
-		self.log(logging.ERROR, msg, *args, **kwargs) 
-		raise raiseError, msg % args
+    def raiseError(self, raiseError, msg, *args, **kwargs):
+        """
+        Log 'msg % args' with severity 'ERROR'. And raises
+        the exception.
+        """
+        self.log(logging.ERROR, msg, *args, **kwargs) 
+        raise raiseError, msg % args
 
 class stdoutLogger:
-	def __init__(self, logger):
-		self.logger = logger
+    def __init__(self, logger):
+        self.logger = logger
 
-	def write(self, msg):
-		self.logger.info('STDOUT %s' % msg)
-		
+    def write(self, msg):
+        self.logger.info('STDOUT %s' % msg)
+        
 class stderrLogger:
-	def __init__(self, logger):
-		self.logger = logger
+    def __init__(self, logger):
+        self.logger = logger
 
-	def write(self, msg):
-		self.logger.error('STDERR %s' % msg)
+    def write(self, msg):
+        self.logger.error('STDERR %s' % msg)
 
 #--------------------------------------------------------------------------------------------------
 logging.setLoggerClass(OutputHandler)
@@ -111,48 +111,48 @@ logging.setLoggerClass(OutputHandler)
 __output = None
 
 def getInstance(logfile='b3.log', loglevel=21):
-	global __output
+    global __output
 
-	if __output == None:
-		__output = logging.getLogger('output')
+    if __output == None:
+        __output = logging.getLogger('output')
 
-		handler = handlers.RotatingFileHandler(logfile, 'a', 10485760, 5)
-		handler.doRollover()
-		handler.setFormatter(logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s', '%y%m%d %H:%M:%S'))
-		
-		__output.addHandler(handler)
-		__output.setLevel(loglevel)
-	
-	return __output
+        handler = handlers.RotatingFileHandler(logfile, 'a', 10485760, 5)
+        handler.doRollover()
+        handler.setFormatter(logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s', '%y%m%d %H:%M:%S'))
+        
+        __output.addHandler(handler)
+        __output.setLevel(loglevel)
+    
+    return __output
 
 if __name__ == '__main__':
-	# test output handler
-	log = getInstance('test.log', 1)
-	log.error('Test error')
-	log.debug('Test debug')
-	log.console('Test console')
-	log.bot('Test bot')
-	log.verbose('Test verbose')
-	log.verbose2('Test verbose')
-	log.warning('Test warning')
-	log.info('Test info')
+    # test output handler
+    log = getInstance('test.log', 1)
+    log.error('Test error')
+    log.debug('Test debug')
+    log.console('Test console')
+    log.bot('Test bot')
+    log.verbose('Test verbose')
+    log.verbose2('Test verbose')
+    log.warning('Test warning')
+    log.info('Test info')
 
-	try:
-		raise Exception('error test')
-	except:
-		log.exception('Test exception')
-		log.error('Test error with exc_info',  exc_info=True)
-		
-	try:
-		log.raiseError(Exception, 'Test raiseError')
-	except Exception, e:
-		# expected behavior
-		log.debug('Got expected Exception %s', e)
-	else:
-		# unexpected behavior
-		raise Exception('raiseError should have raised an exception')
+    try:
+        raise Exception('error test')
+    except:
+        log.exception('Test exception')
+        log.error('Test error with exc_info',  exc_info=True)
+        
+    try:
+        log.raiseError(Exception, 'Test raiseError')
+    except Exception, e:
+        # expected behavior
+        log.debug('Got expected Exception %s', e)
+    else:
+        # unexpected behavior
+        raise Exception('raiseError should have raised an exception')
 
-	# critical will exit
-	log.critical('Test info')
-	raise Exception('log.critical should have exited')
-	
+    # critical will exit
+    log.critical('Test info')
+    raise Exception('log.critical should have exited')
+    

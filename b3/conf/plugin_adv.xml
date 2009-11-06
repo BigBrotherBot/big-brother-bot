@@ -4,7 +4,7 @@
 		<set name="rate">2</set>
 	</settings>
 	<ads>
-    <ad>^2Big Brother Bot is watching you... ^9BigBrotherBot.com</ad>
+		<ad>^2Big Brother Bot is watching you... ^9BigBrotherBot.com</ad>
 		<ad>/spam#rule1</ad>
 		<ad>^2Do not poke b3 with a stick</ad>
 		<ad>^2b3 is not responsible for damaged reputation</ad>

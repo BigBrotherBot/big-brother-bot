@@ -523,7 +523,7 @@ class Q3AParser(b3.parser.Parser):
                 m = re.match(self._regPlayer, line.strip())
             
             if m:  
-                 players[str(m.group('slot'))] = int(m.group('score'))
+                players[str(m.group('slot'))] = int(m.group('score'))
             #elif '------' not in line and 'map: ' not in line and 'num score ping' not in line:
                 #self.verbose('getPlayerScores() = Line did not match format: %s' % line)
         

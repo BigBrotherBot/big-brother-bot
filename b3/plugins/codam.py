@@ -24,50 +24,50 @@ import b3.plugin
 
 #--------------------------------------------------------------------------------------------------
 class CodamPlugin(b3.plugin.Plugin):
-	_adminPlugin = None
+    _adminPlugin = None
 
-	def startup(self):
-		self._adminPlugin = self.console.getPlugin('admin')
-		if self._adminPlugin:
-			if 'commands' in self.config.sections():
-				for cmd in self.config.options('commands'):
-					if cmd == 'codam':
-						self._adminPlugin.registerCommand(self, 'codam', self.config.get('commands', 'codam'), self.cmd_codam)
-					else:
-						self._adminPlugin.registerCommand(self, 'c' + cmd, self.config.get('commands', cmd), self.cmd_command)
+    def startup(self):
+        self._adminPlugin = self.console.getPlugin('admin')
+        if self._adminPlugin:
+            if 'commands' in self.config.sections():
+                for cmd in self.config.options('commands'):
+                    if cmd == 'codam':
+                        self._adminPlugin.registerCommand(self, 'codam', self.config.get('commands', 'codam'), self.cmd_codam)
+                    else:
+                        self._adminPlugin.registerCommand(self, 'c' + cmd, self.config.get('commands', cmd), self.cmd_command)
 
-			if 'user_commands' in self.config.sections():
-				for cmd in self.config.options('user_commands'):
-					self._adminPlugin.registerCommand(self, 'c' + cmd, self.config.get('user_commands', cmd), self.cmd_user_command)
+            if 'user_commands' in self.config.sections():
+                for cmd in self.config.options('user_commands'):
+                    self._adminPlugin.registerCommand(self, 'c' + cmd, self.config.get('user_commands', cmd), self.cmd_user_command)
 
-	def cmd_codam(self, data, client, cmd=None):
-		"""\
-		- CoDAM command
-		"""
-		self.console.write('command "%s"' % data)
+    def cmd_codam(self, data, client, cmd=None):
+        """\
+        - CoDAM command
+        """
+        self.console.write('command "%s"' % data)
 
-	def cmd_user_command(self, data, client, cmd=None):
-		"""\
-		- CoDAM user command
-		"""
-		m = re.match('^([^ ]{2,}|[0-9]+) ?(.*)$', data)
-		if not m:
-			client.message('^7Invalid parameters')
-			return False
+    def cmd_user_command(self, data, client, cmd=None):
+        """\
+        - CoDAM user command
+        """
+        m = re.match('^([^ ]{2,}|[0-9]+) ?(.*)$', data)
+        if not m:
+            client.message('^7Invalid parameters')
+            return False
 
-		cid = m.group(1)
-		parm = m.group(2)
+        cid = m.group(1)
+        parm = m.group(2)
 
-		sclient = self._adminPlugin.findClientPrompt(cid, client)
-		if sclient:
-			self.cmd_codam('%s %s %s' % (cmd.command[1:], parm, sclient.cid), client)
+        sclient = self._adminPlugin.findClientPrompt(cid, client)
+        if sclient:
+            self.cmd_codam('%s %s %s' % (cmd.command[1:], parm, sclient.cid), client)
 
-	def cmd_command(self, data, client, cmd=None):
-		"""\
-		- CoDAM command
-		"""
-		self.cmd_codam('%s %s' % (cmd.command, data), client)
+    def cmd_command(self, data, client, cmd=None):
+        """\
+        - CoDAM command
+        """
+        self.cmd_codam('%s %s' % (cmd.command, data), client)
 
-	def handle(self, event):
-		pass
-		
+    def handle(self, event):
+        pass
+        

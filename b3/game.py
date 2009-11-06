@@ -22,50 +22,50 @@ __version__ = '1.2.0'
 import time
 
 class Game(object):
-	mapName = None
-	timeLimit = None
-	fragLimit = None
-	captureLimit = None
-	gameType = None
-	_roundTimeStart = None
-	_mapTimeStart = None
-	rounds = 0
-	gameName = None
-	modName = None
+    mapName = None
+    timeLimit = None
+    fragLimit = None
+    captureLimit = None
+    gameType = None
+    _roundTimeStart = None
+    _mapTimeStart = None
+    rounds = 0
+    gameName = None
+    modName = None
 
-	def __init__(self, console, gameName):
-		self.console = console
-		self.gameName = gameName
-		self.startRound()
+    def __init__(self, console, gameName):
+        self.console = console
+        self.gameName = gameName
+        self.startRound()
 
-	def __getattr__(self, key):
-		if self.__dict__.has_key(key):
-			return self.__dict__[key]
+    def __getattr__(self, key):
+        if self.__dict__.has_key(key):
+            return self.__dict__[key]
 
-		return None
+        return None
 
-	def __setitem__(self, key, value):
-		self.__dict__[key] = value
-		return self.__dict__[key]
+    def __setitem__(self, key, value):
+        self.__dict__[key] = value
+        return self.__dict__[key]
 
-	def mapTime(self):
-		return self.console.time()  - self._mapTimeStart
+    def mapTime(self):
+        return self.console.time()  - self._mapTimeStart
 
-	def roundTime(self):
-		return self.console.time() - self._roundTimeStart
+    def roundTime(self):
+        return self.console.time() - self._roundTimeStart
 
-	def startRound(self):
-		if not self._mapTimeStart:
-			self.startMap()
+    def startRound(self):
+        if not self._mapTimeStart:
+            self.startMap()
 
-		self._roundTimeStart = self.console.time()
-		self.rounds = self.rounds + 1
+        self._roundTimeStart = self.console.time()
+        self.rounds = self.rounds + 1
 
-	def startMap(self, mapName=None):
-		if mapName:
-			self.mapName = mapName
+    def startMap(self, mapName=None):
+        if mapName:
+            self.mapName = mapName
 
-		self._mapTimeStart = self.console.time()
+        self._mapTimeStart = self.console.time()
 
-	def mapEnd(self):
-		pass
+    def mapEnd(self):
+        pass

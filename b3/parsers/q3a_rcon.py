@@ -23,360 +23,360 @@ import socket, sys, select, re, time, thread, threading, Queue
 
 #--------------------------------------------------------------------------------------------------
 class Rcon:
-	host = ()
-	password = None
-	lock = thread.allocate_lock()
-	socket = None
-	queue = None
-	console = None
-	socket_timeout = 0.55
+    host = ()
+    password = None
+    lock = thread.allocate_lock()
+    socket = None
+    queue = None
+    console = None
+    socket_timeout = 0.55
 
-	def __init__(self, console, host, password):
-		self.console = console
-		self.queue = Queue.Queue()
+    def __init__(self, console, host, password):
+        self.console = console
+        self.queue = Queue.Queue()
 
-		self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		self.host = host
-		self.password = password
-		self.socket.settimeout(2)
-		self.socket.connect(self.host)
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.host = host
+        self.password = password
+        self.socket.settimeout(2)
+        self.socket.connect(self.host)
 
-		self._stopEvent = threading.Event()
-		thread.start_new_thread(self._writelines, ())
+        self._stopEvent = threading.Event()
+        thread.start_new_thread(self._writelines, ())
 
-	def send(self, data):
-		data = data.strip()
-		self.console.verbose('QSERVER sending (%s:%s) %s', self.host[0], self.host[1], data)
-		startTime = time.time()
+    def send(self, data):
+        data = data.strip()
+        self.console.verbose('QSERVER sending (%s:%s) %s', self.host[0], self.host[1], data)
+        startTime = time.time()
 
-		retries = 0
-		while time.time() - startTime < 5:
-			readables, writeables, errors = select.select([], [self.socket], [self.socket], self.socket_timeout)
+        retries = 0
+        while time.time() - startTime < 5:
+            readables, writeables, errors = select.select([], [self.socket], [self.socket], self.socket_timeout)
 
-			if len(errors) > 0:
-				self.console.error('QSERVER: %s', str(errors))
-			elif len(writeables) > 0:
-				try:
-					writeables[0].send('\377\377\377\377%s\n' % data)
-				except Exception, msg:
-					self.console.error('QSERVER: ERROR sending: %s', msg)
-				else:
-					try:
-						data = self.readSocket(self.socket)
-						self.console.verbose2('QSERVER: Received %s' % data)
-						return data
-					except Exception, msg:
-						self.console.error('QSERVER: ERROR reading: %s', msg)
-					
-			else:
-				self.console.verbose('QSERVER: no writeable socket')
+            if len(errors) > 0:
+                self.console.error('QSERVER: %s', str(errors))
+            elif len(writeables) > 0:
+                try:
+                    writeables[0].send('\377\377\377\377%s\n' % data)
+                except Exception, msg:
+                    self.console.error('QSERVER: ERROR sending: %s', msg)
+                else:
+                    try:
+                        data = self.readSocket(self.socket)
+                        self.console.verbose2('QSERVER: Received %s' % data)
+                        return data
+                    except Exception, msg:
+                        self.console.error('QSERVER: ERROR reading: %s', msg)
+                    
+            else:
+                self.console.verbose('QSERVER: no writeable socket')
 
-			time.sleep(0.05)
+            time.sleep(0.05)
 
-			retries += 1
+            retries += 1
 
-			if retries >= 2:
-				break
+            if retries >= 2:
+                break
 
-			self.console.verbose('QSERVER: retry sending %s...', data.strip())
-
-
-		self.console.debug('QSERVER: Did not send any data')
-		return ''
-		
-	def sendRcon(self, data):
-		data = data.strip()
-		self.console.verbose('RCON sending (%s:%s) %s', self.host[0], self.host[1], data)
-		startTime = time.time()
-
-		retries = 0
-		while time.time() - startTime < 5:
-			readables, writeables, errors = select.select([], [self.socket], [self.socket], self.socket_timeout)
-
-			if len(errors) > 0:
-				self.console.error('RCON: %s', str(errors))
-			elif len(writeables) > 0:
-				try:
-					writeables[0].send('\377\377\377\377rcon "%s" %s\n' % (self.password, data))
-				except Exception, msg:
-					self.console.error('RCON: ERROR sending: %s', msg)
-				else:
-					try:
-						data = self.readSocket(self.socket)
-						self.console.verbose2('RCON: Received %s' % data)
-						return data
-					except Exception, msg:
-						self.console.error('RCON: ERROR reading: %s', msg)
-
-				if re.match(r'^map(_rotate)?.*', data):
-					# do not retry map changes since they prevent the server from responding
-					self.console.verbose2('RCON: no retry for %s', data)
-					return ''
-					
-			else:
-				self.console.verbose('RCON: no writeable socket')
-
-			time.sleep(0.05)
-
-			retries += 1
-
-			if retries >= 2:
-				break
-
-			self.console.verbose('RCON: retry sending %s...', data.strip())
+            self.console.verbose('QSERVER: retry sending %s...', data.strip())
 
 
-		self.console.debug('RCON: Did not send any data')
-		return ''
+        self.console.debug('QSERVER: Did not send any data')
+        return ''
+        
+    def sendRcon(self, data):
+        data = data.strip()
+        self.console.verbose('RCON sending (%s:%s) %s', self.host[0], self.host[1], data)
+        startTime = time.time()
+
+        retries = 0
+        while time.time() - startTime < 5:
+            readables, writeables, errors = select.select([], [self.socket], [self.socket], self.socket_timeout)
+
+            if len(errors) > 0:
+                self.console.error('RCON: %s', str(errors))
+            elif len(writeables) > 0:
+                try:
+                    writeables[0].send('\377\377\377\377rcon "%s" %s\n' % (self.password, data))
+                except Exception, msg:
+                    self.console.error('RCON: ERROR sending: %s', msg)
+                else:
+                    try:
+                        data = self.readSocket(self.socket)
+                        self.console.verbose2('RCON: Received %s' % data)
+                        return data
+                    except Exception, msg:
+                        self.console.error('RCON: ERROR reading: %s', msg)
+
+                if re.match(r'^map(_rotate)?.*', data):
+                    # do not retry map changes since they prevent the server from responding
+                    self.console.verbose2('RCON: no retry for %s', data)
+                    return ''
+                    
+            else:
+                self.console.verbose('RCON: no writeable socket')
+
+            time.sleep(0.05)
+
+            retries += 1
+
+            if retries >= 2:
+                break
+
+            self.console.verbose('RCON: retry sending %s...', data.strip())
 
 
-	def stop(self):
-		"""Stop the rcon writelines queue"""
-		self._stopEvent.set()
+        self.console.debug('RCON: Did not send any data')
+        return ''
 
-	def _writelines(self):
-		while not self._stopEvent.isSet():
-			lines = self.queue.get(True)
 
-			self.lock.acquire()
-			try:
-				data = ''
+    def stop(self):
+        """Stop the rcon writelines queue"""
+        self._stopEvent.set()
 
-				i = 0
-				for cmd in lines:
-					if i > 0:
-						# pause and give time for last send to finish
-						time.sleep(1)
+    def _writelines(self):
+        while not self._stopEvent.isSet():
+            lines = self.queue.get(True)
 
-					if not cmd: 
-						continue
+            self.lock.acquire()
+            try:
+                data = ''
 
-					d = self.sendRcon(cmd)
-					if d:
-						data += d
+                i = 0
+                for cmd in lines:
+                    if i > 0:
+                        # pause and give time for last send to finish
+                        time.sleep(1)
 
-					i+=1
-			finally:
-				self.lock.release()
+                    if not cmd: 
+                        continue
 
-	def writelines(self, lines):
-		self.queue.put(lines)
+                    d = self.sendRcon(cmd)
+                    if d:
+                        data += d
 
-	def write(self, cmd):
-		self.lock.acquire()
-		try:
-			data = self.sendRcon(cmd)
-		finally:
-			self.lock.release()
+                    i+=1
+            finally:
+                self.lock.release()
 
-		if data:
-			return data
-		else:
-			return ''
+    def writelines(self, lines):
+        self.queue.put(lines)
 
-	def flush(self):
-		pass
+    def write(self, cmd):
+        self.lock.acquire()
+        try:
+            data = self.sendRcon(cmd)
+        finally:
+            self.lock.release()
 
-	def readNonBlocking(self, sock):
-		sock.settimeout(2)
+        if data:
+            return data
+        else:
+            return ''
 
-		startTime = time.time()
+    def flush(self):
+        pass
 
-		data = ''
-		while time.time() - startTime < 1:
-			try:
-				d = str(sock.recv(4096))
-			except socket.error, detail:
-				self.console.debug('RCON: ERROR reading: %s' % detail)
-				break
-			else:
-				if d:
-					# remove rcon header
-					data += d.replace('\377\377\377\377print\n', '')
-				elif len(data) > 0 and ord(data[-1:]) == 10:
-					break
+    def readNonBlocking(self, sock):
+        sock.settimeout(2)
 
-		return data.strip()
+        startTime = time.time()
 
-	def readSocket(self, sock, size=4096):
-		data = ''
+        data = ''
+        while time.time() - startTime < 1:
+            try:
+                d = str(sock.recv(4096))
+            except socket.error, detail:
+                self.console.debug('RCON: ERROR reading: %s' % detail)
+                break
+            else:
+                if d:
+                    # remove rcon header
+                    data += d.replace('\377\377\377\377print\n', '')
+                elif len(data) > 0 and ord(data[-1:]) == 10:
+                    break
 
-		readables, writeables, errors = select.select([sock], [], [sock], self.socket_timeout)
-		
-		if not len(readables):
-			raise Exception('No readable socket')
+        return data.strip()
 
-		while len(readables):
-			d = str(sock.recv(size))
+    def readSocket(self, sock, size=4096):
+        data = ''
 
-			if d:
-				# remove rcon header
-				data += d.replace('\377\377\377\377print\n', '')
-			
-			readables, writeables, errors = select.select([sock], [], [sock], self.socket_timeout)
+        readables, writeables, errors = select.select([sock], [], [sock], self.socket_timeout)
+        
+        if not len(readables):
+            raise Exception('No readable socket')
 
-			if len(readables):
-				self.console.verbose('RCON: More data to read in socket')
+        while len(readables):
+            d = str(sock.recv(size))
 
-		return data.strip()
+            if d:
+                # remove rcon header
+                data += d.replace('\377\377\377\377print\n', '')
+            
+            readables, writeables, errors = select.select([sock], [], [sock], self.socket_timeout)
 
-	def close(self):
-		pass
-		
-	def getRules(self):
-		self.lock.acquire()
-		try:
-			data = self.send('getstatus')
-		finally:
-			self.lock.release()
+            if len(readables):
+                self.console.verbose('RCON: More data to read in socket')
 
-		if data:
-			return data
-		else:
-			return ''
-			
-	def getInfo(self):
-		self.lock.acquire()
-		try:
-			data = self.send('getinfo')
-		finally:
-			self.lock.release()
+        return data.strip()
 
-		if data:
-			return data
-		else:
-			return ''
-			
+    def close(self):
+        pass
+        
+    def getRules(self):
+        self.lock.acquire()
+        try:
+            data = self.send('getstatus')
+        finally:
+            self.lock.release()
+
+        if data:
+            return data
+        else:
+            return ''
+            
+    def getInfo(self):
+        self.lock.acquire()
+        try:
+            data = self.send('getinfo')
+        finally:
+            self.lock.release()
+
+        if data:
+            return data
+        else:
+            return ''
+            
 if __name__ == '__main__':
-	"""
-	To run tests : python b3/parsers/q3a_rcon.py <rcon_ip> <rcon_port> <rcon_password>
-	"""
-	
-	class FakeConsole:			
-		def error(self, msg, *args, **kwargs):
-			"""Log an error"""
-			print 'ERROR    : ' + msg % args
+    """
+    To run tests : python b3/parsers/q3a_rcon.py <rcon_ip> <rcon_port> <rcon_password>
+    """
+    
+    class FakeConsole:            
+        def error(self, msg, *args, **kwargs):
+            """Log an error"""
+            print 'ERROR    : ' + msg % args
 
-		def debug(self, msg, *args, **kwargs):
-			"""Log a debug message"""
-			print 'DEBUG    : ' + msg % args
+        def debug(self, msg, *args, **kwargs):
+            """Log a debug message"""
+            print 'DEBUG    : ' + msg % args
 
-		def bot(self, msg, *args, **kwargs):
-			"""Log a bot message"""
-			print 'BOT      : ' + msg % args
+        def bot(self, msg, *args, **kwargs):
+            """Log a bot message"""
+            print 'BOT      : ' + msg % args
 
-		def verbose(self, msg, *args, **kwargs):
-			"""Log a verbose message"""
-			print 'VERBOSE  : ' + msg % args
+        def verbose(self, msg, *args, **kwargs):
+            """Log a verbose message"""
+            print 'VERBOSE  : ' + msg % args
 
-		def verbose2(self, msg, *args, **kwargs):
-			"""Log an extra verbose message"""
-			print 'VERBOSE2 : ' + msg % args
+        def verbose2(self, msg, *args, **kwargs):
+            """Log an extra verbose message"""
+            print 'VERBOSE2 : ' + msg % args
 
-		def console(self, msg, *args, **kwargs):
-			"""Log a message from the console"""
-			print 'CONSOLE  : ' + msg % args
+        def console(self, msg, *args, **kwargs):
+            """Log a message from the console"""
+            print 'CONSOLE  : ' + msg % args
 
-		def warning(self, msg, *args, **kwargs):
-			"""Log a message from the console"""
-			print 'WARNING  : ' + msg % args
+        def warning(self, msg, *args, **kwargs):
+            """Log a message from the console"""
+            print 'WARNING  : ' + msg % args
 
-		def info(self, msg, *args, **kwargs):
-			"""Log a message from the console"""
-			print 'INFO     : ' + msg % args
+        def info(self, msg, *args, **kwargs):
+            """Log a message from the console"""
+            print 'INFO     : ' + msg % args
 
-		def exception(self, msg, *args, **kwargs):
-			"""Log a message from the console"""
-			print 'EXCEPTION: ' + msg % args
+        def exception(self, msg, *args, **kwargs):
+            """Log a message from the console"""
+            print 'EXCEPTION: ' + msg % args
 
-		def critical(self, msg, *args, **kwargs):
-			"""Log a message from the console"""
-			print 'CRITICAL : ' + msg % args
-			
-	class FakeColoredConsole:
-		def printColor (self, string):
-			colors = {"default":0, "black":30, "red":31, "green":32, "yellow":33,
-						"blue":34,"magenta":35, "cyan":36, "white":37, "black":38,
-						"black":39} #33[%colors%m
-			
-			for color in colors:
-				color_string = "\033[%dm\033[1m" % colors[color]
-				string = string.replace("<%s>" % color, color_string).replace("</%s>" % color, "\033[0m")
-			
-			print string
-			
-		def error(self, msg, *args, **kwargs):
-			"""Log an error"""
-			self.printColor('<red>ERROR</red>    : ' + msg % args)
+        def critical(self, msg, *args, **kwargs):
+            """Log a message from the console"""
+            print 'CRITICAL : ' + msg % args
+            
+    class FakeColoredConsole:
+        def printColor (self, string):
+            colors = {"default":0, "black":30, "red":31, "green":32, "yellow":33,
+                        "blue":34,"magenta":35, "cyan":36, "white":37, "black":38,
+                        "black":39} #33[%colors%m
+            
+            for color in colors:
+                color_string = "\033[%dm\033[1m" % colors[color]
+                string = string.replace("<%s>" % color, color_string).replace("</%s>" % color, "\033[0m")
+            
+            print string
+            
+        def error(self, msg, *args, **kwargs):
+            """Log an error"""
+            self.printColor('<red>ERROR</red>    : ' + msg % args)
 
-		def debug(self, msg, *args, **kwargs):
-			"""Log a debug message"""
-			self.printColor( '<cyan>DEBUG</cyan>    : ' + msg % args)
+        def debug(self, msg, *args, **kwargs):
+            """Log a debug message"""
+            self.printColor( '<cyan>DEBUG</cyan>    : ' + msg % args)
 
-		def bot(self, msg, *args, **kwargs):
-			"""Log a bot message"""
-			self.printColor( 'BOT      : ' + msg % args)
+        def bot(self, msg, *args, **kwargs):
+            """Log a bot message"""
+            self.printColor( 'BOT      : ' + msg % args)
 
-		def verbose(self, msg, *args, **kwargs):
-			"""Log a verbose message"""
-			self.printColor( '<green>VERBOSE</green>  : ' + msg % args)
+        def verbose(self, msg, *args, **kwargs):
+            """Log a verbose message"""
+            self.printColor( '<green>VERBOSE</green>  : ' + msg % args)
 
-		def verbose2(self, msg, *args, **kwargs):
-			"""Log an extra verbose message"""
-			self.printColor( '<green>VERBOSE2</green> : ' + msg % args)
+        def verbose2(self, msg, *args, **kwargs):
+            """Log an extra verbose message"""
+            self.printColor( '<green>VERBOSE2</green> : ' + msg % args)
 
-		def console(self, msg, *args, **kwargs):
-			"""Log a message from the console"""
-			self.printColor( 'CONSOLE  : ' + msg % args)
+        def console(self, msg, *args, **kwargs):
+            """Log a message from the console"""
+            self.printColor( 'CONSOLE  : ' + msg % args)
 
-		def warning(self, msg, *args, **kwargs):
-			"""Log a message from the console"""
-			self.printColor( '<yellow>WARNING</yellow>  : ' + msg % args)
+        def warning(self, msg, *args, **kwargs):
+            """Log a message from the console"""
+            self.printColor( '<yellow>WARNING</yellow>  : ' + msg % args)
 
-		def info(self, msg, *args, **kwargs):
-			"""Log a message from the console"""
-			self.printColor( 'INFO     : ' + msg % args)
+        def info(self, msg, *args, **kwargs):
+            """Log a message from the console"""
+            self.printColor( 'INFO     : ' + msg % args)
 
-		def exception(self, msg, *args, **kwargs):
-			"""Log a message from the console"""
-			self.printColor( '<red>EXCEPTION</red>: ' + msg % args)
+        def exception(self, msg, *args, **kwargs):
+            """Log a message from the console"""
+            self.printColor( '<red>EXCEPTION</red>: ' + msg % args)
 
-		def critical(self, msg, *args, **kwargs):
-			"""Log a message from the console"""
-			self.printColor( '<red>CRITICAL</red> : ' + msg % args)
-			
+        def critical(self, msg, *args, **kwargs):
+            """Log a message from the console"""
+            self.printColor( '<red>CRITICAL</red> : ' + msg % args)
+            
 
-	c = FakeColoredConsole()
-	r = Rcon(c, (sys.argv[1], int(sys.argv[2])), sys.argv[3])
-	
-	r.socket_timeout = 1
-	for cmd in ['say "test1"', 'say "test2"', 'say "test3"', 'say "test4"', 'say "test5"']:
-		c.info('Writing %s', cmd)
-		data = r.write(cmd)
-		c.info('Recieved %s', data)
+    c = FakeColoredConsole()
+    r = Rcon(c, (sys.argv[1], int(sys.argv[2])), sys.argv[3])
+    
+    r.socket_timeout = 1
+    for cmd in ['say "test1"', 'say "test2"', 'say "test3"', 'say "test4"', 'say "test5"']:
+        c.info('Writing %s', cmd)
+        data = r.write(cmd)
+        c.info('Recieved %s', data)
 
-	r.socket_timeout = 0.1
-	for cmd in ['say "test1"', 'say "test2"', 'say "test3"', 'say "test4"', 'say "test5"']:
-		c.info('Writing %s', cmd)
-		data = r.write(cmd)
-		c.info('Recieved %s', data)
+    r.socket_timeout = 0.1
+    for cmd in ['say "test1"', 'say "test2"', 'say "test3"', 'say "test4"', 'say "test5"']:
+        c.info('Writing %s', cmd)
+        data = r.write(cmd)
+        c.info('Recieved %s', data)
 
-	r.socket_timeout = 1
-	for cmd in ['.B3', '.Administrator', '.Admin', 'status', 'sv_mapRotation', 'players']:
-		c.info('Writing %s', cmd)
-		data = r.write(cmd)
-		c.info('Recieved %s', data)
-		
-	r.socket_timeout = 0.1
-	for cmd in ['.B3', '.Administrator', '.Admin', 'status', 'sv_mapRotation', 'players']:
-		c.info('Writing %s', cmd)
-		data = r.write(cmd)
-		c.info('Recieved %s', data)
-	
-	r.socket_timeout = 1
-	c.info('getRules')
-	data = r.getRules()
-	c.info('Recieved %s', data)
-	c.info('getInfo')
-	data = r.getInfo()
-	c.info('Recieved %s', data)
+    r.socket_timeout = 1
+    for cmd in ['.B3', '.Administrator', '.Admin', 'status', 'sv_mapRotation', 'players']:
+        c.info('Writing %s', cmd)
+        data = r.write(cmd)
+        c.info('Recieved %s', data)
+        
+    r.socket_timeout = 0.1
+    for cmd in ['.B3', '.Administrator', '.Admin', 'status', 'sv_mapRotation', 'players']:
+        c.info('Writing %s', cmd)
+        data = r.write(cmd)
+        c.info('Recieved %s', data)
+    
+    r.socket_timeout = 1
+    c.info('getRules')
+    data = r.getRules()
+    c.info('Recieved %s', data)
+    c.info('getInfo')
+    data = r.getInfo()
+    c.info('Recieved %s', data)

@@ -9,12 +9,12 @@
 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 # 03/11/2009 - 1.3.1 - Bakes
@@ -34,7 +34,7 @@
 # 8/29/2005 - 1.2.0 - ThorN
 # Converted to use new event handlers
 
-__author__  = 'ThorN'
+__author__    = 'ThorN'
 __version__ = '1.3.1'
 
 import b3, time, os, StringIO
@@ -47,156 +47,156 @@ from xml.dom.minidom import Document
 
 #--------------------------------------------------------------------------------------------------
 class StatusPlugin(b3.plugin.Plugin):
-  _tkPlugin = None
-  _cronTab = None
-  _ftpstatus = False
-  _ftpinfo = None
-  def onLoadConfig(self):
-    if self.config.get('settings','output_file')[0:6] == 'ftp://':
-        self._ftpinfo = functions.splitDSN(self.config.get('settings','output_file'))
-        self._ftpstatus = True
-    else:    
-        self._outputFile = os.path.expanduser(self.config.get('settings', 'output_file'))
-        
-    self._tkPlugin = self.console.getPlugin('tk')
-    self._interval = self.config.getint('settings', 'interval')
-
-    if self._cronTab:
-      # remove existing crontab
-      self.console.cron - self._cronTab
-
-    self._cronTab = b3.cron.PluginCronTab(self, self.update, '*/%s' % self._interval)
-    self.console.cron + self._cronTab
-
-  def onEvent(self, event):
-    pass
-
-  def update(self):
-    clients = self.console.clients.getList()  
-    
-    scoreList = self.console.getPlayerScores() 
-         
-    self.verbose('Building XML status')
-    xml = Document()
-    b3status = xml.createElement("B3Status")
-    b3status.setAttribute("Time", time.asctime())
-    xml.appendChild(b3status)
-    b3clients = xml.createElement("Clients")
-    b3clients.setAttribute("Total", str(len(clients)))
-    b3status.appendChild(b3clients)
-        
-    for c in clients:
-      if not c.name:
-        c.name = "@"+str(c.id)
-      if c.exactName == "^7":
-        c.exactName = "@"+str(c.id)+"^7"
-
-      if not c.maskedLevel:
-        _level = c.maxLevel
-      else:
-        _level = c.maskedLevel
-
-      try:
-        client = xml.createElement("Client")
-        client.setAttribute("Name", str(sanitizeMe(c.name)))
-        client.setAttribute("ColorName", str(sanitizeMe(c.exactName)))
-        client.setAttribute("DBID", str(c.id))
-        client.setAttribute("Connections", str(c.connections))
-        client.setAttribute("CID", str(c.cid))
-        client.setAttribute("Level", str(_level))
-        if c.guid:
-	  client.setAttribute("GUID", c.guid)
-        else:
-          client.setAttribute("GUID", '')
-        if c.pbid:
-          client.setAttribute("PBID", c.pbid)
-        else:
-          client.setAttribute("PBID", '')
-        client.setAttribute("IP", c.ip)
-        client.setAttribute("Team", str(c.team))
-        client.setAttribute("Joined", str(time.ctime(c.timeAdd)))
-        client.setAttribute("Updated", str(time.ctime(c.timeEdit)))
-        client.setAttribute("Score", str(scoreList[c.cid]))
-        client.setAttribute("State", str(c.state))
-        b3clients.appendChild(client)
-
-        for k,v in c.data.iteritems():
-          data = xml.createElement("Data")
-          data.setAttribute("Name", str(k))
-          data.setAttribute("Value", str(sanitizeMe(v)))
-          client.appendChild(data)
-            
-        if self._tkPlugin:
-          if hasattr(c, 'tkplugin_points'):
-            tkplugin = xml.createElement("TkPlugin")
-            tkplugin.setAttribute("Points", str(c.var(self, 'points')))
-            client.appendChild(tkplugin)      
-            if hasattr(c, 'tkplugin_attackers'):
-              for acid,points in c.var(self, 'attackers').value.items():
-                try:
-                  attacker = xml.createElement("Attacker")
-                  attacker.setAttribute("Name", sanitizeMe(self.console.clients[acid].name))
-                  attacker.setAttribute("CID", str(acid))
-                  attacker.setAttribute("Points", str(points))
-                  tkplugin.appendChild(attacker)
-                except:
-                  pass
+    _tkPlugin = None
+    _cronTab = None
+    _ftpstatus = False
+    _ftpinfo = None
+    def onLoadConfig(self):
+        if self.config.get('settings','output_file')[0:6] == 'ftp://':
+                self._ftpinfo = functions.splitDSN(self.config.get('settings','output_file'))
+                self._ftpstatus = True
+        else:        
+                self._outputFile = os.path.expanduser(self.config.get('settings', 'output_file'))
                 
-      except:
+        self._tkPlugin = self.console.getPlugin('tk')
+        self._interval = self.config.getint('settings', 'interval')
+
+        if self._cronTab:
+            # remove existing crontab
+            self.console.cron - self._cronTab
+
+        self._cronTab = b3.cron.PluginCronTab(self, self.update, '*/%s' % self._interval)
+        self.console.cron + self._cronTab
+
+    def onEvent(self, event):
         pass
 
-    c = self.console.game
-    gamename = ''
-    gametype = ''
-    mapname = ''
-    timelimit = ''
-    fraglimit = ''
-    capturelimit = ''
-    rounds = ''
-    if c.gameName:
-      gamename = c.gameName
-    if c.gameType:
-      gametype = c.gameType
-    if c.mapName:
-      mapname = c.mapName
-    if c.timelimit:
-      timelimit = c.timelimit
-    if c.fraglimit:
-      fraglimit = c.fraglimit
-    if c.captureLimit:
-      capturelimit = c.captureLimit
-    if c.rounds:
-      rounds = c.rounds
-    game = xml.createElement("Game")
-    game.setAttribute("Name", str(gamename))
-    game.setAttribute("Type", str(gametype))
-    game.setAttribute("Map", str(mapname))
-    game.setAttribute("TimeLimit", str(timelimit))
-    game.setAttribute("FragLimit", str(fraglimit))
-    game.setAttribute("CaptureLimit", str(capturelimit))
-    game.setAttribute("Rounds", str(rounds))
-    b3status.appendChild(game)
-
-    for k,v in self.console.game.__dict__.items():
-      data = xml.createElement("Data")
-      data.setAttribute("Name", str(k))
-      data.setAttribute("Value", str(v))
-      game.appendChild(data)
+    def update(self):
+        clients = self.console.clients.getList()    
         
+        scoreList = self.console.getPlayerScores() 
+                 
+        self.verbose('Building XML status')
+        xml = Document()
+        b3status = xml.createElement("B3Status")
+        b3status.setAttribute("Time", time.asctime())
+        xml.appendChild(b3status)
+        b3clients = xml.createElement("Clients")
+        b3clients.setAttribute("Total", str(len(clients)))
+        b3status.appendChild(b3clients)
+                
+        for c in clients:
+            if not c.name:
+                c.name = "@"+str(c.id)
+            if c.exactName == "^7":
+                c.exactName = "@"+str(c.id)+"^7"
 
-    self.writeXML(xml.toprettyxml(indent="	"))
+            if not c.maskedLevel:
+                _level = c.maxLevel
+            else:
+                _level = c.maskedLevel
 
-  def writeXML(self, xml):
-    if self._ftpstatus == True:
-      self.debug('Uploading XML status to FTP server')
-      ftp=FTP(self._ftpinfo['host'],self._ftpinfo['user'],passwd=self._ftpinfo['password'])
-      ftp.cwd(os.path.dirname(self._ftpinfo['path']))
-      ftpfile = StringIO.StringIO()
-      ftpfile.write(xml)
-      ftpfile.seek(0)
-      ftp.storbinary('STOR '+os.path.basename(self._ftpinfo['path']), ftpfile)
-    else:
-      self.debug('Writing XML status to %s', self._outputFile)
-      f = file(self._outputFile, 'w')
-      f.write(xml)
-      f.close()
+            try:
+                client = xml.createElement("Client")
+                client.setAttribute("Name", str(sanitizeMe(c.name)))
+                client.setAttribute("ColorName", str(sanitizeMe(c.exactName)))
+                client.setAttribute("DBID", str(c.id))
+                client.setAttribute("Connections", str(c.connections))
+                client.setAttribute("CID", str(c.cid))
+                client.setAttribute("Level", str(_level))
+                if c.guid:
+                    client.setAttribute("GUID", c.guid)
+                else:
+                    client.setAttribute("GUID", '')
+                if c.pbid:
+                    client.setAttribute("PBID", c.pbid)
+                else:
+                    client.setAttribute("PBID", '')
+                client.setAttribute("IP", c.ip)
+                client.setAttribute("Team", str(c.team))
+                client.setAttribute("Joined", str(time.ctime(c.timeAdd)))
+                client.setAttribute("Updated", str(time.ctime(c.timeEdit)))
+                client.setAttribute("Score", str(scoreList[c.cid]))
+                client.setAttribute("State", str(c.state))
+                b3clients.appendChild(client)
+
+                for k,v in c.data.iteritems():
+                    data = xml.createElement("Data")
+                    data.setAttribute("Name", str(k))
+                    data.setAttribute("Value", str(sanitizeMe(v)))
+                    client.appendChild(data)
+                        
+                if self._tkPlugin:
+                    if hasattr(c, 'tkplugin_points'):
+                        tkplugin = xml.createElement("TkPlugin")
+                        tkplugin.setAttribute("Points", str(c.var(self, 'points')))
+                        client.appendChild(tkplugin)            
+                        if hasattr(c, 'tkplugin_attackers'):
+                            for acid,points in c.var(self, 'attackers').value.items():
+                                try:
+                                    attacker = xml.createElement("Attacker")
+                                    attacker.setAttribute("Name", sanitizeMe(self.console.clients[acid].name))
+                                    attacker.setAttribute("CID", str(acid))
+                                    attacker.setAttribute("Points", str(points))
+                                    tkplugin.appendChild(attacker)
+                                except:
+                                    pass
+                                
+            except:
+                pass
+
+        c = self.console.game
+        gamename = ''
+        gametype = ''
+        mapname = ''
+        timelimit = ''
+        fraglimit = ''
+        capturelimit = ''
+        rounds = ''
+        if c.gameName:
+            gamename = c.gameName
+        if c.gameType:
+            gametype = c.gameType
+        if c.mapName:
+            mapname = c.mapName
+        if c.timelimit:
+            timelimit = c.timelimit
+        if c.fraglimit:
+            fraglimit = c.fraglimit
+        if c.captureLimit:
+            capturelimit = c.captureLimit
+        if c.rounds:
+            rounds = c.rounds
+        game = xml.createElement("Game")
+        game.setAttribute("Name", str(gamename))
+        game.setAttribute("Type", str(gametype))
+        game.setAttribute("Map", str(mapname))
+        game.setAttribute("TimeLimit", str(timelimit))
+        game.setAttribute("FragLimit", str(fraglimit))
+        game.setAttribute("CaptureLimit", str(capturelimit))
+        game.setAttribute("Rounds", str(rounds))
+        b3status.appendChild(game)
+
+        for k,v in self.console.game.__dict__.items():
+            data = xml.createElement("Data")
+            data.setAttribute("Name", str(k))
+            data.setAttribute("Value", str(v))
+            game.appendChild(data)
+                
+
+        self.writeXML(xml.toprettyxml(indent="        "))
+
+    def writeXML(self, xml):
+        if self._ftpstatus == True:
+            self.debug('Uploading XML status to FTP server')
+            ftp=FTP(self._ftpinfo['host'],self._ftpinfo['user'],passwd=self._ftpinfo['password'])
+            ftp.cwd(os.path.dirname(self._ftpinfo['path']))
+            ftpfile = StringIO.StringIO()
+            ftpfile.write(xml)
+            ftpfile.seek(0)
+            ftp.storbinary('STOR '+os.path.basename(self._ftpinfo['path']), ftpfile)
+        else:
+            self.debug('Writing XML status to %s', self._outputFile)
+            f = file(self._outputFile, 'w')
+            f.write(xml)
+            f.close()

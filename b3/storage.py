@@ -152,7 +152,7 @@ class DatabaseStorage(Storage):
                 import MySQLdb
                 return MySQLdb.connect(host=self.dsnDict['host'], user=self.dsnDict['user'], passwd=self.dsnDict['password'], db=self.dsnDict['path'][1:]) 
             except ImportError, err:
-              self.console.critical("%s. You need to install python-myqsldb. Look for 'dependencies' in B3 documentation.",err)
+                self.console.critical("%s. You need to install python-myqsldb. Look for 'dependencies' in B3 documentation.",err)
         elif protocol == 'sqlite':
             # Break it off here
             self.console.critical('SQLite is currently not supported!')

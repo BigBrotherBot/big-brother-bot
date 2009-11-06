@@ -2,7 +2,7 @@
 	<settings name="settings">
 		<!-- The lowest level for which login is required -->
 		<set name="thresholdlevel">40</set>
-		
+
 		<!-- Level necessary to use !setpassword -->
 		<set name="passwdlevel">40</set>
 	</settings>

@@ -452,7 +452,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             else:
                 #make a new client
                 if self.PunkBuster:        
-                   # we will use punkbuster's guid
+                    # we will use punkbuster's guid
                     guid = None
                 else:
                     # use io guid
@@ -1094,9 +1094,9 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             scores['blue'] = int(m.group('BlueScore'))
                    
         for line in data.split('\n')[3:]:
-          m = re.match(self._rePlayerScore, line.strip())
-          if m:
-              scores['players'][int(m.group('slot'))] = {'kills':int(m.group('kill')), 'deaths':int(m.group('death'))}
+            m = re.match(self._rePlayerScore, line.strip())
+            if m:
+                scores['players'][int(m.group('slot'))] = {'kills':int(m.group('kill')), 'deaths':int(m.group('death'))}
                     
         return scores
       

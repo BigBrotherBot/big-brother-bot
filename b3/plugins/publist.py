@@ -56,85 +56,83 @@ from b3 import functions
 
 #--------------------------------------------------------------------------------------------------
 class PublistPlugin(b3.plugin.Plugin):
-  _cronTab = None
-  _url='http://www.bigbrotherbot.com/master/serverping.php'
-  requiresConfigFile = False
-
-  def onStartup(self):
+    _cronTab = None
+    _url='http://www.bigbrotherbot.com/master/serverping.php'
+    requiresConfigFile = False
     
-    # get the plugin so we can register commands
-    self._adminPlugin = self.console.getPlugin('admin')
-    if not self._adminPlugin:
-      # something is wrong, can't start without admin plugin
-      self.error('Could not find admin plugin')
-      return False
-    
-    try:
-      self._advertise = self._adminPlugin.config.getboolean('server', 'list')
-    except:
-      pass
-
-    # set cvar for advertising purposes
-    try:
-      cvarValue = 'B3 %s' % b3.versionId
-      self.console.setCvar('_B3',cvarValue)
-    except:
-      pass
-    
-    rmin = random.randint(0,59)
-    rhour = random.randint(0,23)
-    self.debug("publist will send heartbeat at %02d:%02d every day" % (rhour,rmin))
-    self._cronTab = b3.cron.PluginCronTab(self, self.update, 0, rmin, rhour, '*', '*', '*')
-    self.console.cron + self._cronTab
-    
-    # send initial heartbeat
-    thread.start_new_thread(self.update, ())
-    
-    
-
-  def update(self):
-    self.debug('Sending heartbeat to B3 master...')
-    socket.setdefaulttimeout(10)
-    
-    def getModule(name):
-      mod = __import__(name)
-      components = name.split('.')
-      for comp in components[1:]:
-        mod = getattr(mod, comp)
-      return mod
+    def onStartup(self):
       
-    plugins = []
-    for pname in self.console._pluginOrder:
-      plugins.append("%s/%s" % (pname, getattr(getModule(self.console.getPlugin(pname).__module__), '__version__', 'Unknown Version')))
+        # get the plugin so we can register commands
+        self._adminPlugin = self.console.getPlugin('admin')
+        if not self._adminPlugin:
+            # something is wrong, can't start without admin plugin
+            self.error('Could not find admin plugin')
+            return False
+        
+        try:
+            self._advertise = self._adminPlugin.config.getboolean('server', 'list')
+        except:
+            pass
+        
+        # set cvar for advertising purposes
+        try:
+            cvarValue = 'B3 %s' % b3.versionId
+            self.console.setCvar('_B3',cvarValue)
+        except:
+            pass
+        
+        rmin = random.randint(0,59)
+        rhour = random.randint(0,23)
+        self.debug("publist will send heartbeat at %02d:%02d every day" % (rhour,rmin))
+        self._cronTab = b3.cron.PluginCronTab(self, self.update, 0, rmin, rhour, '*', '*', '*')
+        self.console.cron + self._cronTab
+        
+        # send initial heartbeat
+        thread.start_new_thread(self.update, ())
       
-    info = {
-      'ip' : self.console._publicIp,
-      'port' : self.console._port,
-      'version' : getattr(b3, '__version__', 'Unknown Version'),
-      'parser' : self.console.gameName,
-      'parserversion' : getattr(getModule(self.console.__module__), '__version__', 'Unknown Version'),
-      'database' : functions.splitDSN(self.console.storage.dsn)['protocol'],
-      'plugins' : ','.join(plugins),
-      'os' : os.name
-    }
-    #self.debug(info)
-
-
-    try:
-        request = urllib2.Request('%s?%s' % (self._url, urllib.urlencode(info)))
-        request.add_header('User-Agent', "B3 Publist plugin/%s" % __version__)
-        opener = urllib2.build_opener()
-        self.debug(opener.open(request).read())
-    except IOError, e:
-        if hasattr(e, 'reason'):
-            self.error('Unable to reach B3 masterserver, maybe the service is down or internet was unavailable')
-            self.debug(e.reason)
-        elif hasattr(e, 'code'):
-            self.error('Unable to reach B3 masterserver, maybe the service is down or internet was unavailable')
-            self.debug(e.code)
-    except:
-      self.error('Unable to reach B3 masterserver. unknown error')
-      print sys.exc_info()
-
-
       
+    
+    def update(self):
+        self.debug('Sending heartbeat to B3 master...')
+        socket.setdefaulttimeout(10)
+        
+        def getModule(name):
+            mod = __import__(name)
+            components = name.split('.')
+            for comp in components[1:]:
+                mod = getattr(mod, comp)
+            return mod
+          
+        plugins = []
+        for pname in self.console._pluginOrder:
+            plugins.append("%s/%s" % (pname, getattr(getModule(self.console.getPlugin(pname).__module__), '__version__', 'Unknown Version')))
+          
+        info = {
+            'ip' : self.console._publicIp,
+            'port' : self.console._port,
+            'version' : getattr(b3, '__version__', 'Unknown Version'),
+            'parser' : self.console.gameName,
+            'parserversion' : getattr(getModule(self.console.__module__), '__version__', 'Unknown Version'),
+            'database' : functions.splitDSN(self.console.storage.dsn)['protocol'],
+            'plugins' : ','.join(plugins),
+            'os' : os.name
+        }
+        #self.debug(info)
+        
+        
+        try:
+            request = urllib2.Request('%s?%s' % (self._url, urllib.urlencode(info)))
+            request.add_header('User-Agent', "B3 Publist plugin/%s" % __version__)
+            opener = urllib2.build_opener()
+            self.debug(opener.open(request).read())
+        except IOError, e:
+            if hasattr(e, 'reason'):
+                self.error('Unable to reach B3 masterserver, maybe the service is down or internet was unavailable')
+                self.debug(e.reason)
+            elif hasattr(e, 'code'):
+                self.error('Unable to reach B3 masterserver, maybe the service is down or internet was unavailable')
+                self.debug(e.code)
+        except:
+            self.error('Unable to reach B3 masterserver. unknown error')
+            print sys.exc_info()
+
