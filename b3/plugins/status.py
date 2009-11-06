@@ -17,6 +17,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+# 03/11/2009 - 1.3.1 - Bakes
+# XML code is now produced through xml.dom.minidocument rather than concatenation. This has a number of advantages.
+# 03/11/2009 - 1.3.0 - Bakes
+# Combined statusftp and status. Use syntax ftp://user:password@host/path/to/status.xml
 # 11/02/2009 - 1.2.7 - xlr8or
 # If masked show masked level instead of real level
 # 11/02/2009 - 1.2.6 - xlr8or
@@ -31,23 +35,31 @@
 # Converted to use new event handlers
 
 __author__  = 'ThorN'
-__version__ = '1.2.7'
+__version__ = '1.3.1'
 
-import b3, time, os
+import b3, time, os, StringIO
 import b3.plugin
 import b3.cron
-from b3.functions import sanitizeMe
 from cgi import escape
+from ftplib import FTP
+from b3 import functions
+from xml.dom.minidom import Document
 
 #--------------------------------------------------------------------------------------------------
 class StatusPlugin(b3.plugin.Plugin):
   _tkPlugin = None
   _cronTab = None
-
+  _ftpstatus = False
+  _ftpinfo = None
   def onLoadConfig(self):
+    if self.config.get('settings','output_file')[0:6] == 'ftp://':
+        self._ftpinfo = functions.splitDSN(self.config.get('settings','output_file'))
+        self._ftpstatus = True
+    else:    
+        self._outputFile = os.path.expanduser(self.config.get('settings', 'output_file'))
+        
     self._tkPlugin = self.console.getPlugin('tk')
     self._interval = self.config.getint('settings', 'interval')
-    self._outputFile = os.path.expanduser(self.config.get('settings', 'output_file'))
 
     if self._cronTab:
       # remove existing crontab
@@ -65,7 +77,13 @@ class StatusPlugin(b3.plugin.Plugin):
     scoreList = self.console.getPlayerScores() 
          
     self.verbose('Building XML status')
-    xml = '<B3Status Time="%s">\n<Clients Total="%s">\n' % (time.asctime(), len(clients))
+    xml = Document()
+    b3status = xml.createElement("B3Status")
+    b3status.setAttribute("Time", time.asctime())
+    xml.appendChild(b3status)
+    b3clients = xml.createElement("Clients")
+    b3clients.setAttribute("Total", str(len(clients)))
+    b3status.appendChild(b3clients)
         
     for c in clients:
       if not c.name:
@@ -78,38 +96,107 @@ class StatusPlugin(b3.plugin.Plugin):
       else:
         _level = c.maskedLevel
 
-      try:          
-        xml += '<Client Name="%s" ColorName="%s" DBID="%s" Connections="%s" CID="%s" Level="%s" GUID="%s" PBID="%s" IP="%s" Team="%s" Joined="%s" Updated="%s" Score="%s" State="%s">\n' % (escape("%s"%sanitizeMe(c.name)), escape("%s"%sanitizeMe(c.exactName)), c.id, c.connections, c.cid, _level, c.guid, c.pbid, c.ip, escape("%s"%c.team), time.ctime(c.timeAdd), time.ctime(c.timeEdit) , scoreList[c.cid], c.state )
+      try:
+        client = xml.createElement("Client")
+        client.setAttribute("Name", str(sanitizeMe(c.name)))
+        client.setAttribute("ColorName", str(sanitizeMe(c.exactName)))
+        client.setAttribute("DBID", str(c.id))
+        client.setAttribute("Connections", str(c.connections))
+        client.setAttribute("CID", str(c.cid))
+        client.setAttribute("Level", str(_level))
+        if c.guid:
+	  client.setAttribute("GUID", c.guid)
+        else:
+          client.setAttribute("GUID", '')
+        if c.pbid:
+          client.setAttribute("PBID", c.pbid)
+        else:
+          client.setAttribute("PBID", '')
+        client.setAttribute("IP", c.ip)
+        client.setAttribute("Team", str(c.team))
+        client.setAttribute("Joined", str(time.ctime(c.timeAdd)))
+        client.setAttribute("Updated", str(time.ctime(c.timeEdit)))
+        client.setAttribute("Score", str(scoreList[c.cid]))
+        client.setAttribute("State", str(c.state))
+        b3clients.appendChild(client)
+
         for k,v in c.data.iteritems():
-          xml += '<Data Name="%s" Value="%s"/>' % (escape("%s"%k), escape("%s"%sanitizeMe(v))) 
+          data = xml.createElement("Data")
+          data.setAttribute("Name", str(k))
+          data.setAttribute("Value", str(sanitizeMe(v)))
+          client.appendChild(data)
             
         if self._tkPlugin:
-          if hasattr(c, 'tkplugin_points'):       
-            xml += '<TkPlugin Points="%s">\n' % c.var(self, 'points').toInt()
+          if hasattr(c, 'tkplugin_points'):
+            tkplugin = xml.createElement("TkPlugin")
+            tkplugin.setAttribute("Points", str(c.var(self, 'points')))
+            client.appendChild(tkplugin)      
             if hasattr(c, 'tkplugin_attackers'):
               for acid,points in c.var(self, 'attackers').value.items():
                 try:
-                  xml += '<Attacker Name="%s" CID="%s" Points="%s"/>\n' % (self.console.clients[acid].name, acid, points)
+                  attacker = xml.createElement("Attacker")
+                  attacker.setAttribute("Name", sanitizeMe(self.console.clients[acid].name))
+                  attacker.setAttribute("CID", str(acid))
+                  attacker.setAttribute("Points", str(points))
+                  tkplugin.appendChild(attacker)
                 except:
                   pass
                 
-            xml += '</TkPlugin>\n'
-        
-        xml += '</Client>\n'
       except:
         pass
 
     c = self.console.game
-    xml += '</Clients>\n<Game Name="%s" Type="%s" Map="%s" TimeLimit="%s" FragLimit="%s" CaptureLimit="%s" Rounds="%s">\n' % (escape("%s"%c.gameName), escape("%s"%c.gameType), escape("%s"%c.mapName), c.timeLimit, c.fragLimit, c.captureLimit, c.rounds)
+    gamename = ''
+    gametype = ''
+    mapname = ''
+    timelimit = ''
+    fraglimit = ''
+    capturelimit = ''
+    rounds = ''
+    if c.gameName:
+      gamename = c.gameName
+    if c.gameType:
+      gametype = c.gameType
+    if c.mapName:
+      mapname = c.mapName
+    if c.timelimit:
+      timelimit = c.timelimit
+    if c.fraglimit:
+      fraglimit = c.fraglimit
+    if c.captureLimit:
+      capturelimit = c.captureLimit
+    if c.rounds:
+      rounds = c.rounds
+    game = xml.createElement("Game")
+    game.setAttribute("Name", str(gamename))
+    game.setAttribute("Type", str(gametype))
+    game.setAttribute("Map", str(mapname))
+    game.setAttribute("TimeLimit", str(timelimit))
+    game.setAttribute("FragLimit", str(fraglimit))
+    game.setAttribute("CaptureLimit", str(capturelimit))
+    game.setAttribute("Rounds", str(rounds))
+    b3status.appendChild(game)
+
     for k,v in self.console.game.__dict__.items():
-      xml += '<Data Name="%s" Value="%s"/>\n' % (escape("%s"%k), escape("%s"%v)) 
-    xml += '</Game>\n</B3Status>'
+      data = xml.createElement("Data")
+      data.setAttribute("Name", str(k))
+      data.setAttribute("Value", str(v))
+      game.appendChild(data)
         
 
-    self.writeXML(xml)
+    self.writeXML(xml.toprettyxml(indent="	"))
 
   def writeXML(self, xml):
-    self.debug('Writing XML status to %s', self._outputFile)
-    f = file(self._outputFile, 'w')
-    f.write(xml)
-    f.close()
+    if self._ftpstatus == True:
+      self.debug('Uploading XML status to FTP server')
+      ftp=FTP(self._ftpinfo['host'],self._ftpinfo['user'],passwd=self._ftpinfo['password'])
+      ftp.cwd(os.path.dirname(self._ftpinfo['path']))
+      ftpfile = StringIO.StringIO()
+      ftpfile.write(xml)
+      ftpfile.seek(0)
+      ftp.storbinary('STOR '+os.path.basename(self._ftpinfo['path']), ftpfile)
+    else:
+      self.debug('Writing XML status to %s', self._outputFile)
+      f = file(self._outputFile, 'w')
+      f.write(xml)
+      f.close()

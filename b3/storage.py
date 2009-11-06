@@ -154,11 +154,13 @@ class DatabaseStorage(Storage):
             except ImportError, err:
               self.console.critical("%s. You need to install python-myqsldb. Look for 'dependencies' in B3 documentation.",err)
         elif protocol == 'sqlite':
-            from b3 import sqlitethreadtunnel as sqlite
+            # Break it off here
+            self.console.critical('SQLite is currently not supported!')
+            import sqlite3
             path = self.dsnDict['path']
             if self.dsnDict['host']:
                 path = self.dsnDict['host'] + path
-            return sqlite.connect(path)
+            return sqlite3.connect(path)
         else:
             raise Exception('Unknown database protocol %s' % protocol)
 

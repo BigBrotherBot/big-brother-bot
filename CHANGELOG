@@ -1,3 +1,7 @@
+1.2.2
+----
+- TK Plugin: Added a few ffa gametypes for bypassing tk handling
+
 1.2.1
 ----
 - B3 now supports connecting to Gameservers via an FTP connection. Read the manual for more details. (Python 2.6+ only!)

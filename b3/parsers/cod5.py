@@ -23,9 +23,11 @@
 #  Fixed typo causing Exception in newPlayer()
 # 19/5/2009 - 1.0.3 - xlr8or
 #  Changed authentication queue to remove an Exception raised when the Key was no longer available
+# 31/10/2009 - 1.0.4 - xlr8or
+#  Fixed suicides
 
 __author__  = 'xlr8or'
-__version__ = '1.0.3'
+__version__ = '1.0.4'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
@@ -102,7 +104,8 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
 
         event = b3.events.EVT_CLIENT_KILL
 
-        if attacker.cid == victim.cid:
+        
+        if attacker.cid == victim.cid or attacker.cid == '-1':
             event = b3.events.EVT_CLIENT_SUICIDE
         elif attacker.team != b3.TEAM_UNKNOWN and \
              attacker.team and \
