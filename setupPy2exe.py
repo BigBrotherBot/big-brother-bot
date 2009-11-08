@@ -10,7 +10,7 @@ def listdirectory(path):
 
 def getVersion():
     pkg_handler = PkgResourcesStandIn()
-    return pkg_handler.version("b3")
+    return pkg_handler.version("b3").rstrip('b')
     
 myDataFiles = [
         ('', ['README']),
@@ -34,6 +34,7 @@ setup(
             "dist_dir": "dist_py2exe",
             "optimize": 1,
             "includes": [
+                "b3.lib.*",
                 "b3.plugins.*",
                 "b3.parsers.*",
                 "b3.extplugins.__init__",

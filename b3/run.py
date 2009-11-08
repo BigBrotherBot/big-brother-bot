@@ -20,6 +20,8 @@ __author__  = 'ThorN'
 __version__ = '1.1.1'
 
 import b3, sys, os, time
+import traceback
+from b3.functions import main_is_frozen
 from optparse import OptionParser
 import pkg_handler
 modulePath = pkg_handler.resource_directory(__name__)
@@ -118,7 +120,21 @@ def main():
         else:
             run_autorestart([])
     else:
-        run(config=options.config)
+        if main_is_frozen():
+            # which happens when running from the py2exe build
+            try:
+                run(config=options.config)
+            except:
+                pass
+            
+            traceback.print_exc()
+            # make sure we are not writting to the log:
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+            traceback.print_exc()
+            raw_input("Press any key")
+        else:
+            run(config=options.config)
     
 if __name__ == '__main__':
     main()
