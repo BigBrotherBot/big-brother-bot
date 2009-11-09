@@ -1,7 +1,7 @@
 <configuration>
   <settings name="b3">
-    <!-- parser defines the game: cod/cod2/cod4/cod5/iourt41/etpro/wop/smg -->
-    <set name="parser">cod</set>
+    <!-- Next line: the parser defines the game: cod/cod2/cod4/cod5/iourt41/etpro/wop/smg (it should NOT be 'changeme') -->
+    <set name="parser">changeme</set>
     <set name="database">mysql://b3:password@localhost/b3</set>
     <set name="bot_name">b3</set>
     <set name="bot_prefix">^0(^2b3^0)^7:</set>

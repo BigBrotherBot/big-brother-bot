@@ -48,6 +48,8 @@ STATE_UNKNOWN = 3
 
 #-----------------------------------------------------------------------------------------------------------------------
 def loadParser(pname):
+  if pname == 'changeme':
+    raise SystemExit('ERROR: Please edit b3/conf/b3.xml before starting me up!')
   name = 'b3.parsers.%s' % pname
   mod = __import__(name)
   components = name.split('.')
