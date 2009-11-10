@@ -44,6 +44,7 @@ from cgi import escape
 from ftplib import FTP
 from b3 import functions
 from xml.dom.minidom import Document
+from b3.functions import sanitizeMe
 
 #--------------------------------------------------------------------------------------------------
 class StatusPlugin(b3.plugin.Plugin):
@@ -72,8 +73,7 @@ class StatusPlugin(b3.plugin.Plugin):
     pass
 
   def update(self):
-    clients = self.console.clients.getList()  
-    
+    clients = self.console.clients.getList()
     scoreList = self.console.getPlayerScores() 
          
     self.verbose('Building XML status')
@@ -105,7 +105,7 @@ class StatusPlugin(b3.plugin.Plugin):
         client.setAttribute("CID", str(c.cid))
         client.setAttribute("Level", str(_level))
         if c.guid:
-	  client.setAttribute("GUID", c.guid)
+	      client.setAttribute("GUID", c.guid)
         else:
           client.setAttribute("GUID", '')
         if c.pbid:
@@ -143,6 +143,7 @@ class StatusPlugin(b3.plugin.Plugin):
                   pass
                 
       except:
+        self.debug('XML Failed')
         pass
 
     c = self.console.game
