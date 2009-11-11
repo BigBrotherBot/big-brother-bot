@@ -1,7 +1,11 @@
 <configuration>
 	<settings name="b3">
-		<!-- parser defines the game: cod/cod2/cod4/cod5/iourt41/etpro/wop/smg -->
-		<set name="parser">cod</set>
+		<!--
+			Next line: the parser defines the game:
+			cod/cod2/cod4/cod5/iourt41/etpro/wop/smg (it should NOT be
+			'changeme')
+		-->
+		<set name="parser">changeme</set>
 		<set name="database">mysql://b3:password@localhost/b3</set>
 		<set name="bot_name">b3</set>
 		<set name="bot_prefix">^0(^2b3^0)^7:</set>
@@ -33,23 +37,24 @@
 		<set name="external_dir">@b3/extplugins</set>
 	</settings>
 	<plugins>
-		<plugin name="censor" priority="1" config="@b3/conf/plugin_censor.xml"/>
-		<plugin name="spamcontrol" priority="2" config="@b3/conf/plugin_spamcontrol.xml"/>
-		<plugin name="admin" priority="3" config="@b3/conf/plugin_admin.xml"/>
-		<plugin name="tk" priority="4" config="@b3/conf/plugin_tk.xml"/>
-		<plugin name="stats" priority="5" config="@b3/conf/plugin_stats.xml"/>
-		<plugin name="pingwatch" priority="6" config="@b3/conf/plugin_pingwatch.xml"/>
-		<plugin name="adv" priority="7" config="@b3/conf/plugin_adv.xml"/>
-		<plugin name="status" priority="8" config="@b3/conf/plugin_status.xml"/>
-		<plugin name="welcome" priority="9" config="@b3/conf/plugin_welcome.xml"/>
-		<plugin name="publist" priority="10" config="@b3/conf/plugin_publist.xml"/>
-		<plugin name="punkbuster" priority="11" config="@b3/conf/plugin_punkbuster.xml"/>
+		<plugin name="censor" priority="1" config="@b3/conf/plugin_censor.xml" />
+		<plugin name="spamcontrol" priority="2" config="@b3/conf/plugin_spamcontrol.xml" />
+		<plugin name="admin" priority="3" config="@b3/conf/plugin_admin.xml" />
+		<plugin name="tk" priority="4" config="@b3/conf/plugin_tk.xml" />
+		<plugin name="stats" priority="5" config="@b3/conf/plugin_stats.xml" />
+		<plugin name="pingwatch" priority="6" config="@b3/conf/plugin_pingwatch.xml" />
+		<plugin name="adv" priority="7" config="@b3/conf/plugin_adv.xml" />
+		<plugin name="status" priority="8" config="@b3/conf/plugin_status.xml" />
+		<plugin name="welcome" priority="9" config="@b3/conf/plugin_welcome.xml" />
+		<plugin name="publist" priority="10" config="@b3/conf/plugin_publist.xml" />
+		<plugin name="punkbuster" priority="11" config="@b3/conf/plugin_punkbuster.xml" />
 
-		<!-- 
-  This is a non-standard plugin, and quite resource heavy. Please take a look in the 
-  B3 forums (look for XLR Extensions) for more information before enabling this.
-  Extra database tables are necessary.
-    <plugin name="xlrstats" priority="13" config="@b3/extplugins/conf/xlrstats.xml"/>
--->
+		<!--
+			This is a non-standard plugin, and quite resource heavy. Please take
+			a look in the B3 forums (look for XLR Extensions) for more
+			information before enabling this. Extra database tables are
+			necessary. <plugin name="xlrstats" priority="13"
+			config="@b3/extplugins/conf/xlrstats.xml"/>
+		-->
 	</plugins>
 </configuration>
