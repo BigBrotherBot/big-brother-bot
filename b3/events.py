@@ -17,11 +17,13 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # 27/6/2009 : xlr8or: added CLIENT_ACTION event
+# 11/11/2009 - 1.1.2 - Courgette
+#    * minor transparent changes to the code 
 
 __author__  = 'ThorN/xlr8or'
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
-import re, time
+import re
 import b3
 
 class Events:
@@ -31,7 +33,7 @@ class Events:
         self.loadEvents((
             ('EVT_EXIT', 'Program Exit'),
             ('EVT_STOP', 'Stop Process'),
-            ('EVT_UNKNOWN', 'Uknown Event'),
+            ('EVT_UNKNOWN', 'Unknown Event'),
             ('EVT_CUSTOM', 'Custom Event'),
             ('EVT_CLIENT_SAY', 'Say'),
             ('EVT_CLIENT_TEAM_SAY', 'Team Say'),
@@ -67,7 +69,7 @@ class Events:
         g = globals()
 
         try:
-            id = self._events[key] = globals()[key]
+            id = self._events[key] = g[key]
         except:
             id = self._events[key] = len(self._events) + 1
 
