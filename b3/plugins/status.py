@@ -9,12 +9,12 @@
 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
 # 03/11/2009 - 1.3.1 - Bakes
@@ -44,6 +44,7 @@ from cgi import escape
 from ftplib import FTP
 from b3 import functions
 from xml.dom.minidom import Document
+from b3.functions import sanitizeMe
 
 #--------------------------------------------------------------------------------------------------
 class StatusPlugin(b3.plugin.Plugin):
@@ -72,8 +73,7 @@ class StatusPlugin(b3.plugin.Plugin):
         pass
 
     def update(self):
-        clients = self.console.clients.getList()    
-        
+        clients = self.console.clients.getList()
         scoreList = self.console.getPlayerScores() 
                  
         self.verbose('Building XML status')
@@ -143,6 +143,7 @@ class StatusPlugin(b3.plugin.Plugin):
                                     pass
                                 
             except:
+                self.debug('XML Failed')
                 pass
 
         c = self.console.game
@@ -200,3 +201,4 @@ class StatusPlugin(b3.plugin.Plugin):
             f = file(self._outputFile, 'w')
             f.write(xml)
             f.close()
+            
