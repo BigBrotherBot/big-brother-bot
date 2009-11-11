@@ -19,6 +19,10 @@
 # $Id: q3a.py 103 2006-04-14 16:23:10Z thorn $
 #
 # CHANGELOG
+#    11/11/2009 - 1.3.0 - Courgette
+#    * New feature: Allow action names to contain spaces. In that case the action
+#      method is built following a CamelCase syntax. IE: action "Flag return" will
+#      call the method named "OnFlagReturn"
 #    2/27/2009 - 1.2.3 - xlr8or
 #    Removed error message for getPlayerList(), getPlayerPings() and getPlayerScores()
 #    5/6/2008 - 1.2.2 - Anubis
@@ -32,9 +36,8 @@
 #    7/23/2005 - 1.0.1 - ThorN
 #    Added log message for when ban() decides to do a tempban
 
-
 __author__  = 'ThorN'
-__version__ = '1.2.3'
+__version__ = '1.3.0'
 
 import re, string
 import b3
@@ -127,7 +130,7 @@ class Q3AParser(b3.parser.Parser):
 
         match, action, data, client, target = m
 
-        func = 'On%s' % action.capitalize()
+        func = 'On%s' % string.capwords(action).replace(' ','')
         
         #self.debug("-==== FUNC!!: " + func)
         
