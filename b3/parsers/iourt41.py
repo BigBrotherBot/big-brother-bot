@@ -52,9 +52,13 @@
 # * upon bot start, already connected players are correctly recognized
 # v1.4.0 - 26/10/2009 - Courgette
 # * when no client is found by cid, try to join the player using /rcon dumpuser <cid>
+# v1.5.0 - 11/11/2009 - Courgette
+#    * create a new event: EVT_GAME_FLAG_RETURNED which is fired when the flag return because of time
+#    * code refactoring
+
 
 __author__  = 'xlr8or'
-__version__ = '1.4.0'
+__version__ = '1.5.0'
 
 import b3.parsers.q3a
 import re, string, threading, time, os
@@ -125,6 +129,10 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         #2:28 sayteam: 12 New_UrT_Player_v4.1: woekele
         #16:33 Flag: 2 0: team_CTF_redflag
         re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<name>[^ ]+):\s+(?P<text>.*))$', re.IGNORECASE),
+
+        #15:42 Flag Return: RED
+        #15:42 Flag Return: BLUE
+        re.compile(r'^(?P<action>Flag Return):\s(?P<data>(?P<color>.+))$', re.IGNORECASE),
 
         #Bombmode actions:
         #3:06 Bombholder is 2
@@ -209,8 +217,12 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     UT_MOD_GOOMBA='40'
 
     def startup(self):
+
+        # add UrT specific events
+        self.Events.createEvent('EVT_GAME_FLAG_RETURNED', 'Flag returned')
+
         # add the world client
-        client = self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
+        self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
 
         # PunkBuster for iourt is not supported!
         #if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
@@ -384,13 +396,13 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if kwargs.has_key('duration'):
             duration = kwargs['duration']
         
-        admin = None
-        if kwargs.has_key('admin'):
-            admin = kwargs['admin']
-        
-        data = None
-        if kwargs.has_key('data'):
-            data = kwargs['data']
+#        admin = None
+#        if kwargs.has_key('admin'):
+#            admin = kwargs['admin']
+#
+#        data = None
+#        if kwargs.has_key('data'):
+#            data = kwargs['data']
             
                 
             
@@ -631,7 +643,6 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     def OnFlag(self, action, data, match=None):
         #Flag: 1 2: team_CTF_blueflag
         #Flag: <_cid> <_subtype:0/1/2>: <text>
-        
         _cid = match.group('cid')
         _subtype = int(match.group('name'))
         data = match.group('text')
@@ -645,6 +656,13 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         else:
             return None
         return self.OnAction(_cid, _actiontype, data)
+
+    def OnFlagReturn(self, action, data, match=None):
+        #Flag Return: RED
+        #Flag Return: BLUE
+        #Flag Return: <color>
+        color = match.group('color')
+        return b3.events.Event(b3.events.EVT_GAME_FLAG_RETURNED, color)
 
     def OnBomb(self, action, data, match=None):
         _cid = match.group('cid')
@@ -1018,7 +1036,6 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if not os.path.isfile(mapfile):
             mapfile = self.game.fs_homepath + '/' + self.game.fs_game + '/' + mapcycle
 
-        firstmap = None
         cyclemapfile = open(mapfile, 'r')
         lines = cyclemapfile.readlines()
         #self.debug(lines)
