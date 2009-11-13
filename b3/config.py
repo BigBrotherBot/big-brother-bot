@@ -154,8 +154,8 @@ class XmlConfigParser:
             # relative path to the b3 module directory
             # TODO: use actual module path
             path = path[1:]
-        elif path[0:6] == '@conf/' and b3.confDir is not None:
-            path = "%s/%s" % (b3.confDir, path[5:])
+        elif path[0:6] == '@conf/':
+            path = "%s/%s" % (b3.getConfPath(), path[5:])
 
         return os.path.normpath(os.path.expanduser(path))
 
@@ -198,8 +198,8 @@ class CfgConfigParser(ConfigParser.ConfigParser):
             # releative path to the b3 module directory
             # TODO: use actual module path
             path = path[1:]
-        elif path[0:6] == '@conf/' and b3.confDir is not None:
-            path = "%s/%s" % (b3.confDir, path[5:])
+        elif path[0:6] == '@conf/':
+            path = "%s/%s" % (b3.getConfPath(), path[5:])
 
         return os.path.normpath(os.path.expanduser(path))
 
@@ -234,8 +234,11 @@ def load(fileName):
     else:
         config = CfgConfigParser()
 
-    if fileName[0:6] == '@conf\\' and b3.confDir is not None:
-        fileName = os.path.normpath(os.path.expanduser("%s/%s" % (b3.confDir, fileName[5:])))
+    fileName = os.path.normpath(fileName)
+    if fileName[0:4] == '@b3\\':
+        fileName = os.path.normpath("%s/%s" % (b3.getB3Path(), fileName[3:]))
+    elif fileName[0:6] == '@conf\\':
+        fileName = os.path.normpath("%s/%s" % (b3.getConfPath(), fileName[5:]))
 
     if config.load(fileName):
         return config
