@@ -34,7 +34,7 @@ version = '^8www.BigBrotherBot.com ^0(^8b3^0) ^9%s ^9(^3Daniel^9)^3' % versionId
 sversion = re.sub(r'\^[0-9a-z]', '', version)
 
 console = None
-confDir = None
+_confDir = None
 
 # some constants
 TEAM_UNKNOWN = -1
@@ -66,6 +66,10 @@ def getB3Path():
         return os.path.dirname(sys.executable)
     return modulePath
 
+def getConfPath():
+    return _confDir
+
+
 def getAbsolutePath(path):
     """Return an absolute path name and expand the user prefix (~)"""
     if path[0:4] == '@b3/':
@@ -82,9 +86,9 @@ def start(configFile):
 
     if os.path.exists(configFile):
         print 'Using config file: %s' % configFile
-        global confDir
-        confDir = os.path.dirname(configFile)
-        #print 'Config dir is        : %s' % confDir
+        global _confDir
+        _confDir = os.path.dirname(configFile)
+        #print 'Config dir is        : %s' % _confDir
         conf = config.load(configFile)
     else:
         raise SystemExit('Could not find config file %s' % configFile)
