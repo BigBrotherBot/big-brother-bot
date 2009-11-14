@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
@@ -67,7 +67,11 @@ def getB3Path():
     return modulePath
 
 def getConfPath():
-    return _confDir
+    if _confDir is not None:
+        return _confDir
+    else:
+        # try to get info from b3.console (assuming it is loaded)
+        return os.path.dirname(console.config.fileName)
 
 
 def getAbsolutePath(path):
