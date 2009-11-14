@@ -2215,3 +2215,27 @@ class Command:
             params.append(buf)
 
         return params
+    
+if __name__ == '__main__':
+    from b3.fake import FakeConsole
+    from b3.fake import joe
+    import time
+    
+    print "___________________________________"
+    fakeConsole = FakeConsole('@b3/conf/b3.xml')
+    p = AdminPlugin(fakeConsole, '@b3/conf/plugin_admin.xml')
+    
+    def say(msg):
+        p.OnSay(b3.events.Event(b3.events.EVT_CLIENT_SAY, msg, joe))
+
+    say('#test')
+    say('#clients')
+    say('#groups')
+    say('#vars')
+    say('#varsjoe')
+    say('#tkinfo')
+    say('#tkinfojoe')
+    say('!!')
+    say('!help')
+    say('hello')
+    

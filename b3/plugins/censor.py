@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -141,7 +141,6 @@ class CensorPlugin(b3.plugin.Plugin):
                 return
             elif not event.client.connected:
                 return
-
             if len(event.data) > 3:
                 if event.type == b3.events.EVT_CLIENT_SAY or \
                    event.type == b3.events.EVT_CLIENT_TEAM_SAY:
@@ -196,3 +195,27 @@ class CensorPlugin(b3.plugin.Plugin):
 
     def clean(self, data):
         return re.sub(self._reClean, ' ', self.console.stripColors(data.lower()))
+    
+    
+if __name__ == '__main__':
+    import time
+    from b3.fake import fakeConsole
+    from b3.fake import joe
+    
+    p = CensorPlugin(fakeConsole, '@b3/conf/plugin_censor.xml')
+    p.onStartup()
+
+    fakeConsole.noVerbose = True
+    joe._maxLevel = 0
+    joe.connected = True
+    
+    #p.onEvent(b3.events.Event(b3.events.EVT_CLIENT_SAY, "fuck", joe))
+    joe.says('hello')
+    joe.says('fuck')
+    joe.says('nothing wrong')
+    joe.says('ass')
+    joe.says('shit')
+    
+    time.sleep(2)
+    
+    

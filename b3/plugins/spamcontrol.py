@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -119,3 +119,26 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
         elif event.client.var(self, 'ignore_till').value > self.console.time():
             #ignore the user
             raise b3.events.VetoEvent
+
+
+if __name__ == '__main__':
+    from b3.fake import fakeConsole
+    from b3.fake import joe
+
+    p = SpamcontrolPlugin(fakeConsole, '@b3/conf/plugin_spamcontrol.xml')
+    p.onStartup()
+    
+    p.info("---------- start spamming")
+    joe.says("i'm spammmmmmmmmming")
+    time.sleep(1)
+    joe.says2team("i'm spammmmmmmmmming")
+    time.sleep(1)
+    joe.says("i'm spammmmmmmmmming")
+    time.sleep(1)
+    joe.says2team("i'm spammmmmmmmmming")
+    time.sleep(1)
+    joe.says("i'm spammmmmmmmmming")
+    time.sleep(1)
+    joe.says("i'm spammmmmmmmmming")
+    p.info("_________ end of test ____________")
+    time.sleep(1) # give console thread a chance to end gracefully 
