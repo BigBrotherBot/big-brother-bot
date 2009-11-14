@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -37,9 +37,11 @@
 # 10/19/2009 - 1.1.11 - Courgette
 # add a timeout to the HTTP call (need urllib2 for that)
 # initial call is now threaded
+# 13/11/2009 - 1.1.12 - Courgette
+# minor severity of messages
+# do not send heartbeat when publicIP is obviously not public
 
-
-__version__ = '1.1.11'
+__version__ = '1.1.12'
 __author__  = 'ThorN'
 
 import sys
@@ -68,11 +70,7 @@ class PublistPlugin(b3.plugin.Plugin):
             # something is wrong, can't start without admin plugin
             self.error('Could not find admin plugin')
             return False
-        
-        try:
-            self._advertise = self._adminPlugin.config.getboolean('server', 'list')
-        except:
-            pass
+
         
         # set cvar for advertising purposes
         try:
@@ -80,6 +78,11 @@ class PublistPlugin(b3.plugin.Plugin):
             self.console.setCvar('_B3',cvarValue)
         except:
             pass
+        
+        
+        if self.console._publicIp == '127.0.0.1':
+            self.info("publist will not send heartbeat to master server as publicIp is not public.")
+            return
         
         rmin = random.randint(0,59)
         rhour = random.randint(0,23)
@@ -107,13 +110,18 @@ class PublistPlugin(b3.plugin.Plugin):
         for pname in self.console._pluginOrder:
             plugins.append("%s/%s" % (pname, getattr(getModule(self.console.getPlugin(pname).__module__), '__version__', 'Unknown Version')))
           
+        try:
+            database = functions.splitDSN(self.console.storage.dsn)['protocol']
+        except:
+            database = "unknown"
+            
         info = {
             'ip' : self.console._publicIp,
             'port' : self.console._port,
             'version' : getattr(b3, '__version__', 'Unknown Version'),
             'parser' : self.console.gameName,
             'parserversion' : getattr(getModule(self.console.__module__), '__version__', 'Unknown Version'),
-            'database' : functions.splitDSN(self.console.storage.dsn)['protocol'],
+            'database' : database,
             'plugins' : ','.join(plugins),
             'os' : os.name
         }
@@ -124,15 +132,33 @@ class PublistPlugin(b3.plugin.Plugin):
             request = urllib2.Request('%s?%s' % (self._url, urllib.urlencode(info)))
             request.add_header('User-Agent', "B3 Publist plugin/%s" % __version__)
             opener = urllib2.build_opener()
-            self.debug(opener.open(request).read())
+            replybody = opener.open(request).read()
+            if len(replybody)>0: 
+                self.debug("master replied: %s" % replybody)
         except IOError, e:
             if hasattr(e, 'reason'):
                 self.error('Unable to reach B3 masterserver, maybe the service is down or internet was unavailable')
                 self.debug(e.reason)
             elif hasattr(e, 'code'):
-                self.error('Unable to reach B3 masterserver, maybe the service is down or internet was unavailable')
-                self.debug(e.code)
+                if e.code == 400:
+                    self.info('B3 masterserver refused the heartbeat. reason: %s', e.msg)
+                else:
+                    self.info('Unable to reach B3 masterserver, maybe the service is down or internet was unavailable')
+                    self.debug(e)
         except:
-            self.error('Unable to reach B3 masterserver. unknown error')
+            self.warning('Unable to reach B3 masterserver. unknown error')
             print sys.exc_info()
 
+
+if __name__ == '__main__':
+    from b3.fake import fakeConsole
+    #import time
+    
+    fakeConsole._publicIp = '127.0.0.1'
+    #fakeConsole._publicIp = '81.56.143.41'
+    p = PublistPlugin(fakeConsole)
+    #p.onStartup()
+    p.update()
+    #time.sleep(5) # so we can see thread working
+
+    
