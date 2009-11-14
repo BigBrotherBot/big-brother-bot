@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,9 +20,11 @@
 # CHANGELOG
 #    11/29/2005 - 1.3.0 - ThorN
 #    Added warning, info, exception, and critical log handlers
+#    14/11/2009 - 1.3.1 - Courgette
+#    display a user friendly error message when a plugin config file as broken XML
 
 __author__  = 'ThorN'
-__version__ = '1.3.0'
+__version__ = '1.3.1'
 
 import os
 import b3.config
@@ -40,8 +42,14 @@ class Plugin:
 
     def __init__(self, console, config=None):
         self.console = console
-        self.loadConfig(config)
-
+        
+        try:
+            self.loadConfig(config)
+        except b3.config.ConfigFileNotValid, e:
+            self.critical("The config file XML syntax is broken: %s" %e)
+            self.critical("Use a XML editor to modify your config files, it makes easy to spot errors")
+            raise 
+        
         self.registerEvent(b3.events.EVT_STOP)
         self.registerEvent(b3.events.EVT_EXIT)
 
@@ -76,7 +84,7 @@ class Plugin:
                 self.config = b3.config.load(fileName)
             except b3.config.ConfigFileNotFound, e:
                 if self.requiresConfigFile:
-                    self.critical('Could not find config file')
+                    self.critical('Could not find config file %s' % fileName)
                     return False
                 else:
                     self.bot('No config file found for %s. (was not required either)'%self.__class__.__name__)

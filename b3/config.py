@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -15,17 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-
+#
 # change log :
 # 22/02/2009 - 1.2.1 - Courgette
 # - fix the compatibility issue with ElementTree  and display an explicit
 #    error message to avoid noobish questions on B3 forums :P
+# 14/11/2009 - 1.2.2 - Courgette
+# - detect xml parsing errors and raise a specific exception in that case
 
 __author__  = 'ThorN'
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
 import sys
 import b3
+from xml.parsers.expat import ExpatError
 
 try:
     from b3.lib.elementtree import ElementTree
@@ -58,7 +61,10 @@ class XmlConfigParser:
         """\
         Read the xml config file from a file pointer
         """
-        self._xml = ElementTree.parse(fp)
+        try:
+            self._xml = ElementTree.parse(fp)
+        except ExpatError, e:
+            raise ConfigFileNotValid("%s" % e)
 
         self._loadSettings()
 
@@ -246,6 +252,11 @@ def load(fileName):
         return None
 
 class ConfigFileNotFound(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+class ConfigFileNotValid(Exception):
     def __init__(self, value):
         self.value = value
     def __str__(self):
