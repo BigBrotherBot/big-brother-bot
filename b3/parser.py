@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -18,6 +18,13 @@
 #
 #
 # CHANGELOG
+#   17/11/2009 - v1.12.0 - Courgette
+#    * b3.xml can now have an optional section named 'devmode'
+#    * move 'replay' option to section 'devmode'
+#    * move 'delay' option to section 'b3'
+#    * add option 'log2console' to section 'devmode'. This will make the bot
+#      write to stderr instead of b3.log (useful if using eclipse or such IDE)
+#    * fix replay mode when bot detected time reset from game log
 #   09/10/2009 - v1.11.2 - xlr8or
 #    * Saved original sys.stdout to console.screen to aid communications to b3 screen
 #   12/09/2009 - v1.11.1 - xlr8or
@@ -34,8 +41,9 @@
 #   11/29/2005 - 1.7.0 - ThorN
 #    Added atexit handlers
 #    Added warning, info, exception, and critical log handlers
+
 __author__  = 'ThorN'
-__version__ = '1.11.2'
+__version__ = '1.12.0'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit
@@ -158,7 +166,8 @@ class Parser(object):
 
         # set up logging
         logfile = self.config.getpath('b3', 'logfile')
-        self.log = b3.output.getInstance(logfile, self.config.getint('b3', 'log_level'))
+        log2console = self.config.has_option('devmode', 'log2console') and self.config.getboolean('devmode', 'log2console')
+        self.log = b3.output.getInstance(logfile, self.config.getint('b3', 'log_level'), log2console)
 
         # save screen output to self.screen
         self.screen = sys.stdout
@@ -204,13 +213,13 @@ class Parser(object):
         self.msgPrefix = self.prefix
 
         # delay between log reads
-        if self.config.has_option('server', 'delay'):
-            delay = self.config.getfloat('server', 'delay')
+        if self.config.has_option('b3', 'delay'):
+            delay = self.config.getfloat('b3', 'delay')
             self.delay = delay
 
         # demo mode: use log time
-        if self.config.has_option('server', 'replay'):
-            self.replay = self.config.getboolean('server', 'replay')
+        if self.config.has_option('devmode', 'replay'):
+            self.replay = self.config.getboolean('devmode', 'replay')
             if self.replay:
                 self._timeStart = 0
                 self.bot('Replay mode enabled')
@@ -623,7 +632,8 @@ class Parser(object):
                             logTimeStart = logTimeCurrent
                             logTimeLast = 0
                             self.debug('Log time reset %d' % logTimeCurrent)
-                            self.input.seek(0,2)
+                            if not self.replay:
+                                self.input.seek(0,2)
                         elif not logTimeStart:
                             logTimeStart = logTimeCurrent
 

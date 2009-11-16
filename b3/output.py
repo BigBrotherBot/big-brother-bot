@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -15,9 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#
+# CHANGELOG:
+# 17/11/2009 - 1.4.0 - Courgette
+#    * add an option to create an instance of the logger that will write to 
+#      stderr instead
+
 
 __author__  = 'ThorN'
-__version__ = '1.3.0'
+__version__ = '1.4.0'
 
 import sys
 import logging
@@ -110,14 +116,19 @@ logging.setLoggerClass(OutputHandler)
 
 __output = None
 
-def getInstance(logfile='b3.log', loglevel=21):
+def getInstance(logfile='b3.log', loglevel=21, log2console=False):
+    """NOTE: log2console is mostly useful for developers. This will make the bot
+    log everything to stderr instead of into the usual logfile"""
     global __output
 
     if __output == None:
         __output = logging.getLogger('output')
 
-        handler = handlers.RotatingFileHandler(logfile, 'a', 10485760, 5)
-        handler.doRollover()
+        if log2console:
+            handler = logging.StreamHandler()
+        else:
+            handler = handlers.RotatingFileHandler(logfile, 'a', 10485760, 5)
+            handler.doRollover()
         handler.setFormatter(logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s', '%y%m%d %H:%M:%S'))
         
         __output.addHandler(handler)
