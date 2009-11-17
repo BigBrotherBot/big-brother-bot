@@ -246,7 +246,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             self.game.fs_game = self.getCvar('fs_game').getString()
         except:
             self.game.fs_game = None
-            self.warning("Could not query server for fs_game... fs_game will be ok at next round only")
+            self.warning("Could not query server for fs_game")
             
         try:
             self.game.fs_basepath = self.getCvar('fs_basepath').getString().rstrip('/')
