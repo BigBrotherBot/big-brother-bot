@@ -55,10 +55,15 @@
 # v1.5.0 - 11/11/2009 - Courgette
 #    * create a new event: EVT_GAME_FLAG_RETURNED which is fired when the flag return because of time
 #    * code refactoring
+# v1.5.1- 17/11/2009 - Courgette
+#    * harden getNextMap by :
+#      o wrapping initial getCvar queries with try:except bloc
+#      o requerying required cvar if missing
+#      o forcing map list refresh on server reload or round end
 
 
 __author__  = 'xlr8or'
-__version__ = '1.5.0'
+__version__ = '1.5.1'
 
 import b3.parsers.q3a
 import re, string, threading, time, os
@@ -237,12 +242,27 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             self.info('map is: %s'%self.game.mapName)
 
         # get gamepaths/vars
-        self.game.fs_game = self.getCvar('fs_game').getString()
-        self.game.fs_basepath = self.getCvar('fs_basepath').getString().rstrip('/')
-        self.debug('fs_basepath: %s' % self.game.fs_basepath)
-        self.game.fs_homepath = self.getCvar('fs_homepath').getString().rstrip('/')
-        self.debug('fs_homepath: %s' % self.game.fs_homepath)
-
+        try:
+            self.game.fs_game = self.getCvar('fs_game').getString()
+        except:
+            self.game.fs_game = None
+            self.warning("Could not query server for fs_game... fs_game will be ok at next round only")
+            
+        try:
+            self.game.fs_basepath = self.getCvar('fs_basepath').getString().rstrip('/')
+            self.debug('fs_basepath: %s' % self.game.fs_basepath)
+        except:
+            self.game.fs_basepath = None
+            self.warning("Could not query server for fs_basepath")
+            
+        try:
+            self.game.fs_homepath = self.getCvar('fs_homepath').getString().rstrip('/')
+            self.debug('fs_homepath: %s' % self.game.fs_homepath)
+        except:
+            self.game.fs_homepath = None
+            self.warning("Could not query server for fs_homepath")
+            
+        
         # initialize connected clients
         plist = self.getPlayerList()
         for cid, c in plist.iteritems():
@@ -799,6 +819,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         self.game.mapEnd()
         # self.clients.sync()
         # self.debug('Synchronizing client info')
+        self._maplist = None # when UrT server reloads, newly uploaded maps get available: force refresh
         return b3.events.Event(b3.events.EVT_GAME_EXIT, data)
 
     # Startgame
@@ -1032,10 +1053,31 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if not self.game.mapName: return None
         
         mapcycle = self.getCvar('g_mapcycle').getString()
+        if self.game.fs_game is None:
+            try:
+                self.game.fs_game = self.getCvar('fs_game').getString().rstrip('/')
+            except:
+                self.game.fs_game = None
+                self.warning("Could not query server for fs_game")
+        if self.game.fs_basepath is None:
+            try:
+                self.game.fs_basepath = self.getCvar('fs_basepath').getString().rstrip('/')
+            except:
+                self.game.fs_basepath = None
+                self.warning("Could not query server for fs_basepath")
         mapfile = self.game.fs_basepath + '/' + self.game.fs_game + '/' + mapcycle
         if not os.path.isfile(mapfile):
+            if self.game.fs_homepath is None:
+                try:
+                    self.game.fs_homepath = self.getCvar('fs_homepath').getString().rstrip('/')
+                except:
+                    self.game.fs_homepath = None
+                    self.warning("Could not query server for fs_homepath")
             mapfile = self.game.fs_homepath + '/' + self.game.fs_game + '/' + mapcycle
-
+        if not os.path.isfile(mapfile):
+            self.error("Unable to find mapcycle file %s" % mapcycle)
+            return None
+        
         cyclemapfile = open(mapfile, 'r')
         lines = cyclemapfile.readlines()
         #self.debug(lines)
