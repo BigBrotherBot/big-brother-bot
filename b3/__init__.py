@@ -104,8 +104,12 @@ def start(configFile):
 
     parser = loadParser(parserType)
 
+    extplugins_dir = conf.getpath('plugins', 'external_dir');
+    print "Using external plugin directory: %s" % extplugins_dir
+    
     global console
     console = parser(conf)
+
 
     try:
         console.start()

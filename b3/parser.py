@@ -419,6 +419,10 @@ class Parser(object):
         """Load plugins specified in the config"""
         self.screen.write('Loading Plugins  : ')
         self.screen.flush()
+        
+        extplugins_dir = self.config.getpath('plugins', 'external_dir');
+        self.bot('Loading Plugins (external plugin directory: %s)' % extplugins_dir)
+        
         plugins = {}
         pluginSort = []
 
