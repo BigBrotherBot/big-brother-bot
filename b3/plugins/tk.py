@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    11/22/2009 - 1.2.4 - Courgette
+#    * also send a msg to victim with instructions on how to forgive
+#    * add tests
 #    10/30/2009 - 1.2.3 - xlr8or
 #    * Added a few ffa gametypes for bypassing tk handling
 #    08/22/2009 - 1.2.2 - Courgette
@@ -35,7 +38,7 @@
 #    7/23/2005 - 1.0.2 - ThorN
 #    * Changed temp ban duration to be based on ban_length times the number of victims
 
-__version__ = '1.2.3'
+__version__ = '1.2.4'
 __author__  = 'ThorN'
 
 import b3, string, re, threading
@@ -332,6 +335,7 @@ class TkPlugin(b3.plugin.Plugin):
             a.lastWarnTime = self.console.time()
             warning = self._adminPlugin.warnClient(attacker, '^3Do not attack teammates, ^1Attacked: ^7%s ^7(^3%s^7)' % (victim.exactName, points), None, False)
             a.warn(v.cid, warning)
+            victim.message('^7type ^3!f %s^7 to forgive %s' % (attacker.cid, attacker.exactName))
 
     def getClientTkInfo(self, client):
         if not client.isvar(self, 'tkinfo'):
@@ -589,3 +593,36 @@ class TkPlugin(b3.plugin.Plugin):
                 self.console.say(self.getMessage('forgive_clear', { 'name' : sclient.exactName, 'points' : points }))
 
             return True
+
+
+
+if __name__ == '__main__':
+    import time
+    from b3.fake import fakeConsole
+    from b3.fake import joe
+    from b3.fake import simon
+    from b3.fake import moderator
+    
+    p = TkPlugin(fakeConsole, "@b3/conf/plugin_tk.xml")
+    p.onStartup() # register events, etc
+    
+    joe.team = b3.TEAM_BLUE
+    simon.team = b3.TEAM_BLUE
+    
+    time.sleep(5)
+    joe.kills(simon)
+    time.sleep(6)
+    simon.kills(joe)
+    time.sleep(2)
+    joe.says('!f 2')
+    time.sleep(2)
+    joe.damages(simon)
+    moderator.says('!forgiveinfo joe')
+    time.sleep(2)
+    joe.damages(simon)
+    joe.damages(simon)
+    moderator.says('!forgiveinfo joe')
+    time.sleep(2)
+    joe.kills(simon)
+    time.sleep(2)
+    
