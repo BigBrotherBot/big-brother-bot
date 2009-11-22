@@ -71,7 +71,7 @@ if __name__ == '__main__':
     time.sleep(2)
 """
 
-__version__ = '1.1'
+__version__ = '1.2'
 
 
 import thread
@@ -218,11 +218,6 @@ class FakeColoredConsole(FakeConsole):
         """Log a message from the console"""
         self.printColor( '<red>CRITICAL</red> : ' + msg % args)
         
-class FakeAdminPlugin(AdminPlugin):
-    def startup(self):
-        self.registerEvent(b3.events.EVT_CLIENT_SAY)
-        self.registerEvent(b3.events.EVT_CLIENT_PRIVATE_SAY)
-        
 class FakeStorage(object):
     _clients = {}
     _groups = []
@@ -326,8 +321,12 @@ class FakeClient(b3.clients.Client):
                                                        self, victim))
         time.sleep(0.2)
 
+
+#####################################################################################
+
 print "creating fakeConsole with @b3/conf/b3.xml"
 fakeConsole = FakeConsole('@b3/conf/b3.xml')
+
 print "creating fakeAdminPlugin with @b3/conf/plugin_admin.xml"
 fakeAdminPlugin = AdminPlugin(fakeConsole, '@b3/conf/plugin_admin.xml')
 fakeAdminPlugin.onStartup()
