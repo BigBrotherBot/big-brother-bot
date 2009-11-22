@@ -22,9 +22,12 @@
 #    error message to avoid noobish questions on B3 forums :P
 # 14/11/2009 - 1.2.2 - Courgette
 # - detect xml parsing errors and raise a specific exception in that case
+# 22/11/2009 - 1.2.3 - Courgette
+# - fix bug with resolution of @conf on linux
+
 
 __author__  = 'ThorN'
-__version__ = '1.2.2'
+__version__ = '1.2.3'
 
 import sys
 import b3
@@ -160,7 +163,7 @@ class XmlConfigParser:
             # relative path to the b3 module directory
             # TODO: use actual module path
             path = path[1:]
-        elif path[0:6] == '@conf/':
+        elif path[0:6] == '@conf/' or path[0:6] == '@conf\\':
             path = "%s/%s" % (b3.getConfPath(), path[5:])
 
         return os.path.normpath(os.path.expanduser(path))
@@ -204,7 +207,7 @@ class CfgConfigParser(ConfigParser.ConfigParser):
             # releative path to the b3 module directory
             # TODO: use actual module path
             path = path[1:]
-        elif path[0:6] == '@conf/':
+        elif path[0:6] == '@conf/' or path[0:6] == '@conf\\':
             path = "%s/%s" % (b3.getConfPath(), path[5:])
 
         return os.path.normpath(os.path.expanduser(path))
@@ -241,9 +244,9 @@ def load(fileName):
         config = CfgConfigParser()
 
     fileName = os.path.normpath(fileName)
-    if fileName[0:4] == '@b3\\':
+    if fileName[0:4] == '@b3\\' or fileName[0:4] == '@b3/':
         fileName = os.path.normpath("%s/%s" % (b3.getB3Path(), fileName[3:]))
-    elif fileName[0:6] == '@conf\\':
+    elif fileName[0:6] == '@conf\\' or fileName[0:6] == '@conf/':
         fileName = os.path.normpath("%s/%s" % (b3.getConfPath(), fileName[5:]))
 
     if config.load(fileName):
