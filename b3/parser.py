@@ -18,6 +18,9 @@
 #
 #
 # CHANGELOG
+#   22/11/2009 - v1.12.1 - Courgette
+#    * b3.xml can have option ('server','rcon_timeout') to specify a custom delay
+#      (in secondes) to use for the rcon socket
 #   17/11/2009 - v1.12.0 - Courgette
 #    * b3.xml can now have an optional section named 'devmode'
 #    * move 'replay' option to section 'devmode'
@@ -43,7 +46,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN'
-__version__ = '1.12.0'
+__version__ = '1.12.1'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit
@@ -272,6 +275,12 @@ class Parser(object):
 
         # setup rcon
         self.output = self.OutputClass(self, (self._rconIp, self._port), self.config.get('server', 'rcon_password'))
+        
+        if self.config.has_option('server','rcon_timeout'):
+            custom_socket_timeout = self.config.getfloat('server','rcon_timeout')
+            self.output.socket_timeout = custom_socket_timeout
+            self.bot('Setting Rcon socket timeout to %0.3f sec' % custom_socket_timeout)
+        
         # testing rcon
         res = self.output.write('status')
         self.output.flush()
