@@ -1,7 +1,16 @@
 <configuration plugin="adv">
+	<!--
+		Note: within ads, you can use the following variables : @nextmap @time
+		or rules as defined in the admin plugin config file. ie: /spam#rule1
+	-->
 	<settings name="settings">
 		<!-- rate in minutes -->
 		<set name="rate">2</set>
+		<!--
+			you can either set here a text file that will contain one ad per line
+			or fill the <ads> section below
+		-->
+		<!-- <set name="ads">c:/somewhere/my_ads.txt</set> -->
 	</settings>
 	<ads>
 		<ad>^2Big Brother Bot is watching you... ^9BigBrotherBot.com</ad>

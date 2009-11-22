@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
+# 11/22/2009 - 1.1.4 - Courgette
+#    fix bug when using external text ads file which is empty
 # 2/27/2009 - 1.1.3 - xlr8or
 #    Added Anubis suggestion @nextmap to ads and also @time to show time.
 # 11/30/2005 - 1.1.2 - ThorN
@@ -25,7 +27,7 @@
 #    Converted to use XML config
 
 __author__ = 'ThorN'
-__version__ = '1.1.3'
+__version__ = '1.1.4'
 
 import b3, os, time
 import b3.plugin
@@ -146,7 +148,7 @@ class AdvPlugin(b3.plugin.Plugin):
 
         self.load(items)
 
-    def load(self, items):
+    def load(self, items=[]):
         self._msg.clear()
 
         for w in items:
@@ -205,3 +207,24 @@ class AdvPlugin(b3.plugin.Plugin):
                 client.message('^3Adv: ^7[^2%s^7] %s' % (i, msg))
         else:
             client.message('^3Adv: ^7No ads loaded')
+
+
+if __name__ == '__main__':
+    from b3.fake import fakeConsole
+    from b3.fake import joe
+    
+    p = AdvPlugin(fakeConsole, '@b3/conf/plugin_adv.xml')
+    p.onStartup()
+    
+    p.adv()
+    print "-----------------------------"
+    time.sleep(2)
+    
+    joe._maxLevel = 100
+    joe.says('!advlist')
+    time.sleep(2)
+    joe.says('!advrem 0')
+    time.sleep(2)
+    joe.says('!advrate 1')
+    time.sleep(5)
+    
