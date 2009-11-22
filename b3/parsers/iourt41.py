@@ -65,6 +65,7 @@
 __author__  = 'xlr8or'
 __version__ = '1.5.1'
 
+
 import b3.parsers.q3a
 import re, string, threading, time, os
 import b3
