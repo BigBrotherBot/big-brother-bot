@@ -335,7 +335,7 @@ class TkPlugin(b3.plugin.Plugin):
             a.lastWarnTime = self.console.time()
             warning = self._adminPlugin.warnClient(attacker, '^3Do not attack teammates, ^1Attacked: ^7%s ^7(^3%s^7)' % (victim.exactName, points), None, False)
             a.warn(v.cid, warning)
-            victim.message('^7type ^3!f %s^7 to forgive %s' % (attacker.cid, attacker.exactName))
+            victim.message('^7type ^3!fp ^7 to forgive ^3%s' % (attacker.exactName))
 
     def getClientTkInfo(self, client):
         if not client.isvar(self, 'tkinfo'):
