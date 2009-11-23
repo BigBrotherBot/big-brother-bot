@@ -25,6 +25,7 @@ __version__ = pkg_handler.version(__name__)
 modulePath = pkg_handler.resource_directory(__name__)
 
 import os, re, sys, traceback
+import signal
 import platform
 import config
 
@@ -110,6 +111,11 @@ def start(configFile):
     global console
     console = parser(conf)
 
+    def termSignalHandler(signum, frame):
+        console.bot("TERM signal received. Shutting down")
+        console.shutdown()
+        raise SystemExit(222)
+    signal.signal(signal.SIGTERM, termSignalHandler)
 
     try:
         console.start()
