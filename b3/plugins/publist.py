@@ -40,8 +40,10 @@
 # 13/11/2009 - 1.1.12 - Courgette
 # minor severity of messages
 # do not send heartbeat when publicIP is obviously not public
+# 23/11/2009 - 1.2.0 - Courgette
+# * publist plugin now also update B3 master on shutdown
 
-__version__ = '1.1.12'
+__version__ = '1.2.0'
 __author__  = 'ThorN'
 
 import sys
@@ -93,7 +95,16 @@ class PublistPlugin(b3.plugin.Plugin):
         # send initial heartbeat
         thread.start_new_thread(self.update, ())
       
-      
+    def onEvent(self, event):
+        if event.type == b3.events.EVT_STOP:
+            info = {
+                'action' : 'shutdown',
+                'ip' : self.console._publicIp,
+                'port' : self.console._port
+            }
+            #self.debug(info)
+            self.info('Sending shutdown info to B3 master')
+            self.sendInfo(info)
     
     def update(self):
         self.debug('Sending heartbeat to B3 master...')
@@ -116,6 +127,7 @@ class PublistPlugin(b3.plugin.Plugin):
             database = "unknown"
             
         info = {
+            'action' : 'update',
             'ip' : self.console._publicIp,
             'port' : self.console._port,
             'version' : getattr(b3, '__version__', 'Unknown Version'),
@@ -126,8 +138,9 @@ class PublistPlugin(b3.plugin.Plugin):
             'os' : os.name
         }
         #self.debug(info)
+        self.sendInfo(info)
         
-        
+    def sendInfo(self, info={}):
         try:
             request = urllib2.Request('%s?%s' % (self._url, urllib.urlencode(info)))
             request.add_header('User-Agent', "B3 Publist plugin/%s" % __version__)
