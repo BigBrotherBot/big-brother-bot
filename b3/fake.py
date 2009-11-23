@@ -112,6 +112,9 @@ class FakeConsole(b3.parser.Parser):
     def getNextMap(self):
         return "ut4_theNextMap"
     
+    def getPlayerScores(self):
+        return {0:5,1:4}
+    
     def stripColors(self, text):
         return re.sub(self._reColor, '', text).strip()
     

@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 23/11/2009 - 1.4.0 - Courgette
+# on bot shutdown, write an empty status.xml document.
+# add tests
 # 03/11/2009 - 1.3.1 - Bakes
 # XML code is now produced through xml.dom.minidocument rather than concatenation. This has a number of advantages.
 # 03/11/2009 - 1.3.0 - Bakes
@@ -52,6 +55,7 @@ class StatusPlugin(b3.plugin.Plugin):
     _cronTab = None
     _ftpstatus = False
     _ftpinfo = None
+    
     def onLoadConfig(self):
         if self.config.get('settings','output_file')[0:6] == 'ftp://':
                 self._ftpinfo = functions.splitDSN(self.config.get('settings','output_file'))
@@ -70,7 +74,14 @@ class StatusPlugin(b3.plugin.Plugin):
         self.console.cron + self._cronTab
 
     def onEvent(self, event):
-        pass
+        if event.type == b3.events.EVT_STOP:
+            self.info('B3 stop/exit.. updating status')
+            # create an empty status document
+            xml = Document()
+            b3status = xml.createElement("B3Status")
+            b3status.setAttribute("Time", time.asctime())
+            xml.appendChild(b3status)
+            self.writeXML(xml.toprettyxml(indent="        "))
 
     def update(self):
         clients = self.console.clients.getList()
@@ -84,7 +95,7 @@ class StatusPlugin(b3.plugin.Plugin):
         b3clients = xml.createElement("Clients")
         b3clients.setAttribute("Total", str(len(clients)))
         b3status.appendChild(b3clients)
-                
+
         for c in clients:
             if not c.name:
                 c.name = "@"+str(c.id)
@@ -202,3 +213,15 @@ class StatusPlugin(b3.plugin.Plugin):
             f.write(xml)
             f.close()
             
+            
+if __name__ == '__main__':
+    from b3.fake import fakeConsole
+    from b3.fake import joe
+    from b3.fake import simon
+    
+    p = StatusPlugin(fakeConsole, "@b3/conf/plugin_status.xml")
+    p.onStartup()
+    p.update()
+    
+    while True: pass
+    
