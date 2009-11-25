@@ -115,12 +115,13 @@ class FakeConsole(b3.parser.Parser):
     def getPlayerScores(self):
         return {0:5,1:4}
     
-    def stripColors(self, text):
-        return re.sub(self._reColor, '', text).strip()
-    
     def say(self, msg):
         """send text to the server"""
-        print ">>> %s" % msg
+        print ">>> %s" % re.sub(re.compile('\^[0-9]'), '', msg).strip()
+    
+    def write(self, msg):
+        """send text to the console"""
+        print "### %s" % re.sub(re.compile('\^[0-9]'), '', msg).strip()
     
     def tempban(self, client, reason, duration, admin, silent):
         """tempban a client"""
@@ -270,8 +271,8 @@ class FakeStorage(object):
     
 class FakeClient(b3.clients.Client):
     console = None
-    def __init__(self, **kwargs):
-        self.console = fakeConsole
+    def __init__(self, console, **kwargs):
+        self.console = console
         b3.clients.Client.__init__(self, **kwargs)
         
         self.console.clients[self.cid] = self
@@ -280,19 +281,21 @@ class FakeClient(b3.clients.Client):
                            self.console.clients[self.cid].cid, self.console.clients[self.cid].name, 
                            self.console.clients[self.cid].guid, self.console.clients[self.cid].data)
         self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_CONNECT, self, self))
-        
+    
+    def pushEvent(self, event):
+        self.console.queueEvent(event)
+        time.sleep(0.3)
+    
     def message(self, msg):
-        print "sending msg to %s: %s" % (self.name, msg)
+        print "sending msg to %s: %s" % (self.name, re.sub(re.compile('\^[0-9]'), '', msg).strip())
         
     def says(self, msg):
         print "\n%s says \"%s\"" % (self.name, msg)
-        b3.fake.fakeConsole.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_SAY, msg, self))
-        time.sleep(0.2)
+        self.pushEvent(b3.events.Event(b3.events.EVT_CLIENT_SAY, msg, self))
         
     def says2team(self, msg):
         print "\n%s says to team \"%s\"" % (self.name, msg)
-        b3.fake.fakeConsole.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, msg, self))
-        time.sleep(0.2)
+        self.pushEvent(b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, msg, self))
         
     def damages(self, victim, points=34.0):
         print "\n%s damages %s for %s points" % (self.name, victim.name, points)
@@ -302,8 +305,7 @@ class FakeClient(b3.clients.Client):
             e = b3.events.EVT_CLIENT_DAMAGE_TEAM
         else:
             e = b3.events.EVT_CLIENT_DAMAGE
-        b3.fake.fakeConsole.queueEvent( b3.events.Event(e, (points, 1, 1, 1), self, victim))
-        time.sleep(0.2)
+        self.pushEvent( b3.events.Event(e, (points, 1, 1, 1), self, victim))
         
     def kills(self, victim):
         print "\n%s kills %s" % (self.name, victim.name)
@@ -314,15 +316,20 @@ class FakeClient(b3.clients.Client):
             e = b3.events.EVT_CLIENT_KILL_TEAM
         else:
             e = b3.events.EVT_CLIENT_KILL
-        b3.fake.fakeConsole.queueEvent(b3.events.Event(e, (100, 1, 1, 1), self, victim))
-        time.sleep(0.2)
+        self.pushEvent(b3.events.Event(e, (100, 1, 1, 1), self, victim))
         
     def suicides(self):
-        print "\n%s kills himself"
-        b3.fake.fakeConsole.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_SUICIDE, 
+        print "\n%s kills himself" % self.name
+        self.pushEvent(b3.events.Event(b3.events.EVT_CLIENT_SUICIDE, 
                                                        (100, 1, 1, 1), 
                                                        self, victim))
-        time.sleep(0.2)
+        
+    def doAction(self, actiontype):
+        self.console.queueEvent((b3.events.Event(b3.events.EVT_CLIENT_ACTION, actiontype, self)))
+
+    def triggerEvent(self, type, data, target=None):
+        print "\n%s trigger event %s" % (self.name, type)
+        self.pushEvent(b3.events.Event(type, data, self, target))
 
 
 #####################################################################################
@@ -334,7 +341,7 @@ print "creating fakeAdminPlugin with @b3/conf/plugin_admin.xml"
 fakeAdminPlugin = AdminPlugin(fakeConsole, '@b3/conf/plugin_admin.xml')
 fakeAdminPlugin.onStartup()
 
-joe = FakeClient(cid=1, name="Joe", exactName="Joe", guid="zaerezarezar", _maxLevel=1, authed=True, team=b3.TEAM_UNKNOWN)
-simon = FakeClient(cid=2, name="Simon", exactName="Simon", guid="qsdfdsqfdsqf", _maxLevel=0, authed=False, team=b3.TEAM_UNKNOWN)
-moderator = FakeClient(cid=3, name="Moderator", exactName="Moderator", guid="sdf455ezr", _maxLevel=20, authed=True, team=b3.TEAM_UNKNOWN)
+joe = FakeClient(fakeConsole, cid=1, name="Joe", exactName="Joe", guid="zaerezarezar", _maxLevel=1, authed=True, team=b3.TEAM_UNKNOWN)
+simon = FakeClient(fakeConsole, cid=2, name="Simon", exactName="Simon", guid="qsdfdsqfdsqf", _maxLevel=0, authed=True, team=b3.TEAM_UNKNOWN)
+moderator = FakeClient(fakeConsole, cid=3, name="Moderator", exactName="Moderator", guid="sdf455ezr", _maxLevel=20, authed=True, team=b3.TEAM_UNKNOWN)
 
