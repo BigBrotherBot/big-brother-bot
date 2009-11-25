@@ -55,15 +55,16 @@
 # v1.5.0 - 11/11/2009 - Courgette
 #    * create a new event: EVT_GAME_FLAG_RETURNED which is fired when the flag return because of time
 #    * code refactoring
-# v1.5.1- 17/11/2009 - Courgette
+# v1.5.1 - 17/11/2009 - Courgette
 #    * harden getNextMap by :
 #      o wrapping initial getCvar queries with try:except bloc
 #      o requerying required cvar if missing
 #      o forcing map list refresh on server reload or round end
-
+# v1.5.2 - 26/11/2009 - Courgette
+#    * fix a bug that prevented kills by slap or nuke from firing kill events
 
 __author__  = 'xlr8or'
-__version__ = '1.5.1'
+__version__ = '1.5.2'
 
 
 import b3.parsers.q3a
@@ -611,7 +612,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         ## Fix attacker
         if match.group('aweap') in (self.UT_MOD_SLAPPED,self.UT_MOD_NUKED):
             self.debug('OnKill: slap/nuke => attacker should be None')
-            attacker = None
+            attacker = self.clients.getByCID(-1) # make the attacker 'World'
         elif match.group('aweap') in (self.MOD_WATER,self.MOD_LAVA,self.MOD_FALLING,self.MOD_TRIGGER_HURT,self.UT_MOD_BOMBED,self.UT_MOD_FLAG):
             # those kills should be considered suicides
             self.debug('OnKill: water/lava/falling/trigger_hurt/bombed/flag should be suicides')
