@@ -349,8 +349,6 @@ class Q3AParser(b3.parser.Parser):
         else:
             return b3.TEAM_UNKNOWN
 
-    def stripColors(self, text):
-        return re.sub(self._reColor, '', text).strip()
 
     def message(self, client, text):
         try:
