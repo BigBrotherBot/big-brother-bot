@@ -888,6 +888,9 @@ class Parser(object):
     cron = property(_get_cron)
 
 
+    def stripColors(self, text):
+        return re.sub(self._reColor, '', text).strip()
+
 if __name__ == '__main__':
     import config
     
