@@ -24,12 +24,13 @@
 # - detect xml parsing errors and raise a specific exception in that case
 # 22/11/2009 - 1.2.3 - Courgette
 # - fix bug with resolution of @conf on linux
-
+# 29/11/2209 - 1.3.0 - Courgette
+# XmlConfigParser can also be parsed from string
 
 __author__  = 'ThorN'
-__version__ = '1.2.3'
+__version__ = '1.3.0'
 
-import sys
+import sys, time
 import b3
 from xml.parsers.expat import ExpatError
 
@@ -180,6 +181,22 @@ class XmlConfigParser:
         self.fileName  = fileName
         self.fileMtime = os.path.getmtime(self.fileName)
 
+        return True
+
+    def loadFromString(self, xmlstring):
+        """\
+        Read the xml config from a string
+        """
+        
+        self.fileName  = None
+        self.fileMtime = time.time()
+        
+        try:
+            self._xml = ElementTree.XML(xmlstring)
+        except ExpatError, e:
+            raise ConfigFileNotValid("%s" % e)
+
+        self._loadSettings()
         return True
 
     def save(self):

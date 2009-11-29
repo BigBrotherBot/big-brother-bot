@@ -22,9 +22,11 @@
 #    Added warning, info, exception, and critical log handlers
 #    14/11/2009 - 1.3.1 - Courgette
 #    display a user friendly error message when a plugin config file as broken XML
+#    29/11/2009 - 1.4.0 - Courgette
+#    constructor now also accepts an instance of Config in place of a config file name
 
 __author__  = 'ThorN'
-__version__ = '1.3.1'
+__version__ = '1.4.0'
 
 import os
 import b3.config
@@ -43,12 +45,23 @@ class Plugin:
     def __init__(self, console, config=None):
         self.console = console
         
-        try:
-            self.loadConfig(config)
-        except b3.config.ConfigFileNotValid, e:
-            self.critical("The config file XML syntax is broken: %s" %e)
-            self.critical("Use a XML editor to modify your config files, it makes easy to spot errors")
-            raise 
+        if isinstance(config, b3.config.XmlConfigParser) \
+            or isinstance(config, b3.config.CfgConfigParser):
+            self.config = config
+        else:
+            try:
+                self.loadConfig(config)
+            except b3.config.ConfigFileNotValid, e:
+                self.critical("The config file XML syntax is broken: %s" %e)
+                self.critical("Use a XML editor to modify your config files, it makes easy to spot errors")
+                raise 
+        
+                
+        # empty message cache
+        self._messages = {}
+
+        if self.config:
+            self.onLoadConfig()
         
         self.registerEvent(b3.events.EVT_STOP)
         self.registerEvent(b3.events.EVT_EXIT)
@@ -99,14 +112,7 @@ class Plugin:
             else:
                 self.bot('No config file found for %s. (was not required either)'%self.__class__.__name__)
                 return True
-                
-        # empty message cache
-        self._messages = {}
 
-        if self.config:
-            return self.onLoadConfig()
-        else:
-            return False
 
     def onLoadConfig(self):
         """\
