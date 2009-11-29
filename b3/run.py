@@ -22,6 +22,7 @@ __version__ = '1.1.1'
 import b3, sys, os, time
 import traceback
 from b3.functions import main_is_frozen
+from b3.setup import Setup
 from optparse import OptionParser
 import pkg_handler
 modulePath = pkg_handler.resource_directory(__name__)
@@ -97,9 +98,14 @@ def run(config=None):
                 break
 
     if not config:
-        raise SystemExit('Could not find config file.')
+        Setup()
+        #raise SystemExit('Could not find config file.')
 
     b3.start(config)
+
+def run_setup():
+    Setup()
+    raise SystemExit('Configfile generated b3/conf/b3.xml. Ready to restart!')
 
 def main():
     parser = OptionParser(version=b3.sversion)
@@ -108,11 +114,17 @@ def main():
     parser.add_option('-r', '--restart',
                       action='store_true', dest='restart', default=False,
                       help='Auto-restart B3 on crash')
+    parser.add_option('-s', '--setup',
+                      action='store_true', dest='setup', default=False,
+                      help='Setup main b3.xml config file')
 
     (options, args) = parser.parse_args()
 
     if not options.config and len(args) == 1:
         options.config = args[0]
+
+    if options.setup:
+        run_setup()
 
     if options.restart:
         if options.config:

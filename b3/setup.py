@@ -20,18 +20,20 @@
 __author__  = 'xlr8or'
 __version__ = '0.0.1'
 
-import b3, platform
+import platform, shutil, time
 import os.path
 from xml.dom.minidom import Document
+
 
 class Setup:
     _indentation = "    "
     _priority = 1
 
     def __init__(self):
-        if platform.system() != 'Windows':
-            os.system('clear')
+        self.backupFile()
+        self.clearscreen()
         self.runSetup()
+        raise SystemExit('Restart B3 or reconfigure B3 using option: -s')
 
     def runSetup(self):
         global xml
@@ -115,8 +117,6 @@ class Setup:
         self.add_plugin(_section, "censor", "@b3/conf/plugin_censor.xml")
         #<plugin name="spamcontrol" priority="2" config="@b3/conf/plugin_spamcontrol.xml" />
         self.add_plugin(_section, "spamcontrol", "@b3/conf/plugin_spamcontrol.xml")
-        #<plugin name="admin" priority="3" config="@b3/conf/plugin_admin.xml" />
-        self.add_plugin(_section, "admin", "@b3/conf/plugin_admin.xml")
         #<plugin name="tk" priority="4" config="@b3/conf/plugin_tk.xml" />
         self.add_plugin(_section, "tk", "@b3/conf/plugin_tk.xml")
         #<plugin name="stats" priority="5" config="@b3/conf/plugin_stats.xml" />
@@ -133,8 +133,8 @@ class Setup:
         self.add_plugin(_section, "punkbuster", "@b3/conf/plugin_punkbuster.xml")
 
 
-        #self.writeXML(xml.toxml())
-        self.writeXML(xml.toprettyxml(indent=self._indentation))
+        self.writeXML(xml.toxml())
+        #self.writeXML(xml.toprettyxml(indent=self._indentation))
         
     def add_explanation(self, etext):
         _prechar = "> "
@@ -153,14 +153,15 @@ class Setup:
         _text = xml.createTextNode(_value)
         _set.appendChild(_text)
         ssection.appendChild(_set)
+        self.clearscreen()
 
     def add_plugin(self, ssection, sname, sconfig, explanation=""):
-         """
+        """
         A routine to add a plugin to the config
         Usage: self.add_plugin(section, pluginname, default-configfile, optional-explanation)
         Priority is increased automatically.
         """
-       _q = "Install "+sname+" plugin? (yes/no)"
+        _q = "Install "+sname+" plugin? (yes/no)"
         _test = self.raw_default(_q, "yes")
         if _test == "no":
             return None
@@ -173,6 +174,7 @@ class Setup:
         _set.setAttribute("config", _config)
         ssection.appendChild(_set)
         self._priority += 1
+        self.clearscreen()
 
     def raw_default(self, prompt, dflt=None):
         if dflt: 
@@ -188,7 +190,7 @@ class Setup:
 
     def writeXML(self, xml):
         try:
-            self._outputFile = "b3-conf.xml"
+            self._outputFile = "b3/conf/b3.xml"
             #self.debug('Writing XML status to %s', _outputFile)
             f = file(self._outputFile, 'w')
             f.write(xml)
@@ -196,6 +198,53 @@ class Setup:
             print self._outputFile+" written."
         except:
             print "ERROR: There was an error writing the file: "+self._outputFile+"!"
+
+    def clearscreen(self):
+        if platform.system() != 'Windows':
+            os.system('clear')
+        else:
+            os.system('cls')
+
+    def backupFile(self):
+        try:
+            _stamp = time.strftime("%d_%b_%Y_%H%M%S", time.gmtime())
+            _fname = "b3/conf/b3_"+_stamp+".xml"
+            shutil.copy("b3/conf/b3.xml", _fname)
+        except:
+            print "\n\nOriginal config not found, let's generate one...\n"
+            raw_input('Press any key to continue to setup, Ctrl-C to break...')
+
+    #code not implemented
+    def fixed_writexml(self, writer, indent="", addindent="", newl=""):
+        # indent = current indentation
+        # addindent = indentation to add to higher levels
+        # newl = newline string
+        writer.write(indent+"<" + self.tagName)
+    
+        attrs = self._get_attributes()
+        a_names = attrs.keys()
+        a_names.sort()
+    
+        for a_name in a_names:
+            writer.write(" %s=\"" % a_name)
+            xml.dom.minidom._write_data(writer, attrs[a_name].value)
+            writer.write("\"")
+        if self.childNodes:
+            if len(self.childNodes) == 1 \
+              and self.childNodes[0].nodeType == xml.dom.minidom.Node.TEXT_NODE:
+                writer.write(">")
+                self.childNodes[0].writexml(writer, "", "", "")
+                writer.write("</%s>%s" % (self.tagName, newl))
+                return
+            writer.write(">%s"%(newl))
+            for node in self.childNodes:
+                node.writexml(writer,indent+addindent,addindent,newl)
+            writer.write("%s</%s>%s" % (indent,self.tagName,newl))
+        else:
+            writer.write("/>%s"%(newl))
+    # replace minidom's function with ours
+    #xml.dom.minidom.Element.writexml = fixed_writexml
+
 
 if __name__ == '__main__':
     from b3.fake import fakeConsole
