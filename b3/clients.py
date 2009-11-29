@@ -79,7 +79,7 @@ class Client(object):
     # fields on object
     console = None
     exactName = None
-    team = -1
+    team = b3.TEAM_UNKNOWN
     maxGroup = None
     authed = False
     hide = False
@@ -360,7 +360,7 @@ class Client(object):
     timeEdit = property(_get_timeEdit, _set_timeEdit)
 
     #------------------------
-    _team = -1
+    _team = b3.TEAM_UNKNOWN
     def _set_team(self, team):
         if self._team != team:
             self._team = team
