@@ -206,10 +206,14 @@ class Setup:
             os.system('cls')
 
     def backupFile(self):
+        self.clearscreen()
+        print "Trying to backup the original b3.xml..."
         try:
             _stamp = time.strftime("%d_%b_%Y_%H%M%S", time.gmtime())
             _fname = "b3/conf/b3_"+_stamp+".xml"
             shutil.copy("b3/conf/b3.xml", _fname)
+            print "Backup success, b3/conf/b3.xml copied to : %s" % _fname
+            raw_input('Press any key to continue to setup, Ctrl-C to break...')
         except:
             print "\n\nOriginal config not found, let's generate one...\n"
             raw_input('Press any key to continue to setup, Ctrl-C to break...')
