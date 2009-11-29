@@ -78,6 +78,7 @@ import thread
 import re
 import time
 from b3.plugins.admin import AdminPlugin
+import b3.parsers.punkbuster
 import b3.parser
 import b3.events
 from sys import stdout
@@ -93,9 +94,14 @@ class FakeConsole(b3.parser.Parser):
         b3.console = self
         self._timeStart = self.time()
         self.config = b3.config.load(configFile)
+        
         self.storage = FakeStorage()
         self.clients  = b3.clients.Clients(self)
         self.game = b3.game.Game(self, "fakeGame")
+        
+        if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
+            self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
+            
         self.queue = Queue.Queue(15)
         self.working = True
         thread.start_new_thread(self.handleEvents, ())
@@ -127,6 +133,27 @@ class FakeConsole(b3.parser.Parser):
         """tempban a client"""
         print '>>>tempbanning %s for %s (%s)' % (client.name, reason, duration)
     
+    def kick(self, client, reason='', admin=None, silent=False, *kwargs):
+        if isinstance(client, str) and re.match('^[0-9]+$', client):
+            self.write(self.getCommand('kick', cid=client, reason=reason))
+            return
+        elif admin:
+            reason = self.getMessage('kicked_by', client.exactName, admin.exactName, reason)
+        else:
+            reason = self.getMessage('kicked', client.exactName, reason)
+
+        if self.PunkBuster:
+            self.PunkBuster.kick(client, 0.5, reason)
+        else:
+            self.write(self.getCommand('kick', cid=client.cid, reason=reason))
+
+        if not silent:
+            self.say(reason)
+
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_KICK, reason, client))
+        client.disconnect()
+    
+    ##############################
     
     def error(self, msg, *args, **kwargs):
         """Log an error"""
@@ -274,20 +301,17 @@ class FakeClient(b3.clients.Client):
     def __init__(self, console, **kwargs):
         self.console = console
         b3.clients.Client.__init__(self, **kwargs)
-        
-        self.console.clients[self.cid] = self
-        self.console.clients.resetIndex()
-        self.console.debug('Client Connected: [%s] %s - %s (%s)', 
-                           self.console.clients[self.cid].cid, self.console.clients[self.cid].name, 
-                           self.console.clients[self.cid].guid, self.console.clients[self.cid].data)
-        self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_CONNECT, self, self))
-    
+                
     def pushEvent(self, event):
         self.console.queueEvent(event)
         time.sleep(0.3)
     
     def message(self, msg):
         print "sending msg to %s: %s" % (self.name, re.sub(re.compile('\^[0-9]'), '', msg).strip())
+        
+    def connects(self, cid):
+        print "\n%s connects to the game on slot #%s" % (self.name, cid)
+        self.console.clients.newClient(cid, name=self.name, ip=self.ip, state=b3.STATE_ALIVE, guid=self.guid, data=self.data)    
         
     def says(self, msg):
         print "\n%s says \"%s\"" % (self.name, msg)
@@ -341,7 +365,7 @@ print "creating fakeAdminPlugin with @b3/conf/plugin_admin.xml"
 fakeAdminPlugin = AdminPlugin(fakeConsole, '@b3/conf/plugin_admin.xml')
 fakeAdminPlugin.onStartup()
 
-joe = FakeClient(fakeConsole, cid=1, name="Joe", exactName="Joe", guid="zaerezarezar", _maxLevel=1, authed=True, team=b3.TEAM_UNKNOWN)
-simon = FakeClient(fakeConsole, cid=2, name="Simon", exactName="Simon", guid="qsdfdsqfdsqf", _maxLevel=0, authed=True, team=b3.TEAM_UNKNOWN)
-moderator = FakeClient(fakeConsole, cid=3, name="Moderator", exactName="Moderator", guid="sdf455ezr", _maxLevel=20, authed=True, team=b3.TEAM_UNKNOWN)
+joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="zaerezarezar", _maxLevel=1, authed=True, team=b3.TEAM_UNKNOWN)
+simon = FakeClient(fakeConsole, name="Simon", exactName="Simon", guid="qsdfdsqfdsqf", _maxLevel=0, authed=True, team=b3.TEAM_UNKNOWN)
+moderator = FakeClient(fakeConsole, name="Moderator", exactName="Moderator", guid="sdf455ezr", _maxLevel=20, authed=True, team=b3.TEAM_UNKNOWN)
 
