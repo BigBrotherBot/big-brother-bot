@@ -53,8 +53,8 @@
 			This is a non-standard plugin, and quite resource heavy. Please take
 			a look in the B3 forums (look for XLR Extensions) for more
 			information before enabling this. Extra database tables are
-			necessary. <plugin name="xlrstats" priority="13"
-			config="@b3/extplugins/conf/xlrstats.xml"/>
+			necessary.
+      <plugin name="xlrstats" priority="13" config="@b3/extplugins/conf/xlrstats.xml"/>
 		-->
 	</plugins>
 </configuration>
