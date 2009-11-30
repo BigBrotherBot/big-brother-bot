@@ -1,17 +1,17 @@
 #
 # ioUrT Parser for BigBrotherBot(B3) (www.bigbrotherbot.com)
 # Copyright (C) 2008 Mark Weirath (xlr8or@xlr8or.com)
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -24,7 +24,7 @@
 # v1.0.5 - xlr8or added hitloc and damageType info to accomodate XLRstats
 # v1.0.6 - Fixed a bug where the parser wouldn't parse the shutdowngame and warmup functions
 # v1.0.7 - Better synchronizing and identification of connecting players and zombies
-# v1.0.8 - Better Zombie handling (Zombies being a result of: sv_zombietime (default 2 seconds)) 
+# v1.0.8 - Better Zombie handling (Zombies being a result of: sv_zombietime (default 2 seconds))
 #          (Zombie time is the time after a disconnect that the slot cannot be used and thus is in Zombie state)
 #          Added functionality to use ip's only, not using the guid at all (experimental)
 # v1.0.9 - Try to get the map name at start
@@ -32,20 +32,20 @@
 # v1.0.10 - Modified _reColor so name sanitation is the same as UrT. Here it does more than just remove color.
 # v1.0.11 - Courgette - Add getScores  # NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
 # v1.0.12 - Courgette - Fix regex that failed to parse chat lines when player's name ends with ':'
-# v1.0.13 - xlr8or - support for !maps and !nextmap command 
-# v1.0.14 - xlr8or - better understanding of mapcycle.txt 
+# v1.0.13 - xlr8or - support for !maps and !nextmap command
+# v1.0.14 - xlr8or - better understanding of mapcycle.txt
 # v1.0.15 - mindriot - 01-Nov-2008
 # * client with empty name ("") resulted in error and B3 not registering client - now given _empty_name_default
 # v1.0.16 - xlr8or - added IpCombi. Setting True will replace the last part of the guid with two segments of the ip
-#                    Increases security on admins who have cl_guidServerUniq set to 0 in client config (No cloning). 
+#                    Increases security on admins who have cl_guidServerUniq set to 0 in client config (No cloning).
 # v1.0.17 - mindriot - 02-Nov-2008
 # * _empty_name_default now only given upon client connect, due to possibility of no name specified in ClientUserinfo at any time
 # v1.0.19 - xlr8or - Disabled PunkBuster default settings due to recent supportrequests in the forums with missing PB line in b3.xml
 #
 # v1.1.0 - xlr8or - Added Action Mechanism (event) for B3 v1.1.5+
-# v1.1.1 - courgette 
+# v1.1.1 - courgette
 # * Debugged Action Mechanism (event) for B3 v1.1.5+
-# v1.2.0 - 19/08/2009 - Courgette 
+# v1.2.0 - 19/08/2009 - Courgette
 # * adds slap, nuke, mute new custom penalty types (can be used in censor or admin plugin)
 # * requires admin plugin v1.4+ and parser.py v1.10+
 # v1.3.0 - 20/10/2009 - Courgette
@@ -77,7 +77,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     gameName = 'iourt41'
     IpsOnly = False
     IpCombi = False
-    _maplist = None 
+    _maplist = None
 
     _settings = {}
     _settings['line_length'] = 65
@@ -156,7 +156,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         #Shutdowngame and Warmup... the one word lines
         re.compile(r'^(?P<action>[a-z]+):$', re.IGNORECASE)
     )
-    
+
     # map: ut4_casa
     # num score ping name            lastmsg address               qport rate
     # --- ----- ---- --------------- ------- --------------------- ----- -----
@@ -249,30 +249,30 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         except:
             self.game.fs_game = None
             self.warning("Could not query server for fs_game")
-            
+
         try:
             self.game.fs_basepath = self.getCvar('fs_basepath').getString().rstrip('/')
             self.debug('fs_basepath: %s' % self.game.fs_basepath)
         except:
             self.game.fs_basepath = None
             self.warning("Could not query server for fs_basepath")
-            
+
         try:
             self.game.fs_homepath = self.getCvar('fs_homepath').getString().rstrip('/')
             self.debug('fs_homepath: %s' % self.game.fs_homepath)
         except:
             self.game.fs_homepath = None
             self.warning("Could not query server for fs_homepath")
-            
-        
+
+
         # initialize connected clients
         plist = self.getPlayerList()
         for cid, c in plist.iteritems():
             userinfostring = self.queryClientUserInfoByCid(cid)
             if userinfostring:
                 self.OnClientuserinfo(None, userinfostring)
-        
-        
+
+
     def getLineParts(self, line):
         line = re.sub(self._lineClear, '', line, 1)
 
@@ -294,6 +294,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             self.verbose('line did not match format: %s' % line)
 
     def parseUserInfo(self, info):
+        """Just extract the cid and pairs of key/value without any treatment"""
         #2 \ip\145.99.135.227:27960\challenge\-232198920\qport\2781\protocol\68\battleye\1\name\[SNT]^1XLR^78or\rate\8000\cg_predictitems\0\snaps\20\model\sarge\headmodel\sarge\team_model\james\team_headmodel\*james\color1\4\color2\5\handicap\100\sex\male\cl_anonymous\0\teamtask\0\cl_guid\58D4069246865BB5A85F20FB60ED6F65
         #7 n\[SNT]^1XLR^78or\t\3\r\2\tl\0\f0\\f1\\f2\\a0\0\a1\0\a2\0
         playerID, info = string.split(info, ' ', 1)
@@ -308,27 +309,6 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             data[o[0]] = o[1]
 
         data['cid'] = playerID
-
-        if data.has_key('n'):
-            data['name'] = data['n']
-
-        # split port from ip field
-        if data.has_key('ip'):
-            tip = string.split(data['ip'], ':', 1)
-            data['ip'] = tip[0]
-            data['port'] = tip[1]
-
-        t = 0
-        if data.has_key('team'):
-            t = data['team']
-        elif data.has_key('t'):
-            t = data['t']
-
-        data['team'] = self.getTeam(t)
-
-        if data.has_key('cl_guid') and not data.has_key('pbid') and self.PunkBuster:
-            data['pbid'] = data['cl_guid']
-
         return data
 
     def getCvar(self, cvarName):
@@ -372,7 +352,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         _gameType = ''
         _gameType = str(gameTypeInt)
         #self.debug('gameTypeInt: %s' % gameTypeInt)
-        
+
         if gameTypeInt == '0':
             _gameType = 'dm'
         elif gameTypeInt == '1':   # Dunno what this one is
@@ -391,7 +371,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             _gameType = 'ctf'
         elif gameTypeInt == '8':
             _gameType = 'bm'
-        
+
         #self.debug('_gameType: %s' % _gameType)
         return _gameType
 
@@ -401,7 +381,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
             lines.append(self.getCommand('broadcast', prefix=self.msgPrefix, message=line))
 
-        if len(lines):        
+        if len(lines):
             self.writelines(lines)
 
     def inflictCustomPenalty(self, type, **kwargs):
@@ -409,15 +389,15 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         client = None
         if kwargs.has_key('client'):
             client = kwargs['client']
-        
+
         reason = None
         if kwargs.has_key('reason'):
             reason = kwargs['reason']
-        
+
         duration = None
         if kwargs.has_key('duration'):
             duration = kwargs['duration']
-        
+
 #        admin = None
 #        if kwargs.has_key('admin'):
 #            admin = kwargs['admin']
@@ -425,29 +405,29 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 #        data = None
 #        if kwargs.has_key('data'):
 #            data = kwargs['data']
-            
-                
-            
+
+
+
         if type == 'slap' and client:
             cmd = self.getCommand('slap', cid=client.cid)
             self.write(cmd)
             if reason:
                 client.message("%s" % reason)
             return True
-            
+
         elif type == 'nuke' and client:
             cmd = self.getCommand('nuke', cid=client.cid)
             self.write(cmd)
             if reason:
                 client.message("%s" % reason)
             return True
-            
+
         elif type == 'mute' and client:
             if duration is None:
                 seconds = 60
             else:
                 seconds = round(float(b3.functions.time2minutes(duration) * 60), 0)
-                
+
             # make sure to unmute first
             cmd = self.getCommand('mute', cid=client.cid, seconds=0)
             self.write(cmd)
@@ -457,13 +437,13 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             if reason:
                 client.message("%s" % reason)
             return True
-            
+
         # elif type == 'morron' and client:
             # client.message('you morron')
             # return True
-        
 
-    
+
+
 #----------------------------------------------------------------------------------
 
     # Connect/Join
@@ -474,8 +454,23 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
     # Parse Userinfo
     def OnClientuserinfo(self, action, data, match=None):
+        #2 \ip\145.99.135.227:27960\challenge\-232198920\qport\2781\protocol\68\battleye\1\name\[SNT]^1XLR^78or\rate\8000\cg_predictitems\0\snaps\20\model\sarge\headmodel\sarge\team_model\james\team_headmodel\*james\color1\4\color2\5\handicap\100\sex\male\cl_anonymous\0\teamtask\0\cl_guid\58D4069246865BB5A85F20FB60ED6F65
         bclient = self.parseUserInfo(data)
+        
+        # remove spaces from name
+        bclient['name'] = bclient['name'].replace(' ','')
+
+        # split port from ip field
+        if bclient.has_key('ip'):
+            (bclient['ip'], bclient['port']) = string.split(bclient['ip'], ':', 1)
+
+        bclient['team'] = self.getTeam(bclient['team'])
+
+        if bclient.has_key('cl_guid') and not bclient.has_key('pbid') and self.PunkBuster:
+            bclient['pbid'] = bclient['cl_guid']
+
         self.verbose('Parsed user info %s' % bclient)
+        
         if bclient:
             client = self.clients.getByCID(bclient['cid'])
 
@@ -485,7 +480,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                     setattr(client, k, v)
             else:
                 #make a new client
-                if self.PunkBuster:        
+                if self.PunkBuster:
                     # we will use punkbuster's guid
                     guid = None
                 else:
@@ -493,8 +488,8 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                     if bclient.has_key('cl_guid'):
                         guid = bclient['cl_guid']
                     else:
-                        guid = 'unknown' 
-                
+                        guid = 'unknown'
+
                 # v1.0.17 - mindriot - 02-Nov-2008
                 if not bclient.has_key('name'):
                     bclient['name'] = self._empty_name_default
@@ -504,7 +499,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                     # infoline was still waiting to be parsed.
                     self.debug('Client disconnected. Ignoring.')
                     return None
-                
+
                 nguid = ''
                 # overide the guid... use ip's only if self.console.IpsOnly is set True.
                 if self.IpsOnly:
@@ -527,7 +522,41 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
     # when userinfo changes
     def OnClientuserinfochanged(self, action, data, match=None):
-        return self.OnClientuserinfo(action, data, match)
+        #7 n\[SNT]^1XLR^78or\t\3\r\2\tl\0\f0\\f1\\f2\\a0\0\a1\0\a2\0
+        parseddata = self.parseUserInfo(data)
+
+        if parseddata:
+            client = self.clients.getByCID(parseddata['cid'])
+
+            if client:
+                # update existing client
+                if parseddata.has_key('n') and parseddata['n'] != client['name']:
+                    setattr(client, 'name', parseddata['n'])
+                
+                if parseddata.has_key('t'):
+                    newteam = self.getTeam(parseddata['t'])
+                    if client['team'] != newteam:
+                        setattr(client, 'team', newteam)
+                
+                    team = client['team']
+                    if parseddata.has_key('r'):
+                        if team == b3.TEAM_BLUE:
+                            setattr(client, 'raceblue', parseddata['r'])
+                        elif team == b3.TEAM_RED:
+                            setattr(client, 'racered', parseddata['r'])
+                    if parseddata.has_key('f0') and parseddata['f0'] is not None \
+                            and parseddata.has_key('f1') and parseddata['f1'] is not None \
+                            and parseddata.has_key('f2') and parseddata['f2'] is not None :
+                        data = "%s,%s,%s" % (parseddata['f0'], parseddata['f1'], parseddata['f2'])
+                        if team == b3.TEAM_BLUE:
+                            setattr(client, 'funblue', data)
+                        elif team == b3.TEAM_RED:
+                            setattr(client, 'funred', data)
+                        
+                if parseddata.has_key('a0') and parseddata.has_key('a1') and parseddata.has_key('a2'):
+                    setattr(client, 'cg_rgb', "%s %s %s" % (parseddata['a0'], parseddata['a1'], parseddata['a2']))
+                    
+        return None
 
     # damage
     #Hit: 13 10 0 8: Grover hit jacobdk92 in the Head
@@ -597,7 +626,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         40:     UT_MOD_GOOMBA --- normal kill line
         """
         self.debug('OnKill: %s (%s)'%(match.group('aweap'),match.group('text')))
-        
+
         victim = self.getByCidOrJoinPlayer(match.group('cid'))
         if not victim:
             self.debug('No victim')
@@ -620,7 +649,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         else:
             attacker = self.getByCidOrJoinPlayer(match.group('acid'))
         ## end fix attacker
-          
+
         if not attacker:
             self.debug('No attacker')
             return None
@@ -649,7 +678,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         # if not logging damage we need a general hitloc (for xlrstats)
         if not hasattr(victim, 'hitloc'):
             victim.hitloc = 'body'
-        
+
         victim.state = b3.STATE_DEAD
         #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (victim.name, attacker.name, weapon, victim.hitloc, dType))
         # need to pass some amount of damage for the teamkill plugin - 100 is a kill
@@ -883,7 +912,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
         self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
         self.game.startRound()
-        
+
         self.debug('Synchronizing client info')
         self.clients.sync()
 
@@ -892,7 +921,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
 
-        
+
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
         self.debug('BAN : client: %s, reason: %s', client, reason)
         if isinstance(client, b3.clients.Client) and not client.guid:
@@ -922,7 +951,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
         if not silent:
             self.say(reason)
-            
+
         if admin:
             admin.message('^3banned^7: ^1%s^7 (^2@%s^7). His last ip (^1%s^7) has been added to banlist'%(client.exactName, client.id, client.ip))
 
@@ -959,11 +988,11 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                 if m.group('ping') == 'ZMBI' or m.group('ping') == 'CNCT':
                     # ignore them, let them not bother us with errors
                     pass
-                else:    
+                else:
                     players[str(m.group('slot'))] = int(m.group('ping'))
 
         return players
-    
+
     def sync(self):
         plist = self.getPlayerList()
         mlist = {}
@@ -996,9 +1025,9 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                         client.disconnect()
                 else:
                     self.debug('no-sync: no guid or ip found.')
-        
+
         return mlist
-        
+
 #    Use the new function in the q3a parser instead
 #    def getPlayerScores(self):
 #        plist = self.getPlayerList()
@@ -1015,19 +1044,19 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if not data:
             return None
 
-        line = data.split('\n')[0] 
+        line = data.split('\n')[0]
         #self.debug('[%s]'%line.strip())
-        
+
         m = re.match(self._reMapNameFromStatus, line.strip())
         if m:
             return str(m.group('map'))
-                    
+
         return None
 
     def getMaps(self):
         if self._maplist is not None:
             return self._maplist
-        
+
         data = self.write('fdir *.bsp')
         if not data:
             return []
@@ -1053,7 +1082,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
         # seek the next map from the mapcyle file
         if not self.game.mapName: return None
-        
+
         mapcycle = self.getCvar('g_mapcycle').getString()
         if self.game.fs_game is None:
             try:
@@ -1079,14 +1108,14 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if not os.path.isfile(mapfile):
             self.error("Unable to find mapcycle file %s" % mapcycle)
             return None
-        
+
         cyclemapfile = open(mapfile, 'r')
         lines = cyclemapfile.readlines()
         #self.debug(lines)
         if len(lines) == 0:
             return None
-            
-        # get maps 
+
+        # get maps
         maps = []
         try:
             while True:
@@ -1098,14 +1127,14 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                 maps.append(tmp)
         except IndexError:
             pass
-        
+
         #self.debug(maps)
 
         if len(maps) == 0:
             return None
-        
+
         firstmap = maps[0]
-        
+
         # find current map
         #currentmap = self.game.mapName.strip().lower() # this fails after a cyclemap
         currentmap = self.getCvar('mapname').value
@@ -1129,12 +1158,12 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if not data:
             return None
 
-        line = data.split('\n')[2] 
-        
+        line = data.split('\n')[2]
+
         m = re.match(self._reTeamScores, line.strip())
         if m:
             return [int(m.group('RedScore')), int(m.group('BlueScore'))]
-                    
+
         return None
 
     def getScores(self):
@@ -1145,22 +1174,22 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if not data:
             return None
 
-        
+
         scores = {'red':None, 'blue':None, 'players':{}}
-        
-        line = data.split('\n')[2] 
+
+        line = data.split('\n')[2]
         m = re.match(self._reTeamScores, line.strip())
         if m:
             scores['red'] = int(m.group('RedScore'))
             scores['blue'] = int(m.group('BlueScore'))
-                   
+
         for line in data.split('\n')[3:]:
             m = re.match(self._rePlayerScore, line.strip())
             if m:
                 scores['players'][int(m.group('slot'))] = {'kills':int(m.group('kill')), 'deaths':int(m.group('death'))}
-                    
+
         return scores
-      
+
     def joinPlayers(self):
         plist = self.getPlayerList()
 
@@ -1181,13 +1210,13 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         for line in data.split('\n'):
             if line.strip() == "userinfo" or line.strip() == "--------":
                 continue
-            
+
             var = line[:20].strip()
             val = line[20:].strip()
             datatransformed += "\\%s\\%s" % (var, val)
 
         return datatransformed
-            
+
     def getByCidOrJoinPlayer(self, cid):
         client = self.clients.getByCID(cid)
         if client:
@@ -1197,8 +1226,17 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             if userinfostring:
                 self.OnClientuserinfo(None, userinfostring)
             return self.clients.getByCID(cid)
-        
-""" 
+
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
+
+
+
+
+"""
 #----- Actions -----------------------------------------------------------------
 Item: 0 team_CTF_redflag -> Flag Taken/picked up
 Flag: 0 0: team_CTF_blueflag -> Flag Dropped
@@ -1206,7 +1244,7 @@ Flag: 0 1: team_CTF_blueflag -> Flag Returned
 Flag: 0 2: team_CTF_blueflag -> Flag Captured
 
 Bombholder is 5 -> Spawn with the bomb
-Bomb was planted by 5 
+Bomb was planted by 5
 Bomb was defused by 6!
 Bomb was tossed by 4 -> either manually or by being killed
 Bomb has been collected by 6 -> Picking up a tossed bomb
@@ -1214,7 +1252,7 @@ Bomb has been collected by 6 -> Picking up a tossed bomb
 #----- Connection Info ---------------------------------------------------------
 A little documentation on the ClientSlot states in relation to ping positions in the status response
 
-UrT ClientSlot states: 
+UrT ClientSlot states:
 CS_FREE,     // can be reused for a new connection
 CS_ZOMBIE,   // client has been disconnected, but don't reuse
              // connection for a couple seconds
