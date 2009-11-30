@@ -62,9 +62,14 @@
 #      o forcing map list refresh on server reload or round end
 # v1.5.2 - 26/11/2009 - Courgette
 #    * fix a bug that prevented kills by slap or nuke from firing kill events
+# v1.6.0 - 30/11/2009 - Courgette
+#    * separate parsing of lines ClientUserInfo and ClientUserInfoChanged to better translate 
+#    ClientUserInfoChanged data. Also OnClientUserInfoChanged does not create new client if 
+#    cid is unknown.
+#
 
 __author__  = 'xlr8or'
-__version__ = '1.5.2'
+__version__ = '1.6.0'
 
 
 import b3.parsers.q3a
@@ -464,7 +469,8 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if bclient.has_key('ip'):
             (bclient['ip'], bclient['port']) = string.split(bclient['ip'], ':', 1)
 
-        bclient['team'] = self.getTeam(bclient['team'])
+        if bclient.has_key('team'):
+            bclient['team'] = self.getTeam(bclient['team'])
 
         if bclient.has_key('cl_guid') and not bclient.has_key('pbid') and self.PunkBuster:
             bclient['pbid'] = bclient['cl_guid']
@@ -530,15 +536,13 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
             if client:
                 # update existing client
-                if parseddata.has_key('n') and parseddata['n'] != client['name']:
+                if parseddata.has_key('n'):
                     setattr(client, 'name', parseddata['n'])
                 
                 if parseddata.has_key('t'):
-                    newteam = self.getTeam(parseddata['t'])
-                    if client['team'] != newteam:
-                        setattr(client, 'team', newteam)
+                    team = self.getTeam(parseddata['t'])
+                    setattr(client, 'team', team)
                 
-                    team = client['team']
                     if parseddata.has_key('r'):
                         if team == b3.TEAM_BLUE:
                             setattr(client, 'raceblue', parseddata['r'])
