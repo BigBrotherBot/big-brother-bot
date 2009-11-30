@@ -62,7 +62,7 @@
 #      o forcing map list refresh on server reload or round end
 # v1.5.2 - 26/11/2009 - Courgette
 #    * fix a bug that prevented kills by slap or nuke from firing kill events
-# v1.6.0 - 30/11/2009 - Courgette
+# v1.6.1 - 30/11/2009 - Courgette
 #    * separate parsing of lines ClientUserInfo and ClientUserInfoChanged to better translate 
 #    ClientUserInfoChanged data. Also OnClientUserInfoChanged does not create new client if 
 #    cid is unknown.
@@ -467,7 +467,10 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
         # split port from ip field
         if bclient.has_key('ip'):
-            (bclient['ip'], bclient['port']) = string.split(bclient['ip'], ':', 1)
+            ipPortData = string.split(bclient['ip'], ':', 1)
+            bclient['ip'] = ipPortData[0]
+            if len(ipPortData) > 1:
+                bclient['port'] = ipPortData[1] 
 
         if bclient.has_key('team'):
             bclient['team'] = self.getTeam(bclient['team'])
