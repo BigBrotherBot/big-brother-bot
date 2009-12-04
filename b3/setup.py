@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 __author__  = 'xlr8or'
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 import platform, shutil, time
 import os.path
@@ -30,6 +30,7 @@ class Setup:
     _priority = 1
     _config = "b3/conf/b3.xml"
     _buffer = ''
+    _equaLength = 15
 
     def __init__(self, config=None):
         if config:
@@ -48,7 +49,7 @@ class Setup:
         xml.appendChild(_configuration)
 
         # B3 settings
-        self.addbuffer('--B3 SETTINGS---------------------------------------------------\n')
+        self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
         _section = xml.createElement("settings") 
         _section.setAttribute("name", "b3")
         _configuration.appendChild(_section)
@@ -57,39 +58,39 @@ class Setup:
         #<set name="parser">changeme</set>
         self.add_set(_section, "database", "mysql://b3:password@localhost/b3", "Your database info: <mysql>://<db-user>:<db-password>@<db-server>/<db-name>")
         #<set name="bot_name">b3</set>
-        self.add_set(_section, "bot_name", "b3")
+        self.add_set(_section, "bot_name", "b3", "Name of the bot")
         #<set name="bot_prefix">^0(^2b3^0)^7:</set>
-        self.add_set(_section, "bot_prefix", "^0(^2b3^0)^7:")
+        self.add_set(_section, "bot_prefix", "^0(^2b3^0)^7:", "Ingame messages are prefixed with this code, you can use colorcodes")
         #<set name="time_format">%I:%M%p %Z %m/%d/%y</set>
         self.add_set(_section, "time_format", "%I:%M%p %Z %m/%d/%y")
         #<set name="time_zone">CST</set>
-        self.add_set(_section, "time_zone", "CST")
+        self.add_set(_section, "time_zone", "CST", "The timezone your bot is in")
         #<!-- 9 = verbose, 10 = debug, 21 = bot, 22 = console -->
         #<set name="log_level">9</set>
         self.add_set(_section, "log_level", "9", "How much detail in the logfile: 9 = verbose, 10 = debug, 21 = bot, 22 = console")
         #<set name="logfile">b3.log</set>
-        self.add_set(_section, "logfile", "b3.log")
+        self.add_set(_section, "logfile", "b3.log", "Name of the logfile the bot will generate")
 
         # server settings
-        self.addbuffer('\n--GAME SERVER SETTINGS------------------------------------------\n')
+        self.add_buffer('\n--GAME SERVER SETTINGS------------------------------------------\n')
         _section = xml.createElement("settings") 
         _section.setAttribute("name", "server")
         _configuration.appendChild(_section)
         #<set name="rcon_password">password</set>
-        self.add_set(_section, "rcon_password", "")
+        self.add_set(_section, "rcon_password", "", "The RCON pass of your gameserver")
         #<set name="port">28960</set>
-        self.add_set(_section, "port", "28960")
+        self.add_set(_section, "port", "28960", "The port the server is running on")
         #<set name="game_log">games_mp.log</set>
-        self.add_set(_section, "game_log", "games_mp.log")
+        self.add_set(_section, "game_log", "games_mp.log", "The gameserver generates a logfile, put the path and name here")
         #<set name="public_ip">127.0.0.1</set>
-        self.add_set(_section, "public_ip", "127.0.0.1")
+        self.add_set(_section, "public_ip", "127.0.0.1", "The public IP your gameserver is residing on")
         #<set name="rcon_ip">127.0.0.1</set>
-        self.add_set(_section, "rcon_ip", "127.0.0.1")
+        self.add_set(_section, "rcon_ip", "127.0.0.1", "The IP the bot can use to send RCON commands to (127.0.0.1 when on the same box)")
         #<set name="punkbuster">on</set>
-        self.add_set(_section, "punkbuster", "on", "Punkbuster: on / off")
+        self.add_set(_section, "punkbuster", "on", "Punkbuster: on / off", "Is the gameserver running PunkBuster Anticheat?")
 
         # messages settings
-        self.addbuffer('\n--MESSAGES------------------------------------------------------\n')
+        self.add_buffer('\n--MESSAGES------------------------------------------------------\n')
         _section = xml.createElement("settings") 
         _section.setAttribute("name", "messages")
         _configuration.appendChild(_section)
@@ -111,7 +112,7 @@ class Setup:
         self.add_set(_section, "unbanned", "%s^7 was un-banned %s")
 
         # plugins settings
-        self.addbuffer('\n--PLUGIN CONFIG PATH--------------------------------------------\n')
+        self.add_buffer('\n--PLUGIN CONFIG PATH--------------------------------------------\n')
         _section = xml.createElement("settings") 
         _section.setAttribute("name", "plugins")
         _configuration.appendChild(_section)
@@ -119,7 +120,7 @@ class Setup:
         self.add_set(_section, "external_dir", "@b3/extplugins")
 
         # plugins
-        self.addbuffer('\n--INSTALLING PLUGINS--------------------------------------------\n')
+        self.add_buffer('\n--INSTALLING PLUGINS--------------------------------------------\n')
         _section = xml.createElement("plugins") 
         _configuration.appendChild(_section)
         #<plugin name="censor" priority="1" config="@b3/conf/plugin_censor.xml" />
@@ -141,7 +142,7 @@ class Setup:
         #<plugin name="punkbuster" priority="11" config="@b3/conf/plugin_punkbuster.xml" />
         self.add_plugin(_section, "punkbuster", "@b3/conf/plugin_punkbuster.xml")
 
-        self.addbuffer('\n--BACKUP/WRITE CONFIG-------------------------------------------\n')
+        self.add_buffer('\n--BACKUP/WRITE CONFIG-------------------------------------------\n')
         self.writeXML(xml.toxml())
         #self.writeXML(xml.toprettyxml(indent=self._indentation))
         
@@ -149,7 +150,7 @@ class Setup:
         _prechar = "> "
         print _prechar+etext
 
-    def addbuffer(self, addition, autowrite=True):
+    def add_buffer(self, addition, autowrite=True):
         self._buffer += addition
         if autowrite:
             self.writebuffer()
@@ -157,6 +158,9 @@ class Setup:
     def writebuffer(self):
         self.clearscreen()
         print self._buffer
+
+    def equaLize(self, _string):
+        return (self._equaLength-len(str(_string)))*" "
 
     def add_set(self, ssection, sname, sdflt, explanation=""):
         """
@@ -171,8 +175,7 @@ class Setup:
         _text = xml.createTextNode(_value)
         _set.appendChild(_text)
         ssection.appendChild(_set)
-        print "     Saving "+str(sname)+": "+str(_value)+"\n\n"
-        self.addbuffer(str(sname)+": "+str(_value)+"\n")
+        self.add_buffer(str(sname)+self.equaLize(sname)+": "+str(_value)+"\n")
 
     def add_plugin(self, ssection, sname, sconfig, explanation=""):
         """
@@ -192,7 +195,7 @@ class Setup:
         _config = self.raw_default("config", sconfig)
         _set.setAttribute("config", _config)
         ssection.appendChild(_set)
-        self.addbuffer("plugin: "+str(sname)+", priority: "+str(self._priority)+", config: "+str(_config)+"\n")
+        self.add_buffer("plugin: "+str(sname)+", priority: "+str(self._priority)+", config: "+str(_config)+"\n")
         self._priority += 1
 
     def raw_default(self, prompt, dflt=None):
@@ -201,7 +204,7 @@ class Setup:
             prompt = "%s [%s]" % (prompt, dflt)
         else:
             prompt = "%s" % (prompt)
-        res = raw_input(prompt+": ")
+        res = raw_input(prompt+self.equaLize(prompt)+": ")
         if not res and dflt:
             res = dflt
         if res == "":
@@ -248,7 +251,7 @@ class Setup:
         print "We're about to generate a main configuration file for "
         print "BigBrotherBot. This procedure is initiated when:\n"
         print " 1. you run B3 with the option --setup or -s"
-        print " 2. if the config you're trying to run does not exist"
+        print " 2. the config you're trying to run does not exist"
         print "    ("+self._config+")"
         print " 3. you did not modify the distributed b3.xml prior to"
         print "    starting B3."
