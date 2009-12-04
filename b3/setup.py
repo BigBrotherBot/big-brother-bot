@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 __author__  = 'xlr8or'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 import platform, shutil, time
 import os.path
@@ -30,7 +30,7 @@ class Setup:
     _priority = 1
 
     def __init__(self):
-        self.backupFile()
+        self.introduction()
         self.clearscreen()
         self.runSetup()
         raise SystemExit('Restart B3 or reconfigure B3 using option: -s')
@@ -189,9 +189,11 @@ class Setup:
         return res         
 
     def writeXML(self, xml):
+        self._outputFile = self.raw_default("Location and name of the configfile", "b3/conf/b3.xml")
+        #Creating Backup
+        self.backupFile(self._outputFile)
+        self.clearscreen()
         try:
-            self._outputFile = "b3/conf/b3.xml"
-            #self.debug('Writing XML status to %s', _outputFile)
             f = file(self._outputFile, 'w')
             f.write(xml)
             f.close()
@@ -205,18 +207,49 @@ class Setup:
         else:
             os.system('cls')
 
-    def backupFile(self):
+    def backupFile(self, _file="b3/conf/b3.xml"):
         self.clearscreen()
         print "Trying to backup the original b3.xml..."
         try:
-            _stamp = time.strftime("%d_%b_%Y_%H%M%S", time.gmtime())
-            _fname = "b3/conf/b3_"+_stamp+".xml"
-            shutil.copy("b3/conf/b3.xml", _fname)
-            print "Backup success, b3/conf/b3.xml copied to : %s" % _fname
+            _stamp = time.strftime("-%d_%b_%Y_%H.%M.%S", time.gmtime())
+            _fname = _file+_stamp+".xml"
+            shutil.copy(_file, _fname)
+            print "Backup success, "+_file+" copied to : %s" % _fname
             raw_input('Press any key to continue to setup, Ctrl-C to break...')
         except:
-            print "\n\nOriginal config not found, let's generate one...\n"
+            print "\n\nA file with this location/name does not yet exist, I'm about to generate it...\n"
             raw_input('Press any key to continue to setup, Ctrl-C to break...')
+
+    def introduction(self):
+        self.clearscreen()
+        print "                WELCOME TO B3 SETUP PROCEDURE"
+        print "----------------------------------------------------------------"
+        print "We're about to generate a main configuration file for "
+        print "BigBrotherBot. This procedure is initiated when you run B3"
+        print "with the option -s (for setup), if you have deleted the original"
+        print "b3/conf/b3.xml or when you did not modify the distributed b3.xml"
+        print "earlier."
+        print ""
+        print "We will prompt you for each setting. We'll also provide default"
+        print "values inside [] if applicable. When you want to accept a"
+        print "default value you will only need to press Enter."
+        print ""
+        print "If you make an error at any stage, you can abort the setup"
+        print "procedure by pressing Ctrl-C on your keyboard. You can start"
+        print "over by running B3 with the setup option: python b3_run.py -s"
+        print ""
+        print "At the end of setup you are prompted for a location and name for"
+        print "this configuration file. This is for multiple server setups, or"
+        print "if you want to run B3 from a different setup file for your own."
+        print "reasons. In a basic single instance install you will not have to"
+        print "change this location and/or name. If a configuration file exists"
+        print "we will make a backup first and tag it with date and time, so"
+        print "you can always revert to a previous version of the config file."
+        print ""
+        print "This procedure is new, bugs may be reported on our forums at"
+        print "www.bigbrotherbot.com"
+        print "\n\n"
+        raw_input('Press any key to continue to setup, Ctrl-C to break...')
 
     #code not implemented
     def fixed_writexml(self, writer, indent="", addindent="", newl=""):
