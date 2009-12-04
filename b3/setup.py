@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 __author__  = 'xlr8or'
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 import platform, shutil, time
 import os.path
@@ -29,6 +29,7 @@ class Setup:
     _indentation = "    "
     _priority = 1
     _config = "b3/conf/b3.xml"
+    _buffer = ''
 
     def __init__(self, config=None):
         if config:
@@ -47,6 +48,7 @@ class Setup:
         xml.appendChild(_configuration)
 
         # B3 settings
+        self.addbuffer('--B3 SETTINGS---------------------------------------------------\n')
         _section = xml.createElement("settings") 
         _section.setAttribute("name", "b3")
         _configuration.appendChild(_section)
@@ -67,9 +69,9 @@ class Setup:
         self.add_set(_section, "log_level", "9", "How much detail in the logfile: 9 = verbose, 10 = debug, 21 = bot, 22 = console")
         #<set name="logfile">b3.log</set>
         self.add_set(_section, "logfile", "b3.log")
-        self.clearscreen()
 
         # server settings
+        self.addbuffer('\n--GAME SERVER SETTINGS------------------------------------------\n')
         _section = xml.createElement("settings") 
         _section.setAttribute("name", "server")
         _configuration.appendChild(_section)
@@ -85,9 +87,9 @@ class Setup:
         self.add_set(_section, "rcon_ip", "127.0.0.1")
         #<set name="punkbuster">on</set>
         self.add_set(_section, "punkbuster", "on", "Punkbuster: on / off")
-        self.clearscreen()
 
         # messages settings
+        self.addbuffer('\n--MESSAGES------------------------------------------------------\n')
         _section = xml.createElement("settings") 
         _section.setAttribute("name", "messages")
         _configuration.appendChild(_section)
@@ -107,17 +109,17 @@ class Setup:
         self.add_set(_section, "unbanned_by", "%s^7 was un-banned by %s^7 %s")
         #<set name="unbanned">%s^7 was un-banned %s</set>
         self.add_set(_section, "unbanned", "%s^7 was un-banned %s")
-        self.clearscreen()
 
         # plugins settings
+        self.addbuffer('\n--PLUGIN CONFIG PATH--------------------------------------------\n')
         _section = xml.createElement("settings") 
         _section.setAttribute("name", "plugins")
         _configuration.appendChild(_section)
         #<set name="external_dir">@b3/extplugins</set>
         self.add_set(_section, "external_dir", "@b3/extplugins")
-        self.clearscreen()
 
         # plugins
+        self.addbuffer('\n--INSTALLING PLUGINS--------------------------------------------\n')
         _section = xml.createElement("plugins") 
         _configuration.appendChild(_section)
         #<plugin name="censor" priority="1" config="@b3/conf/plugin_censor.xml" />
@@ -138,14 +140,23 @@ class Setup:
         self.add_plugin(_section, "welcome", "@b3/conf/plugin_welcome.xml")
         #<plugin name="punkbuster" priority="11" config="@b3/conf/plugin_punkbuster.xml" />
         self.add_plugin(_section, "punkbuster", "@b3/conf/plugin_punkbuster.xml")
-        self.clearscreen()
 
+        self.addbuffer('\n--BACKUP/WRITE CONFIG-------------------------------------------\n')
         self.writeXML(xml.toxml())
         #self.writeXML(xml.toprettyxml(indent=self._indentation))
         
     def add_explanation(self, etext):
         _prechar = "> "
         print _prechar+etext
+
+    def addbuffer(self, addition, autowrite=True):
+        self._buffer += addition
+        if autowrite:
+            self.writebuffer()
+
+    def writebuffer(self):
+        self.clearscreen()
+        print self._buffer
 
     def add_set(self, ssection, sname, sdflt, explanation=""):
         """
@@ -161,7 +172,7 @@ class Setup:
         _set.appendChild(_text)
         ssection.appendChild(_set)
         print "     Saving "+str(sname)+": "+str(_value)+"\n\n"
-        #self.clearscreen()
+        self.addbuffer(str(sname)+": "+str(_value)+"\n")
 
     def add_plugin(self, ssection, sname, sconfig, explanation=""):
         """
@@ -181,8 +192,8 @@ class Setup:
         _config = self.raw_default("config", sconfig)
         _set.setAttribute("config", _config)
         ssection.appendChild(_set)
+        self.addbuffer("plugin: "+str(sname)+", priority: "+str(self._priority)+", config: "+str(_config)+"\n")
         self._priority += 1
-        #self.clearscreen()
 
     def raw_default(self, prompt, dflt=None):
         res = None
@@ -219,17 +230,16 @@ class Setup:
             os.system('cls')
 
     def backupFile(self, _file):
-        self.clearscreen()
-        print "Trying to backup the original b3.xml..."
+        print "    Trying to backup the original "+_file+"..."
         try:
             _stamp = time.strftime("-%d_%b_%Y_%H.%M.%S", time.gmtime())
             _fname = _file+_stamp+".xml"
             shutil.copy(_file, _fname)
-            print "Backup success, "+_file+" copied to : %s" % _fname
-            self.testExit()
+            print "    Backup success, "+_file+" copied to : %s" % _fname
+            self.testExit(_question='[Enter] to write %s, \'abort\' to abort Setup: ' %(_file))
         except:
-            print "\n\nA file with this location/name does not yet exist, I'm about to generate it...\n"
-            self.testExit()
+            print "    A file with this location/name does not yet exist,\n    I'm about to generate it...\n"
+            self.testExit(_question='[Enter] to write %s, \'abort\' to abort Setup: ' %(_file))
 
     def introduction(self):
         self.clearscreen()
@@ -240,8 +250,8 @@ class Setup:
         print " 1. you run B3 with the option --setup or -s"
         print " 2. if the config you're trying to run does not exist"
         print "    ("+self._config+")"
-        print " 3. when you did not modify the distributed b3.xml"
-        print "    prior to starting B3."
+        print " 3. you did not modify the distributed b3.xml prior to"
+        print "    starting B3."
         self.testExit()
         print "We will prompt you for each setting. We'll also provide default"
         print "values inside [] if applicable. When you want to accept a"
@@ -261,17 +271,16 @@ class Setup:
         print ""
         print "This procedure is new, bugs may be reported on our forums at"
         print "www.bigbrotherbot.com"
-        self.testExit(_test='[Enter] to continue to generate the configfile...')
+        self.testExit(_question='[Enter] to continue to generate the configfile...')
 
-    def testExit(self, _key='', _test='[Enter] to continue, \'abort\' to abort Setup: ', _message='Setup aborted, run python b3_run.py -s to restart the procedure.'):
+    def testExit(self, _key='', _question='[Enter] to continue, \'abort\' to abort Setup: ', _exitmessage='Setup aborted, run python b3_run.py -s to restart the procedure.'):
         if _key == '':
-            _key = raw_input('\n'+_test)
+            _key = raw_input('\n'+_question)
         if _key != 'abort':
             print "\n"
             return
         else:
-            self.clearscreen()
-            raise SystemExit(_message)
+            raise SystemExit(_exitmessage)
 
     #code not implemented
     def fixed_writexml(self, writer, indent="", addindent="", newl=""):
