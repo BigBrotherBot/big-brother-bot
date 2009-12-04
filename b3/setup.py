@@ -28,8 +28,11 @@ from xml.dom.minidom import Document
 class Setup:
     _indentation = "    "
     _priority = 1
+    _config = "b3/conf/b3.xml"
 
-    def __init__(self):
+    def __init__(self, config=None):
+        if config:
+            self._config = config
         self.introduction()
         self.clearscreen()
         self.runSetup()
@@ -64,6 +67,7 @@ class Setup:
         self.add_set(_section, "log_level", "9", "How much detail in the logfile: 9 = verbose, 10 = debug, 21 = bot, 22 = console")
         #<set name="logfile">b3.log</set>
         self.add_set(_section, "logfile", "b3.log")
+        self.clearscreen()
 
         # server settings
         _section = xml.createElement("settings") 
@@ -81,6 +85,7 @@ class Setup:
         self.add_set(_section, "rcon_ip", "127.0.0.1")
         #<set name="punkbuster">on</set>
         self.add_set(_section, "punkbuster", "on", "Punkbuster: on / off")
+        self.clearscreen()
 
         # messages settings
         _section = xml.createElement("settings") 
@@ -102,6 +107,7 @@ class Setup:
         self.add_set(_section, "unbanned_by", "%s^7 was un-banned by %s^7 %s")
         #<set name="unbanned">%s^7 was un-banned %s</set>
         self.add_set(_section, "unbanned", "%s^7 was un-banned %s")
+        self.clearscreen()
 
         # plugins settings
         _section = xml.createElement("settings") 
@@ -109,6 +115,7 @@ class Setup:
         _configuration.appendChild(_section)
         #<set name="external_dir">@b3/extplugins</set>
         self.add_set(_section, "external_dir", "@b3/extplugins")
+        self.clearscreen()
 
         # plugins
         _section = xml.createElement("plugins") 
@@ -131,7 +138,7 @@ class Setup:
         self.add_plugin(_section, "welcome", "@b3/conf/plugin_welcome.xml")
         #<plugin name="punkbuster" priority="11" config="@b3/conf/plugin_punkbuster.xml" />
         self.add_plugin(_section, "punkbuster", "@b3/conf/plugin_punkbuster.xml")
-
+        self.clearscreen()
 
         self.writeXML(xml.toxml())
         #self.writeXML(xml.toprettyxml(indent=self._indentation))
@@ -153,7 +160,8 @@ class Setup:
         _text = xml.createTextNode(_value)
         _set.appendChild(_text)
         ssection.appendChild(_set)
-        self.clearscreen()
+        print "     Saving "+str(sname)+": "+str(_value)+"\n\n"
+        #self.clearscreen()
 
     def add_plugin(self, ssection, sname, sconfig, explanation=""):
         """
@@ -174,22 +182,25 @@ class Setup:
         _set.setAttribute("config", _config)
         ssection.appendChild(_set)
         self._priority += 1
-        self.clearscreen()
+        #self.clearscreen()
 
     def raw_default(self, prompt, dflt=None):
+        res = None
         if dflt: 
-            prompt = "%s [%s]: " % (prompt, dflt)
+            prompt = "%s [%s]" % (prompt, dflt)
         else:
-            prompt = "%s: " % (prompt)
-        res = raw_input(prompt)
+            prompt = "%s" % (prompt)
+        res = raw_input(prompt+": ")
         if not res and dflt:
-            return dflt
+            res = dflt
         if res == "":
-            print "ERROR: No value was entered! Check your config file later!"
+            print "ERROR: No value was entered! Give it another try!"
+            res = self.raw_default(prompt, dflt)
+        self.testExit(res)
         return res         
 
     def writeXML(self, xml):
-        self._outputFile = self.raw_default("Location and name of the configfile", "b3/conf/b3.xml")
+        self._outputFile = self.raw_default("Location and name of the configfile", self._config)
         #Creating Backup
         self.backupFile(self._outputFile)
         self.clearscreen()
@@ -207,7 +218,7 @@ class Setup:
         else:
             os.system('cls')
 
-    def backupFile(self, _file="b3/conf/b3.xml"):
+    def backupFile(self, _file):
         self.clearscreen()
         print "Trying to backup the original b3.xml..."
         try:
@@ -215,29 +226,31 @@ class Setup:
             _fname = _file+_stamp+".xml"
             shutil.copy(_file, _fname)
             print "Backup success, "+_file+" copied to : %s" % _fname
-            raw_input('Press any key to continue to setup, Ctrl-C to break...')
+            self.testExit()
         except:
             print "\n\nA file with this location/name does not yet exist, I'm about to generate it...\n"
-            raw_input('Press any key to continue to setup, Ctrl-C to break...')
+            self.testExit()
 
     def introduction(self):
         self.clearscreen()
         print "                WELCOME TO B3 SETUP PROCEDURE"
         print "----------------------------------------------------------------"
         print "We're about to generate a main configuration file for "
-        print "BigBrotherBot. This procedure is initiated when you run B3"
-        print "with the option -s (for setup), if you have deleted the original"
-        print "b3/conf/b3.xml or when you did not modify the distributed b3.xml"
-        print "earlier."
-        print ""
+        print "BigBrotherBot. This procedure is initiated when:\n"
+        print " 1. you run B3 with the option --setup or -s"
+        print " 2. if the config you're trying to run does not exist"
+        print "    ("+self._config+")"
+        print " 3. when you did not modify the distributed b3.xml"
+        print "    prior to starting B3."
+        self.testExit()
         print "We will prompt you for each setting. We'll also provide default"
         print "values inside [] if applicable. When you want to accept a"
         print "default value you will only need to press Enter."
         print ""
         print "If you make an error at any stage, you can abort the setup"
-        print "procedure by pressing Ctrl-C on your keyboard. You can start"
+        print "procedure by typing \'abort\' at the prompt. You can start"
         print "over by running B3 with the setup option: python b3_run.py -s"
-        print ""
+        self.testExit()
         print "At the end of setup you are prompted for a location and name for"
         print "this configuration file. This is for multiple server setups, or"
         print "if you want to run B3 from a different setup file for your own."
@@ -248,8 +261,17 @@ class Setup:
         print ""
         print "This procedure is new, bugs may be reported on our forums at"
         print "www.bigbrotherbot.com"
-        print "\n\n"
-        raw_input('Press any key to continue to setup, Ctrl-C to break...')
+        self.testExit(_test='[Enter] to continue to generate the configfile...')
+
+    def testExit(self, _key='', _test='[Enter] to continue, \'abort\' to abort Setup: ', _message='Setup aborted, run python b3_run.py -s to restart the procedure.'):
+        if _key == '':
+            _key = raw_input('\n'+_test)
+        if _key != 'abort':
+            print "\n"
+            return
+        else:
+            self.clearscreen()
+            raise SystemExit(_message)
 
     #code not implemented
     def fixed_writexml(self, writer, indent="", addindent="", newl=""):

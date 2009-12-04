@@ -98,14 +98,14 @@ def run(config=None):
                 break
 
     if not config:
-        Setup()
+        Setup(config)
         #raise SystemExit('Could not find config file.')
 
     b3.start(config)
 
 def run_setup():
     Setup()
-    raise SystemExit('Configfile generated b3/conf/b3.xml. Ready to restart!')
+    raise SystemExit('Configfile generated. Ready to restart!')
 
 def main():
     parser = OptionParser(version=b3.sversion)

@@ -100,7 +100,8 @@ def start(configFile):
         #print 'Config dir is        : %s' % _confDir
         conf = config.load(configFile)
     else:
-        raise SystemExit('Could not find config file %s' % configFile)
+        Setup(configFile)
+        #raise SystemExit('Could not find config file %s' % configFile)
 
     parserType = conf.get('b3', 'parser')
 
