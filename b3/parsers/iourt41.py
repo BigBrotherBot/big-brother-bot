@@ -66,10 +66,13 @@
 #    * separate parsing of lines ClientUserInfo and ClientUserInfoChanged to better translate 
 #    ClientUserInfoChanged data. Also OnClientUserInfoChanged does not create new client if 
 #    cid is unknown.
+# v1.6.2 - 05/12/2009 - Courgette
+#    * fix _rePlayerScore regexp
+#    * on startup, also try to get players' team (which is not given by dumpuser)
 #
 
 __author__  = 'xlr8or'
-__version__ = '1.6.0'
+__version__ = '1.6.2'
 
 
 import b3.parsers.q3a
@@ -178,7 +181,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     # 0:  FREE k:0 d:0 ping:0
     # 4: yene RED k:16 d:8 ping:50 92.104.110.192:63496
     _reTeamScores = re.compile(r'^Scores:\s+R:(?P<RedScore>.+)\s+B:(?P<BlueScore>.+)$', re.I)
-    _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): (?P<name>.*) k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) (?P<ping>[0-9]+|CNCT|ZMBI) (?P<ip>[0-9.]+):(?P<port>[0-9-]+)$', re.I) # NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
+    _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): (?P<name>.*) (?P<team>RED|BLUE|SPECTATOR) k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) ping:(?P<ping>[0-9]+|CNCT|ZMBI)( (?P<ip>[0-9.]+):(?P<port>[0-9-]+))?$', re.I) # NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
 
     _reCvarName = re.compile(r'^[a-z0-9_.]+$', re.I)
     _reCvar = (
@@ -276,7 +279,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             userinfostring = self.queryClientUserInfoByCid(cid)
             if userinfostring:
                 self.OnClientuserinfo(None, userinfostring)
-
+        self.CorrectPlayersTeam()
 
     def getLineParts(self, line):
         line = re.sub(self._lineClear, '', line, 1)
@@ -339,17 +342,25 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                 return None
 
     def getTeam(self, team):
-        if team == 'red': team = 1
-        if team == 'blue': team = 2
+        if team == 'red' or team == 'RED': 
+            team = 1
+        elif team == 'blue' or team == 'BLUE': 
+            team = 2
+        elif team == 'SPECTATOR':
+            team = 3
+        
         team = int(team)
         if team == 1:
-            return b3.TEAM_RED
+            result = b3.TEAM_RED
         elif team == 2:
-            return b3.TEAM_BLUE
+            result = b3.TEAM_BLUE
         elif team == 3:
-            return b3.TEAM_SPEC
+            result = b3.TEAM_SPEC
         else:
-            return b3.TEAM_UNKNOWN
+            result = b3.TEAM_UNKNOWN
+            
+        #self.debug('getTeam(%s) -> %s' % (team, result))
+        return result
 
     # Translate the gameType to a readable format (also for teamkill plugin!)
     def defineGameType(self, gameTypeInt):
@@ -1234,11 +1245,48 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                 self.OnClientuserinfo(None, userinfostring)
             return self.clients.getByCID(cid)
 
+    def CorrectPlayersTeam(self):
+        """/rcon players
+        Map: ut4_heroic_beta1
+        Players: 16
+        Scores: R:51 B:92
+        0:  FREE k:0 d:0 ping:0
+        0:  FREE k:0 d:0 ping:0
+        2: Anibal BLUE k:24 d:11 ping:69 90.47.240.44:27960
+        3: kasper01 RED k:6 d:28 ping:56 93.22.173.133:27960
+        4: notorcan RED k:16 d:10 ping:51 86.206.51.250:27960
+        5: laCourge SPECTATOR k:0 d:0 ping:48 81.56.143.41:27960
+        6: fundy_kill BLUE k:6 d:9 ping:50 92.129.99.62:27960
+        7: brillko BLUE k:25 d:11 ping:56 85.224.201.172:27960
+        8: -Tuxmania- BLUE k:16 d:7 ping:48 81.231.39.32:27960
+        9: j.i.goe RED k:1 d:4 ping:51 86.218.69.81:27960
+        10: EasyRider RED k:10 d:12 ping:53 85.176.137.142:27960
+        11: Ferd75 BLUE k:4 d:8 ping:48 90.3.171.84:27960
+        12: frag4#Gost0r RED k:11 d:16 ping:74 79.229.27.54:27960
+        13: {'OuT'}ToinetoX RED k:6 d:13 ping:67 81.48.189.135:27960
+        14: GibsonSG BLUE k:-1 d:2 ping:37 84.60.3.67:27960
+        15: Kjeldor BLUE k:16 d:9 ping:80 85.246.3.196:50851
+        """
+        """
+        NOTE: this won't work fully if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
+        """
+        data = self.write('players')
+        if not data:
+            return None
 
+        for line in data.split('\n')[3:]:
+            self.debug(line.strip())
+            m = re.match(self._rePlayerScore, line.strip())
+            if m:
+                client = self.clients.getByCID(int(m.group('slot')))
+                if client:
+                    newteam = self.getTeam(m.group('team'))
+                    if newteam != client.team:
+                        self.debug('Fixing client team for %s : %s is now %s' %(m.group('name'), client.team, newteam))
+                        setattr(client, 'team', newteam)
+                else:
+                    self.debug('no client found for slot %s' % m.group('slot'))
 
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
 
 
 
