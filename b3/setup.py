@@ -18,12 +18,11 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 __author__  = 'xlr8or'
-__version__ = '0.0.4'
+__version__ = '0.1.0'
 
 import platform, shutil, time
 import os.path
-from xml.dom.minidom import Document
-
+from lib.elementtree.SimpleXMLWriter import XMLWriter
 
 class Setup:
     _indentation = "    "
@@ -31,121 +30,101 @@ class Setup:
     _config = "b3/conf/b3.xml"
     _buffer = ''
     _equaLength = 15
-
+ 
     def __init__(self, config=None):
         if config:
             self._config = config
         self.introduction()
         self.clearscreen()
+        self._outputFile = self.raw_default("Location and name of the configfile", self._config)
+        #Creating Backup
+        self.backupFile(self._outputFile)
         self.runSetup()
         raise SystemExit('Restart B3 or reconfigure B3 using option: -s')
 
     def runSetup(self):
         global xml
-        xml = Document()
+        xml = XMLWriter(self._outputFile)
 
         # first level
-        _configuration = xml.createElement("configuration")
-        xml.appendChild(_configuration)
+        configuration = xml.start("configuration")
+        xml.data("\n    ")
 
         # B3 settings
         self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
-        _section = xml.createElement("settings") 
-        _section.setAttribute("name", "b3")
-        _configuration.appendChild(_section)
-        #<set name="parser">changeme</set>
-        self.add_set(_section, "parser", "cod", "Define your game: cod/cod2/cod4/cod5/iourt41/etpro/wop/smg")
-        #<set name="parser">changeme</set>
-        self.add_set(_section, "database", "mysql://b3:password@localhost/b3", "Your database info: <mysql>://<db-user>:<db-password>@<db-server>/<db-name>")
-        #<set name="bot_name">b3</set>
-        self.add_set(_section, "bot_name", "b3", "Name of the bot")
-        #<set name="bot_prefix">^0(^2b3^0)^7:</set>
-        self.add_set(_section, "bot_prefix", "^0(^2b3^0)^7:", "Ingame messages are prefixed with this code, you can use colorcodes")
-        #<set name="time_format">%I:%M%p %Z %m/%d/%y</set>
-        self.add_set(_section, "time_format", "%I:%M%p %Z %m/%d/%y")
-        #<set name="time_zone">CST</set>
-        self.add_set(_section, "time_zone", "CST", "The timezone your bot is in")
-        #<!-- 9 = verbose, 10 = debug, 21 = bot, 22 = console -->
-        #<set name="log_level">9</set>
-        self.add_set(_section, "log_level", "9", "How much detail in the logfile: 9 = verbose, 10 = debug, 21 = bot, 22 = console")
-        #<set name="logfile">b3.log</set>
-        self.add_set(_section, "logfile", "b3.log", "Name of the logfile the bot will generate")
+        xml.start("settings", name="b3")
+        self.add_set("parser", "cod", "Define your game: cod/cod2/cod4/cod5/iourt41/etpro/wop/smg")
+        self.add_set("database", "mysql://b3:password@localhost/b3", "Your database info: [mysql]://[db-user]:[db-password]@[db-server]/[db-name]")
+        self.add_set("bot_name", "b3", "Name of the bot")
+        self.add_set("bot_prefix", "^0(^2b3^0)^7:", "Ingame messages are prefixed with this code, you can use colorcodes")
+        self.add_set("time_format", "%I:%M%p %Z %m/%d/%y")
+        self.add_set("time_zone", "CST", "The timezone your bot is in")
+        self.add_set("log_level", "9", "How much detail in the logfile: 9 = verbose, 10 = debug, 21 = bot, 22 = console")
+        self.add_set("logfile", "b3.log", "Name of the logfile the bot will generate")
+        xml.data("\n    ")
+        xml.end()
+        xml.data("\n    ")
 
         # server settings
         self.add_buffer('\n--GAME SERVER SETTINGS------------------------------------------\n')
-        _section = xml.createElement("settings") 
-        _section.setAttribute("name", "server")
-        _configuration.appendChild(_section)
-        #<set name="rcon_password">password</set>
-        self.add_set(_section, "rcon_password", "", "The RCON pass of your gameserver")
-        #<set name="port">28960</set>
-        self.add_set(_section, "port", "28960", "The port the server is running on")
-        #<set name="game_log">games_mp.log</set>
-        self.add_set(_section, "game_log", "games_mp.log", "The gameserver generates a logfile, put the path and name here")
-        #<set name="public_ip">127.0.0.1</set>
-        self.add_set(_section, "public_ip", "127.0.0.1", "The public IP your gameserver is residing on")
-        #<set name="rcon_ip">127.0.0.1</set>
-        self.add_set(_section, "rcon_ip", "127.0.0.1", "The IP the bot can use to send RCON commands to (127.0.0.1 when on the same box)")
-        #<set name="punkbuster">on</set>
-        self.add_set(_section, "punkbuster", "on", "Is the gameserver running PunkBuster Anticheat? on/off")
+        xml.start("settings", name="server")
+        self.add_set("rcon_password", "", "The RCON pass of your gameserver")
+        self.add_set("port", "28960", "The port the server is running on")
+        self.add_set("game_log", "games_mp.log", "The gameserver generates a logfile, put the path and name here")
+        self.add_set("public_ip", "127.0.0.1", "The public IP your gameserver is residing on")
+        self.add_set("rcon_ip", "127.0.0.1", "The IP the bot can use to send RCON commands to (127.0.0.1 when on the same box)")
+        self.add_set("punkbuster", "on", "Is the gameserver running PunkBuster Anticheat: on/off")
+        xml.data("\n    ")
+        xml.end()
+        xml.data("\n    ")
 
         # messages settings
         self.add_buffer('\n--MESSAGES------------------------------------------------------\n')
-        _section = xml.createElement("settings") 
-        _section.setAttribute("name", "messages")
-        _configuration.appendChild(_section)
-        #<set name="kicked_by">%s^7 was kicked by %s^7 %s</set>
-        self.add_set(_section, "kicked_by", "%s^7 was kicked by %s^7 %s")
-        #<set name="kicked">%s^7 was kicked %s</set>
-        self.add_set(_section, "kicked", "%s^7 was kicked %s")
-        #<set name="banned_by">%s^7 was banned by %s^7 %s</set>
-        self.add_set(_section, "banned_by", "%s^7 was banned by %s^7 %s")
-        #<set name="banned">%s^7 was banned %s</set>
-        self.add_set(_section, "banned", "%s^7 was banned %s")
-        #<set name="temp_banned_by">%s^7 was temp banned by %s^7 for %s^7 %s</set>
-        self.add_set(_section, "temp_banned_by", "%s^7 was temp banned by %s^7 for %s^7 %s")
-        #<set name="temp_banned">%s^7 was temp banned for %s^7 %s</set>
-        self.add_set(_section, "temp_banned", "%s^7 was temp banned for %s^7 %s")
-        #<set name="unbanned_by">%s^7 was un-banned by %s^7 %s</set>
-        self.add_set(_section, "unbanned_by", "%s^7 was un-banned by %s^7 %s")
-        #<set name="unbanned">%s^7 was un-banned %s</set>
-        self.add_set(_section, "unbanned", "%s^7 was un-banned %s")
+        xml.start("settings", name="messages")
+        self.add_set("kicked_by", "%s^7 was kicked by %s^7 %s")
+        self.add_set("kicked", "%s^7 was kicked %s")
+        self.add_set("banned_by", "%s^7 was banned by %s^7 %s")
+        self.add_set("banned", "%s^7 was banned %s")
+        self.add_set("temp_banned_by", "%s^7 was temp banned by %s^7 for %s^7 %s")
+        self.add_set("temp_banned", "%s^7 was temp banned for %s^7 %s")
+        self.add_set("unbanned_by", "%s^7 was un-banned by %s^7 %s")
+        self.add_set("unbanned", "%s^7 was un-banned %s")
+        xml.data("\n    ")
+        xml.end()
+        xml.data("\n    ")
 
         # plugins settings
         self.add_buffer('\n--PLUGIN CONFIG PATH--------------------------------------------\n')
-        _section = xml.createElement("settings") 
-        _section.setAttribute("name", "plugins")
-        _configuration.appendChild(_section)
-        #<set name="external_dir">@b3/extplugins</set>
-        self.add_set(_section, "external_dir", "@b3/extplugins")
+        xml.start("settings", name="plugins")
+        self.add_set("external_dir", "@b3/extplugins")
+        xml.data("\n    ")
+        xml.end()
+        xml.data("\n    ")
 
         # plugins
         self.add_buffer('\n--INSTALLING PLUGINS--------------------------------------------\n')
-        _section = xml.createElement("plugins") 
-        _configuration.appendChild(_section)
-        #<plugin name="censor" priority="1" config="@b3/conf/plugin_censor.xml" />
-        self.add_plugin(_section, "censor", "@b3/conf/plugin_censor.xml")
-        #<plugin name="spamcontrol" priority="2" config="@b3/conf/plugin_spamcontrol.xml" />
-        self.add_plugin(_section, "spamcontrol", "@b3/conf/plugin_spamcontrol.xml")
-        #<plugin name="tk" priority="4" config="@b3/conf/plugin_tk.xml" />
-        self.add_plugin(_section, "tk", "@b3/conf/plugin_tk.xml")
-        #<plugin name="stats" priority="5" config="@b3/conf/plugin_stats.xml" />
-        self.add_plugin(_section, "stats", "@b3/conf/plugin_stats.xml")
-        #<plugin name="pingwatch" priority="6" config="@b3/conf/plugin_pingwatch.xml" />
-        self.add_plugin(_section, "pingwatch", "@b3/conf/plugin_pingwatch.xml")
-        #<plugin name="adv" priority="7" config="@b3/conf/plugin_adv.xml" />
-        self.add_plugin(_section, "adv", "@b3/conf/plugin_adv.xml")
-        #<plugin name="status" priority="8" config="@b3/conf/plugin_status.xml" />
-        self.add_plugin(_section, "status", "@b3/conf/plugin_status.xml")
-        #<plugin name="welcome" priority="9" config="@b3/conf/plugin_welcome.xml" />
-        self.add_plugin(_section, "welcome", "@b3/conf/plugin_welcome.xml")
+        xml.start("plugins")
+        self.add_plugin("censor", "@b3/conf/plugin_censor.xml")
+        self.add_plugin("spamcontrol", "@b3/conf/plugin_spamcontrol.xml")
+        self.add_plugin("tk", "@b3/conf/plugin_tk.xml")
+        self.add_plugin("stats", "@b3/conf/plugin_stats.xml")
+        self.add_plugin("pingwatch", "@b3/conf/plugin_pingwatch.xml")
+        self.add_plugin("adv", "@b3/conf/plugin_adv.xml")
+        self.add_plugin("status", "@b3/conf/plugin_status.xml")
+        self.add_plugin("welcome", "@b3/conf/plugin_welcome.xml")
         #<plugin name="punkbuster" priority="11" config="@b3/conf/plugin_punkbuster.xml" />
-        self.add_plugin(_section, "punkbuster", "@b3/conf/plugin_punkbuster.xml")
+        self.add_plugin("punkbuster", "@b3/conf/plugin_punkbuster.xml")
+        xml.data("\n        ")
+        xml.comment("You can add new/custom plugins to this list using the same form as above.")
+        xml.data("        ")
+        xml.comment("Just make sure you don't have any duplicate priority values!")
+        xml.data("    ")
+        xml.end()
 
-        self.add_buffer('\n--BACKUP/WRITE CONFIG-------------------------------------------\n')
-        self.writeXML(xml.toxml())
-        #self.writeXML(xml.toprettyxml(indent=self._indentation))
-        
+        xml.data("\n")
+        xml.close(configuration)
+        self.add_buffer('\n--FINISHED CONFIGURATION----------------------------------------\n')
+
     def add_explanation(self, etext):
         _prechar = "> "
         print _prechar+etext
@@ -162,25 +141,24 @@ class Setup:
     def equaLize(self, _string):
         return (self._equaLength-len(str(_string)))*" "
 
-    def add_set(self, ssection, sname, sdflt, explanation=""):
+    def add_set(self, sname, sdflt, explanation=""):
         """
         A routine to add a setting with a textnode to the config
-        Usage: self.add_set(section, name, default value optional-explanation)
+        Usage: self.add_set(name, default value optional-explanation)
         """
+        xml.data("\n        ")
         if explanation != "":
             self.add_explanation(explanation)
+            xml.comment(explanation)
+            xml.data("        ")
         _value = self.raw_default(sname, sdflt)
-        _set = xml.createElement("set")
-        _set.setAttribute("name", sname)
-        _text = xml.createTextNode(_value)
-        _set.appendChild(_text)
-        ssection.appendChild(_set)
+        xml.element("set", _value, name=sname)
         self.add_buffer(str(sname)+self.equaLize(sname)+": "+str(_value)+"\n")
 
-    def add_plugin(self, ssection, sname, sconfig, explanation=""):
+    def add_plugin(self, sname, sconfig, explanation=""):
         """
         A routine to add a plugin to the config
-        Usage: self.add_plugin(section, pluginname, default-configfile, optional-explanation)
+        Usage: self.add_plugin(pluginname, default-configfile, optional-explanation)
         Priority is increased automatically.
         """
         _q = "Install "+sname+" plugin? (yes/no)"
@@ -189,12 +167,9 @@ class Setup:
             return None
         if explanation != "":
             self.add_explanation(explanation)
-        _set = xml.createElement("plugin")
-        _set.setAttribute("name", sname)
-        _set.setAttribute("priority", str(self._priority))
         _config = self.raw_default("config", sconfig)
-        _set.setAttribute("config", _config)
-        ssection.appendChild(_set)
+        xml.data("\n        ")
+        xml.element("plugin", name=sname, priority=str(self._priority), config=_config)
         self.add_buffer("plugin: "+str(sname)+", priority: "+str(self._priority)+", config: "+str(_config)+"\n")
         self._priority += 1
 
@@ -213,11 +188,8 @@ class Setup:
         self.testExit(res)
         return res         
 
+    # funtion not longer needed when using ElementTree
     def writeXML(self, xml):
-        self._outputFile = self.raw_default("Location and name of the configfile", self._config)
-        #Creating Backup
-        self.backupFile(self._outputFile)
-        self.clearscreen()
         try:
             f = file(self._outputFile, 'w')
             f.write(xml)
@@ -233,16 +205,18 @@ class Setup:
             os.system('cls')
 
     def backupFile(self, _file):
+        print "\n--BACKUP/CREATE CONFIGFILE--------------------------------------\n"
         print "    Trying to backup the original "+_file+"..."
         try:
             _stamp = time.strftime("-%d_%b_%Y_%H.%M.%S", time.gmtime())
             _fname = _file+_stamp+".xml"
             shutil.copy(_file, _fname)
             print "    Backup success, "+_file+" copied to : %s" % _fname
-            self.testExit(_question='[Enter] to write %s, \'abort\' to abort Setup: ' %(_file))
+            print "    If you need to abort setup, you can restore by renaming the backup file."
+            self.testExit()
         except:
             print "    A file with this location/name does not yet exist,\n    I'm about to generate it...\n"
-            self.testExit(_question='[Enter] to write %s, \'abort\' to abort Setup: ' %(_file))
+            self.testExit()
 
     def introduction(self):
         self.clearscreen()
@@ -314,12 +288,12 @@ class Setup:
         else:
             writer.write("/>%s"%(newl))
     # replace minidom's function with ours
-    #xml.dom.minidom.Element.writexml = fixed_writexml
+    #dom.Element.writexml = fixed_writexml
 
 
 if __name__ == '__main__':
-    from b3.fake import fakeConsole
-    from b3.fake import joe
-    from b3.fake import simon
+    #from b3.fake import fakeConsole
+    #from b3.fake import joe
+    #from b3.fake import simon
     
-    Setup()
+    Setup('test.xml')
