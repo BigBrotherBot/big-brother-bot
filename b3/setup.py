@@ -87,7 +87,7 @@ class Setup:
         #<set name="rcon_ip">127.0.0.1</set>
         self.add_set(_section, "rcon_ip", "127.0.0.1", "The IP the bot can use to send RCON commands to (127.0.0.1 when on the same box)")
         #<set name="punkbuster">on</set>
-        self.add_set(_section, "punkbuster", "on", "Punkbuster: on / off", "Is the gameserver running PunkBuster Anticheat?")
+        self.add_set(_section, "punkbuster", "on", "Is the gameserver running PunkBuster Anticheat? on/off")
 
         # messages settings
         self.add_buffer('\n--MESSAGES------------------------------------------------------\n')
