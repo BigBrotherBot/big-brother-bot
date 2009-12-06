@@ -368,4 +368,3 @@ fakeAdminPlugin.onStartup()
 joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="zaerezarezar", _maxLevel=1, authed=True, team=b3.TEAM_UNKNOWN)
 simon = FakeClient(fakeConsole, name="Simon", exactName="Simon", guid="qsdfdsqfdsqf", _maxLevel=0, authed=True, team=b3.TEAM_UNKNOWN)
 moderator = FakeClient(fakeConsole, name="Moderator", exactName="Moderator", guid="sdf455ezr", _maxLevel=20, authed=True, team=b3.TEAM_UNKNOWN)
-

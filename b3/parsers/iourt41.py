@@ -1323,7 +1323,6 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
 
 
-
 """
 #----- Actions -----------------------------------------------------------------
 Item: 0 team_CTF_redflag -> Flag Taken/picked up
