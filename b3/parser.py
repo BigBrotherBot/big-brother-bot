@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   06/12/2009 - v1.12.2 - Courgette
+#    * write() can specify a custom maxRetries value
 #   22/11/2009 - v1.12.1 - Courgette
 #    * b3.xml can have option ('server','rcon_timeout') to specify a custom delay
 #      (in secondes) to use for the rcon socket
@@ -46,7 +48,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN'
-__version__ = '1.12.1'
+__version__ = '1.12.2'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit
@@ -747,14 +749,14 @@ class Parser(object):
         if self.exiting.locked():
             self.exiting.release()
 
-    def write(self, msg):
+    def write(self, msg, maxRetries=None):
         """Write a message to Rcon/Console"""
         if self.replay:
             self.bot('Sent rcon message: %s' % msg)
         elif self.output == None:
             pass
         else:
-            res = self.output.write(msg)
+            res = self.output.write(msg, maxRetries=maxRetries)
             self.output.flush()
             return res
 
