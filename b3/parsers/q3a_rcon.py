@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -15,9 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#
+# Changelog :
+# 2009/12/06 - 1.3.5 - Courgette
+#    * make default socket_timeout 800 ms
+#    * custom socket_timeout and maxRetries can be specified on a per
+#      call basis
+#
 
 __author__  = 'ThorN'
-__version__ = '1.3.4'
+__version__ = '1.3.5'
 
 import socket, sys, select, re, time, thread, threading, Queue
 
@@ -29,7 +36,7 @@ class Rcon:
     socket = None
     queue = None
     console = None
-    socket_timeout = 0.55
+    socket_timeout = 0.80
 
     def __init__(self, console, host, password):
         self.console = console
@@ -44,14 +51,19 @@ class Rcon:
         self._stopEvent = threading.Event()
         thread.start_new_thread(self._writelines, ())
 
-    def send(self, data):
+    def send(self, data, maxRetries=None, socketTimeout=None):
+        if socketTimeout is None:
+            socketTimeout = self.socket_timeout
+        if maxRetries is None:
+            maxRetries = 2
+            
         data = data.strip()
         self.console.verbose('QSERVER sending (%s:%s) %s', self.host[0], self.host[1], data)
         startTime = time.time()
 
         retries = 0
         while time.time() - startTime < 5:
-            readables, writeables, errors = select.select([], [self.socket], [self.socket], self.socket_timeout)
+            readables, writeables, errors = select.select([], [self.socket], [self.socket], socketTimeout)
 
             if len(errors) > 0:
                 self.console.error('QSERVER: %s', str(errors))
@@ -62,7 +74,7 @@ class Rcon:
                     self.console.error('QSERVER: ERROR sending: %s', msg)
                 else:
                     try:
-                        data = self.readSocket(self.socket)
+                        data = self.readSocket(self.socket, socketTimeout=socketTimeout)
                         self.console.verbose2('QSERVER: Received %s' % data)
                         return data
                     except Exception, msg:
@@ -75,7 +87,7 @@ class Rcon:
 
             retries += 1
 
-            if retries >= 2:
+            if retries >= maxRetries:
                 break
 
             self.console.verbose('QSERVER: retry sending %s...', data.strip())
@@ -84,14 +96,19 @@ class Rcon:
         self.console.debug('QSERVER: Did not send any data')
         return ''
         
-    def sendRcon(self, data):
+    def sendRcon(self, data, maxRetries=None, socketTimeout=None):
+        if socketTimeout is None:
+            socketTimeout = self.socket_timeout
+        if maxRetries is None:
+            maxRetries = 2
+            
         data = data.strip()
         self.console.verbose('RCON sending (%s:%s) %s', self.host[0], self.host[1], data)
         startTime = time.time()
 
         retries = 0
         while time.time() - startTime < 5:
-            readables, writeables, errors = select.select([], [self.socket], [self.socket], self.socket_timeout)
+            readables, writeables, errors = select.select([], [self.socket], [self.socket], socketTimeout)
 
             if len(errors) > 0:
                 self.console.error('RCON: %s', str(errors))
@@ -102,7 +119,7 @@ class Rcon:
                     self.console.error('RCON: ERROR sending: %s', msg)
                 else:
                     try:
-                        data = self.readSocket(self.socket)
+                        data = self.readSocket(self.socket, socketTimeout=socketTimeout)
                         self.console.verbose2('RCON: Received %s' % data)
                         return data
                     except Exception, msg:
@@ -120,7 +137,7 @@ class Rcon:
 
             retries += 1
 
-            if retries >= 2:
+            if retries >= maxRetries:
                 break
 
             self.console.verbose('RCON: retry sending %s...', data.strip())
@@ -162,10 +179,10 @@ class Rcon:
     def writelines(self, lines):
         self.queue.put(lines)
 
-    def write(self, cmd):
+    def write(self, cmd, maxRetries=None, socketTimeout=None):
         self.lock.acquire()
         try:
-            data = self.sendRcon(cmd)
+            data = self.sendRcon(cmd, maxRetries=maxRetries, socketTimeout=socketTimeout)
         finally:
             self.lock.release()
 
@@ -198,10 +215,13 @@ class Rcon:
 
         return data.strip()
 
-    def readSocket(self, sock, size=4096):
+    def readSocket(self, sock, size=4096, socketTimeout=None):
+        if socketTimeout is None:
+            socketTimeout = self.socket_timeout
+            
         data = ''
 
-        readables, writeables, errors = select.select([sock], [], [sock], self.socket_timeout)
+        readables, writeables, errors = select.select([sock], [], [sock], socketTimeout)
         
         if not len(readables):
             raise Exception('No readable socket')
@@ -213,7 +233,7 @@ class Rcon:
                 # remove rcon header
                 data += d.replace('\377\377\377\377print\n', '')
             
-            readables, writeables, errors = select.select([sock], [], [sock], self.socket_timeout)
+            readables, writeables, errors = select.select([sock], [], [sock], socketTimeout)
 
             if len(readables):
                 self.console.verbose('RCON: More data to read in socket')
@@ -252,39 +272,39 @@ if __name__ == '__main__':
     To run tests : python b3/parsers/q3a_rcon.py <rcon_ip> <rcon_port> <rcon_password>
     """
     
-    from b3.fake import FakeConsole
+    from b3.fake import fakeConsole
 
-    c = FakeConsole()
-    r = Rcon(c, (sys.argv[1], int(sys.argv[2])), sys.argv[3])
+    r = Rcon(fakeConsole, (sys.argv[1], int(sys.argv[2])), sys.argv[3])
     
-    r.socket_timeout = 1
     for cmd in ['say "test1"', 'say "test2"', 'say "test3"', 'say "test4"', 'say "test5"']:
-        c.info('Writing %s', cmd)
+        fakeConsole.info('Writing %s', cmd)
         data = r.write(cmd)
-        c.info('Recieved %s', data)
+        fakeConsole.info('Recieved %s', data)
 
-    r.socket_timeout = 0.1
+    print '----------------------------------------'
     for cmd in ['say "test1"', 'say "test2"', 'say "test3"', 'say "test4"', 'say "test5"']:
-        c.info('Writing %s', cmd)
-        data = r.write(cmd)
-        c.info('Recieved %s', data)
+        fakeConsole.info('Writing %s', cmd)
+        data = r.write(cmd, socketTimeout=0.45)
+        fakeConsole.info('Recieved %s', data)
 
-    r.socket_timeout = 1
+    print '----------------------------------------'
     for cmd in ['.B3', '.Administrator', '.Admin', 'status', 'sv_mapRotation', 'players']:
-        c.info('Writing %s', cmd)
+        fakeConsole.info('Writing %s', cmd)
         data = r.write(cmd)
-        c.info('Recieved %s', data)
+        fakeConsole.info('Recieved %s', data)
         
-    r.socket_timeout = 0.1
+    print '----------------------------------------'
     for cmd in ['.B3', '.Administrator', '.Admin', 'status', 'sv_mapRotation', 'players']:
-        c.info('Writing %s', cmd)
-        data = r.write(cmd)
-        c.info('Recieved %s', data)
+        fakeConsole.info('Writing %s', cmd)
+        data = r.write(cmd, socketTimeout=0.55)
+        fakeConsole.info('Recieved %s', data)
     
-    r.socket_timeout = 1
-    c.info('getRules')
+    print '----------------------------------------'
+    fakeConsole.info('getRules')
     data = r.getRules()
-    c.info('Recieved %s', data)
-    c.info('getInfo')
+    fakeConsole.info('Recieved %s', data)
+    
+    print '----------------------------------------'
+    fakeConsole.info('getInfo')
     data = r.getInfo()
-    c.info('Recieved %s', data)
+    fakeConsole.info('Recieved %s', data)

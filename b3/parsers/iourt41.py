@@ -72,9 +72,12 @@
 # v1.6.3 - 06/11/2009 - Courgette
 #    * harden queryClientUserInfoByCid making sure we got a positive response. (Never trust input data...)
 #    * fix _rePlayerScore regexp again
+# v1.6.4 - 06/11/2009 - Courgette
+#    * sync() will retries to get player list up to 4 for times before giving up as
+#      sync() after map change too often fail 2 times.
 #
 __author__  = 'xlr8or'
-__version__ = '1.6.3'
+__version__ = '1.6.4'
 
 
 import b3.parsers.q3a
@@ -1016,7 +1019,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         return players
 
     def sync(self):
-        plist = self.getPlayerList()
+        plist = self.getPlayerList(maxRetries=4)
         mlist = {}
 
         for cid, c in plist.iteritems():
