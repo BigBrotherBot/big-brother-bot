@@ -19,6 +19,9 @@
 # $Id: q3a.py 103 2006-04-14 16:23:10Z thorn $
 #
 # CHANGELOG
+#    12/06/2009 - 1.3.1 - Courgette
+#    * getPlayerList can be called with a custom maxRetries value. This can be
+#    useful when a map just changed and the gameserver hangs for a while.
 #    11/11/2009 - 1.3.0 - Courgette
 #    * New feature: Allow action names to contain spaces. In that case the action
 #      method is built following a CamelCase syntax. IE: action "Flag return" will
@@ -36,8 +39,9 @@
 #    7/23/2005 - 1.0.1 - ThorN
 #    Added log message for when ban() decides to do a tempban
 
+
 __author__  = 'ThorN'
-__version__ = '1.3.0'
+__version__ = '1.3.1'
 
 import re, string
 import b3
@@ -540,11 +544,11 @@ class Q3AParser(b3.parser.Parser):
                 scorelist[str(cid)] = c['score']
         return scorelist
         
-    def getPlayerList(self):
+    def getPlayerList(self, maxRetries=None):
         if self.PunkBuster:
             return self.PunkBuster.getPlayerList()
         else:
-            data = self.write('status')
+            data = self.write('status', maxRetries=maxRetries)
             if not data:
                 return {}
 
