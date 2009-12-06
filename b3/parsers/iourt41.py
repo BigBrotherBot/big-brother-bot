@@ -69,10 +69,12 @@
 # v1.6.2 - 05/12/2009 - Courgette
 #    * fix _rePlayerScore regexp
 #    * on startup, also try to get players' team (which is not given by dumpuser)
+# v1.6.3 - 06/11/2009 - Courgette
+#    * harden queryClientUserInfoByCid making sure we got a positive response. (Never trust input data...)
+#    * fix _rePlayerScore regexp again
 #
-
 __author__  = 'xlr8or'
-__version__ = '1.6.2'
+__version__ = '1.6.3'
 
 
 import b3.parsers.q3a
@@ -181,7 +183,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     # 0:  FREE k:0 d:0 ping:0
     # 4: yene RED k:16 d:8 ping:50 92.104.110.192:63496
     _reTeamScores = re.compile(r'^Scores:\s+R:(?P<RedScore>.+)\s+B:(?P<BlueScore>.+)$', re.I)
-    _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): (?P<name>.*) (?P<team>RED|BLUE|SPECTATOR) k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) ping:(?P<ping>[0-9]+|CNCT|ZMBI)( (?P<ip>[0-9.]+):(?P<port>[0-9-]+))?$', re.I) # NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
+    _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): (?P<name>.*) (?P<team>RED|BLUE|SPECTATOR|FREE) k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) ping:(?P<ping>[0-9]+|CNCT|ZMBI)( (?P<ip>[0-9.]+):(?P<port>[0-9-]+))?$', re.I) # NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
 
     _reCvarName = re.compile(r'^[a-z0-9_.]+$', re.I)
     _reCvar = (
@@ -348,6 +350,8 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             team = 2
         elif team == 'SPECTATOR':
             team = 3
+        elif team == 'FREE':
+            team = -1 # will fall back to b3.TEAM_UNKNOWN
         
         team = int(team)
         if team == 1:
@@ -1046,17 +1050,6 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
         return mlist
 
-#    Use the new function in the q3a parser instead
-#    def getPlayerScores(self):
-#        plist = self.getPlayerList()
-#        scorelist = {}
-#
-#        for cid, c in plist.iteritems():
-#            client = self.clients.getByCID(cid)
-#            if client:
-#                scorelist[str(cid)] = c['score']
-#        return scorelist
-
     def getMap(self):
         data = self.write('status')
         if not data:
@@ -1220,8 +1213,45 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         return None
 
     def queryClientUserInfoByCid(self, cid):
+        """
+        : dumpuser 5
+        Player 5 is not on the server
+        
+        : dumpuser 3
+        userinfo
+        --------
+        ip                  62.235.246.103:27960
+        name                Shinki
+        racered             2
+        raceblue            2
+        rate                8000
+        ut_timenudge        0
+        cg_rgb              255 0 255
+        cg_predictitems     0
+        cg_physics          1
+        gear                GLJAXUA
+        cl_anonymous        0
+        sex                 male
+        handicap            100
+        color2              5
+        color1              4
+        team_headmodel      *james
+        team_model          james
+        headmodel           sarge
+        model               sarge
+        snaps               20
+        teamtask            0
+        cl_guid             8982B13A8DCEE4C77A32E6AC4DD7EEDF
+        weapmodes           00000110220000020002
+
+        """
         data = self.write('dumpuser %s' % cid)
         if not data:
+            return None
+        
+        if data.split('\n')[0] != "userinfo":
+            self.debug("dumpuser %s returned : %s" % (cid, data))
+            self.debug('client %s probably disconnected, but its character is still hanging in game...')
             return None
 
         datatransformed = "%s " % cid
