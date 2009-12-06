@@ -20,6 +20,7 @@ __author__ = 'ThorN'
 
 import pkg_handler
 from b3.functions import main_is_frozen
+from b3.setup import Setup
 
 __version__ = pkg_handler.version(__name__)
 modulePath = pkg_handler.resource_directory(__name__)
@@ -50,7 +51,8 @@ STATE_UNKNOWN = 3
 #-----------------------------------------------------------------------------------------------------------------------
 def loadParser(pname):
     if pname == 'changeme':
-        raise SystemExit('ERROR: Please edit b3/conf/b3.xml before starting me up!')
+        Setup()
+        #raise SystemExit('ERROR: Please edit b3/conf/b3.xml before starting me up!')
     name = 'b3.parsers.%s' % pname
     mod = __import__(name)
     components = name.split('.')
@@ -87,6 +89,8 @@ def start(configFile):
     configFile = getAbsolutePath(configFile)
     if platform.system() != 'Windows':
         os.system('clear')
+    else:
+        os.system('cls')
     print 'Starting %s\n' % sversion
 
     if os.path.exists(configFile):
@@ -96,7 +100,8 @@ def start(configFile):
         #print 'Config dir is        : %s' % _confDir
         conf = config.load(configFile)
     else:
-        raise SystemExit('Could not find config file %s' % configFile)
+        Setup(configFile)
+        #raise SystemExit('Could not find config file %s' % configFile)
 
     parserType = conf.get('b3', 'parser')
 
