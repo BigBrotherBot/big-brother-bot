@@ -69,15 +69,17 @@
 # v1.6.2 - 05/12/2009 - Courgette
 #    * fix _rePlayerScore regexp
 #    * on startup, also try to get players' team (which is not given by dumpuser)
-# v1.6.3 - 06/11/2009 - Courgette
+# v1.6.3 - 06/12/2009 - Courgette
 #    * harden queryClientUserInfoByCid making sure we got a positive response. (Never trust input data...)
 #    * fix _rePlayerScore regexp again
-# v1.6.4 - 06/11/2009 - Courgette
+# v1.6.4 - 06/12/2009 - Courgette
 #    * sync() will retries to get player list up to 4 for times before giving up as
 #      sync() after map change too often fail 2 times.
+# v1.6.5 - 09/12/2009 - Courgette
+#    * different handling of 'name' in OnClientuserinfo. Now log looks less worrying
 #
 __author__  = 'xlr8or'
-__version__ = '1.6.4'
+__version__ = '1.6.5'
 
 
 import b3.parsers.q3a
@@ -480,8 +482,10 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         #2 \ip\145.99.135.227:27960\challenge\-232198920\qport\2781\protocol\68\battleye\1\name\[SNT]^1XLR^78or\rate\8000\cg_predictitems\0\snaps\20\model\sarge\headmodel\sarge\team_model\james\team_headmodel\*james\color1\4\color2\5\handicap\100\sex\male\cl_anonymous\0\teamtask\0\cl_guid\58D4069246865BB5A85F20FB60ED6F65
         bclient = self.parseUserInfo(data)
         
-        # remove spaces from name
-        bclient['name'] = bclient['name'].replace(' ','')
+        if bclient.has_key('name'):
+            # remove spaces from name
+            bclient['name'] = bclient['name'].replace(' ','')
+
 
         # split port from ip field
         if bclient.has_key('ip'):
