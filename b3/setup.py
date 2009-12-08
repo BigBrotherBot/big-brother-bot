@@ -217,7 +217,7 @@ class Setup:
             print "    If you need to abort setup, you can restore by renaming the backup file."
             self.testExit()
         except:
-            print "    A file with this location/name does not yet exist,\n    I'm about to generate it...\n"
+            print "\n    No backup needed.\n    A file with this location/name does not yet exist,\n    I'm about to generate a new config file!\n"
             self.testExit()
 
     def introduction(self):
@@ -240,8 +240,8 @@ class Setup:
         print "procedure by typing \'abort\' at the prompt. You can start"
         print "over by running B3 with the setup option: python b3_run.py -s"
         self.testExit()
-        print "At the end of setup you are prompted for a location and name for"
-        print "this configuration file. This is for multiple server setups, or"
+        print "First you will be prompted for a location and name for this"
+        print "configuration file. This is for multiple server setups, or"
         print "if you want to run B3 from a different setup file for your own."
         print "reasons. In a basic single instance install you will not have to"
         print "change this location and/or name. If a configuration file exists"
