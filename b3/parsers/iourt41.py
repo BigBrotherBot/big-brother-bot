@@ -77,6 +77,7 @@
 #      sync() after map change too often fail 2 times.
 # v1.6.5 - 09/12/2009 - Courgette
 #    * different handling of 'name' in OnClientuserinfo. Now log looks less worrying
+#    * prevent exception on the rare case where a say line shows no text after cid (hence no regexp match)
 #
 __author__  = 'xlr8or'
 __version__ = '1.6.5'
@@ -793,6 +794,10 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     # say
     def OnSay(self, action, data, match=None):
         #3:53 say: 8 denzel: lol
+        
+        if match is None:
+            return
+        
         client = self.getByCidOrJoinPlayer(match.group('cid'))
 
         if not client:
