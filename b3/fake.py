@@ -90,10 +90,15 @@ class FakeConsole(b3.parser.Parser):
     screen = stdout
     noVerbose = False
     
-    def __init__(self, configFile):
+    def __init__(self, config):
         b3.console = self
         self._timeStart = self.time()
-        self.config = b3.config.load(configFile)
+        
+        if isinstance(config, b3.config.XmlConfigParser) \
+            or isinstance(config, b3.config.CfgConfigParser):
+            self.config = config
+        else:
+            self.config = b3.config.load(config)
         
         self.storage = FakeStorage()
         self.clients  = b3.clients.Clients(self)
@@ -114,6 +119,9 @@ class FakeConsole(b3.parser.Parser):
             return fakeAdminPlugin
         else:
             return None
+    
+    def sync(self):
+        return {}
     
     def getNextMap(self):
         return "ut4_theNextMap"
@@ -295,6 +303,8 @@ class FakeStorage(object):
         return None
     def getGroups(self):
         return self._groups
+    def shutdown(self):
+        pass
     
 class FakeClient(b3.clients.Client):
     console = None
@@ -368,3 +378,4 @@ fakeAdminPlugin.onStartup()
 joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="zaerezarezar", _maxLevel=1, authed=True, team=b3.TEAM_UNKNOWN)
 simon = FakeClient(fakeConsole, name="Simon", exactName="Simon", guid="qsdfdsqfdsqf", _maxLevel=0, authed=True, team=b3.TEAM_UNKNOWN)
 moderator = FakeClient(fakeConsole, name="Moderator", exactName="Moderator", guid="sdf455ezr", _maxLevel=20, authed=True, team=b3.TEAM_UNKNOWN)
+superadmin = FakeClient(fakeConsole, name="God", exactName="God", guid="f4qfer654r", _maxLevel=100, authed=True, team=b3.TEAM_UNKNOWN)
