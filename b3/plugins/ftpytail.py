@@ -18,6 +18,9 @@
 #
 # CHANGELOG:
 #
+# 12/12/2009 - 1.2 - Courgette
+#     does not download huge amount of log in case local file is too far behind remote file (prevents memory errors)
+#     In case of connection failure, try to reconnect every second for the first 30 seconds
 # 12/12/2009 - 1.1.1 - Courgette
 #     Gracefully stop thread when B3 is shutting down
 #     Add tests
@@ -26,10 +29,10 @@
 # 17/06/2009 - 1.0 - Bakes
 #     Initial Plugin, basic functionality.
  
-__version__ = '1.1.1'
+__version__ = '1.2'
 __author__ = 'Bakes'
  
-import b3, threading, time, re
+import b3, threading
 from b3 import functions
 import b3.events
 import b3.plugin
@@ -41,9 +44,15 @@ import re
 import sys
 #--------------------------------------------------------------------------------------------------
 class FtpytailPlugin(b3.plugin.Plugin):
+    ### settings
+    _maxGap = 20480 # max gap in bytes between remote file and local file
+    _waitBeforeReconnect = 15 # time (in sec) to wait before reconnecting after loosing FTP connection : 
+    
     requiresConfigFile = False
     ftpconfig = None
-    tempfile = None
+    buffer = None
+    _remoteFileOffset = None
+    _nbConsecutiveConnFailure = 0
     
     def onStartup(self):
         if self.console.config.get('server','game_log')[0:6] == 'ftp://' :
@@ -57,30 +66,47 @@ class FtpytailPlugin(b3.plugin.Plugin):
     
     def update(self):
         def handleDownload(block):
-            if self.tempfile == None:
-                self.tempfile = block
+            #self.debug('received %s bytes' % len(block))
+            self._remoteFileOffset += len(block)
+            if self.buffer == None:
+                self.buffer = block
             else:
-                self.tempfile = self.tempfile + block
+                self.buffer = self.buffer + block
         ftp = None
         self.file = open('games_mp.log', 'ab')
         while self.console.working:
             try:
                 if not ftp:
                     ftp = self.ftpconnect()
-                    self.debug('FTP = %s' % str(ftp))
-                size = os.path.getsize('games_mp.log')
-                ftp.retrbinary('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload, rest=size)          
-                if self.tempfile:
-                    self.file.write(self.tempfile)
-                    self.tempfile = None
-                    self.file.flush()
-                if self.console._paused:
-                    self.console.unpause()
-                    self.debug('Unpausing')
+                    self._nbConsecutiveConnFailure = 0
+                    remoteSize = ftp.size(os.path.basename(self.ftpconfig['path']))
+                    self.verbose("Connection successful. Remote file size is %s" % remoteSize)
+                    if self._remoteFileOffset is None:
+                        self._remoteFileOffset = remoteSize
+                remoteSize = ftp.size(os.path.basename(self.ftpconfig['path']))
+                if remoteSize < self._remoteFileOffset:
+                    self.debug("remote file rotation detected")
+                    self._remoteFileOffset = 0
+                if remoteSize > self._remoteFileOffset:
+                    if  (remoteSize - self._remoteFileOffset) > self._maxGap:
+                        self.debug('gap between local and remote file too large (%s bytes)', (remoteSize - self._remoteFileOffset))
+                        self.debug('downloading only the last %s bytes' % self._maxGap)
+                        self._remoteFileOffset = remoteSize - self._maxGap
+                    #self.debug('RETR from remote offset %s. (expecting to read at least %s bytes)' % (self._remoteFileOffset, remoteSize - self._remoteFileOffset))
+                    ftp.retrbinary('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload, rest=self._remoteFileOffset)          
+                    if self.buffer:
+                        self.file.write(self.buffer)
+                        self.buffer = None
+                        self.file.flush()
+                    if self.console._paused:
+                        self.console.unpause()
+                        self.debug('Unpausing')
             except ftplib.all_errors, e:
                 self.debug(str(e))
-                self.verbose('Lost connection to server, pausing until updated properly, Sleeping 10 seconds')
-                self.console.pause()
+                self._nbConsecutiveConnFailure += 1
+                self.verbose('Lost connection to server, pausing until updated properly')
+                if self.console._paused is False:
+                    self.console.pause()
                 self.file.close()
                 self.file = open('games_mp.log', 'w')
                 self.file.close()
@@ -91,8 +117,13 @@ class FtpytailPlugin(b3.plugin.Plugin):
                 except:
                     pass
                 ftp = None
-                time.sleep(10)
-        
+                
+                if self._nbConsecutiveConnFailure <= 30:
+                    time.sleep(1)
+                else:
+                    self.debug('too many failures, sleeping %s sec' % self._waitBeforeReconnect)
+                    time.sleep(self._waitBeforeReconnect)
+            time.sleep(0.150)
         self.verbose("B3 is down, stopping Ftpytail thread")
         try:
             ftp.close()
@@ -128,6 +159,6 @@ if __name__ == '__main__':
     p = FtpytailPlugin(fakeConsole)
 
     p.initThread('ftp://www.somewhere.tld/somepath/somefile.log')
-    time.sleep(23)
+    time.sleep(30)
     fakeConsole.shutdown()
     time.sleep(8)
