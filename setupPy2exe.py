@@ -27,11 +27,12 @@ setup(
     version = getVersion(),
     url = "http://www.bigbrotherbot.com/",
     console = ["b3_run.py"],
-    #zipfile = None, 
+    zipfile = None, 
     data_files = myDataFiles,
     options = {
         "py2exe": {
             "dist_dir": "dist_py2exe",
+            "bundle_files": 1,
             "optimize": 1,
             "includes": [
                 "b3.lib.*",
