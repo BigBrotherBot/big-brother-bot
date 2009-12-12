@@ -21,10 +21,12 @@
 #    * make default socket_timeout 800 ms
 #    * custom socket_timeout and maxRetries can be specified on a per
 #      call basis
+# 2009/12/11 - 1.3.6 - Courgette
+#    * make errors warnings until maxRetries is not reached
 #
 
 __author__  = 'ThorN'
-__version__ = '1.3.5'
+__version__ = '1.3.6'
 
 import socket, sys, select, re, time, thread, threading, Queue
 
@@ -66,19 +68,19 @@ class Rcon:
             readables, writeables, errors = select.select([], [self.socket], [self.socket], socketTimeout)
 
             if len(errors) > 0:
-                self.console.error('QSERVER: %s', str(errors))
+                self.console.warning('QSERVER: %s', str(errors))
             elif len(writeables) > 0:
                 try:
                     writeables[0].send('\377\377\377\377%s\n' % data)
                 except Exception, msg:
-                    self.console.error('QSERVER: ERROR sending: %s', msg)
+                    self.console.warning('QSERVER: ERROR sending: %s', msg)
                 else:
                     try:
                         data = self.readSocket(self.socket, socketTimeout=socketTimeout)
                         self.console.verbose2('QSERVER: Received %s' % data)
                         return data
                     except Exception, msg:
-                        self.console.error('QSERVER: ERROR reading: %s', msg)
+                        self.console.warning('QSERVER: ERROR reading: %s', msg)
                     
             else:
                 self.console.verbose('QSERVER: no writeable socket')
@@ -88,9 +90,10 @@ class Rcon:
             retries += 1
 
             if retries >= maxRetries:
+                self.console.error('QSERVER: too much tries. Abording (%s)', data.strip())
                 break
 
-            self.console.verbose('QSERVER: retry sending %s...', data.strip())
+            self.console.verbose('QSERVER: retry sending %s (%s/%s)...', data.strip(), retries, maxRetries)
 
 
         self.console.debug('QSERVER: Did not send any data')
@@ -111,19 +114,19 @@ class Rcon:
             readables, writeables, errors = select.select([], [self.socket], [self.socket], socketTimeout)
 
             if len(errors) > 0:
-                self.console.error('RCON: %s', str(errors))
+                self.console.warning('RCON: %s', str(errors))
             elif len(writeables) > 0:
                 try:
                     writeables[0].send('\377\377\377\377rcon "%s" %s\n' % (self.password, data))
                 except Exception, msg:
-                    self.console.error('RCON: ERROR sending: %s', msg)
+                    self.console.warning('RCON: ERROR sending: %s', msg)
                 else:
                     try:
                         data = self.readSocket(self.socket, socketTimeout=socketTimeout)
                         self.console.verbose2('RCON: Received %s' % data)
                         return data
                     except Exception, msg:
-                        self.console.error('RCON: ERROR reading: %s', msg)
+                        self.console.warning('RCON: ERROR reading: %s', msg)
 
                 if re.match(r'^map(_rotate)?.*', data):
                     # do not retry map changes since they prevent the server from responding
@@ -138,9 +141,10 @@ class Rcon:
             retries += 1
 
             if retries >= maxRetries:
+                self.console.error('RCON: too much tries. Abording (%s)', data.strip())
                 break
 
-            self.console.verbose('RCON: retry sending %s...', data.strip())
+            self.console.verbose('RCON: retry sending %s (%s/%s)...', data.strip(), retries, maxRetries)
 
 
         self.console.debug('RCON: Did not send any data')
