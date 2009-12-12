@@ -83,12 +83,14 @@ import b3.parser
 import b3.events
 from sys import stdout
 import Queue
+import StringIO
 
 
 class FakeConsole(b3.parser.Parser):
     Events = b3.events.eventManager
     screen = stdout
     noVerbose = False
+    input = None
     
     def __init__(self, config):
         b3.console = self
@@ -106,7 +108,9 @@ class FakeConsole(b3.parser.Parser):
         
         if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
             self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
-            
+        
+        self.input = StringIO.StringIO()
+        
         self.queue = Queue.Queue(15)
         self.working = True
         thread.start_new_thread(self.handleEvents, ())
