@@ -18,6 +18,10 @@
 #
 #
 # CHANGELOG
+#   12/12/2009 - v1.12.3 - Courgette
+#    * when working in remote mode, does not download the remote log file.
+#   06/12/2009 - v1.12.2 - Courgette
+#    * write() can specify a custom maxRetries value
 #   22/11/2009 - v1.12.1 - Courgette
 #    * b3.xml can have option ('server','rcon_timeout') to specify a custom delay
 #      (in secondes) to use for the rcon socket
@@ -46,7 +50,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN'
-__version__ = '1.12.1'
+__version__ = '1.12.3'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit
@@ -232,24 +236,10 @@ class Parser(object):
         # open log file
         if self.config.get('server','game_log')[0:6] == 'ftp://' :
             self.remoteLog = True
-            self.bot('Working in Remote-Log-Mode')
-            self.bot('Game log %s', self.config.get('server', 'game_log'))
+            self.bot('Working in Remote-Log-Mode : %s' % self.config.get('server', 'game_log'))
             f = os.path.normpath(os.path.expanduser('games_mp.log'))
             ftptempfile = open(f, "w")
-            ftptempfile.close()
-            from b3 import functions
-            from ftplib import FTP
-            def handleDownload(block):
-                self.file.write(block)
-                self.file.flush()
-            gamelog = self.config.get('server', 'game_log')
-            ftpconfig = functions.splitDSN(gamelog)
-            ftp=FTP(ftpconfig['host'], ftpconfig['user'], ftpconfig['password'])
-            ftp.cwd(os.path.dirname(ftpconfig['path']))
-            self.file = open('games_mp.log', 'ab')
-            size=os.path.getsize('games_mp.log')
-            self.debug('Logfile updating, please wait')
-            ftp.retrbinary('RETR ' + os.path.basename(ftpconfig['path']), handleDownload, rest=size)          
+            ftptempfile.close()          
         else:
             self.bot('Game log %s', self.config.getpath('server', 'game_log'))
             f = self.config.getpath('server', 'game_log')
@@ -266,9 +256,9 @@ class Parser(object):
             elif self.config.has_option('server', 'seek'):
                 seek = self.config.getboolean('server', 'seek')
                 if seek:
-                    self.input.seek(0, 2)
+                    self.input.seek(0, os.SEEK_END)
             else:
-                self.input.seek(0, 2)
+                self.input.seek(0, os.SEEK_END)
         else:
             self.error('Error reading file %s', f)
             raise SystemExit('Error reading file %s\n' % f)
@@ -383,7 +373,7 @@ class Parser(object):
         """Unpause B3 log parsing"""
         self._paused = False
         self._pauseNotice = False
-        self.input.seek(0,2)
+        self.input.seek(0, os.SEEK_END)
 
     def loadEvents(self):
         """Load events from event manager"""
@@ -646,7 +636,7 @@ class Parser(object):
                             logTimeLast = 0
                             self.debug('Log time reset %d' % logTimeCurrent)
                             if not self.replay:
-                                self.input.seek(0,2)
+                                self.input.seek(0, os.SEEK_END)
                         elif not logTimeStart:
                             logTimeStart = logTimeCurrent
 
@@ -747,14 +737,14 @@ class Parser(object):
         if self.exiting.locked():
             self.exiting.release()
 
-    def write(self, msg):
+    def write(self, msg, maxRetries=None):
         """Write a message to Rcon/Console"""
         if self.replay:
             self.bot('Sent rcon message: %s' % msg)
         elif self.output == None:
             pass
         else:
-            res = self.output.write(msg)
+            res = self.output.write(msg, maxRetries=maxRetries)
             self.output.flush()
             return res
 
