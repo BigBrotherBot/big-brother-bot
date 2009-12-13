@@ -20,8 +20,8 @@
 __author__  = 'xlr8or'
 __version__ = '0.1.1'
 
-import platform, shutil
-import os.path
+import platform, shutil, os, sys
+from functions import main_is_frozen
 from lib.elementtree.SimpleXMLWriter import XMLWriter
 
 class Setup:
@@ -34,6 +34,9 @@ class Setup:
     def __init__(self, config=None):
         if config:
             self._config = config
+        if self.getB3Path() != "":
+            self._config = self.getB3Path() + "/" + config
+        print self._config
         self.introduction()
         self.clearscreen()
         self._outputFile = self.raw_default("Location and name of the configfile", self._config)
@@ -261,6 +264,11 @@ class Setup:
         else:
             raise SystemExit(_exitmessage)
 
+    def getB3Path(self):
+        if main_is_frozen():
+            # which happens when running from the py2exe build
+            return os.path.dirname(sys.executable)
+        return ""
 
 if __name__ == '__main__':
     #from b3.fake import fakeConsole
