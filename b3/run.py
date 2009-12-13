@@ -136,14 +136,17 @@ def main():
             # which happens when running from the py2exe build
             try:
                 run(config=options.config)
+            except SystemExit, msg:
+                # make sure we are not writting to the log:
+                sys.stdout = sys.__stdout__
+                sys.stderr = sys.__stderr__
+                print msg
             except:
-                pass
-            
-            traceback.print_exc()
-            # make sure we are not writting to the log:
-            sys.stdout = sys.__stdout__
-            sys.stderr = sys.__stderr__
-            traceback.print_exc()
+                traceback.print_exc()
+                # make sure we are not writting to the log:
+                sys.stdout = sys.__stdout__
+                sys.stderr = sys.__stderr__
+                traceback.print_exc()
             raw_input("Press any key")
         else:
             run(config=options.config)
