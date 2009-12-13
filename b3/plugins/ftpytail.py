@@ -18,6 +18,12 @@
 #
 # CHANGELOG:
 #
+# 13/12/2009 - 1.3 - Courgette
+#    * default timeout is 30 secondes (as I had a user reporting the FTP server he uses 
+#      lags 15 sec before accepting connections).
+#    * Can optionnaly read a config file to customize timeout and max allowed gap between
+#      remote and local gamelog
+#    * add a test to validate config reading
 # 12/12/2009 - 1.2 - Courgette
 #     does not download huge amount of log in case local file is too far behind remote file (prevents memory errors)
 #     In case of connection failure, try to reconnect every second for the first 30 seconds
@@ -29,7 +35,7 @@
 # 17/06/2009 - 1.0 - Bakes
 #     Initial Plugin, basic functionality.
  
-__version__ = '1.2'
+__version__ = '1.3'
 __author__ = 'Bakes'
  
 import b3, threading
@@ -47,6 +53,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
     ### settings
     _maxGap = 20480 # max gap in bytes between remote file and local file
     _waitBeforeReconnect = 15 # time (in sec) to wait before reconnecting after loosing FTP connection : 
+    _connectionTimeout = 30
     
     requiresConfigFile = False
     ftpconfig = None
@@ -57,6 +64,19 @@ class FtpytailPlugin(b3.plugin.Plugin):
     def onStartup(self):
         if self.console.config.get('server','game_log')[0:6] == 'ftp://' :
             self.initThread(self.console.config.get('server','game_log'))
+    
+    def onLoadConfig(self):
+        try:
+            self._connectionTimeout = self.config.getint('settings', 'timeout')
+        except: 
+            self.warning("Error reading timeout from config file. Using default value")
+        self.info("FTP connection timeout: %s" % self._connectionTimeout)
+
+        try:
+            self._maxGap = self.config.getint('settings', 'maxGapBytes')
+        except: 
+            self.warning("Error reading maxGapBytes from config file. Using default value")
+        self.info("Maximum gap allowed between remote and local gamelog: %s bytes" % self._maxGap)
     
     def initThread(self, ftpfileDSN):
         self.ftpconfig = functions.splitDSN(ftpfileDSN)
@@ -143,7 +163,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
         else:
             #self.debug('Python Version %s.%s, so setting timeout of 10 seconds' % (versionsearch.group(2), versionsearch.group(3)))
             self.verbose('Connecting to %s ...', self.ftpconfig["host"])
-            ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'],timeout=10)
+            ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'],timeout=self._connectionTimeout)
         try:
             ftp.cwd(os.path.dirname(self.ftpconfig['path']))
         except:
@@ -154,6 +174,19 @@ class FtpytailPlugin(b3.plugin.Plugin):
     
 if __name__ == '__main__':
     from b3.fake import fakeConsole
+    
+    print "------------------------------------"
+    config = b3.config.XmlConfigParser()
+    config.setXml("""
+    <configuration plugin="ftpytail">
+        <settings name="settings">
+            <set name="timeout">15</set>
+            <set name="maxGapBytes">1024</set>
+        </settings>
+    </configuration>
+    """)
+    p = FtpytailPlugin(fakeConsole, config)
+
     
     print "------------------------------------"
     p = FtpytailPlugin(fakeConsole)
