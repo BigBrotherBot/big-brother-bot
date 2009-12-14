@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -17,6 +17,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    14/12/209 - 1.2.7 - Courgette
+#    * Change the way client.name and client.exactName are set and when the 
+#      client name changed event is triggered
+#    * A new alias is given the default num_used 1 (was 0)
 #    2/26/2009 - 1.2.6 - xlr8or
 #     Changed lastVisit to a global client variable
 #    5/6/2008 - 1.2.5 - xlr8or
@@ -30,7 +34,7 @@
 #     Added data parameter to Client.tempban()
 
 __author__  = 'ThorN'
-__version__ = '1.2.6'
+__version__ = '1.2.7'
 
 import b3, string, re, time, functions, threading, weakref, traceback, sys
 
@@ -377,23 +381,24 @@ class Client(object):
     _exactName = ''
 
     def _set_name(self, name):
-        ename = name
         if self.console:
-            name = self.console.stripColors(ename)
+            newName = self.console.stripColors(name)
+        else:
+            newName = name.strip()
 
-        if self._exactName != ename:
-            if self._name and self._name != name:
-                self.makeAlias(self._name)
-
-            self._name = name
-            self._exactName = ename + '^7'
-
-            if self.console:
-                self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_NAME_CHANGE, self.name, self))
+        if self._name == newName:
+            return
+        
+        self.makeAlias(self._name)
+        self._name = newName
+        self._exactName = name + '^7'
+            
+        if self.console and self.authed:
+            self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_NAME_CHANGE, self.name, self))
 
     def _get_name(self):
         return self._name
-
+        
     def _get_exactName(self):
         return self._exactName
 
@@ -768,7 +773,7 @@ class Alias(Struct):
     alias    = ''
     timeAdd  = 0
     timeEdit = 0
-    numUsed  = 0
+    numUsed  = 1
     clientId = 0
 
     def save(self, console):
