@@ -122,7 +122,7 @@ class FakeConsole(b3.parser.Parser):
         if name == 'admin':
             return fakeAdminPlugin
         else:
-            return None
+            return b3.parser.Parser.getPlugin(self, name)
     
     def sync(self):
         return {}
@@ -164,6 +164,14 @@ class FakeConsole(b3.parser.Parser):
 
         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_KICK, reason, client))
         client.disconnect()
+    
+    def message(self, client, text):
+        if client == None:
+            self.say(text)
+        elif client.cid == None:
+            pass
+        else:
+            print "sending msg to %s: %s" % (client.name, re.sub(re.compile('\^[0-9]'), '', text).strip())
     
     ##############################
     
@@ -298,7 +306,7 @@ class FakeStorage(object):
         G.id = 128
         G.name = 'Super Admin'
         G.keyword = 'superadmin'
-        G.level = 20
+        G.level = 100
         self._groups.append(G)
         
     def getClient(self, client):
@@ -312,6 +320,7 @@ class FakeStorage(object):
     
 class FakeClient(b3.clients.Client):
     console = None
+    
     def __init__(self, console, **kwargs):
         self.console = console
         b3.clients.Client.__init__(self, **kwargs)
@@ -325,8 +334,30 @@ class FakeClient(b3.clients.Client):
         
     def connects(self, cid):
         print "\n%s connects to the game on slot #%s" % (self.name, cid)
-        self.console.clients.newClient(cid, name=self.name, ip=self.ip, state=b3.STATE_ALIVE, guid=self.guid, data=self.data)    
-        
+        self.cid = cid
+        self.timeAdd = self.console.time()
+        #self.console.clients.newClient(cid)
+        clients = self.console.clients
+        clients[self.cid] = self
+        clients.resetIndex()
+
+        self.console.debug('Client Connected: [%s] %s - %s (%s)', clients[self.cid].cid, clients[self.cid].name, clients[self.cid].guid, clients[self.cid].data)
+
+        self.pushEvent(b3.events.Event(b3.events.EVT_CLIENT_CONNECT, self, self))
+    
+        if self.guid:
+            self.auth()
+        elif not self.authed:
+            clients.authorizeClients()
+         
+    def disconnects(self):
+        print "\n%s disconnects from slot #%s" % (self.name, self.cid)
+        self.console.clients.disconnect(self)
+        self.cid = None
+        self.authed = False
+        self._pluginData = {}
+        self.state = b3.STATE_UNKNOWN
+    
     def says(self, msg):
         print "\n%s says \"%s\"" % (self.name, msg)
         self.pushEvent(b3.events.Event(b3.events.EVT_CLIENT_SAY, msg, self))
@@ -379,7 +410,7 @@ print "creating fakeAdminPlugin with @b3/conf/plugin_admin.xml"
 fakeAdminPlugin = AdminPlugin(fakeConsole, '@b3/conf/plugin_admin.xml')
 fakeAdminPlugin.onStartup()
 
-joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="zaerezarezar", _maxLevel=1, authed=True, team=b3.TEAM_UNKNOWN)
-simon = FakeClient(fakeConsole, name="Simon", exactName="Simon", guid="qsdfdsqfdsqf", _maxLevel=0, authed=True, team=b3.TEAM_UNKNOWN)
-moderator = FakeClient(fakeConsole, name="Moderator", exactName="Moderator", guid="sdf455ezr", _maxLevel=20, authed=True, team=b3.TEAM_UNKNOWN)
-superadmin = FakeClient(fakeConsole, name="God", exactName="God", guid="f4qfer654r", _maxLevel=100, authed=True, team=b3.TEAM_UNKNOWN)
+joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="zaerezarezar", groupBits=1, team=b3.TEAM_UNKNOWN)
+simon = FakeClient(fakeConsole, name="Simon", exactName="Simon", guid="qsdfdsqfdsqf", groupBits=0, team=b3.TEAM_UNKNOWN)
+moderator = FakeClient(fakeConsole, name="Moderator", exactName="Moderator", guid="sdf455ezr", groupBits=8, team=b3.TEAM_UNKNOWN)
+superadmin = FakeClient(fakeConsole, name="God", exactName="God", guid="f4qfer654r", groupBits=128, team=b3.TEAM_UNKNOWN)
