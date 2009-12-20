@@ -26,9 +26,13 @@
 # - fix bug with resolution of @conf on linux
 # 29/11/2209 - 1.3.0 - Courgette
 # XmlConfigParser can also be parsed from string
+# 20/12/2209 - 1.3.1 - Courgette
+# Fix bug in resolving @b3 which was failing for the win32 standalone release
+#
+
 
 __author__  = 'ThorN'
-__version__ = '1.3.0'
+__version__ = '1.3.1'
 
 import sys, time
 import b3
@@ -161,9 +165,7 @@ class XmlConfigParser:
         path = self.get(section, setting)
 
         if path[0:3] == '@b3':
-            # relative path to the b3 module directory
-            # TODO: use actual module path
-            path = path[1:]
+            path = "%s/%s" % (b3.getB3Path(), path[3:])
         elif path[0:6] == '@conf/' or path[0:6] == '@conf\\':
             path = "%s/%s" % (b3.getConfPath(), path[5:])
 
