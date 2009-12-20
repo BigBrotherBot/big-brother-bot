@@ -238,7 +238,7 @@ class DatabaseStorage(Storage):
                 # (2006, 'MySQL server has gone away')
 
                 if e[0] == 2013 or e[0] == 2006:
-                    self.console.error('Query failed, trying to reconnect - %s: %s' % (type(e), e))
+                    self.console.warning('Query failed, trying to reconnect - %s: %s' % (type(e), e))
 
                     # query failed, try to reconnect
                     if self.connect():
