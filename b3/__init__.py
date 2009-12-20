@@ -20,12 +20,13 @@ __author__ = 'ThorN'
 
 import pkg_handler
 from b3.functions import main_is_frozen
+from b3.functions import checkUpdate
 from b3.setup import Setup
 
 __version__ = pkg_handler.version(__name__)
 modulePath = pkg_handler.resource_directory(__name__)
 
-import os, re, sys, traceback
+import os, re, sys, traceback, time
 import signal
 import platform
 import config
@@ -91,6 +92,13 @@ def start(configFile):
         os.system('clear')
     else:
         os.system('cls')
+
+    # Check if a newer version of B3 is available
+    _ver = checkUpdate(versionId)
+    if _ver != "":
+        print _ver
+        time.sleep(10)
+
     print 'Starting %s\n' % sversion
 
     if os.path.exists(configFile):
