@@ -46,8 +46,7 @@
 		<plugin name="adv" priority="7" config="@b3/conf/plugin_adv.xml" />
 		<plugin name="status" priority="8" config="@b3/conf/plugin_status.xml" />
 		<plugin name="welcome" priority="9" config="@b3/conf/plugin_welcome.xml" />
-		<plugin name="publist" priority="10" config="@b3/conf/plugin_publist.xml" />
-		<plugin name="punkbuster" priority="11" config="@b3/conf/plugin_punkbuster.xml" />
+		<plugin name="punkbuster" priority="10" config="@b3/conf/plugin_punkbuster.xml" />
 
 		<!--
 			This is a non-standard plugin, and quite resource heavy. Please take
