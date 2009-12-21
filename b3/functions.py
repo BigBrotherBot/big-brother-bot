@@ -26,6 +26,7 @@ def checkUpdate(versionId):
     """
     check if an update of B3 is available
     """
+    message = None
     try:
         f = urllib2.urlopen('http://www.bigbrotherbot.com/version.xml')
         _xml = ElementTree.parse(f)
@@ -34,10 +35,8 @@ def checkUpdate(versionId):
         _cver = int(re.sub(r'[^0-9]', '', versionId))
         if _cver < _lver:
             message = "*** NOTICE: A newer version of B3 is available! ***"
-        else:
-            message = "" 
     except:
-        message = "Checking for Update failed"
+        pass
     return message
 
 #--------------------------------------------------------------------------------------------------

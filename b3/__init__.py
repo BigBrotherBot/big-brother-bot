@@ -95,9 +95,9 @@ def start(configFile):
 
     # Check if a newer version of B3 is available
     _ver = checkUpdate(versionId)
-    if _ver != "":
+    if _ver:
         print _ver
-        time.sleep(10)
+        time.sleep(15)
 
     print 'Starting %s\n' % sversion
 
