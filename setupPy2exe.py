@@ -14,7 +14,7 @@ def getVersion():
     
 myDataFiles = [
         ('', ['README']),
-        ('examples', listdirectory('examples/')),
+        ('', ['b3.egg-info/PKG-INFO']),
         ('docs', listdirectory('b3/docs/')),
         ('conf', listdirectory('b3/conf/')),
         ('extplugins', ['b3/extplugins/xlrstats.py']),

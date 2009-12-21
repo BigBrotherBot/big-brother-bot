@@ -19,18 +19,32 @@
 __author__    = 'ThorN, xlr8or'
 __version__ = '1.2.0'
 
-import re
-import os
-import sys
-import imp
-import string
+import re, os, sys, imp, string, urllib2
+from lib.elementtree import ElementTree
 
+def checkUpdate(versionId):
+    """
+    check if an update of B3 is available
+    """
+    message = None
+    try:
+        f = urllib2.urlopen('http://www.bigbrotherbot.com/version.xml')
+        _xml = ElementTree.parse(f)
+        lversion = _xml.getroot().text
+        _lver = int(re.sub(r'[^0-9]', '', lversion))
+        _cver = int(re.sub(r'[^0-9]', '', versionId))
+        if _cver < _lver:
+            message = "*** NOTICE: A newer version of B3 is available! ***"
+    except:
+        pass
+    return message
+
+#--------------------------------------------------------------------------------------------------
 def main_is_frozen():
     """detect if b3 is running from b3_run.exe"""
     return (hasattr(sys, "frozen") or # new py2exe
         hasattr(sys, "importers") or # old py2exe
         imp.is_frozen("__main__")) # tools/freeze
-
 
 #--------------------------------------------------------------------------------------------------
 def splitDSN(url):

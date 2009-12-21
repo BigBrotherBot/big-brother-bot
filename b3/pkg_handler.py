@@ -45,7 +45,7 @@ class PkgResourcesStandIn:
     def version(self, module):
         # find package info
         version = '<unknown>'
-        for p in (os.path.join(self.resource_directory(module), 'PKG-INFO'), os.path.join(self.resource_directory(module), '..', 'PKG-INFO'), os.path.join(self.resource_directory(module), '..', 'b3.egg-info', 'PKG-INFO')):
+        for p in ('PKG-INFO' , os.path.join(self.resource_directory(module), 'PKG-INFO'), os.path.join(self.resource_directory(module), '..', 'PKG-INFO'), os.path.join(self.resource_directory(module), '..', 'b3.egg-info', 'PKG-INFO')):
             if os.path.isfile(p):            
                 f = file(p, 'r')                
                 for line in f:
