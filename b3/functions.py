@@ -26,11 +26,12 @@ import time
 
 
 
-def checkUpdate(currentVersion):
+def checkUpdate(currentVersion, singleLine=True, showErrormsg=False):
     """
     check if an update of B3 is available
     """
-    sys.stdout.write("checking for updates... ")
+    if not singleLine:
+        sys.stdout.write("checking for updates... \n")
     message = None
     errorMessage = None
     try:
@@ -40,7 +41,10 @@ def checkUpdate(currentVersion):
         _lver = version.LooseVersion(latestVersion)
         _cver = version.LooseVersion(currentVersion)
         if _cver < _lver:
-            message = """
+            if singleLine:
+                message = "*** NOTICE: A newer version of B3 is available. See www.bigbrotherbot.com! ***"
+            else:
+                message = """
          _\|/_
          (o o)
  +----oOO-{_}-OOo---------------------+
@@ -61,14 +65,12 @@ def checkUpdate(currentVersion):
         else:
             errorMessage = "%s" % e
     
-    if errorMessage:
-        print errorMessage
+    if errorMessage and showErrormsg:
+        return errorMessage
+    elif message:
+        return message
     else:
-        if message:
-            print message
-            time.sleep(5)
-        else:
-            print ""
+        return None
 
 
 #--------------------------------------------------------------------------------------------------
