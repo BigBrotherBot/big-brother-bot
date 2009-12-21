@@ -100,7 +100,12 @@ def start(configFile):
         os.system('cls')
 
     # Check if a newer version of B3 is available
-    checkUpdate(__version__)
+    _update = checkUpdate(__version__, singleLine=False, showErrormsg=True)
+    if _update:
+        print _update
+        _delay = 5
+        print "...resuming in %s seconds" %_delay
+        time.sleep(_delay)
     
     print 'Starting %s\n' % getB3versionString()
 
