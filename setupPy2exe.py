@@ -1,6 +1,7 @@
 import sys
 import os
 import glob
+import re
 from distutils.core import setup 
 import py2exe
 from b3.pkg_handler import PkgResourcesStandIn
@@ -10,7 +11,12 @@ def listdirectory(path):
 
 def getVersion():
     pkg_handler = PkgResourcesStandIn()
-    return pkg_handler.version("b3").rstrip('b')
+    reStrictVersion = re.compile('^\s*(?P<version>[0-9.]+).*$')
+    m = reStrictVersion.match(pkg_handler.version("b3"))
+    if m:
+        return m.group('version')
+    else:
+        return None
     
 myDataFiles = [
         ('', ['README']),
@@ -31,7 +37,7 @@ setup(
     data_files = myDataFiles,
     options = {
         "py2exe": {
-            "dist_dir": "dist_py2exe",
+            "dist_dir": "../dist_py2exe",
             "bundle_files": 1,
             "optimize": 1,
             "includes": [
