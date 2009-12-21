@@ -34,7 +34,7 @@ import config
 versionOs = os.name
 versionId = 'v%s [%s]' % (__version__, versionOs)
 version = '^8www.BigBrotherBot.com ^0(^8b3^0) ^9%s ^9(^3Daniel^9)^3' % versionId
-sversion = re.sub(r'\^[0-9a-z]', '', version)
+
 
 console = None
 _confDir = None
@@ -64,6 +64,12 @@ def loadParser(pname):
     return mod
 
 #-----------------------------------------------------------------------------------------------------------------------
+def getB3versionString():
+    sversion = re.sub(r'\^[0-9a-z]', '', version)
+    if main_is_frozen():
+        sversion = "%s [Win32 standalone]" % sversion
+    return sversion
+
 def getB3Path():
     if main_is_frozen():
         # which happens when running from the py2exe build
@@ -94,12 +100,9 @@ def start(configFile):
         os.system('cls')
 
     # Check if a newer version of B3 is available
-    _ver = checkUpdate(versionId)
-    if _ver:
-        print _ver
-        time.sleep(15)
-
-    print 'Starting %s\n' % sversion
+    checkUpdate(__version__)
+    
+    print 'Starting %s\n' % getB3versionString()
 
     if os.path.exists(configFile):
         print 'Using config file: %s' % configFile

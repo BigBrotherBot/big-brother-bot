@@ -108,7 +108,7 @@ def run_setup():
     raise SystemExit('Configfile generated. Ready to restart!')
 
 def main():
-    parser = OptionParser(version=b3.sversion)
+    parser = OptionParser(version=b3.getB3versionString())
     parser.add_option('-c', '--config', dest='config', default=None,
                       help='B3 config file. Example: -c b3.xml')
     parser.add_option('-r', '--restart',

@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
@@ -21,23 +21,55 @@ __version__ = '1.2.0'
 
 import re, os, sys, imp, string, urllib2
 from lib.elementtree import ElementTree
+from distutils import version
+import time
 
-def checkUpdate(versionId):
+
+
+def checkUpdate(currentVersion):
     """
     check if an update of B3 is available
     """
+    sys.stdout.write("checking for updates... ")
     message = None
+    errorMessage = None
     try:
         f = urllib2.urlopen('http://www.bigbrotherbot.com/version.xml')
         _xml = ElementTree.parse(f)
-        lversion = _xml.getroot().text
-        _lver = int(re.sub(r'[^0-9]', '', lversion))
-        _cver = int(re.sub(r'[^0-9]', '', versionId))
+        latestVersion = _xml.getroot().text
+        _lver = version.LooseVersion(latestVersion)
+        _cver = version.LooseVersion(currentVersion)
         if _cver < _lver:
-            message = "*** NOTICE: A newer version of B3 is available! ***"
-    except:
-        pass
-    return message
+            message = """
+         _\|/_
+         (o o)
+ +----oOO-{_}-OOo---------------------+
+ |                                    |
+ |                                    |
+ | A newer version of B3 is available |
+ |     See www.bigbrotherbot.com      |
+ |                                    |
+ |                                    |
+ +------------------------------------+
+ 
+"""
+    except IOError, e:
+        if hasattr(e, 'reason'):
+            errorMessage = "%s" % e.reason
+        elif hasattr(e, 'code'):
+            errorMessage = "error code: %s" % e.code
+        else:
+            errorMessage = "%s" % e
+    
+    if errorMessage:
+        print errorMessage
+    else:
+        if message:
+            print message
+            time.sleep(5)
+        else:
+            print ""
+
 
 #--------------------------------------------------------------------------------------------------
 def main_is_frozen():
