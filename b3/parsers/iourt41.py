@@ -78,9 +78,11 @@
 # v1.6.5 - 09/12/2009 - Courgette
 #    * different handling of 'name' in OnClientuserinfo. Now log looks less worrying
 #    * prevent exception on the rare case where a say line shows no text after cid (hence no regexp match)
+# v1.7 - 21/12/2009 - Courgette
+#    * add new UrT specific event : EVT_CLIENT_GEAR_CHANGE
 #
 __author__  = 'xlr8or'
-__version__ = '1.6.5'
+__version__ = '1.7'
 
 
 import b3.parsers.q3a
@@ -243,6 +245,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
         # add UrT specific events
         self.Events.createEvent('EVT_GAME_FLAG_RETURNED', 'Flag returned')
+        self.Events.createEvent('EVT_CLIENT_GEAR_CHANGE', 'Client gear change')
 
         # add the world client
         self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
@@ -509,6 +512,8 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             if client:
                 # update existing client
                 for k, v in bclient.iteritems():
+                    if hasattr(client, 'gear') and k == 'gear' and client.gear != v:
+                        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_GEAR_CHANGE, v, client))
                     setattr(client, k, v)
             else:
                 #make a new client
