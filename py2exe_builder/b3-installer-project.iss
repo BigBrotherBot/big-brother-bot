@@ -66,7 +66,7 @@ Name: {group}\{cm:UninstallProgram,BigBrotherBot}; Filename: {uninstallexe}
 
 
 [Files]
-Source: ..\dist_py2exe\*; DestDir: {app}; Flags: recursesubdirs
+Source: ..\..\dist_py2exe\*; DestDir: {app}; Flags: recursesubdirs
 
 
 
