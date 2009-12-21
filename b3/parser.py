@@ -65,6 +65,9 @@ import b3.cron
 import b3.parsers.q3a_rcon
 import b3.clients
 import b3.functions
+from b3.functions import main_is_frozen
+
+
 class Parser(object):
     _lineFormat = re.compile('^([a-z ]+): (.*?)', re.IGNORECASE)
 
@@ -199,7 +202,7 @@ class Parser(object):
             self._rconIp = f.read().strip()
             f.close()
 
-        self.bot('%s', b3.sversion)
+        self.bot('%s', b3.getB3versionString())
         self.bot('Python: %s', sys.version)
         self.bot('Starting %s server for %s:%s', self.__class__.__name__, self._rconIp, self._port)
 
