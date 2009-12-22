@@ -42,8 +42,11 @@
 # do not send heartbeat when publicIP is obviously not public
 # 23/11/2009 - 1.2.0 - Courgette
 # * publist plugin now also update B3 master on shutdown
+# 22/12/2009 - 1.3 - Courgette
+# * bot version tells if the bot is built with py2exe
+#
 
-__version__ = '1.2.0'
+__version__ = '1.3'
 __author__  = 'ThorN'
 
 import sys
@@ -55,6 +58,7 @@ import b3, os, random
 import b3.events
 import b3.plugin
 from b3 import functions
+
 
 
 
@@ -126,11 +130,15 @@ class PublistPlugin(b3.plugin.Plugin):
         except:
             database = "unknown"
             
+        version = getattr(b3, '__version__', 'Unknown Version')
+        if b3.functions.main_is_frozen():
+            version += " win32"
+            
         info = {
             'action' : 'update',
             'ip' : self.console._publicIp,
             'port' : self.console._port,
-            'version' : getattr(b3, '__version__', 'Unknown Version'),
+            'version' : version,
             'parser' : self.console.gameName,
             'parserversion' : getattr(getModule(self.console.__module__), '__version__', 'Unknown Version'),
             'database' : database,
@@ -165,13 +173,13 @@ class PublistPlugin(b3.plugin.Plugin):
 
 if __name__ == '__main__':
     from b3.fake import fakeConsole
-    #import time
+    import time
     
-    fakeConsole._publicIp = '127.0.0.1'
-    #fakeConsole._publicIp = '81.56.143.41'
+    #fakeConsole._publicIp = '127.0.0.1'
+    fakeConsole._publicIp = '11.22.33.44'
     p = PublistPlugin(fakeConsole)
     #p.onStartup()
     p.update()
-    #time.sleep(5) # so we can see thread working
+    time.sleep(5) # so we can see thread working
 
     
