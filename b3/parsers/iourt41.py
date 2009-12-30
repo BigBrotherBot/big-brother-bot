@@ -80,9 +80,13 @@
 #    * prevent exception on the rare case where a say line shows no text after cid (hence no regexp match)
 # v1.7 - 21/12/2009 - Courgette
 #    * add new UrT specific event : EVT_CLIENT_GEAR_CHANGE
+# v1.7.1 - 30/12/2009 - Courgette
+#    * Say, Sayteam and Saytell lines do not trigger name change anymore and detect the UrT bug described
+#      in http://www.bigbrotherbot.com/forums/urt/b3-bot-sometimes-mix-up-client-id%27s/ . Hopefully this
+#      definitely fixes the wrong aliases issue.
 #
 __author__  = 'xlr8or'
-__version__ = '1.7'
+__version__ = '1.7.1'
 
 
 import b3.parsers.q3a
@@ -816,8 +820,17 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if data and ord(data[:1]) == 21:
             data = data[1:]
 
-        client.name = match.group('name')
-        return b3.events.Event(b3.events.EVT_CLIENT_SAY, data, client)
+        name = self.stripColors(match.group('name'))
+        if int(match.group('cid')) == 0 and client.name != name:
+            self.debug('UrT bug spotted: cid does not match name on a Say line')
+            client2 = self.clients.getClientsByName(name)
+            if not client2:
+                self.warning('Could not get client with name %s' % name)
+                return None
+            self.debug('cid should be %s' % client2.cid)
+            return b3.events.Event(b3.events.EVT_CLIENT_SAY, data, client2)
+        else:
+            return b3.events.Event(b3.events.EVT_CLIENT_SAY, data, client)
 
 
     # sayteam
@@ -834,8 +847,17 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if data and ord(data[:1]) == 21:
             data = data[1:]
 
-        client.name = match.group('name')
-        return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data, client, client.team)
+        name = self.stripColors(match.group('name'))
+        if int(match.group('cid')) == 0 and client.name != name:
+            self.debug('UrT bug spotted: cid does not match name on a Sayteam line')
+            client2 = self.clients.getClientsByName(name)
+            if not client2:
+                self.warning('Could not get client with name %s' % name)
+                return None
+            self.debug('cid should be %s' % client2.cid)
+            return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data, client2, client2.team)
+        else:
+            return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data, client, client.team)
 
 
     # saytell
@@ -858,8 +880,18 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if data and ord(data[:1]) == 21:
             data = data[1:]
 
-        client.name = match.group('name')
-        return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data, client, tclient)
+        name = self.stripColors(match.group('name'))
+        if int(match.group('cid')) == 0 and client.name != name:
+            self.debug('UrT bug spotted: cid does not match name on a Saytell line')
+            client2 = self.clients.getClientsByName(name)
+            if not client2:
+                self.warning('Could not get client with name %s' % name)
+                return None
+            self.debug('cid should be %s' % client2.cid)
+            return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data, client2, tclient)
+        else:
+            return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data, client, tclient)
+
 
 
     # tell
