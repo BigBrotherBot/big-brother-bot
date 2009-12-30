@@ -84,9 +84,12 @@
 #    * Say, Sayteam and Saytell lines do not trigger name change anymore and detect the UrT bug described
 #      in http://www.bigbrotherbot.com/forums/urt/b3-bot-sometimes-mix-up-client-id%27s/ . Hopefully this
 #      definitely fixes the wrong aliases issue.
+# v1.7.2 - 30/12/2009 - Courgette
+#    * improve say lines slot bug detection for cases where no player exists on slot 0. 
+#      Refactor detection code to follow the KISS rule (keep it simple and stupid)
 #
 __author__  = 'xlr8or'
-__version__ = '1.7.1'
+__version__ = '1.7.2'
 
 
 import b3.parsers.q3a
@@ -807,57 +810,53 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         if match is None:
             return
         
+        name = self.stripColors(match.group('name'))
+        cid = int(match.group('cid'))
         client = self.getByCidOrJoinPlayer(match.group('cid'))
+
+        if cid == 0 and (not client or client.name != name):
+            self.debug('UrT bug spotted. Trying to get client by name')
+            client = self.clients.getClientsByName(name)
 
         if not client:
             self.verbose('No Client Found!')
             return None
-
-        self.verbose('Client Found: %s' % client.name)
+                
+        self.verbose('Client Found: %s on slot %s' % (client.name, client.cid))
+        
         data = match.group('text')
 
         #removal of weird characters
         if data and ord(data[:1]) == 21:
             data = data[1:]
 
-        name = self.stripColors(match.group('name'))
-        if int(match.group('cid')) == 0 and client.name != name:
-            self.debug('UrT bug spotted: cid does not match name on a Say line')
-            client2 = self.clients.getClientsByName(name)
-            if not client2:
-                self.warning('Could not get client with name %s' % name)
-                return None
-            self.debug('cid should be %s' % client2.cid)
-            return b3.events.Event(b3.events.EVT_CLIENT_SAY, data, client2)
-        else:
-            return b3.events.Event(b3.events.EVT_CLIENT_SAY, data, client)
+        return b3.events.Event(b3.events.EVT_CLIENT_SAY, data, client)
 
 
     # sayteam
     def OnSayteam(self, action, data, match=None):
         #2:28 sayteam: 12 New_UrT_Player_v4.1: wokele
+        if match is None:
+            return
+        
+        name = self.stripColors(match.group('name'))
+        cid = int(match.group('cid'))
         client = self.getByCidOrJoinPlayer(match.group('cid'))
+
+        if cid == 0 and (not client or client.name != name):
+            self.debug('UrT bug spotted. Trying to get client by name')
+            client = self.clients.getClientsByName(name)
 
         if not client:
             self.verbose('No Client Found!')
             return None
-
-        self.verbose('Client Found: %s' % client.name)
-        data = match.group('text')
+                
+        self.verbose('Client Found: %s on slot %s' % (client.name, client.cid))
+        
         if data and ord(data[:1]) == 21:
             data = data[1:]
 
-        name = self.stripColors(match.group('name'))
-        if int(match.group('cid')) == 0 and client.name != name:
-            self.debug('UrT bug spotted: cid does not match name on a Sayteam line')
-            client2 = self.clients.getClientsByName(name)
-            if not client2:
-                self.warning('Could not get client with name %s' % name)
-                return None
-            self.debug('cid should be %s' % client2.cid)
-            return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data, client2, client2.team)
-        else:
-            return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data, client, client.team)
+        return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data, client, client.team)
 
 
     # saytell
@@ -869,28 +868,29 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         #if not len(data) >= 2 and not (data[:1] == '!' or data[:1] == '@') and match.group('cid') == match.group('acid'):
         #    return None
 
+        if match is None:
+            return
+        
+        name = self.stripColors(match.group('name'))
+        cid = int(match.group('cid'))
         client = self.getByCidOrJoinPlayer(match.group('cid'))
         tclient = self.clients.getByCID(match.group('acid'))
 
+        if cid == 0 and (not client or client.name != name):
+            self.debug('UrT bug spotted. Trying to get client by name')
+            client = self.clients.getClientsByName(name)
+
         if not client:
-            self.verbose('No Client Found')
+            self.verbose('No Client Found!')
             return None
+                
+        self.verbose('Client Found: %s on slot %s' % (client.name, client.cid))
 
         data = match.group('text')
         if data and ord(data[:1]) == 21:
             data = data[1:]
 
-        name = self.stripColors(match.group('name'))
-        if int(match.group('cid')) == 0 and client.name != name:
-            self.debug('UrT bug spotted: cid does not match name on a Saytell line')
-            client2 = self.clients.getClientsByName(name)
-            if not client2:
-                self.warning('Could not get client with name %s' % name)
-                return None
-            self.debug('cid should be %s' % client2.cid)
-            return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data, client2, tclient)
-        else:
-            return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data, client, tclient)
+        return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data, client, tclient)
 
 
 
