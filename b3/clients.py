@@ -17,7 +17,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
-#    14/12/209 - 1.2.7 - Courgette
+#
+#    01/01/2010 - 1.2.8 - Courgette
+#    * fix bug in Clients.getByName()
+#    14/12/2009 - 1.2.7 - Courgette
 #    * Change the way client.name and client.exactName are set and when the 
 #      client name changed event is triggered
 #    * A new alias is given the default num_used 1 (was 0)
@@ -34,7 +37,7 @@
 #     Added data parameter to Client.tempban()
 
 __author__  = 'ThorN'
-__version__ = '1.2.7'
+__version__ = '1.2.8'
 
 import b3, string, re, time, functions, threading, weakref, traceback, sys
 
@@ -832,8 +835,8 @@ class Clients(dict):
             for cid,c in self.items():
                 if c.name and c.name.lower() == name:
                     #self.console.debug('Found client by name %s = %s', name, c.name)
-                    self._exactNameIndex[name] = c.cid
-                    return weakref.ref(c)
+                    self._nameIndex[name] = c.cid
+                    return weakref.ref(c)()
 
         return None
 

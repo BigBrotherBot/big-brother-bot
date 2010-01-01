@@ -87,9 +87,13 @@
 # v1.7.2 - 30/12/2009 - Courgette
 #    * improve say lines slot bug detection for cases where no player exists on slot 0. 
 #      Refactor detection code to follow the KISS rule (keep it simple and stupid)
+# v1.7.3 - 31/12/2009 - Courgette
+#    * fix bug getting client by name when UrT slot 0 bug 
+#    * requires clients.py 1.2.8+
 #
+
 __author__  = 'xlr8or'
-__version__ = '1.7.2'
+__version__ = '1.7.3'
 
 
 import b3.parsers.q3a
@@ -816,7 +820,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
         if cid == 0 and (not client or client.name != name):
             self.debug('UrT bug spotted. Trying to get client by name')
-            client = self.clients.getClientsByName(name)
+            client = self.clients.getByName(name)
 
         if not client:
             self.verbose('No Client Found!')
@@ -845,7 +849,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
         if cid == 0 and (not client or client.name != name):
             self.debug('UrT bug spotted. Trying to get client by name')
-            client = self.clients.getClientsByName(name)
+            client = self.clients.getByName(name)
 
         if not client:
             self.verbose('No Client Found!')
@@ -878,7 +882,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
         if cid == 0 and (not client or client.name != name):
             self.debug('UrT bug spotted. Trying to get client by name')
-            client = self.clients.getClientsByName(name)
+            client = self.clients.getByName(name)
 
         if not client:
             self.verbose('No Client Found!')
