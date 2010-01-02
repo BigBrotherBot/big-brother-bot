@@ -90,10 +90,12 @@
 # v1.7.3 - 31/12/2009 - Courgette
 #    * fix bug getting client by name when UrT slot 0 bug 
 #    * requires clients.py 1.2.8+
+# v1.7.4 - 02/12/2010 - Courgette
+#    * improve Urt slot bug woraround as it appears it can occur with slot num different than 0
 #
 
 __author__  = 'xlr8or'
-__version__ = '1.7.3'
+__version__ = '1.7.4'
 
 
 import b3.parsers.q3a
@@ -818,7 +820,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         cid = int(match.group('cid'))
         client = self.getByCidOrJoinPlayer(match.group('cid'))
 
-        if cid == 0 and (not client or client.name != name):
+        if not client or client.name != name:
             self.debug('UrT bug spotted. Trying to get client by name')
             client = self.clients.getByName(name)
 
@@ -847,7 +849,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         cid = int(match.group('cid'))
         client = self.getByCidOrJoinPlayer(match.group('cid'))
 
-        if cid == 0 and (not client or client.name != name):
+        if not client or client.name != name:
             self.debug('UrT bug spotted. Trying to get client by name')
             client = self.clients.getByName(name)
 
@@ -880,7 +882,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         client = self.getByCidOrJoinPlayer(match.group('cid'))
         tclient = self.clients.getByCID(match.group('acid'))
 
-        if cid == 0 and (not client or client.name != name):
+        if not client or client.name != name:
             self.debug('UrT bug spotted. Trying to get client by name')
             client = self.clients.getByName(name)
 
