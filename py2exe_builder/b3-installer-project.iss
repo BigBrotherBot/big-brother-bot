@@ -10,15 +10,15 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{F04D6FC4-CF46-4409-995A-04BEB0B219E6}
 AppName=BigBrotherBot
-AppVerName=BigBrotherBot 1.2.2b (Courgette dev build 01/01/2010)
+AppVerName=BigBrotherBot 1.2.2b (Courgette dev build 05/01/2010)
 AppPublisher=BigBrotherBot
 AppPublisherURL=http://www.bigbrotherbot.com/
 AppSupportURL=http://www.bigbrotherbot.com/forums/
 AppUpdatesURL=http://www.bigbrotherbot.com/
-DefaultDirName={pf}\BigBrotherBot_1.2.2b-courgette-20100101
+DefaultDirName={pf}\BigBrotherBot_1.2.2b-courgette-20100105
 DefaultGroupName=BigBrotherBot
 LicenseFile=gpl-2.0.txt
-OutputBaseFilename=BigBrotherBot-1.2.2b-courgette-20100101-win32-standalone
+OutputBaseFilename=BigBrotherBot-1.2.2b-courgette-20100105-win32-standalone
 Compression=lzma/ultra64
 SolidCompression=true
 InternalCompressLevel=normal
@@ -59,7 +59,7 @@ Name: slovenian; MessagesFile: compiler:Languages\Slovenian.isl
 Name: spanish; MessagesFile: compiler:Languages\Spanish.isl
 
 [Icons]
-Name: {group}\{cm:executable,b3_run}; Filename: {app}\b3_run.exe; Parameters: -c {app}\conf\b3.xml; WorkingDir: {app}
+Name: {group}\{cm:executable,b3_run}; Filename: {app}\b3_run.exe; Parameters: "-c ""{app}\conf\b3.xml"""; WorkingDir: {app}
 Name: {group}\{cm:Website,BigBrotherBot}; Filename: http://www.bigbrotherbot.com/
 Name: {group}\{cm:Forums,B3 Forums}; Filename: http://www.bigbrotherbot.com/forums/
 Name: {group}\{cm:UninstallProgram,BigBrotherBot}; Filename: {uninstallexe}
