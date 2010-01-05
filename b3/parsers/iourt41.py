@@ -92,10 +92,11 @@
 #    * requires clients.py 1.2.8+
 # v1.7.4 - 02/12/2010 - Courgette
 #    * improve Urt slot bug woraround as it appears it can occur with slot num different than 0
-#
+# v1.7.5 - 05/12/2010 - Courgette
+#    * fix minor bug in saytell
 
 __author__  = 'xlr8or'
-__version__ = '1.7.4'
+__version__ = '1.7.5'
 
 
 import b3.parsers.q3a
@@ -859,6 +860,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                 
         self.verbose('Client Found: %s on slot %s' % (client.name, client.cid))
         
+        data = match.group('text')
         if data and ord(data[:1]) == 21:
             data = data[1:]
 
