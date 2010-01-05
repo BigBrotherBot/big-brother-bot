@@ -18,6 +18,11 @@
 #
 # CHANGELOG
 #
+#    01/01/2001 - 1.2.9 - Courgette
+#    * clients get* methods' code is now more meaningful as : 
+#        b = weakref.ref(a)() 
+#        b = a
+#    are strictly identical 
 #    01/01/2010 - 1.2.8 - Courgette
 #    * fix bug in Clients.getByName()
 #    14/12/2009 - 1.2.7 - Courgette
@@ -37,9 +42,9 @@
 #     Added data parameter to Client.tempban()
 
 __author__  = 'ThorN'
-__version__ = '1.2.8'
+__version__ = '1.2.9'
 
-import b3, string, re, time, functions, threading, weakref, traceback, sys
+import b3, string, re, time, functions, threading, traceback, sys
 
 class ClientVar(object):
     value = None
@@ -830,13 +835,13 @@ class Clients(dict):
         name = name.lower()
 
         try:
-            return weakref.ref(self[self._nameIndex[name]])()
+            return self[self._nameIndex[name]]
         except:
             for cid,c in self.items():
                 if c.name and c.name.lower() == name:
                     #self.console.debug('Found client by name %s = %s', name, c.name)
                     self._nameIndex[name] = c.cid
-                    return weakref.ref(c)()
+                    return c
 
         return None
 
@@ -846,13 +851,13 @@ class Clients(dict):
         try:
             c = self[self._exactNameIndex[name]]
             #self.console.debug('Found client by exact name in index %s = %s : %s', name, c.exactName, c.__class__.__name__)
-            return weakref.ref(c)()
+            return c
         except:
             for cid,c in self.items():
                 if c.exactName and c.exactName.lower() == name:
                     #self.console.debug('Found client by exact name %s = %s', name, c.exactName)
                     self._exactNameIndex[name] = c.cid
-                    return weakref.ref(c)()
+                    return c
 
         return None
 
@@ -860,7 +865,7 @@ class Clients(dict):
         clist = []
         for cid,c in self.items():
             if not c.hide:
-                clist.append(weakref.ref(c)())
+                clist.append(c)
         return clist
 
     def getClientsByLevel(self, min=0, max=100, masked=False):
@@ -870,12 +875,12 @@ class Clients(dict):
             if c.hide:
                 continue
             elif not masked and c.maskGroup and c.maskGroup.level >= min and c.maskGroup.level <= max:
-                clist.append(weakref.ref(c)())
+                clist.append(c)
             elif not masked and c.maskGroup:
                 continue
             elif c.maxLevel >= min and c.maxLevel <= max:
                 #self.console.debug('getClientsByLevel hidden = %s', c.hide)
-                clist.append(weakref.ref(c)())
+                clist.append(c)
         return clist
 
     def getClientsByName(self, name):
@@ -883,7 +888,7 @@ class Clients(dict):
         name = name.lower()
         for cid,c in self.items():
             if not c.hide and string.find(c.name.lower(), name) != -1:
-                clist.append(weakref.ref(c)())
+                clist.append(c)
 
         return clist
 
@@ -891,7 +896,7 @@ class Clients(dict):
         name = name.lower()
         for cid,c in self.items():
             if not c.hide and string.find(c.name.lower(), name) != -1:
-                return weakref.ref(c)()
+                return c
 
         return None
 
@@ -899,7 +904,7 @@ class Clients(dict):
         clist = []
         for cid,c in self.items():
             if not c.hide and c.state == state:
-                clist.append(weakref.ref(c)())
+                clist.append(c)
 
         return clist
 
@@ -949,15 +954,15 @@ class Clients(dict):
         guid = guid.upper()
 
         try:
-            return weakref.ref(self[self._guidIndex[guid]])()
+            return self[self._guidIndex[guid]]
         except:
             for cid,c in self.items():
                 if c.guid and c.guid == guid:
                     self._guidIndex[guid] = c.cid
-                    return weakref.ref(c)()
+                    return c
                 elif functions.fuzzyGuidMatch(c.guid, guid):
                     # Found by fuzzy matching, don't index
-                    return weakref.ref(c)()
+                    return c
                     
         return None
 
@@ -970,8 +975,10 @@ class Clients(dict):
             self.console.error('Unexpected error getByCID(%s) - %s', cid, e)
         else:
             #self.console.debug('Found client by CID %s = %s', cid, c.name)
-            if c.cid == str(cid): return weakref.ref(c)()
-            else: return None
+            if c.cid == str(cid): 
+                return c
+            else: 
+                return None
 
         return None
 
