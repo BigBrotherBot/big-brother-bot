@@ -25,9 +25,11 @@
 #  Changed authentication queue to remove an Exception raised when the Key was no longer available
 # 31/10/2009 - 1.0.4 - xlr8or
 #  Fixed suicides
+# 6/1/2010 - 1.0.5 - xlr8or
+#  Fixed unassigned pbid bug for non-pb servers
 
 __author__  = 'xlr8or'
-__version__ = '1.0.4'
+__version__ = '1.0.5'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
@@ -150,6 +152,7 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
                 return None
             else:
                 guid = codguid
+                pbid = None
                 ip = sp['ip']
                 self._counter.pop(cid)
         elif self._counter[cid] > 10:
