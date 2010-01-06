@@ -20,6 +20,7 @@
 #           This includes spaces and also the / is removed. 
 # v1.1.4  : xlr8or - Removed bug for non PB servers
 # v1.1.5  : Bakes - Improved suicide code, now works with weapon suicides, not falling.
+# v1.1.6  : xlr8or - Minor bugfix regarding unassigned pbid on non pb servers.
 
 
 __author__  = 'ThorN, xlr8or'
@@ -76,6 +77,7 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
                 pbid = codguid
             else:
                 guid = codguid
+                pbid = None
 
             sp = self.connectClient(cid)
             if sp and self.PunkBuster:
