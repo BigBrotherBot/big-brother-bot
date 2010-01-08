@@ -18,7 +18,9 @@
 #
 # CHANGELOG
 #
-#    01/01/2001 - 1.2.9 - Courgette
+#    08/01/2010 - 1.2.10 - xlr8or
+#    * disabled adding aliasses for world
+#    01/01/2010 - 1.2.9 - Courgette
 #    * clients get* methods' code is now more meaningful as : 
 #        b = weakref.ref(a)() 
 #        b = a
@@ -42,7 +44,7 @@
 #     Added data parameter to Client.tempban()
 
 __author__  = 'ThorN'
-__version__ = '1.2.9'
+__version__ = '1.2.10'
 
 import b3, string, re, time, functions, threading, traceback, sys
 
@@ -395,6 +397,10 @@ class Client(object):
             newName = name.strip()
 
         if self._name == newName:
+            self.console.verbose2('Aborted Making Alias for cid: %s, name is the same' % self.cid)
+            return
+        if self.cid == '-1':
+            self.console.verbose2('Aborted Making Alias for cid: %s, must be World' % self.cid)
             return
         
         self.makeAlias(self._name)
@@ -874,6 +880,7 @@ class Clients(dict):
         for cid,c in self.items():
             if c.hide:
                 continue
+
             elif not masked and c.maskGroup and c.maskGroup.level >= min and c.maskGroup.level <= max:
                 clist.append(c)
             elif not masked and c.maskGroup:
