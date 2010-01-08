@@ -21,63 +21,95 @@
 # v1.1.4  : xlr8or - Removed bug for non PB servers
 # v1.1.5  : Bakes - Improved suicide code, now works with weapon suicides, not falling.
 # v1.1.6  : xlr8or - Minor bugfix regarding unassigned pbid on non pb servers.
-# v1.2.0  : xlr8or - Big CoD4 MakeOver 
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.2.0'
+__version__ = '1.1.5'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
 import b3.functions
-import re, threading
+import re
 from b3 import functions
 
 class Cod4Parser(b3.parsers.cod2.Cod2Parser):
     gameName = 'cod4'
-    _counter = {}
+    #_reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
+    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[a-z0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
 
-    #num score ping guid                             name            lastmsg address               qport rate
-    #--- ----- ---- -------------------------------- --------------- ------- --------------------- ----- -----
-    #  4     0   23 blablablabfa218d4be29e7168c637be ^1XLR^78^9or[^7^7               0 135.94.165.296:63564  25313 25000
-    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[a-z0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9-]+)\s+(?P<rate>[0-9]+)$', re.I)
 
+    def getClient(self, match=None, attacker=None, victim=None):
+        """Get a client object using the best availible data.
+        Prefer GUID first, then Client ID (CID)
+        """
+        if attacker:
+            keys = ['aguid', 'acid']
+        else:
+            keys = ['guid', 'cid']
+
+        methods = [self.clients.getByGUID, self.clients.getByCID]
+
+        match = attacker or victim or match
+
+        for k, m in zip(keys, methods):
+            client = m(match.group(k))
+            if client:
+                return client
 
     # join
     def OnJ(self, action, data, match=None):
         # COD4 stores the PBID in the log file
         codguid = match.group('guid')
         cid = match.group('cid')
-        name = match.group('name')
+        pbid = ''
 
         client = self.getClient(match)
+
         if client:
-            self.verbose2('ClientObject already exists')
             # update existing client
             client.state = b3.STATE_ALIVE
             # possible name changed
-            client.name = name
-            # Join-event for mapcount reasons and so forth
-            return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
+            client.name = match.group('name')
         else:
-            self._counter[cid] = 1
-            t = threading.Timer(2, self.newPlayer, (cid, codguid, name))
-            t.start()
-            self.debug('%s connected, waiting for Authentication...' %name)
-            self.debug('Our Authentication queue: %s' % self._counter)
+            # make a new client
+            if self.PunkBuster:
+                guid = codguid
+                pbid = codguid
+            else:
+                guid = codguid
+                pbid = None
 
-    # disconnect
-    def OnQ(self, action, data, match=None):
-        client = self.getClient(match)
-        if client:
-            client.disconnect()
-        else:
-            # Check if we're in the authentication queue
-            if match.group('cid') in self._counter:
-                # Flag it to remove from the queue
-                self._counter[cid] = 'Disconnected'
-                self.debug('slot %s has disconnected or was forwarded to our http download location, removing from authentication queue...' % cid)
-        return None
+            sp = self.connectClient(cid)
+            if sp and self.PunkBuster:
+                if not sp['pbid']:
+                    self.debug('PunkBuster is enabled in b3.xml, yet I cannot retrieve the PunkBuster Guid. Are you sure PB is enabled?')
+                #self.debug('sp: %s' % sp)
+                if len(guid) < 32:
+                    guid = sp['guid']
+                if len(pbid) < 32:
+                    pbid = sp['pbid']
+                ip = sp['ip']
+            elif sp:
+                if not codguid:
+                    self.error('No CodGuid and no PunkBuster... cannot continue!')
+                    return None
+                else:
+                    if len(guid) < 32:
+                        guid = sp['guid']
+                    ip = sp['ip']
+            else:
+                ip = ''
+
+            if len(guid) < 32:
+                # break it of, we can't get a valid 32 character guid, attempt to join on a future event.
+                self.debug('Ignoring Client! guid: %s (%s), ip: %s' %(guid, len(guid), ip) )
+                return None
+            else:
+                self.debug('guid: %s (%s), ip: %s' %(guid, len(guid), ip) )
+            
+            client = self.clients.newClient(match.group('cid'), name=match.group('name'), ip=ip, state=b3.STATE_ALIVE, guid=guid, pbid=pbid)
+
+        return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
 
     # kill
     def OnK(self, action, data, match=None):
@@ -100,50 +132,24 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
         if match.group('team'):
             victim.team = self.getTeam(match.group('team'))
 
+
         attacker.name = match.group('aname')
         victim.name = match.group('name')
-
-        event = b3.events.EVT_CLIENT_KILL
         
-        if attacker.cid == victim.cid or attacker.cid == '-1':
-            self.verbose2('Suicide Detected')
+        event = b3.events.EVT_CLIENT_KILL
+
+        if match.group('acid') == '-1':
             event = b3.events.EVT_CLIENT_SUICIDE
         elif attacker.team != b3.TEAM_UNKNOWN and \
              attacker.team and \
              victim.team and \
              attacker.team == victim.team:
-            self.verbose2('Teamkill Detected')
             event = b3.events.EVT_CLIENT_KILL_TEAM
 
         victim.state = b3.STATE_DEAD
         return b3.events.Event(event, (float(match.group('damage')), match.group('aweap'), match.group('dlocation'), match.group('dtype')), attacker, victim)
 
-    def OnInitgame(self, action, data, match=None):
-        options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)
-
-        for o in options:
-            if o[0] == 'mapname':
-                self.game.mapName = o[1]
-            elif o[0] == 'g_gametype':
-                self.game.gameType = o[1]
-            elif o[0] == 'fs_game':
-                self.game.modName = o[1]
-            else:
-                setattr(self.game, o[0], o[1])
-
-        self.game.startRound()
-
-        #Sync clients 30 sec after InitGame
-        t = threading.Timer(30, self.clients.sync)
-        t.start()
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
-
-    def OnExitlevel(self, action, data, match=None):
-        #self.clients.sync()
-        return b3.events.Event(b3.events.EVT_GAME_EXIT, data)
-
     def sync(self):
-        self.debug('Synchronising Clients')
         plist = self.getPlayerList()
         mlist = {}
 
@@ -211,43 +217,3 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
             if int(cid) == int(ccid):
                 self.debug('Client found in status/playerList')
                 return p
-
-
-    def newPlayer(self, cid, codguid, name):
-        if not self._counter.get(cid):
-            self.verbose('newPlayer thread no longer needed, Key no longer available')
-            return None
-        if self._counter.get(cid) == 'Disconnected':
-            self.debug('%s disconnected, removing from authentication queue' %name)
-            self._counter.pop(cid)
-            return None
-        self.debug('newClient: %s, %s, %s' %(cid, codguid, name) )
-        sp = self.connectClient(cid)
-        # Seems there is no difference in guids if we either do or don't use PunkBuster
-        if sp:
-            if not codguid:
-                self.error('No Guid... cannot continue!')
-                return None
-            guid = codguid
-            pbid = codguid
-            if len(guid) < 32:
-                guid = sp['guid']
-            if len(pbid) < 32:
-                pbid = sp['pbid']
-            ip = sp['ip']
-            #self.debug('sp: %s' % sp)
-            self._counter.pop(cid)
-        elif self._counter[cid] > 10:
-            self.debug('Couldn\'t Auth %s, giving up...' % name)
-            self._counter.pop(cid)
-            return None
-        # Player is not in the status response (yet), retry
-        else:
-            self.debug('%s not yet fully connected, retrying...#:%s' %(name, self._counter[cid]))
-            self._counter[cid] +=1
-            t = threading.Timer(4, self.newPlayer, (cid, codguid, name))
-            t.start()
-            return None
-            
-        client = self.clients.newClient(cid, name=name, ip=ip, state=b3.STATE_ALIVE, guid=guid, pbid=pbid, data={ 'codguid' : codguid })
-        return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
