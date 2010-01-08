@@ -92,7 +92,7 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
             self.debug('No attacker %s' % match.groupdict())
             return None
 
-        # COD5 doesn't report the team on kill, only use it if it's set
+        # COD5 first version doesn't report the team on kill, only use it if it's set
         # Hopefully the team has been set on another event
         if match.group('ateam'):
             attacker.team = self.getTeam(match.group('ateam'))
@@ -100,12 +100,10 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
         if match.group('team'):
             victim.team = self.getTeam(match.group('team'))
 
-
         attacker.name = match.group('aname')
         victim.name = match.group('name')
 
         event = b3.events.EVT_CLIENT_KILL
-
         
         if attacker.cid == victim.cid or attacker.cid == '-1':
             event = b3.events.EVT_CLIENT_SUICIDE
