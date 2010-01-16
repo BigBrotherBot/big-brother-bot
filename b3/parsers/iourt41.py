@@ -90,13 +90,15 @@
 # v1.7.3 - 31/12/2009 - Courgette
 #    * fix bug getting client by name when UrT slot 0 bug 
 #    * requires clients.py 1.2.8+
-# v1.7.4 - 02/12/2010 - Courgette
+# v1.7.4 - 02/12/2009 - Courgette
 #    * improve Urt slot bug woraround as it appears it can occur with slot num different than 0
-# v1.7.5 - 05/12/2010 - Courgette
+# v1.7.5 - 05/12/2009 - Courgette
 #    * fix minor bug in saytell
+# v1.7.6 - 16/01/2010 - xlr8or
+#    * removed maxRetries=4 keyword from getPlayerList()
 
 __author__  = 'xlr8or'
-__version__ = '1.7.5'
+__version__ = '1.7.6'
 
 
 import b3.parsers.q3a
@@ -1073,7 +1075,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         return players
 
     def sync(self):
-        plist = self.getPlayerList(maxRetries=4)
+        plist = self.getPlayerList()
         mlist = {}
 
         for cid, c in plist.iteritems():

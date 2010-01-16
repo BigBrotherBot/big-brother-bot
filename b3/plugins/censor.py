@@ -17,15 +17,18 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    1/16/2010 - 2.2.0 - xlr8or
+#       Added ignore_length as an optional configurable option
+#       Started debugging the badname checker
 #    8/13/2005 - 2.0.0 - ThorN
-#    Converted to use XML config
-#    Allow custom penalties for words and names
+#       Converted to use XML config
+#       Allow custom penalties for words and names
 #    7/23/2005 - 1.1.0 - ThorN
-#    Added data column to penalties table
-#    Put censored message/name in the warning data
+#       Added data column to penalties table
+#       Put censored message/name in the warning data
 
 __author__  = 'ThorN'
-__version__ = '2.1.0'
+__version__ = '2.2.0'
 
 import b3, re, traceback, sys, threading
 import b3.events
@@ -57,6 +60,7 @@ class CensorPlugin(b3.plugin.Plugin):
     _defaultBadWordPenalty = None
     _defaultBadNamePenalty = None
     _maxLevel = 0
+    _ignoreLength = 3
 
     def onStartup(self):
         self._adminPlugin = self.console.getPlugin('admin')
@@ -65,9 +69,18 @@ class CensorPlugin(b3.plugin.Plugin):
 
         self.registerEvent(b3.events.EVT_CLIENT_SAY)
         self.registerEvent(b3.events.EVT_CLIENT_TEAM_SAY)
+        self.registerEvent(b3.events.EVT_CLIENT_NAME_CHANGE)
+        self.registerEvent(b3.events.EVT_CLIENT_AUTH)
 
     def onLoadConfig(self):
-        self._maxLevel = self.config.getint('settings', 'max_level')
+        try:
+            self._maxLevel = self.config.getint('settings', 'max_level')
+        except:
+            self._maxLevel = 0
+        try:
+            self._ignoreLength = self.config.getint('settings', 'ignore_length')
+        except:
+            self._ignoreLength = 3
 
         penalty = self.config.get('badwords/penalty')[0]
 
@@ -141,7 +154,11 @@ class CensorPlugin(b3.plugin.Plugin):
                 return
             elif not event.client.connected:
                 return
-            if len(event.data) > 3:
+
+            if event.type == b3.events.EVT_CLIENT_AUTH or b3.events.EVT_CLIENT_NAME_CHANGE:
+                self.checkBadName(event.client)
+
+            elif len(event.data) > self._ignoreLength:
                 if event.type == b3.events.EVT_CLIENT_SAY or \
                    event.type == b3.events.EVT_CLIENT_TEAM_SAY:
                     raw = ' ' + event.data + ' '
@@ -156,8 +173,6 @@ class CensorPlugin(b3.plugin.Plugin):
                             self.penalizeClient(w.penalty, event.client, event.data)
                             raise b3.events.VetoEvent
 
-                elif event.type == b3.events.EVT_CLIENT_NAME_CHANGE:
-                    self.checkBadName(event.client)
 
         except b3.events.VetoEvent:
             raise
@@ -165,19 +180,31 @@ class CensorPlugin(b3.plugin.Plugin):
             self.error('Censor plugin error: %s - %s', msg, traceback.extract_tb(sys.exc_info()[2]))
 
     def penalizeClient(self, penalty, client, data=''):
+        """\
+        This is the default penalisation for using bad language in say and teamsay
+        """
+        #self.debug("%s"%((penalty.type, penalty.reason, penalty.keyword, penalty.duration),))
+        self._adminPlugin.penalizeClient(penalty.type, client, penalty.reason, penalty.keyword, penalty.duration, None, data)
+
+    def penalizeClientBadname(self, penalty, client, data=''):
+        """\
+        This is the penalisation for bad names
+        """
         #self.debug("%s"%((penalty.type, penalty.reason, penalty.keyword, penalty.duration),))
         self._adminPlugin.penalizeClient(penalty.type, client, penalty.reason, penalty.keyword, penalty.duration, None, data)
 
     def checkBadName(self, client):
         if not client.connected:
+            self.debug('Client not connected?')
             return
 
+        self.debug('Checking %s for badname' % (client.exactName))
         name = ' ' + self.clean(client.exactName) + ' '
         for w in self._badNames:
             if w.regexp.search(name):
-                self.penalizeClient(w.penalty, client, '%s => %s' % (client.exactName, name))
+                self.penalizeClientBadname(w.penalty, client, '%s => %s' % (client.exactName, name))
 
-                t = threading.Timer(300, self.checkBadName, (client,))
+                t = threading.Timer(60, self.checkBadName, (client,))
                 t.start()
                 return
 
@@ -186,9 +213,9 @@ class CensorPlugin(b3.plugin.Plugin):
             name = client.exactName
             for w in self._badNames:
                 if w.regexp.search(name):
-                    self.penalizeClient(w.penalty, client, client.exactName)
+                    self.penalizeClientBadname(w.penalty, client, client.exactName)
 
-                    t = threading.Timer(300, self.checkBadName, (client,))
+                    t = threading.Timer(60, self.checkBadName, (client,))
                     t.start()
 
                     return
