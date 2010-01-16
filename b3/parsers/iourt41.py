@@ -69,15 +69,40 @@
 # v1.6.2 - 05/12/2009 - Courgette
 #    * fix _rePlayerScore regexp
 #    * on startup, also try to get players' team (which is not given by dumpuser)
-# v1.6.3 - 06/11/2009 - Courgette
+# v1.6.3 - 06/12/2009 - Courgette
 #    * harden queryClientUserInfoByCid making sure we got a positive response. (Never trust input data...)
 #    * fix _rePlayerScore regexp again
-# v1.6.4 - 06/11/2009 - Courgette
+# v1.6.4 - 06/12/2009 - Courgette
 #    * sync() will retries to get player list up to 4 for times before giving up as
 #      sync() after map change too often fail 2 times.
+# v1.6.5 - 09/12/2009 - Courgette
+#    * different handling of 'name' in OnClientuserinfo. Now log looks less worrying
+#    * prevent exception on the rare case where a say line shows no text after cid (hence no regexp match)
+# v1.7 - 21/12/2009 - Courgette
+#    * add new UrT specific event : EVT_CLIENT_GEAR_CHANGE
+# v1.7.1 - 30/12/2009 - Courgette
+#    * Say, Sayteam and Saytell lines do not trigger name change anymore and detect the UrT bug described
+#      in http://www.bigbrotherbot.com/forums/urt/b3-bot-sometimes-mix-up-client-id%27s/ . Hopefully this
+#      definitely fixes the wrong aliases issue.
+# v1.7.2 - 30/12/2009 - Courgette
+#    * improve say lines slot bug detection for cases where no player exists on slot 0. 
+#      Refactor detection code to follow the KISS rule (keep it simple and stupid)
+# v1.7.3 - 31/12/2009 - Courgette
+#    * fix bug getting client by name when UrT slot 0 bug 
+#    * requires clients.py 1.2.8+
+# v1.7.4 - 02/01/2010 - Courgette
+#    * improve Urt slot bug woraround as it appears it can occur with slot num different than 0
+# v1.7.5 - 05/01/2010 - Courgette
+#    * fix minor bug in saytell
+# v1.7.6 - 16/01/2010 - xlr8or
+#    * removed maxRetries=4 keyword from getPlayerList()
+# v1.7.7 - 16/01/2010 - Courgette
+#    * put back maxRetries=4 keyword from getPlayerList(). @xlr8or: make sure you have the latest
+#      q3a.py file (v1.3.1+) for maxRetries to work.
 #
+
 __author__  = 'xlr8or'
-__version__ = '1.6.4'
+__version__ = '1.7.7'
 
 
 import b3.parsers.q3a
@@ -240,6 +265,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
 
         # add UrT specific events
         self.Events.createEvent('EVT_GAME_FLAG_RETURNED', 'Flag returned')
+        self.Events.createEvent('EVT_CLIENT_GEAR_CHANGE', 'Client gear change')
 
         # add the world client
         self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
@@ -480,8 +506,10 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         #2 \ip\145.99.135.227:27960\challenge\-232198920\qport\2781\protocol\68\battleye\1\name\[SNT]^1XLR^78or\rate\8000\cg_predictitems\0\snaps\20\model\sarge\headmodel\sarge\team_model\james\team_headmodel\*james\color1\4\color2\5\handicap\100\sex\male\cl_anonymous\0\teamtask\0\cl_guid\58D4069246865BB5A85F20FB60ED6F65
         bclient = self.parseUserInfo(data)
         
-        # remove spaces from name
-        bclient['name'] = bclient['name'].replace(' ','')
+        if bclient.has_key('name'):
+            # remove spaces from name
+            bclient['name'] = bclient['name'].replace(' ','')
+
 
         # split port from ip field
         if bclient.has_key('ip'):
@@ -504,6 +532,8 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             if client:
                 # update existing client
                 for k, v in bclient.iteritems():
+                    if hasattr(client, 'gear') and k == 'gear' and client.gear != v:
+                        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_GEAR_CHANGE, v, client))
                     setattr(client, k, v)
             else:
                 #make a new client
@@ -789,38 +819,57 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     # say
     def OnSay(self, action, data, match=None):
         #3:53 say: 8 denzel: lol
+        
+        if match is None:
+            return
+        
+        name = self.stripColors(match.group('name'))
+        cid = int(match.group('cid'))
         client = self.getByCidOrJoinPlayer(match.group('cid'))
+
+        if not client or client.name != name:
+            self.debug('UrT bug spotted. Trying to get client by name')
+            client = self.clients.getByName(name)
 
         if not client:
             self.verbose('No Client Found!')
             return None
-
-        self.verbose('Client Found: %s' % client.name)
+                
+        self.verbose('Client Found: %s on slot %s' % (client.name, client.cid))
+        
         data = match.group('text')
 
         #removal of weird characters
         if data and ord(data[:1]) == 21:
             data = data[1:]
 
-        client.name = match.group('name')
         return b3.events.Event(b3.events.EVT_CLIENT_SAY, data, client)
 
 
     # sayteam
     def OnSayteam(self, action, data, match=None):
         #2:28 sayteam: 12 New_UrT_Player_v4.1: wokele
+        if match is None:
+            return
+        
+        name = self.stripColors(match.group('name'))
+        cid = int(match.group('cid'))
         client = self.getByCidOrJoinPlayer(match.group('cid'))
+
+        if not client or client.name != name:
+            self.debug('UrT bug spotted. Trying to get client by name')
+            client = self.clients.getByName(name)
 
         if not client:
             self.verbose('No Client Found!')
             return None
-
-        self.verbose('Client Found: %s' % client.name)
+                
+        self.verbose('Client Found: %s on slot %s' % (client.name, client.cid))
+        
         data = match.group('text')
         if data and ord(data[:1]) == 21:
             data = data[1:]
 
-        client.name = match.group('name')
         return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data, client, client.team)
 
 
@@ -833,19 +882,30 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         #if not len(data) >= 2 and not (data[:1] == '!' or data[:1] == '@') and match.group('cid') == match.group('acid'):
         #    return None
 
+        if match is None:
+            return
+        
+        name = self.stripColors(match.group('name'))
+        cid = int(match.group('cid'))
         client = self.getByCidOrJoinPlayer(match.group('cid'))
         tclient = self.clients.getByCID(match.group('acid'))
 
+        if not client or client.name != name:
+            self.debug('UrT bug spotted. Trying to get client by name')
+            client = self.clients.getByName(name)
+
         if not client:
-            self.verbose('No Client Found')
+            self.verbose('No Client Found!')
             return None
+                
+        self.verbose('Client Found: %s on slot %s' % (client.name, client.cid))
 
         data = match.group('text')
         if data and ord(data[:1]) == 21:
             data = data[1:]
 
-        client.name = match.group('name')
         return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data, client, tclient)
+
 
 
     # tell
@@ -1319,7 +1379,6 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                         setattr(client, 'team', newteam)
                 else:
                     self.debug('no client found for slot %s' % m.group('slot'))
-
 
 
 
