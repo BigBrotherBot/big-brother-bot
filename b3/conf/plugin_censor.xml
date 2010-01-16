@@ -105,13 +105,13 @@
 		<badword name="huora" lang="skandinavian">
 			<regexp>hu[o0]r[a@]</regexp>
 		</badword>
-		<badword name="spica" lang="es">
+		<badword name="spica" lang="pt">
 			<regexp>\sp[i!1]ca\s</regexp>
 		</badword>
-		<badword name="piroca" lang="es">
+		<badword name="piroca" lang="pt">
 			<regexp>p[i!1]r[o0]ca</regexp>
 		</badword>
-		<badword name="caralho" lang="es">
+		<badword name="caralho" lang="pt">
 			<regexp>c[a@]r[a@]lh[o0]</regexp>
 		</badword>
 		<badword name="puta" lang="es">
