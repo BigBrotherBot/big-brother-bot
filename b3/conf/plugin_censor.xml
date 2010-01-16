@@ -1,6 +1,8 @@
 <configuration plugin="censor">
 	<settings name="settings">
 		<set name="max_level">40</set>
+		<!-- ignore bad words that have equal or less characters: -->
+    <set name="ignore_length">3</set>
 	</settings>
 	<badwords>
 		<penalty type="warning" reasonkeyword="cuss"/>
