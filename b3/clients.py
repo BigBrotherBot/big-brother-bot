@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -17,6 +17,19 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    08/01/2010 - 1.2.10 - xlr8or
+#    * disabled adding aliasses for world
+#    01/01/2001 - 1.2.9 - Courgette
+#    * clients get* methods' code is now more meaningful as : 
+#        b = weakref.ref(a)() 
+#        b = a
+#    are strictly identical 
+#    01/01/2010 - 1.2.8 - Courgette
+#    * fix bug in Clients.getByName()
+#    14/12/2009 - 1.2.7 - Courgette
+#    * Change the way client.name and client.exactName are set and when the 
+#      client name changed event is triggered
+#    * A new alias is given the default num_used 1 (was 0)
 #    2/26/2009 - 1.2.6 - xlr8or
 #     Changed lastVisit to a global client variable
 #    5/6/2008 - 1.2.5 - xlr8or
@@ -30,9 +43,9 @@
 #     Added data parameter to Client.tempban()
 
 __author__  = 'ThorN'
-__version__ = '1.2.6'
+__version__ = '1.2.10'
 
-import b3, string, re, time, functions, threading, weakref, traceback, sys
+import b3, string, re, time, functions, threading, traceback, sys
 
 class ClientVar(object):
     value = None
@@ -103,6 +116,11 @@ class Client(object):
 
         for k, v in kwargs.iteritems():
             setattr(self, k, v)
+            
+        print 'created : %s' % self
+            
+    def __del__(self):
+        print 'destroyed : %s' % self
 
     def isvar(self, plugin, key):
         try:
@@ -377,23 +395,28 @@ class Client(object):
     _exactName = ''
 
     def _set_name(self, name):
-        ename = name
         if self.console:
-            name = self.console.stripColors(ename)
+            newName = self.console.stripColors(name)
+        else:
+            newName = name.strip()
 
-        if self._exactName != ename:
-            if self._name and self._name != name:
-                self.makeAlias(self._name)
-
-            self._name = name
-            self._exactName = ename + '^7'
-
-            if self.console:
-                self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_NAME_CHANGE, self.name, self))
+        if self._name == newName:
+            self.console.verbose2('Aborted Making Alias for cid: %s, name is the same' % self.cid)
+            return
+        if self.cid == '-1':
+            self.console.verbose2('Aborted Making Alias for cid: %s, must be World' % self.cid)
+            return
+        
+        self.makeAlias(self._name)
+        self._name = newName
+        self._exactName = name + '^7'
+            
+        if self.console and self.authed:
+            self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_NAME_CHANGE, self.name, self))
 
     def _get_name(self):
         return self._name
-
+        
     def _get_exactName(self):
         return self._exactName
 
@@ -768,7 +791,7 @@ class Alias(Struct):
     alias    = ''
     timeAdd  = 0
     timeEdit = 0
-    numUsed  = 0
+    numUsed  = 1
     clientId = 0
 
     def save(self, console):
@@ -822,13 +845,13 @@ class Clients(dict):
         name = name.lower()
 
         try:
-            return weakref.ref(self[self._nameIndex[name]])()
+            return self[self._nameIndex[name]]
         except:
             for cid,c in self.items():
                 if c.name and c.name.lower() == name:
                     #self.console.debug('Found client by name %s = %s', name, c.name)
-                    self._exactNameIndex[name] = c.cid
-                    return weakref.ref(c)
+                    self._nameIndex[name] = c.cid
+                    return c
 
         return None
 
@@ -838,13 +861,13 @@ class Clients(dict):
         try:
             c = self[self._exactNameIndex[name]]
             #self.console.debug('Found client by exact name in index %s = %s : %s', name, c.exactName, c.__class__.__name__)
-            return weakref.ref(c)()
+            return c
         except:
             for cid,c in self.items():
                 if c.exactName and c.exactName.lower() == name:
                     #self.console.debug('Found client by exact name %s = %s', name, c.exactName)
                     self._exactNameIndex[name] = c.cid
-                    return weakref.ref(c)()
+                    return c
 
         return None
 
@@ -852,7 +875,7 @@ class Clients(dict):
         clist = []
         for cid,c in self.items():
             if not c.hide:
-                clist.append(weakref.ref(c)())
+                clist.append(c)
         return clist
 
     def getClientsByLevel(self, min=0, max=100, masked=False):
@@ -862,12 +885,12 @@ class Clients(dict):
             if c.hide:
                 continue
             elif not masked and c.maskGroup and c.maskGroup.level >= min and c.maskGroup.level <= max:
-                clist.append(weakref.ref(c)())
+                clist.append(c)
             elif not masked and c.maskGroup:
                 continue
             elif c.maxLevel >= min and c.maxLevel <= max:
                 #self.console.debug('getClientsByLevel hidden = %s', c.hide)
-                clist.append(weakref.ref(c)())
+                clist.append(c)
         return clist
 
     def getClientsByName(self, name):
@@ -875,7 +898,7 @@ class Clients(dict):
         name = name.lower()
         for cid,c in self.items():
             if not c.hide and string.find(c.name.lower(), name) != -1:
-                clist.append(weakref.ref(c)())
+                clist.append(c)
 
         return clist
 
@@ -883,7 +906,7 @@ class Clients(dict):
         name = name.lower()
         for cid,c in self.items():
             if not c.hide and string.find(c.name.lower(), name) != -1:
-                return weakref.ref(c)()
+                return c
 
         return None
 
@@ -891,7 +914,7 @@ class Clients(dict):
         clist = []
         for cid,c in self.items():
             if not c.hide and c.state == state:
-                clist.append(weakref.ref(c)())
+                clist.append(c)
 
         return clist
 
@@ -941,15 +964,15 @@ class Clients(dict):
         guid = guid.upper()
 
         try:
-            return weakref.ref(self[self._guidIndex[guid]])()
+            return self[self._guidIndex[guid]]
         except:
             for cid,c in self.items():
                 if c.guid and c.guid == guid:
                     self._guidIndex[guid] = c.cid
-                    return weakref.ref(c)()
+                    return c
                 elif functions.fuzzyGuidMatch(c.guid, guid):
                     # Found by fuzzy matching, don't index
-                    return weakref.ref(c)()
+                    return c
                     
         return None
 
@@ -962,8 +985,10 @@ class Clients(dict):
             self.console.error('Unexpected error getByCID(%s) - %s', cid, e)
         else:
             #self.console.debug('Found client by CID %s = %s', cid, c.name)
-            if c.cid == str(cid): return weakref.ref(c)()
-            else: return None
+            if c.cid == str(cid): 
+                return c
+            else: 
+                return None
 
         return None
 
