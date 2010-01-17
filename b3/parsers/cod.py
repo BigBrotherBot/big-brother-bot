@@ -20,14 +20,13 @@
 #    Added damage type to Damage and Kill event data
 # 27/6/2009 - 1.3.1 - xlr8or - Added Action Mechanism (event) for version 1.1.5 
 # 28/8/2009 - 1.3.2 - Bakes - added regexp for CoD4 suicides
+# 17/1/2010 - 1.3.3 - xlr8or - moved sync to InitGame (30 second delay)
 
 __author__  = 'ThorN'
-__version__ = '1.3.2'
-
-
+__version__ = '1.3.3'
 
 import b3.parsers.q3a
-import re, string
+import re, string, threading
 import b3
 import b3.events
 import b3.parsers.punkbuster
@@ -261,8 +260,29 @@ class CodParser(b3.parsers.q3a.Q3AParser):
         client.name = match.group('name')
         return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data, client, tclient)
 
+    def OnInitgame(self, action, data, match=None):
+        options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)
+
+        for o in options:
+            if o[0] == 'mapname':
+                self.game.mapName = o[1]
+            elif o[0] == 'g_gametype':
+                self.game.gameType = o[1]
+            elif o[0] == 'fs_game':
+                self.game.modName = o[1]
+            else:
+                setattr(self.game, o[0], o[1])
+
+        self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
+        self.game.startRound()
+
+        #Sync clients 30 sec after InitGame
+        t = threading.Timer(30, self.clients.sync)
+        t.start()
+        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
+
     def OnExitlevel(self, action, data, match=None):
-        self.clients.sync()
+        #self.clients.sync()
         return b3.events.Event(b3.events.EVT_GAME_EXIT, data)
 
     def OnItem(self, action, data, match=None):
@@ -327,3 +347,32 @@ class CodParser(b3.parsers.q3a.Q3AParser):
             return None
         else:
             return None
+
+    def sync(self):
+        self.debug('Synchronising Clients.')
+        plist = self.getPlayerList(maxRetries=4)
+        mlist = {}
+
+        for cid, c in plist.iteritems():
+            client = self.clients.getByCID(cid)
+            if client:
+                if client.guid and c.has_key('guid'):
+                    if client.guid == c['guid']:
+                        # player matches
+                        self.debug('in-sync %s == %s', client.guid, c['guid'])
+                        mlist[str(cid)] = client
+                    else:
+                        self.debug('no-sync %s <> %s', client.guid, c['guid'])
+                        client.disconnect()
+                elif client.ip and c.has_key('ip'):
+                    if client.ip == c['ip']:
+                        # player matches
+                        self.debug('in-sync %s == %s', client.ip, c['ip'])
+                        mlist[str(cid)] = client
+                    else:
+                        self.debug('no-sync %s <> %s', client.ip, c['ip'])
+                        client.disconnect()
+                else:
+                    self.debug('no-sync: no guid or ip found.')
+        
+        return mlist

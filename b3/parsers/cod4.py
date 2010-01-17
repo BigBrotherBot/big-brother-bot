@@ -22,10 +22,11 @@
 # v1.1.5  : Bakes - Improved suicide code, now works with weapon suicides, not falling.
 # v1.1.6  : xlr8or - Minor bugfix regarding unassigned pbid on non pb servers.
 # v1.2.0  : xlr8or - Big CoD4 MakeOver 
-
+# 17/1/2010 - 1.2.1 - xlr8or
+#  Moved OnInitgame and OnExitlevel to codparser!
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
@@ -117,30 +118,6 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
 
         victim.state = b3.STATE_DEAD
         return b3.events.Event(event, (float(match.group('damage')), match.group('aweap'), match.group('dlocation'), match.group('dtype')), attacker, victim)
-
-    def OnInitgame(self, action, data, match=None):
-        options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)
-
-        for o in options:
-            if o[0] == 'mapname':
-                self.game.mapName = o[1]
-            elif o[0] == 'g_gametype':
-                self.game.gameType = o[1]
-            elif o[0] == 'fs_game':
-                self.game.modName = o[1]
-            else:
-                setattr(self.game, o[0], o[1])
-
-        self.game.startRound()
-
-        #Sync clients 30 sec after InitGame
-        t = threading.Timer(30, self.clients.sync)
-        t.start()
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
-
-    def OnExitlevel(self, action, data, match=None):
-        #self.clients.sync()
-        return b3.events.Event(b3.events.EVT_GAME_EXIT, data)
 
     def sync(self):
         self.debug('Synchronising Clients')

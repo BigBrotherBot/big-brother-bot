@@ -29,9 +29,11 @@
 #  Fixed unassigned pbid bug for non-pb servers
 # 9/1/2010 - 1.0.6 - xlr8or
 #  Moved sync to a thread 30 secs after InitGame
+# 17/1/2010 - 1.0.7 - xlr8or
+#  Moved OnInitgame and OnExitlevel to codparser!
 
 __author__  = 'xlr8or'
-__version__ = '1.0.6'
+__version__ = '1.0.7'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
@@ -117,30 +119,6 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
 
         victim.state = b3.STATE_DEAD
         return b3.events.Event(event, (float(match.group('damage')), match.group('aweap'), match.group('dlocation'), match.group('dtype')), attacker, victim)
-
-    def OnInitgame(self, action, data, match=None):
-        options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)
-
-        for o in options:
-            if o[0] == 'mapname':
-                self.game.mapName = o[1]
-            elif o[0] == 'g_gametype':
-                self.game.gameType = o[1]
-            elif o[0] == 'fs_game':
-                self.game.modName = o[1]
-            else:
-                setattr(self.game, o[0], o[1])
-
-        self.game.startRound()
-
-        #Sync clients 30 sec after InitGame
-        t = threading.Timer(30, self.clients.sync)
-        t.start()
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
-
-    def OnExitlevel(self, action, data, match=None):
-        #self.clients.sync()
-        return b3.events.Event(b3.events.EVT_GAME_EXIT, data)
 
     def connectClient(self, ccid):
         players = self.getPlayerList()
