@@ -155,7 +155,7 @@ class CensorPlugin(b3.plugin.Plugin):
             elif not event.client.connected:
                 return
 
-            if event.type == b3.events.EVT_CLIENT_AUTH or b3.events.EVT_CLIENT_NAME_CHANGE:
+            if event.type == b3.events.EVT_CLIENT_AUTH or event.type == b3.events.EVT_CLIENT_NAME_CHANGE:
                 self.checkBadName(event.client)
 
             elif len(event.data) > self._ignoreLength:
