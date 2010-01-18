@@ -53,4 +53,5 @@ print "project files content signature: %s" % md5sum_content.hexdigest()
  
 for line in linesToDisplay:
     print line
-        
+
+    
