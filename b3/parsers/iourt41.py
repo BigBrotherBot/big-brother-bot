@@ -99,10 +99,13 @@
 # v1.7.7 - 16/01/2010 - Courgette
 #    * put back maxRetries=4 keyword from getPlayerList(). @xlr8or: make sure you have the latest
 #      q3a.py file (v1.3.1+) for maxRetries to work.
+# v1.7.8 - 18/01/2010 - Courgette
+#    * update getPlayerList and sync so that connecting players (CNCT) are not ignored.
+#      This will allow to use commands like !ci or !kick on hanging players.
 #
 
 __author__  = 'xlr8or'
-__version__ = '1.7.7'
+__version__ = '1.7.8'
 
 
 import b3.parsers.q3a
@@ -1070,7 +1073,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         for line in data.split('\n'):
             m = re.match(self._regPlayer, line.strip())
             if m:
-                if m.group('ping') == 'ZMBI' or m.group('ping') == 'CNCT':
+                if m.group('ping') == 'ZMBI':
                     # ignore them, let them not bother us with errors
                     pass
                 else:
@@ -1088,9 +1091,6 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                 # Disconnect the zombies first
                 if c['ping'] == 'ZMBI':
                     self.debug('slot is in state zombie: %s - ignoring', c['ip'])
-                    # client.disconnect()
-                elif c['ping'] == 'CNCT':
-                    self.debug('Client is connecting: %s - ignoring', c['ip'])
                     # client.disconnect()
                 elif client.guid and c.has_key('guid'):
                     if client.guid == c['guid']:
