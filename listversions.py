@@ -17,6 +17,7 @@ for root, subFolders, files in os.walk(rootdir):
     for file in files:
         if file.endswith('.py'):
             fileList.append(os.path.join(root,file))
+fileList.sort()        
         
 reVersion = re.compile(r'^\s*__version__\s*=\s*[\'"](?P<version>.+)[\'"].*$', re.MULTILINE)
 
