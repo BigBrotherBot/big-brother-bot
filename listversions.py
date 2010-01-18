@@ -25,7 +25,7 @@ reVersion = re.compile(r'^\s*__version__\s*=\s*[\'"](?P<version>.+)[\'"].*$', re
 resultsLines = []
 for pythonfile in fileList:
     try:
-        str = pythonfile + '\t'
+        str = pythonfile + ' '
         f = open(pythonfile)
         filecontent = f.read()
         
@@ -38,7 +38,7 @@ for pythonfile in fileList:
         
 md5sum = hashlib.md5()
 for line in resultsLines:
-    md5sum.update(line)
+    md5sum.update(line.replace('\\','/'))
 print "project signature: %s" % md5sum.hexdigest()
  
 for line in resultsLines:
