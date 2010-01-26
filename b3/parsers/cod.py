@@ -25,9 +25,10 @@
 # 26/1/2010 - 1.4.1 - xlr8or
 #    * Added authorizeClients() for IpsOnly
 #    * minor bugfixes after initial tests
+# 26/1/2010 - 1.4.2 - xlr8or - Added mapEnd() on Exitlevel
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.1'
+__version__ = '1.4.2'
 
 import b3.parsers.q3a
 import re, string, threading
@@ -324,7 +325,7 @@ class CodParser(b3.parsers.q3a.Q3AParser):
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
 
     def OnExitlevel(self, action, data, match=None):
-        #self.clients.sync()
+        self.game.mapEnd()
         return b3.events.Event(b3.events.EVT_GAME_EXIT, data)
 
     def OnItem(self, action, data, match=None):
