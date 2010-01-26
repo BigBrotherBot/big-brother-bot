@@ -68,4 +68,5 @@ class Game(object):
         self._mapTimeStart = self.console.time()
 
     def mapEnd(self):
-        pass
+        self._mapTimeStart = None
+        
