@@ -24,6 +24,7 @@ import re
 
 class Cod2Parser(b3.parsers.cod.CodParser):
     gameName = 'cod2'
+    IpsOnly = False
 
     _commands = {}
     _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'

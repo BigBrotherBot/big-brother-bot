@@ -19,6 +19,9 @@
 # $Id: q3a.py 103 2006-04-14 16:23:10Z thorn $
 #
 # CHANGELOG
+#    26/01/2010 - 1.3.2 -  xlr8or
+#    * added maxRetries=4 to authorizeClients()
+#    * getMap() was moved from iourt to q3a
 #    12/06/2009 - 1.3.1 - Courgette
 #    * getPlayerList can be called with a custom maxRetries value. This can be
 #    useful when a map just changed and the gameserver hangs for a while.
@@ -41,7 +44,7 @@
 
 
 __author__  = 'ThorN'
-__version__ = '1.3.1'
+__version__ = '1.3.2'
 
 import re, string
 import b3
@@ -101,6 +104,7 @@ class Q3AParser(b3.parser.Parser):
     _reColor = re.compile(r'(\^[0-9a-z])|[\x80-\xff]')
     _reCvarName = re.compile(r'^[a-z0-9_.]+$', re.I)
     _reCvar = re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?"\s+default:\s*"(?P<default>.*?)(\^7)?"$', re.I)
+    _reMapNameFromStatus = re.compile(r'^map:\s+(?P<map>.+)$', re.I)
 
     PunkBuster = None
 
@@ -588,6 +592,20 @@ class Q3AParser(b3.parser.Parser):
         else:
             self.error('%s is not a valid cvar name', cvarName)
 
+    def getMap(self):
+        data = self.write('status')
+        if not data:
+            return None
+
+        line = data.split('\n')[0]
+        #self.debug('[%s]'%line.strip())
+
+        m = re.match(self._reMapNameFromStatus, line.strip())
+        if m:
+            return str(m.group('map'))
+
+        return None
+
     def getMaps(self):
         return None
 
@@ -620,7 +638,7 @@ class Q3AParser(b3.parser.Parser):
         return mlist
 
     def authorizeClients(self):
-        players = self.getPlayerList()
+        players = self.getPlayerList(maxRetries=4)
         self.verbose('authorizeClients() = %s' % players)
 
         for cid, p in players.iteritems():
