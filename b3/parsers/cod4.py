@@ -23,11 +23,15 @@
 # v1.1.6  : xlr8or - Minor bugfix regarding unassigned pbid on non pb servers.
 # v1.2.0  : xlr8or - Big CoD4 MakeOver 
 # 17/1/2010 - 1.2.1 - xlr8or
-#  Moved OnInitgame and OnExitlevel to codparser!
+#  * Moved OnInitgame and OnExitlevel to codparser!
 # 25/1/2010 - 1.3.0 - xlr8or - refactored cod parser series
+# 27/1/2010 - 1.3.1 - xlr8or
+#  * Added authorizeClients() for IpsOnly
+#  * Minor bugfix in sync() for IpsOnly
+
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.3.0'
+__version__ = '1.3.1'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
@@ -115,7 +119,7 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
         for cid, c in plist.iteritems():
             client = self.clients.getByCID(cid)
             if client:
-                if client.guid and c.has_key('guid'):
+                if client.guid and c.has_key('guid') and not self.IpsOnly:
                     if functions.fuzzyGuidMatch(client.guid, c['guid']):
                         # player matches
                         self.debug('in-sync %s == %s', client.guid, c['guid'])
@@ -158,6 +162,9 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
                 # Only set provided data, otherwise use the currently set data
                 sp.ip   = p.get('ip', sp.ip)
                 sp.pbid = p.get('pbid', sp.pbid)
-                sp.guid = p.get('guid', sp.guid)
+                if self.IpsOnly:
+                    sp.guid = p.get('ip', sp.guid)
+                else:
+                    sp.guid = p.get('guid', sp.guid)
                 sp.data = p
                 sp.auth()

@@ -26,9 +26,11 @@
 #    * Added authorizeClients() for IpsOnly
 #    * minor bugfixes after initial tests
 # 26/1/2010 - 1.4.2 - xlr8or - Added mapEnd() on Exitlevel
+# 27/1/2010 - 1.4.3 - xlr8or - Minor bugfix in sync() for IpsOnly
+
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.2'
+__version__ = '1.4.3'
 
 import b3.parsers.q3a
 import re, string, threading
@@ -399,7 +401,7 @@ class CodParser(b3.parsers.q3a.Q3AParser):
         for cid, c in plist.iteritems():
             client = self.clients.getByCID(cid)
             if client:
-                if client.guid and c.has_key('guid'):
+                if client.guid and c.has_key('guid') and not self.IpsOnly:
                     if client.guid == c['guid']:
                         # player matches
                         self.debug('in-sync %s == %s', client.guid, c['guid'])
