@@ -17,7 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
-#   9/1/2009 - 1.4.2 - xlr8or
+#   27/1/2010 - 1.4.4 - xlr8or
+#    * added some verbose info to startup()
+#   9/1/2009 - 1.4.3 - xlr8or
 #    * check database connection before checking groups
 #   8/24/2009 - 1.4.2 - courgette
 #    * warning messages are also sent by pm to the admin that give them
@@ -99,8 +101,11 @@ class AdminPlugin(b3.plugin.Plugin):
             superadmins = self.console.clients.lookupSuperAdmins()
             try:
                 if len(superadmins) == 0:
+                    self.verbose('No SuperAdmins found, enabling !iamgod')
                     # There are no superadmins, enable the !iamgod command
                     self.registerCommand(self, 'iamgod', 0, self.getCmd('iamgod'))
+                else:
+                    self.verbose('SuperAdmin(s) found, no need for !iamgod')
             except Exception, msg:
                 # no proper groups available, cannot continue
                 self.critical('Seems your groupstable in the database is empty. Please recreate your database using the proper sql syntax - use b3/docs/b3.sql - (%s)' %msg)
