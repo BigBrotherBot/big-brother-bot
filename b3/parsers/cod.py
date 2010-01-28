@@ -27,10 +27,11 @@
 #    * minor bugfixes after initial tests
 # 26/1/2010 - 1.4.2 - xlr8or - Added mapEnd() on Exitlevel
 # 27/1/2010 - 1.4.3 - xlr8or - Minor bugfix in sync() for IpsOnly
+# 28/1/2010 - 1.4.4 - xlr8or - Make sure cid is entering Authentication queue only once. 
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.3'
+__version__ = '1.4.4'
 
 import b3.parsers.q3a
 import re, string, threading
@@ -219,6 +220,9 @@ class CodParser(b3.parsers.q3a.Q3AParser):
             # Join-event for mapcount reasons and so forth
             return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
         else:
+            if self._counter.get(cid):
+                self.verbose('cid: %s already in authentication queue. Aborting Join.' %cid)
+                return None
             self._counter[cid] = 1
             t = threading.Timer(2, self.newPlayer, (cid, codguid, name))
             t.start()
