@@ -98,8 +98,8 @@ def run(config=None):
                 break
 
     if not config:
-        Setup(config)
-        #raise SystemExit('Could not find config file.')
+        #Setup(config)
+        raise SystemExit('ERROR: Could not find config file, Please run B3 with option: --setup or -s')
 
     b3.start(config)
 
