@@ -94,10 +94,7 @@ def getAbsolutePath(path):
 
 def start(configFile):
     configFile = getAbsolutePath(configFile)
-    if platform.system() in ('Windows', 'Microsoft'):
-        os.system('cls')
-    else:
-        os.system('clear')
+    clearScreen()
 
     # Check if a newer version of B3 is available
     _update = checkUpdate(__version__, singleLine=False, showErrormsg=True)
@@ -106,6 +103,11 @@ def start(configFile):
         _delay = 5
         print "...resuming in %s seconds" %_delay
         time.sleep(_delay)
+    else:
+        print "...no update available."
+        _delay = 1
+        time.sleep(_delay)
+    clearScreen()
     
     print 'Starting %s\n' % getB3versionString()
 
@@ -150,3 +152,9 @@ def start(configFile):
     except Exception, msg:
         print 'Error: %s\n%s' % (msg, ''.join(traceback.format_list(traceback.extract_tb(sys.exc_info()[2]))))
         sys.exit(223)
+
+def clearScreen():
+    if platform.system() in ('Windows', 'Microsoft'):
+        os.system('cls')
+    else:
+        os.system('clear')
