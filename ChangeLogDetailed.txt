@@ -1,3 +1,96 @@
+2010-01-29  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/__init__.py: minor update in screen buildup
+
+2010-01-29  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py: Minor rewrite of Auth queue check
+
+2010-01-29  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/__init__.py: Fix Vista clearscreen bug
+
+2010-01-28  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py: Make sure cid is entering Authentication queue
+	only once.
+
+2010-01-27  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: Improved Setup: - Improved console clearance for Vista - Intelligent PB settings - Added code for downloading and unzipping extplugins - not
+	complete.
+
+2010-01-27  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/plugins/admin.py: Added some verbose info to startup()
+
+2010-01-27  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py, b3/parsers/cod4.py: Minor bugfix in sync() for
+	IpsOnly
+
+2010-01-26  Ismael <ismaelgfk@gmail.com>
+
+	* b3/game.py: Game must restart the _mapTimeStart to track game time
+	accurately
+
+2010-01-26  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py: Added mapEnd() to onExitlevel
+
+2010-01-26  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py, b3/parsers/cod2.py, b3/parsers/cod4.py,
+	b3/parsers/cod5.py, b3/parsers/iourt41.py, b3/parsers/q3a.py: * Merged new cod parsers into master branch * Moved getMap() from iourt.py to q3a.py (incl.
+	_reMapNameFromStatus)
+
+2010-01-19  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/iourt41.py: iourt41 : connecting players (CNCT) are not
+	ignored anymore. Allow to use !kick or !ci on ci players
+
+2010-01-18  xlr8or <xlr8or@xlr8or.com>
+
+	* listversions.py: Signed-off-by: xlr8or <xlr8or@xlr8or.com>
+
+2010-01-18  Courgette <courgette@ubu-team.org>
+
+	* listversions.py: listversion script improved to also find
+	differences between individual files
+
+2010-01-18  Courgette <courgette@ubu-team.org>
+
+	* listversions.py: listversions: remove differences between linux
+	and windows
+
+2010-01-18  Courgette <courgette@ubu-team.org>
+
+	* listversions.py: listversions.py: sort files because they are not
+	returned in the same order on Linux and Windows
+
+2010-01-18  Courgette <courgette@ubu-team.org>
+
+	* listversions.py: add a script to easily list py files versions
+	numbers
+
+2010-01-18  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/q3a_rcon.py: put back q3a_rcon v1.3.6
+
+2010-01-17  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py, b3/parsers/cod4.py, b3/parsers/cod5.py: 
+	Refactoring cod parser series.  Moved sync to OnInitgame (delayed
+	30s) to fix synchronisation issues.
+
+2010-01-16  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/plugins/censor.py: minor update
+
+2010-01-16  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG, ChangeLogDetailed.txt: Changed changelog files
+
 2010-01-16  Courgette <courgette@ubu-team.org>
 
 	* b3/parsers/iourt41.py: put back maxRetries=4 keyword from
