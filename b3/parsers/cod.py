@@ -28,10 +28,11 @@
 # 26/1/2010 - 1.4.2 - xlr8or - Added mapEnd() on Exitlevel
 # 27/1/2010 - 1.4.3 - xlr8or - Minor bugfix in sync() for IpsOnly
 # 28/1/2010 - 1.4.4 - xlr8or - Make sure cid is entering Authentication queue only once. 
+# 29/1/2010 - 1.4.5 - xlr8or - Minor rewrite of Auth queue check 
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.4'
+__version__ = '1.4.5'
 
 import b3.parsers.q3a
 import re, string, threading
@@ -456,7 +457,10 @@ class CodParser(b3.parsers.q3a.Q3AParser):
                 guid = sp['pbid']
                 pbid = guid # save pbid in both fields to be consistent with other pb enabled databases
             ip = sp['ip']
-            self._counter.pop(cid)
+            if self._counter.get(cid):
+                self._counter.pop(cid)
+            else:
+                return None
         # PunkBuster is not enabled, using codguid
         elif sp:
             if self.IpsOnly:
@@ -468,13 +472,14 @@ class CodParser(b3.parsers.q3a.Q3AParser):
                 guid = codguid
                 pbid = None
                 ip = sp['ip']
-                try:
+                if self._counter.get(cid):
                     self._counter.pop(cid)
-                except:
-                    self.verbose('cid no longer in authentication queue, continueing')
+                else:
+                    return None
         elif self._counter[cid] > 10:
             self.debug('Couldn\'t Auth %s, giving up...' % name)
-            self._counter.pop(cid)
+            if self._counter.get(cid):
+                self._counter.pop(cid)
             return None
         # Player is not in the status response (yet), retry
         else:
