@@ -94,10 +94,10 @@ def getAbsolutePath(path):
 
 def start(configFile):
     configFile = getAbsolutePath(configFile)
-    if platform.system() != 'Windows':
-        os.system('clear')
-    else:
+    if platform.system() in ('Windows', 'Microsoft'):
         os.system('cls')
+    else:
+        os.system('clear')
 
     # Check if a newer version of B3 is available
     _update = checkUpdate(__version__, singleLine=False, showErrormsg=True)
