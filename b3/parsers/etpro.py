@@ -16,7 +16,11 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
-# 05/04/2009: 0.1.0: Updating so that it works for etpro
+# 05/04/2009: 0.0.1: Updating so that it works for etpro
+# 31/01/2010 - 0.0.2 - Courgette
+# * getMap() is now inherited from q3a
+# 
+#
 #
 # CREDITS
 # Based on the version 0.0.1, thanks ThorN.
@@ -36,7 +40,7 @@
 
 
 __author__    = 'xlr8or, ailmanki'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 import re, string
 import b3
@@ -109,7 +113,6 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
     # --- ----- ---- --------------- ------- --------------------- ----- -----
     #   2     0   45 xlr8or[*]             0 145.99.135.227:27960  39678 25000
     _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
-    _reMapNameFromStatus = re.compile(r'^map:\s+(?P<map>.+)$', re.I)
     _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
 
     PunkBuster = None
@@ -464,21 +467,6 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
         
         return data
 
-    def getMap(self):
-        data = self.write('status')
-        if not data:
-            return None
-
-        line = data.split('\n')[0] 
-        #self.debug('[%s]'%line.strip())
-        
-        m = re.match(self._reMapNameFromStatus, line.strip())
-        if m:
-            return str(m.group('map'))
-                                
-        return None
-
-
     def message(self, client, text):
         try:
             if client == None:
@@ -544,19 +532,6 @@ class EtproParser(b3.parsers.q3a.Q3AParser):
         #self.debug('_gameType: %s' % _gameType)
         return _gameType
 
-    def getMap(self):
-        data = self.write('status')
-        if not data:
-            return None
-
-        line = data.split('\n')[0] 
-        #self.debug('[%s]'%line.strip())
-        
-        m = re.match(self._reMapNameFromStatus, line.strip())
-        if m:
-            return str(m.group('map'))
-                    
-        return None
 
     def getMaps(self):
         m=[]

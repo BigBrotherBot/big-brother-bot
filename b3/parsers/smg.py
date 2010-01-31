@@ -18,7 +18,9 @@
 # CHANGELOG
 # 31/01/2010 - 0.1 - Courgette
 # * use the new /cp command to send private messages (requires SmokinGuns v1.1)
-#
+# 31/01/2010 - 0.1.1 - Courgette
+# * getMap() is now inherited from q3a
+# 
 #
 
 __author__  = 'xlr8or'
@@ -81,7 +83,6 @@ class SmgParser(b3.parsers.q3a.Q3AParser):
     #  3     3   37 xlr8or^7                0 145.99.135.227:27960   3598 25000
     _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
     #_regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.:-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
-    _reMapNameFromStatus = re.compile(r'^map:\s+(?P<map>.+)$', re.I)
     _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
 
     PunkBuster = None
@@ -338,19 +339,6 @@ class SmgParser(b3.parsers.q3a.Q3AParser):
         
         return data
 
-    def getMap(self):
-        data = self.write('status')
-        if not data:
-            return None
-
-        line = data.split('\n')[0] 
-        #self.debug('[%s]'%line.strip())
-        
-        m = re.match(self._reMapNameFromStatus, line.strip())
-        if m:
-            return str(m.group('map'))
-                                
-        return None
 
     def getTeam(self, team):
         if team == 'red': team = 1
@@ -388,20 +376,6 @@ class SmgParser(b3.parsers.q3a.Q3AParser):
         
         #self.debug('_gameType: %s' % _gameType)
         return _gameType
-
-    def getMap(self):
-        data = self.write('status')
-        if not data:
-            return None
-
-        line = data.split('\n')[0] 
-        #self.debug('[%s]'%line.strip())
-        
-        m = re.match(self._reMapNameFromStatus, line.strip())
-        if m:
-            return str(m.group('map'))
-                    
-        return None
 
     def getMaps(self):
         m=[]
