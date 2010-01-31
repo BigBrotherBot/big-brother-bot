@@ -362,9 +362,9 @@ class CodParser(b3.parsers.q3a.Q3AParser):
             elif admin:
                 admin.message('%s^7 unbanned but has no punkbuster id' % client.exactName)
         else:
-            self.write(self.getCommand('unban', name=client.exactName, reason=reason))
+            result = self.write(self.getCommand('unban', name=client.exactName[:7], reason=reason))
             if admin:
-                admin.message('%s unbanned and removed from game\'s banfile' % client.exactName)
+                admin.message(result)
 
     def getTeam(self, team):
         if team == 'allies':
