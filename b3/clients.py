@@ -116,11 +116,6 @@ class Client(object):
 
         for k, v in kwargs.iteritems():
             setattr(self, k, v)
-            
-        print 'created : %s' % self
-            
-    def __del__(self):
-        print 'destroyed : %s' % self
 
     def isvar(self, plugin, key):
         try:
