@@ -19,6 +19,8 @@
 # $Id: q3a.py 103 2006-04-14 16:23:10Z thorn $
 #
 # CHANGELOG
+#    31/01/2010 - 1.3.3 -  xlr8or
+#    * Fixed a few  typos
 #    26/01/2010 - 1.3.2 -  xlr8or
 #    * added maxRetries=4 to authorizeClients()
 #    * getMap() was moved from iourt to q3a
@@ -44,7 +46,7 @@
 
 
 __author__  = 'ThorN'
-__version__ = '1.3.2'
+__version__ = '1.3.3'
 
 import re, string
 import b3
@@ -457,7 +459,7 @@ class Q3AParser(b3.parser.Parser):
                 result = self.PunkBuster.unBanGUID(client)
 
                 if result:                    
-                    admin.message('^3Unbaned^7: %s^7: %s' % (client.exactName, result))
+                    admin.message('^3Unbanned^7: %s^7: %s' % (client.exactName, result))
 
                 if not silent:
                     if admin:
@@ -465,9 +467,9 @@ class Q3AParser(b3.parser.Parser):
                     else:
                         self.say(self.getMessage('unbanned', client.exactName, reason))
             elif admin:
-                admin.message('%s^7 un-banned but has no punkbuster id' % client.exactName)
+                admin.message('%s^7 unbanned but has no punkbuster id' % client.exactName)
         elif admin:
-            admin.message('^3Unbaned^7: %s^7. You may need to manually remove the user from the game\'s ban file.' % client.exactName)
+            admin.message('^3Unbanned^7: %s^7. You may need to manually remove the user from the game\'s ban file.' % client.exactName)
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
         duration = b3.functions.time2minutes(duration)
