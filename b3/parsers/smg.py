@@ -5,7 +5,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
@@ -14,10 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
-
+#
+# CHANGELOG
+# 31/01/2010 - 0.1 - Courgette
+# * use the new /cp command to send private messages (requires SmokinGuns v1.1)
+#
+#
 
 __author__  = 'xlr8or'
-__version__ = '0.0.1'
+__version__ = '0.1'
 
 import re, string, threading
 import b3
@@ -36,10 +41,8 @@ class SmgParser(b3.parsers.q3a.Q3AParser):
     _empty_name_default = 'EmptyNameDefault'
 
     _commands = {}
-    #_commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
-    #_commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
-    _commands['message'] = '%(prefix)s ^3[pm]^7 %(message)s'
-    _commands['deadsay'] = '%(prefix)s [DEAD]^7 %(message)s'
+    _commands['message'] = 'cp %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
+    _commands['deadsay'] = 'cp %(cid)s %(prefix)s [DEAD]^7 %(message)s'
     _commands['say'] = 'say %(prefix)s %(message)s'
     _commands['set'] = 'set %(name)s "%(value)s"'
     _commands['kick'] = 'clientkick %(cid)s'
