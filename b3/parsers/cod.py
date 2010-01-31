@@ -17,13 +17,25 @@
 #
 # CHANGELOG
 # 7/23/2005 - 1.1.0
-#    Added damage type to Damage and Kill event data
+#    * Added damage type to Damage and Kill event data
 # 27/6/2009 - 1.3.1 - xlr8or - Added Action Mechanism (event) for version 1.1.5 
 # 28/8/2009 - 1.3.2 - Bakes - added regexp for CoD4 suicides
 # 17/1/2010 - 1.3.3 - xlr8or - moved sync to InitGame (30 second delay)
+# 25/1/2010 - 1.4.0 - xlr8or - refactored cod parser series
+# 26/1/2010 - 1.4.1 - xlr8or
+#    * Added authorizeClients() for IpsOnly
+#    * minor bugfixes after initial tests
+# 26/1/2010 - 1.4.2 - xlr8or - Added mapEnd() on Exitlevel
+# 27/1/2010 - 1.4.3 - xlr8or - Minor bugfix in sync() for IpsOnly
+# 28/1/2010 - 1.4.4 - xlr8or - Make sure cid is entering Authentication queue only once. 
+# 29/1/2010 - 1.4.5 - xlr8or - Minor rewrite of Auth queue check 
+# 31/1/2010 - 1.4.6 - xlr8or
+#    * Added unban for non pb servers
+#    * Fixed bug: rcon command banid replaced by banclient 
 
-__author__  = 'ThorN'
-__version__ = '1.3.3'
+
+__author__  = 'ThorN, xlr8or'
+__version__ = '1.4.6'
 
 import b3.parsers.q3a
 import re, string, threading
@@ -33,6 +45,8 @@ import b3.parsers.punkbuster
 
 class CodParser(b3.parsers.q3a.Q3AParser):
     gameName = 'cod'
+    IpsOnly = False
+    _counter = {}
     _settings = {}
     _settings['line_length'] = 65
     _settings['min_wrap_length'] = 120
@@ -43,7 +57,8 @@ class CodParser(b3.parsers.q3a.Q3AParser):
     _commands['say'] = 'say %(prefix)s %(message)s'
     _commands['set'] = 'set %(name)s "%(value)s"'
     _commands['kick'] = 'clientkick %(cid)s'
-    _commands['ban'] = 'banid %(cid)s'
+    _commands['ban'] = 'banclient %(cid)s'
+    _commands['unban'] = 'unbanuser %(name)s' # remove players from game engine's ban.txt
     _commands['tempban'] = 'clientkick %(cid)s'
 
     _eventMap = {
@@ -88,11 +103,40 @@ class CodParser(b3.parsers.q3a.Q3AParser):
     PunkBuster = None
 
     def startup(self):
+        if self.IpsOnly:
+            self.debug('Authentication Method: Using Ip\'s instead of GUID\'s!')
         # add the world client
         client = self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
 
         if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
             self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
+
+        # get map from the status rcon command
+        map = self.getMap()
+        if map:
+            self.game.mapName = map
+            self.info('map is: %s'%self.game.mapName)
+
+        # get gamepaths/vars
+        try:
+            self.game.fs_game = self.getCvar('fs_game').getString()
+        except:
+            self.game.fs_game = None
+            self.warning("Could not query server for fs_game")
+
+        try:
+            self.game.fs_basepath = self.getCvar('fs_basepath').getString().rstrip('/')
+            self.debug('fs_basepath: %s' % self.game.fs_basepath)
+        except:
+            self.game.fs_basepath = None
+            self.warning("Could not query server for fs_basepath")
+
+        try:
+            self.game.fs_homepath = self.getCvar('fs_homepath').getString().rstrip('/')
+            self.debug('fs_homepath: %s' % self.game.fs_homepath)
+        except:
+            self.game.fs_homepath = None
+            self.warning("Could not query server for fs_homepath")
 
     # kill
     def OnK(self, action, data, match=None):
@@ -151,13 +195,23 @@ class CodParser(b3.parsers.q3a.Q3AParser):
     # disconnect
     def OnQ(self, action, data, match=None):
         client = self.getClient(match)
-        if client: client.disconnect()
+        if client:
+            client.disconnect()
+        else:
+            # Check if we're in the authentication queue
+            if match.group('cid') in self._counter:
+                # Flag it to remove from the queue
+                self._counter[cid] = 'Disconnected'
+                self.debug('slot %s has disconnected or was forwarded to our http download location, removing from authentication queue...' % cid)
         return None
 
     # join
     def OnJ(self, action, data, match=None):
         codguid = match.group('guid')
-        if len(codguid) <= 5:
+        cid = match.group('cid')
+        name = match.group('name')
+        
+        if len(codguid) < 6:
             # invalid guid
             codguid = None
 
@@ -168,18 +222,18 @@ class CodParser(b3.parsers.q3a.Q3AParser):
             client.state = b3.STATE_ALIVE
             # possible name changed
             client.name = match.group('name')
+            # Join-event for mapcount reasons and so forth
+            return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
         else:
-            # make a new client
-            if self.PunkBuster:        
-                # we will use punkbuster's guid
-                guid = None
-            else:
-                # use cod guid
-                guid = codguid 
+            if self._counter.get(cid):
+                self.verbose('cid: %s already in authentication queue. Aborting Join.' %cid)
+                return None
+            self._counter[cid] = 1
+            t = threading.Timer(2, self.newPlayer, (cid, codguid, name))
+            t.start()
+            self.debug('%s connected, waiting for Authentication...' %name)
+            self.debug('Our Authentication queue: %s' % self._counter)
 
-            client = self.clients.newClient(match.group('cid'), name=match.group('name'), state=b3.STATE_ALIVE, guid=guid, data={ 'codguid' : codguid })
-
-        return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
 
     # action
     def OnA(self, action, data, match=None):
@@ -282,7 +336,7 @@ class CodParser(b3.parsers.q3a.Q3AParser):
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
 
     def OnExitlevel(self, action, data, match=None):
-        #self.clients.sync()
+        self.game.mapEnd()
         return b3.events.Event(b3.events.EVT_GAME_EXIT, data)
 
     def OnItem(self, action, data, match=None):
@@ -291,6 +345,26 @@ class CodParser(b3.parsers.q3a.Q3AParser):
         if client:
             return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, item, client)
         return None
+
+    def unban(self, client, reason='', admin=None, silent=False, *kwargs):
+        if self.PunkBuster:
+            if client.pbid:
+                result = self.PunkBuster.unBanGUID(client)
+
+                if result:                    
+                    admin.message('^3Unbanned^7: %s^7: %s' % (client.exactName, result))
+
+                if not silent:
+                    if admin:
+                        self.say(self.getMessage('unbanned_by', client.exactName, admin.exactName, reason))
+                    else:
+                        self.say(self.getMessage('unbanned', client.exactName, reason))
+            elif admin:
+                admin.message('%s^7 unbanned but has no punkbuster id' % client.exactName)
+        else:
+            result = self.write(self.getCommand('unban', name=client.exactName[:7], reason=reason))
+            if admin:
+                admin.message(result)
 
     def getTeam(self, team):
         if team == 'allies':
@@ -356,7 +430,7 @@ class CodParser(b3.parsers.q3a.Q3AParser):
         for cid, c in plist.iteritems():
             client = self.clients.getByCID(cid)
             if client:
-                if client.guid and c.has_key('guid'):
+                if client.guid and c.has_key('guid') and not self.IpsOnly:
                     if client.guid == c['guid']:
                         # player matches
                         self.debug('in-sync %s == %s', client.guid, c['guid'])
@@ -376,3 +450,85 @@ class CodParser(b3.parsers.q3a.Q3AParser):
                     self.debug('no-sync: no guid or ip found.')
         
         return mlist
+
+    def connectClient(self, ccid):
+        players = self.getPlayerList()
+        self.verbose('connectClient() = %s' % players)
+
+        for cid, p in players.iteritems():
+            #self.debug('cid: %s, ccid: %s, p: %s' %(cid, ccid, p))
+            if int(cid) == int(ccid):
+                self.debug('%s found in status/playerList' %p['name'])
+                return p
+
+    def newPlayer(self, cid, codguid, name):
+        if not self._counter.get(cid):
+            self.verbose('newPlayer thread no longer needed, Key no longer available')
+            return None
+        if self._counter.get(cid) == 'Disconnected':
+            self.debug('%s disconnected, removing from authentication queue' %name)
+            self._counter.pop(cid)
+            return None
+        self.debug('newClient: %s, %s, %s' %(cid, codguid, name) )
+        sp = self.connectClient(cid)
+        # PunkBuster is enabled, using PB guid
+        if sp and self.PunkBuster:
+            self.debug('sp: %s' % sp)
+            if self.IpsOnly:
+                guid = sp['ip']
+                pbid = sp['pbid']
+            else:
+                guid = sp['pbid']
+                pbid = guid # save pbid in both fields to be consistent with other pb enabled databases
+            ip = sp['ip']
+            if self._counter.get(cid):
+                self._counter.pop(cid)
+            else:
+                return None
+        # PunkBuster is not enabled, using codguid
+        elif sp:
+            if self.IpsOnly:
+                codguid = sp['ip']
+            if not codguid:
+                self.error('No CodGuid and no PunkBuster... cannot continue!')
+                return None
+            else:
+                guid = codguid
+                pbid = None
+                ip = sp['ip']
+                if self._counter.get(cid):
+                    self._counter.pop(cid)
+                else:
+                    return None
+        elif self._counter[cid] > 10:
+            self.debug('Couldn\'t Auth %s, giving up...' % name)
+            if self._counter.get(cid):
+                self._counter.pop(cid)
+            return None
+        # Player is not in the status response (yet), retry
+        else:
+            self.debug('%s not yet fully connected, retrying...#:%s' %(name, self._counter[cid]))
+            self._counter[cid] +=1
+            t = threading.Timer(4, self.newPlayer, (cid, codguid, name))
+            t.start()
+            return None
+            
+        client = self.clients.newClient(cid, name=name, ip=ip, state=b3.STATE_ALIVE, guid=guid, pbid=pbid, data={ 'codguid' : codguid })
+        return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
+
+    def authorizeClients(self):
+        players = self.getPlayerList(maxRetries=4)
+        self.verbose('authorizeClients() = %s' % players)
+
+        for cid, p in players.iteritems():
+            sp = self.clients.getByCID(cid)
+            if sp:
+                # Only set provided data, otherwise use the currently set data
+                sp.ip   = p.get('ip', sp.ip)
+                sp.pbid = p.get('pbid', sp.pbid)
+                if self.IpsOnly:
+                    sp.guid = p.get('ip', sp.guid)
+                else:
+                    sp.guid = p.get('guid', sp.guid)
+                sp.data = p
+                sp.auth()

@@ -31,9 +31,10 @@
 #  Moved sync to a thread 30 secs after InitGame
 # 17/1/2010 - 1.0.7 - xlr8or
 #  Moved OnInitgame and OnExitlevel to codparser!
+# 25/1/2010 - 1.2.0 - xlr8or - refactored cod parser series
 
 __author__  = 'xlr8or'
-__version__ = '1.0.7'
+__version__ = '1.2.0'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
@@ -42,7 +43,7 @@ import re, threading
 
 class Cod5Parser(b3.parsers.cod2.Cod2Parser):
     gameName = 'cod5'
-    _counter = {}
+    IpsOnly = False
 
     # join
     def OnJ(self, action, data, match=None):
@@ -69,19 +70,6 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
             t.start()
             self.debug('%s connected, waiting for Authentication...' %name)
             self.debug('Our Authentication queue: %s' % self._counter)
-
-    # disconnect
-    def OnQ(self, action, data, match=None):
-        client = self.getClient(match)
-        if client:
-            client.disconnect()
-        else:
-            # Check if we're in the authentication queue
-            if match.group('cid') in self._counter:
-                # Flag it to remove from the queue
-                self._counter[cid] = 'Disconnected'
-                self.debug('slot %s has disconnected or was forwarded to our http download location, removing from authentication queue...' % cid)
-        return None
 
     # kill
     def OnK(self, action, data, match=None):
@@ -119,55 +107,3 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
 
         victim.state = b3.STATE_DEAD
         return b3.events.Event(event, (float(match.group('damage')), match.group('aweap'), match.group('dlocation'), match.group('dtype')), attacker, victim)
-
-    def connectClient(self, ccid):
-        players = self.getPlayerList()
-        self.verbose('connectClient() = %s' % players)
-
-        for cid, p in players.iteritems():
-            #self.debug('cid: %s, ccid: %s, p: %s' %(cid, ccid, p))
-            if int(cid) == int(ccid):
-                self.debug('%s found in status/playerList' %p['name'])
-                return p
-
-    def newPlayer(self, cid, codguid, name):
-        if not self._counter.get(cid):
-            self.verbose('newPlayer thread no longer needed, Key no longer available')
-            return None
-        if self._counter.get(cid) == 'Disconnected':
-            self.debug('%s disconnected, removing from authentication queue' %name)
-            self._counter.pop(cid)
-            return None
-        self.debug('newClient: %s, %s, %s' %(cid, codguid, name) )
-        sp = self.connectClient(cid)
-        # PunkBuster is enabled, using PB guid
-        if sp and self.PunkBuster:
-            self.debug('sp: %s' % sp)
-            guid = sp['pbid']
-            pbid = guid # save pbid in both fields to be consistent with other pb enabled databases
-            ip = sp['ip']
-            self._counter.pop(cid)
-        # PunkBuster is not enabled, using codguid
-        elif sp:
-            if not codguid:
-                self.error('No CodGuid and no PunkBuster... cannot continue!')
-                return None
-            else:
-                guid = codguid
-                pbid = None
-                ip = sp['ip']
-                self._counter.pop(cid)
-        elif self._counter[cid] > 10:
-            self.debug('Couldn\'t Auth %s, giving up...' % name)
-            self._counter.pop(cid)
-            return None
-        # Player is not in the status response (yet), retry
-        else:
-            self.debug('%s not yet fully connected, retrying...#:%s' %(name, self._counter[cid]))
-            self._counter[cid] +=1
-            t = threading.Timer(4, self.newPlayer, (cid, codguid, name))
-            t.start()
-            return None
-            
-        client = self.clients.newClient(cid, name=name, ip=ip, state=b3.STATE_ALIVE, guid=guid, pbid=pbid, data={ 'codguid' : codguid })
-        return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)

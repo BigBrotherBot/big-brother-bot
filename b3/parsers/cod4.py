@@ -23,10 +23,15 @@
 # v1.1.6  : xlr8or - Minor bugfix regarding unassigned pbid on non pb servers.
 # v1.2.0  : xlr8or - Big CoD4 MakeOver 
 # 17/1/2010 - 1.2.1 - xlr8or
-#  Moved OnInitgame and OnExitlevel to codparser!
+#  * Moved OnInitgame and OnExitlevel to codparser!
+# 25/1/2010 - 1.3.0 - xlr8or - refactored cod parser series
+# 27/1/2010 - 1.3.1 - xlr8or
+#  * Added authorizeClients() for IpsOnly
+#  * Minor bugfix in sync() for IpsOnly
+
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.2.1'
+__version__ = '1.3.1'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
@@ -36,7 +41,7 @@ from b3 import functions
 
 class Cod4Parser(b3.parsers.cod2.Cod2Parser):
     gameName = 'cod4'
-    _counter = {}
+    IpsOnly = False
 
     #num score ping guid                             name            lastmsg address               qport rate
     #--- ----- ---- -------------------------------- --------------- ------- --------------------- ----- -----
@@ -66,19 +71,6 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
             t.start()
             self.debug('%s connected, waiting for Authentication...' %name)
             self.debug('Our Authentication queue: %s' % self._counter)
-
-    # disconnect
-    def OnQ(self, action, data, match=None):
-        client = self.getClient(match)
-        if client:
-            client.disconnect()
-        else:
-            # Check if we're in the authentication queue
-            if match.group('cid') in self._counter:
-                # Flag it to remove from the queue
-                self._counter[cid] = 'Disconnected'
-                self.debug('slot %s has disconnected or was forwarded to our http download location, removing from authentication queue...' % cid)
-        return None
 
     # kill
     def OnK(self, action, data, match=None):
@@ -127,7 +119,7 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
         for cid, c in plist.iteritems():
             client = self.clients.getByCID(cid)
             if client:
-                if client.guid and c.has_key('guid'):
+                if client.guid and c.has_key('guid') and not self.IpsOnly:
                     if functions.fuzzyGuidMatch(client.guid, c['guid']):
                         # player matches
                         self.debug('in-sync %s == %s', client.guid, c['guid'])
@@ -170,61 +162,9 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
                 # Only set provided data, otherwise use the currently set data
                 sp.ip   = p.get('ip', sp.ip)
                 sp.pbid = p.get('pbid', sp.pbid)
-                sp.guid = p.get('guid', sp.guid)
+                if self.IpsOnly:
+                    sp.guid = p.get('ip', sp.guid)
+                else:
+                    sp.guid = p.get('guid', sp.guid)
                 sp.data = p
                 sp.auth()
-
-
-    def connectClient(self, ccid):
-        if self.PunkBuster:
-            self.debug('Getting the (PunkBuster) Playerlist')
-        else:
-            self.debug('Getting the (status) Playerlist')
-        players = self.getPlayerList()
-        self.verbose('connectClient() = %s' % players)
-
-        for cid, p in players.iteritems():
-            #self.debug('cid: %s, ccid: %s, p: %s' %(cid, ccid, p))
-            if int(cid) == int(ccid):
-                self.debug('Client found in status/playerList')
-                return p
-
-
-    def newPlayer(self, cid, codguid, name):
-        if not self._counter.get(cid):
-            self.verbose('newPlayer thread no longer needed, Key no longer available')
-            return None
-        if self._counter.get(cid) == 'Disconnected':
-            self.debug('%s disconnected, removing from authentication queue' %name)
-            self._counter.pop(cid)
-            return None
-        self.debug('newClient: %s, %s, %s' %(cid, codguid, name) )
-        sp = self.connectClient(cid)
-        # Seems there is no difference in guids if we either do or don't use PunkBuster
-        if sp:
-            if not codguid:
-                self.error('No Guid... cannot continue!')
-                return None
-            guid = codguid
-            pbid = codguid
-            if len(guid) < 32:
-                guid = sp['guid']
-            if len(pbid) < 32:
-                pbid = sp['pbid']
-            ip = sp['ip']
-            #self.debug('sp: %s' % sp)
-            self._counter.pop(cid)
-        elif self._counter[cid] > 10:
-            self.debug('Couldn\'t Auth %s, giving up...' % name)
-            self._counter.pop(cid)
-            return None
-        # Player is not in the status response (yet), retry
-        else:
-            self.debug('%s not yet fully connected, retrying...#:%s' %(name, self._counter[cid]))
-            self._counter[cid] +=1
-            t = threading.Timer(4, self.newPlayer, (cid, codguid, name))
-            t.start()
-            return None
-            
-        client = self.clients.newClient(cid, name=name, ip=ip, state=b3.STATE_ALIVE, guid=guid, pbid=pbid, data={ 'codguid' : codguid })
-        return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)

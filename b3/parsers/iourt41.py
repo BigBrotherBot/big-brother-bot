@@ -102,10 +102,12 @@
 # v1.7.8 - 18/01/2010 - Courgette
 #    * update getPlayerList and sync so that connecting players (CNCT) are not ignored.
 #      This will allow to use commands like !ci or !kick on hanging players.
+# v1.7.9 - 26/01/2010 - xlr8or
+#    * moved getMap() to q3a.py
 #
 
 __author__  = 'xlr8or'
-__version__ = '1.7.8'
+__version__ = '1.7.9'
 
 
 import b3.parsers.q3a
@@ -206,7 +208,6 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     #   9     0 ZMBI ^7                   1900 81.178.80.68:27960    10801  8000  # zombies (need to be disconnected!)
     _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+|CNCT|ZMBI)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
     _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
-    _reMapNameFromStatus = re.compile(r'^map:\s+(?P<map>.+)$', re.I)
 
     # Map: ut4_algiers
     # Players: 8
@@ -1112,20 +1113,6 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                     self.debug('no-sync: no guid or ip found.')
 
         return mlist
-
-    def getMap(self):
-        data = self.write('status')
-        if not data:
-            return None
-
-        line = data.split('\n')[0]
-        #self.debug('[%s]'%line.strip())
-
-        m = re.match(self._reMapNameFromStatus, line.strip())
-        if m:
-            return str(m.group('map'))
-
-        return None
 
     def getMaps(self):
         if self._maplist is not None:

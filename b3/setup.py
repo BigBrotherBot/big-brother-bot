@@ -18,18 +18,25 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 __author__  = 'xlr8or'
-__version__ = '0.1.1'
+__version__ = '0.2.0'
 
-import platform, shutil, os, sys, time
+import platform, urllib2, shutil, os, sys, time, zipfile
 from functions import main_is_frozen
+from distutils import version
 from lib.elementtree.SimpleXMLWriter import XMLWriter
+from urlparse import urlsplit
+from cStringIO import StringIO
+
+
 
 class Setup:
+    _pver = sys.version.split()[0]
     _indentation = "    "
     _priority = 1
     _config = "b3/conf/b3.xml"
     _buffer = ''
     _equaLength = 15
+    _PBSupportedParsers = ['cod','cod2','cod4','cod5']
  
     def __init__(self, config=None):
         if config:
@@ -79,10 +86,19 @@ class Setup:
         xml.start("settings", name="server")
         self.add_set("rcon_password", "", "The RCON pass of your gameserver")
         self.add_set("port", "28960", "The port the server is running on")
+        # determine if ftp functionality is available
+        if version.LooseVersion(self._pver) < version.LooseVersion('2.6.0'):
+            self.add_buffer('\n  NOTE for game_log:\n  You are running python '+self._pver+', ftp functionality\n  is not available prior to python version 2.6.0\n')
+        else:
+            self.add_buffer('\n  NOTE for game_log:\n  You are running python '+self._pver+', the gamelog may also be\n  ftp-ed in.\nDefine game_log like this:\n  ftp://[ftp-user]:[ftp-password]@[ftp-server]/path/to/games_mp.log\n')
         self.add_set("game_log", "games_mp.log", "The gameserver generates a logfile, put the path and name here")
         self.add_set("public_ip", "127.0.0.1", "The public IP your gameserver is residing on")
         self.add_set("rcon_ip", "127.0.0.1", "The IP the bot can use to send RCON commands to (127.0.0.1 when on the same box)")
-        self.add_set("punkbuster", "on", "Is the gameserver running PunkBuster Anticheat: on/off")
+        # determine if PunkBuster is supported
+        if self._set_parser in self._PBSupportedParsers:
+            self.add_set("punkbuster", "on", "Is the gameserver running PunkBuster Anticheat: on/off")
+        else:
+            self.add_set("punkbuster", "off", "Is the gameserver running PunkBuster Anticheat: on/off", silent=True)
         xml.data("\n    ")
         xml.end()
         xml.data("\n    ")
@@ -126,8 +142,16 @@ class Setup:
             xml.data("\n        ")
         else:
             xml.data("\n        ")
-            xml.comment("The punkbuster plugin was not installed since punkbuster is not running.")
+            xml.comment("The punkbuster plugin was not installed since punkbuster is not supported or disabled.")
             xml.data("        ")
+
+        # ext plugins
+        xml.comment("The next plugins are external, 3rd party plugins and should reside in the external_dir.")
+        self.add_plugin("xlrstats", self._set_external_dir+"/conf/xlrstats.xml")
+        #self.add_plugin("registered", self._set_external_dir+"/conf/plugin_registered.xml", "Trying to download Registered", "http://www.bigbrotherbot.com/forums/downloads/?sa=downfile&id=22")
+
+        # final comments
+        xml.data("\n        ")
         xml.comment("You can add new/custom plugins to this list using the same form as above.")
         xml.data("        ")
         xml.comment("Just make sure you don't have any duplicate priority values!")
@@ -154,7 +178,7 @@ class Setup:
     def equaLize(self, _string):
         return (self._equaLength-len(str(_string)))*" "
 
-    def add_set(self, sname, sdflt, explanation=""):
+    def add_set(self, sname, sdflt, explanation="", silent=False):
         """
         A routine to add a setting with a textnode to the config
         Usage: self.add_set(name, default value optional-explanation)
@@ -164,13 +188,17 @@ class Setup:
             self.add_explanation(explanation)
             xml.comment(explanation)
             xml.data("        ")
-        _value = self.raw_default(sname, sdflt)
+        if not silent:
+            _value = self.raw_default(sname, sdflt)
+        else:
+            _value = sdflt
         xml.element("set", _value, name=sname)
         #store values into a variable for later use ie. enabling the punkbuster plugin.
         exec("self._set_"+str(sname)+" = \""+str(_value)+"\"")
-        self.add_buffer(str(sname)+self.equaLize(sname)+": "+str(_value)+"\n")
+        if not silent:
+            self.add_buffer(str(sname)+self.equaLize(sname)+": "+str(_value)+"\n")
 
-    def add_plugin(self, sname, sconfig, explanation=""):
+    def add_plugin(self, sname, sconfig, explanation=None, downlURL=None):
         """
         A routine to add a plugin to the config
         Usage: self.add_plugin(pluginname, default-configfile, optional-explanation)
@@ -180,7 +208,11 @@ class Setup:
         _test = self.raw_default(_q, "yes")
         if _test != "yes":
             return None
-        if explanation != "":
+
+        if downlURL:
+            self.download(downlURL)
+
+        if explanation:
             self.add_explanation(explanation)
         _config = self.raw_default("config", sconfig)
         xml.data("\n        ")
@@ -203,10 +235,10 @@ class Setup:
         return res         
 
     def clearscreen(self):
-        if platform.system() != 'Windows':
-            os.system('clear')
-        else:
+        if platform.system() in ('Windows', 'Microsoft'):
             os.system('cls')
+        else:
+            os.system('clear')
 
     def backupFile(self, _file):
         print "\n--BACKUP/CREATE CONFIGFILE--------------------------------------\n"
@@ -227,8 +259,12 @@ class Setup:
                 self.testExit()
 
     def introduction(self):
+        try:
+            _uname = platform.uname()[1]+", "
+        except:
+            _uname = "admin, "
         self.clearscreen()
-        print "                WELCOME TO B3 SETUP PROCEDURE"
+        print "    WELCOME "+_uname+"TO THE B3 SETUP PROCEDURE"
         print "----------------------------------------------------------------"
         print "We're about to generate a main configuration file for "
         print "BigBrotherBot. This procedure is initiated when:\n"
@@ -272,6 +308,74 @@ class Setup:
             # which happens when running from the py2exe build
             return os.path.dirname(sys.executable)
         return ""
+
+    def getAbsolutePath(self, path):
+        """Return an absolute path name and expand the user prefix (~)"""
+        if path[0:4] == '@b3/':
+            path = os.path.join(self.getB3Path(), path[4:])
+        return os.path.normpath(os.path.expanduser(path))
+
+    def url2name(self, url):
+        return os.path.basename(urlsplit(url)[2])
+    
+    def download(self, url, localFileName = None):
+        absPath = self.getAbsolutePath(self._set_external_dir)
+        localName = self.url2name(url)
+        req = urllib2.Request(url)
+        r = urllib2.urlopen(req)
+        if r.info().has_key('Content-Disposition'):
+            # If the response has Content-Disposition, we take file name from it
+            localName = r.info()['Content-Disposition'].split('filename=')[1]
+            if localName[0] == '"' or localName[0] == "'":
+                localName = localName[1:-1]
+        elif r.url != url: 
+            # if we were redirected, the real file name we take from the final URL
+            localName = url2name(r.url)
+        if localFileName: 
+            # we can force to save the file as specified name
+            localName = localFileName
+        localName = absPath+"/packages/"+localName
+        f = open(localName, 'wb')
+        f.write(r.read())
+        f.close()
+        self.extract(localName, absPath)
+    
+    def extract(self, filename, dir):
+        zf = zipfile.ZipFile( filename )
+        namelist = zf.namelist()
+        dirlist = filter( lambda x: x.endswith( '/' ), namelist )
+        filelist = filter( lambda x: not x.endswith( '/' ), namelist )
+        # make base
+        pushd = os.getcwd()
+        if not os.path.isdir( dir ):
+            os.mkdir( dir )
+        os.chdir( dir )
+        # create directory structure
+        dirlist.sort()
+        for dirs in dirlist:
+            dirs = dirs.split( '/' )
+            prefix = ''
+            for dir in dirs:
+                dirname = os.path.join( prefix, dir )
+                if dir and not os.path.isdir( dirname ):
+                    os.mkdir( dirname )
+                prefix = dirname
+        # extract files
+        for fn in filelist:
+            try:
+                out = open( fn, 'wb' )
+                buffer = StringIO( zf.read( fn ))
+                buflen = 2 ** 20
+                datum = buffer.read( buflen )
+                while datum:
+                    out.write( datum )
+                    datum = buffer.read( buflen )
+                out.close()
+            finally:
+                print fn
+        os.chdir( pushd )
+
+
 
 if __name__ == '__main__':
     #from b3.fake import fakeConsole
