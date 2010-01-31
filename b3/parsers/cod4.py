@@ -28,6 +28,8 @@
 # 27/1/2010 - 1.3.1 - xlr8or
 #  * Added authorizeClients() for IpsOnly
 #  * Minor bugfix in sync() for IpsOnly
+# 31/1/2010 - 1.3.2 - xlr8or
+#  * Modified unban to remove bans from game's ban list
 
 
 __author__  = 'ThorN, xlr8or'
@@ -110,6 +112,27 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
 
         victim.state = b3.STATE_DEAD
         return b3.events.Event(event, (float(match.group('damage')), match.group('aweap'), match.group('dlocation'), match.group('dtype')), attacker, victim)
+
+    def unban(self, client, reason='', admin=None, silent=False, *kwargs):
+        if self.PunkBuster:
+            if client.pbid:
+                result = self.PunkBuster.unBanGUID(client)
+
+                if result:                    
+                    admin.message('^3Unbanned^7: %s^7: %s' % (client.exactName, result))
+
+                if not silent:
+                    if admin:
+                        self.say(self.getMessage('unbanned_by', client.exactName, admin.exactName, reason))
+                    else:
+                        self.say(self.getMessage('unbanned', client.exactName, reason))
+            elif admin:
+                admin.message('%s^7 unbanned but has no punkbuster id' % client.exactName)
+        else:
+            _name = self.stripColors(client.exactName[:15])
+            result = self.write(self.getCommand('unban', name=_name, reason=reason))
+            if admin:
+                admin.message(result)
 
     def sync(self):
         self.debug('Synchronising Clients')
