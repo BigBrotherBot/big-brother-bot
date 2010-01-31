@@ -29,10 +29,13 @@
 # 27/1/2010 - 1.4.3 - xlr8or - Minor bugfix in sync() for IpsOnly
 # 28/1/2010 - 1.4.4 - xlr8or - Make sure cid is entering Authentication queue only once. 
 # 29/1/2010 - 1.4.5 - xlr8or - Minor rewrite of Auth queue check 
+# 31/1/2010 - 1.4.6 - xlr8or
+#    * Added unban for non pb servers
+#    * Fixed bug: rcon command banid replaced by banclient 
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.5'
+__version__ = '1.4.6'
 
 import b3.parsers.q3a
 import re, string, threading
@@ -54,7 +57,8 @@ class CodParser(b3.parsers.q3a.Q3AParser):
     _commands['say'] = 'say %(prefix)s %(message)s'
     _commands['set'] = 'set %(name)s "%(value)s"'
     _commands['kick'] = 'clientkick %(cid)s'
-    _commands['ban'] = 'banid %(cid)s'
+    _commands['ban'] = 'banclient %(cid)s'
+    _commands['unban'] = 'unbanuser %(name)s' # remove players from game engine's ban.txt
     _commands['tempban'] = 'clientkick %(cid)s'
 
     _eventMap = {
@@ -341,6 +345,26 @@ class CodParser(b3.parsers.q3a.Q3AParser):
         if client:
             return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, item, client)
         return None
+
+    def unban(self, client, reason='', admin=None, silent=False, *kwargs):
+        if self.PunkBuster:
+            if client.pbid:
+                result = self.PunkBuster.unBanGUID(client)
+
+                if result:                    
+                    admin.message('^3Unbanned^7: %s^7: %s' % (client.exactName, result))
+
+                if not silent:
+                    if admin:
+                        self.say(self.getMessage('unbanned_by', client.exactName, admin.exactName, reason))
+                    else:
+                        self.say(self.getMessage('unbanned', client.exactName, reason))
+            elif admin:
+                admin.message('%s^7 unbanned but has no punkbuster id' % client.exactName)
+        else:
+            self.write(self.getCommand('unban', name=client.exactName, reason=reason))
+            if admin:
+                admin.message('%s unbanned and removed from game\'s banfile' % client.exactName)
 
     def getTeam(self, team):
         if team == 'allies':

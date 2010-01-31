@@ -15,8 +15,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+# CHANGELOG
+#    31/01/2010 - 1.2.2 -  xlr8or
+#    * Removed commandsdict, inherit from codparser
+
+
 __author__  = 'ThorN, ttlogic'
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
 import b3.parsers.cod
 import b3.parsers.q3a
@@ -25,16 +30,6 @@ import re
 class Cod2Parser(b3.parsers.cod.CodParser):
     gameName = 'cod2'
     IpsOnly = False
-
-    _commands = {}
-    _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
-    _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
-    _commands['say'] = 'say %(prefix)s %(message)s'
-    _commands['set'] = 'set %(name)s "%(value)s"'
-    _commands['kick'] = 'clientkick %(cid)s'
-    _commands['ban'] = 'banclient %(cid)s'
-    _commands['tempban'] = 'clientkick %(cid)s'
-
 
     # cod2 needs the multiline flag because it adds "Domain is 0 or 1" to the cvar output
     _reCvar = re.compile(b3.parsers.q3a.Q3AParser._reCvar.pattern, re.I | re.M)
