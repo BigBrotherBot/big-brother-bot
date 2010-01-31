@@ -19,10 +19,12 @@
 #
 # CHANGELOG
 # 11/30/2008: 1.0.1: OnKill, kill modes and XLRstats compatibility 
-
+# 31/01/2010 - 1.0.2 - Courgette
+# * getMap() is now inherited from q3a
+# 
 
 __author__  = 'xlr8or'
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 import b3.parsers.q3a
 import re, string
@@ -83,7 +85,6 @@ class WopParser(b3.parsers.q3a.Q3AParser):
     #  3     5  103 PadPlayer^7             0 77.41.107.169:27960   47612  5000
     #  4   154   50 WARR^7                 50 91.127.64.194:27960   39880 25000
     _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
-    _reMapNameFromStatus = re.compile(r'^map:\s+(?P<map>.+)$', re.I)
     _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
 
     PunkBuster = None
@@ -419,18 +420,4 @@ class WopParser(b3.parsers.q3a.Q3AParser):
         
         #self.debug('_gameType: %s' % _gameType)
         return _gameType
-
-    def getMap(self):
-        data = self.write('status')
-        if not data:
-            return None
-
-        line = data.split('\n')[0] 
-        #self.debug('[%s]'%line.strip())
-        
-        m = re.match(self._reMapNameFromStatus, line.strip())
-        if m:
-            return str(m.group('map'))
-                    
-        return None
 
