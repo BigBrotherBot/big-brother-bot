@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   27/1/2010 - 1.4.5 - Courgette
+#    * the iamgod check warns if the command is explicitly enabled by config file but
+#      superadmins are found in database
 #   27/1/2010 - 1.4.4 - xlr8or
 #    * added some verbose info to startup()
 #   9/1/2009 - 1.4.3 - xlr8or
@@ -42,8 +45,8 @@
 #    Added ci command
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.4.3'
-__author__  = 'ThorN'
+__version__ = '1.4.5'
+__author__  = 'ThorN, xlr8or, Courgette'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
 import ConfigParser
@@ -97,18 +100,28 @@ class AdminPlugin(b3.plugin.Plugin):
 
         if not self.console.storage.db:
             self.error('There is no database connection! Cannot store or retrieve any information. Fix the database connection first!')
-        elif not self._commands.has_key('iamgod'):
-            superadmins = self.console.clients.lookupSuperAdmins()
+        else:
             try:
-                if len(superadmins) == 0:
-                    self.verbose('No SuperAdmins found, enabling !iamgod')
-                    # There are no superadmins, enable the !iamgod command
-                    self.registerCommand(self, 'iamgod', 0, self.getCmd('iamgod'))
-                else:
-                    self.verbose('SuperAdmin(s) found, no need for !iamgod')
+                superadmins = self.console.clients.lookupSuperAdmins()
             except Exception, msg:
                 # no proper groups available, cannot continue
                 self.critical('Seems your groupstable in the database is empty. Please recreate your database using the proper sql syntax - use b3/docs/b3.sql - (%s)' %msg)
+            
+            if self._commands.has_key('iamgod') \
+                and self._commands['iamgod'].level is not None \
+                and self._commands['iamgod'].level[0] >= 0:
+                ## here the config file for the admin plugin explicitly enables the iamgod command
+                if len(superadmins) == 0:
+                    self.verbose('!iamgod command enabled by config file. Be sure to disable it after typing !iamgod.')
+                else:
+                    self.warning('!iamgod command enabled by config file but %s superadmin are already registered. ' +
+                        'Make sure to disable the iamgod command in the admin plugin', len(superadmins))
+            elif len(superadmins) == 0:
+                self.verbose('No SuperAdmins found, enabling !iamgod')
+                # There are no superadmins, enable the !iamgod command
+                self.registerCommand(self, 'iamgod', 0, self.getCmd('iamgod'))
+            else:
+                self.verbose('SuperAdmin(s) found, no need for !iamgod')
 
     def registerCommand(self, plugin, command, level, handler, alias=None, secretLevel=None):
         if not handler:
