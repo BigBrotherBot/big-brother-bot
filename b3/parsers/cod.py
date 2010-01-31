@@ -362,7 +362,7 @@ class CodParser(b3.parsers.q3a.Q3AParser):
             elif admin:
                 admin.message('%s^7 unbanned but has no punkbuster id' % client.exactName)
         else:
-            result = self.write(self.getCommand('unban', name=client.exactName[:7], reason=reason))
+            result = self.write(self.getCommand('unban', name=client.name[:7], reason=reason))
             if admin:
                 admin.message(result)
 
