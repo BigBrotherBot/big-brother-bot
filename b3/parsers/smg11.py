@@ -24,10 +24,12 @@
 # * fix _regPlayer regex for SGv1.1b4
 # * discover clients at bot start
 # * make use of dumpuser to get a player's ip
+# * don't lower() guid
+#
 #
 
 __author__  = 'xlr8or, Courgette'
-__version__ = '0.1.1'
+__version__ = '0.2'
 
 import re, string, thread, time, threading
 import b3
@@ -352,9 +354,9 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
         
         
         if data.has_key('cl_guid'):
-            data['guid'] = data['cl_guid'].lower()
+            data['guid'] = data['cl_guid']
         if data.has_key('guid'):
-            data['guid'] = data['guid'].lower()
+            data['guid'] = data['guid']
         
         return data
 
