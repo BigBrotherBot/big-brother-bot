@@ -28,10 +28,12 @@
 # 06/02/2010 - 0.3 - Courgette
 # * enable private messaging with the new /tell command
 # * fix ban command
+# 06/02/2010 - 0.4 - Courgette
+# * parser recognizes damage lines (when enabled in SG config with : set g_debugDamage "1")
 #
 
 __author__  = 'xlr8or, Courgette'
-__version__ = '0.3'
+__version__ = '0.4'
 
 import re, string, thread, time, threading
 import b3
@@ -68,6 +70,9 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
     _lineClear = re.compile(r'^(?:[0-9:.]+\s?)?')
 
     _lineFormats = (
+        #468950: client:0 health:90 damage:21.6 where:arm from:MOD_SCHOFIELD by:2
+        re.compile(r'^\d+:\s+(?P<data>client:(?P<cid>\d+)\s+health:(?P<health>\d+)\s+damage:(?P<damage>[.\d]+)\s+where:(?P<hitloc>[^\s]+)\s+from:(?P<aweap>[^\s]+)\s+by:(?P<acid>\d+))$', re.IGNORECASE),
+        
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<pbid>[0-9A-Z]{32}):\s*(?P<name>[^:]+):\s*(?P<num1>[0-9]+):\s*(?P<num2>[0-9]+):\s*(?P<ip>[0-9.]+):(?P<port>[0-9]+))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<name>.+):\s+(?P<text>.*))$', re.IGNORECASE),
         #
@@ -185,7 +190,14 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
         if m:
             client = None
             target = None
-            return (m, m.group('action').lower(), m.group('data').strip(), client, target)
+            
+            try:
+                action =  m.group('action').lower()
+            except IndexError:
+                # special case for damage lines where no action group can be set
+                action = 'damage'
+            
+            return (m, action, m.group('data').strip(), client, target)
         elif '------' not in line:
             self.verbose('XLR--------> line did not match format: %s' % line)
 
@@ -325,6 +337,30 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
     def OnSayteam(self, action, data, match=None):
         # Teaminfo does not exist in the sayteam logline. Parse it as a normal say line
         return self.OnSay(action, data, match)
+
+    # damage
+    #468950: client:0 health:90 damage:21.6 where:arm from:MOD_SCHOFIELD by:2
+    def OnDamage(self, action, data, match=None):
+        victim = self.clients.getByCID(match.group('cid'))
+        if not victim:
+            self.debug('No victim')
+            return None
+
+        attacker = self.clients.getByCID(match.group('acid'))
+        if not attacker:
+            self.debug('No attacker')
+            return None
+
+        event = b3.events.EVT_CLIENT_DAMAGE
+
+        if attacker.cid == victim.cid:
+            event = b3.events.EVT_CLIENT_DAMAGE_SELF
+        elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
+            event = b3.events.EVT_CLIENT_DAMAGE_TEAM
+
+        victim.hitloc = match.group('hitloc')
+        damagepoints = round(float(match.group('damage')), 1)
+        return b3.events.Event(event, (damagepoints, match.group('aweap'), victim.hitloc), attacker, victim)
 
 #---------------------------------------------------------------------------------------------------
 
