@@ -1,4 +1,4 @@
-# Enemy Territory ETPro parser for BigBrotherBot(B3) (www.bigbrotherbot.com)
+# Smoking' Guns 1.1 parser for BigBrotherBot(B3) (www.bigbrotherbot.com)
 # Copyright (C) 2009 ailmanki
 # 
 # This program is free software; you can redistribute it and/or modify
@@ -25,11 +25,13 @@
 # * discover clients at bot start
 # * make use of dumpuser to get a player's ip
 # * don't lower() guid
-#
+# 06/02/2010 - 0.3 - Courgette
+# * enable private messaging with the new /tell command
+# * fix ban command
 #
 
 __author__  = 'xlr8or, Courgette'
-__version__ = '0.2'
+__version__ = '0.3'
 
 import re, string, thread, time, threading
 import b3
@@ -49,12 +51,12 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
     _empty_name_default = 'EmptyNameDefault'
 
     _commands = {}
-    _commands['message'] = 'cp %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
-    _commands['deadsay'] = 'cp %(cid)s %(prefix)s [DEAD]^7 %(message)s'
+    _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
+    _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
     _commands['say'] = 'say %(prefix)s %(message)s'
     _commands['set'] = 'set %(name)s "%(value)s"'
     _commands['kick'] = 'clientkick %(cid)s'
-    _commands['ban'] = 'banid %(cid)s'
+    _commands['ban'] = 'banClient %(cid)s'
     _commands['tempban'] = 'clientkick %(cid)s'
 
     _eventMap = {
