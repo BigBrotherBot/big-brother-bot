@@ -17,7 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
-#
+# 06/02/2010 - 1.4 - Courgette
+#    * force FTP binary mode
 # 13/12/2009 - 1.3 - Courgette
 #    * default timeout is 30 secondes (as I had a user reporting the FTP server he uses 
 #      lags 15 sec before accepting connections).
@@ -35,7 +36,7 @@
 # 17/06/2009 - 1.0 - Bakes
 #     Initial Plugin, basic functionality.
  
-__version__ = '1.3'
+__version__ = '1.4'
 __author__ = 'Bakes'
  
 import b3, threading
@@ -164,6 +165,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
             #self.debug('Python Version %s.%s, so setting timeout of 10 seconds' % (versionsearch.group(2), versionsearch.group(3)))
             self.verbose('Connecting to %s ...', self.ftpconfig["host"])
             ftp=FTP(self.ftpconfig['host'],self.ftpconfig['user'],passwd=self.ftpconfig['password'],timeout=self._connectionTimeout)
+            ftp.voidcmd('TYPE I')
         try:
             ftp.cwd(os.path.dirname(self.ftpconfig['path']))
         except:
