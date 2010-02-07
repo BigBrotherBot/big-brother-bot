@@ -1,4 +1,4 @@
-# Enemy Territory ETPro parser for BigBrotherBot(B3) (www.bigbrotherbot.com)
+# Smokin' Guns parser for BigBrotherBot(B3) (www.bigbrotherbot.com)
 # Copyright (C) 2009 ailmanki
 # 
 # This program is free software; you can redistribute it and/or modify
@@ -20,11 +20,12 @@
 # * use the new /cp command to send private messages (requires SmokinGuns v1.1)
 # 31/01/2010 - 0.1.1 - Courgette
 # * getMap() is now inherited from q3a
-# 
-#
+# 06/02/2010 - 0.1.2 - Courgette
+# * do not use cp/bigtext for private messaging to make this parser compatible with SG pior to v1.1
+# * fix the ban command
 
 __author__  = 'xlr8or'
-__version__ = '0.1'
+__version__ = '0.1.2'
 
 import re, string, threading
 import b3
@@ -43,12 +44,12 @@ class SmgParser(b3.parsers.q3a.Q3AParser):
     _empty_name_default = 'EmptyNameDefault'
 
     _commands = {}
-    _commands['message'] = 'cp %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
-    _commands['deadsay'] = 'cp %(cid)s %(prefix)s [DEAD]^7 %(message)s'
+    _commands['message'] = '%(cid)s %(prefix)s ^3[pm]^7 %(message)s'
+    _commands['deadsay'] = '%(cid)s %(prefix)s [DEAD]^7 %(message)s'
     _commands['say'] = 'say %(prefix)s %(message)s'
     _commands['set'] = 'set %(name)s "%(value)s"'
     _commands['kick'] = 'clientkick %(cid)s'
-    _commands['ban'] = 'banid %(cid)s'
+    _commands['ban'] = 'banClient %(cid)s'
     _commands['tempban'] = 'clientkick %(cid)s'
 
     _eventMap = {
