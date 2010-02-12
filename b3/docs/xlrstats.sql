@@ -117,13 +117,14 @@ CREATE TABLE IF NOT EXISTS `xlr_playerstats` (
   `suicides` smallint(5) unsigned NOT NULL default '0',
   `ratio` float NOT NULL default '0',
   `skill` float NOT NULL default '0',
+  `assists` mediumint(8) NOT NULL default '0',
+  `assistskill` float NOT NULL default '0',
   `curstreak` smallint(6) NOT NULL default '0',
   `winstreak` smallint(6) NOT NULL default '0',
   `losestreak` smallint(6) NOT NULL default '0',
   `rounds` smallint(5) unsigned NOT NULL default '0',
   `hide` tinyint(4) NOT NULL default '0',
-  `fixed_name` varchar(32) NOT NULL default '',
-  PRIMARY KEY  (`id`),
+  `fixed_name` varchar(32) NOT NULL default '',  PRIMARY KEY  (`id`),
   UNIQUE KEY `client_id` (`client_id`)
 ) TYPE=MyISAM;
 
@@ -192,3 +193,55 @@ CREATE TABLE IF NOT EXISTS `xlr_playeractions` (
   KEY `action_id` (`action_id`),
   KEY `player_id` (`player_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `xlr_history_monthly`
+--
+
+CREATE TABLE IF NOT EXISTS `xlr_history_monthly` (
+  `id` smallint(5) unsigned NOT NULL auto_increment,
+  `client_id` int(11) unsigned NOT NULL default '0',
+  `kills` mediumint(8) unsigned NOT NULL default '0',
+  `deaths` mediumint(8) unsigned NOT NULL default '0',
+  `teamkills` smallint(5) unsigned NOT NULL default '0',
+  `teamdeaths` smallint(5) unsigned NOT NULL default '0',
+  `suicides` smallint(5) unsigned NOT NULL default '0',
+  `ratio` float NOT NULL default '0',
+  `skill` float NOT NULL default '0',
+  `winstreak` smallint(6) NOT NULL default '0',
+  `losestreak` smallint(6) NOT NULL default '0',
+  `rounds` smallint(5) unsigned NOT NULL default '0',
+  `year` int(4) NOT NULL,
+  `month` int(2) NOT NULL,
+  `week` int(2) NOT NULL,
+  `day` int(2) NOT NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `xlr_history_weekly`
+--
+
+CREATE TABLE IF NOT EXISTS `xlr_history_weekly` (
+  `id` smallint(5) unsigned NOT NULL auto_increment,
+  `client_id` int(11) unsigned NOT NULL default '0',
+  `kills` mediumint(8) unsigned NOT NULL default '0',
+  `deaths` mediumint(8) unsigned NOT NULL default '0',
+  `teamkills` smallint(5) unsigned NOT NULL default '0',
+  `teamdeaths` smallint(5) unsigned NOT NULL default '0',
+  `suicides` smallint(5) unsigned NOT NULL default '0',
+  `ratio` float NOT NULL default '0',
+  `skill` float NOT NULL default '0',
+  `winstreak` smallint(6) NOT NULL default '0',
+  `losestreak` smallint(6) NOT NULL default '0',
+  `rounds` smallint(5) unsigned NOT NULL default '0',
+  `year` int(4) NOT NULL,
+  `month` int(2) NOT NULL,
+  `week` int(2) NOT NULL,
+  `day` int(2) NOT NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;

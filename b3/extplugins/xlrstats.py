@@ -18,9 +18,11 @@
 #   No longer save worldkills
 # 28/6/2009 - 1.0.0 - Mark Weirath (xlr8or@xlr8or.com)
 #   Added Action classes
+# 5/2/2010 - 2.0.0 - Mark Weirath (xlr8or@xlr8or.com)
+#   Added Assist Bonus
 
 __author__  = 'Tim ter Laak / Mark Weirath'
-__version__ = '1.0.0'
+__version__ = '2.0.0'
 
 # Version = major.minor.patches
 
@@ -40,37 +42,43 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     
     _world_clientid = None
     _ffa = ['dm', 'ffa', 'syc-ffa']
+    _damage_able_games = ['cod'] # will only count assists when damage is 50 points or more.
+    _damage_ability = False
 
     # config variables
-    defaultskill = None
-    minlevel = None
+    defaultskill = 1000
+    minlevel = 1
     onemaponly = False
 
-    Kfactor_high = None
-    Kfactor_low = None
-    Kswitch_kills = None
+    Kfactor_high = 16
+    Kfactor_low = 4
+    Kswitch_kills = 100
 
-    steepness = None
-    suicide_penalty_percent = None
-    tk_penalty_percent = None
-    kill_bonus = None
-    prematch_maxtime = None
+    steepness = 600
+    suicide_penalty_percent = 0.05
+    tk_penalty_percent = 0.1
+    kill_bonus = 1.2
+    assist_bonus = 0.2
+    assist_timespan = 2 # on non damage based games: damage before death timespan
+    damage_assist_release = 10 # on damage based games: release the assist (wil overwrite self.assist_timespan on startup)
+    prematch_maxtime = 70
+    announce = False
     
     # keep some private map data to detect prematches and restarts
     last_map = None
     last_roundtime = None
     
     # names for various stats tables
-    playerstats_table = None
-    weaponstats_table = None
-    weaponusage_table = None
-    bodyparts_table = None
-    playerbody_table = None
-    opponents_table = None
-    mapstats_table = None
-    playermaps_table = None
-    actionstats_table = None
-    playeractions_table = None
+    playerstats_table = 'xlr_playerstats'
+    weaponstats_table = 'xlr_weaponstats'
+    weaponusage_table = 'xlr_weaponusage'
+    bodyparts_table = 'xlr_bodyparts'
+    playerbody_table = 'xlr_playerbody'
+    opponents_table = 'xlr_opponents'
+    mapstats_table = 'xlr_mapstats'
+    playermaps_table = 'xlr_playermaps'
+    actionstats_table = 'xlr_actionstats'
+    playeractions_table = 'xlr_playeractions'
     clients_table = 'clients'
     penalties_table = 'penalties'
     
@@ -133,6 +141,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         self.registerEvent(b3.events.EVT_CLIENT_SUICIDE)
         self.registerEvent(b3.events.EVT_GAME_ROUND_START)
         self.registerEvent(b3.events.EVT_CLIENT_ACTION) #for game-events/actions
+        self.registerEvent(b3.events.EVT_CLIENT_DAMAGE) #for assist recognition
         
         # get the Client.id for the bot itself (guid: WORLD)
         sclient = self.console.clients.getByGUID("WORLD");
@@ -140,59 +149,55 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self._world_clientid = sclient.id
         self.debug('Got client id for WORLD: %s', self._world_clientid)
 
+        #determine the ability to work with damage based assists
+        if ( self.console.gameName[:3] in self._damage_able_games ):
+            self._damage_ability = True
+            self.assist_timespan = self.damage_assist_release
+
     def onLoadConfig(self):
         try:
-            self.onemaponly = self.config.getint('settings', 'onemaponly')    
+            self.onemaponly = self.config.getboolean('settings', 'onemaponly')    
         except:
-            self.onemaponly = False
             self.debug('Using default value (%i) for settings::onemaponly', self.onemaponly)
 
         try:
             self.minlevel = self.config.getint('settings', 'minlevel')    
         except:
-            self.minlevel = 1
             self.debug('Using default value (%i) for settings::minlevel', self.minlevel)
 
         try:
             self.defaultskill = self.config.getint('settings', 'defaultskill')  
         except:
-            self.defaultskill = 1000
             self.debug('Using default value (%i) for settings::defaultskill', self.defaultskill)
             
         try:
             self.Kfactor_high = self.config.getint('settings', 'Kfactor_high')   
         except:
-            self.Kfactor_high = 16
             self.debug('Using default value (%i) for settings::Kfactor_high', self.Kfactor_high)
             
         try:
             self.Kfactor_low = self.config.getint('settings', 'Kfactor_low')    
         except:
-            self.Kfactor_low = 4
             self.debug('Using default value (%i) for settings::Kfactor_low', self.Kfactor_low)
             
         try:
             self.Kswitch_kills = self.config.getint('settings', 'Kswitch_kills')    
         except:
-            self.Kswitch_kills = 100
             self.debug('Using default value (%i) for settings::Kswitch_kills', self.Kswitch_kills)
             
         try:
             self.steepness = self.config.getint('settings', 'steepness')
         except:
-            self.steepness = 600
             self.debug('Using default value (%i) for settings::steepness', self.steepness)
             
         try:
             self.suicide_penalty_percent = self.config.getfloat('settings', 'suicide_penalty_percent')
         except:
-            self.suicide_penalty_percent = 0.05
             self.debug('Using default value (%f) for settings::suicide_penalty_percent', self.suicide_penalty_percent)
 
         try:
             self.tk_penalty_percent = self.config.getfloat('settings', 'tk_penalty_percent')
         except:
-            self.tk_penalty_percent = 0.1
             self.debug('Using default value (%f) for settings::tk_penalty_percent', self.tk_penalty_percent)
             
         try:
@@ -202,71 +207,82 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.debug('Using default value (%f) for settings::kill_bonus', self.kill_bonus)
             
         try:
+            self.assist_bonus = self.config.getfloat('settings', 'assist_bonus')
+            #cap off the assistbonus, so it will not be better rewarded than a kill
+            if self.assist_bonus > 0.9:
+                self.assist_bonus = 0.9
+        except:
+            self.debug('Using default value (%f) for settings::assist_bonus', self.assist_bonus)
+
+        try:
+            self.assist_timespan = self.config.getint('settings', 'assist_timespan')
+        except:
+            self.debug('Using default value (%d) for settings::assist_timespan', self.assist_timespan)
+
+        try:
+            self.damage_assist_release = self.config.getint('settings', 'damage_assist_release')
+        except:
+            self.debug('Using default value (%d) for settings::damage_assist_release', self.damage_assist_release)
+
+        try:
             self.prematch_maxtime = self.config.getint('settings', 'prematch_maxtime')
         except:
-            self.prematch_maxtime = 70
             self.debug('Using default value (%d) for settings::prematch_maxtime', self.prematch_maxtime)
 
-            
+        try:
+            self.announce = self.config.getboolean('settings', 'announce')
+        except:
+            self.debug('Using default value (%d) for settings::announce', self.announce)
+
         try:
             self.playerstats_table = self.config.get('tables', 'playerstats')
         except:
-            self.playerstats_table = 'xlr_playerstats'
             self.debug('Using default value (%s) for tables::playerstats', self.playerstats_table)
             
             
         try:
             self.weaponstats_table = self.config.get('tables', 'weaponstats')
         except:
-            self.weaponstats_table = 'xlr_weaponstats'
             self.debug('Using default value (%s) for tables::weaponstats', self.weaponstats_table)
             
         try:
             self.weaponusage_table = self.config.get('tables', 'weaponusage')
         except:
-            self.weaponusage_table = 'xlr_weaponusage'
             self.debug('Using default value (%s) for tables::weaponusage', self.weaponusage_table)
             
         try:
             self.bodyparts_table = self.config.get('tables', 'bodyparts')
         except:
-            self.bodyparts_table = 'xlr_bodyparts'
             self.debug('Using default value (%s) for tables::bodyparts', self.bodyparts_table)
            
         try:
             self.playerbody_table = self.config.get('tables', 'playerbody')
         except:
-            self.playerbody_table = 'xlr_playerbody'
             self.debug('Using default value (%s) for tables::playerbody', self.playerbody_table)
             
         try:
             self.opponents_table = self.config.get('tables', 'opponents')
         except:
-            self.opponents_table = 'xlr_opponents'
             self.debug('Using default value (%s) for tables::opponents', self.opponents_table)
             
         try:
             self.mapstats_table = self.config.get('tables', 'mapstats')
         except:
-            self.mapstats_table = 'xlr_mapstats'
             self.debug('Using default value (%s) for tables::mapstats', self.mapstats_table)
             
         try:
             self.playermaps_table = self.config.get('tables', 'playermaps')
         except:
-            self.playermaps_table = 'xlr_playermaps'
             self.debug('Using default value (%s) for tables::playermaps', self.playermaps_table)
                       
         try:
             self.actionstats_table = self.config.get('tables', 'actionstats')
         except:
-            self.actionstats_table = 'xlr_actionstats'
             self.debug('Using default value (%s) for tables::actionstats', self.actionstats_table)
 
         try:
             self.playeractions_table = self.config.get('tables', 'playeractions')
         except:
-            self.playeractions_table = 'xlr_playeractions'
             self.debug('Using default value (%s) for tables::playeractions', self.playeractions_table)
 
         return
@@ -292,6 +308,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 self.kill(event.client, event.target, event.data)
             else:
                 self.teamkill(event.client, event.target, event.data)
+        elif (event.type == b3.events.EVT_CLIENT_DAMAGE):
+            self.damage(event.client, event.target, event.data)
         elif (event.type == b3.events.EVT_CLIENT_SUICIDE):
             self.suicide(event.client, event.target, event.data)
         elif (event.type == b3.events.EVT_GAME_ROUND_START):
@@ -332,6 +350,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             s.suicides = r['suicides']
             s.ratio = r['ratio']
             s.skill = r['skill']
+            s.assists = r['assists']
+            s.assistskill = r['assistskill']
             s.curstreak = r['curstreak']
             s.winstreak = r['winstreak']
             s.losestreak = r['losestreak']
@@ -519,8 +539,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
 
     def save_Stat(self, stat):
-        #self.debug('Saving statistics for ', type(stat))
-        #self.debug('Contents: ', stat)
+        #self.verbose('*----> XLRstats: Saving statistics for %s' %type(stat))
+        #self.verbose('*----> Contents: %s' %stat)
         if hasattr(stat, '_new'):
             q = stat._insertquery()
             #self.debug('Inserting using: ', q)
@@ -539,6 +559,74 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         # If it fails, that's just bad luck. 
         return
         
+    def check_Assists(self, client, target, data, etype=None):
+        #determine eventual assists // an assist only counts if damage was done within # secs. before death
+        #it will also punish teammates that have a 'negative' assist!
+        _count = 0 # number of assists to return
+        _sum = 0   # sum of assistskill returned
+        self.verbose('----> XLRstats: %s Killed %s (%s), checking for assists' %(client.name, target.name, etype))
+
+        try:
+            ainfo = target._attackers
+        except:
+            target._attackers = {}
+            ainfo = target._attackers
+
+        for k, v in ainfo.iteritems():
+            if (k == client.cid):
+                #don't award the killer for the assist aswell
+                continue
+            elif (time.time() - v < self.assist_timespan):
+                assister = self.console.clients.getByCID(k)
+                self.verbose('----> XLRstats: assister = %s' %(assister.name))
+
+                victimstats = self.get_PlayerStats(target)
+                if (victimstats == None):
+                    anonymous = VICTIM
+                    victimstats = self.get_PlayerAnon()
+                    if (victimstats == None):
+                        return None
+
+                assiststats = self.get_PlayerStats(assister)
+                if (assiststats == None):
+                    self.verbose('----> XLRstats: assister is anonymous, nothing to do here.')
+                    continue
+
+                if (assiststats.kills > self.Kswitch_kills):
+                    Kfactor = self.Kfactor_low
+                else:
+                    Kfactor = self.Kfactor_high
+
+                #calculate the win probability for the assister
+                assist_prob = self.win_prob(assiststats.skill, victimstats.skill)
+                self.verbose('----> XLRstats: win probability for %s: %s' %(assister.name, assist_prob))
+                #calculate new skill for the assister
+                oldskill = assiststats.skill
+                if (( target.team == assister.team ) and not ( self.console.game.gameType in self._ffa )):
+                    #teammate needs skill and assists reduced
+                    _assistbonus = self.assist_bonus * Kfactor * (0-assist_prob)
+                    assiststats.skill = float(assiststats.skill) + _assistbonus
+                    assiststats.assistskill = float(assiststats.assistskill) + _assistbonus
+                    assiststats.assists -= 1 #negative assist
+                    self.verbose('----> XLRstats: Assistpunishment deducted for %s: %s (oldsk: %.3f - newsk: %.3f)' %(assister.name, assiststats.skill-oldskill, oldskill, assiststats.skill))
+                    _count += 1
+                    _sum += _assistbonus
+                    if self.announce and not assiststats.hide:
+                        assister.message('^5XLRstats:^7 Teamdamaged (%s) -> skill: ^1%.3f^7 -> ^2%.1f^7' %(target.name, assiststats.skill-oldskill, assiststats.skill))
+                else:
+                    #this is a real assist
+                    _assistbonus = self.assist_bonus * Kfactor * (1-assist_prob)
+                    assiststats.skill = float(assiststats.skill) + _assistbonus
+                    assiststats.assistskill = float(assiststats.assistskill) + _assistbonus
+                    assiststats.assists += 1
+                    self.verbose('----> XLRstats: Assistbonus awarded for %s: %s (oldsk: %.3f - newsk: %.3f)' %(assister.name, assiststats.skill-oldskill, oldskill, assiststats.skill))
+                    _count += 1
+                    _sum += _assistbonus
+                    if self.announce and not assiststats.hide:
+                        assister.message('^5XLRstats:^7 Assistbonus (%s) -> skill: ^2+%.3f^7 -> ^2%.1f^7' %(target.name, assiststats.skill-oldskill, assiststats.skill))
+                self.save_Stat(assiststats)
+        #end of assist reward function, return the number of assists 
+        return _count, _sum
 
     def kill(self, client, target, data):
         if (client == None) or (client.id == self._world_clientid):
@@ -550,6 +638,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             
         anonymous = None
        
+        _assists_count, _assists_sum = self.check_Assists(client, target, data, 'kill')
+
         killerstats = self.get_PlayerStats(client)
         victimstats = self.get_PlayerStats(target)
 
@@ -588,14 +678,28 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         except:
             weapon_factor = 1.0
          
-        #Calculate new stats for the killer
+        #calculate new stats for the killer
         if ( anonymous != KILLER ):
             if (killerstats.kills > self.Kswitch_kills):
                 Kfactor = self.Kfactor_low
             else:
                 Kfactor = self.Kfactor_high
                 
-            killerstats.skill = int(killerstats.skill) + ( self.kill_bonus * Kfactor * weapon_factor * (1-killer_prob) )
+            oldskill = killerstats.skill
+            #pure skilladdition for a 100% kill
+            _skilladdition = self.kill_bonus * Kfactor * weapon_factor * (1-killer_prob)
+            #deduct the assists from the killers skill, but no more than 50%
+            if ( _assists_sum == 0 ):
+                pass
+            elif (_assists_sum >= ( _skilladdition / 2 )):
+                _skilladdition /= 2
+                self.verbose('----> XLRstats: Killer: assists > 50perc: %.3f - skilladd: %.3f' %(_assists_sum, _skilladdition))
+            else:
+                _skilladdition -= _assists_sum
+                self.verbose('----> XLRstats: Killer: assists < 50perc: %.3f - skilladd: %.3f' %(_assists_sum, _skilladdition))
+
+            killerstats.skill = float(killerstats.skill) + _skilladdition
+            self.verbose('----> XLRstats: Killer: oldsk: %.3f - newsk: %.3f' %(oldskill, killerstats.skill))
             killerstats.kills = int(killerstats.kills) + 1
  
             if ( int(killerstats.deaths) != 0):
@@ -613,16 +717,20 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             else:
                 killerstats.winstreak = int(killerstats.winstreak)        
         
+            if self.announce and not killerstats.hide:
+                client.message('^5XLRstats:^7 Killed %s -> skill: ^2+%.3f^7 -> ^2%.1f^7' %(target.name, (killerstats.skill-oldskill), killerstats.skill))
             self.save_Stat(killerstats)
 
-        #Calculate new stats for the victim
+        #calculate new stats for the victim
         if (anonymous != VICTIM):
             if (victimstats.kills > self.Kswitch_kills):
                 Kfactor = self.Kfactor_low
             else:
                 Kfactor = self.Kfactor_high    
                 
-            victimstats.skill = int(victimstats.skill) + ( Kfactor * weapon_factor * (0-victim_prob) )
+            oldskill = victimstats.skill
+            victimstats.skill = float(victimstats.skill) + ( Kfactor * weapon_factor * (0-victim_prob) )
+            self.verbose('----> XLRstats: Victim: oldsk: %.3f - newsk: %.3f' %(oldskill, victimstats.skill))
             victimstats.deaths = int(victimstats.deaths) + 1
 
             victimstats.ratio = float(victimstats.kills) / float(victimstats.deaths)
@@ -637,6 +745,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             else:
                 victimstats.losestreak = int(victimstats.losestreak)        
         
+            if self.announce and not victimstats.hide:
+                target.message('^5XLRstats:^7 Killed by %s -> skill: ^1%.3f^7 -> ^2%.1f^7' %(client.name, (victimstats.skill-oldskill), victimstats.skill))
             self.save_Stat(victimstats)
 
         #make sure the record for anonymous is really created with an insert once
@@ -646,10 +756,10 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             elif ( (anonymous == VICTIM) and (hasattr(victimstats, '_new')) ):
                 self.save_Stat(victimstats)  
         
-        # adjust the "opponents" table to register who killed who
+        #adjust the "opponents" table to register who killed who
         opponent = self.get_Opponent(targetid=victimstats.id, killerid=killerstats.id)
         retal = self.get_Opponent(targetid=killerstats.id, killerid=victimstats.id)
-        # The above should always succeed, but you never know...
+        #the above should always succeed, but you never know...
         if (opponent and retal):
             opponent.kills += 1
             retal.retals += 1
@@ -701,6 +811,26 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         #end of kill function
         return
 
+    def damage(self, client, target, data):
+        if client.id == self._world_clientid:
+            self.verbose('----> XLRstats: onDamage: WORLD-damage, moving on...')
+            return None
+        if (client.cid == target.cid):
+            self.verbose('----> XLRstats: onDamage: self damage: %s damaged %s, continueing' %(client.name, target.name))
+            return None
+
+        #check if game is _damage_able -> 50 points or more damage will award an assist
+        if ( self._damage_ability and data[0] < 50 ):
+            self.verbose('---> XLRstats: Not enough damage done to award an assist')
+            return
+
+        try:
+            target._attackers[client.cid] = time.time()
+        except:
+            target._attackers = {}
+            target._attackers[client.cid] = time.time()
+        self.verbose('----> XLRstats: onDamage: attacker added: %s (%s) damaged %s (%s)' %(client.name, client.cid, target.name, target.cid))
+        self.verbose('----> XLRstats: Assistinfo: %s' %(target._attackers))
 
     def suicide(self, client, target, data):
         if (client == None):
@@ -710,7 +840,10 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         if (data == None):
             return
 
+        self.check_Assists(client, target, data, 'suicide')
+
         playerstats = self.get_PlayerStats(client)
+
         if (playerstats is None):
             #anonymous player. We're not interested :)
             return
@@ -723,7 +856,10 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         if ( playerstats.curstreak < playerstats.losestreak ):
             playerstats.losestreak = playerstats.curstreak
         
+        oldskill = playerstats.skill
         playerstats.skill = (1 - (self.suicide_penalty_percent / 100.0) ) * float(playerstats.skill)
+        if self.announce and not playerstats.hide:
+            client.message('^5XLRstats:^7 Suicide -> skill: ^1%.3f^7 -> ^2%.1f^7' %(playerstats.skill-oldskill, playerstats.skill))
         self.save_Stat(playerstats)
             
         #get applicable weapon replacement
@@ -780,6 +916,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         anonymous = None
 
+        self.check_Assists(client, target, data, 'teamkill')
+
         killerstats = self.get_PlayerStats(client)
         victimstats = self.get_PlayerStats(target)
 
@@ -803,10 +941,13 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         if (anonymous != KILLER):
             #Calculate new stats for the killer
+            oldskill = killerstats.skill
             killerstats.skill = (1 - (self.tk_penalty_percent / 100.0) ) * float(killerstats.skill) 
             killerstats.teamkills += 1
             killerstats.curstreak = 0   # break off current streak as it is now "impure"
-            self.save_Stat(killerstats)         
+            if self.announce and not killerstats.hide:
+                client.message('^5XLRstats:^7 Teamkill -> skill: ^1%.3f^7 -> ^2%.1f^7' %(killerstats.skill-oldskill, killerstats.skill))
+            self.save_Stat(killerstats)
 
         if (anonymous !=VICTIM):
             #Calculate new stats for the victim
@@ -906,48 +1047,48 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         return
 
     def action(self, client, data):
-        self.debug('----> XLRstats: Entering actionfunc.')
+        #self.verbose('----> XLRstats: Entering actionfunc.')
         if client == None:
             return
 
         action = self.get_ActionStats(name=data)
         if action:
             action.count += 1
-            #self.debug('----> XLRstats: Actioncount: %s' %action.count)
-            #self.debug('----> XLRstats: Actionname: %s' %action.name)
-            if hasattr(action, '_new'):
-                self.debug('----> XLRstats: insertquery: %s' %action._insertquery())
-            else:
-                self.debug('----> XLRstats: updatequery: %s' %action._updatequery())
+            #self.verbose('----> XLRstats: Actioncount: %s' %action.count)
+            #self.verbose('----> XLRstats: Actionname: %s' %action.name)
+            #if hasattr(action, '_new'):
+            #    self.verbose('----> XLRstats: insertquery: %s' %action._insertquery())
+            #else:
+            #    self.verbose('----> XLRstats: updatequery: %s' %action._updatequery())
             self.save_Stat(action)
 
         #is it an anonymous client, stop here
         playerstats = self.get_PlayerStats(client)
         if playerstats == None:
-            self.debug('----> XLRstats: Anonymous client')
+            #self.verbose('----> XLRstats: Anonymous client')
             return
         
         playeractions = self.get_PlayerActions(playerid=playerstats.id, actionid=action.id)
         if playeractions:
             playeractions.count += 1
-            #self.debug('----> XLRstats: Players Actioncount: %s' %playeractions.count)
-            if hasattr(playeractions, '_new'):
-                self.debug('----> XLRstats: insertquery: %s' %playeractions._insertquery())
-            else:
-                self.debug('----> XLRstats: updatequery: %s' %playeractions._updatequery())
+            #self.verbose('----> XLRstats: Players Actioncount: %s' %playeractions.count)
+            #if hasattr(playeractions, '_new'):
+            #    self.verbose('----> XLRstats: insertquery: %s' %playeractions._insertquery())
+            #else:
+            #    self.verbose('----> XLRstats: updatequery: %s' %playeractions._updatequery())
             self.save_Stat(playeractions)
 
         #get applicable action bonus
         try:
             action_bonus = self.config.getfloat('actions', action.name)
-            self.debug('----> XLRstats: Found a bonus for %s: %s' %(action.name, action_bonus))
+            #self.verbose('----> XLRstats: Found a bonus for %s: %s' %(action.name, action_bonus))
         except:
             action_bonus = 0
         
         if action_bonus:
-            self.debug('----> XLRstats: Old Skill: %s.' %playerstats.skill)
+            #self.verbose('----> XLRstats: Old Skill: %s.' %playerstats.skill)
             playerstats.skill += action_bonus
-            self.debug('----> XLRstats: New Skill: %s.' %playerstats.skill)
+            #self.verbose('----> XLRstats: New Skill: %s.' %playerstats.skill)
             self.save_Stat(playerstats)
 
         return
@@ -1038,11 +1179,13 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         
         m = input[1]
         if m in ('on','1'):
-            sclient.message('^3You are invisible in xlrstats!')
+            if client != sclient:
+                sclient.message('^3You are invisible in xlrstats!')
             client.message('^3%s INVISIBLE in xlrstats!' % sclient.exactName)
             hide = 1
         elif m in ('off', '0'):
-            sclient.message('^3You are visible in xlrstats!')
+            if client != sclient:
+                sclient.message('^3You are visible in xlrstats!')
             client.message('^3%s VISIBLE in xlrstats!' % sclient.exactName)
             hide = 0
         else:
@@ -1080,6 +1223,8 @@ class PlayerStats(StatObject):
     
     ratio = 0
     skill = 0
+    assists = 0
+    assistskill = 0
     curstreak = 0
     winstreak = 0
     losestreak = 0
@@ -1090,11 +1235,11 @@ class PlayerStats(StatObject):
     fixed_name = "" 
 
     def _insertquery(self):
-        q = 'INSERT INTO %s ( client_id, kills, deaths, teamkills, teamdeaths, suicides, ratio, skill, curstreak, winstreak, losestreak, rounds, hide ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)' % (self._table, self.client_id, self.kills, self.deaths,  self.teamkills, self.teamdeaths, self.suicides, self.ratio, self.skill, self.curstreak, self.winstreak, self.losestreak, self.rounds, self.hide)
+        q = 'INSERT INTO %s ( client_id, kills, deaths, teamkills, teamdeaths, suicides, ratio, skill, assists, assistskill, curstreak, winstreak, losestreak, rounds, hide ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)' % (self._table, self.client_id, self.kills, self.deaths,  self.teamkills, self.teamdeaths, self.suicides, self.ratio, self.skill, self.assists, self.assistskill, self.curstreak, self.winstreak, self.losestreak, self.rounds, self.hide)
         return q
         
     def _updatequery(self):
-        q = 'UPDATE %s SET client_id=%s, kills=%s, deaths=%s, teamkills=%s, teamdeaths=%s, suicides=%s, ratio=%s, skill=%s, curstreak=%s, winstreak=%s, losestreak=%s, rounds=%s, hide=%s WHERE id=%s' % (self._table, self.client_id, self.kills, self.deaths, self.teamkills, self.teamdeaths, self.suicides, self.ratio, self.skill, self.curstreak, self.winstreak, self.losestreak, self.rounds, self.hide, self.id)
+        q = 'UPDATE %s SET client_id=%s, kills=%s, deaths=%s, teamkills=%s, teamdeaths=%s, suicides=%s, ratio=%s, skill=%s, assists=%s, assistskill=%s, curstreak=%s, winstreak=%s, losestreak=%s, rounds=%s, hide=%s WHERE id=%s' % (self._table, self.client_id, self.kills, self.deaths, self.teamkills, self.teamdeaths, self.suicides, self.ratio, self.skill, self.assists, self.assistskill, self.curstreak, self.winstreak, self.losestreak, self.rounds, self.hide, self.id)
         return q
          
 
@@ -1277,6 +1422,7 @@ class PlayerActions(StatObject):
         q = 'UPDATE %s SET player_id=%s, action_id=%s, count=%s WHERE id=%s' % (self._table, self.player_id, self.action_id, self.count, self.id)
         return q
     
+
 if __name__ == '__main__':
     print '\nThis is version '+__version__+' by '+__author__+' for BigBrotherBot.\n'
 
