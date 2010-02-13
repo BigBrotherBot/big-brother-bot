@@ -154,6 +154,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self._damage_ability = True
             self.assist_timespan = self.damage_assist_release
 
+        self.updateTables()
+        #end startup sequence
+
     def onLoadConfig(self):
         try:
             self.onemaponly = self.config.getboolean('settings', 'onemaponly')    
@@ -1197,6 +1200,23 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.save_Stat(player)
             
         return
+
+    def updateTables(self):
+        self.verbose('Checking if we need to update tables for version 2.0.0')
+        #todo: add mysql condition
+        try:
+            self.query('SELECT `assists` FROM %s limit 1;' %PlayerStats._table, silent=True)
+        except:
+            self.query('ALTER TABLE %s ADD `assists` MEDIUMINT( 8 ) NOT NULL DEFAULT "0" AFTER `skill` ;' %PlayerStats._table)
+            self.verbose('Created new column `assists` on playerstats table')
+        try:
+            self.query('SELECT `assistskill` FROM %s limit 1;' %PlayerStats._table, silent=True)
+        except:
+            self.query('ALTER TABLE %s ADD `assistskill` FLOAT NOT NULL DEFAULT "0" AFTER `assists` ;' %PlayerStats._table)
+            self.verbose('Created new column `assistskill` on playerstats table')
+        
+        return None
+        #end of update check
 
 
 # This is an abstract class. Do not call directly.
