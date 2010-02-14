@@ -19,7 +19,7 @@
 # 28/6/2009 - 1.0.0 - Mark Weirath (xlr8or@xlr8or.com)
 #   Added Action classes
 # 5/2/2010 - 2.0.0 - Mark Weirath (xlr8or@xlr8or.com)
-#   Added Assist Bonus
+#   Added Assist Bonus and History
 
 __author__  = 'Tim ter Laak / Mark Weirath'
 __version__ = '2.0.0'
@@ -39,16 +39,20 @@ VICTIM = "victim"
 
 
 class XlrstatsPlugin(b3.plugin.Plugin):
+    requiresConfigFile = False
     
     _world_clientid = None
     _ffa = ['dm', 'ffa', 'syc-ffa']
     _damage_able_games = ['cod'] # will only count assists when damage is 50 points or more.
     _damage_ability = False
+    _cronTabWeek = None
+    _cronTabMonth = None
 
     # config variables
     defaultskill = 1000
     minlevel = 1
     onemaponly = False
+    keep_history = True
 
     Kfactor_high = 16
     Kfactor_low = 4
@@ -81,7 +85,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     playeractions_table = 'xlr_playeractions'
     clients_table = 'clients'
     penalties_table = 'penalties'
-    
+    history_monthly_table = 'xlr_history_monthly'
+    history_weekly_table = 'xlr_history_weekly'
+
 
     def startup(self):
 
@@ -154,10 +160,27 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self._damage_ability = True
             self.assist_timespan = self.damage_assist_release
 
-        self.updateTables()
+        if self.keep_history:
+            # remove existing crontabs
+            if self._cronTabMonth:
+                self.console.cron - self._cronTabMonth
+            if self._cronTabWeek:
+                self.console.cron - self._cronTabWeek
+            # install crontabs
+            self._cronTabMonth = b3.cron.PluginCronTab(self, self.snapshot_month, 0, 0, 0, 1, '*', '*')
+            self.console.cron + self._cronTabMonth
+            self._cronTabWeek = b3.cron.PluginCronTab(self, self.snapshot_week, 0, 0, 0, '*', '*', 1) # day 1 is monday
+            self.console.cron + self._cronTabWeek
+
+        self.updateTableColumns()
         #end startup sequence
 
     def onLoadConfig(self):
+        try:
+            self.keep_history = self.config.getboolean('settings', 'keep_history')    
+        except:
+            self.debug('Using default value (%i) for settings::keep_history', self.keep_history)
+
         try:
             self.onemaponly = self.config.getboolean('settings', 'onemaponly')    
         except:
@@ -287,6 +310,19 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.playeractions_table = self.config.get('tables', 'playeractions')
         except:
             self.debug('Using default value (%s) for tables::playeractions', self.playeractions_table)
+
+        #history tables
+        try:
+            self.history_monthly_table = self.config.get('tables', 'history_monthly')    
+        except:
+            self.history_monthly_table = 'xlr_history_monthly'
+            self.debug('Using default value (%s) for tables::history_monthly', self.history_monthly_table)
+
+        try:
+            self.history_weekly_table = self.config.get('tables', 'history_weekly')    
+        except:
+            self.history_weekly_table = 'xlr_history_weekly'
+            self.debug('Using default value (%s) for tables::history_weekly', self.history_weekly_table)
 
         return
     
@@ -1201,22 +1237,50 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             
         return
 
-    def updateTables(self):
+    def snapshot_month(self):
+        sql = ('INSERT INTO ' + self.history_monthly_table + ' (`client_id` , `kills` , `deaths` , `teamkills` , `teamdeaths` , `suicides` ' +
+            ', `ratio` , `skill` , `assists` , `assistskill` , `winstreak` , `losestreak` , `rounds`, `year`, `month`, `week`, `day`)' +
+            '  SELECT `client_id` , `kills`, `deaths` , `teamkills` , `teamdeaths` , `suicides` , `ratio` , `skill` , `assists` , `assistskill` , `winstreak` ' +
+            ', `losestreak` , `rounds`, YEAR(NOW()), MONTH(NOW()), WEEK(NOW(),3), DAY(NOW())' + 
+            '  FROM `' + PlayerStats._table + '`' )
+        try:
+            self.query(sql, silent=True)
+            self.verbose('Monthly XLRstats snapshot created')
+        except Exception, msg:
+            self.error('Creating history snapshot failed: %s' %msg)
+   
+    def snapshot_week(self):
+        sql = ('INSERT INTO ' + self.history_weekly_table + ' (`client_id` , `kills` , `deaths` , `teamkills` , `teamdeaths` , `suicides` ' +
+            ', `ratio` , `skill` , `assists` , `assistskill` , `winstreak` , `losestreak` , `rounds`, `year`, `month`, `week`, `day`)' +
+            '  SELECT `client_id` , `kills`, `deaths` , `teamkills` , `teamdeaths` , `suicides` , `ratio` , `skill` , `assists` , `assistskill` , `winstreak` ' +
+            ', `losestreak` , `rounds`, YEAR(NOW()), MONTH(NOW()), WEEK(NOW(),3), DAY(NOW())' + 
+            '  FROM `' + PlayerStats._table + '`' )
+        try:
+            self.query(sql, silent=True)
+            self.verbose('Weekly XLRstats snapshot created')
+        except Exception, msg:
+            self.error('Creating history snapshot failed: %s' %msg)
+
+    def updateTableColumns(self):
         self.verbose('Checking if we need to update tables for version 2.0.0')
         #todo: add mysql condition
-        try:
-            self.query('SELECT `assists` FROM %s limit 1;' %PlayerStats._table, silent=True)
-        except:
-            self.query('ALTER TABLE %s ADD `assists` MEDIUMINT( 8 ) NOT NULL DEFAULT "0" AFTER `skill` ;' %PlayerStats._table)
-            self.verbose('Created new column `assists` on playerstats table')
-        try:
-            self.query('SELECT `assistskill` FROM %s limit 1;' %PlayerStats._table, silent=True)
-        except:
-            self.query('ALTER TABLE %s ADD `assistskill` FLOAT NOT NULL DEFAULT "0" AFTER `assists` ;' %PlayerStats._table)
-            self.verbose('Created new column `assistskill` on playerstats table')
-        
+        #v2.0.0 additions to the playerstats table:
+        self._updateTableColumn('assists', PlayerStats._table, 'MEDIUMINT( 8 ) NOT NULL DEFAULT "0" AFTER `skill`')
+        self._updateTableColumn('assistskill', PlayerStats._table, 'FLOAT NOT NULL DEFAULT "0" AFTER `assists`')
         return None
         #end of update check
+
+    def _updateTableColumn(self, c1, t1, specs):
+        try:
+            self.query('SELECT `%s` FROM %s limit 1;' %(c1, t1), silent=True)
+        except Exception, e:
+            if e[0][0] == 1054:
+                self.console.verbose('Column does not yet exist: %s' % (e))
+                self.query('ALTER TABLE %s ADD `%s` %s ;' %(t1, c1, specs))
+                self.verbose('Created new column `%s` on %s' %(c1, t1))
+            else:
+                self.console.error('Query failed - %s: %s' % (type(e), e))
+
 
 
 # This is an abstract class. Do not call directly.
@@ -1445,6 +1509,24 @@ class PlayerActions(StatObject):
 
 if __name__ == '__main__':
     print '\nThis is version '+__version__+' by '+__author__+' for BigBrotherBot.\n'
+
+"""\
+Crontab:
+*  *  *  *  *  command to be executed
+-  -  -  -  -
+|  |  |  |  |
+|  |  |  |  +----- day of week (0 - 6) (Sunday=0)
+|  |  |  +------- month (1 - 12)
+|  |  +--------- day of month (1 - 31)
+|  +----------- hour (0 - 23)
++------------- min (0 - 59)
+
+Query:
+INSERT INTO xlr_history_weekly (`client_id` , `kills` , `deaths` , `teamkills` , `teamdeaths` , `suicides` , `ratio` , `skill` , `winstreak` , `losestreak` , `rounds`, `year`, `month`, `week`, `day`) 
+  SELECT `client_id` , `kills` , `deaths` , `teamkills` , `teamdeaths` , `suicides` , `ratio` , `skill` , `winstreak` , `losestreak` , `rounds`, YEAR(NOW()), MONTH(NOW()), WEEK(NOW(),3), DAY(NOW()) 
+  FROM `xlr_playerstats`
+"""
+
 
 # local variables:
 # tab-width: 4
