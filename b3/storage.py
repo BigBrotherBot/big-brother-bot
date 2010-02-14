@@ -17,6 +17,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   02/13/2010 - 1.7.0 - xlr8or
+#   Added 'silent' option to query. Defaults to false. 
+#   When set True it will raise an Exception for use in a try/except construction for a failed query
+#   instead of just logging an error.
 #   08/30/2009 - 1.6.3 - Bakes
 #   Removed limit to number of aliases selected.
 #   12/23/2008 - 1.6.2 - xlr8or
@@ -36,7 +40,7 @@
 #   Added data column to penalties table
 
 __author__  = 'ThorN'
-__version__ = '1.6.3'
+__version__ = '1.7.0'
 
 import re, time, traceback, sys, thread
 
@@ -228,7 +232,7 @@ class DatabaseStorage(Storage):
             self._lock.release()
         return c
 
-    def query(self, query):
+    def query(self, query, silent=False):
         # use existing connection or create a new one
         if self.db or self.connect():
             try:
@@ -249,7 +253,10 @@ class DatabaseStorage(Storage):
                             # fall through to log error message
                             pass
 
-                self.console.error('Query failed - %s: %s' % (type(e), e))
+                if silent:
+                    raise Exception('Query failed - %s: %s' % (type(e), e))
+                else:
+                    self.console.error('Query failed - %s: %s' % (type(e), e))
 
         return None
         

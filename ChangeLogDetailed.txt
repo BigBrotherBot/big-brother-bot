@@ -1,3 +1,93 @@
+2010-02-06  courgette <courgette@v10117.ovh.net>
+
+	* b3/parsers/smg11.py: PARSER SMG11: add EVT_CLIENT_DAMAGE
+
+2010-02-06  courgette <courgette@v10117.ovh.net>
+
+	* b3/parsers/smg.py, b3/parsers/smg11.py: PARSER smg is compatible
+	with SG pior 1.1. smg11 uses the new /tell command for private chat
+
+2010-02-07  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/ftpytail.py: REMOTE FTP: force binary mode
+
+2010-02-02  courgette <courgette@v10117.ovh.net>
+
+	* b3/parsers/smg11.py: do not convert guid to lowercase
+
+2010-02-02  courgette <courgette@v10117.ovh.net>
+
+	* b3/parsers/smg11.py: add Smokin' Guns parsers for v1.1b4
+
+2010-01-31  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/admin.py: the iamgod check warns if the command is
+	explicitly enabled by config file but superadmins are found in
+	database
+
+2010-01-31  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/etpro.py, b3/parsers/smg.py, b3/parsers/wop.py: 
+	getMap() is now inherited from q3a for etpro/smg/wop parsers
+
+2010-01-31  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/smg.py: SMG: enable private messaging
+
+2010-02-13  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/docs/recreate-xlrstats.sql,
+	b3/docs/xlrstats-update-to-v2.0.0.sql, b3/docs/xlrstats.sql,
+	b3/extplugins/xlrstats.py: Auto update tables to v2.0.0 on startup
+	and updated sql files
+
+2010-02-13  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/storage.py: Added 'silent' option to query. Defaults to false.
+	When set True it will raise an Exception for use in a try/except
+	construction for a failed query instead of just logging an error.
+
+2010-02-12  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/docs/recreate-xlrstats.sql,
+	b3/docs/xlrstats-update-to-v2.0.0.sql, b3/docs/xlrstats.sql,
+	b3/extplugins/conf/xlrstats.xml, b3/extplugins/xlrstats.py: Merged
+	XLRstats version 2.0.0 into master
+
+2010-01-31  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py, b3/parsers/cod4.py: unban: tested codseries for
+	ban file syntax
+
+2010-01-31  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py: minor update to unban function
+
+2010-01-31  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py: minor update
+
+2010-01-31  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py: updated !unban (tested with cod4 without PB)
+
+2010-01-31  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/q3a.py: Fixed a few typos
+
+2010-01-31  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py, b3/parsers/cod2.py: Changes to cods parsers: * Added unban for non pb servers * Fixed bug in cod parser: rcon command banid replaced by banclient * Removed commandsdict from cod2 parser, inherit from cod parser
+
+2010-01-29  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt: Updated detailed changelog
+
+2010-01-29  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/__init__.py, b3/run.py: Removed auto-setup on config error. It
+	will now exit with a hint.
+
 2010-01-29  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/__init__.py: minor update in screen buildup
