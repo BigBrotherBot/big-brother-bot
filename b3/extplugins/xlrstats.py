@@ -52,7 +52,6 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     defaultskill = 1000
     minlevel = 1
     onemaponly = False
-    keep_history = True
 
     Kfactor_high = 16
     Kfactor_low = 4
@@ -67,7 +66,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     damage_assist_release = 10 # on damage based games: release the assist (wil overwrite self.assist_timespan on startup)
     prematch_maxtime = 70
     announce = False
-    
+    keep_history = True
+   
     # keep some private map data to detect prematches and restarts
     last_map = None
     last_roundtime = None
@@ -161,17 +161,24 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.assist_timespan = self.damage_assist_release
 
         if self.keep_history:
-            # remove existing crontabs
-            if self._cronTabMonth:
-                self.console.cron - self._cronTabMonth
-            if self._cronTabWeek:
-                self.console.cron - self._cronTabWeek
-            # install crontabs
-            self._cronTabMonth = b3.cron.PluginCronTab(self, self.snapshot_month, 0, 0, 0, 1, '*', '*')
-            self.console.cron + self._cronTabMonth
-            self._cronTabWeek = b3.cron.PluginCronTab(self, self.snapshot_week, 0, 0, 0, '*', '*', 1) # day 1 is monday
-            self.console.cron + self._cronTabWeek
+            _tables = self.showTables()
+            if ( (self.history_monthly_table in _tables) and (self.history_monthly_table in _tables) ):
+                self.verbose('History Tables are present! Installing history Crontabs:')
+                # remove existing crontabs
+                if self._cronTabMonth:
+                    self.console.cron - self._cronTabMonth
+                if self._cronTabWeek:
+                    self.console.cron - self._cronTabWeek
+                # install crontabs
+                self._cronTabMonth = b3.cron.PluginCronTab(self, self.snapshot_month, 0, 0, 0, 1, '*', '*')
+                self.console.cron + self._cronTabMonth
+                self._cronTabWeek = b3.cron.PluginCronTab(self, self.snapshot_week, 0, 0, 0, '*', '*', 1) # day 1 is monday
+                self.console.cron + self._cronTabWeek
+            else:
+                self.keep_history = False
+                self.error('History Tables are NOT present! Please run b3/docs/xlrstats.sql on your database to install missing tables!')
 
+        #check and update columns in existing tables
         self.updateTableColumns()
         #end startup sequence
 
@@ -1275,12 +1282,23 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.query('SELECT `%s` FROM %s limit 1;' %(c1, t1), silent=True)
         except Exception, e:
             if e[0][0] == 1054:
-                self.console.verbose('Column does not yet exist: %s' % (e))
+                self.console.debug('Column does not yet exist: %s' % (e))
                 self.query('ALTER TABLE %s ADD `%s` %s ;' %(t1, c1, specs))
-                self.verbose('Created new column `%s` on %s' %(c1, t1))
+                self.console.info('Created new column `%s` on %s' %(c1, t1))
             else:
                 self.console.error('Query failed - %s: %s' % (type(e), e))
 
+    def showTables(self):
+        _tables = []
+        q = 'SHOW TABLES'
+        cursor = self.query(q)
+        if (cursor and (cursor.rowcount > 0) ):
+            while not cursor.EOF:
+                r = cursor.getRow()
+                _tables.append(r.values()[0])
+                cursor.moveNext()
+        self.console.verbose('Available tables in this database: %s' %_tables)
+        return _tables
 
 
 # This is an abstract class. Do not call directly.
