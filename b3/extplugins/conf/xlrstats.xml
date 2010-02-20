@@ -15,6 +15,7 @@
     <set name="prematch_maxtime">70</set>
     <set name="minlevel">1</set>
     <set name="onemaponly">False</set>
+    <set name="keep_history">False</set>
 <!-- *** assist bonus settings ***
   Call of Duty passes damage amount info to the logs. Therefore we can award assists based on damage.
   So in the CoD series we award an assist if the amount of damage is 50 points or more and they must occur
