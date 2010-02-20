@@ -15,6 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+#
+# 2010/02/20 - Courgette
+#    * user friendly handlling of parser import error. Prints a detailled
+#      message and exits.
+#
+
 
 __author__ = 'ThorN'
 
@@ -126,7 +133,10 @@ def start(configFile):
     if not parserType:
         raise SystemExit('You must supply a parser')
 
-    parser = loadParser(parserType)
+    try:
+        parser = loadParser(parserType)
+    except ImportError:
+        raise SystemExit("CRITICAL: Cannot find parser '%s'. Check you main config file (b3.xml)\nB3 failed to start"% parserType)
 
     extplugins_dir = conf.getpath('plugins', 'external_dir');
     print "Using external plugin directory: %s" % extplugins_dir
