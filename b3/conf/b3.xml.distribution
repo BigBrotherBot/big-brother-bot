@@ -23,6 +23,16 @@
 		<set name="rcon_ip">127.0.0.1</set>
 		<set name="punkbuster">on</set>
 	</settings>
+  <settings name="autodoc">
+    <!-- Autodoc will generate a user documentation for all B3 commands 
+     * type can be one of : html, htmltable, xml
+     * destination can be a file or a ftp url
+     by default, a html documentation is created in your conf folder
+    -->
+    <set name="type">html</set>
+    <!-- <set name="destination">C:\Users\b3\Desktop\test_doc.htm</set> -->
+    <!-- <set name="destination">ftp://user:pass@somewhere.com/www/test_doc.htm</set> -->
+  </settings>
 	<settings name="messages">
 		<set name="kicked_by">%s^7 was kicked by %s^7 %s</set>
 		<set name="kicked">%s^7 was kicked %s</set>

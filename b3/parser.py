@@ -416,6 +416,8 @@ class Parser(object):
             p = self._plugins[k]
             self.bot('Reload plugin config for %s', k)
             p.loadConfig()
+            
+        self.updateDocumentation()
 
     def loadPlugins(self):
         """Load plugins specified in the config"""
@@ -616,6 +618,8 @@ class Parser(object):
         self.screen.write('Startup Complete : Let\'s get to work!\n\n')
         self.screen.write('(Please check %s in the B3 root directory for more detailed info)\n' % self.config.getpath('b3', 'logfile'))
         #self.screen.flush()
+
+        self.updateDocumentation()
 
         logTimeStart = None
         logTimeLast = 0
@@ -884,6 +888,16 @@ class Parser(object):
 
     def stripColors(self, text):
         return re.sub(self._reColor, '', text).strip()
+
+    def updateDocumentation(self):
+        """Create a documentation for all available commands"""
+        try: 
+            from b3.tools.documentationBuilder import DocBuilder
+            docbuilder = DocBuilder(self)
+            docbuilder.save()
+        except Exception, err:
+            self.error("Failed to generate user documentation")
+            self.exception(err)
 
 if __name__ == '__main__':
     import config
