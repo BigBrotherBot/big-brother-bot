@@ -17,10 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
-#
 #    08/01/2010 - 1.2.10 - xlr8or
 #    * disabled adding aliasses for world
-#    01/01/2010 - 1.2.9 - Courgette
+#    01/01/2001 - 1.2.9 - Courgette
 #    * clients get* methods' code is now more meaningful as : 
 #        b = weakref.ref(a)() 
 #        b = a
@@ -880,7 +879,6 @@ class Clients(dict):
         for cid,c in self.items():
             if c.hide:
                 continue
-
             elif not masked and c.maskGroup and c.maskGroup.level >= min and c.maskGroup.level <= max:
                 clist.append(c)
             elif not masked and c.maskGroup:

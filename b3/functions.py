@@ -26,12 +26,14 @@ import time
 
 
 
+
 def checkUpdate(currentVersion, singleLine=True, showErrormsg=False):
     """
     check if an update of B3 is available
     """
     if not singleLine:
         sys.stdout.write("checking for updates... \n")
+
     message = None
     errorMessage = None
     try:
