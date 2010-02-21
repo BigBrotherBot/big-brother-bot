@@ -20,9 +20,11 @@
 #   Added Action classes
 # 5/2/2010 - 2.0.0 - Mark Weirath (xlr8or@xlr8or.com)
 #   Added Assist Bonus and History
+# 21/2/2010 - 2.1.0 - Mark Weirath (xlr8or@xlr8or.com)
+#   Better assist mechanism
 
 __author__  = 'Tim ter Laak / Mark Weirath'
-__version__ = '2.0.0'
+__version__ = '2.1.0'
 
 # Version = major.minor.patches
 
@@ -36,6 +38,7 @@ import b3.plugin
 
 KILLER = "killer"
 VICTIM = "victim"
+ASSISTER = "assister"
 
 
 class XlrstatsPlugin(b3.plugin.Plugin):
@@ -610,6 +613,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         #it will also punish teammates that have a 'negative' assist!
         _count = 0 # number of assists to return
         _sum = 0   # sum of assistskill returned
+        _vsum = 0  # sum of victims skill deduction returned
         self.verbose('----> XLRstats: %s Killed %s (%s), checking for assists' %(client.name, target.name, etype))
 
         try:
@@ -626,53 +630,101 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 assister = self.console.clients.getByCID(k)
                 self.verbose('----> XLRstats: assister = %s' %(assister.name))
 
+                anonymous = None
+               
                 victimstats = self.get_PlayerStats(target)
+                assiststats = self.get_PlayerStats(assister)
+
+                # if both should be anonymous, we have no work to do
+                if ( (assiststats is None) and (victimstats is None) ):
+                    self.verbose('----> XLRstats: check_Assists: %s & %s both anonymous, continueing' %(assister.name, target.name))
+                    continue
+                    
                 if (victimstats == None):
                     anonymous = VICTIM
                     victimstats = self.get_PlayerAnon()
                     if (victimstats == None):
-                        return None
+                        continue
 
-                assiststats = self.get_PlayerStats(assister)
                 if (assiststats == None):
-                    self.verbose('----> XLRstats: assister is anonymous, nothing to do here.')
-                    continue
+                    anonymous = ASSISTER
+                    assiststats = self.get_PlayerAnon()
+                    if (assiststats == None):
+                        continue
 
-                if (assiststats.kills > self.Kswitch_kills):
-                    Kfactor = self.Kfactor_low
-                else:
-                    Kfactor = self.Kfactor_high
-
-                #calculate the win probability for the assister
+                #calculate the win probability for the assister and victim
                 assist_prob = self.win_prob(assiststats.skill, victimstats.skill)
+                victim_prob = self.win_prob(victimstats.skill, assiststats.skill)
                 self.verbose('----> XLRstats: win probability for %s: %s' %(assister.name, assist_prob))
+                self.verbose('----> XLRstats: win probability for %s: %s' %(target.name, victim_prob))
+
+                #get applicable weapon replacement
+                actualweapon = data[1]
+                for r in data:
+                    try:
+                        actualweapon = self.config.get('replacements', r)
+                    except:
+                        pass
+        
+                #get applicable weapon multiplier
+                try:
+                    weapon_factor = self.config.getfloat('weapons', actualweapon)
+                except:
+                    weapon_factor = 1.0
+         
                 #calculate new skill for the assister
-                oldskill = assiststats.skill
-                if (( target.team == assister.team ) and not ( self.console.game.gameType in self._ffa )):
-                    #teammate needs skill and assists reduced
-                    _assistbonus = self.assist_bonus * Kfactor * (0-assist_prob)
-                    assiststats.skill = float(assiststats.skill) + _assistbonus
-                    assiststats.assistskill = float(assiststats.assistskill) + _assistbonus
-                    assiststats.assists -= 1 #negative assist
-                    self.verbose('----> XLRstats: Assistpunishment deducted for %s: %s (oldsk: %.3f - newsk: %.3f)' %(assister.name, assiststats.skill-oldskill, oldskill, assiststats.skill))
-                    _count += 1
-                    _sum += _assistbonus
-                    if self.announce and not assiststats.hide:
-                        assister.message('^5XLRstats:^7 Teamdamaged (%s) -> skill: ^1%.3f^7 -> ^2%.1f^7' %(target.name, assiststats.skill-oldskill, assiststats.skill))
-                else:
-                    #this is a real assist
-                    _assistbonus = self.assist_bonus * Kfactor * (1-assist_prob)
-                    assiststats.skill = float(assiststats.skill) + _assistbonus
-                    assiststats.assistskill = float(assiststats.assistskill) + _assistbonus
-                    assiststats.assists += 1
-                    self.verbose('----> XLRstats: Assistbonus awarded for %s: %s (oldsk: %.3f - newsk: %.3f)' %(assister.name, assiststats.skill-oldskill, oldskill, assiststats.skill))
-                    _count += 1
-                    _sum += _assistbonus
-                    if self.announce and not assiststats.hide:
-                        assister.message('^5XLRstats:^7 Assistbonus (%s) -> skill: ^2+%.3f^7 -> ^2%.1f^7' %(target.name, assiststats.skill-oldskill, assiststats.skill))
-                self.save_Stat(assiststats)
+                if ( anonymous != ASSISTER ):
+                    if (assiststats.kills > self.Kswitch_kills):
+                        Kfactor = self.Kfactor_low
+                    else:
+                        Kfactor = self.Kfactor_high
+    
+                    oldskill = assiststats.skill
+                    if (( target.team == assister.team ) and not ( self.console.game.gameType in self._ffa )):
+                        #assister is a teammate and needs skill and assists reduced
+                        _assistbonus = self.assist_bonus * Kfactor * weapon_factor * (0-assist_prob)
+                        assiststats.skill = float(assiststats.skill) + _assistbonus
+                        assiststats.assistskill = float(assiststats.assistskill) + _assistbonus
+                        assiststats.assists -= 1 #negative assist
+                        self.verbose('----> XLRstats: Assistpunishment deducted for %s: %s (oldsk: %.3f - newsk: %.3f)' %(assister.name, assiststats.skill-oldskill, oldskill, assiststats.skill))
+                        _count += 1
+                        _sum += _assistbonus
+                        if self.announce and not assiststats.hide:
+                            assister.message('^5XLRstats:^7 Teamdamaged (%s) -> skill: ^1%.3f^7 -> ^2%.1f^7' %(target.name, assiststats.skill-oldskill, assiststats.skill))
+                    else:
+                        #this is a real assist
+                        _assistbonus = self.assist_bonus * Kfactor * weapon_factor * (1-assist_prob)
+                        assiststats.skill = float(assiststats.skill) + _assistbonus
+                        assiststats.assistskill = float(assiststats.assistskill) + _assistbonus
+                        assiststats.assists += 1
+                        self.verbose('----> XLRstats: Assistbonus awarded for %s: %s (oldsk: %.3f - newsk: %.3f)' %(assister.name, assiststats.skill-oldskill, oldskill, assiststats.skill))
+                        _count += 1
+                        _sum += _assistbonus
+                        if self.announce and not assiststats.hide:
+                            assister.message('^5XLRstats:^7 Assistbonus (%s) -> skill: ^2+%.3f^7 -> ^2%.1f^7' %(target.name, assiststats.skill-oldskill, assiststats.skill))
+                    self.save_Stat(assiststats)
+
+                #calculate new skill for the victim
+                if (anonymous != VICTIM):
+                    if (victimstats.kills > self.Kswitch_kills):
+                        Kfactor = self.Kfactor_low
+                    else:
+                        Kfactor = self.Kfactor_high
+    
+                    oldskill = victimstats.skill
+                    if (( target.team == assister.team ) and not ( self.console.game.gameType in self._ffa )):
+                        #assister was a teammate, this should not affect victims skill.
+                        pass
+                    else:
+                        #this is a real assist
+                        _assistdeduction = self.assist_bonus * Kfactor * weapon_factor * (0-victim_prob)
+                        victimstats.skill = float(victimstats.skill) + _assistdeduction
+                        self.verbose('----> XLRstats: Assist skilldeduction for %s: %s (oldsk: %.3f - newsk: %.3f)' %(target.name, victimstats.skill-oldskill, oldskill, victimstats.skill))
+                        _vsum += _assistdeduction
+                    self.save_Stat(victimstats)
+
         #end of assist reward function, return the number of assists 
-        return _count, _sum
+        return _count, _sum, _vsum
 
     def kill(self, client, target, data):
         if (client == None) or (client.id == self._world_clientid):
@@ -682,10 +734,10 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         if (data == None):
             return
             
+        _assists_count, _assists_sum, _victim_sum = self.check_Assists(client, target, data, 'kill')
+
         anonymous = None
        
-        _assists_count, _assists_sum = self.check_Assists(client, target, data, 'kill')
-
         killerstats = self.get_PlayerStats(client)
         victimstats = self.get_PlayerStats(target)
 
@@ -775,7 +827,20 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 Kfactor = self.Kfactor_high    
                 
             oldskill = victimstats.skill
-            victimstats.skill = float(victimstats.skill) + ( Kfactor * weapon_factor * (0-victim_prob) )
+
+            #pure skilldeduction for a 100% kill
+            _skilldeduction = Kfactor * weapon_factor * (0-victim_prob)
+            #deduct the assists from the victims skill deduction, but no more than 50%
+            if ( _victim_sum == 0 ):
+                pass
+            elif ( _victim_sum <= ( _skilldeduction / 2 )): #carefull, negative numbers here
+                _skilldeduction /= 2
+                self.verbose('----> XLRstats: Victim: assists > 50perc: %.3f - skilldeduct: %.3f' %( _victim_sum, _skilldeduction))
+            else:
+                _skilldeduction -=  _victim_sum
+                self.verbose('----> XLRstats: Victim: assists < 50perc: %.3f - skilldeduct: %.3f' %( _victim_sum, _skilldeduction))
+
+            victimstats.skill = float(victimstats.skill) + _skilldeduction
             self.verbose('----> XLRstats: Victim: oldsk: %.3f - newsk: %.3f' %(oldskill, victimstats.skill))
             victimstats.deaths = int(victimstats.deaths) + 1
 

@@ -20,7 +20,7 @@
   Call of Duty passes damage amount info to the logs. Therefore we can award assists based on damage.
   So in the CoD series we award an assist if the amount of damage is 50 points or more and they must occur
   within 10 seconds before the victim dies. In other games we shorten the timespan because we don't have
-  the amount op damage available, we have to award all assists, even the very tiny ones. The shorter time
+  the amount of damage available, we have to award all assists, even the very tiny ones. The shorter time
   compensates for that. 
 -->
     <!--     assist factor of the normal skill calculation (cannot be 1 or more) -->
