@@ -34,6 +34,7 @@ import b3.events
 #----------------------------------------------------------------------------------------------------------------------------------------------
 class WopParser(b3.parsers.q3a.Q3AParser):
     gameName = 'wop'
+    privateMsg = False
 
     _settings = {}
     _settings['line_length'] = 65
