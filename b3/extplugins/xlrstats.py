@@ -50,6 +50,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     _damage_ability = False
     _cronTabWeek = None
     _cronTabMonth = None
+    _cronTabKillBonus = None
 
     # config variables
     defaultskill = 1000
@@ -63,8 +64,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     steepness = 600
     suicide_penalty_percent = 0.05
     tk_penalty_percent = 0.1
-    kill_bonus = 1.2
-    assist_bonus = 0.2
+    kill_bonus = 1.5
+    assist_bonus = 0.5
     assist_timespan = 2 # on non damage based games: damage before death timespan
     damage_assist_release = 10 # on damage based games: release the assist (wil overwrite self.assist_timespan on startup)
     prematch_maxtime = 70
@@ -183,6 +184,13 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         #check and update columns in existing tables
         self.updateTableColumns()
+
+        #set proper kill_bonus and crontab
+        self.calculateKillBonus()
+        if self._cronTabKillBonus:
+            self.console.cron - self._cronTabKillBonus
+        self._cronTabKillBonus = b3.cron.PluginCronTab(self, self.calculateKillBonus, '*/10', '*', '*', '*', '*', '*')
+
         #end startup sequence
 
     def onLoadConfig(self):
@@ -236,19 +244,19 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         except:
             self.debug('Using default value (%f) for settings::tk_penalty_percent', self.tk_penalty_percent)
             
-        try:
-            self.kill_bonus = self.config.getfloat('settings', 'kill_bonus')
-        except:
-            self.kill_bonus = 1.2
-            self.debug('Using default value (%f) for settings::kill_bonus', self.kill_bonus)
+        #try:
+        #    self.kill_bonus = self.config.getfloat('settings', 'kill_bonus')
+        #except:
+        #    self.kill_bonus = 1.2
+        #    self.debug('Using default value (%f) for settings::kill_bonus', self.kill_bonus)
             
-        try:
-            self.assist_bonus = self.config.getfloat('settings', 'assist_bonus')
-            #cap off the assistbonus, so it will not be better rewarded than a kill
-            if self.assist_bonus > 0.9:
-                self.assist_bonus = 0.9
-        except:
-            self.debug('Using default value (%f) for settings::assist_bonus', self.assist_bonus)
+        #try:
+        #    self.assist_bonus = self.config.getfloat('settings', 'assist_bonus')
+        #    #cap off the assistbonus, so it will not be better rewarded than a kill
+        #    if self.assist_bonus > 0.9:
+        #        self.assist_bonus = 0.9
+        #except:
+        #    self.debug('Using default value (%f) for settings::assist_bonus', self.assist_bonus)
 
         try:
             self.assist_timespan = self.config.getint('settings', 'assist_timespan')
@@ -1364,6 +1372,29 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 cursor.moveNext()
         self.console.verbose('Available tables in this database: %s' %_tables)
         return _tables
+
+    def calculateKillBonus(self):
+        self.verbose('Calculating kill_bonus')
+        max = 0.0
+        diff = 0.0
+        _oldkillbonus = self.kill_bonus
+
+        q = 'SELECT MAX(skill) AS max_skill FROM %s' % self.playerstats_table
+        cursor = self.query(q)
+        r = cursor.getRow()
+        max = r['max_skill']
+        diff = max - self.defaultskill
+        if diff < 0:
+            self.kill_bonus = 2.0
+        elif diff < 400:
+            self.kill_bonus = 1.5
+        else:
+            c = 200.0 / diff + 1
+            self.kill_bonus = round(c,1)
+        self.assist_bonus = self.kill_bonus/3
+        if self.kill_bonus != _oldkillbonus:
+            self.debug('kill_bonus set to: %s' % self.kill_bonus)
+            self.debug('assist_bonus set to: %s' % self.assist_bonus)
 
 
 # This is an abstract class. Do not call directly.

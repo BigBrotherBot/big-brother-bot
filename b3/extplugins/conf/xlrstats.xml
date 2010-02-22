@@ -4,7 +4,6 @@
   Also game specific configs can be found on that website.
 -->
   <settings name="settings">
-    <set name="kill_bonus">1.3</set>
     <set name="suicide_penalty_percent">0.05</set>
     <set name="tk_penalty_percent">0.1</set>
     <set name="defaultskill">1000</set>
@@ -23,8 +22,6 @@
   the amount of damage available, we have to award all assists, even the very tiny ones. The shorter time
   compensates for that. 
 -->
-    <!--     assist factor of the normal skill calculation (cannot be 1 or more) -->
-    <!-- <set name="assist_bonus">0.5</set> -->
     <!--     timespan the assist must have taken place before the victim dies ( Call of Duty ) -->
     <!-- <set name="damage_assist_release">10</set> -->
     <!--     timespan the assist must have taken place before the victim dies ( Other than Call of Duty ) -->
