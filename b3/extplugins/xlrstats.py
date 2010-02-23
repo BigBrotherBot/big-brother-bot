@@ -22,9 +22,11 @@
 #   Added Assist Bonus and History
 # 21/2/2010 - 2.1.0 - Mark Weirath (xlr8or@xlr8or.com)
 #   Better assist mechanism
+# 23/2/2010 - 2.2.0 - Mark Weirath (xlr8or@xlr8or.com)
+#   Adding table maintenance on startup
 
 __author__  = 'Tim ter Laak / Mark Weirath'
-__version__ = '2.1.0'
+__version__ = '2.2.0'
 
 # Version = major.minor.patches
 
@@ -165,7 +167,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.assist_timespan = self.damage_assist_release
 
         if self.keep_history:
-            _tables = self.showTables()
+            self._xlrstatstables = [self.playerstats_table, self.weaponstats_table, self.weaponusage_table, self.bodyparts_table, self.playerbody_table, self.opponents_table, self.mapstats_table, self.playermaps_table, self.actionstats_table, self.playeractions_table, self.history_monthly_table, self.history_weekly_table]
+            _tables = self.showTables(xlrstats=True)
             if ( (self.history_monthly_table in _tables) and (self.history_monthly_table in _tables) ):
                 self.verbose('History Tables are present! Installing history Crontabs:')
                 # remove existing crontabs
@@ -180,16 +183,21 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 self.console.cron + self._cronTabWeek
             else:
                 self.keep_history = False
+                self._xlrstatstables = [self.playerstats_table, self.weaponstats_table, self.weaponusage_table, self.bodyparts_table, self.playerbody_table, self.opponents_table, self.mapstats_table, self.playermaps_table, self.actionstats_table, self.playeractions_table]
                 self.error('History Tables are NOT present! Please run b3/docs/xlrstats.sql on your database to install missing tables!')
 
         #check and update columns in existing tables
         self.updateTableColumns()
 
+        #optimize xlrstats tables
+        self.optimizeTables(self._xlrstatstables)
+
         #set proper kill_bonus and crontab
         self.calculateKillBonus()
         if self._cronTabKillBonus:
             self.console.cron - self._cronTabKillBonus
-        self._cronTabKillBonus = b3.cron.PluginCronTab(self, self.calculateKillBonus, '*/10', '*', '*', '*', '*', '*')
+        self._cronTabKillBonus = b3.cron.PluginCronTab(self, self.calculateKillBonus, 0, '*/10')
+        self.console.cron + self._cronTabKillBonus
 
         #end startup sequence
 
@@ -1361,17 +1369,53 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             else:
                 self.console.error('Query failed - %s: %s' % (type(e), e))
 
-    def showTables(self):
+    def showTables(self, xlrstats=False):
         _tables = []
         q = 'SHOW TABLES'
         cursor = self.query(q)
         if (cursor and (cursor.rowcount > 0) ):
             while not cursor.EOF:
                 r = cursor.getRow()
-                _tables.append(r.values()[0])
+                n = str(r.values()[0])
+                if xlrstats and not n in self._xlrstatstables:
+                    pass
+                else:
+                    _tables.append(r.values()[0])
                 cursor.moveNext()
-        self.console.verbose('Available tables in this database: %s' %_tables)
+        if xlrstats:
+            self.console.verbose('Available XLRstats tables in this database: %s' %_tables)
+        else:
+            self.console.verbose('Available tables in this database: %s' %_tables)
         return _tables
+
+    def optimizeTables(self, t=None):
+        if not t:
+            t = self.showTables()
+        if type(t) == type(''):
+            _tables = str(t)
+        else:
+            _tables = ', '.join(t)
+        self.debug('Optimizing Table(s): %s' % _tables)
+        try:
+            self.query('OPTIMIZE TABLE %s' % _tables )
+            self.debug('Optimize Success')
+        except Exception, msg:
+            self.error('Optimizing Table(s) Failed: %s, trying to repair...' %msg)
+            self.repairTables(t)
+
+    def repairTables(self, t=None):
+        if not t:
+            t = self.showTables()
+        if type(t) == type(''):
+            _tables = str(t)
+        else:
+            _tables = ', '.join(t)
+        self.debug('Repairing Table(s): %s' % _tables)
+        try:
+            self.query('REPAIR TABLE %s' % _tables )
+            self.debug('Repair Success')
+        except Exception, msg:
+            self.error('Repairing Table(s) Failed: %s' %msg)
 
     def calculateKillBonus(self):
         self.verbose('Calculating kill_bonus')
