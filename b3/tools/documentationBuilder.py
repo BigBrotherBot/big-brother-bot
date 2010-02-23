@@ -22,6 +22,9 @@
 #    * fix convertion from level to group name for unexpected level numbers
 #    * cosmetics to the html export
 #    * add maxlevel setting to hide commands reserved to high levels
+# 2010/02/23 - 1.2 - Courgette
+#    * make the html export validate the W3C test
+#    * hide the maxLevel column on the html export
 #
 
 """ 
@@ -30,7 +33,7 @@ on current config
 """
 
 __author__    = 'Courgette'
-__version__ = '1.1'
+__version__ = '1.2'
 
 import time, os, StringIO, string, re, sets
 from xml.dom.minidom import Document
@@ -126,7 +129,9 @@ class DocBuilder:
             #b3commands td {
                 font-size: 12px;
             }
-
+            #b3commands .b3MaxLevel {
+                display: none;
+            }
             body {
                 font-family: tahoma,sans-serif;
                 color: #3F3B3B;
@@ -170,6 +175,7 @@ class DocBuilder:
                 """
         
         javascript = """
+        //<![CDATA[
 /*!
  * jQuery JavaScript Library v1.4.2
  * http://jquery.com/
@@ -373,7 +379,7 @@ $(document).ready(function(){
     });
     $("#bodyarea table thead th:lt(5)").css('cursor', 'pointer');
 }); 
-            
+        //]]>
         """
         
         html = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -396,6 +402,11 @@ $(document).ready(function(){
                 <p>updated on %(dateUpdated)s</p>
                 %(commandsTable)s
             </div>
+            <p style="border: 10px; float: right;">
+                <a href="http://validator.w3.org/check?uri=referer"><img
+                src="http://www.w3.org/Icons/valid-xhtml10"
+                alt="Valid XHTML 1.0 Transitional" height="31" width="88" style="border: 0;"/></a>
+            </p>
             <script type="text/javascript">%(javascript)s</script>
         </body>
         </html>
@@ -414,7 +425,14 @@ $(document).ready(function(){
         text = """
             <table id="b3commands">
                 <thead>
-                    <tr><th>plugin</th><th>min level</th><th>max level</th><th>command</th><th>alias</th><th>description</th></tr>
+                    <tr>
+                        <th class="b3Plugin">plugin</th>
+                        <th class="b3MinLevel">min level</th>
+                        <th class="b3MaxLevel">max level</th>
+                        <th class="b3Name">command</th>
+                        <th class="b3Alias">alias</th>
+                        <th class="b3Desc">description</th>
+                    </tr>
                 </thead>
                 <tbody>
                 %(commandsTablerow)s
