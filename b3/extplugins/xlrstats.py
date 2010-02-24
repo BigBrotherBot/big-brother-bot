@@ -24,9 +24,13 @@
 #   Better assist mechanism
 # 23/2/2010 - 2.2.0 - Mark Weirath (xlr8or@xlr8or.com)
 #   Adding table maintenance on startup
+# 24/2/2010 - 2.2.1 - Mark Weirath (xlr8or@xlr8or.com)
+#   Repaired self._xlrstatstables bug
+# 24/2/2010 - 2.2.2 - Mark Weirath (xlr8or@xlr8or.com)
+#   Repaired updateTableColumns() bug
 
 __author__  = 'Tim ter Laak / Mark Weirath'
-__version__ = '2.2.0'
+__version__ = '2.2.2'
 
 # Version = major.minor.patches
 
@@ -166,6 +170,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self._damage_ability = True
             self.assist_timespan = self.damage_assist_release
 
+        self._xlrstatstables = [self.playerstats_table, self.weaponstats_table, self.weaponusage_table, self.bodyparts_table, self.playerbody_table, self.opponents_table, self.mapstats_table, self.playermaps_table, self.actionstats_table, self.playeractions_table]
         if self.keep_history:
             self._xlrstatstables = [self.playerstats_table, self.weaponstats_table, self.weaponusage_table, self.bodyparts_table, self.playerbody_table, self.opponents_table, self.mapstats_table, self.playermaps_table, self.actionstats_table, self.playeractions_table, self.history_monthly_table, self.history_weekly_table]
             _tables = self.showTables(xlrstats=True)
@@ -252,6 +257,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         except:
             self.debug('Using default value (%f) for settings::tk_penalty_percent', self.tk_penalty_percent)
             
+        #--OBSOLETE
         #try:
         #    self.kill_bonus = self.config.getfloat('settings', 'kill_bonus')
         #except:
@@ -265,6 +271,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         #        self.assist_bonus = 0.9
         #except:
         #    self.debug('Using default value (%f) for settings::assist_bonus', self.assist_bonus)
+        #--end OBS
 
         try:
             self.assist_timespan = self.config.getint('settings', 'assist_timespan')
@@ -1362,7 +1369,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         try:
             self.query('SELECT `%s` FROM %s limit 1;' %(c1, t1), silent=True)
         except Exception, e:
-            if e[0][0] == 1054:
+            if e[0] == 1054:
                 self.console.debug('Column does not yet exist: %s' % (e))
                 self.query('ALTER TABLE %s ADD `%s` %s ;' %(t1, c1, specs))
                 self.console.info('Created new column `%s` on %s' %(c1, t1))
@@ -1418,7 +1425,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.error('Repairing Table(s) Failed: %s' %msg)
 
     def calculateKillBonus(self):
-        self.verbose('Calculating kill_bonus')
+        self.debug('Calculating kill_bonus')
         max = 0.0
         diff = 0.0
         _oldkillbonus = self.kill_bonus
