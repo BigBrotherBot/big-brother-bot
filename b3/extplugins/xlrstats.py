@@ -24,9 +24,11 @@
 #   Better assist mechanism
 # 23/2/2010 - 2.2.0 - Mark Weirath (xlr8or@xlr8or.com)
 #   Adding table maintenance on startup
+# 24/2/2010 - 2.2.1 - Mark Weirath (xlr8or@xlr8or.com)
+#   Repaired self._xlrstatstables bug
 
 __author__  = 'Tim ter Laak / Mark Weirath'
-__version__ = '2.2.0'
+__version__ = '2.2.1'
 
 # Version = major.minor.patches
 
@@ -166,6 +168,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self._damage_ability = True
             self.assist_timespan = self.damage_assist_release
 
+        self._xlrstatstables = [self.playerstats_table, self.weaponstats_table, self.weaponusage_table, self.bodyparts_table, self.playerbody_table, self.opponents_table, self.mapstats_table, self.playermaps_table, self.actionstats_table, self.playeractions_table]
         if self.keep_history:
             self._xlrstatstables = [self.playerstats_table, self.weaponstats_table, self.weaponusage_table, self.bodyparts_table, self.playerbody_table, self.opponents_table, self.mapstats_table, self.playermaps_table, self.actionstats_table, self.playeractions_table, self.history_monthly_table, self.history_weekly_table]
             _tables = self.showTables(xlrstats=True)
@@ -183,7 +186,6 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 self.console.cron + self._cronTabWeek
             else:
                 self.keep_history = False
-                self._xlrstatstables = [self.playerstats_table, self.weaponstats_table, self.weaponusage_table, self.bodyparts_table, self.playerbody_table, self.opponents_table, self.mapstats_table, self.playermaps_table, self.actionstats_table, self.playeractions_table]
                 self.error('History Tables are NOT present! Please run b3/docs/xlrstats.sql on your database to install missing tables!')
 
         #check and update columns in existing tables
