@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -15,9 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#
+# CHANGELOG:
+#
+# 2010/02/24 - 1.2 - Courgette
+#    * uniformize SystemExit and uncatched exception handling between
+#      bot running as a win32 standalone and running as a python script
+#
 
 __author__  = 'ThorN'
-__version__ = '1.1.1'
+__version__ = '1.2'
 
 import b3, sys, os, time
 import traceback
@@ -132,24 +139,28 @@ def main():
         else:
             run_autorestart([])
     else:
-        if main_is_frozen():
-            # which happens when running from the py2exe build
-            try:
-                run(config=options.config)
-            except SystemExit, msg:
+        try:
+            run(config=options.config)
+        except SystemExit, msg:
+            print msg
+            if sys.stdout != sys.__stdout__:
                 # make sure we are not writting to the log:
                 sys.stdout = sys.__stdout__
                 sys.stderr = sys.__stderr__
                 print msg
-            except:
-                traceback.print_exc()
+        except:
+            traceback.print_exc()
+            if sys.stdout != sys.__stdout__:
                 # make sure we are not writting to the log:
                 sys.stdout = sys.__stdout__
                 sys.stderr = sys.__stderr__
                 traceback.print_exc()
-            raw_input("Press any key")
-        else:
-            run(config=options.config)
+        if main_is_frozen():
+            # which happens when running from the py2exe build
+            # we wait for keyboad keypress to give a chance to the 
+            # user to see the error message
+            raw_input("Press the [ENTER] key")
+     
     
 if __name__ == '__main__':
     main()
