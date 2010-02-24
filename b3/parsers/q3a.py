@@ -59,6 +59,7 @@ import b3.cvar
 #----------------------------------------------------------------------------------------------------------------------------------------------
 class Q3AParser(b3.parser.Parser):
     gameName = 'q3a'
+    privateMsg = True
     OutputClass = b3.parsers.q3a_rcon.Rcon
 
     _settings = {}

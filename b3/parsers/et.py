@@ -26,6 +26,7 @@ import PunkBuster
 
 class EtParser(parsers.q3a.Q3AParser):
     gameName = 'et'
+    privateMsg = False
     _settings = {}
     _settings['line_length'] = 65
     _settings['min_wrap_length'] = 90
