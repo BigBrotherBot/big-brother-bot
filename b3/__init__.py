@@ -20,8 +20,9 @@
 # 2010/02/20 - Courgette
 #    * user friendly handlling of parser import error. Prints a detailled
 #      message and exits.
+# 2010/02/24 - Courgette
+#    * user friendly message on missing config file option
 #
-
 
 __author__ = 'ThorN'
 
@@ -37,6 +38,7 @@ import os, re, sys, traceback, time
 import signal
 import platform
 import config
+import ConfigParser
 
 versionOs = os.name
 versionId = 'v%s [%s]' % (__version__, versionOs)
@@ -128,21 +130,25 @@ def start(configFile):
         Setup(configFile)
         #raise SystemExit('Could not find config file %s' % configFile)
 
-    parserType = conf.get('b3', 'parser')
-
-    if not parserType:
-        raise SystemExit('You must supply a parser')
-
     try:
-        parser = loadParser(parserType)
-    except ImportError:
-        raise SystemExit("CRITICAL: Cannot find parser '%s'. Check you main config file (b3.xml)\nB3 failed to start"% parserType)
+        parserType = conf.get('b3', 'parser')
+        if not parserType:
+            raise SystemExit('You must supply a parser')
 
-    extplugins_dir = conf.getpath('plugins', 'external_dir');
-    print "Using external plugin directory: %s" % extplugins_dir
+        try:
+            parser = loadParser(parserType)
+        except ImportError:
+            raise SystemExit("CRITICAL: Cannot find parser '%s'. Check you main config file (b3.xml)\nB3 failed to start"% parserType)
     
-    global console
-    console = parser(conf)
+        extplugins_dir = conf.getpath('plugins', 'external_dir');
+        print "Using external plugin directory: %s" % extplugins_dir
+        
+        global console
+        console = parser(conf)
+
+    except ConfigParser.NoOptionError, err:
+        raise SystemExit("CRITICAL: option %r not found in section %r. Correct your config file %s" % (err.option, err.section, configFile))
+
 
     def termSignalHandler(signum, frame):
         console.bot("TERM signal received. Shutting down")
