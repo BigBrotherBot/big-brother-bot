@@ -28,6 +28,8 @@
 # 2010/02/25 - 1.2.1 - Courgette
 #    * fix Internet Explorer issues with logo in html export
 #    * remove any use the sets module
+# 2010/02/26 - 1.2.2 - Courgette
+#    * fix bug making commands with alias appear twice in the results
 #
 
 """ 
@@ -36,7 +38,7 @@ on current config
 """
 
 __author__    = 'Courgette'
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
 import time, os, StringIO, string, re
 from xml.dom.minidom import Document
@@ -491,7 +493,7 @@ $(document).ready(function(){
     def _getCommandsDict(self):
         if self._maxlevel is not None:
             self._console.debug('AUTODOC: get commands with level <= %s' % self._maxlevel)
-        commands = []
+        commands = {}
         for cmd in self._adminPlugin._commands.values():
             if cmd in commands or \
                 cmd.level is None:
@@ -509,7 +511,7 @@ $(document).ready(function(){
             tmp['description'] = escape(cmd.help)
             tmp['minlevel'] = str(cmd.level[0])
             tmp['maxlevel'] = str(cmd.level[1])
-            commands.append(tmp)
+            commands[cmd] = tmp
             
         def commands_compare(x, y):
             if x['plugin'] < y['plugin']: return -1
@@ -524,8 +526,9 @@ $(document).ready(function(){
             else:
                 return 0
 
-        commands.sort(commands_compare)
-        return commands
+        listCommands = commands.values()
+        listCommands.sort(commands_compare)
+        return listCommands
     
     def _write(self, text):
         
