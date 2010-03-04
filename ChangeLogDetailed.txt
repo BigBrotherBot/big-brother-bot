@@ -1,3 +1,76 @@
+2010-02-24  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: Adding table maintenance on startup
+
+2010-02-22  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/conf/xlrstats.xml, b3/extplugins/xlrstats.py: Auto
+	calculate kill_bonus and assist_bonus
+
+2010-02-21  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/tools/documentationBuilder.py: Signed-off-by: xlr8or
+	<xlr8or@xlr8or.com>
+
+2010-02-21  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit e493d0f17badb6bf9cf4a87df29fe1f662ee4d5d Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sun Feb 21 13:20:50 2010 +0100
+
+2010-02-21  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/et.py, b3/parsers/q3a.py, b3/parsers/wop.py: Added
+	privateMsg variable to parsers for identification of '/tell ability'
+
+2010-02-20  Courgette <courgette@ubu-team.org>
+
+	* b3/functions.py: delete unused splitFTPDSN function
+
+2010-02-20  Courgette <courgette@ubu-team.org>
+
+	* b3/__init__.py: Bot start : displays a understandable message when
+	the parser was not found
+
+2010-02-21  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/b3.xml, b3/conf/b3.xml.distribution,
+	b3/tools/documentationBuilder.py: autodoc: add maxlevel setting
+
+2010-02-20  Courgette <courgette@ubu-team.org>
+
+	* b3.egg-info/PKG-INFO, b3/conf/b3.xml,
+	b3/conf/b3.xml.distribution, b3/parser.py, b3/tools/__init__.py,
+	b3/tools/documentationBuilder.py: add a new feature to B3 : user
+	command documentation auto generation and update.  documentation can
+	be saved as a full html document, a html table snippet or xml
+	document.  the document can be either saved locally on disk or
+	uploaded to a FTP server.
+
+2010-02-20  Courgette <courgette@ubu-team.org>
+
+	* b3/functions.py: delete unused splitFTPDSN function
+
+2010-02-20  Courgette <courgette@ubu-team.org>
+
+	* b3/__init__.py: Bot start : displays a understandable message when
+	the parser was not found
+
+2010-02-20  Courgette <courgette@ubu-team.org>
+
+	* : commit eaafcca9ddcd358ae284cbde89915d9f76e8be78 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sun Feb 14 17:32:50 2010 +0100
+
+2010-02-14  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/docs/xlrstats-update-to-v1.0.0.sql, b3/extplugins/xlrstats.py: 
+	Added history functionality and improved column update.  [!!]This
+	version needs new tables added. Run b3/docs/xlrstats.sql or
+	b3/docs/xlrstats-update-to-v2.0.0.sql prior to installation!
+
+2010-02-14  Courgette <courgette@ubu-team.org>
+
+	* : merging from xlr8or master
+
 2010-02-06  courgette <courgette@v10117.ovh.net>
 
 	* b3/parsers/smg11.py: PARSER SMG11: add EVT_CLIENT_DAMAGE
@@ -54,18 +127,68 @@
 	b3/extplugins/conf/xlrstats.xml, b3/extplugins/xlrstats.py: Merged
 	XLRstats version 2.0.0 into master
 
+2010-02-07  Courgette <courgette@ubu-team.org>
+
+	* : commit 34f24a8c668830ae0209565753cd546d79741dd6 Author:
+	Courgette <courgette@ubu-team.org> Date:   Sun Feb 7 08:12:27 2010
+	+0100
+
+2010-02-06  courgette <courgette@v10117.ovh.net>
+
+	* b3/parsers/smg11.py: PARSER SMG11: add EVT_CLIENT_DAMAGE
+
+2010-02-06  courgette <courgette@v10117.ovh.net>
+
+	* b3/parsers/smg.py, b3/parsers/smg11.py: PARSER smg is compatible
+	with SG pior 1.1. smg11 uses the new /tell command for private chat
+
+2010-02-03  Courgette <courgette@ubu-team.org>
+
+	* : commit 7d9284ac6f8050e7ffafa9183eb2a8ab03315d29 Author:
+	courgette <courgette@v10117.ovh.net> Date:   Mon Feb 1 22:29:55 2010
+	+0100
+
+2010-02-01  courgette <courgette@v10117.ovh.net>
+
+	* b3/parsers/smg11.py: add Smokin' Guns parsers for v1.1b4
+
 2010-01-31  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/parsers/cod.py, b3/parsers/cod4.py: unban: tested codseries for
 	ban file syntax
 
+2010-01-31  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/admin.py: the iamgod check warns if the command is
+	explicitly enabled by config file but superadmins are found in
+	database
+
+2010-01-31  Courgette <courgette@ubu-team.org>
+
+	* b3/clients.py: remove dirty debugging message
+
 2010-01-31  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/parsers/cod.py: minor update to unban function
 
+2010-01-31  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/etpro.py, b3/parsers/smg.py, b3/parsers/wop.py: 
+	getMap() is now inherited from q3a for etpro/smg/wop parsers
+
+2010-01-31  Courgette <courgette@ubu-team.org>
+
+	* : commit a63af1e75a4cb6b5edc0bed429cf5aa2e399d625 Merge: 1b7b698
+	85296ed Author: Courgette <courgette@ubu-team.org> Date:   Sun Jan
+	31 13:46:56 2010 +0100
+
 2010-01-31  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/parsers/cod.py: minor update
+
+2010-01-31  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/smg.py: SMG: enable private messaging
 
 2010-01-31  xlr8or <xlr8or@xlr8or.com>
 
@@ -139,9 +262,14 @@
 	* b3/parsers/iourt41.py: iourt41 : connecting players (CNCT) are not
 	ignored anymore. Allow to use !kick or !ci on ci players
 
-2010-01-18  xlr8or <xlr8or@xlr8or.com>
+2010-01-19  Courgette <courgette@ubu-team.org>
 
-	* listversions.py: Signed-off-by: xlr8or <xlr8or@xlr8or.com>
+	* b3/parsers/iourt41.py: iourt41 : connecting players (CNCT) are not
+	ignored anymore. Allow to use !kick or !ci on ci players
+
+2010-01-18  Courgette <courgette@ubu-team.org>
+
+	* : pulling from xlr8or/master
 
 2010-01-18  Courgette <courgette@ubu-team.org>
 
@@ -167,15 +295,44 @@
 
 	* b3/parsers/q3a_rcon.py: put back q3a_rcon v1.3.6
 
+2010-01-18  Courgette <courgette@ubu-team.org>
+
+	* listversions.py: listversion script improved to also find
+	differences between individual files
+
+2010-01-18  Courgette <courgette@ubu-team.org>
+
+	* listversions.py: listversions: remove differences between linux
+	and windows
+
+2010-01-18  Courgette <courgette@ubu-team.org>
+
+	* listversions.py: listversions.py: sort files because they are not
+	returned in the same order on Linux and Windows
+
+2010-01-18  Courgette <courgette@ubu-team.org>
+
+	* listversions.py: add a script to easily list py files versions
+	numbers
+
+2010-01-18  Courgette <courgette@ubu-team.org>
+
+	* b3/clients.py: put back client.py from v1.2.6 to v1.2.10
+
+2010-01-17  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/q3a_rcon.py: put back q3a_rcon v1.3.6
+
 2010-01-17  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/parsers/cod.py, b3/parsers/cod4.py, b3/parsers/cod5.py: 
 	Refactoring cod parser series.  Moved sync to OnInitgame (delayed
 	30s) to fix synchronisation issues.
 
-2010-01-16  xlr8or <xlr8or@xlr8or.com>
+2010-01-17  Courgette <courgette@ubu-team.org>
 
-	* b3/plugins/censor.py: minor update
+	* : commit 11a88de71bc2dbd7f0df0e56c0c82a65eb7b2561 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sat Jan 16 21:36:40 2010 +0100
 
 2010-01-16  xlr8or <xlr8or@xlr8or.com>
 
@@ -198,9 +355,15 @@
 	* b3/parsers/iourt41.py: put back maxRetries=4 keyword from
 	getPlayerList()
 
-2010-01-16  xlr8or <xlr8or@xlr8or.com>
+2010-01-16  Courgette <courgette@ubu-team.org>
 
-	* b3/conf/plugin_censor.xml: es -> pt
+	* b3/parsers/iourt41.py: put back maxRetries=4 keyword from
+	getPlayerList()
+
+2010-01-16  Courgette <courgette@ubu-team.org>
+
+	* : commit f04892960ba6222f9edabff6f6a6831fddf67603 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sat Jan 16 13:12:46 2010 +0100
 
 2010-01-16  xlr8or <xlr8or@xlr8or.com>
 
@@ -221,9 +384,9 @@
 
 	* b3/parsers/cod5.py: Moved Sync to InitGame and delayed it 30secs.
 
-2010-01-08  xlr8or <xlr8or@xlr8or.com>
+2010-01-08  Courgette <courgette@ubu-team.org>
 
-	* CHANGELOG: Added GNU style Changelog - Auto Generated with git2cl
+	* : merging from xlr8or/master
 
 2010-01-08  xlr8or <xlr8or@xlr8or.com>
 
@@ -304,10 +467,61 @@
 
 	* b3/parsers/cod5.py: Fixed unassigned pbid bug for non-pb servers
 
-2009-12-21  xlr8or <xlr8or@xlr8or.com>
+2010-01-06  Courgette <courgette@ubu-team.org>
 
-	* b3/__init__.py, b3/functions.py: update to the checkUpdate()
-	script.
+	* py2exe_builder/b3-installer-project.iss: version change for
+	Courgette dev build 05/01/2010
+
+2010-01-06  Courgette <courgette@ubu-team.org>
+
+	* b3.egg-info/PKG-INFO, b3/pkg_handler.py: make
+	PkgResourcesStandIn.version('b3') work with py2exe build
+
+2010-01-05  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/iourt41.py: fix minor bug in saytell
+
+2010-01-05  Courgette <courgette@ubu-team.org>
+
+	* b3/clients.py: get rid of weakref.ref(<someobject>)() as this is
+	the same as <someobject>
+
+2010-01-02  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/iourt41.py: improve Urt slot bug woraround as it
+	appears it can occur with slot num different than 0
+
+2010-01-02  Courgette <courgette@ubu-team.org>
+
+	* b3.egg-info/PKG-INFO, b3/clients.py, b3/parsers/iourt41.py,
+	py2exe_builder/b3-installer-project.iss: fix Clients.getByName().
+	Fix Urt slot bug workaround
+
+2009-12-30  Courgette <courgette@ubu-team.org>
+
+	* b3.egg-info/PKG-INFO, b3/parsers/iourt41.py,
+	py2exe_builder/b3-installer-project.iss: improve say lines slot bug
+	detection for cases where no player exists on slot 0.
+
+2009-12-30  Courgette <courgette@ubu-team.org>
+
+	* b3.egg-info/PKG-INFO, b3/parsers/iourt41.py,
+	py2exe_builder/b3-installer-project.iss: Fixes Urban Terror aliases
+	issue
+
+2009-12-22  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/publist.py: bot version tells if the bot is built with
+	py2exe
+
+2009-12-21  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/iourt41.py: add new UrT specific event :
+	EVT_CLIENT_GEAR_CHANGE
+
+2009-12-21  Courgette <courgette@ubu-team.org>
+
+	* : resolves conflicts merging from xlr8or master
 
 2009-12-21  xlr8or <xlr8or@xlr8or.com>
 
@@ -346,11 +560,23 @@
 
 	* b3/storage.py: error msg -> warning
 
-2009-12-21  xlr8or <xlr8or@xlr8or.com>
+2009-12-21  Courgette <courgette@ubu-team.org>
 
-	* b3/pkg_handler.py, setupPy2exe.py: Update to standalone distro
-	tools to enable current version detection.  This follows the
-	setuptools version numbering procedure we use.
+	* b3/__init__.py, b3/functions.py, b3/parser.py, b3/run.py: Version
+	string modified for win32 standalone build.  While checking new B3
+	 version availibility : * take advantage of distutil methods to compare versions numbers  * if new version, print an eye candy message and sleep 5 sec (15
+	 sec too confusing, it looks like the bot crashed) * in case of HTTP error, the reason for the failure is displayed
+	Tested running from python and running off b3_run.exe
+
+2009-12-21  Courgette <courgette@ubu-team.org>
+
+	* setupPy2exe.py: better version number handling. Create the build
+	out of the src directory
+
+2009-12-21  Courgette <courgette@ubu-team.org>
+
+	* : commit 38db35f33b4be533695f5ffd54f80b1f4e6b855d Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Mon Dec 21 10:47:02 2009 +0100
 
 2009-12-21  xlr8or <xlr8or@xlr8or.com>
 
@@ -360,6 +586,34 @@
 
 	* b3/__init__.py, b3/functions.py: Added check: 'new version
 	available' on bot startup.
+
+2009-12-20  Courgette <courgette@ubu-team.org>
+
+	* b3/parser.py: more detailed info msg when looking for plugins in
+	extplugins
+
+2009-12-20  Courgette <courgette@ubu-team.org>
+
+	* b3/config.py: Fix bug in resolving @b3 which was failing for the
+	win32 standalone release.
+
+2009-12-20  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/b3.xml, b3/conf/b3.xml.distribution: no need for the
+	publist config anymore
+
+2009-12-20  Courgette <courgette@ubu-team.org>
+
+	* b3/storage.py: error msg -> warning
+
+2009-12-16  Courgette <courgette@ubu-team.org>
+
+	* b3/fake.py: improved FakeConsole FakeClient can disconnects()
+	FakeClient.connects() debugged Fix superadmin group's level
+
+2009-12-14  Courgette <courgette@ubu-team.org>
+
+	* b3/clients.py: refactor _set_name and fix Alias default numUsed
 
 2009-12-16  Courgette <courgette@ubu-team.org>
 
@@ -427,17 +681,97 @@
 
 	* b3/fake.py: FakeConsole can fake more situations (shutdown, sync) Conflicts: 	b3/fake.py
 
-2009-12-13  xlr8or <xlr8or@xlr8or.com>
+2009-12-13  Courgette <courgette@ubu-team.org>
 
-	* b3/setup.py: modification to aid standalone install
+	* b3/plugins/ftpytail.py: * default timeout is 30 secondes (as I had a user reporting the FTP
+	  server he uses lags 15 sec before accepting connections).  * Can optionnaly read a config file to customize timeout and max
+	  allowed gap between remote and local gamelog * add a test to validate config reading
+
+2009-12-13  Courgette <courgette@ubu-team.org>
+
+	* b3/run.py, b3/setup.py: Fix setup for Win32 standalone
+	distribution.  other minor changes
+
+2009-12-13  Courgette <courgette@ubu-team.org>
+
+	* : commit 110cbc1cfe6a22d5d2160c61054ef6b1ec0815d8 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sun Dec 13 19:47:19 2009 +0100
+
+2009-12-12  Courgette <courgette@ubu-team.org>
+
+	* b3/parser.py: when working in remote mode, does not download the
+	remote log file.
+
+2009-12-12  Courgette <courgette@ubu-team.org>
+
+	* setupPy2exe.py: py2exe will bundle everything into the b3_run.exe.
+	This makes the installation directory a lot cleaner
+
+2009-12-12  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/ftpytail.py: does not download huge amount of log in
+	case local file is too far behind remote file (prevents memory
+	errors) In case of connection failure, try to reconnect every second
+	for the first 30 seconds be polite with CPU pausing at least 150ms
+	each loop
+
+2009-12-12  Courgette <courgette@ubu-team.org>
+
+	* b3/fake.py: fakeConsole can fake having an input gamelog
+
+2009-12-12  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/q3a_rcon.py: make errors warnings until maxRetries is
+	not reached
+
+2009-12-12  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/ftpytail.py: Gracefully stop thread when B3 is shutting
+	down Add tests
+
+2009-12-12  Courgette <courgette@ubu-team.org>
+
+	* b3/fake.py: FakeConsole can fake more situations (shutdown, sync)
+
+2009-12-09  Courgette <courgette@ubu-team.org>
+
+	* : commit a8b119ab382589d27547a6b1ab536b227ab14190 Author:
+	Courgette <courgette@ubu-team.org> Date:   Wed Dec 9 00:31:33 2009
+	+0100
+
+2009-12-09  Courgette <courgette@ubu-team.org>
+
+	* : commit bb76d136878195ef1b72928dca35459fc76c5e2d Author:
+	Courgette <courgette@ubu-team.org> Date:   Wed Dec 9 00:20:43 2009
+	+0100
 
 2009-12-07  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/setup.py: minor fix for setup
 
+2009-12-06  Courgette <courgette@ubu-team.org>
+
+	* : commit 853a3366930293094de59223cda96f071ba08be6 Author:
+	Courgette <courgette@ubu-team.org> Date:   Sun Dec 6 14:38:54 2009
+	+0100
+
+2009-12-06  Courgette <courgette@ubu-team.org>
+
+	* : resolve conflicts merging xlr8or/master
+
 2009-12-06  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/setup.py: improvements to setup
+
+2009-12-06  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/iourt41.py: harden queryClientUserInfoByCid and fix
+	_rePlayerScore regexp again
+
+2009-12-05  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/iourt41.py: fix _rePlayerScore regexp and on startup,
+	also try to get players' team (which is not given by dumpuser)
 
 2009-12-05  xlr8or <xlr8or@xlr8or.com>
 
@@ -495,6 +829,21 @@
 	* b3/config.py, b3/plugin.py: * config can be parsed from a string instead of reading a xml file  * a plugin can be instanciated with an instance of Config instead
 	 of a config filename Signed-off-by: Courgette <courgette@ubu-team.org>
 
+2009-11-30  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/iourt41.py: fix ip:port splitting
+
+2009-11-30  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/iourt41.py: ClientUserInfo and ClientUserInfoChanged
+	separated
+
+2009-11-30  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/iourt41.py: separates treatments for clientUserInfo and
+	clientUserInfoChanged lines.  OnClienUserInfoChanged, no new user is
+	created
+
 2009-11-29  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/setup.py: improvements to setup
@@ -503,6 +852,21 @@
 
 	* b3/__init__.py, b3/conf/b3.xml.distribution, b3/run.py,
 	b3/setup.py: stage 2 of the setup procedure
+
+2009-11-29  Courgette <courgette@ubu-team.org>
+
+	* b3/clients.py: replace constant values with their constant names
+
+2009-11-29  Courgette <courgette@ubu-team.org>
+
+	* b3/fake.py: can fake use of punkbuster fakeConsole can kick
+	FakeClient.connects(cid) to emulated a player connecting to the
+	gameserver
+
+2009-11-29  Courgette <courgette@ubu-team.org>
+
+	* b3/config.py, b3/plugin.py: * config can be parsed from a string instead of reading a xml file  * a plugin can be instanciated with an instance of Config instead
+	 of a config filename Signed-off-by: Courgette <courgette@ubu-team.org>
 
 2009-11-29  xlr8or <xlr8or@xlr8or.com>
 
@@ -526,6 +890,22 @@
 
 	* b3/parsers/iourt41.py: fix a bug that prevented kills by slap or
 	nuke from firing a kill event
+
+2009-11-25  Courgette <courgette@ubu-team.org>
+
+	* b3/parser.py, b3/parsers/q3a.py: move stripColors down to
+	parser.py
+
+2009-11-26  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/iourt41.py: fix a bug that prevented kills by slap or
+	nuke from firing a kill event
+
+2009-11-25  Courgette <courgette@ubu-team.org>
+
+	* b3/fake.py: add FakeConsole.write() FakeClient can be used with
+	custom consoles add doAction and triggerEvent to FakeClient
+	FakeConsole strips colors to make output easier to read
 
 2009-11-25  Courgette <courgette@ubu-team.org>
 

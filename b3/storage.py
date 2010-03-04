@@ -254,7 +254,7 @@ class DatabaseStorage(Storage):
                             pass
 
                 if silent:
-                    raise Exception('Query failed - %s: %s' % (type(e), e))
+                    raise Exception(e[0], e[1])
                 else:
                     self.console.error('Query failed - %s: %s' % (type(e), e))
 
