@@ -30,10 +30,12 @@
 # * fix ban command
 # 06/02/2010 - 0.4 - Courgette
 # * parser recognizes damage lines (when enabled in SG config with : set g_debugDamage "1")
+# 04/03/2010 - 0.5 - Courgette
+# * OnClientuserinfo -> OnClientuserinfochanged 
 #
 
 __author__  = 'xlr8or, Courgette'
-__version__ = '0.4'
+__version__ = '0.5'
 
 import re, string, thread, time, threading
 import b3
@@ -172,7 +174,7 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
         for cid, c in plist.iteritems():
             userinfostring = self.queryClientUserInfoByCid(cid)
             if userinfostring:
-                self.OnClientuserinfo(None, userinfostring)
+                self.OnClientuserinfochanged(None, userinfostring)
         
             
 #---------------------------------------------------------------------------------------------------
@@ -184,7 +186,7 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
         for f in self._lineFormats:
             m = re.match(f, line)
             if m:
-                #self.debug('XLR--------> line matched %s' % f.pattern)
+                self.debug('XLR--------> line matched %s' % f.pattern)
                 break
 
         if m:
@@ -210,7 +212,7 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
         return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
 
     # Parse Userinfo
-    def OnClientuserinfo(self, action, data, match=None):
+    def OnClientuserinfochanged(self, action, data, match=None):
         bclient = self.parseUserInfo(data)
         self.verbose('Parsed user info %s' % bclient)
         if bclient:
@@ -264,7 +266,7 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
         victim = self.clients.getByCID(match.group('cid'))
         if not victim:
             self.debug('No victim')
-            #self.OnClientuserinfo(action, data, match)
+            #self.OnClientuserinfochanged(action, data, match)
             return None
 
         weapon = match.group('aweap')
@@ -314,6 +316,7 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
 
     # startgame
     def OnInitgame(self, action, data, match=None):
+        self.debug('OnInitgame: %s' % data)
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)
 
         for o in options:
@@ -324,6 +327,7 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
             elif o[0] == 'fs_game':
                 self.game.modName = o[1]
             else:
+                #self.debug('%s = %s' % (o[0],o[1]))
                 setattr(self.game, o[0], o[1])
 
         self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
