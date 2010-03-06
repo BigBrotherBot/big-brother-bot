@@ -32,10 +32,15 @@
 # * parser recognizes damage lines (when enabled in SG config with : set g_debugDamage "1")
 # 04/03/2010 - 0.5 - Courgette
 # * OnClientuserinfo -> OnClientuserinfochanged 
+# 06/03/2010 - 0.6 - Courgette
+# * make sure bots are bots on client connection
+# * auth client by making use of dumpuser whenever needed
+# * add custom handling of OnItem action
+# * add the money property to clients that holds the amount of money a player has
 #
 
 __author__  = 'xlr8or, Courgette'
-__version__ = '0.5'
+__version__ = '0.6'
 
 import re, string, thread, time, threading
 import b3
@@ -158,7 +163,7 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
     def startup(self):
         # add the world client
         
-        self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
+        self.clients.newClient(1022, guid='WORLD', name='World', hide=True, pbid='WORLD')
         #if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
         #    self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
 
@@ -204,7 +209,8 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
             self.verbose('XLR--------> line did not match format: %s' % line)
 
 #---------------------------------------------------------------------------------------------------
-
+       
+        
     def OnClientconnect(self, action, data, match=None):
         self._clientConnectID = data
         client = self.clients.getByCID(data)
@@ -236,10 +242,12 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
                 if bclient.has_key('guid'):
                     guid = bclient['guid']
                 else:
-                    #guid = 'BOT-' + str(bclient['name'])
-                    guid = 'BOT-' + str(cid)
-                    self.verbose('BOT connected!')
-                    self.clients.newClient(cid, name=bclient['name'], ip='0.0.0.0', state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid })
+                    if bclient.has_key('skill'):
+                        guid = 'BOT-' + str(cid)
+                        self.verbose('BOT connected!')
+                        self.clients.newClient(cid, name=bclient['name'], ip='0.0.0.0', state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid }, money=20)
+                    else:
+                        self.warning('cannot connect player because he has no guid and is not a bot either')
                     self._connectingSlots.remove(cid)
                     return None
                 
@@ -251,7 +259,7 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
                         self.warning('failed to get client ip')
                 
                 if bclient.has_key('ip'):
-                    self.clients.newClient(cid, name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid })
+                    self.clients.newClient(cid, name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid }, money=20)
                 else:
                     self.warning('failed to get connect client')
                     
@@ -263,7 +271,7 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
     def OnKill(self, action, data, match=None):
         self.debug('OnKill: %s (%s)'%(match.group('aweap'),match.group('text')))
         
-        victim = self.clients.getByCID(match.group('cid'))
+        victim = self.getByCidOrJoinPlayer(match.group('cid'))
         if not victim:
             self.debug('No victim')
             #self.OnClientuserinfochanged(action, data, match)
@@ -280,7 +288,7 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
             self.debug('OnKill: Fixed attacker, suicide detected: %s' %match.group('text'))
             attacker = victim
         else:
-            attacker = self.clients.getByCID(match.group('acid'))
+            attacker = self.getByCidOrJoinPlayer(match.group('acid'))
         ## end fix attacker
           
         if not attacker:
@@ -341,6 +349,33 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
     def OnSayteam(self, action, data, match=None):
         # Teaminfo does not exist in the sayteam logline. Parse it as a normal say line
         return self.OnSay(action, data, match)
+    
+    
+    def OnItem(self, action, data, match=None):
+        #Item: 0 pickup_money (5) picked up ($25)
+        #Item: 0 weapon_schofield bought ($18/$20)
+        #Item: 0 weapon_remington58 (7) picked up
+        cid, item = string.split(data, ' ', 1)
+        client = self.getByCidOrJoinPlayer(cid)
+        if client:
+            if 'pickup_money' in item:
+                rePickup_money = re.compile(r"^pickup_money \((?P<type>\d+)\) picked up \(\$(?P<totalmoney>\d+)\)$")
+                m = rePickup_money.search(item)
+                if m is not None:
+                    totalmoney = m.group('totalmoney')
+                    if totalmoney:
+                        setattr(client, 'money', int(totalmoney))
+                        self.verbose('%s has now $%s' % (client.name, client.money))
+            return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, item, client)
+        return None
+    
+    
+    def OnSay(self, action, data, match=None):
+        msg = string.split(data, ': ', 1)
+        if not len(msg) == 2:
+            return None
+        client = self.getByCidOrJoinPlayer(msg[0])
+        return b3.events.Event(b3.events.EVT_CLIENT_SAY, msg[1], client)
 
     # damage
     #468950: client:0 health:90 damage:21.6 where:arm from:MOD_SCHOFIELD by:2
@@ -466,7 +501,7 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
         mlist = {}
 
         for cid, c in plist.iteritems():
-            client = self.clients.getByCID(cid)
+            client = self.getByCidOrJoinPlayer(cid)
             if client:
                 if client.guid and c.has_key('guid'):
                     if client.guid == c['guid']:
@@ -502,7 +537,19 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
             if int(cid) == int(ccid):
                 self.debug('Client found in status/playerList')
                 return p
-
+    
+    
+    def getByCidOrJoinPlayer(self, cid):
+        client = self.clients.getByCID(cid)
+        if client:
+            return client
+        else:
+            userinfostring = self.queryClientUserInfoByCid(cid)
+            if userinfostring:
+                self.OnClientuserinfochanged(None, userinfostring)
+            return self.clients.getByCID(cid)
+        
+        
     def queryClientUserInfoByCid(self, cid):
         """
         : dumpuser 5
