@@ -17,10 +17,13 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
-#   27/1/2010 - 1.4.5 - Courgette
+#   3/7/2010 - 1.4.6 - Courgette
+#    * fix crash on bot startup when loading a plugin which does not requires any config
+#      file but still registers commands
+#   1/27/2010 - 1.4.5 - Courgette
 #    * the iamgod check warns if the command is explicitly enabled by config file but
 #      superadmins are found in database
-#   27/1/2010 - 1.4.4 - xlr8or
+#   1/27/2010 - 1.4.4 - xlr8or
 #    * added some verbose info to startup()
 #   9/1/2009 - 1.4.3 - xlr8or
 #    * check database connection before checking groups
@@ -45,7 +48,7 @@
 #    Added ci command
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.4.5'
+__version__ = '1.4.6'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
@@ -128,7 +131,7 @@ class AdminPlugin(b3.plugin.Plugin):
             self.error('Command "%s" registration failed, no handler' % command)
             return False
 
-        if plugin != self and plugin.config.has_option('commands', command):
+        if plugin.config and plugin != self and plugin.config.has_option('commands', command):
             # override default level with level in config
             level = plugin.config.get('commands', command)
             
