@@ -37,10 +37,14 @@
 # * auth client by making use of dumpuser whenever needed
 # * add custom handling of OnItem action
 # * add the money property to clients that holds the amount of money a player has
-#
+# 07/03/2010 - 0.7 - Courgette
+# * when players buy stuff or pickup money, EVT_CLIENT_ITEM_PICKUP events are replaced by
+#   two SG specific new events : EVT_CLIENT_GAIN_MONEY and EVT_CLIENT_SPEND_MONEY
+#   Those events help keeping track of money flows and should give plugin developpers 
+#   a lot of freedom
 
 __author__  = 'xlr8or, Courgette'
-__version__ = '0.6'
+__version__ = '0.7'
 
 import re, string, thread, time, threading
 import b3
@@ -161,8 +165,12 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
 #---------------------------------------------------------------------------------------------------
 
     def startup(self):
+    
+        # add SG specific events
+        self.Events.createEvent('EVT_CLIENT_GAIN_MONEY', 'Client gain money')
+        self.Events.createEvent('EVT_CLIENT_SPEND_MONEY', 'Client spend money')
+
         # add the world client
-        
         self.clients.newClient(1022, guid='WORLD', name='World', hide=True, pbid='WORLD')
         #if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
         #    self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
@@ -359,13 +367,25 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
         client = self.getByCidOrJoinPlayer(cid)
         if client:
             if 'pickup_money' in item:
-                rePickup_money = re.compile(r"^pickup_money \((?P<type>\d+)\) picked up \(\$(?P<totalmoney>\d+)\)$")
+                rePickup_money = re.compile(r"^pickup_money \((?P<amount>\d+)\) picked up \(\$(?P<totalmoney>\d+)\)$")
                 m = rePickup_money.search(item)
                 if m is not None:
+                    amount = m.group('amount')
                     totalmoney = m.group('totalmoney')
-                    if totalmoney:
-                        setattr(client, 'money', int(totalmoney))
+                    setattr(client, 'money', int(totalmoney))
+                    self.verbose('%s has now $%s' % (client.name, client.money))
+                    return b3.events.Event(b3.events.EVT_CLIENT_GAIN_MONEY, {'amount': amount, 'totalmoney': totalmoney}, client)
+            if 'bought' in item:
+                reBought = re.compile(r"^(?P<item>.+) bought \(\$(?P<cost>\d+)/\$(?P<totalmoney>\d+)\)$")
+                m = reBought.search(item)
+                if m is not None:
+                    what = m.group('item')
+                    cost = m.group('cost')
+                    totalmoney = m.group('totalmoney')
+                    if cost is not None and totalmoney is not None:
+                        setattr(client, 'money', int(totalmoney) - int(cost))
                         self.verbose('%s has now $%s' % (client.name, client.money))
+                        return b3.events.Event(b3.events.EVT_CLIENT_SPEND_MONEY, {'item': what, 'cost': cost, 'totalmoney': client.money}, client)
             return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, item, client)
         return None
     
