@@ -1,3 +1,28 @@
+2010-02-26  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: fix bug when no max skill is available
+
+2010-02-25  Courgette <courgette@ubu-team.org>
+
+	* b3/tools/documentationBuilder.py: AUTODOC html export : fix
+	Internet Explorer issues with logo Conflicts: 	b3/tools/documentationBuilder.py
+
+2010-02-24  Courgette <courgette@ubu-team.org>
+
+	* b3/__init__.py, b3/run.py: displays user friendly error message
+	when config options are missing.  simplify the differencies between
+	the win32 standalone and python script in the way the bot handles
+	SystemExit and Exceptions
+
+2010-02-24  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit fe6578d28383a3b3ba43c065760e7d95a2df3f2d Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Wed Feb 24 18:13:48 2010 +0100
+
+2010-02-24  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: Repaired self._xlrstatstables bug
+
 2010-02-24  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/extplugins/xlrstats.py: Adding table maintenance on startup
