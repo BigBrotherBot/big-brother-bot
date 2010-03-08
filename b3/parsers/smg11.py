@@ -42,13 +42,15 @@
 #   two SG specific new events : EVT_CLIENT_GAIN_MONEY and EVT_CLIENT_SPEND_MONEY
 #   Those events help keeping track of money flows and should give plugin developpers 
 #   a lot of freedom
-# 08/03/2010 - 0.8 - Courgette
+# 07/03/2010 - 0.8 - Courgette
+# * fix bug introduced in 0.6 which messed up clients cid as soon as they are chatting...
+# 08/03/2010 - 0.9 - Courgette
 # * should fix the bot's team issue
 #
 
 
 __author__  = 'xlr8or, Courgette'
-__version__ = '0.8'
+__version__ = '0.9'
 
 import re, string, thread, time, threading
 import b3
@@ -396,13 +398,6 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
             return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, item, client)
         return None
     
-    
-    def OnSay(self, action, data, match=None):
-        msg = string.split(data, ': ', 1)
-        if not len(msg) == 2:
-            return None
-        client = self.getByCidOrJoinPlayer(msg[0])
-        return b3.events.Event(b3.events.EVT_CLIENT_SAY, msg[1], client)
 
     # damage
     #468950: client:0 health:90 damage:21.6 where:arm from:MOD_SCHOFIELD by:2
