@@ -42,9 +42,13 @@
 #   two SG specific new events : EVT_CLIENT_GAIN_MONEY and EVT_CLIENT_SPEND_MONEY
 #   Those events help keeping track of money flows and should give plugin developpers 
 #   a lot of freedom
+# 08/03/2010 - 0.8 - Courgette
+# * should fix the bot's team issue
+#
+
 
 __author__  = 'xlr8or, Courgette'
-__version__ = '0.7'
+__version__ = '0.8'
 
 import re, string, thread, time, threading
 import b3
@@ -246,6 +250,9 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
             else:
                 if not bclient.has_key('name'):
                     bclient['name'] = self._empty_name_default
+
+                if bclient.has_key('team'):
+                    bclient['team'] = self.getTeam(bclient['team'])
 
                 if bclient.has_key('guid'):
                     guid = bclient['guid']
