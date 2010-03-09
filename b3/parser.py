@@ -18,6 +18,10 @@
 #
 #
 # CHANGELOG
+#   10/03/2010 - v1.13 - Courgette
+#    * add rconPort for games which have a different rcon port than the game port
+#    * server.game_log option is not mandatory anymore. This makes B3 able to work
+#      with game servers having no game log file
 #   12/12/2009 - v1.12.3 - Courgette
 #    * when working in remote mode, does not download the remote log file.
 #   06/12/2009 - v1.12.2 - Courgette
@@ -49,8 +53,8 @@
 #    Added atexit handlers
 #    Added warning, info, exception, and critical log handlers
 
-__author__  = 'ThorN'
-__version__ = '1.12.3'
+__author__  = 'ThorN, Courgette'
+__version__ = '1.13'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit
@@ -116,6 +120,7 @@ class Parser(object):
 
     _publicIp = ''
     _rconIp = ''
+    _rconPort = None
     _port = 0
     _rconPassword = ''
 
@@ -188,9 +193,12 @@ class Parser(object):
 
         # setup ip addresses
         self._publicIp = self.config.get('server', 'public_ip')
-        self._rconIp   = self.config.get('server', 'rcon_ip')
-        self._port     = self.config.getint('server', 'port')
-        self._rconPassword     = self.config.get('server', 'rcon_password')
+        self._rconIp = self.config.get('server', 'rcon_ip')
+        self._rconPort = self._rconIp # if rcon port is the same as the game port, rcon_port can be ommited
+        if self.config.has_option('server', 'rcon_port'):
+            self._rconPort = self.config.get('server', 'rcon_ip')
+        self._port = self.config.getint('server', 'port')
+        self._rconPassword = self.config.get('server', 'rcon_password')
 
         if self._publicIp[0:1] == '~' or self._publicIp[0:1] == '/':
             # load ip from a file
@@ -238,38 +246,39 @@ class Parser(object):
 
         self.storage = b3.storage.getStorage('database', self.config.get('b3', 'database'), self)
 
-        # open log file
-        if self.config.get('server','game_log')[0:6] == 'ftp://' :
-            self.remoteLog = True
-            self.bot('Working in Remote-Log-Mode : %s' % self.config.get('server', 'game_log'))
-            f = os.path.normpath(os.path.expanduser('games_mp.log'))
-            ftptempfile = open(f, "w")
-            ftptempfile.close()          
-        else:
-            self.bot('Game log %s', self.config.getpath('server', 'game_log'))
-            f = self.config.getpath('server', 'game_log')
-        self.bot('Starting bot reading file %s', f)
-        self.screen.write('Using Gamelog    : %s\n' % f)
+        if self.config.has_option('server','game_log'):
+            # open log file
+            game_log = self.config.get('server','game_log')
+            if game_log[0:6] == 'ftp://' :
+                self.remoteLog = True
+                self.bot('Working in Remote-Log-Mode : %s' % game_log)
+                f = os.path.normpath(os.path.expanduser('games_mp.log'))
+                ftptempfile = open(f, "w")
+                ftptempfile.close()          
+            else:
+                self.bot('Game log %s', game_log)
+                f = self.config.getpath('server', 'game_log')
+            self.bot('Starting bot reading file %s', f)
+            self.screen.write('Using Gamelog    : %s\n' % f)
 
-        if os.path.isfile(f):
-            self.output = None
-            self.input  = file(f, 'r')
-
-            # seek to point in log file?
-            if self.replay:
-                pass
-            elif self.config.has_option('server', 'seek'):
-                seek = self.config.getboolean('server', 'seek')
-                if seek:
+            if os.path.isfile(f):
+                self.input  = file(f, 'r')
+    
+                # seek to point in log file?
+                if self.replay:
+                    pass
+                elif self.config.has_option('server', 'seek'):
+                    seek = self.config.getboolean('server', 'seek')
+                    if seek:
+                        self.input.seek(0, os.SEEK_END)
+                else:
                     self.input.seek(0, os.SEEK_END)
             else:
-                self.input.seek(0, os.SEEK_END)
-        else:
-            self.error('Error reading file %s', f)
-            raise SystemExit('Error reading file %s\n' % f)
+                self.error('Error reading file %s', f)
+                raise SystemExit('Error reading file %s\n' % f)
 
         # setup rcon
-        self.output = self.OutputClass(self, (self._rconIp, self._port), self._rconPassword)
+        self.output = self.OutputClass(self, (self._rconIp, self._rconPort), self._rconPassword)
         
         if self.config.has_option('server','rcon_timeout'):
             custom_socket_timeout = self.config.getfloat('server','rcon_timeout')
@@ -484,7 +493,8 @@ class Parser(object):
                 self.screen.flush()
             except Exception, msg:
                 self.verbose('Error loading plugin: %s', msg)
-        if self.config.get('server','game_log')[0:6] == 'ftp://' :
+        if self.config.has_option('server','game_log') \
+            and self.config.get('server','game_log')[0:6] == 'ftp://' :
             #self.debug('ftpytail not found!')
             p = 'ftpytail'
             self.bot('Loading Plugin %s', p)
