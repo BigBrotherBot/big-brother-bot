@@ -117,6 +117,7 @@ class Parser(object):
     _publicIp = ''
     _rconIp = ''
     _port = 0
+    _rconPassword = ''
 
     info = None
 
@@ -189,6 +190,7 @@ class Parser(object):
         self._publicIp = self.config.get('server', 'public_ip')
         self._rconIp   = self.config.get('server', 'rcon_ip')
         self._port     = self.config.getint('server', 'port')
+        self._rconPassword     = self.config.get('server', 'rcon_password')
 
         if self._publicIp[0:1] == '~' or self._publicIp[0:1] == '/':
             # load ip from a file
@@ -267,7 +269,7 @@ class Parser(object):
             raise SystemExit('Error reading file %s\n' % f)
 
         # setup rcon
-        self.output = self.OutputClass(self, (self._rconIp, self._port), self.config.get('server', 'rcon_password'))
+        self.output = self.OutputClass(self, (self._rconIp, self._port), self._rconPassword)
         
         if self.config.has_option('server','rcon_timeout'):
             custom_socket_timeout = self.config.getfloat('server','rcon_timeout')
