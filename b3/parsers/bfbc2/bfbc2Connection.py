@@ -1,3 +1,33 @@
+#
+# BigBrotherBot(B3) (www.bigbrotherbot.com)
+# Copyright (C) 2005 Michael "ThorN" Thornton
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#
+#
+# CHANGELOG
+# 2010/03/09 - 0.5 - Courgette
+# * open a TCP connection to a BFBC2 server, auth with provided password
+# * can either be used to send commands or enter the listening mode (which
+#   waits for BFBC2 events)
+#
+
+__author__  = 'Courgette'
+__version__ = '0.5'
+
+debug = True
 
 import time
 import socket
@@ -17,6 +47,7 @@ class Bfbc2Connection(object):
     _maxShortRetryCount = 10
     _maxLongRetryCount = 10
     _delayBetweenLongRetry = 5 # seconds
+    _timeout = 30
 
     def __init__(self, host, port, password):
         
@@ -27,10 +58,26 @@ class Bfbc2Connection(object):
         self._connect()
         self._auth()
    
+    def __set_timeout(self, value):
+        if value is not None and value < 0:
+            self._timeout = 0
+        else:
+            self._timeout = value
+        if self._serverSocket is not None:
+            self._serverSocket.settimeout(self._timeout)
+   
     def _connect(self):
-        self._serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._serverSocket.connect( ( self._host, self._port ) )
-        self._serverSocket.setblocking(1)
+        try:
+            self._serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._serverSocket.connect( ( self._host, self._port ) )
+            self._serverSocket.setblocking(1)
+            self._serverSocket.settimeout(self._timeout)
+        except Exception, err:
+            raise Bfbc2Exception(err)
+    
+    def close(self):
+        if self._serverSocket is not None:
+            self._serverSocket.close()
 
     def sendRequest(self, command, *args):
         words = [command]
@@ -41,13 +88,12 @@ class Bfbc2Connection(object):
         response = self._serverSocket.recv(4096)
         decodedResponse = DecodePacket(response)
         printPacket(decodedResponse)
-        #[isFromServer, isResponse, sequence, words] = DecodePacket(response)
-        return decodedResponse
+        #[isFromServer, isResponse, sequence, words] = decodedResponse
+        return decodedResponse[3]
         
     def _auth(self):
         # Retrieve this connection's 'salt' (magic value used when encoding password) from server
-        response = self.sendRequest("login.hashed")
-        [isFromServer, isResponse, sequence, words] = response
+        words = self.sendRequest("login.hashed")
 
         # if the server doesn't understand "login.hashed" command, abort
         if words[0] != "OK":
@@ -60,10 +106,9 @@ class Bfbc2Connection(object):
 
         # Send password hash to server
         loginResponse = self.sendRequest("login.hashed", passwordHashHexString)
-        [isFromServer, isResponse, sequence, words] = loginResponse
 
         # if the server didn't like our password, abort
-        if words[0] != "OK":
+        if loginResponse[0] != "OK":
             raise Bfbc2BadPasswordException("The BFBC2 server refused our password")
 
             
@@ -72,14 +117,13 @@ class Bfbc2Connection(object):
         tell the bfbc2 server to send us events
         """
         response = self.sendRequest("eventsEnabled", "true")
-        [isFromServer, isResponse, sequence, words] = response
 
         # if the server didn't know about the command, abort
-        if words[0] != "OK":
-            raise Bfbc2BadCommandException()
+        if response[0] != "OK":
+            raise Bfbc2BadCommandException(response[1:])
 
         
-    def waitForEvent(self):
+    def handle_bfbc2_events(self):
         # Wait for packet from server
         packet = self._serverSocket.recv(4096)    
         [isFromServer, isResponse, sequence, words] = DecodePacket(packet)
@@ -103,32 +147,41 @@ class Bfbc2Connection(object):
 ###################################################################################
 # Display contents of packet in user-friendly format, useful for debugging purposes
 def printPacket(packet):
-
-    if (packet[0]):
-        print ">",
-    else:
-        print "<",
+    if debug:
+        if (packet[0]):
+            print ">",
+        else:
+            print "<",
+        
+        if (packet[1]):
+            print "R",
+        else:
+            print "Q",
     
-    if (packet[1]):
-        print "R",
-    else:
-        print "Q",
-
-    print "(%s)" %  packet[2],
-
-    if packet[3]:
-        print " :",
-        for word in packet[3]:
-            print "\"" + word + "\"",
-
-    print ""
+        print "(%s)" %  packet[2],
+    
+        if packet[3]:
+            print " :",
+            for word in packet[3]:
+                print "\"" + word + "\"",
+    
+        print ""
     
 ###################################################################################
 # Example program
 
 if __name__ == '__main__':
     import sys
-
-    bc2server = Bfbc2Connection('xxx.xxx.xxx.xxx', 48888, 'xxxxxx')
+    
+    if len(sys.argv) != 4:
+        host = raw_input('Enter game server host IP/name: ')
+        port = int(raw_input('Enter host port: '))
+        pw = raw_input('Enter password: ')
+    else:
+        host = sys.argv[1]
+        port = int(sys.argv[2])
+        pw = sys.argv[3]
+        
+    bc2server = Bfbc2Connection(host, port, pw)
     
     
