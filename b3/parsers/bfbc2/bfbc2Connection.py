@@ -27,7 +27,7 @@
 __author__  = 'Courgette'
 __version__ = '0.5'
 
-debug = False
+debug = True
 
 import time
 import socket
@@ -59,6 +59,9 @@ class Bfbc2Connection(object):
         self._connect()
         self._auth()
    
+    def __del__(self):
+        self.close()
+   
     def __set_timeout(self, value):
         if value is not None and value < 0:
             self._timeout = 0
@@ -84,9 +87,13 @@ class Bfbc2Connection(object):
             self._serverSocket.close()
             self._serverSocket = None
 
-    def sendRequest(self, command, *args):
-        words = [command]
-        words += args
+    def sendRequest(self, *command):
+        if command is None:
+            return None
+        if len(command) == 1 and type(command[0]) == tuple:
+            words = command[0]
+        else:
+            words = command
         request = EncodeClientRequest(words)
         printPacket(DecodePacket(request))
         self._serverSocket.send(request)
@@ -94,8 +101,7 @@ class Bfbc2Connection(object):
         decodedResponse = DecodePacket(response)
         printPacket(decodedResponse)
         if decodedResponse[3][0] != "OK":
-            raise Bfbc2CommandFailedError("%s: %s" % (decodedResponse[3], (command, args)))
-        printPacket(decodedResponse)
+            raise Bfbc2CommandFailedError("%s: %s" % (decodedResponse[3], words))
         #[isFromServer, isResponse, sequence, words] = decodedResponse
         return decodedResponse[3]
         
@@ -136,17 +142,17 @@ class Bfbc2Connection(object):
         try:
             packet = self._serverSocket.recv(4096)
         except socket.error, detail:
-            raise Bfbc2Exception('Network error: %s'% detail[1])
+            raise Bfbc2Exception('Network error: %s'% detail)
         [isFromServer, isResponse, sequence, words] = DecodePacket(packet)
         printPacket(DecodePacket(packet))
         
         # If this was a command from the server, we should respond to it
         # For now, we always respond with an "OK"
         if isResponse:
-            print 'Received an unexpected response packet from server, ignoring'
+            print>>__stderr__, 'Received an unexpected response packet from server, ignoring'
             return self.handle_bfbc2_events()
         else:
-            response = EncodeClientResponse(sequence, ["OK"])
+            response = EncodePacket(True, True, sequence, ["OK"])
             printPacket(DecodePacket(response))
             self._serverSocket.send(response)
             return words
@@ -159,24 +165,26 @@ class Bfbc2Connection(object):
 # Display contents of packet in user-friendly format, useful for debugging purposes
 def printPacket(packet):
     if debug:
-        if (packet[0]):
-            print ">",
-        else:
-            print "<",
-        
-        if (packet[1]):
-            print "R",
-        else:
-            print "Q",
+        erf = sys.__stderr__
+        isFromServer = packet[0]
+        isResponse = packet[1]
+        if isFromServer and isResponse:
+            print>>erf, "<-R-",
+        elif isFromServer and not isResponse:
+            print>>erf, "-Q->",
+        elif not isFromServer and isResponse:
+            print>>erf, "-R->",
+        elif not isFromServer and not isResponse:
+            print>>erf, "<-Q-",
     
-        print "(%s)" %  packet[2],
+        print>>erf, "(%s)" %  packet[2],
     
         if packet[3]:
-            print " :",
+            print>>erf, " :",
             for word in packet[3]:
-                print "\"" + word + "\"",
+                print>>erf, "\"" + word + "\"",
     
-        print ""
+        print>>erf, ""
     
 ###################################################################################
 # Example program

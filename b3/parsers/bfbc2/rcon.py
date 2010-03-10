@@ -67,11 +67,8 @@ class Rcon:
         if self._bfbc2Connection is None:
             self._connect()
         try:
-            self._connect()
-            if isinstance(cmd, list):
-                response = self._bfbc2Connection.sendRequest(cmd[0], cmd[1:])
-            else:
-                response = self._bfbc2Connection.sendRequest(cmd)
+            self.console.verbose('RCON: sending %s', cmd)
+            response = self._bfbc2Connection.sendRequest(cmd)
             return response[1:]
         except Bfbc2Exception, err:
             self.console.error('RCON: sending \'%s\', %s' % (cmd, err))
@@ -106,7 +103,7 @@ if __name__ == '__main__':
 
     r = Rcon(fakeConsole, (host, port), pw)
     
-    for cmd in ['version', 'serverInfo', 'quit', 'version', 'help', 'admin.currentLevel', 'quit']:
+    for cmd in ['version', 'serverInfo', 'quit', 'version', 'help', 'admin.currentLevel', 'admin.listPlayers']:
         fakeConsole.info('Writing %s', cmd)
         data = r.write(cmd)
         fakeConsole.info('Recieved %s', data)

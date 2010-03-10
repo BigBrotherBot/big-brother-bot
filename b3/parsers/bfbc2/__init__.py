@@ -95,6 +95,7 @@ class Bfbc2Parser(b3.parser.Parser):
         self.info('connecting all players...')
         for p in self.getPlayerList():
             self.debug('connecting %s' % p)
+            
 
     def run(self, ):
         """Main worker thread for B3"""
@@ -171,9 +172,10 @@ class Bfbc2Parser(b3.parser.Parser):
                     self._eventMap[bfbc2EventType],
                     bfbc2EventData))
         else:
-            self.queueEvent(b3.events.Event(
-                    b3.events.EVT_UNKNOWN,
-                    str(bfbc2EventType) + ': ' + str(bfbc2EventData)))
+            if func:
+                data = func + ' '
+            func += str(bfbc2EventType) + ': ' + str(bfbc2EventData)
+            self.queueEvent(b3.events.Event(b3.events.EVT_UNKNOWN, func))
 
     def getClientByExactNameOrConnect(self, exactName):
         client = self.clients.getByExactName(exactName)
@@ -253,8 +255,8 @@ class Bfbc2Parser(b3.parser.Parser):
         return b3.events.Event(b3.events.EVT_CLIENT_KILL, (100, None, None), attacker, victim)
 
 
-    def OnPunkBusterMessage(self, action, data):
-        self.debug("punkbuster message : %s" % data)
+    def OnPunkbusterMessage(self, action, data):
+        self.debug("PB> %s" % data)
         return b3.events.Event(b3.events.EVT_UNKNOWN, data)
 
 
