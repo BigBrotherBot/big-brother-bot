@@ -58,7 +58,6 @@ class Bfbc2Parser(b3.parser.Parser):
     _commands['message'] = 'admin.yell "%(prefix)s ^3[pm]^7 %(message)s" %(duration)s %(cid)s '
     _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
     _commands['say'] = 'say %(prefix)s %(message)s'
-    _commands['set'] = 'set %(name)s "%(value)s"'
     _commands['kick'] = 'clientkick %(cid)s'
     _commands['ban'] = 'addip %(cid)s'
     _commands['tempban'] = 'clientkick %(cid)s'
@@ -72,6 +71,35 @@ class Bfbc2Parser(b3.parser.Parser):
     
     _eventMap = {
     }
+
+    _gameServerVars = (
+        '3dSpotting',
+        'adminPassword',
+        'bannerUrl',
+        'crossHair',
+        'currentPlayerLimit',
+        'friendlyFire',
+        'gamePassword',
+        'hardCore',
+        'killCam',
+        'maxPlayerLimit',
+        'miniMap',
+        'miniMapSpotting',
+        'playerLimit',
+        'punkBuster',
+        'rankLimit',
+        'ranked',
+        'serverDescription',
+        'teamBalance',
+        'thirdPersonVehicleCameras'
+    )
+
+    _punkbusterMessageFormats = (
+        (re.compile(r'^PunkBuster Server: Running PB Scheduled Task \(slot #(?P<slot>\d+)\)\s+(?P<task>.*)$'), 'OnPBScheduledTask'),
+        (re.compile(r'^PunkBuster Server: Lost Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) (?P<pbuid>[^\s]+)\s(?P<name>.+)$'), 'OnPBLostConnection'),
+        (re.compile(r'^PunkBuster Server: Master Query Sent to \((?P<pbmaster>[^\s]+)\) (?P<ip>[^:]+)$'), 'OnPBMasterQuerySent'),
+        (re.compile(r'^PunkBuster Server: New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection')
+     )
 
     PunkBuster = None
 
@@ -90,14 +118,29 @@ class Bfbc2Parser(b3.parser.Parser):
         if version[0] != 'BFBC2':
             raise Exception("the bfbc2 parser can only work with BattleField Bad Company 2")
         
-        self.info('BFBC2 server info : %s' % self.output.write('serverInfo'))
+        self.info('Server info : %s' % self.output.write('serverInfo'))
+        self.info('is PunkBuster enabled on server ? %s' % self.output.write('vars.punkBuster'))
+        self.info('PunkBuster version : %s' % self.output.write(('punkBuster.pb_sv_command', 'PB_SV_VER')))
+        self.info('PunkBuster PB_SV_PList : %s' % self.output.write(('punkBuster.pb_sv_command', 'PB_SV_PList')))
+        
+        self.info("available server commands :")
+        availableCmd = self.output.write('help')
+        for cmd in availableCmd:
+            self.info(cmd)
+            
+        self.getServerVars()
+        
+        self.setCvar('serverDescription', 'test description')
+        self.debug('new description : %s' % self.getCvar('serverDescription'))
+        self.setCvar('serverDescription', '')
+        self.debug('new description : %s' % self.getCvar('serverDescription'))
         
         self.info('connecting all players...')
         for p in self.getPlayerList():
             self.debug('connecting %s' % p)
             
 
-    def run(self, ):
+    def run(self):
         """Main worker thread for B3"""
         self.bot('Start listening ...')
         self.screen.write('Startup Complete : Let\'s get to work!\n\n')
@@ -133,14 +176,15 @@ class Bfbc2Parser(b3.parser.Parser):
                 except Bfbc2Exception, e:
                     self.debug(str(e))
                     self._nbConsecutiveConnFailure += 1
-                    if self._nbConsecutiveConnFailure <= 10:
-                        time.sleep(1.5)
-                    elif self._nbConsecutiveConnFailure <= 16:
+                    if self._nbConsecutiveConnFailure <= 40:
+                        self.debug('sleeping 0.25 sec...')
+                        time.sleep(0.25)
+                    elif self._nbConsecutiveConnFailure <= 60:
+                        self.debug('sleeping 2 sec...')
+                        time.sleep(2)
+                    else:
                         self.debug('sleeping 10 sec...')
                         time.sleep(10)
-                    elif self._nbConsecutiveConnFailure <= 20:
-                        self.debug('sleeping 1 minute...')
-                        time.sleep(60)
                     
         self.bot('Stop listening.')
 
@@ -174,8 +218,8 @@ class Bfbc2Parser(b3.parser.Parser):
         else:
             if func:
                 data = func + ' '
-            func += str(bfbc2EventType) + ': ' + str(bfbc2EventData)
-            self.queueEvent(b3.events.Event(b3.events.EVT_UNKNOWN, func))
+            data += str(bfbc2EventType) + ': ' + str(bfbc2EventData)
+            self.queueEvent(b3.events.Event(b3.events.EVT_UNKNOWN, data))
 
     def getClientByExactNameOrConnect(self, exactName):
         client = self.clients.getByExactName(exactName)
@@ -192,19 +236,15 @@ class Bfbc2Parser(b3.parser.Parser):
                 return {}
 
             players = {}
-            for p in data:
-                self.debug('player: %s' % p)
-                continue
-                m = re.match(self._regPlayer, line.strip())
-                if m:
-                    d = m.groupdict()
-                    d['pbid'] = None
-                    players[str(m.group('slot'))] = d
-                #elif '------' not in line and 'map: ' not in line and 'num score ping' not in line:
-                    #self.verbose('getPlayerList() = Line did not match format: %s' % line)
-
+            def group(s, n): return [s[i:i+n] for i in xrange(0, len(s), n)]
+            for clantag, name, squadId, teamId  in group(data,4):
+                self.debug('player: %s %s %s %s' % (clantag, name, squadId, teamId))
+                players[name] = {'clantag':clantag, 'name':name, 'squadId':squadId, 'teamId':teamId}
         return players
 
+    def getServerVars(self):
+        for v in self._gameServerVars:
+            self.getCvar(v)
 
     def getMap(self):
         data = self.write('serverInfo')
@@ -215,6 +255,8 @@ class Bfbc2Parser(b3.parser.Parser):
 
 
     #----------------------------------
+    
+
     def OnPlayerChat(self, action, data):
         #['envex', 'gg']
         if not len(data) == 2:
@@ -222,21 +264,18 @@ class Bfbc2Parser(b3.parser.Parser):
         client = self.clients.getByExactName(data[0])
         return b3.events.Event(b3.events.EVT_CLIENT_SAY, data[1], client)
 
-
     def OnPlayerLeave(self, action, data):
         #player.onLeave: ['GunnDawg']
         client = self.clients.getByExactName(data[0])
         if client: 
             client.disconnect()
         return None
-    
 
     def OnPlayerJoin(self, action, data):
         #player.onJoin: ['OrasiK']
         self.debug(self.output.write(''))
         self._clientConnectID = data
         return None
-
 
     def OnPlayerKill(self, action, data):
         #player.onKill: ['Juxta', '6blBaJlblu']
@@ -254,15 +293,46 @@ class Bfbc2Parser(b3.parser.Parser):
         
         return b3.events.Event(b3.events.EVT_CLIENT_KILL, (100, None, None), attacker, victim)
 
-
     def OnPunkbusterMessage(self, action, data):
-        self.debug("PB> %s" % data)
-        return b3.events.Event(b3.events.EVT_UNKNOWN, data)
+        #self.debug("PB> %s" % data)
+        if data and data[0]:
+            for regexp, funcName in self._punkbusterMessageFormats:
+                match = re.match(regexp, str(data[0]).strip())
+                if match:
+                    break
+            if match and hasattr(self, funcName):
+                func = getattr(self, funcName)
+                event = func(match, data[0])
+                if event:
+                    self.queueEvent(event)     
+            else:
+                return b3.events.Event(b3.events.EVT_UNKNOWN, data)
+                
+    def OnPBNewConnection(self, match, data):
+        slot = match.group('slot')
+        ip = match.group('ip')
+        port = match.group('port')
+        something = match.group('something')
+        name = match.group('name')
+        self.debug('TODO OnPBNewConnection: '+data)
 
+    def OnPBLostConnection(self, match, data):
+        slot = match.group('slot')
+        ip = match.group('ip')
+        port = match.group('port')
+        pbuid = match.group('pbuid')
+        name = match.group('name')
+        self.debug('TODO OnPBLostConnection: '+data)
 
+    def OnPBScheduledTask(self, match, data):
+        slot = match.group('slot')
+        task = match.group('task')
+        self.info('PB TASK #%s : %s' % (slot, task))
 
-
-
+    def OnPBMasterQuerySent(self, match, data):
+        pbmaster = match.group('pbmaster')
+        ip = match.group('ip')
+        self.debug('TODO OnPBMasterQuerySent: %s %s'% (pbmaster, ip))
 
 
     def OnShutdowngame(self, action, data, match=None):
@@ -546,30 +616,40 @@ class Bfbc2Parser(b3.parser.Parser):
 
 
     def getCvar(self, cvarName):
+        if cvarName not in self._gameServerVars:
+            self.warning('cannot get unknown cvar \'%s\'' % cvarName)
+            return None
+        
+        words = self.write('vars.%s' % cvarName)
+        self.debug('Get cvar %s = [%s]', cvarName, words)
+        
+        if words and len(words) == 1:
+            value = words[0]
+            
+            val = None
+            
+            if type(value) == tuple and len(value) == 1:
+                if value[0] == 'true':
+                    val = True
+                elif value[0] == 'false':
+                    val = False
+                elif value[0] == '':
+                    val = ''
+                else:
+                    try:
+                        val = int(value[0])
+                    except ValueError:
+                        val = value[0]
+                
+            return b3.cvar.Cvar(cvarName, value=val)
         return None
-        if self._reCvarName.match(cvarName):
-            #"g_password" is:"^7" default:"scrim^7"
-            val = self.write(cvarName)
-            self.debug('Get cvar %s = [%s]', cvarName, val)
-            #sv_mapRotation is:gametype sd map mp_brecourt map mp_carentan map mp_dawnville map mp_depot map mp_harbor map mp_hurtgen map mp_neuville map mp_pavlov map mp_powcamp map mp_railyard map mp_rocket map mp_stalingrad^7 default:^7
-
-            m = self._reCvar.match(val)
-            if m and m.group('cvar').lower() == cvarName.lower():
-                return b3.cvar.Cvar(m.group('cvar'), value=m.group('value'), default=m.group('default'))
-
-        return None
-
-    def set(self, cvarName, value):
-        self.warning('Parser.set() is depreciated, use Parser.setCvar() instead')
-        self.setCvar(cvarName, value)
 
     def setCvar(self, cvarName, value):
-        return None
-        if re.match('^[a-z0-9_.]+$', cvarName, re.I):
-            self.debug('Set cvar %s = [%s]', cvarName, value)
-            self.write(self.getCommand('set', name=cvarName, value=value))
-        else:
-            self.error('%s is not a valid cvar name', cvarName)
+        if cvarName not in self._gameServerVars:
+            self.warning('cannot set unknown cvar \'%s\'' % cvarName)
+            return
+        self.debug('Set cvar %s = \'%s\'', cvarName, value)
+        self.write(('vars.%s' % cvarName, value))
 
     
     def getMaps(self):

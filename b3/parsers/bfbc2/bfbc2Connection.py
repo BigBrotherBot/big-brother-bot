@@ -27,7 +27,7 @@
 __author__  = 'Courgette'
 __version__ = '0.5'
 
-debug = True
+debug = False
 
 import time
 import socket
@@ -45,9 +45,6 @@ class Bfbc2Connection(object):
     _port = None
     _password = None
 
-    _maxShortRetryCount = 10
-    _maxLongRetryCount = 10
-    _delayBetweenLongRetry = 5 # seconds
     _timeout = 30
 
     def __init__(self, host, port, password):
@@ -106,6 +103,9 @@ class Bfbc2Connection(object):
         return decodedResponse[3]
         
     def _auth(self):
+        if self._serverSocket is None:
+            raise Bfbc2Connection("cannot auth, need to be connected")
+            
         # Retrieve this connection's 'salt' (magic value used when encoding password) from server
         words = self.sendRequest("login.hashed")
 

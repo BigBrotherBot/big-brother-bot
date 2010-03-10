@@ -22,6 +22,7 @@
 # 2010/03/09 - 0.2 - courgette
 # * tested, seems to work for most cases
 #
+from b3.parsers.bfbc2 import bfbc2Connection
  
 __author__ = 'Courgette'
 __version__ = '0.2'
@@ -102,9 +103,72 @@ if __name__ == '__main__':
     debug = True
 
     r = Rcon(fakeConsole, (host, port), pw)
-    
-    for cmd in ['version', 'serverInfo', 'quit', 'version', 'help', 'admin.currentLevel', 'admin.listPlayers']:
+       
+    for cmd in ['version', 'serverInfo', 'help', 'version', 'admin.currentLevel', 'admin.listPlayers']:
         fakeConsole.info('Writing %s', cmd)
         data = r.write(cmd)
         fakeConsole.info('Recieved %s', data)
-
+    
+    print '----------------------------'
+    
+    bfbc2Connection.debug = True
+    
+    varlist = (
+        '3dSpotting',
+        'bannerUrl',
+        'crossHair',
+        'currentPlayerLimit',
+        'friendlyFire',
+        'gamePassword',
+        'hardCore',
+        'killCam',
+        'maxPlayerLimit',
+        'miniMap',
+        'miniMapSpotting',
+        'playerLimit',
+        'punkBuster',
+        'rankLimit',
+        'ranked',
+        'serverDescription',
+        'teamBalance',
+        'thirdPersonVehicleCameras'
+    )
+    import time
+    for var in varlist:
+        time.sleep(0.5)
+        val = r.write('vars.%s' % var)[0]
+        print "------------original %s value : '%s' -------------" % (var, val)
+    
+        if val == 'true':
+            newval = 'false'
+        elif val == 'false':
+            newval = 'true'
+        else:
+            try:
+                int(val)
+                newval = 2
+            except ValueError:
+                newval = 'test qsdf'
+        
+        print "\t > changing to '%s'" % newval
+        time.sleep(0.5)
+        r.write(('vars.%s' % var, newval))
+        
+        time.sleep(0.5)
+        val2 = r.write('vars.%s' % var)[0]
+        print "\t\tnow : '%s'" % val2
+        
+        print "\t > changing back to '%s'" % val
+        time.sleep(0.5)
+        r.write(('vars.%s' % var, val))
+        
+        time.sleep(0.5)
+        val3 = r.write('vars.%s' % var)[0]
+        print "\t\tnow : '%s'" % val3
+        
+        time.sleep(0.5)
+        if val == val2 or val != val3:
+            print "\t FAILED !!!!"
+        else:
+            print "\t PASS"
+        
