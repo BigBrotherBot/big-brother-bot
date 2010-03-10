@@ -44,7 +44,6 @@ class Bfbc2Parser(b3.parser.Parser):
     privateMsg = True
     OutputClass = rcon.Rcon
     
-    _rconPort = 48888
     _bfbc2EventsListener = None
     _bfbc2Connection = None
     _nbConsecutiveConnFailure = 0
@@ -56,7 +55,7 @@ class Bfbc2Parser(b3.parser.Parser):
 
     _commands = {}
     _commands['broadcast'] = '%(prefix)s^7 %(message)s'
-    _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
+    _commands['message'] = 'admin.yell "%(prefix)s ^3[pm]^7 %(message)s" %(duration)s %(cid)s '
     _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
     _commands['say'] = 'say %(prefix)s %(message)s'
     _commands['set'] = 'set %(name)s "%(value)s"'
@@ -78,13 +77,7 @@ class Bfbc2Parser(b3.parser.Parser):
 
     def startup(self):
         try:
-            self._rconPort = self.console.config.getint('server', 'rcon_port')
-        except: 
-            self.warning("Error reading rcon_port from config file. Using default value")
-        self.info("rcon_port: %s" % self._rconPort)
-             
-        try:
-            self._connectionTimeout = self.config.getint('settings', 'timeout')
+            self._connectionTimeout = self.config.getint('server', 'timeout')
         except: 
             self.warning("Error reading timeout from config file. Using default value")
         self.info("BFBC2 connection timeout: %s" % self._connectionTimeout)
@@ -92,8 +85,16 @@ class Bfbc2Parser(b3.parser.Parser):
         if self.config.has_option('server', 'punkbuster') and self.config.getboolean('server', 'punkbuster'):
             self.PunkBuster = PunkBuster(self)
             
-
+        version = self.output.write('version')
+        self.info('BFBC2 server version : %s' % version)
+        if version[0] != 'BFBC2':
+            raise Exception("the bfbc2 parser can only work with BattleField Bad Company 2")
         
+        self.info('BFBC2 server info : %s' % self.output.write('serverInfo'))
+        
+        self.info('connecting all players...')
+        for p in self.getPlayerList():
+            self.debug('connecting %s' % p)
 
     def run(self, ):
         """Main worker thread for B3"""
@@ -153,16 +154,18 @@ class Bfbc2Parser(b3.parser.Parser):
         bfbc2EventType = packet[0]
         bfbc2EventData = packet[1:]
         
-        func = 'On%s' % string.capwords(bfbc2EventType).replace('.on','')
-        
-        self.debug("-==== FUNC!!: " + func)
-        
-        if hasattr(self, func):
+        match = re.search(r"^(?P<actor>[^.]+)\.on(?P<event>.+)$", bfbc2EventType)
+        if match:
+            func = 'On%s%s' % (string.capitalize(match.group('actor')), \
+                               string.capitalize(match.group('event')))
+            #self.debug("-==== FUNC!!: " + func)
+            
+        if match and hasattr(self, func):
             func = getattr(self, func)
             event = func(bfbc2EventType, bfbc2EventData)
-
             if event:
                 self.queueEvent(event)
+            
         elif bfbc2EventType in self._eventMap:
             self.queueEvent(b3.events.Event(
                     self._eventMap[bfbc2EventType],
@@ -172,54 +175,99 @@ class Bfbc2Parser(b3.parser.Parser):
                     b3.events.EVT_UNKNOWN,
                     str(bfbc2EventType) + ': ' + str(bfbc2EventData)))
 
+    def getClientByExactNameOrConnect(self, exactName):
+        client = self.clients.getByExactName(exactName)
+        if client is None:
+            self.output.write('')
+
+
+    def getPlayerList(self, maxRetries=None):
+        if self.PunkBuster:
+            return self.PunkBuster.getPlayerList()
+        else:
+            data = self.write(('admin.listPlayers', 'all'))
+            if not data:
+                return {}
+
+            players = {}
+            for p in data:
+                self.debug('player: %s' % p)
+                continue
+                m = re.match(self._regPlayer, line.strip())
+                if m:
+                    d = m.groupdict()
+                    d['pbid'] = None
+                    players[str(m.group('slot'))] = d
+                #elif '------' not in line and 'map: ' not in line and 'num score ping' not in line:
+                    #self.verbose('getPlayerList() = Line did not match format: %s' % line)
+
+        return players
+
+
+    def getMap(self):
+        data = self.write('serverInfo')
+        if not data:
+            return None
+        return data[4]
+    
+
 
     #----------------------------------
-    def OnPlayerChat(self, action, data, match=None):
-        msg = string.split(data, ': ', 1)
-        if not len(msg) == 2:
+    def OnPlayerChat(self, action, data):
+        #['envex', 'gg']
+        if not len(data) == 2:
             return None
-        client = self.clients.getByExactName(msg[0])
-        return b3.events.Event(b3.events.EVT_CLIENT_SAY, msg[1], client)
+        client = self.clients.getByExactName(data[0])
+        return b3.events.Event(b3.events.EVT_CLIENT_SAY, data[1], client)
 
-    def OnPlayerLeave(self, action, data, match=None):
-        client = self.getClient(match)
-        if client: client.disconnect()
+
+    def OnPlayerLeave(self, action, data):
+        #player.onLeave: ['GunnDawg']
+        client = self.clients.getByExactName(data[0])
+        if client: 
+            client.disconnect()
         return None
+    
 
-    def OnPlayerJoin(self, action, data, match=None):
-        # we get user info in two parts:
-        # 19:42.36 ClientConnect: 4
-        # 19:42.36 Userinfo: \cg_etVersion\ET Pro, ET 2.56\cg_u
-        # we need to store the ClientConnect ID for the next call to userinfo
+    def OnPlayerJoin(self, action, data):
+        #player.onJoin: ['OrasiK']
+        self.debug(self.output.write(''))
         self._clientConnectID = data
         return None
 
-    def OnPlayerKill(self, action, data, match=None):
-        #Kill: 1022 0 6: <world> killed <-NoX-ThorN-> by MOD_FALLING
-        #20:26.59 Kill: 3 2 9: ^9n^2@^9ps killed [^0BsD^7:^0Und^7erKo^0ver^7] by MOD_MP40
-        #m = re.match(r'^([0-9]+)\s([0-9]+)\s([0-9]+): (.*?) killed (.*?) by ([A-Z_]+)$', data)
 
-        attacker = self.getClient(attacker=match)
+    def OnPlayerKill(self, action, data):
+        #player.onKill: ['Juxta', '6blBaJlblu']
+        if not len(data) == 2:
+            return None
+        attacker = self.clients.getByExactName(data[0])
         if not attacker:
             self.bot('No attacker')
             return None
 
-        victim = self.getClient(victim=match)
+        victim = self.clients.getByExactName(data[1])
         if not victim:
             self.bot('No victim')
             return None
+        
+        return b3.events.Event(b3.events.EVT_CLIENT_KILL, (100, None, None), attacker, victim)
 
-        return b3.events.Event(b3.events.EVT_CLIENT_KILL, (100, match.group('aweap'), None), attacker, victim)
 
-    def OnPunkBusterMessage(self, action, data, match=None):
+    def OnPunkBusterMessage(self, action, data):
         self.debug("punkbuster message : %s" % data)
         return b3.events.Event(b3.events.EVT_UNKNOWN, data)
+
+
+
+
+
 
 
     def OnShutdowngame(self, action, data, match=None):
         #self.game.mapEnd()
         #self.clients.sync()
         return b3.events.Event(b3.events.EVT_GAME_ROUND_END, data)
+
 
     def OnExit(self, action, data, match=None):
         self.game.mapEnd()
@@ -455,6 +503,7 @@ class Bfbc2Parser(b3.parser.Parser):
             return b3.TEAM_UNKNOWN
 
     def getPlayerPings(self):
+        return None
         data = self.write('status')
         if not data:
             return {}
@@ -474,6 +523,7 @@ class Bfbc2Parser(b3.parser.Parser):
         return players
         
     def getPlayerScores(self):
+        return None
         data = self.write('status')
         if not data:
             return {}
@@ -492,27 +542,9 @@ class Bfbc2Parser(b3.parser.Parser):
         
         return players
 
-    def getPlayerList(self, maxRetries=None):
-        if self.PunkBuster:
-            return self.PunkBuster.getPlayerList()
-        else:
-            data = self.write('status', maxRetries=maxRetries)
-            if not data:
-                return {}
-
-            players = {}
-            for line in data.split('\n')[3:]:
-                m = re.match(self._regPlayer, line.strip())
-                if m:
-                    d = m.groupdict()
-                    d['pbid'] = None
-                    players[str(m.group('slot'))] = d
-                #elif '------' not in line and 'map: ' not in line and 'num score ping' not in line:
-                    #self.verbose('getPlayerList() = Line did not match format: %s' % line)
-
-        return players
 
     def getCvar(self, cvarName):
+        return None
         if self._reCvarName.match(cvarName):
             #"g_password" is:"^7" default:"scrim^7"
             val = self.write(cvarName)
@@ -530,26 +562,14 @@ class Bfbc2Parser(b3.parser.Parser):
         self.setCvar(cvarName, value)
 
     def setCvar(self, cvarName, value):
+        return None
         if re.match('^[a-z0-9_.]+$', cvarName, re.I):
             self.debug('Set cvar %s = [%s]', cvarName, value)
             self.write(self.getCommand('set', name=cvarName, value=value))
         else:
             self.error('%s is not a valid cvar name', cvarName)
 
-    def getMap(self):
-        data = self.write('status')
-        if not data:
-            return None
-
-        line = data.split('\n')[0]
-        #self.debug('[%s]'%line.strip())
-
-        m = re.match(self._reMapNameFromStatus, line.strip())
-        if m:
-            return str(m.group('map'))
-
-        return None
-
+    
     def getMaps(self):
         return None
 
