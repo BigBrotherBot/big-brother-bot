@@ -22,6 +22,7 @@
 #    * add rconPort for games which have a different rcon port than the game port
 #    * server.game_log option is not mandatory anymore. This makes B3 able to work
 #      with game servers having no game log file
+#    * do not test rcon anymore as the test process differs depending on the game
 #   12/12/2009 - v1.12.3 - Courgette
 #    * when working in remote mode, does not download the remote log file.
 #   06/12/2009 - v1.12.2 - Courgette
@@ -193,11 +194,11 @@ class Parser(object):
 
         # setup ip addresses
         self._publicIp = self.config.get('server', 'public_ip')
-        self._rconIp = self.config.get('server', 'rcon_ip')
-        self._rconPort = self._rconIp # if rcon port is the same as the game port, rcon_port can be ommited
-        if self.config.has_option('server', 'rcon_port'):
-            self._rconPort = self.config.get('server', 'rcon_ip')
         self._port = self.config.getint('server', 'port')
+        self._rconPort = self._port # if rcon port is the same as the game port, rcon_port can be ommited
+        self._rconIp = self.config.get('server', 'rcon_ip')
+        if self.config.has_option('server', 'rcon_port'):
+            self._rconPort = self.config.getint('server', 'rcon_port')
         self._rconPassword = self.config.get('server', 'rcon_password')
 
         if self._publicIp[0:1] == '~' or self._publicIp[0:1] == '/':
@@ -286,20 +287,20 @@ class Parser(object):
             self.bot('Setting Rcon socket timeout to %0.3f sec' % custom_socket_timeout)
         
         # testing rcon
-        res = self.output.write('status')
-        self.output.flush()
-        self.screen.write('Testing RCON     : ')
-        self.screen.flush()
-        if res == 'Bad rconpassword.':
-            self.screen.write('>>> Oops: Bad RCON password\n>>> Hint: This will lead to errors and render B3 without any power to interact!\n')
-            self.screen.flush()
-            time.sleep(2)
-        elif res == '':
-            self.screen.write('>>> Oops: No response\n>>> Could be something wrong with the rcon connection to the server!\n>>> Hint 1: The server is not running or it is changing maps.\n>>> Hint 2: Check your server-ip and port.\n')
-            self.screen.flush()
-            time.sleep(2)
-        else:
-            self.screen.write('OK\n')
+#        res = self.output.write('status')
+#        self.output.flush()
+#        self.screen.write('Testing RCON     : ')
+#        self.screen.flush()
+#        if res == 'Bad rconpassword.':
+#            self.screen.write('>>> Oops: Bad RCON password\n>>> Hint: This will lead to errors and render B3 without any power to interact!\n')
+#            self.screen.flush()
+#            time.sleep(2)
+#        elif res == '':
+#            self.screen.write('>>> Oops: No response\n>>> Could be something wrong with the rcon connection to the server!\n>>> Hint 1: The server is not running or it is changing maps.\n>>> Hint 2: Check your server-ip and port.\n')
+#            self.screen.flush()
+#            time.sleep(2)
+#        else:
+#            self.screen.write('OK\n')
 
         self.loadEvents()
         self.screen.write('Loading Events   : %s events loaded\n' % len(self._events))

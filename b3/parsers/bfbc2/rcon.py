@@ -19,10 +19,12 @@
 # Changelog :
 # 2010/03/09 - 0.1 - Courgette
 # * alpha, need test server to validate
+# 2010/03/09 - 0.2 - courgette
+# * tested, seems to work for most cases
 #
  
 __author__ = 'Courgette'
-__version__ = '0.1'
+__version__ = '0.2'
  
 from b3.parsers.bfbc2.bfbc2Connection import *
 
@@ -52,33 +54,31 @@ class Rcon:
 
     def _connect(self):
         if self._bfbc2Connection:
-            self._bfbc2Connection.close()
+            return
         self.console.verbose('RCON: Connecting to BFBC2 server ...')
         self._bfbc2Connection = Bfbc2Connection(self._rconIp, self._rconPort, self._rconPassword)
-        self._bfbc2Connection.timeout = self._connectionTimeout
-        self._bfbc2Connection.subscribeToBfbc2Events()
+        self._bfbc2Connection.timeout = self._socket_timeout
 
     def writelines(self, lines):
         for line in lines:
             self.write(line)
 
-    def write(self, cmd):
-        #if self._bfbc2Connection is None:
-        #    self._connect()
+    def write(self, cmd, maxRetries=0):
+        if self._bfbc2Connection is None:
+            self._connect()
         try:
-            response = self._bfbc2Connection.sendRequest(cmd)
-        except:
-            try:
-                self._connect()
+            self._connect()
+            if isinstance(cmd, list):
+                response = self._bfbc2Connection.sendRequest(cmd[0], cmd[1:])
+            else:
                 response = self._bfbc2Connection.sendRequest(cmd)
-            except Bfbc2Exception, err:
-                self.console.error('RCON: sending \'%s\', %s' % (cmd, err))
-                return None
-        if response[0] == 'OK':
             return response[1:]
-        else:
+        except Bfbc2Exception, err:
+            self.console.error('RCON: sending \'%s\', %s' % (cmd, err))
             return None
-        
+        except Bfbc2CommandFailedError, err:
+            self.console.error('RCON: %s' % err)
+            return None
 
     def flush(self):
         pass
@@ -102,10 +102,11 @@ if __name__ == '__main__':
         pw = sys.argv[3]
     
     from b3.fake import fakeConsole
+    debug = True
 
     r = Rcon(fakeConsole, (host, port), pw)
     
-    for cmd in ['version', 'serverInfo', 'quit', 'version', 'help', 'admin.currentLevel']:
+    for cmd in ['version', 'serverInfo', 'quit', 'version', 'help', 'admin.currentLevel', 'quit']:
         fakeConsole.info('Writing %s', cmd)
         data = r.write(cmd)
         fakeConsole.info('Recieved %s', data)

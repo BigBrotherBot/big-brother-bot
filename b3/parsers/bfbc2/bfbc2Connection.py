@@ -27,7 +27,7 @@
 __author__  = 'Courgette'
 __version__ = '0.5'
 
-debug = True
+debug = False
 
 import time
 import socket
@@ -35,7 +35,8 @@ from b3.parsers.bfbc2.EventConsole import *
 
 class Bfbc2Exception(Exception): pass
 class Bfbc2BadPasswordException(Bfbc2Exception): pass
-class Bfbc2BadCommandException(Bfbc2Exception): pass
+
+class Bfbc2CommandFailedError(Exception): pass
 
 class Bfbc2Connection(object):
     
@@ -77,7 +78,11 @@ class Bfbc2Connection(object):
     
     def close(self):
         if self._serverSocket is not None:
+            try:
+                self.sendRequest('quit')
+            except: pass
             self._serverSocket.close()
+            self._serverSocket = None
 
     def sendRequest(self, command, *args):
         words = [command]
@@ -87,6 +92,9 @@ class Bfbc2Connection(object):
         self._serverSocket.send(request)
         response = self._serverSocket.recv(4096)
         decodedResponse = DecodePacket(response)
+        printPacket(decodedResponse)
+        if decodedResponse[3][0] != "OK":
+            raise Bfbc2CommandFailedError("%s: %s" % (decodedResponse[3], (command, args)))
         printPacket(decodedResponse)
         #[isFromServer, isResponse, sequence, words] = decodedResponse
         return decodedResponse[3]
@@ -120,12 +128,15 @@ class Bfbc2Connection(object):
 
         # if the server didn't know about the command, abort
         if response[0] != "OK":
-            raise Bfbc2BadCommandException(response[1:])
+            raise Bfbc2CommandFailedError(response[1:])
 
         
     def handle_bfbc2_events(self):
         # Wait for packet from server
-        packet = self._serverSocket.recv(4096)    
+        try:
+            packet = self._serverSocket.recv(4096)
+        except socket.error, detail:
+            raise Bfbc2Exception('Network error: %s'% detail[1])
         [isFromServer, isResponse, sequence, words] = DecodePacket(packet)
         printPacket(DecodePacket(packet))
         
@@ -133,7 +144,7 @@ class Bfbc2Connection(object):
         # For now, we always respond with an "OK"
         if isResponse:
             print 'Received an unexpected response packet from server, ignoring'
-            return self.waitForEvent()
+            return self.handle_bfbc2_events()
         else:
             response = EncodeClientResponse(sequence, ["OK"])
             printPacket(DecodePacket(response))
@@ -183,5 +194,9 @@ if __name__ == '__main__':
         pw = sys.argv[3]
         
     bc2server = Bfbc2Connection(host, port, pw)
+    print "connected"
+    bc2server.close()
+    print "closed"
+    print "bc2server._serverSocket : %s " % bc2server._serverSocket
     
     
