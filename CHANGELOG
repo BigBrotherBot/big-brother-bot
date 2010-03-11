@@ -1,17 +1,33 @@
-1.2.2b -> 1.3.0 (Currently under development)
+1.2.2b -> 1.3.0
 ----
-- Setup procedure added. Initiated on first run, when config does not exist or with option -s 
+75 files were changed! We strongly recommend updating the complete bot!
+A list of changed files is available after release here:
+github.com/BigBrotherBot/big-brother-bot/compare/v1.2.1...v1.3.0
+----
+- Setup procedure added. Initiated with option --setup or -s 
 - b3/plugins/censor.py: Fixed censor.py badname functionality.
 	(Also compatible with censorurt)
-- b3/parsers/cod4.py: Total makeover of the cod4 parser
-  * Introduced authentication queue for cod4 parser
+- Total makeover of the complete cod parser series
+  * Introduced authentication queue
   * fixed _regPlayer regexp
   * fixed client synchronisation 
-  * Should now work good for servers with and without PB (Added cod4-v1.1.6.py as backup parser)
+  * Should now work good for servers with and without PB
 - Fixed minor bugs in cod5 parser
-- b3/parsers/iourt41.py: improve Urt slot bug woraround as it appears it can occur with slot num different than 0
+- b3/parsers/iourt41.py: improve Urt slot bug workaround as it appears it can occur with slot num different than 0
 - B3 checks for updates on startup
 - Improvements to ftp functionality
+-	b3/tools/documentationBuilder.py: add a new feature to B3 : user
+	command documentation auto generation and update.  documentation can
+	be saved as a full html document, a html table snippet or xml
+	document.  the document can be either saved locally on disk or
+	uploaded to a FTP server.
+- b3/extplugins/xlrstats.py: 
+	Added history functionality and improved column update.  [!!]This
+	version needs new tables added. Run b3/docs/xlrstats.sql or
+	b3/docs/xlrstats-update-to-v2.0.0.sql prior to installation!
+-	[BETA addition] b3/parsers/smg.py, b3/parsers/smg11.py: PARSER smg is compatible
+	with SG pior 1.1. smg11 uses the new /tell command for private chat
+----
 
 1.2.1
 ----
