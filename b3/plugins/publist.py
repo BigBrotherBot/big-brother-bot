@@ -44,10 +44,12 @@
 # * publist plugin now also update B3 master on shutdown
 # 22/12/2009 - 1.3 - Courgette
 # * bot version tells if the bot is built with py2exe
+# 10/03/2010 - 1.4 - Courgette
+# * rconPort is sent 
 #
 
-__version__ = '1.3'
-__author__  = 'ThorN'
+__version__ = '1.4'
+__author__  = 'ThorN, Courgette'
 
 import sys
 import thread
@@ -104,7 +106,8 @@ class PublistPlugin(b3.plugin.Plugin):
             info = {
                 'action' : 'shutdown',
                 'ip' : self.console._publicIp,
-                'port' : self.console._port
+                'port' : self.console._port,
+                'rconPort' : self.console._rconPort
             }
             #self.debug(info)
             self.info('Sending shutdown info to B3 master')
