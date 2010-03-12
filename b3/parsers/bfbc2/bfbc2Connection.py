@@ -143,13 +143,16 @@ class Bfbc2Connection(object):
             packet = self._serverSocket.recv(4096)
         except socket.error, detail:
             raise Bfbc2Exception('Network error: %s'% detail)
-        [isFromServer, isResponse, sequence, words] = DecodePacket(packet)
-        printPacket(DecodePacket(packet))
+        try:
+            [isFromServer, isResponse, sequence, words] = DecodePacket(packet)
+            printPacket(DecodePacket(packet))
+        except:
+            raise Bfbc2Exception('failed to decodePacket {%s}' % packet)
         
         # If this was a command from the server, we should respond to it
         # For now, we always respond with an "OK"
         if isResponse:
-            print>>__stderr__, 'Received an unexpected response packet from server, ignoring'
+            print>>sys.__stderr__, 'Received an unexpected response packet from server, ignoring: %s' % packet
             return self.handle_bfbc2_events()
         else:
             response = EncodePacket(True, True, sequence, ["OK"])

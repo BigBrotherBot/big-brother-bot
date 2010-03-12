@@ -22,10 +22,19 @@
 # * parser is able to connect to a distant BFBC2 server through TCP
 #   and listens for BFBC2 events.
 # * BFBC2 events are routed to create matching B3 events
+# 2010/03/12 - 0.2 - Courgette
+# * the bot recognize players, commands and can respond
+#
+#
+# TODO :
+# * fix the issue regarding messages sent to clients which are sent at
+#   a too high frequence. A solution might be to introduce a 'line of text' 
+#   queue management at the client level.
+# * test commands. at the moment only 'message' and 'say' commands have been tested
 #
 
 __author__  = 'Courgette'
-__version__ = '0.1'
+__version__ = '0.2'
 
 import sys, time, re, string, traceback
 import b3
@@ -49,24 +58,23 @@ class Bfbc2Parser(b3.parser.Parser):
     _nbConsecutiveConnFailure = 0
     _connectionTimeout = 60
 
+    # BFBC2 does not support color code, so we need this property
+    # in order to get stripColors working
+    _reColor = re.compile(r'(\^[0-9])') 
+
     _settings = {}
     _settings['line_length'] = 65
     _settings['min_wrap_length'] = 100
 
     _commands = {}
-    _commands['broadcast'] = '%(prefix)s^7 %(message)s'
-    _commands['message'] = 'admin.yell "%(prefix)s ^3[pm]^7 %(message)s" %(duration)s %(cid)s '
-    _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
-    _commands['say'] = 'say %(prefix)s %(message)s'
-    _commands['kick'] = 'clientkick %(cid)s'
-    _commands['ban'] = 'addip %(cid)s'
-    _commands['tempban'] = 'clientkick %(cid)s'
-    _commands['banByIp'] = 'addip %(ip)s'
-    _commands['unbanByIp'] = 'removeip %(ip)s'
-    _commands['slap'] = 'slap %(cid)s'
-    _commands['nuke'] = 'nuke %(cid)s'
-    _commands['mute'] = 'mute %(cid)s %(seconds)s'
-
+    _commands['message'] = ('admin.yell', '%(prefix)s [pm] %(message)s', '%(duration)s', 'player', '%(cid)s')
+    _commands['say'] = ('admin.yell', '%(prefix)s %(message)s', '%(duration)s', 'all')
+    _commands['kick'] = ('admin.kickPlayer', '%(cid)s')
+    _commands['ban'] = ('admin.banPlayer', '%(cid)s', 'perm')
+    _commands['unban'] = ('admin.unbanPlayer', '%(cid)s')
+    _commands['tempban'] = ('admin.banPlayer', '%(cid)s', 'seconds', '%(duration)d')
+    _commands['banByIp'] = ('admin.banIP', '%(ip)s', 'perm')
+    _commands['unbanByIp'] = ('admin.unbanIP', '%(ip)s')
 
     
     _eventMap = {
@@ -104,6 +112,12 @@ class Bfbc2Parser(b3.parser.Parser):
     PunkBuster = None
 
     def startup(self):
+        
+        # add specific events
+        self.Events.createEvent('EVT_PUNKBUSTER_SCHEDULED_TASK', 'PunkBuster scheduled task')
+        self.Events.createEvent('EVT_PUNKBUSTER_CLIENT_CONNECT', 'PunkBuster client connection')
+        self.Events.createEvent('EVT_CLIENT_GEAR_CHANGE', 'Client gear change')
+        
         try:
             self._connectionTimeout = self.config.getint('server', 'timeout')
         except: 
@@ -126,7 +140,7 @@ class Bfbc2Parser(b3.parser.Parser):
         self.info("available server commands :")
         availableCmd = self.output.write('help')
         for cmd in availableCmd:
-            self.info(cmd)
+            self.debug(cmd)
             
         self.getServerVars()
         
@@ -136,8 +150,12 @@ class Bfbc2Parser(b3.parser.Parser):
         self.debug('new description : %s' % self.getCvar('serverDescription'))
         
         self.info('connecting all players...')
-        for p in self.getPlayerList():
-            self.debug('connecting %s' % p)
+        plist = self.getPlayerList()
+        for cid, c in plist.iteritems():
+            client = self.getClient(cid)
+            if client:
+                self.debug('Joining %s' % client.name)
+                self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client))
             
 
     def run(self):
@@ -166,7 +184,7 @@ class Bfbc2Parser(b3.parser.Parser):
                         self._nbConsecutiveConnFailure = 0
                         
                     bfbc2packet = self._bfbc2Connection.handle_bfbc2_events()
-                    self.console("%s: %s" % (bfbc2packet[0], bfbc2packet[1:]))
+                    self.console("%s" % bfbc2packet)
                     try:
                         self.routeBfbc2Packet(bfbc2packet)
                     except SystemExit:
@@ -206,6 +224,7 @@ class Bfbc2Parser(b3.parser.Parser):
             #self.debug("-==== FUNC!!: " + func)
             
         if match and hasattr(self, func):
+            self.debug('routing ----> %s' % func)
             func = getattr(self, func)
             event = func(bfbc2EventType, bfbc2EventData)
             if event:
@@ -239,7 +258,7 @@ class Bfbc2Parser(b3.parser.Parser):
             def group(s, n): return [s[i:i+n] for i in xrange(0, len(s), n)]
             for clantag, name, squadId, teamId  in group(data,4):
                 self.debug('player: %s %s %s %s' % (clantag, name, squadId, teamId))
-                players[name] = {'clantag':clantag, 'name':name, 'squadId':squadId, 'teamId':teamId}
+                players[name] = {'clantag':clantag, 'name':name, 'guid':name, 'squadId':squadId, 'teamId':self.getTeam(teamId)}
         return players
 
     def getServerVars(self):
@@ -247,7 +266,7 @@ class Bfbc2Parser(b3.parser.Parser):
             self.getCvar(v)
 
     def getMap(self):
-        data = self.write('serverInfo')
+        data = self.write(('serverInfo',))
         if not data:
             return None
         return data[4]
@@ -261,39 +280,43 @@ class Bfbc2Parser(b3.parser.Parser):
         #['envex', 'gg']
         if not len(data) == 2:
             return None
-        client = self.clients.getByExactName(data[0])
+        client = self.getClient(data[0])
         return b3.events.Event(b3.events.EVT_CLIENT_SAY, data[1], client)
 
     def OnPlayerLeave(self, action, data):
         #player.onLeave: ['GunnDawg']
-        client = self.clients.getByExactName(data[0])
+        client = self.getClient(data[0])
         if client: 
             client.disconnect()
         return None
 
     def OnPlayerJoin(self, action, data):
         #player.onJoin: ['OrasiK']
-        self.debug(self.output.write(''))
-        self._clientConnectID = data
-        return None
+        name = data[0]
+        client = self.getClient(name)
+        return b3.events.Event(b3.events.EVT_CLIENT_JOIN, data, client)
 
     def OnPlayerKill(self, action, data):
         #player.onKill: ['Juxta', '6blBaJlblu']
         if not len(data) == 2:
             return None
-        attacker = self.clients.getByExactName(data[0])
+        attacker = self.getClient(data[0])
         if not attacker:
-            self.bot('No attacker')
+            self.debug('No attacker')
             return None
 
-        victim = self.clients.getByExactName(data[1])
+        victim = self.getClient(data[1])
         if not victim:
-            self.bot('No victim')
+            self.debug('No victim')
             return None
         
         return b3.events.Event(b3.events.EVT_CLIENT_KILL, (100, None, None), attacker, victim)
 
     def OnPunkbusterMessage(self, action, data):
+        """handes all punkbuster related events and 
+        route them to the appropriate method depending
+        on the type of PB message.
+        """
         #self.debug("PB> %s" % data)
         if data and data[0]:
             for regexp, funcName in self._punkbusterMessageFormats:
@@ -309,112 +332,61 @@ class Bfbc2Parser(b3.parser.Parser):
                 return b3.events.Event(b3.events.EVT_UNKNOWN, data)
                 
     def OnPBNewConnection(self, match, data):
-        slot = match.group('slot')
-        ip = match.group('ip')
-        port = match.group('port')
-        something = match.group('something')
+        """PunkBuster tells us a new player identified. The player is
+        normally already connected"""
         name = match.group('name')
-        self.debug('TODO OnPBNewConnection: '+data)
+        client = self.getClient(name)
+        if client:
+            slot = match.group('slot')
+            ip = match.group('ip')
+            port = match.group('port')
+            something = match.group('something')
+            client.ip = ip
+            client.port = port
+            self.debug('OnPBNewConnection: client updated with %s' % data)
+        else:
+            self.warning('OnPBNewConnection: we\'ve been unable to get the client')
+        return b3.events.Event(b3.events.EVT_PUNKBUSTER_CLIENT_CONNECT, data, client)
 
     def OnPBLostConnection(self, match, data):
-        slot = match.group('slot')
-        ip = match.group('ip')
-        port = match.group('port')
-        pbuid = match.group('pbuid')
+        """PB notifies us it lost track of a player. This is the only change
+        we have to save the PunkBuster id of clients.
+        This event is triggered after the OnPlayerLeave, so normaly the client
+        is not connected. Anyway our task here is to save PBid not to 
+        connect/disconnect the client
+        """
         name = match.group('name')
-        self.debug('TODO OnPBLostConnection: '+data)
+        dict = {
+            'slot': match.group('slot'),
+            'ip': match.group('ip'),
+            'port': match.group('port'),
+            'pbuid': match.group('pbuid'),
+            'name': name
+        }
+        client = self.clients.getByCID(dict['name'])
+        if not client:
+            client = b3.clients.Client(console=self, cid=name, guid=name)
+        # update client data
+        self.debug("saving client PB_ID to database")
+        client.pbid = dict['pbuid']
+        client.ip = dict['ip']
+        client.save()
+        return b3.events.Event(b3.events.EVT_PUNKBUSTER_LOST_PLAYER, dict)
 
     def OnPBScheduledTask(self, match, data):
+        """We get notified the server ran a PB scheduled task
+        Nothing much to do but it can be interresting to have
+        this information logged
+        """
         slot = match.group('slot')
         task = match.group('task')
-        self.info('PB TASK #%s : %s' % (slot, task))
+        return b3.events.Event(b3.events.EVT_PUNKBUSTER_SCHEDULED_TASK, {'slot': slot, 'task': task})
 
     def OnPBMasterQuerySent(self, match, data):
-        pbmaster = match.group('pbmaster')
-        ip = match.group('ip')
-        self.debug('TODO OnPBMasterQuerySent: %s %s'% (pbmaster, ip))
-
-
-    def OnShutdowngame(self, action, data, match=None):
-        #self.game.mapEnd()
-        #self.clients.sync()
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_END, data)
-
-
-    def OnExit(self, action, data, match=None):
-        self.game.mapEnd()
-        return b3.events.Event(b3.events.EVT_GAME_EXIT, None)
-
-    def OnItem(self, action, data, match=None):
-        client = self.getClient(match)
-        if client:
-            return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, match.group('text'), client)
-        return None
-
-    def OnClientbegin(self, action, data, match=None):
-        # we get user info in two parts:
-        # 19:42.36 ClientBegin: 4
-        # 19:42.36 Userinfo: \cg_etVersion\ET Pro, ET 2.56\cg_u
-        # we need to store the ClientConnect ID for the next call to userinfo
-
-        self._clientConnectID = data
-
-        return None
-
-    def OnClientuserinfo(self, action, data, match=None):
-        bclient = self.parseUserInfo(data)
-        self.verbose('Parsed user info %s' % bclient)
-        if bclient:
-            client = self.clients.getByCID(bclient['cid'])
-
-            if client:
-                # update existing client
-                for k, v in bclient.iteritems():
-                    setattr(client, k, v)
-            else:
-                client = self.clients.newClient(bclient['cid'], **bclient)
-
-        return None
-
-    def OnClientuserinfochanged(self, action, data, match=None):
-        return self.OnClientuserinfo(action, data, match)
-
-    def OnUserinfo(self, action, data, match=None):
-        #f = re.findall(r'\\name\\([^\\]+)', data)
-
-        #if f:
-        #    client = self.clients.getByExactName(f[0])
-        #    if client:
-
-        try:
-            id = self._clientConnectID
-        except:
-            id = None
-
-        self._clientConnectID = None
-
-        if not id:
-            self.error('OnUserinfo called without a ClientConnect ID')
-            return None
-
-        return self.OnClientuserinfo(action, '%s %s' % (id, data), match)
-
-    def OnInitgame(self, action, data, match=None):
-        options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)
-
-        for o in options:
-            if o[0] == 'mapname':
-                self.game.mapName = o[1]
-            elif o[0] == 'g_gametype':
-                self.game.gameType = o[1]
-            elif o[0] == 'fs_game':
-                self.game.modName = o[1]
-            else:
-                setattr(self.game, o[0], o[1])
-
-        self.game.startRound()
-
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
+        """We get notified that the server sent a ping to the PB masters"""
+        #pbmaster = match.group('pbmaster')
+        #ip = match.group('ip')
+        pass
 
 
 
@@ -426,8 +398,9 @@ class Bfbc2Parser(b3.parser.Parser):
                 pass
             else:
                 lines = []
+                text = self.stripColors(text)
                 for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
-                    lines.append(self.getCommand('message', cid=client.cid, prefix=self.msgPrefix, message=line))
+                    lines.append(self.getCommand('message', cid=client.cid, prefix=self.stripColors(self.msgPrefix), message=line, duration=2300))
 
                 self.writelines(lines)
         except:
@@ -435,132 +408,12 @@ class Bfbc2Parser(b3.parser.Parser):
 
     def say(self, msg):
         lines = []
+        msg = self.stripColors(msg)
         for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
-            lines.append(self.getCommand('say', prefix=self.msgPrefix, message=line))
+            lines.append(self.getCommand('say', prefix=self.stripColors(self.msgPrefix), message=line, duration=2300))
 
         if len(lines):        
             self.writelines(lines)
-
-    def smartSay(self, client, msg):
-        if client and (client.state == b3.STATE_DEAD or client.team == b3.TEAM_SPEC):
-            self.verbose('say dead state: %s, team %s', client.state, client.team)
-            self.sayDead(msg)
-        else:
-            self.verbose('say all')
-            self.say(msg)
-
-    def sayDead(self, msg):
-        wrapped = self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length'])
-        lines = []
-        for client in self.clients.getClientsByState(b3.STATE_DEAD):
-            if client.cid:                
-                for line in wrapped:
-                    lines.append(self.getCommand('deadsay', cid=client.cid, prefix=self.msgPrefix, message=line))
-
-        if len(lines):        
-            self.writelines(lines)
-
-    def kick(self, client, reason='', admin=None, silent=False, *kwargs):
-        if isinstance(client, str) and re.match('^[0-9]+$', client):
-            self.write(self.getCommand('kick', cid=client, reason=reason))
-            return
-        elif admin:
-            reason = self.getMessage('kicked_by', client.exactName, admin.exactName, reason)
-        else:
-            reason = self.getMessage('kicked', client.exactName, reason)
-
-        if self.PunkBuster:
-            self.PunkBuster.kick(client, 0.5, reason)
-        else:
-            self.write(self.getCommand('kick', cid=client.cid, reason=reason))
-
-        if not silent:
-            self.say(reason)
-
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_KICK, reason, client))
-        client.disconnect()
-
-    def ban(self, client, reason='', admin=None, silent=False, *kwargs):
-        if isinstance(client, b3.clients.Client) and not client.guid:
-            # client has no guid, kick instead
-            return self.kick(client, reason, admin, silent)
-        elif isinstance(client, str) and re.match('^[0-9]+$', client):
-            self.write(self.getCommand('ban', cid=client, reason=reason))
-            return
-        elif not client.id:
-            # no client id, database must be down, do tempban
-            self.error('Q3AParser.ban(): no client id, database must be down, doing tempban')
-            return self.tempban(client, reason, '1d', admin, silent)
-
-        if admin:
-            reason = self.getMessage('banned_by', client.exactName, admin.exactName, reason)
-        else:
-            reason = self.getMessage('banned', client.exactName, reason)
-
-        if self.PunkBuster:
-            self.PunkBuster.ban(client, reason)
-            # bans will only last 7 days, this is a failsafe incase a ban cant
-            # be removed from punkbuster
-            #self.PunkBuster.kick(client, 1440 * 7, reason)
-        else:
-            self.write(self.getCommand('ban', cid=client.cid, reason=reason))
-
-        if not silent:
-            self.say(reason)
-
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, reason, client))
-        client.disconnect()
-
-    def unban(self, client, reason='', admin=None, silent=False, *kwargs):
-        if self.PunkBuster:
-            if client.pbid:
-                result = self.PunkBuster.unBanGUID(client)
-
-                if result:                    
-                    admin.message('^3Unbanned^7: %s^7: %s' % (client.exactName, result))
-
-                if not silent:
-                    if admin:
-                        self.say(self.getMessage('unbanned_by', client.exactName, admin.exactName, reason))
-                    else:
-                        self.say(self.getMessage('unbanned', client.exactName, reason))
-            elif admin:
-                admin.message('%s^7 unbanned but has no punkbuster id' % client.exactName)
-        elif admin:
-            admin.message('^3Unbanned^7: %s^7. You may need to manually remove the user from the game\'s ban file.' % client.exactName)
-
-    def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
-        duration = b3.functions.time2minutes(duration)
-
-        if isinstance(client, b3.clients.Client) and not client.guid:
-            # client has no guid, kick instead
-            return self.kick(client, reason, admin, silent)
-        elif isinstance(client, str) and re.match('^[0-9]+$', client):
-            self.write(self.getCommand('tempban', cid=client, reason=reason))
-            return
-        elif admin:
-            reason = self.getMessage('temp_banned_by', client.exactName, admin.exactName, b3.functions.minutesStr(duration), reason)
-        else:
-            reason = self.getMessage('temp_banned', client.exactName, b3.functions.minutesStr(duration), reason)
-
-        if self.PunkBuster:
-            # punkbuster acts odd if you ban for more than a day
-            # tempban for a day here and let b3 re-ban if the player
-            # comes back
-            if duration > 1440:
-                duration = 1440
-
-            self.PunkBuster.kick(client, duration, reason)
-        else:
-            self.write(self.getCommand('tempban', cid=client.cid, reason=reason))
-
-        if not silent:
-            self.say(reason)
-
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, reason, client))
-        client.disconnect()
-
-
 
 
     def getTeam(self, team):
@@ -573,54 +426,38 @@ class Bfbc2Parser(b3.parser.Parser):
             return b3.TEAM_SPEC
         else:
             return b3.TEAM_UNKNOWN
-
-    def getPlayerPings(self):
-        return None
-        data = self.write('status')
-        if not data:
-            return {}
-
-        players = {}
-        for line in data.split('\n'):
-            #self.debug('Line: ' + line + "-")
-            m = re.match(self._regPlayerShort, line)
-            if not m:
-                m = re.match(self._regPlayer, line.strip())
-            
-            if m:
-                players[str(m.group('slot'))] = int(m.group('ping'))
-            #elif '------' not in line and 'map: ' not in line and 'num score ping' not in line:
-                #self.verbose('getPlayerScores() = Line did not match format: %s' % line)
         
-        return players
-        
-    def getPlayerScores(self):
-        return None
-        data = self.write('status')
-        if not data:
-            return {}
+    def getClient(self, name):
+        """Get a connected client from storage or create it
+        In BFBC2, clients are identified by their name, so we
+        have to trick B3 giving the name for CID and GUID fields
+        """
+        client = self.clients.getByCID(name)
+        if not client:
+            self.clients.newClient(name, guid=name, name=name)
+            client = self.clients.getByCID(name)
+        return client
 
-        players = {}
-        for line in data.split('\n'):
-            #self.debug('Line: ' + line + "-")
-            m = re.match(self._regPlayerShort, line)
-            if not m:
-                m = re.match(self._regPlayer, line.strip())
-            
-            if m:  
-                players[str(m.group('slot'))] = int(m.group('score'))
-            #elif '------' not in line and 'map: ' not in line and 'num score ping' not in line:
-                #self.verbose('getPlayerScores() = Line did not match format: %s' % line)
-        
-        return players
+    def authorizeClients(self):
+        players = self.getPlayerList()
+        self.verbose('authorizeClients() = %s' % players)
 
+        for cid, p in players.iteritems():
+            sp = self.clients.getByCID(cid)
+            if sp:
+                # Only set provided data, otherwise use the currently set data
+                sp.ip   = p.get('ip', sp.ip)
+                sp.pbid = p.get('pbid', sp.pbid)
+                sp.guid = p.get('guid', sp.guid)
+                sp.data = p
+                sp.auth()
 
     def getCvar(self, cvarName):
         if cvarName not in self._gameServerVars:
             self.warning('cannot get unknown cvar \'%s\'' % cvarName)
             return None
         
-        words = self.write('vars.%s' % cvarName)
+        words = self.write(('vars.%s' % cvarName,))
         self.debug('Get cvar %s = [%s]', cvarName, words)
         
         if words and len(words) == 1:
@@ -659,40 +496,92 @@ class Bfbc2Parser(b3.parser.Parser):
         plist = self.getPlayerList()
         mlist = {}
 
-        for cid, c in plist.iteritems():
-            client = self.clients.getByCID(cid)
+        for name, c in plist.iteritems():
+            client = self.clients.getByName(name)
             if client:
-                if client.guid and c.has_key('guid'):
-                    if client.guid == c['guid']:
-                        # player matches
-                        self.debug('in-sync %s == %s', client.guid, c['guid'])
-                        mlist[str(cid)] = client
-                    else:
-                        self.debug('no-sync %s <> %s', client.guid, c['guid'])
-                        client.disconnect()
-                elif client.ip and c.has_key('ip'):
-                    if client.ip == c['ip']:
-                        # player matches
-                        self.debug('in-sync %s == %s', client.ip, c['ip'])
-                        mlist[str(cid)] = client
-                    else:
-                        self.debug('no-sync %s <> %s', client.ip, c['ip'])
-                        client.disconnect()
-                else:
-                    self.debug('no-sync: no guid or ip found.')
-        
+                mlist[name] = client
+         
         return mlist
 
-    def authorizeClients(self):
-        players = self.getPlayerList(maxRetries=4)
-        self.verbose('authorizeClients() = %s' % players)
+    def getCommand(self, cmd, **kwargs):
+        """Return a reference to a loaded command"""
+        try:
+            cmd = self._commands[cmd]
+        except KeyError:
+            return None
 
-        for cid, p in players.iteritems():
-            sp = self.clients.getByCID(cid)
-            if sp:
-                # Only set provided data, otherwise use the currently set data
-                sp.ip   = p.get('ip', sp.ip)
-                sp.pbid = p.get('pbid', sp.pbid)
-                sp.guid = p.get('guid', sp.guid)
-                sp.data = p
-                sp.auth()
+        preparedcmd = []
+        for a in cmd:
+            try:
+                preparedcmd.append(a % kwargs)
+            except KeyError:
+                pass
+        
+        result = tuple(preparedcmd)
+        self.debug('getCommand: %s', result)
+        return result
+    
+    def write(self, msg, maxRetries=None):
+        """Write a message to Rcon/Console
+        Unfortunaltely this has been abused all over B3 
+        and B3 plugins to broadcast text :(
+        """
+        if type(msg) == str:
+            # console abuse to broadcast text
+            self.say(msg)
+        else:
+            # Then we got a command
+            if self.replay:
+                self.bot('Sent rcon message: %s' % msg)
+            elif self.output == None:
+                pass
+            else:
+                res = self.output.write(msg, maxRetries=maxRetries)
+                self.output.flush()
+                return res
+            
+
+    def getWrap(self, text, length=80, minWrapLen=150):
+        """Returns a sequence of lines for text that fits within the limits
+        TODO: simplify this method as in BFBC2, we make sure the text contains
+        no Q3 color code before passing it here.
+        """
+        if not text:
+            return []
+
+        length = int(length)
+        text = text.replace('//', '/ /')
+
+        if len(text) <= minWrapLen:
+            return [text]
+        #if len(re.sub(REG, '', text)) <= minWrapLen:
+        #    return [text]
+
+        text = re.split(r'\s+', text)
+
+        lines = []
+        color = '^7';
+
+        line = text[0]
+        for t in text[1:]:
+            if len(re.sub(self._reColor, '', line)) + len(re.sub(self._reColor, '', t)) + 2 <= length:
+                line = '%s %s' % (line, t)
+            else:
+                if len(lines) > 0:
+                    lines.append('>%s' % line)
+                else:
+                    lines.append('%s' % line)
+
+                m = re.findall(self._reColor, line)
+                if m:
+                    color = m[-1]
+
+                line = t
+
+        if len(line):
+            if len(lines) > 0:
+                lines.append('>%s' % line)
+            else:
+                lines.append('%s' % line)
+
+        return lines

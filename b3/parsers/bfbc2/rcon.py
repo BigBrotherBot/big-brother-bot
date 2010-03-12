@@ -100,10 +100,15 @@ if __name__ == '__main__':
         pw = sys.argv[3]
     
     from b3.fake import fakeConsole
-    debug = True
+    bfbc2Connection.debug = True
 
     r = Rcon(fakeConsole, (host, port), pw)
        
+    r.write(('admin.yell', 'test', 1400, 'player', 'Courgette'))  
+       
+    sys.exit()
+    
+    
     for cmd in ['version', 'serverInfo', 'help', 'version', 'admin.currentLevel', 'admin.listPlayers']:
         fakeConsole.info('Writing %s', cmd)
         data = r.write(cmd)
