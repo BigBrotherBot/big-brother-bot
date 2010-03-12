@@ -34,6 +34,7 @@ import socket
 from b3.parsers.bfbc2.EventConsole import *
 
 class Bfbc2Exception(Exception): pass
+class Bfbc2NetworkException(Bfbc2Exception): pass
 class Bfbc2BadPasswordException(Bfbc2Exception): pass
 
 class Bfbc2CommandFailedError(Exception): pass
@@ -53,8 +54,11 @@ class Bfbc2Connection(object):
         self._port = port
         self._password = password
         
-        self._connect()
-        self._auth()
+        try:
+            self._connect()
+            self._auth()
+        except socket.error, detail:
+            raise Bfbc2NetworkException('Network error: %s'% detail)
    
     def __del__(self):
         self.close()
@@ -142,7 +146,7 @@ class Bfbc2Connection(object):
         try:
             packet = self._serverSocket.recv(4096)
         except socket.error, detail:
-            raise Bfbc2Exception('Network error: %s'% detail)
+            raise Bfbc2NetworkException('Network error: %s'% detail)
         try:
             [isFromServer, isResponse, sequence, words] = DecodePacket(packet)
             printPacket(DecodePacket(packet))
