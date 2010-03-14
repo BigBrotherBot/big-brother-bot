@@ -21,11 +21,13 @@
 # * alpha, need test server to validate
 # 2010/03/09 - 0.2 - courgette
 # * tested, seems to work for most cases
-#
+# 2010/03/14 - 0.3 - Courgette
+# * write() can retry in case of failure
+
 from b3.parsers.bfbc2 import bfbc2Connection
  
 __author__ = 'Courgette'
-__version__ = '0.2'
+__version__ = '0.3'
  
 from b3.parsers.bfbc2.bfbc2Connection import *
 
@@ -64,25 +66,35 @@ class Rcon:
         for line in lines:
             self.write(line)
 
-    def write(self, cmd, maxRetries=0):
+    def write(self, cmd, maxRetries=1):
         if self._bfbc2Connection is None:
             self._connect()
+        tries = 0
+        while tries <= maxRetries:
+            try:
+                tries += 1
+                self.console.verbose('RCON (%s/%s) %s' % (tries, maxRetries, cmd))
+                response = self._bfbc2Connection.sendRequest(cmd)
+                return response[1:]
+            except Bfbc2Exception, err:
+                self.console.warning('RCON: sending \'%s\', %s' % (cmd, err))
+            except Bfbc2CommandFailedError, err:
+                self.console.error('RCON: %s' % err)
+                return None
+        self.console.error('RCON: failed to send \'%s\'', cmd)
         try:
-            self.console.verbose('RCON: sending %s', cmd)
-            response = self._bfbc2Connection.sendRequest(cmd)
-            return response[1:]
-        except Bfbc2Exception, err:
-            self.console.error('RCON: sending \'%s\', %s' % (cmd, err))
-            return None
-        except Bfbc2CommandFailedError, err:
-            self.console.error('RCON: %s' % err)
-            return None
+            # we close the connection to make sure to have a brand new one 
+            # on the next write
+            self.close()
+        except: pass
+        
 
     def flush(self):
         pass
 
     def close(self):
-        pass
+        self.console.info('RCON: disconnecting from BFBC2 server')
+        self._bfbc2Connection.close()
 
             
             
@@ -99,24 +111,22 @@ if __name__ == '__main__':
         port = int(sys.argv[2])
         pw = sys.argv[3]
     
+
     from b3.fake import fakeConsole
     bfbc2Connection.debug = True
 
-    r = Rcon(fakeConsole, (host, port), pw)
-       
+
+    bfbc2Connection.debug = True
+    r = Rcon(fakeConsole, (host, port), pw)   
     r.write(('admin.yell', 'test', 1400, 'player', 'Courgette'))  
-       
-    sys.exit()
     
     
-    for cmd in ['version', 'serverInfo', 'help', 'version', 'admin.currentLevel', 'admin.listPlayers']:
+    for cmd in ['version', 'serverInfo', 'help', 'version', 'admin.currentLevel', ('admin.listPlayers', 'all')]:
         fakeConsole.info('Writing %s', cmd)
         data = r.write(cmd)
         fakeConsole.info('Recieved %s', data)
     
     print '----------------------------'
-    
-    bfbc2Connection.debug = True
     
     varlist = (
         '3dSpotting',
@@ -138,42 +148,46 @@ if __name__ == '__main__':
         'teamBalance',
         'thirdPersonVehicleCameras'
     )
-    import time
     for var in varlist:
-        time.sleep(0.5)
-        val = r.write('vars.%s' % var)[0]
-        print "------------original %s value : '%s' -------------" % (var, val)
-    
-        if val == 'true':
-            newval = 'false'
-        elif val == 'false':
-            newval = 'true'
-        else:
-            try:
-                int(val)
-                newval = 2
-            except ValueError:
-                newval = 'test qsdf'
+        #time.sleep(0.5)
+        print r.write('vars.%s' % var)[0]
         
-        print "\t > changing to '%s'" % newval
-        time.sleep(0.5)
-        r.write(('vars.%s' % var, newval))
-        
-        time.sleep(0.5)
-        val2 = r.write('vars.%s' % var)[0]
-        print "\t\tnow : '%s'" % val2
-        
-        print "\t > changing back to '%s'" % val
-        time.sleep(0.5)
-        r.write(('vars.%s' % var, val))
-        
-        time.sleep(0.5)
-        val3 = r.write('vars.%s' % var)[0]
-        print "\t\tnow : '%s'" % val3
-        
-        time.sleep(0.5)
-        if val == val2 or val != val3:
-            print "\t FAILED !!!!"
-        else:
-            print "\t PASS"
+#    import time
+#    for var in varlist:
+#        time.sleep(0.5)
+#        val = r.write('vars.%s' % var)[0]
+#        print "------------original %s value : '%s' -------------" % (var, val)
+#    
+#        if val == 'true':
+#            newval = 'false'
+#        elif val == 'false':
+#            newval = 'true'
+#        else:
+#            try:
+#                int(val)
+#                newval = 2
+#            except ValueError:
+#                newval = 'test qsdf'
+#        
+#        print "\t > changing to '%s'" % newval
+#        time.sleep(0.5)
+#        r.write(('vars.%s' % var, newval))
+#        
+#        time.sleep(0.5)
+#        val2 = r.write('vars.%s' % var)[0]
+#        print "\t\tnow : '%s'" % val2
+#        
+#        print "\t > changing back to '%s'" % val
+#        time.sleep(0.5)
+#        r.write(('vars.%s' % var, val))
+#        
+#        time.sleep(0.5)
+#        val3 = r.write('vars.%s' % var)[0]
+#        print "\t\tnow : '%s'" % val3
+#        
+#        time.sleep(0.5)
+#        if val == val2 or val != val3:
+#            print "\t FAILED !!!!"
+#        else:
+#            print "\t PASS"
         

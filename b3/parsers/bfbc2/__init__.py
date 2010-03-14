@@ -36,10 +36,11 @@
 # * add kick, tempban, unban, ban
 # 2010/03/14 - 0.5.1 - Courgette
 # * fix bug in OnPlayerKill
-
+# 2010/03/14 - 0.5.2 - Courgette
+# * remove junk
 
 __author__  = 'Courgette'
-__version__ = '0.5.1'
+__version__ = '0.5.2'
 
 import sys, time, re, string, traceback
 import b3
@@ -148,11 +149,6 @@ class Bfbc2Parser(b3.parser.Parser):
             
         self.getServerVars()
         
-        self.setCvar('serverDescription', 'test description')
-        self.debug('new description : %s' % self.getCvar('serverDescription'))
-        self.setCvar('serverDescription', '')
-        self.debug('new description : %s' % self.getCvar('serverDescription'))
-        
         self.info('connecting all players...')
         plist = self.getPlayerList()
         for cid, c in plist.iteritems():
@@ -219,15 +215,15 @@ class Bfbc2Parser(b3.parser.Parser):
                 except Bfbc2Exception, e:
                     self.debug(e)
                     self._nbConsecutiveConnFailure += 1
-                    if self._nbConsecutiveConnFailure <= 40:
-                        self.debug('sleeping 0.25 sec...')
-                        time.sleep(0.25)
+                    if self._nbConsecutiveConnFailure <= 20:
+                        self.debug('sleeping 0.5 sec...')
+                        time.sleep(0.5)
                     elif self._nbConsecutiveConnFailure <= 60:
                         self.debug('sleeping 2 sec...')
                         time.sleep(2)
                     else:
-                        self.debug('sleeping 10 sec...')
-                        time.sleep(10)
+                        self.debug('sleeping 30 sec...')
+                        time.sleep(30)
                     
         self.bot('Stop listening.')
 
@@ -249,7 +245,7 @@ class Bfbc2Parser(b3.parser.Parser):
             #self.debug("-==== FUNC!!: " + func)
             
         if match and hasattr(self, func):
-            self.debug('routing ----> %s' % func)
+            #self.debug('routing ----> %s' % func)
             func = getattr(self, func)
             event = func(bfbc2EventType, bfbc2EventData)
             if event:
@@ -265,10 +261,6 @@ class Bfbc2Parser(b3.parser.Parser):
             data += str(bfbc2EventType) + ': ' + str(bfbc2EventData)
             self.queueEvent(b3.events.Event(b3.events.EVT_UNKNOWN, data))
 
-    def getClientByExactNameOrConnect(self, exactName):
-        client = self.clients.getByExactName(exactName)
-        if client is None:
-            self.output.write('')
 
 
     def getPlayerList(self, maxRetries=None):
@@ -645,9 +637,6 @@ class Bfbc2Parser(b3.parser.Parser):
         self.write(('vars.%s' % cvarName, value))
 
     
-    def getMaps(self):
-        return None
-
     def sync(self):
         plist = self.getPlayerList()
         mlist = {}
@@ -677,7 +666,7 @@ class Bfbc2Parser(b3.parser.Parser):
         self.debug('getCommand: %s', result)
         return result
     
-    def write(self, msg, maxRetries=None):
+    def write(self, msg, maxRetries=1):
         """Write a message to Rcon/Console
         Unfortunaltely this has been abused all over B3 
         and B3 plugins to broadcast text :(

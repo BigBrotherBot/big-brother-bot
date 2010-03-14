@@ -22,10 +22,13 @@
 # * open a TCP connection to a BFBC2 server, auth with provided password
 # * can either be used to send commands or enter the listening mode (which
 #   waits for BFBC2 events)
+# 2010/03/14 - 0.6 - Courgette
+# * raise a Bfbc2NetworkException whenever something goes wrong on the 
+#   network while using sendRequest()
 #
 
 __author__  = 'Courgette'
-__version__ = '0.5'
+__version__ = '0.6'
 
 debug = False
 
@@ -97,8 +100,12 @@ class Bfbc2Connection(object):
             words = command
         request = EncodeClientRequest(words)
         printPacket(DecodePacket(request))
-        self._serverSocket.send(request)
-        response = self._serverSocket.recv(4096)
+        try:
+            time.sleep(0.01)
+            self._serverSocket.send(request)
+            response = self._serverSocket.recv(4096)
+        except socket.error, detail:
+            raise Bfbc2NetworkException(detail)
         decodedResponse = DecodePacket(response)
         printPacket(decodedResponse)
         if decodedResponse[3][0] != "OK":
