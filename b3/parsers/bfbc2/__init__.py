@@ -34,12 +34,12 @@
 # * add EVT_CLIENT_CONNECT
 # * recognize kill/suicide/teamkill
 # * add kick, tempban, unban, ban
-#
-#
+# 2010/03/14 - 0.5.1 - Courgette
+# * fix bug in OnPlayerKill
 
 
 __author__  = 'Courgette'
-__version__ = '0.5'
+__version__ = '0.5.1'
 
 import sys, time, re, string, traceback
 import b3
@@ -337,8 +337,8 @@ class Bfbc2Parser(b3.parser.Parser):
         
         if victim == attacker:
             return b3.events.Event(b3.events.EVT_CLIENT_SUICIDE, (100, 1, 1), self, self)
-            attackerteam = self.getPlayerTeam(attacker)
-            victimteam = self.getPlayerTeam(victim)
+        attackerteam = self.getPlayerTeam(attacker)
+        victimteam = self.getPlayerTeam(victim)
         if attackerteam == victimteam and attackerteam != b3.TEAM_UNKNOWN and attackerteam != b3.TEAM_SPEC:
             return b3.events.Event(b3.events.EVT_CLIENT_TEAMKILL, (100, None, None), attacker, victim)
         else:
