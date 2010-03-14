@@ -38,9 +38,12 @@
 # * fix bug in OnPlayerKill
 # 2010/03/14 - 0.5.2 - Courgette
 # * remove junk
+# 2010/03/14 - 0.5.2 - Courgette
+# * fix EVT_CLIENT_SUICIDE parameters
+#
 
 __author__  = 'Courgette'
-__version__ = '0.5.2'
+__version__ = '0.5.3'
 
 import sys, time, re, string, traceback
 import b3
@@ -328,7 +331,7 @@ class Bfbc2Parser(b3.parser.Parser):
             return None
         
         if victim == attacker:
-            return b3.events.Event(b3.events.EVT_CLIENT_SUICIDE, (100, 1, 1), self, self)
+            return b3.events.Event(b3.events.EVT_CLIENT_SUICIDE, (100, 1, 1), attacker, victim)
         attackerteam = self.getPlayerTeam(attacker)
         victimteam = self.getPlayerTeam(victim)
         if attackerteam == victimteam and attackerteam != b3.TEAM_UNKNOWN and attackerteam != b3.TEAM_SPEC:
@@ -585,6 +588,11 @@ class Bfbc2Parser(b3.parser.Parser):
             if data and len(data) == 4:
                 teamId = self.getTeam(data[3])
         return teamId
+        
+    def getPlayerScores(self):
+        """I don't know what we could put here...
+        maybe we could send the number of kills if the mstat plugin is enabled"""
+        return None
 
     def authorizeClients(self):
         players = self.getPlayerList()
