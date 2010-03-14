@@ -24,17 +24,13 @@
 # * BFBC2 events are routed to create matching B3 events
 # 2010/03/12 - 0.2 - Courgette
 # * the bot recognize players, commands and can respond
+# 2010/03/14 - 0.3 - Courgette
+# * better handling of 'connection reset by peer' issue
 #
-#
-# TODO :
-# * fix the issue regarding messages sent to clients which are sent at
-#   a too high frequence. A solution might be to introduce a 'line of text' 
-#   queue management at the client level.
-# * test commands. at the moment only 'message' and 'say' commands have been tested
 #
 
 __author__  = 'Courgette'
-__version__ = '0.2'
+__version__ = '0.3'
 
 import sys, time, re, string, traceback
 import b3
@@ -168,6 +164,9 @@ class Bfbc2Parser(b3.parser.Parser):
         self.updateDocumentation()
 
         while self.working:
+            """
+            While we are working, connect to the BFBC2 server
+            """
             if self._paused:
                 if self._pauseNotice == False:
                     self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
@@ -175,24 +174,42 @@ class Bfbc2Parser(b3.parser.Parser):
             else:
                 
                 try:
-                    if not self._bfbc2Connection:
-                        self.verbose('Connecting to BFBC2 server ...')
-                        self._bfbc2Connection = Bfbc2Connection(self._rconIp, self._rconPort, self._rconPassword)
-                        self._bfbc2Connection.timeout = self._connectionTimeout
-                        self._bfbc2Connection.subscribeToBfbc2Events()
-                        self.clients.sync()
-                        self._nbConsecutiveConnFailure = 0
+                    if self._bfbc2Connection:
+                        self.verbose('Disconnecting to BFBC2 server ...')
+                        try:
+                            self._bfbc2Connection.close()
+                        except: pass
+                        del self._bfbc2Connection
+                    
+                    self.verbose('Connecting to BFBC2 server ...')
+                    self._bfbc2Connection = Bfbc2Connection(self._rconIp, self._rconPort, self._rconPassword)
+                    self._bfbc2Connection.timeout = self._connectionTimeout
+                    self._bfbc2Connection.subscribeToBfbc2Events()
+                    self.clients.sync()
+                    self._nbConsecutiveConnFailure = 0
                         
-                    bfbc2packet = self._bfbc2Connection.handle_bfbc2_events()
-                    self.console("%s" % bfbc2packet)
-                    try:
-                        self.routeBfbc2Packet(bfbc2packet)
-                    except SystemExit:
-                        raise
-                    except Exception, msg:
-                        self.error('could not route BFBC2 packet %s: %s', msg, traceback.extract_tb(sys.exc_info()[2]))
+                    nbConsecutiveReadFailure = 0
+                    while self.working:
+                        """
+                        While we are working and connected, read a packet
+                        """
+                        if not self._paused:
+                            try:
+                                bfbc2packet = self._bfbc2Connection.handle_bfbc2_events()
+                                self.console("%s" % bfbc2packet)
+                                try:
+                                    self.routeBfbc2Packet(bfbc2packet)
+                                except SystemExit:
+                                    raise
+                                except Exception, msg:
+                                    self.error('%s: %s', msg, traceback.extract_tb(sys.exc_info()[2]))
+                            except Bfbc2Exception, e:
+                                self.debug(e)
+                                nbConsecutiveReadFailure += 1
+                                if nbConsecutiveReadFailure > 5:
+                                    raise e
                 except Bfbc2Exception, e:
-                    self.debug(str(e))
+                    self.debug(e)
                     self._nbConsecutiveConnFailure += 1
                     if self._nbConsecutiveConnFailure <= 40:
                         self.debug('sleeping 0.25 sec...')
