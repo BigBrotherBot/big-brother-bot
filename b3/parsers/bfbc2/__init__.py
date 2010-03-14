@@ -30,9 +30,16 @@
 # * save clantag as part of the name
 # * save Punkbuster ID when client disconnects (when we get notified by PB)
 # * save client IP on client connects (when we get notified by PB)
+# 2010/03/14 - 0.5 - Courgette
+# * add EVT_CLIENT_CONNECT
+# * recognize kill/suicide/teamkill
+# * add kick, tempban, unban, ban
+#
+#
+
 
 __author__  = 'Courgette'
-__version__ = '0.4'
+__version__ = '0.5'
 
 import sys, time, re, string, traceback
 import b3
@@ -61,7 +68,7 @@ class Bfbc2Parser(b3.parser.Parser):
     _reColor = re.compile(r'(\^[0-9])') 
 
     _settings = {}
-    _settings['line_length'] = 65
+    _settings['line_length'] = 100
     _settings['min_wrap_length'] = 100
 
     _commands = {}
@@ -113,7 +120,6 @@ class Bfbc2Parser(b3.parser.Parser):
         
         # add specific events
         self.Events.createEvent('EVT_PUNKBUSTER_SCHEDULED_TASK', 'PunkBuster scheduled task')
-        self.Events.createEvent('EVT_PUNKBUSTER_CLIENT_CONNECT', 'PunkBuster client connection')
         self.Events.createEvent('EVT_PUNKBUSTER_LOST_PLAYER', 'PunkBuster client connection lost')
         
         try:
@@ -313,7 +319,7 @@ class Bfbc2Parser(b3.parser.Parser):
         #player.onJoin: ['OrasiK']
         name = data[0]
         client = self.getClient(name)
-        return b3.events.Event(b3.events.EVT_CLIENT_JOIN, data, client)
+        return b3.events.Event(b3.events.EVT_CLIENT_CONNECT, data, client)
 
     def OnPlayerKill(self, action, data):
         #player.onKill: ['Juxta', '6blBaJlblu']
@@ -329,7 +335,15 @@ class Bfbc2Parser(b3.parser.Parser):
             self.debug('No victim')
             return None
         
-        return b3.events.Event(b3.events.EVT_CLIENT_KILL, (100, None, None), attacker, victim)
+        if victim == attacker:
+            return b3.events.Event(b3.events.EVT_CLIENT_SUICIDE, (100, 1, 1), self, self)
+            attackerteam = self.getPlayerTeam(attacker)
+            victimteam = self.getPlayerTeam(victim)
+        if attackerteam == victimteam and attackerteam != b3.TEAM_UNKNOWN and attackerteam != b3.TEAM_SPEC:
+            return b3.events.Event(b3.events.EVT_CLIENT_TEAMKILL, (100, None, None), attacker, victim)
+        else:
+            return b3.events.Event(b3.events.EVT_CLIENT_KILL, (100, None, None), attacker, victim)
+        
 
     def OnPunkbusterMessage(self, action, data):
         """handes all punkbuster related events and 
@@ -356,17 +370,17 @@ class Bfbc2Parser(b3.parser.Parser):
         name = match.group('name')
         client = self.getClient(name)
         if client:
-            slot = match.group('slot')
+            #slot = match.group('slot')
             ip = match.group('ip')
             port = match.group('port')
-            something = match.group('something')
+            #something = match.group('something')
             client.ip = ip
             client.port = port
             client.save()
             self.debug('OnPBNewConnection: client updated with %s' % data)
         else:
             self.warning('OnPBNewConnection: we\'ve been unable to get the client')
-        return b3.events.Event(b3.events.EVT_PUNKBUSTER_CLIENT_CONNECT, data, client)
+        return b3.events.Event(b3.events.EVT_CLIENT_JOIN, data, client)
 
     def OnPBLostConnection(self, match, data):
         """PB notifies us it lost track of a player. This is the only change
@@ -438,7 +452,106 @@ class Bfbc2Parser(b3.parser.Parser):
         if len(lines):        
             self.writelines(lines)
 
+    def kick(self, client, reason='', admin=None, silent=False, *kwargs):
+        if isinstance(client, str):
+            self.write(self.getCommand('kick', cid=client, reason=reason))
+            return
+        elif admin:
+            reason = self.getMessage('kicked_by', client.exactName, admin.exactName, reason)
+        else:
+            reason = self.getMessage('kicked', client.exactName, reason)
 
+        if self.PunkBuster:
+            self.PunkBuster.kick(client, 0.5, reason)
+        else:
+            self.write(self.getCommand('kick', cid=client.cid, reason=reason))
+
+        if not silent:
+            self.say(reason)
+            
+            
+    def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
+        duration = b3.functions.time2minutes(duration)
+
+        if isinstance(client, str):
+            self.write(self.getCommand('tempban', cid=client, duration=duration*60, reason=reason))
+            return
+        elif admin:
+            reason = self.getMessage('temp_banned_by', client.exactName, admin.exactName, b3.functions.minutesStr(duration), reason)
+        else:
+            reason = self.getMessage('temp_banned', client.exactName, b3.functions.minutesStr(duration), reason)
+
+        if self.PunkBuster:
+            # punkbuster acts odd if you ban for more than a day
+            # tempban for a day here and let b3 re-ban if the player
+            # comes back
+            if duration > 1440:
+                duration = 1440
+
+            self.PunkBuster.kick(client, duration, reason)
+        else:
+            self.write(self.getCommand('tempban', cid=client.cid, duration=duration*60, reason=reason))
+
+        if not silent:
+            self.say(reason)
+
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, reason, client))
+
+    def unban(self, client, reason='', admin=None, silent=False, *kwargs):
+        if client.ip is not None:
+            self.write(self.getCommand('unbanByIp', ip=client.ip, reason=reason))
+            if admin:
+                admin.message('Unbanned: %s. His last ip (^1%s^7) has been removed from banlist.' % (client.exactName, client.ip))    
+        
+        self.write(self.getCommand('unban', cid=client.guid, reason=reason))
+        if admin:
+            admin.message('Unbanned: %s' % (client.exactName))
+        
+
+    def ban(self, client, reason='', admin=None, silent=False, *kwargs):
+        """Permanent ban"""
+        self.debug('BAN : client: %s, reason: %s', client, reason)
+        if isinstance(client, b3.clients.Client):
+            self.write(self.getCommand('ban', cid=client.guid, reason=reason))
+            return
+
+        if admin:
+            reason = self.getMessage('banned_by', client.exactName, admin.exactName, reason)
+        else:
+            reason = self.getMessage('banned', client.exactName, reason)
+
+        if client.cid is None:
+            # ban by ip, this happens when we !permban @xx a player that is not connected
+            self.debug('EFFECTIVE BAN : %s',self.getCommand('banByIp', ip=client.ip, reason=reason))
+            self.write(self.getCommand('banByIp', ip=client.ip, reason=reason))
+            if admin:
+                admin.message('banned: %s (@%s). His last ip (%s) has been added to banlist'%(client.exactName, client.id, client.ip))
+        else:
+            # ban by cid
+            self.debug('EFFECTIVE BAN : %s',self.getCommand('ban', cid=client.guid, reason=reason))
+            self.write(self.getCommand('ban', cid=client.guid, reason=reason))
+            if admin:
+                admin.message('banned: %s (@%s) has been added to banlist'%(client.exactName, client.id))
+
+        if not silent:
+            self.say(reason)
+        
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, reason, client))
+        
+        
+    def getNextMap(self):
+        """Return the name of the next map
+        TODO
+        """
+        pass
+    
+    def getMaps(self):
+        """Return the map list
+        TODO"""
+        pass
+    
+    
+        
     def getTeam(self, team):
         team = int(team)
         if team == 1:
@@ -469,6 +582,17 @@ class Bfbc2Parser(b3.parser.Parser):
                 self.clients.newClient(name, guid=name, name="%s%s" % (clantag, name), team=teamId)
         client = self.clients.getByCID(name)
         return client
+
+        
+    def getPlayerTeam(self, name):
+        """Ask the BFBC2 for a given client's team
+        """
+        teamId = b3.TEAM_UNKNOWN
+        if name:
+            data = self.write(('admin.listPlayers', 'player', name))
+            if data and len(data) == 4:
+                teamId = self.getTeam(data[3])
+        return teamId
 
     def authorizeClients(self):
         players = self.getPlayerList()
@@ -572,48 +696,21 @@ class Bfbc2Parser(b3.parser.Parser):
                 self.output.flush()
                 return res
             
-
-    def getWrap(self, text, length=80, minWrapLen=150):
+    def getWrap(self, text, length=100, minWrapLen=100):
         """Returns a sequence of lines for text that fits within the limits
-        TODO: simplify this method as in BFBC2, we make sure the text contains
-        no Q3 color code before passing it here.
         """
         if not text:
             return []
-
+    
         length = int(length)
-        text = text.replace('//', '/ /')
-
+        
         if len(text) <= minWrapLen:
             return [text]
-        #if len(re.sub(REG, '', text)) <= minWrapLen:
-        #    return [text]
-
-        text = re.split(r'\s+', text)
-
-        lines = []
-        color = '^7';
-
-        line = text[0]
-        for t in text[1:]:
-            if len(re.sub(self._reColor, '', line)) + len(re.sub(self._reColor, '', t)) + 2 <= length:
-                line = '%s %s' % (line, t)
-            else:
-                if len(lines) > 0:
-                    lines.append('>%s' % line)
-                else:
-                    lines.append('%s' % line)
-
-                m = re.findall(self._reColor, line)
-                if m:
-                    color = m[-1]
-
-                line = t
-
-        if len(line):
-            if len(lines) > 0:
-                lines.append('>%s' % line)
-            else:
-                lines.append('%s' % line)
-
-        return lines
+        else:
+            lines = [text[0:length]]
+            remaining = text[length:]
+            while len(remaining) > 0:
+                lines.append(">%s" % remaining[0:length-1])
+                remaining = remaining[length-1:]
+            return lines
+        
