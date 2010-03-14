@@ -26,11 +26,13 @@
 # * the bot recognize players, commands and can respond
 # 2010/03/14 - 0.3 - Courgette
 # * better handling of 'connection reset by peer' issue
-#
-#
+# 2010/03/14 - 0.4 - Courgette
+# * save clantag as part of the name
+# * save Punkbuster ID when client disconnects (when we get notified by PB)
+# * save client IP on client connects (when we get notified by PB)
 
 __author__  = 'Courgette'
-__version__ = '0.3'
+__version__ = '0.4'
 
 import sys, time, re, string, traceback
 import b3
@@ -100,7 +102,7 @@ class Bfbc2Parser(b3.parser.Parser):
 
     _punkbusterMessageFormats = (
         (re.compile(r'^PunkBuster Server: Running PB Scheduled Task \(slot #(?P<slot>\d+)\)\s+(?P<task>.*)$'), 'OnPBScheduledTask'),
-        (re.compile(r'^PunkBuster Server: Lost Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) (?P<pbuid>[^\s]+)\s(?P<name>.+)$'), 'OnPBLostConnection'),
+        (re.compile(r'^PunkBuster Server: Lost Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) (?P<pbuid>[^\s]+)\(-\)\s(?P<name>.+)$'), 'OnPBLostConnection'),
         (re.compile(r'^PunkBuster Server: Master Query Sent to \((?P<pbmaster>[^\s]+)\) (?P<ip>[^:]+)$'), 'OnPBMasterQuerySent'),
         (re.compile(r'^PunkBuster Server: New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection')
      )
@@ -112,7 +114,7 @@ class Bfbc2Parser(b3.parser.Parser):
         # add specific events
         self.Events.createEvent('EVT_PUNKBUSTER_SCHEDULED_TASK', 'PunkBuster scheduled task')
         self.Events.createEvent('EVT_PUNKBUSTER_CLIENT_CONNECT', 'PunkBuster client connection')
-        self.Events.createEvent('EVT_CLIENT_GEAR_CHANGE', 'Client gear change')
+        self.Events.createEvent('EVT_PUNKBUSTER_LOST_PLAYER', 'PunkBuster client connection lost')
         
         try:
             self._connectionTimeout = self.config.getint('server', 'timeout')
@@ -275,7 +277,7 @@ class Bfbc2Parser(b3.parser.Parser):
             def group(s, n): return [s[i:i+n] for i in xrange(0, len(s), n)]
             for clantag, name, squadId, teamId  in group(data,4):
                 self.debug('player: %s %s %s %s' % (clantag, name, squadId, teamId))
-                players[name] = {'clantag':clantag, 'name':name, 'guid':name, 'squadId':squadId, 'teamId':self.getTeam(teamId)}
+                players[name] = {'clantag':clantag, 'name':"%s%s"% (clantag, name), 'guid':name, 'squadId':squadId, 'teamId':self.getTeam(teamId)}
         return players
 
     def getServerVars(self):
@@ -360,6 +362,7 @@ class Bfbc2Parser(b3.parser.Parser):
             something = match.group('something')
             client.ip = ip
             client.port = port
+            client.save()
             self.debug('OnPBNewConnection: client updated with %s' % data)
         else:
             self.warning('OnPBNewConnection: we\'ve been unable to get the client')
@@ -382,12 +385,15 @@ class Bfbc2Parser(b3.parser.Parser):
         }
         client = self.clients.getByCID(dict['name'])
         if not client:
-            client = b3.clients.Client(console=self, cid=name, guid=name)
-        # update client data
-        self.debug("saving client PB_ID to database")
-        client.pbid = dict['pbuid']
-        client.ip = dict['ip']
-        client.save()
+            tmpclient = b3.clients.Client(console=self, id=-1, guid=name)
+            client = self.storage.getClient(tmpclient)
+        if not client:
+            self.error('unable to find client %s. weird')
+        else:
+            # update client data with PB id and IP
+            client.pbid = dict['pbuid']
+            client.ip = dict['ip']
+            client.save()
         return b3.events.Event(b3.events.EVT_PUNKBUSTER_LOST_PLAYER, dict)
 
     def OnPBScheduledTask(self, match, data):
@@ -451,8 +457,17 @@ class Bfbc2Parser(b3.parser.Parser):
         """
         client = self.clients.getByCID(name)
         if not client:
-            self.clients.newClient(name, guid=name, name=name)
-            client = self.clients.getByCID(name)
+            clantag = ''
+            squadId = -1
+            teamId = b3.TEAM_UNKNOWN
+            data = self.write(('admin.listPlayers', 'player', name))
+            if data and len(data) == 4:
+                clantag, name, squadId, teamId = data
+                self.debug('player: %s %s %s %s' % (clantag, name, squadId, teamId))
+                if clantag is not None and len(clantag.strip()) > 0:
+                    clantag += ' '
+                self.clients.newClient(name, guid=name, name="%s%s" % (clantag, name), team=teamId)
+        client = self.clients.getByCID(name)
         return client
 
     def authorizeClients(self):
