@@ -41,6 +41,9 @@
 # 2010/03/14 - 0.5.2 - Courgette
 # * fix EVT_CLIENT_SUICIDE parameters
 #
+# 2010/03/16 - 0.5.3 - SpacepiG
+# * added maps, nextmap, getEasyName for translating map name.
+#
 
 __author__  = 'Courgette'
 __version__ = '0.5.3'
@@ -77,7 +80,7 @@ class Bfbc2Parser(b3.parser.Parser):
 
     _commands = {}
     _commands['message'] = ('admin.yell', '%(prefix)s [pm] %(message)s', '%(duration)s', 'player', '%(cid)s')
-    _commands['say'] = ('admin.yell', '%(prefix)s %(message)s', '%(duration)s', 'all')
+    _commands['say'] = ('admin.say', '%(prefix)s %(message)s', '%(duration)s', 'all')
     _commands['kick'] = ('admin.kickPlayer', '%(cid)s')
     _commands['ban'] = ('admin.banPlayer', '%(cid)s', 'perm')
     _commands['unban'] = ('admin.unbanPlayer', '%(cid)s')
@@ -169,6 +172,7 @@ class Bfbc2Parser(b3.parser.Parser):
         #self.screen.flush()
 
         self.updateDocumentation()
+
 
         while self.working:
             """
@@ -536,14 +540,58 @@ class Bfbc2Parser(b3.parser.Parser):
         
     def getNextMap(self):
         """Return the name of the next map
-        TODO
         """
-        pass
+        currentMap = self.write(('admin.currentLevel',))
+        data = self.write(('mapList.list',))
+        for index in range(0,len(data)): 
+            if data[index] == currentMap[0]:
+                index = ((index +1) % len(data))
+                nextMap = self.getEasyName(data[index])
+                self.debug('currentmap: %s ' % (nextMap)) 
+                return nextMap  
+        return () 
+    
+    def getEasyName(self, mapname):
+        """ Change levelname to real name """
+        if mapname == 'Levels/MP_001':
+            return ('Panama Canal')
+            
+        elif mapname == 'Levels/MP_002':
+            return ('Valparaiso')
+
+        elif mapname == 'Levels/MP_003':
+            return ('Laguna Alta')
+
+        elif mapname == 'Levels/MP_004':
+            return ('Isla Inocentes')
+
+        elif mapname == 'Levels/MP_005':
+            return ('Atacama Desert')
+
+        elif mapname == 'Levels/MP_006':
+            return ('Arica Harbor')
+
+        elif mapname == 'Levels/MP_007':
+            return ('White Pass')
+
+        elif mapname == 'Levels/MP_008':
+            return ('Nelson Bay')
+
+        elif mapname == 'Levels/MP_009':
+            return ('Laguna Preza')
+
+        elif mapname == 'Levels/MP_012':
+            return ('Port Valdez')
+
+        return ()
     
     def getMaps(self):
         """Return the map list
         TODO"""
-        pass
+        data = self.write(('mapList.list',))
+        for index in range(0,len(data)):
+        	mapList[index] = self.getEasyName(data[index])
+        return mapList 
     
     
         
