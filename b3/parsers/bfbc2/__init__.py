@@ -17,7 +17,11 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 #
+<<<<<<< Updated upstream
 # CHANGELOG
+=======
+# ====================== CHANGELOG ========================
+>>>>>>> Stashed changes
 # 2010/03/09 - 0.1 - Courgette
 # * parser is able to connect to a distant BFBC2 server through TCP
 #   and listens for BFBC2 events.
@@ -40,6 +44,7 @@
 # * remove junk
 # 2010/03/14 - 0.5.2 - Courgette
 # * fix EVT_CLIENT_SUICIDE parameters
+<<<<<<< Updated upstream
 #
 # 2010/03/16 - 0.5.3 - SpacepiG
 # * added maps, nextmap, getEasyName for translating map name.
@@ -47,6 +52,40 @@
 
 __author__  = 'Courgette'
 __version__ = '0.5.3'
+=======
+# 2010/03/16 - 0.6 - Courgette
+# * set client.team whenever we got the info from the BFBC2 server
+#
+#
+#
+# ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPPERS USING THIS PARSER ======
+# -- standard B3 events  -- 
+# EVT_UNKNOWN
+# EVT_CLIENT_CONNECT
+# EVT_CLIENT_JOIN (only if punkbuter enabled on the server)
+# EVT_CLIENT_DISCONNECT
+# EVT_CLIENT_SAY
+# EVT_CLIENT_KILL
+# EVT_CLIENT_TEAMKILL
+# EVT_CLIENT_SUICIDE
+# EVT_CLIENT_BAN_TEMP
+# EVT_CLIENT_BAN
+#
+# -- BFBC2 specific B3 events --
+# EVT_PUNKBUSTER_LOST_PLAYER
+# EVT_PUNKBUSTER_SCHEDULED_TASK
+# 
+# -- B3 events triggered natively by B3 core --
+# EVT_CLIENT_NAME_CHANGE
+# EVT_CLIENT_TEAM_CHANGE
+# EVT_CLIENT_AUTH
+#
+
+
+
+__author__  = 'Courgette'
+__version__ = '0.6'
+>>>>>>> Stashed changes
 
 import sys, time, re, string, traceback
 import b3
@@ -58,6 +97,14 @@ import b3.cvar
 
 from b3.parsers.bfbc2.bfbc2Connection import *
 
+<<<<<<< Updated upstream
+=======
+GAMETYPE_SQDM = 'SQDM' # no team, but up to 4 squad fighting each others
+GAMETYPE_CONQUEST = 'CONQUEST'
+GAMETYPE_RUSH = 'RUSH'
+GAMETYPE_SQRUSH = 'SQRUSH'
+
+>>>>>>> Stashed changes
 
 #----------------------------------------------------------------------------------------------------------------------------------------------
 class Bfbc2Parser(b3.parser.Parser):
@@ -65,14 +112,22 @@ class Bfbc2Parser(b3.parser.Parser):
     privateMsg = True
     OutputClass = rcon.Rcon
     
+<<<<<<< Updated upstream
     _bfbc2EventsListener = None
     _bfbc2Connection = None
     _nbConsecutiveConnFailure = 0
     _connectionTimeout = 60
+=======
+    
+    _bfbc2EventsListener = None
+    _bfbc2Connection = None
+    _nbConsecutiveConnFailure = 0
+>>>>>>> Stashed changes
 
     # BFBC2 does not support color code, so we need this property
     # in order to get stripColors working
     _reColor = re.compile(r'(\^[0-9])') 
+<<<<<<< Updated upstream
 
     _settings = {}
     _settings['line_length'] = 100
@@ -81,6 +136,18 @@ class Bfbc2Parser(b3.parser.Parser):
     _commands = {}
     _commands['message'] = ('admin.yell', '%(prefix)s [pm] %(message)s', '%(duration)s', 'player', '%(cid)s')
     _commands['say'] = ('admin.say', '%(prefix)s %(message)s', '%(duration)s', 'all')
+=======
+    
+    _reServerInfo = re.compile(r'^"(?P<sv_hostname>[^"]+)" "(?P<numplayers>\d+)" "(?P<sv_maxclients>\d+)" "(?P<gametype>[^"]+)" "(?P<currentmap>.+)"$')
+
+    _settings = {}
+    _settings['line_length'] = 99
+    _settings['min_wrap_length'] = 99
+
+    _commands = {}
+    _commands['message'] = ('admin.yell', '%(message)s', '%(duration)s', 'player', '%(cid)s')
+    _commands['say'] = ('admin.yell', '%(message)s', '%(duration)s', 'all')
+>>>>>>> Stashed changes
     _commands['kick'] = ('admin.kickPlayer', '%(cid)s')
     _commands['ban'] = ('admin.banPlayer', '%(cid)s', 'perm')
     _commands['unban'] = ('admin.unbanPlayer', '%(cid)s')
@@ -94,7 +161,10 @@ class Bfbc2Parser(b3.parser.Parser):
 
     _gameServerVars = (
         '3dSpotting',
+<<<<<<< Updated upstream
         'adminPassword',
+=======
+>>>>>>> Stashed changes
         'bannerUrl',
         'crossHair',
         'currentPlayerLimit',
@@ -118,6 +188,10 @@ class Bfbc2Parser(b3.parser.Parser):
         (re.compile(r'^PunkBuster Server: Running PB Scheduled Task \(slot #(?P<slot>\d+)\)\s+(?P<task>.*)$'), 'OnPBScheduledTask'),
         (re.compile(r'^PunkBuster Server: Lost Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) (?P<pbuid>[^\s]+)\(-\)\s(?P<name>.+)$'), 'OnPBLostConnection'),
         (re.compile(r'^PunkBuster Server: Master Query Sent to \((?P<pbmaster>[^\s]+)\) (?P<ip>[^:]+)$'), 'OnPBMasterQuerySent'),
+<<<<<<< Updated upstream
+=======
+        (re.compile(r'^PunkBuster Server: Player GUID Computed (?P<pbid>[0-9a-fA-F]+)\(-\) \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+)\s(?P<name>.+)$'), 'OnPBPlayerGuid'),
+>>>>>>> Stashed changes
         (re.compile(r'^PunkBuster Server: New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection')
      )
 
@@ -129,12 +203,15 @@ class Bfbc2Parser(b3.parser.Parser):
         self.Events.createEvent('EVT_PUNKBUSTER_SCHEDULED_TASK', 'PunkBuster scheduled task')
         self.Events.createEvent('EVT_PUNKBUSTER_LOST_PLAYER', 'PunkBuster client connection lost')
         
+<<<<<<< Updated upstream
         try:
             self._connectionTimeout = self.config.getint('server', 'timeout')
         except: 
             self.warning("Error reading timeout from config file. Using default value")
         self.info("BFBC2 connection timeout: %s" % self._connectionTimeout)
         
+=======
+>>>>>>> Stashed changes
         if self.config.has_option('server', 'punkbuster') and self.config.getboolean('server', 'punkbuster'):
             self.PunkBuster = PunkBuster(self)
             
@@ -143,6 +220,7 @@ class Bfbc2Parser(b3.parser.Parser):
         if version[0] != 'BFBC2':
             raise Exception("the bfbc2 parser can only work with BattleField Bad Company 2")
         
+<<<<<<< Updated upstream
         self.info('Server info : %s' % self.output.write('serverInfo'))
         self.info('is PunkBuster enabled on server ? %s' % self.output.write('vars.punkBuster'))
         self.info('PunkBuster version : %s' % self.output.write(('punkBuster.pb_sv_command', 'PB_SV_VER')))
@@ -153,6 +231,9 @@ class Bfbc2Parser(b3.parser.Parser):
         for cmd in availableCmd:
             self.debug(cmd)
             
+=======
+
+>>>>>>> Stashed changes
         self.getServerVars()
         
         self.info('connecting all players...')
@@ -173,7 +254,10 @@ class Bfbc2Parser(b3.parser.Parser):
 
         self.updateDocumentation()
 
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
         while self.working:
             """
             While we are working, connect to the BFBC2 server
@@ -184,6 +268,7 @@ class Bfbc2Parser(b3.parser.Parser):
                     self._pauseNotice = True
             else:
                 
+<<<<<<< Updated upstream
                 try:
                     if self._bfbc2Connection:
                         self.verbose('Disconnecting to BFBC2 server ...')
@@ -195,6 +280,12 @@ class Bfbc2Parser(b3.parser.Parser):
                     self.verbose('Connecting to BFBC2 server ...')
                     self._bfbc2Connection = Bfbc2Connection(self._rconIp, self._rconPort, self._rconPassword)
                     self._bfbc2Connection.timeout = self._connectionTimeout
+=======
+                try:                
+                    if self._bfbc2Connection is None:
+                        self.verbose('Connecting to BFBC2 server ...')
+                        self._bfbc2Connection = Bfbc2Connection(self._rconIp, self._rconPort, self._rconPassword)
+>>>>>>> Stashed changes
                     self._bfbc2Connection.subscribeToBfbc2Events()
                     self.clients.sync()
                     self._nbConsecutiveConnFailure = 0
@@ -206,7 +297,11 @@ class Bfbc2Parser(b3.parser.Parser):
                         """
                         if not self._paused:
                             try:
+<<<<<<< Updated upstream
                                 bfbc2packet = self._bfbc2Connection.handle_bfbc2_events()
+=======
+                                bfbc2packet = self._bfbc2Connection.readBfbc2Event()
+>>>>>>> Stashed changes
                                 self.console("%s" % bfbc2packet)
                                 try:
                                     self.routeBfbc2Packet(bfbc2packet)
@@ -281,13 +376,39 @@ class Bfbc2Parser(b3.parser.Parser):
             players = {}
             def group(s, n): return [s[i:i+n] for i in xrange(0, len(s), n)]
             for clantag, name, squadId, teamId  in group(data,4):
+<<<<<<< Updated upstream
                 self.debug('player: %s %s %s %s' % (clantag, name, squadId, teamId))
+=======
+                #self.debug('player: %s %s %s %s' % (clantag, name, squadId, teamId))
+>>>>>>> Stashed changes
                 players[name] = {'clantag':clantag, 'name':"%s%s"% (clantag, name), 'guid':name, 'squadId':squadId, 'teamId':self.getTeam(teamId)}
         return players
 
     def getServerVars(self):
+<<<<<<< Updated upstream
         for v in self._gameServerVars:
             self.getCvar(v)
+=======
+        """Update the game property from server fresh data"""
+        self.game.is3dSpotting = self.getCvar('3dSpotting')
+        self.game.bannerUrl = self.getCvar('bannerUrl')
+        self.game.crossHair = self.getCvar('crossHair')
+        self.game.currentPlayerLimit = self.getCvar('currentPlayerLimit')
+        self.game.friendlyFire = self.getCvar('friendlyFire')
+        self.game.hardCore = self.getCvar('bbbbbbbbb')
+        self.game.killCam = self.getCvar('killCam')
+        self.game.maxPlayerLimit = self.getCvar('maxPlayerLimit')
+        self.game.miniMap = self.getCvar('miniMap')
+        self.game.miniMapSpotting = self.getCvar('miniMapSpotting')
+        self.game.playerLimit = self.getCvar('playerLimit')
+        self.game.punkBuster = self.getCvar('punkBuster')
+        self.game.rankLimit = self.getCvar('rankLimit')
+        self.game.ranked = self.getCvar('ranked')
+        self.game.serverDescription = self.getCvar('serverDescription')
+        self.game.teamBalance = self.getCvar('teamBalance')
+        self.game.thirdPersonVehicleCameras = self.getCvar('thirdPersonVehicleCameras')
+        
+>>>>>>> Stashed changes
 
     def getMap(self):
         data = self.write(('serverInfo',))
@@ -311,7 +432,11 @@ class Bfbc2Parser(b3.parser.Parser):
         #player.onLeave: ['GunnDawg']
         client = self.getClient(data[0])
         if client: 
+<<<<<<< Updated upstream
             client.disconnect()
+=======
+            client.disconnect() # this triggers the EVT_CLIENT_DISCONNECT event
+>>>>>>> Stashed changes
         return None
 
     def OnPlayerJoin(self, action, data):
@@ -334,11 +459,24 @@ class Bfbc2Parser(b3.parser.Parser):
             self.debug('No victim')
             return None
         
+<<<<<<< Updated upstream
         if victim == attacker:
             return b3.events.Event(b3.events.EVT_CLIENT_SUICIDE, (100, 1, 1), attacker, victim)
         attackerteam = self.getPlayerTeam(attacker)
         victimteam = self.getPlayerTeam(victim)
         if attackerteam == victimteam and attackerteam != b3.TEAM_UNKNOWN and attackerteam != b3.TEAM_SPEC:
+=======
+        attackerteam = self.getPlayerTeam(attacker.name)
+        attacker.team = attackerteam
+
+        if attacker != victim:
+            victimteam = self.getPlayerTeam(victim.name)
+            victim.team = victimteam
+        
+        if victim == attacker:
+            return b3.events.Event(b3.events.EVT_CLIENT_SUICIDE, (100, 1, 1), attacker, victim)
+        elif attacker.team == victim.team and attacker.team != b3.TEAM_UNKNOWN and attacker.team != b3.TEAM_SPEC:
+>>>>>>> Stashed changes
             return b3.events.Event(b3.events.EVT_CLIENT_TEAMKILL, (100, None, None), attacker, victim)
         else:
             return b3.events.Event(b3.events.EVT_CLIENT_KILL, (100, None, None), attacker, victim)
@@ -424,7 +562,22 @@ class Bfbc2Parser(b3.parser.Parser):
         #ip = match.group('ip')
         pass
 
+<<<<<<< Updated upstream
 
+=======
+    def OnPBPlayerGuid(self, match, data):
+        """We get notified of a player punkbuster GUID"""
+        pbid = match.group('pbid')
+        #slot = match.group('slot')
+        ip = match.group('ip')
+        #port = match.group('port')
+        name = match.group('name')
+        client = self.getClient(name)
+        client.ip = ip
+        client.pbid = pbid
+        client.save()
+        
+>>>>>>> Stashed changes
 
     def message(self, client, text):
         try:
@@ -434,9 +587,15 @@ class Bfbc2Parser(b3.parser.Parser):
                 pass
             else:
                 lines = []
+<<<<<<< Updated upstream
                 text = self.stripColors(text)
                 for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
                     lines.append(self.getCommand('message', cid=client.cid, prefix=self.stripColors(self.msgPrefix), message=line, duration=2300))
+=======
+                text = self.stripColors(self.msgPrefix + ' [pm] ' + text)
+                for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
+                    lines.append(self.getCommand('message', cid=client.cid, message=line, duration=2300))
+>>>>>>> Stashed changes
 
                 self.writelines(lines)
         except:
@@ -444,9 +603,15 @@ class Bfbc2Parser(b3.parser.Parser):
 
     def say(self, msg):
         lines = []
+<<<<<<< Updated upstream
         msg = self.stripColors(msg)
         for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
             lines.append(self.getCommand('say', prefix=self.stripColors(self.msgPrefix), message=line, duration=2300))
+=======
+        msg = self.stripColors(self.msgPrefix + ' ' + msg)
+        for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+            lines.append(self.getCommand('say', message=line, duration=2300))
+>>>>>>> Stashed changes
 
         if len(lines):        
             self.writelines(lines)
@@ -540,6 +705,7 @@ class Bfbc2Parser(b3.parser.Parser):
         
     def getNextMap(self):
         """Return the name of the next map
+<<<<<<< Updated upstream
         """
         currentMap = self.write(('admin.currentLevel',))
         data = self.write(('mapList.list',))
@@ -584,14 +750,23 @@ class Bfbc2Parser(b3.parser.Parser):
             return ('Port Valdez')
 
         return ()
+=======
+        TODO
+        """
+        pass
+>>>>>>> Stashed changes
     
     def getMaps(self):
         """Return the map list
         TODO"""
+<<<<<<< Updated upstream
         data = self.write(('mapList.list',))
         for index in range(0,len(data)):
         	mapList[index] = self.getEasyName(data[index])
         return mapList 
+=======
+        pass
+>>>>>>> Stashed changes
     
     
         
@@ -622,7 +797,11 @@ class Bfbc2Parser(b3.parser.Parser):
                 self.debug('player: %s %s %s %s' % (clantag, name, squadId, teamId))
                 if clantag is not None and len(clantag.strip()) > 0:
                     clantag += ' '
+<<<<<<< Updated upstream
                 self.clients.newClient(name, guid=name, name="%s%s" % (clantag, name), team=teamId)
+=======
+                self.clients.newClient(name, guid=name, name="%s%s" % (clantag, name), team=self.getTeam(teamId))
+>>>>>>> Stashed changes
         client = self.clients.getByCID(name)
         return client
 
@@ -654,14 +833,29 @@ class Bfbc2Parser(b3.parser.Parser):
                 sp.pbid = p.get('pbid', sp.pbid)
                 sp.guid = p.get('guid', sp.guid)
                 sp.data = p
+<<<<<<< Updated upstream
+=======
+                sp.team = p.get('teamId', sp.team)
+>>>>>>> Stashed changes
                 sp.auth()
 
     def getCvar(self, cvarName):
         if cvarName not in self._gameServerVars:
+<<<<<<< Updated upstream
             self.warning('cannot get unknown cvar \'%s\'' % cvarName)
             return None
         
         words = self.write(('vars.%s' % cvarName,))
+=======
+            self.warning('unknown cvar \'%s\'' % cvarName)
+            return None
+        
+        try:
+            words = self.write(('vars.%s' % cvarName,))
+        except Bfbc2CommandFailedError, err:
+            self.error(err)
+            return
+>>>>>>> Stashed changes
         self.debug('Get cvar %s = [%s]', cvarName, words)
         
         if words and len(words) == 1:
@@ -690,7 +884,14 @@ class Bfbc2Parser(b3.parser.Parser):
             self.warning('cannot set unknown cvar \'%s\'' % cvarName)
             return
         self.debug('Set cvar %s = \'%s\'', cvarName, value)
+<<<<<<< Updated upstream
         self.write(('vars.%s' % cvarName, value))
+=======
+        try:
+            self.write(('vars.%s' % cvarName, value))
+        except Bfbc2CommandFailedError, err:
+            self.error(err)
+>>>>>>> Stashed changes
 
     
     def sync(self):
@@ -701,6 +902,10 @@ class Bfbc2Parser(b3.parser.Parser):
             client = self.clients.getByName(name)
             if client:
                 mlist[name] = client
+<<<<<<< Updated upstream
+=======
+                client.team = c.get('teamId', client.team)
+>>>>>>> Stashed changes
          
         return mlist
 

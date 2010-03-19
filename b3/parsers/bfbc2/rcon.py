@@ -35,7 +35,6 @@ from b3.parsers.bfbc2.bfbc2Connection import *
 class Rcon:
     console = None
     _bfbc2Connection = None
-    _socket_timeout = 60
     
     _rconIp = None
     _rconPort = None
@@ -47,20 +46,11 @@ class Rcon:
         self._rconIp, self._rconPort = host
         self._rconPassword = password
         
-    def __set_socket_timeout(self, value):
-        if value is not None and value < 0:
-            self._socket_timeout = 0
-        else:
-            self._socket_timeout = value
-        if self._socket_timeout is not None:
-            self._bfbc2Connection.timeout = self._socket_timeout
-
     def _connect(self):
         if self._bfbc2Connection:
             return
         self.console.verbose('RCON: Connecting to BFBC2 server ...')
         self._bfbc2Connection = Bfbc2Connection(self._rconIp, self._rconPort, self._rconPassword)
-        self._bfbc2Connection.timeout = self._socket_timeout
 
     def writelines(self, lines):
         for line in lines:
@@ -80,7 +70,7 @@ class Rcon:
                 self.console.warning('RCON: sending \'%s\', %s' % (cmd, err))
             except Bfbc2CommandFailedError, err:
                 self.console.error('RCON: %s' % err)
-                return None
+                raise err
         self.console.error('RCON: failed to send \'%s\'', cmd)
         try:
             # we close the connection to make sure to have a brand new one 
