@@ -27,10 +27,12 @@
 #   network while using sendRequest()
 # 2010/03/16 - 0.7 - Courgette
 # * Bfbc2CommandFailedError now also contains the BFBC2 response
+# 2010/03/19 - 0.8 - Courgette
+# * fix bug listening to event when we have an incomplete packet
 #
 
 __author__  = 'Courgette'
-__version__ = '0.7'
+__version__ = '0.8'
 
 debug = True
 
@@ -181,7 +183,10 @@ class Bfbc2Connection(object):
     def readBfbc2Event(self):
         # Wait for packet from server
         try:
-            packet = self._packetReader.getPacket()
+            try:
+                packet = self._packetReader.getPacket()
+            except IncompletePacket: 
+                pass
             while packet is None:
                 try:
                     data = self._serverSocket.recv(1024)
