@@ -44,6 +44,8 @@
 # * added maps, nextmap, getEasyName for translating map name.
 # 2010/03/16 - 0.6 - Courgette
 # * set client.team whenever we got the info from the BFBC2 server
+# 2010/03/16 - 0.6.1 - Courgetet
+# * fix getCvar
 #
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPPERS USING THIS PARSER ======
@@ -70,7 +72,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG'
-__version__ = '0.6'
+__version__ = '0.6.1'
 
 
 import sys, time, re, string, traceback
@@ -296,23 +298,24 @@ class Bfbc2Parser(b3.parser.Parser):
 
     def getServerVars(self):
         """Update the game property from server fresh data"""
-        self.game.is3dSpotting = self.getCvar('3dSpotting')
-        self.game.bannerUrl = self.getCvar('bannerUrl')
-        self.game.crossHair = self.getCvar('crossHair')
-        self.game.currentPlayerLimit = self.getCvar('currentPlayerLimit')
-        self.game.friendlyFire = self.getCvar('friendlyFire')
-        self.game.hardCore = self.getCvar('bbbbbbbbb')
-        self.game.killCam = self.getCvar('killCam')
-        self.game.maxPlayerLimit = self.getCvar('maxPlayerLimit')
-        self.game.miniMap = self.getCvar('miniMap')
-        self.game.miniMapSpotting = self.getCvar('miniMapSpotting')
-        self.game.playerLimit = self.getCvar('playerLimit')
-        self.game.punkBuster = self.getCvar('punkBuster')
-        self.game.rankLimit = self.getCvar('rankLimit')
-        self.game.ranked = self.getCvar('ranked')
-        self.game.serverDescription = self.getCvar('serverDescription')
-        self.game.teamBalance = self.getCvar('teamBalance')
-        self.game.thirdPersonVehicleCameras = self.getCvar('thirdPersonVehicleCameras')
+        
+        self.game.is3dSpotting = self.getCvar('3dSpotting').getBoolean()
+        self.game.bannerUrl = self.getCvar('bannerUrl').getString()
+        self.game.crossHair = self.getCvar('crossHair').getBoolean()
+        self.game.currentPlayerLimit = self.getCvar('currentPlayerLimit').getInt()
+        self.game.friendlyFire = self.getCvar('friendlyFire').getBoolean()
+        self.game.hardCore = self.getCvar('hardCore').getBoolean()
+        self.game.killCam = self.getCvar('killCam').getBoolean()
+        self.game.maxPlayerLimit = self.getCvar('maxPlayerLimit').getInt()
+        self.game.miniMap = self.getCvar('miniMap').getBoolean()
+        self.game.miniMapSpotting = self.getCvar('miniMapSpotting').getBoolean()
+        self.game.playerLimit = self.getCvar('playerLimit').getInt()
+        self.game.punkBuster = self.getCvar('punkBuster').getBoolean()
+        self.game.rankLimit = self.getCvar('rankLimit').getInt()
+        self.game.ranked = self.getCvar('ranked').getBoolean()
+        self.game.serverDescription = self.getCvar('serverDescription').getString()
+        self.game.teamBalance = self.getCvar('teamBalance').getBoolean()
+        self.game.thirdPersonVehicleCameras = self.getCvar('thirdPersonVehicleCameras').getBoolean()
         
 
     def getMap(self):
@@ -710,27 +713,10 @@ class Bfbc2Parser(b3.parser.Parser):
         except Bfbc2CommandFailedError, err:
             self.error(err)
             return
-        self.debug('Get cvar %s = [%s]', cvarName, words)
+        self.debug('Get cvar %s = %s', cvarName, words)
         
         if words and len(words) == 1:
-            value = words[0]
-            
-            val = None
-            
-            if type(value) == tuple and len(value) == 1:
-                if value[0] == 'true':
-                    val = True
-                elif value[0] == 'false':
-                    val = False
-                elif value[0] == '':
-                    val = ''
-                else:
-                    try:
-                        val = int(value[0])
-                    except ValueError:
-                        val = value[0]
-                
-            return b3.cvar.Cvar(cvarName, value=val)
+            return b3.cvar.Cvar(cvarName, value=words[0])
         return None
 
     def setCvar(self, cvarName, value):
