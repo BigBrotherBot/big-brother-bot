@@ -72,11 +72,7 @@ class Bfbc2Exception(Exception): pass
 class Bfbc2NetworkException(Bfbc2Exception): pass
 class Bfbc2BadPasswordException(Bfbc2Exception): pass
 
-class Bfbc2CommandFailedError(Exception):
-    response = None
-    def __init__(self, message, response):
-        Exception.__init__(self, message)
-        self.response = response
+class Bfbc2CommandFailedError(Exception): pass
 
 class Bfbc2Connection(object):
     
@@ -138,10 +134,11 @@ class Bfbc2Connection(object):
                     pass
         except socket.error, detail:
             raise Bfbc2NetworkException(detail)
+        
+        if response is None:
+            return None
         decodedResponse = DecodePacket(response)
         printPacket(decodedResponse)
-        if decodedResponse[3][0] != "OK":
-            raise Bfbc2CommandFailedError("%s: %s" % (command, words), decodedResponse[3])
         #[isFromServer, isResponse, sequence, words] = decodedResponse
         return decodedResponse[3]
         
@@ -177,7 +174,7 @@ class Bfbc2Connection(object):
 
         # if the server didn't know about the command, abort
         if response[0] != "OK":
-            raise Bfbc2CommandFailedError(response[1:], response)
+            raise Bfbc2CommandFailedError(response)
 
         
     def readBfbc2Event(self):

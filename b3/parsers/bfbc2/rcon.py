@@ -68,9 +68,6 @@ class Rcon:
                 return response[1:]
             except Bfbc2Exception, err:
                 self.console.warning('RCON: sending \'%s\', %s' % (cmd, err))
-            except Bfbc2CommandFailedError, err:
-                self.console.error('RCON: %s' % err)
-                raise err
         self.console.error('RCON: failed to send \'%s\'', cmd)
         try:
             # we close the connection to make sure to have a brand new one 
@@ -138,10 +135,14 @@ if __name__ == '__main__':
         'teamBalance',
         'thirdPersonVehicleCameras'
     )
-    for var in varlist:
+    #for var in varlist:
         #time.sleep(0.5)
-        print r.write('vars.%s' % var)[0]
+        #print r.write('vars.%s' % var)[0]
         
+    print '----------------------------'
+        
+    for c in r.write(('help',)):
+        print c
 #    import time
 #    for var in varlist:
 #        time.sleep(0.5)

@@ -180,6 +180,9 @@ class Bfbc2Parser(b3.parser.Parser):
             if client:
                 self.debug('Joining %s' % client.name)
                 self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client))
+        
+        # request pbid of connected players
+        self.write(('punkBuster.pb_sv_command', 'pb_sv_list'))
             
 
     def run(self):
