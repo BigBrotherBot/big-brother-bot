@@ -103,6 +103,20 @@ class Setup:
         xml.end()
         xml.data("\n    ")
 
+        # autodoc settings
+        self.add_buffer('\n--AUTODOC-------------------------------------------------------\n')
+        xml.start("settings", name="autodoc")
+        xml.data("\n        ")
+        xml.comment("Autodoc will generate a user documentation for all B3 commands") 
+        xml.data("        ")
+        xml.comment("by default, a html documentation is created in your conf folder")
+        self.add_set("type", "html", "html, htmltable or xml")
+        self.add_set("maxlevel", "100", "if you want to exclude commands reserved for higher levels")
+        self.add_set("destination", "test_doc.html", "Destination can be a file or a ftp url")
+        xml.data("\n    ")
+        xml.end()
+        xml.data("\n    ")
+
         # messages settings
         self.add_buffer('\n--MESSAGES------------------------------------------------------\n')
         xml.start("settings", name="messages")
