@@ -21,10 +21,12 @@
 # 2010/02/24 - 1.2 - Courgette
 #    * uniformize SystemExit and uncatched exception handling between
 #      bot running as a win32 standalone and running as a python script
-#
+# 2010/03/20 - 1.3 -  xlr8or
+#    * finished options -s --setup and -n, --nosetup
+#      where setup launches setup procedure and nosetup prevents bot from entering setup procedure.
 
 __author__  = 'ThorN'
-__version__ = '1.2'
+__version__ = '1.3'
 
 import b3, sys, os, time
 import traceback
@@ -91,7 +93,7 @@ def run_autorestart(args=None):
             print 'Quit'
             break
 
-def run(config=None):
+def run(config=None, nosetup=False):
     if config:
         config = b3.getAbsolutePath(config)
     else:
@@ -105,13 +107,16 @@ def run(config=None):
                 break
 
     if not config:
-        #Setup(config)
-        raise SystemExit('ERROR: Could not find config file, Please run B3 with option: --setup or -s')
+        # This happens when no config was specified on the commandline and the default configs are missing! 
+        if nosetup:
+            raise SystemExit('ERROR: Could not find config file, Please run B3 with option: --setup or -s')
+        else:
+            Setup(config)
 
-    b3.start(config)
+    b3.start(config, nosetup)
 
-def run_setup():
-    Setup()
+def run_setup(config=None):
+    Setup(config)
     raise SystemExit('Configfile generated. Ready to restart!')
 
 def main():
@@ -124,6 +129,10 @@ def main():
     parser.add_option('-s', '--setup',
                       action='store_true', dest='setup', default=False,
                       help='Setup main b3.xml config file')
+    parser.add_option('-n', '--nosetup',
+                      action="store_true", dest='nosetup', default=False,
+                      help='Do not enter setup mode when config is missing')
+
 
     (options, args) = parser.parse_args()
 
@@ -131,7 +140,7 @@ def main():
         options.config = args[0]
 
     if options.setup:
-        run_setup()
+        run_setup(config=options.config)
 
     if options.restart:
         if options.config:
@@ -140,7 +149,7 @@ def main():
             run_autorestart([])
     else:
         try:
-            run(config=options.config)
+            run(config=options.config, nosetup=options.nosetup)
         except SystemExit, msg:
             print msg
             if sys.stdout != sys.__stdout__:

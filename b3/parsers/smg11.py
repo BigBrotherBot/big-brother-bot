@@ -44,10 +44,13 @@
 #   a lot of freedom
 # 07/03/2010 - 0.8 - Courgette
 # * fix bug introduced in 0.6 which messed up clients cid as soon as they are chatting...
+# 08/03/2010 - 0.9 - Courgette
+# * should fix the bot's team issue
+#
 
 
 __author__  = 'xlr8or, Courgette'
-__version__ = '0.8'
+__version__ = '0.9'
 
 import re, string, thread, time, threading
 import b3
@@ -249,6 +252,9 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
             else:
                 if not bclient.has_key('name'):
                     bclient['name'] = self._empty_name_default
+
+                if bclient.has_key('team'):
+                    bclient['team'] = self.getTeam(bclient['team'])
 
                 if bclient.has_key('guid'):
                     guid = bclient['guid']
