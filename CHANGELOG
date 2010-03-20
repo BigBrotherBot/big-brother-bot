@@ -1,10 +1,10 @@
-1.2.2b -> 1.3.0
+1.2.1 -> 1.3.0
 ----
-75 files were changed! We strongly recommend updating the complete bot!
+78 files were changed (in 339 commits)! We strongly recommend updating the complete bot!
 A list of changed files is available after release here:
 github.com/BigBrotherBot/big-brother-bot/compare/v1.2.1...v1.3.0
 ----
-- Setup procedure added. Initiated with option --setup or -s 
+- Setup procedure added. Initiated with option -s, --setup (can be overridden by -n, --nosetup option)
 - b3/plugins/censor.py: Fixed censor.py badname functionality.
 	(Also compatible with censorurt)
 - Total makeover of the complete cod parser series
