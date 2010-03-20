@@ -115,8 +115,8 @@ def run(config=None, nosetup=False):
 
     b3.start(config, nosetup)
 
-def run_setup():
-    Setup()
+def run_setup(config=None):
+    Setup(config)
     raise SystemExit('Configfile generated. Ready to restart!')
 
 def main():
@@ -140,7 +140,7 @@ def main():
         options.config = args[0]
 
     if options.setup:
-        run_setup()
+        run_setup(config=options.config)
 
     if options.restart:
         if options.config:
