@@ -7,3 +7,5 @@
 *.log.5
 releases/*
 build/*
+py2exe_builder/Output/
+
