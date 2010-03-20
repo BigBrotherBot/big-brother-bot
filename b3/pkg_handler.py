@@ -19,9 +19,13 @@
 # CHANGELOG:
 # 05/01/2009 - 1.1.1 - Courgette
 #    * make PkgResourcesStandIn.version('b3') work with py2exe build
+# 20/03/2010 - 1.2 - Courgette
+#    * make sure to read the version from the PKG-INFO file if found in the b3 module
+#      even when setup_tools are installed on the system
+#
 
 __author__  = 'ThorN'
-__version__ = '1.1.1'
+__version__ = '1.2'
 
 import os, sys, re
 from b3.functions import main_is_frozen
@@ -33,7 +37,13 @@ class PkgResources:
     def version(self, module):
         version = '<unknown>'
         try:
-            version = pkg_resources.get_distribution(module).version
+            if os.path.isfile(os.path.join(self.resource_directory(module), 'PKG-INFO')):
+                ## we need this in the case the user installed B3 from sources (copying the b3.egg-in
+                ## folder) and then updates just the b3 folder but still have setup_tools installed
+                ## on his system 
+                version = getVersionFromFile(os.path.join(self.resource_directory(module), 'PKG-INFO'))
+            else:
+                version = pkg_resources.get_distribution(module).version
         except pkg_resources.DistributionNotFound:
             # must not be installed as an egg
             pkg_handler = PkgResourcesStandIn()
@@ -59,13 +69,7 @@ class PkgResourcesStandIn:
             
         for p in searchDirectories:
             if os.path.isfile(p):            
-                f = file(p, 'r')                
-                for line in f:
-                    if line.lower().startswith('version:'):
-                        version = re.sub('[^A-Za-z0-9.]+', '-', line.split(':',1)[1].strip().replace(' ','.'))
-                        break
-                f.close()
-                break
+                version = getVersionFromFile(p)
 
         return version
 
@@ -77,6 +81,18 @@ class PkgResourcesStandIn:
             # which happens when running from the py2exe build
             return os.path.dirname(sys.executable)
         return self.resource_directory('b3')
+
+def getVersionFromFile(filename):
+    version = None
+    if os.path.isfile(filename):            
+        f = file(filename, 'r')                
+        for line in f:
+            if line.lower().startswith('version:'):
+                version = re.sub('[^A-Za-z0-9.]+', '-', line.split(':',1)[1].strip().replace(' ','.'))
+                break
+        f.close()
+    return version
+
 
 pkg_handler = None
 try:
