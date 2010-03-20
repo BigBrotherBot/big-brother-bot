@@ -183,7 +183,16 @@ class Bfbc2Parser(b3.parser.Parser):
         
         # request pbid of connected players
         self.write(('punkBuster.pb_sv_command', 'pb_sv_list'))
-            
+        updatethread = threading.Thread(target=self.updatePlayers)
+        updatethread.start()
+           
+    def updatePlayers(self):
+        """Update player list to detect team changes"""
+        while self.working:
+            self.debug('Updating Player List')
+            self.sync()
+            time.sleep(5)
+        self.debug('End Updating Player List')
 
     def run(self):
         """Main worker thread for B3"""
