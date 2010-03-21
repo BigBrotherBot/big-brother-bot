@@ -137,8 +137,8 @@ def start(configFile):
 
         try:
             parser = loadParser(parserType)
-        except ImportError:
-            raise SystemExit("CRITICAL: Cannot find parser '%s'. Check you main config file (b3.xml)\nB3 failed to start"% parserType)
+        except ImportError, err:
+            raise SystemExit("CRITICAL: Cannot find parser '%s'. Check you main config file (b3.xml)\nB3 failed to start.\n%r"% (parserType, err))
     
         extplugins_dir = conf.getpath('plugins', 'external_dir');
         print "Using external plugin directory: %s" % extplugins_dir
