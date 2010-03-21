@@ -4,4 +4,8 @@
 		<set name="max_ping">500</set>
 		<set name="max_ping_duration">90</set>
 	</settings>
+	<settings name="commands">
+		<!-- The command level for !ci -->
+		<set name="ci">20</set>
+	</settings>
 </configuration>

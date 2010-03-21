@@ -19,6 +19,8 @@
 # $Id: q3a.py 103 2006-04-14 16:23:10Z thorn $
 #
 # CHANGELOG
+#    21/03/2010 - 1.3.4 - Bakes
+#    * rotateMap() function added to make the admin plugin more BFBC2-compatible.
 #    31/01/2010 - 1.3.3 -  xlr8or
 #    * Fixed a few  typos
 #    26/01/2010 - 1.3.2 -  xlr8or
@@ -46,7 +48,7 @@
 
 
 __author__  = 'ThorN'
-__version__ = '1.3.3'
+__version__ = '1.3.4'
 
 import re, string
 import b3

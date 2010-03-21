@@ -58,7 +58,6 @@
 		<set name="say">20</set>
 		<set name="status">20</set>
 		<set name="leveltest-lt">20</set>
-		<set name="ci">20</set>
 		<set name="poke">20</set>
 
 		<set name="b3">9</set>
