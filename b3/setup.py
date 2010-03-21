@@ -7,7 +7,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -16,9 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#
+# CHANGELOG:
+# 2010/03/21 - 0.2.1 - Courgette
+#    * fix bug on config path which showed up only when run as a .exe
+#
 
 __author__  = 'xlr8or'
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 
 import platform, urllib2, shutil, os, sys, time, zipfile
 from functions import main_is_frozen
@@ -41,7 +46,7 @@ class Setup:
     def __init__(self, config=None):
         if config:
             self._config = config
-        if self.getB3Path() != "":
+        elif self.getB3Path() != "":
             self._config = self.getB3Path() + "\\conf\\b3.xml"
         print self._config
         self.introduction()
@@ -103,6 +108,20 @@ class Setup:
         xml.end()
         xml.data("\n    ")
 
+        # autodoc settings
+        self.add_buffer('\n--AUTODOC-------------------------------------------------------\n')
+        xml.start("settings", name="autodoc")
+        xml.data("\n        ")
+        xml.comment("Autodoc will generate a user documentation for all B3 commands") 
+        xml.data("        ")
+        xml.comment("by default, a html documentation is created in your conf folder")
+        self.add_set("type", "html", "html, htmltable or xml")
+        self.add_set("maxlevel", "100", "if you want to exclude commands reserved for higher levels")
+        self.add_set("destination", "test_doc.html", "Destination can be a file or a ftp url")
+        xml.data("\n    ")
+        xml.end()
+        xml.data("\n    ")
+
         # messages settings
         self.add_buffer('\n--MESSAGES------------------------------------------------------\n')
         xml.start("settings", name="messages")
@@ -129,16 +148,16 @@ class Setup:
         # plugins
         self.add_buffer('\n--INSTALLING PLUGINS--------------------------------------------\n')
         xml.start("plugins")
-        self.add_plugin("censor", "@b3/conf/plugin_censor.xml")
-        self.add_plugin("spamcontrol", "@b3/conf/plugin_spamcontrol.xml")
-        self.add_plugin("tk", "@b3/conf/plugin_tk.xml")
-        self.add_plugin("stats", "@b3/conf/plugin_stats.xml")
-        self.add_plugin("pingwatch", "@b3/conf/plugin_pingwatch.xml")
-        self.add_plugin("adv", "@b3/conf/plugin_adv.xml")
-        self.add_plugin("status", "@b3/conf/plugin_status.xml")
-        self.add_plugin("welcome", "@b3/conf/plugin_welcome.xml")
+        self.add_plugin("censor", "@conf/plugin_censor.xml")
+        self.add_plugin("spamcontrol", "@conf/plugin_spamcontrol.xml")
+        self.add_plugin("tk", "@conf/plugin_tk.xml")
+        self.add_plugin("stats", "@conf/plugin_stats.xml")
+        self.add_plugin("pingwatch", "@conf/plugin_pingwatch.xml")
+        self.add_plugin("adv", "@conf/plugin_adv.xml")
+        self.add_plugin("status", "@conf/plugin_status.xml")
+        self.add_plugin("welcome", "@conf/plugin_welcome.xml")
         if self._set_punkbuster == "on":
-            self.add_plugin("punkbuster", "@b3/conf/plugin_punkbuster.xml")
+            self.add_plugin("punkbuster", "@conf/plugin_punkbuster.xml")
             xml.data("\n        ")
         else:
             xml.data("\n        ")
@@ -149,6 +168,7 @@ class Setup:
         xml.comment("The next plugins are external, 3rd party plugins and should reside in the external_dir.")
         self.add_plugin("xlrstats", self._set_external_dir+"/conf/xlrstats.xml")
         #self.add_plugin("registered", self._set_external_dir+"/conf/plugin_registered.xml", "Trying to download Registered", "http://www.bigbrotherbot.com/forums/downloads/?sa=downfile&id=22")
+        #self.add_plugin("countryfilter", self._set_external_dir+"/conf/countryfilter.xml", "Trying to download Countryfilter", "http://github.com/xlr8or/b3-plugin-countryfilter/zipball/master")
 
         # final comments
         xml.data("\n        ")
@@ -322,7 +342,10 @@ class Setup:
         absPath = self.getAbsolutePath(self._set_external_dir)
         localName = self.url2name(url)
         req = urllib2.Request(url)
-        r = urllib2.urlopen(req)
+        try:
+            r = urllib2.urlopen(req)
+        except Exception, msg:
+            print('Download failed: %s' % msg)
         if r.info().has_key('Content-Disposition'):
             # If the response has Content-Disposition, we take file name from it
             localName = r.info()['Content-Disposition'].split('filename=')[1]
@@ -330,15 +353,19 @@ class Setup:
                 localName = localName[1:-1]
         elif r.url != url: 
             # if we were redirected, the real file name we take from the final URL
-            localName = url2name(r.url)
+            localName = self.url2name(r.url)
         if localFileName: 
             # we can force to save the file as specified name
             localName = localFileName
+        packageLocation = absPath+"/packages/"
         localName = absPath+"/packages/"+localName
+        if not os.path.isdir( packageLocation ):
+            os.mkdir( packageLocation )
         f = open(localName, 'wb')
         f.write(r.read())
         f.close()
         self.extract(localName, absPath)
+        #self.extract(localName, packageLocation)
     
     def extract(self, filename, dir):
         zf = zipfile.ZipFile( filename )

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.com)
 # Copyright (C) 2005 Michael "ThorN" Thornton
@@ -17,52 +18,42 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # Example:
-# setup.py dev sdist
-# setup.py dev bdist_egg
+# setup.py (for a release)
+# setup.py beta (for a beta package)
+#
 
-__author__  = 'ThorN'
-__version__ = '1.0.0'
+__author__  = 'ThorN, xlr8or'
+__version__ = '2.0.0'
 
 
-import ez_setup
+import ez_setup, os, shutil, sys
 ez_setup.use_setuptools()
-
 from setuptools import setup, find_packages
 
-import sys
-
-# use 'register upload' to upload to pypi
-if len(sys.argv) == 1:
-    sys.argv += ['beta', 'sdist', '--formats=zip']
-
-setup(
-    name = "b3",
-    version = "1.2.2",
-    packages = find_packages(),
-    extras_require = { 'mysql' : 'MySQL-python', 'elementtree' : 'elementtree' },
-    package_data = {
-        '': ['conf/*.xml', 'extplugins/conf/*.xml', 'docs/*', 'CHANGELOG', 'README']
-    },
-    zip_safe = False,
-    #download_url = 'http://b3.python-hosting.com/browser/releases/',
-    author = 'Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or)',
-    author_email = "bigbrotherbot@gmail.com",
-    description = "BigBrotherBot (B3) is a cross-platform, cross-game game administration bot. Features in-game administration of game servers, multiple user access levels, and database storage. Currently include parsers for Call of Duty 1 to 5, Urban Terror (ioUrT), World of Padman ",
-    long_description = """\
+_setupinfo = {
+    'name' : "b3",
+    'version' : "1.3.0",
+    'packages' : find_packages(),
+    'extras_require' : { 'mysql' : 'MySQL-python' },
+    'zip_safe' : False,
+    'author' : 'Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Léveil (Courgette)',
+    'author_email' : "bigbrotherbot@gmail.com",
+    'description' : "BigBrotherBot (B3) is a cross-platform, cross-game game administration bot. Features in-game administration of game servers, multiple user access levels, and database storage. Currently include parsers for Call of Duty 1 to 5, Urban Terror (ioUrT), World of Padman, ETpro, Smokin' Guns, BFBC2(beta)",
+    'long_description' : """\
 Big Brother Bot B3 is a complete and total server administration package for online games. B3 is designed primarily to keep your server free from the derelicts of online gaming, but offers more, much more. With the stock configuration files, B3 will will keep your server free from offensive language, and team killers alike. A completely automated and customizable warning system will warn the offending players that this type of behavior is not allowed on your server, and ultimately kick, and or ban them for a predetermined time limit.
 
-B3 was designed to be easily ported to other online games. Currently, B3 is in production for the Call of Duty series, Urban Terror (ioUrT), etpro and World of Padman since these games are based on the Quake III Arena engine, conversion to any game using the engine should be easy.
+B3 was designed to be easily ported to other online games. Currently, B3 is in production for the Call of Duty series, Urban Terror (ioUrT), etpro, World of Padman and Smokin' Guns since these games are based on the Quake III Arena engine, conversion to any game using the engine should be easy. Connecting B3 to the FrostBite engine for Battle Field Bad Company 2 is currently under development.
 
 Plugins provide much of the functionality for B3. These plugins can easily be configured. An SDK will be provided to make your own plugins.
 """,
-    license = "GPL",
-    url = "http://www.bigbrotherbot.com",
-    entry_points = {
+    'license' : "GPL",
+    'url' : "http://www.bigbrotherbot.com",
+    'entry_points' : {
         'console_scripts': [
             'b3_run = b3.run:main',
         ]
     },
-    classifiers = [
+    'classifiers' : [
         'Development Status :: 4 - Beta',
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
@@ -74,4 +65,13 @@ Plugins provide much of the functionality for B3. These plugins can easily be co
         'Topic :: System :: Logging',
         'Topic :: Utilities'
     ]
-)
+}
+
+
+# use 'register upload' to upload to pypi
+if len(sys.argv) == 1 or sys.argv[1] == 'release':
+    sys.argv = ['setup.py', 'prepare']
+    setup(**_setupinfo)
+    shutil.copy ('b3.egg-info/PKG-INFO', 'b3/PKG-INFO')
+    sys.argv = ['setup.py', 'release']
+    setup(**_setupinfo)
