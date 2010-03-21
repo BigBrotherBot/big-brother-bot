@@ -1,6 +1,154 @@
+2010-03-20  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/conf/b3.xml, b3/conf/b3.xml.distribution, b3/run.py,
+	b3/setup.py: Setup procedure and default b3.xml b3.xml.distribution
+	modified.
+
+2010-03-20  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/__init__.py, b3/run.py: * finished options -s --setup and -n, --nosetup where setup launches
+	setup procedure and nosetup prevents bot from entering setup
+	procedure.
+
+2010-03-14  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: minor changes to setup.py
+
+2010-03-11  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/bfbc2/CommandConsole.py,
+	b3/parsers/bfbc2/EventConsole.py, b3/parsers/bfbc2/__init__.py,
+	b3/parsers/bfbc2/bfbc2Connection.py, b3/parsers/bfbc2/rcon.py: 
+	removed beta parser
+
+2010-03-11  xlr8or <xlr8or@xlr8or.com>
+
+	* MANIFEST.in, b3/PKG-INFO, setup.cfg, setup.py: rewrite of the
+	setup (packaging) scripts for release of v1.3.0
+
+2010-03-11  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit eae4fd0204f10f3ef5061e0bdfa91801d3d70501 Author:
+	Courgette <courgette@ubu-team.org> Date:   Wed Mar 10 02:49:37 2010
+	+0100
+
+2010-03-10  Courgette <courgette@ubu-team.org>
+
+	* b3/parser.py, b3/parsers/bfbc2/__init__.py,
+	b3/parsers/bfbc2/bfbc2Connection.py, b3/parsers/bfbc2/rcon.py,
+	b3/parsers/bfbc2_rcon.py, b3/plugins/bfbc2Listener.py: PARSER bfbc2
+	: alpha stage. listening to BFBC2 events, routing them somewhat into
+	B3 events, should be able to send rcon commands.  Need a BFBC2
+	server for tests !!!
+
+2010-03-09  Courgette <courgette@ubu-team.org>
+
+	* b3/parser.py, b3/parsers/bfbc2/CommandConsole.py,
+	b3/parsers/bfbc2/EventConsole.py, b3/parsers/bfbc2/__init__.py,
+	b3/parsers/bfbc2/bfbc2Connection.py, b3/parsers/bfbc2_rcon.py,
+	b3/plugins/bfbc2Listener.py: BFBC2 : add bfbc2Listener.py which is
+	able to listen to BFBC2 events and create a game log file locally.
+	TODO :  * dev the bfbc2_rcon.py class  * build the bfbc2 parser for this gamelog file  * make the bot load bfbc2Listener when bfbc2 parser is choosen in
+	 the b3.xml (a bit like ftpytail) Signed-off-by: Courgette <courgette@ubu-team.org>
+
+2010-03-08  Courgette <courgette@ubu-team.org>
+
+	* : PARSER smg11 : merging
+
+2010-03-07  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG: updated changelog
+
+2010-03-07  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 743a44f6799edc7af0b62065b52314a66b0c2641 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sun Mar 7 10:14:19 2010 +0100
+
+2010-03-07  Courgette <courgette@ubu-team.org>
+
+	* b3/tools/documentationBuilder.py: AUTODOC: make the html export
+	pass the W3C test
+
+2010-03-07  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/smg11.py: PARSER smg11: fix bug introduced in 0.6
+
+2010-03-07  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/smg11.py: PARSER smg11: add two new events
+	(EVT_CLIENT_GAIN_MONEY, EVT_CLIENT_SPEND_MONEY)
+
+2010-03-07  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/admin.py: PLUGIN ADMIN: fix crash on bot startup when
+	loading a plugin which does not requires any config
+
+2010-03-07  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/smg11.py: PARSER smg11: better client auth, better bot
+	recognition, knows how much money players have
+
+2010-03-04  Courgette <courgette@ubu-team.org>
+
+	* : commit 10cef4c622f482f4d69dc3ffba152e9ab2d094ba Author:
+	courgette <courgette@v10117.ovh.net> Date:   Thu Mar 4 21:59:41 2010
+	+0100
+
+2010-02-26  Courgette <courgette@ubu-team.org>
+
+	* b3/tools/documentationBuilder.py: AUTODOC: fix bug making commands
+	with alias appear twice in the results
+
+2010-02-26  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: fix bug when no max skill is available
+
+2010-02-25  Courgette <courgette@ubu-team.org>
+
+	* b3/tools/documentationBuilder.py: AUTODOC html export : fix
+	Internet Explorer issues with logo Conflicts: 	b3/tools/documentationBuilder.py
+
+2010-02-24  Courgette <courgette@ubu-team.org>
+
+	* b3/__init__.py, b3/run.py: displays user friendly error message
+	when config options are missing.  simplify the differencies between
+	the win32 standalone and python script in the way the bot handles
+	SystemExit and Exceptions
+
+2010-02-25  Courgette <courgette@ubu-team.org>
+
+	* b3/tools/documentationBuilder.py: AUTODOC html export : fix
+	Internet Explorer issues with logo
+
+2010-02-24  Courgette <courgette@ubu-team.org>
+
+	* b3/__init__.py, b3/run.py: displays user friendly error message
+	when config options are missing.  simplify the differencies between
+	the win32 standalone and python script in the way the bot handles
+	SystemExit and Exceptions
+
+2010-02-24  Courgette <courgette@ubu-team.org>
+
+	* : merge xlr8or/master
+
+2010-02-24  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt, b3.egg-info/PKG-INFO,
+	b3/extplugins/xlrstats.py, b3/storage.py: Repaired
+	updateTableColumns() bug in xlrstats, also affects storage.py
+
+2010-02-24  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: Repaired self._xlrstatstables bug
+
 2010-02-24  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/extplugins/xlrstats.py: Adding table maintenance on startup
+
+2010-02-23  Courgette <courgette@ubu-team.org>
+
+	* b3/tools/documentationBuilder.py: AUTODOC: html do not show the
+	maxLevel column anymore and pass the w3c xhtml 1.0 transitional test
 
 2010-02-22  xlr8or <xlr8or@xlr8or.com>
 

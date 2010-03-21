@@ -6,6 +6,9 @@ from distutils.core import setup
 import py2exe
 from b3.pkg_handler import PkgResourcesStandIn
 
+if len(sys.argv)==1:
+    sys.argv.append('py2exe')
+
 def listdirectory(path):
     return filter(os.path.isfile, glob.glob(path + os.sep + '*'))
 
@@ -20,7 +23,7 @@ def getVersion():
     
 myDataFiles = [
         ('', ['README']),
-        ('', ['b3.egg-info/PKG-INFO']),
+        ('', ['b3/PKG-INFO']),
         ('docs', listdirectory('b3/docs/')),
         ('conf', listdirectory('b3/conf/')),
         ('extplugins', ['b3/extplugins/xlrstats.py']),

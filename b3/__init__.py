@@ -22,9 +22,11 @@
 #      message and exits.
 # 2010/02/24 - Courgette
 #    * user friendly message on missing config file option
-#
+# 2010/03/20 - 1.1.0 - xl8or (added version)
+#    * ability to disable automatic setup procedure when option -n, --nosetup is passed
 
 __author__ = 'ThorN'
+__version__ = '1.1.0'
 
 import pkg_handler
 from b3.functions import main_is_frozen
@@ -101,7 +103,7 @@ def getAbsolutePath(path):
 
     return os.path.normpath(os.path.expanduser(path))
 
-def start(configFile):
+def start(configFile, nosetup=False):
     configFile = getAbsolutePath(configFile)
     clearScreen()
 
@@ -127,8 +129,12 @@ def start(configFile):
         #print 'Config dir is        : %s' % _confDir
         conf = config.load(configFile)
     else:
-        Setup(configFile)
-        #raise SystemExit('Could not find config file %s' % configFile)
+        # This happens when a config was entered on the commandline, but it does not exist
+        if nosetup:
+            raise SystemExit('Could not find config file %s' % configFile)
+        else:
+            Setup(configFile)
+        
 
     try:
         parserType = conf.get('b3', 'parser')

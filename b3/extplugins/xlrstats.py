@@ -1434,6 +1434,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         cursor = self.query(q)
         r = cursor.getRow()
         max = r['max_skill']
+        if max == None:
+            max = self.defaultskill
         diff = max - self.defaultskill
         if diff < 0:
             self.kill_bonus = 2.0
