@@ -18,6 +18,9 @@
 #
 # CHANGELOG
 #
+#   2010/03/21 - 1.6 - Courgette
+#    * make this plugin game independant by delegating the work to the parser for 
+#      commands !map and !maprotate
 #   2010/03/21 - 1.5 - Courgette
 #    * removed commands : greeting, about, groups, cmdlevel, newgroup, delgroup, editgroup
 #   3/7/2010 - 1.4.6 - Courgette
@@ -51,7 +54,7 @@
 #    Added ci command
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.5'
+__version__ = '1.6'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
@@ -546,23 +549,16 @@ class AdminPlugin(b3.plugin.Plugin):
         """\
         <map> - switch current map
         """
-
         if not data:
             client.message('^7You must supply a map to change to.')
             return
-
-        self.console.say('^7Changing map to %s' % data)
-        time.sleep(1)
-        self.console.write('map %s' % data)
+        self.console.changeMap(data)
 
     def cmd_maprotate(self, data, client, cmd=None):
         """\
         - switch to the next map in rotation
         """
-
-        self.console.say('^7Changing map to next map')
-        time.sleep(1)
-        self.console.write('map_rotate 0')
+        self.console.maprotate()
 
     def cmd_b3(self, data, client, cmd=None):
         """\
