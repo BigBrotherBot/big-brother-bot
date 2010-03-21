@@ -44,9 +44,12 @@
 # * added maps, nextmap, getEasyName for translating map name.
 # 2010/03/16 - 0.6 - Courgette
 # * set client.team whenever we got the info from the BFBC2 server
-# 2010/03/16 - 0.6.1 - Courgetet
+# 2010/03/16 - 0.6.1 - Courgette
 # * fix getCvar
-#
+# 2010/03/21 - 0.7 - Bakes
+# * sync each 5 sec. to detect team changes 
+# 2010/03/21 - 0.7.1 - Courgette
+# * fix bug in getCvar when result is an empty list
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -72,7 +75,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG'
-__version__ = '0.6.1'
+__version__ = '0.7.1'
 
 
 import sys, time, re, string, traceback
@@ -727,8 +730,11 @@ class Bfbc2Parser(b3.parser.Parser):
             return
         self.debug('Get cvar %s = %s', cvarName, words)
         
-        if words and len(words) == 1:
-            return b3.cvar.Cvar(cvarName, value=words[0])
+        if words:
+            if len(words) == 0:
+                return b3.cvar.Cvar(cvarName, value=None)
+            else:
+                return b3.cvar.Cvar(cvarName, value=words[0])
         return None
 
     def setCvar(self, cvarName, value):
