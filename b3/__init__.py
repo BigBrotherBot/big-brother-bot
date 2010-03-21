@@ -61,10 +61,12 @@ STATE_ALIVE = 2
 STATE_UNKNOWN = 3
 
 #-----------------------------------------------------------------------------------------------------------------------
-def loadParser(pname):
+def loadParser(pname, configFile, nosetup=False):
     if pname == 'changeme':
-        #Setup()
-        raise SystemExit('ERROR: Configfile not setup properly, Please run B3 with option: --setup or -s')
+        if nosetup:
+            raise SystemExit('ERROR: Configfile not setup properly, Please run B3 with option: --setup or -s')
+        else:
+            Setup(configFile)
     name = 'b3.parsers.%s' % pname
     mod = __import__(name)
     components = name.split('.')
@@ -142,7 +144,7 @@ def start(configFile, nosetup=False):
             raise SystemExit('You must supply a parser')
 
         try:
-            parser = loadParser(parserType)
+            parser = loadParser(parserType, configFile, nosetup)
         except ImportError:
             raise SystemExit("CRITICAL: Cannot find parser '%s'. Check you main config file (b3.xml)\nB3 failed to start"% parserType)
     
