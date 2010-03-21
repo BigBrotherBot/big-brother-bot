@@ -9,17 +9,11 @@
 		<set name="unmask">100</set>
 		<set name="runas-su">100</set>
 
-		<set name="cmdlevel">90</set>
 		<set name="pause">90</set>
 		<set name="rebuild">90</set>
-		<set name="ungroup">90</set>
-		<set name="delgroup">90</set>
 		<set name="clientinfo">90</set>
-		<set name="editgroup">90</set>
-		<set name="groups">90</set>
-		<set name="newgroup">90</set>
-
-		<set name="putgroup">89</set>
+		<set name="putgroup">90</set>
+		<set name="ungroup">90</set>
 
 		<set name="permban-pb">80</set>
 		<set name="map">80</set>
@@ -62,7 +56,6 @@
 		<set name="poke">20</set>
 
 		<set name="b3">9</set>
-		<set name="greeting">9</set>
 
 		<set name="seen">2</set>
 		<set name="maps">2</set>
