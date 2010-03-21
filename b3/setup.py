@@ -7,7 +7,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -16,9 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#
+# CHANGELOG:
+# 2010/03/21 - 0.2.1 - Courgette
+#    * fix bug on config path which showed up only when run as a .exe
+#
 
 __author__  = 'xlr8or'
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 
 import platform, urllib2, shutil, os, sys, time, zipfile
 from functions import main_is_frozen
@@ -41,7 +46,7 @@ class Setup:
     def __init__(self, config=None):
         if config:
             self._config = config
-        if self.getB3Path() != "":
+        elif self.getB3Path() != "":
             self._config = self.getB3Path() + "\\conf\\b3.xml"
         print self._config
         self.introduction()
