@@ -1,3 +1,65 @@
+2010-03-21  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/__init__.py: Autostart setup procedure if parser is not valid
+	in config
+
+2010-03-21  xlr8or <xlr8or@xlr8or.com>
+
+	* b3.egg-info/PKG-INFO, b3.egg-info/SOURCES.txt, b3/PKG-INFO: 
+	updated version info 1.3rc1
+
+2010-03-21  Courgette <courgette@ubu-team.org>
+
+	* b3/setup.py: fix .exe specific bug in the setup wizard
+
+2010-03-21  Courgette <courgette@ubu-team.org>
+
+	* py2exe_builder/build_py2exe.bat: cleaning
+
+2010-03-21  Courgette <courgette@ubu-team.org>
+
+	* b3/tools/documentationBuilder.py: fix regression on AUTODOC
+
+2010-03-21  Courgette <courgette@ubu-team.org>
+
+	* : commit ceb75caf1a71c5ccefb95c12e7e55efb5c4d657f Author:
+	Courgette <courgette@ubu-team.org> Date:   Sun Mar 21 00:09:33 2010
+	+0100
+
+2010-03-21  Courgette <courgette@ubu-team.org>
+
+	* py2exe_builder/b3-installer-project.iss, setupPy2exe.py: update
+	exe builder scritps
+
+2010-03-21  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/cod4-v1.1.6.py: remove obsolete parser for cod4
+
+2010-03-21  Courgette <courgette@ubu-team.org>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO: update package inforamtion
+
+2010-03-21  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/b3.xml, b3/conf/b3.xml.distribution: make default config
+	have path settings relative to the main config file instead of
+	having them relative to the b3 install folder
+
+2010-03-20  Courgette <courgette@ubu-team.org>
+
+	* b3/pkg_handler.py: make sure to read the version from the PKG-INFO
+	file if found in the b3 module
+
+2010-03-20  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: Added autodoc settings to setup procedure
+
+2010-03-20  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG, ChangeLogDetailed.txt, b3.egg-info/PKG-INFO,
+	b3.egg-info/SOURCES.txt, b3.egg-info/requires.txt, b3/PKG-INFO: 
+	Version info changed to v1.3.0.prerelease and changelogs updated
+
 2010-03-20  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/conf/b3.xml, b3/conf/b3.xml.distribution, b3/run.py,

@@ -31,10 +31,15 @@ AppCopyright=
 VersionInfoTextVersion=1.0
 VersionInfoProductName=BigBrotherBot
 VersionInfoProductVersion=1.3
-ExtraDiskSpaceRequired=8950624
+ExtraDiskSpaceRequired=11790316
 RestartIfNeededByRun=false
 PrivilegesRequired=none
-WizardImageBackColor=$804000
+WizardImageBackColor=clBlack
+WindowVisible=false
+BackColor=clBlack
+BackColor2=clYellow
+WizardSmallImageFile=C:\Users\Thomas\workspace\BigBrotherBot_big-brother-bot\src\py2exe_builder\WizB3SmallImage.bmp
+WizardImageFile=C:\Users\Thomas\workspace\BigBrotherBot_big-brother-bot\src\py2exe_builder\WizB3Image.bmp
 
 [Languages]
 Name: english; MessagesFile: compiler:Default.isl
@@ -72,6 +77,8 @@ Name: {group}\web\other tools\{cm:Echelon,Echelon}; Filename: http://www.bigbrot
 Name: {group}\web\other tools\{cm:Xlrstats,XLRstats}; Filename: http://www.xlrstats.com/
 Name: {group}\web\artwork; Filename: http://www.bigbrotherbot.com/forums/news-2/banners-n-buttons/
 
+[Dirs]
+Name: {commonappdata}\BigBrotherBot; Permissions: users-full
 
 [Files]
 ;Source: ..\..\dist_py2exe\*; DestDir: {app}; Flags: recursesubdirs

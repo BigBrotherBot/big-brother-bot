@@ -16,6 +16,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
+# 2010/03/21 - 1.1 - Courgette
+#    import cmd_greeting from the admin plugin 
 # 3/4/2009 - 1.0.6 - xlr8or
 #    Added welcome delay setting to config
 # 3/3/2009 - 1.0.5 - xlr8or
@@ -25,10 +27,10 @@
 # 2/26/2009 - 1.0.3 - xlr8or
 #    Do not welcome players that where already welcomed in the last hour
 
-__version__ = '1.0.6'
+__version__ = '1.1'
 __author__    = 'ThorN'
 
-import b3, threading, time
+import b3, threading, time, re
 import b3.events
 import b3.plugin
 
@@ -37,11 +39,22 @@ class WelcomePlugin(b3.plugin.Plugin):
     _newbConnections = 0
     _welcomeFlags = 0
     _welcomeDelay = 0
+    _cmd_greeting_minlevel = None
 
     def onStartup(self):
         self.registerEvent(b3.events.EVT_CLIENT_AUTH)
 
     def onLoadConfig(self):
+        try:
+            self._cmd_greeting_minlevel = self.config.getint('commands', 'greeting')
+        except:
+            self._cmd_greeting_minlevel = 20
+            self.warning('using default value %s for command !greeting' % self._cmd_greeting_minlevel)
+        
+        self._adminPlugin = self.console.getPlugin('admin')
+        if self._adminPlugin:
+            self._adminPlugin.registerCommand(self, 'greeting', self._cmd_greeting_minlevel, self.cmd_greeting)
+            
         self._welcomeFlags = self.config.getint('settings', 'flags')
         self._newbConnections = self.config.getint('settings', 'newb_connections')
         try:
@@ -51,6 +64,38 @@ class WelcomePlugin(b3.plugin.Plugin):
                 self.debug('Welcome delay not in range 15-90 using 30 instead.')
         except:
             self._welcomeDelay = 30
+
+    
+    def cmd_greeting(self, data, client, cmd=None):
+        """\
+        [<greeting>] - set or list your greeting (use 'none' to remove)
+        """
+        if data.lower() == 'none':
+            client.greeting = ''
+            client.save()
+            client.message(self.getMessage('greeting_cleared'))
+        elif data:
+            data = re.sub(r'\$([a-z]+)', r'%(\1)s', data)
+
+            if len(data) > 255:
+                client.message('^7Your greeting is too long')
+            else:
+                try:
+                    client.message('Greeting Test: %s' % (str(data) %
+                        {'name' : client.exactName, 'greeting' : client.greeting, 'maxLevel' : client.maxLevel, 'group' : getattr(client.maxGroup, 'name', None), 'connections' : client.connections}))
+                except ValueError, msg:
+                    client.message(self.getMessage('greeting_bad', msg))
+                    return False
+                else:
+                    client.greeting = data
+                    client.save()
+                    client.message(self.getMessage('greeting_changed', client.greeting))
+                    return True
+        else:
+            if client.greeting:
+                client.message(self.getMessage('greeting_yours', client.greeting))
+            else:
+                client.message(self.getMessage('greeting_empty'))
 
     def onEvent(self, event):
         if event.type == b3.events.EVT_CLIENT_AUTH:

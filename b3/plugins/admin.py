@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#
+#   2010/03/21 - 1.5 - Courgette
+#    * removed commands : greeting, about, groups, cmdlevel, newgroup, delgroup, editgroup
 #   3/7/2010 - 1.4.6 - Courgette
 #    * fix crash on bot startup when loading a plugin which does not requires any config
 #      file but still registers commands
@@ -48,7 +51,7 @@
 #    Added ci command
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.4.6'
+__version__ = '1.5'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
@@ -318,40 +321,6 @@ class AdminPlugin(b3.plugin.Plugin):
 
         return None
 
-    def setCmdLevel(self, command, level):
-        if command.__class__ is not Command:
-            try:
-                command = self._commands[command]
-            except:
-                raise KeyError, '^7Could not find command %s' % command
-                return False
-
-        level = str(level)
-        if level.lower() == 'none':
-            level = None
-        elif level.count('-') == 1:
-            level = level.split('-', 1)
-            level = (int(level[0]), int(level[1]))
-        else:
-            level = (int(level), 100)
-
-        if command.level == level:
-            raise Warning, '^7Command %s is already level %s' % (command.command, level)
-            return True
-        else:
-            if level == None:
-                level = 'none';
-            elif level[1] == 100:
-                level = level[0]
-            else:
-                level = '%s-%s' % level
-
-            self.config.set('commands', command.command, level)
-            self.saveConfig()
-
-            command.level = level
-            return True
-
     def getAdmins(self):
         return self.console.clients.getClientsByLevel(self.config.getint('settings', 'admins_level'))
 
@@ -533,36 +502,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 client.message('^7Un-Masked %s' % sclient.name)
             sclient.message('^7Un-Masked')
 
-    def cmd_greeting(self, data, client, cmd=None):
-        """\
-        [<greeting>] - set or list your greeting (use 'none' to remove)
-        """
-        if data.lower() == 'none':
-            client.greeting = ''
-            client.save()
-            client.message(self.getMessage('greeting_cleared'))
-        elif data:
-            data = re.sub(r'\$([a-z]+)', r'%(\1)s', data)
 
-            if len(data) > 255:
-                client.message('^7Your greeting is too long')
-            else:
-                try:
-                    client.message('Greeting Test: %s' % (str(data) %
-                        {'name' : client.exactName, 'greeting' : client.greeting, 'maxLevel' : client.maxLevel, 'group' : getattr(client.maxGroup, 'name', None), 'connections' : client.connections}))
-                except ValueError, msg:
-                    client.message(self.getMessage('greeting_bad', msg))
-                    return False
-                else:
-                    client.greeting = data
-                    client.save()
-                    client.message(self.getMessage('greeting_changed', client.greeting))
-                    return True
-        else:
-            if client.greeting:
-                client.message(self.getMessage('greeting_yours', client.greeting))
-            else:
-                client.message(self.getMessage('greeting_empty'))
 
     def cmd_clear(self, data, client, cmd=None):
         """\
@@ -677,11 +617,6 @@ class AdminPlugin(b3.plugin.Plugin):
         else:
             cmd.sayLoudOrPM(client, '%s ^7- uptime: [^2%s^7]' % (b3.version, functions.minutesStr(self.console.upTime() / 60.0)))
 
-    def cmd_about(self, data, client, cmd=None):
-        """\
-        <plugin> - Get information about a particular plugin
-        """
-        pass
 
     def cmd_enable(self, data, client, cmd=None):
         """\
@@ -801,26 +736,6 @@ class AdminPlugin(b3.plugin.Plugin):
         cmd.sayLoudOrPM(client, string.join(names, ', '))
         return True
 
-    def cmd_groups(self, data, client, cmd=None):
-        """\
-        <name> - lists all the player's groups
-        """
-        m = self.parseUserCmd(data)
-        if m:
-            lclient = self.findClientPrompt(m[0], client)
-        else:
-            lclient = client
-
-        if lclient:
-            if len(lclient.groups):
-                glist = []
-                for group in lclient.groups:
-                    glist.append(group.keyword);
-
-                cmd.sayLoudOrPM(client, self.getMessage('groups_in', lclient.exactName, string.join(glist, ', ')))
-                return True
-            else:
-                cmd.sayLoudOrPM(client, self.getMessage('groups_none', lclient.exactName))
 
     def cmd_admins(self, data, client, cmd=None):
         """\
@@ -888,83 +803,6 @@ class AdminPlugin(b3.plugin.Plugin):
 
         return True
 
-    def cmd_cmdlevel(self, data, client, cmd=None):
-        """\
-        <command> <level> - set a commands level
-        """
-        m = re.match('^([a-z]+) ([0-9]+)$', data, re.I)
-        if not m:
-            client.message('^7Invalid parameters')
-            return False
-
-        cmd   = m.group(1)
-        level = int(m.group(2))
-
-        try:
-            self.setCmdLevel(cmd, level)
-        except Warning, msg:
-            client.message(str(msg))
-        except KeyError, msg:
-            client.message(str(msg))
-        except Exception, msg:
-            client.message('^7Error setting level for %s: %s' % (cmd, str(msg)))
-        else:
-            client.message('^7Command %s set to level %s' % (cmd, level))
-            return True
-
-    def cmd_newgroup(self, data, client, cmd=None):
-        """\
-        <keyword> <level> <name> - create a new group
-        """
-        m = re.match('^([a-z]+) ([0-9]+) (.*)$', data, re.I)
-        if not m:
-            client.message('^7Invalid parameters')
-            return False
-
-        keyword, level, name = m.groups()
-
-        try:
-            group = clients.Group(keyword=keyword)
-            group = self.console.storage.getGroup(group)
-            client.message('^7Group %s already exists' % group.keyword)
-            return False
-        except:
-            raise NotImplementedError, 'Not implemented !newgroup'
-            #group = clients.Group.new(keyword=keyword, name=name, level=level)
-            client.message('^7Group %s created' % group.keyword)
-            return True
-
-    def cmd_delgroup(self, data, client, cmd=None):
-        """\
-        <group> - remove a group and remove all clients from the group
-        """
-        m = re.match('^([a-z]+)$', data, re.I)
-        if not m:
-            client.message('^7Invalid parameters')
-            return False
-
-        keyword = m.group(1)
-
-        try:
-            group = clients.Group(keyword=keyword)
-            group = self.console.storage.getGroup(group)
-        except:
-            client.message('^7Group %s does not exist' % keyword)
-            return False
-
-        raise NotImplementedError, 'Not implemented !delgroup'
-
-        # remove all the clients from the group
-        for c in group.clients:
-            c.removeGroup(group)
-
-        group.destroySelf()
-
-        for cid, c in self.console.clients.items():
-            c.refreshLevel()
-
-        client.message('^7Deleted group %s' % keyword)
-        return True
 
     def cmd_makereg(self, data, client, cmd=None):
         """\
@@ -1067,42 +905,6 @@ class AdminPlugin(b3.plugin.Plugin):
             else:
                 client.message('^7%s^7 is not in group %s' % (sclient.exactName, group.name))
 
-    def cmd_editgroup(self, data, client, cmd=None):
-        """\
-        <group> <-n|-k|-l> <value> - change a group's settings
-        """
-        m = re.match('^([a-z]+) -([a-z]) ([a-z0-9 ^]+)$', data, re.I)
-        if not m:
-            client.message('^7Invalid parameters')
-            return False
-
-        keyword, option, value = m.groups()
-
-        try:
-            group = clients.Group(keyword=keyword)
-            group = self.console.storage.getGroup(group)
-            mykeyword = group.keyword
-        except:
-            client.message('^7Group %s does not exist' % keyword)
-            return False
-
-        raise NotImplementedError, 'Not implemented !editgroup'
-
-        if option == 'n':
-            group.name = value
-            client.message('^7Changed name of group %s to %s' % (mykeyword, group.name))
-        elif option == 'l':
-            group.level = int(value)
-
-            # refresh levels for all the connected clients
-            for cid,c in self.console.clients.items():
-                if group in c.groups:
-                    c.refreshLevel()
-
-            client.message('^7Changed level of group %s to %s' % (mykeyword, group.level))
-        elif option == 'k':
-            group.keyword = value
-            client.message('^7Changed keyword of group %s to %s' % (mykeyword, group.keyword))
 
     def cmd_iamgod(self, data, client, cmd=None):
         """\
@@ -1128,21 +930,18 @@ class AdminPlugin(b3.plugin.Plugin):
             self.error('iamgod command not found')
             return False
         else:
-            try:
-                self.setCmdLevel(command, 'none')
-            except Exception, msg:
-                self.error('problem setting iamgod command level  %s', msg)
-            else:
-                if group in client.groups:
-                    client.message('^7You are already a %s' % group.exactName)
-                    return True
+            command.level = 'none'
 
-                client.setGroup(group)
-                client.save()
+            if group in client.groups:
+                client.message('^7You are already a %s' % group.exactName)
+                return True
 
-                client.message('^7You are now a %s' % group.name)
+            client.setGroup(group)
+            client.save()
 
-                self.bot('^7Created %s %s - %s', group.name, client.name, client.guid)
+            client.message('^7You are now a %s' % group.name)
+
+            self.bot('^7Created %s %s - %s', group.name, client.name, client.guid)
 
             return True
 
