@@ -622,7 +622,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
         self.console.say('^7Changing map to next map')
         time.sleep(1)
-        self.console.write('map_rotate 0')
+        self.console.rotateMap()
 
     def cmd_b3(self, data, client, cmd=None):
         """\

@@ -521,6 +521,10 @@ class Q3AParser(b3.parser.Parser):
                 #self.verbose('getPlayerScores() = Line did not match format: %s' % line)
         
         return players
+
+    def rotateMap(self):
+        self.write('map_rotate 0')
+        return True
         
     def getPlayerScores(self):
         data = self.write('status')

@@ -338,6 +338,10 @@ class Bfbc2Parser(b3.parser.Parser):
         if not data:
             return None
         return data[4]
+
+    def rotateMap(self):
+        self.write(('admin.runNextLevel',))
+        return True
     
 
 
