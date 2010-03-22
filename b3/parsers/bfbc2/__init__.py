@@ -316,23 +316,40 @@ class Bfbc2Parser(b3.parser.Parser):
     def getServerVars(self):
         """Update the game property from server fresh data"""
         
-        self.game.is3dSpotting = self.getCvar('3dSpotting').getBoolean()
-        self.game.bannerUrl = self.getCvar('bannerUrl').getString()
-        self.game.crossHair = self.getCvar('crossHair').getBoolean()
-        self.game.currentPlayerLimit = self.getCvar('currentPlayerLimit').getInt()
-        self.game.friendlyFire = self.getCvar('friendlyFire').getBoolean()
-        self.game.hardCore = self.getCvar('hardCore').getBoolean()
-        self.game.killCam = self.getCvar('killCam').getBoolean()
-        self.game.maxPlayerLimit = self.getCvar('maxPlayerLimit').getInt()
-        self.game.miniMap = self.getCvar('miniMap').getBoolean()
-        self.game.miniMapSpotting = self.getCvar('miniMapSpotting').getBoolean()
-        self.game.playerLimit = self.getCvar('playerLimit').getInt()
-        self.game.punkBuster = self.getCvar('punkBuster').getBoolean()
-        self.game.rankLimit = self.getCvar('rankLimit').getInt()
-        self.game.ranked = self.getCvar('ranked').getBoolean()
-        self.game.serverDescription = self.getCvar('serverDescription').getString()
-        self.game.teamBalance = self.getCvar('teamBalance').getBoolean()
-        self.game.thirdPersonVehicleCameras = self.getCvar('thirdPersonVehicleCameras').getBoolean()
+        try: self.game.is3dSpotting = self.getCvar('3dSpotting').getBoolean()
+        except: pass
+        try: self.game.bannerUrl = self.getCvar('bannerUrl').getString()
+        except: pass
+        try: self.game.crossHair = self.getCvar('crossHair').getBoolean()
+        except: pass
+        try: self.game.currentPlayerLimit = self.getCvar('currentPlayerLimit').getInt()
+        except: pass
+        try: self.game.friendlyFire = self.getCvar('friendlyFire').getBoolean()
+        except: pass
+        try: self.game.hardCore = self.getCvar('hardCore').getBoolean()
+        except: pass
+        try: self.game.killCam = self.getCvar('killCam').getBoolean()
+        except: pass
+        try: self.game.maxPlayerLimit = self.getCvar('maxPlayerLimit').getInt()
+        except: pass
+        try: self.game.miniMap = self.getCvar('miniMap').getBoolean()
+        except: pass
+        try: self.game.miniMapSpotting = self.getCvar('miniMapSpotting').getBoolean()
+        except: pass
+        try: self.game.playerLimit = self.getCvar('playerLimit').getInt()
+        except: pass
+        try: self.game.punkBuster = self.getCvar('punkBuster').getBoolean()
+        except: pass
+        try: self.game.rankLimit = self.getCvar('rankLimit').getInt()
+        except: pass
+        try: self.game.ranked = self.getCvar('ranked').getBoolean()
+        except: pass
+        try: self.game.serverDescription = self.getCvar('serverDescription').getString()
+        except: pass
+        try: self.game.teamBalance = self.getCvar('teamBalance').getBoolean()
+        except: pass
+        try: self.game.thirdPersonVehicleCameras = self.getCvar('thirdPersonVehicleCameras').getBoolean()
+        except: pass
         
 
     def getMap(self):
