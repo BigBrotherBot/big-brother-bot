@@ -19,6 +19,8 @@
 # $Id: q3a.py 103 2006-04-14 16:23:10Z thorn $
 #
 # CHANGELOG
+#    2010/03/21 - 1.4 - Courgette
+#    * now implements methods maprotate and changeMap
 #    31/01/2010 - 1.3.3 -  xlr8or
 #    * Fixed a few  typos
 #    26/01/2010 - 1.3.2 -  xlr8or
@@ -46,9 +48,9 @@
 
 
 __author__  = 'ThorN'
-__version__ = '1.3.3'
+__version__ = '1.4'
 
-import re, string
+import re, string, time
 import b3
 import b3.events
 from b3.parsers.punkbuster import PunkBuster
@@ -502,6 +504,16 @@ class Q3AParser(b3.parser.Parser):
 
         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, reason, client))
         client.disconnect()
+
+    def maprotate(self):
+        self.console.say('^7Changing map to next map')
+        time.sleep(1)
+        self.console.write('map_rotate 0')
+        
+    def changeMap(self, map):
+        self.console.say('^7Changing map to %s' % map)
+        time.sleep(1)
+        self.console.write('map %s' % map)
 
     def getPlayerPings(self):
         data = self.write('status')
