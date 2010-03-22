@@ -46,9 +46,11 @@
 # * bot version tells if the bot is built with py2exe
 # 10/03/2010 - 1.4 - Courgette
 # * rconPort is sent 
+# 21/03/2010 - 1.4.1 - Courgette
+# * fix rconPort when update type of ping is sent 
 #
 
-__version__ = '1.4'
+__version__ = '1.4.1'
 __author__  = 'ThorN, Courgette'
 
 import sys
@@ -141,6 +143,7 @@ class PublistPlugin(b3.plugin.Plugin):
             'action' : 'update',
             'ip' : self.console._publicIp,
             'port' : self.console._port,
+            'rconPort' : self.console._rconPort,
             'version' : version,
             'parser' : self.console.gameName,
             'parserversion' : getattr(getModule(self.console.__module__), '__version__', 'Unknown Version'),
