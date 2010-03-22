@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2010/03/22 - 1.14.1 - Courgette
+#   * change maprotate() to rotateMap()
 #   2010/03/21 - 1.14 - Courgette
 #    * create method stubs for inheriting classes to implement
 #   10/03/2010 - v1.13 - Courgette
@@ -57,7 +59,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette'
-__version__ = '1.14'
+__version__ = '1.14.1'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit
@@ -997,7 +999,7 @@ class Parser(object):
         """
         raise NotImplementedError
 
-    def maprotate(self):
+    def rotateMap(self):
         """\
         load the next map/level
         """

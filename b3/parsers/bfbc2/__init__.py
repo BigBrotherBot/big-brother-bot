@@ -50,6 +50,8 @@
 # * sync each 5 sec. to detect team changes 
 # 2010/03/21 - 0.7.1 - Courgette
 # * fix bug in getCvar when result is an empty list
+# 2010/03/21 - 0.7.2 - Bakes
+# * rotateMap() function added for !maprotate functionality.
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -75,7 +77,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG'
-__version__ = '0.7.1'
+__version__ = '0.7.2'
 
 
 import sys, time, re, string, traceback
@@ -338,6 +340,10 @@ class Bfbc2Parser(b3.parser.Parser):
         if not data:
             return None
         return data[4]
+
+    def rotateMap(self):
+        self.write(('admin.runNextLevel',))
+        return True
     
 
 

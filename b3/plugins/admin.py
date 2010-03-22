@@ -18,11 +18,16 @@
 #
 # CHANGELOG
 #
+#   2010/03/22 - 1.6.1 - Courgette
+#   * resolve conflict regarding maprotate/rotateMap
 #   2010/03/21 - 1.6 - Courgette
 #    * make this plugin game independant by delegating the work to the parser for 
 #      commands !map and !maprotate
 #   2010/03/21 - 1.5 - Courgette
 #    * removed commands : greeting, about, groups, cmdlevel, newgroup, delgroup, editgroup
+#   3/21/2010 - 1.4.7 - Bakes
+#    * moved the !ci command to the pingwatch plugin
+#    * moved part of cmd_maprotate to the parser.
 #   3/7/2010 - 1.4.6 - Courgette
 #    * fix crash on bot startup when loading a plugin which does not requires any config
 #      file but still registers commands
@@ -54,7 +59,8 @@
 #    Added ci command
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.6'
+
+__version__ = '1.6.1'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
@@ -71,7 +77,6 @@ import copy
 class AdminPlugin(b3.plugin.Plugin):
     _commands = {}
     _parseUserCmdRE = re.compile(r'^(?P<cid>\'[^\']{2,}\'|[0-9]+|[^\s]{2,}|@[0-9]+)\s?(?P<parms>.*)$')
-    _maxCiPing = 500
     _long_tempban_max_duration = 1440 # 60m/h x 24h = 1440m = 1d
 
     cmdPrefix = '!'
@@ -558,7 +563,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """\
         - switch to the next map in rotation
         """
-        self.console.maprotate()
+        self.console.rotateMap()
 
     def cmd_b3(self, data, client, cmd=None):
         """\
@@ -1816,26 +1821,6 @@ class AdminPlugin(b3.plugin.Plugin):
         elif re.match('^[0-9]+$', cid):
             # failsafe, do a manual client id ban
             self.console.tempban(cid, reason, duration, client)
-
-    def cmd_ci(self, data, client=None, cmd=None):
-        """\
-        <player> - Kick a player that has an interrupted connection
-        """
-
-        m = self.parseUserCmd(data)
-        if not m:
-            client.message('^7Invalid parameters, you must supply a player name')
-            return False
-
-        sclient = self.findClientPrompt(m[0], client)
-        if sclient:
-            for cid,ping in self.console.getPlayerPings().items():
-                if cid == sclient.cid:
-                    if ping > self._maxCiPing:
-                        sclient.kick(self.getReason('ci'), 'ci', client)
-                    else:
-                        client.message('^7%s ^7is not CI' % sclient.exactName)
-                    break
 
     def cmd_poke(self, data, client=None, cmd=None):
         """\

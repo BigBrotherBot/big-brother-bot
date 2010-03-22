@@ -17,13 +17,15 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    03/21/2010 - 1.2.0 - Bakes
+#    Added the !ci command from the admin plugin.
 #    11/30/2005 - 1.1.3 - ThorN
 #    Use PluginCronTab instead of CronTab
 #    8/29/2005 - 1.1.0 - ThorN
 #    Converted to use new event handlers
 
 __author__  = 'ThorN'
-__version__ = '1.1.4'
+__version__ = '1.2.0'
 
 
 
@@ -39,6 +41,7 @@ class PingwatchPlugin(b3.plugin.Plugin):
     _maxPingDuration = 0
     _ignoreTill = 0
     _cronTab = None
+    _maxCiPing = 500
 
     def onStartup(self):
         self.registerEvent(b3.events.EVT_GAME_EXIT)
@@ -47,6 +50,7 @@ class PingwatchPlugin(b3.plugin.Plugin):
         self._ignoreTill = self.console.time() + 120
 
     def onLoadConfig(self):
+        self._minLevel = self.config.get('commands', 'ci')
         self._interval = self.config.getint('settings', 'interval')
         self._maxPing = self.config.getint('settings', 'max_ping')
         self._maxPingDuration = self.config.getint('settings', 'max_ping_duration')
@@ -57,6 +61,8 @@ class PingwatchPlugin(b3.plugin.Plugin):
 
         self._cronTab = b3.cron.PluginCronTab(self, self.check, '*/%s' % self._interval)
         self.console.cron + self._cronTab
+        self._adminPlugin = self.console.getPlugin('admin')
+        self._adminPlugin.registerCommand(self, 'ci', self._minLevel, self.cmd_ci)
 
     def onEvent(self, event):
         if event.type == b3.events.EVT_GAME_EXIT:
@@ -82,3 +88,23 @@ class PingwatchPlugin(b3.plugin.Plugin):
                         else:
                             self.console.verbose('set ping watch %s = %s', cid, ping)
                             client.setvar(self, 'highping', self.console.time())
+
+    def cmd_ci(self, data, client=None, cmd=None):
+        """\
+        <player> - Kick a player that has an interrupted connection
+        """
+
+        m = self._adminPlugin.parseUserCmd(data)
+        if not m:
+            client.message('^7Invalid parameters, you must supply a player name')
+            return False
+
+        sclient = self._adminPlugin.findClientPrompt(m[0], client)
+        if sclient:
+            for cid,ping in self.console.getPlayerPings().items():
+                if cid == sclient.cid:
+                    if ping > self._maxCiPing:
+                        sclient.kick(self.getReason('ci'), 'ci', client)
+                    else:
+                        client.message('^7%s ^7is not CI' % sclient.exactName)
+                    break
