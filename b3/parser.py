@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2010/03/21 - 1.14 - Courgette
+#    * create method stubs for inheriting classes to implement
 #   10/03/2010 - v1.13 - Courgette
 #    * add rconPort for games which have a different rcon port than the game port
 #    * server.game_log option is not mandatory anymore. This makes B3 able to work
@@ -55,7 +57,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette'
-__version__ = '1.13'
+__version__ = '1.14'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit
@@ -911,6 +913,116 @@ class Parser(object):
         except Exception, err:
             self.error("Failed to generate user documentation")
             self.exception(err)
+
+
+    ###############################################################################
+    ##                                                                           ##
+    ##     Inheriting classes must implements the following methods.             ##
+    ##     Plugins that are game independant assume those methods exist          ##
+    ##                                                                           ##
+    ###############################################################################
+
+    def getPlayerList(self):
+        """\
+        Query the game server for connected players.
+        return a dict having players' id for keys and players' data as another dict for values
+        """
+        raise NotImplementedError
+
+    def authorizeClients(self):
+        """\
+        For all connected players, fill the client object with properties allowing to find 
+        the user in the database (usualy guid, or punkbuster id, ip) and call the 
+        Client.auth() method 
+        """
+        raise NotImplementedError
+    
+    def sync(self):
+        """\
+        For all connected players returned by self.getPlayerList(), get the matching Client
+        object from self.clients (with self.clients.getByCID(cid) or similar methods) and
+        look for inconsistencies. If required call the client.disconnect() method to remove
+        a client from self.clients.
+        This is mainly useful for games where clients are identified by the slot number they
+        occupy. On map change, a player A on slot 1 can leave making room for player B who
+        connects on slot 1.
+        """
+        raise NotImplementedError
+    
+    def say(self, msg):
+        """\
+        broadcast a message to all players
+        """
+        raise NotImplementedError
+
+    def message(self, client, text):
+        """\
+        display a message to a given player
+        """
+        raise NotImplementedError
+
+    def kick(self, client, reason='', admin=None, silent=False, *kwargs):
+        """\
+        kick a given players
+        """
+        raise NotImplementedError
+
+    def ban(self, client, reason='', admin=None, silent=False, *kwargs):
+        """\
+        ban a given players
+        """
+        raise NotImplementedError
+
+    def unban(self, client, reason='', admin=None, silent=False, *kwargs):
+        """\
+        unban a given players
+        """
+        raise NotImplementedError
+
+    def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
+        """\
+        tempban a given players
+        """
+        raise NotImplementedError
+
+    def getMap(self):
+        """\
+        return the current map/level name
+        """
+        raise NotImplementedError
+
+    def getMaps(self):
+        """\
+        return the available maps/levels name
+        """
+        raise NotImplementedError
+
+    def maprotate(self):
+        """\
+        load the next map/level
+        """
+        raise NotImplementedError
+        
+    def changeMap(self, map):
+        """\
+        load a given map/level
+        """
+        raise NotImplementedError
+
+    def getPlayerPings(self):
+        """\
+        returns a dict having players' id for keys and players' ping for values
+        """
+        raise NotImplementedError
+
+    def getPlayerScores(self):
+        """\
+        returns a dict having players' id for keys and players' scores for values
+        """
+        raise NotImplementedError
+
+
+
 
 if __name__ == '__main__':
     import config
