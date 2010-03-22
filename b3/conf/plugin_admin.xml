@@ -80,10 +80,8 @@
 	<settings name="messages">
 		<set name="ban_denied">^7Hey %s^7, you're no Elvis, can't ban %s</set>
 		<set name="help_available">^7Available commands: %s</set>
-		<set name="greeting_yours">^7Your greeting is %s</set>
 		<set name="temp_ban_self">^7%s ^7Can't ban yourself newb</set>
 		<set name="groups_in">^7%s^7 is in groups %s</set>
-		<set name="greeting_bad">^7Greeting is not formated properly: %s</set>
 		<set name="say">^7%s^7: %s</set>
 		<set name="player_id">^7[^2%s^7] %s^7</set>
 		<set name="seen">^7%s ^7was last seen on %s</set>
@@ -91,8 +89,6 @@
 		<set name="lookup_found">^7[^2@%s^7] %s^7 (^3%s^7)</set>
 		<set name="kick_self">^7%s ^7Can't kick yourself newb!</set>
 		<set name="groups_welcome">^7You are now a %s</set>
-		<set name="greeting_changed">^7Greeting changed to: %s</set>
-		<set name="greeting_cleared">^7Greeting cleared</set>
 		<set name="warn_denied">%s^7, %s^7 owns you, can't warn</set>
 		<set name="groups_already_in">^7%s^7 is already in group %s</set>
 		<set name="temp_ban_denied">^7Hey %s^7, you're no ^1Red ^7Elvis, can't temp ban %s</set>
@@ -106,7 +102,6 @@
 		<set name="groups_put">^7%s ^7put in group %s</set>
 		<set name="groups_none">^7%s^7 is not in any groups</set>
 		<set name="help_command">^2%s%s ^7%s</set>
-		<set name="greeting_empty">^7Your have no greeting set</set>
 		<set name="warn_self">^7%s ^7Can't warn yourself newb!</set>
 		<set name="regme_regged">^7You are now a %s</set>
 		<set name="help_none">^7You have no available commands</set>

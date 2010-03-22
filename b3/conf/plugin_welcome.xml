@@ -40,5 +40,12 @@
 		<set name="announce_first">^7Everyone welcome $name^7, player number ^3#$id^7, to the server</set>
 		<!-- displayed if a user has a greeting -->
 		<set name="greeting">^7$name^7 joined: $greeting</set>
+
+		<!-- command answers : -->
+		<set name="greeting_empty">^7Your have no greeting set</set>
+		<set name="greeting_yours">^7Your greeting is %s</set>
+		<set name="greeting_bad">^7Greeting is not formated properly: %s</set>
+		<set name="greeting_changed">^7Greeting changed to: %s</set>
+		<set name="greeting_cleared">^7Greeting cleared</set>
 	</settings>
 </configuration>
