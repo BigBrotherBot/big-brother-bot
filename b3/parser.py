@@ -660,8 +660,6 @@ class Parser(object):
                             logTimeStart = logTimeCurrent
                             logTimeLast = 0
                             self.debug('Log time reset %d' % logTimeCurrent)
-                            if not self.replay:
-                                self.input.seek(0, os.SEEK_END)
                         elif not logTimeStart:
                             logTimeStart = logTimeCurrent
 
