@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#    2010/03/23 - 1.14.2 - Bakes
+#   * add message_delay for better BFBC2 interoperability.
 #   2010/03/22 - 1.14.1 - Courgette
 #   * change maprotate() to rotateMap()
 #   2010/03/21 - 1.14 - Courgette
@@ -59,7 +61,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette'
-__version__ = '1.14.1'
+__version__ = '1.14.2'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit
@@ -115,6 +117,7 @@ class Parser(object):
     _settings = {}
     _settings['line_length'] = 65
     _settings['min_wrap_length'] = 100
+    _settings['message_delay'] = 0
 
     _reColor = re.compile(r'\^[0-9a-z]')
     _cron = None

@@ -52,6 +52,13 @@
 # * fix bug in getCvar when result is an empty list
 # 2010/03/21 - 0.7.2 - Bakes
 # * rotateMap() function added for !maprotate functionality.
+# 2010/03/21 - 0.7.3 - Bakes
+# * message_delay added so that self.say doesn't spew out spam.
+# 2010/03/21 - 0.7.4 - Bakes
+# * say messages are now queued instead of hanging the bot.
+# 2010/03/21 - 0.7.5 - Bakes
+# * fixes the 'multiple say event' problem that causes plenty of spam warnings.
+#
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -76,8 +83,8 @@
 # EVT_CLIENT_AUTH
 #
 
-__author__  = 'Courgette, SpacepiG'
-__version__ = '0.7.2'
+__author__  = 'Courgette, SpacepiG, Bakes'
+__version__ = '0.7.3'
 
 
 import sys, time, re, string, traceback
@@ -85,6 +92,8 @@ import b3
 import b3.events
 import b3.parser
 from b3.parsers.punkbuster import PunkBuster
+import threading
+import Queue
 import rcon
 import b3.cvar
 
@@ -101,6 +110,10 @@ class Bfbc2Parser(b3.parser.Parser):
     gameName = 'bfbc2'
     privateMsg = True
     OutputClass = rcon.Rcon
+    sayqueue = Queue.Queue()
+    sayqueuelistener = None
+    lasttime = 0
+    lastmessage = None
     
     _bfbc2EventsListener = None
     _bfbc2Connection = None
@@ -115,6 +128,7 @@ class Bfbc2Parser(b3.parser.Parser):
     _settings = {}
     _settings['line_length'] = 99
     _settings['min_wrap_length'] = 99
+    _settings['message_delay'] = 2
 
     _commands = {}
     _commands['message'] = ('admin.yell', '%(message)s', '%(duration)s', 'player', '%(cid)s')
@@ -190,6 +204,15 @@ class Bfbc2Parser(b3.parser.Parser):
         self.write(('punkBuster.pb_sv_command', 'pb_sv_list'))
         updatethread = threading.Thread(target=self.updatePlayers)
         updatethread.start()
+        self.sayqueuelistener = threading.Thread(target=self.sayqueuelistener)
+        self.sayqueuelistener.setDaemon(True)
+        self.sayqueuelistener.start()
+    def sayqueuelistener(self):
+        while True:
+            msg = self.sayqueue.get()
+            for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
+                self.write(self.getCommand('say', message=line, duration=2300))
+                time.sleep(self._settings['message_delay'])
            
     def updatePlayers(self):
         """Update player list to detect team changes"""
@@ -371,7 +394,11 @@ class Bfbc2Parser(b3.parser.Parser):
         #['envex', 'gg']
         if not len(data) == 2:
             return None
+        if (self.lastmessage == data[1]) and ((int(time.time())-self.lasttime) < 2):
+            return None
         client = self.getClient(data[0])
+        self.lastmessage = data[1]
+        self.lasttime = int(time.time())
         return b3.events.Event(b3.events.EVT_CLIENT_SAY, data[1], client)
 
     def OnPlayerLeave(self, action, data):
@@ -524,20 +551,15 @@ class Bfbc2Parser(b3.parser.Parser):
                 self.writelines(lines)
         except:
             pass
-
+			
     def say(self, msg):
-        lines = []
-        msg = self.stripColors(self.msgPrefix + ' ' + msg)
-        for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
-            lines.append(self.getCommand('say', message=line, duration=2300))
+        self.sayqueue.put(msg)
 
-        if len(lines):        
-            self.writelines(lines)
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         if isinstance(client, str):
-            self.write(self.getCommand('kick', cid=client, reason=reason))
-            return
+                self.write(self.getCommand('kick', cid=client.cid, reason=reason))
+                return
         elif admin:
             reason = self.getMessage('kicked_by', client.exactName, admin.exactName, reason)
         else:
