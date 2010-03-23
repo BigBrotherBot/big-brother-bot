@@ -87,6 +87,8 @@ import b3
 import b3.events
 import b3.parser
 from b3.parsers.punkbuster import PunkBuster
+import threading
+import Queue
 import rcon
 import b3.cvar
 
@@ -103,6 +105,8 @@ class Bfbc2Parser(b3.parser.Parser):
     gameName = 'bfbc2'
     privateMsg = True
     OutputClass = rcon.Rcon
+    sayqueue = Queue.Queue()
+    sayqueuelistener = None
     
     _bfbc2EventsListener = None
     _bfbc2Connection = None
@@ -193,6 +197,15 @@ class Bfbc2Parser(b3.parser.Parser):
         self.write(('punkBuster.pb_sv_command', 'pb_sv_list'))
         updatethread = threading.Thread(target=self.updatePlayers)
         updatethread.start()
+        self.sayqueuelistener = threading.Thread(target=self.sayqueuelistener)
+        self.sayqueuelistener.setDaemon(True)
+        self.sayqueuelistener.start()
+    def sayqueuelistener(self):
+        while True:
+            msg = self.sayqueue.get()
+            for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
+                self.write(self.getCommand('say', message=line, duration=2300))
+                time.sleep(self._settings['message_delay'])
            
     def updatePlayers(self):
         """Update player list to detect team changes"""
@@ -529,12 +542,8 @@ class Bfbc2Parser(b3.parser.Parser):
             pass
 			
     def say(self, msg):
-        msg = self.stripColors(self.msgPrefix + ' ' + msg)
-        length = len(self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']))
-        for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
-            self.write(self.getCommand('say', message=line, duration=2300))
-            if length != 1:
-                time.sleep(self._settings['message_delay'])
+        self.sayqueue.put(msg)
+
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         if isinstance(client, str):

@@ -117,7 +117,7 @@ class Parser(object):
     _settings = {}
     _settings['line_length'] = 65
     _settings['min_wrap_length'] = 100
-	_settings['message_delay'] = 0
+    _settings['message_delay'] = 0
 
     _reColor = re.compile(r'\^[0-9a-z]')
     _cron = None
