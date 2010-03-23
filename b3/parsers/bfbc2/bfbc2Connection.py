@@ -29,10 +29,12 @@
 # * Bfbc2CommandFailedError now also contains the BFBC2 response
 # 2010/03/19 - 0.8 - Courgette
 # * fix bug listening to event when we have an incomplete packet
+# 2010/03/23 - 0.9 - Courgette
+# * bugfix: when start listening and only a partial packet is available
 #
 
 __author__  = 'Courgette'
-__version__ = '0.8'
+__version__ = '0.9'
 
 debug = True
 
@@ -180,6 +182,7 @@ class Bfbc2Connection(object):
     def readBfbc2Event(self):
         # Wait for packet from server
         try:
+            packet = None
             try:
                 packet = self._packetReader.getPacket()
             except IncompletePacket: 
