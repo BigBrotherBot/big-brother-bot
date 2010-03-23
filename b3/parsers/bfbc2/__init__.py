@@ -54,6 +54,9 @@
 # * rotateMap() function added for !maprotate functionality.
 # 2010/03/21 - 0.7.3 - Bakes
 # * message_delay added so that self.say doesn't spew out spam.
+# 2010/03/21 - 0.7.4 - Bakes
+# * say messages are now queued instead of hanging the bot.
+#
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
