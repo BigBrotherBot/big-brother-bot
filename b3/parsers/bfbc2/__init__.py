@@ -52,6 +52,8 @@
 # * fix bug in getCvar when result is an empty list
 # 2010/03/21 - 0.7.2 - Bakes
 # * rotateMap() function added for !maprotate functionality.
+# 2010/03/21 - 0.7.3 - Bakes
+# * message_delay added so that self.say doesn't spew out spam.
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -76,8 +78,8 @@
 # EVT_CLIENT_AUTH
 #
 
-__author__  = 'Courgette, SpacepiG'
-__version__ = '0.7.2'
+__author__  = 'Courgette, SpacepiG, Bakes'
+__version__ = '0.7.3'
 
 
 import sys, time, re, string, traceback
@@ -115,6 +117,7 @@ class Bfbc2Parser(b3.parser.Parser):
     _settings = {}
     _settings['line_length'] = 99
     _settings['min_wrap_length'] = 99
+    _settings['message_delay'] = 2
 
     _commands = {}
     _commands['message'] = ('admin.yell', '%(message)s', '%(duration)s', 'player', '%(cid)s')
@@ -524,20 +527,19 @@ class Bfbc2Parser(b3.parser.Parser):
                 self.writelines(lines)
         except:
             pass
-
+			
     def say(self, msg):
-        lines = []
         msg = self.stripColors(self.msgPrefix + ' ' + msg)
+        length = len(self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']))
         for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
-            lines.append(self.getCommand('say', message=line, duration=2300))
-
-        if len(lines):        
-            self.writelines(lines)
+            self.write(self.getCommand('say', message=line, duration=2300))
+            if length != 1:
+                time.sleep(self._settings['message_delay'])
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         if isinstance(client, str):
-            self.write(self.getCommand('kick', cid=client, reason=reason))
-            return
+                self.write(self.getCommand('kick', cid=client.cid, reason=reason))
+                return
         elif admin:
             reason = self.getMessage('kicked_by', client.exactName, admin.exactName, reason)
         else:
