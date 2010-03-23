@@ -56,6 +56,8 @@
 # * message_delay added so that self.say doesn't spew out spam.
 # 2010/03/21 - 0.7.4 - Bakes
 # * say messages are now queued instead of hanging the bot.
+# 2010/03/21 - 0.7.5 - Bakes
+# * fixes the 'multiple say event' problem that causes plenty of spam warnings.
 #
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPPERS USING THIS PARSER ======
@@ -110,6 +112,8 @@ class Bfbc2Parser(b3.parser.Parser):
     OutputClass = rcon.Rcon
     sayqueue = Queue.Queue()
     sayqueuelistener = None
+    lasttime = 0
+    lastmessage = None
     
     _bfbc2EventsListener = None
     _bfbc2Connection = None
@@ -390,7 +394,11 @@ class Bfbc2Parser(b3.parser.Parser):
         #['envex', 'gg']
         if not len(data) == 2:
             return None
+        if (self.lastmessage == data[1]) and ((int(time.time())-self.lasttime) < 2):
+            return None
         client = self.getClient(data[0])
+        self.lastmessage = data[1]
+        self.lasttime = int(time.time())
         return b3.events.Event(b3.events.EVT_CLIENT_SAY, data[1], client)
 
     def OnPlayerLeave(self, action, data):
