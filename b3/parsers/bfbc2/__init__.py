@@ -58,6 +58,9 @@
 # * say messages are now queued instead of hanging the bot.
 # 2010/03/21 - 0.7.5 - Bakes
 # * fixes the 'multiple say event' problem that causes plenty of spam warnings.
+# 2010/03/24 - 0.7.6 - Courgette
+# * interrupt sayqueuelistener if the bot is paused
+# * review all Punkbuster related code
 #
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPPERS USING THIS PARSER ======
@@ -84,7 +87,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '0.7.3'
+__version__ = '0.7.6'
 
 
 import sys, time, re, string, traceback
@@ -201,14 +204,17 @@ class Bfbc2Parser(b3.parser.Parser):
                 self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client))
         
         # request pbid of connected players
-        self.write(('punkBuster.pb_sv_command', 'pb_sv_list'))
+        if self.PunkBuster:
+            self.PunkBuster.send('pb_sv_list')
+            
         updatethread = threading.Thread(target=self.updatePlayers)
         updatethread.start()
         self.sayqueuelistener = threading.Thread(target=self.sayqueuelistener)
         self.sayqueuelistener.setDaemon(True)
         self.sayqueuelistener.start()
+        
     def sayqueuelistener(self):
-        while True:
+        while self.working:
             msg = self.sayqueue.get()
             for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
                 self.write(self.getCommand('say', message=line, duration=2300))
@@ -322,18 +328,15 @@ class Bfbc2Parser(b3.parser.Parser):
 
 
     def getPlayerList(self, maxRetries=None):
-        if self.PunkBuster:
-            return self.PunkBuster.getPlayerList()
-        else:
-            data = self.write(('admin.listPlayers', 'all'))
-            if not data:
-                return {}
+        data = self.write(('admin.listPlayers', 'all'))
+        if not data:
+            return {}
 
-            players = {}
-            def group(s, n): return [s[i:i+n] for i in xrange(0, len(s), n)]
-            for clantag, name, squadId, teamId  in group(data,4):
-                #self.debug('player: %s %s %s %s' % (clantag, name, squadId, teamId))
-                players[name] = {'clantag':clantag, 'name':"%s%s"% (clantag, name), 'guid':name, 'squadId':squadId, 'teamId':self.getTeam(teamId)}
+        players = {}
+        def group(s, n): return [s[i:i+n] for i in xrange(0, len(s), n)]
+        for clantag, name, squadId, teamId  in group(data,4):
+            #self.debug('player: %s %s %s %s' % (clantag, name, squadId, teamId))
+            players[name] = {'clantag':clantag, 'name':"%s%s"% (clantag, name), 'guid':name, 'squadId':squadId, 'teamId':self.getTeam(teamId)}
         return players
 
     def getServerVars(self):
@@ -558,8 +561,8 @@ class Bfbc2Parser(b3.parser.Parser):
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         if isinstance(client, str):
-                self.write(self.getCommand('kick', cid=client.cid, reason=reason))
-                return
+            self.write(self.getCommand('kick', cid=client.cid, reason=reason))
+            return
         elif admin:
             reason = self.getMessage('kicked_by', client.exactName, admin.exactName, reason)
         else:
@@ -567,8 +570,8 @@ class Bfbc2Parser(b3.parser.Parser):
 
         if self.PunkBuster:
             self.PunkBuster.kick(client, 0.5, reason)
-        else:
-            self.write(self.getCommand('kick', cid=client.cid, reason=reason))
+        
+        self.write(self.getCommand('kick', cid=client.cid, reason=reason))
 
         if not silent:
             self.say(reason)
@@ -593,9 +596,10 @@ class Bfbc2Parser(b3.parser.Parser):
                 duration = 1440
 
             self.PunkBuster.kick(client, duration, reason)
-        else:
-            self.write(self.getCommand('tempban', cid=client.cid, duration=duration*60, reason=reason))
-
+        
+        self.write(self.getCommand('tempban', cid=client.cid, duration=duration*60, reason=reason))
+        
+        
         if not silent:
             self.say(reason)
 
@@ -608,6 +612,10 @@ class Bfbc2Parser(b3.parser.Parser):
                 admin.message('Unbanned: %s. His last ip (^1%s^7) has been removed from banlist.' % (client.exactName, client.ip))    
         
         self.write(self.getCommand('unban', cid=client.guid, reason=reason))
+        
+        if self.PunkBuster:
+            self.PunkBuster.unBanGUID(client)
+            
         if admin:
             admin.message('Unbanned: %s' % (client.exactName))
         
@@ -637,6 +645,9 @@ class Bfbc2Parser(b3.parser.Parser):
             if admin:
                 admin.message('banned: %s (@%s) has been added to banlist'%(client.exactName, client.id))
 
+        if self.PunkBuster:
+            self.PunkBuster.banGUID(client, reason)
+        
         if not silent:
             self.say(reason)
         
