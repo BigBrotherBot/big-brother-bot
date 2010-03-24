@@ -1,12 +1,102 @@
+2010-03-23  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/conf/plugin_welcome.xml, b3/parsers/bfbc2/bfbc2Connection.py: 
+	Signed-off-by: xlr8or <xlr8or@xlr8or.com>
+
+2010-03-22  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/publist.py: PLUGIN PUBLIST: sends rconPort to master.
+	Required for BFBC2
+
+2010-03-22  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/plugin_admin.xml, b3/conf/plugin_welcome.xml: PLUGIN
+	WELCOME: finish move of greeting related commands from the admin
+	plugin to the welcome plugin
+
+2010-03-22  Courgette <courgette@ubu-team.org>
+
+	* b3/parser.py: PARSER: fix bug that made the gamelog reader skip a
+	few lines with games that resets the log time on round start
+
+2010-03-22  Courgette <courgette@ubu-team.org>
+
+	* : merge bakes/bfbc2 into bfbc2, resolves conflicts between
+	Courgettes and Bakes changes
+
+2010-03-22  Courgette <courgette@ubu-team.org>
+
+	* b3/parser.py: add empty methods that needs to be implemented in
+	inheriting classes to clarity and documentation
+
+2010-03-22  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/q3a.py: PARSER Q3A: implement methods changeMap and
+	maprotate as a consequence of the admin plugin being now game
+	independant
+
+2010-03-22  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/admin.py: PLUGIN ADMIN: make the plugin game
+	independant
+
+2010-03-22  Courgette <courgette@ubu-team.org>
+
+	* : commit 28ef6da7172b1edbddf4df49ad8b286274a08f06 Author:
+	Courgette <courgette@ubu-team.org> Date:   Mon Mar 22 00:04:40 2010
+	+0100
+
+2010-03-22  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/plugin_welcome.xml, b3/plugins/welcome.py: PLUGIN WELCOME:
+	add command greeting
+
+2010-03-22  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/plugin_admin.xml, b3/plugins/admin.py: PLUGIN ADMIN:
+	remove commands greeting, about, groups, cmdlevel, newgroup,
+	delgroup, editgroup
+
+2010-03-21  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit d6dae96ff8adf9ac6c40d255e89619c05f207cb3 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sun Mar 21 21:19:52 2010 +0100
+
+2010-03-21  Courgette <courgette@ubu-team.org>
+
+	* py2exe_builder/b3-installer-project.iss: Fix Windows installer
+	issue with conf folder permissions. Add B3 images
+
+2010-03-21  Bakes <bakes@ymail.com>
+
+	* b3/conf/plugin_admin.xml, b3/conf/plugin_pingwatch.xml,
+	b3/parsers/bfbc2/__init__.py, b3/parsers/q3a.py,
+	b3/plugins/admin.py, b3/plugins/pingwatch.py: Moved !ci to the
+	pingwatch plugin to avoid bfbc2 conflicts.
+
+2010-03-21  Bakes <bakes@ymail.com>
+
+	* b3/parsers/bfbc2/__init__.py, b3/parsers/q3a.py,
+	b3/plugins/admin.py: Moved !maprotate to respective parsers. q3a and
+	bfbc2 now have a 'rotateMap()' function.
+
 2010-03-21  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/__init__.py: Autostart setup procedure if parser is not valid
 	in config
 
-2010-03-21  xlr8or <xlr8or@xlr8or.com>
+2010-03-21  Bakes <bakes@ymail.com>
 
-	* b3.egg-info/PKG-INFO, b3.egg-info/SOURCES.txt, b3/PKG-INFO: 
-	updated version info 1.3rc1
+	* : commit 615afdd388b7e956178af3e21cb143b343d4faaa Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sun Mar 21 10:55:11 2010 +0100
+
+2010-03-21  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py: BFBC2: fix bug getCvar
+
+2010-03-21  Courgette <courgette@ubu-team.org>
+
+	* : merging courgette/1.3 into courgette/bfbc2
 
 2010-03-21  Courgette <courgette@ubu-team.org>
 
@@ -22,9 +112,12 @@
 
 2010-03-21  Courgette <courgette@ubu-team.org>
 
-	* : commit ceb75caf1a71c5ccefb95c12e7e55efb5c4d657f Author:
-	Courgette <courgette@ubu-team.org> Date:   Sun Mar 21 00:09:33 2010
-	+0100
+	* : commit 2aea74bbfc587efb40508a60c5f081e8bf2723c9 Author: Bakes
+	<bakes@ymail.com> Date:   Sat Mar 20 23:22:35 2010 +0000
+
+2010-03-21  Courgette <courgette@ubu-team.org>
+
+	* .gitignore: update repository git ignore list
 
 2010-03-21  Courgette <courgette@ubu-team.org>
 
@@ -72,9 +165,99 @@
 	setup procedure and nosetup prevents bot from entering setup
 	procedure.
 
+2010-03-19  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py,
+	b3/parsers/bfbc2/bfbc2Connection.py, b3/parsers/bfbc2/rcon.py: 
+	BFBC2: more fix to network code
+
+2010-03-19  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py: BFBC2: fix getCvar
+
+2010-03-19  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/bfbc2Connection.py: BFBC2: fix bug listening to
+	event when we have an incomplete packet
+
+2010-03-19  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py: BFBC2: manually merge
+
+2010-03-19  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/CommandConsole.py,
+	b3/parsers/bfbc2/EventConsole.py, b3/parsers/bfbc2/__init__.py,
+	b3/parsers/bfbc2/bfbc2Connection.py, b3/parsers/bfbc2/protocol.py,
+	b3/parsers/bfbc2/rcon.py: BFBC2: better network code
+
+2010-03-17  unknown <Spacepig@.(none)>
+
+	* b3/parsers/bfbc2/__init__.py: Added: maps nextmaps getEasyName for
+	translating levels to mapnames Signed-off-by:  <SpacepiG>
+
+2010-03-14  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py: BFBC2: fix event client suicide. Was
+	making xlrstats crash
+
+2010-03-14  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py,
+	b3/parsers/bfbc2/bfbc2Connection.py, b3/parsers/bfbc2/rcon.py: 
+	BFBC2: harden network code
+
+2010-03-14  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py: BFBC2: fix OnPlayerKill
+
 2010-03-14  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/setup.py: minor changes to setup.py
+
+2010-03-14  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py: BFBC2: add EVT_CLIENT_CONNECT,
+	recognize kill/suicide/teamkill, add kick, tempban, unban, ban
+
+2010-03-14  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py: BFBC2: now saves IP, PBiD and
+	clantag
+
+2010-03-14  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py: BFBC2: better handling of connection
+	issues
+
+2010-03-14  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/b3.xml_bfbc2_example: add example config file for BFCB2
+
+2010-03-14  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/b3.xml.distribution: add a bit of documentation to the
+	b3.xml.distribution file
+
+2010-03-14  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/b3.xml: add a bit of documentation to the b3.xml file
+
+2010-03-12  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/bfbc2Connection.py: BFBC2: Bfbc2Connection now
+	throw an exception on connect failure
+
+2010-03-12  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py,
+	b3/parsers/bfbc2/bfbc2Connection.py, b3/parsers/bfbc2/rcon.py: 
+	BFBC2: first beta version. enough features implemented to interact
+	ingame with the bot
+
+2010-03-11  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/publist.py: PLUGIN publist : now also send rconPort
 
 2010-03-11  xlr8or <xlr8or@xlr8or.com>
 
@@ -90,9 +273,21 @@
 
 2010-03-11  xlr8or <xlr8or@xlr8or.com>
 
-	* : commit eae4fd0204f10f3ef5061e0bdfa91801d3d70501 Author:
-	Courgette <courgette@ubu-team.org> Date:   Wed Mar 10 02:49:37 2010
+	* : commit e43e73c681763f643ab9d3bf9a22bab500160ec0 Author:
+	Courgette <courgette@ubu-team.org> Date:   Thu Mar 11 00:29:10 2010
 	+0100
+
+2010-03-10  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py,
+	b3/parsers/bfbc2/bfbc2Connection.py, b3/parsers/bfbc2/rcon.py: 
+	BFBC2: fix listening to bfbc2 events and sending rcon commands
+
+2010-03-10  Courgette <courgette@ubu-team.org>
+
+	* b3/parser.py, b3/parsers/bfbc2/__init__.py,
+	b3/parsers/bfbc2/bfbc2Connection.py, b3/parsers/bfbc2/rcon.py: 
+	BFBC2: more progress since I had the chance to test on a real server
 
 2010-03-10  Courgette <courgette@ubu-team.org>
 

@@ -28,9 +28,10 @@
 #   Repaired self._xlrstatstables bug
 # 24/2/2010 - 2.2.2 - Mark Weirath (xlr8or@xlr8or.com)
 #   Repaired updateTableColumns() bug
+# 24-3-2010 - 2.2.3 - Mark Weirath - Minor fix in onEvent()
 
 __author__  = 'Tim ter Laak / Mark Weirath'
-__version__ = '2.2.2'
+__version__ = '2.2.3'
 
 # Version = major.minor.patches
 
@@ -373,7 +374,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         if (event.type == b3.events.EVT_CLIENT_JOIN):
             self.join(event.client)
-        if (event.type == b3.events.EVT_CLIENT_KILL):
+        elif (event.type == b3.events.EVT_CLIENT_KILL):
             self.kill(event.client, event.target, event.data)
         elif (event.type == b3.events.EVT_CLIENT_KILL_TEAM):
             if self.console.game.gameType in self._ffa:
