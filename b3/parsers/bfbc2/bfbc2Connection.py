@@ -34,9 +34,13 @@
 # 2010/03/25 - 0.10 - Courgette
 # * updated to use latest protocol.py
 # * sendRequest and readBfbc2Event now detect a lost connection and reconnect in such cases
+# 2010/03/25 - 0.10.1 - Courgette
+# * Exception message more explicit
+# * fix the socket time out message when listening to events
+#
 
 __author__  = 'Courgette'
-__version__ = '0.10'
+__version__ = '0.10.1'
 
 debug = True
 
@@ -69,7 +73,7 @@ class Bfbc2Connection(object):
             self._connect()
             self._auth()
         except socket.error, detail:
-            raise Bfbc2NetworkException('Network error: %s'% detail)
+            raise Bfbc2NetworkException('Canoot create Bfbc2Connection: %s'% detail)
    
     def __del__(self):
         self.close()
@@ -145,6 +149,7 @@ class Bfbc2Connection(object):
         """
         tell the bfbc2 server to send us events
         """
+        self._serverSocket.setblocking(1)
         response = self.sendRequest("eventsEnabled", "true")
 
         # if the server didn't know about the command, abort
@@ -162,7 +167,7 @@ class Bfbc2Connection(object):
                 self.subscribeToBfbc2Events()
             [packet, self._receiveBuffer] = receivePacket(self._serverSocket, self._receiveBuffer)
         except socket.error, detail:
-            raise Bfbc2NetworkException('Network error: %r'% detail)
+            raise Bfbc2NetworkException('readBfbc2Event: %r'% detail)
         try:
             [isFromServer, isResponse, sequence, words] = DecodePacket(packet)
             printPacket(DecodePacket(packet))

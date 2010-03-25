@@ -160,10 +160,9 @@ if __name__ == '__main__':
 	print "Remote administration event listener for BFBC2"
 #	history_file = os.path.join( os.environ["HOME"], ".bfbc2_rcon_history" )
 
-	host = raw_input('Enter game server host IP/name: ')
-	port = int(raw_input('Enter host port: '))
-	pw = raw_input('Enter password: ')
-
+	host = None
+	port = None
+	pw = None
 	serverSocket = None
 
 	opts, args = getopt(sys.argv[1:], 'h:p:e:a:')
@@ -174,7 +173,11 @@ if __name__ == '__main__':
 			port = int(v)
 		elif k == '-a':
 			pw = v
-
+	
+	if not host:
+		host = raw_input('Enter game server host IP/name: ')
+	if not port:
+		port = int(raw_input('Enter host port: '))
 	if not pw:
 		pw = raw_input('Enter password: ')
 
@@ -184,6 +187,7 @@ if __name__ == '__main__':
 		print 'Connecting to port: %s:%d...' % ( host, port )
 		serverSocket.connect( ( host, port ) )
 		serverSocket.setblocking(1)
+		receiveBuffer = ''
 
 		print 'Logging in - 1: retrieving salt...'
 
