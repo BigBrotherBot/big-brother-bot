@@ -124,6 +124,30 @@ def generatePasswordHash(salt, password):
 	m.update(password)
 	return m.digest()
 	
+###################################################################################
+
+def containsCompletePacket(data):
+	if len(data) < 8:
+		return False
+	if len(data) < DecodeInt32(data[4:8]):
+		return False
+	return True
+
+# Wait until the local receive buffer contains a full packet (appending data from the network socket),
+# then split receive buffer into first packet and remaining buffer data
+	
+def receivePacket(socket, receiveBuffer):
+
+	while not containsCompletePacket(receiveBuffer):
+		receiveBuffer += socket.recv(4096)
+
+	packetSize = DecodeInt32(receiveBuffer[4:8])
+
+	packet = receiveBuffer[0:packetSize]
+	receiveBuffer = receiveBuffer[packetSize:len(receiveBuffer)]
+
+	return [packet, receiveBuffer]
+
     
     
 ###################################################################################
@@ -167,7 +191,7 @@ if __name__ == '__main__':
 		getPasswordSaltRequest = EncodeClientRequest( [ "login.hashed" ] )
 		serverSocket.send(getPasswordSaltRequest)
 
-		getPasswordSaltResponse = serverSocket.recv(4096)
+		[getPasswordSaltResponse, receiveBuffer] = receivePacket(serverSocket, receiveBuffer)
 		printPacket(DecodePacket(getPasswordSaltResponse))
 
 		[isFromServer, isResponse, sequence, words] = DecodePacket(getPasswordSaltResponse)
@@ -191,7 +215,8 @@ if __name__ == '__main__':
 		loginRequest = EncodeClientRequest( [ "login.hashed", passwordHashHexString ] )
 		serverSocket.send(loginRequest)
 
-		loginResponse = serverSocket.recv(4096)	
+		[loginResponse, receiveBuffer] = receivePacket(serverSocket, receiveBuffer)
+
 		printPacket(DecodePacket(loginResponse))
 
 		[isFromServer, isResponse, sequence, words] = DecodePacket(loginResponse)
@@ -207,7 +232,7 @@ if __name__ == '__main__':
 		enableEventsRequest = EncodeClientRequest( [ "eventsEnabled", "true" ] )
 		serverSocket.send(enableEventsRequest)
 
-		enableEventsResponse = serverSocket.recv(4096)	
+		[enableEventsResponse, receiveBuffer] = receivePacket(serverSocket, receiveBuffer)
 		printPacket(DecodePacket(enableEventsResponse))
 
 		[isFromServer, isResponse, sequence, words] = DecodePacket(enableEventsResponse)
@@ -220,7 +245,7 @@ if __name__ == '__main__':
 
 		while True:
 			# Wait for packet from server
-			packet = serverSocket.recv(4096)	
+			[packet, receiveBuffer] = receivePacket(serverSocket, receiveBuffer)
 
 			[isFromServer, isResponse, sequence, words] = DecodePacket(packet)
 
