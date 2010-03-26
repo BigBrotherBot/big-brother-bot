@@ -61,13 +61,17 @@
 # 2010/03/24 - 0.7.6 - Courgette
 # * interrupt sayqueuelistener if the bot is paused
 # * review all Punkbuster related code
-#
+# 2010/03/26 - 0.8 - Courgette
+# * refactor the way clients' messages are queued too ensure consecutive
+#   messages are displayed at a peaceful rate. Previously this was done
+#   in a very similar way in the b3/clients.py file. But it is better
+#   to make those changes only for BFBC2 at the moment
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
 # EVT_UNKNOWN
 # EVT_CLIENT_CONNECT
-# EVT_CLIENT_JOIN (only if punkbuter enabled on the server)
+# EVT_CLIENT_JOIN (only if punkbuster enabled on the server)
 # EVT_CLIENT_DISCONNECT
 # EVT_CLIENT_SAY
 # EVT_CLIENT_KILL
@@ -87,7 +91,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '0.7.6'
+__version__ = '0.8'
 
 
 import sys, time, re, string, traceback
@@ -546,15 +550,10 @@ class Bfbc2Parser(b3.parser.Parser):
             elif client.cid == None:
                 pass
             else:
-                lines = []
-                text = self.stripColors(self.msgPrefix + ' [pm] ' + text)
-                for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
-                    lines.append(self.getCommand('message', cid=client.cid, message=line, duration=2300))
-
-                self.writelines(lines)
+                self.write(self.getCommand('message', message=text, duration=2300, cid=client.guid))
         except:
             pass
-			
+
     def say(self, msg):
         self.sayqueue.put(msg)
 
@@ -858,15 +857,57 @@ class Bfbc2Parser(b3.parser.Parser):
         if not text:
             return []
     
-        length = int(length)
+        maxLength = int(minWrapLen)
         
-        if len(text) <= minWrapLen:
+        if len(text) <= maxLength:
             return [text]
         else:
-            lines = [text[0:length]]
-            remaining = text[length:]
+            lines = [text[:maxLength]]
+            remaining = text[maxLength:]
             while len(remaining) > 0:
-                lines.append(">%s" % remaining[0:length-1])
-                remaining = remaining[length-1:]
+                lines.append(remaining[0:maxLength])
+                remaining = remaining[maxLength:]
             return lines
         
+
+
+        
+        
+#############################################################
+# Below is the code that change a bit the b3.clients.Client
+# class at runtime. What the point of coding in python if we
+# cannot play with its dynamic nature ;)
+#
+# why ?
+# because doing so make sure we're not broking any other 
+# working and long tested parser. The change we make here
+# are only applied when the Bfbc2 parser is loaded.
+#############################################################
+  
+## add a new method to the Client class
+def bfbc2ClientMessageQueueWorker(self):
+    """
+    This take a line off the queue and displays it
+    then pause for 'message_delay' seconds
+    """
+    while self.console.working:
+        msg = self.messagequeue.get()
+        if msg:
+            self.console.message(self, msg)
+            time.sleep(int(self.console._settings['message_delay']))
+        self.messagequeue.task_done() 
+b3.clients.Client.messagequeueworker = bfbc2ClientMessageQueueWorker
+
+## override the Client.message() method at runtime
+def bfbc2ClientMessageMethod(self, msg):
+    if msg and len(msg.strip())>0:
+        if not hasattr(self, 'messagequeue'):
+            self.messagequeue = Queue.Queue()
+            self.messagehandler = threading.Thread(target=self.messagequeueworker)
+            self.messagehandler.setDaemon(True)
+            self.messagehandler.start()
+        text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
+        for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
+            self.messagequeue.put(line)
+b3.clients.Client.message = bfbc2ClientMessageMethod
+
