@@ -17,8 +17,6 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
-#    23/03/2010 - 1.3 - Bakes
-#    * client.message() now uses an independant queue so that B3 does not spam bfbc2 clients too quickly.
 #    08/01/2010 - 1.2.10 - xlr8or
 #    * disabled adding aliasses for world
 #    01/01/2001 - 1.2.9 - Courgette
@@ -45,10 +43,10 @@
 #     Added data parameter to Client.tempban()
 
 __author__  = 'ThorN'
-__version__ = '1.3'
+__version__ = '1.2.10'
 
 import b3, string, re, time, functions, threading, traceback, sys
-import Queue
+
 class ClientVar(object):
     value = None
 
@@ -81,8 +79,6 @@ class ClientVar(object):
 
 #-----------------------------------------------------------------------------------------------------------------------
 class Client(object):
-    messagequeue = None
-    messagehandler = None
     # fields in storage
     guid = ''
     pbid = ''
@@ -117,21 +113,9 @@ class Client(object):
         self._pluginData = {}
         self.state = b3.STATE_UNKNOWN
         self._data = {}        
-        self.messagequeue = Queue.Queue()
-        self.messagehandler = threading.Thread(target=self.messagequeueworker)
-        self.messagehandler.setDaemon(True)
-        self.messagehandler.start()
-
 
         for k, v in kwargs.iteritems():
             setattr(self, k, v)
-    def messagequeueworker(self):
-        while True:
-            msg = self.messagequeue.get()
-            for line in self.console.getWrap(msg, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
-               self.console.message(self, line)
-               time.sleep(self.console._settings['message_delay'])
-            self.messagequeue.task_done()
 
     def isvar(self, plugin, key):
         try:
@@ -540,7 +524,7 @@ class Client(object):
             ban.save(self.console)
 
     def message(self, msg):
-        self.messagequeue.put(msg)
+        self.console.message(self, msg)
 
     def warn(self, duration, warning, keyword=None, admin=None, data=''):
         if self.id:
