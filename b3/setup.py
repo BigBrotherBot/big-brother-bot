@@ -148,6 +148,7 @@ class Setup:
         # plugins
         self.add_buffer('\n--INSTALLING PLUGINS--------------------------------------------\n')
         xml.start("plugins")
+        self.add_plugin("admin", "@conf/plugin_admin.xml", explanation="admin plugin is arbitrairy.", prompt=False)
         self.add_plugin("censor", "@conf/plugin_censor.xml")
         self.add_plugin("spamcontrol", "@conf/plugin_spamcontrol.xml")
         self.add_plugin("tk", "@conf/plugin_tk.xml")
@@ -218,16 +219,17 @@ class Setup:
         if not silent:
             self.add_buffer(str(sname)+self.equaLize(sname)+": "+str(_value)+"\n")
 
-    def add_plugin(self, sname, sconfig, explanation=None, downlURL=None):
+    def add_plugin(self, sname, sconfig, explanation=None, downlURL=None, prompt=True):
         """
         A routine to add a plugin to the config
-        Usage: self.add_plugin(pluginname, default-configfile, optional-explanation)
+        Usage: self.add_plugin(pluginname, default-configfile, optional-explanation, optional-downloadlocation, optional-prompt)
         Priority is increased automatically.
         """
-        _q = "Install "+sname+" plugin? (yes/no)"
-        _test = self.raw_default(_q, "yes")
-        if _test != "yes":
-            return None
+        if prompt:
+            _q = "Install "+sname+" plugin? (yes/no)"
+            _test = self.raw_default(_q, "yes")
+            if _test != "yes":
+                return None
 
         if downlURL:
             self.download(downlURL)

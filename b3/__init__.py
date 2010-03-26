@@ -143,7 +143,7 @@ def start(configFile, nosetup=False):
             raise SystemExit('You must supply a parser')
 
         try:
-            parser = loadParser(parserType)
+            parser = loadParser(parserType, configFile, nosetup)
         except ImportError, err:
             raise SystemExit("CRITICAL: Cannot find parser '%s'. Check you main config file (b3.xml)\nB3 failed to start.\n%r"% (parserType, err))
     

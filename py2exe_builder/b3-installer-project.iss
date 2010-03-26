@@ -10,15 +10,15 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{F04D6FC4-CF46-4409-995A-04BEB0B219E6}
 AppName=BigBrotherBot
-AppVerName=BigBrotherBot 1.3rc1
+AppVerName=BigBrotherBot 1.3rc2
 AppPublisher=BigBrotherBot
 AppPublisherURL=http://www.bigbrotherbot.com/
 AppSupportURL=http://www.bigbrotherbot.com/forums/
 AppUpdatesURL=http://www.bigbrotherbot.com/
-DefaultDirName={pf}\BigBrotherBot_1.3rc1
+DefaultDirName={pf}\BigBrotherBot_1.3rc2
 DefaultGroupName=BigBrotherBot
 LicenseFile=gpl-2.0.txt
-OutputBaseFilename=BigBrotherBot-1.3rc1
+OutputBaseFilename=BigBrotherBot-1.3rc2
 Compression=lzma/ultra64
 SolidCompression=true
 InternalCompressLevel=normal
@@ -38,8 +38,8 @@ WizardImageBackColor=clBlack
 WindowVisible=false
 BackColor=clBlack
 BackColor2=clYellow
-WizardSmallImageFile=C:\Users\Thomas\workspace\BigBrotherBot_big-brother-bot\src\py2exe_builder\WizB3SmallImage.bmp
-WizardImageFile=C:\Users\Thomas\workspace\BigBrotherBot_big-brother-bot\src\py2exe_builder\WizB3Image.bmp
+WizardSmallImageFile=D:\svn\b3-git\py2exe_builder\WizB3SmallImage.bmp
+WizardImageFile=D:\svn\b3-git\py2exe_builder\WizB3Image.bmp
 
 [Languages]
 Name: english; MessagesFile: compiler:Default.isl
