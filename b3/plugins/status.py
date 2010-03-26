@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 21/03/2010 - 1.4.1 - Courgette
+# * does not fail if there is no player score available
+# * make errors more verbose
 # 23/11/2009 - 1.4.0 - Courgette
 # on bot shutdown, write an empty status.xml document.
 # add tests
@@ -38,7 +41,7 @@
 # Converted to use new event handlers
 
 __author__    = 'ThorN'
-__version__ = '1.3.1'
+__version__ = '1.4.1'
 
 import b3, time, os, StringIO
 import b3.plugin
@@ -127,7 +130,8 @@ class StatusPlugin(b3.plugin.Plugin):
                 client.setAttribute("Team", str(c.team))
                 client.setAttribute("Joined", str(time.ctime(c.timeAdd)))
                 client.setAttribute("Updated", str(time.ctime(c.timeEdit)))
-                client.setAttribute("Score", str(scoreList[c.cid]))
+                if c.cid in scoreList:
+                    client.setAttribute("Score", str(scoreList[c.cid]))
                 client.setAttribute("State", str(c.state))
                 b3clients.appendChild(client)
 
@@ -153,8 +157,8 @@ class StatusPlugin(b3.plugin.Plugin):
                                 except:
                                     pass
                                 
-            except:
-                self.debug('XML Failed')
+            except Exception, err:
+                self.debug('XML Failed: %r' % err)
                 pass
 
         c = self.console.game

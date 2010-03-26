@@ -136,7 +136,6 @@ def start(configFile, nosetup=False):
             raise SystemExit('Could not find config file %s' % configFile)
         else:
             Setup(configFile)
-        
 
     try:
         parserType = conf.get('b3', 'parser')
@@ -144,9 +143,9 @@ def start(configFile, nosetup=False):
             raise SystemExit('You must supply a parser')
 
         try:
-            parser = loadParser(parserType, configFile, nosetup)
-        except ImportError:
-            raise SystemExit("CRITICAL: Cannot find parser '%s'. Check you main config file (b3.xml)\nB3 failed to start"% parserType)
+            parser = loadParser(parserType)
+        except ImportError, err:
+            raise SystemExit("CRITICAL: Cannot find parser '%s'. Check you main config file (b3.xml)\nB3 failed to start.\n%r"% (parserType, err))
     
         extplugins_dir = conf.getpath('plugins', 'external_dir');
         print "Using external plugin directory: %s" % extplugins_dir
