@@ -38,8 +38,9 @@ WizardImageBackColor=clBlack
 WindowVisible=false
 BackColor=clBlack
 BackColor2=clYellow
-WizardSmallImageFile=D:\svn\b3-git\py2exe_builder\WizB3SmallImage.bmp
-WizardImageFile=D:\svn\b3-git\py2exe_builder\WizB3Image.bmp
+WizardSmallImageFile=WizB3SmallImage.bmp
+WizardImageFile=WizB3Image.bmp
+UsePreviousAppDir=false
 
 [Languages]
 Name: english; MessagesFile: compiler:Default.isl
@@ -81,7 +82,6 @@ Name: {group}\web\artwork; Filename: http://www.bigbrotherbot.com/forums/news-2/
 Name: {commonappdata}\BigBrotherBot; Permissions: users-full
 
 [Files]
-;Source: ..\..\dist_py2exe\*; DestDir: {app}; Flags: recursesubdirs
 Source: ..\..\dist_py2exe\b3_run.exe; DestDir: {app}
 Source: ..\..\dist_py2exe\PKG-INFO; DestDir: {app}
 Source: ..\..\dist_py2exe\README; DestDir: {app}; DestName: README.txt
