@@ -23,16 +23,22 @@
 # * tested, seems to work for most cases
 # 2010/03/14 - 0.3 - Courgette
 # * write() can retry in case of failure
+# 2010/03/27 - 0.3.1 - Courgette
+# * fix maxRetries limitation 
+# * make this class thread safe
 
+
+import thread
 from b3.parsers.bfbc2 import bfbc2Connection
  
 __author__ = 'Courgette'
-__version__ = '0.3'
+__version__ = '0.3.1'
  
 from b3.parsers.bfbc2.bfbc2Connection import *
 
 #--------------------------------------------------------------------------------------------------
 class Rcon:
+    _lock = thread.allocate_lock()
     console = None
     _bfbc2Connection = None
     
@@ -57,24 +63,27 @@ class Rcon:
             self.write(line)
 
     def write(self, cmd, maxRetries=1):
-        if self._bfbc2Connection is None:
-            self._connect()
-        tries = 0
-        while tries <= maxRetries:
-            try:
-                tries += 1
-                self.console.verbose('RCON (%s/%s) %s' % (tries, maxRetries, cmd))
-                response = self._bfbc2Connection.sendRequest(cmd)
-                return response[1:]
-            except Bfbc2Exception, err:
-                self.console.warning('RCON: sending \'%s\', %s' % (cmd, err))
-        self.console.error('RCON: failed to send \'%s\'', cmd)
+        self._lock.acquire()
         try:
-            # we close the connection to make sure to have a brand new one 
-            # on the next write
-            self.close()
-        except: pass
-        
+            if self._bfbc2Connection is None:
+                self._connect()
+            tries = 0
+            while tries < maxRetries:
+                try:
+                    tries += 1
+                    self.console.verbose('RCON (%s/%s) %s' % (tries, maxRetries, cmd))
+                    response = self._bfbc2Connection.sendRequest(cmd)
+                    return response[1:]
+                except Bfbc2Exception, err:
+                    self.console.warning('RCON: sending \'%s\', %s' % (cmd, err))
+            self.console.error('RCON: failed to send \'%s\'', cmd)
+            try:
+                # we close the connection to make sure to have a brand new one 
+                # on the next write
+                self.close()
+            except: pass
+        finally:
+            self._lock.release()
 
     def flush(self):
         pass

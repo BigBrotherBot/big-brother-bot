@@ -73,7 +73,7 @@ class Bfbc2Connection(object):
             self._connect()
             self._auth()
         except socket.error, detail:
-            raise Bfbc2NetworkException('Canoot create Bfbc2Connection: %s'% detail)
+            raise Bfbc2NetworkException('Cannot create Bfbc2Connection: %s'% detail)
    
     def __del__(self):
         self.close()
