@@ -1,3 +1,30 @@
+2010-03-27  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/functions.py, b3/setup.py, b3/storage.py: Added optional port
+	setting to mysql db connection string
+
+2010-03-26  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit c59d0441b68ccbe1ddcd6d44beae539ad706f246 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Fri Mar 26 19:40:41 2010 +0100
+
+2010-03-26  Courgette <courgette@ubu-team.org>
+
+	* py2exe_builder/b3-installer-project.iss: INNOSETUP: wizar img path
+	are now relative.  Do not use previous installation dir to avoid
+	version number confusions fix the PKG-INFO file that was missing
+
+2010-03-26  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/PKG-INFO, b3/__init__.py, b3/setup.py,
+	py2exe_builder/b3-installer-project.iss: Minor improvements to setup
+	procedure.  Compiled windows standalone testbuild v1.3.0rc2
+
+2010-03-26  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit e14ac5540d80b08602849b6fd71ee8099b60abd6 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Wed Mar 24 21:32:04 2010 +0100
+
 2010-03-23  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/conf/plugin_welcome.xml, b3/parsers/bfbc2/bfbc2Connection.py: 
@@ -13,6 +40,11 @@
 	* b3/conf/plugin_admin.xml, b3/conf/plugin_welcome.xml: PLUGIN
 	WELCOME: finish move of greeting related commands from the admin
 	plugin to the welcome plugin
+
+2010-03-22  Courgette <courgette@ubu-team.org>
+
+	* b3/parser.py: PARSER: fix bug that made the gamelog reader skip a
+	few lines with games that resets the log time on round start
 
 2010-03-22  Courgette <courgette@ubu-team.org>
 
@@ -97,6 +129,15 @@
 2010-03-21  Courgette <courgette@ubu-team.org>
 
 	* : merging courgette/1.3 into courgette/bfbc2
+
+2010-03-21  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/status.py: PLUGIN status : make the plugin compatible
+	with parsers that do not provide player scores
+
+2010-03-21  Courgette <courgette@ubu-team.org>
+
+	* b3/__init__.py: failure to load parser is a bit more verbose
 
 2010-03-21  Courgette <courgette@ubu-team.org>
 
@@ -232,6 +273,15 @@
 
 2010-03-14  Courgette <courgette@ubu-team.org>
 
+	* b3/conf/b3.xml: add a bit of documentation to the b3.xml file
+
+2010-03-14  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/b3.xml.distribution: add a bit of documentation to the
+	b3.xml.distribution file
+
+2010-03-14  Courgette <courgette@ubu-team.org>
+
 	* b3/conf/b3.xml_bfbc2_example: add example config file for BFCB2
 
 2010-03-14  Courgette <courgette@ubu-team.org>
@@ -258,6 +308,49 @@
 2010-03-11  Courgette <courgette@ubu-team.org>
 
 	* b3/plugins/publist.py: PLUGIN publist : now also send rconPort
+
+2010-03-11  Courgette <courgette@ubu-team.org>
+
+	* : commit 41f9b6e0a144c72d4157b42f089ca8a49f5cdf56 Merge: 7b2761f
+	eae4fd0 Author: Courgette <courgette@ubu-team.org> Date:   Thu Mar
+	11 15:30:58 2010 +0100
+
+2010-03-11  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/CommandConsole.py,
+	b3/parsers/bfbc2/EventConsole.py, b3/parsers/bfbc2/__init__.py,
+	b3/parsers/bfbc2/bfbc2Connection.py, b3/parsers/bfbc2/rcon.py: 
+	remove anything related to bfbc2 from master
+
+2010-03-10  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py,
+	b3/parsers/bfbc2/bfbc2Connection.py, b3/parsers/bfbc2/rcon.py: 
+	BFBC2: more progress since I had the chance to test on a real server
+
+2010-03-10  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py,
+	b3/parsers/bfbc2/bfbc2Connection.py, b3/parsers/bfbc2/rcon.py,
+	b3/parsers/bfbc2_rcon.py: PARSER bfbc2 : alpha stage. listening to
+	BFBC2 events, routing them somewhat into B3 events, should be able
+	to send rcon commands.  Need a BFBC2 server for tests !!!
+
+2010-03-09  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/CommandConsole.py,
+	b3/parsers/bfbc2/EventConsole.py, b3/parsers/bfbc2/__init__.py,
+	b3/parsers/bfbc2/bfbc2Connection.py, b3/parsers/bfbc2_rcon.py: BFBC2
+	: add bfbc2Listener.py which is able to listen to BFBC2 events and
+	create a game log file locally.  TODO :  * dev the bfbc2_rcon.py class  * build the bfbc2 parser for this gamelog file  * make the bot load bfbc2Listener when bfbc2 parser is choosen in
+	 the b3.xml (a bit like ftpytail) Signed-off-by: Courgette <courgette@ubu-team.org>
+
+2010-03-10  Courgette <courgette@ubu-team.org>
+
+	* b3/parser.py, b3/parsers/bfbc2/CommandConsole.py,
+	b3/parsers/bfbc2/EventConsole.py, b3/parsers/bfbc2/__init__.py,
+	b3/parsers/bfbc2/bfbc2Connection.py, b3/parsers/bfbc2/rcon.py: 
+	remove eae4fd0204f10 from master
 
 2010-03-11  xlr8or <xlr8or@xlr8or.com>
 

@@ -10,15 +10,15 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{F04D6FC4-CF46-4409-995A-04BEB0B219E6}
 AppName=BigBrotherBot
-AppVerName=BigBrotherBot 1.3rc2
+AppVerName=BigBrotherBot 1.3rc3
 AppPublisher=BigBrotherBot
 AppPublisherURL=http://www.bigbrotherbot.com/
 AppSupportURL=http://www.bigbrotherbot.com/forums/
 AppUpdatesURL=http://www.bigbrotherbot.com/
-DefaultDirName={pf}\BigBrotherBot_1.3rc2
+DefaultDirName={pf}\BigBrotherBot_1.3rc3
 DefaultGroupName=BigBrotherBot
 LicenseFile=gpl-2.0.txt
-OutputBaseFilename=BigBrotherBot-1.3rc2
+OutputBaseFilename=BigBrotherBot-1.3rc3
 Compression=lzma/ultra64
 SolidCompression=true
 InternalCompressLevel=normal
