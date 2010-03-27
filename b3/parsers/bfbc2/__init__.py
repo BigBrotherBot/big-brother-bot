@@ -66,8 +66,10 @@
 #   messages are displayed at a peaceful rate. Previously this was done
 #   in a very similar way in the b3/clients.py file. But it is better
 #   to make those changes only for BFBC2 at the moment
+# 2010/03/27 - 0.8.1 - Bakes
+# * teamkill event fixed - EVT_CLIENT_KILL_TEAM not EVT_CLIENT_TEAMKILL
 #
-# ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPPERS USING THIS PARSER ======
+# ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
 # EVT_UNKNOWN
 # EVT_CLIENT_CONNECT
@@ -75,7 +77,7 @@
 # EVT_CLIENT_DISCONNECT
 # EVT_CLIENT_SAY
 # EVT_CLIENT_KILL
-# EVT_CLIENT_TEAMKILL
+# EVT_CLIENT_KILL_TEAM
 # EVT_CLIENT_SUICIDE
 # EVT_CLIENT_BAN_TEMP
 # EVT_CLIENT_BAN
@@ -91,7 +93,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '0.8'
+__version__ = '0.8.1'
 
 
 import sys, time, re, string, traceback
@@ -445,7 +447,7 @@ class Bfbc2Parser(b3.parser.Parser):
         if victim == attacker:
             return b3.events.Event(b3.events.EVT_CLIENT_SUICIDE, (100, 1, 1), attacker, victim)
         elif attacker.team == victim.team and attacker.team != b3.TEAM_UNKNOWN and attacker.team != b3.TEAM_SPEC:
-            return b3.events.Event(b3.events.EVT_CLIENT_TEAMKILL, (100, None, None), attacker, victim)
+            return b3.events.Event(b3.events.EVT_CLIENT_KILL_TEAM, (100, None, None), attacker, victim)
         else:
             return b3.events.Event(b3.events.EVT_CLIENT_KILL, (100, None, None), attacker, victim)
         
