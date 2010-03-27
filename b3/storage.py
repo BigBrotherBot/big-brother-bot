@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   27/03/2010 - 1.7.1 - xlr8or
+#   enable setting different port for mysql connections
 #   02/13/2010 - 1.7.0 - xlr8or
 #   Added 'silent' option to query. Defaults to false. 
 #   When set True it will raise an Exception for use in a try/except construction for a failed query
@@ -40,7 +42,7 @@
 #   Added data column to penalties table
 
 __author__  = 'ThorN'
-__version__ = '1.7.0'
+__version__ = '1.7.1'
 
 import re, time, traceback, sys, thread
 
@@ -154,7 +156,7 @@ class DatabaseStorage(Storage):
         if protocol == 'mysql':
             try:
                 import MySQLdb
-                return MySQLdb.connect(host=self.dsnDict['host'], user=self.dsnDict['user'], passwd=self.dsnDict['password'], db=self.dsnDict['path'][1:]) 
+                return MySQLdb.connect(host=self.dsnDict['host'], port=self.dsnDict['port'], user=self.dsnDict['user'], passwd=self.dsnDict['password'], db=self.dsnDict['path'][1:]) 
             except ImportError, err:
                 self.console.critical("%s. You need to install python-myqsldb. Look for 'dependencies' in B3 documentation.",err)
         elif protocol == 'sqlite':

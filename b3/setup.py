@@ -20,10 +20,12 @@
 # CHANGELOG:
 # 2010/03/21 - 0.2.1 - Courgette
 #    * fix bug on config path which showed up only when run as a .exe
+# 2010/03/27 - 0.2.2 - xlr8or
+#    * minor improvements, added port to db-conn, default value for yes/no in add_plugin()
 #
 
 __author__  = 'xlr8or'
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 
 import platform, urllib2, shutil, os, sys, time, zipfile
 from functions import main_is_frozen
@@ -75,7 +77,7 @@ class Setup:
         self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
         xml.start("settings", name="b3")
         self.add_set("parser", "cod", "Define your game: cod/cod2/cod4/cod5/iourt41/etpro/wop/smg")
-        self.add_set("database", "mysql://b3:password@localhost/b3", "Your database info: [mysql]://[db-user]:[db-password]@[db-server]/[db-name]")
+        self.add_set("database", "mysql://b3:password@localhost/b3", "Your database info: [mysql]://[db-user]:[db-password]@[db-server[:port]]/[db-name]")
         self.add_set("bot_name", "b3", "Name of the bot")
         self.add_set("bot_prefix", "^0(^2b3^0)^7:", "Ingame messages are prefixed with this code, you can use colorcodes")
         self.add_set("time_format", "%I:%M%p %Z %m/%d/%y")
@@ -166,8 +168,10 @@ class Setup:
             xml.data("        ")
 
         # ext plugins
-        xml.comment("The next plugins are external, 3rd party plugins and should reside in the external_dir.")
-        self.add_plugin("xlrstats", self._set_external_dir+"/conf/xlrstats.xml")
+        xml.comment("The next plugins are external, 3rd party plugins and should reside in the external_dir. Example:")
+        xml.data("        ")
+        xml.comment("plugin config=\"@b3/extplugins/conf/newplugin.xml\" name=\"newplugin\" priority=\"**\" ")
+        self.add_plugin("xlrstats", self._set_external_dir+"/conf/xlrstats.xml", default="no")
         #self.add_plugin("registered", self._set_external_dir+"/conf/plugin_registered.xml", "Trying to download Registered", "http://www.bigbrotherbot.com/forums/downloads/?sa=downfile&id=22")
         #self.add_plugin("countryfilter", self._set_external_dir+"/conf/countryfilter.xml", "Trying to download Countryfilter", "http://github.com/xlr8or/b3-plugin-countryfilter/zipball/master")
 
@@ -219,7 +223,7 @@ class Setup:
         if not silent:
             self.add_buffer(str(sname)+self.equaLize(sname)+": "+str(_value)+"\n")
 
-    def add_plugin(self, sname, sconfig, explanation=None, downlURL=None, prompt=True):
+    def add_plugin(self, sname, sconfig, explanation=None, default="yes", downlURL=None, prompt=True):
         """
         A routine to add a plugin to the config
         Usage: self.add_plugin(pluginname, default-configfile, optional-explanation, optional-downloadlocation, optional-prompt)
@@ -227,7 +231,7 @@ class Setup:
         """
         if prompt:
             _q = "Install "+sname+" plugin? (yes/no)"
-            _test = self.raw_default(_q, "yes")
+            _test = self.raw_default(_q, default)
             if _test != "yes":
                 return None
 
