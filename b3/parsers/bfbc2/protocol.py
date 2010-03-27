@@ -1,13 +1,16 @@
 #!/usr/local/bin/python
 from struct import *
-import md5
 import socket
 import sys
 import shlex
 import string
 import threading
 import os
-
+try:
+    from hashlib import md5 as newmd5
+except ImportError:
+    # for Python versions < 2.5
+    from md5 import new as newmd5
 
 def EncodeHeader(isFromServer, isResponse, sequence):
 	header = sequence & 0x3fffffff
@@ -119,7 +122,7 @@ def printPacket(packet):
 ###################################################################################
 
 def generatePasswordHash(salt, password):
-	m = md5.new()
+	m = newmd5()
 	m.update(salt)
 	m.update(password)
 	return m.digest()
