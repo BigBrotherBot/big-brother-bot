@@ -66,6 +66,10 @@
 #   messages are displayed at a peaceful rate. Previously this was done
 #   in a very similar way in the b3/clients.py file. But it is better
 #   to make those changes only for BFBC2 at the moment
+# 2010/03/27 - 0.8.1 - Courgette
+# * getEasyName return the level name is no easyname is found.
+# * getEasyName return correct name for maps in SQDM mode
+#
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -91,7 +95,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '0.8'
+__version__ = '0.8.1'
 
 
 import sys, time, re, string, traceback
@@ -668,46 +672,48 @@ class Bfbc2Parser(b3.parser.Parser):
     
     def getEasyName(self, mapname):
         """ Change levelname to real name """
-        if mapname == 'Levels/MP_001':
-            return ('Panama Canal')
+        if mapname.startswith('Levels/MP_001'):
+            return 'Panama Canal'
             
-        elif mapname == 'Levels/MP_002':
-            return ('Valparaiso')
+        elif mapname.startswith('Levels/MP_002'):
+            return 'Valparaiso'
 
-        elif mapname == 'Levels/MP_003':
-            return ('Laguna Alta')
+        elif mapname.startswith('Levels/MP_003'):
+            return 'Laguna Alta'
 
-        elif mapname == 'Levels/MP_004':
-            return ('Isla Inocentes')
+        elif mapname.startswith('Levels/MP_004'):
+            return 'Isla Inocentes'
 
-        elif mapname == 'Levels/MP_005':
-            return ('Atacama Desert')
+        elif mapname.startswith('Levels/MP_005'):
+            return 'Atacama Desert'
 
-        elif mapname == 'Levels/MP_006':
-            return ('Arica Harbor')
+        elif mapname.startswith('Levels/MP_006'):
+            return 'Arica Harbor'
 
-        elif mapname == 'Levels/MP_007':
-            return ('White Pass')
+        elif mapname.startswith('Levels/MP_007'):
+            return 'White Pass'
 
-        elif mapname == 'Levels/MP_008':
-            return ('Nelson Bay')
+        elif mapname.startswith('Levels/MP_008'):
+            return 'Nelson Bay'
 
-        elif mapname == 'Levels/MP_009':
-            return ('Laguna Preza')
+        elif mapname.startswith('Levels/MP_009'):
+            return 'Laguna Preza'
 
-        elif mapname == 'Levels/MP_012':
-            return ('Port Valdez')
-
-        return None
+        elif mapname.startswith('Levels/MP_012'):
+            return 'Port Valdez'
+        
+        else:
+            self.warning('unknown level name \'%s\'. Please report this on B3 forums' % mapname)
+            return mapname
     
     def getMaps(self):
         """Return the map list
         TODO"""
         data = self.write(('mapList.list',))
         mapList = []
-        for index in range(0,len(data)):
-            mapList[index] = self.getEasyName(data[index])
-        return mapList 
+        for map in data:
+            mapList.append(self.getEasyName(map))
+        return mapList
     
         
     def getTeam(self, team):
