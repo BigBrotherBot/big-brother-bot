@@ -1,3 +1,18 @@
+2010-03-28  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py: Added PunkBuster activity check on startup
+
+2010-03-28  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/plugins/pingwatch.py: Add default _minLevel for !ci if config
+	option is missing This happens when ppl use the config from pre 1.3
+	where !ci was part of the admin plugin.
+
+2010-03-27  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt, b3/PKG-INFO,
+	py2exe_builder/b3-installer-project.iss: v1.3rc3
+
 2010-03-27  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/functions.py, b3/setup.py, b3/storage.py: Added optional port

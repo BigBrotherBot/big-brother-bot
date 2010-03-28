@@ -1,6 +1,7 @@
 1.2.1 -> 1.3.0
 ----
-78 files were changed (in 339 commits)! We strongly recommend updating the complete bot!
+~100 files were changed (in 400+ commits)! We strongly recommend updating the complete bot!
+Also make sure you check your saved config files for additions and changes!
 A list of changed files is available after release here:
 github.com/BigBrotherBot/big-brother-bot/compare/v1.2.1...v1.3.0
 ----
@@ -25,6 +26,10 @@ github.com/BigBrotherBot/big-brother-bot/compare/v1.2.1...v1.3.0
 	Added history functionality and improved column update.  [!!]This
 	version needs new tables added. Run b3/docs/xlrstats.sql or
 	b3/docs/xlrstats-update-to-v2.0.0.sql prior to installation!
+- b3/plugins/admin.py:
+  Moved !ci to pingwatch plugin
+  Moved !greeting to welcome plugin
+  Removed redundant commands: about, groups, cmdlevel, newgroup, delgroup, editgroup
 -	[BETA addition] b3/parsers/smg.py, b3/parsers/smg11.py: PARSER smg is compatible
 	with SG pior 1.1. smg11 uses the new /tell command for private chat
 ----
