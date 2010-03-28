@@ -16,7 +16,7 @@
 	<settings name="b3">
 		<!--
 			Next line: the parser defines the game:
-			cod/cod2/cod4/cod5/iourt41/etpro/wop/smg (it should NOT be
+			cod/cod2/cod4/cod5/iourt41/etpro/wop/smg/bfbc2 (it should NOT be
 			'changeme')
 		-->
 		<set name="parser">changeme</set>
