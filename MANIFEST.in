@@ -1,3 +1,2 @@
-include *.txt *.py *.sh *.sql CHANGELOG README b3/PKG-INFO
-recursive-include b3/conf *.xml
-recursive-include b3/extplugins/conf *.xml
+include *.txt *.py *.xml *.sql CHANGELOG README b3/PKG-INFO
+exclude py2exe_builder/*

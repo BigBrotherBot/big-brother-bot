@@ -32,9 +32,12 @@ from setuptools import setup, find_packages
 
 _setupinfo = {
     'name' : "b3",
-    'version' : "1.3.0",
+    'version' : "1.3rc4",
     'packages' : find_packages(),
     'extras_require' : { 'mysql' : 'MySQL-python' },
+    'package_data' : {
+        '': ['conf/*.xml', 'extplugins/conf/*.xml', 'docs/*', 'README']
+    },
     'zip_safe' : False,
     'author' : 'Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Léveil (Courgette)',
     'author_email' : "bigbrotherbot@gmail.com",

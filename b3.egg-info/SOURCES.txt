@@ -8,6 +8,7 @@ listversions.py
 setup.cfg
 setup.py
 setupPy2exe.py
+versions.txt
 b3/PKG-INFO
 b3/__init__.py
 b3/clients.py
@@ -34,7 +35,8 @@ b3.egg-info/entry_points.txt
 b3.egg-info/not-zip-safe
 b3.egg-info/requires.txt
 b3.egg-info/top_level.txt
-b3/conf/b3.xml
+b3/conf/b3.bfbc2_example.xml
+b3/conf/b3.distribution.xml
 b3/conf/plugin_admin.xml
 b3/conf/plugin_adv.xml
 b3/conf/plugin_censor.xml
@@ -85,6 +87,11 @@ b3/parsers/q3a_rcon.py
 b3/parsers/smg.py
 b3/parsers/smg11.py
 b3/parsers/wop.py
+b3/parsers/bfbc2/__init__.py
+b3/parsers/bfbc2/bfbc2Connection.py
+b3/parsers/bfbc2/protocol.py
+b3/parsers/bfbc2/punkbuster.py
+b3/parsers/bfbc2/rcon.py
 b3/plugins/__init__.py
 b3/plugins/admin.py
 b3/plugins/adv.py
@@ -102,5 +109,3 @@ b3/plugins/tk.py
 b3/plugins/welcome.py
 b3/tools/__init__.py
 b3/tools/documentationBuilder.py
-py2exe_builder/gpl-2.0.txt
-py2exe_builder/readme.txt
