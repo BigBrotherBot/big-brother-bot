@@ -29,43 +29,25 @@
 # * Bfbc2CommandFailedError now also contains the BFBC2 response
 # 2010/03/19 - 0.8 - Courgette
 # * fix bug listening to event when we have an incomplete packet
+# 2010/03/23 - 0.9 - Courgette
+# * bugfix: when start listening and only a partial packet is available
+# 2010/03/25 - 0.10 - Courgette
+# * updated to use latest protocol.py
+# * sendRequest and readBfbc2Event now detect a lost connection and reconnect in such cases
+# 2010/03/25 - 0.10.1 - Courgette
+# * Exception message more explicit
+# * fix the socket time out message when listening to events
 #
 
 __author__  = 'Courgette'
-__version__ = '0.8'
+__version__ = '0.10.1'
 
 debug = True
 
 import time
 import socket
 from b3.parsers.bfbc2.protocol import *
-
-
-class IncompletePacket(Exception): pass
-
-class PacketReader(object):
-    _buffer = ''
-
-    def append(self, data):
-        self._buffer += data
-        
-    def getPacket(self):
-        """
-        will only return complete bfbc2packet. Else raise IncompletePacket exception
-        """
-        if len(self._buffer) == 0:
-            return None
-        if len(self._buffer) < 12:
-            raise IncompletePacket(self._buffer)
-        
-        packetSize = DecodeInt32(self._buffer[4:8])
-        if len(self._buffer) < packetSize:
-            raise IncompletePacket(self._buffer)
-        
-        packetData = self._buffer[:packetSize]
-        self._buffer = self._buffer[packetSize:]
-        return packetData
-    
+ 
     
 
 class Bfbc2Exception(Exception): pass
@@ -77,7 +59,7 @@ class Bfbc2CommandFailedError(Exception): pass
 class Bfbc2Connection(object):
     
     _serverSocket = None
-    _packetReader = None
+    _receiveBuffer = None
     _host = None
     _port = None
     _password = None
@@ -86,19 +68,19 @@ class Bfbc2Connection(object):
         self._host = host
         self._port = port
         self._password = password
-        self._packetReader = PacketReader()
         
         try:
             self._connect()
             self._auth()
         except socket.error, detail:
-            raise Bfbc2NetworkException('Network error: %s'% detail)
+            raise Bfbc2NetworkException('Cannot create Bfbc2Connection: %s'% detail)
    
     def __del__(self):
         self.close()
    
     def _connect(self):
         try:
+            self._receiveBuffer = ''
             self._serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._serverSocket.connect( ( self._host, self._port ) )
         except Exception, err:
@@ -115,6 +97,11 @@ class Bfbc2Connection(object):
     def sendRequest(self, *command):
         if command is None:
             return None
+        if self._serverSocket is None:
+            print "reconnecting..."
+            self._connect()
+            self._auth()
+            
         if len(command) == 1 and type(command[0]) == tuple:
             words = command[0]
         else:
@@ -123,15 +110,7 @@ class Bfbc2Connection(object):
         printPacket(DecodePacket(request))
         try:
             self._serverSocket.sendall(request)
-            response = None
-            while response is None:
-                try:
-                    data = self._serverSocket.recv(1024)
-                    if not data: break
-                    self._packetReader.append(data)
-                    response = self._packetReader.getPacket()
-                except IncompletePacket:
-                    pass
+            [response, self._receiveBuffer] = receivePacket(self._serverSocket, self._receiveBuffer)
         except socket.error, detail:
             raise Bfbc2NetworkException(detail)
         
@@ -170,6 +149,7 @@ class Bfbc2Connection(object):
         """
         tell the bfbc2 server to send us events
         """
+        self._serverSocket.setblocking(1)
         response = self.sendRequest("eventsEnabled", "true")
 
         # if the server didn't know about the command, abort
@@ -180,22 +160,14 @@ class Bfbc2Connection(object):
     def readBfbc2Event(self):
         # Wait for packet from server
         try:
-            try:
-                packet = self._packetReader.getPacket()
-            except IncompletePacket: 
-                pass
-            while packet is None:
-                try:
-                    data = self._serverSocket.recv(1024)
-                    if not data: break
-                    self._packetReader.append(data)
-                    packet = self._packetReader.getPacket()
-                except IncompletePacket:
-                    pass
-                except socket.timeout:
-                    pass
+            if self._serverSocket is None:
+                print "reconnecting..."
+                self._connect()
+                self._auth()
+                self.subscribeToBfbc2Events()
+            [packet, self._receiveBuffer] = receivePacket(self._serverSocket, self._receiveBuffer)
         except socket.error, detail:
-            raise Bfbc2NetworkException('Network error: %r'% detail)
+            raise Bfbc2NetworkException('readBfbc2Event: %r'% detail)
         try:
             [isFromServer, isResponse, sequence, words] = DecodePacket(packet)
             printPacket(DecodePacket(packet))
@@ -259,8 +231,16 @@ if __name__ == '__main__':
         
     bc2server = Bfbc2Connection(host, port, pw)
     print "connected"
+    
+    reponse = bc2server.sendRequest(('version',))
+    print reponse[1]
+    
+    reponse = bc2server.sendRequest(('help',))
+    for command in reponse[1:]:
+        print '\t' + command
+    
     bc2server.close()
     print "closed"
-    print "bc2server._serverSocket : %s " % bc2server._serverSocket
+    
     
     

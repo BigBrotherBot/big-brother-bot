@@ -15,32 +15,33 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#
+# CHANGELOG
+# 2010/03/24 - 1.1 - Courgette
+#   * make sure to fallback on the parsers' getPlayerList() method as in the BFBC2 
+#     the PB_SV_PList command is asynchronous and cannot be used as expected
+#     with other B3 parsers
+#   * make sure not to ban with slot id as this is not reliable
+#
+#
 
 __author__  = 'Courgette'
-__version__ = '1.0'
+__version__ = '1.1'
 
 import re
 import b3.parsers.punkbuster
 
 #--------------------------------------------------------------------------------------------------
 class PunkBuster(b3.parsers.punkbuster.PunkBuster):
-    regPlayer = re.compile(r'^.*?:\s+(?P<slot>[0-9]+)\s+(?P<pbid>[a-z0-9]+)\s?\([^>)]+\)\s(?P<ip>[0-9.:]+):(?P<port>[0-9-]+) (?P<status>[a-z]+)\s+(?P<power>[0-9]+)\s+(?P<auth>[0-9.]+)\s+(?P<ss>[0-9]+)(\{[^}]+\})?\s+\((?P<os>[^)]+)\)\s+"?(?P<name>[^"]+)"?$', re.I)
 
     def send(self, command):
         return self.console.write(('punkBuster.pb_sv_command', command))
 
     def getPlayerList(self):
-        data = self.pList()
-        if not data:
-            return {}
+        return self.console.getPlayerList()
 
-        players = {}
-        for line in data.split('\n'):
-            m = re.match(self.regPlayer, line)
-            if m:
-                d = m.groupdict()
-                d['guid'] = d['pbid']
-                players[int(m.group('slot')) - 1] = d
-
-        return players
-
+    def ban(self, client, reason='', private=''):
+        # in BFBC2 we do not have reliable slot id for connected players.
+        # fallback on banning by GUID instead
+        return self.banGUID(client, reason)
+            
