@@ -1,7 +1,7 @@
 <configuration plugin="welcome">
-  <settings name="commands">
-    <set name="greeting">20</set>
-  </settings>
+	<settings name="commands">
+		<set name="greeting">20</set>
+	</settings>
 	<settings name="settings">
 		<!--
 		who to welcome
