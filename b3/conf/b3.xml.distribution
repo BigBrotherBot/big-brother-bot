@@ -1,15 +1,18 @@
 <configuration>
-	<!--
-	This is B3 main config file (the one you specify when you run b3 with the
-	command : b3_run -c b3.xml)
+<!-- 
+ If you want to generate a new config file and make sure the format is 
+ correct, you can invoke the setup procedure with the 
+ command : b3_run -s b3.xml
 
-	For any change made in this config file, you have to restart the bot.
+ This is B3 main config file (the one you specify when you run B3 with the 
+ command : b3_run -c b3.xml) 
 
-	Whenever you can specify a file/directory path, the following shortucts
-	can be used :
-	 @b3 : the folder where B3 code is installed in
-	 @conf : the folder containing this config file
-	-->
+ For any change made in this config file, you have to restart the bot.
+ Whenever you can specify a file/directory path, the following shortcuts
+ can be used :
+  @b3 : the folder where B3 code is installed in
+  @conf : the folder containing this config file
+ -->
 	<settings name="b3">
 		<!--
 			Next line: the parser defines the game:
