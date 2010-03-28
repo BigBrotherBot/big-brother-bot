@@ -15,9 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# 27/03/2010 - 1.2.1 - xlr8or - set default port for mysql
 
 __author__    = 'ThorN, xlr8or'
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 import re, os, sys, imp, string, urllib2
 from lib.elementtree import ElementTree
@@ -89,8 +91,6 @@ def splitDSN(url):
         return None
 
     g = m.groupdict()
-    if g['port']:
-        g['port'] = int(g['port'])
 
     if not g['protocol']:
         g['protocol'] = 'file'
@@ -108,6 +108,11 @@ def splitDSN(url):
         elif g['host']:
             g['path'] = g['host']
             g['host'] = None
+
+    if g['port']:
+        g['port'] = int(g['port'])
+    elif g['protocol'] == 'mysql':
+        g['port'] = 3306
 
     return g
 #--------------------------------------------------------------------------------------------------
