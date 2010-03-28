@@ -1,5 +1,5 @@
-project files/versions signature: ab6e7dc9086210f7d9b4352c6aa55dfc
-project files content signature: ad419f5f30ccdee2f7e06e3727fd02a6
+project files/versions signature: 6451adf85565a0f407ad29de60e63d9f
+project files content signature: 73eae8b7e05338756be11e239b6bc966
 b3\__init__.py dbd84b93f6d817311ce156c0263e8003 1.1.0
 b3\clients.py f69725faefd84a15e487efe7f8f9fdcc 1.2.10
 b3\config.py a1aae8f3404d8b403b033ee02a016e4a 1.3.1
@@ -26,13 +26,13 @@ b3\lib\elementtree\TidyTools.py fe4b421b5bbc1b517aa21dec6b4ba788 None
 b3\lib\elementtree\XMLTreeBuilder.py 0de5390e01773ab7d0dc9ca6ac7cf158 None
 b3\lib\elementtree\__init__.py a5b55367eca5b161d918d7c4fd3e7251 None
 b3\output.py de0b04b0c3124413ed934fa95d2ad28f 1.4.0
-b3\parser.py a4ea8c161b6e1e632bad5108b3baec85 1.14.1
+b3\parser.py 333fad62b0d05cdaf636afff7ada1d68 1.14.2
 b3\parsers\__init__.py dc27db9710c1c207a8bd46935163efc1 None
-b3\parsers\bfbc2\__init__.py 1b71c86da7295621b879c4215d82a664 0.7.2
-b3\parsers\bfbc2\bfbc2Connection.py b6b98f50b355eb63ecef8d6529058792 0.8
-b3\parsers\bfbc2\protocol.py 665b37def8695184243db3e05e9faabb None
-b3\parsers\bfbc2\punkbuster.py 319e1b7094f40c8b72bfca23911f7004 1.0
-b3\parsers\bfbc2\rcon.py 30db4ab7a2be23e448bf937a8d41eafe 0.3
+b3\parsers\bfbc2\__init__.py 71c789927aff864f18f1e4f7acb14600 0.8.2
+b3\parsers\bfbc2\bfbc2Connection.py b7683ee330e4799f08c8e0472e0cba38 0.10.1
+b3\parsers\bfbc2\protocol.py 9f99ff41c5e651062ddf756b48b5c88c None
+b3\parsers\bfbc2\punkbuster.py cae2314e3c85c73b8d351706a7d595f6 1.1
+b3\parsers\bfbc2\rcon.py 92358268ad9670f40a5231f42480412c 0.3.1
 b3\parsers\cod.py aa602764af6b36db24105fa11c7a0c98 1.4.7
 b3\parsers\cod2.py 0bcee8e3863b7e5e6d4f95005e1d2782 1.2.2
 b3\parsers\cod4.py c0793975462c91d7eb23e110abc8b92c 1.3.1
@@ -65,7 +65,7 @@ b3\plugins\tk.py 8a258abee09b7842377d3d27ab3a72be 1.2.4
 b3\plugins\welcome.py 43dc939305efaafdcb4745b6cc85a648 1.1
 b3\querybuilder.py b3e20540041693afe9afcea08d516938 1.0.1
 b3\run.py e1a406a83e2fede829d65fac826fe96e 1.3
-b3\setup.py 75d7698efc4fce31ab6f589384e1580b 0.2.2
+b3\setup.py 72b39321f5e37bf2c0241d7100c07214 0.2.2
 b3\storage.py 0111832fdbb706e5df01b07f59d3312e 1.7.1
 b3\timezones.py b5a25c7351b10c90c231871e8cc377b0 1.0.0
 b3\tools\__init__.py d41d8cd98f00b204e9800998ecf8427e None
