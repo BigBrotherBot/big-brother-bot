@@ -10,7 +10,13 @@ if len(sys.argv)==1:
     sys.argv.append('py2exe')
 
 def listdirectory(path):
-    return filter(os.path.isfile, glob.glob(path + os.sep + '*'))
+    def istocopy(path):
+        return (
+                os.path.isfile(path)
+                and not path.endswith('.pyc') 
+                and not path.endswith('.pyo') 
+                )
+    return map(os.path.normpath, filter(istocopy, glob.glob(path + os.sep + '*')))
 
 def getVersion():
     pkg_handler = PkgResourcesStandIn()

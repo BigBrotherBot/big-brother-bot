@@ -1,13 +1,16 @@
 #!/usr/local/bin/python
 from struct import *
-import md5
 import socket
 import sys
 import shlex
 import string
 import threading
 import os
-
+try:
+    from hashlib import md5 as newmd5
+except ImportError:
+    # for Python versions < 2.5
+    from md5 import new as newmd5
 
 def EncodeHeader(isFromServer, isResponse, sequence):
 	header = sequence & 0x3fffffff
@@ -119,11 +122,35 @@ def printPacket(packet):
 ###################################################################################
 
 def generatePasswordHash(salt, password):
-	m = md5.new()
+	m = newmd5()
 	m.update(salt)
 	m.update(password)
 	return m.digest()
 	
+###################################################################################
+
+def containsCompletePacket(data):
+	if len(data) < 8:
+		return False
+	if len(data) < DecodeInt32(data[4:8]):
+		return False
+	return True
+
+# Wait until the local receive buffer contains a full packet (appending data from the network socket),
+# then split receive buffer into first packet and remaining buffer data
+	
+def receivePacket(socket, receiveBuffer):
+
+	while not containsCompletePacket(receiveBuffer):
+		receiveBuffer += socket.recv(4096)
+
+	packetSize = DecodeInt32(receiveBuffer[4:8])
+
+	packet = receiveBuffer[0:packetSize]
+	receiveBuffer = receiveBuffer[packetSize:len(receiveBuffer)]
+
+	return [packet, receiveBuffer]
+
     
     
 ###################################################################################
@@ -136,10 +163,9 @@ if __name__ == '__main__':
 	print "Remote administration event listener for BFBC2"
 #	history_file = os.path.join( os.environ["HOME"], ".bfbc2_rcon_history" )
 
-	host = raw_input('Enter game server host IP/name: ')
-	port = int(raw_input('Enter host port: '))
-	pw = raw_input('Enter password: ')
-
+	host = None
+	port = None
+	pw = None
 	serverSocket = None
 
 	opts, args = getopt(sys.argv[1:], 'h:p:e:a:')
@@ -150,7 +176,11 @@ if __name__ == '__main__':
 			port = int(v)
 		elif k == '-a':
 			pw = v
-
+	
+	if not host:
+		host = raw_input('Enter game server host IP/name: ')
+	if not port:
+		port = int(raw_input('Enter host port: '))
 	if not pw:
 		pw = raw_input('Enter password: ')
 
@@ -160,6 +190,7 @@ if __name__ == '__main__':
 		print 'Connecting to port: %s:%d...' % ( host, port )
 		serverSocket.connect( ( host, port ) )
 		serverSocket.setblocking(1)
+		receiveBuffer = ''
 
 		print 'Logging in - 1: retrieving salt...'
 
@@ -167,7 +198,7 @@ if __name__ == '__main__':
 		getPasswordSaltRequest = EncodeClientRequest( [ "login.hashed" ] )
 		serverSocket.send(getPasswordSaltRequest)
 
-		getPasswordSaltResponse = serverSocket.recv(4096)
+		[getPasswordSaltResponse, receiveBuffer] = receivePacket(serverSocket, receiveBuffer)
 		printPacket(DecodePacket(getPasswordSaltResponse))
 
 		[isFromServer, isResponse, sequence, words] = DecodePacket(getPasswordSaltResponse)
@@ -191,7 +222,8 @@ if __name__ == '__main__':
 		loginRequest = EncodeClientRequest( [ "login.hashed", passwordHashHexString ] )
 		serverSocket.send(loginRequest)
 
-		loginResponse = serverSocket.recv(4096)	
+		[loginResponse, receiveBuffer] = receivePacket(serverSocket, receiveBuffer)
+
 		printPacket(DecodePacket(loginResponse))
 
 		[isFromServer, isResponse, sequence, words] = DecodePacket(loginResponse)
@@ -207,7 +239,7 @@ if __name__ == '__main__':
 		enableEventsRequest = EncodeClientRequest( [ "eventsEnabled", "true" ] )
 		serverSocket.send(enableEventsRequest)
 
-		enableEventsResponse = serverSocket.recv(4096)	
+		[enableEventsResponse, receiveBuffer] = receivePacket(serverSocket, receiveBuffer)
 		printPacket(DecodePacket(enableEventsResponse))
 
 		[isFromServer, isResponse, sequence, words] = DecodePacket(enableEventsResponse)
@@ -220,7 +252,7 @@ if __name__ == '__main__':
 
 		while True:
 			# Wait for packet from server
-			packet = serverSocket.recv(4096)	
+			[packet, receiveBuffer] = receivePacket(serverSocket, receiveBuffer)
 
 			[isFromServer, isResponse, sequence, words] = DecodePacket(packet)
 
