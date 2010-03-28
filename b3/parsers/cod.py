@@ -31,11 +31,12 @@
 # 29/1/2010 - 1.4.5 - xlr8or - Minor rewrite of Auth queue check 
 # 31/1/2010 - 1.4.6 - xlr8or
 #    * Added unban for non pb servers
-#    * Fixed bug: rcon command banid replaced by banclient 
+#    * Fixed bug: rcon command banid replaced by banclient
+# 28/3/2010 - 1.4.7 - xlr8or - Added PunkBuster activity check on startup
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.6'
+__version__ = '1.4.7'
 
 import b3.parsers.q3a
 import re, string, threading
@@ -109,7 +110,13 @@ class CodParser(b3.parsers.q3a.Q3AParser):
         client = self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
 
         if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
-            self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
+            # test if PunkBuster is active
+            result = self.write('PB_SV_Ver')
+            if result != '':
+                self.info('PunkBuster Active: %s' %result) 
+                self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
+            else:
+                self.warning('PunkBuster test FAILED, Check your game server setup and B3 config! Disabling PB support!')
 
         # get map from the status rcon command
         map = self.getMap()
