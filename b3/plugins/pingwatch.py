@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    03/28/2010 - 1.2.1 - xlr8or
+#    add default _minLevel for !ci if config option is missing
 #    03/21/2010 - 1.2.0 - Bakes
 #    Added the !ci command from the admin plugin.
 #    11/30/2005 - 1.1.3 - ThorN
@@ -25,7 +27,7 @@
 #    Converted to use new event handlers
 
 __author__  = 'ThorN'
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 
 
@@ -42,6 +44,7 @@ class PingwatchPlugin(b3.plugin.Plugin):
     _ignoreTill = 0
     _cronTab = None
     _maxCiPing = 500
+    _minLevel = 20
 
     def onStartup(self):
         self.registerEvent(b3.events.EVT_GAME_EXIT)
@@ -50,7 +53,11 @@ class PingwatchPlugin(b3.plugin.Plugin):
         self._ignoreTill = self.console.time() + 120
 
     def onLoadConfig(self):
-        self._minLevel = self.config.get('commands', 'ci')
+        try:
+            self._minLevel = self.config.get('commands', 'ci')
+        except:
+            pass 
+
         self._interval = self.config.getint('settings', 'interval')
         self._maxPing = self.config.getint('settings', 'max_ping')
         self._maxPingDuration = self.config.getint('settings', 'max_ping_duration')
