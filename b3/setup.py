@@ -79,7 +79,7 @@ class Setup:
 
         # first level
         configuration = xml.start("configuration")
-        xml.data("\n    ")
+        xml.data("\n\t")
 
         # B3 settings
         self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
@@ -92,9 +92,9 @@ class Setup:
         self.add_set("time_zone", "CST", "The timezone your bot is in")
         self.add_set("log_level", "9", "How much detail in the logfile: 9 = verbose, 10 = debug, 21 = bot, 22 = console")
         self.add_set("logfile", "b3.log", "Name of the logfile the bot will generate")
-        xml.data("\n    ")
+        xml.data("\n\t")
         xml.end()
-        xml.data("\n    ")
+        xml.data("\n\t")
 
         # server settings
         self.add_buffer('\n--GAME SERVER SETTINGS------------------------------------------\n')
@@ -114,23 +114,23 @@ class Setup:
             self.add_set("punkbuster", "on", "Is the gameserver running PunkBuster Anticheat: on/off")
         else:
             self.add_set("punkbuster", "off", "Is the gameserver running PunkBuster Anticheat: on/off", silent=True)
-        xml.data("\n    ")
+        xml.data("\n\t")
         xml.end()
-        xml.data("\n    ")
+        xml.data("\n\t")
 
         # autodoc settings
         self.add_buffer('\n--AUTODOC-------------------------------------------------------\n')
         xml.start("settings", name="autodoc")
-        xml.data("\n        ")
+        xml.data("\n\t\t")
         xml.comment("Autodoc will generate a user documentation for all B3 commands") 
-        xml.data("        ")
+        xml.data("\t\t")
         xml.comment("by default, a html documentation is created in your conf folder")
         self.add_set("type", "html", "html, htmltable or xml")
         self.add_set("maxlevel", "100", "if you want to exclude commands reserved for higher levels")
         self.add_set("destination", "test_doc.html", "Destination can be a file or a ftp url")
-        xml.data("\n    ")
+        xml.data("\n\t")
         xml.end()
-        xml.data("\n    ")
+        xml.data("\n\t")
 
         # messages settings
         self.add_buffer('\n--MESSAGES------------------------------------------------------\n')
@@ -143,17 +143,17 @@ class Setup:
         self.add_set("temp_banned", "%s^7 was temp banned for %s^7 %s")
         self.add_set("unbanned_by", "%s^7 was un-banned by %s^7 %s")
         self.add_set("unbanned", "%s^7 was un-banned %s")
-        xml.data("\n    ")
+        xml.data("\n\t")
         xml.end()
-        xml.data("\n    ")
+        xml.data("\n\t")
 
         # plugins settings
         self.add_buffer('\n--PLUGIN CONFIG PATH--------------------------------------------\n')
         xml.start("settings", name="plugins")
         self.add_set("external_dir", "@b3/extplugins")
-        xml.data("\n    ")
+        xml.data("\n\t")
         xml.end()
-        xml.data("\n    ")
+        xml.data("\n\t")
 
         # plugins
         self.add_buffer('\n--INSTALLING PLUGINS--------------------------------------------\n')
@@ -169,26 +169,26 @@ class Setup:
         self.add_plugin("welcome", "@conf/plugin_welcome.xml")
         if self._set_punkbuster == "on":
             self.add_plugin("punkbuster", "@conf/plugin_punkbuster.xml")
-            xml.data("\n        ")
+            xml.data("\n\t\t")
         else:
-            xml.data("\n        ")
+            xml.data("\n\t\t")
             xml.comment("The punkbuster plugin was not installed since punkbuster is not supported or disabled.")
-            xml.data("        ")
+            xml.data("\t\t")
 
         # ext plugins
         xml.comment("The next plugins are external, 3rd party plugins and should reside in the external_dir. Example:")
-        xml.data("        ")
+        xml.data("\t\t")
         xml.comment("plugin config=\"@b3/extplugins/conf/newplugin.xml\" name=\"newplugin\" priority=\"**\" ")
         self.add_plugin("xlrstats", self._set_external_dir+"/conf/xlrstats.xml", default="no")
         #self.add_plugin("registered", self._set_external_dir+"/conf/plugin_registered.xml", "Trying to download Registered", "http://www.bigbrotherbot.com/forums/downloads/?sa=downfile&id=22")
         #self.add_plugin("countryfilter", self._set_external_dir+"/conf/countryfilter.xml", "Trying to download Countryfilter", "http://github.com/xlr8or/b3-plugin-countryfilter/zipball/master")
 
         # final comments
-        xml.data("\n        ")
+        xml.data("\n\t\t")
         xml.comment("You can add new/custom plugins to this list using the same form as above.")
-        xml.data("        ")
+        xml.data("\t\t")
         xml.comment("Just make sure you don't have any duplicate priority values!")
-        xml.data("    ")
+        xml.data("\t")
         xml.end()
 
         xml.data("\n")
@@ -216,11 +216,11 @@ class Setup:
         A routine to add a setting with a textnode to the config
         Usage: self.add_set(name, default value optional-explanation)
         """
-        xml.data("\n        ")
+        xml.data("\n\t\t")
         if explanation != "":
             self.add_explanation(explanation)
             xml.comment(explanation)
-            xml.data("        ")
+            xml.data("\t\t")
         if not silent:
             _value = self.raw_default(sname, sdflt)
         else:
@@ -249,7 +249,7 @@ class Setup:
         if explanation:
             self.add_explanation(explanation)
         _config = self.raw_default("config", sconfig)
-        xml.data("\n        ")
+        xml.data("\n\t\t")
         xml.element("plugin", name=sname, priority=str(self._priority), config=_config)
         self.add_buffer("plugin: "+str(sname)+", priority: "+str(self._priority)+", config: "+str(_config)+"\n")
         self._priority += 1
