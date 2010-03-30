@@ -71,6 +71,10 @@
 # 2010/03/27 - 0.8.2 - Courgette
 # * getEasyName return the level name is no easyname is found.
 # * getEasyName return correct name for maps in SQDM mode
+# 2010/03/30 - 0.8.3 - Courgette
+# * fix self.Punkbuster
+# * add Squad constants
+#
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -96,14 +100,14 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '0.8.2'
+__version__ = '0.8.3'
 
 
 import sys, time, re, string, traceback
 import b3
 import b3.events
 import b3.parser
-from b3.parsers.punkbuster import PunkBuster
+from b3.parsers.bfbc2.punkbuster import PunkBuster as Bfbc2PunkBuster
 import threading
 import Queue
 import rcon
@@ -111,11 +115,20 @@ import b3.cvar
 
 from b3.parsers.bfbc2.bfbc2Connection import *
 
-GAMETYPE_SQDM = 'SQDM' # no team, but up to 4 squad fighting each others
+GAMETYPE_SQDM = 'SQDM' # Squad Deathmatch. no team, but up to 4 squad fighting each others
 GAMETYPE_CONQUEST = 'CONQUEST'
 GAMETYPE_RUSH = 'RUSH'
-GAMETYPE_SQRUSH = 'SQRUSH'
+GAMETYPE_SQRUSH = 'SQRUSH' # Squad Rush
 
+SQUAD_ALPHA = 0
+SQUAD_BRAVO = 1
+SQUAD_CHARLIE = 2
+SQUAD_DELTA = 3
+SQUAD_ECHO = 4
+SQUAD_FOXTROT = 5
+SQUAD_GOLF = 6
+SQUAD_HOTEL = 7
+SQUAD_NEUTRAL = 24
 
 #----------------------------------------------------------------------------------------------------------------------------------------------
 class Bfbc2Parser(b3.parser.Parser):
@@ -195,7 +208,9 @@ class Bfbc2Parser(b3.parser.Parser):
         self.Events.createEvent('EVT_PUNKBUSTER_LOST_PLAYER', 'PunkBuster client connection lost')
         
         if self.config.has_option('server', 'punkbuster') and self.config.getboolean('server', 'punkbuster'):
-            self.PunkBuster = PunkBuster(self)
+            self.debug('punkbuster enabled in config')
+            self.PunkBuster = Bfbc2PunkBuster(self)
+            
             
         version = self.output.write('version')
         self.info('BFBC2 server version : %s' % version)
@@ -212,10 +227,6 @@ class Bfbc2Parser(b3.parser.Parser):
                 self.debug('Joining %s' % client.name)
                 self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client))
         
-        # request pbid of connected players
-        if self.PunkBuster:
-            self.PunkBuster.send('pb_sv_list')
-            
         updatethread = threading.Thread(target=self.updatePlayers)
         updatethread.start()
         self.sayqueuelistener = threading.Thread(target=self.sayqueuelistener)
