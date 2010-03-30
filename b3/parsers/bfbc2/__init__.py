@@ -259,7 +259,7 @@ class Bfbc2Parser(b3.parser.Parser):
                 try:                
                     if self._bfbc2Connection is None:
                         self.verbose('Connecting to BFBC2 server ...')
-                        self._bfbc2Connection = Bfbc2Connection(self._rconIp, self._rconPort, self._rconPassword)
+                        self._bfbc2Connection = Bfbc2Connection(self, self._rconIp, self._rconPort, self._rconPassword)
 
                     self._bfbc2Connection.subscribeToBfbc2Events()
                     self.clients.sync()

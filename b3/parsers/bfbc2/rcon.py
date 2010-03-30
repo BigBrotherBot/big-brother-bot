@@ -34,7 +34,7 @@ from b3.parsers.bfbc2 import bfbc2Connection
 __author__ = 'Courgette'
 __version__ = '0.3.1'
  
-from b3.parsers.bfbc2.bfbc2Connection import *
+from b3.parsers.bfbc2.bfbc2Connection import Bfbc2Connection
 
 #--------------------------------------------------------------------------------------------------
 class Rcon:
@@ -56,7 +56,7 @@ class Rcon:
         if self._bfbc2Connection:
             return
         self.console.verbose('RCON: Connecting to BFBC2 server ...')
-        self._bfbc2Connection = Bfbc2Connection(self._rconIp, self._rconPort, self._rconPassword)
+        self._bfbc2Connection = Bfbc2Connection(self.console, self._rconIp, self._rconPort, self._rconPassword)
 
     def writelines(self, lines):
         for line in lines:
