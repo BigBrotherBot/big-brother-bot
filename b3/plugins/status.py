@@ -130,7 +130,7 @@ class StatusPlugin(b3.plugin.Plugin):
                 client.setAttribute("Team", str(c.team))
                 client.setAttribute("Joined", str(time.ctime(c.timeAdd)))
                 client.setAttribute("Updated", str(time.ctime(c.timeEdit)))
-                if c.cid in scoreList:
+                if scoreList and c.cid in scoreList:
                     client.setAttribute("Score", str(scoreList[c.cid]))
                 client.setAttribute("State", str(c.state))
                 b3clients.appendChild(client)
