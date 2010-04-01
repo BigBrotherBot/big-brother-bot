@@ -74,6 +74,8 @@
 # 2010/03/30 - 0.8.3 - Courgette
 # * fix self.Punkbuster
 # * add Squad constants
+# 2010/04/01 - 0.8.4 - Bakes
+# * self.game.* is now updated correctly every 15 seconds.
 #
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
@@ -100,7 +102,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '0.8.3'
+__version__ = '0.8.4'
 
 
 import sys, time, re, string, traceback
@@ -227,8 +229,12 @@ class Bfbc2Parser(b3.parser.Parser):
                 self.debug('Joining %s' % client.name)
                 self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client))
         
-        updatethread = threading.Thread(target=self.updatePlayers)
-        updatethread.start()
+        updateplayersthread = threading.Thread(target=self.updatePlayers)
+        updateplayersthread.setDaemon(True)
+        updateplayersthread.start()
+        updategamethread = threading.Thread(target=self.updateGameinfo)
+        updategamethread.setDaemon(True)
+        updategamethread.start()
         self.sayqueuelistener = threading.Thread(target=self.sayqueuelistener)
         self.sayqueuelistener.setDaemon(True)
         self.sayqueuelistener.start()
@@ -247,6 +253,14 @@ class Bfbc2Parser(b3.parser.Parser):
             self.sync()
             time.sleep(5)
         self.debug('End Updating Player List')
+    
+    def updateGameinfo(self):
+        """Update server information to detect map changes"""
+        while self.working:
+            self.debug('Updating Game Info')
+            self.updateGameData()
+            time.sleep(15)
+        self.debug('End Updating Game Info')
 
     def run(self):
         """Main worker thread for B3"""
@@ -397,6 +411,14 @@ class Bfbc2Parser(b3.parser.Parser):
         try: self.game.thirdPersonVehicleCameras = self.getCvar('thirdPersonVehicleCameras').getBoolean()
         except: pass
         
+    def updateGameData(self):
+        #OK Multiplay.co.uk B3 Test Server 7 8 CONQUEST Levels/MP_001
+        data = self.write(('serverInfo',))
+        if not data:
+            self.error('No data responded!')
+        else:
+            self.game.gameType = data[3]
+            self.game.mapName = data[4]
 
     def getMap(self):
         data = self.write(('serverInfo',))
