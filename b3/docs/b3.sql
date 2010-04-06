@@ -38,7 +38,7 @@ CREATE TABLE clients (
   id int(11) unsigned NOT NULL auto_increment,
   ip varchar(16) NOT NULL default '',
   connections int(11) unsigned NOT NULL default '0',
-  guid varchar(32) NOT NULL default '',
+  guid varchar(36) NOT NULL default '',
   pbid varchar(32) NOT NULL default '',
   name varchar(32) NOT NULL default '',
   auto_login tinyint(1) unsigned NOT NULL default '0',
