@@ -16,7 +16,7 @@
 -- Table structure for table `aliases`
 -- 
 
-CREATE TABLE aliases (
+CREATE TABLE IF NOT EXISTS aliases (
   id int(10) unsigned NOT NULL auto_increment,
   num_used int(10) unsigned NOT NULL default '0',
   alias varchar(32) NOT NULL default '',
@@ -34,11 +34,11 @@ CREATE TABLE aliases (
 -- Table structure for table `clients`
 -- 
 
-CREATE TABLE clients (
+CREATE TABLE IF NOT EXISTS clients (
   id int(11) unsigned NOT NULL auto_increment,
   ip varchar(16) NOT NULL default '',
   connections int(11) unsigned NOT NULL default '0',
-  guid varchar(32) NOT NULL default '',
+  guid varchar(36) NOT NULL default '',
   pbid varchar(32) NOT NULL default '',
   name varchar(32) NOT NULL default '',
   auto_login tinyint(1) unsigned NOT NULL default '0',
@@ -61,7 +61,7 @@ CREATE TABLE clients (
 -- Table structure for table `groups`
 -- 
 
-CREATE TABLE groups (
+CREATE TABLE IF NOT EXISTS groups (
   id int(10) unsigned NOT NULL auto_increment,
   name varchar(32) NOT NULL default '',
   keyword varchar(32) NOT NULL default '',
@@ -91,7 +91,7 @@ INSERT INTO `groups` (id, time_edit, name, keyword, time_add, level) VALUES (1, 
 -- Table structure for table `penalties`
 -- 
 
-CREATE TABLE penalties (
+CREATE TABLE IF NOT EXISTS penalties (
   id int(10) unsigned NOT NULL auto_increment,
   type enum('Ban','TempBan','Kick','Warning','Notice') NOT NULL default 'Ban',
   client_id int(10) unsigned NOT NULL default '0',
