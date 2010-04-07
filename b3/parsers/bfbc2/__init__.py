@@ -584,7 +584,9 @@ class Bfbc2Parser(b3.parser.Parser):
         }
         client = self.clients.getByCID(dict['name'])
         if not client:
-            client = client = self.storage.getClientsMatching( {'pbid': match.group('pbuid')} )
+            matchingClients = self.storage.getClientsMatching( {'pbid': match.group('pbuid')} )
+            if matchingClients and len(matchingClients) == 0:
+                client = matchingClients[0]
         if not client:
             self.error('unable to find client %s. weird')
         else:
@@ -817,7 +819,9 @@ class Bfbc2Parser(b3.parser.Parser):
             # must be the first time we see this client
             words = self.write(('admin.listPlayers', 'player', cid))
             pib = PlayerInfoBlock(words)
-            self.debug('PlayerInfoBlock: %s' % pib)
+            if len(pib) == 0:
+                self.debug('no such client found')
+                return None
             p = pib[0]
             cid = p['name']
             if 'clanTag' in p and len(p['clanTag']) > 0:
