@@ -71,21 +71,44 @@
 # 2010/03/27 - 0.8.2 - Courgette
 # * getEasyName return the level name is no easyname is found.
 # * getEasyName return correct name for maps in SQDM mode
+# 2010/03/30 - 0.8.3 - Courgette
+# * fix self.Punkbuster
+# * add Squad constants
+# 2010/04/01 - 0.8.4 - Bakes
+# * self.game.* is now updated correctly every 15 seconds.
+# 2010/04/05 - 1.0 - Courgette
+# * update parser to follow BFBC2 R9 protocol changes
+# 2010/04/07 - 1.1 - Courgette
+# * fix OnPlayerTeamchange
+# * fix OnPlayerSquadchange
+# * fix OnServerLoadinglevel
+# * fix OnServerLevelstarted
+# * introduced a mechanisms that ensure the server loade a target map. This
+#   ensure changeMap and mapRotate actually change maps and not just change 
+#   map sides (as admin.runNextLevel does natively)
+# * make used of the soundex/levenshteinDistance algorithm to get map name from
+#   user commands
+#
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
 # EVT_UNKNOWN
-# EVT_CLIENT_CONNECT
-# EVT_CLIENT_JOIN (only if punkbuster enabled on the server)
-# EVT_CLIENT_DISCONNECT
+# EVT_CLIENT_JOIN
+# EVT_CLIENT_KICK
 # EVT_CLIENT_SAY
-# EVT_CLIENT_KILL
-# EVT_CLIENT_KILL_TEAM
+# EVT_CLIENT_TEAM_SAY
+# EVT_CLIENT_PRIVATE_SAY
+# EVT_CLIENT_CONNECT
 # EVT_CLIENT_SUICIDE
+# EVT_CLIENT_KILL_TEAM
+# EVT_CLIENT_KILL
+# EVT_GAME_WARMUP
+# EVT_GAME_ROUND_START
 # EVT_CLIENT_BAN_TEMP
 # EVT_CLIENT_BAN
 #
 # -- BFBC2 specific B3 events --
+# EVT_CLIENT_SQUAD_CHANGE
 # EVT_PUNKBUSTER_LOST_PLAYER
 # EVT_PUNKBUSTER_SCHEDULED_TASK
 # 
@@ -93,43 +116,58 @@
 # EVT_CLIENT_NAME_CHANGE
 # EVT_CLIENT_TEAM_CHANGE
 # EVT_CLIENT_AUTH
+# EVT_CLIENT_DISCONNECT
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '0.8.2'
+__version__ = '1.1'
 
 
 import sys, time, re, string, traceback
 import b3
 import b3.events
 import b3.parser
-from b3.parsers.punkbuster import PunkBuster
+from b3.parsers.bfbc2.punkbuster import PunkBuster as Bfbc2PunkBuster
 import threading
 import Queue
 import rcon
 import b3.cvar
-
+from b3.functions import soundex, levenshteinDistance
 from b3.parsers.bfbc2.bfbc2Connection import *
 
-GAMETYPE_SQDM = 'SQDM' # no team, but up to 4 squad fighting each others
+GAMETYPE_SQDM = 'SQDM' # Squad Deathmatch. no team, but up to 4 squad fighting each others
 GAMETYPE_CONQUEST = 'CONQUEST'
 GAMETYPE_RUSH = 'RUSH'
-GAMETYPE_SQRUSH = 'SQRUSH'
+GAMETYPE_SQRUSH = 'SQRUSH' # Squad Rush
 
+SQUAD_NOSQUAD = 0
+SQUAD_ALPHA = 1
+SQUAD_BRAVO = 2
+SQUAD_CHARLIE = 3
+SQUAD_DELTA = 4
+SQUAD_ECHO = 5
+SQUAD_FOXTROT = 6
+SQUAD_GOLF = 7
+SQUAD_HOTEL = 8
+SQUAD_NEUTRAL = 24
+
+BUILD_NUMBER_R9 = 526861
 
 #----------------------------------------------------------------------------------------------------------------------------------------------
 class Bfbc2Parser(b3.parser.Parser):
     gameName = 'bfbc2'
-    privateMsg = True
     OutputClass = rcon.Rcon
     sayqueue = Queue.Queue()
     sayqueuelistener = None
-    lasttime = 0
-    lastmessage = None
     
     _bfbc2EventsListener = None
     _bfbc2Connection = None
     _nbConsecutiveConnFailure = 0
+    
+    ## to make changeMap() and mapRotate() work as expected
+    changeMap_targetLevel = None
+    changeMap_restoreMapListOnNextLevel = False
+    changeMap_backupMapList = None
 
     # BFBC2 does not support color code, so we need this property
     # in order to get stripColors working
@@ -143,17 +181,18 @@ class Bfbc2Parser(b3.parser.Parser):
     _settings['message_delay'] = 2
 
     _commands = {}
-    _commands['message'] = ('admin.yell', '%(message)s', '%(duration)s', 'player', '%(cid)s')
-    _commands['say'] = ('admin.yell', '%(message)s', '%(duration)s', 'all')
-    _commands['kick'] = ('admin.kickPlayer', '%(cid)s')
-    _commands['ban'] = ('admin.banPlayer', '%(cid)s', 'perm')
-    _commands['unban'] = ('admin.unbanPlayer', '%(cid)s')
-    _commands['tempban'] = ('admin.banPlayer', '%(cid)s', 'seconds', '%(duration)d')
-    _commands['banByIp'] = ('admin.banIP', '%(ip)s', 'perm')
-    _commands['unbanByIp'] = ('admin.unbanIP', '%(ip)s')
+    _commands['message'] = ('admin.say', '%(message)s', 'player', '%(cid)s')
+    _commands['say'] = ('admin.say', '%(message)s', 'all')
+    _commands['kick'] = ('admin.kickPlayer', '%(cid)s', '%(reason)s')
+    _commands['ban'] = ('banList.add', 'guid', '%(guid)s', 'perm', '%(reason)s')
+    _commands['banByIp'] = ('banList.add', 'ip', '%(ip)s', 'perm', '%(reason)s')
+    _commands['unban'] = ('banList.remove', 'guid', '%(guid)s')
+    _commands['unbanByIp'] = ('banList.remove', 'ip', '%(ip)s')
+    _commands['tempban'] = ('banList.add', 'guid', '%(guid)s', 'seconds', '%(duration)d', '%(reason)s')
 
     
     _eventMap = {
+        'player.onKicked': b3.events.EVT_CLIENT_KICK,
     }
 
     _gameServerVars = (
@@ -191,52 +230,54 @@ class Bfbc2Parser(b3.parser.Parser):
     def startup(self):
         
         # add specific events
+        self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
         self.Events.createEvent('EVT_PUNKBUSTER_SCHEDULED_TASK', 'PunkBuster scheduled task')
         self.Events.createEvent('EVT_PUNKBUSTER_LOST_PLAYER', 'PunkBuster client connection lost')
         
+        # create the 'Server' client
+        self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN, squad=SQUAD_NEUTRAL)
+        
         if self.config.has_option('server', 'punkbuster') and self.config.getboolean('server', 'punkbuster'):
-            self.PunkBuster = PunkBuster(self)
+            self.info('kick/ban by punkbuster is unsupported yet')
+            #self.debug('punkbuster enabled in config')
+            #self.PunkBuster = Bfbc2PunkBuster(self)
+            
             
         version = self.output.write('version')
         self.info('BFBC2 server version : %s' % version)
         if version[0] != 'BFBC2':
             raise Exception("the bfbc2 parser can only work with BattleField Bad Company 2")
+        if int(version[1]) < BUILD_NUMBER_R9:
+            raise Exception("this bfbc2 parser requires a BFBC2 server v R9 or later")
         
         self.getServerVars()
         
         self.info('connecting all players...')
         plist = self.getPlayerList()
-        for cid, c in plist.iteritems():
-            client = self.getClient(cid)
-            if client:
-                self.debug('Joining %s' % client.name)
-                self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client))
+        for cid, p in plist.iteritems():
+            client = self.clients.getByCID(cid)
+            if not client:
+                #self.clients.newClient(playerdata['cid'], guid=playerdata['guid'], name=playerdata['name'], team=playerdata['team'], squad=playerdata['squad'])
+                name = p['name']
+                if 'clanTag' in p and len(p['clanTag']) > 0:
+                    name = "[" + p['clanTag'] + "] " + p['name']
+                self.debug('client %s found on the server' % cid)
+                client = self.clients.newClient(cid, guid=p['guid'], name=name, team=p['teamId'], squad=p['squadId'], data=p)
+                self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
+                
         
-        # request pbid of connected players
-        if self.PunkBuster:
-            self.PunkBuster.send('pb_sv_list')
-            
-        updatethread = threading.Thread(target=self.updatePlayers)
-        updatethread.start()
         self.sayqueuelistener = threading.Thread(target=self.sayqueuelistener)
         self.sayqueuelistener.setDaemon(True)
         self.sayqueuelistener.start()
+        
         
     def sayqueuelistener(self):
         while self.working:
             msg = self.sayqueue.get()
             for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
-                self.write(self.getCommand('say', message=line, duration=2300))
+                self.write(self.getCommand('say', message=line))
                 time.sleep(self._settings['message_delay'])
            
-    def updatePlayers(self):
-        """Update player list to detect team changes"""
-        while self.working:
-            self.debug('Updating Player List')
-            self.sync()
-            time.sleep(5)
-        self.debug('End Updating Player List')
-
     def run(self):
         """Main worker thread for B3"""
         self.bot('Start listening ...')
@@ -259,7 +300,7 @@ class Bfbc2Parser(b3.parser.Parser):
                 try:                
                     if self._bfbc2Connection is None:
                         self.verbose('Connecting to BFBC2 server ...')
-                        self._bfbc2Connection = Bfbc2Connection(self._rconIp, self._rconPort, self._rconPassword)
+                        self._bfbc2Connection = Bfbc2Connection(self, self._rconIp, self._rconPort, self._rconPassword)
 
                     self._bfbc2Connection.subscribeToBfbc2Events()
                     self.clients.sync()
@@ -288,6 +329,7 @@ class Bfbc2Parser(b3.parser.Parser):
                 except Bfbc2Exception, e:
                     self.debug(e)
                     self._nbConsecutiveConnFailure += 1
+                    self._bfbc2Connection.close()
                     if self._nbConsecutiveConnFailure <= 20:
                         self.debug('sleeping 0.5 sec...')
                         time.sleep(0.5)
@@ -321,6 +363,7 @@ class Bfbc2Parser(b3.parser.Parser):
             #self.debug('routing ----> %s' % func)
             func = getattr(self, func)
             event = func(bfbc2EventType, bfbc2EventData)
+            #self.debug('event : %s' % event)
             if event:
                 self.queueEvent(event)
             
@@ -332,86 +375,38 @@ class Bfbc2Parser(b3.parser.Parser):
             if func:
                 data = func + ' '
             data += str(bfbc2EventType) + ': ' + str(bfbc2EventData)
+            self.debug('TODO: %r' % packet)
             self.queueEvent(b3.events.Event(b3.events.EVT_UNKNOWN, data))
-
-
-
-    def getPlayerList(self, maxRetries=None):
-        data = self.write(('admin.listPlayers', 'all'))
-        if not data:
-            return {}
-
-        players = {}
-        def group(s, n): return [s[i:i+n] for i in xrange(0, len(s), n)]
-        for clantag, name, squadId, teamId  in group(data,4):
-            #self.debug('player: %s %s %s %s' % (clantag, name, squadId, teamId))
-            players[name] = {'clantag':clantag, 'name':"%s%s"% (clantag, name), 'guid':name, 'squadId':squadId, 'teamId':self.getTeam(teamId)}
-        return players
-
-    def getServerVars(self):
-        """Update the game property from server fresh data"""
-        
-        try: self.game.is3dSpotting = self.getCvar('3dSpotting').getBoolean()
-        except: pass
-        try: self.game.bannerUrl = self.getCvar('bannerUrl').getString()
-        except: pass
-        try: self.game.crossHair = self.getCvar('crossHair').getBoolean()
-        except: pass
-        try: self.game.currentPlayerLimit = self.getCvar('currentPlayerLimit').getInt()
-        except: pass
-        try: self.game.friendlyFire = self.getCvar('friendlyFire').getBoolean()
-        except: pass
-        try: self.game.hardCore = self.getCvar('hardCore').getBoolean()
-        except: pass
-        try: self.game.killCam = self.getCvar('killCam').getBoolean()
-        except: pass
-        try: self.game.maxPlayerLimit = self.getCvar('maxPlayerLimit').getInt()
-        except: pass
-        try: self.game.miniMap = self.getCvar('miniMap').getBoolean()
-        except: pass
-        try: self.game.miniMapSpotting = self.getCvar('miniMapSpotting').getBoolean()
-        except: pass
-        try: self.game.playerLimit = self.getCvar('playerLimit').getInt()
-        except: pass
-        try: self.game.punkBuster = self.getCvar('punkBuster').getBoolean()
-        except: pass
-        try: self.game.rankLimit = self.getCvar('rankLimit').getInt()
-        except: pass
-        try: self.game.ranked = self.getCvar('ranked').getBoolean()
-        except: pass
-        try: self.game.serverDescription = self.getCvar('serverDescription').getString()
-        except: pass
-        try: self.game.teamBalance = self.getCvar('teamBalance').getBoolean()
-        except: pass
-        try: self.game.thirdPersonVehicleCameras = self.getCvar('thirdPersonVehicleCameras').getBoolean()
-        except: pass
-        
-
-    def getMap(self):
-        data = self.write(('serverInfo',))
-        if not data:
-            return None
-        return data[4]
-
-    def rotateMap(self):
-        self.write(('admin.runNextLevel',))
-        return True
-    
 
 
     #----------------------------------
     
 
     def OnPlayerChat(self, action, data):
-        #['envex', 'gg']
-        if not len(data) == 2:
-            return None
-        if (self.lastmessage == data[1]) and ((int(time.time())-self.lasttime) < 2):
-            return None
+        """
+        player.onChat <source soldier name: string> <text: string> <target group: player subset>
+        
+        Effect: Player with name <source soldier name> (or the server, or the 
+        server admin) has sent chat message <text> to some people
+        
+        Comment: The chat text is as represented before the profanity filtering 
+        If <source soldier name> is 'Server', then the message was sent from the 
+        server rather than from an actual player If sending to a specific player, 
+        and the player doesn't exist, then the target group will be 'player' ''
+        """
+        #['envex', 'gg', 'team', 1]
+        #['envex', 'gg', 'all']
+        #['envex', 'gg', 'squad' 2]
+        #['envex', 'gg', 'player', 'Courgette']
         client = self.getClient(data[0])
-        self.lastmessage = data[1]
-        self.lasttime = int(time.time())
-        return b3.events.Event(b3.events.EVT_CLIENT_SAY, data[1], client)
+        if data[2] == 'all':
+            return b3.events.Event(b3.events.EVT_CLIENT_SAY, data[1].lstrip('/'), client, 'all')
+        elif data[2] == 'team' or data[2] == 'squad':
+            return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data[1].lstrip('/'), client, data[2] + ' ' + data[3])
+        elif data[2] == 'player':
+            target = self.getClient(data[3])
+            return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data[1].lstrip('/'), client, target)
+        
 
     def OnPlayerLeave(self, action, data):
         #player.onLeave: ['GunnDawg']
@@ -421,10 +416,22 @@ class Bfbc2Parser(b3.parser.Parser):
         return None
 
     def OnPlayerJoin(self, action, data):
+        """
+        we don't have guid at this point. Wait for player.onAuthenticated
+        """
+        pass
+        
+
+    def OnPlayerAuthenticated(self, action, data):
+        """
+        player.onAuthenticated <soldier name: string> <player GUID: guid>
+        
+        Effect: Player with name <soldier name> has been authenticated, and has the given GUID
+        """
         #player.onJoin: ['OrasiK']
-        name = data[0]
-        client = self.getClient(name)
+        client = self.getClient(data[0])
         return b3.events.Event(b3.events.EVT_CLIENT_CONNECT, data, client)
+
 
     def OnPlayerKill(self, action, data):
         #player.onKill: ['Juxta', '6blBaJlblu']
@@ -440,20 +447,69 @@ class Bfbc2Parser(b3.parser.Parser):
             self.debug('No victim')
             return None
         
-        attackerteam = self.getPlayerTeam(attacker.name)
-        attacker.team = attackerteam
-
-        if attacker != victim:
-            victimteam = self.getPlayerTeam(victim.name)
-            victim.team = victimteam
-        
         if victim == attacker:
             return b3.events.Event(b3.events.EVT_CLIENT_SUICIDE, (100, 1, 1), attacker, victim)
         elif attacker.team == victim.team and attacker.team != b3.TEAM_UNKNOWN and attacker.team != b3.TEAM_SPEC:
             return b3.events.Event(b3.events.EVT_CLIENT_KILL_TEAM, (100, None, None), attacker, victim)
         else:
             return b3.events.Event(b3.events.EVT_CLIENT_KILL, (100, None, None), attacker, victim)
+
+    def OnPlayerTeamchange(self, action, data):
+        """
+        player.onTeamChange <soldier name: player name> <team: Team ID> <squad: Squad ID>
         
+        Effect: Player might have changed team
+        """
+        client = self.getClient(data[0])
+        if client:
+            client.team = self.getTeam(data[1]) # .team setter will send team change event
+            client.squad = data[2]
+            
+    def OnPlayerSquadchange(self, action, data):
+        """
+        player.onSquadChange <soldier name: player name> <team: Team ID> <squad: Squad ID>    
+        
+        Effect: Player might have changed squad
+        """
+        client = self.getClient(data[0])
+        if client:
+            client.team = self.getTeam(data[1]) # .team setter will send team change event
+            if client.squad != data[2]:
+                client.squad = data[2]
+                return b3.events.Event(b3.events.EVT_CLIENT_SQUAD_CHANGE, data[1:], client)
+
+
+    def OnServerLoadinglevel(self, action, data):
+        """
+        server.onLoadingLevel <level name: string>
+        
+        Effect: Level is loading
+        """
+        self.game.mapName = data[0]
+        return b3.events.Event(b3.events.EVT_GAME_WARMUP, data[0])
+
+    def OnServerLevelstarted(self, action, data):
+        """When the level finished loading and started"""
+        if self.changeMap_targetLevel is not None:
+            if self.game.mapName != self.changeMap_targetLevel:
+                # doh! the server just switched map sides instead of changing map !!! DICE please do something :)
+                # try again
+                self.debug("try one more time to change to map %s" % self.changeMap_targetLevel)
+                self.changeMap_targetLevel = None
+                self.write(('admin.runNextLevel', ))
+                return
+            else:
+                # yeah! we did it !
+                self.debug("succesfully change to map %s" % self.changeMap_targetLevel)
+                self.changeMap_targetLevel = None
+                
+        if self.changeMap_restoreMapListOnNextLevel:
+            self.restoreMapList(self.changeMap_backupMapList)
+            self.changeMap_restoreMapListOnNextLevel = False
+            self.changeMap_backupMapList = None
+
+        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, data)
+            
 
     def OnPunkbusterMessage(self, action, data):
         """handes all punkbuster related events and 
@@ -490,13 +546,12 @@ class Bfbc2Parser(b3.parser.Parser):
             self.debug('OnPBNewConnection: client updated with %s' % data)
         else:
             self.warning('OnPBNewConnection: we\'ve been unable to get the client')
-        return b3.events.Event(b3.events.EVT_CLIENT_JOIN, data, client)
 
     def OnPBLostConnection(self, match, data):
         """PB notifies us it lost track of a player. This is the only change
-        we have to save the PunkBuster id of clients.
+        we have to save the ip of clients.
         This event is triggered after the OnPlayerLeave, so normaly the client
-        is not connected. Anyway our task here is to save PBid not to 
+        is not connected. Anyway our task here is to save data into db not to 
         connect/disconnect the client
         """
         name = match.group('name')
@@ -509,8 +564,9 @@ class Bfbc2Parser(b3.parser.Parser):
         }
         client = self.clients.getByCID(dict['name'])
         if not client:
-            tmpclient = b3.clients.Client(console=self, id=-1, guid=name)
-            client = self.storage.getClient(tmpclient)
+            matchingClients = self.storage.getClientsMatching( {'pbid': match.group('pbuid')} )
+            if matchingClients and len(matchingClients) == 0:
+                client = matchingClients[0]
         if not client:
             self.error('unable to find client %s. weird')
         else:
@@ -555,7 +611,7 @@ class Bfbc2Parser(b3.parser.Parser):
             elif client.cid == None:
                 pass
             else:
-                self.write(self.getCommand('message', message=text, duration=2300, cid=client.guid))
+                self.write(self.getCommand('message', message=text, cid=client.cid))
         except:
             pass
 
@@ -564,18 +620,20 @@ class Bfbc2Parser(b3.parser.Parser):
 
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
+        self.debug('kick reason: [%s]' % reason)
         if isinstance(client, str):
-            self.write(self.getCommand('kick', cid=client.cid, reason=reason))
+            self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
             return
         elif admin:
             reason = self.getMessage('kicked_by', client.exactName, admin.exactName, reason)
         else:
             reason = self.getMessage('kicked', client.exactName, reason)
+        reason = self.stripColors(reason)
 
         if self.PunkBuster:
             self.PunkBuster.kick(client, 0.5, reason)
         
-        self.write(self.getCommand('kick', cid=client.cid, reason=reason))
+        self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
 
         if not silent:
             self.say(reason)
@@ -585,12 +643,13 @@ class Bfbc2Parser(b3.parser.Parser):
         duration = b3.functions.time2minutes(duration)
 
         if isinstance(client, str):
-            self.write(self.getCommand('tempban', cid=client, duration=duration*60, reason=reason))
+            self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
             return
         elif admin:
             reason = self.getMessage('temp_banned_by', client.exactName, admin.exactName, b3.functions.minutesStr(duration), reason)
         else:
             reason = self.getMessage('temp_banned', client.exactName, b3.functions.minutesStr(duration), reason)
+        reason = self.stripColors(reason)
 
         if self.PunkBuster:
             # punkbuster acts odd if you ban for more than a day
@@ -601,7 +660,7 @@ class Bfbc2Parser(b3.parser.Parser):
 
             self.PunkBuster.kick(client, duration, reason)
         
-        self.write(self.getCommand('tempban', cid=client.cid, duration=duration*60, reason=reason))
+        self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
         
         
         if not silent:
@@ -615,7 +674,7 @@ class Bfbc2Parser(b3.parser.Parser):
             if admin:
                 admin.message('Unbanned: %s. His last ip (^1%s^7) has been removed from banlist.' % (client.exactName, client.ip))    
         
-        self.write(self.getCommand('unban', cid=client.guid, reason=reason))
+        self.write(self.getCommand('unban', guid=client.guid, reason=reason))
         
         if self.PunkBuster:
             self.PunkBuster.unBanGUID(client)
@@ -628,24 +687,25 @@ class Bfbc2Parser(b3.parser.Parser):
         """Permanent ban"""
         self.debug('BAN : client: %s, reason: %s', client, reason)
         if isinstance(client, b3.clients.Client):
-            self.write(self.getCommand('ban', cid=client.guid, reason=reason))
+            self.write(self.getCommand('ban', guid=client.guid, reason=reason[:80]))
             return
 
         if admin:
             reason = self.getMessage('banned_by', client.exactName, admin.exactName, reason)
         else:
             reason = self.getMessage('banned', client.exactName, reason)
+        reason = self.stripColors(reason)
 
         if client.cid is None:
             # ban by ip, this happens when we !permban @xx a player that is not connected
-            self.debug('EFFECTIVE BAN : %s',self.getCommand('banByIp', ip=client.ip, reason=reason))
-            self.write(self.getCommand('banByIp', ip=client.ip, reason=reason))
+            self.debug('EFFECTIVE BAN : %s',self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
+            self.write(self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
             if admin:
                 admin.message('banned: %s (@%s). His last ip (%s) has been added to banlist'%(client.exactName, client.id, client.ip))
         else:
             # ban by cid
-            self.debug('EFFECTIVE BAN : %s',self.getCommand('ban', cid=client.guid, reason=reason))
-            self.write(self.getCommand('ban', cid=client.guid, reason=reason))
+            self.debug('EFFECTIVE BAN : %s',self.getCommand('ban', guid=client.guid, reason=reason[:80]))
+            self.write(self.getCommand('ban', cid=client.cid, reason=reason[:80]))
             if admin:
                 admin.message('banned: %s (@%s) has been added to banlist'%(client.exactName, client.id))
 
@@ -661,15 +721,9 @@ class Bfbc2Parser(b3.parser.Parser):
     def getNextMap(self):
         """Return the name of the next map
         """
-        currentMap = self.write(('admin.currentLevel',))
-        data = self.write(('mapList.list',))
-        for index in range(0,len(data)): 
-            if data[index] == currentMap[0]:
-                index = ((index +1) % len(data))
-                nextMap = self.getEasyName(data[index])
-                self.debug('currentmap: %s ' % (nextMap)) 
-                return nextMap  
-        return None 
+        [nextLevelIndex] = self.write(('mapList.nextLevelIndex',))
+        levelnames = self.write(('mapList.list',))
+        return self.getEasyName(levelnames[int(nextLevelIndex) % len(levelnames)])
     
     def getEasyName(self, mapname):
         """ Change levelname to real name """
@@ -708,16 +762,127 @@ class Bfbc2Parser(b3.parser.Parser):
             return mapname
     
     def getMaps(self):
-        """Return the map list
-        TODO"""
-        data = self.write(('mapList.list',))
+        """Return the map list for the current rotation. (as easy map names)
+        This does not return all available maps
+        """
+        levelnames = self.write(('mapList.list',))
         mapList = []
-        for map in data:
-            mapList.append(self.getEasyName(map))
+        for l in levelnames:
+            mapList.append(self.getEasyName(l))
         return mapList
+
+    def getMap(self):
+        """Return the current level name (not easy map name)"""
+        data = self.write(('admin.currentLevel',))
+        if not data:
+            return None
+        return data[0]
+
+    def rotateMap(self):
+        """Load the next level. If the current game mod plays each level twice
+        to get teams the chance to play both sides, then this rotate a second
+        time to really switch to the next level"""
+        [nextLevelIndex] = self.write(('mapList.nextLevelIndex',))
+        levelnames = self.write(('mapList.list',))
+        self.changeMap_targetLevel = levelnames[int(nextLevelIndex) % len(levelnames)]
+        self.write(('admin.runNextLevel',))
     
+    def changeMap(self, map):
+        """Change to the given map/level
+        
+        If map is of the form 'Levels/MP_001' and 'Levels/MP_001' is a supported
+        level for the current game mod, then this level is loaded.
+        
+        In other cases, this method assumes it is given a 'easy map name' (like
+        'Port Valdez') and it will do its best to find the level name that seems
+        to be for 'Port Valdez' within the supported levels.
+        If no match is found, then instead of loading the map, this method 
+        returns a list of candidate map names
+        """        
+        supportedMaps = self.getSupportedMaps()
+        if map not in supportedMaps:
+            match = self.getMapsSoundingLike(map)
+            if len(match) == 1:
+                map = match[0]
+            else:
+                return match
+            
+        if map in supportedMaps:
+            self.say('Changing map to %s' % map)
+            self.changeMap_backupMapList = self.write(('mapList.list',))
+            self.changeMap_restoreMapListOnNextLevel = True
+            self.changeMap_targetLevel = map
+            self.write(('mapList.clear',))
+            self.write(('mapList.append', map))
+            self.write(('mapList.save',))
+            time.sleep(1)
+            self.changeMap_tries = 1
+            self.write(('admin.runNextLevel', ))
+            
+            
+            
+
+    def getSupportedMaps(self):
+        """return a list of supported levels for the current game mod"""
+        [currentPlaylist] = self.write(('admin.getPlaylist',))
+        supportedMaps = self.write(('admin.supportedMaps', currentPlaylist))
+        return supportedMaps
+
+    def getMapsSoundingLike(self, mapname):
+        """found matching level names for the given mapname (which can either
+        be a level name or map name)
+        If no exact match is found, then return close candidates using soundex
+        and then LevenshteinDistance algoritms
+        """
+        supportedMaps = self.getSupportedMaps()
+        supportedEasyNames = {}
+        for m in supportedMaps:
+            supportedEasyNames[self.getEasyName(m)] = m
+            
+        data = mapname.strip()
+        soundex1 = soundex(data)
+        #self.debug('soundex %s : %s' % (data, soundex1))
+        
+        match = []
+        if data in supportedMaps:
+            match = [data]
+        elif data in supportedEasyNames:
+            match = [supportedEasyNames[data]]
+        else:
+            for m in supportedEasyNames:
+                s = soundex(m)
+                #self.debug('soundex %s : %s' % (m, s))
+                if s == soundex1:
+                    #self.debug('probable map : %s', m)
+                    match.append(supportedEasyNames[m])
+        
+        if len(match) == 0:
+            # suggest closest spellings
+            shortmaplist = []
+            for m in supportedEasyNames:
+                if m.find(data) != -1:
+                    shortmaplist.append(m)
+            if len(shortmaplist) > 0:
+                shortmaplist.sort(key=lambda map: levenshteinDistance(data, string.replace(map.strip())))
+                self.debug("shortmaplist sorted by distance : %s" % shortmaplist)
+                match = shortmaplist[:3]
+            else:
+                easyNames = supportedEasyNames.keys()
+                easyNames.sort(key=lambda map: levenshteinDistance(data, map.strip()))
+                self.debug("maplist sorted by distance : %s" % easyNames)
+                match = easyNames[:3]
+        return match
+
+
+    def restoreMapList(self, list):
+        self.write(('mapList.clear',))
+        for l in list:
+            self.write(('mapList.append', l))
+        self.write(('mapList.save',))
+           
         
     def getTeam(self, team):
+        """convert BFBC2 team numbers to B3 team numbers"""
         team = int(team)
         if team == 1:
             return b3.TEAM_RED
@@ -729,41 +894,105 @@ class Bfbc2Parser(b3.parser.Parser):
             return b3.TEAM_UNKNOWN
         
         
-    def getClient(self, name):
+    def getClient(self, cid):
         """Get a connected client from storage or create it
-        In BFBC2, clients are identified by their name, so we
-        have to trick B3 giving the name for CID and GUID fields
+        B3 CID   <--> BFBC2 character name
+        B3 GUID  <--> BFBC2 EA_guid
         """
-        client = self.clients.getByCID(name)
-        if not client:
-            clantag = ''
-            squadId = -1
-            teamId = b3.TEAM_UNKNOWN
-            data = self.write(('admin.listPlayers', 'player', name))
-            if data and len(data) == 4:
-                clantag, name, squadId, teamId = data
-                self.debug('player: %s %s %s %s' % (clantag, name, squadId, teamId))
-                if clantag is not None and len(clantag.strip()) > 0:
-                    clantag += ' '
-                self.clients.newClient(name, guid=name, name="%s%s" % (clantag, name), team=self.getTeam(teamId))
-        client = self.clients.getByCID(name)
-        return client
-
         
-    def getPlayerTeam(self, name):
-        """Ask the BFBC2 for a given client's team
-        """
-        teamId = b3.TEAM_UNKNOWN
-        if name:
-            data = self.write(('admin.listPlayers', 'player', name))
-            if data and len(data) == 4:
-                teamId = self.getTeam(data[3])
-        return teamId
+        # try to get the client from the storage of already authed clients
+        client = self.clients.getByCID(cid)
+        if not client:
+            if cid == 'Server':
+                return self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN, squad=SQUAD_NEUTRAL)
+            # must be the first time we see this client
+            words = self.write(('admin.listPlayers', 'player', cid))
+            pib = PlayerInfoBlock(words)
+            if len(pib) == 0:
+                self.debug('no such client found')
+                return None
+            p = pib[0]
+            cid = p['name']
+            name = p['name']
+            if 'clanTag' in p and len(p['clanTag']) > 0:
+                name = "[" + p['clanTag'] + "] " + p['name']
+            client = self.clients.newClient(cid, guid=p['guid'], name=name, team=p['teamId'], squad=p['squadId'], data=p)
+            self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
+        
+        return client
+        
+
+
+    def getPlayerList(self, maxRetries=None):
+        """return a dict which keys are cid and values a dict of player properties
+        as returned by admin.listPlayers.
+        Does not return client objects"""
+        data = self.write(('admin.listPlayers', 'all'))
+        if not data:
+            return {}
+        players = {}
+        pib = PlayerInfoBlock(data)
+        for p in pib:
+            players[p['name']] = p
+        return players
+
+
+    def getServerVars(self):
+        """Update the game property from server fresh data"""
+        try: self.game.is3dSpotting = self.getCvar('3dSpotting').getBoolean()
+        except: pass
+        try: self.game.bannerUrl = self.getCvar('bannerUrl').getString()
+        except: pass
+        try: self.game.crossHair = self.getCvar('crossHair').getBoolean()
+        except: pass
+        try: self.game.currentPlayerLimit = self.getCvar('currentPlayerLimit').getInt()
+        except: pass
+        try: self.game.friendlyFire = self.getCvar('friendlyFire').getBoolean()
+        except: pass
+        try: self.game.hardCore = self.getCvar('hardCore').getBoolean()
+        except: pass
+        try: self.game.killCam = self.getCvar('killCam').getBoolean()
+        except: pass
+        try: self.game.maxPlayerLimit = self.getCvar('maxPlayerLimit').getInt()
+        except: pass
+        try: self.game.miniMap = self.getCvar('miniMap').getBoolean()
+        except: pass
+        try: self.game.miniMapSpotting = self.getCvar('miniMapSpotting').getBoolean()
+        except: pass
+        try: self.game.playerLimit = self.getCvar('playerLimit').getInt()
+        except: pass
+        try: self.game.punkBuster = self.getCvar('punkBuster').getBoolean()
+        except: pass
+        try: self.game.rankLimit = self.getCvar('rankLimit').getInt()
+        except: pass
+        try: self.game.ranked = self.getCvar('ranked').getBoolean()
+        except: pass
+        try: self.game.serverDescription = self.getCvar('serverDescription').getString()
+        except: pass
+        try: self.game.teamBalance = self.getCvar('teamBalance').getBoolean()
+        except: pass
+        try: self.game.thirdPersonVehicleCameras = self.getCvar('thirdPersonVehicleCameras').getBoolean()
+        except: pass
+        
         
     def getPlayerScores(self):
-        """I don't know what we could put here...
-        maybe we could send the number of kills if the mstat plugin is enabled"""
-        return None
+        """Ask the BFBC2 for a given client's team
+        """
+        scores = {}
+        pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
+        for p in pib:
+            scores[p['name']] = int(p['score'])
+        return scores
+    
+    def getPlayerPings(self):
+        """Ask the BFBC2 for a given client's team
+        """
+        scores = {}
+        pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
+        for p in pib:
+            scores[p['name']] = int(p['ping'])
+        return scores
+    
 
     def authorizeClients(self):
         players = self.getPlayerList()
@@ -781,6 +1010,7 @@ class Bfbc2Parser(b3.parser.Parser):
                 sp.auth()
 
     def getCvar(self, cvarName):
+        """Read a server var"""
         if cvarName not in self._gameServerVars:
             self.warning('unknown cvar \'%s\'' % cvarName)
             return None
@@ -800,6 +1030,7 @@ class Bfbc2Parser(b3.parser.Parser):
         return None
 
     def setCvar(self, cvarName, value):
+        """Set a server var"""
         if cvarName not in self._gameServerVars:
             self.warning('cannot set unknown cvar \'%s\'' % cvarName)
             return
@@ -814,10 +1045,10 @@ class Bfbc2Parser(b3.parser.Parser):
         plist = self.getPlayerList()
         mlist = {}
 
-        for name, c in plist.iteritems():
-            client = self.clients.getByName(name)
+        for cid, c in plist.iteritems():
+            client = self.clients.getByCID(cid)
             if client:
-                mlist[name] = client
+                mlist[cid] = client
                 client.team = c.get('teamId', client.team)
         return mlist
 
@@ -877,7 +1108,130 @@ class Bfbc2Parser(b3.parser.Parser):
             return lines
         
 
+class PlayerInfoBlock:
+    """
+    help extract player info from a BFBC2 Player Info Block which we obtain
+    from admin.listPlayers
+    
+    usage :
+        words = [3, 'name', 'guid', 'ping', 2, 
+            'Courgette', 'A32132e', 130, 
+            'SpacepiG', '6546545665465', 120,
+            'Bakes', '6ae54ae54ae5', 50]
+        playersInfo = PlayerInfoBlock(words)
+        print "num of players : %s" % len(playersInfo)
+        print "first player : %s" % playersInfo[0]
+        print "second player : %s" % playersInfo[1]
+        print "the first 2 players : %s" % playersInfo[0:2]
+        for p in playersInfo:
+            print p
+    """
+    playersData = []
+    numOfParameters= 0
+    numOfPlayers = 0
+    parameterTypes = []
+    
+    def __init__(self, data):
+        """Represent a BFBC2 Player info block
+        The standard set of info for a group of players contains a lot of different 
+        fields. To reduce the risk of having to do backwards-incompatible changes to
+        the protocol, the player info block includes some formatting information.
+            
+        <number of parameters>       - number of parameters for each player 
+        N x <parameter type: string> - the parameter types that will be sent below 
+        <number of players>          - number of players following 
+        M x N x <parameter value>    - all parameter values for player 0, then all 
+                                    parameter values for player 1, etc
+                                    
+        Current parameters:
+          name     string     - player name 
+          guid     GUID       - player GUID, or '' if GUID is not yet known 
+          teamId   Team ID    - player's current team 
+          squadId  Squad ID   - player's current squad 
+          kills    integer    - number of kills, as shown in the in-game scoreboard
+          deaths   integer    - number of deaths, as shown in the in-game scoreboard
+          score    integer    - score, as shown in the in-game scoreboard 
+          ping     integer    - ping (ms), as shown in the in-game scoreboard
+        """
+        self.numOfParameters = int(data[0])
+        self.parameterTypes = data[1:1+self.numOfParameters]
+        self.numOfPlayers = int(data[1+self.numOfParameters])
+        self.playersData = data[1+self.numOfParameters+1:]
+    
+    def __len__(self):
+        return self.numOfPlayers
+    
+    def __getitem__(self, key):
+        """Returns the player data, for provided key (int or slice)"""
+        if isinstance(key, slice):
+            indices = key.indices(len(self))
+            return [self.getPlayerData(i) for i in range(*indices) ]
+        else:
+            return self.getPlayerData(key)
 
+    def getPlayerData(self, index):
+        if index >= self.numOfPlayers:
+            raise IndexError
+        data = {}
+        playerData = self.playersData[index*self.numOfParameters:(index+1)*self.numOfParameters]
+        for i in range(self.numOfParameters):
+            data[self.parameterTypes[i]] = playerData[i]
+        return data 
+
+
+class BanlistContent:
+    """
+    help extract banlist info from a BFBC2 banList.list response
+    
+    usage :
+        words = [2, 
+            'name', 'Courgette', 'perm', , 'test',  
+            'name', 'Courgette', 'seconds', 3600 , 'test2'] 
+        bansInfo = BanlistContent(words)
+        print "num of bans : %s" % len(bansInfo)
+        print "first ban : %s" % bansInfo[0]
+        print "second ban : %s" % bansInfo[1]
+        print "the first 2 bans : %s" % bansInfo[0:2]
+        for b in bansInfo:
+            print b
+    """
+    bansData = []
+    numOfBans = 0
+    
+    def __init__(self, data):
+        """Represent a BFBC2 banList.list response
+        Request: banList.list 
+        Response: OK <player ban entries> 
+        Response: InvalidArguments 
+        Effect: Return list of banned players/IPs/GUIDs. 
+        Comment: The list starts with a number telling how many bans the list is holding. 
+                 After that, 5 words (Id-type, id, ban-type, time and reason) are received for every ban in the list.
+        """
+        self.bansData = data[1:]
+        self.numOfBans = data[0]
+    
+    def __len__(self):
+        return self.numOfBans
+    
+    def __getitem__(self, key):
+        """Returns the ban data, for provided key (int or slice)"""
+        if isinstance(key, slice):
+            indices = key.indices(len(self))
+            return [self.getData(i) for i in range(*indices) ]
+        else:
+            return self.getData(key)
+
+    def getData(self, index):
+        if index >= self.numOfBans:
+            raise IndexError
+        tmp = self.bansData[index*5:(index+1)*5]
+        return {
+            'idType': tmp[0], # name | ip | guid
+            'id': tmp[1],
+            'banType': tmp[2], # perm | round | seconds
+            'time': tmp[3],
+            'reason': tmp[4], # 80 chars max
+        }
         
         
 #############################################################

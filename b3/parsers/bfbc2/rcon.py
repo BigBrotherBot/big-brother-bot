@@ -26,15 +26,16 @@
 # 2010/03/27 - 0.3.1 - Courgette
 # * fix maxRetries limitation 
 # * make this class thread safe
-
+# 2010/04/03 - 0.3.2 - courgette
+# * fix import Bfbc2Exception
 
 import thread
 from b3.parsers.bfbc2 import bfbc2Connection
  
 __author__ = 'Courgette'
-__version__ = '0.3.1'
+__version__ = '0.3.2'
  
-from b3.parsers.bfbc2.bfbc2Connection import *
+from b3.parsers.bfbc2.bfbc2Connection import Bfbc2Connection, Bfbc2Exception
 
 #--------------------------------------------------------------------------------------------------
 class Rcon:
@@ -56,7 +57,7 @@ class Rcon:
         if self._bfbc2Connection:
             return
         self.console.verbose('RCON: Connecting to BFBC2 server ...')
-        self._bfbc2Connection = Bfbc2Connection(self._rconIp, self._rconPort, self._rconPassword)
+        self._bfbc2Connection = Bfbc2Connection(self.console, self._rconIp, self._rconPort, self._rconPassword)
 
     def writelines(self, lines):
         for line in lines:
@@ -98,6 +99,7 @@ if __name__ == '__main__':
     """
     To run tests : python b3/parsers/bfbc2/rcon.py <rcon_ip> <rcon_port> <rcon_password>
     """
+    import sys
     if len(sys.argv) != 4:
         host = raw_input('Enter game server host IP/name: ')
         port = int(raw_input('Enter host port: '))
