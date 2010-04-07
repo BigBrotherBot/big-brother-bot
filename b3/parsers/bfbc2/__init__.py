@@ -913,6 +913,7 @@ class Bfbc2Parser(b3.parser.Parser):
                 return None
             p = pib[0]
             cid = p['name']
+            name = p['name']
             if 'clanTag' in p and len(p['clanTag']) > 0:
                 name = "[" + p['clanTag'] + "] " + p['name']
             client = self.clients.newClient(cid, guid=p['guid'], name=name, team=p['teamId'], squad=p['squadId'], data=p)
