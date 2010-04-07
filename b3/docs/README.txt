@@ -69,22 +69,21 @@ This only works in Python 2.6.
 1. Create a directory to store your b3 log files and config files, example:
    /home/b3/conf
 2. Copy the config files from /install/path/b3/conf to /home/b3/conf.
-3. Modify b3.xml
-   Edit database <scheme>://<username>:<password>@<host>/<database> 
-	Example: <set name="database">mysql://b3:password@localhost/b3</set>
+3. Modify b3.xml or run: b3_run.py --setup
+   Edit database <scheme>://<username>:<password>@<host[:port]>/<database> 
+   Example: <set name="database">mysql://b3:password@localhost/b3</set>
 
-	Edit logfile 
-	Example: <set name="logfile">/home/b3/b3.log</set> 
+   Edit logfile 
+   Example: <set name="logfile">/home/b3/b3.log</set> 
 
-	Edit game log 
-	Example: <set name="game_log">/usr/games/cod/uo/games_mp.log</set> 
+   Edit game log 
+   Example: <set name="game_log">/usr/games/cod/uo/games_mp.log</set> 
 
-	Edit rcon_password 
-	Example: <set name="rcon_password">password</set>
+   Edit rcon_password 
+   Example: <set name="rcon_password">password</set>
 
-	Leave log_level at 9 for debugging, If there is a bug found we will 
-	need your b3.log.
-   
+   Leave log_level at 9 for debugging, If there is a bug found we will 
+   need your b3.log.   
 
 ### Running B3
 
@@ -105,11 +104,8 @@ This only works in Python 2.6.
 ### Checking Status
 
 1. Check b3.log
-	`tail -n100 -f b3.log`
+   `tail -n100 -f b3.log`
    
 ### Setup Users
 
-1. Change iamgod to 0 in the b3/conf/plugin_admin.xml
-2. Connect to the server and type !iamgod. This will register you as the server
-   owner. 
-3. Change iamgod back to "none" after you are registered.
+1. Connect to the server and type !iamgod. This will register you as the server owner. 
