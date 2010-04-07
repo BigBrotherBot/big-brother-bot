@@ -78,22 +78,37 @@
 # * self.game.* is now updated correctly every 15 seconds.
 # 2010/04/05 - 1.0 - Courgette
 # * update parser to follow BFBC2 R9 protocol changes
+# 2010/04/07 - 1.1 - Courgette
+# * fix OnPlayerTeamchange
+# * fix OnPlayerSquadchange
+# * fix OnServerLoadinglevel
+# * fix OnServerLevelstarted
+# * introduced a mechanisms that ensure the server loade a target map. This
+#   ensure changeMap and mapRotate actually change maps and not just change 
+#   map sides (as admin.runNextLevel does natively)
+# * make used of the soundex/levenshteinDistance algorithm to get map name from
+#   user commands
 #
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
 # EVT_UNKNOWN
-# EVT_CLIENT_CONNECT
-# EVT_CLIENT_JOIN (only if punkbuster enabled on the server)
-# EVT_CLIENT_DISCONNECT
+# EVT_CLIENT_JOIN
+# EVT_CLIENT_KICK
 # EVT_CLIENT_SAY
-# EVT_CLIENT_KILL
-# EVT_CLIENT_KILL_TEAM
+# EVT_CLIENT_TEAM_SAY
+# EVT_CLIENT_PRIVATE_SAY
+# EVT_CLIENT_CONNECT
 # EVT_CLIENT_SUICIDE
+# EVT_CLIENT_KILL_TEAM
+# EVT_CLIENT_KILL
+# EVT_GAME_WARMUP
+# EVT_GAME_ROUND_START
 # EVT_CLIENT_BAN_TEMP
 # EVT_CLIENT_BAN
 #
 # -- BFBC2 specific B3 events --
+# EVT_CLIENT_SQUAD_CHANGE
 # EVT_PUNKBUSTER_LOST_PLAYER
 # EVT_PUNKBUSTER_SCHEDULED_TASK
 # 
@@ -101,10 +116,11 @@
 # EVT_CLIENT_NAME_CHANGE
 # EVT_CLIENT_TEAM_CHANGE
 # EVT_CLIENT_AUTH
+# EVT_CLIENT_DISCONNECT
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.0'
+__version__ = '1.1'
 
 
 import sys, time, re, string, traceback
@@ -116,7 +132,7 @@ import threading
 import Queue
 import rcon
 import b3.cvar
-
+from b3.functions import soundex, levenshteinDistance
 from b3.parsers.bfbc2.bfbc2Connection import *
 
 GAMETYPE_SQDM = 'SQDM' # Squad Deathmatch. no team, but up to 4 squad fighting each others
@@ -147,6 +163,11 @@ class Bfbc2Parser(b3.parser.Parser):
     _bfbc2EventsListener = None
     _bfbc2Connection = None
     _nbConsecutiveConnFailure = 0
+    
+    ## to make changeMap() and mapRotate() work as expected
+    changeMap_targetLevel = None
+    changeMap_restoreMapListOnNextLevel = False
+    changeMap_backupMapList = None
 
     # BFBC2 does not support color code, so we need this property
     # in order to get stripColors working
@@ -171,7 +192,6 @@ class Bfbc2Parser(b3.parser.Parser):
 
     
     _eventMap = {
-        'server.onLevelStarted': b3.events.EVT_GAME_ROUND_START,
         'player.onKicked': b3.events.EVT_CLIENT_KICK,
     }
 
@@ -359,68 +379,6 @@ class Bfbc2Parser(b3.parser.Parser):
             self.queueEvent(b3.events.Event(b3.events.EVT_UNKNOWN, data))
 
 
-
-    def getPlayerList(self, maxRetries=None):
-        data = self.write(('admin.listPlayers', 'all'))
-        if not data:
-            return {}
-        players = {}
-        pib = PlayerInfoBlock(data)
-        for p in pib:
-            players[p['name']] = p
-        return players
-
-
-    def getServerVars(self):
-        """Update the game property from server fresh data"""
-        try: self.game.is3dSpotting = self.getCvar('3dSpotting').getBoolean()
-        except: pass
-        try: self.game.bannerUrl = self.getCvar('bannerUrl').getString()
-        except: pass
-        try: self.game.crossHair = self.getCvar('crossHair').getBoolean()
-        except: pass
-        try: self.game.currentPlayerLimit = self.getCvar('currentPlayerLimit').getInt()
-        except: pass
-        try: self.game.friendlyFire = self.getCvar('friendlyFire').getBoolean()
-        except: pass
-        try: self.game.hardCore = self.getCvar('hardCore').getBoolean()
-        except: pass
-        try: self.game.killCam = self.getCvar('killCam').getBoolean()
-        except: pass
-        try: self.game.maxPlayerLimit = self.getCvar('maxPlayerLimit').getInt()
-        except: pass
-        try: self.game.miniMap = self.getCvar('miniMap').getBoolean()
-        except: pass
-        try: self.game.miniMapSpotting = self.getCvar('miniMapSpotting').getBoolean()
-        except: pass
-        try: self.game.playerLimit = self.getCvar('playerLimit').getInt()
-        except: pass
-        try: self.game.punkBuster = self.getCvar('punkBuster').getBoolean()
-        except: pass
-        try: self.game.rankLimit = self.getCvar('rankLimit').getInt()
-        except: pass
-        try: self.game.ranked = self.getCvar('ranked').getBoolean()
-        except: pass
-        try: self.game.serverDescription = self.getCvar('serverDescription').getString()
-        except: pass
-        try: self.game.teamBalance = self.getCvar('teamBalance').getBoolean()
-        except: pass
-        try: self.game.thirdPersonVehicleCameras = self.getCvar('thirdPersonVehicleCameras').getBoolean()
-        except: pass
-        
-
-    def getMap(self):
-        data = self.write(('admin.currentLevel',))
-        if not data:
-            return None
-        return data[0]
-
-    def rotateMap(self):
-        self.write(('admin.runNextLevel',))
-        return True
-    
-
-
     #----------------------------------
     
 
@@ -496,7 +454,7 @@ class Bfbc2Parser(b3.parser.Parser):
         else:
             return b3.events.Event(b3.events.EVT_CLIENT_KILL, (100, None, None), attacker, victim)
 
-    def OnPlayerTeamChange(self, action, data):
+    def OnPlayerTeamchange(self, action, data):
         """
         player.onTeamChange <soldier name: player name> <team: Team ID> <squad: Squad ID>
         
@@ -507,7 +465,7 @@ class Bfbc2Parser(b3.parser.Parser):
             client.team = self.getTeam(data[1]) # .team setter will send team change event
             client.squad = data[2]
             
-    def OnPlayerSquadChange(self, action, data):
+    def OnPlayerSquadchange(self, action, data):
         """
         player.onSquadChange <soldier name: player name> <team: Team ID> <squad: Squad ID>    
         
@@ -521,7 +479,7 @@ class Bfbc2Parser(b3.parser.Parser):
                 return b3.events.Event(b3.events.EVT_CLIENT_SQUAD_CHANGE, data[1:], client)
 
 
-    def OnServerLoadingLevel(self, action, data):
+    def OnServerLoadinglevel(self, action, data):
         """
         server.onLoadingLevel <level name: string>
         
@@ -530,6 +488,28 @@ class Bfbc2Parser(b3.parser.Parser):
         self.game.mapName = data[0]
         return b3.events.Event(b3.events.EVT_GAME_WARMUP, data[0])
 
+    def OnServerLevelstarted(self, action, data):
+        """When the level finished loading and started"""
+        if self.changeMap_targetLevel is not None:
+            if self.game.mapName != self.changeMap_targetLevel:
+                # doh! the server just switched map sides instead of changing map !!! DICE please do something :)
+                # try again
+                self.debug("try one more time to change to map %s" % self.changeMap_targetLevel)
+                self.changeMap_targetLevel = None
+                self.write(('admin.runNextLevel', ))
+                return
+            else:
+                # yeah! we did it !
+                self.debug("succesfully change to map %s" % self.changeMap_targetLevel)
+                self.changeMap_targetLevel = None
+                
+        if self.changeMap_restoreMapListOnNextLevel:
+            self.restoreMapList(self.changeMap_backupMapList)
+            self.changeMap_restoreMapListOnNextLevel = False
+            self.changeMap_backupMapList = None
+
+        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, data)
+            
 
     def OnPunkbusterMessage(self, action, data):
         """handes all punkbuster related events and 
@@ -742,9 +722,8 @@ class Bfbc2Parser(b3.parser.Parser):
         """Return the name of the next map
         """
         [nextLevelIndex] = self.write(('mapList.nextLevelIndex',))
-        [currentPlaylist] = self.write(('admin.getPlaylist',))
-        supportedMaps = self.write(('admin.supportedMaps', currentPlaylist))
-        return self.getEasyName(supportedMaps[nextLevelIndex])
+        levelnames = self.write(('mapList.list',))
+        return self.getEasyName(levelnames[int(nextLevelIndex) % len(levelnames)])
     
     def getEasyName(self, mapname):
         """ Change levelname to real name """
@@ -783,14 +762,124 @@ class Bfbc2Parser(b3.parser.Parser):
             return mapname
     
     def getMaps(self):
-        """Return the map list"""
+        """Return the map list for the current rotation. (as easy map names)
+        This does not return all available maps
+        """
+        levelnames = self.write(('mapList.list',))
+        mapList = []
+        for l in levelnames:
+            mapList.append(self.getEasyName(l))
+        return mapList
+
+    def getMap(self):
+        """Return the current level name (not easy map name)"""
+        data = self.write(('admin.currentLevel',))
+        if not data:
+            return None
+        return data[0]
+
+    def rotateMap(self):
+        """Load the next level. If the current game mod plays each level twice
+        to get teams the chance to play both sides, then this rotate a second
+        time to really switch to the next level"""
+        [nextLevelIndex] = self.write(('mapList.nextLevelIndex',))
+        levelnames = self.write(('mapList.list',))
+        self.changeMap_targetLevel = levelnames[int(nextLevelIndex) % len(levelnames)]
+        self.write(('admin.runNextLevel',))
+    
+    def changeMap(self, map):
+        """Change to the given map/level
+        
+        If map is of the form 'Levels/MP_001' and 'Levels/MP_001' is a supported
+        level for the current game mod, then this level is loaded.
+        
+        In other cases, this method assumes it is given a 'easy map name' (like
+        'Port Valdez') and it will do its best to find the level name that seems
+        to be for 'Port Valdez' within the supported levels.
+        If no match is found, then instead of loading the map, this method 
+        returns a list of candidate map names
+        """        
+        supportedMaps = self.getSupportedMaps()
+        if map not in supportedMaps:
+            match = self.getMapsSoundingLike(map)
+            if len(match) == 1:
+                map = match[0]
+            else:
+                return match
+            
+        if map in supportedMaps:
+            self.say('Changing map to %s' % map)
+            self.changeMap_backupMapList = self.write(('mapList.list',))
+            self.changeMap_restoreMapListOnNextLevel = True
+            self.changeMap_targetLevel = map
+            self.write(('mapList.clear',))
+            self.write(('mapList.append', map))
+            self.write(('mapList.save',))
+            time.sleep(1)
+            self.changeMap_tries = 1
+            self.write(('admin.runNextLevel', ))
+            
+            
+            
+
+    def getSupportedMaps(self):
+        """return a list of supported levels for the current game mod"""
         [currentPlaylist] = self.write(('admin.getPlaylist',))
         supportedMaps = self.write(('admin.supportedMaps', currentPlaylist))
-        mapList = []
-        for map in supportedMaps:
-            mapList.append(self.getEasyName(map))
-        return mapList
-    
+        return supportedMaps
+
+    def getMapsSoundingLike(self, mapname):
+        """found matching level names for the given mapname (which can either
+        be a level name or map name)
+        If no exact match is found, then return close candidates using soundex
+        and then LevenshteinDistance algoritms
+        """
+        supportedMaps = self.getSupportedMaps()
+        supportedEasyNames = {}
+        for m in supportedMaps:
+            supportedEasyNames[self.getEasyName(m)] = m
+            
+        data = mapname.strip()
+        soundex1 = soundex(data)
+        #self.debug('soundex %s : %s' % (data, soundex1))
+        
+        match = []
+        if data in supportedMaps:
+            match = [data]
+        elif data in supportedEasyNames:
+            match = [supportedEasyNames[data]]
+        else:
+            for m in supportedEasyNames:
+                s = soundex(m)
+                #self.debug('soundex %s : %s' % (m, s))
+                if s == soundex1:
+                    #self.debug('probable map : %s', m)
+                    match.append(supportedEasyNames[m])
+        
+        if len(match) == 0:
+            # suggest closest spellings
+            shortmaplist = []
+            for m in supportedEasyNames:
+                if m.find(data) != -1:
+                    shortmaplist.append(m)
+            if len(shortmaplist) > 0:
+                shortmaplist.sort(key=lambda map: levenshteinDistance(data, string.replace(map.strip())))
+                self.debug("shortmaplist sorted by distance : %s" % shortmaplist)
+                match = shortmaplist[:3]
+            else:
+                easyNames = supportedEasyNames.keys()
+                easyNames.sort(key=lambda map: levenshteinDistance(data, map.strip()))
+                self.debug("maplist sorted by distance : %s" % easyNames)
+                match = easyNames[:3]
+        return match
+
+
+    def restoreMapList(self, list):
+        self.write(('mapList.clear',))
+        for l in list:
+            self.write(('mapList.append', l))
+        self.write(('mapList.save',))
+           
         
     def getTeam(self, team):
         """convert BFBC2 team numbers to B3 team numbers"""
@@ -831,6 +920,60 @@ class Bfbc2Parser(b3.parser.Parser):
         
         return client
         
+
+
+    def getPlayerList(self, maxRetries=None):
+        """return a dict which keys are cid and values a dict of player properties
+        as returned by admin.listPlayers.
+        Does not return client objects"""
+        data = self.write(('admin.listPlayers', 'all'))
+        if not data:
+            return {}
+        players = {}
+        pib = PlayerInfoBlock(data)
+        for p in pib:
+            players[p['name']] = p
+        return players
+
+
+    def getServerVars(self):
+        """Update the game property from server fresh data"""
+        try: self.game.is3dSpotting = self.getCvar('3dSpotting').getBoolean()
+        except: pass
+        try: self.game.bannerUrl = self.getCvar('bannerUrl').getString()
+        except: pass
+        try: self.game.crossHair = self.getCvar('crossHair').getBoolean()
+        except: pass
+        try: self.game.currentPlayerLimit = self.getCvar('currentPlayerLimit').getInt()
+        except: pass
+        try: self.game.friendlyFire = self.getCvar('friendlyFire').getBoolean()
+        except: pass
+        try: self.game.hardCore = self.getCvar('hardCore').getBoolean()
+        except: pass
+        try: self.game.killCam = self.getCvar('killCam').getBoolean()
+        except: pass
+        try: self.game.maxPlayerLimit = self.getCvar('maxPlayerLimit').getInt()
+        except: pass
+        try: self.game.miniMap = self.getCvar('miniMap').getBoolean()
+        except: pass
+        try: self.game.miniMapSpotting = self.getCvar('miniMapSpotting').getBoolean()
+        except: pass
+        try: self.game.playerLimit = self.getCvar('playerLimit').getInt()
+        except: pass
+        try: self.game.punkBuster = self.getCvar('punkBuster').getBoolean()
+        except: pass
+        try: self.game.rankLimit = self.getCvar('rankLimit').getInt()
+        except: pass
+        try: self.game.ranked = self.getCvar('ranked').getBoolean()
+        except: pass
+        try: self.game.serverDescription = self.getCvar('serverDescription').getString()
+        except: pass
+        try: self.game.teamBalance = self.getCvar('teamBalance').getBoolean()
+        except: pass
+        try: self.game.thirdPersonVehicleCameras = self.getCvar('thirdPersonVehicleCameras').getBoolean()
+        except: pass
+        
+        
     def getPlayerScores(self):
         """Ask the BFBC2 for a given client's team
         """
@@ -866,6 +1009,7 @@ class Bfbc2Parser(b3.parser.Parser):
                 sp.auth()
 
     def getCvar(self, cvarName):
+        """Read a server var"""
         if cvarName not in self._gameServerVars:
             self.warning('unknown cvar \'%s\'' % cvarName)
             return None
@@ -885,6 +1029,7 @@ class Bfbc2Parser(b3.parser.Parser):
         return None
 
     def setCvar(self, cvarName, value):
+        """Set a server var"""
         if cvarName not in self._gameServerVars:
             self.warning('cannot set unknown cvar \'%s\'' % cvarName)
             return
