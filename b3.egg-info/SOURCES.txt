@@ -51,6 +51,7 @@ b3/conf/plugin_welcome.xml
 b3/docs/LICENSE.txt
 b3/docs/README.txt
 b3/docs/b3-db.sql
+b3/docs/b3-update-v1.3.sql
 b3/docs/b3.sql
 b3/docs/commands.txt
 b3/docs/recreate-xlrstats.sql
