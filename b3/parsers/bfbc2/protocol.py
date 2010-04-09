@@ -142,7 +142,7 @@ def containsCompletePacket(data):
 def receivePacket(socket, receiveBuffer):
 
 	while not containsCompletePacket(receiveBuffer):
-		receiveBuffer += socket.recv(4096)
+		receiveBuffer += socket.recv(16384)
 
 	packetSize = DecodeInt32(receiveBuffer[4:8])
 

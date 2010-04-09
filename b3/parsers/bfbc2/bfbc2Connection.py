@@ -37,16 +37,19 @@
 # 2010/03/25 - 0.10.1 - Courgette
 # * Exception message more explicit
 # * fix the socket time out message when listening to events
+# 2010/03/30 - 0.11 - Courgette
+# * use console to print messages
+# * when listening to event, do not set the socket into blocking mode. This should
+#   make the bot recover from a connection loss
 #
 
 __author__  = 'Courgette'
-__version__ = '0.10.1'
+__version__ = '0.11'
 
 debug = True
 
-import time
 import socket
-from b3.parsers.bfbc2.protocol import *
+import b3.parsers.bfbc2.protocol
  
     
 
@@ -58,13 +61,15 @@ class Bfbc2CommandFailedError(Exception): pass
 
 class Bfbc2Connection(object):
     
+    console = None
     _serverSocket = None
     _receiveBuffer = None
     _host = None
     _port = None
     _password = None
 
-    def __init__(self, host, port, password):
+    def __init__(self, console, host, port, password):
+        self.console = console
         self._host = host
         self._port = port
         self._password = password
@@ -80,6 +85,7 @@ class Bfbc2Connection(object):
    
     def _connect(self):
         try:
+            self.console.debug('opening bfbc2Connection socket')
             self._receiveBuffer = ''
             self._serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._serverSocket.connect( ( self._host, self._port ) )
@@ -88,6 +94,7 @@ class Bfbc2Connection(object):
     
     def close(self):
         if self._serverSocket is not None:
+            self.console.debug('closing bfbc2Connection socket')
             try:
                 self.sendRequest('quit')
             except: pass
@@ -98,7 +105,7 @@ class Bfbc2Connection(object):
         if command is None:
             return None
         if self._serverSocket is None:
-            print "reconnecting..."
+            self.console.info("sendRequest: reconnecting...")
             self._connect()
             self._auth()
             
@@ -106,22 +113,23 @@ class Bfbc2Connection(object):
             words = command[0]
         else:
             words = command
-        request = EncodeClientRequest(words)
-        printPacket(DecodePacket(request))
+        request = b3.parsers.bfbc2.protocol.EncodeClientRequest(words)
+        self.printPacket(b3.parsers.bfbc2.protocol.DecodePacket(request))
         try:
             self._serverSocket.sendall(request)
-            [response, self._receiveBuffer] = receivePacket(self._serverSocket, self._receiveBuffer)
+            [response, self._receiveBuffer] = b3.parsers.bfbc2.protocol.receivePacket(self._serverSocket, self._receiveBuffer)
         except socket.error, detail:
             raise Bfbc2NetworkException(detail)
         
         if response is None:
             return None
-        decodedResponse = DecodePacket(response)
-        printPacket(decodedResponse)
+        decodedResponse = b3.parsers.bfbc2.protocol.DecodePacket(response)
+        self.printPacket(decodedResponse)
         #[isFromServer, isResponse, sequence, words] = decodedResponse
         return decodedResponse[3]
         
     def _auth(self):
+        self.console.debug('authing to BFBC2 server')
         if self._serverSocket is None:
             raise Bfbc2Connection("cannot auth, need to be connected")
             
@@ -134,8 +142,8 @@ class Bfbc2Connection(object):
 
         # Given the salt and the password, combine them and compute hash value
         salt = words[1].decode("hex")
-        passwordHash = generatePasswordHash(salt, self._password)
-        passwordHashHexString = string.upper(passwordHash.encode("hex"))
+        passwordHash = b3.parsers.bfbc2.protocol.generatePasswordHash(salt, self._password)
+        passwordHashHexString = b3.parsers.bfbc2.protocol.string.upper(passwordHash.encode("hex"))
 
         # Send password hash to server
         loginResponse = self.sendRequest("login.hashed", passwordHashHexString)
@@ -149,7 +157,7 @@ class Bfbc2Connection(object):
         """
         tell the bfbc2 server to send us events
         """
-        self._serverSocket.setblocking(1)
+        self.console.debug('subscribing to BFBC2 events')
         response = self.sendRequest("eventsEnabled", "true")
 
         # if the server didn't know about the command, abort
@@ -159,61 +167,65 @@ class Bfbc2Connection(object):
         
     def readBfbc2Event(self):
         # Wait for packet from server
+        packet = None
+        while packet is None:
+            try:
+                if self._serverSocket is None:
+                    self.console.info("readBfbc2Event: reconnecting...")
+                    self._connect()
+                    self._auth()
+                    self.subscribeToBfbc2Events()
+                [packet, self._receiveBuffer] = b3.parsers.bfbc2.protocol.receivePacket(self._serverSocket, self._receiveBuffer)
+            except socket.timeout:
+                pass
+            except socket.error, detail:
+                raise Bfbc2NetworkException('readBfbc2Event: %r'% detail)
+        
+        
         try:
-            if self._serverSocket is None:
-                print "reconnecting..."
-                self._connect()
-                self._auth()
-                self.subscribeToBfbc2Events()
-            [packet, self._receiveBuffer] = receivePacket(self._serverSocket, self._receiveBuffer)
-        except socket.error, detail:
-            raise Bfbc2NetworkException('readBfbc2Event: %r'% detail)
-        try:
-            [isFromServer, isResponse, sequence, words] = DecodePacket(packet)
-            printPacket(DecodePacket(packet))
+            [isFromServer, isResponse, sequence, words] = b3.parsers.bfbc2.protocol.DecodePacket(packet)
+            self.printPacket(b3.parsers.bfbc2.protocol.DecodePacket(packet))
         except:
-            raise Bfbc2Exception('failed to decodePacket {%s}' % packet)
+            raise Bfbc2Exception('readBfbc2Event: failed to decodePacket {%s}' % packet)
         
         # If this was a command from the server, we should respond to it
         # For now, we always respond with an "OK"
         if isResponse:
-            print 'Received an unexpected response packet from server, ignoring: %r' % packet
+            self.console.debug('Received an unexpected response packet from server, ignoring: %r' % packet)
             return self.handle_bfbc2_events()
         else:
-            response = EncodePacket(True, True, sequence, ["OK"])
-            printPacket(DecodePacket(response))
+            response = b3.parsers.bfbc2.protocol.EncodePacket(True, True, sequence, ["OK"])
+            self.printPacket(b3.parsers.bfbc2.protocol.DecodePacket(response))
             self._serverSocket.sendall(response)
             return words
             
+    def printPacket(self, packet):
+        """Display contents of packet in user-friendly format, useful for debugging purposes"""
+        if debug:
+            isFromServer = packet[0]
+            isResponse = packet[1]
+            msg = ""
+            if isFromServer and isResponse:
+                msg += "<-R-"
+            elif isFromServer and not isResponse:
+                msg += "-Q->"
+            elif not isFromServer and isResponse:
+                msg += "-R->"
+            elif not isFromServer and not isResponse:
+                msg += "<-Q-"
+        
+            msg += " (%s)" %  packet[2]
+        
+            if packet[3]:
+                msg += " :"
+                for word in packet[3]:
+                    msg += " \"" + word + "\""
+        
+            self.console.verbose2(msg)
+        
 
         
 
-
-###################################################################################
-# Display contents of packet in user-friendly format, useful for debugging purposes
-def printPacket(packet):
-    if debug:
-        erf = sys.__stderr__
-        isFromServer = packet[0]
-        isResponse = packet[1]
-        if isFromServer and isResponse:
-            print>>erf, "<-R-",
-        elif isFromServer and not isResponse:
-            print>>erf, "-Q->",
-        elif not isFromServer and isResponse:
-            print>>erf, "-R->",
-        elif not isFromServer and not isResponse:
-            print>>erf, "<-Q-",
-    
-        print>>erf, "(%s)" %  packet[2],
-    
-        if packet[3]:
-            print>>erf, " :",
-            for word in packet[3]:
-                print>>erf, "\"" + word + "\"",
-    
-        print>>erf, ""
-    
 ###################################################################################
 # Example program
 
@@ -228,8 +240,17 @@ if __name__ == '__main__':
         host = sys.argv[1]
         port = int(sys.argv[2])
         pw = sys.argv[3]
-        
-    bc2server = Bfbc2Connection(host, port, pw)
+    
+    class MyConsole:
+        def debug(self, msg):
+            print "   DEBUG: " + msg
+        def info(self, msg):
+            print "    INFO: " + msg
+        def verbose2(self, msg):
+            print "VERBOSE2: " + msg
+    myConsole = MyConsole()
+    
+    bc2server = Bfbc2Connection(myConsole, host, port, pw)
     print "connected"
     
     reponse = bc2server.sendRequest(('version',))
