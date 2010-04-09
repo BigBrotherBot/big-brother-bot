@@ -1,3 +1,28 @@
+2010-04-09  xlr8or <xlr8or@xlr8or.com>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO,
+	py2exe_builder/b3-installer-project.iss, setup.py: Version 1.3
+	release preparations
+
+2010-04-09  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 7ee18030deaa243555375aa67fa17262ef0c5ae5 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Fri Apr 9 17:15:04 2010 +0200
+
+2010-04-09  Courgette <courgette@ubu-team.org>
+
+	* : commit 1b468cfdf08d399f830fcbb1e4c4adae994cbac8 Author:
+	Courgette <courgette@ubu-team.org> Date:   Fri Apr 9 01:21:07 2010
+	+0200
+
+2010-04-08  Courgette <courgette@ubu-team.org>
+
+	* : Merge remote branch 'courgette/bfbc2' into 1.3
+
+2010-04-07  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py: BFCB2 parser v1.1. Lots of fixes
+
 2010-04-07  xlr8or <xlr8or@xlr8or.com>
 
 	* b3.egg-info/SOURCES.txt: egg-info sources.txt updated
@@ -15,10 +40,47 @@
 
 	* b3/docs/b3-update-v1.3.sql, b3/docs/b3.sql: * update b3.sql to fit 36 char guids (bfbc2) * add b3-update-v1.3.sql, added for support ability when needed
 
+2010-04-07  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py: BFCB2: quick fixes
+
+2010-04-07  Courgette <courgette@ubu-team.org>
+
+	* b3/docs/b3.sql, b3/parsers/bfbc2/__init__.py,
+	b3/parsers/bfbc2/protocol.py: BFBC2: update B3 for R9
+
 2010-04-05  xlr8or <xlr8or@xlr8or.com>
 
 	* : commit f1ade579518f648ee1b6a06fa0947bc027128582 Author: xlr8or
 	<xlr8or@xlr8or.com> Date:   Mon Apr 5 19:28:17 2010 +0200
+
+2010-04-03  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/rcon.py: BFBC2 rcon: fix missing import
+
+2010-04-01  Bakes <bakes@ymail.com>
+
+	* b3/parsers/bfbc2/__init__.py: The map is now updated every 15
+	seconds. This will be changed in time for R9, since R9 includes a
+	load map event.
+
+2010-03-30  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/status.py: PLUGIN STATUS: do not fail to write player
+	info is the parser does not provide scores
+
+2010-03-30  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py: BFBC2: fix self.Punkbuster, add
+	Squad constants
+
+2010-03-30  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py,
+	b3/parsers/bfbc2/bfbc2Connection.py, b3/parsers/bfbc2/rcon.py: 
+	BFBC2: bfbc2Connection improvements (recover from connection loss,
+	use self.console to print messages, do not pollute globals with
+	imports)
 
 2010-03-30  Courgette <courgette@ubu-team.org>
 
