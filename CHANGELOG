@@ -1,9 +1,18 @@
 1.2.1 -> 1.3.0
 ----
-~100 files were changed (in 400+ commits)! We strongly recommend updating the complete bot!
+Over 100 files were changed (in almost 500 commits)! We strongly recommend updating the complete bot!
 Also make sure you check your saved config files for additions and changes!
 A list of changed files is available after release here:
 github.com/BigBrotherBot/big-brother-bot/compare/v1.2.1...v1.3.0
+----
+Upgrading:
+A number of commands were moved from the adminplugin to welcome and pingwatch plugin.
+This results in changes to the next config files:
+* plugin_admin.xml (some commands were removed)
+* plugin_welcome.xml (new command !greeting)
+* plugin_pingwatch.xml (new command !ci)
+If you're using xlrstats, make sure the database holding the xlrstats tables is upgraded:
+* new tables for xlrstats need to be created (run xlrstats.sql or xlrstats-update-to-v2.0.0.sql on the database!) 
 ----
 - Setup procedure added. Initiated with option -s, --setup (can be overridden by -n, --nosetup option)
 - b3/plugins/censor.py: Fixed censor.py badname functionality.
@@ -32,6 +41,7 @@ github.com/BigBrotherBot/big-brother-bot/compare/v1.2.1...v1.3.0
   Removed redundant commands: about, groups, cmdlevel, newgroup, delgroup, editgroup
 -	[BETA addition] b3/parsers/smg.py, b3/parsers/smg11.py: PARSER smg is compatible
 	with SG pior 1.1. smg11 uses the new /tell command for private chat
+-	[BETA addition] b3/parsers/bfbc2: Parser for BattleField Bad Company 2 (R9 servers)
 ----
 
 1.2.1
