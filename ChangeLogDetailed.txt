@@ -1,3 +1,30 @@
+2010-04-07  xlr8or <xlr8or@xlr8or.com>
+
+	* b3.egg-info/SOURCES.txt: egg-info sources.txt updated
+
+2010-04-07  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/docs/commands.txt: changed commands.txt pointing to autodoc
+	feature.
+
+2010-04-07  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/docs/README.txt: update README.txt
+
+2010-04-07  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/docs/b3-update-v1.3.sql, b3/docs/b3.sql: * update b3.sql to fit 36 char guids (bfbc2) * add b3-update-v1.3.sql, added for support ability when needed
+
+2010-04-05  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit f1ade579518f648ee1b6a06fa0947bc027128582 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Mon Apr 5 19:28:17 2010 +0200
+
+2010-03-30  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/status.py: PLUGIN STATUS: do not fail to write player
+	info is the parser does not provide scores
+
 2010-03-28  xlr8or <xlr8or@xlr8or.com>
 
 	* versions.txt: Added file versions list
