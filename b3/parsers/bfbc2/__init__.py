@@ -1139,7 +1139,7 @@ class Bfbc2Parser(b3.parser.Parser):
                 self.output.flush()
                 return res
             
-    def getWrap(self, text, length=100, minWrapLen=100):
+    def getWrap(self, text, length=SAY_LINE_MAX_LENGTH, minWrapLen=SAY_LINE_MAX_LENGTH):
         """Returns a sequence of lines for text that fits within the limits
         """
         if not text:
