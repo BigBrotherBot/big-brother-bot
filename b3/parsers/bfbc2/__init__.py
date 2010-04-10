@@ -95,7 +95,10 @@
 # * on map load, update self.game.<whatever we can> so other plugins can find more data
 # * handle gracefully cases where the mapList is empty
 # * fix typo in 'africa harbor'
-# 
+# 2010/04/10 - 1.2.1 - Courgette
+# * you can now specify in b3.xml what custom maximum line length you want to 
+#   see in the chat zone. 
+# * make sure the BFBC2 server is R9 or later
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -127,7 +130,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.2'
+__version__ = '1.2.1'
 
 
 import sys, time, re, string, traceback
@@ -141,6 +144,8 @@ import rcon
 import b3.cvar
 from b3.functions import soundex, levenshteinDistance
 from b3.parsers.bfbc2.bfbc2Connection import *
+
+SAY_LINE_MAX_LENGTH = 100
 
 GAMETYPE_SQDM = 'SQDM' # Squad Deathmatch. no team, but up to 4 squad fighting each others
 GAMETYPE_CONQUEST = 'CONQUEST'
@@ -158,7 +163,6 @@ SQUAD_GOLF = 7
 SQUAD_HOTEL = 8
 SQUAD_NEUTRAL = 24
 
-BUILD_NUMBER_R9_PRERELEASE2 = 526861
 BUILD_NUMBER_R9 = 527791
 
 #----------------------------------------------------------------------------------------------------------------------------------------------
@@ -178,8 +182,8 @@ class Bfbc2Parser(b3.parser.Parser):
     _reColor = re.compile(r'(\^[0-9])') 
     
     _settings = {}
-    _settings['line_length'] = 99
-    _settings['min_wrap_length'] = 99
+    _settings['line_length'] = 65
+    _settings['min_wrap_length'] = 65
     _settings['message_delay'] = 2
 
     _commands = {}
@@ -243,14 +247,31 @@ class Bfbc2Parser(b3.parser.Parser):
             self.info('kick/ban by punkbuster is unsupported yet')
             #self.debug('punkbuster enabled in config')
             #self.PunkBuster = Bfbc2PunkBuster(self)
+        
+        
+        if self.config.has_option('bfbc2', 'max_say_line_length'):
+            try:
+                maxlength = self.config.getint('bfbc2', 'max_say_line_length')
+                if maxlength > SAY_LINE_MAX_LENGTH:
+                    self.warning('max_say_line_length cannot be greater than %s' % SAY_LINE_MAX_LENGTH)
+                    maxlength = SAY_LINE_MAX_LENGTH
+                if maxlength < 20:
+                    self.warning('max_say_line_length is way too short. using default')
+                    maxlength = self._settings['line_length']
+                self._settings['line_length'] = maxlength
+                self._settings['min_wrap_length'] = maxlength
+            except Exception, err:
+                self.error('failed to read max_say_line_length setting "%s" : %s' % (self.config.get('bfbc2', 'max_say_line_length'), err))
+        self.debug('line_length: %s' % self._settings['line_length'])
+            
             
             
         version = self.output.write('version')
         self.info('BFBC2 server version : %s' % version)
         if version[0] != 'BFBC2':
             raise Exception("the bfbc2 parser can only work with BattleField Bad Company 2")
-        if int(version[1]) < BUILD_NUMBER_R9_PRERELEASE2:
-            raise Exception("this bfbc2 parser requires a BFBC2 server v R9 or later")
+        if int(version[1]) < BUILD_NUMBER_R9:
+            raise SystemExit("this bfbc2 parser requires a BFBC2 server R9 or later")
         
         self.getServerVars()
         self.getServerInfo()
@@ -1124,7 +1145,7 @@ class Bfbc2Parser(b3.parser.Parser):
         if not text:
             return []
     
-        maxLength = int(minWrapLen)
+        maxLength = int(length)
         
         if len(text) <= maxLength:
             return [text]
