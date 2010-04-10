@@ -95,6 +95,8 @@
 # * on map load, update self.game.<whatever we can> so other plugins can find more data
 # * handle gracefully cases where the mapList is empty
 # * fix typo in 'africa harbor'
+# 2010/04/10 - 1.2.1 - Bakes
+# * saybig() function is now available for use by plugins.
 # 
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
@@ -127,7 +129,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.2'
+__version__ = '1.2.1'
 
 
 import sys, time, re, string, traceback
@@ -167,6 +169,8 @@ class Bfbc2Parser(b3.parser.Parser):
     OutputClass = rcon.Rcon
     sayqueue = Queue.Queue()
     sayqueuelistener = None
+    saybigqueue = Queue.Queue()
+    saybigqueuelistener = None
     
     _bfbc2EventsListener = None
     _bfbc2Connection = None
@@ -185,6 +189,7 @@ class Bfbc2Parser(b3.parser.Parser):
     _commands = {}
     _commands['message'] = ('admin.say', '%(message)s', 'player', '%(cid)s')
     _commands['say'] = ('admin.say', '%(message)s', 'all')
+    _commands['saybig'] = ('admin.yell', '%(message)s', '%(duration)s', 'all')
     _commands['kick'] = ('admin.kickPlayer', '%(cid)s', '%(reason)s')
     _commands['ban'] = ('banList.add', 'guid', '%(guid)s', 'perm', '%(reason)s')
     _commands['banByIp'] = ('banList.add', 'ip', '%(ip)s', 'perm', '%(reason)s')
@@ -273,12 +278,23 @@ class Bfbc2Parser(b3.parser.Parser):
         self.sayqueuelistener.setDaemon(True)
         self.sayqueuelistener.start()
         
+        self.saybigqueuelistener = threading.Thread(target=self.saybigqueuelistener)
+        self.saybigqueuelistener.setDaemon(True)
+        self.saybigqueuelistener.start()
+        
         
     def sayqueuelistener(self):
         while self.working:
             msg = self.sayqueue.get()
             for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
                 self.write(self.getCommand('say', message=line))
+                time.sleep(self._settings['message_delay'])
+                
+    def saybigqueuelistener(self):
+        while self.working:
+            msg = self.saybigqueue.get()
+            for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
+                self.write(self.getCommand('saybig', message=line, duration=2400))
                 time.sleep(self._settings['message_delay'])
            
     def run(self):
@@ -613,6 +629,9 @@ class Bfbc2Parser(b3.parser.Parser):
 
     def say(self, msg):
         self.sayqueue.put(msg)
+        
+    def saybig(self, msg):
+        self.saybigqueue.put(msg)
 
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):

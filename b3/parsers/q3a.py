@@ -20,8 +20,12 @@
 #
 # CHANGELOG
 #
+#    2010/04/10 - 1.4.2 - Bakes
+#    * saybig() function can now be used by plugins. Since basic q3 games (such as CoD)
+#      cannot print to the centre of the screen, it performs the same function as the scream
+#      command.
 #    2010/03/22 - 1.4.1 - Courgette
-#   * fix conflict between 1.3.4 and 1.4. 
+#    * fix conflict between 1.3.4 and 1.4. 
 #    2010/03/21 - 1.4 - Courgette
 #    * now implements methods maprotate and changeMap
 #    21/03/2010 - 1.3.4 - Bakes
@@ -52,8 +56,9 @@
 #    Added log message for when ban() decides to do a tempban
 
 
+
 __author__  = 'ThorN'
-__version__ = '1.4.1'
+__version__ = '1.4.2'
 
 import re, string, time
 import b3
@@ -390,6 +395,12 @@ class Q3AParser(b3.parser.Parser):
 
         if len(lines):        
             self.writelines(lines)
+    
+    def saybig(self, msg):
+        for c in range(1,6):
+            self.say('^%i%s' % (c, msg))
+            time.sleep(delay)
+
 
     def smartSay(self, client, msg):
         if client and (client.state == b3.STATE_DEAD or client.team == b3.TEAM_SPEC):
