@@ -17,7 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
-#
+#   2010/04/10 - 1.7 - Bakes
+#   * new '&' command prefix can be used to say messages in the middle of the screen.
+#     has the same settings as '@', this may change in the future.
 #   2010/03/22 - 1.6.1 - Courgette
 #   * resolve conflict regarding maprotate/rotateMap
 #   2010/03/21 - 1.6 - Courgette
@@ -60,7 +62,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 
 
-__version__ = '1.6.1'
+__version__ = '1.7'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
@@ -81,6 +83,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
     cmdPrefix = '!'
     cmdPrefixLoud = '@'
+    cmdPrefixBig = '&'
 
     PENALTY_KICK = 'kick'
     PENALTY_TEMPBAN = 'tempban'
@@ -242,10 +245,10 @@ class AdminPlugin(b3.plugin.Plugin):
                     self.debug('Error getting Tkinfo: %s', e)
                 self.debug('End of Tkinfo')
 
-        elif len(event.data) >= 2 and (event.data[:1] == self.cmdPrefix or event.data[:1] == self.cmdPrefixLoud):
+        elif len(event.data) >= 2 and (event.data[:1] == self.cmdPrefix or event.data[:1] == self.cmdPrefixLoud or event.data[:1] == self.cmdPrefixBig):
             self.debug('Handle command %s' % event.data)
 
-            if event.data[1:2] == self.cmdPrefix or event.data[1:2] == self.cmdPrefixLoud or event.data[1:2] == '1':
+            if event.data[1:2] == self.cmdPrefix or event.data[1:2] == self.cmdPrefixLoud or event.data[1:2] == self.cmdPrefixBig or event.data[1:2] == '1':
                 # self.is the alias for say
                 cmd = 'say'
                 data = event.data[2:]
@@ -297,6 +300,8 @@ class AdminPlugin(b3.plugin.Plugin):
                 try:
                     if event.data[:1] == self.cmdPrefixLoud and event.client.maxLevel >= 9:
                         results = command.executeLoud(data, event.client)
+                    elif event.data[:1] == self.cmdPrefixBig and event.client.maxLevel >= 9:
+                        results = command.executeBig(data, event.client)
                     else:
                         results = command.execute(data, event.client)
                 except Exception, msg:
@@ -1852,6 +1857,7 @@ class Command:
     time = 0
     prefix = '!'
     prefixLoud = '@'
+    prefixBig = '&'
 
     PLAYER_DATA = re.compile(r'^([\w\d\s-]+|@\d+|\d+)$', re.I)
     _reType = type(re.compile('.*'))
@@ -1861,6 +1867,7 @@ class Command:
         self.func = func
         self.plugin = plugin
         self.loud = False
+        self.big = False
 
         if help:
             self.help = help.strip()
@@ -1900,10 +1907,18 @@ class Command:
         cmd.loud = True
         self.func(data, client, cmd)
         self.time = self.plugin.console.time()
+    
+    def executeBig(self, data, client):
+        cmd = copy.copy(self)
+        cmd.big = True
+        self.func(data, client, cmd)
+        self.time = self.plugin.console.time()
 
     def sayLoudOrPM(self, client, message):
         if self.loud:
             self.plugin.console.say(message)
+        elif self.big:
+            self.plugin.console.saybig(message)
         else:
             client.message(message)
 

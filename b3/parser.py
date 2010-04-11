@@ -18,7 +18,9 @@
 #
 #
 # CHANGELOG
-#    2010/03/23 - 1.14.2 - Bakes
+#   2010/04/10 - 1.14.3 - Bakes
+#   * added saybig() to method stubs for inheriting classes.
+#   2010/03/23 - 1.14.2 - Bakes
 #   * add message_delay for better BFBC2 interoperability.
 #   2010/03/22 - 1.14.1 - Courgette
 #   * change maprotate() to rotateMap()
@@ -61,7 +63,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette'
-__version__ = '1.14.2'
+__version__ = '1.14.3'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit
@@ -955,6 +957,12 @@ class Parser(object):
     def say(self, msg):
         """\
         broadcast a message to all players
+        """
+        raise NotImplementedError
+
+    def saybig(self, msg):
+        """\
+        broadcast a message to all players in a way that will catch their attention.
         """
         raise NotImplementedError
 

@@ -99,9 +99,10 @@
 # * you can now specify in b3.xml what custom maximum line length you want to 
 #   see in the chat zone. 
 # * make sure the BFBC2 server is R9 or later
-# 2010/04/11 - 1.2.2 - Courgette
+# 2010/04/11 - 1.2.2 - Courgette, Bakes
 # * make this module compatible with python 2.4
-#
+# * saybig() function is now available for use by plugins.
+# 
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -174,6 +175,8 @@ class Bfbc2Parser(b3.parser.Parser):
     OutputClass = rcon.Rcon
     sayqueue = Queue.Queue()
     sayqueuelistener = None
+    saybigqueue = Queue.Queue()
+    saybigqueuelistener = None
     
     _bfbc2EventsListener = None
     _bfbc2Connection = None
@@ -192,6 +195,7 @@ class Bfbc2Parser(b3.parser.Parser):
     _commands = {}
     _commands['message'] = ('admin.say', '%(message)s', 'player', '%(cid)s')
     _commands['say'] = ('admin.say', '%(message)s', 'all')
+    _commands['saybig'] = ('admin.yell', '%(message)s', '%(duration)s', 'all')
     _commands['kick'] = ('admin.kickPlayer', '%(cid)s', '%(reason)s')
     _commands['ban'] = ('banList.add', 'guid', '%(guid)s', 'perm', '%(reason)s')
     _commands['banByIp'] = ('banList.add', 'ip', '%(ip)s', 'perm', '%(reason)s')
@@ -297,12 +301,23 @@ class Bfbc2Parser(b3.parser.Parser):
         self.sayqueuelistener.setDaemon(True)
         self.sayqueuelistener.start()
         
+        self.saybigqueuelistener = threading.Thread(target=self.saybigqueuelistener)
+        self.saybigqueuelistener.setDaemon(True)
+        self.saybigqueuelistener.start()
+        
         
     def sayqueuelistener(self):
         while self.working:
             msg = self.sayqueue.get()
             for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
                 self.write(self.getCommand('say', message=line))
+                time.sleep(self._settings['message_delay'])
+                
+    def saybigqueuelistener(self):
+        while self.working:
+            msg = self.saybigqueue.get()
+            for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
+                self.write(self.getCommand('saybig', message=line, duration=2400))
                 time.sleep(self._settings['message_delay'])
            
     def run(self):
@@ -643,6 +658,9 @@ class Bfbc2Parser(b3.parser.Parser):
 
     def say(self, msg):
         self.sayqueue.put(msg)
+        
+    def saybig(self, msg):
+        self.saybigqueue.put(msg)
 
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
