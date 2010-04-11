@@ -99,6 +99,9 @@
 # * you can now specify in b3.xml what custom maximum line length you want to 
 #   see in the chat zone. 
 # * make sure the BFBC2 server is R9 or later
+# 2010/04/11 - 1.2.2 - Courgette
+# * make this module compatible with python 2.4
+#
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -130,7 +133,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
 
 import sys, time, re, string, traceback
@@ -374,6 +377,9 @@ class Bfbc2Parser(b3.parser.Parser):
                 sys.exit(self.exitcode)
 
     def routeBfbc2Packet(self, packet):
+        if packet is None:
+            self.warning('cannot route empty packet : %s' % traceback.extract_tb(sys.exc_info()[2]))
+        
         bfbc2EventType = packet[0]
         bfbc2EventData = packet[1:]
         
@@ -423,6 +429,9 @@ class Bfbc2Parser(b3.parser.Parser):
         #['envex', 'gg', 'squad' 2]
         #['envex', 'gg', 'player', 'Courgette']
         client = self.getClient(data[0])
+        if client is None:
+            self.warning("Could not get client :( %s" % traceback.extract_tb(sys.exc_info()[2]))
+            return
         if client.cid == 'Server':
             # ignore chat events for Server
             return
@@ -1306,7 +1315,6 @@ def bfbc2ClientMessageQueueWorker(self):
         if msg:
             self.console.message(self, msg)
             time.sleep(int(self.console._settings['message_delay']))
-        self.messagequeue.task_done() 
 b3.clients.Client.messagequeueworker = bfbc2ClientMessageQueueWorker
 
 ## override the Client.message() method at runtime
