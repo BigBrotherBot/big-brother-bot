@@ -102,7 +102,9 @@
 # 2010/04/11 - 1.2.2 - Courgette, Bakes
 # * make this module compatible with python 2.4
 # * saybig() function is now available for use by plugins.
-# 
+# 2010/04/12 - 1.2.3 - Courgette
+# * fix 'Arica' not 'Africa'
+#
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -134,7 +136,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.2.2'
+__version__ = '1.2.3'
 
 
 import sys, time, re, string, traceback
@@ -799,7 +801,7 @@ class Bfbc2Parser(b3.parser.Parser):
             return 'Atacama Desert'
 
         elif mapname.startswith('Levels/MP_006'):
-            return 'Africa Harbor'
+            return 'Arica Harbor'
 
         elif mapname.startswith('Levels/MP_007'):
             return 'White Pass'
