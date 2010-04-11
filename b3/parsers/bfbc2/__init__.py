@@ -102,6 +102,9 @@
 # 2010/04/11 - 1.2.2 - Courgette, Bakes
 # * make this module compatible with python 2.4
 # * saybig() function is now available for use by plugins.
+# 2010/04/12 - 1.2.3 - Bakes
+# * client.messagebig() is now available for use by plugins.
+# * getHardName is added from poweradminbfbc2, reverse of getEasyname
 # 
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
@@ -134,7 +137,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.2.2'
+__version__ = '1.2.3'
 
 
 import sys, time, re, string, traceback
@@ -194,6 +197,7 @@ class Bfbc2Parser(b3.parser.Parser):
 
     _commands = {}
     _commands['message'] = ('admin.say', '%(message)s', 'player', '%(cid)s')
+    _commands['messagebig'] = ('admin.yell', '%(message)s', '%(duration)s', 'player', '%(cid)s')
     _commands['say'] = ('admin.say', '%(message)s', 'all')
     _commands['saybig'] = ('admin.yell', '%(message)s', '%(duration)s', 'all')
     _commands['kick'] = ('admin.kickPlayer', '%(cid)s', '%(reason)s')
@@ -655,6 +659,17 @@ class Bfbc2Parser(b3.parser.Parser):
                 self.write(self.getCommand('message', message=text, cid=client.cid))
         except:
             pass
+            
+    def messagebig(self, client, text):
+        try:
+            if client == None:
+                self.saybig(text)
+            elif client.cid == None:
+                pass
+            else:
+                self.write(self.getCommand('messagebig', message=text, cid=client.cid, duration=2400))
+        except:
+            pass
 
     def say(self, msg):
         self.sayqueue.put(msg)
@@ -799,7 +814,7 @@ class Bfbc2Parser(b3.parser.Parser):
             return 'Atacama Desert'
 
         elif mapname.startswith('Levels/MP_006'):
-            return 'Africa Harbor'
+            return 'Arica Harbor'
 
         elif mapname.startswith('Levels/MP_007'):
             return 'White Pass'
@@ -815,6 +830,43 @@ class Bfbc2Parser(b3.parser.Parser):
         
         else:
             self.warning('unknown level name \'%s\'. Please report this on B3 forums' % mapname)
+            return mapname
+            
+    def getHardName(self, mapname):
+        """ Change real name to level name """
+        mapname = mapname.lower()
+        if mapname.startswith('panama canal'):
+            return 'Levels/MP_001'
+            
+        elif mapname.startswith('val paraiso'):
+            return 'Levels/MP_002'
+
+        elif mapname.startswith('laguna alta'):
+            return 'Levels/MP_003'
+
+        elif mapname.startswith('isla inocentes'):
+            return 'Levels/MP_004'
+
+        elif mapname.startswith('atacama desert'):
+            return 'Levels/MP_005'
+
+        elif mapname.startswith('arica harbor'):
+            return 'Levels/MP_006'
+
+        elif mapname.startswith('white pass'):
+            return 'Levels/MP_007'
+
+        elif mapname.startswith('nelson bay'):
+            return 'Levels/MP_008'
+
+        elif mapname.startswith('laguna preza'):
+            return 'Levels/MP_009'
+
+        elif mapname.startswith('port valdez'):
+            return 'Levels/MP_012'
+        
+        else:
+            self.warning('unknown level name \'%s\'. Please make sure you have entered a valid mapname' % mapname)
             return mapname
     
     def getMaps(self):
@@ -1348,3 +1400,29 @@ def bfbc2ClientMessageMethod(self, msg):
             self.messagequeue.put(line)
 b3.clients.Client.message = bfbc2ClientMessageMethod
 
+## add a new method to the Client class
+def bfbc2ClientMessageBigQueueWorker(self):
+    """
+    This takes a line off the queue and displays it
+    in the middle of the screen then pause for
+    'message_delay' seconds
+    """
+    while self.console.working:
+        msg = self.messagebigqueue.get()
+        if msg:
+            self.console.messagebig(self, msg)
+            time.sleep(int(self.console._settings['message_delay']))
+b3.clients.Client.messagebigqueueworker = bfbc2ClientMessageBigQueueWorker
+
+## override the Client.messagebig() method at runtime
+def bfbc2ClientMessageBigMethod(self, msg):
+    if msg and len(msg.strip())>0:
+        if not hasattr(self, 'messagebigqueue'):
+            self.messagebigqueue = Queue.Queue()
+            self.messagebighandler = threading.Thread(target=self.messagebigqueueworker)
+            self.messagebighandler.setDaemon(True)
+            self.messagebighandler.start()
+        text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
+        for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
+            self.messagebigqueue.put(line)
+b3.clients.Client.messagebig = bfbc2ClientMessageBigMethod
