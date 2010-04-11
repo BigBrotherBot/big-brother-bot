@@ -10,7 +10,7 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{F04D6FC4-CF46-4409-995A-04BEB0B219E6}
 AppName=BigBrotherBot
-AppVerName=BigBrotherBot 1.3rc4
+AppVerName=BigBrotherBot 1.3
 AppPublisher=BigBrotherBot
 AppPublisherURL=http://www.bigbrotherbot.com/
 AppSupportURL=http://www.bigbrotherbot.com/forums/
