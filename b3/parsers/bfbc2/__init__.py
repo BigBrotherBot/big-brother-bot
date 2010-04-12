@@ -102,9 +102,10 @@
 # 2010/04/11 - 1.2.2 - Courgette, Bakes
 # * make this module compatible with python 2.4
 # * saybig() function is now available for use by plugins.
-# 2010/04/12 - 1.2.3 - Bakes
+# 2010/04/11 - 1.2.3 - Bakes
 # * client.messagebig() is now available for use by plugins.
 # * getHardName is added from poweradminbfbc2, reverse of getEasyname
+# * fixed arica harbor typo
 # 
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
