@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2010/04/10 - 1.15 - Courgette
+#   * public_ip and rcon_ip can now be domain names
 #   2010/04/10 - 1.14.3 - Bakes
 #   * added saybig() to method stubs for inheriting classes.
 #   2010/03/23 - 1.14.2 - Bakes
@@ -63,10 +65,10 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette'
-__version__ = '1.14.3'
+__version__ = '1.15'
 
 # system modules
-import os, sys, re, time, thread, traceback, Queue, imp, atexit
+import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
 
 import b3
 import b3.storage
@@ -210,17 +212,30 @@ class Parser(object):
             self._rconPort = self.config.getint('server', 'rcon_port')
         self._rconPassword = self.config.get('server', 'rcon_password')
 
+
         if self._publicIp[0:1] == '~' or self._publicIp[0:1] == '/':
             # load ip from a file
             f = file(self.getAbsolutePath(self._publicIp))
             self._publicIp = f.read().strip()
             f.close()
-    
+
+        try:
+            # resolve domain names
+            self._publicIp = socket.gethostbyname(self._publicIp)
+        except:
+            pass
+
         if self._rconIp[0:1] == '~' or self._rconIp[0:1] == '/':
             # load ip from a file
             f = file(self.getAbsolutePath(self._rconIp))
             self._rconIp = f.read().strip()
             f.close()
+
+        try:
+            # resolve domain names
+            self._rconIp = socket.gethostbyname(self._rconIp)
+        except:
+            pass
 
         self.bot('%s', b3.getB3versionString())
         self.bot('Python: %s', sys.version)
