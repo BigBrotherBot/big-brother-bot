@@ -30,6 +30,8 @@
 # * fix import Bfbc2Exception
 # 2010/04/11 - 1.0 Courgette
 # * just make it v1.0 as it is now part of a public release and works rather good
+# 2010/04/15 - 1.0.1 Bakes
+# * If the response of the rcon command does not start with 'OK', trigger Bfbc2CommandFailedError
 
 import thread
 from b3.parsers.bfbc2 import bfbc2Connection
@@ -37,7 +39,7 @@ from b3.parsers.bfbc2 import bfbc2Connection
 __author__ = 'Courgette'
 __version__ = '1.0'
  
-from b3.parsers.bfbc2.bfbc2Connection import Bfbc2Connection, Bfbc2Exception
+from b3.parsers.bfbc2.bfbc2Connection import Bfbc2Connection, Bfbc2Exception, Bfbc2CommandFailedError
 
 #--------------------------------------------------------------------------------------------------
 class Rcon:
@@ -76,6 +78,8 @@ class Rcon:
                     tries += 1
                     self.console.verbose('RCON (%s/%s) %s' % (tries, maxRetries, cmd))
                     response = self._bfbc2Connection.sendRequest(cmd)
+                    if response[0] != "OK":
+                        raise Bfbc2CommandFailedError(response)
                     return response[1:]
                 except Bfbc2Exception, err:
                     self.console.warning('RCON: sending \'%s\', %s' % (cmd, err))
