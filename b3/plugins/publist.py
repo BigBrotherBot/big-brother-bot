@@ -62,7 +62,7 @@ import b3, os, random
 import b3.events
 import b3.plugin
 from b3 import functions
-
+from b3.functions import getModule
 
 
 
@@ -90,7 +90,7 @@ class PublistPlugin(b3.plugin.Plugin):
             pass
         
         
-        if self.console._publicIp == '127.0.0.1':
+        if self.console._publicIp == '127.0.0.1' and False:
             self.info("publist will not send heartbeat to master server as publicIp is not public.")
             return
         
@@ -119,13 +119,6 @@ class PublistPlugin(b3.plugin.Plugin):
         self.debug('Sending heartbeat to B3 master...')
         socket.setdefaulttimeout(10)
         
-        def getModule(name):
-            mod = __import__(name)
-            components = name.split('.')
-            for comp in components[1:]:
-                mod = getattr(mod, comp)
-            return mod
-          
         plugins = []
         for pname in self.console._pluginOrder:
             plugins.append("%s/%s" % (pname, getattr(getModule(self.console.getPlugin(pname).__module__), '__version__', 'Unknown Version')))
@@ -151,7 +144,7 @@ class PublistPlugin(b3.plugin.Plugin):
             'plugins' : ','.join(plugins),
             'os' : os.name
         }
-        #self.debug(info)
+        self.debug(info)
         self.sendInfo(info)
         
     def sendInfo(self, info={}):

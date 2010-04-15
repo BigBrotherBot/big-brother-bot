@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2010/04/10 - 1.15.1 - Courgette
+#   * write the parser version to log file
 #   2010/04/10 - 1.15 - Courgette
 #   * public_ip and rcon_ip can now be domain names
 #   2010/04/10 - 1.14.3 - Bakes
@@ -64,8 +66,8 @@
 #    Added atexit handlers
 #    Added warning, info, exception, and critical log handlers
 
-__author__  = 'ThorN, Courgette'
-__version__ = '1.15'
+__author__  = 'ThorN, Courgette, xlr8or, Bakes'
+__version__ = '1.15.1'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -80,7 +82,7 @@ import b3.cron
 import b3.parsers.q3a_rcon
 import b3.clients
 import b3.functions
-from b3.functions import main_is_frozen
+from b3.functions import main_is_frozen, getModule
 
 
 class Parser(object):
@@ -239,7 +241,7 @@ class Parser(object):
 
         self.bot('%s', b3.getB3versionString())
         self.bot('Python: %s', sys.version)
-        self.bot('Starting %s server for %s:%s', self.__class__.__name__, self._rconIp, self._port)
+        self.bot('Starting %s v%s for server %s:%s', self.__class__.__name__, getattr(getModule(self.__module__), '__version__', ' Unknown'), self._rconIp, self._port)
 
         # get events
         self.Events = b3.events.eventManager

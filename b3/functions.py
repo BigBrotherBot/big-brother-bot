@@ -27,7 +27,12 @@ from lib.elementtree import ElementTree
 from distutils import version
 
 
-
+def getModule(name):
+    mod = __import__(name)
+    components = name.split('.')
+    for comp in components[1:]:
+        mod = getattr(mod, comp)
+    return mod
 
 def checkUpdate(currentVersion, singleLine=True, showErrormsg=False):
     """
