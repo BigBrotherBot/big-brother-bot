@@ -90,7 +90,7 @@ class PublistPlugin(b3.plugin.Plugin):
             pass
         
         
-        if self.console._publicIp == '127.0.0.1' and False:
+        if self.console._publicIp == '127.0.0.1':
             self.info("publist will not send heartbeat to master server as publicIp is not public.")
             return
         
@@ -144,7 +144,7 @@ class PublistPlugin(b3.plugin.Plugin):
             'plugins' : ','.join(plugins),
             'os' : os.name
         }
-        self.debug(info)
+        #self.debug(info)
         self.sendInfo(info)
         
     def sendInfo(self, info={}):
