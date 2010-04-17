@@ -18,6 +18,10 @@
 #
 #
 # CHANGELOG
+#
+#   2010/04/17 - 1.16 - Courgette
+#   * plugin priority is defined by their order in the b3.xml file 
+#   * fix bug in getEventName()
 #   2010/04/10 - 1.15.1 - Courgette
 #   * write the parser version to log file
 #   2010/04/10 - 1.15 - Courgette
@@ -436,7 +440,7 @@ class Parser(object):
 
     def getEventName(self, id):
         """Get the name of an event by numeric ID"""
-        return self.Events.getName(key)
+        return self.Events.getName(id)
 
     def getPlugin(self, plugin):
         """Get a reference to a loaded plugin"""
@@ -468,8 +472,8 @@ class Parser(object):
         plugins = {}
         pluginSort = []
 
+        priority = 1
         for p in self.config.get('plugins/plugin'):
-            priority = int(p.get('priority'))
             plugin = p.get('name')
             conf = p.get('config')
 
@@ -478,6 +482,7 @@ class Parser(object):
 
             plugins[priority] = (plugin, self.getAbsolutePath(conf))
             pluginSort.append(priority)
+            priority += 1
 
         pluginSort.sort()
 
