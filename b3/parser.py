@@ -18,7 +18,13 @@
 #
 #
 # CHANGELOG
-#    2010/03/23 - 1.14.2 - Bakes
+#   2010/04/10 - 1.15.1 - Courgette
+#   * write the parser version to log file
+#   2010/04/10 - 1.15 - Courgette
+#   * public_ip and rcon_ip can now be domain names
+#   2010/04/10 - 1.14.3 - Bakes
+#   * added saybig() to method stubs for inheriting classes.
+#   2010/03/23 - 1.14.2 - Bakes
 #   * add message_delay for better BFBC2 interoperability.
 #   2010/03/22 - 1.14.1 - Courgette
 #   * change maprotate() to rotateMap()
@@ -60,11 +66,11 @@
 #    Added atexit handlers
 #    Added warning, info, exception, and critical log handlers
 
-__author__  = 'ThorN, Courgette'
-__version__ = '1.14.2'
+__author__  = 'ThorN, Courgette, xlr8or, Bakes'
+__version__ = '1.15.1'
 
 # system modules
-import os, sys, re, time, thread, traceback, Queue, imp, atexit
+import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
 
 import b3
 import b3.storage
@@ -76,7 +82,7 @@ import b3.cron
 import b3.parsers.q3a_rcon
 import b3.clients
 import b3.functions
-from b3.functions import main_is_frozen
+from b3.functions import main_is_frozen, getModule
 
 
 class Parser(object):
@@ -208,21 +214,34 @@ class Parser(object):
             self._rconPort = self.config.getint('server', 'rcon_port')
         self._rconPassword = self.config.get('server', 'rcon_password')
 
+
         if self._publicIp[0:1] == '~' or self._publicIp[0:1] == '/':
             # load ip from a file
             f = file(self.getAbsolutePath(self._publicIp))
             self._publicIp = f.read().strip()
             f.close()
-    
+
+        try:
+            # resolve domain names
+            self._publicIp = socket.gethostbyname(self._publicIp)
+        except:
+            pass
+
         if self._rconIp[0:1] == '~' or self._rconIp[0:1] == '/':
             # load ip from a file
             f = file(self.getAbsolutePath(self._rconIp))
             self._rconIp = f.read().strip()
             f.close()
 
+        try:
+            # resolve domain names
+            self._rconIp = socket.gethostbyname(self._rconIp)
+        except:
+            pass
+
         self.bot('%s', b3.getB3versionString())
         self.bot('Python: %s', sys.version)
-        self.bot('Starting %s server for %s:%s', self.__class__.__name__, self._rconIp, self._port)
+        self.bot('Starting %s v%s for server %s:%s', self.__class__.__name__, getattr(getModule(self.__module__), '__version__', ' Unknown'), self._rconIp, self._port)
 
         # get events
         self.Events = b3.events.eventManager
@@ -955,6 +974,12 @@ class Parser(object):
     def say(self, msg):
         """\
         broadcast a message to all players
+        """
+        raise NotImplementedError
+
+    def saybig(self, msg):
+        """\
+        broadcast a message to all players in a way that will catch their attention.
         """
         raise NotImplementedError
 

@@ -28,12 +28,14 @@
 # * make this class thread safe
 # 2010/04/03 - 0.3.2 - courgette
 # * fix import Bfbc2Exception
+# 2010/04/11 - 1.0 Courgette
+# * just make it v1.0 as it is now part of a public release and works rather good
 
 import thread
 from b3.parsers.bfbc2 import bfbc2Connection
  
 __author__ = 'Courgette'
-__version__ = '0.3.2'
+__version__ = '1.0'
  
 from b3.parsers.bfbc2.bfbc2Connection import Bfbc2Connection, Bfbc2Exception
 

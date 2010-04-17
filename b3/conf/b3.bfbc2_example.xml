@@ -22,6 +22,13 @@
 		<set name="log_level">9</set>
 		<set name="logfile">b3.log</set>
 	</settings>
+	<settings name="bfbc2">
+		<!-- BFBC2 specific settings
+			* max_say_line_length : how long do you want the lines to be restricted to
+			in the chat zone. (maximum length is 100)
+		-->
+		<set name="max_say_line_length">100</set>
+	</settings>
 	<settings name="server">
 		<set name="public_ip">11.22.33.44</set>
 		<set name="port">19567</set>
@@ -33,11 +40,11 @@
 	</settings>
 	<settings name="autodoc">
 		<!-- Autodoc will generate a user documentation for all B3 commands 
-     * type : can be one of : html, htmltable, xml
-     * maxlevel : if you want to exclude commands reserved for higher levels
-     * destination : can be a file or a ftp url
-     by default, a html documentation is created in your conf folder
-    -->
+		 * type : can be one of : html, htmltable, xml
+		 * maxlevel : if you want to exclude commands reserved for higher levels
+		 * destination : can be a file or a ftp url
+		 by default, a html documentation is created in your conf folder
+		-->
 		<set name="type">html</set>
 		<set name="maxlevel">100</set>
 		<!-- <set name="destination">C:\Users\b3\Desktop\test_doc.htm</set> -->
@@ -68,10 +75,10 @@
 
 
 		<!-- 
-  This is a non-standard plugin, and quite resource heavy. Please take a look in the 
-  B3 forums (look for XLR Extensions) for more information before enabling this.
-  Extra database tables are necessary.
-    <plugin name="xlrstats" priority="13" config="@b3/extplugins/conf/xlrstats.xml"/>
--->
+			This is a non-standard plugin, and quite resource heavy. Please take a look in the 
+			B3 forums (look for XLR Extensions) for more information before enabling this.
+			Extra database tables are necessary.
+		<plugin name="xlrstats" priority="13" config="@b3/extplugins/conf/xlrstats.xml"/>
+		-->
 	</plugins>
 </configuration>

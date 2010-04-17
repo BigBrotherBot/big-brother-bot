@@ -104,10 +104,14 @@
 #      This will allow to use commands like !ci or !kick on hanging players.
 # v1.7.9 - 26/01/2010 - xlr8or
 #    * moved getMap() to q3a.py
-#
+# v1.7.10 - 10/04/2010 - Bakes
+#    * bigsay() function can be used by plugins.
+# v1.7.11 - 15/04/2010 - Courgette
+#    * add debugging info for getNextMap()
+
 
 __author__  = 'xlr8or'
-__version__ = '1.7.9'
+__version__ = '1.7.11'
 
 
 import b3.parsers.q3a
@@ -133,6 +137,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
     _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
     _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
     _commands['say'] = 'say %(prefix)s %(message)s'
+    _commands['saybig'] = 'bigtext "%(prefix)s %(message)s"'
 
     _commands['set'] = 'set %(name)s "%(value)s"'
     _commands['kick'] = 'clientkick %(cid)s'
@@ -433,6 +438,14 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
         lines = []
         for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
             lines.append(self.getCommand('broadcast', prefix=self.msgPrefix, message=line))
+
+        if len(lines):
+            self.writelines(lines)
+
+    def saybig(self, msg):
+        lines = []
+        for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+            lines.append(self.getCommand('saybig', prefix=self.msgPrefix, message=line))
 
         if len(lines):
             self.writelines(lines)
@@ -1159,6 +1172,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                 self.warning("Could not query server for fs_basepath")
         mapfile = self.game.fs_basepath + '/' + self.game.fs_game + '/' + mapcycle
         if not os.path.isfile(mapfile):
+            self.debug('coud not read mapcycle file at %s' % mapfile)
             if self.game.fs_homepath is None:
                 try:
                     self.game.fs_homepath = self.getCvar('fs_homepath').getString().rstrip('/')
@@ -1167,6 +1181,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
                     self.warning("Could not query server for fs_homepath")
             mapfile = self.game.fs_homepath + '/' + self.game.fs_game + '/' + mapcycle
         if not os.path.isfile(mapfile):
+            self.debug('coud not read mapcycle file at %s' % mapfile)
             self.error("Unable to find mapcycle file %s" % mapcycle)
             return None
 

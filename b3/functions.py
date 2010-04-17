@@ -17,17 +17,22 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # 27/03/2010 - 1.2.1 - xlr8or - set default port for mysql
+# 11/04/2010 - 1.2.2 - Courgette - make splitDSN support usernames containing '@'
 
 __author__    = 'ThorN, xlr8or'
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
-import re, os, sys, imp, string, urllib2
+import re, sys, imp, string, urllib2
 from lib.elementtree import ElementTree
 from distutils import version
-import time
 
 
-
+def getModule(name):
+    mod = __import__(name)
+    components = name.split('.')
+    for comp in components[1:]:
+        mod = getattr(mod, comp)
+    return mod
 
 def checkUpdate(currentVersion, singleLine=True, showErrormsg=False):
     """
@@ -86,7 +91,7 @@ def main_is_frozen():
 
 #--------------------------------------------------------------------------------------------------
 def splitDSN(url):
-    m = re.match(r'^(?:(?P<protocol>[a-z]+)://)?(?:(?P<user>[^@:]+)(?::(?P<password>[^@]+))?@)?(?P<host>[^/:]+)?(?::(?P<port>\d+))?(?P<path>.*)', url)
+    m = re.match(r'^(?:(?P<protocol>[a-z]+)://)?(?:(?P<user>[^:]+)(?::(?P<password>[^@]+))?@)?(?P<host>[^/:]+)?(?::(?P<port>\d+))?(?P<path>.*)', url)
     if not m:
         return None
 
@@ -253,18 +258,107 @@ def sanitizeMe(s):
 
 
 if __name__ == '__main__':
-    print splitDSN('sqlite://c|/mydatabase/test.db')
+    
+    import unittest
+    
+    class TestSpliDSN(unittest.TestCase):
+        def assertDsnEqual(self, url, expected):
+            tmp = splitDSN(url)
+            self.assertEqual(tmp, expected)
+    
+        def test_sqlite(self):
+            self.assertDsnEqual('sqlite://c|/mydatabase/test.db', 
+            {'protocol': 'sqlite', 'host': 'c|', 'user': None, 
+            'path': '/mydatabase/test.db', 'password': None, 'port': None })
+    
+        def test_ftp(self):
+            self.assertDsnEqual('ftp://username@domain.com/index.html', 
+            {'protocol': 'ftp', 'host': 'domain.com', 'user': 'username', 
+             'path': '/index.html', 'password': None, 'port': None })
+            
+        def test_ftp2(self):
+            self.assertDsnEqual('ftp://username:password@domain.com/index.html', 
+            {'protocol': 'ftp', 'host': 'domain.com', 'user': 'username', 
+             'path': '/index.html', 'password': 'password', 'port': None })
+            
+        def test_ftp3(self):
+            self.assertDsnEqual('ftp://username@domain.com:password@domain.com/index.html', 
+            {'protocol': 'ftp', 'host': 'domain.com', 'user': 'username@domain.com', 
+             'path': '/index.html', 'password': 'password', 'port': None })
+            
+        def test_mysql(self):
+            self.assertDsnEqual('mysql://b3:password@localhost/b3', 
+            {'protocol': 'mysql', 'host': 'localhost', 'user': 'b3', 
+             'path': '/b3', 'password': 'password', 'port': 3306} )
+            
+    class TestFuzziGuidMatch(unittest.TestCase):
+        def test_1(self):
+            self.assertTrue(fuzzyGuidMatch( '098f6bcd4621d373cade4e832627b4f6', '098f6bcd4621d373cade4e832627b4f6'))
+            self.assertTrue(fuzzyGuidMatch( '098f6bcd4621d373cade4e832627b4f6', '098f6bcd4621d373cade4e832627b4f'))
+            self.assertTrue(fuzzyGuidMatch( '098f6bcd4621d373cade4e832627b4f6', '098f6bcd4621d373cde4e832627b4f6'))
+            self.assertTrue(fuzzyGuidMatch( '098f6bcd4621d373cade4e832627bf6',  '098f6bcd4621d373cade4e832627b4f6'))
+            self.assertFalse(fuzzyGuidMatch('098f6bcd4621d373cade4e832627b4f6', '098f6bcd46d373cade4e832627b4f6'))
+            self.assertFalse(fuzzyGuidMatch('098f6bcd4621d373cade4832627b4f6',  '098f6bcd4621d73cade4e832627b4f6'))
+        
+        def test_caseInsensitive(self):
+            self.assertTrue(fuzzyGuidMatch( '098F6BCD4621D373CADE4E832627B4F6', '098f6bcd4621d373cade4e832627b4f6'))
+            self.assertTrue(fuzzyGuidMatch( '098F6BCD4621D373CADE4E832627B4F6', '098f6bcd4621d373cade4e832627b4f'))
+            self.assertTrue(fuzzyGuidMatch( '098F6BCD4621D373CADE4E832627B4F6', '098f6bcd4621d373cde4e832627b4f6'))
+            self.assertFalse(fuzzyGuidMatch('098F6BCD4621D373CADE4E832627B4F6', '098f6bcd46d373cade4e832627b4f6'))
+            self.assertTrue(fuzzyGuidMatch( '098F6BCD4621D373CADE4E832627BF6', '098f6bcd4621d373cade4e832627b4f6'))
+            self.assertFalse(fuzzyGuidMatch('098F6BCD4621D373CADE4832627B4F6', '098f6bcd4621d73cade4e832627b4f6'))
+            
+    class TestMinutes2int(unittest.TestCase):
+        def test_NaN(self):
+            self.assertEqual(minutes2int('mlkj'), 0)
+            self.assertEqual(minutes2int(''), 0)
+            self.assertEqual(minutes2int('50,654'), 0)
+        def test_int(self):
+            self.assertEqual(minutes2int('50'), 50)
+            self.assertEqual(minutes2int('50.654'), 50.65)
+          
+    class TestTime2minutes(unittest.TestCase):
+        def test_None(self):
+            self.assertEqual(time2minutes(None), 0)
+        def test_int(self):
+            self.assertEqual(time2minutes(0), 0)
+            self.assertEqual(time2minutes(1), 1)
+            self.assertEqual(time2minutes(154), 154)
+        def test_str(self):
+            self.assertEqual(time2minutes(''), 0)
+        def test_str_h(self):
+            self.assertEqual(time2minutes('145h'), 145*60)
+            self.assertEqual(time2minutes('0 h'), 0)
+            self.assertEqual(time2minutes('0    h'), 0)
+            self.assertEqual(time2minutes('5h'), 5*60)
+        def test_str_m(self):
+            self.assertEqual(time2minutes('145m'), 145)
+            self.assertEqual(time2minutes('0 m'), 0)
+            self.assertEqual(time2minutes('0    m'), 0)
+            self.assertEqual(time2minutes('5m'), 5)
+        def test_str_s(self):
+            self.assertEqual(time2minutes('0 s'), 0)
+            self.assertEqual(time2minutes('0    s'), 0)
+            self.assertEqual(time2minutes('60s'), 1)
+            self.assertEqual(time2minutes('120s'), 2)
+            self.assertEqual(time2minutes('5s'), 5.0/60)
+            self.assertEqual(time2minutes('90s'), 1.5)
+        def test_str_d(self):
+            self.assertEqual(time2minutes('0 d'), 0)
+            self.assertEqual(time2minutes('0    d'), 0)
+            self.assertEqual(time2minutes('60d'), 60*24*60)
+            self.assertEqual(time2minutes('120d'), 120*24*60)
+            self.assertEqual(time2minutes('5d'), 5*24*60)
+            self.assertEqual(time2minutes('90d'), 90*24*60)
+        def test_str_w(self):
+            self.assertEqual(time2minutes('0 w'), 0)
+            self.assertEqual(time2minutes('0    w'), 0)
+            self.assertEqual(time2minutes('60w'), 60*7*24*60)
+            self.assertEqual(time2minutes('120w'), 120*7*24*60)
+            self.assertEqual(time2minutes('5w'), 5*7*24*60)
+            self.assertEqual(time2minutes('90w'), 90*7*24*60)
 
-    compare = [
-        ('098f6bcd4621d373cade4e832627b4f6', '098f6bcd4621d373cade4e832627b4f6'),
-        ('098f6bcd4621d373cade4e832627b4f6', '098f6bcd4621d373cade4e832627b4f'),
-        ('098f6bcd4621d373cade4e832627bf6', '098f6bcd4621d373cade4e832627b4f6'),
-        ('098f6bcd4621d373cade4e832627b4f6', '098f6bcd4621d373cde4e832627b4f6'),
-        ('098f6bcd4621d373cade4e832627b4f6', '098f6bcd46d373cade4e832627b4f6'),
-        ('098f6bcd4621d373cade4832627b4f6', '098f6bcd4621d73cade4e832627b4f6'),
-        ('098F6BCD4621D373CADE4E832627B4F6', '098f6bcd4621d373cade4e832627b4f6'),
-    ]
+    
+    unittest.main()
 
 
-    for a,b in compare:
-        print '%s <> %s = %s' % (a, b, fuzzyGuidMatch(a,b))

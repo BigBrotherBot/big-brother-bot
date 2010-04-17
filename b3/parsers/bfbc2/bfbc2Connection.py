@@ -41,10 +41,12 @@
 # * use console to print messages
 # * when listening to event, do not set the socket into blocking mode. This should
 #   make the bot recover from a connection loss
-#
+# 2010/04/11 - 1.0 - Courgette
+# * fix a bug which occurred in the rare case we receive from the server a packet from another sequence
+# * make this version 1.0 as it seems to be stable enough now
 
 __author__  = 'Courgette'
-__version__ = '0.11'
+__version__ = '1.0'
 
 debug = True
 
@@ -192,7 +194,7 @@ class Bfbc2Connection(object):
         # For now, we always respond with an "OK"
         if isResponse:
             self.console.debug('Received an unexpected response packet from server, ignoring: %r' % packet)
-            return self.handle_bfbc2_events()
+            return self.readBfbc2Event()
         else:
             response = b3.parsers.bfbc2.protocol.EncodePacket(True, True, sequence, ["OK"])
             self.printPacket(b3.parsers.bfbc2.protocol.DecodePacket(response))
