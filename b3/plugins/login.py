@@ -22,13 +22,20 @@
 #     * fix indentation problem
 # 1.0.2 - 28/08/2009 - xlr8or
 #     * minor update
+# 1.0.3 - 17/04/2010 - Bakes
+#     * use hashlib if available instead of the deprecated md5
 
 __author__    = 'Tim ter Laak'
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 # Version = major.minor.patches
 
-import md5, string
+import string
+try:
+    from hashlib import md5 as newmd5
+except ImportError:
+    # for Python versions < 2.5
+    from md5 import new as newmd5
 
 import b3
 import b3.events
@@ -108,7 +115,7 @@ class LoginPlugin(b3.plugin.Plugin):
             return            
         
         if data:
-            digest = md5.new(data).hexdigest()
+            digest = newmd5(data).hexdigest()
             if digest == client.password:
                 client.setvar(self, 'loggedin', 1)
                 client.groupBits = client.var(self, 'login_groupbits').value
@@ -136,7 +143,7 @@ class LoginPlugin(b3.plugin.Plugin):
         else:
             sclient = client
 
-        sclient.password = md5.new(data[0]).hexdigest()
+        sclient.password = newmd5(data[0]).hexdigest()
         self.console.storage.query(QueryBuilder(self.console.storage.db).UpdateQuery( { 'password' : sclient.password }, 'clients', { 'id' : sclient.id } ))
         return
     
