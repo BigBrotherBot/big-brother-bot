@@ -33,10 +33,11 @@
 #    * Added unban for non pb servers
 #    * Fixed bug: rcon command banid replaced by banclient
 # 28/3/2010 - 1.4.7 - xlr8or - Added PunkBuster activity check on startup
+# 18/4/2010 - 1.4.8 - xlr8or - Trying to prevent key errors in newPlayer()
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.7'
+__version__ = '1.4.8'
 
 import b3.parsers.q3a
 import re, string, threading
@@ -508,17 +509,21 @@ class CodParser(b3.parsers.q3a.Q3AParser):
                     self._counter.pop(cid)
                 else:
                     return None
-        elif self._counter[cid] > 10:
+        elif self._counter.get(cid) > 10:
             self.debug('Couldn\'t Auth %s, giving up...' % name)
             if self._counter.get(cid):
                 self._counter.pop(cid)
             return None
         # Player is not in the status response (yet), retry
         else:
-            self.debug('%s not yet fully connected, retrying...#:%s' %(name, self._counter[cid]))
-            self._counter[cid] +=1
-            t = threading.Timer(4, self.newPlayer, (cid, codguid, name))
-            t.start()
+            if self._counter.get(cid):
+                self.debug('%s not yet fully connected, retrying...#:%s' %(name, self._counter.get(cid)))
+                self._counter[cid] +=1
+                t = threading.Timer(4, self.newPlayer, (cid, codguid, name))
+                t.start()
+            else:
+                #Falling trough
+                self.warning('All authentication attempts failed.')
             return None
             
         client = self.clients.newClient(cid, name=name, ip=ip, state=b3.STATE_ALIVE, guid=guid, pbid=pbid, data={ 'codguid' : codguid })
