@@ -44,9 +44,12 @@
 # 2010/04/11 - 1.0 - Courgette
 # * fix a bug which occurred in the rare case we receive from the server a packet from another sequence
 # * make this version 1.0 as it seems to be stable enough now
+# 2010/04/18 - 1.1 - Courgette
+# * harden readBfbc2Event in cases where a network error occurs while replying OK to an event (Thanks to Merph's report)
+#
 
 __author__  = 'Courgette'
-__version__ = '1.0'
+__version__ = '1.1'
 
 debug = True
 
@@ -198,7 +201,12 @@ class Bfbc2Connection(object):
         else:
             response = b3.parsers.bfbc2.protocol.EncodePacket(True, True, sequence, ["OK"])
             self.printPacket(b3.parsers.bfbc2.protocol.DecodePacket(response))
-            self._serverSocket.sendall(response)
+            
+            try:
+                self._serverSocket.sendall(response)
+            except socket.error, detail:
+                self.console.warning("in readBfbc2Event while sending response OK to server : %s" % detail)
+                
             return words
             
     def printPacket(self, packet):
@@ -250,6 +258,8 @@ if __name__ == '__main__':
             print "    INFO: " + msg
         def verbose2(self, msg):
             print "VERBOSE2: " + msg
+        def warning(self, msg):
+            print "WARNING : " + msg
     myConsole = MyConsole()
     
     bc2server = Bfbc2Connection(myConsole, host, port, pw)
@@ -264,6 +274,8 @@ if __name__ == '__main__':
     
     bc2server.close()
     print "closed"
+    
+    bc2server.readBfbc2Event()
     
     
     

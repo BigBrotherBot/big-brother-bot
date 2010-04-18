@@ -22,10 +22,11 @@
 #    * fix bug on config path which showed up only when run as a .exe
 # 2010/03/27 - 0.2.2 - xlr8or
 #    * minor improvements, added port to db-conn, default value for yes/no in add_plugin()
-#
+# 2010/04/17 - 0.3 -Courgette
+#    * remove plugin priority related code to follow with parser.py v1.16 changes
 
 __author__  = 'xlr8or'
-__version__ = '0.2.2'
+__version__ = '0.3'
 
 import platform, urllib2, shutil, os, sys, time, zipfile
 from functions import main_is_frozen
@@ -39,7 +40,6 @@ from cStringIO import StringIO
 class Setup:
     _pver = sys.version.split()[0]
     _indentation = "    "
-    _priority = 1
     _config = "b3/conf/b3.xml"
     _buffer = ''
     _equaLength = 15
@@ -158,6 +158,7 @@ class Setup:
         # plugins
         self.add_buffer('\n--INSTALLING PLUGINS--------------------------------------------\n')
         xml.start("plugins")
+        xml.comment("plugin order is important. Plugins that add new in-game commands all depend on the admin plugin. Make sure to have the admin plugin before them.")
         self.add_plugin("admin", "@conf/plugin_admin.xml", explanation="admin plugin is arbitrairy.", prompt=False)
         self.add_plugin("censor", "@conf/plugin_censor.xml")
         self.add_plugin("spamcontrol", "@conf/plugin_spamcontrol.xml")
@@ -178,7 +179,7 @@ class Setup:
         # ext plugins
         xml.comment("The next plugins are external, 3rd party plugins and should reside in the external_dir. Example:")
         xml.data("\t\t")
-        xml.comment("plugin config=\"@b3/extplugins/conf/newplugin.xml\" name=\"newplugin\" priority=\"**\" ")
+        xml.comment("plugin config=\"@b3/extplugins/conf/newplugin.xml\" name=\"newplugin\"")
         self.add_plugin("xlrstats", self._set_external_dir+"/conf/xlrstats.xml", default="no")
         #self.add_plugin("registered", self._set_external_dir+"/conf/plugin_registered.xml", "Trying to download Registered", "http://www.bigbrotherbot.com/forums/downloads/?sa=downfile&id=22")
         #self.add_plugin("countryfilter", self._set_external_dir+"/conf/countryfilter.xml", "Trying to download Countryfilter", "http://github.com/xlr8or/b3-plugin-countryfilter/zipball/master")
@@ -186,8 +187,6 @@ class Setup:
         # final comments
         xml.data("\n\t\t")
         xml.comment("You can add new/custom plugins to this list using the same form as above.")
-        xml.data("\t\t")
-        xml.comment("Just make sure you don't have any duplicate priority values!")
         xml.data("\t")
         xml.end()
 
@@ -235,7 +234,6 @@ class Setup:
         """
         A routine to add a plugin to the config
         Usage: self.add_plugin(pluginname, default-configfile, optional-explanation, optional-downloadlocation, optional-prompt)
-        Priority is increased automatically.
         """
         if prompt:
             _q = "Install "+sname+" plugin? (yes/no)"
@@ -250,9 +248,8 @@ class Setup:
             self.add_explanation(explanation)
         _config = self.raw_default("config", sconfig)
         xml.data("\n\t\t")
-        xml.element("plugin", name=sname, priority=str(self._priority), config=_config)
-        self.add_buffer("plugin: "+str(sname)+", priority: "+str(self._priority)+", config: "+str(_config)+"\n")
-        self._priority += 1
+        xml.element("plugin", name=sname, config=_config)
+        self.add_buffer("plugin: "+str(sname)+", config: "+str(_config)+"\n")
 
     def raw_default(self, prompt, dflt=None):
         if dflt: 
