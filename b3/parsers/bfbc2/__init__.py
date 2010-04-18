@@ -103,9 +103,10 @@
 # * make this module compatible with python 2.4
 # * saybig() function is now available for use by plugins.
 # 2010/04/11 - 1.2.3 - Bakes
+# * fixed arica harbor typo
+# 2010/04/11 - 1.2.4 - Bakes
 # * client.messagebig() is now available for use by plugins.
 # * getHardName is added from poweradminbfbc2, reverse of getEasyname
-# * fixed arica harbor typo
 # 
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
@@ -138,7 +139,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.2.3'
+__version__ = '1.2.4'
 
 
 import sys, time, re, string, traceback
@@ -1415,7 +1416,7 @@ def bfbc2ClientMessageBigQueueWorker(self):
             time.sleep(int(self.console._settings['message_delay']))
 b3.clients.Client.messagebigqueueworker = bfbc2ClientMessageBigQueueWorker
 
-## override the Client.messagebig() method at runtime
+## add the Client.messagebig() method at runtime
 def bfbc2ClientMessageBigMethod(self, msg):
     if msg and len(msg.strip())>0:
         if not hasattr(self, 'messagebigqueue'):
@@ -1424,6 +1425,6 @@ def bfbc2ClientMessageBigMethod(self, msg):
             self.messagebighandler.setDaemon(True)
             self.messagebighandler.start()
         text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
-        for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
+        for line in self.console.getWrap(text):
             self.messagebigqueue.put(line)
 b3.clients.Client.messagebig = bfbc2ClientMessageBigMethod

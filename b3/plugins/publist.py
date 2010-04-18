@@ -48,9 +48,12 @@
 # * rconPort is sent 
 # 21/03/2010 - 1.4.1 - Courgette
 # * fix rconPort when update type of ping is sent 
+# 17/04/2010 - 1.5 - Courgette
+# * allow to send ping to an additionnal master (mostly used for debugging master code)
+# * send the python version to the master
 #
 
-__version__ = '1.4.1'
+__version__ = '1.5'
 __author__  = 'ThorN, Courgette'
 
 import sys
@@ -62,6 +65,7 @@ import b3, os, random
 import b3.events
 import b3.plugin
 from b3 import functions
+from b3.functions import getModule
 
 
 
@@ -70,8 +74,16 @@ from b3 import functions
 class PublistPlugin(b3.plugin.Plugin):
     _cronTab = None
     _url='http://www.bigbrotherbot.com/master/serverping.php'
+    _secondUrl = None
     requiresConfigFile = False
     
+    def onLoadConfig(self):
+        try:
+            self._secondUrl = self.config.get('settings', 'url')
+            self.debug('Using second url : %s' % self._secondUrl)
+        except:
+            pass
+            
     def onStartup(self):
       
         # get the plugin so we can register commands
@@ -119,13 +131,6 @@ class PublistPlugin(b3.plugin.Plugin):
         self.debug('Sending heartbeat to B3 master...')
         socket.setdefaulttimeout(10)
         
-        def getModule(name):
-            mod = __import__(name)
-            components = name.split('.')
-            for comp in components[1:]:
-                mod = getattr(mod, comp)
-            return mod
-          
         plugins = []
         for pname in self.console._pluginOrder:
             plugins.append("%s/%s" % (pname, getattr(getModule(self.console.getPlugin(pname).__module__), '__version__', 'Unknown Version')))
@@ -149,14 +154,21 @@ class PublistPlugin(b3.plugin.Plugin):
             'parserversion' : getattr(getModule(self.console.__module__), '__version__', 'Unknown Version'),
             'database' : database,
             'plugins' : ','.join(plugins),
-            'os' : os.name
+            'os' : os.name,
+            'python_version': sys.version
         }
         #self.debug(info)
         self.sendInfo(info)
         
+    
     def sendInfo(self, info={}):
+        self.sendInfoToMaster(self._url, info)
+        if self._secondUrl is not None:
+            self.sendInfoToMaster(self._secondUrl, info)
+    
+    def sendInfoToMaster(self, url, info={}):
         try:
-            request = urllib2.Request('%s?%s' % (self._url, urllib.urlencode(info)))
+            request = urllib2.Request('%s?%s' % (url, urllib.urlencode(info)))
             request.add_header('User-Agent', "B3 Publist plugin/%s" % __version__)
             opener = urllib2.build_opener()
             replybody = opener.open(request).read()
@@ -181,11 +193,39 @@ if __name__ == '__main__':
     from b3.fake import fakeConsole
     import time
     
+    from b3.config import XmlConfigParser
+    
+    conf = XmlConfigParser()
+    conf.setXml("""
+    <configuration plugin="publist">
+        <settings name="settings">
+            <set name="url">http://test.somewhere.com/serverping.php</set>
+        </settings>
+    </configuration>
+    """)
+
+    
     #fakeConsole._publicIp = '127.0.0.1'
     fakeConsole._publicIp = '11.22.33.44'
-    p = PublistPlugin(fakeConsole)
+    p = PublistPlugin(fakeConsole, conf)
     #p.onStartup()
-    p.update()
+    p.onLoadConfig()
+    #p.update()
+    
+    p.sendInfo({'version': '1.3-dev', 
+            'os': 'nt', 
+            'database': 'unknown', 
+            'action': 'update', 
+            'ip': '91.121.95.52', 
+            'parser': 'iourt41', 
+            'plugins': '', 
+            'port': 27960, 
+            'parserversion': '1.2', 
+            'rconPort': None,
+            'python_version': sys.version
+    })
+    
     time.sleep(5) # so we can see thread working
 
+    #p.sendInfo({'action' : 'shutdown', 'ip' : '91.121.95.52', 'port' : 27960, 'rconPort' : None })
     
