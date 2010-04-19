@@ -46,10 +46,11 @@
 # * make this version 1.0 as it seems to be stable enough now
 # 2010/04/18 - 1.1 - Courgette
 # * harden readBfbc2Event in cases where a network error occurs while replying OK to an event (Thanks to Merph's report)
+# 2010/04/18 - 1.2 - Courgette
+# * try to make sure readBfbc2Event does not hang on a dead connection
 #
-
 __author__  = 'Courgette'
-__version__ = '1.1'
+__version__ = '1.2'
 
 debug = True
 
@@ -173,6 +174,7 @@ class Bfbc2Connection(object):
     def readBfbc2Event(self):
         # Wait for packet from server
         packet = None
+        timeout_counter = 0
         while packet is None:
             try:
                 if self._serverSocket is None:
@@ -182,7 +184,12 @@ class Bfbc2Connection(object):
                     self.subscribeToBfbc2Events()
                 [packet, self._receiveBuffer] = b3.parsers.bfbc2.protocol.receivePacket(self._serverSocket, self._receiveBuffer)
             except socket.timeout:
-                pass
+                timeout_counter += 1
+                self.console.verbose2('timeout %s' % timeout_counter)
+                if timeout_counter >= 5:
+                    self.console.verbose2('checking connection...')
+                    self.subscribeToBfbc2Events()
+                    timeout_counter = 0
             except socket.error, detail:
                 raise Bfbc2NetworkException('readBfbc2Event: %r'% detail)
         
