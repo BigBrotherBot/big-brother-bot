@@ -107,7 +107,8 @@
 # 2010/04/11 - 1.2.4 - Bakes
 # * client.messagebig() is now available for use by plugins.
 # * getHardName is added from poweradminbfbc2, reverse of getEasyname
-# 
+# 2010/04/12 - 1.2.5 - Courgette
+# * make sure client.squad is a int
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -139,7 +140,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.2.4'
+__version__ = '1.2.5'
 
 
 import sys, time, re, string, traceback
@@ -532,7 +533,7 @@ class Bfbc2Parser(b3.parser.Parser):
         if client:
             client.team = self.getTeam(data[1]) # .team setter will send team change event
             if client.squad != data[2]:
-                client.squad = data[2]
+                client.squad = int(data[2])
                 return b3.events.Event(b3.events.EVT_CLIENT_SQUAD_CHANGE, data[1:], client)
 
 
