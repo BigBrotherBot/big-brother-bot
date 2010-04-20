@@ -48,9 +48,11 @@
 # * harden readBfbc2Event in cases where a network error occurs while replying OK to an event (Thanks to Merph's report)
 # 2010/04/18 - 1.2 - Courgette
 # * try to make sure readBfbc2Event does not hang on a dead connection
+# 2010/04/20 - 1.2.1 - Courgette
+# * harden 1.2
 #
 __author__  = 'Courgette'
-__version__ = '1.2'
+__version__ = '1.2.1'
 
 debug = True
 
@@ -172,7 +174,7 @@ class Bfbc2Connection(object):
 
         
     def readBfbc2Event(self):
-        # Wait for packet from server
+        # Wait for event from server
         packet = None
         timeout_counter = 0
         while packet is None:
@@ -182,13 +184,20 @@ class Bfbc2Connection(object):
                     self._connect()
                     self._auth()
                     self.subscribeToBfbc2Events()
-                [packet, self._receiveBuffer] = b3.parsers.bfbc2.protocol.receivePacket(self._serverSocket, self._receiveBuffer)
+                [tmppacket, self._receiveBuffer] = b3.parsers.bfbc2.protocol.receivePacket(self._serverSocket, self._receiveBuffer)
+                [isFromServer, isResponse, sequence, words] = b3.parsers.bfbc2.protocol.DecodePacket(tmppacket)
+                if isFromServer and not isResponse:
+                    packet = tmppacket
+                else:
+                    self.console.verbose2('received a packet which is not an event: %s' % [isFromServer, isResponse, sequence, words])
             except socket.timeout:
                 timeout_counter += 1
                 self.console.verbose2('timeout %s' % timeout_counter)
                 if timeout_counter >= 5:
                     self.console.verbose2('checking connection...')
-                    self.subscribeToBfbc2Events()
+                    request = b3.parsers.bfbc2.protocol.EncodeClientRequest(['eventsEnabled','true'])
+                    self.printPacket(b3.parsers.bfbc2.protocol.DecodePacket(request))
+                    self._serverSocket.sendall(request)
                     timeout_counter = 0
             except socket.error, detail:
                 raise Bfbc2NetworkException('readBfbc2Event: %r'% detail)
