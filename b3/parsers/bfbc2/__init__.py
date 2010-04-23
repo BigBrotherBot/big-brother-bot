@@ -107,7 +107,12 @@
 # 2010/04/11 - 1.2.4 - Bakes
 # * client.messagebig() is now available for use by plugins.
 # * getHardName is added from poweradminbfbc2, reverse of getEasyname
-# 
+# 2010/04/12 - 1.2.5 - Courgette
+# * make sure client.squad and client.team are of type int. 
+# 2010/04/12 - 1.2.6 - Courgette
+# Fix client.team inconsistency
+# * add client.teamId property which is the exact team id as understood by the BFBC2 
+#   (while client.team follow the B3 team numbering scheme : b3.TEAM_BLUE, b3.TEAM_SPEC, etc)
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -139,7 +144,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.2.4'
+__version__ = '1.2.6'
 
 
 import sys, time, re, string, traceback
@@ -520,6 +525,7 @@ class Bfbc2Parser(b3.parser.Parser):
         client = self.getClient(data[0])
         if client:
             client.team = self.getTeam(data[1]) # .team setter will send team change event
+            client.teamId = int(data[1])
             client.squad = int(data[2])
             
     def OnPlayerSquadchange(self, action, data):
@@ -531,8 +537,9 @@ class Bfbc2Parser(b3.parser.Parser):
         client = self.getClient(data[0])
         if client:
             client.team = self.getTeam(data[1]) # .team setter will send team change event
+            client.teamId = int(data[1])
             if client.squad != data[2]:
-                client.squad = data[2]
+                client.squad = int(data[2])
                 return b3.events.Event(b3.events.EVT_CLIENT_SQUAD_CHANGE, data[1:], client)
 
 
@@ -1038,7 +1045,7 @@ class Bfbc2Parser(b3.parser.Parser):
             name = p['name']
             if 'clanTag' in p and len(p['clanTag']) > 0:
                 name = "[" + p['clanTag'] + "] " + p['name']
-            client = self.clients.newClient(cid, guid=p['guid'], name=name, team=p['teamId'], squad=p['squadId'], data=p)
+            client = self.clients.newClient(cid, guid=p['guid'], name=name, team=self.getTeam(p['teamId']), teamId=int(p['teamId']), squad=p['squadId'], data=p)
             self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
         
         return client
@@ -1137,7 +1144,10 @@ class Bfbc2Parser(b3.parser.Parser):
                 sp.pbid = p.get('pbid', sp.pbid)
                 sp.guid = p.get('guid', sp.guid)
                 sp.data = p
-                sp.team = p.get('teamId', sp.team)
+                newTeam = p.get('teamId', None)
+                if newTeam is not None:
+                    sp.team = self.getTeam(newTeam)
+                sp.teamId = int(newTeam)
                 sp.auth()
 
     def getCvar(self, cvarName):
@@ -1180,7 +1190,10 @@ class Bfbc2Parser(b3.parser.Parser):
             client = self.clients.getByCID(cid)
             if client:
                 mlist[cid] = client
-                client.team = c.get('teamId', client.team)
+                newTeam = c.get('teamId', None)
+                if newTeam is not None:
+                    client.team = self.getTeam(newTeam)
+                client.teamId = int(newTeam)
         return mlist
 
     def getCommand(self, cmd, **kwargs):

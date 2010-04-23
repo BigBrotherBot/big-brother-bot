@@ -33,10 +33,12 @@
 #    * Added unban for non pb servers
 #    * Fixed bug: rcon command banid replaced by banclient
 # 28/3/2010 - 1.4.7 - xlr8or - Added PunkBuster activity check on startup
+# 18/4/2010 - 1.4.8 - xlr8or - Trying to prevent key errors in newPlayer()
+# 18/4/2010 - 1.4.9 - xlr8or - Forcing g_logsync to make server write unbuffered gamelogs
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.7'
+__version__ = '1.4.8'
 
 import b3.parsers.q3a
 import re, string, threading
@@ -47,6 +49,7 @@ import b3.parsers.punkbuster
 class CodParser(b3.parsers.q3a.Q3AParser):
     gameName = 'cod'
     IpsOnly = False
+    _logSync = 3 # Value for unbuffered game logging (append mode)
     _counter = {}
     _settings = {}
     _settings['line_length'] = 65
@@ -124,26 +127,30 @@ class CodParser(b3.parsers.q3a.Q3AParser):
             self.game.mapName = map
             self.info('map is: %s'%self.game.mapName)
 
+        # Force g_logsync
+        self.debug('Forcing server cvar g_logsync to %s' % self._logSync)
+        self.write('set g_logsync %s' %self._logSync)
+
         # get gamepaths/vars
         try:
             self.game.fs_game = self.getCvar('fs_game').getString()
         except:
             self.game.fs_game = None
-            self.warning("Could not query server for fs_game")
+            self.warning('Could not query server for fs_game')
 
         try:
             self.game.fs_basepath = self.getCvar('fs_basepath').getString().rstrip('/')
             self.debug('fs_basepath: %s' % self.game.fs_basepath)
         except:
             self.game.fs_basepath = None
-            self.warning("Could not query server for fs_basepath")
+            self.warning('Could not query server for fs_basepath')
 
         try:
             self.game.fs_homepath = self.getCvar('fs_homepath').getString().rstrip('/')
             self.debug('fs_homepath: %s' % self.game.fs_homepath)
         except:
             self.game.fs_homepath = None
-            self.warning("Could not query server for fs_homepath")
+            self.warning('Could not query server for fs_homepath')
 
     # kill
     def OnK(self, action, data, match=None):
@@ -508,17 +515,21 @@ class CodParser(b3.parsers.q3a.Q3AParser):
                     self._counter.pop(cid)
                 else:
                     return None
-        elif self._counter[cid] > 10:
+        elif self._counter.get(cid) > 10:
             self.debug('Couldn\'t Auth %s, giving up...' % name)
             if self._counter.get(cid):
                 self._counter.pop(cid)
             return None
         # Player is not in the status response (yet), retry
         else:
-            self.debug('%s not yet fully connected, retrying...#:%s' %(name, self._counter[cid]))
-            self._counter[cid] +=1
-            t = threading.Timer(4, self.newPlayer, (cid, codguid, name))
-            t.start()
+            if self._counter.get(cid):
+                self.debug('%s not yet fully connected, retrying...#:%s' %(name, self._counter.get(cid)))
+                self._counter[cid] +=1
+                t = threading.Timer(4, self.newPlayer, (cid, codguid, name))
+                t.start()
+            else:
+                #Falling trough
+                self.warning('All authentication attempts failed.')
             return None
             
         client = self.clients.newClient(cid, name=name, ip=ip, state=b3.STATE_ALIVE, guid=guid, pbid=pbid, data={ 'codguid' : codguid })
