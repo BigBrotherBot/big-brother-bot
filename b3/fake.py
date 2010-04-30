@@ -71,7 +71,12 @@ if __name__ == '__main__':
     time.sleep(2)
 """
 
-__version__ = '1.2'
+# CHANGELOG
+# 1.3
+#    * add FakeConsole.saybig(msg)
+#    * FakeConsole.write() do not fail when arg is not a string
+
+__version__ = '1.3'
 
 
 import thread
@@ -137,9 +142,17 @@ class FakeConsole(b3.parser.Parser):
         """send text to the server"""
         print ">>> %s" % re.sub(re.compile('\^[0-9]'), '', msg).strip()
     
-    def write(self, msg):
+    def saybig(self, msg):
+        """send bigtext to the server"""
+        print "+++ %s" % re.sub(re.compile('\^[0-9]'), '', msg).strip()
+    
+    def write(self, *msg):
         """send text to the console"""
-        print "### %s" % re.sub(re.compile('\^[0-9]'), '', msg).strip()
+        if type(msg) == str:
+            print "### %s" % re.sub(re.compile('\^[0-9]'), '', msg).strip()
+        else:
+            # which happens for BFBC2
+            print "### %s" % msg
     
     def tempban(self, client, reason, duration, admin, silent):
         """tempban a client"""
