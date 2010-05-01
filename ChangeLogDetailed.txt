@@ -1,3 +1,172 @@
+2010-05-01  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/PKG-INFO, py2exe_builder/b3-installer-project.iss, setup.py: 
+	Updated version to 1.3.1b
+
+2010-05-01  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py, b3/parsers/cod4.py, b3/parsers/cod5.py: Updated
+	CoD series to test guidlength and added regexp to test PunkBuster
+	Id's for validity.
+
+2010-04-30  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 9307617acaab03daac137143ca99a83fd9618ea0 Author:
+	Courgette <courgette@ubu-team.org> Date:   Sun Apr 25 18:05:22 2010
+	+0200
+
+2010-04-22  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit c3719915b9bc0520dfe61484fcbcfbe90f7d4311 Author:
+	Courgette <courgette@ubu-team.org> Date:   Tue Apr 20 20:10:44 2010
+	+0200
+
+2010-04-20  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/conf/plugin_welcome.xml: Fixed typo in plugin_welcome.xml
+
+2010-04-19  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/bfbc2Connection.py: BFBC2: try to make sure the
+	listening connection is alive
+
+2010-04-19  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py: BFBC2: add client.teamId property
+
+2010-04-19  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py: BFBC2: make sure client.squad is a
+	int
+
+2010-04-19  Courgette <courgette@ubu-team.org>
+
+	* : Merge remote branch 'bakes/master'
+
+2010-04-18  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 7621adcd2dac2ef31d5b97535e18dd1476ef82dd Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sun Apr 18 18:22:29 2010 +0200
+
+2010-04-18  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/bfbc2Connection.py: BFBC2: harden reading event
+	when bfbc2 server connection fails
+
+2010-04-18  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py: Trying to prevent key errors in newPlayer()
+
+2010-04-18  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/b3.bfbc2_example.xml, b3/conf/b3.distribution.xml,
+	b3/parser.py, b3/setup.py: change the way plugin priority is defined
+	in b3.xml
+
+2010-04-17  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/publist.py: publist plugins now also send python
+	version to master server
+
+2010-04-17  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit b81473dfefccd2dc71793fb6a899c904c09f81d0 Author: Bakes
+	<bakes@ymail.com> Date:   Sat Apr 17 14:08:59 2010 +0100
+
+2010-04-15  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/publist.py: note to myself: review diff carefully
+	before commit
+
+2010-04-15  Courgette <courgette@ubu-team.org>
+
+	* b3/functions.py, b3/parser.py, b3/plugins/publist.py: Add the
+	parser version to the b3 log file with the hope to make user support
+	easier
+
+2010-04-15  Bakes <bakes@ymail.com>
+
+	* b3/parsers/bfbc2/rcon.py: BFBC2: If the response of
+	self.rcon.write() does not start with OK, trigger a
+	Bfbc2CommandFailedError because the command has not gone through
+	successfully.
+
+2010-04-15  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/iourt41.py: IOURT41: add debugging info for
+	getNextMap()
+
+2010-04-14  Courgette <courgette@ubu-team.org>
+
+	* b3/parser.py: b3.xml can now understand domain names for public_ip
+	and rcon_ip
+
+2010-04-14  Courgette <courgette@ubu-team.org>
+
+	* b3/fake.py: update fake.py since we have no more b3.xml
+
+2010-04-12  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py: BFBC2: merge Bakes
+
+2010-04-12  Bakes <bakes@ymail.com>
+
+	* : fixed changelog for previous commit
+
+2010-04-11  Bakes <bakes@ymail.com>
+
+	* b3/parsers/bfbc2/__init__.py: added client.messagebig for use by
+	plugins and getHardName as reverse of getEasyName.
+
+2010-04-11  xlr8or <xlr8or@xlr8or.com>
+
+	* py2exe_builder/b3-installer-project.iss, setup.py: Fix bug in egg
+	distribution package Fix typo in win32 standalone installer
+
+2010-04-11  Courgette <courgette@ubu-team.org>
+
+	* b3/functions.py: splitDSN: works now with usernames containing '@'
+
+2010-04-11  Courgette <courgette@ubu-team.org>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO,
+	py2exe_builder/b3-installer-project.iss: change version nums to
+	1.3-dev
+
+2010-04-11  Courgette <courgette@ubu-team.org>
+
+	* : Merge remote branch 'bakes/bfbc1' into bfbc2 Conflicts: 	b3/parsers/bfbc2/__init__.py
+
+2010-04-11  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/bfbc2Connection.py, b3/parsers/bfbc2/rcon.py: 
+	Bfbc2Connection: fix a rare bug
+
+2010-04-10  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2/__init__.py: BDBC2: quick minor fix
+
+2010-04-10  Bakes <bakes@ymail.com>
+
+	* b3/parser.py, b3/parsers/bfbc2/__init__.py,
+	b3/parsers/iourt41.py, b3/parsers/q3a.py, b3/plugins/admin.py: &
+	prefix can be used to say the text big with sayLoudorPM, eg in the
+	middle of the screen on BC2 and UrT but in pretty colours on CoD
+	games, where it is not supported.
+
+2010-04-10  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/b3.bfbc2_example.xml, b3/parsers/bfbc2/__init__.py: BFBC2
+	v1.2.1 : you can now customize the maximum line length in b3.xml
+
+2010-04-09  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG: Changelog updated.
+
+2010-04-09  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt: Detailed changelog additions
+
 2010-04-09  xlr8or <xlr8or@xlr8or.com>
 
 	* b3.egg-info/PKG-INFO, b3/PKG-INFO,
