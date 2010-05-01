@@ -35,10 +35,12 @@
 # 28/3/2010 - 1.4.7 - xlr8or - Added PunkBuster activity check on startup
 # 18/4/2010 - 1.4.8 - xlr8or - Trying to prevent key errors in newPlayer()
 # 18/4/2010 - 1.4.9 - xlr8or - Forcing g_logsync to make server write unbuffered gamelogs
+# 1/5/2010 - 1.4.10 - xlr8or - delegate guid length checking to cod parser
+
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.8'
+__version__ = '1.4.10'
 
 import b3.parsers.q3a
 import re, string, threading
@@ -49,6 +51,8 @@ import b3.parsers.punkbuster
 class CodParser(b3.parsers.q3a.Q3AParser):
     gameName = 'cod'
     IpsOnly = False
+    _guidLength = 6 # (minimum) length of the guid
+    _pbRegExp = re.compile(r'^[0-9a-f]{32}$', re.IGNORECASE) # RegExp to match a PunkBuster ID
     _logSync = 3 # Value for unbuffered game logging (append mode)
     _counter = {}
     _settings = {}
@@ -225,17 +229,19 @@ class CodParser(b3.parsers.q3a.Q3AParser):
         cid = match.group('cid')
         name = match.group('name')
         
-        if len(codguid) < 6:
+        if len(codguid) < self._guidLength:
             # invalid guid
             codguid = None
+            self.verbose2('Invalid GUID: %s' %codguid)
 
         client = self.getClient(match)
 
         if client:
+            self.verbose2('ClientObject already exists')
             # update existing client
             client.state = b3.STATE_ALIVE
             # possible name changed
-            client.name = match.group('name')
+            client.name = name
             # Join-event for mapcount reasons and so forth
             return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
         else:
@@ -489,6 +495,13 @@ class CodParser(b3.parsers.q3a.Q3AParser):
         # PunkBuster is enabled, using PB guid
         if sp and self.PunkBuster:
             self.debug('sp: %s' % sp)
+            # test if pbid is valid, otherwise break off and wait for another cycle to authenticate
+            if not re.match(self._pbRegExp, sp['pbid']):
+                self.debug('PB-id is not valid! Giving it another try.')
+                self._counter[cid] +=1
+                t = threading.Timer(4, self.newPlayer, (cid, codguid, name))
+                t.start()
+                return None
             if self.IpsOnly:
                 guid = sp['ip']
                 pbid = sp['pbid']
@@ -505,7 +518,9 @@ class CodParser(b3.parsers.q3a.Q3AParser):
             if self.IpsOnly:
                 codguid = sp['ip']
             if not codguid:
-                self.error('No CodGuid and no PunkBuster... cannot continue!')
+                self.warning('Missing or wrong CodGuid and PunkBuster is disabled... cannot authenticate!')
+                if self._counter.get(cid):
+                    self._counter.pop(cid)
                 return None
             else:
                 guid = codguid

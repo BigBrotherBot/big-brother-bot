@@ -32,9 +32,10 @@
 # 17/1/2010 - 1.0.7 - xlr8or
 #  Moved OnInitgame and OnExitlevel to codparser!
 # 25/1/2010 - 1.2.0 - xlr8or - refactored cod parser series
+# 1/5/2010 - 1.2.1 - xlr8or - delegate guid length checking to cod parser
 
 __author__  = 'xlr8or'
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
@@ -44,32 +45,7 @@ import re, threading
 class Cod5Parser(b3.parsers.cod2.Cod2Parser):
     gameName = 'cod5'
     IpsOnly = False
-
-    # join
-    def OnJ(self, action, data, match=None):
-        codguid = match.group('guid')
-        cid = match.group('cid')
-        name = match.group('name')
-        
-        if len(codguid) < 9: # not sure what the min length of the guid is, seen 9 and 10 nr guids
-            # invalid guid
-            codguid = None
-
-        client = self.getClient(match)
-
-        if client:
-            # update existing client
-            client.state = b3.STATE_ALIVE
-            # possible name changed
-            client.name = match.group('name')
-            # Join-event for mapcount reasons and so forth
-            return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
-        else:
-            self._counter[cid] = 1
-            t = threading.Timer(2, self.newPlayer, (cid, codguid, name))
-            t.start()
-            self.debug('%s connected, waiting for Authentication...' %name)
-            self.debug('Our Authentication queue: %s' % self._counter)
+    _guidLength = 9
 
     # kill
     def OnK(self, action, data, match=None):

@@ -30,10 +30,12 @@
 #  * Minor bugfix in sync() for IpsOnly
 # 31/1/2010 - 1.3.2 - xlr8or
 #  * Modified unban to remove bans from game's ban list
+# 1/5/2010 - 1.3.2 - xlr8or - delegate guid length checking to cod parser
+
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.3.1'
+__version__ = '1.3.2'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
@@ -44,35 +46,13 @@ from b3 import functions
 class Cod4Parser(b3.parsers.cod2.Cod2Parser):
     gameName = 'cod4'
     IpsOnly = False
+    _guidLength = 32
 
     #num score ping guid                             name            lastmsg address               qport rate
     #--- ----- ---- -------------------------------- --------------- ------- --------------------- ----- -----
     #  4     0   23 blablablabfa218d4be29e7168c637be ^1XLR^78^9or[^7^7               0 135.94.165.296:63564  25313 25000
     _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[a-z0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9-]+)\s+(?P<rate>[0-9]+)$', re.I)
 
-
-    # join
-    def OnJ(self, action, data, match=None):
-        # COD4 stores the PBID in the log file
-        codguid = match.group('guid')
-        cid = match.group('cid')
-        name = match.group('name')
-
-        client = self.getClient(match)
-        if client:
-            self.verbose2('ClientObject already exists')
-            # update existing client
-            client.state = b3.STATE_ALIVE
-            # possible name changed
-            client.name = name
-            # Join-event for mapcount reasons and so forth
-            return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
-        else:
-            self._counter[cid] = 1
-            t = threading.Timer(2, self.newPlayer, (cid, codguid, name))
-            t.start()
-            self.debug('%s connected, waiting for Authentication...' %name)
-            self.debug('Our Authentication queue: %s' % self._counter)
 
     # kill
     def OnK(self, action, data, match=None):
