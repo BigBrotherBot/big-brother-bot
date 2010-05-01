@@ -24,9 +24,15 @@
 #    * minor improvements, added port to db-conn, default value for yes/no in add_plugin()
 # 2010/04/17 - 0.3 -Courgette
 #    * remove plugin priority related code to follow with parser.py v1.16 changes
+# 2010/04/27 - 0.4 - Bakes
+#    * added proper BC2 support to the setup wizard.
+#    * changed censor and spamcontrol plugins to be added before admin.
+#      this means that people who spam or swear in admin commands are
+#      warned, rather than the event just being handled in the admin
+#      plugin and veto'd elsewhere.
 
 __author__  = 'xlr8or'
-__version__ = '0.3'
+__version__ = '0.4'
 
 import platform, urllib2, shutil, os, sys, time, zipfile
 from functions import main_is_frozen
@@ -95,20 +101,28 @@ class Setup:
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
-
+        
         # server settings
         self.add_buffer('\n--GAME SERVER SETTINGS------------------------------------------\n')
         xml.start("settings", name="server")
-        self.add_set("rcon_password", "", "The RCON pass of your gameserver")
-        self.add_set("port", "28960", "The port the server is running on")
-        # determine if ftp functionality is available
-        if version.LooseVersion(self._pver) < version.LooseVersion('2.6.0'):
-            self.add_buffer('\n  NOTE for game_log:\n  You are running python '+self._pver+', ftp functionality\n  is not available prior to python version 2.6.0\n')
-        else:
-            self.add_buffer('\n  NOTE for game_log:\n  You are running python '+self._pver+', the gamelog may also be\n  ftp-ed in.\nDefine game_log like this:\n  ftp://[ftp-user]:[ftp-password]@[ftp-server]/path/to/games_mp.log\n')
-        self.add_set("game_log", "games_mp.log", "The gameserver generates a logfile, put the path and name here")
-        self.add_set("public_ip", "127.0.0.1", "The public IP your gameserver is residing on")
-        self.add_set("rcon_ip", "127.0.0.1", "The IP the bot can use to send RCON commands to (127.0.0.1 when on the same box)")
+        if self._set_parser == 'bfbc2':
+            self.add_set("public_ip", "11.22.33.44", "The IP address of your gameserver")
+            self.add_set("port", "", "The port people use to connect to your gameserver")
+            self.add_set("rcon_ip", "11.22.33.44", "The IP that the bot uses to send RCON commands. Usually the same as the public_ip")
+            self.add_set("rcon_port", "", "The port that the bot uses to send RCON commands. NOT the same as the normal port.")
+            self.add_set("rcon_password", "", "The RCON password of your gameserver.")
+            self.add_set("timeout", "3", "RCON timeout", silent=True)
+        else:   
+            self.add_set("rcon_password", "", "The RCON pass of your gameserver")
+            self.add_set("port", "28960", "The port the server is running on")
+            # determine if ftp functionality is available
+            if version.LooseVersion(self._pver) < version.LooseVersion('2.6.0'):
+                self.add_buffer('\n  NOTE for game_log:\n  You are running python '+self._pver+', ftp functionality\n  is not available prior to python version 2.6.0\n')
+            else:
+                self.add_buffer('\n  NOTE for game_log:\n  You are running python '+self._pver+', the gamelog may also be\n  ftp-ed in.\nDefine game_log like this:\n  ftp://[ftp-user]:[ftp-password]@[ftp-server]/path/to/games_mp.log\n')
+            self.add_set("game_log", "games_mp.log", "The gameserver generates a logfile, put the path and name here")
+            self.add_set("public_ip", "127.0.0.1", "The public IP your gameserver is residing on")
+            self.add_set("rcon_ip", "127.0.0.1", "The IP the bot can use to send RCON commands to (127.0.0.1 when on the same box)")
         # determine if PunkBuster is supported
         if self._set_parser in self._PBSupportedParsers:
             self.add_set("punkbuster", "on", "Is the gameserver running PunkBuster Anticheat: on/off")
@@ -159,9 +173,9 @@ class Setup:
         self.add_buffer('\n--INSTALLING PLUGINS--------------------------------------------\n')
         xml.start("plugins")
         xml.comment("plugin order is important. Plugins that add new in-game commands all depend on the admin plugin. Make sure to have the admin plugin before them.")
-        self.add_plugin("admin", "@conf/plugin_admin.xml", explanation="admin plugin is arbitrairy.", prompt=False)
         self.add_plugin("censor", "@conf/plugin_censor.xml")
         self.add_plugin("spamcontrol", "@conf/plugin_spamcontrol.xml")
+        self.add_plugin("admin", "@conf/plugin_admin.xml", explanation="the admin plugin is compulsory.", prompt=False)
         self.add_plugin("tk", "@conf/plugin_tk.xml")
         self.add_plugin("stats", "@conf/plugin_stats.xml")
         self.add_plugin("pingwatch", "@conf/plugin_pingwatch.xml")
