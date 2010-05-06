@@ -1,3 +1,11 @@
+1.3.0 -> 1.3.1
+----
+A list of changed files is available after release here:
+github.com/BigBrotherBot/big-brother-bot/compare/v1.3.0...v1.3.1
+----
+Maintenance release for CoD series parsers.
+- Preventing invalid PB-id's on authentication
+
 1.2.1 -> 1.3.0
 ----
 Over 100 files were changed (in almost 500 commits)! We strongly recommend updating the complete bot!

@@ -1,5 +1,19 @@
 2010-05-01  xlr8or <xlr8or@xlr8or.com>
 
+	* : commit 9514dd8c9120483796d2634ad7d810e315017eba Merge: 2beb99a
+	d8f28d2 Author: Courgette <courgette@ubu-team.org> Date:   Sat May 1
+	20:24:18 2010 +0200
+
+2010-04-23  Bakes <bakes@ymail.com>
+
+	* b3/plugins/pingwatch.py: Fix to pingwatch plugin
+
+2010-05-01  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt: update detailed changelog
+
+2010-05-01  xlr8or <xlr8or@xlr8or.com>
+
 	* b3/PKG-INFO, py2exe_builder/b3-installer-project.iss, setup.py: 
 	Updated version to 1.3.1b
 
@@ -11,9 +25,19 @@
 
 2010-04-30  xlr8or <xlr8or@xlr8or.com>
 
+	* : commit d8f28d2e664fefcb4b07efcae670dfb889cf13af Author: Bakes
+	<bakes@ymail.com> Date:   Tue Apr 27 21:30:11 2010 +0100
+
+2010-04-27  Bakes <bakes@ymail.com>
+
 	* : commit 9307617acaab03daac137143ca99a83fd9618ea0 Author:
 	Courgette <courgette@ubu-team.org> Date:   Sun Apr 25 18:05:22 2010
 	+0200
+
+2010-04-23  Bakes <bakes@ymail.com>
+
+	* : commit 7018c664c53e2196dd96493a9d2132774840f4a1 Author: Bakes
+	<bakes@ymail.com> Date:   Fri Apr 23 19:40:51 2010 +0100
 
 2010-04-22  xlr8or <xlr8or@xlr8or.com>
 
