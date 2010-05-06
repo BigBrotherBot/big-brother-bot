@@ -625,15 +625,6 @@ class Parser(object):
 
         return cmd % kwargs
         
-    def inflictCustomPenalty(self, type, **kwargs):
-        """
-        Called if b3.admin.penalizeClient() does not know a given penalty type. 
-        Overwrite this to add customized penalties for your game like 'slap', 'nuke', 
-        'mute' or anything you want.
-        /!\ This method must return True if the penalty was inflicted.
-        """
-        pass
-        
     def formatTime(self, gmttime, tzName=None):
         """Return a time string formated to local time in the b3 config time_format"""
 
@@ -1053,8 +1044,15 @@ class Parser(object):
         returns a dict having players' id for keys and players' scores for values
         """
         raise NotImplementedError
-
-
+        
+    def inflictCustomPenalty(self, type, **kwargs):
+        """
+        Called if b3.admin.penalizeClient() does not know a given penalty type. 
+        Overwrite this to add customized penalties for your game like 'slap', 'nuke', 
+        'mute' or anything you want.
+        /!\ This method must return True if the penalty was inflicted.
+        """
+        pass
 
 
 if __name__ == '__main__':
