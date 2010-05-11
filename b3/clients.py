@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    11/05/2010 - 1.2.11 - Courgette
+#    * fix exploit by using player cid prefixed with '0' for commands making use
+#      of clients.getByCID
 #    08/01/2010 - 1.2.10 - xlr8or
 #    * disabled adding aliasses for world
 #    01/01/2001 - 1.2.9 - Courgette
@@ -43,7 +46,7 @@
 #     Added data parameter to Client.tempban()
 
 __author__  = 'ThorN'
-__version__ = '1.2.10'
+__version__ = '1.2.11'
 
 import b3, string, re, time, functions, threading, traceback, sys
 
@@ -973,7 +976,7 @@ class Clients(dict):
 
     def getByCID(self, cid):
         try:
-            c = self[str(cid)]
+            c = self[str(int(cid))]
         except KeyError:
             return None
         except Exception, e:
