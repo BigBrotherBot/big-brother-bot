@@ -975,15 +975,16 @@ class Clients(dict):
         return None
 
     def getByCID(self, cid):
+        cleanedCid = int(cid)
         try:
-            c = self[str(int(cid))]
+            c = self[str(cleanedCid)]
         except KeyError:
             return None
         except Exception, e:
             self.console.error('Unexpected error getByCID(%s) - %s', cid, e)
         else:
             #self.console.debug('Found client by CID %s = %s', cid, c.name)
-            if c.cid == str(cid): 
+            if c.cid == str(cleanedCid):
                 return c
             else: 
                 return None
