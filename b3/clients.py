@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    21/05/2010 - 1.2.12 - xlr8or
+#    * Catch ValueError in clients.getByCID to allow names as CID's, but still
+#      fix the previous exploit in q3a based games 
 #    11/05/2010 - 1.2.11 - Courgette
 #    * fix exploit by using player cid prefixed with '0' for commands making use
 #      of clients.getByCID
@@ -46,7 +49,7 @@
 #     Added data parameter to Client.tempban()
 
 __author__  = 'ThorN'
-__version__ = '1.2.11'
+__version__ = '1.2.12
 
 import b3, string, re, time, functions, threading, traceback, sys
 
@@ -975,7 +978,13 @@ class Clients(dict):
         return None
 
     def getByCID(self, cid):
-        cleanedCid = int(cid)
+        try:
+            cleanedCid = int(cid)
+        except ValueError:
+            # Must ba a game using names or other strings as cid's, allow it.
+            # this will obviously fail for a nickname like '007'
+            cleanedCid = cid
+
         try:
             c = self[str(cleanedCid)]
         except KeyError:

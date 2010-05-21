@@ -116,6 +116,8 @@
 # 2010/05/19 - 1.2.7 - Baes
 # * fixed issue between this and clients.py by overwriting the clients.py method. Will need to
 #   be fixed more comprehensively at a later date, this is a quick fix and nothing more!
+# 2010/05/21 - 1.2.8 - xlr8or
+# * delegated getByCID override to clients.py and fix it there
 #
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
@@ -148,7 +150,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.2.7'
+__version__ = '1.2.8'
 
 
 import sys, time, re, string, traceback
@@ -1445,21 +1447,3 @@ def bfbc2ClientMessageBigMethod(self, msg):
         for line in self.console.getWrap(text):
             self.messagebigqueue.put(line)
 b3.clients.Client.messagebig = bfbc2ClientMessageBigMethod
-
-## overwrite clients.getbyCID to stop crashes with BC2 caused by anti-exploit code.
-def getByCID(self, cid):
-    try:
-        c = self[cid]
-    except KeyError:
-        return None
-    except Exception, e:
-        self.console.error('Unexpected error getByCID(%s) - %s', cid, e)
-    else:
-        #self.console.debug('Found client by CID %s = %s', cid, c.name)
-        if c.cid == str(cid):
-            return c
-        else: 
-            return None
-
-    return None
-b3.clients.Clients.getByCID = getByCID
