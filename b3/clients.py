@@ -49,7 +49,7 @@
 #     Added data parameter to Client.tempban()
 
 __author__  = 'ThorN'
-__version__ = '1.2.12
+__version__ = '1.2.12'
 
 import b3, string, re, time, functions, threading, traceback, sys
 
