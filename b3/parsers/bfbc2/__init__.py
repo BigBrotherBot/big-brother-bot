@@ -113,11 +113,13 @@
 # Fix client.team inconsistency
 # * add client.teamId property which is the exact team id as understood by the BFBC2 
 #   (while client.team follow the B3 team numbering scheme : b3.TEAM_BLUE, b3.TEAM_SPEC, etc)
-# 2010/05/19 - 1.2.7 - Baes
+# 2010/05/19 - 1.2.7 - Bakes
 # * fixed issue between this and clients.py by overwriting the clients.py method. Will need to
 #   be fixed more comprehensively at a later date, this is a quick fix and nothing more!
 # 2010/05/21 - 1.2.8 - xlr8or
 # * delegated getByCID override to clients.py and fix it there
+# 2010/05/22 - 1.2.9 - nicholasperkins (inserted by Bakes)
+# * new method for getWrap that doesn't split strings in the middle of words.
 #
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
@@ -1250,11 +1252,21 @@ class Bfbc2Parser(b3.parser.Parser):
         if len(text) <= maxLength:
             return [text]
         else:
-            lines = [text[:maxLength]]
-            remaining = text[maxLength:]
+            wrappoint = text[:maxLength].rfind(" ")
+            if wrappoint == 0:
+                wrappoint = maxLength
+            lines = [text[:wrappoint]]
+            remaining = text[wrappoint:]
             while len(remaining) > 0:
-                lines.append(remaining[0:maxLength])
-                remaining = remaining[maxLength:]
+                if len(remaining) <= maxLength:
+                    lines.append(remaining)
+                    remaining = ""
+                else:
+                    wrappoint = remaining[:maxLength].rfind(" ")
+                    if wrappoint == 0:
+                        wrappoint = maxLength
+                    lines.append(remaining[0:wrappoint])
+                    remaining = remaining[wrappoint:]
             return lines
         
 
