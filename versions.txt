@@ -1,7 +1,7 @@
-project files/versions signature: 801b7e9834a4af7ae0e907a3a21e6049
-project files content signature: 157e4b4edd023368e24084380f8a38d9
+project files/versions signature: ae1bf7ac7ba5deb3f9433c77baaec9cc
+project files content signature: eb170a184c55c46d43a6a2f4b532b35e
 b3\__init__.py dbd84b93f6d817311ce156c0263e8003 1.1.0
-b3\clients.py f69725faefd84a15e487efe7f8f9fdcc 1.2.10
+b3\clients.py f5059fc50ce000d76c16ad4825262a55 1.2.12
 b3\config.py a1aae8f3404d8b403b033ee02a016e4a 1.3.1
 b3\cron.py 4054ffe2fbf4e3c326489135ac012c20 1.3.1
 b3\cvar.py f4d30666f27d062b2a18da28380e234c 1.0.1
@@ -26,9 +26,9 @@ b3\lib\elementtree\TidyTools.py fe4b421b5bbc1b517aa21dec6b4ba788 None
 b3\lib\elementtree\XMLTreeBuilder.py 0de5390e01773ab7d0dc9ca6ac7cf158 None
 b3\lib\elementtree\__init__.py a5b55367eca5b161d918d7c4fd3e7251 None
 b3\output.py de0b04b0c3124413ed934fa95d2ad28f 1.4.0
-b3\parser.py 719f45c6d0714b4ba73668b1e6d35db1 1.15.1
+b3\parser.py 8b1b4cab1b33a67bbcbb3434ffcfb8da 1.15.1
 b3\parsers\__init__.py dc27db9710c1c207a8bd46935163efc1 None
-b3\parsers\bfbc2\__init__.py 57fba7a626a971d0c3ec096c25a1b9f6 1.2.6
+b3\parsers\bfbc2\__init__.py 8d1b20a15b1f59c3d6914330c0c7e52c 1.2.8
 b3\parsers\bfbc2\bfbc2Connection.py 65080020bb7460f6fcb7d34847af9d6e 1.2.1
 b3\parsers\bfbc2\protocol.py d0f9bf1a7a86912bb0d753643b15b233 None
 b3\parsers\bfbc2\punkbuster.py cae2314e3c85c73b8d351706a7d595f6 1.1

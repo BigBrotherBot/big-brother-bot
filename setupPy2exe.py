@@ -53,6 +53,7 @@ setup(
                 "b3.lib.*",
                 "b3.plugins.*",
                 "b3.parsers.*",
+                "b3.parsers.bfbc2.*",
                 "b3.extplugins.__init__",
             ],
         }
