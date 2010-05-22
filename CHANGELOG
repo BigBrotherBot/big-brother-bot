@@ -1,3 +1,12 @@
+1.3.1 -> 1.3.2
+----
+A list of changed files is available after release here:
+github.com/BigBrotherBot/big-brother-bot/compare/v1.3.1...v1.3.2
+----
+Maintenance release for bfbc2 parser.
+- Fixed bfbc2 package error  for win32 standalone release.
+
+
 1.3.0 -> 1.3.1
 ----
 A list of changed files is available after release here:

@@ -1,3 +1,48 @@
+2010-05-22  xlr8or <xlr8or@xlr8or.com>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO, setupPy2exe.py, versions.txt: 
+	setting up maintenance release for win32 standalone build.  fixed
+	error where bfbc2 parser was not packaged in the win32 standalone
+	binary.
+
+2010-05-21  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/clients.py: typo
+
+2010-05-21  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/clients.py, b3/parsers/bfbc2/__init__.py: - Catch ValueError in clients.getByCID to allow names as CID's, but
+	still fix the previous exploit in q3a based games - Removed override from bfbc2 parser
+
+2010-05-19  Bakes <bakes@ymail.com>
+
+	* b3/parsers/bfbc2/__init__.py: Quick fix to stop crashes caused by
+	exploit fixes to clients.py
+
+2010-05-20  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/PKG-INFO, setup.py: Moving version to v1.3.2
+
+2010-05-11  Courgette <courgette@ubu-team.org>
+
+	* b3/clients.py: fix exploit that allows one to kick/ban/... someone
+	with higher admin level (2)
+
+2010-05-11  Courgette <courgette@ubu-team.org>
+
+	* b3/clients.py: fix exploit that allows one to kick/ban/... someone
+	with higher admin level
+
+2010-05-06  Courgette <courgette@ubu-team.org>
+
+	* b3/parser.py: just rearranging code. No change really
+
+2010-05-06  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG, ChangeLogDetailed.txt, b3.egg-info/PKG-INFO,
+	b3/PKG-INFO, versions.txt: Release v1.3.1 maintenance release for
+	CoD series parsers.
+
 2010-05-01  xlr8or <xlr8or@xlr8or.com>
 
 	* : commit 9514dd8c9120483796d2634ad7d810e315017eba Merge: 2beb99a
