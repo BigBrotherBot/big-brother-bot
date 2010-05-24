@@ -116,7 +116,7 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
 
     def sync(self):
         self.debug('Synchronising Clients')
-        plist = self.getPlayerList()
+        plist = self.getPlayerList(maxRetries=4)
         mlist = {}
 
         for cid, c in plist.iteritems():
