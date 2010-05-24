@@ -35,12 +35,13 @@
 # 28/3/2010 - 1.4.7 - xlr8or - Added PunkBuster activity check on startup
 # 18/4/2010 - 1.4.8 - xlr8or - Trying to prevent key errors in newPlayer()
 # 18/4/2010 - 1.4.9 - xlr8or - Forcing g_logsync to make server write unbuffered gamelogs
-# 1/5/2010 - 1.4.10 - xlr8or - delegate guid length checking to cod parser
+# 01/5/2010 - 1.4.10 - xlr8or - delegate guid length checking to cod parser
+# 24/5/2010 - 1.4.11 - xlr8or - check if guids match on existing client objects when joining after a mapchange
 
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.10'
+__version__ = '1.4.11'
 
 import b3.parsers.q3a
 import re, string, threading
@@ -238,6 +239,22 @@ class CodParser(b3.parsers.q3a.Q3AParser):
 
         if client:
             self.verbose2('ClientObject already exists')
+            # lets see if the name/guids match for this client, prevent player mixups after mapchange
+            if self.IpsOnly:
+                # this needs testing since the name cleanup code may interfere with this next condition
+                if name != client.name:
+                    self.debug('This is not the correct client (%s <> %s), disconnecting' %(name, client.name))
+                    client.disconnect()
+                    return None
+                else:
+                    self.verbose2('client.name in sync: %s == %s' %(name, client.name))
+            else:
+                if codguid != client.guid:
+                    self.debug('This is not the correct client (%s <> %s), disconnecting' %(codguid, client.guid))
+                    client.disconnect()
+                    return None
+                else:
+                    self.verbose2('client.guid in sync: %s == %s' %(codguid, client.guid))
             # update existing client
             client.state = b3.STATE_ALIVE
             # possible name changed
