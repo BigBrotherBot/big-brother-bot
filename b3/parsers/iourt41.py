@@ -531,7 +531,7 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             # must be a bot connecting
             self.bot('Bot Connecting!')
             bclient['ip'] = '0.0.0.0'
-            bclient['cl_guid'] = 'BOT' + str(bclient.['cid'])
+            bclient['cl_guid'] = 'BOT' + str(bclient['cid'])
 
         if bclient.has_key('name'):
             # remove spaces from name
