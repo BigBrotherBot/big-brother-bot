@@ -106,12 +106,14 @@
 #    * moved getMap() to q3a.py
 # v1.7.10 - 10/04/2010 - Bakes
 #    * bigsay() function can be used by plugins.
+# v1.7.11 - 15/04/2010 - Courgette
+#    * add debugging info for getNextMap()
 # v1.7.12 - 28/05/2010 - xlr8or
 #    * connect bots
 
 
 __author__  = 'xlr8or'
-__version__ = '1.7.11'
+__version__ = '1.7.12'
 
 
 import b3.parsers.q3a
