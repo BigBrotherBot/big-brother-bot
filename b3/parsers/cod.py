@@ -37,11 +37,12 @@
 # 18/4/2010 - 1.4.9 - xlr8or - Forcing g_logsync to make server write unbuffered gamelogs
 # 01/5/2010 - 1.4.10 - xlr8or - delegate guid length checking to cod parser
 # 24/5/2010 - 1.4.11 - xlr8or - check if guids match on existing client objects when joining after a mapchange
+# 30/5/2010 - 1.4.12 - xlr8or - adding dummy setVersionExceptions() to enable overriding of variables based on the shortversion 
 
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.11'
+__version__ = '1.4.12'
 
 import b3.parsers.q3a
 import re, string, threading
@@ -156,6 +157,22 @@ class CodParser(b3.parsers.q3a.Q3AParser):
         except:
             self.game.fs_homepath = None
             self.warning('Could not query server for fs_homepath')
+        try:
+            self.game.shortversion = self.getCvar('shortversion').getString()
+            self.debug('shortversion: %s' % self.game.shortversion)
+        except:
+            self.game.shortversion = None
+            self.warning('Could not query server for shortversion')
+
+        self.setVersionExceptions()
+        self.debug('Parser started.')
+
+    def setVersionExceptions(self):
+        """\
+        Dummy to enable shortversionexceptions for cod2.
+        Use this function in inheriting parsers to override certain vars based on ie. shortversion
+        """
+        pass
 
     # kill
     def OnK(self, action, data, match=None):
