@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   29/06/2010 - 1.7.2 - xlr8or
+#   fixed typo myqsldb -> msqldb in error message (thanks ryry46d9)
 #   27/03/2010 - 1.7.1 - xlr8or
 #   enable setting different port for mysql connections
 #   02/13/2010 - 1.7.0 - xlr8or
@@ -42,7 +44,7 @@
 #   Added data column to penalties table
 
 __author__  = 'ThorN'
-__version__ = '1.7.1'
+__version__ = '1.7.2'
 
 import re, time, traceback, sys, thread
 
@@ -158,7 +160,7 @@ class DatabaseStorage(Storage):
                 import MySQLdb
                 return MySQLdb.connect(host=self.dsnDict['host'], port=self.dsnDict['port'], user=self.dsnDict['user'], passwd=self.dsnDict['password'], db=self.dsnDict['path'][1:]) 
             except ImportError, err:
-                self.console.critical("%s. You need to install python-myqsldb. Look for 'dependencies' in B3 documentation.",err)
+                self.console.critical("%s. You need to install python-mysqldb. Look for 'dependencies' in B3 documentation.",err)
         elif protocol == 'sqlite':
             # Break it off here
             self.console.critical('SQLite is currently not supported!')
