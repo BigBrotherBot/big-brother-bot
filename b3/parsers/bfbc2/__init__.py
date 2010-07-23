@@ -120,6 +120,10 @@
 # * delegated getByCID override to clients.py and fix it there
 # 2010/05/22 - 1.2.9 - nicholasperkins (inserted by Bakes)
 # * new method for getWrap that doesn't split strings in the middle of words.
+# 2010/07/20 - 1.3.0 - xlr8or
+# * modified OnPlayerKill to work with R15+
+# * fixed infinite loop in a python socket thread in receivePacket() (in protocol.py) on gameserver restart
+# * fixed (statusplugin crontab) error when polling for playerscores and -pings while server is unreachable
 #
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
@@ -152,7 +156,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.2.8'
+__version__ = '1.3.0'
 
 
 import sys, time, re, string, traceback
@@ -186,6 +190,8 @@ SQUAD_HOTEL = 8
 SQUAD_NEUTRAL = 24
 
 BUILD_NUMBER_R9 = 527791
+BUILD_NUMBER_R16 = 556157
+BUILD_NUMBER_R17 = 560541
 
 #----------------------------------------------------------------------------------------------------------------------------------------------
 class Bfbc2Parser(b3.parser.Parser):
@@ -383,7 +389,7 @@ class Bfbc2Parser(b3.parser.Parser):
                                 except Exception, msg:
                                     self.error('%s: %s', msg, traceback.extract_tb(sys.exc_info()[2]))
                             except Bfbc2Exception, e:
-                                self.debug(e)
+                                #self.debug(e)
                                 nbConsecutiveReadFailure += 1
                                 if nbConsecutiveReadFailure > 5:
                                     raise e
@@ -504,9 +510,15 @@ class Bfbc2Parser(b3.parser.Parser):
 
 
     def OnPlayerKill(self, action, data):
-        #player.onKill: ['Juxta', '6blBaJlblu']
-        if not len(data) == 2:
+        """
+        Request: player.onKill <killing soldier name: string> <killed soldier name: string> <weapon: string> <headshot: boolean> <killer location: 3 x integer> <killed location: 3 x integes>
+
+        Effect: Player with name <killing soldier name> has killed <killed soldier name> Suicide is indicated with the same soldier name for killer and victim. If the server kills the player (through admin.killPlayer), it is indicated by showing the killing soldier name as Server. The locations of the killer and the killed have a random error of up to 10 meters in each direction.
+        """
+        #R15: player.onKill: ['Brou88', 'kubulina', 'S20K', 'true', '-77', '68', '-195', '-76', '62', '-209']
+        if len(data) < 2:
             return None
+
         attacker = self.getClient(data[0])
         if not attacker:
             self.debug('No attacker')
@@ -517,17 +529,31 @@ class Bfbc2Parser(b3.parser.Parser):
             self.debug('No victim')
             return None
         
-        if victim == attacker:
-            return b3.events.Event(b3.events.EVT_CLIENT_SUICIDE, (100, 1, 1), attacker, victim)
-        elif attacker.team == victim.team and attacker.team != b3.TEAM_UNKNOWN and attacker.team != b3.TEAM_SPEC:
-            return b3.events.Event(b3.events.EVT_CLIENT_KILL_TEAM, (100, None, None), attacker, victim)
+        if data[2]:
+            weapon = data[2]
         else:
-            return b3.events.Event(b3.events.EVT_CLIENT_KILL, (100, None, None), attacker, victim)
+            # to accomodate pre R15 servers
+            weapon = None
+
+        if data[3]:
+            if data[3] == 'true':
+                hitloc = 'head'
+            else:
+                hitloc = 'torso'
+        else:
+            # to accomodate pre R15 servers
+            hitloc = None
+
+        event = b3.events.EVT_CLIENT_KILL
+        if victim == attacker:
+            event = b3.events.EVT_CLIENT_SUICIDE
+        elif attacker.team == victim.team and attacker.team != b3.TEAM_UNKNOWN and attacker.team != b3.TEAM_SPEC:
+            event = b3.events.EVT_CLIENT_KILL_TEAM
+        return b3.events.Event(event, (100, weapon, hitloc), attacker, victim)
 
     def OnPlayerTeamchange(self, action, data):
         """
         player.onTeamChange <soldier name: player name> <team: Team ID> <squad: Squad ID>
-        
         Effect: Player might have changed team
         """
         client = self.getClient(data[0])
@@ -630,7 +656,7 @@ class Bfbc2Parser(b3.parser.Parser):
             if matchingClients and len(matchingClients) == 0:
                 client = matchingClients[0]
         if not client:
-            self.error('unable to find client %s. weird')
+            self.error('unable to find client %s. weird' %name )
         else:
             # update client data with PB id and IP
             client.pbid = dict['pbuid']
@@ -1116,19 +1142,25 @@ class Bfbc2Parser(b3.parser.Parser):
         """Ask the BFBC2 for a given client's team
         """
         scores = {}
-        pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
-        for p in pib:
-            scores[p['name']] = int(p['score'])
+        try:
+            pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
+            for p in pib:
+                scores[p['name']] = int(p['score'])
+        except:
+            self.debug('Unable to retrieve scores from playerlist')
         return scores
     
     def getPlayerPings(self):
         """Ask the BFBC2 for a given client's team
         """
-        scores = {}
-        pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
-        for p in pib:
-            scores[p['name']] = int(p['ping'])
-        return scores
+        pings = {}
+        try:
+            pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
+            for p in pib:
+                pings[p['name']] = int(p['ping'])
+        except:
+            self.debug('Unable to retrieve pings from playerlist')
+        return pings
     
     def getServerInfo(self):
         """query server info, update self.game and return query results"""

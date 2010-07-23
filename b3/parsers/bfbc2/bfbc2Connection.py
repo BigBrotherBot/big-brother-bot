@@ -201,8 +201,7 @@ class Bfbc2Connection(object):
                     timeout_counter = 0
             except socket.error, detail:
                 raise Bfbc2NetworkException('readBfbc2Event: %r'% detail)
-        
-        
+
         try:
             [isFromServer, isResponse, sequence, words] = b3.parsers.bfbc2.protocol.DecodePacket(packet)
             self.printPacket(b3.parsers.bfbc2.protocol.DecodePacket(packet))
