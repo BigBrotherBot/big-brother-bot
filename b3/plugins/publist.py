@@ -73,7 +73,7 @@ from b3.functions import getModule
 #--------------------------------------------------------------------------------------------------
 class PublistPlugin(b3.plugin.Plugin):
     _cronTab = None
-    _url='http://www.bigbrotherbot.com/master/serverping.php'
+    _url='http://www.bigbrotherbot.net/master/serverping.php'
     _secondUrl = None
     requiresConfigFile = False
     

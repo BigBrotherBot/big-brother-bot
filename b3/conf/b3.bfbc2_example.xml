@@ -1,7 +1,7 @@
 <configuration>
 	<!--
-  This is B3 main config file (the one you specify when you run b3 with the
-  command : b3_run -c b3.xml)
+  This is B3 main config file for BattleField Bad Company 2 !!!
+  (the one you specify when you run b3 with the command : b3_run -c b3.xml)
 
   For any change made in this config file, you have to restart the bot.
 
