@@ -1,3 +1,75 @@
+2010-07-23  xlr8or <xlr8or@xlr8or.com>
+
+	* b3.egg-info/PKG-INFO, b3/conf/b3.bfbc2_example.xml,
+	b3/plugins/publist.py, py2exe_builder/b3-installer-project.iss,
+	setup.py, versions.txt: updated version info
+
+2010-07-23  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/bfbc2/__init__.py,
+	b3/parsers/bfbc2/bfbc2Connection.py, b3/parsers/bfbc2/protocol.py: * modified OnPlayerKill to work with R15+ * fixed infinite loop in a python socket thread in receivePacket()
+	(in protocol.py) on gameserver restart * fixed (statusplugin crontab) error when polling for playerscores
+	and -pings while server is unreachable
+
+2010-05-22  Bakes <bakes@ymail.com>
+
+	* b3/parsers/bfbc2/__init__.py: [BC2] nicholasperkins' method for
+	line wrapping. Much better.
+
+2010-06-29  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/storage.py: fixed typo myqsldb -> msqldb in error message
+	(thanks ryry46d9)
+
+2010-06-04  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod2.py: CoD2 v1.2 exception: PBid length set to range
+	30-32
+
+2010-05-30  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py, b3/parsers/cod2.py: * adding dummy setVersionExceptions() to enable overriding of
+	variables based on the shortversion * Setting exception for 31 char PBid in shortversion v1.2
+
+2010-05-28  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/iourt41.py: typo
+
+2010-05-28  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/iourt41.py: Connecting bots, needs testing! (minor)
+
+2010-05-28  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/iourt41.py: Connecting Bots. Needs to be tested!
+
+2010-05-24  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/PKG-INFO, setup.py: updated version numbering
+
+2010-05-24  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py: check if guids match on existing client objects
+	when joining after a mapchange
+
+2010-05-24  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod4.py: added maxretries to sync()
+
+2010-05-24  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parser.py, b3/parsers/bfbc2/__init__.py: Cleared up message on
+	startup screen, some ppl questioned the 'Let's get to work' notice.
+
+2010-05-22  xlr8or <xlr8or@xlr8or.com>
+
+	* py2exe_builder/b3-installer-project.iss: update version numbering
+
+2010-05-22  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG, ChangeLogDetailed.txt: Updated changelog for version
+	1.3.2
+
 2010-05-22  xlr8or <xlr8or@xlr8or.com>
 
 	* b3.egg-info/PKG-INFO, b3/PKG-INFO, setupPy2exe.py, versions.txt: 
