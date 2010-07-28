@@ -127,6 +127,8 @@
 # 2010/07/26 - 1.3.1 - xlr8or
 # * make sure we don't create a new client without a guid and;
 # * pass guid to getClient() in OnPlayerAuthenticated() for a better chance on a guid
+# 2010/07/28 - 1.3.1 - Durzo
+# * merge onPlayerSpawn event with latest xlr8or code base
 #
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
@@ -147,6 +149,7 @@
 # EVT_CLIENT_BAN
 #
 # -- BFBC2 specific B3 events --
+# EVT_CLIENT_SPAWN
 # EVT_CLIENT_SQUAD_CHANGE
 # EVT_PUNKBUSTER_LOST_PLAYER
 # EVT_PUNKBUSTER_SCHEDULED_TASK
@@ -274,6 +277,7 @@ class Bfbc2Parser(b3.parser.Parser):
         self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
         self.Events.createEvent('EVT_PUNKBUSTER_SCHEDULED_TASK', 'PunkBuster scheduled task')
         self.Events.createEvent('EVT_PUNKBUSTER_LOST_PLAYER', 'PunkBuster client connection lost')
+        self.Events.createEvent('EVT_CLIENT_SPAWN', 'Client Spawn')
         
         # create the 'Server' client
         self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN, squad=SQUAD_NEUTRAL)
@@ -510,6 +514,26 @@ class Bfbc2Parser(b3.parser.Parser):
         #player.onJoin: ['OrasiK']
         client = self.getClient(data[0], data[1])
         return b3.events.Event(b3.events.EVT_CLIENT_CONNECT, data, client)
+
+
+    def OnPlayerSpawn(self, action, data):
+        """
+        Request: player.onSpawn <spawning soldier name: string> <kit type: string> <gadget: string> <pistol: string> <primary weapon: string> <specialization 1: string> <specialization 2: string> <specialization 3: string>
+        """
+        if len(data) < 2:
+            return None
+
+        spawner = self.getClient(data[0])
+        kit = data[1]
+        gadget = data[2]
+        pistol = data[3]
+        weapon = data[4]
+        spec1 = data[5]
+        spec2 = data[6]
+        spec3 = data[7]
+
+        event = b3.events.EVT_CLIENT_SPAWN
+        return b3.events.Event(event, (kit, gadget, pistol, weapon, spec1, spec2, spec3), spawner)
 
 
     def OnPlayerKill(self, action, data):
