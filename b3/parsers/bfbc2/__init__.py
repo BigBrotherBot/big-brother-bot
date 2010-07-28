@@ -124,6 +124,9 @@
 # * modified OnPlayerKill to work with R15+
 # * fixed infinite loop in a python socket thread in receivePacket() (in protocol.py) on gameserver restart
 # * fixed (statusplugin crontab) error when polling for playerscores and -pings while server is unreachable
+# 2010/07/26 - 1.3.1 - xlr8or
+# * make sure we don't create a new client without a guid and;
+# * pass guid to getClient() in OnPlayerAuthenticated() for a better chance on a guid
 #
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
@@ -156,7 +159,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.3.0'
+__version__ = '1.3.1'
 
 
 import sys, time, re, string, traceback
@@ -505,7 +508,7 @@ class Bfbc2Parser(b3.parser.Parser):
         Effect: Player with name <soldier name> has been authenticated, and has the given GUID
         """
         #player.onJoin: ['OrasiK']
-        client = self.getClient(data[0])
+        client = self.getClient(data[0], data[1])
         return b3.events.Event(b3.events.EVT_CLIENT_CONNECT, data, client)
 
 
@@ -1057,7 +1060,7 @@ class Bfbc2Parser(b3.parser.Parser):
             return b3.TEAM_UNKNOWN
         
         
-    def getClient(self, cid):
+    def getClient(self, cid, _guid=None):
         """Get a connected client from storage or create it
         B3 CID   <--> BFBC2 character name
         B3 GUID  <--> BFBC2 EA_guid
@@ -1077,9 +1080,20 @@ class Bfbc2Parser(b3.parser.Parser):
             p = pib[0]
             cid = p['name']
             name = p['name']
+
+            # Let's see if we have a guid, either from the PlayerInfoBlock, or passed to us by OnPlayerAuthenticated()
+            if p['guid']:
+                guid = p['guid']
+            elif _guid:
+                guid = _guid
+            else:
+                # If we still don't have a guid, we cannot create a newclient without the guid!
+                self.debug('No guid for %s, waiting for next event.' %name)
+                return None
+
             if 'clanTag' in p and len(p['clanTag']) > 0:
                 name = "[" + p['clanTag'] + "] " + p['name']
-            client = self.clients.newClient(cid, guid=p['guid'], name=name, team=self.getTeam(p['teamId']), teamId=int(p['teamId']), squad=p['squadId'], data=p)
+            client = self.clients.newClient(cid, guid=guid, name=name, team=self.getTeam(p['teamId']), teamId=int(p['teamId']), squad=p['squadId'], data=p)
             self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
         
         return client
