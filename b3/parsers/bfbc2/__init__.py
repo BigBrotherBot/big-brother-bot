@@ -130,9 +130,11 @@
 # 2010/07/28 - 1.3.1 - Durzo
 # * merge onPlayerSpawn event with latest xlr8or code base
 # 2010/07/29 - 1.3.2 - xlr8or
-# * Added EVT_PUNKBUSTER_NEW_CONNECTION when PB announces new connection.
-#   Here's where we see the clients IP for the first time (to aid IP and GeoIP based plugins).
+# * Added EVT_PUNKBUSTER_NEW_CONNECTION when IP address is published by PB
+#  (to aid IP and GeoIP based plugins)
 # * Removed obsolete code in OnPBLostConection() that generated a consistent error.
+# * Fixed unban()
+# * Added needConfirmation var to write() so we can test on the confirmationtype ("OK", "NotFound") sent by the server on rcon.
 #
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
@@ -814,18 +816,24 @@ class Bfbc2Parser(b3.parser.Parser):
         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, reason, client))
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
-        if client.ip is not None:
-            self.write(self.getCommand('unbanByIp', ip=client.ip, reason=reason))
-            if admin:
-                admin.message('Unbanned: %s. His last ip (^1%s^7) has been removed from banlist.' % (client.exactName, client.ip))    
+        self.debug('UNBAN: Name: %s, Ip: %s, Guid: %s' %(client.name, client.ip, client.guid))
+        if client.ip:
+            response = self.write(self.getCommand('unbanByIp', ip=client.ip, reason=reason), needConfirmation=True)
+            #self.verbose(response)
+            if response == "OK":
+                self.verbose('UNBAN: Removed ip (%s) from banlist' %client.ip)
+                if admin:
+                    admin.message('Unbanned: %s. His last ip (%s) has been removed from banlist.' % (client.exactName, client.ip))    
         
-        self.write(self.getCommand('unban', guid=client.guid, reason=reason))
+        response = self.write(self.getCommand('unban', guid=client.guid, reason=reason), needConfirmation=True)
+        #self.verbose(response)
+        if response == "OK":
+            self.verbose('UNBAN: Removed guid (%s) from banlist' %client.guid)
+            if admin:
+                admin.message('Unbanned: Removed %s guid from banlist' % (client.exactName))
         
         if self.PunkBuster:
             self.PunkBuster.unBanGUID(client)
-            
-        if admin:
-            admin.message('Unbanned: %s' % (client.exactName))
         
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -1308,7 +1316,7 @@ class Bfbc2Parser(b3.parser.Parser):
         self.debug('getCommand: %s', result)
         return result
     
-    def write(self, msg, maxRetries=1):
+    def write(self, msg, maxRetries=1, needConfirmation=False):
         """Write a message to Rcon/Console
         Unfortunaltely this has been abused all over B3 
         and B3 plugins to broadcast text :(
@@ -1323,7 +1331,7 @@ class Bfbc2Parser(b3.parser.Parser):
             elif self.output == None:
                 pass
             else:
-                res = self.output.write(msg, maxRetries=maxRetries)
+                res = self.output.write(msg, maxRetries=maxRetries, needConfirmation=needConfirmation)
                 self.output.flush()
                 return res
             
