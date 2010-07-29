@@ -32,6 +32,9 @@
 # * just make it v1.0 as it is now part of a public release and works rather good
 # 2010/04/15 - 1.0.1 Bakes
 # * If the response of the rcon command does not start with 'OK', trigger Bfbc2CommandFailedError
+# 2010/07/29 - 1.0.2 xlr8or
+# * The response may also be "NotFound" ie. when a guid or ip address is not found in the banslist.
+# * Added needConfirmation var to write() so we can use the confirmationtype ("OK", "NotFound") to test on.
 
 import thread
 from b3.parsers.bfbc2 import bfbc2Connection
@@ -67,7 +70,7 @@ class Rcon:
         for line in lines:
             self.write(line)
 
-    def write(self, cmd, maxRetries=1):
+    def write(self, cmd, maxRetries=1, needConfirmation=False):
         self._lock.acquire()
         try:
             if self._bfbc2Connection is None:
@@ -78,9 +81,12 @@ class Rcon:
                     tries += 1
                     self.console.verbose('RCON (%s/%s) %s' % (tries, maxRetries, cmd))
                     response = self._bfbc2Connection.sendRequest(cmd)
-                    if response[0] != "OK":
+                    if response[0] != "OK" and response[0] != "NotFound":
                         raise Bfbc2CommandFailedError(response)
-                    return response[1:]
+                    if needConfirmation:
+                        return response[0]
+                    else:
+                        return response[1:]
                 except Bfbc2Exception, err:
                     self.console.warning('RCON: sending \'%s\', %s' % (cmd, err))
             self.console.error('RCON: failed to send \'%s\'', cmd)
