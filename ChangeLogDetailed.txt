@@ -1,3 +1,30 @@
+2010-07-29  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/bfbc2/__init__.py, b3/parsers/bfbc2/rcon.py: * Fixed unban() * Added needConfirmation var to write() so we can test on the
+	confirmationtype ("OK", "NotFound") sent by the server on rcon.
+
+2010-07-29  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/bfbc2/__init__.py: * Added EVT_PUNKBUSTER_NEW_CONNECTION when PB announces new
+	  connection.  Here's where we see the clients IP for the first time
+	(to aid IP and GeoIP based plugins).  * Removed obsolete code in OnPBLostConection() that generated a
+	consistent error.
+
+2010-07-28  durzo <durzo@badcompany2.com.au>
+
+	* b3/parsers/bfbc2/__init__.py: Add event EVT_CLIENT_SPAWN to handle
+	onPlayerSpawn
+
+2010-07-28  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/bfbc2/__init__.py: Make sure we don't create a new
+	client without a guid and Pass guid to getClient() in
+	OnPlayerAuthenticated() for a better chance on a guid
+
+2010-07-23  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt: updated detailed changelog
+
 2010-07-23  xlr8or <xlr8or@xlr8or.com>
 
 	* b3.egg-info/PKG-INFO, b3/conf/b3.bfbc2_example.xml,
