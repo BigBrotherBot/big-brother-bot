@@ -129,6 +129,10 @@
 # * pass guid to getClient() in OnPlayerAuthenticated() for a better chance on a guid
 # 2010/07/28 - 1.3.1 - Durzo
 # * merge onPlayerSpawn event with latest xlr8or code base
+# 2010/07/29 - 1.3.2 - xlr8or
+# * Added EVT_PUNKBUSTER_NEW_CONNECTION when PB announces new connection.
+#   Here's where we see the clients IP for the first time (to aid IP and GeoIP based plugins).
+# * Removed obsolete code in OnPBLostConection() that generated a consistent error.
 #
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
@@ -153,6 +157,7 @@
 # EVT_CLIENT_SQUAD_CHANGE
 # EVT_PUNKBUSTER_LOST_PLAYER
 # EVT_PUNKBUSTER_SCHEDULED_TASK
+# EVT_PUNKBUSTER_NEW_CONNECTION
 # 
 # -- B3 events triggered natively by B3 core --
 # EVT_CLIENT_NAME_CHANGE
@@ -162,7 +167,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.3.1'
+__version__ = '1.3.2'
 
 
 import sys, time, re, string, traceback
@@ -277,6 +282,7 @@ class Bfbc2Parser(b3.parser.Parser):
         self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
         self.Events.createEvent('EVT_PUNKBUSTER_SCHEDULED_TASK', 'PunkBuster scheduled task')
         self.Events.createEvent('EVT_PUNKBUSTER_LOST_PLAYER', 'PunkBuster client connection lost')
+        self.Events.createEvent('EVT_PUNKBUSTER_NEW_CONNECTION', 'PunkBuster client received IP')
         self.Events.createEvent('EVT_CLIENT_SPAWN', 'Client Spawn')
         
         # create the 'Server' client
@@ -647,7 +653,10 @@ class Bfbc2Parser(b3.parser.Parser):
                 
     def OnPBNewConnection(self, match, data):
         """PunkBuster tells us a new player identified. The player is
-        normally already connected"""
+        normally already connected and authenticated by B3 by ea_guid
+        
+        This is our first moment where we receive the clients IP address
+        so we also fire the custom event EVT_PUNKBUSTER_NEW_CONNECTION here"""
         name = match.group('name')
         client = self.getClient(name)
         if client:
@@ -659,6 +668,8 @@ class Bfbc2Parser(b3.parser.Parser):
             client.port = port
             client.save()
             self.debug('OnPBNewConnection: client updated with %s' % data)
+            # This is our first moment where we get a clients IP. Fire this event to accomodate geoIP based plugins like Countryfilter.
+            return b3.events.Event(b3.events.EVT_PUNKBUSTER_NEW_CONNECTION, data, client)
         else:
             self.warning('OnPBNewConnection: we\'ve been unable to get the client')
 
@@ -667,7 +678,9 @@ class Bfbc2Parser(b3.parser.Parser):
         we have to save the ip of clients.
         This event is triggered after the OnPlayerLeave, so normaly the client
         is not connected. Anyway our task here is to save data into db not to 
-        connect/disconnect the client
+        connect/disconnect the client.
+        
+        Part of this code is obsolete since R15, IP is saved to DB on OnPBNewConnection()
         """
         name = match.group('name')
         dict = {
@@ -677,6 +690,7 @@ class Bfbc2Parser(b3.parser.Parser):
             'pbuid': match.group('pbuid'),
             'name': name
         }
+        """ Code Obsolete since R15:
         client = self.clients.getByCID(dict['name'])
         if not client:
             matchingClients = self.storage.getClientsMatching( {'pbid': match.group('pbuid')} )
@@ -689,6 +703,8 @@ class Bfbc2Parser(b3.parser.Parser):
             client.pbid = dict['pbuid']
             client.ip = dict['ip']
             client.save()
+        """
+        self.verbose('PB lost connection: %s' %dict)
         return b3.events.Event(b3.events.EVT_PUNKBUSTER_LOST_PLAYER, dict)
 
     def OnPBScheduledTask(self, match, data):
