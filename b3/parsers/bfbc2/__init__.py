@@ -579,12 +579,26 @@ class Bfbc2Parser(b3.parser.Parser):
             # to accomodate pre R15 servers
             hitloc = None
 
+        attackerloc = []
+        victimloc = []
+        if data[4] and data[9]:
+            attackerloc.append(data[4])
+            attackerloc.append(data[5])
+            attackerloc.append(data[6])
+            victimloc.append(data[7])
+            victimloc.append(data[8])
+            victimloc.append(data[9])
+        else:
+            # to accomodate pre R15 servers
+            attackerloc.append('None')
+            victimloc.append('None')
+
         event = b3.events.EVT_CLIENT_KILL
         if victim == attacker:
             event = b3.events.EVT_CLIENT_SUICIDE
         elif attacker.team == victim.team and attacker.team != b3.TEAM_UNKNOWN and attacker.team != b3.TEAM_SPEC:
             event = b3.events.EVT_CLIENT_KILL_TEAM
-        return b3.events.Event(event, (100, weapon, hitloc), attacker, victim)
+        return b3.events.Event(event, (100, weapon, hitloc, attackerloc, victimloc), attacker, victim)
 
     def OnPlayerTeamchange(self, action, data):
         """
