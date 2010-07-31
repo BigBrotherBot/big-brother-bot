@@ -135,6 +135,8 @@
 # * Removed obsolete code in OnPBLostConection() that generated a consistent error.
 # * Fixed unban()
 # * Added needConfirmation var to write() so we can test on the confirmationtype ("OK", "NotFound") sent by the server on rcon.
+# 2010-07-30 - 1.3.3 - xlr8or
+# * Added joinClient() to OnServerLevelstarted() so rounds are counted for playerstats
 #
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
@@ -169,7 +171,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.3.2'
+__version__ = '1.3.3'
 
 
 import sys, time, re, string, traceback
@@ -643,8 +645,13 @@ class Bfbc2Parser(b3.parser.Parser):
         return b3.events.Event(b3.events.EVT_GAME_WARMUP, data[0])
 
     def OnServerLevelstarted(self, action, data):
-        """When the level finished loading and started"""
+        """
+        server.onLevelStarted
+        
+        Effect: Level is started"""
         self.game.startRound()
+        #Players need to be joined (EVT_CLIENT_JOIN) for stats to count rounds
+        self.joinPlayers()
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
             
 
@@ -1297,6 +1304,15 @@ class Bfbc2Parser(b3.parser.Parser):
         except Bfbc2CommandFailedError, err:
             self.error(err)
 
+    def joinPlayers(self):
+        self.info('Joining players...')
+        plist = self.getPlayerList()
+        for cid, p in plist.iteritems():
+            client = self.clients.getByCID(cid)
+            if client:
+                self.debug(' - Joining %s' % cid)
+                self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
+        return None
     
     def sync(self):
         plist = self.getPlayerList()
