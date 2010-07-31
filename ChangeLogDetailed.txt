@@ -1,3 +1,33 @@
+2010-07-31  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/bfbc2/__init__.py: Added joinClient() to
+	OnServerLevelstarted() so rounds are counted for playerstats
+
+2010-07-30  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit edd4771cb9594b9075b3966e5d67353d5ebc5f16 Author: durzo
+	<durzo@badcompany2.com.au> Date:   Fri Jul 30 01:42:44 2010 -0700
+
+2010-07-30  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt: Updated detailed Changelog
+
+2010-07-30  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/bfbc2/__init__.py, b3/parsers/bfbc2/rcon.py: * Fixed unban() * Added needConfirmation var to write() so we can test on the
+	confirmationtype ("OK", "NotFound") sent by the server on rcon.
+
+2010-07-29  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/bfbc2/__init__.py: * Added EVT_PUNKBUSTER_NEW_CONNECTION when PB announces new
+	  connection.  Here's where we see the clients IP for the first time
+	(to aid IP and GeoIP based plugins).  * Removed obsolete code in OnPBLostConection() that generated a
+	consistent error.
+
+2010-07-29  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt: Updated detailed Changelog
+
 2010-07-29  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/parsers/bfbc2/__init__.py, b3/parsers/bfbc2/rcon.py: * Fixed unban() * Added needConfirmation var to write() so we can test on the
