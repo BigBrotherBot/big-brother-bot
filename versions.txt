@@ -1,5 +1,5 @@
-project files/versions signature: fe8f18b79d25acd07d1fb7b10702bae3
-project files content signature: 0404a545f2e28fcda5a5034ff97e1b43
+project files/versions signature: bbd2075aa71962c1078fc61fd19b6c72
+project files content signature: 38538f66d842dad9250c3f48c7603987
 b3\__init__.py dbd84b93f6d817311ce156c0263e8003 1.1.0
 b3\clients.py f5059fc50ce000d76c16ad4825262a55 1.2.12
 b3\config.py a1aae8f3404d8b403b033ee02a016e4a 1.3.1
@@ -28,13 +28,13 @@ b3\lib\elementtree\__init__.py a5b55367eca5b161d918d7c4fd3e7251 None
 b3\output.py de0b04b0c3124413ed934fa95d2ad28f 1.4.0
 b3\parser.py 25ab0d32579d7ea7a140fbaf02fa38bf 1.15.1
 b3\parsers\__init__.py dc27db9710c1c207a8bd46935163efc1 None
-b3\parsers\bfbc2\__init__.py 81620ce51b50e7b610134f3d341323c8 1.2.8
-b3\parsers\bfbc2\bfbc2Connection.py 65080020bb7460f6fcb7d34847af9d6e 1.2.1
-b3\parsers\bfbc2\protocol.py d0f9bf1a7a86912bb0d753643b15b233 None
+b3\parsers\bfbc2\__init__.py d171322faf36eaffdf17287a55e0eda8 1.3.3
+b3\parsers\bfbc2\bfbc2Connection.py f526632ae1c7be2bf841f4339eb18c63 1.2.1
+b3\parsers\bfbc2\protocol.py 1c7755c8b3eae89a659118147a53d972 1.0.1
 b3\parsers\bfbc2\punkbuster.py cae2314e3c85c73b8d351706a7d595f6 1.1
-b3\parsers\bfbc2\rcon.py 473da84f45187cbeec837b0e985626f9 1.0
+b3\parsers\bfbc2\rcon.py 0f2b979f582a134c82b6f8121588cab8 1.0
 b3\parsers\cod.py a1d64afc9d36791825a6af8c8afc90bf 1.4.12
-b3\parsers\cod2.py e54d8c2a12dc3fa63a3384f8b7b30851 1.2.4
+b3\parsers\cod2.py 40cee1b97b181e2a911286d7a86e0fa7 1.2.4
 b3\parsers\cod4.py 027069f0d1c2a3757f8a8a8869b6777d 1.3.2
 b3\parsers\cod5.py 55df1463134fe3a893d78664db7a2fd3 1.2.1
 b3\parsers\et.py 3cfa217eab572717d379399964d7fa95 0.0.1
@@ -56,7 +56,7 @@ b3\plugins\codam.py cf8c30e6d253f6b1f1913214f343175f 0.0.1
 b3\plugins\ftpytail.py 4ae8bc5422ca1e8e4ec2b3f233fa5f8a 1.4
 b3\plugins\login.py ced4915041f75e5a195dcdc4e7107921 1.0.3
 b3\plugins\pingwatch.py 8841fedfff4086ac2dc3de22fbef6a4f 1.2.2
-b3\plugins\publist.py 881d7d863d0c247165beeaf61a994c54 1.5
+b3\plugins\publist.py 96c30e181508643ad7373915efae2942 1.5
 b3\plugins\punkbuster.py 8f5ae8135a468a76285a77d2d65be236 1.0.8
 b3\plugins\spamcontrol.py 5eb4c80292853a62e4d7566df491f166 1.1.2
 b3\plugins\stats.py acdb3ac3d6629616f393ec5c95a97f77 1.2.3
@@ -66,7 +66,7 @@ b3\plugins\welcome.py 43dc939305efaafdcb4745b6cc85a648 1.1
 b3\querybuilder.py b3e20540041693afe9afcea08d516938 1.0.1
 b3\run.py e1a406a83e2fede829d65fac826fe96e 1.3
 b3\setup.py 6984948a1a32cbcb14190295b0b4a23b 0.4
-b3\storage.py 0111832fdbb706e5df01b07f59d3312e 1.7.1
+b3\storage.py 8f916f77369ec0b49774b85ea403988f 1.7.2
 b3\timezones.py b5a25c7351b10c90c231871e8cc377b0 1.0.0
 b3\tools\__init__.py d41d8cd98f00b204e9800998ecf8427e None
 b3\tools\documentationBuilder.py 4c205a9e4f0a3ca2ff4d3a94c2a33bcc 1.2.3

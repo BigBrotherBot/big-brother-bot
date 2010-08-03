@@ -575,7 +575,11 @@ class AdminPlugin(b3.plugin.Plugin):
         - say b3's version info
         """
 
-        if len(data) > 0 and client.maxLevel >= self.config.getint('settings', 'admins_level'):
+        if len(data) > 0 and data.lower().strip() == 'confirm':
+            self.debug('checking confirmation...')
+            self.console.say(functions.confirm(client))
+
+        elif len(data) > 0 and client.maxLevel >= self.config.getint('settings', 'admins_level'):
             data = data.lower().strip()
 
             if data == 'poke':
@@ -622,7 +626,6 @@ class AdminPlugin(b3.plugin.Plugin):
                 self.console.say('^7b3 is at %s.' % self.console._publicIp)
         else:
             cmd.sayLoudOrPM(client, '%s ^7- uptime: [^2%s^7]' % (b3.version, functions.minutesStr(self.console.upTime() / 60.0)))
-
 
     def cmd_enable(self, data, client, cmd=None):
         """\
