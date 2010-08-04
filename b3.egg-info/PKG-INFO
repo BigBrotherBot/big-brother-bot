@@ -1,10 +1,10 @@
 Metadata-Version: 1.0
 Name: b3
-Version: 1.3.3
+Version: 1.3.4b
 Summary: BigBrotherBot (B3) is a cross-platform, cross-game game administration bot. Features in-game administration of game servers, multiple user access levels, and database storage. Currently include parsers for Call of Duty 1 to 5, Urban Terror (ioUrT), World of Padman, ETpro, Smokin' Guns, BFBC2(beta)
-Home-page: http://www.bigbrotherbot.com
+Home-page: http://www.bigbrotherbot.net
 Author: Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Léveil (Courgette)
-Author-email: bigbrotherbot@gmail.com
+Author-email: info@bigbrotherbot.net
 License: GPL
 Description: Big Brother Bot B3 is a complete and total server administration package for online games. B3 is designed primarily to keep your server free from the derelicts of online gaming, but offers more, much more. With the stock configuration files, B3 will will keep your server free from offensive language, and team killers alike. A completely automated and customizable warning system will warn the offending players that this type of behavior is not allowed on your server, and ultimately kick, and or ban them for a predetermined time limit.
         

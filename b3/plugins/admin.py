@@ -184,66 +184,70 @@ class AdminPlugin(b3.plugin.Plugin):
     def OnSay(self, event, private=False):
         self.debug('OnSay handle %s:"%s"', event.type, event.data)
 
-        if self.console.debug and len(event.data) >= 3 and event.data[:1] == '#':
-            if event.data[1:] == 'clients':
-                self.debug('Clients:')
-                for k, c in self.console.clients.items():
-                    self.debug('client %s (#%i id: %s cid: %s level: %s group: %s) obj: %s', c.name, id(c), c.id, c.cid, c.maxLevel, c.groupBits, c)
-            elif event.data[1:] == 'groups':
-                self.debug('Groups for %s:', event.client.name)
-                for g in event.client.groups:
-                    self.debug('group (id: %s, name: %s, level: %s)', g.id, g.name, g.level)
-
-            elif event.data[1:5] == 'vars':
-                try:
-                    data = event.data[7:].strip()
-                    if data:
-                        sclient = self.findClientPrompt(data, event.client)
-                        if not sclient: return
-                    else:
+        if len(event.data) >= 3 and event.data[:1] == '#':
+            if event.data[1:] == 'confirm':
+                self.debug('checking confirmation...')
+                self.console.say(functions.confirm(event.client))
+            elif self.console.debug:
+                if event.data[1:] == 'clients':
+                    self.debug('Clients:')
+                    for k, c in self.console.clients.items():
+                        self.debug('client %s (#%i id: %s cid: %s level: %s group: %s) obj: %s', c.name, id(c), c.id, c.cid, c.maxLevel, c.groupBits, c)
+                elif event.data[1:] == 'groups':
+                    self.debug('Groups for %s:', event.client.name)
+                    for g in event.client.groups:
+                        self.debug('group (id: %s, name: %s, level: %s)', g.id, g.name, g.level)
+    
+                elif event.data[1:5] == 'vars':
+                    try:
+                        data = event.data[7:].strip()
+                        if data:
+                            sclient = self.findClientPrompt(data, event.client)
+                            if not sclient: return
+                        else:
+                            sclient = event.client
+                    except:
                         sclient = event.client
-                except:
-                    sclient = event.client
-
-                self.debug('Vars for %s:', sclient.name)
-
-                try:
-                    for k,v in sclient._pluginData.items():
-                        self.debug('\tplugin %s:', k)
-                        for kk,vv in v.items():
-                            self.debug('\t\t%s = %s', kk, str(vv.value))
-                except Exception, e:
-                    self.debug('Error getting vars: %s', e)
-                self.debug('End of vars')
-            elif event.data[1:7] == 'tkinfo':
-                try:
-                    data = event.data[9:].strip()
-                    if data:
-                        sclient = self.findClientPrompt(data, event.client)
-                        if not sclient: return
-                    else:
+    
+                    self.debug('Vars for %s:', sclient.name)
+    
+                    try:
+                        for k,v in sclient._pluginData.items():
+                            self.debug('\tplugin %s:', k)
+                            for kk,vv in v.items():
+                                self.debug('\t\t%s = %s', kk, str(vv.value))
+                    except Exception, e:
+                        self.debug('Error getting vars: %s', e)
+                    self.debug('End of vars')
+                elif event.data[1:7] == 'tkinfo':
+                    try:
+                        data = event.data[9:].strip()
+                        if data:
+                            sclient = self.findClientPrompt(data, event.client)
+                            if not sclient: return
+                        else:
+                            sclient = event.client
+                    except:
                         sclient = event.client
-                except:
-                    sclient = event.client
-
-                self.debug('Tkinfo for %s:', sclient.name)
-
-                try:
-                    for k,v in sclient._pluginData.items():
-
-                        for kk,vv in v.items():
-                            if kk == 'tkinfo':
-                                self.debug('\tplugin %s:', k)
-                                tkinfo = vv.value
-                                self.debug('\t\tcid = %s', tkinfo.cid)
-                                self.debug('\t\tattackers = %s', str(tkinfo.attackers))
-                                self.debug('\t\tattacked = %s', str(tkinfo.attacked))
-                                self.debug('\t\tpoints = %s', tkinfo.points)
-                                self.debug('\t\t_grudged = %s', str(tkinfo._grudged))
-                                self.debug('\t\tlastAttacker = %s', tkinfo.lastAttacker)
-                except Exception, e:
-                    self.debug('Error getting Tkinfo: %s', e)
-                self.debug('End of Tkinfo')
+    
+                    self.debug('Tkinfo for %s:', sclient.name)
+    
+                    try:
+                        for k,v in sclient._pluginData.items():
+    
+                            for kk,vv in v.items():
+                                if kk == 'tkinfo':
+                                    self.debug('\tplugin %s:', k)
+                                    tkinfo = vv.value
+                                    self.debug('\t\tcid = %s', tkinfo.cid)
+                                    self.debug('\t\tattackers = %s', str(tkinfo.attackers))
+                                    self.debug('\t\tattacked = %s', str(tkinfo.attacked))
+                                    self.debug('\t\tpoints = %s', tkinfo.points)
+                                    self.debug('\t\t_grudged = %s', str(tkinfo._grudged))
+                                    self.debug('\t\tlastAttacker = %s', tkinfo.lastAttacker)
+                    except Exception, e:
+                        self.debug('Error getting Tkinfo: %s', e)
+                    self.debug('End of Tkinfo')
 
         elif len(event.data) >= 2 and (event.data[:1] == self.cmdPrefix or event.data[:1] == self.cmdPrefixLoud or event.data[:1] == self.cmdPrefixBig):
             self.debug('Handle command %s' % event.data)
@@ -575,11 +579,7 @@ class AdminPlugin(b3.plugin.Plugin):
         - say b3's version info
         """
 
-        if len(data) > 0 and data.lower().strip() == 'confirm':
-            self.debug('checking confirmation...')
-            self.console.say(functions.confirm(client))
-
-        elif len(data) > 0 and client.maxLevel >= self.config.getint('settings', 'admins_level'):
+        if len(data) > 0 and client.maxLevel >= self.config.getint('settings', 'admins_level'):
             data = data.lower().strip()
 
             if data == 'poke':

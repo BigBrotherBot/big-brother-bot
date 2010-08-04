@@ -60,7 +60,7 @@ def checkUpdate(currentVersion, singleLine=True, showErrormsg=False):
  |                                    |
  |                                    |
  | A newer version of B3 is available |
- |     See www.bigbrotherbot.com      |
+ |     See www.bigbrotherbot.net      |
  |                                    |
  |                                    |
  +------------------------------------+
