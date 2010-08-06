@@ -13,13 +13,10 @@
 		<!-- <set name="ads">c:/somewhere/my_ads.txt</set> -->
 	</settings>
 	<ads>
-		<ad>^2Big Brother Bot is watching you... ^9BigBrotherBot.com</ad>
+		<ad>^2Big Brother Bot is watching you... www.BigBrotherBot.net</ad>
 		<ad>/spam#rule1</ad>
-		<ad>^2Do not poke b3 with a stick</ad>
-		<ad>^2b3 is not responsible for damaged reputation</ad>
-		<ad>^2Do not stare directly at b3</ad>
-		<ad>^2Do not expose b3 to sunlight</ad>
 		<ad>@time</ad>
+		<ad>^2Do you like B3? Consider donating to the project at www.BigBrotherBot.net</ad>
 		<ad>@nextmap</ad>
 	</ads>
 </configuration>

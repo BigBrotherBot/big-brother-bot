@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
+# 08/06/2010 - 1.1.5 - xlr8or
+#    Remove save() errors and !advsave when XML adds are used
+#    This needs to be re-enabled when saving to XML is supported
 # 11/22/2009 - 1.1.4 - Courgette
 #    fix bug when using external text ads file which is empty
 # 2/27/2009 - 1.1.3 - xlr8or
@@ -27,7 +30,7 @@
 #    Converted to use XML config
 
 __author__ = 'ThorN'
-__version__ = '1.1.4'
+__version__ = '1.1.5'
 
 import b3, os, time
 import b3.plugin
@@ -92,9 +95,10 @@ class AdvPlugin(b3.plugin.Plugin):
             self._adminPlugin.registerCommand(self, 'advadd', 100, self.cmd_advadd)
             self._adminPlugin.registerCommand(self, 'advrate', 100, self.cmd_advrate)
             self._adminPlugin.registerCommand(self, 'advlist', 100, self.cmd_advlist)
-            self._adminPlugin.registerCommand(self, 'advsave', 100, self.cmd_advsave)
             self._adminPlugin.registerCommand(self, 'advload', 100, self.cmd_advload)
             self._adminPlugin.registerCommand(self, 'advrem', 100, self.cmd_advrem)
+            if self._fileName:
+                self._adminPlugin.registerCommand(self, 'advsave', 100, self.cmd_advsave)
 
     def onLoadConfig(self):
         self._adminPlugin = self.console.getPlugin('admin')
@@ -170,7 +174,8 @@ class AdvPlugin(b3.plugin.Plugin):
     def cmd_advadd(self, data, client=None, cmd=None):
         self._msg.put(data)
         client.message('^3Adv: ^7"%s^7" added' % data)
-        self.save()
+        if self._fileName:
+            self.save()
 
     def cmd_advsave(self, data, client=None, cmd=None):
         try:
@@ -194,7 +199,8 @@ class AdvPlugin(b3.plugin.Plugin):
 
         if item:
             self._msg.remove(int(data) - 1)
-            self.save()
+            if self._fileName:
+                self.save()
             client.message('^3Adv: ^7Removed item: %s' % item)    
         else:
             client.message('^3Adv: ^7Item %s not found' % data) 
