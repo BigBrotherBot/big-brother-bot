@@ -36,10 +36,6 @@ from b3.functions import main_is_frozen
 from b3.setup import Setup
 from optparse import OptionParser
 import pkg_handler
-try:
-    import subprocess
-except:
-    pass # catching and explaining the problem later, when trying to run in --restart mode
 
 
 modulePath = pkg_handler.resource_directory(__name__)
@@ -60,10 +56,13 @@ def run_autorestart(args=None):
             time.sleep(1)
 
             try:
+                import subprocess
                 status = subprocess.call(script, shell=True)
-            except:
-                # subprocess is a python 2.4+ module. User can however still run B3 in single-shot mode.
-                raise SystemExit('ERROR: restart mode not supported!\nUse B3 without the -r (--restart) option or update your python installation!')
+            except ImportError:
+                #for Python versions < 2.5
+                #status = os.system(script)
+                print 'Restart mode not fully supported!\nUse B3 without the -r (--restart) option or update your python installation!'
+                break
 
             print 'Exited with status %s' % status
 
