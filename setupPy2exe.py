@@ -40,7 +40,7 @@ myDataFiles = [
 setup(
     name = "BigBrotherBot",
     version = getVersion(),
-    url = "http://www.bigbrotherbot.com/",
+    url = "http://www.bigbrotherbot.net/",
     console = ["b3_run.py"],
     zipfile = None, 
     data_files = myDataFiles,
