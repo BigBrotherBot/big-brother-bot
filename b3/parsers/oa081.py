@@ -18,10 +18,12 @@
 # CHANGELOG
 # 08/08/2010 - 0.1 - Courgette
 # * creation based on smg11 parser
+# 09/08/2010 - 0.2 - Courgette
+# * implement rotatemap()
 
 
 __author__  = 'Courgette'
-__version__ = '0.1'
+__version__ = '0.2'
 
 import re, string, thread, time, threading
 import b3
@@ -436,6 +438,12 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
 
     def getNextMap(self):
         return 'Command not supported!'
+
+    def rotateMap(self):
+        """\
+        load the next map/level
+        """
+        self.write('vstr nextmap')
 
     def sync(self):
         plist = self.getPlayerList()
