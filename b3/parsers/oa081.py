@@ -20,10 +20,13 @@
 # * creation based on smg11 parser
 # 09/08/2010 - 0.2 - Courgette
 # * implement rotatemap()
+# 09/08/2010 - 0.3 - Courgette & GrosBedo
+# * bot now recognize /tell commands correctly
+
 
 
 __author__  = 'Courgette'
-__version__ = '0.2'
+__version__ = '0.3'
 
 import re, string, thread, time, threading
 import b3
@@ -73,6 +76,11 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         #
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<text>.*))$', re.IGNORECASE),
+
+        # 81:16 tell: grosbedo to courgette: !help
+        # 81:16 say: grosbedo: !help
+        re.compile(r'^(?P<action>tell):\s(?P<data>(?P<name>.+) to (?P<aname>.+): (?P<text>.*))$', re.IGNORECASE),
+
         #
         # Falling through?
         # 1:05 ClientConnect: 3
@@ -298,7 +306,25 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
     def OnSayteam(self, action, data, match=None):
         # Teaminfo does not exist in the sayteam logline. Parse it as a normal say line
         return self.OnSay(action, data, match)
-    
+
+
+    def OnTell(self, action, data, match=None):
+        #5:27 tell: woekele to XLR8or: test
+
+        client = self.clients.getByExactName(match.group('name'))
+        tclient = self.clients.getByExactName(match.group('aname'))
+
+        if not client:
+            self.verbose('No Client Found')
+            return None
+
+        data = match.group('text')
+        if data and ord(data[:1]) == 21:
+            data = data[1:]
+
+        client.name = match.group('name')
+        return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data, client, tclient)
+
     
     def OnItem(self, action, data, match=None):
         #Item: 0 pickup_money (5) picked up ($25)
