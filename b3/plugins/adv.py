@@ -20,6 +20,8 @@
 # 08/06/2010 - 1.1.5 - xlr8or
 #    Remove save() errors and !advsave when XML adds are used
 #    This needs to be re-enabled when saving to XML is supported
+# 08/06/2010 - 1.2 - xlr8or
+#    Add feedparser (@feed or @feed <nr>)
 # 11/22/2009 - 1.1.4 - Courgette
 #    fix bug when using external text ads file which is empty
 # 2/27/2009 - 1.1.3 - xlr8or
@@ -30,9 +32,12 @@
 #    Converted to use XML config
 
 __author__ = 'ThorN'
-__version__ = '1.1.5'
+__version__ = '1.2'
 
 import b3, os, time
+import os
+import time
+import b3.lib.feedparser as feedparser
 import b3.plugin
 import b3.cron
 
@@ -89,6 +94,11 @@ class AdvPlugin(b3.plugin.Plugin):
     _msg = None
     _fileName = None
     _rate = None
+    _feed = 'http://www.bigbrotherbot.net/forums/news-2/?&type=rss;action=.xml'
+    _feedpre = 'News: '
+    _feedmaxitems = 5
+    _feeditemnr = 0
+    _replay = 0
 
     def onStartup(self):
         if self._adminPlugin:
@@ -117,6 +127,34 @@ class AdvPlugin(b3.plugin.Plugin):
         else:
             self._fileName = None
             self.loadFromConfig()
+
+        try:
+            self._feed = self.config.get('newsfeed', 'url')
+        except:
+            pass
+
+        try:
+            self._feedmaxitems = self.config.getint('newsfeed', 'items')
+        except:
+            pass
+        #reduce feedmaxitems 1 point, since we're starting at item 0, this makes counting easier...
+        self._feedmaxitems -= 1
+        self.verbose('self._feedmaxitems: %s' %self._feedmaxitems)
+
+        try:
+            self._feedpre = self.config.get('newsfeed', 'pretext')
+        except:
+            pass
+
+        #test if we have a proper feed
+        f = feedparser.parse(self._feed)
+        _feedtitle = f['feed']['title']
+        if _feedtitle:
+            self.debug('Opening feed: %s' %_feedtitle)
+        else:
+            # empty the feed all together
+            self._feed = None
+            self.debug('Feed is not a proper feed, or unreachable. Disabling the feedparser')
 
         if self._cronTab:
             # remove existing crontab
@@ -165,12 +203,48 @@ class AdvPlugin(b3.plugin.Plugin):
     def adv(self):
         ad = self._msg.getnext()
         if ad:
-            if(ad == "@nextmap"):
+            if ad == "@nextmap":
                 ad = "^2Next map: ^3" + self.console.getNextMap()
-            elif(ad == "@time"):
+            elif ad == "@time":
                 ad = "^2Time: ^3" + self.console.formatTime(time.time())
-            self.console.say(ad)    
-                
+            elif ad[:5] == "@feed" and self._feed:
+                ad = self.getFeed(ad)
+                if not ad or ad == self._feedpre:
+                    #we didn't get an item from the feedreader, move on to the next ad
+                    self._replay += 1
+                    #prevent endless loop if only feeditems are used as adds
+                    if self._replay < 10:
+                        self.adv()
+                    else:
+                        self.debug('Something wrong with the newsfeed, disabling it. Fix the feed and do !advload')
+                        self._feed = None
+                    return
+            self.console.say(ad)
+            self._replay = 0
+
+    def getFeed(self, ad):
+        i = ad.split()
+        if len(i) == 2 and type(i) == type(1):
+            i = i[1]
+            self._feeditemnr = i
+        else:
+            if self._feeditemnr > self._feedmaxitems:
+                self._feeditemnr = 0
+            i = self._feeditemnr
+        try:
+            f = feedparser.parse(self._feed)
+        except:
+            self.debug('Not able to retrieve feed')
+            return None
+        try:
+            _item = f['entries'][i]['title']
+            self._feeditemnr += 1
+            return self._feedpre + str(_item)
+        except:
+            self.debug('Feeditem %s out of range' %i)
+            self._feeditemnr = 0
+            return None
+
     def cmd_advadd(self, data, client=None, cmd=None):
         self._msg.put(data)
         client.message('^3Adv: ^7"%s^7" added' % data)

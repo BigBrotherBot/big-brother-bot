@@ -41,9 +41,12 @@ import pkg_handler
 modulePath = pkg_handler.resource_directory(__name__)
 
 def run_autorestart(args=None):
-    script = os.path.join(modulePath[:-3], 'b3_run.py')
-    if os.path.isfile(script + 'c'):
-        script += 'c'
+    if main_is_frozen:
+        script = ''
+    else:
+        script = os.path.join(modulePath[:-3], 'b3_run.py')
+        if os.path.isfile(script + 'c'):
+            script += 'c'
 
     if args:
         script = '%s %s %s' % (sys.executable, script, ' '.join(args))
