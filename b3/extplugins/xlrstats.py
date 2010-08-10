@@ -167,7 +167,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             sclient = self.console.clients.getByGUID("Server")
         if (sclient != None):
             self._world_clientid = sclient.id
-        self.debug('Got client id for B3: %s; %s', %(self._world_clientid, sclient.name))
+        self.debug('Got client id for B3: %s; %s' %(self._world_clientid, sclient.name))
 
         #determine the ability to work with damage based assists
         if ( self.console.gameName[:3] in self._damage_able_games ):
