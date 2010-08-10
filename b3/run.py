@@ -182,6 +182,10 @@ def main():
             # which happens when running from the py2exe build
             # we wait for keyboad keypress to give a chance to the 
             # user to see the error message
+            if sys.stdout != sys.__stdout__:
+                # make sure we are not writing to the log:
+                sys.stdout = sys.__stdout__
+                sys.stderr = sys.__stderr__
             raw_input("Press the [ENTER] key")
      
     
