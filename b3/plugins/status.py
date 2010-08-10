@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 08/08/2010 - 1.4.2 - xlr8or
+# * Moved 'Game section' before 'Clients section', XLRstats needs gameinfo before it adds clients to the playerlist
 # 21/03/2010 - 1.4.1 - Courgette
 # * does not fail if there is no player score available
 # * make errors more verbose
@@ -41,7 +43,7 @@
 # Converted to use new event handlers
 
 __author__    = 'ThorN'
-__version__ = '1.4.1'
+__version__ = '1.4.2'
 
 import b3, time, os, StringIO
 import b3.plugin
@@ -92,9 +94,52 @@ class StatusPlugin(b3.plugin.Plugin):
                  
         self.verbose('Building XML status')
         xml = Document()
+        # --- Main section
         b3status = xml.createElement("B3Status")
         b3status.setAttribute("Time", time.asctime())
         xml.appendChild(b3status)
+
+        # --- Game section
+        c = self.console.game
+        gamename = ''
+        gametype = ''
+        mapname = ''
+        timelimit = ''
+        fraglimit = ''
+        capturelimit = ''
+        rounds = ''
+        if c.gameName:
+            gamename = c.gameName
+        if c.gameType:
+            gametype = c.gameType
+        if c.mapName:
+            mapname = c.mapName
+        if c.timelimit:
+            timelimit = c.timelimit
+        if c.fraglimit:
+            fraglimit = c.fraglimit
+        if c.captureLimit:
+            capturelimit = c.captureLimit
+        if c.rounds:
+            rounds = c.rounds
+        game = xml.createElement("Game")
+        game.setAttribute("Name", str(gamename))
+        game.setAttribute("Type", str(gametype))
+        game.setAttribute("Map", str(mapname))
+        game.setAttribute("TimeLimit", str(timelimit))
+        game.setAttribute("FragLimit", str(fraglimit))
+        game.setAttribute("CaptureLimit", str(capturelimit))
+        game.setAttribute("Rounds", str(rounds))
+        b3status.appendChild(game)
+
+        for k,v in self.console.game.__dict__.items():
+            data = xml.createElement("Data")
+            data.setAttribute("Name", str(k))
+            data.setAttribute("Value", str(v))
+            game.appendChild(data)
+        # --- End Game section        
+
+        # --- Clients section
         b3clients = xml.createElement("Clients")
         b3clients.setAttribute("Total", str(len(clients)))
         b3status.appendChild(b3clients)
@@ -160,45 +205,7 @@ class StatusPlugin(b3.plugin.Plugin):
             except Exception, err:
                 self.debug('XML Failed: %r' % err)
                 pass
-
-        c = self.console.game
-        gamename = ''
-        gametype = ''
-        mapname = ''
-        timelimit = ''
-        fraglimit = ''
-        capturelimit = ''
-        rounds = ''
-        if c.gameName:
-            gamename = c.gameName
-        if c.gameType:
-            gametype = c.gameType
-        if c.mapName:
-            mapname = c.mapName
-        if c.timelimit:
-            timelimit = c.timelimit
-        if c.fraglimit:
-            fraglimit = c.fraglimit
-        if c.captureLimit:
-            capturelimit = c.captureLimit
-        if c.rounds:
-            rounds = c.rounds
-        game = xml.createElement("Game")
-        game.setAttribute("Name", str(gamename))
-        game.setAttribute("Type", str(gametype))
-        game.setAttribute("Map", str(mapname))
-        game.setAttribute("TimeLimit", str(timelimit))
-        game.setAttribute("FragLimit", str(fraglimit))
-        game.setAttribute("CaptureLimit", str(capturelimit))
-        game.setAttribute("Rounds", str(rounds))
-        b3status.appendChild(game)
-
-        for k,v in self.console.game.__dict__.items():
-            data = xml.createElement("Data")
-            data.setAttribute("Name", str(k))
-            data.setAttribute("Value", str(v))
-            game.appendChild(data)
-                
+        # --- End Clients section
 
         self.writeXML(xml.toprettyxml(indent="        "))
 
