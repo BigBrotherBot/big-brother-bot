@@ -22,17 +22,20 @@
 # * implement rotatemap()
 # 09/08/2010 - 0.3 - Courgette & GrosBedo
 # * bot now recognize /tell commands correctly
-
+# 10/08/2010 - 0.4 - Courgette
+# * recognizes MOD_SUICIDE as suicide
+# * get rid of PunkBuster related code
+# * should \rcon dumpuser in cases the ClientUserInfoChanged line does not have
+#   guid while player is not a bot. (untested, cannot reproduce)
 
 
 __author__  = 'Courgette'
-__version__ = '0.3'
+__version__ = '0.4'
 
 import re, string, thread, time, threading
 import b3
 import b3.events
 import b3.parsers.q3a
-import b3.parsers.punkbuster
 
 class Oa081Parser(b3.parsers.q3a.Q3AParser):
     gameName = 'oa081'
@@ -99,6 +102,44 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
 
     PunkBuster = None
 
+
+    ##  means of death
+    #===========================================================================
+    # MOD_UNKNOWN,
+    # MOD_SHOTGUN,
+    # MOD_GAUNTLET,
+    # MOD_MACHINEGUN,
+    # MOD_GRENADE,
+    # MOD_GRENADE_SPLASH,
+    # MOD_ROCKET,
+    # MOD_ROCKET_SPLASH,
+    # MOD_PLASMA,
+    # MOD_PLASMA_SPLASH,
+    # MOD_RAILGUN,
+    # MOD_LIGHTNING,
+    # MOD_BFG,
+    # MOD_BFG_SPLASH,
+    # MOD_WATER,
+    # MOD_SLIME,
+    # MOD_LAVA,
+    # MOD_CRUSH,
+    # MOD_TELEFRAG,
+    # MOD_FALLING,
+    # MOD_SUICIDE,
+    # MOD_TARGET_LASER,
+    # MOD_TRIGGER_HURT,
+    # #ifdef MISSIONPACK
+    # MOD_NAIL,
+    # MOD_CHAINGUN,
+    # MOD_PROXIMITY_MINE,
+    # MOD_KAMIKAZE,
+    # MOD_JUICED,
+    # #endif
+    # MOD_GRAPPLE
+    #===========================================================================
+    MOD_SUICIDE = 20
+
+    
     ## meansOfDeath to be considered suicides
     Suicides = (
         # MOD_WATER,
@@ -107,7 +148,7 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         # MOD_CRUSH,
         # MOD_TELEFRAG,
         # MOD_FALLING,
-        # MOD_SUICIDE,
+        MOD_SUICIDE,
         # MOD_TRIGGER_HURT,
         # MOD_NAIL,
         # MOD_CHAINGUN,
@@ -204,7 +245,9 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
                         self.verbose('BOT connected!')
                         self.clients.newClient(cid, name=bclient['name'], ip='0.0.0.0', state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid }, money=20)
                     else:
-                        self.warning('cannot connect player because he has no guid and is not a bot either')
+                        self.info('we are missing the guid but this is not a bot either, dumpuser')
+                        self.OnClientuserinfochanged(self.queryClientUserInfoByCid(cid))
+                        return
                     self._connectingSlots.remove(cid)
                     return None
                 
@@ -302,6 +345,7 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         self.clients.sync()
 
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
+
 
     def OnSayteam(self, action, data, match=None):
         # Teaminfo does not exist in the sayteam logline. Parse it as a normal say line
@@ -500,10 +544,6 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         return mlist
 
     def connectClient(self, ccid):
-        if self.PunkBuster:
-            self.debug('Getting the (PunkBuster) Playerlist')
-        else:
-            self.debug('Getting the (status) Playerlist')
         players = self.getPlayerList()
         self.verbose('connectClient() = %s' % players)
 
