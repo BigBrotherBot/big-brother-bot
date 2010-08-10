@@ -38,11 +38,12 @@
 # 01/5/2010 - 1.4.10 - xlr8or - delegate guid length checking to cod parser
 # 24/5/2010 - 1.4.11 - xlr8or - check if guids match on existing client objects when joining after a mapchange
 # 30/5/2010 - 1.4.12 - xlr8or - adding dummy setVersionExceptions() to enable overriding of variables based on the shortversion 
+# 10/8/2010 - 1.4.13 - xlr8or - fixed a bug where clients would be disconnected after mapchange.  
 
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.12'
+__version__ = '1.4.13'
 
 import b3.parsers.q3a
 import re, string, threading
@@ -249,29 +250,30 @@ class CodParser(b3.parsers.q3a.Q3AParser):
         
         if len(codguid) < self._guidLength:
             # invalid guid
-            codguid = None
             self.verbose2('Invalid GUID: %s' %codguid)
+            codguid = None
 
         client = self.getClient(match)
 
         if client:
             self.verbose2('ClientObject already exists')
-            # lets see if the name/guids match for this client, prevent player mixups after mapchange
-            if self.IpsOnly:
-                # this needs testing since the name cleanup code may interfere with this next condition
-                if name != client.name:
-                    self.debug('This is not the correct client (%s <> %s), disconnecting' %(name, client.name))
-                    client.disconnect()
-                    return None
+            # lets see if the name/guids match for this client, prevent player mixups after mapchange (not with PunkBuster enabled)
+            if not self.PunkBuster:
+                if self.IpsOnly:
+                    # this needs testing since the name cleanup code may interfere with this next condition
+                    if name != client.name:
+                        self.debug('This is not the correct client (%s <> %s), disconnecting' %(name, client.name))
+                        client.disconnect()
+                        return None
+                    else:
+                        self.verbose2('client.name in sync: %s == %s' %(name, client.name))
                 else:
-                    self.verbose2('client.name in sync: %s == %s' %(name, client.name))
-            else:
-                if codguid != client.guid:
-                    self.debug('This is not the correct client (%s <> %s), disconnecting' %(codguid, client.guid))
-                    client.disconnect()
-                    return None
-                else:
-                    self.verbose2('client.guid in sync: %s == %s' %(codguid, client.guid))
+                    if codguid != client.guid:
+                        self.debug('This is not the correct client (%s <> %s), disconnecting' %(codguid, client.guid))
+                        client.disconnect()
+                        return None
+                    else:
+                        self.verbose2('client.guid in sync: %s == %s' %(codguid, client.guid))
             # update existing client
             client.state = b3.STATE_ALIVE
             # possible name changed
