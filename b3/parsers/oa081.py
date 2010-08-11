@@ -30,6 +30,8 @@
 # 11/08/2010 - 0.5 - GrosBedo
 # * minor fix for the /rcon dumpuser when no guid
 # * added !nextmap (with recursive detection !)
+# 11/08/2010 - 0.6 - GrosBedo
+# * fixed the permanent ban command (banClient -> banaddr)
 
 
 __author__  = 'Courgette'
@@ -59,7 +61,7 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
     _commands['say'] = 'say %(prefix)s %(message)s'
     _commands['set'] = 'set %(name)s "%(value)s"'
     _commands['kick'] = 'clientkick %(cid)s'
-    _commands['ban'] = 'banClient %(cid)s'
+    _commands['ban'] = 'banaddr %(cid)s'
     _commands['tempban'] = 'clientkick %(cid)s'
 
     _eventMap = {
