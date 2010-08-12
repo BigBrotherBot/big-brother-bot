@@ -137,6 +137,8 @@
 # * Added needConfirmation var to write() so we can test on the confirmationtype ("OK", "NotFound") sent by the server on rcon.
 # 2010-07-30 - 1.3.3 - xlr8or
 # * Added joinClient() to OnServerLevelstarted() so rounds are counted for playerstats
+# 2010-07-30 - 1.3.4 - xlr8or
+# * Quick mapretrieval on startup
 #
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
@@ -171,7 +173,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.3.3'
+__version__ = '1.3.4'
 
 
 import sys, time, re, string, traceback
@@ -324,6 +326,7 @@ class Bfbc2Parser(b3.parser.Parser):
         
         self.getServerVars()
         self.getServerInfo()
+        self.verbose('GameType: %s, Map: %s' %(self.game.gameType, self.game.mapName))
         
         self.info('connecting all players...')
         plist = self.getPlayerList()
@@ -1251,6 +1254,7 @@ class Bfbc2Parser(b3.parser.Parser):
         self.game.sv_hostname = data[0]
         self.game.sv_maxclients = int(data[2])
         self.game.gameType = data[3]
+        self.game.mapName = data[4]
         self.game.rounds = int(data[5])
         self.game.g_maxrounds = int(data[6])
         return data
