@@ -139,6 +139,8 @@
 # * Added joinClient() to OnServerLevelstarted() so rounds are counted for playerstats
 # 2010-07-30 - 1.3.4 - xlr8or
 # * Quick mapretrieval on startup
+# 2010-07-30 - 1.3.5 - xlr8or
+# * Fixed self.game.rounds
 #
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
@@ -173,7 +175,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.3.4'
+__version__ = '1.3.5'
 
 
 import sys, time, re, string, traceback
@@ -652,7 +654,11 @@ class Bfbc2Parser(b3.parser.Parser):
         server.onLevelStarted
         
         Effect: Level is started"""
+        # next function call will increase roundcount by one, this is not correct, need to deduct one to compensate
+        # we'll still leave the call here since it provides us self.game.roundTime()
         self.game.startRound()
+        self.game.rounds -= 1
+        
         #Players need to be joined (EVT_CLIENT_JOIN) for stats to count rounds
         self.joinPlayers()
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
@@ -1254,7 +1260,8 @@ class Bfbc2Parser(b3.parser.Parser):
         self.game.sv_hostname = data[0]
         self.game.sv_maxclients = int(data[2])
         self.game.gameType = data[3]
-        self.game.mapName = data[4]
+        if not self.game.mapName:
+            self.game.mapName = data[4]
         self.game.rounds = int(data[5])
         self.game.g_maxrounds = int(data[6])
         return data
