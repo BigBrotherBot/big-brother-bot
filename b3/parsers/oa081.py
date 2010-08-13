@@ -22,17 +22,28 @@
 # * implement rotatemap()
 # 09/08/2010 - 0.3 - Courgette & GrosBedo
 # * bot now recognize /tell commands correctly
+# 10/08/2010 - 0.4 - Courgette
+# * recognizes MOD_SUICIDE as suicide
+# * get rid of PunkBuster related code
+# * should \rcon dumpuser in cases the ClientUserInfoChanged line does not have
+#   guid while player is not a bot. (untested, cannot reproduce)
+# 11/08/2010 - 0.5 - GrosBedo
+# * minor fix for the /rcon dumpuser when no guid
+# * added !nextmap (with recursive detection !)
+# 11/08/2010 - 0.6 - GrosBedo
+# * fixed the permanent ban command (banClient -> banaddr)
+# 12/08/2010 - 0.7 - GrosBedo
+# * added weapons and means of death. Define what means of death are suicides
+#
 
 
-
-__author__  = 'Courgette'
-__version__ = '0.3'
+__author__  = 'Courgette, GrosBedo'
+__version__ = '0.7'
 
 import re, string, thread, time, threading
 import b3
 import b3.events
 import b3.parsers.q3a
-import b3.parsers.punkbuster
 
 class Oa081Parser(b3.parsers.q3a.Q3AParser):
     gameName = 'oa081'
@@ -53,7 +64,7 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
     _commands['say'] = 'say %(prefix)s %(message)s'
     _commands['set'] = 'set %(name)s "%(value)s"'
     _commands['kick'] = 'clientkick %(cid)s'
-    _commands['ban'] = 'banClient %(cid)s'
+    _commands['ban'] = 'banaddr %(cid)s' #addip for q3a
     _commands['tempban'] = 'clientkick %(cid)s'
 
     _eventMap = {
@@ -99,20 +110,52 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
 
     PunkBuster = None
 
+
+    ##  means of death
+    #===========================================================================
+    MOD_UNKNOWN = 0
+    MOD_SHOTGUN = 1
+    MOD_GAUNTLET = 2
+    MOD_MACHINEGUN = 3
+    MOD_GRENADE = 4
+    MOD_GRENADE_SPLASH = 5
+    MOD_ROCKET = 6
+    MOD_ROCKET_SPLASH = 7
+    MOD_PLASMA = 8
+    MOD_PLASMA_SPLASH = 9
+    MOD_RAILGUN = 10
+    MOD_LIGHTNING = 11
+    MOD_BFG = 12
+    MOD_BFG_SPLASH = 13
+    MOD_WATER = 14
+    MOD_SLIME = 15
+    MOD_LAVA = 16
+    MOD_CRUSH = 17
+    MOD_TELEFRAG = 18
+    MOD_FALLING = 19
+    MOD_SUICIDE = 20
+    MOD_TARGET_LASER = 21
+    MOD_TRIGGER_HURT = 22
+    # #ifdef MISSIONPACK
+    MOD_NAIL = 23
+    MOD_CHAINGUN = 24
+    MOD_PROXIMITY_MINE = 25
+    MOD_KAMIKAZE = 26
+    MOD_JUICED = 27
+    # #endif
+    MOD_GRAPPLE = 28
+    #===========================================================================
+
+    
     ## meansOfDeath to be considered suicides
     Suicides = (
-        # MOD_WATER,
-        # MOD_SLIME,
-        # MOD_LAVA,
-        # MOD_CRUSH,
-        # MOD_TELEFRAG,
-        # MOD_FALLING,
-        # MOD_SUICIDE,
-        # MOD_TRIGGER_HURT,
-        # MOD_NAIL,
-        # MOD_CHAINGUN,
-        # MOD_PROXIMITY_MINE,
-        # MOD_BOILER
+        MOD_WATER,
+        MOD_SLIME,
+        MOD_LAVA,
+        MOD_CRUSH,
+        MOD_FALLING,
+        MOD_SUICIDE,
+        MOD_TRIGGER_HURT,
     )
 #---------------------------------------------------------------------------------------------------
 
@@ -203,10 +246,13 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
                         guid = 'BOT-' + str(cid)
                         self.verbose('BOT connected!')
                         self.clients.newClient(cid, name=bclient['name'], ip='0.0.0.0', state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid }, money=20)
+                        self._connectingSlots.remove(cid)
+                        return None
                     else:
-                        self.warning('cannot connect player because he has no guid and is not a bot either')
-                    self._connectingSlots.remove(cid)
-                    return None
+                        self.info('we are missing the guid but this is not a bot either, dumpuser')
+                        self._connectingSlots.remove(cid)
+                        self.OnClientuserinfochanged(None, self.queryClientUserInfoByCid(cid))
+                        return
                 
                 if not bclient.has_key('ip'):
                     infoclient = self.parseUserInfo(self.queryClientUserInfoByCid(cid))
@@ -302,6 +348,7 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         self.clients.sync()
 
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
+
 
     def OnSayteam(self, action, data, match=None):
         # Teaminfo does not exist in the sayteam logline. Parse it as a normal say line
@@ -463,7 +510,43 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         return maps
 
     def getNextMap(self):
-        return 'Command not supported!'
+        data = self.write('nextmap')
+        nextmap = self.findNextMap(data)
+        if nextmap:
+            return nextmap
+        else:
+            return 'no nextmap set or it is in an unrecognized format !'
+
+    def findNextMap(self, data):
+        # "nextmap" is: "vstr next4; echo test; vstr aupo3; map oasago2"
+        # the last command in the line is the one that decides what is the next map
+        # in a case like : map oasago2; echo test; vstr nextmap6; vstr nextmap3
+        # the parser will recursively look each last vstr var, and if it can't find a map, fallback to the last map command
+        self.debug('Extracting nextmap name from: %s' % (data))
+        nextmapregex = re.compile(r'.*("|;)\s*((?P<vstr>vstr (?P<vstrnextmap>[a-z0-9]+))|(?P<map>map (?P<mapnextmap>[a-z0-9]+)))', re.IGNORECASE)
+        m = re.match(nextmapregex, data)
+        if m:
+            if m.group('map'):
+                self.debug('Found nextmap: %s' % (m.group('mapnextmap')))
+                return m.group('mapnextmap')
+            elif m.group('vstr'):
+                self.debug('Nextmap is redirecting to var: %s' % (m.group('vstrnextmap')))
+                data = self.write(m.group('vstrnextmap'))
+                result = self.findNextMap(data) # recursively dig into the vstr vars to find the last map called
+                if result: # if a result was found in a deeper level, then we return it to the upper level, until we get back to the root level
+                    return result
+                else: # if none could be found, then try to find a map command in the current string
+                    nextmapregex = re.compile(r'.*("|;)\s*(?P<map>map (?P<mapnextmap>[a-z0-9]+))"', re.IGNORECASE)
+                    m = re.match(nextmapregex, data)
+                    if m.group('map'):
+                        self.debug('Found nextmap: %s' % (m.group('mapnextmap')))
+                        return m.group('mapnextmap')
+                    else: # if none could be found, we go up a level by returning None (remember this is done recursively)
+                        self.debug('No nextmap found in this string !')
+                        return None
+        else:
+            self.debug('No nextmap found in this string !')
+            return None
 
     def rotateMap(self):
         """\
@@ -500,10 +583,6 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         return mlist
 
     def connectClient(self, ccid):
-        if self.PunkBuster:
-            self.debug('Getting the (PunkBuster) Playerlist')
-        else:
-            self.debug('Getting the (status) Playerlist')
         players = self.getPlayerList()
         self.verbose('connectClient() = %s' % players)
 
