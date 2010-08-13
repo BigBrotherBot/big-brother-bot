@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 13/08/2010 - 1.4.3 - xlr8or
+# * Added running roundtime and maptime
 # 08/08/2010 - 1.4.2 - xlr8or
 # * Moved 'Game section' before 'Clients section', XLRstats needs gameinfo before it adds clients to the playerlist
 # 21/03/2010 - 1.4.1 - Courgette
@@ -43,7 +45,7 @@
 # Converted to use new event handlers
 
 __author__    = 'ThorN'
-__version__ = '1.4.2'
+__version__ = '1.4.3'
 
 import b3, time, os, StringIO
 import b3.plugin
@@ -108,6 +110,8 @@ class StatusPlugin(b3.plugin.Plugin):
         fraglimit = ''
         capturelimit = ''
         rounds = ''
+        roundTime = ''
+        mapTime = ''
         if c.gameName:
             gamename = c.gameName
         if c.gameType:
@@ -122,6 +126,10 @@ class StatusPlugin(b3.plugin.Plugin):
             capturelimit = c.captureLimit
         if c.rounds:
             rounds = c.rounds
+        if c.roundTime:
+            roundTime = c.roundTime()
+        if c.mapTime:
+            mapTime = c.mapTime()
         game = xml.createElement("Game")
         game.setAttribute("Name", str(gamename))
         game.setAttribute("Type", str(gametype))
@@ -130,6 +138,8 @@ class StatusPlugin(b3.plugin.Plugin):
         game.setAttribute("FragLimit", str(fraglimit))
         game.setAttribute("CaptureLimit", str(capturelimit))
         game.setAttribute("Rounds", str(rounds))
+        game.setAttribute("RoundTime", str(roundTime))
+        game.setAttribute("MapTime", str(mapTime))
         b3status.appendChild(game)
 
         for k,v in self.console.game.__dict__.items():
