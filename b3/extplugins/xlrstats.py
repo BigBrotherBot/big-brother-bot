@@ -1,7 +1,7 @@
 ##################################################################
 #
 # XLRstats
-# statistics-generating plugin for B3 (www.bigbrotherbot.com)
+# statistics-generating plugin for B3 (www.bigbrotherbot.net)
 # (c) 2004, 2005 Tim ter Laak (ttlogic@xlr8or.com)
 #
 # This program is free software and licensed under the terms of

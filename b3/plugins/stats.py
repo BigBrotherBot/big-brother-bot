@@ -1,5 +1,5 @@
 #
-# BigBrotherBot(B3) (www.bigbrotherbot.com)
+# BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
 # 
 # This program is free software; you can redistribute it and/or modify
@@ -17,13 +17,15 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    8/14/2010 - 1.2.4 GrosBedo
+#    Stats are now cleared at the beginning of next round (so they are still available at scoreboard)
 #    9/5/2005 - 1.2.0 - ThorN
 #    Added !topstats command
 #    8/29/2005 - 1.1.0 - ThorN
 #    Converted to use new event handlers
 
 __author__  = 'ThorN'
-__version__ = '1.2.3'
+__version__ = '1.2.4'
 
 
 
@@ -43,7 +45,7 @@ class StatsPlugin(b3.plugin.Plugin):
         self.registerEvent(b3.events.EVT_CLIENT_KILL)
         self.registerEvent(b3.events.EVT_CLIENT_DAMAGE)
         #self.registerEvent(b3.events.EVT_CLIENT_DISCONNECT)
-        self.registerEvent(b3.events.EVT_GAME_EXIT)
+        self.registerEvent(b3.events.EVT_GAME_ROUND_START)
 
     def onLoadConfig(self):
         self._minLevel = self.config.getint('settings', 'min_level')
@@ -56,8 +58,8 @@ class StatsPlugin(b3.plugin.Plugin):
             self._adminPlugin.registerCommand(self, 'topstats', 9, self.cmd_topstats, 'tstats')
 
     def onEvent(self, event):
-        if event.type == b3.events.EVT_GAME_EXIT:
-            self.debug('Map End: clearing stats')
+        if event.type == b3.events.EVT_GAME_ROUND_START:
+            self.debug('Map Start: clearing stats')
             for cid,c in self.console.clients.items():
                 if c.maxLevel >= self._minLevel:
                     try:

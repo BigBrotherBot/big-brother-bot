@@ -1,5 +1,5 @@
 #
-# BigBrotherBot(B3) (www.bigbrotherbot.com)
+# BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
 # 
 # This program is free software; you can redistribute it and/or modify
@@ -19,6 +19,8 @@
 #
 # CHANGELOG
 #
+#   2010/08/14 - 1.16.1 - Courgette
+#   * fallback on UTC timezone in case the timezone name is not valid
 #   2010/04/17 - 1.16 - Courgette
 #   * plugin priority is defined by their order in the b3.xml file 
 #   * fix bug in getEventName()
@@ -71,7 +73,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.15.1'
+__version__ = '1.16.1'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -632,20 +634,44 @@ class Parser(object):
             tzName = str(tzName).strip().upper()
 
             try:
-                tzOffest = float(tzName)
+                tzOffset = float(tzName) * 3600
             except ValueError:
                 try:
-                    tzOffest = b3.timezones.timezones[tzName]
+                    tzOffset = b3.timezones.timezones[tzName] * 3600
                 except KeyError:
-                    pass
+                    try:
+                        if time.daylight == 0:
+                            tzName = time.tzname[0]
+                        else:
+                            tzName = time.tzname[1]
+                        self.warning("Unknown timezone name [%s]. Valid timezone codes can be found on http://wiki.bigbrotherbot.net/doku.php/usage:available_timezones" % tzName)
+                        self.info("falling back on system default timezone [%s]", tzName)
+                        tzOffset = b3.timezones.timezones[tzName] * 3600
+                    except KeyError:
+                        self.error("Unknown timezone name [%s]. Valid timezone codes can be found on http://wiki.bigbrotherbot.net/doku.php/usage:available_timezones" % tzName)
+                        tzName = 'UTC'
+                        tzOffset = 0
         else:
             tzName = self.config.get('b3', 'time_zone').upper()
-            tzOffest = b3.timezones.timezones[tzName]
+            try:
+                tzOffset = b3.timezones.timezones[tzName] * 3600
+            except KeyError:
+                try:
+                    if time.daylight == 0:
+                        tzName = time.tzname[0]
+                    else:
+                        tzName = time.tzname[1]
+                    self.warning("Unknown timezone name [%s]. Valid timezone codes can be found on http://wiki.bigbrotherbot.net/doku.php/usage:available_timezones" % tzName)
+                    self.info("falling back on system default timezone [%s]", tzName)
+                    tzOffset = b3.timezones.timezones[tzName] * 3600
+                except KeyError:
+                    self.error("Unknown timezone name [%s]. Valid timezone codes can be found on http://wiki.bigbrotherbot.net/doku.php/usage:available_timezones" % tzName)
+                    tzName = 'UTC'
+                    tzOffset = 0
 
-        tzOffest   = tzOffest * 3600
         timeFormat = self.config.get('b3', 'time_format').replace('%Z', tzName).replace('%z', tzName)
-
-        return time.strftime(timeFormat, time.gmtime(gmttime + tzOffest))
+        self.debug('formatting time with timezone [%s], tzOffset : %s' % (tzName, tzOffset))
+        return time.strftime(timeFormat, time.gmtime(gmttime + tzOffset))
 
     def run(self):
         """Main worker thread for B3"""
