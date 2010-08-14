@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -17,15 +17,18 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
-#    8/14/2010 - 1.2.4 GrosBedo
-#    Stats are now cleared at the beginning of next round (so they are still available at scoreboard)
+#    8/14/2010 - 1.3.0 GrosBedo
+#    * Stats are now cleared at the beginning of next round (so they are still available at scoreboard)
+#    * Moved the parameters to the xml config file (and added more)
+#    * Added XP score and !topxp
+#    * Setting to enable/disable score reset at round start
 #    9/5/2005 - 1.2.0 - ThorN
-#    Added !topstats command
+#    * Added !topstats command
 #    8/29/2005 - 1.1.0 - ThorN
-#    Converted to use new event handlers
+#    * Converted to use new event handlers
 
-__author__  = 'ThorN'
-__version__ = '1.2.4'
+__author__ = 'ThorN'
+__version__ = '1.3.0'
 
 
 
@@ -36,10 +39,68 @@ import b3.plugin
 #--------------------------------------------------------------------------------------------------
 class StatsPlugin(b3.plugin.Plugin):
     _adminPlugin = None
-    _minLevel = 0
-    _startPoints = 100
+
+    def onLoadConfig(self):
+        try:
+            self.mapstatslevel = self.config.getint('commands', 'mapstats')
+        except:
+            self.mapstatslevel = 0
+            self.debug('Using default value (%i) for commands::mapstats', self.mapstatslevel)
+
+        try:
+            self.testscorelevel = self.config.getint('commands', 'testscore')
+        except:
+            self.testscorelevel = 0
+            self.debug('Using default value (%i) for commands::testscore', self.testscorelevel)
+
+        try:
+            self.topstatslevel = self.config.getint('commands', 'topstats')
+        except:
+            self.topstatslevel = 2
+            self.debug('Using default value (%i) for commands::topstats', self.topstatslevel)
+
+        try:
+            self.topxplevel = self.config.getint('commands', 'topxp')
+        except:
+            self.topxplevel = 2
+            self.debug('Using default value (%i) for commands::topxp', self.topxplevel)
+
+        try:
+            self.startPoints = self.config.getint('settings', 'startPoints')
+        except:
+            self.startPoints = 100
+            self.debug('Using default value (%i) for settings::startPoints', self.startPoints)
+
+        try:
+            self.resetscore = self.config.getboolean('settings', 'resetscore')
+        except:
+            self.resetscore = False
+            self.debug('Using default value (%s) for settings::resetscore', self.resetscore)
+
+        try:
+            self.resetxp = self.config.getboolean('settings', 'resetxp')
+        except:
+            self.resetxp = False
+            self.debug('Using default value (%s) for settings::resetxp', self.resetxp)
+
 
     def onStartup(self):
+        self._adminPlugin = self.console.getPlugin('admin')
+        if not self._adminPlugin:
+            return False
+
+        # register our commands
+        if 'commands' in self.config.sections():
+            for cmd in self.config.options('commands'):
+                level = self.config.get('commands', cmd)
+                sp = cmd.split('-')
+                alias = None
+                if len(sp) == 2:
+                    cmd, alias = sp
+                func = self.getCmd(cmd)
+                if func:
+                    self._adminPlugin.registerCommand(self, cmd, level, func, alias)
+
         self.registerEvent(b3.events.EVT_CLIENT_DAMAGE_TEAM)
         self.registerEvent(b3.events.EVT_CLIENT_KILL_TEAM)
         self.registerEvent(b3.events.EVT_CLIENT_KILL)
@@ -47,21 +108,11 @@ class StatsPlugin(b3.plugin.Plugin):
         #self.registerEvent(b3.events.EVT_CLIENT_DISCONNECT)
         self.registerEvent(b3.events.EVT_GAME_ROUND_START)
 
-    def onLoadConfig(self):
-        self._minLevel = self.config.getint('settings', 'min_level')
-
-        self._adminPlugin = self.console.getPlugin('admin')
-
-        if self._adminPlugin:
-            self._adminPlugin.registerCommand(self, 'mapstats', self._minLevel, self.cmd_mapstats, 'mstats')
-            self._adminPlugin.registerCommand(self, 'testscore', self._minLevel, self.cmd_testscore, 'ts')
-            self._adminPlugin.registerCommand(self, 'topstats', 9, self.cmd_topstats, 'tstats')
-
     def onEvent(self, event):
         if event.type == b3.events.EVT_GAME_ROUND_START:
             self.debug('Map Start: clearing stats')
-            for cid,c in self.console.clients.items():
-                if c.maxLevel >= self._minLevel:
+            for cid, c in self.console.clients.items():
+                if c.maxLevel >= self.mapstatslevel:
                     try:
                         c.setvar(self, 'shotsTeamHit', 0)
                         c.setvar(self, 'damageTeamHit', 0)
@@ -73,10 +124,13 @@ class StatsPlugin(b3.plugin.Plugin):
                         c.setvar(self, 'kills', 0)
                         c.setvar(self, 'deaths', 0)
 
-                        # points will stay till past the map
-                        #c.setvar(self, 'pointsLost', 0)
-                        #c.setvar(self, 'pointsWon', 0)
-                        #c.setvar(self, 'points', self._startPoints)
+                        if self.resetscore:
+                            # skill points are reset at the beginning of each map
+                            c.setvar(self, 'pointsLost', 0)
+                            c.setvar(self, 'pointsWon', 0)
+                            c.setvar(self, 'points', self.startPoints)
+                        if self.resetxp:
+                            c.setvar(self, 'experience', 0)
                     except:
                         pass
         elif event.client:
@@ -111,7 +165,7 @@ class StatsPlugin(b3.plugin.Plugin):
             killer.var(self, 'teamKills', 0).value += 1
 
             score = self.score(killer, victim)
-            killer.var(self, 'points', self._startPoints).value -= score
+            killer.var(self, 'points', self.startPoints).value -= score
             killer.var(self, 'pointsLost', 0).value += score
         else:
             killer.var(self, 'shotsHit', 0).value  += 1
@@ -122,13 +176,23 @@ class StatsPlugin(b3.plugin.Plugin):
 
             killer.var(self, 'kills', 0).value  += 1
             victim.var(self, 'deaths', 0).value += 1
-            
+
             score = self.score(killer, victim)
-            killer.var(self, 'points', self._startPoints).value += score
+            killer.var(self, 'points', self.startPoints).value += score
             killer.var(self, 'pointsWon', 0).value += score
 
-            victim.var(self, 'points', self._startPoints).value -= score
+            victim.var(self, 'points', self.startPoints).value -= score
             victim.var(self, 'pointsLost', 0).value += score
+        self.updateXP(killer)
+        self.updateXP(victim)
+
+    def updateXP(self, sclient):
+        realpoints = sclient.var(self, 'pointsWon', 0).value - sclient.var(self, 'pointsLost', 0).value
+        if sclient.var(self, 'deaths', 0).value != 0:
+            experience = (sclient.var(self, 'kills', 0).value * realpoints) / sclient.var(self, 'deaths', 0).value
+        else:
+            experience = sclient.var(self, 'kills', 0).value * realpoints
+        sclient.var(self, 'experience', 0).value = experience
 
     def cmd_mapstats(self, data, client, cmd=None):
         """\
@@ -140,7 +204,7 @@ class StatsPlugin(b3.plugin.Plugin):
         else:
             sclient = client
 
-        message = '^3Stats ^7[ %s ^7] K ^2%s ^7D ^3%s ^7TK ^1%s ^7Dmg ^5%s ^7Skill ^3%1.02f' % (sclient.exactName, sclient.var(self, 'kills', 0).value, sclient.var(self, 'deaths', 0).value, sclient.var(self, 'teamKills', 0).value, sclient.var(self, 'damageHit', 0).value, round(sclient.var(self, 'points', self._startPoints).value, 2))
+        message = '^3Stats ^7[ %s ^7] K ^2%s ^7D ^3%s ^7TK ^1%s ^7Dmg ^5%s ^7Skill ^3%1.02f ^7XP ^6%s' % (sclient.exactName, sclient.var(self, 'kills', 0).value, sclient.var(self, 'deaths', 0).value, sclient.var(self, 'teamKills', 0).value, sclient.var(self, 'damageHit', 0).value, round(sclient.var(self, 'points', self.startPoints).value, 2), round(sclient.var(self, 'experience', 0).value, 2))
         cmd.sayLoudOrPM(client, message)
 
     def cmd_testscore(self, data, client, cmd=None):
@@ -162,13 +226,13 @@ class StatsPlugin(b3.plugin.Plugin):
 
     def cmd_topstats(self, data, client, cmd=None):
         """\
-        List the top 5 map[stats players
+        List the top 5 map-stats players
         """
 
         scores = []
         for c in self.console.clients.getList():
             if c.isvar(self, 'points'):
-                scores.append((c.exactName, round(c.var(self, 'points', self._startPoints).value, 2)))
+                scores.append((c.exactName, round(c.var(self, 'points', self.startPoints).value, 2)))
         
         if len(scores):
             tmplist = [(x[1], x) for x in scores]
@@ -191,9 +255,40 @@ class StatsPlugin(b3.plugin.Plugin):
         else:
             client.message('^3Stats: ^7No top players')
 
+    def cmd_topxp(self, data, client, cmd=None):
+        """\
+        List the top 5 map-stats most experienced players
+        """
+
+        scores = []
+        for c in self.console.clients.getList():
+            if c.isvar(self, 'experience'):
+                scores.append((c.exactName, round(c.var(self, 'experience', self.startPoints).value, 2)))
+
+        if len(scores):
+            tmplist = [(x[1], x) for x in scores]
+            tmplist.sort()
+            scores = [x for (key, x) in tmplist]
+            scores.reverse()
+
+            i = 0
+            results = []
+            for name, score in scores:
+                i += 1
+
+                if i >= 6:
+                    break
+
+                results.append('^3#%s^7 %s ^7(^3%s^7)' % (i, name, score))
+
+
+            cmd.sayLoudOrPM(client, '^3Top Experienced Players:^7 %s' % ', '.join(results))
+        else:
+            client.message('^3Stats: ^7No top experienced players')
+
     def score(self, killer, victim):
-        k = int(killer.var(self, 'points', self._startPoints).value)
-        v = int(victim.var(self, 'points', self._startPoints).value)
+        k = int(killer.var(self, 'points', self.startPoints).value)
+        v = int(victim.var(self, 'points', self.startPoints).value)
 
         if k < 1:
             k = 1.00
@@ -207,7 +302,7 @@ class StatsPlugin(b3.plugin.Plugin):
         else:
             high = v
             low  = k
-        
+
         vshift = float(high) / float(low)
         self.console.verbose('stats vshift %s' % vshift)
 
@@ -224,7 +319,7 @@ class StatsPlugin(b3.plugin.Plugin):
 
         vshift = (float(v) / float(k)) / 2
         self.console.verbose('stats vshift %s' % vshift)
-        
+
         points = (15.00 * vshift) + 5
 
         if points < 1:
@@ -233,7 +328,7 @@ class StatsPlugin(b3.plugin.Plugin):
             points = 100.00
 
         return round(points, 2)
-        
+
 """
 #--------------------------------------------------------------------------------------------------
 class ClientStats(DelayedSQLObject):
@@ -271,3 +366,4 @@ class ClientStats(DelayedSQLObject):
         self.playTime += ( (time.time() - time.timezone) - self.lastEventTime ) / 60
         #DelayedSQLObject.save(self)
 """
+
