@@ -17,6 +17,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    8/14/2010 - 1.3.1 Courgette
+#    * move commands in the commands section of config
+#    * allow to define aliases in config
+#    * add automated tests
 #    8/14/2010 - 1.3.0 GrosBedo
 #    * Stats are now cleared at the beginning of next round (so they are still available at scoreboard)
 #    * Moved the parameters to the xml config file (and added more)
@@ -28,7 +32,7 @@
 #    * Converted to use new event handlers
 
 __author__ = 'ThorN'
-__version__ = '1.3.0'
+__version__ = '1.3.1'
 
 
 
@@ -87,6 +91,8 @@ class StatsPlugin(b3.plugin.Plugin):
     def onStartup(self):
         self._adminPlugin = self.console.getPlugin('admin')
         if not self._adminPlugin:
+            self.critical('Cannot find the admin plugin. Disabling Stats plugin')
+            self.disable()
             return False
 
         # register our commands
@@ -100,6 +106,7 @@ class StatsPlugin(b3.plugin.Plugin):
                 func = self.getCmd(cmd)
                 if func:
                     self._adminPlugin.registerCommand(self, cmd, level, func, alias)
+
 
         self.registerEvent(b3.events.EVT_CLIENT_DAMAGE_TEAM)
         self.registerEvent(b3.events.EVT_CLIENT_KILL_TEAM)
@@ -138,6 +145,15 @@ class StatsPlugin(b3.plugin.Plugin):
                 self.clientDamage(event.client, event.target, int(event.data[0]))
             elif event.type == b3.events.EVT_CLIENT_KILL or event.type == b3.events.EVT_CLIENT_KILL_TEAM:
                 self.clientKill(event.client, event.target, int(event.data[0]))
+
+
+    def getCmd(self, cmd):
+        """ return the method for a given command  """
+        cmd = 'cmd_%s' % cmd
+        if hasattr(self, cmd):
+            func = getattr(self, cmd)
+            return func
+        return None
 
 
     def clientDamage(self, killer, victim, points):
@@ -367,3 +383,64 @@ class ClientStats(DelayedSQLObject):
         #DelayedSQLObject.save(self)
 """
 
+
+if __name__ == '__main__':
+    """
+    Automated tests below
+    """
+    from b3.fake import fakeConsole
+    from b3.fake import superadmin, joe 
+    import time
+    
+    from b3.config import XmlConfigParser
+    
+    conf = XmlConfigParser()
+    conf.setXml("""
+<configuration plugin="stats">
+  <settings name="commands">
+    <set name="mapstats-mystatalias">0</set>
+    <set name="testscore-tscr">0</set>
+    <set name="topstats-tops">2</set>
+    <set name="topxp-txp">2</set>
+  </settings>
+  <settings name="settings">
+    <set name="startPoints">100</set>
+    <set name="resetscore">no</set>
+    <set name="resetxp">no</set>
+  </settings>
+</configuration>
+    """)
+
+    
+    p = StatsPlugin(fakeConsole, conf)
+    p.onStartup()
+    p.onLoadConfig()
+    
+    time.sleep(1)
+    joe.connects(cid=3)
+    joe.says("!mapstats")
+    joe.says("!mystatalias")
+    joe.says("!testscore")
+    joe.says("!tscr")
+    joe.says("!topstats")
+    joe.says("!tops")
+    joe.says("!topxp")
+    joe.says("!txp")
+    
+    
+    superadmin.connects(cid=2)
+    joe.kills(superadmin)
+    joe.kills(superadmin)
+    joe.kills(superadmin)
+    superadmin.kills(joe)
+    
+    superadmin.says("!mapstats")
+    superadmin.says("!mystatalias")
+    superadmin.says("!testscore")
+    superadmin.says("!tscr")
+    superadmin.says("!topstats")
+    superadmin.says("!tops")
+    superadmin.says("!topxp")
+    superadmin.says("!txp")
+    
+    
