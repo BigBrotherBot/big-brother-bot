@@ -1,5 +1,5 @@
 #
-# BigBrotherBot(B3) (www.bigbrotherbot.com)
+# BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Plugin for extra authentication of privileged users
 # Copyright (C) 2005 Tim ter Laak (ttlogic@xlr8or.com)
 # 

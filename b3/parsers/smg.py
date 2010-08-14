@@ -1,4 +1,4 @@
-# Smokin' Guns parser for BigBrotherBot(B3) (www.bigbrotherbot.com)
+# Smokin' Guns parser for BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2009 ailmanki
 # 
 # This program is free software; you can redistribute it and/or modify

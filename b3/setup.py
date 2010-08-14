@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# BigBrotherBot(B3) (www.bigbrotherbot.com)
+# BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2009 Mark "xlr8or" Weirath
 # 
 # This program is free software; you can redistribute it and/or modify
@@ -195,7 +195,7 @@ class Setup:
         xml.data("\t\t")
         xml.comment("plugin config=\"@b3/extplugins/conf/newplugin.xml\" name=\"newplugin\"")
         self.add_plugin("xlrstats", self._set_external_dir+"/conf/xlrstats.xml", default="no")
-        #self.add_plugin("registered", self._set_external_dir+"/conf/plugin_registered.xml", "Trying to download Registered", "http://www.bigbrotherbot.com/forums/downloads/?sa=downfile&id=22")
+        #self.add_plugin("registered", self._set_external_dir+"/conf/plugin_registered.xml", "Trying to download Registered", "http://www.bigbrotherbot.net/forums/downloads/?sa=downfile&id=22")
         #self.add_plugin("countryfilter", self._set_external_dir+"/conf/countryfilter.xml", "Trying to download Countryfilter", "http://github.com/xlr8or/b3-plugin-countryfilter/zipball/master")
 
         # final comments
@@ -336,7 +336,7 @@ class Setup:
         print "you can always revert to a previous version of the config file."
         print ""
         print "This procedure is new, bugs may be reported on our forums at"
-        print "www.bigbrotherbot.com"
+        print "www.bigbrotherbot.net"
         self.testExit(_question='[Enter] to continue to generate the configfile...')
 
     def testExit(self, _key='', _question='[Enter] to continue, \'abort\' to abort Setup: ', _exitmessage='Setup aborted, run python b3_run.py -s to restart the procedure.'):

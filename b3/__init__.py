@@ -1,5 +1,5 @@
 #
-# BigBrotherBot(B3) (www.bigbrotherbot.com)
+# BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
 # 
 # This program is free software; you can redistribute it and/or modify
@@ -44,7 +44,7 @@ import ConfigParser
 
 versionOs = os.name
 versionId = 'v%s [%s]' % (__version__, versionOs)
-version = '^8www.BigBrotherBot.com ^0(^8b3^0) ^9%s ^9(^3Daniel^9)^3' % versionId
+version = '^8www.bigbrotherbot.net ^0(^8b3^0) ^9%s ^9(^3Daniel^9)^3' % versionId
 
 
 console = None

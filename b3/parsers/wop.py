@@ -1,5 +1,5 @@
 #
-# World of Padman parser for BigBrotherBot(B3) (www.bigbrotherbot.com)
+# World of Padman parser for BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2008 Mark Weirath (xlr8or@xlr8or.com)
 # 
 # This program is free software; you can redistribute it and/or modify

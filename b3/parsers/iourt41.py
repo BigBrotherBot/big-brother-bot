@@ -1,5 +1,5 @@
 #
-# ioUrT Parser for BigBrotherBot(B3) (www.bigbrotherbot.com)
+# ioUrT Parser for BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2008 Mark Weirath (xlr8or@xlr8or.com)
 #
 # This program is free software; you can redistribute it and/or modify
@@ -82,7 +82,7 @@
 #    * add new UrT specific event : EVT_CLIENT_GEAR_CHANGE
 # v1.7.1 - 30/12/2009 - Courgette
 #    * Say, Sayteam and Saytell lines do not trigger name change anymore and detect the UrT bug described
-#      in http://www.bigbrotherbot.com/forums/urt/b3-bot-sometimes-mix-up-client-id%27s/ . Hopefully this
+#      in http://www.bigbrotherbot.net/forums/urt/b3-bot-sometimes-mix-up-client-id%27s/ . Hopefully this
 #      definitely fixes the wrong aliases issue.
 # v1.7.2 - 30/12/2009 - Courgette
 #    * improve say lines slot bug detection for cases where no player exists on slot 0. 
