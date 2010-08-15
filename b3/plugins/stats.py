@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    8/15/2010 - 1.3.2 GrosBedo
+#    * Fixed disabling reset xp option
 #    8/14/2010 - 1.3.1 Courgette
 #    * move commands in the commands section of config
 #    * allow to define aliases in config
@@ -32,7 +34,7 @@
 #    * Converted to use new event handlers
 
 __author__ = 'ThorN'
-__version__ = '1.3.1'
+__version__ = '1.3.2'
 
 
 
@@ -138,6 +140,9 @@ class StatsPlugin(b3.plugin.Plugin):
                             c.setvar(self, 'points', self.startPoints)
                         if self.resetxp:
                             c.setvar(self, 'experience', 0)
+                        else:
+                            c.var(self, 'oldexperience', 0).value += c.var(self, 'experience', 0).value
+                            c.setvar(self, 'experience', 0)
                     except:
                         pass
         elif event.client:
@@ -220,7 +225,7 @@ class StatsPlugin(b3.plugin.Plugin):
         else:
             sclient = client
 
-        message = '^3Stats ^7[ %s ^7] K ^2%s ^7D ^3%s ^7TK ^1%s ^7Dmg ^5%s ^7Skill ^3%1.02f ^7XP ^6%s' % (sclient.exactName, sclient.var(self, 'kills', 0).value, sclient.var(self, 'deaths', 0).value, sclient.var(self, 'teamKills', 0).value, sclient.var(self, 'damageHit', 0).value, round(sclient.var(self, 'points', self.startPoints).value, 2), round(sclient.var(self, 'experience', 0).value, 2))
+        message = '^3Stats ^7[ %s ^7] K ^2%s ^7D ^3%s ^7TK ^1%s ^7Dmg ^5%s ^7Skill ^3%1.02f ^7XP ^6%s' % (sclient.exactName, sclient.var(self, 'kills', 0).value, sclient.var(self, 'deaths', 0).value, sclient.var(self, 'teamKills', 0).value, sclient.var(self, 'damageHit', 0).value, round(sclient.var(self, 'points', self.startPoints).value, 2), round(sclient.var(self, 'oldexperience', 0).value + sclient.var(self, 'experience', 0).value, 2))
         cmd.sayLoudOrPM(client, message)
 
     def cmd_testscore(self, data, client, cmd=None):
