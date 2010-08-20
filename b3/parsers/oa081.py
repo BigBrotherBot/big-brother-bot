@@ -40,11 +40,15 @@
 # * added many more regexp to detect ctf events, cvars and awards
 # * implement permban by ip and unbanbyip
 # * implement team recognition
-#
+# 20/08/2010 - 0.8 - Courgette
+# * clean regexp (Item, CTF, Award, fallback)
+# * clean OnItem
+# * remove OnDamage
+# * add OnCtf and OnAward
 
 
 __author__  = 'Courgette, GrosBedo'
-__version__ = '0.7.5'
+__version__ = '0.8'
 
 import re, string, thread, time, threading
 import b3
@@ -103,26 +107,26 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
 
         # 46:37 Item: 4 team_CTF_redflag
         # 54:52 Item: 2 weapon_plasmagun
-        re.compile(r'^Item:\s+(?P<cid>[0-9]+)\s+(?P<data>.*)$', re.IGNORECASE),
+        re.compile(r'^(?P<action>Item):\s+(?P<cid>[0-9]+)\s+(?P<data>.*)$', re.IGNORECASE),
     
         # 1:25 CTF: 1 2 2: Sarge returned the BLUE flag!
         # 1:16 CTF: 1 1 3: Sarge fragged RED's flag carrier!
         # 6:55 CTF: 2 1 2: Burpman returned the RED flag!
         # 7:02 CTF: 2 2 1: Burpman captured the BLUE flag!
-        re.compile(r'^CTF:\s+(?P<acid>[0-9]+)\s+(?P<cid>[0-9]+)\s+(?P<cid2>[0-9]+):\s+(?P<data>.*(?P<team>RED|BLUE).*)$', re.IGNORECASE),
+        re.compile(r'^(?P<action>CTF):\s+(?P<cid>[0-9]+)\s+(?P<fid>[0-9]+)\s+(?P<type>[0-9]+):\s+(?P<data>.*(?P<color>RED|BLUE).*)$', re.IGNORECASE),
         
         # 7:02 Award: 2 4: Burpman gained the CAPTURE award!
         # 7:02 Award: 2 5: Burpman gained the ASSIST award!
         # 7:30 Award: 2 3: Burpman gained the DEFENCE award!
         # 29:15 Award: 2 2: SalaManderDragneL gained the IMPRESSIVE award!
         # 32:08 Award: 2 1: SalaManderDragneL gained the EXCELLENT award!
-        re.compile(r'^Award:\s+(?P<acid>[0-9]+)\s+(?P<cid>[0-9]+):\s+(?P<data>(?P<name>[a-z_0-9]+) gained the (?P<award>\w+) award!)$', re.IGNORECASE),
+        re.compile(r'^(?P<action>Award):\s+(?P<cid>[0-9]+)\s+(?P<awardtype>[0-9]+):\s+(?P<data>(?P<name>.+) gained the (?P<awardname>\w+) award!)$', re.IGNORECASE),
 
         #
         # Falling through?
         # 1:05 ClientConnect: 3
         # 1:05 ClientUserinfoChanged: 3 guid\CAB616192CB5652375401264987A23D0\n\xlr8or\t\0\model\wq_male2/red\g_redteam\\g_blueteam\\hc\100\w\0\l\0\tt\0\tl\0
-        re.compile(r'^(?P<action>[a-z_]+):\s*(?P<data>.*)$', re.IGNORECASE)
+        re.compile(r'^(?P<action>[a-z_]\w*):\s*(?P<data>.*)$', re.IGNORECASE)
     )
 
     #map: dm_fort
@@ -213,9 +217,9 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         self.clients.newClient(1022, guid='WORLD', name='World', hide=True, pbid='WORLD')
 
         # get map from the status rcon command
-        map = self.getMap()
-        if map:
-            self.game.mapName = map
+        map_name = self.getMap()
+        if map_name:
+            self.game.mapName = map_name
             self.info('map is: %s'%self.game.mapName)
 
         # get gamepaths/vars
@@ -278,7 +282,6 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
        
         
     def OnClientconnect(self, action, data, match=None):
-        self._clientConnectID = data
         client = self.clients.getByCID(data)
         self.debug('OnClientConnect: %s, %s' % (data, client))
         return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
@@ -428,9 +431,6 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
             return None
 
         data = match.group('text')
-        if data and ord(data[:1]) == 21:
-            data = data[1:]
-
         client.name = match.group('name')
         return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data, client, -1)
 
@@ -452,41 +452,44 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         client.name = match.group('name')
         return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data, client, tclient)
 
-    
     def OnItem(self, action, data, match=None):
-        #Item: 0 pickup_money (5) picked up ($25)
-        #Item: 0 weapon_schofield bought ($18/$20)
-        #Item: 0 weapon_remington58 (7) picked up
-        cid, item = string.split(data, ' ', 1)
-        client = self.getByCidOrJoinPlayer(cid)
+        client = self.getByCidOrJoinPlayer(match.group('cid'))
         if client:
-            return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, item, client)
+            return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, match.group('data'), client)
         return None
-    
 
-    # damage
-    #468950: client:0 health:90 damage:21.6 where:arm from:MOD_SCHOFIELD by:2
-    def OnDamage(self, action, data, match=None):
-        victim = self.clients.getByCID(match.group('cid'))
-        if not victim:
-            self.debug('No victim')
-            return None
+    def OnCtf(self, action, data, match=None):
+        # 1:25 CTF: 1 2 2: Sarge returned the BLUE flag!
+        # 1:16 CTF: 1 1 3: Sarge fragged RED's flag carrier!
+        # 6:55 CTF: 2 1 2: Burpman returned the RED flag!
+        # 7:02 CTF: 2 2 1: Burpman captured the BLUE flag!
 
-        attacker = self.clients.getByCID(match.group('acid'))
-        if not attacker:
-            self.debug('No attacker')
-            return None
+        client = self.getByCidOrJoinPlayer(match.group('cid'))
+        flagteam = self.getTeam(match.group('fid'))
+        action_types = {
+            '1': 'flag_captured',
+            '2': 'flag_returned',
+            '3': 'flag_carrier_kill',
+        }
+        try:
+            action_id = action_types[match.group('type')]
+        except KeyError:
+            action_id = 'flag_action_' + match.group('type')
+            self.debug('unknown CTF action type: %s (%s)' % (match.group('type'), match.group('data')))
+        #flagcolor = match.group('color')
+        return b3.events.Event(b3.events.EVT_CLIENT_ACTION, action_id, client)
 
-        event = b3.events.EVT_CLIENT_DAMAGE
+    def OnAward(self, action, data, match=None):
+        ## Award: <cid> <awardtype>: <name> gained the <awardname> award!
+        # 7:02 Award: 2 4: Burpman gained the CAPTURE award!
+        # 7:02 Award: 2 5: Burpman gained the ASSIST award!
+        # 7:30 Award: 2 3: Burpman gained the DEFENCE award!
+        # 29:15 Award: 2 2: SalaManderDragneL gained the IMPRESSIVE award!
+        # 32:08 Award: 2 1: SalaManderDragneL gained the EXCELLENT award!
+        client = self.getByCidOrJoinPlayer(match.group('cid'))
+        action_type = 'award_%s' % match.group('awardname')
+        return b3.events.Event(b3.events.EVT_CLIENT_ACTION, action_type, client)
 
-        if attacker.cid == victim.cid:
-            event = b3.events.EVT_CLIENT_DAMAGE_SELF
-        elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
-            event = b3.events.EVT_CLIENT_DAMAGE_TEAM
-
-        victim.hitloc = match.group('hitloc')
-        damagepoints = round(float(match.group('damage')), 1)
-        return b3.events.Event(event, (damagepoints, match.group('aweap'), victim.hitloc), attacker, victim)
 
 #---------------------------------------------------------------------------------------------------
 
