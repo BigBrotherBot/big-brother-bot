@@ -17,11 +17,13 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
+# 08/20/2010 - 1.2.1 - xlr8or
+#    Add @topstats for xlrstats
+# 08/06/2010 - 1.2 - xlr8or
+#    Add feedparser (@feed or @feed <nr>)
 # 08/06/2010 - 1.1.5 - xlr8or
 #    Remove save() errors and !advsave when XML adds are used
 #    This needs to be re-enabled when saving to XML is supported
-# 08/06/2010 - 1.2 - xlr8or
-#    Add feedparser (@feed or @feed <nr>)
 # 11/22/2009 - 1.1.4 - Courgette
 #    fix bug when using external text ads file which is empty
 # 2/27/2009 - 1.1.3 - xlr8or
@@ -32,9 +34,9 @@
 #    Converted to use XML config
 
 __author__ = 'ThorN'
-__version__ = '1.2'
+__version__ = '1.2.1'
 
-import b3, os, time
+import b3
 import os
 import time
 import b3.lib.feedparser as feedparser
@@ -110,9 +112,14 @@ class AdvPlugin(b3.plugin.Plugin):
             if self._fileName:
                 self._adminPlugin.registerCommand(self, 'advsave', 100, self.cmd_advsave)
 
+        self._xlrstatsPlugin = self.console.getPlugin('xlrstats')
+        if not self._xlrstatsPlugin:
+            self.debug('XLRstats not installed, @topstats not available!')
+        else:
+            self.debug('XLRstats found, @topstats available!')
+
     def onLoadConfig(self):
         self._adminPlugin = self.console.getPlugin('admin')
-
         self._msg = MessageLoop()
 
         try:
@@ -219,7 +226,15 @@ class AdvPlugin(b3.plugin.Plugin):
                         self.debug('Something wrong with the newsfeed, disabling it. Fix the feed and do !advload')
                         self._feed = None
                     return
-            self.console.say(ad)
+            elif ad == "@topstats":
+                if self._xlrstatsPlugin:
+                    self._xlrstatsPlugin.cmd_xlrtopstats(data='3', client=None, cmd=None, ext=True)
+                    ad = None
+                else:
+                    self.error('XLRstats not installed! Cannot use @topstats in adv plugin!')
+                    ad = '@topstats not available, XLRstats is not installed!'
+            if ad:
+                self.console.say(ad)
             self._replay = 0
 
     def getFeed(self, ad):
