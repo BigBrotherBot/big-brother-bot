@@ -1,5 +1,35 @@
 <configuration plugin="stats">
-	<settings name="settings">
-		<set name="min_level">1</set>
+
+  <settings name="commands">
+    <!-- !mapstats or !stats: minimum level to be able to see your own stats
+      for the current map (except skill points which are kept during the
+      whole gaming session) -->
+    <set name="mapstats-stats">0</set>
+
+    <!-- !testscore or !ts: minimum level to be able to make a calculation
+      on how much skill points you would get by killing the specified player -->
+    <set name="testscore-ts">0</set>
+
+    <!-- !topstats or !top: minimum level to be able to see a list of the
+      top skills scored players for the gaming session -->
+    <set name="topstats-top">2</set>
+
+    <!-- !topxp: minimum level to be able to see a list of the top
+      experienced players for the gaming session -->
+    <set name="topxp">2</set>
+
+  </settings>
+
+  <settings name="settings">
+    <!-- number of skill points you start with (the points are substracted
+	     or added to this base) -->
+    <set name="startPoints">100</set>
+
+		<!-- Reset the Skill score at each round start ? (yes|no) -->
+    <set name="resetscore">no</set>
+
+		<!-- Reset the Experience (XP) score at each round start ? (yes|no) -->
+    <set name="resetxp">no</set>
 	</settings>
+
 </configuration>

@@ -34,11 +34,21 @@
 # * fixed the permanent ban command (banClient -> banaddr)
 # 12/08/2010 - 0.7 - GrosBedo
 # * added weapons and means of death. Define what means of death are suicides
-#
+# 17/08/2010 - 0.7.1 - GrosBedo
+# * added say_team recognition
+# 20/08/2010 - 0.7.5 - GrosBedo
+# * added many more regexp to detect ctf events, cvars and awards
+# * implement permban by ip and unbanbyip
+# * implement team recognition
+# 20/08/2010 - 0.8 - Courgette
+# * clean regexp (Item, CTF, Award, fallback)
+# * clean OnItem
+# * remove OnDamage
+# * add OnCtf and OnAward
 
 
 __author__  = 'Courgette, GrosBedo'
-__version__ = '0.7'
+__version__ = '0.8'
 
 import re, string, thread, time, threading
 import b3
@@ -66,6 +76,9 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
     _commands['kick'] = 'clientkick %(cid)s'
     _commands['ban'] = 'banaddr %(cid)s' #addip for q3a
     _commands['tempban'] = 'clientkick %(cid)s'
+    _commands['banByIp'] = 'banaddr %(ip)s'
+    _commands['unbanByIp'] = 'bandel %(cid)s' #removeip for q3a
+    _commands['banlist'] = 'listbans' #g_banips for q3a
 
     _eventMap = {
         'warmup' : b3.events.EVT_GAME_WARMUP,
@@ -76,13 +89,10 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
     _lineClear = re.compile(r'^(?:[0-9:.]+\s?)?')
 
     _lineFormats = (
-        #468950: client:0 health:90 damage:21.6 where:arm from:MOD_SCHOFIELD by:2
-        re.compile(r'^\d+:\s+(?P<data>client:(?P<cid>\d+)\s+health:(?P<health>\d+)\s+damage:(?P<damage>[.\d]+)\s+where:(?P<hitloc>[^\s]+)\s+from:(?P<aweap>[^\s]+)\s+by:(?P<acid>\d+))$', re.IGNORECASE),
-        
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<pbid>[0-9A-Z]{32}):\s*(?P<name>[^:]+):\s*(?P<num1>[0-9]+):\s*(?P<num2>[0-9]+):\s*(?P<ip>[0-9.]+):(?P<port>[0-9]+))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<name>.+):\s+(?P<text>.*))$', re.IGNORECASE),
         #
-        #1536:37Kill: 1 18 9: ^1klaus killed ^1[pura]fox.nl by MOD_MP40
+        #47:05 Kill: 2 4 11: Sarge killed ^6Jondah by MOD_LIGHTNING
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
         #
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
@@ -91,12 +101,32 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         # 81:16 tell: grosbedo to courgette: !help
         # 81:16 say: grosbedo: !help
         re.compile(r'^(?P<action>tell):\s(?P<data>(?P<name>.+) to (?P<aname>.+): (?P<text>.*))$', re.IGNORECASE),
+        
+        # 19:33 sayteam: UnnamedPlayer: ahahaha
+        re.compile(r'^(?P<action>sayteam):\s(?P<data>(?P<name>.+): (?P<text>.*))$', re.IGNORECASE),
+
+        # 46:37 Item: 4 team_CTF_redflag
+        # 54:52 Item: 2 weapon_plasmagun
+        re.compile(r'^(?P<action>Item):\s+(?P<cid>[0-9]+)\s+(?P<data>.*)$', re.IGNORECASE),
+    
+        # 1:25 CTF: 1 2 2: Sarge returned the BLUE flag!
+        # 1:16 CTF: 1 1 3: Sarge fragged RED's flag carrier!
+        # 6:55 CTF: 2 1 2: Burpman returned the RED flag!
+        # 7:02 CTF: 2 2 1: Burpman captured the BLUE flag!
+        re.compile(r'^(?P<action>CTF):\s+(?P<cid>[0-9]+)\s+(?P<fid>[0-9]+)\s+(?P<type>[0-9]+):\s+(?P<data>.*(?P<color>RED|BLUE).*)$', re.IGNORECASE),
+        
+        # 7:02 Award: 2 4: Burpman gained the CAPTURE award!
+        # 7:02 Award: 2 5: Burpman gained the ASSIST award!
+        # 7:30 Award: 2 3: Burpman gained the DEFENCE award!
+        # 29:15 Award: 2 2: SalaManderDragneL gained the IMPRESSIVE award!
+        # 32:08 Award: 2 1: SalaManderDragneL gained the EXCELLENT award!
+        re.compile(r'^(?P<action>Award):\s+(?P<cid>[0-9]+)\s+(?P<awardtype>[0-9]+):\s+(?P<data>(?P<name>.+) gained the (?P<awardname>\w+) award!)$', re.IGNORECASE),
 
         #
         # Falling through?
         # 1:05 ClientConnect: 3
         # 1:05 ClientUserinfoChanged: 3 guid\CAB616192CB5652375401264987A23D0\n\xlr8or\t\0\model\wq_male2/red\g_redteam\\g_blueteam\\hc\100\w\0\l\0\tt\0\tl\0
-        re.compile(r'^(?P<action>[a-z_]+):\s*(?P<data>.*)$', re.IGNORECASE)
+        re.compile(r'^(?P<action>[a-z_]\w*):\s*(?P<data>.*)$', re.IGNORECASE)
     )
 
     #map: dm_fort
@@ -107,6 +137,28 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
     #  3     3   37 xlr8or^7                0 145.99.135.227:27960   3598 25000
     _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
     _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
+
+    # 7:44 Exit: Capturelimit hit.
+    # 7:44 red:8  blue:0
+    # 7:44 score: 63  ping: 81  client: 2 ^2^^0Pha^7nt^2om^7^^0Boo
+    # 7:44 score: 0  ping: 0  client: 1 Sarge
+    _reTeamScores = re.compile(r'^red:(?P<RedScore>.+)\s+blue:(?P<BlueScore>.+)$', re.I)
+    _rePlayerScore = re.compile(r'^score:\s+(?P<score>[0-9]+)\s+ping:\s+(?P<ping>[0-9]+|CNCT|ZMBI)\s+client:\s+(?P<slot>[0-9]+)\s+(?P<name>.*)$', re.I)
+
+    _reCvarName = re.compile(r'^[a-z0-9_.]+$', re.I)
+    _reCvar = (
+        #"sv_maxclients" is:"16^7" default:"8^7"
+        #latched: "12"
+        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?"\s+default:\s*"(?P<default>.*?)(\^7)?"$', re.I | re.M),
+        #"g_maxGameClients" is:"0^7", the default
+        #latched: "1"
+        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?",\s+the\sdefault$', re.I | re.M),
+        #"mapname" is:"ut4_abbey^7"
+        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?"$', re.I | re.M),
+    )
+    
+    # Ban #1: 200.200.200.200/32
+    _reBanList = re.compile(r'^Ban #(?P<cid>[0-9]+):\s+(?P<ip>[0-9]+.[0-9]+.[0-9]+.[0-9]+)/(?P<range>[0-9]+)$', re.I)
 
     PunkBuster = None
 
@@ -165,10 +217,31 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         self.clients.newClient(1022, guid='WORLD', name='World', hide=True, pbid='WORLD')
 
         # get map from the status rcon command
-        map = self.getMap()
-        if map:
-            self.game.mapName = map
+        map_name = self.getMap()
+        if map_name:
+            self.game.mapName = map_name
             self.info('map is: %s'%self.game.mapName)
+
+        # get gamepaths/vars
+        try:
+            self.game.fs_game = self.getCvar('fs_game').getString()
+        except:
+            self.game.fs_game = None
+            self.warning("Could not query server for fs_game")
+
+        try:
+            self.game.fs_basepath = self.getCvar('fs_basepath').getString().rstrip('/')
+            self.debug('fs_basepath: %s' % self.game.fs_basepath)
+        except:
+            self.game.fs_basepath = None
+            self.warning("Could not query server for fs_basepath")
+
+        try:
+            self.game.fs_homepath = self.getCvar('fs_homepath').getString().rstrip('/')
+            self.debug('fs_homepath: %s' % self.game.fs_homepath)
+        except:
+            self.game.fs_homepath = None
+            self.warning("Could not query server for fs_homepath")
 
         # initialize connected clients
         self.info('discover connected clients')
@@ -209,7 +282,6 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
        
         
     def OnClientconnect(self, action, data, match=None):
-        self._clientConnectID = data
         client = self.clients.getByCID(data)
         self.debug('OnClientConnect: %s, %s' % (data, client))
         return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
@@ -351,8 +423,16 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
 
 
     def OnSayteam(self, action, data, match=None):
-        # Teaminfo does not exist in the sayteam logline. Parse it as a normal say line
-        return self.OnSay(action, data, match)
+        # Teaminfo does not exist in the sayteam logline, so we can't know in which team the user is in. So we set him in a -1 void team.
+        client = self.clients.getByExactName(match.group('name'))
+
+        if not client:
+            self.verbose('No Client Found')
+            return None
+
+        data = match.group('text')
+        client.name = match.group('name')
+        return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data, client, -1)
 
 
     def OnTell(self, action, data, match=None):
@@ -372,41 +452,44 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         client.name = match.group('name')
         return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data, client, tclient)
 
-    
     def OnItem(self, action, data, match=None):
-        #Item: 0 pickup_money (5) picked up ($25)
-        #Item: 0 weapon_schofield bought ($18/$20)
-        #Item: 0 weapon_remington58 (7) picked up
-        cid, item = string.split(data, ' ', 1)
-        client = self.getByCidOrJoinPlayer(cid)
+        client = self.getByCidOrJoinPlayer(match.group('cid'))
         if client:
-            return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, item, client)
+            return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, match.group('data'), client)
         return None
-    
 
-    # damage
-    #468950: client:0 health:90 damage:21.6 where:arm from:MOD_SCHOFIELD by:2
-    def OnDamage(self, action, data, match=None):
-        victim = self.clients.getByCID(match.group('cid'))
-        if not victim:
-            self.debug('No victim')
-            return None
+    def OnCtf(self, action, data, match=None):
+        # 1:25 CTF: 1 2 2: Sarge returned the BLUE flag!
+        # 1:16 CTF: 1 1 3: Sarge fragged RED's flag carrier!
+        # 6:55 CTF: 2 1 2: Burpman returned the RED flag!
+        # 7:02 CTF: 2 2 1: Burpman captured the BLUE flag!
 
-        attacker = self.clients.getByCID(match.group('acid'))
-        if not attacker:
-            self.debug('No attacker')
-            return None
+        client = self.getByCidOrJoinPlayer(match.group('cid'))
+        flagteam = self.getTeam(match.group('fid'))
+        action_types = {
+            '1': 'flag_captured',
+            '2': 'flag_returned',
+            '3': 'flag_carrier_kill',
+        }
+        try:
+            action_id = action_types[match.group('type')]
+        except KeyError:
+            action_id = 'flag_action_' + match.group('type')
+            self.debug('unknown CTF action type: %s (%s)' % (match.group('type'), match.group('data')))
+        #flagcolor = match.group('color')
+        return b3.events.Event(b3.events.EVT_CLIENT_ACTION, action_id, client)
 
-        event = b3.events.EVT_CLIENT_DAMAGE
+    def OnAward(self, action, data, match=None):
+        ## Award: <cid> <awardtype>: <name> gained the <awardname> award!
+        # 7:02 Award: 2 4: Burpman gained the CAPTURE award!
+        # 7:02 Award: 2 5: Burpman gained the ASSIST award!
+        # 7:30 Award: 2 3: Burpman gained the DEFENCE award!
+        # 29:15 Award: 2 2: SalaManderDragneL gained the IMPRESSIVE award!
+        # 32:08 Award: 2 1: SalaManderDragneL gained the EXCELLENT award!
+        client = self.getByCidOrJoinPlayer(match.group('cid'))
+        action_type = 'award_%s' % match.group('awardname')
+        return b3.events.Event(b3.events.EVT_CLIENT_ACTION, action_type, client)
 
-        if attacker.cid == victim.cid:
-            event = b3.events.EVT_CLIENT_DAMAGE_SELF
-        elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
-            event = b3.events.EVT_CLIENT_DAMAGE_TEAM
-
-        victim.hitloc = match.group('hitloc')
-        damagepoints = round(float(match.group('damage')), 1)
-        return b3.events.Event(event, (damagepoints, match.group('aweap'), victim.hitloc), attacker, victim)
 
 #---------------------------------------------------------------------------------------------------
 
@@ -445,22 +528,52 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         
         return data
 
+    def getCvar(self, cvarName):
+        if self._reCvarName.match(cvarName):
+            #"g_password" is:"^7" default:"scrim^7"
+            val = self.write(cvarName)
+            self.debug('Get cvar %s = [%s]', cvarName, val)
+            #sv_mapRotation is:gametype sd map mp_brecourt map mp_carentan map mp_dawnville map mp_depot map mp_harbor map mp_hurtgen map mp_neuville map mp_pavlov map mp_powcamp map mp_railyard map mp_rocket map mp_stalingrad^7 default:^7
+
+            for f in self._reCvar:
+                m = re.match(f, val)
+                if m:
+                    #self.debug('line matched %s' % f.pattern)
+                    break
+
+            if m:
+                #self.debug('m.lastindex %s' % m.lastindex)
+                if m.group('cvar').lower() == cvarName.lower() and m.lastindex > 3:
+                    return b3.cvar.Cvar(m.group('cvar'), value=m.group('value'), default=m.group('default'))
+                elif m.group('cvar').lower() == cvarName.lower():
+                    return b3.cvar.Cvar(m.group('cvar'), value=m.group('value'), default=m.group('value'))
+            else:
+                return None
 
     def getTeam(self, team):
-        if team == 'red': team = 1
-        if team == 'blue': team = 2
+        if team == 'red' or team == 'RED':
+            team = 1
+        elif team == 'blue' or team == 'BLUE':
+            team = 2
+        elif team == 'spectator' or team == 'SPECTATOR':
+            team = 3
+        else:
+            team = -1
         team = int(team)
         if team == 1:
             #self.verbose('Team is Red')
-            return b3.TEAM_RED
+            result = b3.TEAM_RED
         elif team == 2:
             #self.verbose('Team is Blue')
-            return b3.TEAM_BLUE
+            result = b3.TEAM_BLUE
         elif team == 3:
             #self.verbose('Team is Spec')
-            return b3.TEAM_SPEC
+            result = b3.TEAM_SPEC
         else:
-            return b3.TEAM_UNKNOWN
+            result = b3.TEAM_UNKNOWN
+        
+        #self.debug('getTeam(%s) -> %s' % (team, result))
+        return result
 
     # Translate the gameType to a readable format (also for teamkill plugin!)
     def defineGameType(self, gameTypeInt):
@@ -553,6 +666,73 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         load the next map/level
         """
         self.write('vstr nextmap')
+
+    def ban(self, client, reason='', admin=None, silent=False, *kwargs):
+        self.debug('BAN : client: %s, reason: %s', client, reason)
+        if isinstance(client, b3.clients.Client) and not client.guid:
+            # client has no guid, kick instead
+            return self.kick(client, reason, admin, silent)
+        elif isinstance(client, str) and re.match('^[0-9]+$', client):
+            self.write(self.getCommand('ban', cid=client, reason=reason))
+            return
+        elif not client.id:
+            # no client id, database must be down, do tempban
+            self.error('Q3AParser.ban(): no client id, database must be down, doing tempban')
+            return self.tempban(client, reason, '1d', admin, silent)
+
+        if admin:
+            reason = self.getMessage('banned_by', client.exactName, admin.exactName, reason)
+        else:
+            reason = self.getMessage('banned', client.exactName, reason)
+
+        if client.cid is None:
+            # ban by ip, this happens when we !permban @xx a player that is not connected
+            self.debug('EFFECTIVE BAN : %s',self.getCommand('banByIp', ip=client.ip, reason=reason))
+            self.write(self.getCommand('banByIp', ip=client.ip, reason=reason))
+        else:
+            # ban by cid
+            self.debug('EFFECTIVE BAN : %s',self.getCommand('ban', cid=client.cid, reason=reason))
+            self.write(self.getCommand('ban', cid=client.cid, reason=reason))
+
+        if not silent:
+            self.say(reason)
+
+        if admin:
+            admin.message('^3banned^7: ^1%s^7 (^2@%s^7). His last ip (^1%s^7) has been added to banlist'%(client.exactName, client.id, client.ip))
+
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, reason, client))
+        client.disconnect()
+
+    def unban(self, client, reason='', admin=None, silent=False, *kwargs):
+        data = self.write(self.getCommand('banlist', cid=-1))
+        if not data:
+            self.debug('Error : unban cannot be done, no ban list returned')
+        else:
+            for line in data.split('\n'):
+                m = re.match(self._reBanList, line.strip())
+                if m:
+                    if m.group('ip') == client.ip:
+                        self.write(self.getCommand('unbanByIp', cid=m.group('cid'), reason=reason))
+                        self.debug('EFFECTIVE UNBAN : %s',self.getCommand('unbanByIp', cid=m.group('cid')))
+                if admin:
+                    admin.message('^3Unbanned^7: ^1%s^7 (^2@%s^7). His last ip (^1%s^7) has been removed from banlist.' % (client.exactName, client.id, client.ip))
+
+    def getPlayerPings(self):
+        data = self.write('status')
+        if not data:
+            return {}
+
+        players = {}
+        for line in data.split('\n'):
+            m = re.match(self._regPlayer, line.strip())
+            if m:
+                if m.group('ping') == 'ZMBI':
+                    # ignore them, let them not bother us with errors
+                    pass
+                else:
+                    players[str(m.group('slot'))] = int(m.group('ping'))
+
+        return players
 
     def sync(self):
         plist = self.getPlayerList()
