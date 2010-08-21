@@ -60,6 +60,8 @@ setup(
                 "b3.parsers.*",
                 "b3.parsers.bfbc2.*",
                 "b3.extplugins.__init__",
+                ### additional modules for popular/useful 3rd party plugins ###
+                "smtplib", "email", # contact plugin
             ],
         }
     },
