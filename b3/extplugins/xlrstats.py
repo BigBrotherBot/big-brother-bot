@@ -30,16 +30,22 @@
 #   Repaired updateTableColumns() bug
 # 24-3-2010 - 2.2.3 - Mark Weirath - Minor fix in onEvent()
 # 10-8-2010 - 2.2.4 - Mark Weirath - BFBC2 adaptions (Bot Guid is Server, not WORLD) 
+# 20-8-2010 - 2.2.5 - Mark Weirath
+#   Allow external function call for cmd_xlrtopstats
+#   Retrieve variables from webfront installation for topstats results
 
 __author__  = 'Tim ter Laak / Mark Weirath'
-__version__ = '2.2.4'
+__version__ = '2.2.5'
 
 # Version = major.minor.patches
 
 # emacs-mode: -*- python-*-
 
-import string, time, re, thread
-
+import string
+import time
+import re
+import thread
+import urllib2 
 import b3
 import b3.events
 import b3.plugin
@@ -59,6 +65,13 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     _cronTabWeek = None
     _cronTabMonth = None
     _cronTabKillBonus = None
+
+    # webfront variables
+    webfrontUrl = ''
+    webfrontConfigNr = 0
+    _minKills = 500
+    _minRounds = 50
+    _maxDays = 14
 
     # config variables
     defaultskill = 1000
@@ -201,6 +214,21 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         #optimize xlrstats tables
         self.optimizeTables(self._xlrstatstables)
 
+        #let's try and get some variables from our webfront installation
+        if self.webfrontUrl != '':
+            _request = str(self.webfrontUrl.rstrip('/')) + '/?config=' + str(self.webfrontConfigNr) + '&func=pluginreq'
+            try:
+                f = urllib2.urlopen(_request)
+                _result = f.readline().split(',')
+                self._minKills = _result[0]
+                self._minRounds = _result[1]
+                self._maxDays = _result[2]
+                self.debug('Successfuly retrieved webfront variables: minkills: %s, minrounds: %s, maxdays: %s' %(self._minKills, self._minRounds, self._maxDays))
+            except:
+                self.debug('Couldn\'t retrieve webfront variables, using defaults')
+        else:
+            self.debug('No Webfront Url available, using defaults')
+        
         #set proper kill_bonus and crontab
         self.calculateKillBonus()
         if self._cronTabKillBonus:
@@ -208,9 +236,20 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         self._cronTabKillBonus = b3.cron.PluginCronTab(self, self.calculateKillBonus, 0, '*/10')
         self.console.cron + self._cronTabKillBonus
 
+
         #end startup sequence
 
     def onLoadConfig(self):
+        try:
+            self.webfrontUrl = self.config.get('settings', 'webfronturl')    
+        except:
+            self.debug('Using default value (%s) for settings::webfronturl', self.webfrontUrl)
+
+        try:
+            self.webfrontConfigNr = self.config.getint('settings', 'servernumber')    
+        except:
+            self.debug('Using default value (%i) for settings::servernumber', self.webfrontConfigNr)
+
         try:
             self.keep_history = self.config.getboolean('settings', 'keep_history')    
         except:
@@ -1256,16 +1295,16 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         return
 
     # Start a thread to get the top players
-    def cmd_xlrtopstats(self, data, client, cmd=None):
+    def cmd_xlrtopstats(self, data, client, cmd=None, ext=False):
         """\
         [<#>] - list the top # players of the last 14 days.
         """
-        thread.start_new_thread(self.doTopList, (data, client, cmd))
+        thread.start_new_thread(self.doTopList, (data, client, cmd, ext))
 
         return
 
     # Retrieves the Top # Players
-    def doTopList(self, data, client, cmd=None):
+    def doTopList(self, data, client, cmd=None, ext=False):
         if data:
             if re.match('^[0-9]+$', data, re.I):
                 limit = int(data)
@@ -1275,21 +1314,53 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             limit = 3
 
 
-        q = 'SELECT `%s`.name, `%s`.time_edit, `%s`.id, kills, deaths, ratio, skill, winstreak, losestreak, rounds, fixed_name, ip FROM `%s`, `%s` WHERE (`%s`.id = `%s`.client_id) AND ((`%s`.kills > 1000) OR (`%s`.rounds > 50)) AND (`%s`.hide = 0) AND (UNIX_TIMESTAMP(NOW()) - `%s`.time_edit  < 14*60*60*24) AND `%s`.id NOT IN ( SELECT distinct(target.id) FROM `%s` as penalties, `%s` as target WHERE (penalties.type = "Ban" OR penalties.type = "TempBan") AND inactive = 0 AND penalties.client_id = target.id AND ( penalties.time_expire = -1 OR penalties.time_expire > UNIX_TIMESTAMP(NOW()) ) ) ORDER BY `%s`.`skill` DESC LIMIT %s' % (self.clients_table, self.clients_table, self.playerstats_table, self.clients_table, self.playerstats_table, self.clients_table, self.playerstats_table, self.playerstats_table, self.playerstats_table, self.playerstats_table, self.clients_table, self.clients_table, self.penalties_table, self.clients_table, self.playerstats_table, limit)
+        #q = 'SELECT `%s`.name, `%s`.time_edit, `%s`.id, kills, deaths, ratio, skill, winstreak, losestreak, rounds, fixed_name, ip FROM `%s`, `%s` WHERE (`%s`.id = `%s`.client_id) AND ((`%s`.kills > 100) OR (`%s`.rounds > 10)) AND (`%s`.hide = 0) AND (UNIX_TIMESTAMP(NOW()) - `%s`.time_edit  < 14*60*60*24) AND `%s`.id NOT IN ( SELECT distinct(target.id) FROM `%s` as penalties, `%s` as target WHERE (penalties.type = "Ban" OR penalties.type = "TempBan") AND inactive = 0 AND penalties.client_id = target.id AND ( penalties.time_expire = -1 OR penalties.time_expire > UNIX_TIMESTAMP(NOW()) ) ) ORDER BY `%s`.`skill` DESC LIMIT %s' % (self.clients_table, self.clients_table, self.playerstats_table, self.clients_table, self.playerstats_table, self.clients_table, self.playerstats_table, self.playerstats_table, self.playerstats_table, self.playerstats_table, self.clients_table, self.clients_table, self.penalties_table, self.clients_table, self.playerstats_table, limit)
+        q = 'SELECT `%s`.name, `%s`.time_edit, `%s`.id, kills, deaths, ratio, skill, winstreak, losestreak, rounds, fixed_name, ip \
+        FROM `%s`, `%s` \
+            WHERE (`%s`.id = `%s`.client_id) \
+            AND ((`%s`.kills > %s) \
+            OR (`%s`.rounds > %s)) \
+            AND (`%s`.hide = 0) \
+            AND (UNIX_TIMESTAMP(NOW()) - `%s`.time_edit  < %s*60*60*24) \
+            AND `%s`.id NOT IN \
+                ( SELECT distinct(target.id) FROM `%s` as penalties, `%s` as target \
+                WHERE (penalties.type = "Ban" \
+                OR penalties.type = "TempBan") \
+                AND inactive = 0 \
+                AND penalties.client_id = target.id \
+                AND ( penalties.time_expire = -1 \
+                OR penalties.time_expire > UNIX_TIMESTAMP(NOW()) ) ) \
+        ORDER BY `%s`.`skill` DESC LIMIT %s' \
+        % (self.clients_table, self.clients_table, self.playerstats_table, self.clients_table, self.playerstats_table, \
+        self.clients_table, self.playerstats_table, self.playerstats_table, self._minKills, self.playerstats_table, \
+        self._minRounds, self.playerstats_table, self.clients_table, self._maxDays, self.clients_table, self.penalties_table, \
+        self.clients_table, self.playerstats_table, limit)
 
         cursor = self.query(q)
         if (cursor and (cursor.rowcount > 0) ):
             message = '^3XLR Stats Top %s Players:' % (limit)
-            cmd.sayLoudOrPM(client, message)
+            if ext:
+                self.console.say(message)
+            else:
+                cmd.sayLoudOrPM(client, message)
             c = 1
             while not cursor.EOF:
                 r = cursor.getRow()
                 message = '^3# %s: ^7%s ^7: Skill ^3%1.02f ^7Ratio ^5%1.02f ^7Kills: ^2%s' % (c, r['name'], r['skill'], r['ratio'], r['kills'])
-                cmd.sayLoudOrPM(client, message)
+                if ext:
+                    self.console.say(message)
+                else:
+                    cmd.sayLoudOrPM(client, message)
                 cursor.moveNext()
                 c += 1
                 time.sleep(1)
         else:
+            self.debug('No players qualified for the toplist yet...')
+            message = 'Qualify for the toplist by making %i kills, or playing %i rounds!' % (self._minKills, self._minRounds)
+            if ext:
+                self.console.say(message)
+            else:
+                cmd.sayLoudOrPM(client, message)
             return None
 
         return
