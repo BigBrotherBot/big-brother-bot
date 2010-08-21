@@ -1,5 +1,5 @@
 #
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
+# BigBrotherBot(B3) (www.bigbrotherbot.com)
 # Copyright (C) 2005 Michael "ThorN" Thornton
 # 
 # This program is free software; you can redistribute it and/or modify
@@ -141,6 +141,8 @@
 # * Quick mapretrieval on startup
 # 2010-07-30 - 1.3.5 - xlr8or
 # * Fixed self.game.rounds
+# 2010-08-15 - 1.3.6 - xlr8or
+# * minor updates
 #
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
@@ -529,7 +531,8 @@ class Bfbc2Parser(b3.parser.Parser):
         """
         #player.onJoin: ['OrasiK']
         client = self.getClient(data[0], data[1])
-        return b3.events.Event(b3.events.EVT_CLIENT_CONNECT, data, client)
+        # No need to queue a client join event, that is done by clients.newClient() already
+        # return b3.events.Event(b3.events.EVT_CLIENT_CONNECT, data, client)
 
 
     def OnPlayerSpawn(self, action, data):
@@ -1176,7 +1179,6 @@ class Bfbc2Parser(b3.parser.Parser):
             self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
         
         return client
-        
 
 
     def getPlayerList(self, maxRetries=None):

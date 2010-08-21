@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    15/08/2010 - 1.2.13 - xlr8or
+#    * Minor addition for bfbc2 in alias checking
 #    21/05/2010 - 1.2.12 - xlr8or
 #    * Catch ValueError in clients.getByCID to allow names as CID's, but still
 #      fix the previous exploit in q3a based games 
@@ -49,7 +51,7 @@
 #     Added data parameter to Client.tempban()
 
 __author__  = 'ThorN'
-__version__ = '1.2.12'
+__version__ = '1.2.13'
 
 import b3, string, re, time, functions, threading, traceback, sys
 
@@ -404,8 +406,8 @@ class Client(object):
         if self._name == newName:
             self.console.verbose2('Aborted Making Alias for cid: %s, name is the same' % self.cid)
             return
-        if self.cid == '-1':
-            self.console.verbose2('Aborted Making Alias for cid: %s, must be World' % self.cid)
+        if self.cid == '-1' or self.cid == 'Server': # bfbc2 addition
+            self.console.verbose2('Aborted Making Alias for cid: %s, must be B3' % self.cid)
             return
         
         self.makeAlias(self._name)
