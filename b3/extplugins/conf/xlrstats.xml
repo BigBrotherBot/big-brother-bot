@@ -15,6 +15,17 @@
 		<set name="minlevel">1</set>
 		<set name="onemaponly">False</set>
 		<set name="keep_history">False</set>
+
+<!--  
+  The next settings enable the plugin to retrieve certain config settings from your webfront install
+  This will make topstats return the same results as the webfront.
+  You'll need at least webfront version 2.2 for this to work.
+  The webfronturl should point to your xlrstats website, ie: http://www.yoursite.com/xlrstats
+  The servernumber is the confignumber of the webfront install when you're using multiple servers and one xlrstats install
+-->
+		<set name="webfronturl"></set>
+		<set name="servernumber">0</set>
+
 <!-- *** assist bonus settings ***
 	Call of Duty passes damage amount info to the logs. Therefore we can award assists based on damage.
 	So in the CoD series we award an assist if the amount of damage is 50 points or more and they must occur
