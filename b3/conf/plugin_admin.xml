@@ -68,13 +68,26 @@
 		<set name="rules-r">0</set>
 	</settings>
 	<settings name="settings">
+    <!-- noreason_level : admin from this level are not required to specify a reason when giving penalties to players -->
 		<set name="noreason_level">100</set>
+		<!-- hidecmd_level : level required to be able to use hidden commands. On quake3 based games, a hidden command can be issued by 
+		telling to command to oneself -->
 		<set name="hidecmd_level">60</set>
+		<!-- long_tempban_level : admin level required to be able to issue bans longer than long_tempban_max_duration -->
 		<set name="long_tempban_level">80</set>
+		<!-- long_tempban_max_duration : maximum ban duration that can be inflicted by admin of level below long_tempban_level -->
 		<set name="long_tempban_max_duration">3h</set>
+		<!-- command_prefix : the prefix that should be put before b3 commands -->
 		<set name="command_prefix">!</set>
+		<!-- comamnd_prefix_loud : some commands can have their result broadcasted to the whole player crowed instead of only to 
+		the player issuing the command. To have such a behavior, use this command prefix instead -->
 		<set name="command_prefix_loud">@</set>
+		<!-- comamnd_prefix_big : some commands can have their result broadcasted to the whole player crowed as a bigtext. 
+		To have such a behavior, use this command prefix instead -->
+		<set name="comamnd_prefix_big">&</set>
+		<!-- admins_level : minimum level for groups to consider as admins -->
 		<set name="admins_level">20</set>
+		<!-- ban_duration : tempban duration to apply to the !ban and !banall commands -->
 		<set name="ban_duration">14d</set>
 	</settings>
 	<settings name="messages">
@@ -112,35 +125,41 @@
 		<set name="leveltest">^7%s ^7(^3@%s^7) is a ^3%s ^7[^2%s^7] since %s</set>
 		<set name="leveltest_nogroups">^7%s ^7(^3@%s^7) is not in any groups</set>
 		<set name="aliases">^7%s^7 aliases: %s</set>
-		<set name="warn_kick_alert">^1ALERT^7: $name^7 auto-kick from warnings if not cleared (^3$warnings^7)</set>
-		<set name="warn_ban_alert">^1ALERT^7: $name^7 auto-ban from warnings if not cleared (^3$warnings^7)</set>
 	</settings>
 	<settings name="warn">
-		<!-- This setting determines whether the warning is sent to the the whole server, or just the player and admin, to reduce chatbox spam.
+		<!-- pm_global determines whether the warning is sent to the the whole server, or just the player and admin, to reduce chatbox spam.
 0 is whole server, 1 is private.
 -->
 		<set name="pm_global">0</set>
-		<!-- THESE APPEAR TO BE OBSOLETE - DO NOT USE - mindriot - 10/20/2008
-		<set name="ban_reason">^7too many warnings ^1BANNED: $reason</set>
-		<set name="ban_num">5</set>
-		<set name="kick_num">3</set>
-		<set name="kick_duration">2</set>
-		<set name="ban_duration">1h</set>
-		<set name="kick_reason">^7too many warnings: $reason</set>
--->
-
+		<!-- alert_kick_num : if a player reach this number of active warnings he will be notified by with message then tempbanned -->
 		<set name="alert_kick_num">3</set>
+		<!-- alert_kick_num : if a player reach this number of active warnings he will be tempbanned right away -->
 		<set name="instant_kick_num">5</set>
+		<!-- tempban_num : when the number of warnings goes over this limit, the player is tempban for tempban_duration -->
 		<set name="tempban_num">6</set>
+		<!-- tempban_duration : for how long to tempban a players whose number of warning exceeded tempban_num -->
 		<set name="tempban_duration">1d</set>
+		<!-- max_duration : when the bot decides to tempban (warning exceeding alert_kick_num) the ban duration is 
+		computed from the duration of each of the active warnings but will never exceed max_duration -->
 		<set name="max_duration">1d</set>
+		<!-- message : template for building warning messages -->
 		<set name="message">^1WARNING^7 (^3$warnings^7): $reason</set>
+		<!-- warn_delay : an given player cannot only be given one warning every warn_delay seconds -->
 		<set name="warn_delay">15</set>
+		<!-- reason : template for building warning message when a player exceeds the tolerated number of warnings -->
 		<set name="reason">^7too many warnings: $reason</set>
+		<!-- duration_divider : tempbanned duration is computed from the sum of all active warnings durations divided by duration_divider -->
 		<set name="duration_divider">30</set>
+		<!-- alert : when a player receives his last warning tolerated warning, this message is broadcasted so an admin can decide to clear it and
+		this teaches other players too -->
 		<set name="alert">^1ALERT^7: $name^7 auto-kick from warnings if not cleared (^3$warnings^7) $reason</set>
+    <!-- warn_command_abusers will make the bot warn players who try to use command they don't have suffisent rights to use or warn
+    players who try invalid commands  -->
+    <set name="warn_command_abusers">yes</set>
 	</settings>
 	<settings name="spamages">
+    <!-- You can define shortcuts to messages that can be used with the !spam command. Note if the message shortcut is of 
+    the form 'rule#' where # is a number between 1 and 20, they will be used for the !rules command. -->	
 		<set name="vent">^3Ventrilo voice chat: ^269.93.232.106:3803 ^3password ^2nffoov^3, www.ventrilo.org</set>
 		<set name="join">^3Join Austin Server by signing up on the forums at www.austinserver.com</set>
 		<set name="forum">^3Visit the Austin Server forums at www.austinserver.com</set>
@@ -159,6 +178,11 @@
 		<set name="rule10">^3Rule #10: Offense players must play for the objective and support their team</set>
 	</settings>
 	<settings name="warn_reasons">
+	  <!-- Define here shorcuts for warning reasons. Those shortcuts can be used with the !kick, !tempban, !ban, and !permban commands.
+	  The format of warning reasons can be of the form "<duration>, <message>". The duration defines how long such a warning will 
+	  last before expiring. The message is what will be sent to the player.
+	  NOTE : in the message, you can make reference to an existing spammage shortcut by using the form '/spam#<spammage keyword>'  
+	  NOTE2 : you can define warning shortcuts aliases if you don't use duration and the message is of the form '/<warn shortcut>'-->
 		<set name="generic">1h, ^7</set>
 		<set name="default">1h, ^7behave yourself</set>
 
