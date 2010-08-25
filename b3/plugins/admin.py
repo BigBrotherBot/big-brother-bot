@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2010/08/25 - 1.8.1 - Courgette
+#   * do not fail if warn_command_abusers is missing in config
 #   2010/08/24 - 1.8 - kikker916 & Courgette
 #   * add warn_command_abusers setting what defines if player should get warned 
 #     for trying to use non existing or privileged commands
@@ -69,7 +71,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 
 
-__version__ = '1.8'
+__version__ = '1.8.1'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
@@ -127,6 +129,9 @@ class AdminPlugin(b3.plugin.Plugin):
 
         try:
             self._warn_command_abusers = self.config.getboolean('warn', 'warn_command_abusers')
+        except ConfigParser.NoOptionError:
+            self.warning('conf warn\warn_command_abusers not found, using default : yes')
+            self._warn_command_abusers = True
         except ValueError:
             self.warning('invalid value for conf warn\warn_command_abusers, using default : yes')
             self._warn_command_abusers = True
