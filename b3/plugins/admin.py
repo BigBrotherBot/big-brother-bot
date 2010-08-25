@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -17,6 +17,11 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2010/08/24 - 1.8 - kikker916 & Courgette
+#   * add warn_command_abusers setting what defines if player should get warned 
+#     for trying to use non existing or privileged commands
+#   * add documentation into the xml config file
+#   * fix a few things with the config file
 #   2010/08/14 - 1.7.1 - Courgette
 #   * fix _parseUserCmdRE regexp for cases where the player's name start with a digit
 #   2010/04/10 - 1.7 - Bakes
@@ -64,7 +69,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 
 
-__version__ = '1.7.1'
+__version__ = '1.8'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
@@ -82,6 +87,7 @@ class AdminPlugin(b3.plugin.Plugin):
     _commands = {}
     _parseUserCmdRE = re.compile(r"^(?P<cid>'[^']{2,}'|[0-9]+|[^\s]{2,}|@[0-9]+)(\s+(?P<parms>.*))?$")
     _long_tempban_max_duration = 1440 # 60m/h x 24h = 1440m = 1d
+    _warn_command_abusers = None
 
     cmdPrefix = '!'
     cmdPrefixLoud = '@'
@@ -97,13 +103,34 @@ class AdminPlugin(b3.plugin.Plugin):
         self.registerEvent(b3.events.EVT_CLIENT_PRIVATE_SAY)
         self.createEvent('EVT_ADMIN_COMMAND', 'Admin Command')
 
-        cmdPrefix = self.config.get('settings', 'command_prefix')
-        if cmdPrefix:
-            self.cmdPrefix = cmdPrefix
+        try:
+            cmdPrefix = self.config.get('settings', 'command_prefix')
+            if cmdPrefix:
+                self.cmdPrefix = cmdPrefix
+        except:
+            self.warning('could not get command_prefix, using default')
 
-        #cmdPrefixLoud = self.config.get('settings', 'command_prefix_loud')
-        #if cmdPrefixLoud:
-        #    self.cmdPrefixLoud = cmdPrefixLoud
+        try:
+            cmdPrefixLoud = self.config.get('settings', 'command_prefix_loud')
+            if cmdPrefixLoud:
+                self.cmdPrefixLoud = cmdPrefixLoud
+        except:
+            self.warning('could not get command_prefix_loud, using default')
+    
+        try:
+            cmdPrefixBig = self.config.get('settings', 'command_prefix_big')
+            if cmdPrefixBig:
+                self.cmdPrefixBig = cmdPrefixBig
+        except:
+            self.warning('could not get command_prefix_big, using default')
+
+
+        try:
+            self._warn_command_abusers = self.config.getboolean('warn', 'warn_command_abusers')
+        except ValueError:
+            self.warning('invalid value for conf warn\warn_command_abusers, using default : yes')
+            self._warn_command_abusers = True
+
 
         if 'commands' in self.config.sections():
             for cmd in self.config.options('commands'):
@@ -271,8 +298,8 @@ class AdminPlugin(b3.plugin.Plugin):
 
             try:
                 command = self._commands[cmd.lower()]
-            except Exception, msg:
-                if event.client.authed and event.client.maxLevel < self.config.getint('settings', 'admins_level'):
+            except Exception:
+                if self._warn_command_abusers and event.client.authed and event.client.maxLevel < self.config.getint('settings', 'admins_level'):
                     if event.client.var(self, 'fakeCommand').value:
                         event.client.var(self, 'fakeCommand').value += 1
                     else:
@@ -282,8 +309,10 @@ class AdminPlugin(b3.plugin.Plugin):
                         event.client.setvar(self, 'fakeCommand', 0)
                         self.warnClient(event.client, 'fakecmd', None, False)
                         return
-
-                event.client.message(self.getMessage('unknown_command', cmd))
+                if not self._warn_command_abusers and event.client.maxLevel < self.config.getint('settings', 'admins_level'):
+                    event.client.message(self.getMessage('unknown_command', cmd))
+                elif event.client.maxLevel > self.config.getint('settings', 'admins_level'):
+                    event.client.message(self.getMessage('unknown_command', cmd))
                 return
 
             cmd = cmd.lower()
@@ -316,7 +345,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 else:
                     self.console.queueEvent(self.console.getEvent('EVT_ADMIN_COMMAND', (command.func, data, results), event.client))
             else:
-                if event.client.maxLevel < self.config.getint('settings', 'admins_level'):
+                if self._warn_command_abusers and event.client.maxLevel < self.config.getint('settings', 'admins_level'):
                     if event.client.var(self, 'noCommand').value:
                         event.client.var(self, 'noCommand').value += 1
                     else:
@@ -329,7 +358,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 
                 if command.level == None:
                     event.client.message('^7%s%s command is disabled' % (self.cmdPrefix, cmd))
-                else:
+                elif self._warn_command_abusers:
                     event.client.message('^7You do not have sufficient access to use %s%s' % (self.cmdPrefix, cmd))
 
     def getCmd(self, cmd):
