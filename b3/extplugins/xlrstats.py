@@ -33,9 +33,11 @@
 # 20-8-2010 - 2.2.5 - Mark Weirath
 #   Allow external function call for cmd_xlrtopstats
 #   Retrieve variables from webfront installation for topstats results
+# 23-8-2010 - 2.2.6 - Mark Weirath
+#   BugFix: Requires ConfigFile for the commands
 
 __author__  = 'Tim ter Laak / Mark Weirath'
-__version__ = '2.2.5'
+__version__ = '2.2.6'
 
 # Version = major.minor.patches
 
@@ -56,7 +58,7 @@ ASSISTER = "assister"
 
 
 class XlrstatsPlugin(b3.plugin.Plugin):
-    requiresConfigFile = False
+    requiresConfigFile = True
     
     _world_clientid = None
     _ffa = ['dm', 'ffa', 'syc-ffa']
