@@ -45,10 +45,12 @@
 # * clean OnItem
 # * remove OnDamage
 # * add OnCtf and OnAward
+# 27/08/2010 - 0.8.1 - GrosBedo
+# * fixed findnextmap underscore bug (maps and vstr cvars with an underscore are now correctly parsed)
 
 
 __author__  = 'Courgette, GrosBedo'
-__version__ = '0.8'
+__version__ = '0.8.1'
 
 import re, string, thread, time, threading
 import b3
@@ -636,7 +638,7 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         # in a case like : map oasago2; echo test; vstr nextmap6; vstr nextmap3
         # the parser will recursively look each last vstr var, and if it can't find a map, fallback to the last map command
         self.debug('Extracting nextmap name from: %s' % (data))
-        nextmapregex = re.compile(r'.*("|;)\s*((?P<vstr>vstr (?P<vstrnextmap>[a-z0-9]+))|(?P<map>map (?P<mapnextmap>[a-z0-9]+)))', re.IGNORECASE)
+        nextmapregex = re.compile(r'.*("|;)\s*((?P<vstr>vstr (?P<vstrnextmap>[a-z0-9_]+))|(?P<map>map (?P<mapnextmap>[a-z0-9_]+)))', re.IGNORECASE)
         m = re.match(nextmapregex, data)
         if m:
             if m.group('map'):
