@@ -47,11 +47,13 @@
 # * add OnCtf and OnAward
 # 27/08/2010 - 0.8.1 - GrosBedo
 # * fixed findnextmap underscore bug (maps and vstr cvars with an underscore are now correctly parsed)
-# 27/08/2010 - 0.8.2 - Courgette
+# 28/08/2010 - 0.8.2 - Courgette
 # * fix another findnextmap underscore bug
+# 28/08/2010 - 0.8.3 - Courgette
+# * fix issue with the regexp that match 'Award:' lines 
 
 __author__  = 'Courgette, GrosBedo'
-__version__ = '0.8.2'
+__version__ = '0.8.3'
 
 import re, string, thread, time, threading
 import b3
@@ -97,6 +99,15 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         #
         #47:05 Kill: 2 4 11: Sarge killed ^6Jondah by MOD_LIGHTNING
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
+        
+        # 7:02 Award: 2 4: Burpman gained the CAPTURE award!
+        # 7:02 Award: 2 5: Burpman gained the ASSIST award!
+        # 7:30 Award: 2 3: Burpman gained the DEFENCE award!
+        # 29:15 Award: 2 2: SalaManderDragneL gained the IMPRESSIVE award!
+        # 32:08 Award: 2 1: SalaManderDragneL gained the EXCELLENT award!
+        # 8:36 Award: 10 1: Karamel is a fake gained the EXCELLENT award!
+        re.compile(r'^(?P<action>Award):\s+(?P<cid>[0-9]+)\s+(?P<awardtype>[0-9]+):\s+(?P<data>(?P<name>.+) gained the (?P<awardname>\w+) award!)$', re.IGNORECASE),
+
         #
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<text>.*))$', re.IGNORECASE),
@@ -117,13 +128,6 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         # 6:55 CTF: 2 1 2: Burpman returned the RED flag!
         # 7:02 CTF: 2 2 1: Burpman captured the BLUE flag!
         re.compile(r'^(?P<action>CTF):\s+(?P<cid>[0-9]+)\s+(?P<fid>[0-9]+)\s+(?P<type>[0-9]+):\s+(?P<data>.*(?P<color>RED|BLUE).*)$', re.IGNORECASE),
-        
-        # 7:02 Award: 2 4: Burpman gained the CAPTURE award!
-        # 7:02 Award: 2 5: Burpman gained the ASSIST award!
-        # 7:30 Award: 2 3: Burpman gained the DEFENCE award!
-        # 29:15 Award: 2 2: SalaManderDragneL gained the IMPRESSIVE award!
-        # 32:08 Award: 2 1: SalaManderDragneL gained the EXCELLENT award!
-        re.compile(r'^(?P<action>Award):\s+(?P<cid>[0-9]+)\s+(?P<awardtype>[0-9]+):\s+(?P<data>(?P<name>.+) gained the (?P<awardname>\w+) award!)$', re.IGNORECASE),
 
         #
         # Falling through?
@@ -489,6 +493,7 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         # 7:30 Award: 2 3: Burpman gained the DEFENCE award!
         # 29:15 Award: 2 2: SalaManderDragneL gained the IMPRESSIVE award!
         # 32:08 Award: 2 1: SalaManderDragneL gained the EXCELLENT award!
+        # 8:36 Award: 10 1: Karamel is a fake gained the EXCELLENT award!
         client = self.getByCidOrJoinPlayer(match.group('cid'))
         action_type = 'award_%s' % match.group('awardname')
         return b3.events.Event(b3.events.EVT_CLIENT_ACTION, action_type, client)
