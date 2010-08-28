@@ -47,10 +47,11 @@
 # * add OnCtf and OnAward
 # 27/08/2010 - 0.8.1 - GrosBedo
 # * fixed findnextmap underscore bug (maps and vstr cvars with an underscore are now correctly parsed)
-
+# 27/08/2010 - 0.8.2 - Courgette
+# * fix another findnextmap underscore bug
 
 __author__  = 'Courgette, GrosBedo'
-__version__ = '0.8.1'
+__version__ = '0.8.2'
 
 import re, string, thread, time, threading
 import b3
@@ -651,7 +652,7 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
                 if result: # if a result was found in a deeper level, then we return it to the upper level, until we get back to the root level
                     return result
                 else: # if none could be found, then try to find a map command in the current string
-                    nextmapregex = re.compile(r'.*("|;)\s*(?P<map>map (?P<mapnextmap>[a-z0-9]+))"', re.IGNORECASE)
+                    nextmapregex = re.compile(r'.*("|;)\s*(?P<map>map (?P<mapnextmap>[a-z0-9_]+))"', re.IGNORECASE)
                     m = re.match(nextmapregex, data)
                     if m.group('map'):
                         self.debug('Found nextmap: %s' % (m.group('mapnextmap')))
