@@ -142,8 +142,8 @@
 # 2010-07-30 - 1.3.5 - xlr8or
 # * Fixed self.game.rounds
 # 2010-08-15 - 1.3.6 - xlr8or
-# * minor updates
-#
+# * Fix PB handling when the PB server was renamed to something else than 'PunkBuster Server'
+# * Added OnPBVersion() for testing purposes 
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -178,7 +178,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.3.5'
+__version__ = '1.3.6'
 
 
 import sys, time, re, string, traceback
@@ -278,11 +278,12 @@ class Bfbc2Parser(b3.parser.Parser):
     )
 
     _punkbusterMessageFormats = (
-        (re.compile(r'^PunkBuster Server: Running PB Scheduled Task \(slot #(?P<slot>\d+)\)\s+(?P<task>.*)$'), 'OnPBScheduledTask'),
-        (re.compile(r'^PunkBuster Server: Lost Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) (?P<pbuid>[^\s]+)\(-\)\s(?P<name>.+)$'), 'OnPBLostConnection'),
-        (re.compile(r'^PunkBuster Server: Master Query Sent to \((?P<pbmaster>[^\s]+)\) (?P<ip>[^:]+)$'), 'OnPBMasterQuerySent'),
-        (re.compile(r'^PunkBuster Server: Player GUID Computed (?P<pbid>[0-9a-fA-F]+)\(-\) \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+)\s(?P<name>.+)$'), 'OnPBPlayerGuid'),
-        (re.compile(r'^PunkBuster Server: New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection')
+        (re.compile(r'^(?P<servername>.*): PunkBuster Server for BC2 \((?P<version>.+)\)\sEnabl.*$'), 'OnPBVersion'),
+        (re.compile(r'^(?P<servername>.*): Running PB Scheduled Task \(slot #(?P<slot>\d+)\)\s+(?P<task>.*)$'), 'OnPBScheduledTask'),
+        (re.compile(r'^(?P<servername>.*): Lost Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) (?P<pbuid>[^\s]+)\(-\)\s(?P<name>.+)$'), 'OnPBLostConnection'),
+        (re.compile(r'^(?P<servername>.*): Master Query Sent to \((?P<pbmaster>[^\s]+)\) (?P<ip>[^:]+)$'), 'OnPBMasterQuerySent'),
+        (re.compile(r'^(?P<servername>.*): Player GUID Computed (?P<pbid>[0-9a-fA-F]+)\(-\) \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+)\s(?P<name>.+)$'), 'OnPBPlayerGuid'),
+        (re.compile(r'^(?P<servername>.*): New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection')
      )
 
     PunkBuster = None
@@ -295,7 +296,7 @@ class Bfbc2Parser(b3.parser.Parser):
         self.Events.createEvent('EVT_PUNKBUSTER_LOST_PLAYER', 'PunkBuster client connection lost')
         self.Events.createEvent('EVT_PUNKBUSTER_NEW_CONNECTION', 'PunkBuster client received IP')
         self.Events.createEvent('EVT_CLIENT_SPAWN', 'Client Spawn')
-        
+                
         # create the 'Server' client
         self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN, squad=SQUAD_NEUTRAL)
         
@@ -319,8 +320,6 @@ class Bfbc2Parser(b3.parser.Parser):
             except Exception, err:
                 self.error('failed to read max_say_line_length setting "%s" : %s' % (self.config.get('bfbc2', 'max_say_line_length'), err))
         self.debug('line_length: %s' % self._settings['line_length'])
-            
-            
             
         version = self.output.write('version')
         self.info('BFBC2 server version : %s' % version)
@@ -669,7 +668,7 @@ class Bfbc2Parser(b3.parser.Parser):
             
 
     def OnPunkbusterMessage(self, action, data):
-        """handes all punkbuster related events and 
+        """handles all punkbuster related events and 
         route them to the appropriate method depending
         on the type of PB message.
         """
@@ -687,6 +686,13 @@ class Bfbc2Parser(b3.parser.Parser):
             else:
                 return b3.events.Event(b3.events.EVT_UNKNOWN, data)
                 
+    def OnPBVersion(self, match,data):
+        """PB notifies us of the version numbers
+        version = match.group('version')"""
+        #self.debug('PunkBuster server named: %s' % match.group('servername') )
+        #self.debug('PunkBuster Server version: %s' %( match.group('version') ) )
+        pass
+
     def OnPBNewConnection(self, match, data):
         """PunkBuster tells us a new player identified. The player is
         normally already connected and authenticated by B3 by ea_guid
