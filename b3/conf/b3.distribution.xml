@@ -33,6 +33,8 @@
 		<set name="rcon_password">password</set>
 		<set name="port">28960</set>
 		<set name="game_log">games_mp.log</set>
+		<!-- <set name="game_log">ftp://<user>:<password>@f<server>:<port>/filepath/games_mp.log</set> -->
+		<!-- <set name="game_log">sftp://<user>:<password>@f<server>:<port>:/filepath/games_mp.log</set> -->
 		<set name="public_ip">127.0.0.1</set>
 		<set name="rcon_ip">127.0.0.1</set>
 		<set name="punkbuster">on</set>

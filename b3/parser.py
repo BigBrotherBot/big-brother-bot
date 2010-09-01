@@ -19,6 +19,8 @@
 #
 # CHANGELOG
 #
+#   2010/09/01 - 1.17 - Courgette
+#   * add beta support for sftp protocol for reading remote game log file
 #   2010/08/14 - 1.16.1 - Courgette
 #   * fallback on UTC timezone in case the timezone name is not valid
 #   2010/04/17 - 1.16 - Courgette
@@ -73,7 +75,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.16.1'
+__version__ = '1.17'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -282,12 +284,12 @@ class Parser(object):
         if self.config.has_option('server','game_log'):
             # open log file
             game_log = self.config.get('server','game_log')
-            if game_log[0:6] == 'ftp://' :
+            if game_log[0:6] == 'ftp://' or game_log[0:7] == 'sftp://':
                 self.remoteLog = True
                 self.bot('Working in Remote-Log-Mode : %s' % game_log)
                 f = os.path.normpath(os.path.expanduser('games_mp.log'))
                 ftptempfile = open(f, "w")
-                ftptempfile.close()          
+                ftptempfile.close()
             else:
                 self.bot('Game log %s', game_log)
                 f = self.config.getpath('server', 'game_log')
@@ -529,9 +531,8 @@ class Parser(object):
                 self.verbose('Error loading plugin: %s', msg)
         if self.config.has_option('server','game_log') \
             and self.config.get('server','game_log')[0:6] == 'ftp://' :
-            #self.debug('ftpytail not found!')
             p = 'ftpytail'
-            self.bot('Loading Plugin %s', p)
+            self.bot('Loading %s', p)
             try:
                 pluginModule = self.pluginImport(p)
                 self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title()) (self)
@@ -542,7 +543,24 @@ class Parser(object):
                 self.screen.write('.')
                 self.screen.flush()
             except Exception, msg:
-                self.verbose('Error loading plugin: %s', msg)
+                self.critical('Error loading plugin: %s', msg)
+                raise SystemExit('error while loading %s' % p)
+        if self.config.has_option('server','game_log') \
+            and self.config.get('server','game_log')[0:7] == 'sftp://' :
+            p = 'sftpytail'
+            self.bot('Loading %s', p)
+            try:
+                pluginModule = self.pluginImport(p)
+                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title()) (self)
+                self._pluginOrder.append(p)
+                version = getattr(pluginModule, '__version__', 'Unknown Version')
+                author  = getattr(pluginModule, '__author__', 'Unknown Author')
+                self.bot('Plugin %s (%s - %s) loaded', p, version, author)
+                self.screen.write('.')
+                self.screen.flush()
+            except Exception, msg:
+                self.critical('Error loading plugin: %s', msg)
+                raise SystemExit('error while loading %s' % p)
         if 'admin' not in self._pluginOrder:
             # critical will exit, admin plugin must be loaded!
             self.critical('AdminPlugin is essential and MUST be loaded! Cannot continue without admin plugin.')
