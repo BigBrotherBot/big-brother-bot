@@ -84,7 +84,7 @@
 		<set name="command_prefix_loud">@</set>
 		<!-- comamnd_prefix_big : some commands can have their result broadcasted to the whole player crowed as a bigtext. 
 		To have such a behavior, use this command prefix instead -->
-		<set name="comamnd_prefix_big">&</set>
+		<set name="comamnd_prefix_big"><![CDATA[&]]></set>
 		<!-- admins_level : minimum level for groups to consider as admins -->
 		<set name="admins_level">20</set>
 		<!-- ban_duration : tempban duration to apply to the !ban and !banall commands -->

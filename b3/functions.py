@@ -18,9 +18,10 @@
 #
 # 27/03/2010 - 1.2.1 - xlr8or - set default port for mysql
 # 11/04/2010 - 1.2.2 - Courgette - make splitDSN support usernames containing '@'
+# 01/09/2010 - 1.3 - Courgette - make splitDSN add default ftp and sftp port
 
 __author__    = 'ThorN, xlr8or'
-__version__   = '1.2.2'
+__version__   = '1.3'
 
 import re, sys, imp, string, urllib2
 from lib.elementtree import ElementTree
@@ -116,6 +117,10 @@ def splitDSN(url):
 
     if g['port']:
         g['port'] = int(g['port'])
+    elif g['protocol'] == 'ftp':
+        g['port'] = 21
+    elif g['protocol'] == 'sftp':
+        g['port'] = 22
     elif g['protocol'] == 'mysql':
         g['port'] = 3306
 

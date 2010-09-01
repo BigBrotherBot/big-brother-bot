@@ -32,6 +32,8 @@
 #    * fix bug making commands with alias appear twice in the results
 # 2010/03/07 - 1.2.3 - Courgette
 #   * make the html export pass the W3C tests
+# 2010/08/25 - 1.2.4 - Courgette
+#   * do not fail if 'destination' is found in config but empty
 
 """ 
 This module will generate a user documentation depending
@@ -39,7 +41,7 @@ on current config
 """
 
 __author__    = 'Courgette'
-__version__ = '1.2.3'
+__version__ = '1.2.4'
 
 import time, os, StringIO, string, re
 from xml.dom.minidom import Document
@@ -66,11 +68,14 @@ class DocBuilder:
         if self._console.config.has_section('autodoc'):
             if self._console.config.has_option('autodoc','destination'):
                 dest = self._console.config.get('autodoc','destination')
-                if dest.startswith('ftp://') or dest.startswith('file://'):
-                    self._outputUrl = dest
+                if dest is None:
+                    self._console.warning('AUTODOC: destination found but empty. using default')
                 else:
-                    # assume file
-                    self._outputUrl = 'file://' + self._console.config.getpath('autodoc', 'destination')
+                    if dest.startswith('ftp://') or dest.startswith('file://'):
+                        self._outputUrl = dest
+                    else:
+                        # assume file
+                        self._outputUrl = 'file://' + self._console.config.getpath('autodoc', 'destination')
         
             if self._console.config.has_option('autodoc','type'):
                 self._outputType = self._console.config.get('autodoc','type')
