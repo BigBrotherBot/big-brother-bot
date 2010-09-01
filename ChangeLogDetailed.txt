@@ -1,3 +1,269 @@
+2010-09-01  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/bfbc2/__init__.py: [BFBC2] Fix memory leak due to never
+	ending threads in messagequeue workers
+
+2010-08-25  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 36318f2bac3ea01457947370bedd18dcc641c541 Merge: 0cfaaf5
+	f4c431a Author: xlr8or <xlr8or@xlr8or.com> Date:   Wed Aug 25
+	19:31:48 2010 +0200
+
+2010-08-25  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/plugins/admin.py: plugin admin : version numbering
+
+2010-08-25  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/plugin_admin.xml, b3/plugins/admin.py: admin plugin : add
+	kikker916 stuff and few fixes. Add doc to conf
+
+2010-08-24  Courgette <courgette@ubu-team.org>
+
+	* setupPy2exe.py: add calendar module to the win32 build
+
+2010-08-23  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: BugFix: Requires ConfigFile for the
+	commands
+
+2010-08-22  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/bfbc2/__init__.py: * [BFBC2] Fix PB handling when the
+	PB server was renamed to something else than 'PunkBuster Server' *
+	[BFBC2] Added OnPBVersion() for testing purposes
+
+2010-08-22  Courgette <courgette@ubu-team.org>
+
+	* : commit 501c775558a7903dd55235bcebd56e90db9a8640 Merge: b804b21
+	379ddb9 Author: xlr8or <xlr8or@xlr8or.com> Date:   Sat Aug 21
+	20:17:29 2010 +0200
+
+2010-08-21  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/conf/xlrstats.xml, b3/extplugins/xlrstats.py: Allow
+	external function call for cmd_xlrtopstats Retrieve variables from
+	webfront installation for topstats results
+
+2010-08-21  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/plugins/adv.py: Add @topstats for xlrstats
+
+2010-08-21  Courgette <courgette@ubu-team.org>
+
+	* : commit 98aa7488da447b4e6c039e8669b6258064f46fb3 Merge: 304dd69
+	1e06965 Author: Courgette <courgette@ubu-team.org> Date:   Sat Aug
+	21 12:41:07 2010 +0200
+
+2010-08-20  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/oa081.py: fix regexp (Item, CTF, Award, fallback), fix
+	OnItem, remove OnDamage, add OnCtf, add OnAward
+
+2010-08-20  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/oa081.py: OA081: detect ctf events, cvars and awards,
+	implement permban by ip, unbanbyip, say_team and team recognition
+
+2010-08-16  Courgette <courgette@bigbrotherbot.net>
+
+	* : commit 5326268c38d7d74d8f6b765b30264b4d2b026b19 Author:
+	Courgette <courgette@bigbrotherbot.net> Date:   Mon Aug 16 12:32:49
+	2010 +0200
+
+2010-08-15  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/stats.py: fix disabling reset xp option
+
+2010-08-15  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/clients.py, b3/parsers/bfbc2/__init__.py: minor updates
+
+2010-08-15  Courgette <courgette@ubu-team.org>
+
+	* : commit d20b1cf6d9457fbf6ece9a8983396be910981432 Author:
+	Courgette <courgette@ubu-team.org> Date:   Sun Aug 15 00:00:16 2010
+	+0200
+
+2010-08-14  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/plugin_stats.xml, b3/plugins/stats.py: Added XP score and
+	topxp command. More settings in config
+
+2010-08-14  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 33ed8b02cacda2158ae20fc96339c27e1c01cfea Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sat Aug 14 21:05:43 2010 +0200
+
+2010-08-14  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/stats.py: PLUGIN STATS: Stats are now cleared at the
+	beginning of next round
+
+2010-08-14  Courgette <courgette@ubu-team.org>
+
+	* b3/parser.py: Do not crash when timezone code is missing or
+	invalid. Instead fallback on UTC and log an error message
+
+2010-08-14  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/admin.py: admin plugin : fix _parseUserCmdRE
+
+2010-08-14  Courgette <courgette@ubu-team.org>
+
+	* b3/__init__.py, b3/clients.py, b3/config.py, b3/cron.py,
+	b3/cvar.py, b3/events.py, b3/extplugins/xlrstats.py,
+	b3/functions.py, b3/game.py, b3/output.py, b3/parser.py,
+	b3/parsers/bfbc2/__init__.py, b3/parsers/bfbc2/bfbc2Connection.py,
+	b3/parsers/bfbc2/punkbuster.py, b3/parsers/bfbc2/rcon.py,
+	b3/parsers/cod.py, b3/parsers/cod2.py, b3/parsers/cod4.py,
+	b3/parsers/cod5.py, b3/parsers/et.py, b3/parsers/etpro.py,
+	b3/parsers/iourt41.py, b3/parsers/oa081.py,
+	b3/parsers/punkbuster.py, b3/parsers/q3a.py,
+	b3/parsers/q3a_rcon.py, b3/parsers/smg.py, b3/parsers/smg11.py,
+	b3/parsers/wop.py, b3/pkg_handler.py, b3/plugin.py,
+	b3/plugins/admin.py, b3/plugins/adv.py, b3/plugins/censor.py,
+	b3/plugins/codam.py, b3/plugins/ftpytail.py, b3/plugins/login.py,
+	b3/plugins/pingwatch.py, b3/plugins/publist.py,
+	b3/plugins/punkbuster.py, b3/plugins/spamcontrol.py,
+	b3/plugins/stats.py, b3/plugins/status.py, b3/plugins/tk.py,
+	b3/plugins/welcome.py, b3/querybuilder.py, b3/run.py, b3/setup.py,
+	b3/storage.py, b3/timezones.py, b3/tools/documentationBuilder.py,
+	b3_run.py, setup.py: bigbrotherbot.com ---> bigbrotherbot.net
+
+2010-08-13  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 90ddb82a8a854b09676068e40d9bb3ca172a3fa2 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Fri Aug 13 11:06:04 2010 +0200
+
+2010-08-13  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/plugins/status.py: * Added running roundtime and maptime (Seconds)
+
+2010-08-12  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/bfbc2/__init__.py, b3/run.py: * Quick mapretrieval on startup * fixed typo in run.py
+
+2010-08-12  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/oa081.py: OA081: added weapons and means of death.
+	Define what means of death are suicides
+
+2010-08-11  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/oa081.py: OA081: v0.6: fix permban
+
+2010-08-11  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/oa081.py: OA081: v0.5 from grosbedo. Adds nextmap
+	support and fix detection of player with no guid on connect
+
+2010-08-10  Courgette <courgette@ubu-team.org>
+
+	* : commit a55fbcebdd28d0a2a45b64806d83bab3a652ec46 Author:
+	Courgette <courgette@ubu-team.org> Date:   Tue Aug 10 23:59:07 2010
+	+0200
+
+2010-08-10  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: fixed typo
+
+2010-08-10  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: BFBC2 adaptions (Bot Guid is Server,
+	not WORLD)
+
+2010-08-10  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py: Cod series parsers: Fixed a bug where clients
+	would be disconnected after mapchange on PB enabled servers.
+
+2010-08-10  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit d70cf6c81ac446e82ddfedae1e1fc7d1972c1e96 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Tue Aug 10 10:45:13 2010 +0200
+
+2010-08-10  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/run.py: minor update
+
+2010-08-10  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/plugins/status.py: Moved 'Game section' before 'Clients
+	section', XLRstats needs gameinfo before it adds clients to the
+	playerlist
+
+2010-08-10  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/conf/plugin_admin.xml: fixed typo in admin plugin config where
+	rules was only available to level 0
+
+2010-08-09  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/oa081.py: OA081: react upon tell log lines
+
+2010-08-09  Courgette <courgette@ubu-team.org>
+
+	* : commit 9da83f333d0a709f26cd70fe296319a06e6a60a8 Author:
+	Courgette <courgette@ubu-team.org> Date:   Mon Aug 9 08:00:59 2010
+	+0200
+
+2010-08-08  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/run.py: fixing --restart for WIN standalone editions
+
+2010-08-08  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 913b4fec3acae24da2b6f22338168e6b5d6d0448 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sun Aug 8 20:34:52 2010 +0200
+
+2010-08-08  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/conf/plugin_adv.xml, b3/lib/feedparser.py, b3/plugins/adv.py: 
+	Adding feedparser to advertising plugin
+
+2010-08-08  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/oa081.py: OA081: create beta parser for OpenArena 0.8.1
+
+2010-08-08  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/q3a.py: Q3A: fix minor bug with saybig()
+
+2010-08-07  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/run.py: better py version handling
+
+2010-08-06  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/conf/plugin_adv.xml, b3/plugins/adv.py: Remove save() errors
+	and !advsave when XML adds are used
+
+2010-08-06  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/run.py: Fixing broken --restart mode (ready for testing!)
+
+2010-08-04  xlr8or <xlr8or@xlr8or.com>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO, b3/functions.py,
+	b3/plugins/admin.py, setup.py, versions.txt: Update version
+	numbering
+
+2010-08-03  xlr8or <xlr8or@xlr8or.com>
+
+	* versions.txt: versions list updated
+
+2010-08-03  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG, b3.egg-info/PKG-INFO, b3/PKG-INFO,
+	b3/conf/plugin_admin.xml, b3/functions.py, b3/plugins/admin.py,
+	py2exe_builder/b3-installer-project.iss, setup.py, versions.txt: 
+	Version 1.3.3 release preparations
+
+2010-07-31  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt: updated detailed changelog
+
 2010-07-31  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/parsers/bfbc2/__init__.py: Added joinClient() to
