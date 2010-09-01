@@ -19,6 +19,8 @@
 #
 # CHANGELOG
 #
+#   2010/09/01 - 1.18 - Grosbedo
+#   * detect game log file rotation
 #   2010/09/01 - 1.17 - Courgette
 #   * add beta support for sftp protocol for reading remote game log file
 #   2010/08/14 - 1.16.1 - Courgette
@@ -75,7 +77,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.17'
+__version__ = '1.18'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -845,8 +847,16 @@ class Parser(object):
             return res
 
     def read(self):
-        """Read date from Rcon/Console"""
-        return self.input.readline()
+        """read from game server log file"""
+        # Getting the stats of the game log (we are looking for the size)
+        filestats = os.fstat(self.input.fileno())
+        # Compare the current cursor position against the current file size,
+        # if the cursor is at a number higher than the game log size, then
+        # there's a problem
+        if self.input.tell() > filestats.st_size:   
+            self.debug('Parser: Game log is suddenly smaller than it was before (%s bytes, now %s), the log was probably either rotated or emptied. B3 will now re-adjust to the new size of the log.' % (str(self.input.tell()), str(filestats.st_size)) )  
+            self.input.seek(0, os.SEEK_END)  
+        return self.input.readline() 
 
     def shutdown(self):
         """Shutdown B3"""
