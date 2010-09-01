@@ -144,6 +144,8 @@
 # 2010-08-15 - 1.3.6 - xlr8or
 # * Fix PB handling when the PB server was renamed to something else than 'PunkBuster Server'
 # * Added OnPBVersion() for testing purposes 
+# 2010-09-02 - 1.3.7 - xlr8or
+# * Fix memory leak due to never ending threads in messagequeue workers
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -178,7 +180,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.3.6'
+__version__ = '1.3.7'
 
 
 import sys, time, re, string, traceback
@@ -512,6 +514,7 @@ class Bfbc2Parser(b3.parser.Parser):
         #player.onLeave: ['GunnDawg']
         client = self.getClient(data[0])
         if client: 
+            client.endMessageThreads = True
             client.disconnect() # this triggers the EVT_CLIENT_DISCONNECT event
         return None
 
@@ -1557,7 +1560,7 @@ def bfbc2ClientMessageQueueWorker(self):
     This take a line off the queue and displays it
     then pause for 'message_delay' seconds
     """
-    while self.console.working:
+    while not self.messagequeue.empty():
         msg = self.messagequeue.get()
         if msg:
             self.console.message(self, msg)
@@ -1569,9 +1572,9 @@ def bfbc2ClientMessageMethod(self, msg):
     if msg and len(msg.strip())>0:
         if not hasattr(self, 'messagequeue'):
             self.messagequeue = Queue.Queue()
-            self.messagehandler = threading.Thread(target=self.messagequeueworker)
-            self.messagehandler.setDaemon(True)
-            self.messagehandler.start()
+        self.messagehandler = threading.Thread(target=self.messagequeueworker)
+        self.messagehandler.setDaemon(True)
+        self.messagehandler.start()
         text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
         for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
             self.messagequeue.put(line)
@@ -1584,7 +1587,7 @@ def bfbc2ClientMessageBigQueueWorker(self):
     in the middle of the screen then pause for
     'message_delay' seconds
     """
-    while self.console.working:
+    while not self.messagebigqueue.empty():
         msg = self.messagebigqueue.get()
         if msg:
             self.console.messagebig(self, msg)
@@ -1596,10 +1599,11 @@ def bfbc2ClientMessageBigMethod(self, msg):
     if msg and len(msg.strip())>0:
         if not hasattr(self, 'messagebigqueue'):
             self.messagebigqueue = Queue.Queue()
-            self.messagebighandler = threading.Thread(target=self.messagebigqueueworker)
-            self.messagebighandler.setDaemon(True)
-            self.messagebighandler.start()
+        self.messagebighandler = threading.Thread(target=self.messagebigqueueworker)
+        self.messagebighandler.setDaemon(True)
+        self.messagebighandler.start()
         text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
         for line in self.console.getWrap(text):
             self.messagebigqueue.put(line)
 b3.clients.Client.messagebig = bfbc2ClientMessageBigMethod
+
