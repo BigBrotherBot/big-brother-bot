@@ -146,6 +146,9 @@
 # * Added OnPBVersion() for testing purposes 
 # 2010-09-02 - 1.3.7 - xlr8or
 # * Fix memory leak due to never ending threads in messagequeue workers
+# 2010-09-02 - 1.3.8 - xlr8or
+# * Better thread handling in messagequeue workers
+# * Fix bug on exit preventing --restart to function properly
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -180,7 +183,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.3.7'
+__version__ = '1.3.8'
 
 
 import sys, time, re, string, traceback
@@ -436,7 +439,7 @@ class Bfbc2Parser(b3.parser.Parser):
         self.bot('Stop listening.')
 
         if self.exiting.acquire(1):
-            self.input.close()
+            #self.input.close()
             self.output.close()
 
             if self.exitcode:
@@ -1572,9 +1575,17 @@ def bfbc2ClientMessageMethod(self, msg):
     if msg and len(msg.strip())>0:
         if not hasattr(self, 'messagequeue'):
             self.messagequeue = Queue.Queue()
-        self.messagehandler = threading.Thread(target=self.messagequeueworker)
-        self.messagehandler.setDaemon(True)
-        self.messagehandler.start()
+        try:
+            # do not start a new thread if one is already running
+            if self.messagehandler.isAlive():
+                pass
+            else:
+                # if it exists, but stopped, need to also initiate the thread
+                raise Exception
+        except:
+            self.messagehandler = threading.Thread(target=self.messagequeueworker)
+            self.messagehandler.setDaemon(True)
+            self.messagehandler.start()
         text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
         for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
             self.messagequeue.put(line)
@@ -1599,9 +1610,17 @@ def bfbc2ClientMessageBigMethod(self, msg):
     if msg and len(msg.strip())>0:
         if not hasattr(self, 'messagebigqueue'):
             self.messagebigqueue = Queue.Queue()
-        self.messagebighandler = threading.Thread(target=self.messagebigqueueworker)
-        self.messagebighandler.setDaemon(True)
-        self.messagebighandler.start()
+        try:
+            # do not start a new thread if one is already running
+            if self.messagebighandler.isAlive():
+                pass
+            else:
+                # if it exists, but stopped, need to also initiate the thread
+                raise Exception
+        except:
+            self.messagebighandler = threading.Thread(target=self.messagebigqueueworker)
+            self.messagebighandler.setDaemon(True)
+            self.messagebighandler.start()
         text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
         for line in self.console.getWrap(text):
             self.messagebigqueue.put(line)
