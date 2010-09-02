@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
-# 02/09/2010 - 1.5 / 1.5.1 - Courgette
+# 02/09/2010 - 1.5 - Courgette
 #    * allow to connect on non standard FTP port
 # 06/02/2010 - 1.4 - Courgette
 #    * force FTP binary mode
@@ -38,7 +38,7 @@
 # 17/06/2009 - 1.0 - Bakes
 #     Initial Plugin, basic functionality.
  
-__version__ = '1.5.1'
+__version__ = '1.5'
 __author__ = 'Bakes, Courgette'
  
 import b3, threading
@@ -68,7 +68,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
         versionsearch = re.search("^((?P<mainversion>[0-9]).(?P<lowerversion>[0-9]+)?)", sys.version)
         version = int(versionsearch.group(3))
         if version < 6:
-            self.error('Python Version %s.%s, this is not supported and may lead to hangs. Please update Python to 2.6' % versionsearch.group(1))
+            self.error('Python Version %s, this is not supported and may lead to hangs. Please update Python to 2.6' % versionsearch.group(1))
             self.console.die()
             
         if self.console.config.get('server','game_log')[0:6] == 'ftp://' :
@@ -165,7 +165,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
     
     def ftpconnect(self):
         #self.debug('Python Version %s.%s, so setting timeout of 10 seconds' % (versionsearch.group(2), versionsearch.group(3)))
-        self.verbose('Connecting to %s:%s ...', (self.ftpconfig["host"],self.ftpconfig["port"]))
+        self.verbose('Connecting to %s:%s ...', (self.ftpconfig["host"], self.ftpconfig["port"]))
         ftp=FTP()
         ftp.connect(self.ftpconfig['host'], self.ftpconfig['port'], self._connectionTimeout)
         ftp.login(self.ftpconfig['user'], self.ftpconfig['password'])
