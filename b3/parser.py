@@ -19,6 +19,8 @@
 #
 # CHANGELOG
 #
+#   2010/09/01 - 1.19 - Grosbedo
+#   * reduce disk access costs by reading multiple lines at once from the game log file
 #   2010/09/01 - 1.18 - Grosbedo
 #   * detect game log file rotation
 #   2010/09/01 - 1.17 - Courgette
@@ -77,7 +79,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.18'
+__version__ = '1.19'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -110,7 +112,7 @@ class Parser(object):
     _timeStart = None
 
     clients  = None
-    delay = 0.001
+    delay = 0.01 # between to apply between each game log line processing
     game = None
     gameName = None
     type = None
@@ -269,7 +271,6 @@ class Parser(object):
 
         self.msgPrefix = self.prefix
 
-        # delay between log reads
         if self.config.has_option('b3', 'delay'):
             delay = self.config.getfloat('b3', 'delay')
             self.delay = delay
@@ -710,39 +711,42 @@ class Parser(object):
                     self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
                     self._pauseNotice = True
             else:
-                line = str(self.read()).strip()
+                lines = self.read()
 
-                if line:
-                    # Track the log file time changes. This is mostly for
-                    # parsing old log files for testing and to have time increase
-                    # predictably
-                    m = self._lineTime.match(line)
-                    if m:
-                        logTimeCurrent = (int(m.group('minutes')) * 60) + int(m.group('seconds'))
-                        if logTimeStart and logTimeCurrent - logTimeStart < logTimeLast:
-                            # Time in log has reset
-                            logTimeStart = logTimeCurrent
-                            logTimeLast = 0
-                            self.debug('Log time reset %d' % logTimeCurrent)
-                        elif not logTimeStart:
-                            logTimeStart = logTimeCurrent
+                if lines:
+                    for line in lines:
+                        line = str(line).strip()
+                        if line:
+                            # Track the log file time changes. This is mostly for
+                            # parsing old log files for testing and to have time increase
+                            # predictably
+                            m = self._lineTime.match(line)
+                            if m:
+                                logTimeCurrent = (int(m.group('minutes')) * 60) + int(m.group('seconds'))
+                                if logTimeStart and logTimeCurrent - logTimeStart < logTimeLast:
+                                    # Time in log has reset
+                                    logTimeStart = logTimeCurrent
+                                    logTimeLast = 0
+                                    self.debug('Log time reset %d' % logTimeCurrent)
+                                elif not logTimeStart:
+                                    logTimeStart = logTimeCurrent
 
-                        # Remove starting offset, we want the first line to be at 0 seconds
-                        logTimeCurrent = logTimeCurrent - logTimeStart
-                        self.logTime += logTimeCurrent - logTimeLast
-                        logTimeLast = logTimeCurrent
+                                # Remove starting offset, we want the first line to be at 0 seconds
+                                logTimeCurrent = logTimeCurrent - logTimeStart
+                                self.logTime += logTimeCurrent - logTimeLast
+                                logTimeLast = logTimeCurrent
 
-                    if self.replay:                    
-                        self.debug('Log time %d' % self.logTime)
+                            if self.replay:                    
+                                self.debug('Log time %d' % self.logTime)
 
-                    self.console(line)
+                            self.console(line)
 
-                    try:
-                        self.parseLine(line)
-                    except SystemExit:
-                        raise
-                    except Exception, msg:
-                        self.error('could not parse line %s: %s', msg, traceback.extract_tb(sys.exc_info()[2]))
+                            try:
+                                self.parseLine(line)
+                            except SystemExit:
+                                raise
+                            except Exception, msg:
+                                self.error('could not parse line %s: %s', msg, traceback.extract_tb(sys.exc_info()[2]))
 
             time.sleep(self.delay)
 
@@ -856,7 +860,7 @@ class Parser(object):
         if self.input.tell() > filestats.st_size:   
             self.debug('Parser: Game log is suddenly smaller than it was before (%s bytes, now %s), the log was probably either rotated or emptied. B3 will now re-adjust to the new size of the log.' % (str(self.input.tell()), str(filestats.st_size)) )  
             self.input.seek(0, os.SEEK_END)  
-        return self.input.readline() 
+        return self.input.readlines() 
 
     def shutdown(self):
         """Shutdown B3"""
