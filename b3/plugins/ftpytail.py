@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
+# 02/09/2010 - 1.5.1 - Courgette
+#    * fix bug in 1.5. Dectect FTP permanent error and give up in such cases
 # 02/09/2010 - 1.5 - Courgette
 #    * allow to connect on non standard FTP port
 # 06/02/2010 - 1.4 - Courgette
@@ -38,7 +40,7 @@
 # 17/06/2009 - 1.0 - Bakes
 #     Initial Plugin, basic functionality.
  
-__version__ = '1.5'
+__version__ = '1.5.1'
 __author__ = 'Bakes, Courgette'
  
 import b3, threading
@@ -130,6 +132,9 @@ class FtpytailPlugin(b3.plugin.Plugin):
                     if self.console._paused:
                         self.console.unpause()
                         self.debug('Unpausing')
+
+            except ftplib.error_perm, e:
+                self.critical('FTP permanent error : ' + str(e))
             except ftplib.all_errors, e:
                 self.debug(str(e))
                 self._nbConsecutiveConnFailure += 1
@@ -165,7 +170,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
     
     def ftpconnect(self):
         #self.debug('Python Version %s.%s, so setting timeout of 10 seconds' % (versionsearch.group(2), versionsearch.group(3)))
-        self.verbose('Connecting to %s:%s ...', (self.ftpconfig["host"], self.ftpconfig["port"]))
+        self.verbose('Connecting to %s:%s ...' % (self.ftpconfig["host"], self.ftpconfig["port"]))
         ftp=FTP()
         ftp.connect(self.ftpconfig['host'], self.ftpconfig['port'], self._connectionTimeout)
         ftp.login(self.ftpconfig['user'], self.ftpconfig['password'])
