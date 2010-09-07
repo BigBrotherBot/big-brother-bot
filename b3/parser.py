@@ -18,7 +18,15 @@
 #
 #
 # CHANGELOG
-#
+#   2010/09/04 - 1.19.2 - GrosBedo
+#   * fixed some typos
+#   * moved delay and lines_per_second settings to server category
+#   2010/09/04 - 1.19.1 - Grosbedo
+#   * added b3/local_game_log option for several remote log reading at once
+#   * added http remote log support
+#   * delay2 -> lines_per_second
+#   2010/09/01 - 1.19 - Grosbedo
+#   * reduce disk access costs by reading multiple lines at once from the game log file
 #   2010/09/01 - 1.18 - Grosbedo
 #   * detect game log file rotation
 #   2010/09/01 - 1.17 - Courgette
@@ -77,7 +85,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.18'
+__version__ = '1.19'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -110,7 +118,8 @@ class Parser(object):
     _timeStart = None
 
     clients  = None
-    delay = 0.001
+    delay = 0.05 # between to apply between each game log lines fetching
+    delay2 = 0.001 # between to apply between each game log line processing
     game = None
     gameName = None
     type = None
@@ -201,7 +210,7 @@ class Parser(object):
         self._timeStart = self.time()
 
         if not self.loadConfig(config):
-            print 'COULD NOT LOAD CONFIG'
+            print('CRITICAL ERROR : COULD NOT LOAD CONFIG')
             raise SystemExit(220)
 
         # set up logging
@@ -211,7 +220,7 @@ class Parser(object):
 
         # save screen output to self.screen
         self.screen = sys.stdout
-        print 'Activating log   : %s' % logfile
+        print('Activating log   : %s' % logfile)
         sys.stdout = b3.output.stdoutLogger(self.log)
         sys.stderr = b3.output.stderrLogger(self.log)
 
@@ -270,9 +279,14 @@ class Parser(object):
         self.msgPrefix = self.prefix
 
         # delay between log reads
-        if self.config.has_option('b3', 'delay'):
-            delay = self.config.getfloat('b3', 'delay')
+        if self.config.has_option('server', 'delay'):
+            delay = self.config.getfloat('server', 'delay')
             self.delay = delay
+
+        # delay between each log's line processing
+        if self.config.has_option('server', 'lines_per_second'):
+            delay2 = self.config.getfloat('server', 'lines_per_second')
+            self.delay2 = 1/delay2
 
         # demo mode: use log time
         if self.config.has_option('devmode', 'replay'):
@@ -286,10 +300,15 @@ class Parser(object):
         if self.config.has_option('server','game_log'):
             # open log file
             game_log = self.config.get('server','game_log')
-            if game_log[0:6] == 'ftp://' or game_log[0:7] == 'sftp://':
+            if game_log[0:6] == 'ftp://' or game_log[0:7] == 'sftp://' or game_log[0:7] == 'http://':
                 self.remoteLog = True
                 self.bot('Working in Remote-Log-Mode : %s' % game_log)
-                f = os.path.normpath(os.path.expanduser('games_mp.log'))
+                
+                if self.config.has_option('server', 'local_game_log'):
+                    f = self.config.getpath('server', 'local_game_log')
+                else:
+                    f = os.path.normpath(os.path.expanduser('games_mp.log'))
+
                 ftptempfile = open(f, "w")
                 ftptempfile.close()
             else:
@@ -563,6 +582,22 @@ class Parser(object):
             except Exception, msg:
                 self.critical('Error loading plugin: %s', msg)
                 raise SystemExit('error while loading %s' % p)
+        if self.config.has_option('server','game_log') \
+            and self.config.get('server','game_log')[0:7] == 'http://' :
+            p = 'httpytail'
+            self.bot('Loading %s', p)
+            try:
+                pluginModule = self.pluginImport(p)
+                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title()) (self)
+                self._pluginOrder.append(p)
+                version = getattr(pluginModule, '__version__', 'Unknown Version')
+                author  = getattr(pluginModule, '__author__', 'Unknown Author')
+                self.bot('Plugin %s (%s - %s) loaded', p, version, author)
+                self.screen.write('.')
+                self.screen.flush()
+            except Exception, msg:
+                self.critical('Error loading plugin: %s', msg)
+                raise SystemExit('error while loading %s' % p)
         if 'admin' not in self._pluginOrder:
             # critical will exit, admin plugin must be loaded!
             self.critical('AdminPlugin is essential and MUST be loaded! Cannot continue without admin plugin.')
@@ -710,39 +745,44 @@ class Parser(object):
                     self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
                     self._pauseNotice = True
             else:
-                line = str(self.read()).strip()
+                lines = self.read()
 
-                if line:
-                    # Track the log file time changes. This is mostly for
-                    # parsing old log files for testing and to have time increase
-                    # predictably
-                    m = self._lineTime.match(line)
-                    if m:
-                        logTimeCurrent = (int(m.group('minutes')) * 60) + int(m.group('seconds'))
-                        if logTimeStart and logTimeCurrent - logTimeStart < logTimeLast:
-                            # Time in log has reset
-                            logTimeStart = logTimeCurrent
-                            logTimeLast = 0
-                            self.debug('Log time reset %d' % logTimeCurrent)
-                        elif not logTimeStart:
-                            logTimeStart = logTimeCurrent
+                if lines:
+                    for line in lines:
+                        line = str(line).strip()
+                        if line:
+                            # Track the log file time changes. This is mostly for
+                            # parsing old log files for testing and to have time increase
+                            # predictably
+                            m = self._lineTime.match(line)
+                            if m:
+                                logTimeCurrent = (int(m.group('minutes')) * 60) + int(m.group('seconds'))
+                                if logTimeStart and logTimeCurrent - logTimeStart < logTimeLast:
+                                    # Time in log has reset
+                                    logTimeStart = logTimeCurrent
+                                    logTimeLast = 0
+                                    self.debug('Log time reset %d' % logTimeCurrent)
+                                elif not logTimeStart:
+                                    logTimeStart = logTimeCurrent
 
-                        # Remove starting offset, we want the first line to be at 0 seconds
-                        logTimeCurrent = logTimeCurrent - logTimeStart
-                        self.logTime += logTimeCurrent - logTimeLast
-                        logTimeLast = logTimeCurrent
+                                # Remove starting offset, we want the first line to be at 0 seconds
+                                logTimeCurrent = logTimeCurrent - logTimeStart
+                                self.logTime += logTimeCurrent - logTimeLast
+                                logTimeLast = logTimeCurrent
 
-                    if self.replay:                    
-                        self.debug('Log time %d' % self.logTime)
+                            if self.replay:                    
+                                self.debug('Log time %d' % self.logTime)
 
-                    self.console(line)
+                            self.console(line)
 
-                    try:
-                        self.parseLine(line)
-                    except SystemExit:
-                        raise
-                    except Exception, msg:
-                        self.error('could not parse line %s: %s', msg, traceback.extract_tb(sys.exc_info()[2]))
+                            try:
+                                self.parseLine(line)
+                            except SystemExit:
+                                raise
+                            except Exception, msg:
+                                self.error('could not parse line %s: %s', msg, traceback.extract_tb(sys.exc_info()[2]))
+                            
+                            time.sleep(self.delay2)
 
             time.sleep(self.delay)
 
@@ -856,7 +896,7 @@ class Parser(object):
         if self.input.tell() > filestats.st_size:   
             self.debug('Parser: Game log is suddenly smaller than it was before (%s bytes, now %s), the log was probably either rotated or emptied. B3 will now re-adjust to the new size of the log.' % (str(self.input.tell()), str(filestats.st_size)) )  
             self.input.seek(0, os.SEEK_END)  
-        return self.input.readline() 
+        return self.input.readlines() 
 
     def shutdown(self):
         """Shutdown B3"""
