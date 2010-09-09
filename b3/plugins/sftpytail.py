@@ -17,11 +17,14 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
+# 07/09/2010 - 0.1.1 - GrosBedo
+#   * b3/delay option now specify the delay between each ftp log fetching
+#   * b3/local_game_log option to specify the temporary local log name (permits to manage remotely several servers at once)
 # 01/09/2010 - 0.1 - Courgette
 # * first attempt. Briefly tested. Seems to work
 
 
-__version__ = '0.1'
+__version__ = '0.1.1'
 __author__ = 'Courgette'
  
 import b3, threading
@@ -53,7 +56,17 @@ class SftpytailPlugin(b3.plugin.Plugin):
     _remoteFileOffset = None
     _nbConsecutiveConnFailure = 0
     
+    _sftpdelay = 0.150
+    
     def onStartup(self):
+        if self.console.config.has_option('server', 'delay'):
+            self._sftpdelay = self.console.config.getfloat('server', 'delay')
+        
+        if self.console.config.has_option('server', 'local_game_log'):
+            self.lgame_log = self.console.config.getfloat('server', 'local_game_log')
+        else:
+            self.lgame_log = os.path.normpath(os.path.expanduser('games_mp.log'))
+
         if self.console.config.get('server','game_log')[0:7] == 'sftp://' :
             self.initThread(self.console.config.get('server','game_log'))
         
@@ -90,7 +103,7 @@ class SftpytailPlugin(b3.plugin.Plugin):
                 self.buffer = self.buffer + block
         transport = sftp = None
         rfile = None
-        self.file = open('games_mp.log', 'ab')
+        self.file = open(self.lgame_log, 'ab')
         while self.console.working:
             try:
                 if not sftp:
@@ -135,9 +148,9 @@ class SftpytailPlugin(b3.plugin.Plugin):
                 if self.console._paused is False:
                     self.console.pause()
                 self.file.close()
-                self.file = open('games_mp.log', 'w')
+                self.file = open(self.lgame_log, 'w')
                 self.file.close()
-                self.file = open('games_mp.log', 'ab')
+                self.file = open(self.lgame_log, 'ab')
                 try:
                     rfile.close()
                     transport.close()
@@ -152,7 +165,7 @@ class SftpytailPlugin(b3.plugin.Plugin):
                 else:
                     self.debug('too many failures, sleeping %s sec' % self._waitBeforeReconnect)
                     time.sleep(self._waitBeforeReconnect)
-            time.sleep(0.500)
+            time.sleep(self._sftpdelay)
         self.verbose("B3 is down, stopping sFtpytail thread")
         try: rfile.close()
         except: pass
