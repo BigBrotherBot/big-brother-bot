@@ -1,5 +1,5 @@
 # OpenArena 0.8.1 parser for BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2009 ailmanki
+# Copyright (C) 2010 Courgette & GrosBedo
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,10 +50,12 @@
 # 28/08/2010 - 0.8.2 - Courgette
 # * fix another findnextmap underscore bug
 # 28/08/2010 - 0.8.3 - Courgette
-# * fix issue with the regexp that match 'Award:' lines 
+# * fix issue with the regexp that match 'Award:' lines
+# 04/09/2010 - 0.8.4 - GrosBedo
+# * fix issue with CTF flag capture events
 
 __author__  = 'Courgette, GrosBedo'
-__version__ = '0.8.3'
+__version__ = '0.8.4'
 
 import re, string, thread, time, threading
 import b3
@@ -96,7 +98,13 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
     _lineFormats = (
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<pbid>[0-9A-Z]{32}):\s*(?P<name>[^:]+):\s*(?P<num1>[0-9]+):\s*(?P<num2>[0-9]+):\s*(?P<ip>[0-9.]+):(?P<port>[0-9]+))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<name>.+):\s+(?P<text>.*))$', re.IGNORECASE),
-        #
+        
+        # 1:25 CTF: 1 2 2: Sarge returned the BLUE flag!
+        # 1:16 CTF: 1 1 3: Sarge fragged RED's flag carrier!
+        # 6:55 CTF: 2 1 2: Burpman returned the RED flag!
+        # 7:02 CTF: 2 2 1: Burpman captured the BLUE flag!
+        re.compile(r'^(?P<action>CTF):\s+(?P<cid>[0-9]+)\s+(?P<fid>[0-9]+)\s+(?P<type>[0-9]+):\s+(?P<data>.*(?P<color>RED|BLUE).*)$', re.IGNORECASE),
+        
         #47:05 Kill: 2 4 11: Sarge killed ^6Jondah by MOD_LIGHTNING
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
         
@@ -122,12 +130,6 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         # 46:37 Item: 4 team_CTF_redflag
         # 54:52 Item: 2 weapon_plasmagun
         re.compile(r'^(?P<action>Item):\s+(?P<cid>[0-9]+)\s+(?P<data>.*)$', re.IGNORECASE),
-    
-        # 1:25 CTF: 1 2 2: Sarge returned the BLUE flag!
-        # 1:16 CTF: 1 1 3: Sarge fragged RED's flag carrier!
-        # 6:55 CTF: 2 1 2: Burpman returned the RED flag!
-        # 7:02 CTF: 2 2 1: Burpman captured the BLUE flag!
-        re.compile(r'^(?P<action>CTF):\s+(?P<cid>[0-9]+)\s+(?P<fid>[0-9]+)\s+(?P<type>[0-9]+):\s+(?P<data>.*(?P<color>RED|BLUE).*)$', re.IGNORECASE),
 
         #
         # Falling through?
