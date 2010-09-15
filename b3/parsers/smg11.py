@@ -1,5 +1,5 @@
 # Smoking' Guns 1.1 parser for BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2009 ailmanki
+# Copyright (C) 2010 Courgette
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,11 +46,13 @@
 # * fix bug introduced in 0.6 which messed up clients cid as soon as they are chatting...
 # 08/03/2010 - 0.9 - Courgette
 # * should fix the bot's team issue
+# 15/09/2010 - 0.9.1 - GrosBedo
+# * added !nextmap and !maps support
 #
 
 
 __author__  = 'xlr8or, Courgette'
-__version__ = '0.9'
+__version__ = '0.9.1'
 
 import re, string, thread, time, threading
 import b3
@@ -516,7 +518,43 @@ class Smg11Parser(b3.parsers.q3a.Q3AParser):
         return maps
 
     def getNextMap(self):
-        return 'Command not supported!'
+        data = self.write('nextmap')
+        nextmap = self.findNextMap(data)
+        if nextmap:
+            return nextmap
+        else:
+            return 'no nextmap set or it is in an unrecognized format !'
+
+    def findNextMap(self, data):
+        # "nextmap" is: "vstr next4; echo test; vstr aupo3; map oasago2"
+        # the last command in the line is the one that decides what is the next map
+        # in a case like : map oasago2; echo test; vstr nextmap6; vstr nextmap3
+        # the parser will recursively look each last vstr var, and if it can't find a map, fallback to the last map command
+        self.debug('Extracting nextmap name from: %s' % (data))
+        nextmapregex = re.compile(r'.*("|;)\s*((?P<vstr>vstr (?P<vstrnextmap>[a-z0-9_]+))|(?P<map>map (?P<mapnextmap>[a-z0-9_]+)))', re.IGNORECASE)
+        m = re.match(nextmapregex, data)
+        if m:
+            if m.group('map'):
+                self.debug('Found nextmap: %s' % (m.group('mapnextmap')))
+                return m.group('mapnextmap')
+            elif m.group('vstr'):
+                self.debug('Nextmap is redirecting to var: %s' % (m.group('vstrnextmap')))
+                data = self.write(m.group('vstrnextmap'))
+                result = self.findNextMap(data) # recursively dig into the vstr vars to find the last map called
+                if result: # if a result was found in a deeper level, then we return it to the upper level, until we get back to the root level
+                    return result
+                else: # if none could be found, then try to find a map command in the current string
+                    nextmapregex = re.compile(r'.*("|;)\s*(?P<map>map (?P<mapnextmap>[a-z0-9_]+))"', re.IGNORECASE)
+                    m = re.match(nextmapregex, data)
+                    if m.group('map'):
+                        self.debug('Found nextmap: %s' % (m.group('mapnextmap')))
+                        return m.group('mapnextmap')
+                    else: # if none could be found, we go up a level by returning None (remember this is done recursively)
+                        self.debug('No nextmap found in this string !')
+                        return None
+        else:
+            self.debug('No nextmap found in this string !')
+            return None
 
     def sync(self):
         plist = self.getPlayerList()
