@@ -18,6 +18,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG:
+# 2010-09-17 - v0.6.1 - GrosBedo
+#   * fixed import bug
 # 2010-09-16 - v0.6 - GrosBedo
 #   * fixed function profiler, it now works with threads
 # 2010-09-16 - v0.5.5 - GrosBedo
@@ -47,11 +49,12 @@
 #    * Initial version.
 
 __author__  = 'GrosBedo'
-__version__ = '0.6'
+__version__ = '0.6.1'
 
 import time, sys, os
-sys.path.append(os.path.join('b3','lib'))
-sys.path.append(os.path.join('b3','tools'))
+pathname = os.path.dirname(sys.argv[0])
+sys.path.append(os.path.join(pathname, 'b3','lib')) # we add the b3/lib path for the import to work for some complex libraries (like guppy)
+sys.path.append(os.path.join(pathname, 'b3','tools'))
 
 from b3_run import *
 import argparse
@@ -63,7 +66,6 @@ import pprint, timeit
 
 def parse_cmdline_args():
         # Initializing variables
-        #pathname = os.path.dirname(sys.argv[0])
         #currdateprofile = os.path.join(pathname, '%s.profile' % str(datetime.now().strftime("%Y-%m-%d_%H-%M-%S")))
         cancontinue = True # define if b3 can continue to run normally or not
 

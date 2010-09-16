@@ -36,6 +36,8 @@
 # http://kbyanc.blogspot.com/2007/07/python-serializer-benchmarks.html
 #
 # CHANGELOG:
+# 2010-09-17 - 0.9.5 - GrosBedo
+#    * fixed import bug
 # 2010-09-16 - 0.9.4 - GrosBedo
 #    * fixed: a few bugs in load_data_yaml()
 # 2010-09-15 - 0.9.3 - GrosBedo
@@ -74,11 +76,12 @@
 #     Initial release.
 #
  
-__version__ = '0.9.4'
+__version__ = '0.9.5'
 __author__ = 'GrosBedo'
  
 import os.path, time, re, sys
-sys.path.append(os.path.join('b3','lib'))
+pathname = os.path.dirname(sys.argv[0])
+sys.path.append(os.path.join(pathname, 'b3','lib'))
 
 # Maths functions
 import math

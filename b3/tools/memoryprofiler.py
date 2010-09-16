@@ -18,18 +18,25 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG:
+# 2010-09-17 - v0.1.1 - GrosBedo
+#   * fixed import bug
 # 2010-09-11 - v0.1 - GrosBedo
 #    * Initial version.
 
 __author__  = 'GrosBedo'
-__version__ = '0.1'
+__version__ = '0.1.1'
 
 import os, sys
-sys.path.append(os.path.join('b3','lib')) # we add the b3/lib path for the import to work for some complex libraries (like guppy)
+pathname = os.path.dirname(sys.argv[0])
+sys.path.append(os.path.join(pathname, 'b3','lib')) # we add the b3/lib path for the import to work for some complex libraries (like guppy)
 
 import threading
-from guppy import hpy
 import time
+
+try:
+    from guppy import hpy
+except:
+    pass
 
 #from sizer import code
 #from sizer.sizer import scanner

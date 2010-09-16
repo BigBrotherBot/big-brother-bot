@@ -25,6 +25,8 @@
 # 
 #
 # CHANGELOG:
+# 2010-09-17 - v0.4.1 - GrosBedo
+#   * fixed import bug
 # 2010-09-16 - v0.4 - GrosBedo
 #    * fallback to profile instead of cProfile : even if this pure python implementation is much slower, it at least work with threads (cProfile, alias hotshot, is not compatible with multi-threaded applications at the moment)
 # 2010-09-09 - v0.3 - GrosBedo
@@ -36,13 +38,18 @@
 #    * Initial version.
 
 __author__  = 'GrosBedo'
-__version__ = '0.4'
+__version__ = '0.4.1'
 
 import profile, pstats, sys, os
-sys.path.append(os.path.join('b3','lib'))
+pathname = os.path.dirname(sys.argv[0])
+sys.path.append(os.path.join(pathname, 'b3','lib'))
+
 from kthread import *
-from runsnakerun import runsnake
 from profilebrowser import *
+try:
+	from runsnakerun import runsnake # runsnakerun needs wxPython lib, if it's not available then we pass
+except:
+	pass
 
 
 def runprofile(mainfunction, output, timeout = 60):
