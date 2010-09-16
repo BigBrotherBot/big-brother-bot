@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2010 Michael "ThorN" Thornton
+# Copyright (C) 2010 GrosBedo
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,20 +18,35 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG:
-#
-# 2010-09-07 - v1.2 - GrosBedo
-#    * added the special debug switchs, like debug, profile save and load.
+# 2010-09-11 - v0.1 - GrosBedo
+#    * Initial version.
 
-__author__  = 'ThorN, GrosBedo'
-__version__ = '1.2'
+__author__  = 'GrosBedo'
+__version__ = '0.1'
 
-import b3.run
-import b3_debug
+import os, sys
+sys.path.append(os.path.join('b3','lib')) # we add the b3/lib path for the import to work for some complex libraries (like guppy)
 
-def main():
-	b3.run.main()
+import threading
+from guppy import hpy
+import time
 
-if __name__ == '__main__':
-	result = b3_debug.parse_cmdline_args() # we parse here for special debug switchs, if there are none, the program will continue normally
-	if result: # result will be False if we launched the profiler, or any function that should activate a special behaviour that could conflict with the normal main function
-		main()
+#from sizer import code
+#from sizer.sizer import scanner
+#objs = scanner.Objects()
+#code.interact(local = {'objs': objs})
+
+
+def memoryprofile(output):
+    hpy().heap().stat.dump(filename)
+    time.sleep(0.1)
+
+def runmemoryprofile(output):
+    memorythread = threading.Thread(target=memoryprofile, args=(output,))
+    memorythread.start()
+
+def memoryinteractive():
+    hpy().monitor()
+
+def memorygui(input):
+    hpy().pb(input)
