@@ -25,6 +25,8 @@
 # 
 #
 # CHANGELOG:
+# 2010-09-17 - v0.4.2 - GrosBedo
+#   * added an automatic calibration prior to profiling
 # 2010-09-17 - v0.4.1 - GrosBedo
 #   * fixed import bug
 # 2010-09-16 - v0.4 - GrosBedo
@@ -38,7 +40,7 @@
 #    * Initial version.
 
 __author__  = 'GrosBedo'
-__version__ = '0.4.1'
+__version__ = '0.4.2'
 
 import profile, pstats, sys, os
 pathname = os.path.dirname(sys.argv[0])
@@ -56,8 +58,11 @@ def runprofile(mainfunction, output, timeout = 60):
 	def profileb3():
 	    profile.run(mainfunction, output)
 	# This is the main function for profiling
-	print('SAVING MODE\n--------------------\n')
-	print('Preparing the profiler...')
+	print('=> SAVING MODE\n\n')
+	print('Calibrating the profiler...')
+	cval = calibrateprofile()
+	#print('Found value : %s' % cval)
+	print('Initializing the profiler...')
 	b3main = KThread(target=profileb3) # we open b3 main function with the profiler, in a special killable thread (see below why)
 	print('Will now run the profiling and terminate it in %s seconds. Results will be saved in %s' % (str(timeout), str(output)))
 	print('\nCountdown:')
@@ -70,6 +75,16 @@ def runprofile(mainfunction, output, timeout = 60):
 	print('\n\nFinishing the profile and saving to the file %s' % str(output))
 	b3main.kill() # we must end the main function in order for the profiler to output its results (if we didn't launch a thread and just closed the process, it would have done no result)
 	print('=> Profile done ! Exiting...')
+
+def calibrateprofile():
+	pr = profile.Profile()
+	calib = []
+	crepeat = 10
+	for i in range(crepeat):
+		calib.append(pr.calibrate(10000))
+	final = sum(calib) / crepeat
+	profile.Profile.bias = final # Apply computed bias to all Profile instances created hereafter
+	return final
 
 def subprocessprofileb3(profiler, mainfunction, output):
 	#b3thread = KThread(target=profileb3_timer)
