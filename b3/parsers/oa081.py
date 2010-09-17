@@ -53,9 +53,12 @@
 # * fix issue with the regexp that match 'Award:' lines
 # 04/09/2010 - 0.8.4 - GrosBedo
 # * fix issue with CTF flag capture events
+# 17/09/2010 - 0.8.5 - GrosBedo
+# * fix crash issue when a player has disconnected at the very time the bot check for the list of players
+#
 
 __author__  = 'Courgette, GrosBedo'
-__version__ = '0.8.4'
+__version__ = '0.8.5'
 
 import re, string, thread, time, threading
 import b3
@@ -297,6 +300,8 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
 
     # Parse Userinfo
     def OnClientuserinfochanged(self, action, data, match=None):
+        if data is None: # if the client disconnected and we are trying to force the server to give us an id, we end up with an empty data object, so we just return and everything should be fine (the slot should already be removed ln 336)
+            return
         bclient = self.parseUserInfo(data)
         self.verbose('Parsed user info %s' % bclient)
         if bclient:
