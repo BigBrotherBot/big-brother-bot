@@ -146,6 +146,13 @@
 # * Added OnPBVersion() for testing purposes 
 # 2010-09-02 - 1.3.7 - xlr8or
 # * Fix memory leak due to never ending threads in messagequeue workers
+# 2010-09-02 - 1.3.8 - xlr8or
+# * Better thread handling in messagequeue workers
+# * Fix bug on exit preventing --restart to function properly
+# 2010-09-02 - 1.3.9 - xlr8or
+# * Debugged messagequeue workers
+# 2010-09-02 - 1.3.10 - xlr8or
+# * More debugging messagequeue workers
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -180,7 +187,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '1.3.7'
+__version__ = '1.3.10'
 
 
 import sys, time, re, string, traceback
@@ -436,7 +443,7 @@ class Bfbc2Parser(b3.parser.Parser):
         self.bot('Stop listening.')
 
         if self.exiting.acquire(1):
-            self.input.close()
+            #self.input.close()
             self.output.close()
 
             if self.exitcode:
@@ -1570,14 +1577,20 @@ b3.clients.Client.messagequeueworker = bfbc2ClientMessageQueueWorker
 ## override the Client.message() method at runtime
 def bfbc2ClientMessageMethod(self, msg):
     if msg and len(msg.strip())>0:
+        # do we have a queue?
         if not hasattr(self, 'messagequeue'):
             self.messagequeue = Queue.Queue()
-        self.messagehandler = threading.Thread(target=self.messagequeueworker)
-        self.messagehandler.setDaemon(True)
-        self.messagehandler.start()
+        # fill the queue
         text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
         for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
             self.messagequeue.put(line)
+        # create a thread that executes the worker and pushes out the queue
+        if not hasattr(self, 'messagehandler') or not self.messagehandler.isAlive():
+            self.messagehandler = threading.Thread(target=self.messagequeueworker)
+            self.messagehandler.setDaemon(True)
+            self.messagehandler.start()
+        else:
+            self.console.verbose('messagehandler for %s isAlive' %self.name)
 b3.clients.Client.message = bfbc2ClientMessageMethod
 
 ## add a new method to the Client class
@@ -1597,13 +1610,19 @@ b3.clients.Client.messagebigqueueworker = bfbc2ClientMessageBigQueueWorker
 ## add the Client.messagebig() method at runtime
 def bfbc2ClientMessageBigMethod(self, msg):
     if msg and len(msg.strip())>0:
+        # do we have a queue?
         if not hasattr(self, 'messagebigqueue'):
             self.messagebigqueue = Queue.Queue()
-        self.messagebighandler = threading.Thread(target=self.messagebigqueueworker)
-        self.messagebighandler.setDaemon(True)
-        self.messagebighandler.start()
+        # fill the queue
         text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
         for line in self.console.getWrap(text):
             self.messagebigqueue.put(line)
+        # create a thread that executes the worker and pushes out the queue
+        if not hasattr(self, 'messagebighandler') or not self.messagebighandler.isAlive():
+            self.messagebighandler = threading.Thread(target=self.messagebigqueueworker)
+            self.messagebighandler.setDaemon(True)
+            self.messagebighandler.start()
+        else:
+            self.console.verbose('messagebighandler for %s isAlive' %self.name)
 b3.clients.Client.messagebig = bfbc2ClientMessageBigMethod
 

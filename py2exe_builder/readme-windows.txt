@@ -16,6 +16,6 @@ The windows binary relies on these systemfiles to work:
    WS2_32.dll - C:\Windows\system32\WS2_32.dll
    ole32.dll - C:\Windows\system32\ole32.dll
 
-If you have any errors relating these files you'll have to collect them yourself.
-We are not allowed to distribute them.
+If you have any errors indicating that you miss some of these files you'll have 
+to collect them yourself. We are not allowed to distribute them.
 ================================================================================

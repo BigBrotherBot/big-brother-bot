@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
+# 04/09/2010 - 1.5.2 - GrosBedo
+#   * b3/delay option now specify the delay between each ftp log fetching
+#   * b3/local_game_log option to specify the temporary local log name (permits to manage remotely several servers at once)
 # 02/09/2010 - 1.5.1 - Courgette
 #    * fix bug in 1.5. Dectect FTP permanent error and give up in such cases
 # 02/09/2010 - 1.5 - Courgette
@@ -40,7 +43,7 @@
 # 17/06/2009 - 1.0 - Bakes
 #     Initial Plugin, basic functionality.
  
-__version__ = '1.5.1'
+__version__ = '1.5.2'
 __author__ = 'Bakes, Courgette'
  
 import b3, threading
@@ -66,13 +69,23 @@ class FtpytailPlugin(b3.plugin.Plugin):
     _remoteFileOffset = None
     _nbConsecutiveConnFailure = 0
     
+    _ftpdelay = 0.150
+    
     def onStartup(self):
         versionsearch = re.search("^((?P<mainversion>[0-9]).(?P<lowerversion>[0-9]+)?)", sys.version)
         version = int(versionsearch.group(3))
         if version < 6:
             self.error('Python Version %s, this is not supported and may lead to hangs. Please update Python to 2.6' % versionsearch.group(1))
             self.console.die()
-            
+
+        if self.console.config.has_option('server', 'delay'):
+            self._ftpdelay = self.console.config.getfloat('server', 'delay')
+        
+        if self.console.config.has_option('server', 'local_game_log'):
+            self.lgame_log = self.console.config.getfloat('server', 'local_game_log')
+        else:
+            self.lgame_log = os.path.normpath(os.path.expanduser('games_mp.log'))
+
         if self.console.config.get('server','game_log')[0:6] == 'ftp://' :
             self.initThread(self.console.config.get('server','game_log'))
     
@@ -104,7 +117,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
             else:
                 self.buffer = self.buffer + block
         ftp = None
-        self.file = open('games_mp.log', 'ab')
+        self.file = open(self.lgame_log, 'ab')
         while self.console.working:
             try:
                 if not ftp:
@@ -142,9 +155,9 @@ class FtpytailPlugin(b3.plugin.Plugin):
                 if self.console._paused is False:
                     self.console.pause()
                 self.file.close()
-                self.file = open('games_mp.log', 'w')
+                self.file = open(self.lgame_log, 'w')
                 self.file.close()
-                self.file = open('games_mp.log', 'ab')
+                self.file = open(self.lgame_log, 'ab')
                 try:
                     ftp.close()
                     self.debug('FTP Connection Closed')
@@ -157,7 +170,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
                 else:
                     self.debug('too many failures, sleeping %s sec' % self._waitBeforeReconnect)
                     time.sleep(self._waitBeforeReconnect)
-            time.sleep(0.150)
+            time.sleep(self._ftpdelay)
         self.verbose("B3 is down, stopping Ftpytail thread")
         try:
             ftp.close()

@@ -18,7 +18,13 @@
 #
 #
 # CHANGELOG
-#
+#   2010/09/04 - 1.19.2 - GrosBedo
+#   * fixed some typos
+#   * moved delay and lines_per_second settings to server category
+#   2010/09/04 - 1.19.1 - Grosbedo
+#   * added b3/local_game_log option for several remote log reading at once
+#   * added http remote log support
+#   * delay2 -> lines_per_second
 #   2010/09/01 - 1.19 - Grosbedo
 #   * reduce disk access costs by reading multiple lines at once from the game log file
 #   2010/09/01 - 1.18 - Grosbedo
@@ -112,7 +118,8 @@ class Parser(object):
     _timeStart = None
 
     clients  = None
-    delay = 0.01 # between to apply between each game log line processing
+    delay = 0.05 # between to apply between each game log lines fetching
+    delay2 = 0.001 # between to apply between each game log line processing
     game = None
     gameName = None
     type = None
@@ -203,7 +210,7 @@ class Parser(object):
         self._timeStart = self.time()
 
         if not self.loadConfig(config):
-            print 'COULD NOT LOAD CONFIG'
+            print('CRITICAL ERROR : COULD NOT LOAD CONFIG')
             raise SystemExit(220)
 
         # set up logging
@@ -213,7 +220,7 @@ class Parser(object):
 
         # save screen output to self.screen
         self.screen = sys.stdout
-        print 'Activating log   : %s' % logfile
+        print('Activating log   : %s' % logfile)
         sys.stdout = b3.output.stdoutLogger(self.log)
         sys.stderr = b3.output.stderrLogger(self.log)
 
@@ -271,9 +278,15 @@ class Parser(object):
 
         self.msgPrefix = self.prefix
 
-        if self.config.has_option('b3', 'delay'):
-            delay = self.config.getfloat('b3', 'delay')
+        # delay between log reads
+        if self.config.has_option('server', 'delay'):
+            delay = self.config.getfloat('server', 'delay')
             self.delay = delay
+
+        # delay between each log's line processing
+        if self.config.has_option('server', 'lines_per_second'):
+            delay2 = self.config.getfloat('server', 'lines_per_second')
+            self.delay2 = 1/delay2
 
         # demo mode: use log time
         if self.config.has_option('devmode', 'replay'):
@@ -287,10 +300,15 @@ class Parser(object):
         if self.config.has_option('server','game_log'):
             # open log file
             game_log = self.config.get('server','game_log')
-            if game_log[0:6] == 'ftp://' or game_log[0:7] == 'sftp://':
+            if game_log[0:6] == 'ftp://' or game_log[0:7] == 'sftp://' or game_log[0:7] == 'http://':
                 self.remoteLog = True
                 self.bot('Working in Remote-Log-Mode : %s' % game_log)
-                f = os.path.normpath(os.path.expanduser('games_mp.log'))
+                
+                if self.config.has_option('server', 'local_game_log'):
+                    f = self.config.getpath('server', 'local_game_log')
+                else:
+                    f = os.path.normpath(os.path.expanduser('games_mp.log'))
+
                 ftptempfile = open(f, "w")
                 ftptempfile.close()
             else:
@@ -564,6 +582,22 @@ class Parser(object):
             except Exception, msg:
                 self.critical('Error loading plugin: %s', msg)
                 raise SystemExit('error while loading %s' % p)
+        if self.config.has_option('server','game_log') \
+            and self.config.get('server','game_log')[0:7] == 'http://' :
+            p = 'httpytail'
+            self.bot('Loading %s', p)
+            try:
+                pluginModule = self.pluginImport(p)
+                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title()) (self)
+                self._pluginOrder.append(p)
+                version = getattr(pluginModule, '__version__', 'Unknown Version')
+                author  = getattr(pluginModule, '__author__', 'Unknown Author')
+                self.bot('Plugin %s (%s - %s) loaded', p, version, author)
+                self.screen.write('.')
+                self.screen.flush()
+            except Exception, msg:
+                self.critical('Error loading plugin: %s', msg)
+                raise SystemExit('error while loading %s' % p)
         if 'admin' not in self._pluginOrder:
             # critical will exit, admin plugin must be loaded!
             self.critical('AdminPlugin is essential and MUST be loaded! Cannot continue without admin plugin.')
@@ -747,6 +781,8 @@ class Parser(object):
                                 raise
                             except Exception, msg:
                                 self.error('could not parse line %s: %s', msg, traceback.extract_tb(sys.exc_info()[2]))
+                            
+                            time.sleep(self.delay2)
 
             time.sleep(self.delay)
 
