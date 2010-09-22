@@ -25,6 +25,8 @@
 # 
 #
 # CHANGELOG:
+# 2010-09-22 - v0.4.3 - GrosBedo
+#   * added error handling if profile and pstats libraries can't be found
 # 2010-09-17 - v0.4.2 - GrosBedo
 #   * added an automatic calibration prior to profiling
 # 2010-09-17 - v0.4.1 - GrosBedo
@@ -40,9 +42,15 @@
 #    * Initial version.
 
 __author__  = 'GrosBedo'
-__version__ = '0.4.2'
+__version__ = '0.4.3'
 
-import profile, pstats, sys, os
+
+noprofiler = False
+try:
+	import profile, pstats
+except:
+	noprofiler = True
+import sys, os
 pathname = os.path.dirname(sys.argv[0])
 sys.path.append(os.path.join(pathname, 'b3','lib'))
 
@@ -55,6 +63,9 @@ except:
 
 
 def runprofile(mainfunction, output, timeout = 60):
+	if noprofiler == True:
+		print('ERROR: profiler and/or pstats library missing ! Please install it (probably package named python-profile) before running a profiling !')
+		return False
 	def profileb3():
 	    profile.run(mainfunction, output)
 	# This is the main function for profiling
@@ -75,6 +86,7 @@ def runprofile(mainfunction, output, timeout = 60):
 	print('\n\nFinishing the profile and saving to the file %s' % str(output))
 	b3main.kill() # we must end the main function in order for the profiler to output its results (if we didn't launch a thread and just closed the process, it would have done no result)
 	print('=> Profile done ! Exiting...')
+	return True
 
 def calibrateprofile():
 	pr = profile.Profile()
