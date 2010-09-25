@@ -153,6 +153,8 @@
 # * Debugged messagequeue workers
 # 2010-09-02 - 1.3.10 - xlr8or
 # * More debugging messagequeue workers
+# 2010-09-25 - 1.4 - Bakes
+# * Refactored into Frostbite and Bfbc2 for MoH support.
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -194,13 +196,13 @@ import sys, time, re, string, traceback
 import b3
 import b3.events
 import b3.parser
-from b3.parsers.bfbc2.punkbuster import PunkBuster as Bfbc2PunkBuster
+from b3.parsers.frostbite.punkbuster import PunkBuster as Bfbc2PunkBuster
 import threading
 import Queue
-import rcon
+import b3.parsers.frostbite.rcon as rcon
 import b3.cvar
 from b3.functions import soundex, levenshteinDistance
-from b3.parsers.bfbc2.bfbc2Connection import *
+from b3.parsers.frostbite.bfbc2Connection import *
 
 SAY_LINE_MAX_LENGTH = 100
 

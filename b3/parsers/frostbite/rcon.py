@@ -37,12 +37,12 @@
 # * Added needConfirmation var to write() so we can use the confirmationtype ("OK", "NotFound") to test on.
 
 import thread
-from b3.parsers.bfbc2 import bfbc2Connection
+from b3.parsers.frostbite import bfbc2Connection
  
 __author__ = 'Courgette'
 __version__ = '1.0'
  
-from b3.parsers.bfbc2.bfbc2Connection import Bfbc2Connection, Bfbc2Exception, Bfbc2CommandFailedError
+from b3.parsers.frostbite.bfbc2Connection import Bfbc2Connection, Bfbc2Exception, Bfbc2CommandFailedError
 
 #--------------------------------------------------------------------------------------------------
 class Rcon:
