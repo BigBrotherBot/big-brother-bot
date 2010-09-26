@@ -106,7 +106,7 @@
 			<regexp>hu[o0]r[a@]</regexp>
 		</badword>
 		<badword name="spica" lang="pt">
-			<regexp>\sp[i!1]ca\s</regexp>
+			<regexp>\ssp[i!1]ca\s</regexp>
 		</badword>
 		<badword name="piroca" lang="pt">
 			<regexp>p[i!1]r[o0]ca</regexp>
