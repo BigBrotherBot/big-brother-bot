@@ -57,7 +57,7 @@ __version__ = '1.2.1'
 debug = True
 
 import socket
-import b3.parsers.bfbc2.protocol
+import b3.parsers.frostbite.protocol as protocol
  
     
 
@@ -121,17 +121,17 @@ class Bfbc2Connection(object):
             words = command[0]
         else:
             words = command
-        request = b3.parsers.bfbc2.protocol.EncodeClientRequest(words)
-        self.printPacket(b3.parsers.bfbc2.protocol.DecodePacket(request))
+        request = protocol.EncodeClientRequest(words)
+        self.printPacket(protocol.DecodePacket(request))
         try:
             self._serverSocket.sendall(request)
-            [response, self._receiveBuffer] = b3.parsers.bfbc2.protocol.receivePacket(self._serverSocket, self._receiveBuffer)
+            [response, self._receiveBuffer] = protocol.receivePacket(self._serverSocket, self._receiveBuffer)
         except socket.error, detail:
             raise Bfbc2NetworkException(detail)
         
         if response is None:
             return None
-        decodedResponse = b3.parsers.bfbc2.protocol.DecodePacket(response)
+        decodedResponse = protocol.DecodePacket(response)
         self.printPacket(decodedResponse)
         #[isFromServer, isResponse, sequence, words] = decodedResponse
         return decodedResponse[3]
@@ -150,8 +150,8 @@ class Bfbc2Connection(object):
 
         # Given the salt and the password, combine them and compute hash value
         salt = words[1].decode("hex")
-        passwordHash = b3.parsers.bfbc2.protocol.generatePasswordHash(salt, self._password)
-        passwordHashHexString = b3.parsers.bfbc2.protocol.string.upper(passwordHash.encode("hex"))
+        passwordHash = protocol.generatePasswordHash(salt, self._password)
+        passwordHashHexString = protocol.string.upper(passwordHash.encode("hex"))
 
         # Send password hash to server
         loginResponse = self.sendRequest("login.hashed", passwordHashHexString)
@@ -184,27 +184,27 @@ class Bfbc2Connection(object):
                     self._connect()
                     self._auth()
                     self.subscribeToBfbc2Events()
-                [tmppacket, self._receiveBuffer] = b3.parsers.bfbc2.protocol.receivePacket(self._serverSocket, self._receiveBuffer)
-                [isFromServer, isResponse, sequence, words] = b3.parsers.bfbc2.protocol.DecodePacket(tmppacket)
+                [tmppacket, self._receiveBuffer] = protocol.receivePacket(self._serverSocket, self._receiveBuffer)
+                [isFromServer, isResponse, sequence, words] = protocol.DecodePacket(tmppacket)
                 if isFromServer and not isResponse:
                     packet = tmppacket
                 else:
-                    self.console.verbose2('received a packet which is not an event: %s' % [isFromServer, isResponse, sequence, words])
+                    self.console.verbose2('received a packet which is not an event: %s' % [isFromServer, isResponse, sequence, words,])
             except socket.timeout:
                 timeout_counter += 1
                 self.console.verbose2('timeout %s' % timeout_counter)
                 if timeout_counter >= 5:
                     self.console.verbose2('checking connection...')
-                    request = b3.parsers.bfbc2.protocol.EncodeClientRequest(['eventsEnabled','true'])
-                    self.printPacket(b3.parsers.bfbc2.protocol.DecodePacket(request))
+                    request = protocol.EncodeClientRequest(['eventsEnabled','true'])
+                    self.printPacket(protocol.DecodePacket(request))
                     self._serverSocket.sendall(request)
                     timeout_counter = 0
             except socket.error, detail:
                 raise Bfbc2NetworkException('readBfbc2Event: %r'% detail)
 
         try:
-            [isFromServer, isResponse, sequence, words] = b3.parsers.bfbc2.protocol.DecodePacket(packet)
-            self.printPacket(b3.parsers.bfbc2.protocol.DecodePacket(packet))
+            [isFromServer, isResponse, sequence, words] = protocol.DecodePacket(packet)
+            self.printPacket(protocol.DecodePacket(packet))
         except:
             raise Bfbc2Exception('readBfbc2Event: failed to decodePacket {%s}' % packet)
         
@@ -214,8 +214,8 @@ class Bfbc2Connection(object):
             self.console.debug('Received an unexpected response packet from server, ignoring: %r' % packet)
             return self.readBfbc2Event()
         else:
-            response = b3.parsers.bfbc2.protocol.EncodePacket(True, True, sequence, ["OK"])
-            self.printPacket(b3.parsers.bfbc2.protocol.DecodePacket(response))
+            response = protocol.EncodePacket(True, True, sequence, ["OK"])
+            self.printPacket(protocol.DecodePacket(response))
             
             try:
                 self._serverSocket.sendall(response)
