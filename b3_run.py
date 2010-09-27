@@ -29,9 +29,14 @@ import b3.run
 import b3_debug
 
 def main():
-	b3.run.main()
+    b3.run.main()
 
 if __name__ == '__main__':
-	result = b3_debug.parse_cmdline_args() # we parse here for special debug switchs, if there are none, the program will continue normally
-	if result: # result will be False if we launched the profiler, or any function that should activate a special behaviour that could conflict with the normal main function
-		main()
+    try:
+        result = b3_debug.parse_cmdline_args() # we parse here for special debug switchs, if there are none, the program will continue normally
+        if result: # result will be False if we launched the profiler, or any function that should activate a special behaviour that could conflict with the normal main function
+            main()
+    except ImportError:
+        # it seems some distribution of python are bugged and cannot import pstats
+        main()
+    
