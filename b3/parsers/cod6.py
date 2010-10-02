@@ -29,6 +29,6 @@ import re
 
 class Cod6Parser(b3.parsers.cod4.Cod4Parser):
     gameName = 'cod6'
-
+    _guidLength = 16
     _regPlayer = re.compile(r'(?P<slot>[0-9]+)[\s\0]+(?P<score>[0-9-]+)[\s\0]+(?P<ping>[0-9]+)[\s\0]+(?P<guid>[a-z0-9]+)[\s\0]+(?P<name>.*?)[\s\0]+(?P<last>[0-9]+)[\s\0]+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)', re.I)
 
