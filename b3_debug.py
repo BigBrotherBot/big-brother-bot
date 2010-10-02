@@ -18,6 +18,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG:
+# 2010-10-02 - v0.7 - Courgette
+#   * separated b3_run.py from b3_debug.py. To use the debug stuff, start B3 
+#     using python b3_debug.py instead of python b3_run.py
 # 2010-09-17 - v0.6.1 - GrosBedo
 #   * fixed import bug
 # 2010-09-16 - v0.6 - GrosBedo
@@ -49,9 +52,11 @@
 #    * Initial version.
 
 __author__  = 'GrosBedo'
-__version__ = '0.6.1'
+__version__ = '0.7'
 
 import time, sys, os
+import b3.run
+
 pathname = os.path.dirname(sys.argv[0])
 sys.path.append(os.path.join(pathname, 'b3','lib')) # we add the b3/lib path for the import to work for some complex libraries (like guppy)
 sys.path.append(os.path.join(pathname, 'b3','tools'))
@@ -243,3 +248,15 @@ def parse_cmdline_args():
             cancontinue = False
 
         return cancontinue
+
+
+
+
+def main():
+    b3.run.main()
+
+if __name__ == '__main__':
+    result = parse_cmdline_args() # we parse here for special debug switchs, if there are none, the program will continue normally
+    if result: # result will be False if we launched the profiler, or any function that should activate a special behaviour that could conflict with the normal main function
+        main()
+    
