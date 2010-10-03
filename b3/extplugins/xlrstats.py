@@ -35,9 +35,11 @@
 #   Retrieve variables from webfront installation for topstats results
 # 23-8-2010 - 2.2.6 - Mark Weirath
 #   BugFix: Requires ConfigFile for the commands
+# 3-9-2010 - 2.2.7 - Mark Weirath
+#   Default action bonus set to +3 skillpoints (was 0)
 
 __author__  = 'Tim ter Laak / Mark Weirath'
-__version__ = '2.2.6'
+__version__ = '2.2.7'
 
 # Version = major.minor.patches
 
@@ -1262,7 +1264,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             action_bonus = self.config.getfloat('actions', action.name)
             #self.verbose('----> XLRstats: Found a bonus for %s: %s' %(action.name, action_bonus))
         except:
-            action_bonus = 0
+            action_bonus = 3
         
         if action_bonus:
             #self.verbose('----> XLRstats: Old Skill: %s.' %playerstats.skill)
