@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2010/10/06 - 1.19.3 - xlr8or
+#   * reintroduced rcontesting on startup, but for q3a based only (rconTest var in parser)
 #   2010/09/04 - 1.19.2 - GrosBedo
 #   * fixed some typos
 #   * moved delay and lines_per_second settings to server category
@@ -85,7 +87,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.19'
+__version__ = '1.19.3'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -133,6 +135,7 @@ class Parser(object):
     replay = False
     remoteLog = False
     screen = None
+    rconTest = False
 
     # Time in seconds of epoch of game log
     logTime = 0
@@ -342,20 +345,21 @@ class Parser(object):
             self.bot('Setting Rcon socket timeout to %0.3f sec' % custom_socket_timeout)
         
         # testing rcon
-#        res = self.output.write('status')
-#        self.output.flush()
-#        self.screen.write('Testing RCON     : ')
-#        self.screen.flush()
-#        if res == 'Bad rconpassword.':
-#            self.screen.write('>>> Oops: Bad RCON password\n>>> Hint: This will lead to errors and render B3 without any power to interact!\n')
-#            self.screen.flush()
-#            time.sleep(2)
-#        elif res == '':
-#            self.screen.write('>>> Oops: No response\n>>> Could be something wrong with the rcon connection to the server!\n>>> Hint 1: The server is not running or it is changing maps.\n>>> Hint 2: Check your server-ip and port.\n')
-#            self.screen.flush()
-#            time.sleep(2)
-#        else:
-#            self.screen.write('OK\n')
+        if self.rconTest:
+            res = self.output.write('status')
+            self.output.flush()
+            self.screen.write('Testing RCON     : ')
+            self.screen.flush()
+            if res == 'Bad rconpassword.':
+                self.screen.write('>>> Oops: Bad RCON password\n>>> Hint: This will lead to errors and render B3 without any power to interact!\n')
+                self.screen.flush()
+                time.sleep(2)
+            elif res == '':
+                self.screen.write('>>> Oops: No response\n>>> Could be something wrong with the rcon connection to the server!\n>>> Hint 1: The server is not running or it is changing maps.\n>>> Hint 2: Check your server-ip and port.\n')
+                self.screen.flush()
+                time.sleep(2)
+            else:
+                self.screen.write('OK\n')
 
         self.loadEvents()
         self.screen.write('Loading Events   : %s events loaded\n' % len(self._events))

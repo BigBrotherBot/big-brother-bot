@@ -19,6 +19,8 @@
 # $Id: q3a.py 103 2006-04-14 16:23:10Z thorn $
 #
 # CHANGELOG
+#    2010/10/06 - 1.4.4 - xlr8or
+#    * reintroduced rcontesting on startup, but for q3a based only (rconTest var in parser)
 #    2010/08/08 - 1.4.3 - Courgette
 #    * fix minor bug with saybig()
 #    2010/04/10 - 1.4.2 - Bakes
@@ -59,7 +61,7 @@
 
 
 __author__  = 'ThorN'
-__version__ = '1.4.3'
+__version__ = '1.4.4'
 
 import re, string, time
 import b3
@@ -73,6 +75,7 @@ import b3.cvar
 class Q3AParser(b3.parser.Parser):
     gameName = 'q3a'
     privateMsg = True
+    rconTest = True
     OutputClass = b3.parsers.q3a_rcon.Rcon
 
     _settings = {}
