@@ -10,15 +10,15 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{F04D6FC4-CF46-4409-995A-04BEB0B219E6}
 AppName=BigBrotherBot
-AppVerName=BigBrotherBot 1.3.3
+AppVerName=BigBrotherBot 1.4.0b
 AppPublisher=BigBrotherBot
 AppPublisherURL=http://www.bigbrotherbot.net/
 AppSupportURL=http://www.bigbrotherbot.net/forums/
 AppUpdatesURL=http://www.bigbrotherbot.net/
-DefaultDirName={pf}\BigBrotherBot_1.3.3
+DefaultDirName={pf}\BigBrotherBot_1.4.0b
 DefaultGroupName=BigBrotherBot
 LicenseFile=gpl-2.0.txt
-OutputBaseFilename=BigBrotherBot-1.3.3
+OutputBaseFilename=BigBrotherBot-1.4.0b
 Compression=lzma/ultra64
 SolidCompression=true
 InternalCompressLevel=normal
@@ -30,7 +30,7 @@ VersionInfoCopyright=www.bigbrotherbot.net
 AppCopyright=
 VersionInfoTextVersion=1.0
 VersionInfoProductName=BigBrotherBot
-VersionInfoProductVersion=1.3.3
+VersionInfoProductVersion=1.4.0b
 ExtraDiskSpaceRequired=11790316
 RestartIfNeededByRun=false
 PrivilegesRequired=none
@@ -74,7 +74,7 @@ Name: {group}\web\{cm:Manual,Manual}; Filename: http://wiki.github.com/BigBrothe
 Name: {group}\web\{cm:Forums,B3 Forums}; Filename: http://www.bigbrotherbot.net/forums/
 Name: {group}\web\{cm:DownloadPlugins,Download plugins}; Filename: http://www.bigbrotherbot.net/forums/downloads/?cat=4
 Name: {group}\{cm:UninstallProgram,BigBrotherBot}; Filename: {uninstallexe}
-Name: {group}\web\other tools\{cm:Echelon,Echelon}; Filename: http://www.bigbrotherbot.net/forums/xlr-releases/echelon-web-investigation-tool-for-b3/
+Name: {group}\web\other tools\{cm:Echelon,Echelon}; Filename: http://echelon.bigbrotherbot.net/
 Name: {group}\web\other tools\{cm:Xlrstats,XLRstats}; Filename: http://www.xlrstats.com/
 Name: {group}\web\artwork; Filename: http://www.bigbrotherbot.net/forums/news-2/banners-n-buttons/
 
@@ -83,8 +83,9 @@ Name: {commonappdata}\BigBrotherBot; Permissions: users-full
 
 [Files]
 Source: ..\..\dist_py2exe\b3_run.exe; DestDir: {app}
+Source: ..\..\dist_py2exe\b3.lib; DestDir: {app}
 Source: ..\..\dist_py2exe\PKG-INFO; DestDir: {app}
-Source: ..\..\dist_py2exe\README; DestDir: {app}; DestName: README.txt
+;Source: ..\..\dist_py2exe\README; DestDir: {app}; DestName: README.txt
 Source: ..\..\dist_py2exe\docs\*; DestDir: {app}\docs; Flags: recursesubdirs
 Source: ..\..\dist_py2exe\extplugins\*; DestDir: {app}\extplugins; Flags: recursesubdirs
 Source: ..\..\dist_py2exe\conf\*; DestDir: {commonappdata}\BigBrotherBot\conf; Flags: recursesubdirs

@@ -171,6 +171,9 @@ def main():
             #    sys.stdout = sys.__stdout__
             #    sys.stderr = sys.__stderr__
             #print msg
+            if main_is_frozen():
+                print msg
+                raw_input("Press the [ENTER] key")
             raise
         except:
             if sys.stdout != sys.__stdout__:

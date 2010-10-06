@@ -47,7 +47,8 @@ setup(
             "icon_resources": [(0, "py2exe_builder/b3.ico")]
         }
     ],
-    zipfile = "b3.lib", 
+    zipfile = "b3.lib",
+    #zipfile = None, 
     data_files = myDataFiles,
     options = {
         "py2exe": {
