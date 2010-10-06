@@ -18,13 +18,15 @@
 #
 #
 # CHANGELOG
-# 2010/09/25 - Bakes
+# 2010/10/07 - 0.2 - Courgette
+# * add gameName property. Fix SAY_LINE_MAX_LENGTH
+# 2010/09/25 - 0.1 - Bakes
 # * Initial version of MoH parser - hasn't been tested with OnKill events yet
 #   but basic commands seem to work.
-#
+# 
 
 __author__  = 'Bakes'
-__version__ = '0.1'
+__version__ = '0.2'
 
 import b3.parsers.bfbc2
 import sys, time, re, string, traceback
@@ -39,7 +41,10 @@ import b3.cvar
 from b3.functions import soundex, levenshteinDistance
 from b3.parsers.frostbite.bfbc2Connection import *
 
+SAY_LINE_MAX_LENGTH = 100
+
 class MohParser(b3.parsers.bfbc2.Bfbc2Parser):
+    gameName = 'moh'
     def startup(self):
         
         # add specific events
@@ -58,9 +63,9 @@ class MohParser(b3.parsers.bfbc2.Bfbc2Parser):
             #self.PunkBuster = Bfbc2PunkBuster(self)
         
         
-        if self.config.has_option('bfbc2', 'max_say_line_length'):
+        if self.config.has_option('moh', 'max_say_line_length'):
             try:
-                maxlength = self.config.getint('bfbc2', 'max_say_line_length')
+                maxlength = self.config.getint('moh', 'max_say_line_length')
                 if maxlength > SAY_LINE_MAX_LENGTH:
                     self.warning('max_say_line_length cannot be greater than %s' % SAY_LINE_MAX_LENGTH)
                     maxlength = SAY_LINE_MAX_LENGTH
@@ -70,11 +75,11 @@ class MohParser(b3.parsers.bfbc2.Bfbc2Parser):
                 self._settings['line_length'] = maxlength
                 self._settings['min_wrap_length'] = maxlength
             except Exception, err:
-                self.error('failed to read max_say_line_length setting "%s" : %s' % (self.config.get('bfbc2', 'max_say_line_length'), err))
+                self.error('failed to read max_say_line_length setting "%s" : %s' % (self.config.get('moh', 'max_say_line_length'), err))
         self.debug('line_length: %s' % self._settings['line_length'])
             
         version = self.output.write('version')
-        self.info('BFBC2 server version : %s' % version)
+        self.info('MoH server version : %s' % version)
         if version[0] != 'MOH':
             raise Exception("the moh parser can only work with Medal of Honor")
         
@@ -106,8 +111,8 @@ class MohParser(b3.parsers.bfbc2.Bfbc2Parser):
 
     def getClient(self, cid, _guid=None):
         """Get a connected client from storage or create it
-        B3 CID   <--> BFBC2 character name
-        B3 GUID  <--> BFBC2 EA_guid
+        B3 CID   <--> MoH character name
+        B3 GUID  <--> MoH EA_guid
         """
         
         # try to get the client from the storage of already authed clients
@@ -145,19 +150,19 @@ class MohParser(b3.parsers.bfbc2.Bfbc2Parser):
         """Load the next map (not level). If the current game mod plays each level twice
         to get teams the chance to play both sides, then this rotate a second
         time to really switch to the next map"""
-        nextIndex = self.getNextMapIndex()
+        #nextIndex = self.getNextMapIndex()
         self.write(('admin.runNextRound',))
-		
+
     def getMap(self):
         """Return the current level name (not easy map name)"""
         data = self.write(('serverInfo',))
         if not data:
             return None
         return data[4]
-		
+
 class PlayerInfoBlock:
     """
-    help extract player info from a BFBC2 Player Info Block which we obtain
+    help extract player info from a MoH Player Info Block which we obtain
     from admin.listPlayers
     
     usage :
@@ -179,7 +184,7 @@ class PlayerInfoBlock:
     parameterTypes = []
     
     def __init__(self, data):
-        """Represent a BFBC2 Player info block
+        """Represent a MoH Player info block
         The standard set of info for a group of players contains a lot of different 
         fields. To reduce the risk of having to do backwards-incompatible changes to
         the protocol, the player info block includes some formatting information.
