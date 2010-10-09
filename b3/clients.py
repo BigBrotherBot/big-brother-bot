@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    10/10/2010 - 1.2.14 - Courgette
+#    * attempt to prevent the loss of color information in _exactName
+#      in cases where .name (or .exactName) is set with a uncolored name
 #    15/08/2010 - 1.2.13 - xlr8or
 #    * Minor addition for bfbc2 in alias checking
 #    21/05/2010 - 1.2.12 - xlr8or
@@ -51,7 +54,7 @@
 #     Added data parameter to Client.tempban()
 
 __author__  = 'ThorN'
-__version__ = '1.2.13'
+__version__ = '1.2.14'
 
 import b3, string, re, time, functions, threading, traceback, sys
 
@@ -412,7 +415,14 @@ class Client(object):
         
         self.makeAlias(self._name)
         self._name = newName
-        self._exactName = name + '^7'
+        
+        # only if current exactName does not match the current newName
+        if self.console:
+            ename = self.console.stripColors(self._exactName)
+        else:
+            ename = self._exactName
+        if ename != newName:
+            self._exactName = name + '^7'
             
         if self.console and self.authed:
             self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_NAME_CHANGE, self.name, self))
