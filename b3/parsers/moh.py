@@ -18,6 +18,9 @@
 #
 #
 # CHANGELOG
+# 2010/10/10 - 0.3 - Bakes
+# * getEasyName is now implemented and working, getHardName is implemented
+#   but not working.
 # 2010/10/07 - 0.2 - Courgette
 # * add gameName property. Fix SAY_LINE_MAX_LENGTH
 # 2010/09/25 - 0.1 - Bakes
@@ -159,6 +162,68 @@ class MohParser(b3.parsers.bfbc2.Bfbc2Parser):
         if not data:
             return None
         return data[4]
+		
+		
+    def getHardName(self, mapname):
+        """ Change real name to level name """
+        mapname = mapname.lower()
+        if mapname.startswith('mazar-i-sharif airfield'):
+            return 'levels/mp_01'
+            
+        elif mapname.startswith('shah-i-knot mountains'):
+            return 'levels/mp_02'
+
+        elif mapname.startswith('helmand valley'):
+            return 'levels/mp_04'
+
+        elif mapname.startswith('kandahar marketplace'):
+            return 'levels/mp_05'
+
+        elif mapname.startswith('diwagal camp'):
+            return 'levels/mp_06'
+
+        elif mapname.startswith('kunar base'):
+            return 'levels/mp_08'
+
+        elif mapname.startswith('kabul city ruins'):
+            return 'levels/mp_09'
+
+        elif mapname.startswith('garmzir town'):
+            return 'levels/mp_10'
+			
+        else:
+            self.warning('unknown level name \'%s\'. Please make sure you have entered a valid mapname' % mapname)
+            return mapname
+			
+    def getEasyName(self, mapname):
+        """ Change levelname to real name """
+        if mapname.startswith('levels/mp_01'):
+            return 'Mazar-i-Sharif Airfield'
+            
+        elif mapname.startswith('levels/mp_02'):
+            return 'Shah-i-Knot Mountains'
+
+        elif mapname.startswith('levels/mp_04'):
+            return 'Helmand Valley'
+
+        elif mapname.startswith('levels/mp_05'):
+            return 'Kandahar Marketplace'
+
+        elif mapname.startswith('levels/mp_06'):
+            return 'Diwagal Camp'
+
+        elif mapname.startswith('levels/mp_08'):
+            return 'Kunar Base'
+
+        elif mapname.startswith('levels/mp_09'):
+            return 'Kabul City Ruins'
+
+        elif mapname.startswith('levels/mp_10'):
+            return 'Garmzir Town'
+        
+        else:
+            self.warning('unknown level name \'%s\'. Please report this on B3 forums' % mapname)
+            return mapname
 
 class PlayerInfoBlock:
     """
