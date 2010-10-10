@@ -39,11 +39,12 @@
 # 24/5/2010 - 1.4.11 - xlr8or - check if guids match on existing client objects when joining after a mapchange
 # 30/5/2010 - 1.4.12 - xlr8or - adding dummy setVersionExceptions() to enable overriding of variables based on the shortversion 
 # 10/8/2010 - 1.4.13 - xlr8or - fixed a bug where clients would be disconnected after mapchange.  
+# 10/9/2010 - 1.4.14 - xlr8or - don't save client.name on say and sayteam when name is the same (sanitization problem)
 
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.13'
+__version__ = '1.4.14'
 
 import b3.parsers.q3a
 import re, string, threading
@@ -325,7 +326,8 @@ class CodParser(b3.parsers.q3a.Q3AParser):
         if data and ord(data[:1]) == 21:
             data = data[1:]
 
-        client.name = match.group('name')
+        if client.name != match.group('name'):
+            client.name = match.group('name')
         return b3.events.Event(b3.events.EVT_CLIENT_SAY, data, client)
 
     def OnSayteam(self, action, data, match=None):
@@ -346,7 +348,8 @@ class CodParser(b3.parsers.q3a.Q3AParser):
         if data and ord(data[:1]) == 21:
             data = data[1:]
 
-        client.name = match.group('name')
+        if client.name != match.group('name'):
+            client.name = match.group('name')
         return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data, client)
 
     def OnTell(self, action, data, match=None):
