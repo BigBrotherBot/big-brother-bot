@@ -30,9 +30,11 @@
 #      this means that people who spam or swear in admin commands are
 #      warned, rather than the event just being handled in the admin
 #      plugin and veto'd elsewhere.
+# 2010/10/11 - 0.5 - xlr8or
+#    * added MOH support
 
 __author__  = 'xlr8or'
-__version__ = '0.4'
+__version__ = '0.5'
 
 import platform, urllib2, shutil, os, sys, time, zipfile
 from functions import main_is_frozen
@@ -49,7 +51,8 @@ class Setup:
     _config = "b3/conf/b3.xml"
     _buffer = ''
     _equaLength = 15
-    _PBSupportedParsers = ['cod','cod2','cod4','cod5']
+    _PBSupportedParsers = ['cod','cod2','cod4','cod5'] #bfbc2 and moh need to be added later when parsers correctly implemented pb. 
+    _frostBite = ['bfbc2', 'moh']
  
     def __init__(self, config=None):
         if config:
@@ -90,7 +93,7 @@ class Setup:
         # B3 settings
         self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
         xml.start("settings", name="b3")
-        self.add_set("parser", "cod", "Define your game: cod/cod2/cod4/cod5/iourt41/etpro/wop/smg/bfbc2")
+        self.add_set("parser", "cod", "Define your game: cod/cod2/cod4/cod5/iourt41/etpro/wop/smg/bfbc2/moh")
         self.add_set("database", "mysql://b3:password@localhost/b3", "Your database info: [mysql]://[db-user]:[db-password]@[db-server[:port]]/[db-name]")
         self.add_set("bot_name", "b3", "Name of the bot")
         self.add_set("bot_prefix", "^0(^2b3^0)^7:", "Ingame messages are prefixed with this code, you can use colorcodes")
@@ -105,7 +108,7 @@ class Setup:
         # server settings
         self.add_buffer('\n--GAME SERVER SETTINGS------------------------------------------\n')
         xml.start("settings", name="server")
-        if self._set_parser == 'bfbc2':
+        if self._set_parser in self._frostBite:
             self.add_set("public_ip", "11.22.33.44", "The IP address of your gameserver")
             self.add_set("port", "", "The port people use to connect to your gameserver")
             self.add_set("rcon_ip", "11.22.33.44", "The IP that the bot uses to send RCON commands. Usually the same as the public_ip")
