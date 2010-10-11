@@ -28,7 +28,7 @@
 #    * Fixing broken --restart mode
 
 __author__  = 'ThorN'
-__version__ = '1.3.1'
+__version__ = '1.3.2'
 
 import b3, sys, os, time
 import traceback
@@ -166,12 +166,12 @@ def main():
         try:
             run(config=options.config, nosetup=options.nosetup)
         except SystemExit, msg:
-            #if sys.stdout != sys.__stdout__:
-            #    # make sure we are not writing to the log:
-            #    sys.stdout = sys.__stdout__
-            #    sys.stderr = sys.__stderr__
-            #print msg
+            # This needs some work, is ugly a.t.m. but works... kinda
             if main_is_frozen():
+                if sys.stdout != sys.__stdout__:
+                    # make sure we are not writing to the log:
+                    sys.stdout = sys.__stdout__
+                    sys.stderr = sys.__stderr__
                 print msg
                 raw_input("Press the [ENTER] key")
             raise
