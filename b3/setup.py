@@ -34,7 +34,7 @@
 #    * added MOH support
 
 __author__  = 'xlr8or'
-__version__ = '0.5'
+__version__ = '0.5.1'
 
 import platform, urllib2, shutil, os, sys, time, zipfile
 from functions import main_is_frozen
@@ -105,9 +105,28 @@ class Setup:
         xml.end()
         xml.data("\n\t")
         
+        # BFBC2 specific settings
+        if self._set_parser == 'bfbc2':
+            self.add_buffer('\n--BFBC2 SPECIFIC SETTINGS---------------------------------------\n')
+            xml.start("settings", name="bfbc2")
+            self.add_set("max_say_line_length", "100", "how long do you want the lines to be restricted to in the chat zone. (maximum length is 100)")
+            xml.data("\n\t")
+            xml.end()
+            xml.data("\n\t")
+
+        # MOH specific settings
+        if self._set_parser == 'moh':
+            self.add_buffer('\n--MOH SPECIFIC SETTINGS-----------------------------------------\n')
+            xml.start("settings", name="moh")
+            self.add_set("max_say_line_length", "100", "how long do you want the lines to be restricted to in the chat zone. (maximum length is 100)")
+            xml.data("\n\t")
+            xml.end()
+            xml.data("\n\t")
+
         # server settings
         self.add_buffer('\n--GAME SERVER SETTINGS------------------------------------------\n')
         xml.start("settings", name="server")
+        # Frostbite specific
         if self._set_parser in self._frostBite:
             self.add_set("public_ip", "11.22.33.44", "The IP address of your gameserver")
             self.add_set("port", "", "The port people use to connect to your gameserver")
@@ -115,6 +134,7 @@ class Setup:
             self.add_set("rcon_port", "", "The port that the bot uses to send RCON commands. NOT the same as the normal port.")
             self.add_set("rcon_password", "", "The RCON password of your gameserver.")
             self.add_set("timeout", "3", "RCON timeout", silent=True)
+        # Q3Aa specific
         else:   
             self.add_set("rcon_password", "", "The RCON pass of your gameserver")
             self.add_set("port", "28960", "The port the server is running on")
@@ -126,6 +146,7 @@ class Setup:
             self.add_set("game_log", "games_mp.log", "The gameserver generates a logfile, put the path and name here")
             self.add_set("public_ip", "127.0.0.1", "The public IP your gameserver is residing on")
             self.add_set("rcon_ip", "127.0.0.1", "The IP the bot can use to send RCON commands to (127.0.0.1 when on the same box)")
+
         # determine if PunkBuster is supported
         if self._set_parser in self._PBSupportedParsers:
             self.add_set("punkbuster", "on", "Is the gameserver running PunkBuster Anticheat: on/off")
