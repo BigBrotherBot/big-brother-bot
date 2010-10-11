@@ -63,7 +63,7 @@ class Rcon:
     def _connect(self):
         if self._bfbc2Connection:
             return
-        self.console.verbose('RCON: Connecting to BFBC2 server ...')
+        self.console.verbose('RCON: Connecting to Frostbite server ...')
         self._bfbc2Connection = Bfbc2Connection(self.console, self._rconIp, self._rconPort, self._rconPassword)
 
     def writelines(self, lines):

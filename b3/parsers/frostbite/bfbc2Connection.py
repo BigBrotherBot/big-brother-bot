@@ -50,9 +50,12 @@
 # * try to make sure readBfbc2Event does not hang on a dead connection
 # 2010/04/20 - 1.2.1 - Courgette
 # * harden 1.2
+# 2010/10/11 - 1.2.2 - xlr8or
+# * Output to log changed: BFBC2 -> Frostbite (cosmetic only!)
 #
+
 __author__  = 'Courgette'
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
 debug = True
 
@@ -86,14 +89,14 @@ class Bfbc2Connection(object):
             self._connect()
             self._auth()
         except socket.error, detail:
-            raise Bfbc2NetworkException('Cannot create Bfbc2Connection: %s'% detail)
+            raise Bfbc2NetworkException('Cannot create FrostbiteConnection: %s'% detail)
    
     def __del__(self):
         self.close()
    
     def _connect(self):
         try:
-            self.console.debug('opening bfbc2Connection socket')
+            self.console.debug('opening FrostbiteConnection socket')
             self._receiveBuffer = ''
             self._serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._serverSocket.connect( ( self._host, self._port ) )
@@ -102,7 +105,7 @@ class Bfbc2Connection(object):
     
     def close(self):
         if self._serverSocket is not None:
-            self.console.debug('closing bfbc2Connection socket')
+            self.console.debug('closing FrostbiteConnection socket')
             try:
                 self.sendRequest('quit')
             except: pass
@@ -137,7 +140,7 @@ class Bfbc2Connection(object):
         return decodedResponse[3]
         
     def _auth(self):
-        self.console.debug('authing to BFBC2 server')
+        self.console.debug('authing to Frostbite server')
         if self._serverSocket is None:
             raise Bfbc2Connection("cannot auth, need to be connected")
             
@@ -158,14 +161,14 @@ class Bfbc2Connection(object):
 
         # if the server didn't like our password, abort
         if loginResponse[0] != "OK":
-            raise Bfbc2BadPasswordException("The BFBC2 server refused our password")
+            raise Bfbc2BadPasswordException("The Frostbite server refused our password")
 
             
     def subscribeToBfbc2Events(self):
         """
         tell the bfbc2 server to send us events
         """
-        self.console.debug('subscribing to BFBC2 events')
+        self.console.debug('subscribing to Frostbite events')
         response = self.sendRequest("eventsEnabled", "true")
 
         # if the server didn't know about the command, abort
