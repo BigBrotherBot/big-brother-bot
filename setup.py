@@ -32,7 +32,7 @@ from setuptools import setup, find_packages
 
 _setupinfo = {
     'name' : "b3",
-    'version' : "1.4.0b",
+    'version' : "1.4.0",
     'packages' : find_packages(),
     'extras_require' : { 'mysql' : 'MySQL-python' },
     'package_data' : {

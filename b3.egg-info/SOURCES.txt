@@ -38,6 +38,7 @@ b3.egg-info/requires.txt
 b3.egg-info/top_level.txt
 b3/conf/b3.bfbc2_example.xml
 b3/conf/b3.distribution.xml
+b3/conf/b3.moh_example.xml
 b3/conf/plugin_admin.xml
 b3/conf/plugin_adv.xml
 b3/conf/plugin_censor.xml

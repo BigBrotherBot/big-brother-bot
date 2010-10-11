@@ -1,3 +1,60 @@
+2010-10-11  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/frostbite/bfbc2Connection.py,
+	b3/parsers/frostbite/rcon.py: [Frostbite] Output to log changed:
+	BFBC2 -> Frostbite (cosmetic only!)
+
+2010-10-11  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/run.py: Win-standalone: minor fix prior to release.
+
+2010-10-11  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit a2b8bbddd380c1b9b8f7f875b6d0f8b1161d0c5f Merge: 952138f
+	a1e6eb9 Author: xlr8or <xlr8or@xlr8or.com> Date:   Mon Oct 11
+	20:09:55 2010 +0200
+
+2010-10-11  xlr8or <xlr8or@xlr8or.com>
+
+	* py2exe_builder/b3-installer-project.iss: Versioning 1.4.0
+
+2010-10-11  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: MOH support for config wizard
+
+2010-10-11  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py: cod parser: don't save client.name on say and
+	sayteam when name is the same (sanitization problem)
+
+2010-10-10  Bakes <bakes@ymail.com>
+
+	* b3/parsers/moh.py: Added getEasyName (working) getHardName (not
+	working)
+
+2010-10-10  Courgette <courgette@ubu-team.org>
+
+	* b3/clients.py: revert client.py back to v1.2.13
+
+2010-10-10  Courgette <courgette@ubu-team.org>
+
+	* b3/clients.py: attempt to prevent the loss of color information in
+	_exactName
+
+2010-10-09  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/cod6.py: cod6: set sv_hostname at startup
+
+2010-10-07  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/b3.moh_example.xml, b3/parsers/moh.py: few fixes to MoH
+	that need validation from Bakes
+
+2010-10-06  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt, versions.txt: detailed changelog and
+	versions.txt
+
 2010-10-06  xlr8or <xlr8or@xlr8or.com>
 
 	* b3.egg-info/PKG-INFO, b3.egg-info/SOURCES.txt, b3/PKG-INFO,
