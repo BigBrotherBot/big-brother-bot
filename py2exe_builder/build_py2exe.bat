@@ -18,7 +18,7 @@ cd py2exe_builder/Output
 ECHO ******************************************
 SET /P M=Type version number, then press ENTER: 
 
-7z.exe a -r -tzip b3-%M%.zip b3
+7z.exe a -r -tzip b3-%M%-win32-noinstaller.zip b3
 rmdir b3 /Q /S
 cd ..
 pause
