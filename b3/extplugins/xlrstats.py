@@ -37,9 +37,11 @@
 #   BugFix: Requires ConfigFile for the commands
 # 3-9-2010 - 2.2.7 - Mark Weirath
 #   Default action bonus set to +3 skillpoints (was 0)
+# 13-10-2010 - 2.2.8 - Mark Weirath
+#   BugFix: Empty field webfront Url is now allowed in config
 
 __author__  = 'Tim ter Laak / Mark Weirath'
-__version__ = '2.2.7'
+__version__ = '2.2.8'
 
 # Version = major.minor.patches
 
@@ -219,7 +221,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         self.optimizeTables(self._xlrstatstables)
 
         #let's try and get some variables from our webfront installation
-        if self.webfrontUrl != '':
+        if self.webfrontUrl and self.webfrontUrl != '':
             _request = str(self.webfrontUrl.rstrip('/')) + '/?config=' + str(self.webfrontConfigNr) + '&func=pluginreq'
             try:
                 f = urllib2.urlopen(_request)
