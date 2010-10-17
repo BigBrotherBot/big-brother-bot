@@ -4,7 +4,11 @@
 		or rules as defined in the admin plugin config file. ie: /spam#rule1
 	-->
 	<settings name="settings">
-		<!-- rate in minutes -->
+		<!-- rate in minutes. 
+		  If you want a rate faster than once 
+		  per minutes, then you can add a 's' as a suffix for seconds.
+		  i.e. : <set name="rate">30s</set> 
+		-->
 		<set name="rate">2</set>
 		<!--
 			you can either set here a text file that will contain one ad per line

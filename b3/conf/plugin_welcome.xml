@@ -16,8 +16,13 @@
 		<set name="flags">63</set>
 		<!-- Maximum number of connections a user has to be considere a newb for the newb message -->
 		<set name="newb_connections">15</set>
-		<!-- Time in seconds after connection to display the message (range: 15-90) -->
-		<set name="delay">30</set>
+    <!-- Time in seconds after connection to display the message (range: 15-90) -->
+    <set name="delay">30</set>
+    <!-- Time in seconds the bot must wait before welcoming a player again. 
+      i.e.: if you set min_gap to 3600 seconds (one hour) then the bot will not
+      welcome a player more than once per hour
+    -->
+    <set name="min_gap">3600</set>
 	</settings>
 	<settings name="messages">
 		<!--
