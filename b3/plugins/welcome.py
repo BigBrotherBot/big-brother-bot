@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
@@ -16,6 +16,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
+# 2010/10/17 - 1.2 - Courgette
+#  * add min_gap to customize how long the bot must wait before welcoming a 
+#    player again (in seconds)
+#  * add tests
 # 2010/03/21 - 1.1 - Courgette
 #    import cmd_greeting from the admin plugin 
 # 3/4/2009 - 1.0.6 - xlr8or
@@ -40,6 +44,7 @@ class WelcomePlugin(b3.plugin.Plugin):
     _welcomeFlags = 0
     _welcomeDelay = 0
     _cmd_greeting_minlevel = None
+    _min_gap = 3600
 
     def onStartup(self):
         self.registerEvent(b3.events.EVT_CLIENT_AUTH)
@@ -62,10 +67,20 @@ class WelcomePlugin(b3.plugin.Plugin):
             if self._welcomeDelay < 15 or self._welcomeDelay > 90:
                 self._welcomeDelay = 30
                 self.debug('Welcome delay not in range 15-90 using 30 instead.')
+            self.info('delay set to %s. The bot will wait %ss after a player connects to write the welcome message' % (self._welcomeDelay, self._welcomeDelay))
         except:
             self._welcomeDelay = 30
 
-    
+        try:
+            self._min_gap = self.config.getint('settings', 'min_gap')
+            if self._min_gap < 0:
+                self._min_gap = 0
+            self.info('min_gap set to %s. The bot will not welcome a player more than once every %s seconds' % (self._min_gap, self._min_gap))
+        except:
+            self._min_gap = 3600
+            self.warning('error while reading min_gap from config. min_gap set to %s (default).' % (self._min_gap))
+            
+
     def cmd_greeting(self, data, client, cmd=None):
         """\
         [<greeting>] - set or list your greeting (use 'none' to remove)
@@ -101,13 +116,14 @@ class WelcomePlugin(b3.plugin.Plugin):
         if event.type == b3.events.EVT_CLIENT_AUTH:
             if    self._welcomeFlags < 1 or \
                 not event.client or \
-                not event.client.id or \
+                event.client.id == None or \
                 event.client.cid == None or \
                 not event.client.connected or \
-                event.client.pbid == 'WORLD' or \
-                self.console.upTime() < 300:
+                event.client.pbid == 'WORLD':
                 return
-
+            if self.console.upTime() < 300:
+                self.debug('not welcoming player because the bot started less than 5 min ago')
+                return
             t = threading.Timer(self._welcomeDelay, self.welcome, (event.client,))
             t.start()
 
@@ -120,8 +136,9 @@ class WelcomePlugin(b3.plugin.Plugin):
             self.debug('LastVisit not available. Must be the first time.')
             _timeDiff = 1000000 # big enough so it will welcome new players
 
-        # don't need to welcome people who got kicked or where already welcomed in the last hour
-        if client.connected and _timeDiff > 3600:
+        # don't need to welcome people who got kicked or where already 
+        # welcomed in before _min_gap s ago
+        if client.connected and _timeDiff > self._min_gap:
             info = {
                 'name'    : client.exactName,
                 'id'    : str(client.id),
@@ -160,5 +177,98 @@ class WelcomePlugin(b3.plugin.Plugin):
                 info['greeting'] = client.greeting % info
                 self.console.say(self.getMessage('greeting', info))
         else:
-            if _timeDiff <= 3600:
-                self.debug('Client already welcomed in the past hour')
+            if _timeDiff <= self._min_gap:
+                self.debug('Client already welcomed in the past %s seconds' % self._min_gap)
+
+
+
+if __name__ == '__main__':
+    from b3.fake import fakeConsole
+    from b3.fake import joe
+    from b3.config import XmlConfigParser
+    
+    conf = XmlConfigParser()
+    conf.setXml("""
+<configuration plugin="welcome">
+    <settings name="commands">
+        <set name="greeting">20</set>
+    </settings>
+    <settings name="settings">
+        <!--
+        who to welcome
+        1 = welcome newb
+        2 = welcome announce_user
+        4 = welcome first
+        8 = welcome announce_first
+        16 = welcome user
+        32 = custom greetings
+        add numbers, 63 = all
+        -->
+        <set name="flags">63</set>
+        <!-- Maximum number of connections a user has to be considere a newb for the newb message -->
+        <set name="newb_connections">15</set>
+    <!-- Time in seconds after connection to display the message (range: 15-90) -->
+    <set name="delay">15</set>
+    <!-- Time in seconds the bot must wait before welcoming a player again. 
+      i.e.: if you set min_gap to 3600 seconds (one hour) then the bot will not
+      welcome a player more than once per hour
+    -->
+    <set name="min_gap">6</set>
+    </settings>
+    <settings name="messages">
+        <!--
+        Welcome messages
+        $name = player name
+        $id = player id
+        $lastVisit = last visit time (only on welcome_user and welcome_newb)
+        $group = players group (only on welcome_user)
+        $connections = number of times a user has connected (only on welcome_user and welcome_announce_user)
+        -->
+        <!-- displayed to admins and regs -->
+        <set name="user">^7[^2Authed^7] Welcome back $name ^7(^3@$id^7), last visit ^3$lastVisit^7, you're a ^2$group^7, played $connections times</set>
+        <!-- displayed to users who have not yet registered -->
+        <set name="newb">^7[^2Authed^7] Welcome back $name ^7(^3@$id^7), last visit ^3$lastVisit. Type !register in chat to register. Type !help for help</set>
+        <!-- displayed to everyone when a player with less than 15 connections joins -->
+        <set name="announce_user">^7Everyone welcome back $name^7, player number ^3#$id^7, to the server, played $connections times</set>
+        <!-- displayed to a user on his first connection -->
+        <set name="first">^7Welcome $name^7, this must be your first visit, you are player ^3#$id. Type !help for help</set>
+        <!-- displayed to everyone when a player joins for the first time -->
+        <set name="announce_first">^7Everyone welcome $name^7, player number ^3#$id^7, to the server</set>
+        <!-- displayed if a user has a greeting -->
+        <set name="greeting">^7$name^7 joined: $greeting</set>
+
+        <!-- command answers : -->
+        <set name="greeting_empty">^7You have no greeting set</set>
+        <set name="greeting_yours">^7Your greeting is %s</set>
+        <set name="greeting_bad">^7Greeting is not formated properly: %s</set>
+        <set name="greeting_changed">^7Greeting changed to: %s</set>
+        <set name="greeting_cleared">^7Greeting cleared</set>
+    </settings>
+</configuration>
+    """)
+
+    ## trick the console in thinking it was started an hour ago
+    def myUpTime_func():
+        return 3600
+    fakeConsole.upTime = myUpTime_func
+    
+    p = WelcomePlugin(fakeConsole, conf)
+    p.onStartup()
+    # override _welcomeDelay which makes testing a pain
+    p._welcomeDelay = 1
+    
+    print "--------------------------------"
+    joe.connects(0)
+    time.sleep(2)
+
+    joe.disconnects()
+    joe.connected = True
+    joe.connects(2)
+    time.sleep(8)
+
+    joe.disconnects()
+    joe.connected = True
+    joe.connects(4)
+    time.sleep(5)
+
+    time.sleep(60)
