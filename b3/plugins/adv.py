@@ -123,7 +123,8 @@ class AdvPlugin(b3.plugin.Plugin):
         self._msg = MessageLoop()
 
         try:
-            self._rate = self.config.getint('settings', 'rate')
+            self._rate = self.config.get('settings', 'rate')
+            self.info('adv rate is %s' % self._rate)
         except:
             self.error('config missing [settings].rate')
             return False
@@ -167,7 +168,8 @@ class AdvPlugin(b3.plugin.Plugin):
             # remove existing crontab
             self.console.cron - self._cronTab
 
-        self._cronTab = b3.cron.PluginCronTab(self, self.adv, 0, '*/%s' % self._rate)
+        (min, sec) = self._getRateMinSec()
+        self._cronTab = b3.cron.PluginCronTab(self, self.adv, second=sec, minute=min)
         self.console.cron + self._cronTab
 
     def save(self):
@@ -279,9 +281,13 @@ class AdvPlugin(b3.plugin.Plugin):
 
     def cmd_advrate(self, data, client=None, cmd=None):
         self._rate = data
-        self._cronTab.minute = '*/' + self._rate
-
-        client.message('^3Adv: ^7Rate set to %s minutes' % self._rate)    
+        (min, sec) = self._getRateMinSec()
+        self._cronTab.minute = min
+        self._cronTab.second = sec
+        if self._rate[-1] == 's':
+            client.message('^3Adv: ^7Rate set to %s seconds' % self._rate[:-1])    
+        else:
+            client.message('^3Adv: ^7Rate set to %s minutes' % self._rate)    
 
     def cmd_advrem(self, data, client=None, cmd=None):
         item = self._msg.getitem(int(data) - 1)
@@ -303,23 +309,83 @@ class AdvPlugin(b3.plugin.Plugin):
         else:
             client.message('^3Adv: ^7No ads loaded')
 
-
+    def _getRateMinSec(self):
+        """\
+        allow to define the rate in second by adding 's' at the end
+        """
+        sec = 0
+        min = '*'
+        if self._rate[-1] == 's':
+            # rate is in seconds
+            s = self._rate[:-1]
+            if int(s) > 59:
+                s = 59
+            sec = '*/%s' % s
+        else:
+            min = '*/%s' % self._rate
+        self.debug('%s -> (%s,%s)' % (self._rate, min, sec))
+        return (min, sec)
+    
 if __name__ == '__main__':
     from b3.fake import fakeConsole
     from b3.fake import joe
+    from b3.config import XmlConfigParser
     
-    p = AdvPlugin(fakeConsole, '@b3/conf/plugin_adv.xml')
+    conf = XmlConfigParser()
+    conf.setXml("""
+<configuration plugin="adv">
+    <!--
+        Note: within ads, you can use the following variables : @nextmap @time
+        or rules as defined in the admin plugin config file. ie: /spam#rule1
+    -->
+    <settings name="settings">
+        <!-- rate in minutes-->
+        <set name="rate">5</set>
+        <!--
+            you can either set here a text file that will contain one ad per line
+            or fill the <ads> section below
+        -->
+        <!-- <set name="ads">c:/somewhere/my_ads.txt</set> -->
+    </settings>
+  <settings name="newsfeed">
+        <!--
+            you can include newsitems in your adds by setting the section below
+            you can add feeditems in the adds like this:
+            @feed   (will pick the next newsitem each time it is included in the rotation,
+               rotating until 'items' is reached and then start over.)
+            @feed 0 (will pick the latest newsitem available from the feed and add it in the rotation)
+            @feed 1 (will pick the second latest item in line)
+            etc.
+        -->
+        <set name="url">http://www.bigbrotherbot.net/forums/news-2/?type=rss;action=.xml</set>
+        <set name="items">5</set>
+        <set name="pretext">News: </set>
+    </settings>
+    <ads>
+        <ad>^2Big Brother Bot is watching you... www.BigBrotherBot.net</ad>
+        <ad>@feed</ad>
+        <ad>/spam#rule1</ad>
+        <ad>@time</ad>
+        <ad>@feed</ad>
+        <ad>^2Do you like B3? Consider donating to the project at www.BigBrotherBot.net</ad>
+        <ad>@nextmap</ad>
+    </ads>
+</configuration>
+    """)
+    p = AdvPlugin(fakeConsole, conf)
     p.onStartup()
     
     p.adv()
     print "-----------------------------"
     time.sleep(2)
     
+    joe.connects(1)
     joe._maxLevel = 100
     joe.says('!advlist')
     time.sleep(2)
     joe.says('!advrem 0')
     time.sleep(2)
-    joe.says('!advrate 1')
+    joe.says('!advrate 5s')
     time.sleep(5)
     
+    time.sleep(60)
