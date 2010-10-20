@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    1/16/2010 - 2.2.1 - xlr8or
+#       Plugin can now be disabled with !disable censor
 #    1/16/2010 - 2.2.0 - xlr8or
 #       Added ignore_length as an optional configurable option
 #       Started debugging the badname checker
@@ -28,7 +30,7 @@
 #       Put censored message/name in the warning data
 
 __author__  = 'ThorN'
-__version__ = '2.2.0'
+__version__ = '2.2.1'
 
 import b3, re, traceback, sys, threading
 import b3.events
@@ -146,7 +148,9 @@ class CensorPlugin(b3.plugin.Plugin):
 
     def onEvent(self, event):
         try:
-            if not event.client:
+            if not self.isEnabled():
+                return
+            elif not event.client:
                 return
             elif event.client.cid == None:
                 return
