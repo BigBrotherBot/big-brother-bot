@@ -146,7 +146,7 @@ class FakeConsole(b3.parser.Parser):
         """send bigtext to the server"""
         print "+++ %s" % re.sub(re.compile('\^[0-9]'), '', msg).strip()
     
-    def write(self, *msg):
+    def write(self, msg, maxRetries=0):
         """send text to the console"""
         if type(msg) == str:
             print "### %s" % re.sub(re.compile('\^[0-9]'), '', msg).strip()
