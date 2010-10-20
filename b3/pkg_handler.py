@@ -22,10 +22,12 @@
 # 20/03/2010 - 1.2 - Courgette
 #    * make sure to read the version from the PKG-INFO file if found in the b3 module
 #      even when setup_tools are installed on the system
-#
+# 21/10/2010 - 1.2.1 - Courgette
+#    * fix an issue that broke the b3_run.exe when frozen on a machine that
+#      have pkg_resources available
 
 __author__  = 'ThorN'
-__version__ = '1.2'
+__version__ = '1.2.1'
 
 import os, sys, re
 from b3.functions import main_is_frozen
@@ -95,14 +97,19 @@ def getVersionFromFile(filename):
 
 
 pkg_handler = None
-try:
-    import pkg_resources
-except ImportError:
-    # package tools is not intalled
+if main_is_frozen():
+    # avoid issues when frozen with py2exe on a windows machine
+    # that have phg_resources importable.
     pkg_handler = PkgResourcesStandIn()
 else:
-    # package tools is installed
-    pkg_handler = PkgResources()
+    try:
+        import pkg_resources
+    except ImportError:
+        # package tools is not intalled
+        pkg_handler = PkgResourcesStandIn()
+    else:
+        # package tools is installed
+        pkg_handler = PkgResources()
 
 version = pkg_handler.version
 resource_directory = pkg_handler.resource_directory
