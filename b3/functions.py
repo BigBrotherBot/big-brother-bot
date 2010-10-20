@@ -74,9 +74,11 @@ def checkUpdate(currentVersion, singleLine=True, showErrormsg=False):
             errorMessage = "error code: %s" % e.code
         else:
             errorMessage = "%s" % e
-    
+    except Exception, e:
+        errorMessage = "%s" % e
+        
     if errorMessage and showErrormsg:
-        return errorMessage
+        return "Could not check updates. %s" % errorMessage
     elif message:
         return message
     else:
