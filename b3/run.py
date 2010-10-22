@@ -26,9 +26,11 @@
 #      where setup launches setup procedure and nosetup prevents bot from entering setup procedure.
 # 2010/08/05 - 1.3.1 -  xlr8or
 #    * Fixing broken --restart mode
+# 2010/10/22 - 1.3.3 -  xlr8or
+#    * Restart counter
 
 __author__  = 'ThorN'
-__version__ = '1.3.2'
+__version__ = '1.3.3'
 
 import b3, sys, os, time
 import traceback
@@ -41,6 +43,8 @@ import pkg_handler
 modulePath = pkg_handler.resource_directory(__name__)
 
 def run_autorestart(args=None):
+    _restarts = 0
+
     if main_is_frozen():
         script = ''
     else:
@@ -56,6 +60,8 @@ def run_autorestart(args=None):
     while True:
         try:
             print 'Running in auto-restart mode...'
+            if _restarts > 0:
+                print 'Bot restarted %s times.' %_restarts
             time.sleep(1)
 
             try:
@@ -103,6 +109,7 @@ def run_autorestart(args=None):
             else:
                 print 'Unknown shutdown status (%s), restarting...' % status
         
+            _restarts += 1
             time.sleep(4)
         except KeyboardInterrupt:
             print 'Quit'
