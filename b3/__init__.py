@@ -26,11 +26,13 @@
 #    * ability to disable automatic setup procedure when option -n, --nosetup is passed
 # 2010/09/16 - 1.1.1 - GrosBedo
 #    * can now run in a thread (functions profiler mode)
+# 2010/10/20 - 1.1.2 - GrosBedo
+#    * added TEAM_FREE for non team based gametypes (eg: deathmatch)
 #
 
 
 __author__ = 'ThorN'
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 import pkg_handler
 from b3.functions import main_is_frozen
@@ -56,6 +58,7 @@ _confDir = None
 
 # some constants
 TEAM_UNKNOWN = -1
+TEAM_FREE = 0 # Team free = no team based game (eg: deathmatch)
 TEAM_SPEC = 1
 TEAM_RED = 2
 TEAM_BLUE = 3

@@ -57,10 +57,12 @@
 # * fix crash issue when a player has disconnected at the very time the bot check for the list of players
 # 20/10/2010 - 0.9 - GrosBedo
 # * fix a BIG issue when detecting teams (were always unknown)
+# 20/10/2010 - 0.9.1 - GrosBedo
+# * fix tk issue with DM and other team free gametypes
 #
 
 __author__  = 'Courgette, GrosBedo'
-__version__ = '0.9'
+__version__ = '0.9.1'
 
 import re, string, thread, time, threading
 import b3
@@ -393,7 +395,7 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         # fix event for team change and suicides and tk
         if attacker.cid == victim.cid:
             event = b3.events.EVT_CLIENT_SUICIDE
-        elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
+        elif attacker.team != b3.TEAM_UNKNOWN and attacker.team != b3.TEAM_FREE and attacker.team == victim.team:
             event = b3.events.EVT_CLIENT_KILL_TEAM
 
         # if not defined we need a general hitloc (for xlrstats)
@@ -525,7 +527,7 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         if data.has_key('n'):
             data['name'] = data['n']
 
-        t = 0
+        t = -1
         if data.has_key('team'):
             t = data['team']
         elif data.has_key('t'):
@@ -566,20 +568,23 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
 
     def getTeam(self, team):
         team = str(team).lower() # We convert to a string and lower the case because there is a problem when trying to detect numbers if it's not a string (weird)
-        if team == 'red' or team == '1':
-            self.debug('Team is Red')
+        if team == 'free' or team == '0':
+            #self.debug('Team is Free (no team)')
+            result = b3.TEAM_FREE
+        elif team == 'red' or team == '1':
+            #self.debug('Team is Red')
             result = b3.TEAM_RED
         elif team == 'blue' or team == '2':
-            self.debug('Team is Blue')
+            #self.debug('Team is Blue')
             result = b3.TEAM_BLUE
-        elif team == 'spectator' or team == '0' or team == '3':
-            self.debug('Team is Spectator')
+        elif team == 'spectator' or team == '3':
+            #self.debug('Team is Spectator')
             result = b3.TEAM_SPEC
         else:
-            self.debug('Team is Unknown')
+            #self.debug('Team is Unknown')
             result = b3.TEAM_UNKNOWN
         
-        self.debug('getTeam(%s) -> %s and %s' % (team, result, str(team).lower()))
+        #self.debug('getTeam(%s) -> %s' % (team, result))
         return result
 
     # Translate the gameType to a readable format (also for teamkill plugin!)
