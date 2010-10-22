@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    10/20/2010 - 1.3.3 GrosBedo
+#    * No more teamKills if team is unknown (eg: parser can't detect the team)
 #    8/15/2010 - 1.3.2 GrosBedo
 #    * Fixed disabling reset xp option
 #    8/14/2010 - 1.3.1 Courgette
@@ -165,7 +167,7 @@ class StatsPlugin(b3.plugin.Plugin):
         if points > 100:
             points = 100
 
-        if killer.team == victim.team:
+        if killer.team == victim.team and killer.team != b3.TEAM_UNKNOWN:
             killer.var(self, 'shotsTeamHit', 0).value  += 1
             killer.var(self, 'damageTeamHit', 0).value += points
         else:
@@ -179,7 +181,7 @@ class StatsPlugin(b3.plugin.Plugin):
         if points > 100:
             points = 100
 
-        if killer.team == victim.team:
+        if killer.team == victim.team and killer.team != b3.TEAM_UNKNOWN:
             killer.var(self, 'shotsTeamHit', 0).value  += 1
             killer.var(self, 'damageTeamHit', 0).value += points
 
