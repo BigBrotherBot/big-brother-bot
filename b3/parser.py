@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2010/10/22 - 1.19.4 - xlr8or
+#   * output option log2both writes to logfile AND stderr simultaneously
 #   2010/10/06 - 1.19.3 - xlr8or
 #   * reintroduced rcontesting on startup, but for q3a based only (rconTest var in parser)
 #   2010/09/04 - 1.19.2 - GrosBedo
@@ -87,7 +89,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.19.3'
+__version__ = '1.19.4'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -219,7 +221,8 @@ class Parser(object):
         # set up logging
         logfile = self.config.getpath('b3', 'logfile')
         log2console = self.config.has_option('devmode', 'log2console') and self.config.getboolean('devmode', 'log2console')
-        self.log = b3.output.getInstance(logfile, self.config.getint('b3', 'log_level'), log2console)
+        log2both = self.config.has_option('devmode', 'log2both') and self.config.getboolean('devmode', 'log2both')
+        self.log = b3.output.getInstance(logfile, self.config.getint('b3', 'log_level'), log2console, log2both)
 
         # save screen output to self.screen
         self.screen = sys.stdout

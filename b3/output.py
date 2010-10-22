@@ -20,10 +20,12 @@
 # 17/11/2009 - 1.4.0 - Courgette
 #    * add an option to create an instance of the logger that will write to 
 #      stderr instead
+# 22/10/2010 - 1.5.0 - xlr8or
+#    * add an option to write to both logfile and stderr 
 
 
 __author__  = 'ThorN'
-__version__ = '1.4.0'
+__version__ = '1.5.0'
 
 import sys
 import logging
@@ -116,9 +118,10 @@ logging.setLoggerClass(OutputHandler)
 
 __output = None
 
-def getInstance(logfile='b3.log', loglevel=21, log2console=False):
+def getInstance(logfile='b3.log', loglevel=21, log2console=False, log2both=False):
     """NOTE: log2console is mostly useful for developers. This will make the bot
-    log everything to stderr instead of into the usual logfile"""
+    log everything to stderr instead of into the usual logfile.
+    log2both will write to both the logfile and also stderr."""
     global __output
 
     if __output == None:
@@ -127,18 +130,22 @@ def getInstance(logfile='b3.log', loglevel=21, log2console=False):
         if log2console:
             handler = logging.StreamHandler()
         else:
+            if log2both:
+                handler2 = logging.StreamHandler()
             handler = handlers.RotatingFileHandler(logfile, 'a', 10485760, 5)
             handler.doRollover()
         handler.setFormatter(logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s', '%y%m%d %H:%M:%S'))
         
         __output.addHandler(handler)
+        if log2both:
+            __output.addHandler(handler2)
         __output.setLevel(loglevel)
     
     return __output
 
 if __name__ == '__main__':
     # test output handler
-    log = getInstance('test.log', 1)
+    log = getInstance('test.log', 1, False, True)
     log.error('Test error')
     log.debug('Test debug')
     log.console('Test console')
