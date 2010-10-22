@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
+# 22/10/2010 - 1.0 - Courgette
+#   * obbey the SFTP URI scheme as described in http://tools.ietf.org/html/draft-ietf-secsh-scp-sftp-ssh-uri-04
 # 07/09/2010 - 0.1.1 - GrosBedo
 #   * b3/delay option now specify the delay between each ftp log fetching
 #   * b3/local_game_log option to specify the temporary local log name (permits to manage remotely several servers at once)
@@ -24,7 +26,7 @@
 # * first attempt. Briefly tested. Seems to work
 
 
-__version__ = '0.1.1'
+__version__ = '1.0'
 __author__ = 'Courgette'
  
 import b3, threading
@@ -70,9 +72,6 @@ class SftpytailPlugin(b3.plugin.Plugin):
         if self.console.config.get('server','game_log')[0:7] == 'sftp://' :
             self.initThread(self.console.config.get('server','game_log'))
         
-        if self.sftpconfig['path'][0:1] <> ':':
-            self.critical('sftp path must start with \':\'')
-    
     def onLoadConfig(self):
         try:
             self._connectionTimeout = self.config.getint('settings', 'timeout')
@@ -111,8 +110,8 @@ class SftpytailPlugin(b3.plugin.Plugin):
                     rfile = None
                     self._nbConsecutiveConnFailure = 0
                 try:
-                    #self.debug("Getting remote file size for %s" % self.sftpconfig['path'][1:])
-                    remoteSize = sftp.stat(self.sftpconfig['path'][1:]).st_size
+                    #self.debug("Getting remote file size for %s" % self.sftpconfig['path'])
+                    remoteSize = sftp.stat(self.sftpconfig['path']).st_size
                     #self.verbose("Remote file size is %s" % remoteSize)
                 except IOError, e:
                     self.critical(e)
@@ -129,8 +128,8 @@ class SftpytailPlugin(b3.plugin.Plugin):
                         self._remoteFileOffset = remoteSize - self._maxGap
                     #self.debug('RETR from remote offset %s. (expecting to read at least %s bytes)' % (self._remoteFileOffset, remoteSize - self._remoteFileOffset))
                     if not rfile:
-                        self.debug('opening remote game log file %s for reading' % self.sftpconfig['path'][1:])
-                        rfile = sftp.open(self.sftpconfig['path'][1:], 'r')
+                        self.debug('opening remote game log file %s for reading' % self.sftpconfig['path'])
+                        rfile = sftp.open(self.sftpconfig['path'], 'r')
                     rfile.seek(self._remoteFileOffset)
                     self.debug('reading remote game log file from offset %s' % self._remoteFileOffset)
                     handleDownload(rfile.read())      
