@@ -55,10 +55,12 @@
 # * fix issue with CTF flag capture events
 # 17/09/2010 - 0.8.5 - GrosBedo
 # * fix crash issue when a player has disconnected at the very time the bot check for the list of players
+# 20/10/2010 - 0.9 - GrosBedo
+# * fix a BIG issue when detecting teams (were always unknown)
 #
 
 __author__  = 'Courgette, GrosBedo'
-__version__ = '0.8.5'
+__version__ = '0.9'
 
 import re, string, thread, time, threading
 import b3
@@ -322,16 +324,13 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
                 if not bclient.has_key('name'):
                     bclient['name'] = self._empty_name_default
 
-                if bclient.has_key('team'):
-                    bclient['team'] = self.getTeam(bclient['team'])
-
                 if bclient.has_key('guid'):
                     guid = bclient['guid']
                 else:
                     if bclient.has_key('skill'):
                         guid = 'BOT-' + str(cid)
                         self.verbose('BOT connected!')
-                        self.clients.newClient(cid, name=bclient['name'], ip='0.0.0.0', state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid }, money=20)
+                        self.clients.newClient(cid, name=bclient['name'], ip='0.0.0.0', state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid }, team=bclient['team'], money=20)
                         self._connectingSlots.remove(cid)
                         return None
                     else:
@@ -348,7 +347,7 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
                         self.warning('failed to get client ip')
                 
                 if bclient.has_key('ip'):
-                    self.clients.newClient(cid, name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid }, money=20)
+                    self.clients.newClient(cid, name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid }, team=bclient['team'], money=20)
                 else:
                     self.warning('failed to get connect client')
                     
@@ -566,28 +565,21 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
                 return None
 
     def getTeam(self, team):
-        if team == 'red' or team == 'RED':
-            team = 1
-        elif team == 'blue' or team == 'BLUE':
-            team = 2
-        elif team == 'spectator' or team == 'SPECTATOR':
-            team = 3
-        else:
-            team = -1
-        team = int(team)
-        if team == 1:
-            #self.verbose('Team is Red')
+        team = str(team).lower() # We convert to a string and lower the case because there is a problem when trying to detect numbers if it's not a string (weird)
+        if team == 'red' or team == '1':
+            self.debug('Team is Red')
             result = b3.TEAM_RED
-        elif team == 2:
-            #self.verbose('Team is Blue')
+        elif team == 'blue' or team == '2':
+            self.debug('Team is Blue')
             result = b3.TEAM_BLUE
-        elif team == 3:
-            #self.verbose('Team is Spec')
+        elif team == 'spectator' or team == '0' or team == '3':
+            self.debug('Team is Spectator')
             result = b3.TEAM_SPEC
         else:
+            self.debug('Team is Unknown')
             result = b3.TEAM_UNKNOWN
         
-        #self.debug('getTeam(%s) -> %s' % (team, result))
+        self.debug('getTeam(%s) -> %s and %s' % (team, result, str(team).lower()))
         return result
 
     # Translate the gameType to a readable format (also for teamkill plugin!)
