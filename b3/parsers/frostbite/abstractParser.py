@@ -16,9 +16,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+# CHANGELOG
+# 2010-10-23 - 1.1 - Courgette
+#    * remove bfbc2 names 
 
 __author__  = 'Courgette'
-__version__ = '1.0'
+__version__ = '1.1'
 
 import sys, re, traceback, time, string, Queue, threading
 import b3.parser
@@ -103,7 +106,7 @@ class AbstractParser(b3.parser.Parser):
                 
                 try:                
                     if self._serverConnection is None:
-                        self.verbose('Connecting to BFBC2 server ...')
+                        self.verbose('Connecting to frostbite server ...')
                         self._serverConnection = FrostbiteConnection(self, self._rconIp, self._rconPort, self._rconPassword)
 
                     self._serverConnection.subscribeToEvents()
@@ -117,10 +120,10 @@ class AbstractParser(b3.parser.Parser):
                         """
                         if not self._paused:
                             try:
-                                bfbc2packet = self._serverConnection.readEvent()
-                                self.console("%s" % bfbc2packet)
+                                packet = self._serverConnection.readEvent()
+                                self.console("%s" % packet)
                                 try:
-                                    self.routeBfbc2Packet(bfbc2packet)
+                                    self.routeFrostbitePacket(packet)
                                 except SystemExit:
                                     raise
                                 except Exception, msg:
@@ -154,14 +157,14 @@ class AbstractParser(b3.parser.Parser):
                 sys.exit(self.exitcode)
 
 
-    def routeBfbc2Packet(self, packet):
+    def routeFrostbitePacket(self, packet):
         if packet is None:
             self.warning('cannot route empty packet : %s' % traceback.extract_tb(sys.exc_info()[2]))
         
-        bfbc2EventType = packet[0]
-        bfbc2EventData = packet[1:]
+        eventType = packet[0]
+        eventData = packet[1:]
         
-        match = re.search(r"^(?P<actor>[^.]+)\.on(?P<event>.+)$", bfbc2EventType)
+        match = re.search(r"^(?P<actor>[^.]+)\.on(?P<event>.+)$", eventType)
         if match:
             func = 'On%s%s' % (string.capitalize(match.group('actor')), \
                                string.capitalize(match.group('event')))
@@ -170,19 +173,19 @@ class AbstractParser(b3.parser.Parser):
         if match and hasattr(self, func):
             #self.debug('routing ----> %s' % func)
             func = getattr(self, func)
-            event = func(bfbc2EventType, bfbc2EventData)
+            event = func(eventType, eventData)
             #self.debug('event : %s' % event)
             if event:
                 self.queueEvent(event)
             
-        elif bfbc2EventType in self._eventMap:
+        elif eventType in self._eventMap:
             self.queueEvent(b3.events.Event(
-                    self._eventMap[bfbc2EventType],
-                    bfbc2EventData))
+                    self._eventMap[eventType],
+                    eventData))
         else:
             if func:
                 data = func + ' '
-            data += str(bfbc2EventType) + ': ' + str(bfbc2EventData)
+            data += str(eventType) + ': ' + str(eventData)
             self.debug('TODO: %r' % packet)
             self.queueEvent(b3.events.Event(b3.events.EVT_UNKNOWN, data))
 
@@ -352,7 +355,7 @@ class AbstractParser(b3.parser.Parser):
         return players
         
     def getPlayerScores(self):
-        """Ask the BFBC2 for a given client's team
+        """Ask the server for a given client's team
         """
         scores = {}
         try:
@@ -364,7 +367,7 @@ class AbstractParser(b3.parser.Parser):
         return scores
     
     def getPlayerPings(self):
-        """Ask the BFBC2 for a given client's team
+        """Ask the server for a given client's pings
         """
         pings = {}
         try:
@@ -993,7 +996,7 @@ class AbstractParser(b3.parser.Parser):
 # why ?
 # because doing so make sure we're not broking any other 
 # working and long tested parser. The change we make here
-# are only applied when the Bfbc2 parser is loaded.
+# are only applied when the frostbite parser is loaded.
 #############################################################
   
 ## add a new method to the Client class
