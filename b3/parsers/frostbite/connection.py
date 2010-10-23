@@ -23,17 +23,17 @@
 # * can either be used to send commands or enter the listening mode (which
 #   waits for BFBC2 events)
 # 2010/03/14 - 0.6 - Courgette
-# * raise a Bfbc2NetworkException whenever something goes wrong on the 
+# * raise a FrostbiteNetworkException whenever something goes wrong on the 
 #   network while using sendRequest()
 # 2010/03/16 - 0.7 - Courgette
-# * Bfbc2CommandFailedError now also contains the BFBC2 response
+# * FrostbiteCommandFailedError now also contains the BFBC2 response
 # 2010/03/19 - 0.8 - Courgette
 # * fix bug listening to event when we have an incomplete packet
 # 2010/03/23 - 0.9 - Courgette
 # * bugfix: when start listening and only a partial packet is available
 # 2010/03/25 - 0.10 - Courgette
 # * updated to use latest protocol.py
-# * sendRequest and readBfbc2Event now detect a lost connection and reconnect in such cases
+# * sendRequest and readEvent now detect a lost connection and reconnect in such cases
 # 2010/03/25 - 0.10.1 - Courgette
 # * Exception message more explicit
 # * fix the socket time out message when listening to events
@@ -45,17 +45,18 @@
 # * fix a bug which occurred in the rare case we receive from the server a packet from another sequence
 # * make this version 1.0 as it seems to be stable enough now
 # 2010/04/18 - 1.1 - Courgette
-# * harden readBfbc2Event in cases where a network error occurs while replying OK to an event (Thanks to Merph's report)
+# * harden readEvent in cases where a network error occurs while replying OK to an event (Thanks to Merph's report)
 # 2010/04/18 - 1.2 - Courgette
-# * try to make sure readBfbc2Event does not hang on a dead connection
+# * try to make sure readEvent does not hang on a dead connection
 # 2010/04/20 - 1.2.1 - Courgette
 # * harden 1.2
 # 2010/10/11 - 1.2.2 - xlr8or
 # * Output to log changed: BFBC2 -> Frostbite (cosmetic only!)
-#
+# 2010/10/23 - 2.0 - Courgette
+# * refactor to make this module generic for all frostbite games
 
 __author__  = 'Courgette'
-__version__ = '1.2.2'
+__version__ = '2.0'
 
 debug = True
 
@@ -64,13 +65,13 @@ import b3.parsers.frostbite.protocol as protocol
  
     
 
-class Bfbc2Exception(Exception): pass
-class Bfbc2NetworkException(Bfbc2Exception): pass
-class Bfbc2BadPasswordException(Bfbc2Exception): pass
+class FrostbiteException(Exception): pass
+class FrostbiteNetworkException(FrostbiteException): pass
+class FrostbiteBadPasswordException(FrostbiteException): pass
 
-class Bfbc2CommandFailedError(Exception): pass
+class FrostbiteCommandFailedError(Exception): pass
 
-class Bfbc2Connection(object):
+class FrostbiteConnection(object):
     
     console = None
     _serverSocket = None
@@ -89,7 +90,7 @@ class Bfbc2Connection(object):
             self._connect()
             self._auth()
         except socket.error, detail:
-            raise Bfbc2NetworkException('Cannot create FrostbiteConnection: %s'% detail)
+            raise FrostbiteNetworkException('Cannot create FrostbiteConnection: %s'% detail)
    
     def __del__(self):
         self.close()
@@ -101,7 +102,7 @@ class Bfbc2Connection(object):
             self._serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._serverSocket.connect( ( self._host, self._port ) )
         except Exception, err:
-            raise Bfbc2Exception(err)
+            raise FrostbiteException(err)
     
     def close(self):
         if self._serverSocket is not None:
@@ -130,7 +131,7 @@ class Bfbc2Connection(object):
             self._serverSocket.sendall(request)
             [response, self._receiveBuffer] = protocol.receivePacket(self._serverSocket, self._receiveBuffer)
         except socket.error, detail:
-            raise Bfbc2NetworkException(detail)
+            raise FrostbiteNetworkException(detail)
         
         if response is None:
             return None
@@ -142,14 +143,14 @@ class Bfbc2Connection(object):
     def _auth(self):
         self.console.debug('authing to Frostbite server')
         if self._serverSocket is None:
-            raise Bfbc2Connection("cannot auth, need to be connected")
+            raise FrostbiteConnection("cannot auth, need to be connected")
             
         # Retrieve this connection's 'salt' (magic value used when encoding password) from server
         words = self.sendRequest("login.hashed")
 
         # if the server doesn't understand "login.hashed" command, abort
         if words[0] != "OK":
-            raise Bfbc2Exception("Could not retrieve salt")
+            raise FrostbiteException("Could not retrieve salt")
 
         # Given the salt and the password, combine them and compute hash value
         salt = words[1].decode("hex")
@@ -161,32 +162,32 @@ class Bfbc2Connection(object):
 
         # if the server didn't like our password, abort
         if loginResponse[0] != "OK":
-            raise Bfbc2BadPasswordException("The Frostbite server refused our password")
+            raise FrostbiteBadPasswordException("The Frostbite server refused our password")
 
             
-    def subscribeToBfbc2Events(self):
+    def subscribeToEvents(self):
         """
-        tell the bfbc2 server to send us events
+        tell the frostbite server to send us events
         """
         self.console.debug('subscribing to Frostbite events')
         response = self.sendRequest("eventsEnabled", "true")
 
         # if the server didn't know about the command, abort
         if response[0] != "OK":
-            raise Bfbc2CommandFailedError(response)
+            raise FrostbiteCommandFailedError(response)
 
         
-    def readBfbc2Event(self):
+    def readEvent(self):
         # Wait for event from server
         packet = None
         timeout_counter = 0
         while packet is None:
             try:
                 if self._serverSocket is None:
-                    self.console.info("readBfbc2Event: reconnecting...")
+                    self.console.info("readEvent: reconnecting...")
                     self._connect()
                     self._auth()
-                    self.subscribeToBfbc2Events()
+                    self.subscribeToEvents()
                 [tmppacket, self._receiveBuffer] = protocol.receivePacket(self._serverSocket, self._receiveBuffer)
                 [isFromServer, isResponse, sequence, words] = protocol.DecodePacket(tmppacket)
                 if isFromServer and not isResponse:
@@ -203,19 +204,19 @@ class Bfbc2Connection(object):
                     self._serverSocket.sendall(request)
                     timeout_counter = 0
             except socket.error, detail:
-                raise Bfbc2NetworkException('readBfbc2Event: %r'% detail)
+                raise FrostbiteNetworkException('readEvent: %r'% detail)
 
         try:
             [isFromServer, isResponse, sequence, words] = protocol.DecodePacket(packet)
             self.printPacket(protocol.DecodePacket(packet))
         except:
-            raise Bfbc2Exception('readBfbc2Event: failed to decodePacket {%s}' % packet)
+            raise FrostbiteException('readEvent: failed to decodePacket {%s}' % packet)
         
         # If this was a command from the server, we should respond to it
         # For now, we always respond with an "OK"
         if isResponse:
             self.console.debug('Received an unexpected response packet from server, ignoring: %r' % packet)
-            return self.readBfbc2Event()
+            return self.readEvent()
         else:
             response = protocol.EncodePacket(True, True, sequence, ["OK"])
             self.printPacket(protocol.DecodePacket(response))
@@ -223,7 +224,7 @@ class Bfbc2Connection(object):
             try:
                 self._serverSocket.sendall(response)
             except socket.error, detail:
-                self.console.warning("in readBfbc2Event while sending response OK to server : %s" % detail)
+                self.console.warning("in readEvent while sending response OK to server : %s" % detail)
                 
             return words
             
@@ -280,7 +281,7 @@ if __name__ == '__main__':
             print "WARNING : " + msg
     myConsole = MyConsole()
     
-    bc2server = Bfbc2Connection(myConsole, host, port, pw)
+    bc2server = FrostbiteConnection(myConsole, host, port, pw)
     print "connected"
     
     reponse = bc2server.sendRequest(('version',))
@@ -293,7 +294,7 @@ if __name__ == '__main__':
     bc2server.close()
     print "closed"
     
-    bc2server.readBfbc2Event()
+    bc2server.readEvent()
     
     
     

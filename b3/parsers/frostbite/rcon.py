@@ -27,28 +27,29 @@
 # * fix maxRetries limitation 
 # * make this class thread safe
 # 2010/04/03 - 0.3.2 - courgette
-# * fix import Bfbc2Exception
+# * fix import FrostbiteException
 # 2010/04/11 - 1.0 Courgette
 # * just make it v1.0 as it is now part of a public release and works rather good
 # 2010/04/15 - 1.0.1 Bakes
-# * If the response of the rcon command does not start with 'OK', trigger Bfbc2CommandFailedError
+# * If the response of the rcon command does not start with 'OK', trigger FrostbiteCommandFailedError
 # 2010/07/29 - 1.0.2 xlr8or
 # * The response may also be "NotFound" ie. when a guid or ip address is not found in the banslist.
 # * Added needConfirmation var to write() so we can use the confirmationtype ("OK", "NotFound") to test on.
+# 2010/10/23 - 2.0 - Courgette
+# * refactor BFBC2 -> frostbite
 
-import thread
-from b3.parsers.frostbite import bfbc2Connection
  
 __author__ = 'Courgette'
-__version__ = '1.0'
+__version__ = '2.0'
  
-from b3.parsers.frostbite.bfbc2Connection import Bfbc2Connection, Bfbc2Exception, Bfbc2CommandFailedError
+import thread
+from b3.parsers.frostbite.connection import FrostbiteConnection, FrostbiteException, FrostbiteCommandFailedError
 
 #--------------------------------------------------------------------------------------------------
 class Rcon:
     _lock = thread.allocate_lock()
     console = None
-    _bfbc2Connection = None
+    _frostbiteConnection = None
     
     _rconIp = None
     _rconPort = None
@@ -61,10 +62,10 @@ class Rcon:
         self._rconPassword = password
         
     def _connect(self):
-        if self._bfbc2Connection:
+        if self._frostbiteConnection:
             return
         self.console.verbose('RCON: Connecting to Frostbite server ...')
-        self._bfbc2Connection = Bfbc2Connection(self.console, self._rconIp, self._rconPort, self._rconPassword)
+        self._frostbiteConnection = FrostbiteConnection(self.console, self._rconIp, self._rconPort, self._rconPassword)
 
     def writelines(self, lines):
         for line in lines:
@@ -73,21 +74,21 @@ class Rcon:
     def write(self, cmd, maxRetries=1, needConfirmation=False):
         self._lock.acquire()
         try:
-            if self._bfbc2Connection is None:
+            if self._frostbiteConnection is None:
                 self._connect()
             tries = 0
             while tries < maxRetries:
                 try:
                     tries += 1
                     self.console.verbose('RCON (%s/%s) %s' % (tries, maxRetries, cmd))
-                    response = self._bfbc2Connection.sendRequest(cmd)
+                    response = self._frostbiteConnection.sendRequest(cmd)
                     if response[0] != "OK" and response[0] != "NotFound":
-                        raise Bfbc2CommandFailedError(response)
+                        raise FrostbiteCommandFailedError(response)
                     if needConfirmation:
                         return response[0]
                     else:
                         return response[1:]
-                except Bfbc2Exception, err:
+                except FrostbiteException, err:
                     self.console.warning('RCON: sending \'%s\', %s' % (cmd, err))
             self.console.error('RCON: failed to send \'%s\'', cmd)
             try:
@@ -103,7 +104,7 @@ class Rcon:
 
     def close(self):
         self.console.info('RCON: disconnecting from BFBC2 server')
-        self._bfbc2Connection.close()
+        self._frostbiteConnection.close()
 
             
             
@@ -121,12 +122,12 @@ if __name__ == '__main__':
         port = int(sys.argv[2])
         pw = sys.argv[3]
     
-
     from b3.fake import fakeConsole
-    bfbc2Connection.debug = True
+    
+    import b3.parsers.frostbite.connection as fbConnection
+    fbConnection.debug = True
 
 
-    bfbc2Connection.debug = True
     r = Rcon(fakeConsole, (host, port), pw)   
     r.write(('admin.yell', 'test', 1400, 'player', 'Courgette'))  
     

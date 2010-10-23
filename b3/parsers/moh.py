@@ -18,6 +18,9 @@
 #
 #
 # CHANGELOG
+# 2010/10/23 - 0.4 - Courgette
+# * refactor inheriting from frostbite AbstratParser 
+# * change available server var list
 # 2010/10/10 - 0.3 - Bakes
 # * getEasyName is now implemented and working, getHardName is implemented
 #   but not working.
@@ -26,46 +29,57 @@
 # 2010/09/25 - 0.1 - Bakes
 # * Initial version of MoH parser - hasn't been tested with OnKill events yet
 #   but basic commands seem to work.
-# 
 
-__author__  = 'Bakes'
-__version__ = '0.2'
+__author__  = 'Bakes, Courgette'
+__version__ = '0.3'
 
-import b3.parsers.bfbc2
-import sys, time, re, string, traceback
-import b3
 import b3.events
-import b3.parser
-from b3.parsers.frostbite.punkbuster import PunkBuster as Bfbc2PunkBuster
-import threading
-import Queue
-import b3.parsers.frostbite.rcon as rcon
-import b3.cvar
-from b3.functions import soundex, levenshteinDistance
-from b3.parsers.frostbite.bfbc2Connection import *
+from b3.parsers.frostbite.abstractParser import AbstractParser
+from b3.parsers.frostbite.util import PlayerInfoBlock
 
 SAY_LINE_MAX_LENGTH = 100
 
-class MohParser(b3.parsers.bfbc2.Bfbc2Parser):
+class MohParser(AbstractParser):
     gameName = 'moh'
+    
+    _gameServerVars = (
+        'serverName', # vars.serverName [name] Set the server name 
+        'adminPassword', # vars.adminPassword [password] Set the admin password for the server 
+        'gamePassword', # vars.gamePassword [password] Set the game password for the server 
+        'punkBuster', # vars.punkBuster [enabled] Set if the server will use PunkBuster or not 
+        'hardCore[enabled]', # vars.hardCore[enabled] Set hardcore mode 
+        'ranked', # vars.ranked [enabled] Set ranked or not 
+        'skillLimit', # vars.skillLimit [lower, upper] Set the skill limits allowed on to the server 
+        'noUnlocks', # vars.noUnlocks [enabled] Set if unlocks should be disabled 
+        'noAmmoPickups', # vars.noAmmoPickups [enabled] Set if pickups should be disabled 
+        'realisticHealth', # vars.realisticHealth [enabled] Set if health should be realistic 
+        'supportAction', # vars.supportAction [enabled] Set if support action should be enabled 
+        'preRoundLimit', # vars.preRoundLimit [upper, lower] Set pre round limits. Setting both to zero means the game uses whatever settings are used on the specific levels. On ranked servers, the lowest values allowed are lower = 2 and upper = 4.
+        'roundStartTimerPlayersLimit', # vars.roundStartTimerPlayersLimit [limit] Get/Set the number of players that need to spawn on each team for the round start timer to start counting down.
+        'roundStartTimerDelay', # vars.roundStartTimerDelay [delay] If set to other than -1, this value overrides the round start delay set on the individual levels.
+        'tdmScoreCounterMaxScore', # vars.tdmScoreCounterMaxScore [score] If set to other than -1, this value overrides the score needed to win a round of Team Assault, Sector Control or Hot Zone. 
+        'clanTeams', # vars.clanTeams [enabled] Set if clan teams should be used 
+        'friendlyFire', # vars.friendlyFire [enabled] Set if the server should allow team damage 
+        'currentPlayerLimit', # vars.currentPlayerLimit Retrieve the current maximum number of players 
+        'maxPlayerLimit', # vars.maxPlayerLimit Retrieve the server-enforced maximum number of players 
+        'playerLimit', # vars.playerLimit [nr of players] Set desired maximum number of players 
+        'bannerUrl', # vars.bannerUrl [url] Set banner url 
+        'serverDescription', # vars.serverDescription [description] Set server description 
+        'noCrosshair', # vars.noCrosshair [enabled] Set if crosshair for all weapons is hidden 
+        'noSpotting', # vars.noSpotting [enabled] Set if spotted targets are disabled in the 3d-world 
+        'teamKillCountForKick', # vars.teamKillCountForKick [count] Set number of teamkills allowed during a round 
+        'teamKillValueForKick', # vars.teamKillValueForKick [count] Set max kill-value allowed for a player before he/she is kicked 
+        'teamKillValueIncrease', # vars.teamKillValueIncrease [count] Set kill-value increase for a teamkill 
+        'teamKillValueDecreasePerSecond', # vars.teamKillValueDecreasePerSecond [count] Set kill-value decrease per second
+        'idleTimeout', # vars.idleTimeout [time] Set idle timeout vars.profanityFilter [enabled] Set if profanity filter is enabled
+    )
+    
     def startup(self):
-        
-        # add specific events
-        self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
-        self.Events.createEvent('EVT_PUNKBUSTER_SCHEDULED_TASK', 'PunkBuster scheduled task')
-        self.Events.createEvent('EVT_PUNKBUSTER_LOST_PLAYER', 'PunkBuster client connection lost')
-        self.Events.createEvent('EVT_PUNKBUSTER_NEW_CONNECTION', 'PunkBuster client received IP')
-        self.Events.createEvent('EVT_CLIENT_SPAWN', 'Client Spawn')
+        AbstractParser.startup(self)
                 
         # create the 'Server' client
         self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
-        
-        if self.config.has_option('server', 'punkbuster') and self.config.getboolean('server', 'punkbuster'):
-            self.info('kick/ban by punkbuster is unsupported yet')
-            #self.debug('punkbuster enabled in config')
-            #self.PunkBuster = Bfbc2PunkBuster(self)
-        
-        
+
         if self.config.has_option('moh', 'max_say_line_length'):
             try:
                 maxlength = self.config.getint('moh', 'max_say_line_length')
@@ -81,11 +95,7 @@ class MohParser(b3.parsers.bfbc2.Bfbc2Parser):
                 self.error('failed to read max_say_line_length setting "%s" : %s' % (self.config.get('moh', 'max_say_line_length'), err))
         self.debug('line_length: %s' % self._settings['line_length'])
             
-        version = self.output.write('version')
-        self.info('MoH server version : %s' % version)
-        if version[0] != 'MOH':
-            raise Exception("the moh parser can only work with Medal of Honor")
-        
+            
         self.getServerVars()
         self.getServerInfo()
         self.verbose('GameType: %s, Map: %s' %(self.game.gameType, self.game.mapName))
@@ -104,20 +114,18 @@ class MohParser(b3.parsers.bfbc2.Bfbc2Parser):
                 self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
                 
         
-        self.sayqueuelistener = threading.Thread(target=self.sayqueuelistener)
-        self.sayqueuelistener.setDaemon(True)
-        self.sayqueuelistener.start()
         
-        self.saybigqueuelistener = threading.Thread(target=self.saybigqueuelistener)
-        self.saybigqueuelistener.setDaemon(True)
-        self.saybigqueuelistener.start()
+    def checkVersion(self):
+        version = self.output.write('version')
+        self.info('server version : %s' % version)
+        if version[0] != 'MOH':
+            raise Exception("the moh parser can only work with Medal of Honor")
 
     def getClient(self, cid, _guid=None):
         """Get a connected client from storage or create it
         B3 CID   <--> MoH character name
         B3 GUID  <--> MoH EA_guid
         """
-        
         # try to get the client from the storage of already authed clients
         client = self.clients.getByCID(cid)
         if not client:
@@ -149,21 +157,8 @@ class MohParser(b3.parsers.bfbc2.Bfbc2Parser):
             self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
         
         return client
-    def rotateMap(self):
-        """Load the next map (not level). If the current game mod plays each level twice
-        to get teams the chance to play both sides, then this rotate a second
-        time to really switch to the next map"""
-        #nextIndex = self.getNextMapIndex()
-        self.write(('admin.runNextRound',))
 
-    def getMap(self):
-        """Return the current level name (not easy map name)"""
-        data = self.write(('serverInfo',))
-        if not data:
-            return None
-        return data[4]
-		
-		
+
     def getHardName(self, mapname):
         """ Change real name to level name """
         mapname = mapname.lower()
@@ -190,11 +185,11 @@ class MohParser(b3.parsers.bfbc2.Bfbc2Parser):
 
         elif mapname.startswith('garmzir town'):
             return 'levels/mp_10'
-			
+
         else:
             self.warning('unknown level name \'%s\'. Please make sure you have entered a valid mapname' % mapname)
             return mapname
-			
+
     def getEasyName(self, mapname):
         """ Change levelname to real name """
         if mapname.startswith('levels/mp_01'):
@@ -225,72 +220,69 @@ class MohParser(b3.parsers.bfbc2.Bfbc2Parser):
             self.warning('unknown level name \'%s\'. Please report this on B3 forums' % mapname)
             return mapname
 
-class PlayerInfoBlock:
-    """
-    help extract player info from a MoH Player Info Block which we obtain
-    from admin.listPlayers
-    
-    usage :
-        words = [3, 'name', 'guid', 'ping', 2, 
-            'Courgette', 'A32132e', 130, 
-            'SpacepiG', '6546545665465', 120,
-            'Bakes', '6ae54ae54ae5', 50]
-        playersInfo = PlayerInfoBlock(words)
-        print "num of players : %s" % len(playersInfo)
-        print "first player : %s" % playersInfo[0]
-        print "second player : %s" % playersInfo[1]
-        print "the first 2 players : %s" % playersInfo[0:2]
-        for p in playersInfo:
-            print p
-    """
-    playersData = []
-    numOfParameters= 0
-    numOfPlayers = 0
-    parameterTypes = []
-    
-    def __init__(self, data):
-        """Represent a MoH Player info block
-        The standard set of info for a group of players contains a lot of different 
-        fields. To reduce the risk of having to do backwards-incompatible changes to
-        the protocol, the player info block includes some formatting information.
-            
-        <number of parameters>       - number of parameters for each player 
-        N x <parameter type: string> - the parameter types that will be sent below 
-        <number of players>          - number of players following 
-        M x N x <parameter value>    - all parameter values for player 0, then all 
-                                    parameter values for player 1, etc
-                                    
-        Current parameters:
-          name     string     - player name 
-          guid     GUID       - player GUID, or '' if GUID is not yet known 
-          teamId   Team ID    - player's current team 
-          squadId  Squad ID   - player's current squad 
-          kills    integer    - number of kills, as shown in the in-game scoreboard
-          deaths   integer    - number of deaths, as shown in the in-game scoreboard
-          score    integer    - score, as shown in the in-game scoreboard 
-          ping     integer    - ping (ms), as shown in the in-game scoreboard
-        """
-        self.numOfParameters = int(data[0])
-        self.parameterTypes = data[1:1+self.numOfParameters]
-        self.numOfPlayers = int(data[1+self.numOfParameters])
-        self.playersData = data[1+self.numOfParameters+1:]
-    
-    def __len__(self):
-        return self.numOfPlayers
-    
-    def __getitem__(self, key):
-        """Returns the player data, for provided key (int or slice)"""
-        if isinstance(key, slice):
-            indices = key.indices(len(self))
-            return [self.getPlayerData(i) for i in range(*indices) ]
-        else:
-            return self.getPlayerData(key)
+    def getServerVars(self):
+        """Update the game property from server fresh data"""
+        try: self.game.serverName = self.getCvar('serverName').getBoolean()
+        except: pass
+        try: self.game.adminPassword = self.getCvar('adminPassword').getBoolean()
+        except: pass
+        try: self.game.gamePassword = self.getCvar('gamePassword').getBoolean()
+        except: pass
+        try: self.game.punkBuster = self.getCvar('punkBuster').getBoolean()
+        except: pass
+        try: self.game.hardCore[enabled] = self.getCvar('hardCore[enabled]').getBoolean()
+        except: pass
+        try: self.game.ranked = self.getCvar('ranked').getBoolean()
+        except: pass
+        try: self.game.skillLimit = self.getCvar('skillLimit').getBoolean()
+        except: pass
+        try: self.game.noUnlocks = self.getCvar('noUnlocks').getBoolean()
+        except: pass
+        try: self.game.noAmmoPickups = self.getCvar('noAmmoPickups').getBoolean()
+        except: pass
+        try: self.game.realisticHealth = self.getCvar('realisticHealth').getBoolean()
+        except: pass
+        try: self.game.supportAction = self.getCvar('supportAction').getBoolean()
+        except: pass
+        try: self.game.preRoundLimit = self.getCvar('preRoundLimit').getBoolean()
+        except: pass
+        try: self.game.roundStartTimerPlayersLimit = self.getCvar('roundStartTimerPlayersLimit').getBoolean()
+        except: pass
+        try: self.game.roundStartTimerDelay = self.getCvar('roundStartTimerDelay').getBoolean()
+        except: pass
+        try: self.game.tdmScoreCounterMaxScore = self.getCvar('tdmScoreCounterMaxScore').getBoolean()
+        except: pass
+        try: self.game.clanTeams = self.getCvar('clanTeams').getBoolean()
+        except: pass
+        try: self.game.friendlyFire = self.getCvar('friendlyFire').getBoolean()
+        except: pass
+        try: self.game.currentPlayerLimit = self.getCvar('currentPlayerLimit').getBoolean()
+        except: pass
+        try: self.game.maxPlayerLimit = self.getCvar('maxPlayerLimit').getBoolean()
+        except: pass
+        try: self.game.playerLimit = self.getCvar('playerLimit').getBoolean()
+        except: pass
+        try: self.game.bannerUrl = self.getCvar('bannerUrl').getBoolean()
+        except: pass
+        try: self.game.serverDescription = self.getCvar('serverDescription').getBoolean()
+        except: pass
+        try: self.game.noCrosshair = self.getCvar('noCrosshair').getBoolean()
+        except: pass
+        try: self.game.noSpotting = self.getCvar('noSpotting').getBoolean()
+        except: pass
+        try: self.game.teamKillCountForKick = self.getCvar('teamKillCountForKick').getBoolean()
+        except: pass
+        try: self.game.teamKillValueForKick = self.getCvar('teamKillValueForKick').getBoolean()
+        except: pass
+        try: self.game.teamKillValueIncrease = self.getCvar('teamKillValueIncrease').getBoolean()
+        except: pass
+        try: self.game.teamKillValueDecreasePerSecond = self.getCvar('teamKillValueDecreasePerSecond').getBoolean()
+        except: pass
+        try: self.game.idleTimeout = self.getCvar('idleTimeout').getBoolean()
+        except: pass
+        
+        
 
-    def getPlayerData(self, index):
-        if index >= self.numOfPlayers:
-            raise IndexError
-        data = {}
-        playerData = self.playersData[index*self.numOfParameters:(index+1)*self.numOfParameters]
-        for i in range(self.numOfParameters):
-            data[self.parameterTypes[i]] = playerData[i]
-        return data 
+
+        
+        
