@@ -98,7 +98,7 @@ class CodParser(b3.parsers.q3a.Q3AParser):
         # say like events
         re.compile(r'^(?P<action>[a-z]+);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<name>[^;]+);(?P<text>.*))$', re.IGNORECASE),
         # Join Team (cod5)
-        re.compile(r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]+);(?P<name>[^;]+))$', re.IGNORECASE)
+        re.compile(r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]+);(?P<name>[^;]+))$', re.IGNORECASE),
         # all other events
         re.compile(r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<name>[^;]+))$', re.IGNORECASE)
     )
@@ -604,36 +604,35 @@ class CodParser(b3.parsers.q3a.Q3AParser):
                 sp.auth()
 
 #--LogLineFormats---------------------------------------------------------------
-"""\
 
-*** CoD:
-Join:               J;160913;10;PlayerName
-Quit:               Q;160913;10;PlayerName
-Damage by world:    D;160913;14;axis;PlayerName;;-1;world;;none;6;MOD_FALLING;none
-Damage by opponent: D;160913;19;allies;PlayerName;248102;10;axis;OpponentName;mp44_mp;27;MOD_PISTOL_BULLET;right_foot
-Kill:               K;160913;4;axis;PlayerName;578287;0;axis;OpponentName;kar98k_mp;180;MOD_HEAD_SHOT;head
-Weapon/ammo pickup: Weapon;160913;8;PlayerName;m1garand_mp
-Action:             A;160913;16;axis;PlayerName;htf_scored
-Say to All:         say;160913;8;PlayerName;^Ubye
-Say to Team:        sayteam;160913;8;PlayerName;^Ulol
-Private message:    tell;160913;12;PlayerName1;1322833;8;PlayerName2;what message?
-Winners:            W;axis;160913;PlayerName1;258015;PlayerName2
-Losers:             L;allies;160913;PlayerName1;763816;PlayerName2
-
-ExitLevel:          ExitLevel: executed
-Shutdown Engine:    ShutdownGame:
-Seperator:          ------------------------------------------------------------
-InitGame:           InitGame: \_Admin\xlr8or\_b3\B3 v1.2.1b [posix]\_Email\admin@xlr8or.com\_Host\[SNT]
-                    \_Location\Twente University - The Netherlands\_URL\http://games.snt.utwente.nl/\fs_game\xlr1.7
-                    \g_antilag\1\g_gametype\tdm\gamename\Call of Duty 2\mapname\mp_toujane\protocol\115
-                    \scr_friendlyfire\3\scr_killcam\1\shortversion\1.0\sv_allowAnonymous\0\sv_floodProtect\1
-                    \sv_hostname\^5[SNT] #3 ^7Tactical Gaming ^9(^7B3^9) (^1v1.0^9)\sv_maxclients\24\sv_maxPing\220
-                    \sv_maxRate\20000\sv_minPing\0\sv_privateClients\8\sv_pure\1\sv_voice\1
-
-
-*** CoD5 specific lines:
-JoinTeam:           JT;283895439;17;axis;PlayerName;
-                    AD;564;allies;580090035;6;axis;PlayerName;stg44_mp;30;MOD_RIFLE_BULLET;right_arm_lower
-
-
-"""
+#===============================================================================
+# 
+# *** CoD:
+# Join:               J;160913;10;PlayerName
+# Quit:               Q;160913;10;PlayerName
+# Damage by world:    D;160913;14;axis;PlayerName;;-1;world;;none;6;MOD_FALLING;none
+# Damage by opponent: D;160913;19;allies;PlayerName;248102;10;axis;OpponentName;mp44_mp;27;MOD_PISTOL_BULLET;right_foot
+# Kill:               K;160913;4;axis;PlayerName;578287;0;axis;OpponentName;kar98k_mp;180;MOD_HEAD_SHOT;head
+# Weapon/ammo pickup: Weapon;160913;8;PlayerName;m1garand_mp
+# Action:             A;160913;16;axis;PlayerName;htf_scored
+# Say to All:         say;160913;8;PlayerName;^Ubye
+# Say to Team:        sayteam;160913;8;PlayerName;^Ulol
+# Private message:    tell;160913;12;PlayerName1;1322833;8;PlayerName2;what message?
+# Winners:            W;axis;160913;PlayerName1;258015;PlayerName2
+# Losers:             L;allies;160913;PlayerName1;763816;PlayerName2
+# 
+# ExitLevel:          ExitLevel: executed
+# Shutdown Engine:    ShutdownGame:
+# Seperator:          ------------------------------------------------------------
+# InitGame:           InitGame: \_Admin\xlr8or\_b3\B3 v1.2.1b [posix]\_Email\admin@xlr8or.com\_Host\[SNT]
+#                    \_Location\Twente University - The Netherlands\_URL\http://games.snt.utwente.nl/\fs_game\xlr1.7
+#                    \g_antilag\1\g_gametype\tdm\gamename\Call of Duty 2\mapname\mp_toujane\protocol\115
+#                    \scr_friendlyfire\3\scr_killcam\1\shortversion\1.0\sv_allowAnonymous\0\sv_floodProtect\1
+#                    \sv_hostname\^5[SNT] #3 ^7Tactical Gaming ^9(^7B3^9) (^1v1.0^9)\sv_maxclients\24\sv_maxPing\220
+#                    \sv_maxRate\20000\sv_minPing\0\sv_privateClients\8\sv_pure\1\sv_voice\1
+# 
+# 
+# *** CoD5 specific lines:
+# JoinTeam:           JT;283895439;17;axis;PlayerName;
+#                    AD;564;allies;580090035;6;axis;PlayerName;stg44_mp;30;MOD_RIFLE_BULLET;right_arm_lower
+#===============================================================================
