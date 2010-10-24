@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+# 2010/10/24 - 0.7 - Courgette
+# * add missing getTeam() method
 # 2010/10/24 - 0.6 - Courgette
 # * minor fixes
 # 2010/10/23 - 0.5 - Courgette
@@ -37,7 +39,7 @@
 #   but basic commands seem to work.
 
 __author__  = 'Bakes, Courgette'
-__version__ = '0.6'
+__version__ = '0.7'
 
 import b3.events
 from b3.parsers.frostbite.abstractParser import AbstractParser
@@ -285,7 +287,20 @@ class MohParser(AbstractParser):
         try: self.game.idleTimeout = self.getCvar('idleTimeout').getBoolean()
         except: pass
         
-
+        
+    def getTeam(self, team):
+        """convert MOH team numbers to B3 team numbers"""
+        team = int(team)
+        if team == 1:
+            return b3.TEAM_RED
+        elif team == 2:
+            return b3.TEAM_BLUE
+        elif team == 3:
+            return b3.TEAM_SPEC
+        else:
+            return b3.TEAM_UNKNOWN
+        
+        
     def OnPlayerTeamchange(self, action, data):
         """
         player.onTeamChange <soldier name: player name> <team: Team ID>
