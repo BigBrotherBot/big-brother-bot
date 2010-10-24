@@ -18,10 +18,14 @@
 #
 # CHANGELOG
 #    11/30/2005 - 1.3.0 - ThorN
-#    Added PluginCronTab
-
-__author__  = 'ThorN'
-__version__ = '1.3.1'
+#    * Added PluginCronTab
+#    10/24/2010 - 1.4.0 - Courgette
+#    * make the cron able to run command every second (was limited to every 15 seconds before)
+#    * more cron syntax accepted. '5-12/2, 30, 40-42' is now a valid syntax to specify [5,7,9,11,30,40,41,42]
+#    * add tests
+#
+__author__  = 'ThorN, Courgette'
+__version__ = '1.4.0'
 
 import re, thread, threading, time, traceback, sys
 
@@ -97,33 +101,66 @@ class CronTab(object):
 
     def _getRate(self, rate, max=None):
         if type(rate) == str:
-            r = ReMatcher()
-
-            if rate == '*':
-                return -1
-            elif r.match(r'^([0-9]+)$', rate):
-                return int(rate)
-            elif r.match(r'^\*/([0-9]+)$', rate):
-                # */10 = [0, 10, 20, 30, 40, 50]
-                return range(0, max, int(r.results.group(1)))
-            elif r.match(r'^([0-9]+,)+', rate):
+            if ',' in rate:
                 # 10,20,30 = [10, 20, 30]
-
-                l = []
-                for i in rate.split(','):
-                    l.append(int(i))
-
-                return l
-            elif r.match(r'^([0-9]+)-([0-9]+)$', rate):
-                # 10-20 = [0, 10, 20, 30, 40, 50]
-                return range(int(r.results.group(1)),int(r.results.group(2)) + 1)
+                # 5,6,7,20,30 = [5-7, 20, 30]
+                # 5,7,9,11,30,40,41,42 = [5-12/2, 30, 40-42]
+                myset = {}
+                for fragment in rate.split(','):
+                    result = self._getRateFromFragment(fragment.strip(), max) 
+                    if type(result) == int:
+                        myset[result] = None
+                    else:
+                        for val in result:
+                            myset[int(val)] = None
+                mylist = myset.keys()
+                mylist.sort()
+                return mylist
+            else:
+                return self._getRateFromFragment(rate, max)
         elif type(rate) == int:
+            if rate < 0 or rate >= max:
+                raise ValueError('accepted range is 0-%s' % (max-1))
             return rate
         elif type(rate) == float:
+            if int(rate) < 0 or int(rate) >= max:
+                raise ValueError('accepted range is 0-%s' % (max-1))
             return int(rate)
 
         raise TypeError('"%s" is not a known cron rate type' % rate)
-
+    
+    def _getRateFromFragment(self, rate, max):
+        r = ReMatcher()
+        if rate == '*':
+            return -1
+        elif r.match(r'^([0-9]+)$', rate):
+            if int(rate) >= max:
+                raise ValueError('%s cannot be over %s' % (rate, max-1))
+            return int(rate)
+        elif r.match(r'^\*/([0-9]+)$', rate):
+            # */10 = [0, 10, 20, 30, 40, 50]
+            step = int(r.results.group(1))
+            if step > max:
+                raise ValueError('%s cannot be over every %s' % (rate, max-1))
+            return range(0, max, step)
+        elif r.match(r'^(?P<lmin>[0-9]+)-(?P<lmax>[0-9]+)(/(?P<step>[0-9]+))?$', rate):
+            # 10-20 = [0, 10, 20, 30, 40, 50]
+            lmin = int(r.results.group('lmin'))
+            lmax = int(r.results.group('lmax'))
+            step = r.results.group('step')
+            if step is None:
+                step = 1
+            else:
+                step = int(step)
+            if step > max:
+                raise ValueError('%s is out of accepted range 0-%s' % (step, max))
+            if lmin < 0 or lmax > max:
+                raise ValueError('%s is out of accepted range 0-%s' % (rate, max-1))
+            if lmin > lmax:
+                raise ValueError('%s cannot be greater than %s in %s' % (lmin, lmax, rate))
+            return range(lmin, lmax + 1, step)
+        raise TypeError('"%s" is not a known cron rate type' % rate)
+    
     def _match(self, unit, value):
         if type(unit) == int:
             if unit == -1 or unit == value:
@@ -135,7 +172,7 @@ class CronTab(object):
     def match(self, timetuple):
         # See if the cron entry matches the current time
         # second
-        timeMatch = self._match(self.second, timetuple[5] - (timetuple[5] % 15))
+        timeMatch = self._match(self.second, timetuple[5] - (timetuple[5] % 1))
         # minute
         timeMatch = timeMatch and self._match(self.minute, timetuple[4])
         # hour
@@ -234,16 +271,96 @@ class Cron(object):
                         except Exception, msg:
                             self.console.error('Error executing crontab %s: %s\n%s', c.command, msg, traceback.extract_tb(sys.exc_info()[2]))
 
-            nextTime = nextTime + 15
+            nextTime = nextTime + 1
 
     def getNextTime(self):
         # store the time first, we don't want it to change on us
         t = time.time()
 
-        # current time, minus it's 15 second remainder, plus 15 seconds
-        # will round to the next nearest 15 seconds
-        return (t - t % 15) + 15
+        # current time, minus it's 1 second remainder, plus 1 seconds
+        # will round to the next nearest 1 seconds
+        return (t - t % 1) + 1
 
 
 if __name__ == '__main__':
-    c = Cron(None)
+    import unittest
+    class TestCrontabGetRate(unittest.TestCase):
+        _t = None
+        def setUp(self):
+            self._t = CronTab(None)
+        def tearDown(self):
+            pass
+        def t(self, param):
+            return self._t._getRate(param, 60)
+        def test_None(self):
+            self.assertRaises(TypeError, self.t, None)
+        def test_getRate_int(self):
+            self.assertEquals(0, self.t(0))
+            self.assertEquals(1, self.t(1))
+            self.assertEquals(59, self.t(59))
+            self.assertRaises(ValueError, self.t, 60)
+            self.assertRaises(ValueError, self.t, -1)
+        def test_float(self):
+            self.assertEquals(0, self.t(0.0))
+            self.assertEquals(1, self.t(1.0))
+            self.assertEquals(59, self.t(59.0))
+            self.assertRaises(ValueError, self.t, 60.0)
+            self.assertRaises(ValueError, self.t, -1.0)
+        def test_str_every(self):
+            self.assertEquals(-1, self.t('*'))
+        def test_str_everySo(self):
+            self.assertEquals(range(0,60,2), self.t('*/2') )
+            self.assertEquals(range(0,60,17), self.t('*/17'))
+            self.assertEquals([0,59], self.t('*/59'))
+            self.assertEquals([0], self.t('*/60'))
+            self.assertRaises(ValueError, self.t, ('*/61'))
+            self.assertRaises(TypeError, self.t, ('*/-1'))
+            self.assertRaises(ValueError, self.t, ('*/80'))
+        def test_str_range(self):
+            self.assertEquals(range(5,12), self.t('5-11'))
+            self.assertRaises(TypeError, self.t, ('-5-11'))
+            self.assertRaises(ValueError, self.t, ('35-11'))
+            self.assertRaises(TypeError, self.t, ('5--11'))
+            self.assertRaises(ValueError, self.t, ('5-80'))
+        def test_str_range_with_step(self):
+            self.assertEquals(range(5,12,2), self.t('5-11/2'))
+            self.assertEquals([5], self.t('5-11/60'))
+            self.assertRaises(ValueError, self.t, ('5-11/80'))
+            self.assertRaises(TypeError, self.t, ('5-11/'))
+            self.assertRaises(TypeError, self.t, ('5-11/-1'))
+        def test_str_other(self):
+            self.assertRaises(TypeError, self.t, (''))
+            self.assertRaises(TypeError, self.t, ('test'))
+        def test_list(self):
+            self.assertEquals([5,11,32,45], self.t('5,11,45,32'))
+            self.assertEquals([0,1,2,5,6,7,8], self.t('5-8,0-2'))
+            self.assertEquals([5,6,7,20,30], self.t('5-7, 20, 30'))
+            self.assertEquals([5,6,7,30,40], self.t('5-7,40,30'))
+            self.assertEquals([0,5,6,7,40], self.t('5-7,40,0'))
+            self.assertEquals([5,7,9,11,30,40,41,42], self.t('5-12/2, 30, 40-42'))
+            self.assertRaises(TypeError, self.t, ('5-12/2, -5, 40-42'))
+            
+        
+    def testCron():
+        from b3.fake import fakeConsole
+        c = Cron(fakeConsole)
+        print 'time : %s' % time.time()
+        
+        def every18Sec():
+            print "%s\t\tevery18Sec!" % time.time()
+        c.create(every18Sec, second='*/18')
+        
+        def every010_2030Sec():
+            print "%s\t\tevery010_2030Sec!" % time.time()
+        c.create(every010_2030Sec, second='0-10')
+    
+        def sec13():
+            print "%s\t\t\tsec13!" % time.time()
+        c.create(sec13, second='13')
+        
+        c.start()
+        time.sleep(120)
+
+
+    #testCron()
+    unittest.main()
