@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+# 2010/10/24 - 0.8 - Courgette
+# * fix OnServerRoundover and OnServerRoundoverplayers
 # 2010/10/24 - 0.7 - Courgette
 # * add missing getTeam() method
 # 2010/10/24 - 0.6 - Courgette
@@ -39,7 +41,7 @@
 #   but basic commands seem to work.
 
 __author__  = 'Bakes, Courgette'
-__version__ = '0.7'
+__version__ = '0.8'
 
 import b3.events
 from b3.parsers.frostbite.abstractParser import AbstractParser
@@ -320,7 +322,7 @@ class MohParser(AbstractParser):
         Effect: The round has just ended, and <winning team> won
         """
         #['server.onRoundOver', '2']
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_END, data[1])
+        return b3.events.Event(b3.events.EVT_GAME_ROUND_END, data[0])
         
         
     def OnServerRoundoverplayers(self, action, data):
@@ -330,7 +332,7 @@ class MohParser(AbstractParser):
         Effect: The round has just ended, and <end-of-round soldier info> is the final detailed player stats
         """
         #['server.onRoundOverPlayers', '8', 'clanTag', 'name', 'guid', 'teamId', 'kills', 'deaths', 'score', 'ping', '17', 'RAID', 'mavzee', 'EA_4444444444444444555555555555C023', '2', '20', '17', '310', '147', 'RAID', 'NUeeE', 'EA_1111111111111555555555555554245A', '2', '30', '18', '445', '146', '', 'Strzaerl', 'EA_88888888888888888888888888869F30', '1', '12', '7', '180', '115', '10tr', 'russsssssssker', 'EA_E123456789461416564796848C26D0CD', '2', '12', '12', '210', '141', '', 'Daezch', 'EA_54567891356479846516496842E17F4D', '1', '25', '14', '1035', '129', '', 'Oldqsdnlesss', 'EA_B78945613465798645134659F3079E5A', '1', '8', '12', '120', '256', '', 'TTETqdfs', 'EA_1321654656546544645798641BB6D563', '1', '11', '16', '180', '209', '', 'bozer', 'EA_E3987979878946546546565465464144', '1', '22', '14', '475', '152', '', 'Asdf 1977', 'EA_C65465413213216656546546546029D6', '2', '13', '16', '180', '212', '', 'adfdasse', 'EA_4F313565464654646446446644664572', '1', '4', '25', '45', '162', 'SG1', 'De56546ess', 'EA_123132165465465465464654C2FC2FBB', '2', '5', '8', '75', '159', 'bsG', 'N06540RZ', 'EA_787897944546565656546546446C9467', '2', '8', '14', '100', '115', '', 'Psfds', 'EA_25654321321321000006546464654B81', '2', '15', '15', '245', '140', '', 'Chezear', 'EA_1FD89876543216548796130EB83E411F', '1', '9', '14', '160', '185', '', 'IxSqsdfOKxI', 'EA_481321313132131313213212313112CE', '1', '21', '12', '625', '236', '', 'Ledfg07', 'EA_1D578987994651615166516516136450', '1', '5', '6', '85', '146', '', '5 56 mm', 'EA_90488E6543216549876543216549877B', '2', '0', '0', '0', '192']
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_PLAYER_SCORES, PlayerInfoBlock(data[1]))
+        return b3.events.Event(b3.events.EVT_GAME_ROUND_PLAYER_SCORES, PlayerInfoBlock(data))
         
         
     def OnServerRoundoverteamscores(self, action, data):
