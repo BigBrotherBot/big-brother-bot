@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+# 2010/10/24 - 0.6 - Courgette
+# * minor fixes
 # 2010/10/23 - 0.5 - Courgette
 # * create specific events : EVT_GAME_ROUND_PLAYER_SCORES and EVT_GAME_ROUND_TEAM_SCORES
 # * now fires native B3 event EVT_GAME_ROUND_END
@@ -35,7 +37,7 @@
 #   but basic commands seem to work.
 
 __author__  = 'Bakes, Courgette'
-__version__ = '0.5'
+__version__ = '0.6'
 
 import b3.events
 from b3.parsers.frostbite.abstractParser import AbstractParser
@@ -48,10 +50,9 @@ class MohParser(AbstractParser):
     
     _gameServerVars = (
         'serverName', # vars.serverName [name] Set the server name 
-        'adminPassword', # vars.adminPassword [password] Set the admin password for the server 
         'gamePassword', # vars.gamePassword [password] Set the game password for the server 
         'punkBuster', # vars.punkBuster [enabled] Set if the server will use PunkBuster or not 
-        'hardCore[enabled]', # vars.hardCore[enabled] Set hardcore mode 
+        'hardCore', # vars.hardCore[enabled] Set hardcore mode 
         'ranked', # vars.ranked [enabled] Set ranked or not 
         'skillLimit', # vars.skillLimit [lower, upper] Set the skill limits allowed on to the server 
         'noUnlocks', # vars.noUnlocks [enabled] Set if unlocks should be disabled 
@@ -103,8 +104,6 @@ class MohParser(AbstractParser):
         self.debug('line_length: %s' % self._settings['line_length'])
             
             
-        self.getServerVars()
-        self.getServerInfo()
         self.verbose('GameType: %s, Map: %s' %(self.game.gameType, self.game.mapName))
         
         self.info('connecting all players...')
@@ -231,13 +230,11 @@ class MohParser(AbstractParser):
         """Update the game property from server fresh data"""
         try: self.game.serverName = self.getCvar('serverName').getBoolean()
         except: pass
-        try: self.game.adminPassword = self.getCvar('adminPassword').getBoolean()
-        except: pass
         try: self.game.gamePassword = self.getCvar('gamePassword').getBoolean()
         except: pass
         try: self.game.punkBuster = self.getCvar('punkBuster').getBoolean()
         except: pass
-        try: self.game.hardCore[enabled] = self.getCvar('hardCore[enabled]').getBoolean()
+        try: self.game.hardCore = self.getCvar('hardCore').getBoolean()
         except: pass
         try: self.game.ranked = self.getCvar('ranked').getBoolean()
         except: pass
