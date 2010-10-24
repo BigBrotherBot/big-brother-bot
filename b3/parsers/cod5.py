@@ -33,9 +33,12 @@
 #  Moved OnInitgame and OnExitlevel to codparser!
 # 25/1/2010 - 1.2.0 - xlr8or - refactored cod parser series
 # 1/5/2010 - 1.2.1 - xlr8or - delegate guid length checking to cod parser
+# 24/10/2010 - 1.3 - xlr8or 
+#  ActionMapping added
+#  Add JoinTeam event processing
 
 __author__  = 'xlr8or'
-__version__ = '1.2.1'
+__version__ = '1.3'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
@@ -46,6 +49,70 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
     gameName = 'cod5'
     IpsOnly = False
     _guidLength = 9
+
+    """\
+    Next actions need translation to the EVT_CLIENT_ACTION (Treyarch has a different approach on actions)
+    While IW put all EVT_CLIENT_ACTION in the A; action, Treyarch creates a different action for each EVT_CLIENT_ACTION.
+    """
+    _actionMap = (
+        'ad', # Actor Damage (dogs)
+        'vd', # Vehicle Damage
+        'bd', # Bomb Defused
+        'bp', # Bomb Planted
+        'fc', # Flag Captured
+        'fr', # Flag Returned
+        'ft', # Flag Taken
+        'rc', # Radio Captured
+        'rd'  # Radio Destroyed
+    )
+
+    def parseLine(self, line):           
+        m = self.getLineParts(line)
+        if not m:
+            return False
+
+        match, action, data, client, target = m
+
+        func = 'On%s' % string.capwords(action).replace(' ','')
+        
+        #self.debug("-==== FUNC!!: " + func)
+        
+        if hasattr(self, func):
+            func = getattr(self, func)
+            event = func(action, data, match)
+
+            if event:
+                self.queueEvent(event)
+        elif action in self._eventMap:
+            self.queueEvent(b3.events.Event(
+                    self._eventMap[action],
+                    data,
+                    client,
+                    target
+                ))
+
+        # Addition for cod5 actionMapping
+        elif action in self._actionMap:
+            self.translateAction(action, data, match)
+
+        else:
+            self.queueEvent(b3.events.Event(
+                    b3.events.EVT_UNKNOWN,
+                    str(action) + ': ' + str(data),
+                    client,
+                    target
+                ))
+
+    def translateAction(self, action, data, match=None):
+        client = getClient(match)
+        if not client:
+            self.debug('No client - attempt join')
+            self.OnJ(action, data, match)
+            client = self.getClient(match)
+            if not client:
+                return None
+        self.debug('Queueing Action (translated) for %s: %s' % (client.name, action) )
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_ACTION, action, client))
 
     # kill
     def OnK(self, action, data, match=None):
@@ -83,3 +150,14 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
 
         victim.state = b3.STATE_DEAD
         return b3.events.Event(event, (float(match.group('damage')), match.group('aweap'), match.group('dlocation'), match.group('dtype')), attacker, victim)
+
+    # join team
+    def OnJt(self, action, data, match=None):
+        client = getClient(match)
+        if not client:
+            self.debug('No client - attempt join')
+            self.OnJ(action, data, match)
+            client = self.getClient(match)
+            if not client:
+                return None
+        client.team = self.getTeam(match.group('team'))
