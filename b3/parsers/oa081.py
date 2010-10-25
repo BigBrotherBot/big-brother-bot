@@ -55,10 +55,20 @@
 # * fix issue with CTF flag capture events
 # 17/09/2010 - 0.8.5 - GrosBedo
 # * fix crash issue when a player has disconnected at the very time the bot check for the list of players
+# 20/10/2010 - 0.9 - GrosBedo
+# * fix a BIG issue when detecting teams (were always unknown)
+# 20/10/2010 - 0.9.1 - GrosBedo
+# * fix tk issue with DM and other team free gametypes
+# 20/10/2010 - 0.9.2 - GrosBedo
+# * added EVT_GAME_FLAG_RETURNED (move it to q3a or a generic ioquake3 parser?)
+# 23/10/2010 - 0.9.3 - GrosBedo
+# * detect gametype and modname at startup
+# * added flag_taken action
+# * fix a small bug when triggering the flag return event
 #
 
 __author__  = 'Courgette, GrosBedo'
-__version__ = '0.8.5'
+__version__ = '0.9.3'
 
 import re, string, thread, time, threading
 import b3
@@ -225,6 +235,9 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
 
     def startup(self):
     
+        # registering a ioquake3 specific event
+        self.Events.createEvent('EVT_GAME_FLAG_RETURNED', 'Flag returned')
+
         # add the world client
         self.clients.newClient(1022, guid='WORLD', name='World', hide=True, pbid='WORLD')
 
@@ -236,9 +249,15 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
 
         # get gamepaths/vars
         try:
-            self.game.fs_game = self.getCvar('fs_game').getString()
+            fs_game = self.getCvar('fs_game').getString()
+            if fs_game == '':
+                fs_game = 'baseoa'
+            self.game.fs_game = fs_game
+            self.game.modName = fs_game
+            self.debug('fs_game: %s' % self.game.fs_game)
         except:
             self.game.fs_game = None
+            self.game.modName = None
             self.warning("Could not query server for fs_game")
 
         try:
@@ -254,6 +273,13 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         except:
             self.game.fs_homepath = None
             self.warning("Could not query server for fs_homepath")
+
+        try:
+            self.game.gameType = self.defineGameType(self.getCvar('g_gametype').getString())
+            self.debug('g_gametype: %s' % self.game.gameType)
+        except:
+            self.game.gameType = None
+            self.warning("Could not query server for g_gametype")
 
         # initialize connected clients
         self.info('discover connected clients')
@@ -322,16 +348,13 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
                 if not bclient.has_key('name'):
                     bclient['name'] = self._empty_name_default
 
-                if bclient.has_key('team'):
-                    bclient['team'] = self.getTeam(bclient['team'])
-
                 if bclient.has_key('guid'):
                     guid = bclient['guid']
                 else:
                     if bclient.has_key('skill'):
                         guid = 'BOT-' + str(cid)
                         self.verbose('BOT connected!')
-                        self.clients.newClient(cid, name=bclient['name'], ip='0.0.0.0', state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid }, money=20)
+                        self.clients.newClient(cid, name=bclient['name'], ip='0.0.0.0', state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid }, team=bclient['team'], money=20)
                         self._connectingSlots.remove(cid)
                         return None
                     else:
@@ -348,7 +371,7 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
                         self.warning('failed to get client ip')
                 
                 if bclient.has_key('ip'):
-                    self.clients.newClient(cid, name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid }, money=20)
+                    self.clients.newClient(cid, name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid }, team=bclient['team'], money=20)
                 else:
                     self.warning('failed to get connect client')
                     
@@ -394,7 +417,7 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         # fix event for team change and suicides and tk
         if attacker.cid == victim.cid:
             event = b3.events.EVT_CLIENT_SUICIDE
-        elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
+        elif attacker.team != b3.TEAM_UNKNOWN and attacker.team != b3.TEAM_FREE and attacker.team == victim.team:
             event = b3.events.EVT_CLIENT_KILL_TEAM
 
         # if not defined we need a general hitloc (for xlrstats)
@@ -466,6 +489,16 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         client.name = match.group('name')
         return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data, client, tclient)
 
+    # Action
+    def OnAction(self, cid, actiontype, data, match=None):
+        #Need example
+        client = self.clients.getByCID(cid)
+        if not client:
+            self.debug('No client found')
+            return None
+        self.verbose('OnAction: %s: %s %s' % (client.name, actiontype, data) )
+        return b3.events.Event(b3.events.EVT_CLIENT_ACTION, actiontype, client)
+
     def OnItem(self, action, data, match=None):
         client = self.getByCidOrJoinPlayer(match.group('cid'))
         if client:
@@ -477,10 +510,15 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         # 1:16 CTF: 1 1 3: Sarge fragged RED's flag carrier!
         # 6:55 CTF: 2 1 2: Burpman returned the RED flag!
         # 7:02 CTF: 2 2 1: Burpman captured the BLUE flag!
+        # 2:12 CTF: 3 1 0: Tanisha got the RED flag!
+        # 2:12 CTF: 3 2 0: Tanisha got the BLUE flag!
 
+        cid = match.group('cid')
         client = self.getByCidOrJoinPlayer(match.group('cid'))
         flagteam = self.getTeam(match.group('fid'))
+        flagcolor = match.group('color')
         action_types = {
+            '0': 'flag_taken',
             '1': 'flag_captured',
             '2': 'flag_returned',
             '3': 'flag_carrier_kill',
@@ -490,8 +528,12 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         except KeyError:
             action_id = 'flag_action_' + match.group('type')
             self.debug('unknown CTF action type: %s (%s)' % (match.group('type'), match.group('data')))
-        #flagcolor = match.group('color')
-        return b3.events.Event(b3.events.EVT_CLIENT_ACTION, action_id, client)
+        self.debug('CTF Event: %s from team %s %s by %s' %(action_id, flagcolor, flagteam, client.name))
+        if action_id == 'flag_returned':
+            return b3.events.Event(b3.events.EVT_GAME_FLAG_RETURNED, flagcolor)
+        else:
+            return self.OnAction(cid, action_id, data)
+            #return b3.events.Event(b3.events.EVT_CLIENT_ACTION, action_id, client)
 
     def OnAward(self, action, data, match=None):
         ## Award: <cid> <awardtype>: <name> gained the <awardname> award!
@@ -526,7 +568,7 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         if data.has_key('n'):
             data['name'] = data['n']
 
-        t = 0
+        t = -1
         if data.has_key('team'):
             t = data['team']
         elif data.has_key('t'):
@@ -566,25 +608,21 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
                 return None
 
     def getTeam(self, team):
-        if team == 'red' or team == 'RED':
-            team = 1
-        elif team == 'blue' or team == 'BLUE':
-            team = 2
-        elif team == 'spectator' or team == 'SPECTATOR':
-            team = 3
-        else:
-            team = -1
-        team = int(team)
-        if team == 1:
-            #self.verbose('Team is Red')
+        team = str(team).lower() # We convert to a string and lower the case because there is a problem when trying to detect numbers if it's not a string (weird)
+        if team == 'free' or team == '0':
+            #self.debug('Team is Free (no team)')
+            result = b3.TEAM_FREE
+        elif team == 'red' or team == '1':
+            #self.debug('Team is Red')
             result = b3.TEAM_RED
-        elif team == 2:
-            #self.verbose('Team is Blue')
+        elif team == 'blue' or team == '2':
+            #self.debug('Team is Blue')
             result = b3.TEAM_BLUE
-        elif team == 3:
-            #self.verbose('Team is Spec')
+        elif team == 'spectator' or team == '3':
+            #self.debug('Team is Spectator')
             result = b3.TEAM_SPEC
         else:
+            #self.debug('Team is Unknown')
             result = b3.TEAM_UNKNOWN
         
         #self.debug('getTeam(%s) -> %s' % (team, result))
