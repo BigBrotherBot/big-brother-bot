@@ -59,10 +59,16 @@
 # * fix a BIG issue when detecting teams (were always unknown)
 # 20/10/2010 - 0.9.1 - GrosBedo
 # * fix tk issue with DM and other team free gametypes
+# 20/10/2010 - 0.9.2 - GrosBedo
+# * added EVT_GAME_FLAG_RETURNED (move it to q3a or a generic ioquake3 parser?)
+# 23/10/2010 - 0.9.3 - GrosBedo
+# * detect gametype and modname at startup
+# * added flag_taken action
+# * fix a small bug when triggering the flag return event
 #
 
 __author__  = 'Courgette, GrosBedo'
-__version__ = '0.9.1'
+__version__ = '0.9.3'
 
 import re, string, thread, time, threading
 import b3
@@ -229,6 +235,9 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
 
     def startup(self):
     
+        # registering a ioquake3 specific event
+        self.Events.createEvent('EVT_GAME_FLAG_RETURNED', 'Flag returned')
+
         # add the world client
         self.clients.newClient(1022, guid='WORLD', name='World', hide=True, pbid='WORLD')
 
@@ -240,9 +249,15 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
 
         # get gamepaths/vars
         try:
-            self.game.fs_game = self.getCvar('fs_game').getString()
+            fs_game = self.getCvar('fs_game').getString()
+            if fs_game == '':
+                fs_game = 'baseoa'
+            self.game.fs_game = fs_game
+            self.game.modName = fs_game
+            self.debug('fs_game: %s' % self.game.fs_game)
         except:
             self.game.fs_game = None
+            self.game.modName = None
             self.warning("Could not query server for fs_game")
 
         try:
@@ -258,6 +273,13 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         except:
             self.game.fs_homepath = None
             self.warning("Could not query server for fs_homepath")
+
+        try:
+            self.game.gameType = self.defineGameType(self.getCvar('g_gametype').getString())
+            self.debug('g_gametype: %s' % self.game.gameType)
+        except:
+            self.game.gameType = None
+            self.warning("Could not query server for g_gametype")
 
         # initialize connected clients
         self.info('discover connected clients')
@@ -467,6 +489,16 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         client.name = match.group('name')
         return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data, client, tclient)
 
+    # Action
+    def OnAction(self, cid, actiontype, data, match=None):
+        #Need example
+        client = self.clients.getByCID(cid)
+        if not client:
+            self.debug('No client found')
+            return None
+        self.verbose('OnAction: %s: %s %s' % (client.name, actiontype, data) )
+        return b3.events.Event(b3.events.EVT_CLIENT_ACTION, actiontype, client)
+
     def OnItem(self, action, data, match=None):
         client = self.getByCidOrJoinPlayer(match.group('cid'))
         if client:
@@ -478,10 +510,15 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         # 1:16 CTF: 1 1 3: Sarge fragged RED's flag carrier!
         # 6:55 CTF: 2 1 2: Burpman returned the RED flag!
         # 7:02 CTF: 2 2 1: Burpman captured the BLUE flag!
+        # 2:12 CTF: 3 1 0: Tanisha got the RED flag!
+        # 2:12 CTF: 3 2 0: Tanisha got the BLUE flag!
 
+        cid = match.group('cid')
         client = self.getByCidOrJoinPlayer(match.group('cid'))
         flagteam = self.getTeam(match.group('fid'))
+        flagcolor = match.group('color')
         action_types = {
+            '0': 'flag_taken',
             '1': 'flag_captured',
             '2': 'flag_returned',
             '3': 'flag_carrier_kill',
@@ -491,8 +528,12 @@ class Oa081Parser(b3.parsers.q3a.Q3AParser):
         except KeyError:
             action_id = 'flag_action_' + match.group('type')
             self.debug('unknown CTF action type: %s (%s)' % (match.group('type'), match.group('data')))
-        #flagcolor = match.group('color')
-        return b3.events.Event(b3.events.EVT_CLIENT_ACTION, action_id, client)
+        self.debug('CTF Event: %s from team %s %s by %s' %(action_id, flagcolor, flagteam, client.name))
+        if action_id == 'flag_returned':
+            return b3.events.Event(b3.events.EVT_GAME_FLAG_RETURNED, flagcolor)
+        else:
+            return self.OnAction(cid, action_id, data)
+            #return b3.events.Event(b3.events.EVT_CLIENT_ACTION, action_id, client)
 
     def OnAward(self, action, data, match=None):
         ## Award: <cid> <awardtype>: <name> gained the <awardname> award!
