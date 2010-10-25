@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
+# 10/24/2010 - 1.2.2 - Courgette
+#    Prevent crash when no feed is specified in config
 # 08/20/2010 - 1.2.1 - xlr8or
 #    Add @topstats for xlrstats
 # 08/06/2010 - 1.2 - xlr8or
@@ -34,7 +36,7 @@
 #    Converted to use XML config
 
 __author__ = 'ThorN'
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
 import b3
 import os
@@ -155,14 +157,16 @@ class AdvPlugin(b3.plugin.Plugin):
             pass
 
         #test if we have a proper feed
-        f = feedparser.parse(self._feed)
-        _feedtitle = f['feed']['title']
-        if _feedtitle:
-            self.debug('Opening feed: %s' %_feedtitle)
-        else:
-            # empty the feed all together
-            self._feed = None
-            self.debug('Feed is not a proper feed, or unreachable. Disabling the feedparser')
+        if self._feed is not None:
+            if self._feed.strip() == '':
+                self._feed = None
+            else:
+                f = feedparser.parse(self._feed)
+                
+                if not f or f['bozo'] == 1:
+                    self._feed = None
+                    self.warning('Error reading feed at %s' % self._feed)
+                    self.debug(f['bozo_exception'])
 
         if self._cronTab:
             # remove existing crontab
@@ -358,6 +362,7 @@ if __name__ == '__main__':
             etc.
         -->
         <set name="url">http://www.bigbrotherbot.net/forums/news-2/?type=rss;action=.xml</set>
+        <set name="url.bak"></set>
         <set name="items">5</set>
         <set name="pretext">News: </set>
     </settings>

@@ -17,6 +17,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    10/20/2010 - 1.3.4 GrosBedo
+#    * clientKill and clientDamage separated from clientKillTeam and clientDamageTeam
+#    10/20/2010 - 1.3.3 GrosBedo
+#    * No more teamKills if team is unknown (eg: parser can't detect the team)
 #    8/15/2010 - 1.3.2 GrosBedo
 #    * Fixed disabling reset xp option
 #    8/14/2010 - 1.3.1 Courgette
@@ -33,8 +37,8 @@
 #    8/29/2005 - 1.1.0 - ThorN
 #    * Converted to use new event handlers
 
-__author__ = 'ThorN'
-__version__ = '1.3.2'
+__author__ = 'ThorN, GrosBedo'
+__version__ = '1.3.4'
 
 
 
@@ -146,10 +150,14 @@ class StatsPlugin(b3.plugin.Plugin):
                     except:
                         pass
         elif event.client:
-            if event.type == b3.events.EVT_CLIENT_DAMAGE or event.type == b3.events.EVT_CLIENT_DAMAGE_TEAM:
+            if event.type == b3.events.EVT_CLIENT_DAMAGE:
                 self.clientDamage(event.client, event.target, int(event.data[0]))
-            elif event.type == b3.events.EVT_CLIENT_KILL or event.type == b3.events.EVT_CLIENT_KILL_TEAM:
+            elif event.type == b3.events.EVT_CLIENT_DAMAGE_TEAM:
+                self.clientDamageTeam(event.client, event.target, int(event.data[0]))
+            elif event.type == b3.events.EVT_CLIENT_KILL:
                 self.clientKill(event.client, event.target, int(event.data[0]))
+            elif event.type == b3.events.EVT_CLIENT_KILL_TEAM:
+                self.clientKillTeam(event.client, event.target, int(event.data[0]))
 
 
     def getCmd(self, cmd):
@@ -165,47 +173,63 @@ class StatsPlugin(b3.plugin.Plugin):
         if points > 100:
             points = 100
 
-        if killer.team == victim.team:
-            killer.var(self, 'shotsTeamHit', 0).value  += 1
-            killer.var(self, 'damageTeamHit', 0).value += points
-        else:
-            killer.var(self, 'shotsHit', 0).value  += 1
-            killer.var(self, 'damageHit', 0).value += points
+        killer.var(self, 'shotsHit', 0).value  += 1
+        killer.var(self, 'damageHit', 0).value += points
 
-            victim.var(self, 'shotsGot', 0).value  += 1
-            victim.var(self, 'damageGot', 0).value += points
+        victim.var(self, 'shotsGot', 0).value  += 1
+        victim.var(self, 'damageGot', 0).value += points
+        return
+
+    def clientDamageTeam(self, killer, victim, points):
+        if points > 100:
+            points = 100
+
+        killer.var(self, 'shotsTeamHit', 0).value  += 1
+        killer.var(self, 'damageTeamHit', 0).value += points
+        return
 
     def clientKill(self, killer, victim, points):
         if points > 100:
             points = 100
 
-        if killer.team == victim.team:
-            killer.var(self, 'shotsTeamHit', 0).value  += 1
-            killer.var(self, 'damageTeamHit', 0).value += points
+        killer.var(self, 'shotsHit', 0).value  += 1
+        killer.var(self, 'damageHit', 0).value += points
 
-            killer.var(self, 'teamKills', 0).value += 1
+        victim.var(self, 'shotsGot', 0).value  += 1
+        victim.var(self, 'damageGot', 0).value += points
 
-            score = self.score(killer, victim)
-            killer.var(self, 'points', self.startPoints).value -= score
-            killer.var(self, 'pointsLost', 0).value += score
-        else:
-            killer.var(self, 'shotsHit', 0).value  += 1
-            killer.var(self, 'damageHit', 0).value += points
+        killer.var(self, 'kills', 0).value  += 1
+        victim.var(self, 'deaths', 0).value += 1
 
-            victim.var(self, 'shotsGot', 0).value  += 1
-            victim.var(self, 'damageGot', 0).value += points
+        score = self.score(killer, victim)
+        killer.var(self, 'points', self.startPoints).value += score
+        killer.var(self, 'pointsWon', 0).value += score
 
-            killer.var(self, 'kills', 0).value  += 1
-            victim.var(self, 'deaths', 0).value += 1
+        victim.var(self, 'points', self.startPoints).value -= score
+        victim.var(self, 'pointsLost', 0).value += score
 
-            score = self.score(killer, victim)
-            killer.var(self, 'points', self.startPoints).value += score
-            killer.var(self, 'pointsWon', 0).value += score
-
-            victim.var(self, 'points', self.startPoints).value -= score
-            victim.var(self, 'pointsLost', 0).value += score
         self.updateXP(killer)
         self.updateXP(victim)
+        
+        return
+
+    def clientKillTeam(self, killer, victim, points):
+        if points > 100:
+            points = 100
+
+        killer.var(self, 'shotsTeamHit', 0).value  += 1
+        killer.var(self, 'damageTeamHit', 0).value += points
+
+        killer.var(self, 'teamKills', 0).value += 1
+
+        score = self.score(killer, victim)
+        killer.var(self, 'points', self.startPoints).value -= score
+        killer.var(self, 'pointsLost', 0).value += score
+
+        self.updateXP(killer)
+        self.updateXP(victim)
+        
+        return
 
     def updateXP(self, sclient):
         realpoints = sclient.var(self, 'pointsWon', 0).value - sclient.var(self, 'pointsLost', 0).value
