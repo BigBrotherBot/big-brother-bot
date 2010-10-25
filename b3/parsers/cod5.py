@@ -43,7 +43,7 @@ __version__ = '1.3'
 import b3.parsers.cod2
 import b3.parsers.q3a
 import b3.functions
-import re, threading
+import re, threading, string
 
 class Cod5Parser(b3.parsers.cod2.Cod2Parser):
     gameName = 'cod5'
