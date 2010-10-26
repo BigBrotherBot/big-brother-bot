@@ -18,6 +18,9 @@
 #
 #
 # CHANGELOG
+# 2010/10/27 - 0.9 - Courgette
+# * when banning, also kick to take over MoH engine failure to enforce bans. This
+#   will need more test to determine how to make the MoH engine enforce temp bans.
 # 2010/10/24 - 0.8 - Courgette
 # * fix OnServerRoundover and OnServerRoundoverplayers
 # 2010/10/24 - 0.7 - Courgette
@@ -41,11 +44,12 @@
 #   but basic commands seem to work.
 
 __author__  = 'Bakes, Courgette'
-__version__ = '0.8'
+__version__ = '0.9'
 
 import b3.events
 from b3.parsers.frostbite.abstractParser import AbstractParser
 from b3.parsers.frostbite.util import PlayerInfoBlock
+import b3.functions
 
 SAY_LINE_MAX_LENGTH = 100
 
@@ -345,5 +349,73 @@ class MohParser(AbstractParser):
         return b3.events.Event(b3.events.EVT_GAME_ROUND_TEAM_SCORES, data[1])
         
 
+    def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
+        duration = b3.functions.time2minutes(duration)
+
+        if isinstance(client, str):
+            self.write(self.getCommand('kick', cid=client, reason=reason[:80]))
+            return
+        elif admin:
+            reason = self.getMessage('temp_banned_by', client.exactName, admin.exactName, b3.functions.minutesStr(duration), reason)
+        else:
+            reason = self.getMessage('temp_banned', client.exactName, b3.functions.minutesStr(duration), reason)
+        reason = self.stripColors(reason)
+
+        if self.PunkBuster:
+            # punkbuster acts odd if you ban for more than a day
+            # tempban for a day here and let b3 re-ban if the player
+            # comes back
+            if duration > 1440:
+                duration = 1440
+
+            self.PunkBuster.kick(client, duration, reason)
+        self.write(('banList.list',))
+        self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
+        self.write(('banList.list',))
+        ## also kick as the MoH server seems not to enforce all bans correctly
+        self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
         
+        if not silent:
+            self.say(reason)
+
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, reason, client))
+
+
+    def ban(self, client, reason='', admin=None, silent=False, *kwargs):
+        """Permanent ban"""
+        self.debug('BAN : client: %s, reason: %s', client, reason)
+        if isinstance(client, b3.clients.Client):
+            self.write(self.getCommand('ban', guid=client.guid, reason=reason[:80]))
+            self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
+            return
+
+        if admin:
+            reason = self.getMessage('banned_by', client.exactName, admin.exactName, reason)
+        else:
+            reason = self.getMessage('banned', client.exactName, reason)
+        reason = self.stripColors(reason)
+
+        if client.cid is None:
+            # ban by ip, this happens when we !permban @xx a player that is not connected
+            self.debug('EFFECTIVE BAN : %s',self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
+            self.write(self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
+            if admin:
+                admin.message('banned: %s (@%s). His last ip (%s) has been added to banlist'%(client.exactName, client.id, client.ip))
+        else:
+            # ban by cid
+            self.debug('EFFECTIVE BAN : %s',self.getCommand('ban', guid=client.guid, reason=reason[:80]))
+            self.write(('banList.list',))
+            self.write(self.getCommand('ban', cid=client.cid, reason=reason[:80]))
+            self.write(('banList.list',))
+            self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
+            if admin:
+                admin.message('banned: %s (@%s) has been added to banlist'%(client.exactName, client.id))
+
+        if self.PunkBuster:
+            self.PunkBuster.banGUID(client, reason)
         
+        if not silent:
+            self.say(reason)
+        
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, reason, client))
+
