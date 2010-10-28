@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2010/10/28 - 1.8.2 - Courgette
+#   * make sure to disable the !iamgod command when used while there is already 
+#     a superadmin in db.
 #   2010/08/25 - 1.8.1 - Courgette
 #   * do not fail if warn_command_abusers is missing in config
 #   2010/08/24 - 1.8 - kikker916 & Courgette
@@ -71,7 +74,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 
 
-__version__ = '1.8.1'
+__version__ = '1.8.2'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
@@ -154,6 +157,7 @@ class AdminPlugin(b3.plugin.Plugin):
         else:
             try:
                 superadmins = self.console.clients.lookupSuperAdmins()
+                self.debug('%s superadmins found in database' % len(superadmins))
             except Exception, msg:
                 # no proper groups available, cannot continue
                 self.critical('Seems your groupstable in the database is empty. Please recreate your database using the proper sql syntax - use b3/docs/b3.sql - (%s)' %msg)
@@ -956,8 +960,9 @@ class AdminPlugin(b3.plugin.Plugin):
         - register yourself as the super admin
         """
         superadmins = self.console.clients.lookupSuperAdmins()
-        if len(superadmins) > 1:
+        if len(superadmins) > 0:
             # There are already superadmins, disable this command
+            self.warning('%s superadmin(s) found in db. Disabling command' % len(superadmins))
             if self._commands.has_key('iamgod'):
                 self._commands.pop('iamgod')
             return
