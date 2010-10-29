@@ -8,4 +8,4 @@
 releases/*
 build/*
 py2exe_builder/Output/
-
+.idea/*
