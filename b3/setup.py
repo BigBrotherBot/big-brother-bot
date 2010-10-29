@@ -93,7 +93,7 @@ class Setup:
         # B3 settings
         self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
         xml.start("settings", name="b3")
-        self.add_set("parser", "cod", "Define your game: cod/cod2/cod4/cod5/iourt41/etpro/wop/smg/bfbc2/moh")
+        self.add_set("parser", "cod", "Define your game: cod/cod2/cod4/cod5/cod6/iourt41/etpro/wop/smg/bfbc2/moh")
         self.add_set("database", "mysql://b3:password@localhost/b3", "Your database info: [mysql]://[db-user]:[db-password]@[db-server[:port]]/[db-name]")
         self.add_set("bot_name", "b3", "Name of the bot")
         self.add_set("bot_prefix", "^0(^2b3^0)^7:", "Ingame messages are prefixed with this code, you can use colorcodes")
