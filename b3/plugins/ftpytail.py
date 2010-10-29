@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
+# 29/10/2010 - 1.5.4 - Courgette
+#   * Do not stop thread on FTP permanent error
 # 04/10/2010 - 1.5.3 - Courgette
 #   * stop thread on FTP permanent error
 #   * can activate FTP debug messages with _ftplib_debug_level
@@ -47,7 +49,7 @@
 # 17/06/2009 - 1.0 - Bakes
 #     Initial Plugin, basic functionality.
  
-__version__ = '1.5.3'
+__version__ = '1.5.4'
 __author__ = 'Bakes, Courgette'
  
 import b3, threading
@@ -73,7 +75,6 @@ class FtpytailPlugin(b3.plugin.Plugin):
     _remoteFileOffset = None
     _nbConsecutiveConnFailure = 0
     
-    _working = True
     _ftplib_debug_level = 0 # 0: no debug, 1: normal debug, 2: extended debug
     
     _ftpdelay = 0.150
@@ -113,7 +114,6 @@ class FtpytailPlugin(b3.plugin.Plugin):
         self.ftpconfig = functions.splitDSN(ftpfileDSN)
         thread1 = threading.Thread(target=self.update)
         self.info("Starting ftpytail thread")
-        self._working = True
         thread1.start()
     
     def update(self):
@@ -126,7 +126,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
                 self.buffer = self.buffer + block
         ftp = None
         self.file = open(self.lgame_log, 'ab')
-        while self.console.working and self._working:
+        while self.console.working:
             try:
                 if not ftp:
                     ftp = self.ftpconnect()
@@ -154,32 +154,6 @@ class FtpytailPlugin(b3.plugin.Plugin):
                         self.console.unpause()
                         self.debug('Unpausing')
 
-            except ftplib.error_perm, e:
-                self.critical('FTP permanent error : ' + str(e))
-                self.exception(e)
-                self._working = False
-                continue
-            except ftplib.error_temp, e:
-                self.debug(str(e))
-                self._nbConsecutiveConnFailure += 1
-                if self.console._paused is False:
-                    self.console.pause()
-                self.file.close()
-                self.file = open(self.lgame_log, 'w')
-                self.file.close()
-                self.file = open(self.lgame_log, 'ab')
-                try:
-                    ftp.close()
-                    self.debug('FTP Connection Closed')
-                except:
-                    pass
-                ftp = None
-                
-                if self._nbConsecutiveConnFailure <= 30:
-                    time.sleep(1)
-                else:
-                    self.debug('too many failures, sleeping %s sec' % self._waitBeforeReconnect)
-                    time.sleep(self._waitBeforeReconnect)
             except ftplib.all_errors, e:
                 self.debug(str(e))
                 self._nbConsecutiveConnFailure += 1
