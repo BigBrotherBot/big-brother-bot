@@ -330,7 +330,11 @@ class AbstractParser(b3.parser.Parser):
         raise NotImplemented('getTeam must be implemented in concrete classes')
         
     def getServerInfo(self):
-        """query server info, update self.game and return query results"""
+        """query server info, update self.game and return query results
+        Response: OK <serverName: string> <current playercount: integer> <max playercount: integer> 
+        <current gamemode: string> <current map: string> <roundsPlayed: integer> 
+        <roundsTotal: string> <scores: team scores> <onlineState: online state>
+        """
         data = self.write(('serverInfo',))
         self.game.sv_hostname = data[0]
         self.game.sv_maxclients = int(data[2])
