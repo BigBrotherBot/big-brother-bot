@@ -75,8 +75,10 @@ if __name__ == '__main__':
 # 1.3
 #    * add FakeConsole.saybig(msg)
 #    * FakeConsole.write() do not fail when arg is not a string
-
-__version__ = '1.3'
+# 1.4 - 2010/11/01
+#    * improve FakeStorage implementation
+#
+__version__ = '1.4'
 
 
 import thread
@@ -284,6 +286,9 @@ class FakeColoredConsole(FakeConsole):
         
 class FakeStorage(object):
     _clients = {}
+    _client_id_autoincrement = 0
+    _penalties = {}
+    _penalty_id_autoincrement = 0
     _groups = []
     db = None
     def __init__(self):
@@ -323,13 +328,32 @@ class FakeStorage(object):
         self._groups.append(G)
         
     def getClient(self, client):
-        return client
+        if client.id and client.id > 0:        
+            return self._clients[client.id]
+        else:
+            match = [k for k, v in self._clients.iteritems() if v.guid == client.guid]
+            if len(match)>0:
+                return match[0]
+        raise KeyError, 'No client found in fakestorage for {id: %s, guid: %s}' % (client.id, client.guid)
     def setClient(self, client):
-        return None
+        self._client_id_autoincrement += 1
+        client.id = self._client_id_autoincrement
+        self._clients[self._client_id_autoincrement] = client
+        return self._client_id_autoincrement
     def getGroups(self):
         return self._groups
     def shutdown(self):
         pass
+    def status(self):
+        return True
+    def setClientPenalty(self, penalty):
+        self._penalty_id_autoincrement += 1
+        penalty.id = self._penalty_id_autoincrement
+        self._penalties[penalty.id] = penalty
+        return penalty.id
+    def numPenalties(self, client, type='Ban'):
+        match = [k for k, v in self._penalties.iteritems() if v.clientId == client.id and v.type == type]
+        return len(match)
     
 class FakeClient(b3.clients.Client):
     console = None
