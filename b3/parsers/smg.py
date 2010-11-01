@@ -32,10 +32,10 @@ __version__ = '0.1.3'
 import re, string, threading
 import b3
 import b3.events
-import b3.parsers.q3a
+from b3.parsers.q3a.abstractParser import AbstractParser
 import b3.parsers.punkbuster
 
-class SmgParser(b3.parsers.q3a.Q3AParser):
+class SmgParser(AbstractParser):
     gameName = 'smg'
     _counter = {}
 

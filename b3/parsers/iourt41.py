@@ -116,13 +116,13 @@ __author__  = 'xlr8or'
 __version__ = '1.7.12'
 
 
-import b3.parsers.q3a
+from b3.parsers.q3a.abstractParser import AbstractParser
 import re, string, threading, time, os
 import b3
 import b3.events
 
 #----------------------------------------------------------------------------------------------------------------------------------------------
-class Iourt41Parser(b3.parsers.q3a.Q3AParser):
+class Iourt41Parser(AbstractParser):
     gameName = 'iourt41'
     IpsOnly = False
     IpCombi = False

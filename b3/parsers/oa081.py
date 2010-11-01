@@ -73,9 +73,9 @@ __version__ = '0.9.3'
 import re, string, thread, time, threading
 import b3
 import b3.events
-import b3.parsers.q3a
+from b3.parsers.q3a.abstractParser import AbstractParser
 
-class Oa081Parser(b3.parsers.q3a.Q3AParser):
+class Oa081Parser(AbstractParser):
     gameName = 'oa081'
     _connectingSlots = []
     _maplist = None

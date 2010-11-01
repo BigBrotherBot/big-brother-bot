@@ -21,10 +21,10 @@ __version__ = '0.0.1'
 
 import re, string
 import b3
-import parsers.q3a
+from b3.parsers.q3a.abstractParser import AbstractParser
 import PunkBuster
 
-class EtParser(parsers.q3a.Q3AParser):
+class EtParser(AbstractParser):
     gameName = 'et'
     privateMsg = False
     _settings = {}
