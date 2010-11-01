@@ -1,2 +1,3 @@
 include *.txt *.py *.xml *.sql CHANGELOG README b3/PKG-INFO
 exclude py2exe_builder/*
+exclude .idea/*

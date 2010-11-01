@@ -1,3 +1,245 @@
+2010-11-01  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/ftpytail.py: Make ftpytail retry forever in case it
+	looses FTP connection
+
+2010-10-31  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/frostbite/abstractParser.py: doc
+
+2010-10-29  Courgette <courgette@ubu-team.org>
+
+	* : commit a4609735e14bce6a8da088283fb99fa7e8696a37 Author:
+	Courgette <courgette@ubu-team.org> Date:   Fri Oct 29 22:41:42 2010
+	+0200
+
+2010-10-29  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/publist.py: PLUGIN PUBLIST : send additional info to B3
+	master for frostbite games
+
+2010-10-29  Courgette <courgette@ubu-team.org>
+
+	* : commit da4ce861a4ac2557d5b20d0b1be2d6bc054894f6 Merge: ea82f43
+	c7f2e28 Author: Courgette <courgette@ubu-team.org> Date:   Fri Oct
+	29 19:49:13 2010 +0200
+
+2010-10-29  xlr8or <xlr8or@xlr8or.com>
+
+	* .gitignore: minor
+
+2010-10-29  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: added cod6 to setup.py
+
+2010-10-28  Courgette <courgette@ubu-team.org>
+
+	* : commit 26acf5eef531747cfe135e86ea39e530b8fab87a Author:
+	Courgette <courgette@ubu-team.org> Date:   Thu Oct 28 20:40:03 2010
+	+0200
+
+2010-10-28  Courgette <courgette@ubu-team.org>
+
+	* b3/parser.py: support an new optional syntax for loading plugins
+	in b3.xml which enable to specify a directory where to find the
+	plugin with the 'path' attribute.
+
+2010-10-27  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/moh.py: PARSER MOH : make tempban and permban effective
+
+2010-10-25  Courgette <courgette@ubu-team.org>
+
+	* : commit d5f3ddb971ef6ae570b9bbe46e3ab09aba7caffd Merge: d2d17bf
+	20bc035 Author: xlr8or <xlr8or@xlr8or.com> Date:   Mon Oct 25
+	20:54:57 2010 +0200
+
+2010-10-25  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 44ab24818c0133b81112866ec770fc24db7d8b4d Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Mon Oct 25 02:50:57 2010 -0700
+
+2010-10-25  grosbedo <grosbedo@gmail.com>
+
+	* b3/parsers/oa081.py: oa081 parser: enhanced CTF events detection
+	(can now run flagstats.py plugin) Signed-off-by: grosbedo <grosbedo@gmail.com>
+
+2010-10-25  Courgette <courgette@ubu-team.org>
+
+	* : commit dafd550cedb68f0111788a962584846bbc368bd5 Author:
+	Courgette <courgette@ubu-team.org> Date:   Mon Oct 25 00:07:54 2010
+	+0200
+
+2010-10-25  Courgette <courgette@ubu-team.org>
+
+	* : commit cffe18eede2c681fb2a3112b2617c3bd1ed665a2 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sun Oct 24 23:46:21 2010 +0200
+
+2010-10-24  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/adv.py: PLUGIN ADV : prevent plugin crash when no feed
+	url is set in config
+
+2010-10-24  Courgette <courgette@ubu-team.org>
+
+	* : commit 16335578e0b7f7a8e22b28631d0d653707c4be32 Merge: f070e43
+	e7719b8 Author: Courgette <courgette@ubu-team.org> Date:   Sun Oct
+	24 20:57:34 2010 +0200
+
+2010-10-24  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/moh.py: add missing getTeam()
+
+2010-10-24  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py, b3/parsers/cod5.py: CoD5 Parser: #
+	ActionMapping added #  Add JoinTeam event processing CoD Parser: #
+	Some documentation on line formats
+
+2010-10-24  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/moh.py: PARSER MoH : minor fixes
+
+2010-10-24  Courgette <courgette@ubu-team.org>
+
+	* : commit 5c2a19a9d81b01efd9ae137b7a8c0adeb9615b78 Author:
+	Courgette <courgette@ubu-team.org> Date:   Sun Oct 24 16:16:22 2010
+	+0200
+
+2010-10-23  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/moh.py: better handling of MoH events :
+	server.onRoundOver, server.onRoundOverPlayers,
+	server.onRoundOverTeamScores and player.onTeamChange
+
+2010-10-23  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/frostbite/abstractParser.py: more renaming
+
+2010-10-23  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2.py, b3/parsers/frostbite/abstractParser.py,
+	b3/parsers/frostbite/bfbc2Connection.py,
+	b3/parsers/frostbite/connection.py, b3/parsers/frostbite/rcon.py,
+	b3/parsers/frostbite/util.py, b3/parsers/moh.py: huge refactoring
+	regarding Frostbite related parsers. Carefull not fully tested and
+	this is regression prone activity
+
+2010-10-22  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/output.py, b3/parser.py: devmode > log2both: adds option to
+	write to logfile AND stdout simultaneously
+
+2010-10-22  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 001e706b9e58ea2cfb9d6dc351da8314c6f7fa11 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Fri Oct 22 20:16:53 2010 +0200
+
+2010-10-22  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/run.py: Added restart counter to console
+
+2010-10-22  grosbedo <grosbedo@gmail.com>
+
+	* b3/__init__.py, b3/parsers/oa081.py: oa081 parser: fix tk issue
+	with DM and other team free gametypes global: added TEAM_FREE
+	constant Signed-off-by: grosbedo <grosbedo@gmail.com>
+
+2010-10-22  grosbedo <grosbedo@gmail.com>
+
+	* b3/plugins/stats.py: stats plugin: clientKill and clientDamage
+	separated from clientKillTeam and clientDamageTeam Signed-off-by: grosbedo <grosbedo@gmail.com>
+
+2010-10-22  grosbedo <grosbedo@gmail.com>
+
+	* b3/parsers/oa081.py: oa081.py : fix a BIG issue when detecting
+	teams (were always unknown) Signed-off-by: grosbedo <grosbedo@gmail.com>
+
+2010-10-22  grosbedo <grosbedo@gmail.com>
+
+	* b3/plugins/stats.py: stats.py : No more teamKills if team is
+	unknown (eg: parser can't detect the team) Signed-off-by: grosbedo <grosbedo@gmail.com>
+
+2010-10-22  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/sftpytail.py: change to the SFTP URI syntax
+
+2010-10-21  Courgette <courgette@ubu-team.org>
+
+	* b3/pkg_handler.py: fix an issue that broke the b3_run.exe when
+	frozen on a machine that have pkg_resources available
+
+2010-10-21  Courgette <courgette@ubu-team.org>
+
+	* setupPy2exe.py: setupPy2exe.py : change b3.parsers.bfbc2.* into
+	b3.parsers.frostibte.*
+
+2010-10-20  Courgette <courgette@ubu-team.org>
+
+	* py2exe_builder/b3-installer-project.iss: InnoSetup script: make
+	the b3 version number a constant. Need InnoSetup preprocessor to
+	compile
+
+2010-10-20  Courgette <courgette@ubu-team.org>
+
+	* b3/functions.py: harden the check for B3 updates which crashed the
+	bot in case it received non valid xml
+
+2010-10-20  Courgette <courgette@ubu-team.org>
+
+	* b3/fake.py: minor change to fakeconsole
+
+2010-10-20  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/PKG-INFO: versioning
+
+2010-10-20  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/plugins/censor.py: CensorPlugin: Plugin can now be disabled
+	with !disable censor
+
+2010-10-17  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 5c38df867df4886b84ef659fb6de6973efcf06d8 Merge: 3bbb4eb
+	27991d9 Author: xlr8or <xlr8or@xlr8or.com> Date:   Sun Oct 17
+	11:16:22 2010 +0200
+
+2010-10-17  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod2.py: [cod2]: Don't let version exceptions be
+	inherited by later parsers
+
+2010-10-17  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/plugin_adv.xml, b3/plugins/adv.py: PLUGIN ADV : can set
+	rate in seconds
+
+2010-10-17  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/plugin_welcome.xml, b3/plugins/welcome.py: PLUGIN WELCOME
+	: can now customize for how long the bot waits before welcoming a
+	second time a player
+
+2010-10-13  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: [xlrstats] BugFix: Empty field webfront
+	Url is now allowed in config
+
+2010-10-11  xlr8or <xlr8or@xlr8or.com>
+
+	* py2exe_builder/build_py2exe.bat, setup.cfg: release package format
+	changes
+
+2010-10-11  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py, versions.txt: config wizard updates
+
+2010-10-11  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt, b3.egg-info/PKG-INFO,
+	b3.egg-info/SOURCES.txt, b3/PKG-INFO, setup.py, versions.txt: 
+	Versioning 1.4.0
+
 2010-10-11  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/parsers/frostbite/bfbc2Connection.py,
