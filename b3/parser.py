@@ -106,7 +106,7 @@ import b3.output
 
 import b3.game
 import b3.cron
-import b3.parsers.q3a_rcon
+import b3.parsers.q3a.rcon
 import b3.clients
 import b3.functions
 from b3.functions import main_is_frozen, getModule
@@ -147,7 +147,8 @@ class Parser(object):
     # Time in seconds of epoch of game log
     logTime = 0
 
-    OutputClass = b3.parsers.q3a_rcon.Rcon
+    # Default outputclass set to the q3a rcon class
+    OutputClass = b3.parsers.q3a.rcon.Rcon
 
     _settings = {}
     _settings['line_length'] = 65
@@ -358,7 +359,8 @@ class Parser(object):
             self.output.flush()
             self.screen.write('Testing RCON     : ')
             self.screen.flush()
-            if res == 'Bad rconpassword.':
+            _badRconReplies = ['Bad rconpassword.', 'Invalid password.']
+            if res in _badRconReplies:
                 self.screen.write('>>> Oops: Bad RCON password\n>>> Hint: This will lead to errors and render B3 without any power to interact!\n')
                 self.screen.flush()
                 time.sleep(2)

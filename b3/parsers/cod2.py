@@ -26,7 +26,6 @@ __author__  = 'ThorN, ttlogic, xlr8or'
 __version__ = '1.2.5'
 
 import b3.parsers.cod
-import b3.parsers.q3a
 import re
 
 class Cod2Parser(b3.parsers.cod.CodParser):
@@ -35,7 +34,7 @@ class Cod2Parser(b3.parsers.cod.CodParser):
     _logSync = 1 # Value for unbuffered game logging
 
     # cod2 needs the multiline flag because it adds "Domain is 0 or 1" to the cvar output
-    _reCvar = re.compile(b3.parsers.q3a.Q3AParser._reCvar.pattern, re.I | re.M)
+    _reCvar = re.compile(b3.parsers.q3a.abstractParser.AbstractParser._reCvar.pattern, re.I | re.M)
 
     # set exceptions for this specific version of cod2
     def setVersionExceptions(self):
