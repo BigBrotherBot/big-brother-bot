@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2010/11/07 - 1.20.2 - GrosBedo
+#   * edited default values of lines_per_second and delay
 #   2010/11/07 - 1.20.1 - GrosBedo
 #   * added a new dynamical function getMessageVariables to parse messages
 #   2010/10/28 - 1.20.0 - Courgette
@@ -96,7 +98,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.20.1'
+__version__ = '1.20.2'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -129,8 +131,8 @@ class Parser(object):
     _timeStart = None
 
     clients  = None
-    delay = 0.05 # between to apply between each game log lines fetching
-    delay2 = 0.001 # between to apply between each game log line processing
+    delay = 0.33 # to apply between each game log lines fetching (max time before a command is detected by the bot + (delay2*nb_of_lines) )
+    delay2 = 0.02 # to apply between each game log line processing (max number of lines processed in one second)
     game = None
     gameName = None
     type = None
@@ -295,12 +297,14 @@ class Parser(object):
         # delay between log reads
         if self.config.has_option('server', 'delay'):
             delay = self.config.getfloat('server', 'delay')
-            self.delay = delay
+            if self.delay > 0:
+                self.delay = delay
 
         # delay between each log's line processing
         if self.config.has_option('server', 'lines_per_second'):
             delay2 = self.config.getfloat('server', 'lines_per_second')
-            self.delay2 = 1/delay2
+            if delay2 > 0:
+                self.delay2 = 1/delay2
 
         # demo mode: use log time
         if self.config.has_option('devmode', 'replay'):

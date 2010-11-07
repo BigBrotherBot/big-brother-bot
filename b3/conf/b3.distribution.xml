@@ -52,9 +52,9 @@
 		<!-- Is the gameserver running PunkBuster Anticheat: on/off -->
 		<set name="punkbuster">on</set>
 		<!-- Delay between each log reading. Set a higher value to consume less disk ressources or bandwidth if you remotely connect (ftp or http remote log access) -->
-		<set name="delay">0.05</set>
+		<set name="delay">0.33</set>
 		<!-- Number of lines to process per second. Set a lower value to consume less CPU ressources -->
-		<set name="lines_per_second">1000</set>
+		<set name="lines_per_second">50</set>
 	</settings>
 	<settings name="autodoc">
 		<!-- Autodoc will generate a user documentation for all B3 commands 
