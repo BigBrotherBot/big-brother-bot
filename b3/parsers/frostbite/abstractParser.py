@@ -19,9 +19,13 @@
 # CHANGELOG
 # 2010-10-23 - 1.1 - Courgette
 #    * remove bfbc2 names 
+# 2010-11-02 - 1.2 - Courgette
+#    * call getEasyName() in OnServerLoadinglevel
+#    * fix getSupportedMaps()
+#    * OnServerLoadinglevel() now fills game.rounds and game.sv_maxrounds 
 
 __author__  = 'Courgette'
-__version__ = '1.1'
+__version__ = '1.2'
 
 import sys, re, traceback, time, string, Queue, threading
 import b3.parser
@@ -413,16 +417,13 @@ class AbstractParser(b3.parser.Parser):
 
     def getMap(self):
         """Return the current level name (not easy map name)"""
-        data = self.write(('admin.currentLevel',))
-        if not data:
-            return None
-        return data[0]
+        self.getServerInfo()
+        return self.game.mapName
     
 
     def getSupportedMaps(self):
         """return a list of supported levels for the current game mod"""
-        [currentPlaylist] = self.write(('admin.getPlaylist',))
-        supportedMaps = self.write(('admin.supportedMaps', currentPlaylist))
+        supportedMaps = self.write(('admin.supportedMaps', self.game.gameType))
         return supportedMaps
 
     def getMapsSoundingLike(self, mapname):
@@ -612,10 +613,11 @@ class AbstractParser(b3.parser.Parser):
 
     def OnServerLoadinglevel(self, action, data):
         """
-        server.onLoadingLevel <level name: string>
+        server.onLoadingLevel <level name: string> <roundsPlayed: int> <roundsTotal: int>
         
         Effect: Level is loading
         """
+        #['server.onLoadingLevel', 'levels/mp_04', '0', '2']
         self.debug("OnServerLoadinglevel: %s" % data)
         if not self.game.mapName:
             self.game.mapName = data[0]
@@ -623,7 +625,11 @@ class AbstractParser(b3.parser.Parser):
             # map change detected
             self.game.startMap()
         self.game.mapName = data[0]
+        self.game.rounds = int(data[1])
+        self.game.g_maxrounds = int(data[2])
         self.getServerInfo()
+        # to debug getEasyName()
+        self.info('Loading %s [%s]'  % (self.getEasyName(self.game.mapName), self.game.gameType))
         return b3.events.Event(b3.events.EVT_GAME_WARMUP, data[0])
 
     def OnServerLevelstarted(self, action, data):
@@ -631,7 +637,9 @@ class AbstractParser(b3.parser.Parser):
         server.onLevelStarted
         
         Effect: Level is started"""
-        # next function call will increase roundcount by one, this is not correct, need to deduct one to compensate
+        # next function call will increase roundcount by one, this is not wanted
+        # as the game server provides us the exact round number in OnServerLoadinglevel()
+        # hence we need to deduct one to compensate?
         # we'll still leave the call here since it provides us self.game.roundTime()
         self.game.startRound()
         self.game.rounds -= 1
