@@ -51,9 +51,10 @@
 # 17/04/2010 - 1.5 - Courgette
 # * allow to send ping to an additionnal master (mostly used for debugging master code)
 # * send the python version to the master
-#
+# 29/10/2010 - 1.6 - Courgette
+# * for BFBC2 and MoH send additional info : bannerUrl and serverDescription
 
-__version__ = '1.5'
+__version__ = '1.6'
 __author__  = 'ThorN, Courgette'
 
 import sys
@@ -157,7 +158,19 @@ class PublistPlugin(b3.plugin.Plugin):
             'os' : os.name,
             'python_version': sys.version
         }
-        #self.debug(info)
+        
+        if self.console.gameName in ('bfbc2', 'moh'):
+            try:
+                cvarDescription = self.console.getCvar('serverDescription')
+                if cvarDescription is not None:
+                    info.update({'serverDescription': cvarDescription.value})
+                cvarBannerUrl = self.console.getCvar('bannerUrl')
+                if cvarBannerUrl is not None:
+                    info.update({'bannerUrl': cvarBannerUrl.value})
+            except Exception, err:
+                self.debug(err)
+        
+        self.debug(info)
         self.sendInfo(info)
         
     

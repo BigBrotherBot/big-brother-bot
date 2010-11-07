@@ -18,6 +18,11 @@
 #
 #
 # CHANGELOG
+#   2010/10/28 - 1.20.0 - Courgette
+#   * support an new optional syntax for loading plugins in b3.xml which enable
+#     to specify a directory where to find the plugin with the 'path' attribute.
+#     This overrides the default and extplugins folders. Example :
+#     <plugin name="pluginname" config="@conf/plugin.xml" path="C:\Users\me\myPlugin\"/>
 #   2010/10/22 - 1.19.4 - xlr8or
 #   * output option log2both writes to logfile AND stderr simultaneously
 #   2010/10/06 - 1.19.3 - xlr8or
@@ -89,7 +94,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.19.4'
+__version__ = '1.20.0'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -101,7 +106,7 @@ import b3.output
 
 import b3.game
 import b3.cron
-import b3.parsers.q3a_rcon
+import b3.parsers.q3a.rcon
 import b3.clients
 import b3.functions
 from b3.functions import main_is_frozen, getModule
@@ -142,7 +147,8 @@ class Parser(object):
     # Time in seconds of epoch of game log
     logTime = 0
 
-    OutputClass = b3.parsers.q3a_rcon.Rcon
+    # Default outputclass set to the q3a rcon class
+    OutputClass = b3.parsers.q3a.rcon.Rcon
 
     _settings = {}
     _settings['line_length'] = 65
@@ -353,7 +359,8 @@ class Parser(object):
             self.output.flush()
             self.screen.write('Testing RCON     : ')
             self.screen.flush()
-            if res == 'Bad rconpassword.':
+            _badRconReplies = ['Bad rconpassword.', 'Invalid password.']
+            if res in _badRconReplies:
                 self.screen.write('>>> Oops: Bad RCON password\n>>> Hint: This will lead to errors and render B3 without any power to interact!\n')
                 self.screen.flush()
                 time.sleep(2)
@@ -508,11 +515,12 @@ class Parser(object):
         for p in self.config.get('plugins/plugin'):
             plugin = p.get('name')
             conf = p.get('config')
+            path = p.get('path')
 
             if conf == None:
                 conf = '@b3/conf/plugin_%s.xml' % plugin
 
-            plugins[priority] = (plugin, self.getAbsolutePath(conf))
+            plugins[priority] = (plugin, self.getAbsolutePath(conf), path)
             pluginSort.append(priority)
             priority += 1
 
@@ -521,12 +529,12 @@ class Parser(object):
         self._pluginOrder = []
         for s in pluginSort:
 
-            p, conf = plugins[s]
+            p, conf, path = plugins[s]
             self._pluginOrder.append(p)
             self.bot('Loading Plugin #%s %s [%s]', s, p, conf)
 
             try:
-                pluginModule = self.pluginImport(p)
+                pluginModule = self.pluginImport(p, path)
                 self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title())(self, conf)
             except Exception, msg:
                 # critical will exit
@@ -611,8 +619,19 @@ class Parser(object):
         self.screen.write(' (%s)\n' % len(self._pluginOrder))
         self.screen.flush()
 
-    def pluginImport(self, name):
+    def pluginImport(self, name, path=None):
         """Import a single plugin"""
+        if path is not None:
+            try:
+                self.info('loading plugin from specified path : %s', path)
+                fp, pathname, description = imp.find_module(name, [path])
+                try:
+                    return imp.load_module(name, fp, pathname, description)
+                finally:
+                    if fp:
+                        fp.close()
+            except ImportError:
+                pass
         try:
             module = 'b3.plugins.%s' % name
             mod = __import__(module)
@@ -624,7 +643,6 @@ class Parser(object):
             self.info('Could not load built in plugin %s (%s)', name, m)
             self.info('trying external plugin directory : %s', self.config.getpath('plugins', 'external_dir'))
             fp, pathname, description = imp.find_module(name, [self.config.getpath('plugins', 'external_dir')])
-
             try:
                 return imp.load_module(name, fp, pathname, description)
             finally:

@@ -57,10 +57,10 @@ __version__ = '0.9.1'
 import re, string, thread, time, threading
 import b3
 import b3.events
-import b3.parsers.q3a
+from b3.parsers.q3a.abstractParser import AbstractParser
 import b3.parsers.punkbuster
 
-class Smg11Parser(b3.parsers.q3a.Q3AParser):
+class Smg11Parser(AbstractParser):
     gameName = 'smg'
     _connectingSlots = []
     _maplist = None

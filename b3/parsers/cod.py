@@ -45,13 +45,13 @@
 __author__  = 'ThorN, xlr8or'
 __version__ = '1.4.15'
 
-import b3.parsers.q3a
 import re, string, threading
 import b3
 import b3.events
+from b3.parsers.q3a.abstractParser import AbstractParser
 import b3.parsers.punkbuster
 
-class CodParser(b3.parsers.q3a.Q3AParser):
+class CodParser(AbstractParser):
     gameName = 'cod'
     IpsOnly = False
     _guidLength = 6 # (minimum) length of the guid

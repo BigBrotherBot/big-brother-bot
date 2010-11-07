@@ -18,6 +18,22 @@
 #
 #
 # CHANGELOG
+# 2010/10/27 - 0.9 - Courgette
+# * when banning, also kick to take over MoH engine failure to enforce bans. This
+#   will need more test to determine how to make the MoH engine enforce temp bans.
+# 2010/10/24 - 0.8 - Courgette
+# * fix OnServerRoundover and OnServerRoundoverplayers
+# 2010/10/24 - 0.7 - Courgette
+# * add missing getTeam() method
+# 2010/10/24 - 0.6 - Courgette
+# * minor fixes
+# 2010/10/23 - 0.5 - Courgette
+# * create specific events : EVT_GAME_ROUND_PLAYER_SCORES and EVT_GAME_ROUND_TEAM_SCORES
+# * now fires native B3 event EVT_GAME_ROUND_END
+# * manage team changed event correctly
+# 2010/10/23 - 0.4 - Courgette
+# * refactor inheriting from frostbite AbstratParser 
+# * change available server var list
 # 2010/10/10 - 0.3 - Bakes
 # * getEasyName is now implemented and working, getHardName is implemented
 #   but not working.
@@ -26,46 +42,60 @@
 # 2010/09/25 - 0.1 - Bakes
 # * Initial version of MoH parser - hasn't been tested with OnKill events yet
 #   but basic commands seem to work.
-# 
 
-__author__  = 'Bakes'
-__version__ = '0.2'
+__author__  = 'Bakes, Courgette'
+__version__ = '0.9'
 
-import b3.parsers.bfbc2
-import sys, time, re, string, traceback
-import b3
 import b3.events
-import b3.parser
-from b3.parsers.frostbite.punkbuster import PunkBuster as Bfbc2PunkBuster
-import threading
-import Queue
-import b3.parsers.frostbite.rcon as rcon
-import b3.cvar
-from b3.functions import soundex, levenshteinDistance
-from b3.parsers.frostbite.bfbc2Connection import *
+from b3.parsers.frostbite.abstractParser import AbstractParser
+from b3.parsers.frostbite.util import PlayerInfoBlock
+import b3.functions
 
 SAY_LINE_MAX_LENGTH = 100
 
-class MohParser(b3.parsers.bfbc2.Bfbc2Parser):
+class MohParser(AbstractParser):
     gameName = 'moh'
+    
+    _gameServerVars = (
+        'serverName', # vars.serverName [name] Set the server name 
+        'gamePassword', # vars.gamePassword [password] Set the game password for the server 
+        'punkBuster', # vars.punkBuster [enabled] Set if the server will use PunkBuster or not 
+        'hardCore', # vars.hardCore[enabled] Set hardcore mode 
+        'ranked', # vars.ranked [enabled] Set ranked or not 
+        'skillLimit', # vars.skillLimit [lower, upper] Set the skill limits allowed on to the server 
+        'noUnlocks', # vars.noUnlocks [enabled] Set if unlocks should be disabled 
+        'noAmmoPickups', # vars.noAmmoPickups [enabled] Set if pickups should be disabled 
+        'realisticHealth', # vars.realisticHealth [enabled] Set if health should be realistic 
+        'supportAction', # vars.supportAction [enabled] Set if support action should be enabled 
+        'preRoundLimit', # vars.preRoundLimit [upper, lower] Set pre round limits. Setting both to zero means the game uses whatever settings are used on the specific levels. On ranked servers, the lowest values allowed are lower = 2 and upper = 4.
+        'roundStartTimerPlayersLimit', # vars.roundStartTimerPlayersLimit [limit] Get/Set the number of players that need to spawn on each team for the round start timer to start counting down.
+        'roundStartTimerDelay', # vars.roundStartTimerDelay [delay] If set to other than -1, this value overrides the round start delay set on the individual levels.
+        'tdmScoreCounterMaxScore', # vars.tdmScoreCounterMaxScore [score] If set to other than -1, this value overrides the score needed to win a round of Team Assault, Sector Control or Hot Zone. 
+        'clanTeams', # vars.clanTeams [enabled] Set if clan teams should be used 
+        'friendlyFire', # vars.friendlyFire [enabled] Set if the server should allow team damage 
+        'currentPlayerLimit', # vars.currentPlayerLimit Retrieve the current maximum number of players 
+        'maxPlayerLimit', # vars.maxPlayerLimit Retrieve the server-enforced maximum number of players 
+        'playerLimit', # vars.playerLimit [nr of players] Set desired maximum number of players 
+        'bannerUrl', # vars.bannerUrl [url] Set banner url 
+        'serverDescription', # vars.serverDescription [description] Set server description 
+        'noCrosshair', # vars.noCrosshair [enabled] Set if crosshair for all weapons is hidden 
+        'noSpotting', # vars.noSpotting [enabled] Set if spotted targets are disabled in the 3d-world 
+        'teamKillCountForKick', # vars.teamKillCountForKick [count] Set number of teamkills allowed during a round 
+        'teamKillValueForKick', # vars.teamKillValueForKick [count] Set max kill-value allowed for a player before he/she is kicked 
+        'teamKillValueIncrease', # vars.teamKillValueIncrease [count] Set kill-value increase for a teamkill 
+        'teamKillValueDecreasePerSecond', # vars.teamKillValueDecreasePerSecond [count] Set kill-value decrease per second
+        'idleTimeout', # vars.idleTimeout [time] Set idle timeout vars.profanityFilter [enabled] Set if profanity filter is enabled
+    )
+    
     def startup(self):
+        AbstractParser.startup(self)
         
-        # add specific events
-        self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
-        self.Events.createEvent('EVT_PUNKBUSTER_SCHEDULED_TASK', 'PunkBuster scheduled task')
-        self.Events.createEvent('EVT_PUNKBUSTER_LOST_PLAYER', 'PunkBuster client connection lost')
-        self.Events.createEvent('EVT_PUNKBUSTER_NEW_CONNECTION', 'PunkBuster client received IP')
-        self.Events.createEvent('EVT_CLIENT_SPAWN', 'Client Spawn')
-                
+        self.Events.createEvent('EVT_GAME_ROUND_PLAYER_SCORES', 'round player scores')
+        self.Events.createEvent('EVT_GAME_ROUND_TEAM_SCORES', 'round team scores')
+        
         # create the 'Server' client
         self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
-        
-        if self.config.has_option('server', 'punkbuster') and self.config.getboolean('server', 'punkbuster'):
-            self.info('kick/ban by punkbuster is unsupported yet')
-            #self.debug('punkbuster enabled in config')
-            #self.PunkBuster = Bfbc2PunkBuster(self)
-        
-        
+
         if self.config.has_option('moh', 'max_say_line_length'):
             try:
                 maxlength = self.config.getint('moh', 'max_say_line_length')
@@ -81,13 +111,7 @@ class MohParser(b3.parsers.bfbc2.Bfbc2Parser):
                 self.error('failed to read max_say_line_length setting "%s" : %s' % (self.config.get('moh', 'max_say_line_length'), err))
         self.debug('line_length: %s' % self._settings['line_length'])
             
-        version = self.output.write('version')
-        self.info('MoH server version : %s' % version)
-        if version[0] != 'MOH':
-            raise Exception("the moh parser can only work with Medal of Honor")
-        
-        self.getServerVars()
-        self.getServerInfo()
+            
         self.verbose('GameType: %s, Map: %s' %(self.game.gameType, self.game.mapName))
         
         self.info('connecting all players...')
@@ -104,20 +128,18 @@ class MohParser(b3.parsers.bfbc2.Bfbc2Parser):
                 self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
                 
         
-        self.sayqueuelistener = threading.Thread(target=self.sayqueuelistener)
-        self.sayqueuelistener.setDaemon(True)
-        self.sayqueuelistener.start()
         
-        self.saybigqueuelistener = threading.Thread(target=self.saybigqueuelistener)
-        self.saybigqueuelistener.setDaemon(True)
-        self.saybigqueuelistener.start()
+    def checkVersion(self):
+        version = self.output.write('version')
+        self.info('server version : %s' % version)
+        if version[0] != 'MOH':
+            raise Exception("the moh parser can only work with Medal of Honor")
 
     def getClient(self, cid, _guid=None):
         """Get a connected client from storage or create it
         B3 CID   <--> MoH character name
         B3 GUID  <--> MoH EA_guid
         """
-        
         # try to get the client from the storage of already authed clients
         client = self.clients.getByCID(cid)
         if not client:
@@ -149,21 +171,8 @@ class MohParser(b3.parsers.bfbc2.Bfbc2Parser):
             self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
         
         return client
-    def rotateMap(self):
-        """Load the next map (not level). If the current game mod plays each level twice
-        to get teams the chance to play both sides, then this rotate a second
-        time to really switch to the next map"""
-        #nextIndex = self.getNextMapIndex()
-        self.write(('admin.runNextRound',))
 
-    def getMap(self):
-        """Return the current level name (not easy map name)"""
-        data = self.write(('serverInfo',))
-        if not data:
-            return None
-        return data[4]
-		
-		
+
     def getHardName(self, mapname):
         """ Change real name to level name """
         mapname = mapname.lower()
@@ -190,11 +199,11 @@ class MohParser(b3.parsers.bfbc2.Bfbc2Parser):
 
         elif mapname.startswith('garmzir town'):
             return 'levels/mp_10'
-			
+
         else:
             self.warning('unknown level name \'%s\'. Please make sure you have entered a valid mapname' % mapname)
             return mapname
-			
+
     def getEasyName(self, mapname):
         """ Change levelname to real name """
         if mapname.startswith('levels/mp_01'):
@@ -225,72 +234,188 @@ class MohParser(b3.parsers.bfbc2.Bfbc2Parser):
             self.warning('unknown level name \'%s\'. Please report this on B3 forums' % mapname)
             return mapname
 
-class PlayerInfoBlock:
-    """
-    help extract player info from a MoH Player Info Block which we obtain
-    from admin.listPlayers
-    
-    usage :
-        words = [3, 'name', 'guid', 'ping', 2, 
-            'Courgette', 'A32132e', 130, 
-            'SpacepiG', '6546545665465', 120,
-            'Bakes', '6ae54ae54ae5', 50]
-        playersInfo = PlayerInfoBlock(words)
-        print "num of players : %s" % len(playersInfo)
-        print "first player : %s" % playersInfo[0]
-        print "second player : %s" % playersInfo[1]
-        print "the first 2 players : %s" % playersInfo[0:2]
-        for p in playersInfo:
-            print p
-    """
-    playersData = []
-    numOfParameters= 0
-    numOfPlayers = 0
-    parameterTypes = []
-    
-    def __init__(self, data):
-        """Represent a MoH Player info block
-        The standard set of info for a group of players contains a lot of different 
-        fields. To reduce the risk of having to do backwards-incompatible changes to
-        the protocol, the player info block includes some formatting information.
-            
-        <number of parameters>       - number of parameters for each player 
-        N x <parameter type: string> - the parameter types that will be sent below 
-        <number of players>          - number of players following 
-        M x N x <parameter value>    - all parameter values for player 0, then all 
-                                    parameter values for player 1, etc
-                                    
-        Current parameters:
-          name     string     - player name 
-          guid     GUID       - player GUID, or '' if GUID is not yet known 
-          teamId   Team ID    - player's current team 
-          squadId  Squad ID   - player's current squad 
-          kills    integer    - number of kills, as shown in the in-game scoreboard
-          deaths   integer    - number of deaths, as shown in the in-game scoreboard
-          score    integer    - score, as shown in the in-game scoreboard 
-          ping     integer    - ping (ms), as shown in the in-game scoreboard
-        """
-        self.numOfParameters = int(data[0])
-        self.parameterTypes = data[1:1+self.numOfParameters]
-        self.numOfPlayers = int(data[1+self.numOfParameters])
-        self.playersData = data[1+self.numOfParameters+1:]
-    
-    def __len__(self):
-        return self.numOfPlayers
-    
-    def __getitem__(self, key):
-        """Returns the player data, for provided key (int or slice)"""
-        if isinstance(key, slice):
-            indices = key.indices(len(self))
-            return [self.getPlayerData(i) for i in range(*indices) ]
+    def getServerVars(self):
+        """Update the game property from server fresh data"""
+        try: self.game.serverName = self.getCvar('serverName').getBoolean()
+        except: pass
+        try: self.game.gamePassword = self.getCvar('gamePassword').getBoolean()
+        except: pass
+        try: self.game.punkBuster = self.getCvar('punkBuster').getBoolean()
+        except: pass
+        try: self.game.hardCore = self.getCvar('hardCore').getBoolean()
+        except: pass
+        try: self.game.ranked = self.getCvar('ranked').getBoolean()
+        except: pass
+        try: self.game.skillLimit = self.getCvar('skillLimit').getBoolean()
+        except: pass
+        try: self.game.noUnlocks = self.getCvar('noUnlocks').getBoolean()
+        except: pass
+        try: self.game.noAmmoPickups = self.getCvar('noAmmoPickups').getBoolean()
+        except: pass
+        try: self.game.realisticHealth = self.getCvar('realisticHealth').getBoolean()
+        except: pass
+        try: self.game.supportAction = self.getCvar('supportAction').getBoolean()
+        except: pass
+        try: self.game.preRoundLimit = self.getCvar('preRoundLimit').getBoolean()
+        except: pass
+        try: self.game.roundStartTimerPlayersLimit = self.getCvar('roundStartTimerPlayersLimit').getBoolean()
+        except: pass
+        try: self.game.roundStartTimerDelay = self.getCvar('roundStartTimerDelay').getBoolean()
+        except: pass
+        try: self.game.tdmScoreCounterMaxScore = self.getCvar('tdmScoreCounterMaxScore').getBoolean()
+        except: pass
+        try: self.game.clanTeams = self.getCvar('clanTeams').getBoolean()
+        except: pass
+        try: self.game.friendlyFire = self.getCvar('friendlyFire').getBoolean()
+        except: pass
+        try: self.game.currentPlayerLimit = self.getCvar('currentPlayerLimit').getBoolean()
+        except: pass
+        try: self.game.maxPlayerLimit = self.getCvar('maxPlayerLimit').getBoolean()
+        except: pass
+        try: self.game.playerLimit = self.getCvar('playerLimit').getBoolean()
+        except: pass
+        try: self.game.bannerUrl = self.getCvar('bannerUrl').getBoolean()
+        except: pass
+        try: self.game.serverDescription = self.getCvar('serverDescription').getBoolean()
+        except: pass
+        try: self.game.noCrosshair = self.getCvar('noCrosshair').getBoolean()
+        except: pass
+        try: self.game.noSpotting = self.getCvar('noSpotting').getBoolean()
+        except: pass
+        try: self.game.teamKillCountForKick = self.getCvar('teamKillCountForKick').getBoolean()
+        except: pass
+        try: self.game.teamKillValueForKick = self.getCvar('teamKillValueForKick').getBoolean()
+        except: pass
+        try: self.game.teamKillValueIncrease = self.getCvar('teamKillValueIncrease').getBoolean()
+        except: pass
+        try: self.game.teamKillValueDecreasePerSecond = self.getCvar('teamKillValueDecreasePerSecond').getBoolean()
+        except: pass
+        try: self.game.idleTimeout = self.getCvar('idleTimeout').getBoolean()
+        except: pass
+        
+        
+    def getTeam(self, team):
+        """convert MOH team numbers to B3 team numbers"""
+        team = int(team)
+        if team == 1:
+            return b3.TEAM_RED
+        elif team == 2:
+            return b3.TEAM_BLUE
+        elif team == 3:
+            return b3.TEAM_SPEC
         else:
-            return self.getPlayerData(key)
+            return b3.TEAM_UNKNOWN
+        
+        
+    def OnPlayerTeamchange(self, action, data):
+        """
+        player.onTeamChange <soldier name: player name> <team: Team ID>
+        Effect: Player might have changed team
+        """
+        #['player.onTeamChange', 'Dalich', '2']
+        client = self.getClient(data[0])
+        if client:
+            client.team = self.getTeam(data[1]) # .team setter will send team change event
+            client.teamId = int(data[1])
+            
+        
+    def OnServerRoundover(self, action, data):
+        """
+        server.onRoundOver <winning team: Team ID>
+        
+        Effect: The round has just ended, and <winning team> won
+        """
+        #['server.onRoundOver', '2']
+        return b3.events.Event(b3.events.EVT_GAME_ROUND_END, data[0])
+        
+        
+    def OnServerRoundoverplayers(self, action, data):
+        """
+        server.onRoundOverPlayers <end-of-round soldier info : player info block>
+        
+        Effect: The round has just ended, and <end-of-round soldier info> is the final detailed player stats
+        """
+        #['server.onRoundOverPlayers', '8', 'clanTag', 'name', 'guid', 'teamId', 'kills', 'deaths', 'score', 'ping', '17', 'RAID', 'mavzee', 'EA_4444444444444444555555555555C023', '2', '20', '17', '310', '147', 'RAID', 'NUeeE', 'EA_1111111111111555555555555554245A', '2', '30', '18', '445', '146', '', 'Strzaerl', 'EA_88888888888888888888888888869F30', '1', '12', '7', '180', '115', '10tr', 'russsssssssker', 'EA_E123456789461416564796848C26D0CD', '2', '12', '12', '210', '141', '', 'Daezch', 'EA_54567891356479846516496842E17F4D', '1', '25', '14', '1035', '129', '', 'Oldqsdnlesss', 'EA_B78945613465798645134659F3079E5A', '1', '8', '12', '120', '256', '', 'TTETqdfs', 'EA_1321654656546544645798641BB6D563', '1', '11', '16', '180', '209', '', 'bozer', 'EA_E3987979878946546546565465464144', '1', '22', '14', '475', '152', '', 'Asdf 1977', 'EA_C65465413213216656546546546029D6', '2', '13', '16', '180', '212', '', 'adfdasse', 'EA_4F313565464654646446446644664572', '1', '4', '25', '45', '162', 'SG1', 'De56546ess', 'EA_123132165465465465464654C2FC2FBB', '2', '5', '8', '75', '159', 'bsG', 'N06540RZ', 'EA_787897944546565656546546446C9467', '2', '8', '14', '100', '115', '', 'Psfds', 'EA_25654321321321000006546464654B81', '2', '15', '15', '245', '140', '', 'Chezear', 'EA_1FD89876543216548796130EB83E411F', '1', '9', '14', '160', '185', '', 'IxSqsdfOKxI', 'EA_481321313132131313213212313112CE', '1', '21', '12', '625', '236', '', 'Ledfg07', 'EA_1D578987994651615166516516136450', '1', '5', '6', '85', '146', '', '5 56 mm', 'EA_90488E6543216549876543216549877B', '2', '0', '0', '0', '192']
+        return b3.events.Event(b3.events.EVT_GAME_ROUND_PLAYER_SCORES, PlayerInfoBlock(data))
+        
+        
+    def OnServerRoundoverteamscores(self, action, data):
+        """
+        server.onRoundOverTeamScores <end-of-round scores: team scores>
+        
+        Effect: The round has just ended, and <end-of-round scores> is the final ticket/kill/life count for each team
+        """
+        #['server.onRoundOverTeamScores', '2', '1180', '1200', '1200']
+        return b3.events.Event(b3.events.EVT_GAME_ROUND_TEAM_SCORES, data[1])
+        
 
-    def getPlayerData(self, index):
-        if index >= self.numOfPlayers:
-            raise IndexError
-        data = {}
-        playerData = self.playersData[index*self.numOfParameters:(index+1)*self.numOfParameters]
-        for i in range(self.numOfParameters):
-            data[self.parameterTypes[i]] = playerData[i]
-        return data 
+    def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
+        duration = b3.functions.time2minutes(duration)
+
+        if isinstance(client, str):
+            self.write(self.getCommand('kick', cid=client, reason=reason[:80]))
+            return
+        elif admin:
+            reason = self.getMessage('temp_banned_by', client.exactName, admin.exactName, b3.functions.minutesStr(duration), reason)
+        else:
+            reason = self.getMessage('temp_banned', client.exactName, b3.functions.minutesStr(duration), reason)
+        reason = self.stripColors(reason)
+
+        if self.PunkBuster:
+            # punkbuster acts odd if you ban for more than a day
+            # tempban for a day here and let b3 re-ban if the player
+            # comes back
+            if duration > 1440:
+                duration = 1440
+
+            self.PunkBuster.kick(client, duration, reason)
+        self.write(('banList.list',))
+        self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
+        self.write(('banList.list',))
+        ## also kick as the MoH server seems not to enforce all bans correctly
+        self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
+        
+        if not silent:
+            self.say(reason)
+
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, reason, client))
+
+
+    def ban(self, client, reason='', admin=None, silent=False, *kwargs):
+        """Permanent ban"""
+        self.debug('BAN : client: %s, reason: %s', client, reason)
+        if isinstance(client, b3.clients.Client):
+            self.write(self.getCommand('ban', guid=client.guid, reason=reason[:80]))
+            self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
+            return
+
+        if admin:
+            reason = self.getMessage('banned_by', client.exactName, admin.exactName, reason)
+        else:
+            reason = self.getMessage('banned', client.exactName, reason)
+        reason = self.stripColors(reason)
+
+        if client.cid is None:
+            # ban by ip, this happens when we !permban @xx a player that is not connected
+            self.debug('EFFECTIVE BAN : %s',self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
+            self.write(self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
+            if admin:
+                admin.message('banned: %s (@%s). His last ip (%s) has been added to banlist'%(client.exactName, client.id, client.ip))
+        else:
+            # ban by cid
+            self.debug('EFFECTIVE BAN : %s',self.getCommand('ban', guid=client.guid, reason=reason[:80]))
+            self.write(('banList.list',))
+            self.write(self.getCommand('ban', cid=client.cid, reason=reason[:80]))
+            self.write(('banList.list',))
+            self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
+            if admin:
+                admin.message('banned: %s (@%s) has been added to banlist'%(client.exactName, client.id))
+
+        if self.PunkBuster:
+            self.PunkBuster.banGUID(client, reason)
+        
+        if not silent:
+            self.say(reason)
+        
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, reason, client))
+

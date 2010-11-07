@@ -45,10 +45,10 @@ __version__ = '0.0.2'
 import re, string
 import b3
 import b3.events
-import b3.parsers.q3a
+from b3.parsers.q3a.abstractParser import AbstractParser
 import b3.parsers.punkbuster
 
-class EtproParser(b3.parsers.q3a.Q3AParser):
+class EtproParser(AbstractParser):
     gameName = 'etpro'
     IpsOnly = False    # Setting True will use ip's only for identification.
     IpCombi = False    # Setting True will replace last part of the guid with 2 segments of the ip.
