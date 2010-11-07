@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+# 2010/10/27 - 0.9.1 - GrosBedo
+# * messages now support named $variables instead of %s
 # 2010/10/27 - 0.9 - Courgette
 # * when banning, also kick to take over MoH engine failure to enforce bans. This
 #   will need more test to determine how to make the MoH engine enforce temp bans.
@@ -356,9 +358,9 @@ class MohParser(AbstractParser):
             self.write(self.getCommand('kick', cid=client, reason=reason[:80]))
             return
         elif admin:
-            reason = self.getMessage('temp_banned_by', client.exactName, admin.exactName, b3.functions.minutesStr(duration), reason)
+            reason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=b3.functions.minutesStr(duration)))
         else:
-            reason = self.getMessage('temp_banned', client.exactName, b3.functions.minutesStr(duration), reason)
+            reason = self.getMessage('temp_banned', self.getMessageVariables(client=client, reason=reason, banduration=b3.functions.minutesStr(duration)))
         reason = self.stripColors(reason)
 
         if self.PunkBuster:

@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2010/11/07 - 1.20.1 - GrosBedo
+#   * added a new dynamical function getMessageVariables to parse messages
 #   2010/10/28 - 1.20.0 - Courgette
 #   * support an new optional syntax for loading plugins in b3.xml which enable
 #     to specify a directory where to find the plugin with the 'path' attribute.
@@ -94,7 +96,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.20.0'
+__version__ = '1.20.1'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -697,6 +699,43 @@ class Parser(object):
                 return msg % args
         else:
             return msg
+
+    def getMessageVariables(self, *args, **kwargs):
+        """Dynamically generate a dictionnary of fields available for messages in config file"""
+        variables = {}
+        for obj in args:
+            if obj is None:
+                continue
+            if type(obj).__name__ == 'str':
+                if variables.has_key(obj) is False:
+                    variables[obj] = obj
+            else:
+                for attr in vars(obj):
+                    pattern = re.compile('[\W_]+')
+                    cleanattr = pattern.sub('', attr) # trim any underscore or any non alphanumeric character
+                    variables[cleanattr] = getattr(obj,attr)
+        for key, obj in kwargs.iteritems():
+            #self.debug('Type of kwarg %s: %s' % (key, type(obj).__name__))
+            if obj is None:
+                continue
+            if type(obj).__name__ == 'str':
+                if variables.has_key(key) is False:
+                    variables[key] = obj
+            #elif type(obj).__name__ == 'instance':
+                #self.debug('Classname of object %s: %s' % (key, obj.__class__.__name__))
+            else:
+                for attr in vars(obj):
+                    pattern = re.compile('[\W_]+')
+                    cleanattr = pattern.sub('', attr) # trim any underscore or any non alphanumeric character
+                    currkey = ''.join([key,cleanattr])
+                    variables[currkey] = getattr(obj,attr)
+        ''' For debug purposes, uncomment to see in the log a list of the available fields
+        allkeys = variables.keys()
+        allkeys.sort()
+        for key in allkeys:
+            self.debug('%s has value %s' % (key, variables[key]))
+        '''
+        return variables
 
     def getCommand(self, cmd, **kwargs):
         """Return a reference to a loaded command"""

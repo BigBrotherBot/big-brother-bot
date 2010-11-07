@@ -69,14 +69,14 @@
 		<!-- <set name="destination">ftp://user:pass@somewhere.com/www/test_doc.htm</set> -->
 	</settings>
 	<settings name="messages">
-		<set name="kicked_by">%s^7 was kicked by %s^7 %s</set>
-		<set name="kicked">%s^7 was kicked %s</set>
-		<set name="banned_by">%s^7 was banned by %s^7 %s</set>
-		<set name="banned">%s^7 was banned %s</set>
-		<set name="temp_banned_by">%s^7 was temp banned by %s^7 for %s^7 %s</set>
-		<set name="temp_banned">%s^7 was temp banned for %s^7 %s</set>
-		<set name="unbanned_by">%s^7 was un-banned by %s^7 %s</set>
-		<set name="unbanned">%s^7 was un-banned %s</set>
+		<set name="kicked_by">$clientname^7 was kicked by $adminname^7 $reason</set>
+		<set name="kicked">$clientname^7 was kicked $reason</set>
+		<set name="banned_by">$clientname^7 was banned by $adminname^7 $reason</set>
+		<set name="banned">$clientname^7 was banned $reason</set>
+		<set name="temp_banned_by">$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason</set>
+		<set name="temp_banned">$clientname^7 was temp banned for $banduration^7 $reason</set>
+		<set name="unbanned_by">$clientname^7 was un-banned by $adminname^7 $reason</set>
+		<set name="unbanned">$clientname^7 was un-banned $reason</set>
 	</settings>
 	<settings name="plugins">
 		<set name="external_dir">@b3/extplugins</set>

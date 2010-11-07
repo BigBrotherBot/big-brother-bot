@@ -41,9 +41,10 @@
 # 10/8/2010 - 1.4.13 - xlr8or - fixed a bug where clients would be disconnected after mapchange.  
 # 10/9/2010 - 1.4.14 - xlr8or - don't save client.name on say and sayteam when name is the same (sanitization problem)
 # 24/10/2010 - 1.4.15 - xlr8or - some documentation on line formats
+# 07/11/2010 - 1.4.16 - GrosBedo - messages now support named $variables instead of %s
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.15'
+__version__ = '1.4.16'
 
 import re, string, threading
 import b3
@@ -412,9 +413,9 @@ class CodParser(AbstractParser):
 
                 if not silent:
                     if admin:
-                        self.say(self.getMessage('unbanned_by', client.exactName, admin.exactName, reason))
+                        self.say(self.getMessage('unbanned_by', self.getMessageVariables(client=client, reason=reason, admin=admin)))
                     else:
-                        self.say(self.getMessage('unbanned', client.exactName, reason))
+                        self.say(self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason)))
             elif admin:
                 admin.message('%s^7 unbanned but has no punkbuster id' % client.exactName)
         else:

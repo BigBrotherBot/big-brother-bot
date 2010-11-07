@@ -32,6 +32,8 @@
 #      plugin and veto'd elsewhere.
 # 2010/10/11 - 0.5 - xlr8or
 #    * added MOH support
+# 2010/11/07 - 0.5.1 - GrosBedo
+#    * edited default messages settings
 
 __author__  = 'xlr8or'
 __version__ = '0.5.1'
@@ -137,7 +139,7 @@ class Setup:
         # Q3Aa specific
         else:   
             self.add_set("rcon_password", "", "The RCON pass of your gameserver")
-            self.add_set("port", "28960", "The port the server is running on")
+            self.add_set("port", "27960", "The port the server is running on")
             # determine if ftp functionality is available
             if version.LooseVersion(self._pver) < version.LooseVersion('2.6.0'):
                 self.add_buffer('\n  NOTE for game_log:\n  You are running python '+self._pver+', ftp functionality\n  is not available prior to python version 2.6.0\n')
@@ -173,14 +175,14 @@ class Setup:
         # messages settings
         self.add_buffer('\n--MESSAGES------------------------------------------------------\n')
         xml.start("settings", name="messages")
-        self.add_set("kicked_by", "%s^7 was kicked by %s^7 %s")
-        self.add_set("kicked", "%s^7 was kicked %s")
-        self.add_set("banned_by", "%s^7 was banned by %s^7 %s")
-        self.add_set("banned", "%s^7 was banned %s")
-        self.add_set("temp_banned_by", "%s^7 was temp banned by %s^7 for %s^7 %s")
-        self.add_set("temp_banned", "%s^7 was temp banned for %s^7 %s")
-        self.add_set("unbanned_by", "%s^7 was un-banned by %s^7 %s")
-        self.add_set("unbanned", "%s^7 was un-banned %s")
+        self.add_set("kicked_by", "$clientname^7 was kicked by $adminname^7 $reason")
+        self.add_set("kicked", "$clientname^7 was kicked $reason")
+        self.add_set("banned_by", "$clientname^7 was banned by $adminname^7 $reason")
+        self.add_set("banned", "$clientname^7 was banned $reason")
+        self.add_set("temp_banned_by", "$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason")
+        self.add_set("temp_banned", "$clientname^7 was temp banned for $banduration^7 $reason")
+        self.add_set("unbanned_by", "$clientname^7 was un-banned by $adminname^7 $reason")
+        self.add_set("unbanned", "$clientname^7 was un-banned $reason")
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
