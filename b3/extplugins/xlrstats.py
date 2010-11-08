@@ -39,9 +39,11 @@
 #   Default action bonus set to +3 skillpoints (was 0)
 # 13-10-2010 - 2.2.8 - Mark Weirath
 #   BugFix: Empty field webfront Url is now allowed in config
+# 08-11-2010 - 2.2.9 - Mark Weirath
+#   Harden retrieval of webfront variables
 
 __author__  = 'Tim ter Laak / Mark Weirath'
-__version__ = '2.2.8'
+__version__ = '2.2.9'
 
 # Version = major.minor.patches
 
@@ -226,10 +228,13 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             try:
                 f = urllib2.urlopen(_request)
                 _result = f.readline().split(',')
-                self._minKills = _result[0]
-                self._minRounds = _result[1]
-                self._maxDays = _result[2]
-                self.debug('Successfuly retrieved webfront variables: minkills: %s, minrounds: %s, maxdays: %s' %(self._minKills, self._minRounds, self._maxDays))
+                # Our webfront will present us 3 values
+                if len(_result) == 3:
+                    # Force the collected strings to their final type. If an error occurs they will fail the try statement.
+                    self._minKills = int(_result[0])
+                    self._minRounds = int(_result[1])
+                    self._maxDays = int(_result[2])
+                    self.debug('Successfuly retrieved webfront variables: minkills: %i, minrounds: %i, maxdays: %i' %(self._minKills, self._minRounds, self._maxDays))
             except:
                 self.debug('Couldn\'t retrieve webfront variables, using defaults')
         else:
