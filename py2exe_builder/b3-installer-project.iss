@@ -3,14 +3,14 @@
 
 
 ;#define Debug
-#define B3_VERSION_NUMBER "1.4.1"
-#define B3_VERSION_SUFFIX "b"
+#define B3_VERSION_NUMBER "1.4.2"
+#define B3_VERSION_SUFFIX "alpha"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
 ; Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{F04D6FC4-CF46-4409-995A-04BEB0B219E6}
+AppID={{F04D6FC4-CF46-4409-995A-04BEB0B219E6}
 AppName=BigBrotherBot
 AppVerName=BigBrotherBot {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}
 AppPublisher=BigBrotherBot
@@ -21,15 +21,14 @@ DefaultDirName={pf}\BigBrotherBot_{#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}
 DefaultGroupName=BigBrotherBot
 LicenseFile=gpl-2.0.txt
 OutputBaseFilename=BigBrotherBot-{#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}
-Compression=lzma/ultra64
+Compression=lzma/Ultra64
 SolidCompression=true
-InternalCompressLevel=normal
+InternalCompressLevel=Normal
 DisableStartupPrompt=true
 SetupLogging=true
 VersionInfoVersion=1.0
 VersionInfoDescription=B3 installation
 VersionInfoCopyright=www.bigbrotherbot.net
-AppCopyright=
 VersionInfoTextVersion=1.0
 VersionInfoProductName=BigBrotherBot
 VersionInfoProductVersion={#B3_VERSION_NUMBER}

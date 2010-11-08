@@ -31,11 +31,14 @@
 # 31/1/2010 - 1.3.2 - xlr8or
 #  * Modified unban to remove bans from game's ban list
 # 1/5/2010 - 1.3.2 - xlr8or - delegate guid length checking to cod parser
+# 7/11/2010 - 1.3.3 - GrosBedo
+#    * messages now support named $variables instead of %s
+#
 
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.3.2'
+__version__ = '1.3.3'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
@@ -103,9 +106,9 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
 
                 if not silent:
                     if admin:
-                        self.say(self.getMessage('unbanned_by', client.exactName, admin.exactName, reason))
+                        self.say(self.getMessage('unbanned_by', self.getMessageVariables(client=client, reason=reason, admin=admin)))
                     else:
-                        self.say(self.getMessage('unbanned', client.exactName, reason))
+                        self.say(self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason)))
             elif admin:
                 admin.message('%s^7 unbanned but has no punkbuster id' % client.exactName)
         else:

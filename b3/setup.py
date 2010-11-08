@@ -32,9 +32,15 @@
 #      plugin and veto'd elsewhere.
 # 2010/10/11 - 0.5 - xlr8or
 #    * added MOH support
+# 2010/11/07 - 0.5.1 - GrosBedo
+#    * edited default messages settings
+# 2010/11/07 - 0.5.2 - GrosBedo
+#    * added default values of lines_per_second and delay
+#    * added more infos about the http access for gamelog
+#
 
 __author__  = 'xlr8or'
-__version__ = '0.5.1'
+__version__ = '0.5.2'
 
 import platform, urllib2, shutil, os, sys, time, zipfile
 from functions import main_is_frozen
@@ -137,12 +143,12 @@ class Setup:
         # Q3Aa specific
         else:   
             self.add_set("rcon_password", "", "The RCON pass of your gameserver")
-            self.add_set("port", "28960", "The port the server is running on")
+            self.add_set("port", "27960", "The port the server is running on")
             # determine if ftp functionality is available
             if version.LooseVersion(self._pver) < version.LooseVersion('2.6.0'):
                 self.add_buffer('\n  NOTE for game_log:\n  You are running python '+self._pver+', ftp functionality\n  is not available prior to python version 2.6.0\n')
             else:
-                self.add_buffer('\n  NOTE for game_log:\n  You are running python '+self._pver+', the gamelog may also be\n  ftp-ed in.\nDefine game_log like this:\n  ftp://[ftp-user]:[ftp-password]@[ftp-server]/path/to/games_mp.log\n')
+                self.add_buffer('\n  NOTE for game_log:\n  You are running python '+self._pver+', the gamelog may also be\n  ftp-ed or http-ed in.\nDefine game_log like this:\n  ftp://[ftp-user]:[ftp-password]@[ftp-server]/path/to/games_mp.log\nOr for web access (you can use htaccess to secure):\n http://serverhost/path/to/games_mp.log\n')
             self.add_set("game_log", "games_mp.log", "The gameserver generates a logfile, put the path and name here")
             self.add_set("public_ip", "127.0.0.1", "The public IP your gameserver is residing on")
             self.add_set("rcon_ip", "127.0.0.1", "The IP the bot can use to send RCON commands to (127.0.0.1 when on the same box)")
@@ -152,6 +158,10 @@ class Setup:
             self.add_set("punkbuster", "on", "Is the gameserver running PunkBuster Anticheat: on/off")
         else:
             self.add_set("punkbuster", "off", "Is the gameserver running PunkBuster Anticheat: on/off", silent=True)
+
+        # configure default performances parameters
+        self.add_set("delay", "0.33", "Delay between each log reading. Set a higher value to consume less disk ressources or bandwidth if you remotely connect (ftp or http remote log access)", silent=True)
+        self.add_set("lines_per_second", "50", "Number of lines to process per second. Set a lower value to consume less CPU ressources", silent=True)
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
@@ -173,14 +183,14 @@ class Setup:
         # messages settings
         self.add_buffer('\n--MESSAGES------------------------------------------------------\n')
         xml.start("settings", name="messages")
-        self.add_set("kicked_by", "%s^7 was kicked by %s^7 %s")
-        self.add_set("kicked", "%s^7 was kicked %s")
-        self.add_set("banned_by", "%s^7 was banned by %s^7 %s")
-        self.add_set("banned", "%s^7 was banned %s")
-        self.add_set("temp_banned_by", "%s^7 was temp banned by %s^7 for %s^7 %s")
-        self.add_set("temp_banned", "%s^7 was temp banned for %s^7 %s")
-        self.add_set("unbanned_by", "%s^7 was un-banned by %s^7 %s")
-        self.add_set("unbanned", "%s^7 was un-banned %s")
+        self.add_set("kicked_by", "$clientname^7 was kicked by $adminname^7 $reason")
+        self.add_set("kicked", "$clientname^7 was kicked $reason")
+        self.add_set("banned_by", "$clientname^7 was banned by $adminname^7 $reason")
+        self.add_set("banned", "$clientname^7 was banned $reason")
+        self.add_set("temp_banned_by", "$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason")
+        self.add_set("temp_banned", "$clientname^7 was temp banned for $banduration^7 $reason")
+        self.add_set("unbanned_by", "$clientname^7 was un-banned by $adminname^7 $reason")
+        self.add_set("unbanned", "$clientname^7 was un-banned $reason")
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")

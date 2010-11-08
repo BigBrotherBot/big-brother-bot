@@ -52,9 +52,9 @@
 		<!-- Is the gameserver running PunkBuster Anticheat: on/off -->
 		<set name="punkbuster">on</set>
 		<!-- Delay between each log reading. Set a higher value to consume less disk ressources or bandwidth if you remotely connect (ftp or http remote log access) -->
-		<set name="delay">0.05</set>
+		<set name="delay">0.33</set>
 		<!-- Number of lines to process per second. Set a lower value to consume less CPU ressources -->
-		<set name="lines_per_second">1000</set>
+		<set name="lines_per_second">50</set>
 	</settings>
 	<settings name="autodoc">
 		<!-- Autodoc will generate a user documentation for all B3 commands 
@@ -69,14 +69,14 @@
 		<!-- <set name="destination">ftp://user:pass@somewhere.com/www/test_doc.htm</set> -->
 	</settings>
 	<settings name="messages">
-		<set name="kicked_by">%s^7 was kicked by %s^7 %s</set>
-		<set name="kicked">%s^7 was kicked %s</set>
-		<set name="banned_by">%s^7 was banned by %s^7 %s</set>
-		<set name="banned">%s^7 was banned %s</set>
-		<set name="temp_banned_by">%s^7 was temp banned by %s^7 for %s^7 %s</set>
-		<set name="temp_banned">%s^7 was temp banned for %s^7 %s</set>
-		<set name="unbanned_by">%s^7 was un-banned by %s^7 %s</set>
-		<set name="unbanned">%s^7 was un-banned %s</set>
+		<set name="kicked_by">$clientname^7 was kicked by $adminname^7 $reason</set>
+		<set name="kicked">$clientname^7 was kicked $reason</set>
+		<set name="banned_by">$clientname^7 was banned by $adminname^7 $reason</set>
+		<set name="banned">$clientname^7 was banned $reason</set>
+		<set name="temp_banned_by">$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason</set>
+		<set name="temp_banned">$clientname^7 was temp banned for $banduration^7 $reason</set>
+		<set name="unbanned_by">$clientname^7 was un-banned by $adminname^7 $reason</set>
+		<set name="unbanned">$clientname^7 was un-banned $reason</set>
 	</settings>
 	<settings name="plugins">
 		<set name="external_dir">@b3/extplugins</set>

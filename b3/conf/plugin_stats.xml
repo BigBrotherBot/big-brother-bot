@@ -25,11 +25,18 @@
 	     or added to this base) -->
     <set name="startPoints">100</set>
 
-		<!-- Reset the Skill score at each round start ? (yes|no) -->
+	<!-- Reset the Skill score at each round start ? (yes|no) -->
     <set name="resetscore">no</set>
 
-		<!-- Reset the Experience (XP) score at each round start ? (yes|no) -->
+	<!-- Reset the Experience (XP) score at each round start ? (yes|no) -->
     <set name="resetxp">no</set>
-	</settings>
+	
+	<!-- Show !topstats awards at the end of map automatically -->
+	<set name="show_awards">no</set>
+
+	<!-- Show !topxp awards at the end of map automatically -->
+	<set name="show_awards_xp">no</set>
+
+  </settings>
 
 </configuration>
