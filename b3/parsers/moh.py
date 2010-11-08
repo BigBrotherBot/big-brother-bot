@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+# 2010/11/07 - 0.10 - Courgette
+# * add new maps info
 # 2010/10/27 - 0.9 - Courgette
 # * when banning, also kick to take over MoH engine failure to enforce bans. This
 #   will need more test to determine how to make the MoH engine enforce temp bans.
@@ -44,7 +46,7 @@
 #   but basic commands seem to work.
 
 __author__  = 'Bakes, Courgette'
-__version__ = '0.9'
+__version__ = '0.10'
 
 import b3.events
 from b3.parsers.frostbite.abstractParser import AbstractParser
@@ -172,30 +174,47 @@ class MohParser(AbstractParser):
         
         return client
 
-
     def getHardName(self, mapname):
         """ Change real name to level name """
         mapname = mapname.lower()
         if mapname.startswith('mazar-i-sharif airfield'):
             return 'levels/mp_01'
+        
+        elif mapname.startswith('bagram hanger'):
+            return 'levels/mp_01_elimination'
             
         elif mapname.startswith('shah-i-knot mountains'):
             return 'levels/mp_02'
+        
+        elif mapname.startswith('hindu kush pass'):
+            return 'levels/mp_02_koth'
+        
+        elif mapname.startswith('khyber caves'):
+            return 'levels/mp_03'
+            #return 'levels/mp_03_elimination'
 
         elif mapname.startswith('helmand valley'):
             return 'levels/mp_04'
+        
+        elif mapname.startswith('helmand river hill'):
+            return 'levels/mp_04_koth'
 
         elif mapname.startswith('kandahar marketplace'):
             return 'levels/mp_05'
 
         elif mapname.startswith('diwagal camp'):
             return 'levels/mp_06'
+            #return 'mp_06_elimination'
+        
+        elif mapname.startswith('korengal outpost'):
+            return 'levels/mp_07_koth'
 
         elif mapname.startswith('kunar base'):
             return 'levels/mp_08'
 
         elif mapname.startswith('kabul city ruins'):
             return 'levels/mp_09'
+            #return 'levels/mp_09_elimination'
 
         elif mapname.startswith('garmzir town'):
             return 'levels/mp_10'
@@ -206,11 +225,23 @@ class MohParser(AbstractParser):
 
     def getEasyName(self, mapname):
         """ Change levelname to real name """
-        if mapname.startswith('levels/mp_01'):
+        if mapname.startswith('levels/mp_01_elimination'):
+            return 'Bagram Hanger'
+        
+        elif mapname.startswith('levels/mp_01'):
             return 'Mazar-i-Sharif Airfield'
             
+        elif mapname.startswith('levels/mp_02_koth'):
+            return 'Hindu Kush Pass'
+        
         elif mapname.startswith('levels/mp_02'):
             return 'Shah-i-Knot Mountains'
+
+        elif mapname.startswith('levels/mp_03'):
+            return 'Khyber Caves'
+
+        elif mapname.startswith('levels/mp_04_koth'):
+            return 'Helmand River Hill'
 
         elif mapname.startswith('levels/mp_04'):
             return 'Helmand Valley'
@@ -220,6 +251,9 @@ class MohParser(AbstractParser):
 
         elif mapname.startswith('levels/mp_06'):
             return 'Diwagal Camp'
+
+        elif mapname.startswith('levels/mp_07_koth'):
+            return 'Korengal Outpost'
 
         elif mapname.startswith('levels/mp_08'):
             return 'Kunar Base'
@@ -418,4 +452,5 @@ class MohParser(AbstractParser):
             self.say(reason)
         
         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, reason, client))
+
 

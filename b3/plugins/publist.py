@@ -53,12 +53,20 @@
 # * send the python version to the master
 # 29/10/2010 - 1.6 - Courgette
 # * for BFBC2 and MoH send additional info : bannerUrl and serverDescription
+# 05/11/2010 - 1.7 - Courgette
+# * delay initial heartbeat and do not sent shutdown heartbeat if initial heartbeat was
+#   not already sent. This is to prevent spaming the B3 master with rogue bots that
+#   keep restarting forever
+# 08/11/2010 - 1.8 - Courgette
+# * initial delay can be changed in config file
+# * if B3 master respond with "403 Forbidden" the plugin disables itself. This 
+#   will allow the B3 master to prevent a bot to send further pings (until that bot restarts)
 
-__version__ = '1.6'
+__version__ = '1.8'
 __author__  = 'ThorN, Courgette'
 
 import sys
-import thread
+import thread, threading
 import urllib
 import urllib2
 import socket
@@ -78,10 +86,20 @@ class PublistPlugin(b3.plugin.Plugin):
     _secondUrl = None
     requiresConfigFile = False
     
+    _heartbeat_sent = False
+    _initial_heartbeat_timer = None
+    _initial_heartbeat_delay = 60.0*5 # 5 minutes
+    
     def onLoadConfig(self):
         try:
             self._secondUrl = self.config.get('settings', 'url')
             self.debug('Using second url : %s' % self._secondUrl)
+        except:
+            pass
+        
+        try:
+            self._initial_heartbeat_delay = self.config.getint('settings', 'delay')
+            self.debug('delay : %s' % self._initial_heartbeat_delay)
         except:
             pass
             
@@ -113,22 +131,31 @@ class PublistPlugin(b3.plugin.Plugin):
         self._cronTab = b3.cron.PluginCronTab(self, self.update, 0, rmin, rhour, '*', '*', '*')
         self.console.cron + self._cronTab
         
-        # send initial heartbeat
-        thread.start_new_thread(self.update, ())
+        # planning initial heartbeat
+        self.info('initial heartbeat will be sent to B3 master server in %s seconds' % self._initial_heartbeat_delay) 
+        self._initial_heartbeat_timer = threading.Timer(self._initial_heartbeat_delay, self.update, ())
+        self._initial_heartbeat_timer.start()
       
     def onEvent(self, event):
-        if event.type == b3.events.EVT_STOP:
-            info = {
-                'action' : 'shutdown',
-                'ip' : self.console._publicIp,
-                'port' : self.console._port,
-                'rconPort' : self.console._rconPort
-            }
-            #self.debug(info)
-            self.info('Sending shutdown info to B3 master')
-            self.sendInfo(info)
+        if event.type == b3.events.EVT_STOP and self._heartbeat_sent:
+            self.shutdown()
+    
+    def shutdown(self):
+        """Send a shutdown heartbeat to B3 master server"""
+        self.info('Sending shutdown info to B3 master')
+        if self._initial_heartbeat_timer is not None:
+            self._initial_heartbeat_timer.cancel()
+        info = {
+            'action' : 'shutdown',
+            'ip' : self.console._publicIp,
+            'port' : self.console._port,
+            'rconPort' : self.console._rconPort
+        }
+        #self.debug(info)
+        self.sendInfo(info)
     
     def update(self):
+        """send an upate heartbeat to B3 master server"""
         self.debug('Sending heartbeat to B3 master...')
         socket.setdefaulttimeout(10)
         
@@ -176,6 +203,9 @@ class PublistPlugin(b3.plugin.Plugin):
     
     def sendInfo(self, info={}):
         self.sendInfoToMaster(self._url, info)
+        if self._heartbeat_sent is False:
+            # this is the 1st heartbeat sent since startup
+            self._heartbeat_sent = True
         if self._secondUrl is not None:
             self.sendInfoToMaster(self._secondUrl, info)
     
@@ -194,6 +224,9 @@ class PublistPlugin(b3.plugin.Plugin):
             elif hasattr(e, 'code'):
                 if e.code == 400:
                     self.info('B3 masterserver refused the heartbeat. reason: %s', e.msg)
+                elif e.code == 403:
+                    self.info('B3 masterserver definitely refused our ping. Disabling publist')
+                    self.disable()
                 else:
                     self.info('Unable to reach B3 masterserver, maybe the service is down or internet was unavailable')
                     self.debug(e)
@@ -212,33 +245,63 @@ if __name__ == '__main__':
     conf.setXml("""
     <configuration plugin="publist">
         <settings name="settings">
-            <set name="url">http://test.somewhere.com/serverping.php</set>
+            <set name="urlsqdf">http://test.somewhere.com/serverping.php</set>
+            <set name="url">http://localhost/b3publist/serverping.php</set>
+            <set name="delay">30</set>
         </settings>
     </configuration>
     """)
 
     
+    def test_startup():
+        p._initial_heartbeat_delay = 10
+        p.onStartup()
+        time.sleep(5)
+        print "_heartbeat_sent : %s" % p._heartbeat_sent
+        time.sleep(20)
+        print "_heartbeat_sent : %s" % p._heartbeat_sent
+        fakeConsole.queueEvent(b3.events.Event(b3.events.EVT_STOP, None, None))
+        #p.update()
+    
+    def test_heartbeat():
+        """
+        p.sendInfo({'version': '1.3-dev', 
+                'os': 'nt', 
+                'database': 'unknown', 
+                'action': 'update', 
+                'ip': '91.121.95.52', 
+                'parser': 'iourt41', 
+                'plugins': '', 
+                'port': 27960, 
+                'parserversion': '1.2', 
+                'rconPort': None,
+                'python_version': sys.version
+        })
+        """
+        
+        p.sendInfo({'version': '1.4.1b', 
+                'os': 'nt', 
+                'database': 'mysql', 
+                'action': 'update', 
+                'ip': '192.168.10.1', 
+                'parser': 'iourt41', 
+                'plugins': 'censorurt/0.1.2,admin/1.8.2,publist/1.7.1,poweradminurt/1.5.7,tk/1.2.4,adv/1.2.2', 
+                'port': 27960, 
+                'parserversion': '1.7.12', 
+                'rconPort': 27960,
+                'python_version': '2.6.4 (r264:75708, Oct 26 2009, 08:23:19) [MSC v.1500 32 bit (Intel)]'
+        })
+        
+    
+    
     #fakeConsole._publicIp = '127.0.0.1'
     fakeConsole._publicIp = '11.22.33.44'
     p = PublistPlugin(fakeConsole, conf)
-    #p.onStartup()
     p.onLoadConfig()
-    #p.update()
     
-    p.sendInfo({'version': '1.3-dev', 
-            'os': 'nt', 
-            'database': 'unknown', 
-            'action': 'update', 
-            'ip': '91.121.95.52', 
-            'parser': 'iourt41', 
-            'plugins': '', 
-            'port': 27960, 
-            'parserversion': '1.2', 
-            'rconPort': None,
-            'python_version': sys.version
-    })
+    test_heartbeat()
     
-    time.sleep(5) # so we can see thread working
+    time.sleep(120) # so we can see thread working
 
     #p.sendInfo({'action' : 'shutdown', 'ip' : '91.121.95.52', 'port' : 27960, 'rconPort' : None })
     
