@@ -37,7 +37,7 @@
 		<!-- The RCON pass of your gameserver -->
 		<set name="rcon_password">password</set>
 		<!-- The port the server is running on -->
-		<set name="port">28960</set>
+		<set name="port">27960</set>
 		<!-- The gameserver generates a logfile, put the path and name here (very important !) -->
 		<set name="game_log">games_mp.log</set>
 		<!-- If you want to run b3 on a different computer than where your server reside (remote access to the gamelog), you can connect via ftp or http by using the following syntax:

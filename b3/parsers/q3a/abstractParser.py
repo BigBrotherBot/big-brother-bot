@@ -17,8 +17,11 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # $Id: q3a.py 103 2006-04-14 16:23:10Z thorn $
+# $Id: q3a/abstractParser.py 103 2010-11-01 10:10:10Z xlr8or $
 #
 # CHANGELOG
+#    2010/11/08 - 1.5.2 - GrosBedo
+#    * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
 #    2010/11/07 - 1.5.1 - GrosBedo
 #    * added moveToTeam default command
 #    * fixed getTeam (missed team_free and would crash with q3a and oa081 because of int conversion of strings)
@@ -67,7 +70,7 @@
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.5.1'
+__version__ = '1.5.2'
 
 import re, string, time
 import b3
@@ -439,18 +442,19 @@ class AbstractParser(b3.parser.Parser):
         if isinstance(client, str) and re.match('^[0-9]+$', client):
             self.write(self.getCommand('kick', cid=client, reason=reason))
             return
-        elif admin:
-            reason = self.getMessage('kicked_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
-        else:
-            reason = self.getMessage('kicked', self.getMessageVariables(client=client, reason=reason))
 
         if self.PunkBuster:
             self.PunkBuster.kick(client, 0.5, reason)
         else:
             self.write(self.getCommand('kick', cid=client.cid, reason=reason))
 
-        if not silent:
-            self.say(reason)
+        if admin:
+            fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+        else:
+            fullreason = self.getMessage('kicked', self.getMessageVariables(client=client, reason=reason))
+
+        if not silent and fullreason != '':
+            self.say(fullreason)
 
         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_KICK, reason, client))
         client.disconnect()
@@ -467,11 +471,6 @@ class AbstractParser(b3.parser.Parser):
             self.error('Q3AParser.ban(): no client id, database must be down, doing tempban')
             return self.tempban(client, reason, '1d', admin, silent)
 
-        if admin:
-            reason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
-        else:
-            reason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
-
         if self.PunkBuster:
             self.PunkBuster.ban(client, reason)
             # bans will only last 7 days, this is a failsafe incase a ban cant
@@ -480,8 +479,13 @@ class AbstractParser(b3.parser.Parser):
         else:
             self.write(self.getCommand('ban', cid=client.cid, reason=reason))
 
-        if not silent:
-            self.say(reason)
+        if admin:
+            fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+        else:
+            fullreason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
+
+        if not silent and fullreason != '':
+            self.say(fullreason)
 
         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, reason, client))
         client.disconnect()
@@ -493,12 +497,14 @@ class AbstractParser(b3.parser.Parser):
 
                 if result:                    
                     admin.message('^3Unbanned^7: %s^7: %s' % (client.exactName, result))
+                
+                if admin:
+                    fullreason = self.getMessage('unbanned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+                else:
+                    fullreason = self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason))
 
-                if not silent:
-                    if admin:
-                        self.say(self.getMessage('unbanned_by', self.getMessageVariables(client=client, reason=reason, admin=admin)))
-                    else:
-                        self.say(self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason)))
+                if not silent and fullreason != '':
+                    self.say(fullreason)
             elif admin:
                 admin.message('%s^7 unbanned but has no punkbuster id' % client.exactName)
         elif admin:
@@ -514,9 +520,9 @@ class AbstractParser(b3.parser.Parser):
             self.write(self.getCommand('tempban', cid=client, reason=reason))
             return
         elif admin:
-            reason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=b3.functions.minutesStr(duration)))
+            fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=b3.functions.minutesStr(duration)))
         else:
-            reason = self.getMessage('temp_banned', self.getMessageVariables(client=client, reason=reason, banduration=b3.functions.minutesStr(duration)))
+            fullreason = self.getMessage('temp_banned', self.getMessageVariables(client=client, reason=reason, banduration=b3.functions.minutesStr(duration)))
 
         if self.PunkBuster:
             # punkbuster acts odd if you ban for more than a day
@@ -529,8 +535,8 @@ class AbstractParser(b3.parser.Parser):
         else:
             self.write(self.getCommand('tempban', cid=client.cid, reason=reason))
 
-        if not silent:
-            self.say(reason)
+        if not silent and fullreason != '':
+            self.say(fullreason)
 
         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, reason, client))
         client.disconnect()

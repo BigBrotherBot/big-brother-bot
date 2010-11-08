@@ -42,9 +42,10 @@
 # 10/9/2010 - 1.4.14 - xlr8or - don't save client.name on say and sayteam when name is the same (sanitization problem)
 # 24/10/2010 - 1.4.15 - xlr8or - some documentation on line formats
 # 07/11/2010 - 1.4.16 - GrosBedo - messages now support named $variables instead of %s
+# 08/11/2010 - 1.4.17 - GrosBedo - messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.16'
+__version__ = '1.4.17'
 
 import re, string, threading
 import b3
@@ -411,11 +412,13 @@ class CodParser(AbstractParser):
                 if result:                    
                     admin.message('^3Unbanned^7: %s^7: %s' % (client.exactName, result))
 
-                if not silent:
-                    if admin:
-                        self.say(self.getMessage('unbanned_by', self.getMessageVariables(client=client, reason=reason, admin=admin)))
-                    else:
-                        self.say(self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason)))
+                if admin:
+                    fullreason = self.getMessage('unbanned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+                else:
+                    fullreason = self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason))
+
+                if not silent and fullreason != '':
+                    self.say(fullreason)
             elif admin:
                 admin.message('%s^7 unbanned but has no punkbuster id' % client.exactName)
         else:
