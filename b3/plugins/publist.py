@@ -57,8 +57,12 @@
 # * delay initial heartbeat and do not sent shutdown heartbeat if initial heartbeat was
 #   not already sent. This is to prevent spaming the B3 master with rogue bots that
 #   keep restarting forever
+# 08/11/2010 - 1.8 - Courgette
+# * initial delay can be changed in config file
+# * if B3 master respond with "403 Forbidden" the plugin disables itself. This 
+#   will allow the B3 master to prevent a bot to send further pings (until that bot restarts)
 
-__version__ = '1.7'
+__version__ = '1.8'
 __author__  = 'ThorN, Courgette'
 
 import sys
@@ -90,6 +94,12 @@ class PublistPlugin(b3.plugin.Plugin):
         try:
             self._secondUrl = self.config.get('settings', 'url')
             self.debug('Using second url : %s' % self._secondUrl)
+        except:
+            pass
+        
+        try:
+            self._initial_heartbeat_delay = self.config.getint('settings', 'delay')
+            self.debug('delay : %s' % self._initial_heartbeat_delay)
         except:
             pass
             
@@ -214,6 +224,9 @@ class PublistPlugin(b3.plugin.Plugin):
             elif hasattr(e, 'code'):
                 if e.code == 400:
                     self.info('B3 masterserver refused the heartbeat. reason: %s', e.msg)
+                elif e.code == 403:
+                    self.info('B3 masterserver definitely refused our ping. Disabling publist')
+                    self.disable()
                 else:
                     self.info('Unable to reach B3 masterserver, maybe the service is down or internet was unavailable')
                     self.debug(e)
@@ -233,38 +246,61 @@ if __name__ == '__main__':
     <configuration plugin="publist">
         <settings name="settings">
             <set name="urlsqdf">http://test.somewhere.com/serverping.php</set>
+            <set name="url">http://localhost/b3publist/serverping.php</set>
+            <set name="delay">30</set>
         </settings>
     </configuration>
     """)
 
     
+    def test_startup():
+        p._initial_heartbeat_delay = 10
+        p.onStartup()
+        time.sleep(5)
+        print "_heartbeat_sent : %s" % p._heartbeat_sent
+        time.sleep(20)
+        print "_heartbeat_sent : %s" % p._heartbeat_sent
+        fakeConsole.queueEvent(b3.events.Event(b3.events.EVT_STOP, None, None))
+        #p.update()
+    
+    def test_heartbeat():
+        """
+        p.sendInfo({'version': '1.3-dev', 
+                'os': 'nt', 
+                'database': 'unknown', 
+                'action': 'update', 
+                'ip': '91.121.95.52', 
+                'parser': 'iourt41', 
+                'plugins': '', 
+                'port': 27960, 
+                'parserversion': '1.2', 
+                'rconPort': None,
+                'python_version': sys.version
+        })
+        """
+        
+        p.sendInfo({'version': '1.4.1b', 
+                'os': 'nt', 
+                'database': 'mysql', 
+                'action': 'update', 
+                'ip': '192.168.10.1', 
+                'parser': 'iourt41', 
+                'plugins': 'censorurt/0.1.2,admin/1.8.2,publist/1.7.1,poweradminurt/1.5.7,tk/1.2.4,adv/1.2.2', 
+                'port': 27960, 
+                'parserversion': '1.7.12', 
+                'rconPort': 27960,
+                'python_version': '2.6.4 (r264:75708, Oct 26 2009, 08:23:19) [MSC v.1500 32 bit (Intel)]'
+        })
+        
+    
+    
     #fakeConsole._publicIp = '127.0.0.1'
     fakeConsole._publicIp = '11.22.33.44'
     p = PublistPlugin(fakeConsole, conf)
     p.onLoadConfig()
-    p._initial_heartbeat_delay = 10
-    p.onStartup()
-    time.sleep(5)
-    print "_heartbeat_sent : %s" % p._heartbeat_sent
-    time.sleep(20)
-    print "_heartbeat_sent : %s" % p._heartbeat_sent
-    fakeConsole.queueEvent(b3.events.Event(b3.events.EVT_STOP, None, None))
-    #p.update()
     
-    """
-    p.sendInfo({'version': '1.3-dev', 
-            'os': 'nt', 
-            'database': 'unknown', 
-            'action': 'update', 
-            'ip': '91.121.95.52', 
-            'parser': 'iourt41', 
-            'plugins': '', 
-            'port': 27960, 
-            'parserversion': '1.2', 
-            'rconPort': None,
-            'python_version': sys.version
-    })
-    """
+    test_heartbeat()
+    
     time.sleep(120) # so we can see thread working
 
     #p.sendInfo({'action' : 'shutdown', 'ip' : '91.121.95.52', 'port' : 27960, 'rconPort' : None })
