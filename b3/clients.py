@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    12/11/2010 - 1.3.1 - Courgette
+#    * harden _set_name for cases where console is not set
 #    01/11/2010 - 1.3.0 - Courgette
 #    * Clients::getClientsByName() now ignores blank characters from names
 #    * add automated tests for Clients::getClientsByName()
@@ -54,7 +56,7 @@
 #     Added data parameter to Client.tempban()
 
 __author__  = 'ThorN'
-__version__ = '1.3.0'
+__version__ = '1.3.1'
 
 import b3, string, re, time, functions, threading, traceback, sys
 
@@ -407,10 +409,12 @@ class Client(object):
             newName = name.strip()
 
         if self._name == newName:
-            self.console.verbose2('Aborted Making Alias for cid: %s, name is the same' % self.cid)
+            if self.console:
+                self.console.verbose2('Aborted Making Alias for cid: %s, name is the same' % self.cid)
             return
         if self.cid == '-1' or self.cid == 'Server': # bfbc2 addition
-            self.console.verbose2('Aborted Making Alias for cid: %s, must be B3' % self.cid)
+            if self.console:
+                self.console.verbose2('Aborted Making Alias for cid: %s, must be B3' % self.cid)
             return
         
         self.makeAlias(self._name)
