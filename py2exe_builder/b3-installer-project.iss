@@ -71,14 +71,15 @@ Name: {group}\{cm:executable,b3_run}; Filename: {app}\b3_run.exe; Parameters: "-
 Name: {group}\{cm:configWizard,Config wizard}; Filename: {app}\b3_run.exe; Parameters: "--config ""{commonappdata}\BigBrotherBot\conf\b3.xml"" --setup"; WorkingDir: {app}; Comment: Run the B3 setup wizard; Flags: dontcloseonexit
 Name: {group}\{cm:B3ConfDir,config}; Filename: {commonappdata}\BigBrotherBot\
 Name: {group}\{cm:extplugins,extplugins}; Filename: {app}\extplugins\; IconFilename: {app}\b3-plugins-icon.ico; IconIndex: 0
+Name: {group}\{cm:UninstallProgram,BigBrotherBot}; Filename: {uninstallexe}
 Name: {group}\web\{cm:Website,BigBrotherBot}; Filename: http://www.bigbrotherbot.net/
 Name: {group}\web\{cm:Manual,Manual}; Filename: http://wiki.github.com/BigBrotherBot/big-brother-bot/manual
 Name: {group}\web\{cm:Forums,B3 Forums}; Filename: http://www.bigbrotherbot.net/forums/
 Name: {group}\web\{cm:DownloadPlugins,Download plugins}; Filename: http://www.bigbrotherbot.net/forums/downloads/?cat=4
-Name: {group}\{cm:UninstallProgram,BigBrotherBot}; Filename: {uninstallexe}
+Name: {group}\web\{cm:B3configGenerator,B3 config generator}; Filename: http://config.bigbrotherbot.net/; 
+Name: {group}\web\artwork; Filename: http://www.bigbrotherbot.net/forums/news-2/banners-n-buttons/
 Name: {group}\web\other tools\{cm:Echelon,Echelon}; Filename: http://echelon.bigbrotherbot.net/
 Name: {group}\web\other tools\{cm:Xlrstats,XLRstats}; Filename: http://www.xlrstats.com/
-Name: {group}\web\artwork; Filename: http://www.bigbrotherbot.net/forums/news-2/banners-n-buttons/
 
 [Dirs]
 Name: {commonappdata}\BigBrotherBot; Permissions: users-full
@@ -107,10 +108,11 @@ Name: {app}\*; Type: filesandordirs
 Website=BigBrotherBot Website
 Forums=Forums
 Manual=Manual
-B3ConfDir=config
-extplugins=plugins
-configWizard=B3 config wizard
+B3ConfDir=config folder
+extplugins=plugins folder
+configWizard=Run B3 config wizard
 executable=Run B3
 DownloadPlugins=Download more plugins
 Echelon=Echelon
 Xlrstats=XLRstats
+B3configGenerator=B3 config generator
