@@ -1,3 +1,54 @@
+2010-11-12  Courgette <courgette@ubu-team.org>
+
+	* b3/clients.py: clients: harden _set_name for cases where console
+	is not set
+
+2010-11-11  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit d099d0c9f82b580699c112bdf4f04cc166414182 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Mon Nov 8 19:45:01 2010 +0100
+
+2010-11-08  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/publist.py: PLUGIN PUBLIST : B3 master server can
+	prevent a bot from sending further heartbeats
+
+2010-11-07  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/frostbite/abstractParser.py: PARSER FROSTBITE:
+	OnServerLoadinglevel() now fills game.rounds and game.sv_maxrounds
+	and fix getSupportedMaps()
+
+2010-11-07  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/moh.py: PARSER MOH : add new maps info
+
+2010-11-05  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 00602b222e2f5bb21ea04419e933dcd27fe6a49c Author:
+	Courgette <courgette@ubu-team.org> Date:   Fri Nov 5 19:15:28 2010
+	+0100
+
+2010-11-03  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/frostbite/util.py: FROSTBITE UTIL : minor changes
+
+2010-11-01  xlr8or <xlr8or@xlr8or.com>
+
+	* versions.txt: versions.txt
+
+2010-11-01  Courgette <courgette@ubu-team.org>
+
+	* : commit 5fa63dc0f21852d73e07d5fefd2fdc27013860bf Author:
+	Courgette <courgette@ubu-team.org> Date:   Mon Nov 1 20:34:10 2010
+	+0100
+
+2010-11-01  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG, ChangeLogDetailed.txt, MANIFEST.in,
+	b3.egg-info/SOURCES.txt, versions.txt: versioning 1.4.1b: feature
+	freeze release candidate
+
 2010-11-01  Courgette <courgette@ubu-team.org>
 
 	* b3/plugins/ftpytail.py: Make ftpytail retry forever in case it

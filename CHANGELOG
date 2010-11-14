@@ -6,8 +6,8 @@ github.com/BigBrotherBot/big-brother-bot/compare/v1.4.0...v1.4.1
 - Support for CoD:MW2 (for alteriw.net servers)
 - Rewrite of the frostbite code for MOH and BFBC2
 - Improvements to the MOH parser
-- Event/Action support for CoD 5
-- Several bugfixes 
+- Initial Event/Action support for CoD 5 (we need confirmation of cod5 admins that this works)
+- Several bugfixes and improvements
 
 
 1.3.3 -> 1.4.0
