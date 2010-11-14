@@ -26,13 +26,13 @@
 __author__  = 'xlr8or'
 __version__ = '1.0.2'
 
-import b3.parsers.q3a
+from b3.parsers.q3a.abstractParser import AbstractParser
 import re, string
 import b3
 import b3.events
 
 #----------------------------------------------------------------------------------------------------------------------------------------------
-class WopParser(b3.parsers.q3a.Q3AParser):
+class WopParser(AbstractParser):
     gameName = 'wop'
     privateMsg = False
 

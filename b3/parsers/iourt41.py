@@ -110,19 +110,22 @@
 #    * add debugging info for getNextMap()
 # v1.7.12 - 28/05/2010 - xlr8or
 #    * connect bots
+# v1.7.13 - 07/11/2010 - GrosBedo
+#    * messages now support named $variables instead of %s
+#
 
 
 __author__  = 'xlr8or'
-__version__ = '1.7.12'
+__version__ = '1.7.13'
 
 
-import b3.parsers.q3a
+from b3.parsers.q3a.abstractParser import AbstractParser
 import re, string, threading, time, os
 import b3
 import b3.events
 
 #----------------------------------------------------------------------------------------------------------------------------------------------
-class Iourt41Parser(b3.parsers.q3a.Q3AParser):
+class Iourt41Parser(AbstractParser):
     gameName = 'iourt41'
     IpsOnly = False
     IpCombi = False
@@ -1048,9 +1051,9 @@ class Iourt41Parser(b3.parsers.q3a.Q3AParser):
             return self.tempban(client, reason, '1d', admin, silent)
 
         if admin:
-            reason = self.getMessage('banned_by', client.exactName, admin.exactName, reason)
+            reason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
         else:
-            reason = self.getMessage('banned', client.exactName, reason)
+            reason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
 
         if client.cid is None:
             # ban by ip, this happens when we !permban @xx a player that is not connected

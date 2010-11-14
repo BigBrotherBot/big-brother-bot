@@ -41,17 +41,18 @@
 # 10/8/2010 - 1.4.13 - xlr8or - fixed a bug where clients would be disconnected after mapchange.  
 # 10/9/2010 - 1.4.14 - xlr8or - don't save client.name on say and sayteam when name is the same (sanitization problem)
 # 24/10/2010 - 1.4.15 - xlr8or - some documentation on line formats
+# 07/11/2010 - 1.4.16 - GrosBedo - messages now support named $variables instead of %s
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.15'
+__version__ = '1.4.16'
 
-import b3.parsers.q3a
 import re, string, threading
 import b3
 import b3.events
+from b3.parsers.q3a.abstractParser import AbstractParser
 import b3.parsers.punkbuster
 
-class CodParser(b3.parsers.q3a.Q3AParser):
+class CodParser(AbstractParser):
     gameName = 'cod'
     IpsOnly = False
     _guidLength = 6 # (minimum) length of the guid
@@ -412,9 +413,9 @@ class CodParser(b3.parsers.q3a.Q3AParser):
 
                 if not silent:
                     if admin:
-                        self.say(self.getMessage('unbanned_by', client.exactName, admin.exactName, reason))
+                        self.say(self.getMessage('unbanned_by', self.getMessageVariables(client=client, reason=reason, admin=admin)))
                     else:
-                        self.say(self.getMessage('unbanned', client.exactName, reason))
+                        self.say(self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason)))
             elif admin:
                 admin.message('%s^7 unbanned but has no punkbuster id' % client.exactName)
         else:

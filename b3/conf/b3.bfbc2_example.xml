@@ -51,14 +51,14 @@
 		<!-- <set name="destination">ftp://user:pass@somewhere.com/www/test_doc.htm</set> -->
 	</settings>
 	<settings name="messages">
-		<set name="kicked_by">%s was kicked by %s %s</set>
-		<set name="kicked">%s was kicked %s</set>
-		<set name="banned_by">%s was banned by %s %s</set>
-		<set name="banned">%s was banned %s</set>
-		<set name="temp_banned_by">%s was temp banned by %s for %s %s</set>
-		<set name="temp_banned">%s was temp banned for %s %s</set>
-		<set name="unbanned_by">%s was un-banned by %s %s</set>
-		<set name="unbanned">%s was un-banned %s</set>
+		<set name="kicked_by">$clientname was kicked by $adminname $reason</set>
+		<set name="kicked">$clientname was kicked $reason</set>
+		<set name="banned_by">$clientname was banned by $adminname $reason</set>
+		<set name="banned">$clientname was banned $reason</set>
+		<set name="temp_banned_by">$clientname was temp banned by $adminname for $banduration $reason</set>
+		<set name="temp_banned">$clientname was temp banned for $banduration $reason</set>
+		<set name="unbanned_by">$clientname was un-banned by $adminname $reason</set>
+		<set name="unbanned">$clientname was un-banned $reason</set>
 	</settings>
 	<settings name="plugins">
 		<set name="external_dir">@b3/extplugins</set>

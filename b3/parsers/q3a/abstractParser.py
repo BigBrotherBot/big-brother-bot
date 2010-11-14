@@ -19,6 +19,12 @@
 # $Id: q3a.py 103 2006-04-14 16:23:10Z thorn $
 #
 # CHANGELOG
+#    2010/11/07 - 1.5.1 - GrosBedo
+#    * added moveToTeam default command
+#    * fixed getTeam (missed team_free and would crash with q3a and oa081 because of int conversion of strings)
+#    * messages now support named $variables instead of %s
+#    2010/11/01 - 1.5.0 - xlr8or
+#    * Refactored to an abstract parser class
 #    2010/10/06 - 1.4.4 - xlr8or
 #    * reintroduced rcontesting on startup, but for q3a based only (rconTest var in parser)
 #    2010/08/08 - 1.4.3 - Courgette
@@ -60,23 +66,26 @@
 
 
 
-__author__  = 'ThorN'
-__version__ = '1.4.4'
+__author__  = 'ThorN, xlr8or'
+__version__ = '1.5.1'
 
 import re, string, time
 import b3
 import b3.events
 from b3.parsers.punkbuster import PunkBuster
-import b3.parsers.q3a_rcon
+import b3.parsers.q3a.rcon as rcon
 import b3.parser
 import b3.cvar
 
 #----------------------------------------------------------------------------------------------------------------------------------------------
-class Q3AParser(b3.parser.Parser):
-    gameName = 'q3a'
+class AbstractParser(b3.parser.Parser):
+    '''
+    An abstract base class to help with developing q3a parsers 
+    '''
+    gameName = None
     privateMsg = True
     rconTest = True
-    OutputClass = b3.parsers.q3a_rcon.Rcon
+    OutputClass = rcon.Rcon
 
     _settings = {}
     _settings['line_length'] = 65
@@ -90,6 +99,7 @@ class Q3AParser(b3.parser.Parser):
     _commands['kick'] = 'clientkick %s %s'
     _commands['ban'] = 'banid %s %s'
     _commands['tempban'] = 'clientkick %s %s'
+    _commands['moveToTeam'] = 'forceteam %s %s'
 
     _eventMap = {
         'warmup' : b3.events.EVT_GAME_WARMUP,
@@ -366,15 +376,17 @@ class Q3AParser(b3.parser.Parser):
         return data
 
     def getTeam(self, team):
-        team = int(team)
-        if team == 1:
-            return b3.TEAM_RED
-        elif team == 2:
-            return b3.TEAM_BLUE
-        elif team == 3:
-            return b3.TEAM_SPEC
+        team = str(team).lower() # We convert to a string and lower the case because there is a problem when trying to detect numbers if it's not a string (weird)
+        if team == 'free' or team == '0':
+            result = b3.TEAM_FREE
+        elif team == 'red' or team == '1':
+            result = b3.TEAM_RED
+        elif team == 'blue' or team == '2':
+            result = b3.TEAM_BLUE
+        elif team == 'spectator' or team == '3':
+            result = b3.TEAM_SPEC
         else:
-            return b3.TEAM_UNKNOWN
+            result = b3.TEAM_UNKNOWN
 
 
     def message(self, client, text):
@@ -428,9 +440,9 @@ class Q3AParser(b3.parser.Parser):
             self.write(self.getCommand('kick', cid=client, reason=reason))
             return
         elif admin:
-            reason = self.getMessage('kicked_by', client.exactName, admin.exactName, reason)
+            reason = self.getMessage('kicked_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
         else:
-            reason = self.getMessage('kicked', client.exactName, reason)
+            reason = self.getMessage('kicked', self.getMessageVariables(client=client, reason=reason))
 
         if self.PunkBuster:
             self.PunkBuster.kick(client, 0.5, reason)
@@ -456,9 +468,9 @@ class Q3AParser(b3.parser.Parser):
             return self.tempban(client, reason, '1d', admin, silent)
 
         if admin:
-            reason = self.getMessage('banned_by', client.exactName, admin.exactName, reason)
+            reason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
         else:
-            reason = self.getMessage('banned', client.exactName, reason)
+            reason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
 
         if self.PunkBuster:
             self.PunkBuster.ban(client, reason)
@@ -484,9 +496,9 @@ class Q3AParser(b3.parser.Parser):
 
                 if not silent:
                     if admin:
-                        self.say(self.getMessage('unbanned_by', client.exactName, admin.exactName, reason))
+                        self.say(self.getMessage('unbanned_by', self.getMessageVariables(client=client, reason=reason, admin=admin)))
                     else:
-                        self.say(self.getMessage('unbanned', client.exactName, reason))
+                        self.say(self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason)))
             elif admin:
                 admin.message('%s^7 unbanned but has no punkbuster id' % client.exactName)
         elif admin:
@@ -502,9 +514,9 @@ class Q3AParser(b3.parser.Parser):
             self.write(self.getCommand('tempban', cid=client, reason=reason))
             return
         elif admin:
-            reason = self.getMessage('temp_banned_by', client.exactName, admin.exactName, b3.functions.minutesStr(duration), reason)
+            reason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=b3.functions.minutesStr(duration)))
         else:
-            reason = self.getMessage('temp_banned', client.exactName, b3.functions.minutesStr(duration), reason)
+            reason = self.getMessage('temp_banned', self.getMessageVariables(client=client, reason=reason, banduration=b3.functions.minutesStr(duration)))
 
         if self.PunkBuster:
             # punkbuster acts odd if you ban for more than a day

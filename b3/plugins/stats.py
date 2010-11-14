@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    10/30/2010 - 1.3.5 GrosBedo
+#    * added show_awards and show_awards_xp
 #    10/20/2010 - 1.3.4 GrosBedo
 #    * clientKill and clientDamage separated from clientKillTeam and clientDamageTeam
 #    10/20/2010 - 1.3.3 GrosBedo
@@ -38,7 +40,7 @@
 #    * Converted to use new event handlers
 
 __author__ = 'ThorN, GrosBedo'
-__version__ = '1.3.4'
+__version__ = '1.3.5'
 
 
 
@@ -93,6 +95,18 @@ class StatsPlugin(b3.plugin.Plugin):
             self.resetxp = False
             self.debug('Using default value (%s) for settings::resetxp', self.resetxp)
 
+        try:
+            self.show_awards = self.config.getboolean('settings', 'show_awards')
+        except:
+            self.show_awards = False
+            self.debug('Using default value (%s) for settings::show_awards', self.show_awards)
+
+        try:
+            self.show_awards_xp = self.config.getboolean('settings', 'show_awards_xp')
+        except:
+            self.show_awards_xp = False
+            self.debug('Using default value (%s) for settings::show_awards_xp', self.show_awards_xp)
+
 
     def onStartup(self):
         self._adminPlugin = self.console.getPlugin('admin')
@@ -119,10 +133,15 @@ class StatsPlugin(b3.plugin.Plugin):
         self.registerEvent(b3.events.EVT_CLIENT_KILL)
         self.registerEvent(b3.events.EVT_CLIENT_DAMAGE)
         #self.registerEvent(b3.events.EVT_CLIENT_DISCONNECT)
-        self.registerEvent(b3.events.EVT_GAME_ROUND_START)
+        self.registerEvent(b3.events.EVT_GAME_EXIT) # used to show awards at the end of round
+        #self.registerEvent(b3.events.EVT_GAME_ROUND_END) # used to show awards at the end of round
+        self.registerEvent(b3.events.EVT_GAME_ROUND_START) # better to reinit stats at round start than round end, so that players can still query their stats at the end
 
     def onEvent(self, event):
-        if event.type == b3.events.EVT_GAME_ROUND_START:
+        if event.type == b3.events.EVT_GAME_EXIT:
+            if self.show_awards: self.cmd_topstats(None)
+            if self.show_awards_xp: self.cmd_topxp(None)
+        elif event.type == b3.events.EVT_GAME_ROUND_START:
             self.debug('Map Start: clearing stats')
             for cid, c in self.console.clients.items():
                 if c.maxLevel >= self.mapstatslevel:
@@ -269,11 +288,11 @@ class StatsPlugin(b3.plugin.Plugin):
 
         cmd.sayLoudOrPM(client, '^3Stats: ^7%s^7 will get ^3%s ^7skill points for killing %s^7' % (client.exactName, self.score(client, sclient), sclient.exactName))
 
-    def cmd_topstats(self, data, client, cmd=None):
+    def cmd_topstats(self, data, client=None, cmd=None):
         """\
         List the top 5 map-stats players
         """
-
+        self.debug('Haha')
         scores = []
         for c in self.console.clients.getList():
             if c.isvar(self, 'points'):
@@ -295,12 +314,14 @@ class StatsPlugin(b3.plugin.Plugin):
 
                 results.append('^3#%s^7 %s ^7(^3%s^7)' % (i, name, score))
                 
-                    
-            cmd.sayLoudOrPM(client, '^3Top Stats:^7 %s' % ', '.join(results))
+            if client:        
+                client.message(client, '^3Top Stats:^7 %s' % ', '.join(results))
+            else:
+                self.console.say('^3Top Stats:^7 %s' % ', '.join(results))
         else:
             client.message('^3Stats: ^7No top players')
 
-    def cmd_topxp(self, data, client, cmd=None):
+    def cmd_topxp(self, data, client=None, cmd=None):
         """\
         List the top 5 map-stats most experienced players
         """
@@ -326,8 +347,10 @@ class StatsPlugin(b3.plugin.Plugin):
 
                 results.append('^3#%s^7 %s ^7(^3%s^7)' % (i, name, score))
 
-
-            cmd.sayLoudOrPM(client, '^3Top Experienced Players:^7 %s' % ', '.join(results))
+            if client:
+                client.message(client, '^3Top Experienced Players:^7 %s' % ', '.join(results))
+            else:
+                self.console.say('^3Top Experienced Players:^7 %s' % ', '.join(results))
         else:
             client.message('^3Stats: ^7No top experienced players')
 
