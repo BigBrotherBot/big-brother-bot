@@ -36,12 +36,13 @@
 # 24/10/2010 - 1.3 - xlr8or 
 #  ActionMapping added
 #  Add JoinTeam event processing
+# 14/11/2010 - 1.3.1 - xlr8or 
+#  fix bug in onJT() and translateAction()
 
 __author__  = 'xlr8or'
-__version__ = '1.3'
+__version__ = '1.3.1'
 
 import b3.parsers.cod2
-import b3.parsers.q3a
 import b3.functions
 import re, threading, string
 
@@ -104,7 +105,7 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
                 ))
 
     def translateAction(self, action, data, match=None):
-        client = getClient(match)
+        client = self.getClient(match)
         if not client:
             self.debug('No client - attempt join')
             self.OnJ(action, data, match)
@@ -153,7 +154,7 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
 
     # join team
     def OnJt(self, action, data, match=None):
-        client = getClient(match)
+        client = self.getClient(match)
         if not client:
             self.debug('No client - attempt join')
             self.OnJ(action, data, match)
