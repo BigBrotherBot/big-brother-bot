@@ -17,15 +17,17 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
-#    11/30/2005 - 1.3.0 - ThorN
+# 11/30/2005 - 1.3.0 - ThorN
 #    * Added PluginCronTab
-#    10/24/2010 - 1.4.0 - Courgette
+# 10/24/2010 - 1.4.0 - Courgette
 #    * make the cron able to run command every second (was limited to every 15 seconds before)
 #    * more cron syntax accepted. '5-12/2, 30, 40-42' is now a valid syntax to specify [5,7,9,11,30,40,41,42]
 #    * add tests
+# 11/16/2010 - 1.4.1 - Courgette
+#    * removing a non existing crontab does not raise a KeyError anymore
 #
 __author__  = 'ThorN, Courgette'
-__version__ = '1.4.0'
+__version__ = '1.4.1'
 
 import re, thread, threading, time, traceback, sys
 
@@ -231,7 +233,11 @@ class Cron(object):
         self.cancel(id(tab))
 
     def cancel(self, id):
-        del self._tabs[id]
+        try:
+            del self._tabs[id]
+            self.console.verbose('Removed crontab %s' % id)
+        except KeyError:
+            self.console.verbose('crontab %s not found' % id)
 
     def start(self):
         #self.run()
