@@ -61,8 +61,13 @@
 # * initial delay can be changed in config file
 # * if B3 master respond with "403 Forbidden" the plugin disables itself. This 
 #   will allow the B3 master to prevent a bot to send further pings (until that bot restarts)
+# 16/11/2010 - 1.9 - Courgette
+# * "400 Bad Request" response prevents the plugin from sending further update hearbeats
+# * when receiving "403 Forbidden", do not disable the plugin but remove the crontab
+#   instead, so the bot can still send a shutdown fainting heartbeat http://goo.gl/4QHoq
+#
 
-__version__ = '1.8'
+__version__ = '1.9'
 __author__  = 'ThorN, Courgette'
 
 import sys
@@ -140,6 +145,12 @@ class PublistPlugin(b3.plugin.Plugin):
         if event.type == b3.events.EVT_STOP and self._heartbeat_sent:
             self.shutdown()
     
+    def removeCrontab(self):
+        try:
+            self.console.cron - self._cronTab
+        except KeyError: 
+            pass
+
     def shutdown(self):
         """Send a shutdown heartbeat to B3 master server"""
         self.info('Sending shutdown info to B3 master')
@@ -203,9 +214,7 @@ class PublistPlugin(b3.plugin.Plugin):
     
     def sendInfo(self, info={}):
         self.sendInfoToMaster(self._url, info)
-        if self._heartbeat_sent is False:
-            # this is the 1st heartbeat sent since startup
-            self._heartbeat_sent = True
+        self._heartbeat_sent = True
         if self._secondUrl is not None:
             self.sendInfoToMaster(self._secondUrl, info)
     
@@ -223,10 +232,11 @@ class PublistPlugin(b3.plugin.Plugin):
                 self.debug(e.reason)
             elif hasattr(e, 'code'):
                 if e.code == 400:
-                    self.info('B3 masterserver refused the heartbeat. reason: %s', e.msg)
+                    self.info('B3 masterserver refused the heartbeat. reason: %s. Disabling publist', e.msg)
+                    self.removeCrontab()
                 elif e.code == 403:
                     self.info('B3 masterserver definitely refused our ping. Disabling publist')
-                    self.disable()
+                    self.removeCrontab()
                 else:
                     self.info('Unable to reach B3 masterserver, maybe the service is down or internet was unavailable')
                     self.debug(e)
@@ -264,7 +274,6 @@ if __name__ == '__main__':
         #p.update()
     
     def test_heartbeat():
-        """
         p.sendInfo({'version': '1.3-dev', 
                 'os': 'nt', 
                 'database': 'unknown', 
@@ -277,8 +286,8 @@ if __name__ == '__main__':
                 'rconPort': None,
                 'python_version': sys.version
         })
-        """
-        
+    
+    def test_heartbeat_local_urt():
         p.sendInfo({'version': '1.4.1b', 
                 'os': 'nt', 
                 'database': 'mysql', 
@@ -292,14 +301,50 @@ if __name__ == '__main__':
                 'python_version': '2.6.4 (r264:75708, Oct 26 2009, 08:23:19) [MSC v.1500 32 bit (Intel)]'
         })
         
-    
+    def test_heartbeat_b3_bfbc2():
+        p.sendInfo({'version': '1.4.1b', 
+                'os': 'nt', 
+                'database': 'mysql', 
+                'action': 'update', 
+                'ip': '212.7.205.31', 
+                'parser': 'bfbc2', 
+                'plugins': 'censorurt/0.1.2,admin/1.8.2,publist/1.7.1,poweradminurt/1.5.7,tk/1.2.4,adv/1.2.2', 
+                'port': 19567, 
+                'parserversion': 'x.x.x', 
+                'rconPort': 48888,
+                'python_version': 'publist test',
+                'serverDescription': 'publist plugin test|from admin: Courgette|email: courgette@bigbrotherbot.net| visit our web site : www.bigbrotherbot.net',
+                'bannerUrl': 'http://www.lowpinggameservers.com/i/bc2.jpg',
+        })
+
+    def test_crontab():
+        def myUpdate():
+            p.sendInfo({'version': '1.4.1b', 
+                'os': 'nt', 
+                'action': 'fake', 
+                'ip': '212.7.205.31', 
+                'parser': 'bfbc2', 
+                'plugins': 'censorurt/0.1.2,admin/1.8.2,publist/1.7.1,poweradminurt/1.5.7,tk/1.2.4,adv/1.2.2', 
+                'port': 19567, 
+                'parserversion': 'x.x.x', 
+                'rconPort': 48888,
+                'python_version': 'publist test',
+                'serverDescription': 'publist plugin test|from admin: Courgette|email: courgette@bigbrotherbot.net| visit our web site : www.bigbrotherbot.net',
+                'bannerUrl': 'http://www.lowpinggameservers.com/i/bc2.jpg',
+                })
+        p._cronTab = b3.cron.PluginCronTab(p, myUpdate, second='*/10')
+        p.console.cron + p._cronTab
+        
     
     #fakeConsole._publicIp = '127.0.0.1'
     fakeConsole._publicIp = '11.22.33.44'
     p = PublistPlugin(fakeConsole, conf)
     p.onLoadConfig()
     
-    test_heartbeat()
+    #test_heartbeat()
+    #test_heartbeat_local_urt()
+    #test_heartbeat_b3_bfbc2()
+    #test_crontab()
     
     time.sleep(120) # so we can see thread working
 
