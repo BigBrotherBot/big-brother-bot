@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2010/11/18 - 1.21 - Courgette
+#   * do not resolve eventual domain name found in public_ip
 #   2010/11/07 - 1.20.2 - GrosBedo
 #   * edited default values of lines_per_second and delay
 #   2010/11/07 - 1.20.1 - GrosBedo
@@ -98,7 +100,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.20.2'
+__version__ = '1.21'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -255,12 +257,6 @@ class Parser(object):
             f = file(self.getAbsolutePath(self._publicIp))
             self._publicIp = f.read().strip()
             f.close()
-
-        try:
-            # resolve domain names
-            self._publicIp = socket.gethostbyname(self._publicIp)
-        except:
-            pass
 
         if self._rconIp[0:1] == '~' or self._rconIp[0:1] == '/':
             # load ip from a file
