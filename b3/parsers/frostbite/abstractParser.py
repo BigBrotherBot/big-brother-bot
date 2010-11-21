@@ -26,9 +26,11 @@
 #    * call getEasyName() in OnServerLoadinglevel
 #    * fix getSupportedMaps()
 #    * OnServerLoadinglevel() now fills game.rounds and game.sv_maxrounds 
-
+# 2010-11-21 - 1.3 - Courgette
+#    * remove rotateMap and changeMap as their implementation differs for MoH 
+#
 __author__  = 'Courgette'
-__version__ = '1.2'
+__version__ = '1.3'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -427,6 +429,7 @@ class AbstractParser(b3.parser.Parser):
 
     def getSupportedMaps(self):
         """return a list of supported levels for the current game mod"""
+        self.getServerInfo() ## make sure to update gameType first
         supportedMaps = self.write(('admin.supportedMaps', self.game.gameType))
         return supportedMaps
 
@@ -891,69 +894,6 @@ class AbstractParser(b3.parser.Parser):
             self.say(reason)
         
         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, reason, client))
-
-
-    def rotateMap(self):
-        """Load the next map (not level). If the current game mod plays each level twice
-        to get teams the chance to play both sides, then this rotate a second
-        time to really switch to the next map"""
-        nextIndex = self.getNextMapIndex()
-        if nextIndex == -1:
-            # No map in map rotation list, just call admin.runNextLevel
-            self.write(('admin.runNextLevel',))
-        else:
-            self.write(('mapList.nextLevelIndex', nextIndex))
-            self.write(('admin.runNextLevel',))
-    
-    
-    def changeMap(self, map):
-        """Change to the given map
-        
-        1) determine the level name
-            If map is of the form 'Levels/MP_001' and 'Levels/MP_001' is a supported
-            level for the current game mod, then this level is loaded.
-            
-            In other cases, this method assumes it is given a 'easy map name' (like
-            'Port Valdez') and it will do its best to find the level name that seems
-            to be for 'Port Valdez' within the supported levels.
-        
-            If no match is found, then instead of loading the map, this method 
-            returns a list of candidate map names
-            
-        2) if we got a level name
-            if the level is not in the current rotation list, then add it to 
-            the map list and load it
-        """        
-        supportedMaps = self.getSupportedMaps()
-        if map not in supportedMaps:
-            match = self.getMapsSoundingLike(map)
-            if len(match) == 1:
-                map = match[0]
-            else:
-                return match
-            
-        if map in supportedMaps:
-            levelnames = self.write(('mapList.list',))
-            if map not in levelnames:
-                # add the map to the map list
-                nextIndex = self.getNextMapIndex()
-                if nextIndex == -1:
-                    self.write(('mapList.append', map))
-                    nextIndex = 0
-                else:
-                    if nextIndex == 0:
-                        # case where the map list contains only 1 map
-                        nextIndex = 1
-                    self.write(('mapList.insert', nextIndex, map))
-            else:
-                nextIndex = 0
-                while nextIndex < len(levelnames) and levelnames[nextIndex] != map:
-                    nextIndex += 1
-            
-            self.say('Changing map to %s' % map)
-            time.sleep(1)
-            self.write(('mapList.nextLevelIndex', nextIndex))
-            self.write(('admin.runNextLevel', ))
 
 
     def authorizeClients(self):

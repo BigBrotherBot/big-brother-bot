@@ -157,7 +157,8 @@
 # * Refactored into Frostbite and Bfbc2 for MoH support.
 # 2010-10-23 - 2.0 - Courgette
 # * Refactored with inheritence from a frostbite specific abstract parser
-#
+# 2010-11-21 - 2.1 - Courgette
+# * import rotateMap and changeMap from abstractParser 
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -192,7 +193,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '2.0'
+__version__ = '2.1'
 
 import time, threading, Queue
 import b3.events
@@ -526,6 +527,67 @@ class Bfbc2Parser(AbstractParser):
         self.saybigqueue.put(msg)
 
 
+    def rotateMap(self):
+        """Load the next map (not level). If the current game mod plays each level twice
+        to get teams the chance to play both sides, then this rotate a second
+        time to really switch to the next map"""
+        nextIndex = self.getNextMapIndex()
+        if nextIndex == -1:
+            # No map in map rotation list, just call admin.runNextLevel
+            self.write(('admin.runNextLevel',))
+        else:
+            self.write(('mapList.nextLevelIndex', nextIndex))
+            self.write(('admin.runNextLevel',))
+    
+    
+    def changeMap(self, map):
+        """Change to the given map
+        
+        1) determine the level name
+            If map is of the form 'Levels/MP_001' and 'Levels/MP_001' is a supported
+            level for the current game mod, then this level is loaded.
+            
+            In other cases, this method assumes it is given a 'easy map name' (like
+            'Port Valdez') and it will do its best to find the level name that seems
+            to be for 'Port Valdez' within the supported levels.
+        
+            If no match is found, then instead of loading the map, this method 
+            returns a list of candidate map names
+            
+        2) if we got a level name
+            if the level is not in the current rotation list, then add it to 
+            the map list and load it
+        """        
+        supportedMaps = self.getSupportedMaps()
+        if map not in supportedMaps:
+            match = self.getMapsSoundingLike(map)
+            if len(match) == 1:
+                map = match[0]
+            else:
+                return match
+            
+        if map in supportedMaps:
+            levelnames = self.write(('mapList.list',))
+            if map not in levelnames:
+                # add the map to the map list
+                nextIndex = self.getNextMapIndex()
+                if nextIndex == -1:
+                    self.write(('mapList.append', map))
+                    nextIndex = 0
+                else:
+                    if nextIndex == 0:
+                        # case where the map list contains only 1 map
+                        nextIndex = 1
+                    self.write(('mapList.insert', nextIndex, map))
+            else:
+                nextIndex = 0
+                while nextIndex < len(levelnames) and levelnames[nextIndex] != map:
+                    nextIndex += 1
+            
+            self.say('Changing map to %s' % map)
+            time.sleep(1)
+            self.write(('mapList.nextLevelIndex', nextIndex))
+            self.write(('admin.runNextLevel', ))
 
 
 
