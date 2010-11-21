@@ -77,8 +77,14 @@ if __name__ == '__main__':
 #    * FakeConsole.write() do not fail when arg is not a string
 # 1.4 - 2010/11/01
 #    * improve FakeStorage implementation
+# 1.5 - 2010/11/21
+#    * FakeConsole event mechanism does not involve a Queue anymore as this
+#      class is meant to test one plugin at a time there is no need for 
+#      producer/consumer pattern. This speeds up tests and simplifies the use
+#      of a debugger. Also tests do not neet time.sleep() to make sure the events
+#      were handled before checking results and moving on (unittest friendly)
 #
-__version__ = '1.4'
+__version__ = '1.5'
 
 
 import thread
@@ -117,13 +123,46 @@ class FakeConsole(b3.parser.Parser):
             self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
         
         self.input = StringIO.StringIO()
-        
-        self.queue = Queue.Queue(15)
         self.working = True
-        thread.start_new_thread(self.handleEvents, ())
     
     def run(self):
         pass
+
+    def queueEvent(self, event, expire=10):
+        """Queue an event for processing. NO QUEUE, NO THREAD for faking speed up"""
+        if not hasattr(event, 'type'):
+            return False
+        elif self._handlers.has_key(event.type):    # queue only if there are handlers to listen for this event
+            self.verbose('Queueing event %s %s', self.Events.getName(event.type), event.data)
+            self._handleEvent(event)
+            return True
+        return False
+    
+    def _handleEvent(self, event):
+        """NO QUEUE, NO THREAD for faking speed up"""
+        if event.type == b3.events.EVT_EXIT or event.type == b3.events.EVT_STOP:
+            self.working = False
+
+        nomore = False
+        for hfunc in self._handlers[event.type]:
+            if not hfunc.isEnabled():
+                continue
+            elif nomore:
+                break
+
+            self.verbose('Parsing Event: %s: %s', self.Events.getName(event.type), hfunc.__class__.__name__)
+            try:
+                hfunc.parseEvent(event)
+                time.sleep(0.001)
+            except b3.events.VetoEvent:
+                # plugin called for event hault, do not continue processing
+                self.bot('Event %s vetoed by %s', self.Events.getName(event.type), str(hfunc))
+                nomore = True
+            except SystemExit, e:
+                self.exitcode = e.code
+            except Exception, msg:
+                self.error('handler %s could not handle event %s: %s: %s %s', hfunc.__class__.__name__, self.Events.getName(event.type), msg.__class__.__name__, msg, traceback.extract_tb(sys.exc_info()[2]))
+
     
     def getPlugin(self, name):
         if name == 'admin':
