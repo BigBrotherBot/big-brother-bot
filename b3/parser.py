@@ -1188,6 +1188,7 @@ class Parser(object):
     def changeMap(self, map):
         """\
         load a given map/level
+        return a list of suggested map names in cases it fails to recognize the map that was provided
         """
         raise NotImplementedError
 
