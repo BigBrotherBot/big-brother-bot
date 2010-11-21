@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2010/11/21 - 1.9 - Courgette
+#   * cmd_map now suggests map names if provided by parser
 #   2010/10/28 - 1.8.2 - Courgette
 #   * make sure to disable the !iamgod command when used while there is already 
 #     a superadmin in db.
@@ -72,9 +74,9 @@
 #    Made it so registerCommand() will check a plugins config "commands" section for command level overrides
 #    Added ci command
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
+#
 
-
-__version__ = '1.8.2'
+__version__ = '1.9'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
@@ -606,7 +608,9 @@ class AdminPlugin(b3.plugin.Plugin):
         if not data:
             client.message('^7You must supply a map to change to.')
             return
-        self.console.changeMap(data)
+        suggestions = self.console.changeMap(data)
+        if type(suggestions) == list:
+            client.message('do you mean : %s ?' % string.join(suggestions,', '))
 
     def cmd_maprotate(self, data, client, cmd=None):
         """\
