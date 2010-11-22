@@ -83,11 +83,13 @@ if __name__ == '__main__':
 #      producer/consumer pattern. This speeds up tests and simplifies the use
 #      of a debugger. Also tests do not neet time.sleep() to make sure the events
 #      were handled before checking results and moving on (unittest friendly)
-#
-__version__ = '1.5'
+# 1.6 - 2010/11/21
+# * remove more time.sleep()
+# * add message_history for FakeClient which allow to test if a client was sent a message afterward (unittest)
+
+__version__ = '1.6'
 
 
-import thread
 import re
 import time
 from b3.plugins.admin import AdminPlugin
@@ -95,7 +97,6 @@ import b3.parsers.punkbuster
 import b3.parser
 import b3.events
 from sys import stdout
-import Queue
 import StringIO
 
 
@@ -396,17 +397,24 @@ class FakeStorage(object):
     
 class FakeClient(b3.clients.Client):
     console = None
+    message_history = [] # this allows unittests to check if a message was sent to the client
     
     def __init__(self, console, **kwargs):
         self.console = console
         b3.clients.Client.__init__(self, **kwargs)
                 
-    def pushEvent(self, event):
-        self.console.queueEvent(event)
-        time.sleep(0.3)
+    def clearMessageHistory(self):
+        self.message_history = []
+    def getMessageHistoryLike(self, needle):
+        for m in self.message_history:
+            if needle in m:
+                return m
+        return None
     
     def message(self, msg):
-        print "sending msg to %s: %s" % (self.name, re.sub(re.compile('\^[0-9]'), '', msg).strip())
+        cleanmsg = re.sub(re.compile('\^[0-9]'), '', msg).strip()
+        self.message_history.append(cleanmsg)
+        print "sending msg to %s: %s" % (self.name, cleanmsg)
         
     def connects(self, cid):
         print "\n%s connects to the game on slot #%s" % (self.name, cid)
@@ -419,7 +427,7 @@ class FakeClient(b3.clients.Client):
 
         self.console.debug('Client Connected: [%s] %s - %s (%s)', clients[self.cid].cid, clients[self.cid].name, clients[self.cid].guid, clients[self.cid].data)
 
-        self.pushEvent(b3.events.Event(b3.events.EVT_CLIENT_CONNECT, self, self))
+        self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_CONNECT, self, self))
     
         if self.guid:
             self.auth()
@@ -436,11 +444,11 @@ class FakeClient(b3.clients.Client):
     
     def says(self, msg):
         print "\n%s says \"%s\"" % (self.name, msg)
-        self.pushEvent(b3.events.Event(b3.events.EVT_CLIENT_SAY, msg, self))
+        self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_SAY, msg, self))
         
     def says2team(self, msg):
         print "\n%s says to team \"%s\"" % (self.name, msg)
-        self.pushEvent(b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, msg, self))
+        self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, msg, self))
         
     def damages(self, victim, points=34.0):
         print "\n%s damages %s for %s points" % (self.name, victim.name, points)
@@ -450,7 +458,7 @@ class FakeClient(b3.clients.Client):
             e = b3.events.EVT_CLIENT_DAMAGE_TEAM
         else:
             e = b3.events.EVT_CLIENT_DAMAGE
-        self.pushEvent( b3.events.Event(e, (points, 1, 1, 1), self, victim))
+        self.console.queueEvent( b3.events.Event(e, (points, 1, 1, 1), self, victim))
         
     def kills(self, victim):
         print "\n%s kills %s" % (self.name, victim.name)
@@ -461,11 +469,11 @@ class FakeClient(b3.clients.Client):
             e = b3.events.EVT_CLIENT_KILL_TEAM
         else:
             e = b3.events.EVT_CLIENT_KILL
-        self.pushEvent(b3.events.Event(e, (100, 1, 1, 1), self, victim))
+        self.console.queueEvent(b3.events.Event(e, (100, 1, 1, 1), self, victim))
         
     def suicides(self):
         print "\n%s kills himself" % self.name
-        self.pushEvent(b3.events.Event(b3.events.EVT_CLIENT_SUICIDE, 
+        self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_SUICIDE, 
                                                        (100, 1, 1, 1), 
                                                        self, victim))
         
@@ -474,7 +482,7 @@ class FakeClient(b3.clients.Client):
 
     def triggerEvent(self, type, data, target=None):
         print "\n%s trigger event %s" % (self.name, type)
-        self.pushEvent(b3.events.Event(type, data, self, target))
+        self.console.queueEvent(b3.events.Event(type, data, self, target))
 
 
 #####################################################################################
