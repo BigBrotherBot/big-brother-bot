@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2010/11/25 - 1.9.1 - Courgette
+#   * calling a command of a disabled plugin now sends a message back to the user
 #   2010/11/21 - 1.9 - Courgette
 #   * cmd_map now suggests map names if provided by parser
 #   2010/10/28 - 1.8.2 - Courgette
@@ -76,7 +78,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.9'
+__version__ = '1.9.1'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
@@ -329,6 +331,10 @@ class AdminPlugin(b3.plugin.Plugin):
             cmd = cmd.lower()
 
             if not command.plugin.isEnabled():
+                try:
+                    event.client.message(self.getMessage('cmd_plugin_disabled'))
+                except ConfigParser.NoOptionError:
+                    event.client.message("plugin disabled. Cannot execute command %s" % cmd)
                 return
 
             elif not event.client.authed and command.level > 0:
