@@ -82,9 +82,22 @@
 		<set name="external_dir">@b3/extplugins</set>
 	</settings>
 	<plugins>
-		<!-- plugin order is important. Plugins that add new in-game commands all
+		<!-- Define here the plugins you want to load.
+            
+            Plugin order is important. Plugins that add new in-game commands all
 			depend on the admin plugin. Make sure to have the admin plugin before
-			them. -->
+			them. 
+            
+            You can load a plugin but having it diabled by default. This
+            allows to later enabled it ingame with the !enable command. To do so use
+            the following syntax :
+                <plugin name="adv" config="@conf/plugin_adv.xml" disabled="yes"/>
+            
+            You can override the plugin path (official plugins and extplugins folders) 
+            by specifying the exact location of the plugin file with the 'path' attribute : 
+                <plugin name="adv" config="@conf/plugin_adv.xml" path="c:/somewhere/else/"/>
+            
+            -->
 		<plugin name="admin" config="@conf/plugin_admin.xml" />
 		<plugin name="censor" config="@conf/plugin_censor.xml" />
 		<plugin name="spamcontrol" config="@conf/plugin_spamcontrol.xml" />

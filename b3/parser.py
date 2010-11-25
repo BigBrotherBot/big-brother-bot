@@ -18,6 +18,9 @@
 #
 #
 # CHANGELOG
+#   2010/11/25 - 1.22 - Courgette
+#   * at start, can load a plugin in 'disabled' state. Use the 'disabled' as follow :
+#         <plugin name="adv" config="@conf/plugin_adv.xml" disabled="Yes"/>
 #   2010/11/18 - 1.21 - Courgette
 #   * do not resolve eventual domain name found in public_ip
 #   2010/11/07 - 1.20.2 - GrosBedo
@@ -100,7 +103,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.21'
+__version__ = '1.22'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -515,14 +518,15 @@ class Parser(object):
 
         priority = 1
         for p in self.config.get('plugins/plugin'):
-            plugin = p.get('name')
+            name = p.get('name')
             conf = p.get('config')
-            path = p.get('path')
-
             if conf == None:
-                conf = '@b3/conf/plugin_%s.xml' % plugin
-
-            plugins[priority] = (plugin, self.getAbsolutePath(conf), path)
+                conf = '@b3/conf/plugin_%s.xml' % name
+            disabledconf = p.get('disabled')
+            plugins[priority] = {'name': name, \
+                                 'conf': self.getAbsolutePath(conf), \
+                                 'path': p.get('path'), \
+                                 'disabled': disabledconf is not None and disabledconf.lower() in ('yes', '1', 'on', 'true')}
             pluginSort.append(priority)
             priority += 1
 
@@ -531,13 +535,15 @@ class Parser(object):
         self._pluginOrder = []
         for s in pluginSort:
 
-            p, conf, path = plugins[s]
-            self._pluginOrder.append(p)
-            self.bot('Loading Plugin #%s %s [%s]', s, p, conf)
+            self._pluginOrder.append(plugins[s]['name'])
+            self.bot('Loading Plugin #%s %s [%s]', s, plugins[s]['name'], plugins[s]['conf'])
 
             try:
-                pluginModule = self.pluginImport(p, path)
-                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title())(self, conf)
+                pluginModule = self.pluginImport(plugins[s]['name'], plugins[s]['path'])
+                self._plugins[plugins[s]['name']] = getattr(pluginModule, '%sPlugin' % plugins[s]['name'].title())(self, plugins[s]['conf'])
+                if plugins[s]['disabled']:
+                    self.info("disabling plugin %s" % plugins[s]['name'])
+                    self._plugins[plugins[s]['name']].disable()
             except Exception, msg:
                 # critical will exit
                 self.critical('Error loading plugin: %s', msg)
@@ -545,7 +551,7 @@ class Parser(object):
             version = getattr(pluginModule, '__version__', 'Unknown Version')
             author  = getattr(pluginModule, '__author__', 'Unknown Author')
             
-            self.bot('Plugin %s (%s - %s) loaded', p, version, author)
+            self.bot('Plugin %s (%s - %s) loaded', plugins[s]['name'], version, author)
             self.screen.write('.')
             self.screen.flush()
 
