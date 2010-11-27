@@ -20,6 +20,8 @@
 # CHANGELOG
 # 2010/11/07 - 0.10 - Courgette
 # * add new maps info
+# 2010/11/08 - 0.9.2 - GrosBedo
+# * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
 # 2010/10/27 - 0.9.1 - GrosBedo
 # * messages now support named $variables instead of %s
 # 2010/10/27 - 0.9 - Courgette
@@ -52,7 +54,6 @@
 __author__  = 'Bakes, Courgette'
 __version__ = '1.0'
 
-import time
 import b3.events
 from b3.parsers.frostbite.abstractParser import AbstractParser
 from b3.parsers.frostbite.util import PlayerInfoBlock
@@ -395,9 +396,10 @@ class MohParser(AbstractParser):
             self.write(self.getCommand('kick', cid=client, reason=reason[:80]))
             return
         elif admin:
-            reason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=b3.functions.minutesStr(duration)))
+            fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=b3.functions.minutesStr(duration)))
         else:
-            reason = self.getMessage('temp_banned', self.getMessageVariables(client=client, reason=reason, banduration=b3.functions.minutesStr(duration)))
+            fullreason = self.getMessage('temp_banned', self.getMessageVariables(client=client, reason=reason, banduration=b3.functions.minutesStr(duration)))
+        fullreason = self.stripColors(fullreason)
         reason = self.stripColors(reason)
 
         if self.PunkBuster:
@@ -414,8 +416,8 @@ class MohParser(AbstractParser):
         ## also kick as the MoH server seems not to enforce all bans correctly
         self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
         
-        if not silent:
-            self.say(reason)
+        if not silent and fullreason != '':
+            self.say(fullreason)
 
         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, reason, client))
 

@@ -112,11 +112,13 @@
 #    * connect bots
 # v1.7.13 - 07/11/2010 - GrosBedo
 #    * messages now support named $variables instead of %s
+# v1.7.14 - 08/11/2010 - GrosBedo
+#    * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
 #
 
 
 __author__  = 'xlr8or'
-__version__ = '1.7.13'
+__version__ = '1.7.14'
 
 
 from b3.parsers.q3a.abstractParser import AbstractParser
@@ -1051,9 +1053,9 @@ class Iourt41Parser(AbstractParser):
             return self.tempban(client, reason, '1d', admin, silent)
 
         if admin:
-            reason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+            fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
         else:
-            reason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
+            fullreason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
 
         if client.cid is None:
             # ban by ip, this happens when we !permban @xx a player that is not connected
@@ -1064,8 +1066,8 @@ class Iourt41Parser(AbstractParser):
             self.debug('EFFECTIVE BAN : %s',self.getCommand('ban', cid=client.cid, reason=reason))
             self.write(self.getCommand('ban', cid=client.cid, reason=reason))
 
-        if not silent:
-            self.say(reason)
+        if not silent and fullreason != '':
+            self.say(fullreason)
 
         if admin:
             admin.message('^3banned^7: ^1%s^7 (^2@%s^7). His last ip (^1%s^7) has been added to banlist'%(client.exactName, client.id, client.ip))

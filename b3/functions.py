@@ -19,9 +19,11 @@
 # 27/03/2010 - 1.2.1 - xlr8or - set default port for mysql
 # 11/04/2010 - 1.2.2 - Courgette - make splitDSN support usernames containing '@'
 # 01/09/2010 - 1.3 - Courgette - make splitDSN add default ftp and sftp port
+# 08/11/2010 - 1.3.1 - GrosBedo - vars2printf is now more robust against empty strings
+#
 
 __author__    = 'ThorN, xlr8or'
-__version__   = '1.3'
+__version__   = '1.3.1'
 
 import re, sys, imp, string, urllib2
 from lib.elementtree import ElementTree
@@ -200,8 +202,11 @@ def minutesStr(timeStr):
     return s
 
 def vars2printf(inputStr):
-    return re.sub(r'\$([a-zA-Z]+)', r'%(\1)s', inputStr)
-  
+    if inputStr is not None and inputStr != '':
+        return re.sub(r'\$([a-zA-Z]+)', r'%(\1)s', inputStr)
+    else:
+        return ''
+
 #--------------------------------------------------------------------------------------------------
 def levenshteinDistance(a,b):
     c = {}

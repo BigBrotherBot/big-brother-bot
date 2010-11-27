@@ -33,12 +33,14 @@
 # 1/5/2010 - 1.3.2 - xlr8or - delegate guid length checking to cod parser
 # 7/11/2010 - 1.3.3 - GrosBedo
 #    * messages now support named $variables instead of %s
+# 8/11/2010 - 1.3.4 - GrosBedo
+#    * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
 #
 
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.3.3'
+__version__ = '1.3.4'
 
 import b3.parsers.cod2
 import b3.parsers.q3a
@@ -104,11 +106,13 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
                 if result:                    
                     admin.message('^3Unbanned^7: %s^7: %s' % (client.exactName, result))
 
-                if not silent:
-                    if admin:
-                        self.say(self.getMessage('unbanned_by', self.getMessageVariables(client=client, reason=reason, admin=admin)))
-                    else:
-                        self.say(self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason)))
+                if admin:
+                    fullreason = self.getMessage('unbanned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+                else:
+                    fullreason = self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason))
+
+                if not silent and fullreason != '':
+                    self.say(fullreason)
             elif admin:
                 admin.message('%s^7 unbanned but has no punkbuster id' % client.exactName)
         else:

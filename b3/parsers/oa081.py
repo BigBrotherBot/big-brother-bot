@@ -68,10 +68,12 @@
 # 07/11/2010 - 0.9.4 - GrosBedo
 # * ban and unban messages are now more generic and can be configured from b3.xml
 # * messages now support named $variables instead of %s
+# 08/11/2010 - 0.9.5 - GrosBedo
+# * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
 #
 
 __author__  = 'Courgette, GrosBedo'
-__version__ = '0.9.4'
+__version__ = '0.9.5'
 
 import re, string, thread, time, threading
 import b3
@@ -737,9 +739,9 @@ class Oa081Parser(AbstractParser):
             return self.tempban(client, reason, '1d', admin, silent)
 
         if admin:
-            reason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+            fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
         else:
-            reason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
+            fullreason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
 
         if client.cid is None:
             # ban by ip, this happens when we !permban @xx a player that is not connected
@@ -750,8 +752,8 @@ class Oa081Parser(AbstractParser):
             self.debug('EFFECTIVE BAN : %s',self.getCommand('ban', cid=client.cid, reason=reason))
             self.write(self.getCommand('ban', cid=client.cid, reason=reason))
 
-        if not silent:
-            self.say(reason)
+        if not silent and fullreason != '':
+            self.say(fullreason)
 
         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, reason, client))
         client.disconnect()
@@ -767,11 +769,14 @@ class Oa081Parser(AbstractParser):
                     if m.group('ip') == client.ip:
                         self.write(self.getCommand('unbanByIp', cid=m.group('cid'), reason=reason))
                         self.debug('EFFECTIVE UNBAN : %s',self.getCommand('unbanByIp', cid=m.group('cid')))
-                if not silent:
-                    if admin:
-                        self.say(self.getMessage('unbanned_by', self.getMessageVariables(client=client, reason=reason, admin=admin)))
-                    else:
-                        self.say(self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason)))
+
+                if admin:
+                    fullreason = self.getMessage('unbanned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+                else:
+                    fullreason = self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason))
+
+                if not silent and fullreason != '':
+                    self.say(fullreason)
 
     def getPlayerPings(self):
         data = self.write('status')
