@@ -20,14 +20,18 @@
 # 11/04/2010 - 1.2.2 - Courgette - make splitDSN support usernames containing '@'
 # 01/09/2010 - 1.3 - Courgette - make splitDSN add default ftp and sftp port
 # 08/11/2010 - 1.3.1 - GrosBedo - vars2printf is now more robust against empty strings
-#
+# 01/12/2010 - 1.3.2 - Courgette - checkUpdate now uses a custom short timeout to
+#   prevent blocking the bot when the B3 server is hanging
 
 __author__    = 'ThorN, xlr8or'
-__version__   = '1.3.1'
+__version__   = '1.3.2'
 
 import re, sys, imp, string, urllib2
 from lib.elementtree import ElementTree
 from distutils import version
+
+## url from where we can get the latest B3 version number
+URL_B3_LATEST_VERSION = 'http://www.bigbrotherbot.net/version.xml'
 
 
 def getModule(name):
@@ -41,15 +45,23 @@ def checkUpdate(currentVersion, singleLine=True, showErrormsg=False):
     """
     check if an update of B3 is available
     """
+    timeout = 5
+    ## urllib2.urlopen support the timeout argument only from 2.6... too bad
+    ## instead we alter the default socket timeout
+    import socket
+    original_timeout = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(timeout)
+    
     if not singleLine:
         sys.stdout.write("checking for updates... \n")
 
     message = None
     errorMessage = None
     try:
-        f = urllib2.urlopen('http://www.bigbrotherbot.net/version.xml')
+        f = urllib2.urlopen(URL_B3_LATEST_VERSION)
         _xml = ElementTree.parse(f)
         latestVersion = _xml.getroot().text
+        not singleLine and sys.stdout.write("latest B3 version is %s\n" % latestVersion)
         _lver = version.LooseVersion(latestVersion)
         _cver = version.LooseVersion(currentVersion)
         if _cver < _lver:
@@ -78,6 +90,8 @@ def checkUpdate(currentVersion, singleLine=True, showErrormsg=False):
             errorMessage = "%s" % e
     except Exception, e:
         errorMessage = "%s" % e
+    finally:
+        socket.setdefaulttimeout(original_timeout)
         
     if errorMessage and showErrormsg:
         return "Could not check updates. %s" % errorMessage
@@ -282,7 +296,7 @@ def sanitizeMe(s):
 
 if __name__ == '__main__':
     
-    import unittest
+    import unittest, time
     
     class TestSpliDSN(unittest.TestCase):
         def assertDsnEqual(self, url, expected):
@@ -381,7 +395,28 @@ if __name__ == '__main__':
             self.assertEqual(time2minutes('5w'), 5*7*24*60)
             self.assertEqual(time2minutes('90w'), 90*7*24*60)
 
+    class TestCheckUpdate(unittest.TestCase):
+        _time_start = 0
+        def setUp(self):
+            self._time_start = time.time()
+        def tearDown(self):
+            ms = ((time.time() - self._time_start)*1000)
+            print "test took %0.1f ms" % ms
+            self.assertTrue(ms < 5500, "Test exceeded timeout")
+        def test_1(self):
+            self.assertNotEqual(None, checkUpdate('1.2', False, True))
+        def test_2(self):
+            self.assertNotEqual(None, checkUpdate('1.4', False, True))
+        def test_3(self):
+            self.assertEqual(None, checkUpdate('1.4.1', False, True))
+        def test_4(self):
+            sys.modules[__name__].URL_B3_LATEST_VERSION = 'http://no.where.lol/'
+            self.assertNotEqual(None, checkUpdate('1.2', False, True))
+        def test_5(self):
+            sys.modules[__name__].URL_B3_LATEST_VERSION = 'http://localhost:9000/'
+            self.assertNotEqual(None, checkUpdate('1.2', False, True))
     
-    unittest.main()
-
+    #unittest.main()
+    mytests = unittest.TestLoader().loadTestsFromTestCase(TestCheckUpdate)
+    unittest.TextTestRunner().run(mytests)
 
