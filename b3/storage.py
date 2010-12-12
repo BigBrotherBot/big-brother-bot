@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   12/12/2010 - 1.7.3 - courgette
+#   fix setGroup for update query
 #   29/06/2010 - 1.7.2 - xlr8or
 #   fixed typo myqsldb -> msqldb in error message (thanks ryry46d9)
 #   27/03/2010 - 1.7.1 - xlr8or
@@ -44,7 +46,7 @@
 #   Added data column to penalties table
 
 __author__  = 'ThorN'
-__version__ = '1.7.2'
+__version__ = '1.7.3'
 
 import re, time, traceback, sys, thread
 
@@ -777,7 +779,7 @@ class DatabaseStorage(Storage):
 
         self.console.debug('Storage: setGroup data %s' % str(data))
         if group.id:
-            self.query(QueryBuilder(self.db).UpdateQuery(data, 'groups', { 'group' : alias.id }))
+            self.query(QueryBuilder(self.db).UpdateQuery(data, 'groups', { 'group' : group.id }))
         else:
             cursor = self.query(QueryBuilder(self.db).InsertQuery(data, 'groups'))
 
