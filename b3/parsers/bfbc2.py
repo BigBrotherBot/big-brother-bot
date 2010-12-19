@@ -159,6 +159,8 @@
 # * Refactored with inheritence from a frostbite specific abstract parser
 # 2010-11-21 - 2.1 - Courgette
 # * import rotateMap and changeMap from abstractParser 
+# 2010-11-21 - 2.1.1 - Durzo
+# * adjust mapnames from mappack 7 and vietnam expansion 
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -377,7 +379,31 @@ class Bfbc2Parser(AbstractParser):
 
         elif mapname.startswith('Levels/MP_012'):
             return 'Port Valdez'
-        
+
+        elif mapname.startswith('Levels/BC1_Oasis'):
+            return 'Oasis'
+
+        elif mapname.startswith('Levels/BC1_Harvest_Day'):
+            return 'Harvest Day'
+
+        elif mapname.startswith('Levels/MP_SP_002'):
+            return 'Cold War'
+
+        elif mapname.startswith('Levels/MP_SP_005'):
+            return 'Heavy Metal'
+
+        elif mapname.startswith('Levels/nam_mp_002'):
+            return 'Vantage Point'
+
+        elif mapname.startswith('Levels/nam_mp_003'):
+            return 'Hill 137'
+
+        elif mapname.startswith('Levels/nam_mp_005'):
+            return 'Cao Son Temple'
+
+        elif mapname.startswith('Levels/nam_mp_006'):
+            return 'Phu Bai Valley'
+
         else:
             self.warning('unknown level name \'%s\'. Please report this on B3 forums' % mapname)
             return mapname
@@ -415,7 +441,31 @@ class Bfbc2Parser(AbstractParser):
 
         elif mapname.startswith('port valdez'):
             return 'Levels/MP_012'
-        
+
+        elif mapname.startswith('oasis'):
+            return 'Levels/BC1_Oasis'
+
+        elif mapname.startswith('harvest day'):
+            return 'Levels/BC1_Harvest_Day'
+
+        elif mapname.startswith('cold war'):
+            return 'Levels/MP_SP_002'
+
+        elif mapname.startswith('heavy metal'):
+            return 'Levels/MP_SP_005'
+
+        elif mapname.startswith('vantage point'):
+            return 'levels/nam_mp_002'
+
+        elif mapname.startswith('hill 137'):
+            return 'levels/nam_mp_003'
+
+        elif mapname.startswith('cao son temple'):
+            return 'levels/nam_mp_005'
+
+        elif mapname.startswith('phu bai valley'):
+            return 'levels/nam_mp_006'        
+
         else:
             self.warning('unknown level name \'%s\'. Please make sure you have entered a valid mapname' % mapname)
             return mapname
