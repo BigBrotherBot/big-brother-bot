@@ -43,7 +43,6 @@ __author__  = 'ThorN, xlr8or'
 __version__ = '1.3.4'
 
 import b3.parsers.cod2
-import b3.parsers.q3a
 import b3.functions
 import re, threading
 from b3 import functions

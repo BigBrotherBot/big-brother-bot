@@ -1,3 +1,4 @@
+desktop.ini
 *.pyc
 *.log
 *.log.1
@@ -5,6 +6,8 @@
 *.log.3
 *.log.4
 *.log.5
+*.orig
+*.patch
 releases/*
 build/*
 py2exe_builder/Output/
