@@ -1,9 +1,9 @@
 Big Brother Bot
 ===============
 
-* [Official website] (http://www.bigbrotherbot.com)
-* [Forums] (http://www.bigbrotherbot.com/forums)
-* [Documentation] (http://www.bigbrotherbot.com/b3.html)
+* [Official website] (http://www.bigbrotherbot.net)
+* [Forums] (http://www.bigbrotherbot.net/forums)
+* [Documentation] (http://wiki.bigbrotherbot.net/)
 
 ### Requirements
 
