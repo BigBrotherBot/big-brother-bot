@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 30/12/2010 - 1.4.4 - Gammelbob
+# * additionally stores the stats in database
 # 13/08/2010 - 1.4.3 - xlr8or
 # * Added running roundtime and maptime
 # 08/08/2010 - 1.4.2 - xlr8or
@@ -45,7 +47,7 @@
 # Converted to use new event handlers
 
 __author__    = 'ThorN'
-__version__ = '1.4.3'
+__version__ = '1.4.4'
 
 import b3, time, os, StringIO
 import b3.plugin
@@ -72,6 +74,9 @@ class StatusPlugin(b3.plugin.Plugin):
                 
         self._tkPlugin = self.console.getPlugin('tk')
         self._interval = self.config.getint('settings', 'interval')
+
+        sql = "CREATE TABLE IF NOT EXISTS `xlr_status` (`id` int(11) NOT NULL auto_increment,`name` varchar(255) NOT NULL,`value` varchar(255) NOT NULL, PRIMARY KEY  (`id`), UNIQUE KEY `name` (`name`)) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;"
+        r = self.console.storage.query(sql)
 
         if self._cronTab:
             # remove existing crontab
@@ -147,6 +152,8 @@ class StatusPlugin(b3.plugin.Plugin):
             data.setAttribute("Name", str(k))
             data.setAttribute("Value", str(v))
             game.appendChild(data)
+            sql = "INSERT INTO xlr_status (name, value) VALUES ('%s','%s') ON DUPLICATE KEY UPDATE value = VALUES(value);" % (str(k),str(v))
+            self.console.storage.query(sql)
         # --- End Game section        
 
         # --- Clients section
