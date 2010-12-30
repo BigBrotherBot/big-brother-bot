@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2010/12/12 - 1.10.1 - Courgette
+#   * registering a command can use group keywords instead of groups levels
 #   2010/11/25 - 1.9.1 - Courgette
 #   * calling a command of a disabled plugin now sends a message back to the user
 #   2010/11/21 - 1.9 - Courgette
@@ -190,6 +192,8 @@ class AdminPlugin(b3.plugin.Plugin):
         if plugin.config and plugin != self and plugin.config.has_option('commands', command):
             # override default level with level in config
             level = plugin.config.get('commands', command)
+    
+        level = self.getGroupLevel(level)
             
         if secretLevel is None:
             secretLevel = self.config.getint('settings', 'hidecmd_level')
@@ -422,6 +426,47 @@ class AdminPlugin(b3.plugin.Plugin):
             return (cid, parms)
         else:
             return None
+
+    def getGroupLevel(self, level):
+        """
+        return a group level from group keyword or group level
+        understand level ranges (ie: 20-40 or mod-admin)
+        """
+        level = str(level)
+        if level.lower() == 'none':
+            return 'none'
+        elif level.count('-') == 1:
+            (levelmin, levelmax) = level.split('-', 1)
+            try:
+                levelmin = int(levelmin)
+            except ValueError:
+                try:
+                    group = self.console.storage.getGroup(clients.Group(keyword=levelmin))
+                    levelmin = group.level
+                except:
+                    self.error('unknown group %s' % levelmin)
+                    return False
+            try:
+                levelmax = int(levelmax)
+            except ValueError:
+                try:
+                    group = self.console.storage.getGroup(clients.Group(keyword=levelmax))
+                    levelmax = group.level
+                except:
+                    self.error('unknown group %s' % levelmax)
+                    return False
+            level = '%s-%s' % (levelmin, levelmax)    
+        else:
+            try:
+                level = int(level)
+            except ValueError:
+                try:
+                    group = self.console.storage.getGroup(clients.Group(keyword=level))
+                    level = group.level
+                except:
+                    self.error('unknown group %s' % level)
+                    return False
+        return level
 
     def getReason(self, reason):
         if not reason:
