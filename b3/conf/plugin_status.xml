@@ -5,5 +5,7 @@
 		To use an ftp directory, use this syntax: ftp://username:password@host/path/to/status.xml
 		-->
 		<set name="output_file">~/status.xml</set>
+		<set name="enableDBsvarSaving">False</set>
+		<set name="enableDBclientSaving">False</set>
 	</settings>
 </configuration>
