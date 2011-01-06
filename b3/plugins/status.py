@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
-# 04/01/2011 - 1.4.4 - Gammelbob
+# 06/01/2011 - 1.4.4 - Gammelbob
 # * additionally stores current svars and clients in database
 # 13/08/2010 - 1.4.3 - xlr8or
 # * Added running roundtime and maptime
@@ -76,9 +76,15 @@ class StatusPlugin(b3.plugin.Plugin):
                 
         self._tkPlugin = self.console.getPlugin('tk')
         self._interval = self.config.getint('settings', 'interval')
-        self._enableDBsvarSaving = self.config.getboolean('settings', 'enableDBsvarSaving')
-        self._enableDBclientSaving = self.config.getboolean('settings', 'enableDBclientSaving')
+        try:
+            self._enableDBsvarSaving = self.config.getboolean('settings', 'enableDBsvarSaving')
+        except:
+            self._enableDBsvarSaving = False
 
+        try:
+            self._enableDBclientSaving = self.config.getboolean('settings', 'enableDBclientSaving')
+        except:
+            self._enableDBclientSaving = False
 
         if self._enableDBsvarSaving:
             sql = "CREATE TABLE IF NOT EXISTS `current_svars` (`id` int(11) NOT NULL auto_increment,`name` varchar(255) NOT NULL,`value` varchar(255) NOT NULL, PRIMARY KEY  (`id`), UNIQUE KEY `name` (`name`)) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;"
@@ -161,9 +167,12 @@ class StatusPlugin(b3.plugin.Plugin):
             data.setAttribute("Name", str(k))
             data.setAttribute("Value", str(v))
             game.appendChild(data)
-            if self.enableDBsvarSaving:
+            if self._enableDBsvarSaving:
                 sql = "INSERT INTO current_svars (name, value) VALUES ('%s','%s') ON DUPLICATE KEY UPDATE value = VALUES(value);" % (str(k),str(v))
-                self.console.storage.query(sql)
+                try:
+                    self.console.storage.query(sql)
+                except:
+                    self.error('Error: inserting svars. sqlqry=%s' % (sql))
 
         # --- End Game section        
 
@@ -224,8 +233,11 @@ class StatusPlugin(b3.plugin.Plugin):
                     qryBuilderKey = qryBuilderKey[:-1]
                     qryBuilderValue = qryBuilderValue[:-1]
                     # and insert
-                    sql = "INSERT INTO current_clients (%s) VALUES (%s); " % (qryBuilderKey,qryBuilderValue)
-                    self.console.storage.query(sql)
+                    try:
+                        sql = "INSERT INTO current_clients (%s) VALUES (%s); " % (qryBuilderKey,qryBuilderValue)
+                        self.console.storage.query(sql)
+                    except:
+                        self.error('Error: inserting clients. sqlqry=%s' % (sql))
 
                 b3clients.appendChild(client)
                 for k,v in c.data.iteritems():
