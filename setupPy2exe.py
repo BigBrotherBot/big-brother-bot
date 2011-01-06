@@ -1,3 +1,8 @@
+# This section is DoxuGen information. More information on how to comment your code
+# is available at http://www.stack.nl/~dimitri/doxygen/docblocks.html
+## @file
+# The Windows binary package creator
+
 import sys
 import os
 import glob

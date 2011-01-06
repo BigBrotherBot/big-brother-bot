@@ -22,6 +22,11 @@
 # setup.py beta (for a beta package)
 #
 
+# This section is DoxuGen information. More information on how to comment your code
+# is available at http://www.stack.nl/~dimitri/doxygen/docblocks.html
+## @file
+# The setuptools package creator for pypi.python.org
+
 __author__  = 'ThorN, xlr8or'
 __version__ = '2.0.1'
 

@@ -51,6 +51,11 @@
 # 2010-09-06 - v0.1 - GrosBedo
 #    * Initial version.
 
+# This section is DoxuGen information. More information on how to comment your code
+# is available at http://www.stack.nl/~dimitri/doxygen/docblocks.html
+## @file
+# Run B3 in developer debug mode (for developers)
+
 __author__  = 'GrosBedo'
 __version__ = '0.7'
 
