@@ -9,6 +9,7 @@ desktop.ini
 *.orig
 *.patch
 releases/*
+conf/b3.xml
 build/*
 py2exe_builder/Output/
 .idea/*
