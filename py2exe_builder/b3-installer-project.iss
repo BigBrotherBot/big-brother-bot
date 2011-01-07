@@ -4,7 +4,7 @@
 
 ;#define Debug
 #define B3_VERSION_NUMBER "1.4.2"
-#define B3_VERSION_SUFFIX "a"
+#define B3_VERSION_SUFFIX "b"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -71,6 +71,8 @@ Name: {group}\{cm:executable,b3_run}; Filename: {app}\b3_run.exe; Parameters: "-
 Name: {group}\{cm:configWizard,Config wizard}; Filename: {app}\b3_run.exe; Parameters: "--config ""{commonappdata}\BigBrotherBot\conf\b3.xml"" --setup"; WorkingDir: {app}; Comment: Run the B3 setup wizard; Flags: dontcloseonexit
 Name: {group}\{cm:B3ConfDir,config}; Filename: {commonappdata}\BigBrotherBot\
 Name: {group}\{cm:extplugins,extplugins}; Filename: {app}\extplugins\; IconFilename: {app}\b3-plugins-icon.ico; IconIndex: 0
+Name: {group}\extra\{cm:docs,docs}; Filename: {app}\docs\
+Name: {group}\extra\{cm:sql,sql}; Filename: {app}\sql\
 Name: {group}\{cm:UninstallProgram,BigBrotherBot}; Filename: {uninstallexe}
 Name: {group}\web\{cm:Website,BigBrotherBot}; Filename: http://www.bigbrotherbot.net/
 Name: {group}\web\{cm:Manual,Manual}; Filename: http://wiki.github.com/BigBrotherBot/big-brother-bot/manual
@@ -90,6 +92,7 @@ Source: ..\..\dist_py2exe\b3.lib; DestDir: {app}
 Source: ..\..\dist_py2exe\PKG-INFO; DestDir: {app}
 ;Source: ..\..\dist_py2exe\README; DestDir: {app}; DestName: README.txt
 Source: ..\..\dist_py2exe\docs\*; DestDir: {app}\docs; Flags: recursesubdirs
+Source: ..\..\dist_py2exe\sql\*; DestDir: {app}\sql; Flags: recursesubdirs
 Source: ..\..\dist_py2exe\extplugins\*; DestDir: {app}\extplugins; Flags: recursesubdirs
 Source: ..\..\dist_py2exe\conf\*; DestDir: {commonappdata}\BigBrotherBot\conf; Flags: recursesubdirs
 Source: b3.ico; DestDir: {app}
@@ -116,3 +119,5 @@ DownloadPlugins=Download more plugins
 Echelon=Echelon
 Xlrstats=XLRstats
 B3configGenerator=B3 config generator
+sql=sql folder
+docs=docs folder

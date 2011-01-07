@@ -1,3 +1,161 @@
+2011-01-07  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/plugins/status.py: fixed redundant trailing bracket
+
+2011-01-07  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: XLRstats can now install default
+	database tables when missing
+
+2011-01-07  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/storage.py: Added queryFromFile to execute .sql files
+
+2011-01-07  xlr8or <xlr8or@xlr8or.com>
+
+	* .gitignore: prevent conf/b3.xml from being commited to repo
+
+2011-01-07  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/plugins/publist.py: fix minor issue on initial heartbeat
+
+2011-01-07  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/docs/b3-db.sql, b3/docs/b3-update-v1.3.sql, b3/docs/b3.sql,
+	b3/docs/recreate-xlrstats.sql,
+	b3/docs/xlrstats-update-to-v2.0.0.sql, b3/docs/xlrstats.sql,
+	b3/sql/b3-db.sql, b3/sql/b3-update-v1.3.sql, b3/sql/b3.sql,
+	b3/sql/recreate-xlrstats.sql, b3/sql/xlrstats.sql: Move sql files to
+	b3/sql directory
+
+2011-01-07  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 823f02554c618d09781af921793c12ffa98ddb2d Author:
+	Gammelbob <spam@kh3a.de> Date:   Thu Jan 6 22:21:30 2011 +0100
+
+2011-01-06  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit bce1d6740d7d1411af682e31b2a685efb6a4f202 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Thu Jan 6 20:59:59 2011 +0100
+
+2011-01-06  Gammelbob <spam@kh3a.de>
+
+	* b3/plugins/status.py: added errorlogging, fixed typo
+
+2011-01-04  Gammelbob <spam@kh3a.de>
+
+	* b3/conf/plugin_status.xml, b3/plugins/status.py: changed
+	tablenames, added configvars, added current clients logging ability
+	(by using \<Client\> attributes).
+
+2010-12-30  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/plugins/publist.py: publist plugin: change initial delay timer
+	into one time cron tab to enable faster shutdown of bot on startup.
+
+2010-12-30  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/docs/README.txt: fixed links in /docs/readme.txt
+
+2010-12-30  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit d942bc6f87a31ceda2e629573a7f9b780472e120 Author:
+	Gammelbob <spam@kh3a.de> Date:   Thu Dec 30 04:25:11 2010 -0800
+
+2010-12-19  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/bfbc2.py: 2010-11-21 - 2.1.1 - Durzo * adjust mapnames from mappack 7 and vietnam expansion
+
+2010-12-13  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/admin.py: required level for commands can be set using
+	group keywords in plugins config files
+
+2010-12-12  Courgette <courgette@ubu-team.org>
+
+	* b3/storage.py: fix setGroup for updates queries
+
+2010-12-11  xlr8or <xlr8or@xlr8or.com>
+
+	* .gitignore, b3/parsers/cod4.py: minor changes
+
+2010-12-02  Courgette <courgette@ubu-team.org>
+
+	* b3/functions.py: enforces a short timeout (5s) for update chek so
+	the bot isn't blocked when B3 server is sloooow
+
+2010-11-27  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit ea73602ce61f35ecc27aa587514c3e5fc4b5ee42 Author:
+	Courgette <courgette@ubu-team.org> Date:   Thu Nov 25 23:42:25 2010
+	+0100
+
+2010-11-25  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/plugin_admin.xml, b3/plugins/admin.py: calling a command
+	of a disabled plugin now sends a message back to the user
+
+2010-11-22  Courgette <courgette@ubu-team.org>
+
+	* b3/fake.py: unittest friendler
+
+2010-11-22  Courgette <courgette@ubu-team.org>
+
+	* b3/fake.py: FAKE: FakeConsole event queue removed. Events are
+	handled directly instead of being processed by a event handling
+	thread. unittest friendler
+
+2010-11-21  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/bfbc2.py, b3/parsers/frostbite/abstractParser.py,
+	b3/parsers/moh.py: MOH: fix map and maprotate commands
+
+2010-11-21  Courgette <courgette@ubu-team.org>
+
+	* b3/parser.py: update changeMap method doc for parsers base class
+
+2010-11-21  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/admin.py: PLUGIN ADMIN / command map is able to suggest
+	map names when the parser provide suggestions
+
+2010-11-21  Courgette <courgette@ubu-team.org>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO,
+	py2exe_builder/b3-installer-project.iss: version change to
+	1.4.2alpha
+
+2010-11-18  Courgette <courgette@ubu-team.org>
+
+	* b3/parser.py: do not resolve public_ip if it is a domain name so
+	the domain name can be sent to the B3 master
+
+2010-11-16  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/publist.py: PLUGIN PUBLIST : a 400 Bad Request response
+	prevents the bot from sending further update heartbeats
+
+2010-11-16  Courgette <courgette@ubu-team.org>
+
+	* : commit dba3fe8f0749a858fc206d8ab454082e85a32ca8 Author:
+	Courgette <courgette@ubu-team.org> Date:   Tue Nov 16 20:51:37 2010
+	+0100
+
+2010-11-15  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod5.py: cod5.py: fix bug in onJT() and
+	translateAction()
+
+2010-11-14  Courgette <courgette@ubu-team.org>
+
+	* py2exe_builder/b3-installer-project.iss: windows installer create
+	a shortcut for the config generator on the start menu
+
+2010-11-14  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 97220115cea15bcb53179da03926986e6d631cb1 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sun Nov 14 10:58:50 2010 +0100
+
 2010-11-12  Courgette <courgette@ubu-team.org>
 
 	* b3/clients.py: clients: harden _set_name for cases where console
@@ -5,19 +163,50 @@
 
 2010-11-11  xlr8or <xlr8or@xlr8or.com>
 
-	* : commit d099d0c9f82b580699c112bdf4f04cc166414182 Author: xlr8or
-	<xlr8or@xlr8or.com> Date:   Mon Nov 8 19:45:01 2010 +0100
+	* : commit 33a54c08d5ca1790d14c89bcad85ec602915e77d Merge: de70958
+	6a8fa81 Author: Courgette <courgette@ubu-team.org> Date:   Tue Nov 9
+	00:58:38 2010 +0100
+
+2010-11-08  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: XLRstast: Harden retrieval of webfront
+	variables
 
 2010-11-08  Courgette <courgette@ubu-team.org>
 
-	* b3/plugins/publist.py: PLUGIN PUBLIST : B3 master server can
-	prevent a bot from sending further heartbeats
+	* : commit 93d5f6978b452275c7af293eabf358ed3f1f60bf Author:
+	Courgette <courgette@ubu-team.org> Date:   Mon Nov 8 02:33:17 2010
+	+0100
 
-2010-11-07  Courgette <courgette@ubu-team.org>
+2010-11-08  grosbedo <grosbedo@gmail.com>
 
-	* b3/parsers/frostbite/abstractParser.py: PARSER FROSTBITE:
-	OnServerLoadinglevel() now fills game.rounds and game.sv_maxrounds
-	and fix getSupportedMaps()
+	* b3/conf/b3.distribution.xml, b3/functions.py, b3/parsers/cod.py,
+	b3/parsers/cod4.py, b3/parsers/frostbite/abstractParser.py,
+	b3/parsers/iourt41.py, b3/parsers/moh.py, b3/parsers/oa081.py,
+	b3/parsers/q3a/abstractParser.py: All parsers: messages can now be
+	empty (no message broadcasted on kick/tempban/ban/unban) Signed-off-by: grosbedo <grosbedo@gmail.com>
+
+2010-11-07  grosbedo <grosbedo@gmail.com>
+
+	* b3/conf/b3.distribution.xml, b3/parser.py, b3/setup.py: All
+	parsers: edited default values for lines_per_second (50) and delay
+	(0.33) Signed-off-by: grosbedo <grosbedo@gmail.com>
+
+2010-11-07  grosbedo <grosbedo@gmail.com>
+
+	* b3/conf/b3.bfbc2_example.xml, b3/conf/b3.distribution.xml,
+	b3/conf/b3.moh_example.xml, b3/parser.py, b3/parsers/cod.py,
+	b3/parsers/cod4.py, b3/parsers/frostbite/abstractParser.py,
+	b3/parsers/iourt41.py, b3/parsers/moh.py, b3/parsers/oa081.py,
+	b3/parsers/q3a/abstractParser.py, b3/setup.py: All parsers :
+	messages now support named $variables instead of %s oa081 : some
+	tiny updates Signed-off-by: grosbedo <grosbedo@gmail.com>
+
+2010-11-07  grosbedo <grosbedo@gmail.com>
+
+	* : commit 57aee426d49fe7d1098c7460c55c553dc0c46477 Author:
+	Courgette <courgette@ubu-team.org> Date:   Sun Nov 7 02:35:15 2010
+	+0100
 
 2010-11-07  Courgette <courgette@ubu-team.org>
 
@@ -29,9 +218,28 @@
 	Courgette <courgette@ubu-team.org> Date:   Fri Nov 5 19:15:28 2010
 	+0100
 
+2010-11-05  xlr8or <xlr8or@xlr8or.com>
+
+	* b3.egg-info/PKG-INFO, b3.egg-info/SOURCES.txt, b3/PKG-INFO,
+	py2exe_builder/b3-installer-project.iss, setup.py: v 1.4.2 alpha for
+	testing
+
 2010-11-03  Courgette <courgette@ubu-team.org>
 
 	* b3/parsers/frostbite/util.py: FROSTBITE UTIL : minor changes
+
+2010-11-03  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parser.py, b3/parsers/cod2.py: Quicktested q3a refactoring
+
+2010-11-01  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py, b3/parsers/et.py, b3/parsers/etpro.py,
+	b3/parsers/iourt41.py, b3/parsers/oa081.py, b3/parsers/q3a.py,
+	b3/parsers/q3a/__init__.py, b3/parsers/q3a/abstractParser.py,
+	b3/parsers/q3a/rcon.py, b3/parsers/q3a_rcon.py, b3/parsers/smg.py,
+	b3/parsers/smg11.py, b3/parsers/wop.py: Refactoring of Q3A based
+	parserseries to comply to new parserconvention.
 
 2010-11-01  xlr8or <xlr8or@xlr8or.com>
 
@@ -48,6 +256,11 @@
 	* CHANGELOG, ChangeLogDetailed.txt, MANIFEST.in,
 	b3.egg-info/SOURCES.txt, versions.txt: versioning 1.4.1b: feature
 	freeze release candidate
+
+2010-11-01  grosbedo <grosbedo@gmail.com>
+
+	* b3/conf/plugin_stats.xml, b3/plugins/stats.py: stats plugin:
+	option to show awards at map's end Signed-off-by: grosbedo <grosbedo@gmail.com>
 
 2010-11-01  Courgette <courgette@ubu-team.org>
 

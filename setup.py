@@ -37,14 +37,14 @@ from setuptools import setup, find_packages
 
 _setupinfo = {
     'name' : "b3",
-    'version' : "1.4.1",
+    'version' : "1.4.2b",
     'packages' : find_packages(),
     'extras_require' : { 'mysql' : 'MySQL-python' },
     'package_data' : {
-        '': ['conf/*.xml', 'extplugins/conf/*.xml', 'docs/*', 'README']
+        '': ['conf/*.xml', 'extplugins/conf/*.xml','sql/*', 'docs/*', 'README']
     },
     'zip_safe' : False,
-    'author' : 'Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Léveil (Courgette)',
+    'author' : 'Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Leveil (Courgette)',
     'author_email' : "info@bigbrotherbot.net",
     'description' : "BigBrotherBot (B3) is a cross-platform, cross-game game administration bot. Features in-game administration of game servers, multiple user access levels, and database storage. Currently include parsers for Call of Duty 1 to 5, Urban Terror (ioUrT), World of Padman, ETpro, Smokin' Guns, BFBC2(beta)",
     'long_description' : """\

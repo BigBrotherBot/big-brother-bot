@@ -36,6 +36,7 @@ myDataFiles = [
         ('', ['README']),
         ('', ['b3/PKG-INFO']),
         ('docs', listdirectory('b3/docs/')),
+        ('sql', listdirectory('b3/sql/')),
         ('conf', listdirectory('b3/conf/')),
         ('extplugins', ['b3/extplugins/xlrstats.py']),
         ('extplugins/conf', listdirectory('b3/extplugins/conf/')),
