@@ -174,7 +174,7 @@ class StatusPlugin(b3.plugin.Plugin):
                 except:
                     self.error('Error: inserting svars. sqlqry=%s' % (sql))
         if self._enableDBsvarSaving:
-            sql = "INSERT INTO current_svars (name, value) VALUES ('lastupdate',UNIX_TIMESTAMP()) ON DUPLICATE KEY UPDATE value = VALUES(value);")
+            sql = "INSERT INTO current_svars (name, value) VALUES ('lastupdate',UNIX_TIMESTAMP()) ON DUPLICATE KEY UPDATE value = VALUES(value);"
             try:
                 self.console.storage.query(sql)
             except:
