@@ -41,13 +41,18 @@
 #   BugFix: Empty field webfront Url is now allowed in config
 # 08-11-2010 - 2.2.9 - Mark Weirath
 #   Harden retrieval of webfront variables
+# 07-01-2011 - 2.3 - Mark Weirath
+#   XLRstats can now install default database tables when missing
+
+# This section is DoxuGen information. More information on how to comment your code
+# is available at http://www.stack.nl/~dimitri/doxygen/docblocks.html
+## @file
+# XLRstats Real Time playerstats plugin
 
 __author__  = 'Tim ter Laak / Mark Weirath'
-__version__ = '2.2.9'
+__version__ = '2.3'
 
 # Version = major.minor.patches
-
-# emacs-mode: -*- python-*-
 
 import string
 import time
@@ -120,6 +125,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     penalties_table = 'penalties'
     history_monthly_table = 'xlr_history_monthly'
     history_weekly_table = 'xlr_history_weekly'
+    _defaultTableNames = True
 
 
     def startup(self):
@@ -173,7 +179,11 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         #PlayerMaps.createTable(ifNotExists=True)
         #--end OBS
 
-        # register the events we're interested in. 
+        # create default tables if not present
+        if self._defaultTableNames:
+            self.console.storage.queryFromFile("@b3/sql/xlrstats.sql", silent=True)
+
+        # register the events we're interested in.
         self.registerEvent(b3.events.EVT_CLIENT_JOIN)
         self.registerEvent(b3.events.EVT_CLIENT_KILL)
         self.registerEvent(b3.events.EVT_CLIENT_KILL_TEAM)
@@ -184,9 +194,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         
         # get the Client.id for the bot itself (guid: WORLD or Server(bfbc2))
         sclient = self.console.clients.getByGUID("WORLD")
-        if sclient == None:
+        if sclient is None:
             sclient = self.console.clients.getByGUID("Server")
-        if (sclient != None):
+        if (sclient is not None):
             self._world_clientid = sclient.id
         self.debug('Got client id for B3: %s; %s' %(self._world_clientid, sclient.name))
 
@@ -349,64 +359,75 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         try:
             self.playerstats_table = self.config.get('tables', 'playerstats')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::playerstats', self.playerstats_table)
-            
-            
+
         try:
             self.weaponstats_table = self.config.get('tables', 'weaponstats')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::weaponstats', self.weaponstats_table)
             
         try:
             self.weaponusage_table = self.config.get('tables', 'weaponusage')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::weaponusage', self.weaponusage_table)
             
         try:
             self.bodyparts_table = self.config.get('tables', 'bodyparts')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::bodyparts', self.bodyparts_table)
            
         try:
             self.playerbody_table = self.config.get('tables', 'playerbody')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::playerbody', self.playerbody_table)
             
         try:
             self.opponents_table = self.config.get('tables', 'opponents')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::opponents', self.opponents_table)
             
         try:
             self.mapstats_table = self.config.get('tables', 'mapstats')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::mapstats', self.mapstats_table)
             
         try:
             self.playermaps_table = self.config.get('tables', 'playermaps')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::playermaps', self.playermaps_table)
                       
         try:
             self.actionstats_table = self.config.get('tables', 'actionstats')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::actionstats', self.actionstats_table)
 
         try:
             self.playeractions_table = self.config.get('tables', 'playeractions')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::playeractions', self.playeractions_table)
 
         #history tables
         try:
             self.history_monthly_table = self.config.get('tables', 'history_monthly')    
+            self._defaultTableNames = False
         except:
             self.history_monthly_table = 'xlr_history_monthly'
             self.debug('Using default value (%s) for tables::history_monthly', self.history_monthly_table)
 
         try:
             self.history_weekly_table = self.config.get('tables', 'history_weekly')    
+            self._defaultTableNames = False
         except:
             self.history_weekly_table = 'xlr_history_weekly'
             self.debug('Using default value (%s) for tables::history_weekly', self.history_weekly_table)
@@ -1520,7 +1541,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         cursor = self.query(q)
         r = cursor.getRow()
         max = r['max_skill']
-        if max == None:
+        if max is None:
             max = self.defaultskill
         diff = max - self.defaultskill
         if diff < 0:
