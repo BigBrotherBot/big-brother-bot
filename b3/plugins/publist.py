@@ -140,8 +140,12 @@ class PublistPlugin(b3.plugin.Plugin):
         # planning initial heartbeat
         # v1.9.1: Changing the threaded timer to a one time crontab to enable quick shutdown of the bot.
         _im = int(time.strftime('%M')) + self._initial_heartbeat_delay_minutes
-        self.info('initial heartbeat will be sent to B3 master server at %s:%s hrs' % (time.strftime('%H'), _im))
-        self._cronTab = b3.cron.OneTimeCronTab(self.update, 0, _im, '*', '*', '*', '*')
+        _ih = int(time.strftime('%H'))
+        if _im >= 60:
+            _im -= 60
+            _ih += 1
+        self.info('initial heartbeat will be sent to B3 master server at %s:%s hrs' % (_ih, str(_im).zfill(2)))
+        self._cronTab = b3.cron.OneTimeCronTab(self.update, 0, _im, _ih, '*', '*', '*')
         self.console.cron + self._cronTab
        
       
