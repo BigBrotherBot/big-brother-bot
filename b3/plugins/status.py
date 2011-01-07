@@ -173,7 +173,12 @@ class StatusPlugin(b3.plugin.Plugin):
                     self.console.storage.query(sql)
                 except:
                     self.error('Error: inserting svars. sqlqry=%s' % (sql))
-
+        if self._enableDBsvarSaving:
+            sql = "INSERT INTO current_svars (name, value) VALUES ('lastupdate',UNIX_TIMESTAMP()) ON DUPLICATE KEY UPDATE value = VALUES(value);")
+            try:
+                self.console.storage.query(sql)
+            except:
+                self.error('Error: inserting svars. sqlqry=%s' % (sql))
         # --- End Game section        
 
         # --- Clients section
@@ -187,9 +192,6 @@ class StatusPlugin(b3.plugin.Plugin):
             self.console.storage.query(sql)
 
         for c in clients:
-            sql = ""
-            qryBuilderKey = ""
-            qryBuilderValue = ""
             if not c.name:
                 c.name = "@"+str(c.id)
             if c.exactName == "^7":
@@ -224,6 +226,8 @@ class StatusPlugin(b3.plugin.Plugin):
                     client.setAttribute("Score", str(scoreList[c.cid]))
                 client.setAttribute("State", str(c.state))
                 if self._enableDBclientSaving:
+                    qryBuilderKey = ""
+                    qryBuilderValue = ""
                     # get our attributes
                     for k, v in client.attributes.items():
                         # build the qrystring
