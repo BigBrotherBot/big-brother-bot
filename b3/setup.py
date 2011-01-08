@@ -43,7 +43,7 @@ __author__  = 'xlr8or'
 __version__ = '0.5.2'
 
 import platform, urllib2, shutil, os, sys, time, zipfile
-from functions import main_is_frozen
+import functions
 from distutils import version
 from lib.elementtree.SimpleXMLWriter import XMLWriter
 from urlparse import urlsplit
@@ -101,6 +101,10 @@ class Setup:
         xml.start("settings", name="b3")
         self.add_set("parser", "cod", "Define your game: cod/cod2/cod4/cod5/cod6/iourt41/etpro/wop/smg/bfbc2/moh")
         self.add_set("database", "mysql://b3:password@localhost/b3", "Your database info: [mysql]://[db-user]:[db-password]@[db-server[:port]]/[db-name]")
+
+        self.add_buffer('Testing and Setting Up Database...\n')
+        self.executeSql('@b3/sql/b3.sql')
+
         self.add_set("bot_name", "b3", "Name of the bot")
         self.add_set("bot_prefix", "^0(^2b3^0)^7:", "Ingame messages are prefixed with this code, you can use colorcodes")
         self.add_set("time_format", "%I:%M%p %Z %m/%d/%y")
@@ -382,8 +386,50 @@ class Setup:
         else:
             raise SystemExit(_exitmessage)
 
+    def connectToDatabase(self):
+        _db = None
+        _dsnDict = functions.splitDSN(self._set_database)
+        if _dsnDict['protocol'] == 'mysql':
+            try:
+                import MySQLdb
+                _db = MySQLdb.connect(host=_dsnDict['host'], port=_dsnDict['port'], user=_dsnDict['user'], passwd=_dsnDict['password'], db=_dsnDict['path'][1:])
+            except ImportError:
+                self.add_buffer("You need to install python-mysqldb. Look for 'dependencies' in B3 documentation.\n")
+                raise SystemExit()
+            except Exception:
+                _db.close()
+                pass
+        else:
+            self.add_buffer("%s protocol is not supported. Use mysql instead\n" % _dsnDict['protocol'])
+            self.testExit(_question='Do you still want to continue? [Enter] to continue, \'abort\' to abort Setup: ')
+        return _db
+
+    def executeSql(self, file):
+        """This method executes an external sql file on the current database"""
+        self.db = self.connectToDatabase()
+        if self.db:
+            self.add_buffer('Connected to the database. Installing the tables when they don\'t exist.\n')
+            sqlFile = self.getAbsolutePath(file)
+            if os.path.exists(sqlFile):
+                f = open(sqlFile, 'r')
+                sql_text = f.read()
+                f.close()
+                sql_statements = sql_text.split(';')
+                for s in sql_statements:
+                    try:
+                        self.db.query(s)
+                    except:
+                        pass
+            else:
+                raise Exception('sqlFile does not exist: %s' %sqlFile)
+            self.db.close()
+        else:
+            self.add_buffer('Connection to the database failed. Check the documentation how to add the database tables manually.\n')
+            self.testExit(_question='Do you still want to continue? [Enter] to continue, \'abort\' to abort Setup: ')
+        return None
+
     def getB3Path(self):
-        if main_is_frozen():
+        if functions.main_is_frozen():
             # which happens when running from the py2exe build
             return os.path.dirname(sys.executable)
         return ""
