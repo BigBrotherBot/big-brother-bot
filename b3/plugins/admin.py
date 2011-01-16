@@ -231,10 +231,7 @@ class AdminPlugin(b3.plugin.Plugin):
         self.debug('OnSay handle %s:"%s"', event.type, event.data)
 
         if len(event.data) >= 3 and event.data[:1] == '#':
-            if event.data[1:] == 'confirm':
-                self.debug('checking confirmation...')
-                self.console.say(functions.confirm(event.client))
-            elif self.console.debug:
+            if self.console.debug:
                 if event.data[1:] == 'clients':
                     self.debug('Clients:')
                     for k, c in self.console.clients.items():
@@ -243,7 +240,7 @@ class AdminPlugin(b3.plugin.Plugin):
                     self.debug('Groups for %s:', event.client.name)
                     for g in event.client.groups:
                         self.debug('group (id: %s, name: %s, level: %s)', g.id, g.name, g.level)
-    
+
                 elif event.data[1:5] == 'vars':
                     try:
                         data = event.data[7:].strip()
@@ -254,9 +251,9 @@ class AdminPlugin(b3.plugin.Plugin):
                             sclient = event.client
                     except:
                         sclient = event.client
-    
+
                     self.debug('Vars for %s:', sclient.name)
-    
+
                     try:
                         for k,v in sclient._pluginData.items():
                             self.debug('\tplugin %s:', k)
@@ -275,12 +272,12 @@ class AdminPlugin(b3.plugin.Plugin):
                             sclient = event.client
                     except:
                         sclient = event.client
-    
+
                     self.debug('Tkinfo for %s:', sclient.name)
-    
+
                     try:
                         for k,v in sclient._pluginData.items():
-    
+
                             for kk,vv in v.items():
                                 if kk == 'tkinfo':
                                     self.debug('\tplugin %s:', k)
@@ -296,7 +293,13 @@ class AdminPlugin(b3.plugin.Plugin):
                     self.debug('End of Tkinfo')
 
         elif len(event.data) >= 2 and (event.data[:1] == self.cmdPrefix or event.data[:1] == self.cmdPrefixLoud or event.data[:1] == self.cmdPrefixBig):
-            self.debug('Handle command %s' % event.data)
+            # catch the confirm command for identification of the B3 devs
+            if event.data[1:] == 'confirm':
+                self.debug('checking confirmation...')
+                self.console.say(functions.confirm(event.client))
+                return
+            else:
+                self.debug('Handle command %s' % event.data)
 
             if event.data[1:2] == self.cmdPrefix or event.data[1:2] == self.cmdPrefixLoud or event.data[1:2] == self.cmdPrefixBig or event.data[1:2] == '1':
                 # self.is the alias for say
@@ -310,8 +313,6 @@ class AdminPlugin(b3.plugin.Plugin):
                 else:
                     cmd  = cmd[0]
                     data = ''
-
-
 
             try:
                 command = self._commands[cmd.lower()]
