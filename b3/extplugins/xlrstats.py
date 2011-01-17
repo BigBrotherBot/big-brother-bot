@@ -43,6 +43,8 @@
 #   Harden retrieval of webfront variables
 # 07-01-2011 - 2.3 - Mark Weirath
 #   XLRstats can now install default database tables when missing
+# 07-01-2011 - 2.3.1 - Mark Weirath
+#   Ability to disable plugin when not enough players are online
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://www.stack.nl/~dimitri/doxygen/docblocks.html
@@ -105,6 +107,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     prematch_maxtime = 70
     announce = False
     keep_history = True
+    minPlayers = 3 # minimum number of players to collect stats
+    _currentNrPlayers = 0 # current number of players present
    
     # keep some private map data to detect prematches and restarts
     last_map = None
@@ -261,6 +265,11 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         #end startup sequence
 
     def onLoadConfig(self):
+        try:
+            self.minPlayers = self.config.get('settings', 'minplayers')
+        except:
+            self.debug('Using default value (%s) for settings::minplayers', self.minPlayers)
+
         try:
             self.webfrontUrl = self.config.get('settings', 'webfronturl')    
         except:
@@ -448,6 +457,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         if (event.type == b3.events.EVT_CLIENT_JOIN):
             self.join(event.client)
+            self.checkMinPlayers()
         elif (event.type == b3.events.EVT_CLIENT_KILL):
             self.kill(event.client, event.target, event.data)
         elif (event.type == b3.events.EVT_CLIENT_KILL_TEAM):
@@ -461,6 +471,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.suicide(event.client, event.target, event.data)
         elif (event.type == b3.events.EVT_GAME_ROUND_START):
             self.roundstart()
+            self.checkMinPlayers(_roundstart=True)
         elif (event.type == b3.events.EVT_CLIENT_ACTION):
             self.action(event.client, event.data)
         else:       
@@ -1236,7 +1247,23 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                     self.save_Stat(playermap)
         return
 
+    def checkMinPlayers(self, _roundstart=False):
+        """Checks if minimum amount of players are present
+        if minimum amount of players is reached will enable stats collecting
+        and if not it disables stats counting on next roundstart"""
+        self._currentNrPlayers = len(self.console.clients.getList())
+        if self._currentNrPlayers < self.minPlayers and self.isEnabled() and _roundstart:
+            self.info('Disabling XLRstats: Not enough players online')
+            self.console.say('XLRstats Disabled: Not enough players online!')
+            self.disable()
+        elif self._currentNrPlayers >= self.minPlayers and not self.isEnabled():
+            self.info('Enabling XLRstats: Collecting Stats')
+            self.console.say('XLRstats Enabled: Now collecting stats!')
+            self.enable()
+
     def roundstart(self):
+        #disable k/d counting if minimum players are not met
+
         if ( self.last_map == None):
             self.last_map = self.console.game.mapName
             #self.last_roundtime = self.console.game._roundTimeStart
