@@ -261,7 +261,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         self.console.cron + self._cronTabKillBonus
 
         #start the xlrstats controller
-        p = XlrstatscontrollerPlugin(self.console, None, self.minPlayers)
+        p = XlrstatscontrollerPlugin(self.console, self.minPlayers)
         p.startup()
 
         #end startup sequence
@@ -1575,8 +1575,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 class XlrstatscontrollerPlugin(b3.plugin.Plugin):
     """This is a helper class/plugin that enables and disables the main xlrstats plugin"""
 
-    def __init__(self, console, config=None, minPlayers=3):
+    def __init__(self, console, minPlayers=3):
         self.console = console
+        self.minPlayers = minPlayers
         # empty message cache
         self._messages = {}
         self.registerEvent(b3.events.EVT_STOP)
