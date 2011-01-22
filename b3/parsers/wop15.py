@@ -20,11 +20,13 @@
 # CHANGELOG
 #
 
+
 __author__  = 'xlr8or'
 __version__ = '1.0.0'
 
 from b3.parsers.q3a.abstractParser import AbstractParser
 import re
+import string
 import b3.parsers.wop
 
 #----------------------------------------------------------------------------------------------------------------------------------------------
@@ -42,11 +44,45 @@ class Wop15Parser(b3.parsers.wop.WopParser):
         re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s+(?P<ip>[0-9.]+))$', re.IGNORECASE),
 
         #Say: 0 insta machen?
-        re.compile(r'^(?P<action>say):\s*(?P<data>(?P<cid>[0-9]+)\s*(?P<text>.*))$', re.IGNORECASE),
+        #re.compile(r'^(?P<action>say):\s*(?P<data>(?P<cid>[0-9]+)\s*(?P<text>.*))$', re.IGNORECASE),
         #Bot connecting
         #ClientConnect: 0
         re.compile(r'^(?P<action>ClientConnect):\s*(?P<data>(?P<bcid>[0-9]+))$', re.IGNORECASE),
-        #Falling thru? Item stuff and so forth... still need some other actions from CTF and other gametypes to compare.  
+
+        #Say: 0 insta machen?
         #Item: 3 ammo_spray_n
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>.*)$', re.IGNORECASE)
     )
+
+    # say
+    def OnSay(self, action, data, match=None):
+        #3:59 say: 1 general chat
+        msg = string.split(data, ' ', 1)
+        if not len(msg) == 2:
+            return None
+
+        client = self.clients.getByCiD(msg[0])
+
+        if client:
+            self.verbose('Client Found: %s' % client.name)
+            return b3.events.Event(b3.events.EVT_CLIENT_SAY, msg[1], client)
+        else:
+            self.verbose('No Client Found!')
+            return None
+
+    # sayteam
+    def OnSayteam(self, action, data, match=None):
+        #4:06 sayteam: 1 teamchat
+        msg = string.split(data, ' ', 1)
+        if not len(msg) == 2:
+            return None
+
+        client = self.clients.getByCid(msg[0])
+
+        if client:
+            self.verbose('Client Found: %s' % client.name)
+            return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, msg[1], client, client.team)
+        else:
+            self.verbose('No Client Found!')
+            return None
+
