@@ -1611,7 +1611,7 @@ class XlrstatscontrollerPlugin(b3.plugin.Plugin):
             self.info('Enabling XLRstats: Collecting Stats')
             self.console.say('XLRstats Enabled: Now collecting stats!')
             self._xlrstatsPlugin.enable()
-        else
+        else:
             if self._xlrstatsPlugin.isEnabled():
                 _status = 'Enabled'
             else:
