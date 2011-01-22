@@ -1602,14 +1602,21 @@ class XlrstatscontrollerPlugin(b3.plugin.Plugin):
         if minimum amount of players is reached will enable stats collecting
         and if not it disables stats counting on next roundstart"""
         self._currentNrPlayers = len(self.console.clients.getList())
-        if self._currentNrPlayers < self.minPlayers and self.isEnabled() and _roundstart:
+        self.debug('Checking number of players online. Minimum = %s, Current = %s' %(self.minPlayers, self._currentNrPlayers) )
+        if self._currentNrPlayers < self.minPlayers and self._xlrstatsPlugin.isEnabled() and _roundstart:
             self.info('Disabling XLRstats: Not enough players online')
             self.console.say('XLRstats Disabled: Not enough players online!')
             self._xlrstatsPlugin.disable()
-        elif self._currentNrPlayers >= self.minPlayers and not self.isEnabled():
+        elif self._currentNrPlayers >= self.minPlayers and not self._xlrstatsPlugin.isEnabled():
             self.info('Enabling XLRstats: Collecting Stats')
             self.console.say('XLRstats Enabled: Now collecting stats!')
             self._xlrstatsPlugin.enable()
+        else
+            if self._xlrstatsPlugin.isEnabled():
+                _status = 'Enabled'
+            else:
+                _status = 'Disabled'
+            self.debug('Nothing to do at the moment. XLRstats is already %s' %(_status) )
 
 
 # This is an abstract class. Do not call directly.
