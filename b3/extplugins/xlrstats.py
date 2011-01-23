@@ -268,7 +268,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def onLoadConfig(self):
         try:
-            self.minPlayers = self.config.get('settings', 'minplayers')
+            self.minPlayers = self.config.getint('settings', 'minplayers')
         except:
             self.debug('Using default value (%s) for settings::minplayers', self.minPlayers)
 
