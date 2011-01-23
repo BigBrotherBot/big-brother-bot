@@ -459,7 +459,6 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         if (event.type == b3.events.EVT_CLIENT_JOIN):
             self.join(event.client)
-            self.checkMinPlayers()
         elif (event.type == b3.events.EVT_CLIENT_KILL):
             self.kill(event.client, event.target, event.data)
         elif (event.type == b3.events.EVT_CLIENT_KILL_TEAM):
@@ -473,7 +472,6 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.suicide(event.client, event.target, event.data)
         elif (event.type == b3.events.EVT_GAME_ROUND_START):
             self.roundstart()
-            self.checkMinPlayers(_roundstart=True)
         elif (event.type == b3.events.EVT_CLIENT_ACTION):
             self.action(event.client, event.data)
         else:       
