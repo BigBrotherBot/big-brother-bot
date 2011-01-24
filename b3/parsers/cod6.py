@@ -17,6 +17,8 @@
 #
 # CHANGELOG
 #
+# 24/01/2010 - v0.3 - xlr8or
+#  * replaced _commands dict to fix broken ban command 
 # 09/10/2010 - v0.2 - jerbob92 
 #  * set sv_hostname at statup
 # 02/10/2010 - v0.1 - NTAuthority (http://alteriw.net/)
@@ -24,7 +26,7 @@
 
 
 __author__  = 'NTAuthority'
-__version__ = '0.2'
+__version__ = '0.3'
 
 import b3.parsers.cod4
 import re
@@ -32,6 +34,17 @@ import re
 class Cod6Parser(b3.parsers.cod4.Cod4Parser):
     gameName = 'cod6'
     _guidLength = 16
+
+    _commands = {}
+    _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
+    _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
+    _commands['say'] = 'say %(prefix)s %(message)s'
+    _commands['set'] = 'set %(name)s "%(value)s"'
+    _commands['kick'] = 'clientkick %(cid)s'
+    _commands['ban'] = 'cientkick %(cid)s'
+    _commands['unban'] = 'unbanuser %(name)s' # remove players from game engine's ban.txt
+    _commands['tempban'] = 'clientkick %(cid)s'
+
     _regPlayer = re.compile(r'(?P<slot>[0-9]+)[\s\0]+(?P<score>[0-9-]+)[\s\0]+(?P<ping>[0-9]+)[\s\0]+(?P<guid>[a-z0-9]+)[\s\0]+(?P<name>.*?)[\s\0]+(?P<last>[0-9]+)[\s\0]+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)', re.I)
 
     def startup(self):
