@@ -588,7 +588,7 @@ class CodParser(AbstractParser):
             return None
             
         client = self.clients.newClient(cid, name=name, ip=ip, state=b3.STATE_ALIVE, guid=guid, pbid=pbid, data={ 'codguid' : codguid })
-        return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client))
 
     def authorizeClients(self):
         players = self.getPlayerList(maxRetries=4)
