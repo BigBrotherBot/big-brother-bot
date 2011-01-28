@@ -43,6 +43,8 @@
 #   Harden retrieval of webfront variables
 # 07-01-2011 - 2.3 - Mark Weirath
 #   XLRstats can now install default database tables when missing
+# 07-01-2011 - 2.3.1 - Mark Weirath
+#   Ability to disable plugin when not enough players are online
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://www.stack.nl/~dimitri/doxygen/docblocks.html
@@ -105,6 +107,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     prematch_maxtime = 70
     announce = False
     keep_history = True
+    minPlayers = 3 # minimum number of players to collect stats
+    _currentNrPlayers = 0 # current number of players present
    
     # keep some private map data to detect prematches and restarts
     last_map = None
@@ -149,7 +153,6 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 func = self.getCmd(cmd)
                 if func:
                     self._adminPlugin.registerCommand(self, cmd, level, func, alias)
-
 
         #define a shortcut to the storage.query function
         self.query = self.console.storage.query
@@ -257,10 +260,18 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         self._cronTabKillBonus = b3.cron.PluginCronTab(self, self.calculateKillBonus, 0, '*/10')
         self.console.cron + self._cronTabKillBonus
 
+        #start the xlrstats controller
+        p = XlrstatscontrollerPlugin(self.console, self.minPlayers)
+        p.startup()
 
         #end startup sequence
 
     def onLoadConfig(self):
+        try:
+            self.minPlayers = self.config.getint('settings', 'minplayers')
+        except:
+            self.debug('Using default value (%s) for settings::minplayers', self.minPlayers)
+
         try:
             self.webfrontUrl = self.config.get('settings', 'webfronturl')    
         except:
@@ -1237,6 +1248,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         return
 
     def roundstart(self):
+        #disable k/d counting if minimum players are not met
+
         if ( self.last_map == None):
             self.last_map = self.console.game.mapName
             #self.last_roundtime = self.console.game._roundTimeStart
@@ -1555,6 +1568,53 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         if self.kill_bonus != _oldkillbonus:
             self.debug('kill_bonus set to: %s' % self.kill_bonus)
             self.debug('assist_bonus set to: %s' % self.assist_bonus)
+
+
+class XlrstatscontrollerPlugin(b3.plugin.Plugin):
+    """This is a helper class/plugin that enables and disables the main xlrstats plugin"""
+
+    def __init__(self, console, minPlayers=3):
+        self.console = console
+        self.minPlayers = minPlayers
+        # empty message cache
+        self._messages = {}
+        self.registerEvent(b3.events.EVT_STOP)
+        self.registerEvent(b3.events.EVT_EXIT)
+
+    def startup(self):
+        self.console.debug('Starting SubPlugin: XlrstatsControllerPlugin')
+        #get a reference to the main Xlrstats plugin
+        self._xlrstatsPlugin = self.console.getPlugin('xlrstats')
+        # register the events we're interested in.
+        self.registerEvent(b3.events.EVT_CLIENT_JOIN)
+        self.registerEvent(b3.events.EVT_GAME_ROUND_START)
+
+    def onEvent(self, event):
+        if (event.type == b3.events.EVT_CLIENT_JOIN):
+            self.checkMinPlayers()
+        elif (event.type == b3.events.EVT_GAME_ROUND_START):
+            self.checkMinPlayers(_roundstart=True)
+
+    def checkMinPlayers(self, _roundstart=False):
+        """Checks if minimum amount of players are present
+        if minimum amount of players is reached will enable stats collecting
+        and if not it disables stats counting on next roundstart"""
+        self._currentNrPlayers = len(self.console.clients.getList())
+        self.debug('Checking number of players online. Minimum = %s, Current = %s' %(self.minPlayers, self._currentNrPlayers) )
+        if self._currentNrPlayers < self.minPlayers and self._xlrstatsPlugin.isEnabled() and _roundstart:
+            self.info('Disabling XLRstats: Not enough players online')
+            self.console.say('XLRstats Disabled: Not enough players online!')
+            self._xlrstatsPlugin.disable()
+        elif self._currentNrPlayers >= self.minPlayers and not self._xlrstatsPlugin.isEnabled():
+            self.info('Enabling XLRstats: Collecting Stats')
+            self.console.say('XLRstats Enabled: Now collecting stats!')
+            self._xlrstatsPlugin.enable()
+        else:
+            if self._xlrstatsPlugin.isEnabled():
+                _status = 'Enabled'
+            else:
+                _status = 'Disabled'
+            self.debug('Nothing to do at the moment. XLRstats is already %s' %(_status) )
 
 
 # This is an abstract class. Do not call directly.
