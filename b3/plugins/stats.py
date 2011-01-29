@@ -315,9 +315,9 @@ class StatsPlugin(b3.plugin.Plugin):
                 results.append('^3#%s^7 %s ^7(^3%s^7)' % (i, name, score))
                 
             if client:        
-                client.message(client, '^3Top Stats:^7 %s' % ', '.join(results))
+                client.message(client, '^3Top Stats:^7 %s' % string.join(results,', '))
             else:
-                self.console.say('^3Top Stats:^7 %s' % ', '.join(results))
+                self.console.say('^3Top Stats:^7 %s' % string.join(results,', '))
         else:
             client.message('^3Stats: ^7No top players')
 
@@ -348,9 +348,9 @@ class StatsPlugin(b3.plugin.Plugin):
                 results.append('^3#%s^7 %s ^7(^3%s^7)' % (i, name, score))
 
             if client:
-                client.message(client, '^3Top Experienced Players:^7 %s' % ', '.join(results))
+                client.message(client, '^3Top Experienced Players:^7 %s' % string.join(results, ', '))
             else:
-                self.console.say('^3Top Experienced Players:^7 %s' % ', '.join(results))
+                self.console.say('^3Top Experienced Players:^7 %s' % string.join(results, ', '))
         else:
             client.message('^3Stats: ^7No top experienced players')
 
