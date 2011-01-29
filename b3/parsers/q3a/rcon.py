@@ -55,7 +55,6 @@ class Rcon:
     'cache.type': 'file',
     'cache.data_dir': 'b3/cache/data',
     'cache.lock_dir': 'b3/cache/lock',
-    'cache.expiretime': 60
     }
     #create cache
     cache = CacheManager(**parse_cache_config_options(cache_opts))
