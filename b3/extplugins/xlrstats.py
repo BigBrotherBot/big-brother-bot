@@ -45,6 +45,8 @@
 #   XLRstats can now install default database tables when missing
 # 07-01-2011 - 2.3.1 - Mark Weirath
 #   Ability to disable plugin when not enough players are online
+# 07-01-2011 - 2.3.2 - Mark Weirath
+#   Update weapon tables for cod7.
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://www.stack.nl/~dimitri/doxygen/docblocks.html
@@ -52,7 +54,7 @@
 # XLRstats Real Time playerstats plugin
 
 __author__  = 'Tim ter Laak / Mark Weirath'
-__version__ = '2.3'
+__version__ = '2.3.2'
 
 # Version = major.minor.patches
 
@@ -1480,12 +1482,14 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         self.verbose('Checking if we need to update tables for version 2.0.0')
         #todo: add mysql condition
         #v2.0.0 additions to the playerstats table:
-        self._updateTableColumn('assists', PlayerStats._table, 'MEDIUMINT( 8 ) NOT NULL DEFAULT "0" AFTER `skill`')
-        self._updateTableColumn('assistskill', PlayerStats._table, 'FLOAT NOT NULL DEFAULT "0" AFTER `assists`')
+        self._addTableColumn('assists', PlayerStats._table, 'MEDIUMINT( 8 ) NOT NULL DEFAULT "0" AFTER `skill`')
+        self._addTableColumn('assistskill', PlayerStats._table, 'FLOAT NOT NULL DEFAULT "0" AFTER `assists`')
+        #alterations to columns in existing tables:
+        self._updateTableColumns()
         return None
         #end of update check
 
-    def _updateTableColumn(self, c1, t1, specs):
+    def _addTableColumn(self, c1, t1, specs):
         try:
             self.query('SELECT `%s` FROM %s limit 1;' %(c1, t1), silent=True)
         except Exception, e:
@@ -1495,6 +1499,14 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 self.console.info('Created new column `%s` on %s' %(c1, t1))
             else:
                 self.console.error('Query failed - %s: %s' % (type(e), e))
+
+    def _updateTableColumns(self):
+        try:
+            #need to update the weapon-identifier columns in these tables for cod7. This game knows over 255 weapons/variations
+            self.query('ALTER TABLE  `%s` CHANGE  `id`  `id` SMALLINT( 5 ) UNSIGNED NOT NULL AUTO_INCREMENT;' %(WeaponStats._table))
+            self.query('ALTER TABLE  `%s` CHANGE  `weapon_id`  `weapon_id` SMALLINT( 5 ) UNSIGNED NOT NULL DEFAULT  "0";' %(WeaponUsage._table))
+        except:
+            pass
 
     def showTables(self, xlrstats=False):
         _tables = []
