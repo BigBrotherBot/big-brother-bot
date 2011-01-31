@@ -32,10 +32,17 @@
 #   * Timout value falls back to default 10 seconds if timeout value can't be
 #     parsed from http://logs.gameservers.com/timeout
 #   * Added option for manually setting timout value in b3.xml
+# 21.01.2011 - 1.0.5 - Freelander
+#   * Refactoring code for better timeout handling and get rid of redundant
+#     getRemotelog function
+# 31.01.2011 - 1.0.6 - Bravo17
+#   * Added range header to limit download size
+# 31.01.2011 - 1.0.7 - Freelander
+#   * Added error handling while closing remote file to prevent plugin crash
 #
 
-__author__  = 'Freelander'
-__version__ = '1.0.4'
+__author__  = 'Freelander, Just a baka, Bravo17'
+__version__ = '1.0.7'
 
 import b3, threading
 from b3 import functions
@@ -89,53 +96,6 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             self.error('Your game log url doesn\'t seem to be valid. Please check your config file')
             self.console.die()
 
-    def getRemotelog(self):
-        start = time.time()
-        headers =  { 'User-Agent'  : user_agent  }
-
-        #request remote log
-        request = urllib2.Request(self._url, None, headers)
-
-        #tell the server we like compressed data, and get the log as compressed data
-        request.add_header('Accept-encoding', 'gzip')
-
-        try:
-            response = urllib2.urlopen(request)
-
-            #compressed remote log
-            remote_log_compressed = response.read()
-
-            #get http headers in case needed
-            headers = response.info()
-
-            #size of the compressed log we just downloaded
-            #can be used for information
-            remotelogsize = len(remote_log_compressed)/1024
-            self.verbose('Downloaded: %s KB total' % remotelogsize)
-        except (urllib2.HTTPError, urllib2.URLError), error: 
-            remotelog = ''
-            remote_log_compressed = ''
-            self.error('HTTP ERROR: %s' % error)
-        except socket.timeout:
-            remotelog = ''
-            remote_log_compressed = ''
-            self.error('TIMEOUT ERROR: Socket Timed out!')
-
-        #decompress remote log and return for use
-        if len(remote_log_compressed) > 0:
-            try:
-                compressedstream = StringIO.StringIO(remote_log_compressed)
-                gzipper = gzip.GzipFile(fileobj=compressedstream)
-                remotelog = gzipper.read()
-            except IOError, error:
-                remotelog = ''
-                self.error('IOERROR: %s' % error)
-
-        #calculate how long it took from sending request until completing the download
-        timespent = time.time() - start
-
-        return (remotelog, timespent)
-
     def getLastline(self, sfile):
         fh = open(sfile, "r")
         linelist = fh.readlines()
@@ -161,11 +121,50 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
 
     def processData(self):
         while self.console.working:
-            log = self.getRemotelog()
-            if not log:
-                return False
+            remotelog = ''
+            response = ''
+            remote_log_compressed = ''
 
-            remotelog, timespent = log
+            headers =  { 'User-Agent' : user_agent,
+                         'Range' : 'bytes=-10000',
+                         'Accept-encoding' : 'gzip' }
+
+            self.verbose('Sending request')
+
+            request = urllib2.Request(self._url, None, headers)
+
+            #get remote log url response and headers
+            try:
+                response = urllib2.urlopen(request)
+                headers = response.info()
+
+                #buffer/download remote log
+                if response != '':
+                    remote_log_compressed = response.read()
+
+                try:
+                    #close remote file
+                    response.close()
+                except AttributeError, error:
+                    self.error('ERROR: %s' % error)
+
+            except (urllib2.HTTPError, urllib2.URLError), error:
+                self.error('HTTP ERROR: %s' % error)
+            except socket.timeout:
+                self.error('TIMEOUT ERROR: Socket Timed out!')
+
+            #start keeping the time
+            start = time.time()
+
+            #decompress remote log and return for use
+            if len(remote_log_compressed) > 0:
+                try:
+                    compressedstream = StringIO.StringIO(remote_log_compressed)
+                    gzipper = gzip.GzipFile(fileobj=compressedstream)
+                    remotelog = gzipper.read()
+                except IOError, error:
+                    remotelog = ''
+                    self.error('IOERROR: %s' % error)
 
             if os.path.exists(self.locallog) and os.path.getsize(self.locallog) > 0:
                 #get the last line of our local log file
@@ -216,14 +215,16 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
                     self.console.unpause()
                     self.debug('Unpausing')
 
+            #calculate how long it took to process
+            timespent = time.time() - start
+
             #calculate time to wait until next request. 
             timeout = float(self.timeout)
 
             self.verbose('Given timeout value is %s seconds' % timeout)
-            self.verbose('Total time spent to download the file is %s seconds' % timespent)
+            self.verbose('Total time spent to process the downloaded file is %s seconds' % timespent)
 
-            #Calculate sleep time for next request. Adding 0.5 secs to prevent 
-            #too much HTTP Error 403 errors
+            #Calculate sleep time for next request. Adding 0.5 secs to prevent HTTP Error 403 errors
             wait = float((timeout - timespent) + 0.5)
 
             if wait <= 0:
@@ -235,6 +236,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
 
         self.verbose('B3 is down, stopping Cod7Http Plugin')
 
+
 if __name__ == '__main__':
-    p = Cod7httpPlugin()
+    p = Cod7HttpPlugin()
     p.processData()
