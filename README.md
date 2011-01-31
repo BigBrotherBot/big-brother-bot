@@ -5,9 +5,9 @@ The BigBrotherBot (B3) project is a game administration project for advanced gam
 
 ### Links to our online presence
 
-* [Official website] (http://www.bigbrotherbot.net)
-* [Forums] (http://www.bigbrotherbot.net/forums)
-* [Documentation] (http://wiki.bigbrotherbot.net/)
+* [Official website](http://www.bigbrotherbot.net)
+* [Forums](http://www.bigbrotherbot.net/forums)
+* [Documentation](http://wiki.bigbrotherbot.net/)
 
 ### Installation, configuration and usage
 
