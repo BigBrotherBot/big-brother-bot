@@ -28,7 +28,17 @@
 __author__ = 'ThorN'
 __version__ = '1.3.6'
  
-import socket, sys, select, re, time, thread, threading, Queue
+import socket
+import sys
+import select
+import re
+import time
+import thread
+import threading
+import Queue
+from b3.lib.beaker.cache import CacheManager
+from b3.lib.beaker.cache import Cache
+from b3.lib.beaker.util import parse_cache_config_options
 
 #--------------------------------------------------------------------------------------------------
 class Rcon:
@@ -39,6 +49,17 @@ class Rcon:
     queue = None
     console = None
     socket_timeout = 0.80
+
+    #caching options
+    cache_opts = {
+    'cache.type': 'file',
+    'cache.data_dir': 'b3/cache/data',
+    'cache.lock_dir': 'b3/cache/lock',
+    }
+    #create cache
+    cache = CacheManager(**parse_cache_config_options(cache_opts))
+    #expiretime for the status cache in seconds
+    statusCacheExpireTime = 5
 
     def __init__(self, console, host, password):
         self.console = console
@@ -183,7 +204,12 @@ class Rcon:
     def writelines(self, lines):
         self.queue.put(lines)
 
-    def write(self, cmd, maxRetries=None, socketTimeout=None):
+    def write(self, cmd, maxRetries=None, socketTimeout=None, Cached=True):
+        #intercept status request for caching construct
+        if cmd == 'status' and Cached:
+            data = self._requestStatusCached(cmd)
+            return data
+
         self.lock.acquire()
         try:
             data = self.sendRcon(cmd, maxRetries=maxRetries, socketTimeout=socketTimeout)
@@ -194,6 +220,20 @@ class Rcon:
             return data
         else:
             return ''
+
+    #the next decorator will make the function a cached function, so it will use the cached result if not expired
+    @cache.cache('rconstatus', type='file', expire=statusCacheExpireTime)
+    def _requestStatusCached(self, cmd):
+        self.lock.acquire()
+        try:
+            data = self.sendRcon(cmd, maxRetries=5)
+        finally:
+            self.lock.release()
+        if data:
+            return data
+        else:
+            return ''
+
 
     def flush(self):
         pass
