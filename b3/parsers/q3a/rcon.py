@@ -23,10 +23,11 @@
 # call basis
 # 2009/12/11 - 1.3.6 - Courgette
 # * make errors warnings until maxRetries is not reached
-#
+# 2011/2/1 - 1.3.7 - Bravo17
+# * added variables for rcon & qserver send & reply strings
  
 __author__ = 'ThorN'
-__version__ = '1.3.6'
+__version__ = '1.3.7'
  
 import socket
 import sys
@@ -49,6 +50,9 @@ class Rcon:
     queue = None
     console = None
     socket_timeout = 0.80
+    rconsendstring = '\377\377\377\377rcon "%s" %s\n'
+    rconreplystring = '\377\377\377\377print\n'
+    qserversendstring = '\377\377\377\377%s\n'
 
     #caching options
     cache_opts = {
@@ -92,7 +96,7 @@ class Rcon:
                 self.console.warning('QSERVER: %s', str(errors))
             elif len(writeables) > 0:
                 try:
-                    writeables[0].send('\377\377\377\377%s\n' % data)
+                    writeables[0].send(self.qserversendstring % data)
                 except Exception, msg:
                     self.console.warning('QSERVER: ERROR sending: %s', msg)
                 else:
@@ -138,7 +142,7 @@ class Rcon:
                 self.console.warning('RCON: %s', str(errors))
             elif len(writeables) > 0:
                 try:
-                    writeables[0].send('\377\377\377\377rcon "%s" %s\n' % (self.password, data))
+                    writeables[0].send(self.rconsendstring % (self.password, data))
                 except Exception, msg:
                     self.console.warning('RCON: ERROR sending: %s', msg)
                 else:
@@ -253,7 +257,7 @@ class Rcon:
             else:
                 if d:
                     # remove rcon header
-                    data += d.replace('\377\377\377\377print\n', '')
+                    data += d.replace(self.rconreplystring, '')
                 elif len(data) > 0 and ord(data[-1:]) == 10:
                     break
 
@@ -275,7 +279,7 @@ class Rcon:
 
             if d:
                 # remove rcon header
-                data += d.replace('\377\377\377\377print\n', '')
+                data += d.replace(self.rconreplystring, '')
             
             readables, writeables, errors = select.select([sock], [], [sock], socketTimeout)
 
