@@ -27,7 +27,7 @@
 # 17.01.2011 - 1.0.3 - Freelander
 #   * Fixed local gamelog option
 # 19.01.2011 - 1.0.4 - Freelander
-#   * Increased sleep time second to prevent HTTP 403 errors, although
+#   * Increased sleep time by 0.5 second to prevent HTTP 403 errors, although
 #     requests are not sent less than timeout value
 #   * Timout value falls back to default 10 seconds if timeout value can't be
 #     parsed from http://logs.gameservers.com/timeout
@@ -35,15 +35,16 @@
 # 21.01.2011 - 1.0.5 - Freelander
 #   * Refactoring code for better timeout handling and get rid of redundant
 #     getRemotelog function
-# 31.01.2011 - 1.0.6 - Bravo17
+# 31.01.2011 - 1.0.6 - Freelander
 #   * Added range header to limit download size
-# 01.02.2011 - 1.0.7 - Freelander
+# 02.02.2011 - 1.0.7 - Freelander
 #   * Added error handling while closing remote file to prevent plugin crash
 #   * Check Python version to be minimum 2.6
 #   * Now checking last 3 lines instead of last single line
+#   * Increase range header if last line is not found in the remote log chunk
 #
 
-__author__  = 'Freelander, Just a baka, Bravo17'
+__author__  = 'Freelander'
 __version__ = '1.0.7'
 
 import b3, threading
@@ -125,13 +126,22 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         f.truncate(pos)
 
     def processData(self):
+        _lastLine = True
+
         while self.console.working:
             remotelog = ''
             response = ''
             remote_log_compressed = ''
 
+            #Specify range depending on if the last line
+            #is in the remote log chunk or not
+            if _lastLine:
+                bytes = 'bytes=-10000'
+            else:
+                bytes = 'bytes=-20000'
+
             headers =  { 'User-Agent' : user_agent,
-                         'Range' : 'bytes=-10000',
+                         'Range' : bytes,
                          'Accept-encoding' : 'gzip' }
 
             self.verbose('Sending request')
@@ -177,27 +187,32 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
                 #get the last line of our local log file
                 lastline = self.getLastline(self.locallog)
 
-                #we'll get the new lines i.e what is available after the last line
-                #of our local log file
-                checklog = remotelog.rpartition(lastline)
-                addition = checklog[2]
+                #check if last line is in the remote log chunk
+                if remotelog.find(lastline) != -1:
+                    #we'll get the new lines i.e what is available after the last line
+                    #of our local log file
+                    checklog = remotelog.rpartition(lastline)
+                    addition = checklog[2]
 
-                #append the additions to our log
-                if len(addition) > 0:
-                    output = open(self.locallog,'ab')
-                    output.write(addition)
-                    output.close()
+                    #append the additions to our log
+                    if len(addition) > 0:
+                        output = open(self.locallog,'ab')
+                        output.write(addition)
+                        output.close()
 
-                    self.verbose('Added: %s Byte(s) to log' % len(addition))
+                        self.verbose('Added: %s Byte(s) to log' % len(addition))
+                    else:
+                        self.verbose('No addition found, checking again')
+
+                    #check if our new last line is complete or broken
+                    #if it is not a complete line, remove it
+                    newlastline = self.getLastline(self.locallog)
+
+                    if not newlastline.endswith('\n'):
+                        self.removeLastline(self.locallog)
                 else:
-                    self.verbose('No addition found, checking again')
-
-                #check if our new last line is complete or broken
-                #if it is not a complete line, remove it
-                newlastline = self.getLastline(self.locallog)
-
-                if not newlastline.endswith('\n'):
-                    self.removeLastline(self.locallog)
+                    _lastLine = False
+                    self.debug('Can\'t find last line in the log chunk, checking again...')
 
             else:
                 #pasue the bot from parsing, because we don't
@@ -211,7 +226,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
                 output = open(self.locallog,'wb')
                 output.write(remotelog)
                 output.close()
-                            
+
                 #remove the last line
                 self.removeLastline(self.locallog)
 
@@ -231,7 +246,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             self.verbose('Given timeout value is %s seconds' % timeout)
             self.verbose('Total time spent to process the downloaded file is %s seconds' % timespent)
 
-            #Calculate sleep time for next request. Adding 0.1 sec to prevent HTTP Error 403 errors
+            #Calculate sleep time for next request. Adding 0.5 secs to prevent HTTP Error 403 errors
             wait = float((timeout - timespent) + 0.1)
 
             if wait <= 0:
