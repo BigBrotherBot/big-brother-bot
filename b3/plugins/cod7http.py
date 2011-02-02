@@ -27,7 +27,7 @@
 # 17.01.2011 - 1.0.3 - Freelander
 #   * Fixed local gamelog option
 # 19.01.2011 - 1.0.4 - Freelander
-#   * Increased sleep time by 0.5 second to prevent HTTP 403 errors, although
+#   * Increased sleep time second to prevent HTTP 403 errors, although
 #     requests are not sent less than timeout value
 #   * Timout value falls back to default 10 seconds if timeout value can't be
 #     parsed from http://logs.gameservers.com/timeout
@@ -231,7 +231,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             self.verbose('Given timeout value is %s seconds' % timeout)
             self.verbose('Total time spent to process the downloaded file is %s seconds' % timespent)
 
-            #Calculate sleep time for next request. Adding 0.5 secs to prevent HTTP Error 403 errors
+            #Calculate sleep time for next request. Adding 0.1 sec to prevent HTTP Error 403 errors
             wait = float((timeout - timespent) + 0.1)
 
             if wait <= 0:
