@@ -40,11 +40,15 @@
 #   * Added error handling while closing remote file to prevent plugin crash
 #   * Check Python version to be minimum 2.6
 #   * Now checking last 3 lines instead of last single line
-#   * Increase range header if last line is not found in the remote log chunk
+#   * Increase range header if last line is not found in the remote log chunk.
+# 03.02.2011 - 1.0.8 - Freelander
+#   * If still unable to find the last line after increasing range header,
+#     restart downloading process. That happens if logs are rotated or server restarted.
+#     In that case last line will never be found.
 #
 
 __author__  = 'Freelander'
-__version__ = '1.0.7'
+__version__ = '1.0.8'
 
 import b3, threading
 from b3 import functions
@@ -109,7 +113,11 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         fh = open(sfile, "r")
         linelist = fh.readlines()
         fh.close()
-        self.lastline = linelist[-3]+linelist[-2]+linelist[-1]
+        try:
+            self.lastline = linelist[-3]+linelist[-2]+linelist[-1]
+        except IndexError, error:
+            self.lastline = linelist[-1]
+            self.debug('Remote log doesn\'t have 3 lines, taking last single line')
 
         return self.lastline
 
@@ -124,8 +132,36 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         f = open(file, 'ab')
         f.truncate(pos)
 
+    def writeCompletelog(self, locallog, remotelog):
+        """\
+        Will re-write the local log when bot started for the first time
+        or if last line cannot be found in remote chunk
+        """
+
+        #pasue the bot from parsing, because we don't
+        #want to parse the log from the beginning
+        if self.console._paused is False:
+            self.console.pause()
+            self.debug('Pausing')
+
+        #create the local log file
+        output = open(locallog,'wb')
+        output.write(remotelog)
+        output.close()
+
+        #remove the last line
+        self.removeLastline(locallog)
+
+        self.info('Remote log downloaded successfully')
+
+        #we can now start parsing again
+        if self.console._paused:
+            self.console.unpause()
+            self.debug('Unpausing')
+
     def processData(self):
         _lastLine = True
+        n = 0
 
         while self.console.working:
             remotelog = ''
@@ -188,6 +224,9 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
 
                 #check if last line is in the remote log chunk
                 if remotelog.find(lastline) != -1:
+                    _lastLine = True
+                    n = 0
+
                     #we'll get the new lines i.e what is available after the last line
                     #of our local log file
                     checklog = remotelog.rpartition(lastline)
@@ -212,29 +251,17 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
                 else:
                     _lastLine = False
                     self.debug('Can\'t find last line in the log chunk, checking again...')
+                    n += 1
+
+                    #check once in a larger chunk and if we are still unable to find last line
+                    #in the remote chunk, restart the process
+                    if n == 2:
+                        self.debug('Logs rotated or unable to find last line in remote log, restarting process...')
+                        self.writeCompletelog(self.locallog, remotelog)
+                        _lastLine = True
 
             else:
-                #pasue the bot from parsing, because we don't
-                #want to parse the log from the beginning
-                if self.console._paused is False:
-                    self.console.pause()
-                    self.debug('Pausing')
-
-                #create the local log file
-                #self.console.pause()
-                output = open(self.locallog,'wb')
-                output.write(remotelog)
-                output.close()
-
-                #remove the last line
-                self.removeLastline(self.locallog)
-
-                self.info('Remote log downoaded successfully')
-
-                #we can now start parsing again
-                if self.console._paused:
-                    self.console.unpause()
-                    self.debug('Unpausing')
+                self.writeCompletelog(self.locallog, remotelog)
 
             #calculate how long it took to process
             timespent = time.time() - start
