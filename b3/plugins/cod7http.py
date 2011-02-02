@@ -37,8 +37,10 @@
 #     getRemotelog function
 # 31.01.2011 - 1.0.6 - Bravo17
 #   * Added range header to limit download size
-# 31.01.2011 - 1.0.7 - Freelander
+# 01.02.2011 - 1.0.7 - Freelander
 #   * Added error handling while closing remote file to prevent plugin crash
+#   * Check Python version to be minimum 2.6
+#   * Now checking last 3 lines instead of last single line
 #
 
 __author__  = 'Freelander, Just a baka, Bravo17'
@@ -54,6 +56,7 @@ import StringIO
 import gzip
 import time
 import socket
+import re, sys
 
 user_agent =  "B3 Cod7Http plugin/%s" % __version__
 
@@ -73,6 +76,12 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         thread1.start()
 
     def onStartup(self):
+        versionsearch = re.search("^((?P<mainversion>[0-9]).(?P<lowerversion>[0-9]+)?)", sys.version)
+        version = int(versionsearch.group(3))
+        if version < 6:
+            self.error('Python Version %s, this is not supported and may lead to hangs. Please update Python to 2.6' % versionsearch.group(1))
+            self.console.die()
+
         if self.console.config.has_option('server', 'local_game_log'):
             self.locallog = self.console.config.get('server', 'local_game_log')
         else:
@@ -100,11 +109,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         fh = open(sfile, "r")
         linelist = fh.readlines()
         fh.close()
-        self.lastline = linelist[-1]
-
-        #incase last line is empty
-        if self.lastline == '\n':
-            self.lastline = linelist[-2]
+        self.lastline = linelist[-3]+linelist[-2]+linelist[-1]
 
         return self.lastline
 
@@ -141,6 +146,8 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
                 #buffer/download remote log
                 if response != '':
                     remote_log_compressed = response.read()
+                    remotelogsize = round((len(remote_log_compressed)/float(1024)), 2)
+                    self.verbose('Downloaded: %s KB total' % remotelogsize)
 
                 try:
                     #close remote file
@@ -168,12 +175,12 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
 
             if os.path.exists(self.locallog) and os.path.getsize(self.locallog) > 0:
                 #get the last line of our local log file
-                lastline = self.getLastline(self.locallog).strip()
+                lastline = self.getLastline(self.locallog)
 
                 #we'll get the new lines i.e what is available after the last line
                 #of our local log file
                 checklog = remotelog.rpartition(lastline)
-                addition = checklog[2].lstrip()
+                addition = checklog[2]
 
                 #append the additions to our log
                 if len(addition) > 0:
@@ -200,7 +207,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
                     self.debug('Pausing')
 
                 #create the local log file
-                self.console.pause()
+                #self.console.pause()
                 output = open(self.locallog,'wb')
                 output.write(remotelog)
                 output.close()
@@ -225,7 +232,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             self.verbose('Total time spent to process the downloaded file is %s seconds' % timespent)
 
             #Calculate sleep time for next request. Adding 0.5 secs to prevent HTTP Error 403 errors
-            wait = float((timeout - timespent) + 0.5)
+            wait = float((timeout - timespent) + 0.1)
 
             if wait <= 0:
                 wait = 1
