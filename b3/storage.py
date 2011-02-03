@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   07/01/2011 - 1.8 - xlr8or
+#   Added queryFromFile to execute .sql files
 #   12/12/2010 - 1.7.3 - courgette
 #   fix setGroup for update query
 #   29/06/2010 - 1.7.2 - xlr8or
@@ -46,12 +48,13 @@
 #   Added data column to penalties table
 
 __author__  = 'ThorN'
-__version__ = '1.7.3'
+__version__ = '1.8'
 
-import re, time, traceback, sys, thread
+import re, time, traceback, sys, thread, os
 
 from b3.querybuilder import QueryBuilder
 import b3.clients
+import b3
 from b3 import functions
 
 #--------------------------------------------------------------------------------------------------
@@ -237,6 +240,29 @@ class DatabaseStorage(Storage):
         finally:
             self._lock.release()
         return c
+
+    def queryFromFile(self, file, silent=False):
+        """This method executes an external sql file on the current database"""
+        if self.db or self.connect():
+            orig_stderr = sys.stderr # save standard error output
+            if silent:
+                sys.stderr = open(os.devnull, 'w') # silence the mysql warnings for existing tables and such
+            sqlFile = b3.getAbsolutePath(file)
+            if os.path.exists(sqlFile):
+                f = open(sqlFile, 'r')
+                sql_text = f.read()
+                f.close()
+                sql_statements = sql_text.split(';')
+                for s in sql_statements:
+                    try:
+                        self.query(s, silent=True)
+                    except:
+                        pass
+            else:
+                raise Exception('sqlFile does not exist: %s' %sqlFile)
+            sys.stderr = orig_stderr # reset standard error output
+        return None
+
 
     def query(self, query, silent=False):
         # use existing connection or create a new one

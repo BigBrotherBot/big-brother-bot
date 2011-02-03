@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 06/01/2011 - 1.4.4 - Gammelbob
+# * additionally stores current svars and clients in database
 # 13/08/2010 - 1.4.3 - xlr8or
 # * Added running roundtime and maptime
 # 08/08/2010 - 1.4.2 - xlr8or
@@ -45,7 +47,7 @@
 # Converted to use new event handlers
 
 __author__    = 'ThorN'
-__version__ = '1.4.3'
+__version__ = '1.4.4'
 
 import b3, time, os, StringIO
 import b3.plugin
@@ -62,6 +64,8 @@ class StatusPlugin(b3.plugin.Plugin):
     _cronTab = None
     _ftpstatus = False
     _ftpinfo = None
+    _enableDBsvarSaving = False
+    _enableDBclientSaving = False
     
     def onLoadConfig(self):
         if self.config.get('settings','output_file')[0:6] == 'ftp://':
@@ -72,6 +76,22 @@ class StatusPlugin(b3.plugin.Plugin):
                 
         self._tkPlugin = self.console.getPlugin('tk')
         self._interval = self.config.getint('settings', 'interval')
+        try:
+            self._enableDBsvarSaving = self.config.getboolean('settings', 'enableDBsvarSaving')
+        except:
+            self._enableDBsvarSaving = False
+
+        try:
+            self._enableDBclientSaving = self.config.getboolean('settings', 'enableDBclientSaving')
+        except:
+            self._enableDBclientSaving = False
+
+        if self._enableDBsvarSaving:
+            sql = "CREATE TABLE IF NOT EXISTS `current_svars` (`id` int(11) NOT NULL auto_increment,`name` varchar(255) NOT NULL,`value` varchar(255) NOT NULL, PRIMARY KEY  (`id`), UNIQUE KEY `name` (`name`)) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;"
+            self.console.storage.query(sql)
+        if self._enableDBclientSaving:
+            sql = "CREATE TABLE IF NOT EXISTS `current_clients` (`id` INT(3) NOT NULL AUTO_INCREMENT,`Updated` VARCHAR( 255 ) NOT NULL ,`Name` VARCHAR( 255 ) NOT NULL ,`Level` VARCHAR( 255 ) NOT NULL ,`DBID` VARCHAR( 255 ) NOT NULL ,`CID` VARCHAR( 255 ) NOT NULL ,`Joined` VARCHAR( 255 ) NOT NULL ,`Connections` VARCHAR( 255 ) NOT NULL ,`State` VARCHAR( 255 ) NOT NULL ,`Score` VARCHAR( 255 ) NOT NULL ,`IP` VARCHAR( 255 ) NOT NULL ,`GUID` VARCHAR( 255 ) NOT NULL ,`PBID` VARCHAR( 255 ) NOT NULL ,`Team` VARCHAR( 255 ) NOT NULL ,`ColorName` VARCHAR( 255 ) NOT NULL, PRIMARY KEY (`id`)) ENGINE = MYISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;"
+            self.console.storage.query(sql)
 
         if self._cronTab:
             # remove existing crontab
@@ -147,12 +167,29 @@ class StatusPlugin(b3.plugin.Plugin):
             data.setAttribute("Name", str(k))
             data.setAttribute("Value", str(v))
             game.appendChild(data)
+            if self._enableDBsvarSaving:
+                sql = "INSERT INTO current_svars (name, value) VALUES ('%s','%s') ON DUPLICATE KEY UPDATE value = VALUES(value);" % (str(k),str(v))
+                try:
+                    self.console.storage.query(sql)
+                except:
+                    self.error('Error: inserting svars. sqlqry=%s' % (sql))
+        if self._enableDBsvarSaving:
+            sql = "INSERT INTO current_svars (name, value) VALUES ('lastupdate',UNIX_TIMESTAMP()) ON DUPLICATE KEY UPDATE value = VALUES(value);"
+            try:
+                self.console.storage.query(sql)
+            except:
+                self.error('Error: inserting svars. sqlqry=%s' % (sql))
         # --- End Game section        
 
         # --- Clients section
         b3clients = xml.createElement("Clients")
         b3clients.setAttribute("Total", str(len(clients)))
         b3status.appendChild(b3clients)
+
+        if self._enableDBclientSaving:
+            # empty table current_clients
+            sql = "TRUNCATE TABLE `current_clients`;"
+            self.console.storage.query(sql)
 
         for c in clients:
             if not c.name:
@@ -188,8 +225,25 @@ class StatusPlugin(b3.plugin.Plugin):
                 if scoreList and c.cid in scoreList:
                     client.setAttribute("Score", str(scoreList[c.cid]))
                 client.setAttribute("State", str(c.state))
-                b3clients.appendChild(client)
+                if self._enableDBclientSaving:
+                    qryBuilderKey = ""
+                    qryBuilderValue = ""
+                    # get our attributes
+                    for k, v in client.attributes.items():
+                        # build the qrystring
+                        qryBuilderKey = "%s%s," % (qryBuilderKey, k)
+                        qryBuilderValue = "%s'%s'," % (qryBuilderValue, v)
+                    # cut last ,
+                    qryBuilderKey = qryBuilderKey[:-1]
+                    qryBuilderValue = qryBuilderValue[:-1]
+                    # and insert
+                    try:
+                        sql = "INSERT INTO current_clients (%s) VALUES (%s); " % (qryBuilderKey,qryBuilderValue)
+                        self.console.storage.query(sql)
+                    except:
+                        self.error('Error: inserting clients. sqlqry=%s' % (sql))
 
+                b3clients.appendChild(client)
                 for k,v in c.data.iteritems():
                     data = xml.createElement("Data")
                     data.setAttribute("Name", str(k))
@@ -215,6 +269,7 @@ class StatusPlugin(b3.plugin.Plugin):
             except Exception, err:
                 self.debug('XML Failed: %r' % err)
                 pass
+
         # --- End Clients section
 
         self.writeXML(xml.toprettyxml(indent="        "))

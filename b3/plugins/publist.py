@@ -65,9 +65,10 @@
 # * "400 Bad Request" response prevents the plugin from sending further update hearbeats
 # * when receiving "403 Forbidden", do not disable the plugin but remove the crontab
 #   instead, so the bot can still send a shutdown fainting heartbeat http://goo.gl/4QHoq
-#
+# 3012/2010 - 1.9.1 - xlr8or
+# * change initial delay timer into one time cron tab
 
-__version__ = '1.9'
+__version__ = '1.9.1'
 __author__  = 'ThorN, Courgette'
 
 import sys
@@ -75,6 +76,7 @@ import thread, threading
 import urllib
 import urllib2
 import socket
+import time
 import b3, os, random
 import b3.events
 import b3.plugin
@@ -92,8 +94,7 @@ class PublistPlugin(b3.plugin.Plugin):
     requiresConfigFile = False
     
     _heartbeat_sent = False
-    _initial_heartbeat_timer = None
-    _initial_heartbeat_delay = 60.0*5 # 5 minutes
+    _initial_heartbeat_delay_minutes = 5
     
     def onLoadConfig(self):
         try:
@@ -103,8 +104,8 @@ class PublistPlugin(b3.plugin.Plugin):
             pass
         
         try:
-            self._initial_heartbeat_delay = self.config.getint('settings', 'delay')
-            self.debug('delay : %s' % self._initial_heartbeat_delay)
+            self._initial_heartbeat_delay_minutes = self.config.getint('settings', 'delay')
+            self.debug('delay : %s' % self._initial_heartbeat_delay_minutes)
         except:
             pass
             
@@ -137,9 +138,14 @@ class PublistPlugin(b3.plugin.Plugin):
         self.console.cron + self._cronTab
         
         # planning initial heartbeat
-        self.info('initial heartbeat will be sent to B3 master server in %s seconds' % self._initial_heartbeat_delay) 
-        self._initial_heartbeat_timer = threading.Timer(self._initial_heartbeat_delay, self.update, ())
-        self._initial_heartbeat_timer.start()
+        # v1.9.1: Changing the threaded timer to a one time crontab to enable quick shutdown of the bot.
+        _im = int(time.strftime('%M')) + self._initial_heartbeat_delay_minutes
+        if _im >= 60:
+            _im -= 60
+        self.info('initial heartbeat will be sent to B3 master server at %s minutes' % (str(_im).zfill(2)))
+        self._cronTab = b3.cron.OneTimeCronTab(self.update, 0, _im, '*', '*', '*', '*')
+        self.console.cron + self._cronTab
+       
       
     def onEvent(self, event):
         if event.type == b3.events.EVT_STOP and self._heartbeat_sent:

@@ -41,13 +41,22 @@
 #   BugFix: Empty field webfront Url is now allowed in config
 # 08-11-2010 - 2.2.9 - Mark Weirath
 #   Harden retrieval of webfront variables
+# 07-01-2011 - 2.3 - Mark Weirath
+#   XLRstats can now install default database tables when missing
+# 07-01-2011 - 2.3.1 - Mark Weirath
+#   Ability to disable plugin when not enough players are online
+# 07-01-2011 - 2.3.2 - Mark Weirath
+#   Update weapon tables for cod7.
+
+# This section is DoxuGen information. More information on how to comment your code
+# is available at http://www.stack.nl/~dimitri/doxygen/docblocks.html
+## @file
+# XLRstats Real Time playerstats plugin
 
 __author__  = 'Tim ter Laak / Mark Weirath'
-__version__ = '2.2.9'
+__version__ = '2.3.2'
 
 # Version = major.minor.patches
-
-# emacs-mode: -*- python-*-
 
 import string
 import time
@@ -100,6 +109,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     prematch_maxtime = 70
     announce = False
     keep_history = True
+    minPlayers = 3 # minimum number of players to collect stats
+    _currentNrPlayers = 0 # current number of players present
    
     # keep some private map data to detect prematches and restarts
     last_map = None
@@ -120,6 +131,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     penalties_table = 'penalties'
     history_monthly_table = 'xlr_history_monthly'
     history_weekly_table = 'xlr_history_weekly'
+    _defaultTableNames = True
 
 
     def startup(self):
@@ -143,7 +155,6 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 func = self.getCmd(cmd)
                 if func:
                     self._adminPlugin.registerCommand(self, cmd, level, func, alias)
-
 
         #define a shortcut to the storage.query function
         self.query = self.console.storage.query
@@ -173,7 +184,11 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         #PlayerMaps.createTable(ifNotExists=True)
         #--end OBS
 
-        # register the events we're interested in. 
+        # create default tables if not present
+        if self._defaultTableNames:
+            self.console.storage.queryFromFile("@b3/sql/xlrstats.sql", silent=True)
+
+        # register the events we're interested in.
         self.registerEvent(b3.events.EVT_CLIENT_JOIN)
         self.registerEvent(b3.events.EVT_CLIENT_KILL)
         self.registerEvent(b3.events.EVT_CLIENT_KILL_TEAM)
@@ -184,9 +199,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         
         # get the Client.id for the bot itself (guid: WORLD or Server(bfbc2))
         sclient = self.console.clients.getByGUID("WORLD")
-        if sclient == None:
+        if sclient is None:
             sclient = self.console.clients.getByGUID("Server")
-        if (sclient != None):
+        if (sclient is not None):
             self._world_clientid = sclient.id
         self.debug('Got client id for B3: %s; %s' %(self._world_clientid, sclient.name))
 
@@ -247,10 +262,18 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         self._cronTabKillBonus = b3.cron.PluginCronTab(self, self.calculateKillBonus, 0, '*/10')
         self.console.cron + self._cronTabKillBonus
 
+        #start the xlrstats controller
+        p = XlrstatscontrollerPlugin(self.console, self.minPlayers)
+        p.startup()
 
         #end startup sequence
 
     def onLoadConfig(self):
+        try:
+            self.minPlayers = self.config.getint('settings', 'minplayers')
+        except:
+            self.debug('Using default value (%s) for settings::minplayers', self.minPlayers)
+
         try:
             self.webfrontUrl = self.config.get('settings', 'webfronturl')    
         except:
@@ -349,64 +372,75 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         try:
             self.playerstats_table = self.config.get('tables', 'playerstats')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::playerstats', self.playerstats_table)
-            
-            
+
         try:
             self.weaponstats_table = self.config.get('tables', 'weaponstats')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::weaponstats', self.weaponstats_table)
             
         try:
             self.weaponusage_table = self.config.get('tables', 'weaponusage')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::weaponusage', self.weaponusage_table)
             
         try:
             self.bodyparts_table = self.config.get('tables', 'bodyparts')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::bodyparts', self.bodyparts_table)
            
         try:
             self.playerbody_table = self.config.get('tables', 'playerbody')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::playerbody', self.playerbody_table)
             
         try:
             self.opponents_table = self.config.get('tables', 'opponents')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::opponents', self.opponents_table)
             
         try:
             self.mapstats_table = self.config.get('tables', 'mapstats')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::mapstats', self.mapstats_table)
             
         try:
             self.playermaps_table = self.config.get('tables', 'playermaps')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::playermaps', self.playermaps_table)
                       
         try:
             self.actionstats_table = self.config.get('tables', 'actionstats')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::actionstats', self.actionstats_table)
 
         try:
             self.playeractions_table = self.config.get('tables', 'playeractions')
+            self._defaultTableNames = False
         except:
             self.debug('Using default value (%s) for tables::playeractions', self.playeractions_table)
 
         #history tables
         try:
             self.history_monthly_table = self.config.get('tables', 'history_monthly')    
+            self._defaultTableNames = False
         except:
             self.history_monthly_table = 'xlr_history_monthly'
             self.debug('Using default value (%s) for tables::history_monthly', self.history_monthly_table)
 
         try:
             self.history_weekly_table = self.config.get('tables', 'history_weekly')    
+            self._defaultTableNames = False
         except:
             self.history_weekly_table = 'xlr_history_weekly'
             self.debug('Using default value (%s) for tables::history_weekly', self.history_weekly_table)
@@ -1216,6 +1250,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         return
 
     def roundstart(self):
+        #disable k/d counting if minimum players are not met
+
         if ( self.last_map == None):
             self.last_map = self.console.game.mapName
             #self.last_roundtime = self.console.game._roundTimeStart
@@ -1446,12 +1482,14 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         self.verbose('Checking if we need to update tables for version 2.0.0')
         #todo: add mysql condition
         #v2.0.0 additions to the playerstats table:
-        self._updateTableColumn('assists', PlayerStats._table, 'MEDIUMINT( 8 ) NOT NULL DEFAULT "0" AFTER `skill`')
-        self._updateTableColumn('assistskill', PlayerStats._table, 'FLOAT NOT NULL DEFAULT "0" AFTER `assists`')
+        self._addTableColumn('assists', PlayerStats._table, 'MEDIUMINT( 8 ) NOT NULL DEFAULT "0" AFTER `skill`')
+        self._addTableColumn('assistskill', PlayerStats._table, 'FLOAT NOT NULL DEFAULT "0" AFTER `assists`')
+        #alterations to columns in existing tables:
+        self._updateTableColumns()
         return None
         #end of update check
 
-    def _updateTableColumn(self, c1, t1, specs):
+    def _addTableColumn(self, c1, t1, specs):
         try:
             self.query('SELECT `%s` FROM %s limit 1;' %(c1, t1), silent=True)
         except Exception, e:
@@ -1461,6 +1499,14 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 self.console.info('Created new column `%s` on %s' %(c1, t1))
             else:
                 self.console.error('Query failed - %s: %s' % (type(e), e))
+
+    def _updateTableColumns(self):
+        try:
+            #need to update the weapon-identifier columns in these tables for cod7. This game knows over 255 weapons/variations
+            self.query('ALTER TABLE  `%s` CHANGE  `id`  `id` SMALLINT( 5 ) UNSIGNED NOT NULL AUTO_INCREMENT;' %(WeaponStats._table))
+            self.query('ALTER TABLE  `%s` CHANGE  `weapon_id`  `weapon_id` SMALLINT( 5 ) UNSIGNED NOT NULL DEFAULT  "0";' %(WeaponUsage._table))
+        except:
+            pass
 
     def showTables(self, xlrstats=False):
         _tables = []
@@ -1520,7 +1566,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         cursor = self.query(q)
         r = cursor.getRow()
         max = r['max_skill']
-        if max == None:
+        if max is None:
             max = self.defaultskill
         diff = max - self.defaultskill
         if diff < 0:
@@ -1534,6 +1580,53 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         if self.kill_bonus != _oldkillbonus:
             self.debug('kill_bonus set to: %s' % self.kill_bonus)
             self.debug('assist_bonus set to: %s' % self.assist_bonus)
+
+
+class XlrstatscontrollerPlugin(b3.plugin.Plugin):
+    """This is a helper class/plugin that enables and disables the main xlrstats plugin"""
+
+    def __init__(self, console, minPlayers=3):
+        self.console = console
+        self.minPlayers = minPlayers
+        # empty message cache
+        self._messages = {}
+        self.registerEvent(b3.events.EVT_STOP)
+        self.registerEvent(b3.events.EVT_EXIT)
+
+    def startup(self):
+        self.console.debug('Starting SubPlugin: XlrstatsControllerPlugin')
+        #get a reference to the main Xlrstats plugin
+        self._xlrstatsPlugin = self.console.getPlugin('xlrstats')
+        # register the events we're interested in.
+        self.registerEvent(b3.events.EVT_CLIENT_JOIN)
+        self.registerEvent(b3.events.EVT_GAME_ROUND_START)
+
+    def onEvent(self, event):
+        if (event.type == b3.events.EVT_CLIENT_JOIN):
+            self.checkMinPlayers()
+        elif (event.type == b3.events.EVT_GAME_ROUND_START):
+            self.checkMinPlayers(_roundstart=True)
+
+    def checkMinPlayers(self, _roundstart=False):
+        """Checks if minimum amount of players are present
+        if minimum amount of players is reached will enable stats collecting
+        and if not it disables stats counting on next roundstart"""
+        self._currentNrPlayers = len(self.console.clients.getList())
+        self.debug('Checking number of players online. Minimum = %s, Current = %s' %(self.minPlayers, self._currentNrPlayers) )
+        if self._currentNrPlayers < self.minPlayers and self._xlrstatsPlugin.isEnabled() and _roundstart:
+            self.info('Disabling XLRstats: Not enough players online')
+            self.console.say('XLRstats Disabled: Not enough players online!')
+            self._xlrstatsPlugin.disable()
+        elif self._currentNrPlayers >= self.minPlayers and not self._xlrstatsPlugin.isEnabled():
+            self.info('Enabling XLRstats: Collecting Stats')
+            self.console.say('XLRstats Enabled: Now collecting stats!')
+            self._xlrstatsPlugin.enable()
+        else:
+            if self._xlrstatsPlugin.isEnabled():
+                _status = 'Enabled'
+            else:
+                _status = 'Disabled'
+            self.debug('Nothing to do at the moment. XLRstats is already %s' %(_status) )
 
 
 # This is an abstract class. Do not call directly.
