@@ -98,7 +98,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             try:
                 self.timeout = int(urllib2.urlopen(self._timeout_url).read())
             except (urllib2.HTTPError, urllib2.URLError, socket.timeout), error: 
-                self.timeout = _default_timeout
+                self.timeout = self._default_timeout
                 self.error('ERROR: %s' % error)
                 self.error('ERROR: Couldn\'t get timeout value. Using default %s seconds' % self.timeout)
 
@@ -117,7 +117,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             self.lastline = linelist[-3]+linelist[-2]+linelist[-1]
         except IndexError, error:
             self.lastline = linelist[-1]
-            self.debug('Remote log doesn\'t have 3 lines, taking last single line')
+            self.debug('Log file doesn\'t have 3 lines, taking last single line')
 
         return self.lastline
 
