@@ -27,15 +27,28 @@
 # 17.01.2011 - 1.0.3 - Freelander
 #   * Fixed local gamelog option
 # 19.01.2011 - 1.0.4 - Freelander
-#   * Increased sleep time by 0.5 second to prevent HTTP 403 errors, although
-#     requests are not sent less than timeout value
+#   * Increased sleep time to prevent HTTP 403 errors
 #   * Timout value falls back to default 10 seconds if timeout value can't be
 #     parsed from http://logs.gameservers.com/timeout
 #   * Added option for manually setting timout value in b3.xml
+# 21.01.2011 - 1.0.5 - Freelander
+#   * Refactoring code for better timeout handling and get rid of redundant
+#     getRemotelog function
+# 31.01.2011 - 1.0.6 - Freelander
+#   * Added range header to limit download size
+# 02.02.2011 - 1.0.7 - Freelander
+#   * Added error handling while closing remote file to prevent plugin crash
+#   * Check Python version to be minimum 2.6
+#   * Now checking last 3 lines instead of last single line
+#   * Increase range header if last line is not found in the remote log chunk.
+# 03.02.2011 - 1.0.8 - Freelander
+#   * If still unable to find the last line after increasing range header,
+#     restart downloading process. That happens if logs are rotated or server restarted.
+#     In that case last line will never be found.
 #
 
 __author__  = 'Freelander'
-__version__ = '1.0.4'
+__version__ = '1.0.8'
 
 import b3, threading
 from b3 import functions
@@ -47,6 +60,7 @@ import StringIO
 import gzip
 import time
 import socket
+import re, sys
 
 user_agent =  "B3 Cod7Http plugin/%s" % __version__
 
@@ -66,6 +80,12 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         thread1.start()
 
     def onStartup(self):
+        versionsearch = re.search("^((?P<mainversion>[0-9]).(?P<lowerversion>[0-9]+)?)", sys.version)
+        version = int(versionsearch.group(3))
+        if version < 6:
+            self.error('Python Version %s, this is not supported and may lead to hangs. Please update Python to 2.6' % versionsearch.group(1))
+            self.console.die()
+
         if self.console.config.has_option('server', 'local_game_log'):
             self.locallog = self.console.config.get('server', 'local_game_log')
         else:
@@ -78,7 +98,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             try:
                 self.timeout = int(urllib2.urlopen(self._timeout_url).read())
             except (urllib2.HTTPError, urllib2.URLError, socket.timeout), error: 
-                self.timeout = _default_timeout
+                self.timeout = self._default_timeout
                 self.error('ERROR: %s' % error)
                 self.error('ERROR: Couldn\'t get timeout value. Using default %s seconds' % self.timeout)
 
@@ -89,62 +109,15 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             self.error('Your game log url doesn\'t seem to be valid. Please check your config file')
             self.console.die()
 
-    def getRemotelog(self):
-        start = time.time()
-        headers =  { 'User-Agent'  : user_agent  }
-
-        #request remote log
-        request = urllib2.Request(self._url, None, headers)
-
-        #tell the server we like compressed data, and get the log as compressed data
-        request.add_header('Accept-encoding', 'gzip')
-
-        try:
-            response = urllib2.urlopen(request)
-
-            #compressed remote log
-            remote_log_compressed = response.read()
-
-            #get http headers in case needed
-            headers = response.info()
-
-            #size of the compressed log we just downloaded
-            #can be used for information
-            remotelogsize = len(remote_log_compressed)/1024
-            self.verbose('Downloaded: %s KB total' % remotelogsize)
-        except (urllib2.HTTPError, urllib2.URLError), error: 
-            remotelog = ''
-            remote_log_compressed = ''
-            self.error('HTTP ERROR: %s' % error)
-        except socket.timeout:
-            remotelog = ''
-            remote_log_compressed = ''
-            self.error('TIMEOUT ERROR: Socket Timed out!')
-
-        #decompress remote log and return for use
-        if len(remote_log_compressed) > 0:
-            try:
-                compressedstream = StringIO.StringIO(remote_log_compressed)
-                gzipper = gzip.GzipFile(fileobj=compressedstream)
-                remotelog = gzipper.read()
-            except IOError, error:
-                remotelog = ''
-                self.error('IOERROR: %s' % error)
-
-        #calculate how long it took from sending request until completing the download
-        timespent = time.time() - start
-
-        return (remotelog, timespent)
-
     def getLastline(self, sfile):
         fh = open(sfile, "r")
         linelist = fh.readlines()
         fh.close()
-        self.lastline = linelist[-1]
-
-        #incase last line is empty
-        if self.lastline == '\n':
-            self.lastline = linelist[-2]
+        try:
+            self.lastline = linelist[-3]+linelist[-2]+linelist[-1]
+        except IndexError, error:
+            self.lastline = linelist[-1]
+            self.debug('Log file doesn\'t have 3 lines, taking last single line')
 
         return self.lastline
 
@@ -159,72 +132,148 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         f = open(file, 'ab')
         f.truncate(pos)
 
-    def processData(self):
-        while self.console.working:
-            log = self.getRemotelog()
-            if not log:
-                return False
+    def writeCompletelog(self, locallog, remotelog):
+        """\
+        Will re-write the local log when bot started for the first time
+        or if last line cannot be found in remote chunk
+        """
 
-            remotelog, timespent = log
+        #pasue the bot from parsing, because we don't
+        #want to parse the log from the beginning
+        if self.console._paused is False:
+            self.console.pause()
+            self.debug('Pausing')
+
+        #create the local log file
+        output = open(locallog,'wb')
+        output.write(remotelog)
+        output.close()
+
+        #remove the last line
+        self.removeLastline(locallog)
+
+        self.info('Remote log downloaded successfully')
+
+        #we can now start parsing again
+        if self.console._paused:
+            self.console.unpause()
+            self.debug('Unpausing')
+
+    def processData(self):
+        _lastLine = True
+        n = 0
+
+        while self.console.working:
+            remotelog = ''
+            response = ''
+            remote_log_compressed = ''
+
+            #Specify range depending on if the last line
+            #is in the remote log chunk or not
+            if _lastLine:
+                bytes = 'bytes=-10000'
+            else:
+                bytes = 'bytes=-20000'
+
+            headers =  { 'User-Agent' : user_agent,
+                         'Range' : bytes,
+                         'Accept-encoding' : 'gzip' }
+
+            self.verbose('Sending request')
+
+            request = urllib2.Request(self._url, None, headers)
+
+            #get remote log url response and headers
+            try:
+                response = urllib2.urlopen(request)
+                headers = response.info()
+
+                #buffer/download remote log
+                if response != '':
+                    remote_log_compressed = response.read()
+                    remotelogsize = round((len(remote_log_compressed)/float(1024)), 2)
+                    self.verbose('Downloaded: %s KB total' % remotelogsize)
+
+                try:
+                    #close remote file
+                    response.close()
+                except AttributeError, error:
+                    self.error('ERROR: %s' % error)
+
+            except (urllib2.HTTPError, urllib2.URLError), error:
+                self.error('HTTP ERROR: %s' % error)
+            except socket.timeout:
+                self.error('TIMEOUT ERROR: Socket Timed out!')
+
+            #start keeping the time
+            start = time.time()
+
+            #decompress remote log and return for use
+            if len(remote_log_compressed) > 0:
+                try:
+                    compressedstream = StringIO.StringIO(remote_log_compressed)
+                    gzipper = gzip.GzipFile(fileobj=compressedstream)
+                    remotelog = gzipper.read()
+                except IOError, error:
+                    remotelog = ''
+                    self.error('IOERROR: %s' % error)
 
             if os.path.exists(self.locallog) and os.path.getsize(self.locallog) > 0:
                 #get the last line of our local log file
-                lastline = self.getLastline(self.locallog).strip()
+                lastline = self.getLastline(self.locallog)
 
-                #we'll get the new lines i.e what is available after the last line
-                #of our local log file
-                checklog = remotelog.rpartition(lastline)
-                addition = checklog[2].lstrip()
+                #check if last line is in the remote log chunk
+                if remotelog.find(lastline) != -1:
+                    _lastLine = True
+                    n = 0
 
-                #append the additions to our log
-                if len(addition) > 0:
-                    output = open(self.locallog,'ab')
-                    output.write(addition)
-                    output.close()
+                    #we'll get the new lines i.e what is available after the last line
+                    #of our local log file
+                    checklog = remotelog.rpartition(lastline)
+                    addition = checklog[2]
 
-                    self.verbose('Added: %s Byte(s) to log' % len(addition))
+                    #append the additions to our log
+                    if len(addition) > 0:
+                        output = open(self.locallog,'ab')
+                        output.write(addition)
+                        output.close()
+
+                        self.verbose('Added: %s Byte(s) to log' % len(addition))
+                    else:
+                        self.verbose('No addition found, checking again')
+
+                    #check if our new last line is complete or broken
+                    #if it is not a complete line, remove it
+                    newlastline = self.getLastline(self.locallog)
+
+                    if not newlastline.endswith('\n'):
+                        self.removeLastline(self.locallog)
                 else:
-                    self.verbose('No addition found, checking again')
+                    _lastLine = False
+                    self.debug('Can\'t find last line in the log chunk, checking again...')
+                    n += 1
 
-                #check if our new last line is complete or broken
-                #if it is not a complete line, remove it
-                newlastline = self.getLastline(self.locallog)
-
-                if not newlastline.endswith('\n'):
-                    self.removeLastline(self.locallog)
+                    #check once in a larger chunk and if we are still unable to find last line
+                    #in the remote chunk, restart the process
+                    if n == 2:
+                        self.debug('Logs rotated or unable to find last line in remote log, restarting process...')
+                        self.writeCompletelog(self.locallog, remotelog)
+                        _lastLine = True
 
             else:
-                #pasue the bot from parsing, because we don't
-                #want to parse the log from the beginning
-                if self.console._paused is False:
-                    self.console.pause()
-                    self.debug('Pausing')
+                self.writeCompletelog(self.locallog, remotelog)
 
-                #create the local log file
-                self.console.pause()
-                output = open(self.locallog,'wb')
-                output.write(remotelog)
-                output.close()
-                            
-                #remove the last line
-                self.removeLastline(self.locallog)
-
-                self.info('Remote log downoaded successfully')
-
-                #we can now start parsing again
-                if self.console._paused:
-                    self.console.unpause()
-                    self.debug('Unpausing')
+            #calculate how long it took to process
+            timespent = time.time() - start
 
             #calculate time to wait until next request. 
             timeout = float(self.timeout)
 
             self.verbose('Given timeout value is %s seconds' % timeout)
-            self.verbose('Total time spent to download the file is %s seconds' % timespent)
+            self.verbose('Total time spent to process the downloaded file is %s seconds' % timespent)
 
-            #Calculate sleep time for next request. Adding 0.5 secs to prevent 
-            #too much HTTP Error 403 errors
-            wait = float((timeout - timespent) + 0.5)
+            #Calculate sleep time for next request. Adding 0.1 secs to prevent HTTP Error 403 errors
+            wait = float((timeout - timespent) + 0.1)
 
             if wait <= 0:
                 wait = 1
@@ -235,6 +284,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
 
         self.verbose('B3 is down, stopping Cod7Http Plugin')
 
+
 if __name__ == '__main__':
-    p = Cod7httpPlugin()
+    p = Cod7HttpPlugin()
     p.processData()

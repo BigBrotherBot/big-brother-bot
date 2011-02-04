@@ -22,10 +22,13 @@
 # 22.01.2011 - 1.0.1 - Freelander
 #   * Do not try to authenticate [3arc]democlient
 #   * Inherits from cod5 parser now to handle actions
+# 01.02.2011 - 1.0.2 - Freelander
+#   * Force glogsync to 1 on every round start as it may be lost after a 
+#     server restart/crash 
 #
 
 __author__  = 'Freelander, Courgette'
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 import re, threading
 import b3.parsers.cod7_rcon as rcon
@@ -129,6 +132,30 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
             self.debug('%s connected, waiting for Authentication...' %name)
             self.debug('Our Authentication queue: %s' % self._counter)
 
+    def OnInitgame(self, action, data, match=None):
+        options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)
+
+        for o in options:
+            if o[0] == 'mapname':
+                self.game.mapName = o[1]
+            elif o[0] == 'g_gametype':
+                self.game.gameType = o[1]
+            elif o[0] == 'fs_game':
+                self.game.modName = o[1]
+            else:
+                setattr(self.game, o[0], o[1])
+
+        self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
+        self.game.startRound()
+
+        # Force g_logsync again as it may lost during a server crash/restart
+        self.debug('Forcing server cvar g_logsync to %s' % self._logSync)
+        self.write('g_logsync %s' %self._logSync)
+
+        #Sync clients 30 sec after InitGame
+        t = threading.Timer(30, self.clients.sync)
+        t.start()
+        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
 
 ###################################################################
 # ALTER THE WAY parser.py work for game logs starting with http://
