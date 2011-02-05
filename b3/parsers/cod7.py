@@ -25,12 +25,14 @@
 # 01.02.2011 - 1.0.2 - Freelander
 #   * Force glogsync to 1 on every round start as it may be lost after a 
 #     server restart/crash 
-#
+# 01.02.2011 - 1.0.3 - Just a baka
+#   * Pre-Match Logic
 
-__author__  = 'Freelander, Courgette'
+__author__  = 'Freelander, Courgette, Just a baka'
 __version__ = '1.0.2'
 
-import re, threading
+import re
+import threading
 import b3.parsers.cod7_rcon as rcon
 import b3.parsers.cod5
 
@@ -39,6 +41,10 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
     IpsOnly = False
     _guidLength = 6
     OutputClass = rcon.Cod7Rcon
+
+    _preMatch = 1 # 0 means no Pre-Match, >0 means Pre-Match
+    _igBlockFound = False
+    _sgFound = False
 
     """\
     Next actions need translation to the EVT_CLIENT_ACTION (Treyarch has a different approach on actions)
@@ -52,20 +58,12 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
     #num score ping guid                             name            lastmsg address               qport rate
     #--- ----- ---- -------------------------------- --------------- ------- --------------------- ----- -----
     #  4     0   23 blablablabfa218d4be29e7168c637be ^1XLR^78^9or[^7^7               0 135.94.165.296:63564  25313 25000
-    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[a-z0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9-]+)\s+(?P<rate>[0-9]+)$', re.I)
+    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9-]+)\s+(?P<rate>[0-9]+)$', re.I)
+    _regPlayerWithDemoclient = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+|unknown):?(?P<port>[0-9-]+)?\s+(?P<qport>[0-9-]+)\s+(?P<rate>[0-9]+)$', re.I)
 
     def startup(self):
         # add the world client
         client = self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
-
-        if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
-            # test if PunkBuster is active
-            result = self.write('PB_SV_Ver')
-            if result != '':
-                self.info('PunkBuster Active: %s' %result) 
-                self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
-            else:
-                self.warning('PunkBuster test FAILED, Check your game server setup and B3 config! Disabling PB support!')
 
         # get map from the status rcon command
         map = self.getMap()
@@ -73,12 +71,115 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
             self.game.mapName = map
             self.info('map is: %s'%self.game.mapName)
 
+        # Pre-Match Logic part 1
+        self._regPlayer, self._regPlayerWithDemoclient = self._regPlayerWithDemoclient, self._regPlayer
+        playerList = self.getPlayerList()
+        self._regPlayer, self._regPlayerWithDemoclient = self._regPlayerWithDemoclient, self._regPlayer
+        
+        if len(playerList) >= 6:
+            self.verbose('PREMATCH OFF: PlayerCount >=6: not a Pre-Match')
+            self._preMatch = 0
+        elif '0' in playerList and playerList['0']['guid'] == '0':
+            self.verbose('PREMATCH OFF: Got a democlient presence: not a Pre-Match')
+            self._preMatch = 0
+        else:
+            self.verbose('PREMATCH ON: PlayerCount < 6, got no democlient presence. Defaulting to a pre-match.')
+            self._preMatch = 1
+
         # Force g_logsync
         self.debug('Forcing server cvar g_logsync to %s' % self._logSync)
         self.write('g_logsync %s' %self._logSync)
 
         self.setVersionExceptions()
         self.debug('Parser started.')
+
+    def parseLine(self, line):
+        m = self.getLineParts(line)
+        if not m:
+            return False
+
+        match, action, data, client, target = m
+
+        func = 'On%s' % string.capwords(action).replace(' ','')
+
+        # Timer (in seconds) that always reflects the current event's timestamp
+        t = re.match(self._lineTime, line)
+        if t:
+            self.logTimer = int(t.group('minutes')) * 60 + int(t.group('seconds'))
+
+        # Pre-Match Logic part 2
+        # Ignore Pre-Match K/D-events
+        if self._preMatch and (func == 'OnD' or func == 'OnK' or func == 'OnAd' or func == 'OnVd'):
+            self.verbose('PRE-MATCH: Ignoring kill/damage.')
+            return False
+
+        # Prevent OnInitgame from being called twice due to server-side initGame doubling
+        elif func == 'OnInitgame':
+            if not self._igBlockFound:
+                self._igBlockFound = True
+                self.verbose('Found 1st InitGame from block')
+            elif self.logTimer != 0:
+                self.verbose('Found 2nd InitGame from block, ignoring')
+                return False
+
+        # ExitLevel means there will be Pre-Match right after the mapload
+        elif func == 'OnExitlevel':
+            self._preMatch = 1
+            self.debug('PRE-MATCH ON: found ExitLevel')
+            self._igBlockFound = False
+            self._sgFound = False
+
+        # If we track ShutdownGame events, we could detect sudden server restarts and re-matches
+        elif func == 'OnShutdowngame':
+            self._sgFound = True
+            self._igBlockFound = False
+
+        # InitGame after ShutdownGame:
+        if self._preMatch and self._igBlockFound and self._sgFound and self.logTimer != 0:
+            if self._preMatch < 2:
+                self._preMatch += 1
+            else:
+                self.preMatch = 0
+                self.debug('PRE-MATCH OFF: found 2nd InitGame block')
+            self._igBlockFound = False
+            self._sgFound = False
+
+        # Initgame with @ 0:00
+        elif self._igBlockFound and self.logTimer == 0:
+            self._preMatch = 2
+            self.debug('PRE-MATCH ON: Server crash/restart detected.')
+            self._igBlockFound = False
+            self._sgFound = False
+            # Payload
+            self.write('setadmindvar g_logsync %s' % self._logSync)
+
+        #self.debug("-==== FUNC!!: " + func)
+
+        if hasattr(self, func):
+            func = getattr(self, func)
+            event = func(action, data, match)
+
+            if event:
+                self.queueEvent(event)
+        elif action in self._eventMap:
+            self.queueEvent(b3.events.Event(
+                    self._eventMap[action],
+                    data,
+                    client,
+                    target
+                ))
+
+        # Addition for cod5 actionMapping
+        elif action in self._actionMap:
+            self.translateAction(action, data, match)
+
+        else:
+            self.queueEvent(b3.events.Event(
+                    b3.events.EVT_UNKNOWN,
+                    str(action) + ': ' + str(data),
+                    client,
+                    target
+                ))
 
     # join
     def OnJ(self, action, data, match=None):
@@ -88,6 +189,7 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
 
         if codguid == '0' and cid == '0' and name == '[3arc]democlient':
             self.verbose('Authentication not required for [3arc]democlient. Aborting Join.')
+            self._preMatch = 0
             return None
         
         if len(codguid) < self._guidLength:
