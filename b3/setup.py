@@ -44,8 +44,9 @@ __version__ = '0.5.2'
 
 import platform, urllib2, shutil, os, sys, time, zipfile
 import functions
-from distutils import version
+from lib.elementtree.ElementTree import ElementTree
 from lib.elementtree.SimpleXMLWriter import XMLWriter
+from distutils import version
 from urlparse import urlsplit
 from cStringIO import StringIO
 
@@ -55,6 +56,7 @@ class Setup:
     _pver = sys.version.split()[0]
     _indentation = "    "
     _config = "b3/conf/b3.xml"
+    _template = ""
     _buffer = ''
     _equaLength = 15
     _PBSupportedParsers = ['cod','cod2','cod4','cod5'] #bfbc2 and moh need to be added later when parsers correctly implemented pb. 
@@ -68,7 +70,7 @@ class Setup:
         print self._config
         self.introduction()
         self.clearscreen()
-        self._outputFile = self.raw_default("Location and name of the configfile", self._config)
+        self._outputFile = self.raw_default("Location and name of the new configfile", self._config)
         #Creating Backup
         self.backupFile(self._outputFile)
         self.runSetup()
@@ -99,18 +101,25 @@ class Setup:
         # B3 settings
         self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
         xml.start("settings", name="b3")
-        self.add_set("parser", "cod", "Define your game: cod/cod2/cod4/cod5/cod6/iourt41/etpro/wop/smg/bfbc2/moh")
-        self.add_set("database", "mysql://b3:password@localhost/b3", "Your database info: [mysql]://[db-user]:[db-password]@[db-server[:port]]/[db-name]")
-
+        self.add_set("parser", "", "Define your game: cod/cod2/cod4/cod5/cod6/iourt41/etpro/wop/smg/bfbc2/moh")
+        # set a template xml file to read existing settings from
+        _result = False
+        while not _result:
+            _result = self.load_template()
+            if _result:
+                self.add_buffer('Configuration file loaded successfully\n')
+                break
+        # getting database info, test it and set up the tables
+        self.add_set("database", self.read_element('b3', 'database', 'mysql://b3:password@localhost/b3'), "Your database info: [mysql]://[db-user]:[db-password]@[db-server[:port]]/[db-name]")
         self.add_buffer('Testing and Setting Up Database...\n')
         self.executeSql('@b3/sql/b3.sql')
 
-        self.add_set("bot_name", "b3", "Name of the bot")
-        self.add_set("bot_prefix", "^0(^2b3^0)^7:", "Ingame messages are prefixed with this code, you can use colorcodes")
-        self.add_set("time_format", "%I:%M%p %Z %m/%d/%y")
-        self.add_set("time_zone", "CST", "The timezone your bot is in")
-        self.add_set("log_level", "9", "How much detail in the logfile: 9 = verbose, 10 = debug, 21 = bot, 22 = console")
-        self.add_set("logfile", "b3.log", "Name of the logfile the bot will generate")
+        self.add_set("bot_name", self.read_element('b3', 'bot_name', 'b3'), "Name of the bot")
+        self.add_set("bot_prefix", self.read_element('b3', 'bot_prefix', '^0(^2b3^0)^7:'), "Ingame messages are prefixed with this code, you can use colorcodes")
+        self.add_set("time_format", self.read_element('b3', 'time_format', '%I:%M%p %Z %m/%d/%y'))
+        self.add_set("time_zone", self.read_element('b3', 'time_zone', 'CST'), "The timezone your bot is in")
+        self.add_set("log_level", self.read_element('b3', 'log_level', '9'), "How much detail in the logfile: 9 = verbose, 10 = debug, 21 = bot, 22 = console")
+        self.add_set("logfile", self.read_element('b3', 'logfile', 'b3.log'), "Name of the logfile the bot will generate")
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
@@ -119,7 +128,7 @@ class Setup:
         if self._set_parser == 'bfbc2':
             self.add_buffer('\n--BFBC2 SPECIFIC SETTINGS---------------------------------------\n')
             xml.start("settings", name="bfbc2")
-            self.add_set("max_say_line_length", "100", "how long do you want the lines to be restricted to in the chat zone. (maximum length is 100)")
+            self.add_set("max_say_line_length", self.read_element('bfbc2', 'max_say_line_length', '100'), "how long do you want the lines to be restricted to in the chat zone. (maximum length is 100)")
             xml.data("\n\t")
             xml.end()
             xml.data("\n\t")
@@ -128,7 +137,7 @@ class Setup:
         if self._set_parser == 'moh':
             self.add_buffer('\n--MOH SPECIFIC SETTINGS-----------------------------------------\n')
             xml.start("settings", name="moh")
-            self.add_set("max_say_line_length", "100", "how long do you want the lines to be restricted to in the chat zone. (maximum length is 100)")
+            self.add_set("max_say_line_length", self.read_element('moh', 'max_say_line_length', '100'), "how long do you want the lines to be restricted to in the chat zone. (maximum length is 100)")
             xml.data("\n\t")
             xml.end()
             xml.data("\n\t")
@@ -138,24 +147,27 @@ class Setup:
         xml.start("settings", name="server")
         # Frostbite specific
         if self._set_parser in self._frostBite:
-            self.add_set("public_ip", "11.22.33.44", "The IP address of your gameserver")
-            self.add_set("port", "", "The port people use to connect to your gameserver")
-            self.add_set("rcon_ip", "11.22.33.44", "The IP that the bot uses to send RCON commands. Usually the same as the public_ip")
-            self.add_set("rcon_port", "", "The port that the bot uses to send RCON commands. NOT the same as the normal port.")
-            self.add_set("rcon_password", "", "The RCON password of your gameserver.")
-            self.add_set("timeout", "3", "RCON timeout", silent=True)
+            self.add_set("public_ip", self.read_element('server', 'public_ip', ''), "The IP address of your gameserver")
+            self.add_set("port", self.read_element('server', 'port', ''), "The port people use to connect to your gameserver")
+            self.add_set("rcon_ip", self.read_element('server', 'rcon_ip', ''), "The IP that the bot uses to send RCON commands. Usually the same as the public_ip")
+            self.add_set("rcon_port", self.read_element('server', 'rcon_port', ''), "The port that the bot uses to send RCON commands. NOT the same as the normal port.")
+            self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''), "The RCON password of your gameserver.")
+            self.add_set("timeout", self.read_element('server', 'timeout', '3'), "RCON timeout", silent=True)
         # Q3Aa specific
         else:   
-            self.add_set("rcon_password", "", "The RCON pass of your gameserver")
-            self.add_set("port", "27960", "The port the server is running on")
+            self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''), "The RCON pass of your gameserver")
+            self.add_set("port", self.read_element('server', 'port', ''), "The port the server is running on")
             # determine if ftp functionality is available
             if version.LooseVersion(self._pver) < version.LooseVersion('2.6.0'):
                 self.add_buffer('\n  NOTE for game_log:\n  You are running python '+self._pver+', ftp functionality\n  is not available prior to python version 2.6.0\n')
             else:
                 self.add_buffer('\n  NOTE for game_log:\n  You are running python '+self._pver+', the gamelog may also be\n  ftp-ed or http-ed in.\nDefine game_log like this:\n  ftp://[ftp-user]:[ftp-password]@[ftp-server]/path/to/games_mp.log\nOr for web access (you can use htaccess to secure):\n http://serverhost/path/to/games_mp.log\n')
-            self.add_set("game_log", "games_mp.log", "The gameserver generates a logfile, put the path and name here")
-            self.add_set("public_ip", "127.0.0.1", "The public IP your gameserver is residing on")
-            self.add_set("rcon_ip", "127.0.0.1", "The IP the bot can use to send RCON commands to (127.0.0.1 when on the same box)")
+            self.add_set("game_log", self.read_element('server', 'game_log', ''), "The gameserver generates a logfile, put the path and name here")
+            self.add_set("public_ip", self.read_element('server', 'public_ip', ''), "The public IP your gameserver is residing on")
+            self.add_set("rcon_ip", self.read_element('server', 'rcon_ip', ''), "The IP the bot can use to send RCON commands to (127.0.0.1 when on the same box)")
+            # configure default performances parameters
+            self.add_set("delay", self.read_element('server', 'delay', '0.33'), "Delay between each log reading. Set a higher value to consume less disk ressources or bandwidth if you remotely connect (ftp or http remote log access)", silent=True)
+            self.add_set("lines_per_second", self.read_element('server', 'lines_per_second', '50'), "Number of lines to process per second. Set a lower value to consume less CPU ressources", silent=True)
 
         # determine if PunkBuster is supported
         if self._set_parser in self._PBSupportedParsers:
@@ -163,9 +175,6 @@ class Setup:
         else:
             self.add_set("punkbuster", "off", "Is the gameserver running PunkBuster Anticheat: on/off", silent=True)
 
-        # configure default performances parameters
-        self.add_set("delay", "0.33", "Delay between each log reading. Set a higher value to consume less disk ressources or bandwidth if you remotely connect (ftp or http remote log access)", silent=True)
-        self.add_set("lines_per_second", "50", "Number of lines to process per second. Set a lower value to consume less CPU ressources", silent=True)
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
@@ -177,9 +186,9 @@ class Setup:
         xml.comment("Autodoc will generate a user documentation for all B3 commands") 
         xml.data("\t\t")
         xml.comment("by default, a html documentation is created in your conf folder")
-        self.add_set("type", "html", "html, htmltable or xml")
-        self.add_set("maxlevel", "100", "if you want to exclude commands reserved for higher levels")
-        self.add_set("destination", "test_doc.html", "Destination can be a file or a ftp url")
+        self.add_set("type", self.read_element('autodoc', 'type', 'html'), "html, htmltable or xml")
+        self.add_set("maxlevel", self.read_element('autodoc', 'maxlevel', '100'), "if you want to exclude commands reserved for higher levels")
+        self.add_set("destination", self.read_element('autodoc', 'destination', ''), "Destination can be a file or a ftp url")
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
@@ -249,20 +258,54 @@ class Setup:
         xml.close(configuration)
         self.add_buffer('\n--FINISHED CONFIGURATION----------------------------------------\n')
 
+    def load_template(self):
+        """ Load an existing config file or use the packaged examples"""
+        if self._set_parser == 'bfbc2':
+            self._template = 'conf/b3.bfbc2_example.xml'
+        elif self._set_parser == 'moh':
+            self._template = 'conf/b3.moh_example.xml'
+        else:
+            self._template = 'conf/b3.distribution.xml'
+        self._template = self.raw_default("Load values from an existing configfile", self._template)
+        self._template = self.getAbsolutePath(self._template)
+        self.tree = ElementTree()
+        try:
+            self.tree.parse(self._template)
+            return True
+        except Exception, msg:
+            self.add_buffer('Could not parse xml file: %s\n' % msg)
+            return False
+
+    def read_element(self, _set, _value, _default=''):
+        """ Returns a config value in _set with attribute _value """
+        l = list(self.tree.findall('settings'))
+        for s in l:
+            if s.attrib['name'] == _set:
+                i = list(s.findall('set'))
+                for v in i:
+                    if v.attrib['name'] == _value:
+                        return v.text
+        return _default
+                
+
     def add_explanation(self, etext):
+        """ Add an explanation to the question asked by the setup procedure """
         _prechar = "> "
         print _prechar+etext
 
     def add_buffer(self, addition, autowrite=True):
+        """ Add a line to the output buffer """
         self._buffer += addition
         if autowrite:
             self.writebuffer()
 
     def writebuffer(self):
+        """ Clear the screen and write the output buffer to the screen """
         self.clearscreen()
         print self._buffer
 
     def equaLize(self, _string):
+        """ Make the setup questions same length for prettier formatting """
         return (self._equaLength-len(str(_string)))*" "
 
     def add_set(self, sname, sdflt, explanation="", silent=False):
@@ -308,6 +351,7 @@ class Setup:
         return True
 
     def raw_default(self, prompt, dflt=None):
+        """ Prompt user for input and don't accept an empty value"""
         if dflt: 
             prompt = "%s [%s]" % (prompt, dflt)
         else:
@@ -328,6 +372,7 @@ class Setup:
             os.system('clear')
 
     def backupFile(self, _file):
+        """ Create a backup of an existing config file """
         print "\n--BACKUP/CREATE CONFIGFILE--------------------------------------\n"
         print "    Trying to backup the original "+_file+"..."
         if not os.path.exists(_file):
@@ -382,6 +427,7 @@ class Setup:
         self.testExit(_question='[Enter] to continue to generate the configfile...')
 
     def testExit(self, _key='', _question='[Enter] to continue, \'abort\' to abort Setup: ', _exitmessage='Setup aborted, run python b3_run.py -s to restart the procedure.'):
+        """ Test the input for an exit code, give the user an option to abort setup """
         if _key == '':
             _key = raw_input('\n'+_question)
         if _key != 'abort':
