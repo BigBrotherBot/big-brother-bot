@@ -25,9 +25,11 @@
 # * make errors warnings until maxRetries is not reached
 # 2011/2/1 - 1.3.7 - Bravo17
 # * added variables for rcon & qserver send & reply strings
+# 2011/04/02 - 1.3.8 - Just a baka
+# * Quit command should never be retried
  
 __author__ = 'ThorN'
-__version__ = '1.3.7'
+__version__ = '1.3.8'
  
 import socket
 import sys
@@ -153,7 +155,7 @@ class Rcon:
                     except Exception, msg:
                         self.console.warning('RCON: ERROR reading: %s', msg)
 
-                if if re.match(r'^quit|map(_rotate)?.*', data):
+                if re.match(r'^quit|map(_rotate)?.*', data):
                     # do not retry quits and map changes since they prevent the server from responding
                     self.console.verbose2('RCON: no retry for %s', data)
                     return ''
