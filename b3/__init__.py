@@ -50,7 +50,7 @@ import ConfigParser
 
 versionOs = os.name
 versionId = 'v%s [%s]' % (__version__, versionOs)
-version = '^8www.bigbrotherbot.net ^0(^8b3^0) ^9%s ^9(^3Daniel^9)^3' % versionId
+version = '^8www.bigbrotherbot.net ^0(^8b3^0) ^9%s ^9[^3Daniel^9]^3' % versionId
 
 
 console = None
