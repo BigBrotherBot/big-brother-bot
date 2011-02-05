@@ -77,6 +77,7 @@ class Setup:
         raise SystemExit('Restart B3 or reconfigure B3 using option: -s')
 
     def runSetup(self):
+        """ The main function that handles the setup steps """
         global xml
         xml = XMLWriter(self._outputFile)
 
