@@ -29,7 +29,7 @@
 #   * Pre-Match Logic
 
 __author__  = 'Freelander, Courgette, Just a baka'
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 import re
 import threading
@@ -42,6 +42,7 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
     _guidLength = 6
     OutputClass = rcon.Cod7Rcon
 
+    _usePreMatchLogic = True
     _preMatch = 1 # 0 means no Pre-Match, >0 means Pre-Match
     _igBlockFound = False
     _sgFound = False
@@ -71,20 +72,26 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
             self.game.mapName = map
             self.info('map is: %s'%self.game.mapName)
 
+        if self.config.has_option('server', 'use_prematch_logic'):
+            self._usePreMatchLogic = self.config.getboolean('server', 'use_prematch_logic')
+
         # Pre-Match Logic part 1
-        self._regPlayer, self._regPlayerWithDemoclient = self._regPlayerWithDemoclient, self._regPlayer
-        playerList = self.getPlayerList()
-        self._regPlayer, self._regPlayerWithDemoclient = self._regPlayerWithDemoclient, self._regPlayer
+        if self._usePreMatchLogic:
+            self._regPlayer, self._regPlayerWithDemoclient = self._regPlayerWithDemoclient, self._regPlayer
+            playerList = self.getPlayerList()
+            self._regPlayer, self._regPlayerWithDemoclient = self._regPlayerWithDemoclient, self._regPlayer
         
-        if len(playerList) >= 6:
-            self.verbose('PREMATCH OFF: PlayerCount >=6: not a Pre-Match')
-            self._preMatch = 0
-        elif '0' in playerList and playerList['0']['guid'] == '0':
-            self.verbose('PREMATCH OFF: Got a democlient presence: not a Pre-Match')
-            self._preMatch = 0
+            if len(playerList) >= 6:
+                self.verbose('PREMATCH OFF: PlayerCount >=6: not a Pre-Match')
+                self._preMatch = 0
+            elif '0' in playerList and playerList['0']['guid'] == '0':
+                self.verbose('PREMATCH OFF: Got a democlient presence: not a Pre-Match')
+                self._preMatch = 0
+            else:
+                self.verbose('PREMATCH ON: PlayerCount < 6, got no democlient presence. Defaulting to a pre-match.')
+                self._preMatch = 1
         else:
-            self.verbose('PREMATCH ON: PlayerCount < 6, got no democlient presence. Defaulting to a pre-match.')
-            self._preMatch = 1
+            self._preMatch = 0
 
         # Force g_logsync
         self.debug('Forcing server cvar g_logsync to %s' % self._logSync)
@@ -123,7 +130,7 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
                 return False
 
         # ExitLevel means there will be Pre-Match right after the mapload
-        elif func == 'OnExitlevel':
+        elif self._usePreMatchLogic and func == 'OnExitlevel':
             self._preMatch = 1
             self.debug('PRE-MATCH ON: found ExitLevel')
             self._igBlockFound = False
@@ -146,8 +153,11 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
 
         # Initgame with @ 0:00
         elif self._igBlockFound and self.logTimer == 0:
-            self._preMatch = 2
-            self.debug('PRE-MATCH ON: Server crash/restart detected.')
+            if self._usePreMatchLogic:
+                self._preMatch = 2
+                self.debug('PRE-MATCH ON: Server crash/restart detected.')
+            else:
+                self.debug('Server crash/restart detected.')
             self._igBlockFound = False
             self._sgFound = False
             # Payload
@@ -234,30 +244,6 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
             self.debug('%s connected, waiting for Authentication...' %name)
             self.debug('Our Authentication queue: %s' % self._counter)
 
-    def OnInitgame(self, action, data, match=None):
-        options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)
-
-        for o in options:
-            if o[0] == 'mapname':
-                self.game.mapName = o[1]
-            elif o[0] == 'g_gametype':
-                self.game.gameType = o[1]
-            elif o[0] == 'fs_game':
-                self.game.modName = o[1]
-            else:
-                setattr(self.game, o[0], o[1])
-
-        self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
-        self.game.startRound()
-
-        # Force g_logsync again as it may lost during a server crash/restart
-        self.debug('Forcing server cvar g_logsync to %s' % self._logSync)
-        self.write('g_logsync %s' %self._logSync)
-
-        #Sync clients 30 sec after InitGame
-        t = threading.Timer(30, self.clients.sync)
-        t.start()
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
 
 ###################################################################
 # ALTER THE WAY parser.py work for game logs starting with http://
