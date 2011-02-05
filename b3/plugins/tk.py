@@ -333,7 +333,7 @@ class TkPlugin(b3.plugin.Plugin):
             self._adminPlugin.warnClient(attacker, self._issue_warning, None, False)
         elif points > 100 and attacker.maxLevel < 2 and a.lastWarnTime + 180 < self.console.time():
             a.lastWarnTime = self.console.time()
-            warning = self._adminPlugin.warnClient(attacker, '^3Do not attack teammates, ^1Attacked: ^7%s ^7(^3%s^7)' % (victim.exactName, points), None, False)
+            warning = self._adminPlugin.warnClient(attacker, '^3Do not attack teammates, ^1Attacked: ^7%s ^7[^3%s^7]' % (victim.exactName, points), None, False)
             a.warn(v.cid, warning)
             victim.message('^7type ^3!fp ^7 to forgive ^3%s' % (attacker.exactName))
 
@@ -488,7 +488,7 @@ class TkPlugin(b3.plugin.Plugin):
                 attacker = self.console.clients.getByCID(cid)
                 points = self.forgive(cid, client, True)
                 if attacker and points:
-                    forgave.append('%s^7 (^3%s^7)' % (attacker.name, points))
+                    forgave.append('%s^7 [^3%s^7]' % (attacker.name, points))
                     if self._private_messages:
                         attacker.message(self.getMessage('forgive_many', { 'vname' : client.exactName, 'attackers' : attacker.exactName }))
                 
@@ -520,7 +520,7 @@ class TkPlugin(b3.plugin.Plugin):
                 if v.isGrudged(cid):
                     myattackers.append('^7[^2%s^7] ^1%s ^7(^1%s^7)' % (attacker.cid, attacker.name, points))
                 else:
-                    myattackers.append('^7[^2%s^7] %s ^7(^3%s^7)' % (attacker.cid, attacker.name, points))
+                    myattackers.append('^7[^2%s^7] %s ^7[^3%s^7]' % (attacker.cid, attacker.name, points))
 
             if len(myattackers):
                 client.message(self.getMessage('players', ', '.join(myattackers)))
@@ -564,9 +564,9 @@ class TkPlugin(b3.plugin.Plugin):
                         continue
                     
                     if tkinfo.isGrudged(attacker.cid):
-                        myattackers.append('^1%s ^7(^3%s^7)' % (attacker.name, points))
+                        myattackers.append('^1%s ^7[^3%s^7]' % (attacker.name, points))
                     else:
-                        myattackers.append('%s ^7(^3%s^7)' % (attacker.name, points))
+                        myattackers.append('%s ^7[^3%s^7]' % (attacker.name, points))
                     
                 if len(myattackers):
                     msg += ', ^3Attacked By^7: %s' % ', '.join(myattackers)

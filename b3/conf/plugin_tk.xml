@@ -9,10 +9,10 @@
 	</settings>
 	<settings name="messages">
 		<set name="ban">^7team damage over limit</set>
-		<set name="forgive">^7$vname^7 has forgiven $aname (^3$points^7)</set>
-		<set name="grudged">^7$vname^7 has a ^1grudge ^7against $aname (^3$points^7)</set>
+		<set name="forgive">^7$vname^7 has forgiven $aname [^3$points^7]</set>
+		<set name="grudged">^7$vname^7 has a ^1grudge ^7against $aname [^3$points^7]</set>
 		<set name="forgive_many">^7$vname^7 has forgiven $attackers</set>
-		<set name="forgive_warning">^1ALERT^7: $name^7 auto-kick if not forgiven. Type ^3!forgive $cid ^7to forgive. (^3damage: $points^7)</set>
+		<set name="forgive_warning">^1ALERT^7: $name^7 auto-kick if not forgiven. Type ^3!forgive $cid ^7to forgive. [^3damage: $points^7]</set>
 		<set name="no_forgive">^7no one to forgive</set>
 		<set name="players">^7Forgive who? %s</set>
 		<set name="forgive_info">^7$name^7 has ^3$points^7 TK points</set>

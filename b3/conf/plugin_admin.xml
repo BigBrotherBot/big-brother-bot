@@ -99,7 +99,7 @@
 		<set name="player_id">^7[^2%s^7] %s^7</set>
 		<set name="seen">^7%s ^7was last seen on %s</set>
 		<set name="help_no_command">^7Command not found %s</set>
-		<set name="lookup_found">^7[^2@%s^7] %s^7 (^3%s^7)</set>
+		<set name="lookup_found">^7[^2@%s^7] %s^7 [^3%s^7]</set>
 		<set name="kick_self">^7%s ^7Can't kick yourself newb!</set>
 		<set name="groups_welcome">^7You are now a %s</set>
 		<set name="warn_denied">%s^7, %s^7 owns you, can't warn</set>
@@ -122,8 +122,8 @@
 		<set name="admins">^7Admins online: %s</set>
 		<set name="time">At the sound of the beep it will be ^3%s^7...(beeeep)</set>
 		<set name="unknown_command">^7Unrecognized command %s</set>
-		<set name="leveltest">^7%s ^7(^3@%s^7) is a ^3%s ^7[^2%s^7] since %s</set>
-		<set name="leveltest_nogroups">^7%s ^7(^3@%s^7) is not in any groups</set>
+		<set name="leveltest">^7%s ^7[^3@%s^7] is a ^3%s ^7[^2%s^7] since %s</set>
+		<set name="leveltest_nogroups">^7%s ^7[^3@%s^7] is not in any groups</set>
 		<set name="aliases">^7%s^7 aliases: %s</set>
     <set name="cmd_plugin_disabled">^7cannot execute command. Plugin disabled</set>
 	</settings>
@@ -144,7 +144,7 @@
 		computed from the duration of each of the active warnings but will never exceed max_duration -->
 		<set name="max_duration">1d</set>
 		<!-- message : template for building warning messages -->
-		<set name="message">^1WARNING^7 (^3$warnings^7): $reason</set>
+		<set name="message">^1WARNING^7 [^3$warnings^7]: $reason</set>
 		<!-- warn_delay : an given player cannot only be given one warning every warn_delay seconds -->
 		<set name="warn_delay">15</set>
 		<!-- reason : template for building warning message when a player exceeds the tolerated number of warnings -->
@@ -153,7 +153,7 @@
 		<set name="duration_divider">30</set>
 		<!-- alert : when a player receives his last warning tolerated warning, this message is broadcasted so an admin can decide to clear it and
 		this teaches other players too -->
-		<set name="alert">^1ALERT^7: $name^7 auto-kick from warnings if not cleared (^3$warnings^7) $reason</set>
+		<set name="alert">^1ALERT^7: $name^7 auto-kick from warnings if not cleared [^3$warnings^7] $reason</set>
     <!-- warn_command_abusers will make the bot warn players who try to use command they don't have suffisent rights to use or warn
     players who try invalid commands  -->
     <set name="warn_command_abusers">yes</set>
