@@ -153,8 +153,8 @@ class Rcon:
                     except Exception, msg:
                         self.console.warning('RCON: ERROR reading: %s', msg)
 
-                if re.match(r'^map(_rotate)?.*', data):
-                    # do not retry map changes since they prevent the server from responding
+                if if re.match(r'^quit|map(_rotate)?.*', data):
+                    # do not retry quits and map changes since they prevent the server from responding
                     self.console.verbose2('RCON: no retry for %s', data)
                     return ''
                     
