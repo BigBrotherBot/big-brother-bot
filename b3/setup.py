@@ -45,15 +45,19 @@
 __author__  = 'xlr8or'
 __version__ = '0.6'
 
-import platform, urllib2, shutil, os, sys, time, zipfile
+import platform
+import urllib2
+import shutil
+import os
+import sys
+import time
+import zipfile
 import functions
 from lib.elementtree.ElementTree import ElementTree
 from lib.elementtree.SimpleXMLWriter import XMLWriter
 from distutils import version
 from urlparse import urlsplit
 from cStringIO import StringIO
-
-
 
 class Setup:
     _pver = sys.version.split()[0]
