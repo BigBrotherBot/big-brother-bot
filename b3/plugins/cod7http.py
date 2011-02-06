@@ -110,7 +110,6 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         else:
             #get timeout value set by gameservers.com
             try:
-                #self.timeout = int(urllib2.urlopen(self._timeout_url).read())
                 
                 req = urllib2.Request(self._timeout_url)
                 req.headers['User-Agent'] = user_agent
