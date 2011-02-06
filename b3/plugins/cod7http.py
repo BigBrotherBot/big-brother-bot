@@ -48,13 +48,12 @@
 # 05.02.2011 1.0.9 - Bravo17
 #   * Added log_append config variable to control whether local log is deleted on startup
 #   * Changed lastlines functionality to being stored in memory rather than getting from local log 
-#       using Jastabaka's lazy curser
+#       using Just a baka's lazy cursor
 #   * Make sure that we have something worth decompressing before we attempt to do so
 #   * Added user agent to timeout request
-
 #
 
-__author__  = 'Freelander, Bravo17, Jastabaka'
+__author__  = 'Freelander, Bravo17, Just a baka'
 __version__ = '1.0.9'
 
 import b3, threading
@@ -149,7 +148,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         while remotelog[-4:-2] == '\r\n':
             remotelog = remotelog[:-2]
         
-        # use lazy curser (c) Jastabaka
+        # use lazy cursor (c) Just a baka
         self.lastlines = remotelog[-1000:]
 
         #create or open the local log file
