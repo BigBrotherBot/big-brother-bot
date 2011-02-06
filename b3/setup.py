@@ -529,7 +529,7 @@ class Setup:
                 raise Exception('sqlFile does not exist: %s' %sqlFile)
             self.db.close()
         else:
-            self.add_buffer('Connection to the database failed. Check the documentation how to add the database tables manually.\n')
+            self.add_buffer('Connection to the database failed. Check the documentation how to add the database tables from %s manually.\n' %sqlFile)
             self.testExit(_question='Do you still want to continue? [Enter] to continue, \'abort\' to abort Setup: ')
         return None
 
