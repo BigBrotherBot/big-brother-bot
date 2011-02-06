@@ -45,10 +45,17 @@
 #   * If still unable to find the last line after increasing range header,
 #     restart downloading process. That happens if logs are rotated or server restarted.
 #     In that case last line will never be found.
+# 05.02.2011 1.0.9 - Bravo17
+#   * Added log_append config variable to control whether local log is deleted on startup
+#   * Changed lastlines functionality to being stored in memory rather than getting from local log 
+#       using Jastabaka's lazy curser
+#   * Make sure that we have something worth decompressing before we attempt to do so
+#   * Added user agent to timeout request
+
 #
 
-__author__  = 'Freelander'
-__version__ = '1.0.8'
+__author__  = 'Freelander, Bravo17, Jastabaka'
+__version__ = '1.0.9'
 
 import b3, threading
 from b3 import functions
@@ -70,6 +77,8 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
     #Timout url set by gameservers.com
     _timeout_url = 'http://logs.gameservers.com/timeout'
     _default_timeout = 10
+    _logAppend = True
+    lastlines = ''
 
     def onLoadConfig(self):
         pass
@@ -91,12 +100,24 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         else:
             self.locallog = os.path.normpath(os.path.expanduser('games_mp.log'))
 
+        if self.console.config.has_option('server', 'log_append'):
+            self._logAppend =self.console.config.getboolean('server', 'log_append')
+        else:
+            self._logAppend = False
+
         if self.console.config.has_option('server', 'log_timeout'):
             self.timeout = self.console.config.get('server', 'log_timeout')
         else:
             #get timeout value set by gameservers.com
             try:
-                self.timeout = int(urllib2.urlopen(self._timeout_url).read())
+                
+                req = urllib2.Request(self._timeout_url)
+                req.headers['User-Agent'] = user_agent
+                f = urllib2.urlopen(req)
+                self.timeout = int(f.readlines()[0])
+                f.close()
+                self.debug('Using timeout value of %s seconds' % self.timeout)
+                
             except (urllib2.HTTPError, urllib2.URLError, socket.timeout), error: 
                 self.timeout = self._default_timeout
                 self.error('ERROR: %s' % error)
@@ -109,48 +130,37 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             self.error('Your game log url doesn\'t seem to be valid. Please check your config file')
             self.console.die()
 
-    def getLastline(self, sfile):
-        fh = open(sfile, "r")
-        linelist = fh.readlines()
-        fh.close()
-        try:
-            self.lastline = linelist[-3]+linelist[-2]+linelist[-1]
-        except IndexError, error:
-            self.lastline = linelist[-1]
-            self.debug('Log file doesn\'t have 3 lines, taking last single line')
-
-        return self.lastline
-
-    def removeLastline(self, file):
-        f = open(file, 'rb')
-        pos = next = 0
-
-        for line in f:
-            pos = next # position of beginning of this line
-            next += len(line) # compute position of beginning of next line
-
-        f = open(file, 'ab')
-        f.truncate(pos)
-
     def writeCompletelog(self, locallog, remotelog):
         """\
-        Will re-write the local log when bot started for the first time
+        Will restart writing the local log when bot started for the first time
         or if last line cannot be found in remote chunk
         """
 
-        #pasue the bot from parsing, because we don't
+        #pause the bot from parsing, because we don't
         #want to parse the log from the beginning
         if self.console._paused is False:
             self.console.pause()
             self.debug('Pausing')
+        # Remove last line if not complete
+        i = remotelog.rfind ('\r\n')
+        remotelog = remotelog[:i + 2]
+        # remove any blank lines
+        while remotelog[-4:-2] == '\r\n':
+            remotelog = remotelog[:-2]
+        
+        # use lazy curser (c) Jastabaka
+        self.lastlines = remotelog[-1000:]
 
-        #create the local log file
-        output = open(locallog,'wb')
-        output.write(remotelog)
+        #create or open the local log file
+        if self._logAppend:
+            output = open(locallog, 'ab')
+        else:
+            output = open(locallog, 'wb')
+
+        output.write('\r\n')
+        output.write('B3 has restarted writing the log file\r\n')
+        output.write('\r\n')
         output.close()
-
-        #remove the last line
-        self.removeLastline(locallog)
 
         self.info('Remote log downloaded successfully')
 
@@ -161,6 +171,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
 
     def processData(self):
         _lastLine = True
+        _firstRead = True
         n = 0
 
         while self.console.working:
@@ -173,7 +184,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             if _lastLine:
                 bytes = 'bytes=-10000'
             else:
-                bytes = 'bytes=-20000'
+                bytes = 'bytes=-100000'
 
             headers =  { 'User-Agent' : user_agent,
                          'Range' : bytes,
@@ -209,7 +220,9 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             start = time.time()
 
             #decompress remote log and return for use
-            if len(remote_log_compressed) > 0:
+            # First, make sure that there is domething worth decompressing
+            # In case the server has just done a restart
+            if len(remote_log_compressed) > 500:
                 try:
                     compressedstream = StringIO.StringIO(remote_log_compressed)
                     gzipper = gzip.GzipFile(fileobj=compressedstream)
@@ -218,50 +231,55 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
                     remotelog = ''
                     self.error('IOERROR: %s' % error)
 
-            if os.path.exists(self.locallog) and os.path.getsize(self.locallog) > 0:
-                #get the last line of our local log file
-                lastline = self.getLastline(self.locallog)
+                if os.path.exists(self.locallog) and os.path.getsize(self.locallog) > 0 and not _firstRead:
 
-                #check if last line is in the remote log chunk
-                if remotelog.find(lastline) != -1:
-                    _lastLine = True
-                    n = 0
-
-                    #we'll get the new lines i.e what is available after the last line
-                    #of our local log file
-                    checklog = remotelog.rpartition(lastline)
-                    addition = checklog[2]
-
-                    #append the additions to our log
-                    if len(addition) > 0:
-                        output = open(self.locallog,'ab')
-                        output.write(addition)
-                        output.close()
-
-                        self.verbose('Added: %s Byte(s) to log' % len(addition))
-                    else:
-                        self.verbose('No addition found, checking again')
-
-                    #check if our new last line is complete or broken
-                    #if it is not a complete line, remove it
-                    newlastline = self.getLastline(self.locallog)
-
-                    if not newlastline.endswith('\n'):
-                        self.removeLastline(self.locallog)
-                else:
-                    _lastLine = False
-                    self.debug('Can\'t find last line in the log chunk, checking again...')
-                    n += 1
-
-                    #check once in a larger chunk and if we are still unable to find last line
-                    #in the remote chunk, restart the process
-                    if n == 2:
-                        self.debug('Logs rotated or unable to find last line in remote log, restarting process...')
-                        self.writeCompletelog(self.locallog, remotelog)
+                    #check if last line is in the remote log chunk
+                    if remotelog.find(self.lastlines) != -1:
                         _lastLine = True
+                        n = 0
 
-            else:
-                self.writeCompletelog(self.locallog, remotelog)
+                        #we'll get the new lines i.e what is available after the last line
+                        #of our local log file
+                        checklog = remotelog.rpartition(self.lastlines)
+                        newlog = checklog[2]
+                        # Remove any broken last line
+                        i = newlog.rfind ('\r\n')
+                        newlog = newlog[:i + 2]
+                        # Remove any blank lines
+                        while newlog[-4:-2] == '\r\n':
+                            newlog = newlog[:-2]
+                            
+                        # Remove any blank lines from end
+                        
+                        #append the additions to our log if there is something and update lazy cursor
+                        if newlog > 0:
+                            output = open(self.locallog,'ab')
+                            output.write(newlog)
+                            output.close()
+                            self.lastlines = remotelog[-1000:]                        
+                            self.verbose('Added: %s, chars(s) to log' % len(newlog))
+
+                        else:
+                            self.verbose('No addition found, checking again')
+
+
+                    else:
+                        _lastLine = False
+                        self.debug('Can\'t find last line in the log chunk, checking again...')
+                        n += 1
+
+                        #check once in a larger chunk and if we are still unable to find last line
+                        #in the remote chunk, restart the process
+                        if n == 2:
+                            self.debug('Logs rotated or unable to find last line in remote log, restarting process...')
+                            self.writeCompletelog(self.locallog, remotelog)
+                            _lastLine = True
+                            n = 0
+
+                else:
+                    self.debug('Writing first log read')
+                    self.writeCompletelog(self.locallog, remotelog)
+                    _firstRead = False
 
             #calculate how long it took to process
             timespent = time.time() - start
