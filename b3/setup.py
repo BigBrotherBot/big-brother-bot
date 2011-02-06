@@ -232,7 +232,10 @@ class Setup:
         xml.comment("The next plugins are external, 3rd party plugins and should reside in the external_dir. Example:")
         xml.data("\t\t")
         xml.comment("plugin config=\"@b3/extplugins/conf/newplugin.xml\" name=\"newplugin\"")
-        self.add_plugin("xlrstats", self._set_external_dir+"/conf/xlrstats.xml", default="no")
+        result = self.add_plugin("xlrstats", self._set_external_dir+"/conf/xlrstats.xml", default="no")
+        if result:
+            self.executeSql('@b3/sql/xlrstats.sql')
+
         #self.add_plugin("registered", self._set_external_dir+"/conf/plugin_registered.xml", "Trying to download Registered", "http://www.bigbrotherbot.net/forums/downloads/?sa=downfile&id=22")
         #self.add_plugin("countryfilter", self._set_external_dir+"/conf/countryfilter.xml", "Trying to download Countryfilter", "http://github.com/xlr8or/b3-plugin-countryfilter/zipball/master")
 
@@ -291,7 +294,7 @@ class Setup:
             _q = "Install "+sname+" plugin? (yes/no)"
             _test = self.raw_default(_q, default)
             if _test != "yes":
-                return None
+                return False
 
         if downlURL:
             self.download(downlURL)
@@ -302,6 +305,7 @@ class Setup:
         xml.data("\n\t\t")
         xml.element("plugin", name=sname, config=_config)
         self.add_buffer("plugin: "+str(sname)+", config: "+str(_config)+"\n")
+        return True
 
     def raw_default(self, prompt, dflt=None):
         if dflt: 

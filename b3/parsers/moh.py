@@ -50,6 +50,8 @@
 #   but basic commands seem to work.
 # 2010-11-21 - 1.0 - Courgette
 # * add rotateMap and changeMap to fix !maprotate and !map#
+# 2011-02-01 - 1.1 - xlr8or
+# * adapted to server R9 version 615937 - fixed onPlayerSpawn and vars.noCrosshairs errors
 #
 __author__  = 'Bakes, Courgette'
 __version__ = '1.0'
@@ -86,7 +88,7 @@ class MohParser(AbstractParser):
         'playerLimit', # vars.playerLimit [nr of players] Set desired maximum number of players 
         'bannerUrl', # vars.bannerUrl [url] Set banner url 
         'serverDescription', # vars.serverDescription [description] Set server description 
-        'noCrosshair', # vars.noCrosshair [enabled] Set if crosshair for all weapons is hidden 
+        'noCrosshairs', # vars.noCrosshairs [enabled] Set if crosshairs for all weapons is hidden
         'noSpotting', # vars.noSpotting [enabled] Set if spotted targets are disabled in the 3d-world 
         'teamKillCountForKick', # vars.teamKillCountForKick [count] Set number of teamkills allowed during a round 
         'teamKillValueForKick', # vars.teamKillValueForKick [count] Set max kill-value allowed for a player before he/she is kicked 
@@ -347,6 +349,24 @@ class MohParser(AbstractParser):
             return b3.TEAM_UNKNOWN
         
         
+    def OnPlayerSpawn(self, action, data):
+        """
+        Request:  player.onSpawn <soldier name: string> <kit: string> <weapon: string> <specializations: 3 x string>
+        """
+        if len(data) < 2:
+            return None
+
+        spawner = self.getClient(data[0])
+        kit = data[1]
+        weapon = data[2]
+        spec1 = data[3]
+        spec2 = data[4]
+        spec3 = data[5]
+
+        event = b3.events.EVT_CLIENT_SPAWN
+        return b3.events.Event(event, (kit, weapon, spec1, spec2, spec3), spawner)
+
+
     def OnPlayerTeamchange(self, action, data):
         """
         player.onTeamChange <soldier name: player name> <team: Team ID>
