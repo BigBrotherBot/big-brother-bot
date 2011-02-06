@@ -32,6 +32,7 @@ __author__  = 'Freelander, Courgette, Just a baka'
 __version__ = '1.0.3'
 
 import re
+import string
 import threading
 import b3.parsers.cod7_rcon as rcon
 import b3.parsers.cod5
