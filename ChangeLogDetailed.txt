@@ -1,3 +1,171 @@
+2011-02-06  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: setup: minor update
+
+2011-02-06  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: setup: minor update on executeSql()
+
+2011-02-06  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: setup: able to load values from backed up config when
+	creating a new one.
+
+2011-02-05  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: minor update
+
+2011-02-05  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: setup: You can now load an existing config file.
+	Prevents us from having to type each setting when we already have a
+	good config. This does not work for the 'messages' division and the
+	'plugins'. They fall back to the defaults.
+
+2011-02-02  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/wop15.py: wop15 parser: bugfix
+
+2011-02-02  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/sql/b3.sql: updated b3 sql TYPE->ENGINE
+
+2011-02-01  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/moh.py: moh parser: adapted to server R9 version 615937
+	- fixed onPlayerSpawn and vars.noCrosshairs errors
+
+2011-01-31  xlr8or <xlr8or@xlr8or.com>
+
+	* README.md: minor readme update
+
+2011-01-31  xlr8or <xlr8or@xlr8or.com>
+
+	* README.md: Updated links
+
+2011-01-31  xlr8or <xlr8or@xlr8or.com>
+
+	* README.md: Adding new README.md
+
+2011-01-31  xlr8or <xlr8or@xlr8or.com>
+
+	* README: Renamed README for proper git markdown
+
+2011-01-31  xlr8or <xlr8or@xlr8or.com>
+
+	* : 23	1	README
+
+2011-01-30  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py, b3/sql/recreate-xlrstats.sql, b3/sql/xlrstats.sql: 
+	setup procedure: add xlrstats tables when plugin is installed from
+	setup
+
+2011-01-30  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: xlrstats: update weapon tables
+	structures for cod7
+
+2011-01-28  bdgrell <bdgrell@gmail.com>
+
+	* b3/plugins/stats.py: Fixed the join commands to be consistent with
+	other plugins
+
+2011-01-29  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/q3a/rcon.py: caching update: delegate cache expiretime
+	to decorator only.
+
+2011-01-28  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 0e5b41860a00a6be71cbb4320937fc18189cf569 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Tue Jan 25 20:25:11 2011 +0100
+
+2011-01-24  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod6.py: cod6.py: replaced _commands dict to fix broken
+	ban command
+
+2011-01-23  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: xlrstats: bugfix
+
+2011-01-23  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: xlrstats: bugfix
+
+2011-01-23  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/lib/beaker/__init__.py, b3/lib/beaker/cache.py,
+	b3/lib/beaker/container.py, b3/lib/beaker/converters.py,
+	b3/lib/beaker/crypto/__init__.py,
+	b3/lib/beaker/crypto/jcecrypto.py, b3/lib/beaker/crypto/pbkdf2.py,
+	b3/lib/beaker/crypto/pycrypto.py, b3/lib/beaker/crypto/util.py,
+	b3/lib/beaker/exceptions.py, b3/lib/beaker/ext/__init__.py,
+	b3/lib/beaker/ext/database.py, b3/lib/beaker/ext/google.py,
+	b3/lib/beaker/ext/memcached.py, b3/lib/beaker/ext/sqla.py,
+	b3/lib/beaker/middleware.py, b3/lib/beaker/session.py,
+	b3/lib/beaker/synchronization.py, b3/lib/beaker/util.py: Adding the
+	beaker caching library
+
+2011-01-23  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/cache/empty.txt, b3/parsers/q3a/rcon.py: q3a rcon: Caching of
+	status responses using beaker library Using file type caching for
+	testing purposes
+
+2011-01-22  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: XLRstats: bugfix (:)
+
+2011-01-22  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: XLRstats: more debug information and
+	bugfix
+
+2011-01-22  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/wop15.py: wop15 update
+
+2011-01-21  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/wop15.py: First draft of Wop 1.5 parser
+
+2011-01-21  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: XLRstats: update
+
+2011-01-19  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: XLRstats: implementation of minPlayers
+	using a Sub-Plugin
+
+2011-01-17  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/conf/xlrstats.xml, b3/extplugins/xlrstats.py: First
+	draft: minplayers setting - Disable plugin when not enough players are online on roundstart.  - Enable it when the minplayers setting is met
+
+2011-01-16  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit af63ad0fcf6baef0ba202dcc4781b0850aff32d1 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sun Jan 16 10:01:55 2011 +0100
+
+2011-01-14  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/plugins/publist.py: bugfix in crontab timer calculation
+
+2011-01-08  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: Setup procedure now supports adding B3 database
+	tables when they do not exist.
+
+2011-01-07  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt, b3.egg-info/PKG-INFO,
+	b3.egg-info/SOURCES.txt, b3/PKG-INFO,
+	py2exe_builder/b3-installer-project.iss, setup.py, setupPy2exe.py,
+	versions.txt: Versioning to v1.4.2b
+
 2011-01-07  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/plugins/status.py: fixed redundant trailing bracket
