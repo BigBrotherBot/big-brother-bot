@@ -389,13 +389,13 @@ class Iourt41Parser(AbstractParser):
                 return None
 
     def getTeam(self, team):
-        if team == 'red' or team == 'RED': 
+        if str(team).lower() == 'red':
             team = 1
-        elif team == 'blue' or team == 'BLUE': 
+        elif str(team).lower() == 'blue':
             team = 2
-        elif team == 'SPECTATOR':
+        elif str(team).lower() == 'spectator':
             team = 3
-        elif team == 'FREE':
+        elif str(team).lower() == 'free':
             team = -1 # will fall back to b3.TEAM_UNKNOWN
         
         team = int(team)
