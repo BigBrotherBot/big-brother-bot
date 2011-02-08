@@ -45,16 +45,18 @@
 #   * If still unable to find the last line after increasing range header,
 #     restart downloading process. That happens if logs are rotated or server restarted.
 #     In that case last line will never be found.
-# 05.02.2011 1.0.9 - Bravo17
+# 05.02.2011 - 1.0.9 - Bravo17
 #   * Added log_append config variable to control whether local log is deleted on startup
 #   * Changed lastlines functionality to being stored in memory rather than getting from local log 
 #       using Just a baka's lazy cursor
 #   * Make sure that we have something worth decompressing before we attempt to do so
 #   * Added user agent to timeout request
+# 08.02.2011 - 1.0.10 - Just a baka
+#   * Fixed the bug which prevented b3 from parsing while the gzipped remote log is < 500 bytes
 #
 
 __author__  = 'Freelander, Bravo17, Just a baka'
-__version__ = '1.0.9'
+__version__ = '1.0.10'
 
 import b3, threading
 from b3 import functions
@@ -221,7 +223,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             #decompress remote log and return for use
             # First, make sure that there is domething worth decompressing
             # In case the server has just done a restart
-            if len(remote_log_compressed) > 500:
+            if len(remote_log_compressed) > 0:
                 try:
                     compressedstream = StringIO.StringIO(remote_log_compressed)
                     gzipper = gzip.GzipFile(fileobj=compressedstream)
