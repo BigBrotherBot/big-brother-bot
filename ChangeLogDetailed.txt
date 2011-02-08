@@ -1,3 +1,27 @@
+2011-02-08  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 44c2c398c06fee9f8b1d9b13a38d281dd0a42b56 Merge: f7de0ad
+	a3570ab Author: Freelander <admin@fps-gamer.net> Date:   Tue Feb 8
+	16:06:21 2011 +0200
+
+2011-02-08  Freelander <admin@fps-gamer.net>
+
+	* : Merge remote branch 'b3/CoD7' into CoD7
+
+2011-02-07  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/iourt41.py: iuort41: harden getTeam()
+
+2011-02-07  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit b26904c4537d2176b3abace8f56c96c2d153c08e Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Mon Feb 7 21:25:48 2011 +0100
+
+2011-02-07  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/cache/empty.txt, b3/parsers/q3a/rcon.py: rcon.py: configurable
+	caching
+
 2011-02-06  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/setup.py: setup: minor update
@@ -11,6 +35,59 @@
 	* b3/setup.py: setup: able to load values from backed up config when
 	creating a new one.
 
+2011-02-06  Freelander <admin@fps-gamer.net>
+
+	* : commit c8b9c2c021e40f379375f316ba643ec5688825c8 Author: Just a
+	baka <justabaka@gmail.com> Date:   Sun Feb 6 21:26:58 2011 +0600
+
+2011-02-06  Just a baka <justabaka@gmail.com>
+
+	* : Merge commit '18a23d198e6bf68c8617a0d8b476e946a993f735' into
+	CoD7
+
+2011-02-06  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 7f84f60789a98c275b9196a734fc70371c59d92a Author:
+	82ndab-Bravo17 <82ndab.bravo17@gmail.com> Date:   Sun Feb 6 01:37:39
+	2011 -0500
+
+2011-02-06  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/plugins/cod7http.py: #   * Added log_append config variable to
+	control whether local log is deleted on startup #   * Changed
+	lastlines functionality to being stored in memory rather than
+	getting from local log #       using Jastabaka's lazy curser #   *
+	Make sure that we have something worth decompressing before we
+	attempt to do so #   * Added user agent to timeout request
+
+2011-02-06  Just a baka <justabaka@gmail.com>
+
+	* b3/parsers/cod7.py: Forgotten 'import string'
+
+2011-02-06  Just a baka <justabaka@gmail.com>
+
+	* b3/parsers/cod7.py: Added a config option use_prematch_logic
+	support
+
+2011-02-06  Just a baka <justabaka@gmail.com>
+
+	* b3/parsers/cod7.py: Pre-Match Logic
+
+2011-02-06  Just a baka <justabaka@gmail.com>
+
+	* b3/parsers/q3a/rcon.py: Bugfix and a credits for excluding quit
+	from retrying
+
+2011-02-05  Freelander <admin@fps-gamer.net>
+
+	* : commit 353d7124d63adc9ba3595d1cf076cfd0f7db6bbc Author:
+	82ndab-Bravo17 <82ndab.bravo17@gmail.com> Date:   Sat Feb 5 16:42:48
+	2011 -0500
+
+2011-02-05  Freelander <admin@fps-gamer.net>
+
+	* : Merge remote branch 'b3/CoD7' into CoD7
+
 2011-02-05  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/setup.py: minor update
@@ -22,22 +99,79 @@
 	good config. This does not work for the 'messages' division and the
 	'plugins'. They fall back to the defaults.
 
+2011-02-04  Freelander <admin@fps-gamer.net>
+
+	* : Merge remote branch 'b3/CoD7' into CoD7
+
+2011-02-03  Freelander <admin@fps-gamer.net>
+
+	* b3/plugins/cod7http.py: Bug fix
+
+2011-02-02  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/__init__.py, b3/conf/plugin_admin.xml, b3/conf/plugin_tk.xml,
+	b3/conf/plugin_welcome.xml, b3/plugins/stats.py, b3/plugins/tk.py,
+	b3/plugins/welcome.py: Change all (^3  to [^3 as black ops displays
+	(^3 as 3.
+
+2011-02-02  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/parsers/cod7_rcon.py, b3/parsers/q3a/rcon.py: Added rcon string
+	variables
+
+2011-02-03  Freelander <admin@fps-gamer.net>
+
+	* b3/plugins/cod7http.py: if unable to find last line restart
+	download process
+
 2011-02-02  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/parsers/wop15.py: wop15 parser: bugfix
 
 2011-02-02  xlr8or <xlr8or@xlr8or.com>
 
+	* b3/parsers/cod.py: cod parser: add cod7 suicide lineformat
+
+2011-02-02  Freelander <admin@fps-gamer.net>
+
+	* b3/plugins/cod7http.py: fixing comments again!!!
+
+2011-02-02  Freelander <admin@fps-gamer.net>
+
+	* b3/plugins/cod7http.py: increase range header if last line is not
+	in remote log chunk
+
+2011-02-02  xlr8or <xlr8or@xlr8or.com>
+
 	* b3/sql/b3.sql: updated b3 sql TYPE->ENGINE
+
+2011-02-02  Freelander <admin@fps-gamer.net>
+
+	* b3/parsers/cod7.py: Force glogsync to 1 on every round start
+
+2011-02-02  Freelander <admin@fps-gamer.net>
+
+	* b3/plugins/cod7http.py: fixed some comments
+
+2011-02-02  Freelander <admin@fps-gamer.net>
+
+	* b3/plugins/cod7http.py: now compares last 3 lines and python
+	version check on start up
 
 2011-02-01  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/parsers/moh.py: moh parser: adapted to server R9 version 615937
 	- fixed onPlayerSpawn and vars.noCrosshairs errors
 
+2011-02-01  Freelander <admin@fps-gamer.net>
+
+	* b3/plugins/cod7http.py: refactoring of the code and various
+	changes
+
 2011-01-31  xlr8or <xlr8or@xlr8or.com>
 
-	* README.md: minor readme update
+	* : commit 0daf6624a7287ffece4c6ce8f680f565119c6e1d Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Mon Jan 31 12:18:29 2011 +0100
 
 2011-01-31  xlr8or <xlr8or@xlr8or.com>
 
@@ -78,8 +212,13 @@
 
 2011-01-28  xlr8or <xlr8or@xlr8or.com>
 
-	* : commit 0e5b41860a00a6be71cbb4320937fc18189cf569 Author: xlr8or
-	<xlr8or@xlr8or.com> Date:   Tue Jan 25 20:25:11 2011 +0100
+	* : commit 0611529dd9cb0e4d3773ad893ba1411392911294 Author:
+	Freelander <admin@fps-gamer.net> Date:   Fri Jan 28 11:03:17 2011
+	+0200
+
+2011-01-25  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py: cod.py: bugfix in Joining players on connection
 
 2011-01-24  xlr8or <xlr8or@xlr8or.com>
 
