@@ -36,19 +36,15 @@ class Wop15Parser(b3.parsers.wop.WopParser):
     _lineFormats = (
         #Generated with : WOP version 1.5
         #ClientConnect: 0 014D28A78B194CDA9CED1344D47B903B 84.167.190.158
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<cl_guid>[0-9A-Z]{32})\s+(?P<ip>[0-9.]+):(?P<port>[0-9]+))$', re.IGNORECASE),
-
-        #Kill: 3 2 8: Beinchen killed linux suse 10.3 by MOD_PLASMA
-        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<cl_guid>[0-9A-Z]{32})\s+(?P<ip>[0-9.]+))$', re.IGNORECASE),
         #ClientConnect: 2  151.16.71.226
         re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s+(?P<ip>[0-9.]+))$', re.IGNORECASE),
-
-        #Say: 0 insta machen?
-        #re.compile(r'^(?P<action>say):\s*(?P<data>(?P<cid>[0-9]+)\s*(?P<text>.*))$', re.IGNORECASE),
         #Bot connecting
         #ClientConnect: 0
         re.compile(r'^(?P<action>ClientConnect):\s*(?P<data>(?P<bcid>[0-9]+))$', re.IGNORECASE),
 
+        #Kill: 3 2 8: Beinchen killed linux suse 10.3 by MOD_PLASMA
+        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
         #Say: 0 insta machen?
         #Item: 3 ammo_spray_n
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>.*)$', re.IGNORECASE)

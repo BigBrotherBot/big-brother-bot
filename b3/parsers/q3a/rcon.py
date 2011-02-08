@@ -40,7 +40,6 @@ import thread
 import threading
 import Queue
 from b3.lib.beaker.cache import CacheManager
-from b3.lib.beaker.cache import Cache
 from b3.lib.beaker.util import parse_cache_config_options
 
 #--------------------------------------------------------------------------------------------------
@@ -58,18 +57,28 @@ class Rcon:
 
     #caching options
     cache_opts = {
-    'cache.type': 'file',
     'cache.data_dir': 'b3/cache/data',
     'cache.lock_dir': 'b3/cache/lock',
     }
     #create cache
     cache = CacheManager(**parse_cache_config_options(cache_opts))
-    #expiretime for the status cache in seconds
-    statusCacheExpireTime = 5
+    #default expiretime for the status cache in seconds and cache type
+    statusCacheExpireTime = 2
+    statusCacheType = 'memory'
 
     def __init__(self, console, host, password):
         self.console = console
         self.queue = Queue.Queue()
+
+        if self.console.config.has_option('caching', 'status_cache_type'):
+            self.statusCacheType = self.console.config.get('caching', 'status_cache_type').lower()
+            if self.statusCacheType not in ['file', 'memory']:
+                self.statusCacheType = 'memory'
+        if self.console.config.has_option('caching', 'status_cache_expire'):
+            self.statusCacheExpireTime = abs(self.console.config.getint('caching', 'status_cache_expire'))
+            if self.statusCacheExpireTime > 5:
+                self.statusCacheExpireTime = 5
+        self.console.bot('rcon status Cache Expire Time: [%s sec] Type: [%s]' %(self.statusCacheExpireTime, self.statusCacheType))
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.host = host
@@ -213,7 +222,8 @@ class Rcon:
     def write(self, cmd, maxRetries=None, socketTimeout=None, Cached=True):
         #intercept status request for caching construct
         if cmd == 'status' and Cached:
-            data = self._requestStatusCached(cmd)
+            status_cache = self.cache.get_cache('status', type=self.statusCacheType, expire=self.statusCacheExpireTime)
+            data = status_cache.get(key='status', createfunc=self._requestStatusCached)
             return data
 
         self.lock.acquire()
@@ -227,12 +237,10 @@ class Rcon:
         else:
             return ''
 
-    #the next decorator will make the function a cached function, so it will use the cached result if not expired
-    @cache.cache('rconstatus', type='file', expire=statusCacheExpireTime)
-    def _requestStatusCached(self, cmd):
+    def _requestStatusCached(self):
         self.lock.acquire()
         try:
-            data = self.sendRcon(cmd, maxRetries=5)
+            data = self.sendRcon('status', maxRetries=5)
         finally:
             self.lock.release()
         if data:

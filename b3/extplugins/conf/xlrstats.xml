@@ -4,6 +4,7 @@
 	Also game specific configs can be found on that website.
 -->
 	<settings name="settings">
+		<set name="minplayers">3</set>
 		<set name="suicide_penalty_percent">0.05</set>
 		<set name="tk_penalty_percent">0.1</set>
 		<set name="defaultskill">1000</set>
