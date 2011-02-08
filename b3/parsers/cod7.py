@@ -27,9 +27,11 @@
 #     server restart/crash 
 # 01.02.2011 - 1.0.3 - Just a baka
 #   * Pre-Match Logic
+# 08.02.2011 - 1.0.4 - Just a baka
+#   * Reworked Pre-Match logic to reflect latest changes to cod7http
 
 __author__  = 'Freelander, Courgette, Just a baka'
-__version__ = '1.0.3'
+__version__ = '1.0.4'
 
 import re
 import string
@@ -44,9 +46,12 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
     OutputClass = rcon.Cod7Rcon
 
     _usePreMatchLogic = True
-    _preMatch = 1 # 0 means no Pre-Match, >0 means Pre-Match
+    _preMatch = False
+    _elFound = True
     _igBlockFound = False
     _sgFound = False
+    _logTimer = 0
+    _logTimerOld = 0
 
     """\
     Next actions need translation to the EVT_CLIENT_ACTION (Treyarch has a different approach on actions)
@@ -84,19 +89,20 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
         
             if len(playerList) >= 6:
                 self.verbose('PREMATCH OFF: PlayerCount >=6: not a Pre-Match')
-                self._preMatch = 0
+                self._preMatch = False
             elif '0' in playerList and playerList['0']['guid'] == '0':
                 self.verbose('PREMATCH OFF: Got a democlient presence: not a Pre-Match')
-                self._preMatch = 0
+                self._preMatch = False
             else:
                 self.verbose('PREMATCH ON: PlayerCount < 6, got no democlient presence. Defaulting to a pre-match.')
-                self._preMatch = 1
+                self._preMatch = True
         else:
-            self._preMatch = 0
+            self._preMatch = False
 
         # Force g_logsync
-        self.debug('Forcing server cvar g_logsync to %s' % self._logSync)
-        self.write('g_logsync %s' %self._logSync)
+        self.debug('Forcing server cvar g_logsync to %s and turning UNIX timestamp log timers off.' % self._logSync)
+        self.write('g_logsync %s' % self._logSync)
+        self.write('g_logTimeStampInSeconds 0')
 
         self.setVersionExceptions()
         self.debug('Parser started.')
@@ -113,7 +119,8 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
         # Timer (in seconds) that always reflects the current event's timestamp
         t = re.match(self._lineTime, line)
         if t:
-            self.logTimer = int(t.group('minutes')) * 60 + int(t.group('seconds'))
+            self._logTimerOld = self._logTimer
+            self._logTimer = int(t.group('minutes')) * 60 + int(t.group('seconds'))
 
         # Pre-Match Logic part 2
         # Ignore Pre-Match K/D-events
@@ -126,43 +133,49 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
             if not self._igBlockFound:
                 self._igBlockFound = True
                 self.verbose('Found 1st InitGame from block')
-            elif self.logTimer != 0:
+            elif self._logTimerOld <= self._logTimer:
                 self.verbose('Found 2nd InitGame from block, ignoring')
                 return False
 
         # ExitLevel means there will be Pre-Match right after the mapload
         elif self._usePreMatchLogic and func == 'OnExitlevel':
-            self._preMatch = 1
+            self._preMatch = True
             self.debug('PRE-MATCH ON: found ExitLevel')
+            self._elFound = True
             self._igBlockFound = False
-            self._sgFound = False
 
         # If we track ShutdownGame events, we could detect sudden server restarts and re-matches
         elif func == 'OnShutdowngame':
             self._sgFound = True
             self._igBlockFound = False
 
-        # InitGame after ShutdownGame:
-        if self._preMatch and self._igBlockFound and self._sgFound and self.logTimer != 0:
-            if self._preMatch < 2:
-                self._preMatch += 1
-            else:
-                self.preMatch = 0
-                self.debug('PRE-MATCH OFF: found 2nd InitGame block')
+        # Round switch (InitGame after ShutdownGame, but there was no ExitLevel):
+        if self._preMatch and not self._elFound and self._igBlockFound and self._sgFound and self._logTimerOld <= self._logTimer:
+            self.preMatch = False
+            self.debug('PRE-MATCH OFF: found a round change.')
             self._igBlockFound = False
             self._sgFound = False
 
-        # Initgame with @ 0:00
-        elif self._igBlockFound and self.logTimer == 0:
+        # Timer reset
+        elif self._logTimerOld > self._logTimer:
+            self.debug('Old timer: %s / New timer: %s' % (self._logTimerOld, self._logTimer))
             if self._usePreMatchLogic:
-                self._preMatch = 2
+                self._preMatch = True
                 self.debug('PRE-MATCH ON: Server crash/restart detected.')
             else:
                 self.debug('Server crash/restart detected.')
+            self._elFound = False
             self._igBlockFound = False
             self._sgFound = False
+
             # Payload
             self.write('setadmindvar g_logsync %s' % self._logSync)
+            self.write('setadmindvar g_logTimeStampInSeconds 0')
+
+        # Initgame after ExitLevel
+        else:
+            self._elFound = False
+            self._sgFound = False
 
         #self.debug("-==== FUNC!!: " + func)
 
