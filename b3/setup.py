@@ -236,14 +236,47 @@ class Setup:
         # messages settings
         self.add_buffer('\n--MESSAGES------------------------------------------------------\n')
         xml.start("settings", name="messages")
-        self.add_set("kicked_by", "$clientname^7 was kicked by $adminname^7 $reason")
-        self.add_set("kicked", "$clientname^7 was kicked $reason")
-        self.add_set("banned_by", "$clientname^7 was banned by $adminname^7 $reason")
-        self.add_set("banned", "$clientname^7 was banned $reason")
-        self.add_set("temp_banned_by", "$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason")
-        self.add_set("temp_banned", "$clientname^7 was temp banned for $banduration^7 $reason")
-        self.add_set("unbanned_by", "$clientname^7 was un-banned by $adminname^7 $reason")
-        self.add_set("unbanned", "$clientname^7 was un-banned $reason")
+        # in this section we also need to check if we have old version messages! they contain: %s
+        if '%s' in self.read_element('messages', 'kicked_by', '%s'):
+            self.add_set("kicked_by", "$clientname^7 was kicked by $adminname^7 $reason")
+        else:
+            self.add_set("kicked_by", self.read_element('messages', 'kicked', '$clientname^7 was kicked by $adminname^7 $reason'))
+
+        if '%s' in self.read_element('messages', 'kicked', '%s'):
+            self.add_set("kicked", "$clientname^7 was kicked $reason")
+        else:
+            self.add_set("kicked_by", self.read_element('messages', 'kicked_by', '$clientname^7 was kicked $reason'))
+
+        if '%s' in self.read_element('messages', 'banned_by', '%s'):
+            self.add_set("banned_by", "$clientname^7 was banned by $adminname^7 $reason")
+        else:
+            self.add_set("banned_by", self.read_element('messages', 'banned_by', '$clientname^7 was banned by $adminname^7 $reason'))
+
+        if '%s' in self.read_element('messages', 'banned', '%s'):
+            self.add_set("banned", "$clientname^7 was banned $reason")
+        else:
+            self.add_set("banned", self.read_element('messages', 'banned', '$clientname^7 was banned $reason'))
+
+        if '%s' in self.read_element('messages', 'temp_banned_by', '%s'):
+            self.add_set("temp_banned_by", "$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason")
+        else:
+            self.add_set("temp_banned_by", self.read_element('messages', 'temp_banned_by', '$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason'))
+
+        if '%s' in self.read_element('messages', 'temp_banned', '%s'):
+            self.add_set("temp_banned", "$clientname^7 was temp banned for $banduration^7 $reason")
+        else:
+            self.add_set("temp_banned", self.read_element('messages', 'temp_banned', '$clientname^7 was temp banned for $banduration^7 $reason'))
+
+        if '%s' in self.read_element('messages', 'unbanned_by', '%s'):
+            self.add_set("unbanned_by", "$clientname^7 was un-banned by $adminname^7 $reason")
+        else:
+            self.add_set("unbanned_by", self.read_element('messages', 'unbanned_by', '$clientname^7 was un-banned by $adminname^7 $reason'))
+
+        if '%s' in self.read_element('messages', 'unbanned', '%s'):
+            self.add_set("unbanned", "$clientname^7 was un-banned $reason")
+        else:
+            self.add_set("unbanned", self.read_element('messages', 'unbanned', '$clientname^7 was un-banned $reason'))
+
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
@@ -251,7 +284,7 @@ class Setup:
         # plugins settings
         self.add_buffer('\n--PLUGIN CONFIG PATH--------------------------------------------\n')
         xml.start("settings", name="plugins")
-        self.add_set("external_dir", "@b3/extplugins")
+        self.add_set("external_dir", self.read_element('plugins', 'external_dir', '@b3/extplugins'))
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
