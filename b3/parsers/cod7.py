@@ -65,8 +65,8 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
     #num score ping guid                             name            lastmsg address               qport rate
     #--- ----- ---- -------------------------------- --------------- ------- --------------------- ----- -----
     #  4     0   23 blablablabfa218d4be29e7168c637be ^1XLR^78^9or[^7^7               0 135.94.165.296:63564  25313 25000
-    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9-]+)\s+(?P<rate>[0-9]+)$', re.I)
-    _regPlayerWithDemoclient = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+|unknown):?(?P<port>[0-9-]+)?\s+(?P<qport>[0-9-]+)\s+(?P<rate>[0-9]+)$', re.I)
+    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)(?P<qportsep>[-\s]+)(?P<qport>[0-9-]+)\s+(?P<rate>[0-9]+)$', re.I)
+    _regPlayerWithDemoclient = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+|unknown):?(?P<port>[0-9-]+)?(?P<qportsep>[-\s]+)(?P<qport>[0-9-]+)\s+(?P<rate>[0-9]+)$', re.I)
 
     def startup(self):
         # add the world client
