@@ -135,7 +135,7 @@ CREATE TABLE IF NOT EXISTS `xlr_playerstats` (
 -- 
 
 CREATE TABLE IF NOT EXISTS `xlr_weaponstats` (
-  `id` tinyint(3) unsigned NOT NULL auto_increment,
+  `id` smallint(5) unsigned NOT NULL auto_increment,
   `name` varchar(32) NOT NULL default '',
   `kills` mediumint(8) unsigned NOT NULL default '0',
   `teamkills` smallint(5) unsigned NOT NULL default '0',
@@ -152,7 +152,7 @@ CREATE TABLE IF NOT EXISTS `xlr_weaponstats` (
 
 CREATE TABLE IF NOT EXISTS `xlr_weaponusage` (
   `id` mediumint(8) unsigned NOT NULL auto_increment,
-  `weapon_id` tinyint(3) unsigned NOT NULL default '0',
+  `weapon_id` smallint(5) unsigned NOT NULL default '0',
   `player_id` smallint(5) unsigned NOT NULL default '0',
   `kills` mediumint(8) unsigned NOT NULL default '0',
   `deaths` mediumint(8) unsigned NOT NULL default '0',
