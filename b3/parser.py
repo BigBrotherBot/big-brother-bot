@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2011/02/03 - 1.23 - Bravo17
+#   * allow local log to be appended to instead of overwritten for games with remote logs
 #   2010/11/25 - 1.22 - Courgette
 #   * at start, can load a plugin in 'disabled' state. Use the 'disabled' as follow :
 #         <plugin name="adv" config="@conf/plugin_adv.xml" disabled="Yes"/>
@@ -326,8 +328,18 @@ class Parser(object):
                 else:
                     f = os.path.normpath(os.path.expanduser('games_mp.log'))
 
-                ftptempfile = open(f, "w")
-                ftptempfile.close()
+                if self.config.has_option('server', 'log_append'):
+                    if not (self.config.getboolean('server', 'log_append') and os.path.isfile(f)):
+                        self.screen.write('Creating Gamelog : %s\n' % f)
+                        ftptempfile = open(f, "w")
+                        ftptempfile.close()
+                    else:
+                        self.screen.write('Append to Gamelog: %s\n' % f)
+                else:
+                    self.screen.write('Creating Gamelog : %s\n' % f)
+                    ftptempfile = open(f, "w")
+                    ftptempfile.close()
+                    
             else:
                 self.bot('Game log %s', game_log)
                 f = self.config.getpath('server', 'game_log')
