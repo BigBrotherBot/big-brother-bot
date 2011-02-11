@@ -53,10 +53,12 @@
 #   * Added user agent to timeout request
 # 08.02.2011 - 1.0.10 - Just a baka
 #   * Fixed the bug which prevented b3 from parsing while the gzipped remote log is < 500 bytes
+# 10.02.2011 - 1.0.11 - Just a baka
+#   * Rewritten the inter-cycle sleeping mechanism to achieve a nearly-instant thread exit time
 #
 
 __author__  = 'Freelander, Bravo17, Just a baka'
-__version__ = '1.0.10'
+__version__ = '1.0.11'
 
 import b3, threading
 from b3 import functions
@@ -299,7 +301,13 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
 
             self.verbose('Next request in %s second(s)' % wait)
 
-            time.sleep(wait)
+            # Make the plugin thread fast-killable
+            i = 0
+            w = int(wait)
+            while i < w and self.console.working:
+                time.sleep(1)
+                i += 1
+            time.sleep(wait - w)
 
         self.verbose('B3 is down, stopping Cod7Http Plugin')
 

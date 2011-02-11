@@ -42,7 +42,7 @@ import b3.parsers.cod5
 class Cod7Parser(b3.parsers.cod5.Cod5Parser):
     gameName = 'cod7'
     IpsOnly = False
-    _guidLength = 6
+    _guidLength = 5
     OutputClass = rcon.Cod7Rcon
 
     _usePreMatchLogic = True
