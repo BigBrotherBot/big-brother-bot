@@ -42,6 +42,11 @@
 #    * added COD7 support
 #
 
+# This section is DoxuGen information. More information on how to comment your code
+# is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxugen_rules
+## @file
+# The setup procedure, to create a new configuration file (b3.xml)
+
 __author__  = 'xlr8or'
 __version__ = '0.6'
 

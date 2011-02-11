@@ -49,7 +49,7 @@
 #   Update weapon tables for cod7.
 
 # This section is DoxuGen information. More information on how to comment your code
-# is available at http://www.stack.nl/~dimitri/doxygen/docblocks.html
+# is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxugen_rules
 ## @file
 # XLRstats Real Time playerstats plugin
 

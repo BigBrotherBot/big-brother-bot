@@ -52,7 +52,7 @@
 #    * Initial version.
 
 # This section is DoxuGen information. More information on how to comment your code
-# is available at http://www.stack.nl/~dimitri/doxygen/docblocks.html
+# is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxugen_rules
 ## @file
 # Run B3 in developer debug mode (for developers)
 
