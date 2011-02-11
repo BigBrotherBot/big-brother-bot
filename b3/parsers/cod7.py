@@ -30,6 +30,9 @@
 # 08.02.2011 - 1.0.4 - Just a baka
 #   * Reworked Pre-Match logic to reflect latest changes to cod7http
 
+## @file
+#  CoD7 Parser
+
 __author__  = 'Freelander, Courgette, Just a baka'
 __version__ = '1.0.4'
 
@@ -69,6 +72,8 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
     _regPlayerWithDemoclient = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+|unknown):?(?P<port>[0-9-]+)?(?P<qportsep>[-\s]+)(?P<qport>[0-9-]+)\s+(?P<rate>[0-9]+)$', re.I)
 
     def startup(self):
+        """Implements some necessary tasks on initial B3 start."""
+
         # add the world client
         client = self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
 
@@ -108,6 +113,10 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
         self.debug('Parser started.')
 
     def parseLine(self, line):
+        """Called from parseLine method in Parser class to introduce pre-match logic
+        and action mapping
+        """
+
         m = self.getLineParts(line)
         if not m:
             return False
@@ -193,7 +202,7 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
                     target
                 ))
 
-        # Addition for cod5 actionMapping
+        # Addition for cod7 actionMapping
         elif action in self._actionMap:
             self.translateAction(action, data, match)
 
@@ -205,8 +214,9 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
                     target
                 ))
 
-    # join
     def OnJ(self, action, data, match=None):
+        """Client join"""
+
         codguid = match.group('guid')
         cid = match.group('cid')
         name = match.group('name')

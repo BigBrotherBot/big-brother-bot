@@ -57,6 +57,9 @@
 #   * Rewritten the inter-cycle sleeping mechanism to achieve a nearly-instant thread exit time
 #
 
+## @file
+#  This plugin downloads and maintains CoD7 game log file
+
 __author__  = 'Freelander, Bravo17, Just a baka'
 __version__ = '1.0.11'
 
@@ -75,6 +78,10 @@ import re, sys
 user_agent =  "B3 Cod7Http plugin/%s" % __version__
 
 class Cod7HttpPlugin(b3.plugin.Plugin):
+    """Downloads and appends the remote game log file for CoD7 to a local
+    log file from a http location given by GSP.
+    """
+
     requiresConfigFile = False
 
     #Timout url set by gameservers.com
@@ -87,11 +94,15 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         pass
 
     def initThread(self):
+        """Starts a thread for cod7http plugin."""
+
         thread1 = threading.Thread(target=self.processData)
         self.info("Starting cod7http thread")
         thread1.start()
 
     def onStartup(self):
+        """Sets and loads config values from the main config file."""
+
         versionsearch = re.search("^((?P<mainversion>[0-9]).(?P<lowerversion>[0-9]+)?)", sys.version)
         version = int(versionsearch.group(3))
         if version < 6:
@@ -134,8 +145,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             self.console.die()
 
     def writeCompletelog(self, locallog, remotelog):
-        """\
-        Will restart writing the local log when bot started for the first time
+        """Will restart writing the local log when bot started for the first time
         or if last line cannot be found in remote chunk
         """
 
@@ -173,6 +183,8 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             self.debug('Unpausing')
 
     def processData(self):
+        """Main method for plugin. It's processed by initThread method."""
+
         _lastLine = True
         _firstRead = True
         n = 0
