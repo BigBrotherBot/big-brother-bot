@@ -292,34 +292,39 @@ class Setup:
         # plugins
         self.add_buffer('\n--INSTALLING PLUGINS--------------------------------------------\n')
         xml.start("plugins")
+        xml.data("\n\t\t")
         xml.comment("plugin order is important. Plugins that add new in-game commands all depend on the admin plugin. Make sure to have the admin plugin before them.")
-        self.add_plugin("censor", "@conf/plugin_censor.xml")
-        self.add_plugin("spamcontrol", "@conf/plugin_spamcontrol.xml")
-        self.add_plugin("admin", "@conf/plugin_admin.xml", explanation="the admin plugin is compulsory.", prompt=False)
-        self.add_plugin("tk", "@conf/plugin_tk.xml")
-        self.add_plugin("stats", "@conf/plugin_stats.xml")
-        self.add_plugin("pingwatch", "@conf/plugin_pingwatch.xml")
-        self.add_plugin("adv", "@conf/plugin_adv.xml")
-        self.add_plugin("status", "@conf/plugin_status.xml")
-        self.add_plugin("welcome", "@conf/plugin_welcome.xml")
-        if self._set_punkbuster == "on":
-            self.add_plugin("punkbuster", "@conf/plugin_punkbuster.xml")
-            xml.data("\n\t\t")
+        self.autoinstallplugins = self.raw_default("Do you want to (auto)install all plugins from the template?", "yes")
+        if self.autoinstallplugins == 'yes':
+            self.read_plugins()
         else:
-            xml.data("\n\t\t")
-            xml.comment("The punkbuster plugin was not installed since punkbuster is not supported or disabled.")
+            self.add_plugin("censor", "@conf/plugin_censor.xml")
+            self.add_plugin("spamcontrol", "@conf/plugin_spamcontrol.xml")
+            self.add_plugin("admin", "@conf/plugin_admin.xml", explanation="the admin plugin is compulsory.", prompt=False)
+            self.add_plugin("tk", "@conf/plugin_tk.xml")
+            self.add_plugin("stats", "@conf/plugin_stats.xml")
+            self.add_plugin("pingwatch", "@conf/plugin_pingwatch.xml")
+            self.add_plugin("adv", "@conf/plugin_adv.xml")
+            self.add_plugin("status", "@conf/plugin_status.xml")
+            self.add_plugin("welcome", "@conf/plugin_welcome.xml")
+            if self._set_punkbuster == "on":
+                self.add_plugin("punkbuster", "@conf/plugin_punkbuster.xml")
+                xml.data("\n\t\t")
+            else:
+                xml.data("\n\t\t")
+                xml.comment("The punkbuster plugin was not installed since punkbuster is not supported or disabled.")
+                xml.data("\t\t")
+
+            # ext plugins
+            xml.comment("The next plugins are external, 3rd party plugins and should reside in the external_dir. Example:")
             xml.data("\t\t")
+            xml.comment("plugin config=\"@b3/extplugins/conf/newplugin.xml\" name=\"newplugin\"")
+            result = self.add_plugin("xlrstats", self._set_external_dir+"/conf/xlrstats.xml", default="no")
+            if result:
+                self.executeSql('@b3/sql/xlrstats.sql')
 
-        # ext plugins
-        xml.comment("The next plugins are external, 3rd party plugins and should reside in the external_dir. Example:")
-        xml.data("\t\t")
-        xml.comment("plugin config=\"@b3/extplugins/conf/newplugin.xml\" name=\"newplugin\"")
-        result = self.add_plugin("xlrstats", self._set_external_dir+"/conf/xlrstats.xml", default="no")
-        if result:
-            self.executeSql('@b3/sql/xlrstats.sql')
-
-        #self.add_plugin("registered", self._set_external_dir+"/conf/plugin_registered.xml", "Trying to download Registered", "http://www.bigbrotherbot.net/forums/downloads/?sa=downfile&id=22")
-        #self.add_plugin("countryfilter", self._set_external_dir+"/conf/countryfilter.xml", "Trying to download Countryfilter", "http://github.com/xlr8or/b3-plugin-countryfilter/zipball/master")
+            #self.add_plugin("registered", self._set_external_dir+"/conf/plugin_registered.xml", "Trying to download Registered", "http://www.bigbrotherbot.net/forums/downloads/?sa=downfile&id=22")
+            #self.add_plugin("countryfilter", self._set_external_dir+"/conf/countryfilter.xml", "Trying to download Countryfilter", "http://github.com/xlr8or/b3-plugin-countryfilter/zipball/master")
 
         # final comments
         xml.data("\n\t\t")
@@ -371,6 +376,16 @@ class Setup:
                         return v.text
         return _default
                 
+    def read_plugins(self):
+        """ Writes plugins to the config read from a template """
+        l = list(self.tree.findall('plugins'))
+        for s in l:
+            plugins = list(s.findall('plugin'))
+            for p in plugins:
+                _name = p.attrib['name']
+                _config = p.attrib['config']
+                self.add_plugin(_name, _config, prompt=False)
+        return None
 
     def add_explanation(self, etext):
         """ Add an explanation to the question asked by the setup procedure """
@@ -428,7 +443,12 @@ class Setup:
 
         if explanation:
             self.add_explanation(explanation)
-        _config = self.raw_default("config", sconfig)
+
+        if self.autoinstallplugins:
+            _config = sconfig
+        else:
+            _config = self.raw_default("config", sconfig)
+
         xml.data("\n\t\t")
         xml.element("plugin", name=sname, config=_config)
         self.add_buffer("plugin: "+str(sname)+", config: "+str(_config)+"\n")
@@ -549,6 +569,7 @@ class Setup:
     def executeSql(self, file):
         """This method executes an external sql file on the current database"""
         self.db = self.connectToDatabase()
+        sqlFile = ''
         if self.db:
             self.add_buffer('Connected to the database. Installing the tables when they don\'t exist.\n')
             sqlFile = self.getAbsolutePath(file)
