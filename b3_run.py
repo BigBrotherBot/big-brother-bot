@@ -18,11 +18,11 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 # This section is DoxuGen information. More information on how to comment your code
-# is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxugen_rules
+# is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
 ## @mainpage
 # <p>This documentation is the Bigbrotherbot Reference for developers.</p>
 # <p>If you are a B3 developer, please document your classes, methods properly.<br />
-# More information on how to document code can be found on http://www.doxygen.org</p>
+# More information on how to document code can be found on http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules</p>
 ## @file
 # The entry point to run B3
 

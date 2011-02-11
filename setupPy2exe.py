@@ -1,5 +1,5 @@
 # This section is DoxuGen information. More information on how to comment your code
-# is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxugen_rules
+# is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
 ## @file
 # The Windows binary package creator
 
