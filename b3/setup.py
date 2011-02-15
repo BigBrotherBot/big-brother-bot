@@ -71,7 +71,8 @@ class Setup:
     _template = ''
     _buffer = ''
     _equaLength = 15
-    _PBSupportedParsers = ['cod','cod2','cod4','cod5', 'cod6', 'cod7'] #bfbc2 and moh need to be added later when parsers correctly implemented pb.
+    ## @todo bfbc2 and moh need to be added later when parsers correctly implemented pb.
+    _PBSupportedParsers = ['cod','cod2','cod4','cod5', 'cod6', 'cod7']
     _frostBite = ['bfbc2', 'moh']
  
     def __init__(self, config=None):
