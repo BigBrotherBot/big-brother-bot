@@ -1,5 +1,5 @@
-project files/versions signature: 1657d93151383789b26b013c1c24d1c9
-project files content signature: 1dc82c7a1fc5f580046bcca9692d4f4c
+project files/versions signature: 8e54466048bef6ae3aadb6fa2f81ccb3
+project files content signature: 15c27dc3588611e9f4370c4607930c92
 b3\__init__.py 06b765e06577edcbdc064996d7a7e0f3 1.1.2
 b3\clients.py 1e73855e53f741044427aaf530df3938 1.3.1
 b3\config.py 9a08abbb8974661a5384cf8ff5ddcc9b 1.3.1
@@ -99,7 +99,7 @@ b3\parsers\frostbite\protocol.py 1c7755c8b3eae89a659118147a53d972 1.0.1
 b3\parsers\frostbite\punkbuster.py 3a4153415be31cf25d3a1588c1790301 1.1
 b3\parsers\frostbite\rcon.py 77598a0b767cc78bf39bf3b23ff19428 2.0
 b3\parsers\frostbite\util.py 1c8f30602d7bbccbf2500b2407199ae0 1.1
-b3\parsers\iourt41.py 7afa19763f46b5605d594b0dcd17cca6 1.7.14
+b3\parsers\iourt41.py 396cf529f4e88cf8dc7acc33983dfc24 1.7.15
 b3\parsers\moh.py 781f33eaa508e896fbdc7428b569f1df 1.0
 b3\parsers\oa081.py d72d6c53bde2245cd49d945e1d1f2551 0.9.5
 b3\parsers\punkbuster.py d3209866e3308aec665df17574758cc1 1.0.2

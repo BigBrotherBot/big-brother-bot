@@ -1,5 +1,17 @@
 2011-02-15  xlr8or <xlr8or@xlr8or.com>
 
+	* b3/parsers/iourt41.py: iourt.py: v1.7.15 - 21/12/2010 - SGT    * fix CNCT ping error in getPlayersPings    * fix incorrect game type for ffa    * move getMapList after game initialization
+
+2011-02-15  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG, versions.txt: updated changelog and versions.txt
+
+2011-02-15  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt: changelogdetailed
+
+2011-02-15  xlr8or <xlr8or@xlr8or.com>
+
 	* : commit b005de5df729ed94b817ebdd21e1978a84739721 Author: xlr8or
 	<xlr8or@xlr8or.com> Date:   Tue Feb 15 19:41:26 2011 +0100
 
