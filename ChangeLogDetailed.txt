@@ -1,3 +1,65 @@
+2011-02-11  Freelander <admin@fps-gamer.net>
+
+	* b3/parsers/cod7.py, b3/plugins/cod7http.py: added documentation
+	for doxygen
+
+2011-02-11  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py, b3/setup.py, b3_debug.py, b3_run.py,
+	listversions.py, setup.py, setupPy2exe.py: typo fix
+
+2011-02-11  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py, b3/setup.py, b3_debug.py, b3_run.py,
+	listversions.py, setup.py, setupPy2exe.py: doxugen
+	additions/alterations
+
+2011-02-11  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/conf/b3.distribution.xml, b3/setup.py: setup: autoinstall
+	plugins from template
+
+2011-02-11  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 4ce63199b0a62379370557ac55d7f556079e9760 Merge: 4cd189b
+	d773162 Author: Freelander <admin@fps-gamer.net> Date:   Thu Feb 10
+	09:53:59 2011 +0200
+
+2011-02-10  Just a baka <justabaka@gmail.com>
+
+	* b3/plugins/cod7http.py: Rewritten the inter-cycle sleeping
+	mechanism to achieve a nearly-instant thread exit time
+
+2011-02-10  Just a baka <justabaka@gmail.com>
+
+	* : Merge commit '70894e660d7264a389b52b04a0ccbc808fb68404' into
+	CoD7
+
+2011-02-09  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: setup: updated to test messages for old format in the
+	template and make that section somewhat intelligent
+
+2011-02-09  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit e672d55a56275ed8243ad55261ca5f0adc43032f Merge: 2abb8a2
+	151d31f Author: Just a baka <justabaka@gmail.com> Date:   Wed Feb 9
+	21:17:12 2011 +0600
+
+2011-02-09  Just a baka <justabaka@gmail.com>
+
+	* : Merge commit 'f7de0ade50ff780f6dbbf83a0ef70dd911d49095' into
+	CoD7
+
+2011-02-08  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/parsers/cod7.py: Changes to _regPlayer to cope with neg port
+	and neq qport
+
+2011-02-08  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt: update changelogdetailed
+
 2011-02-08  xlr8or <xlr8or@xlr8or.com>
 
 	* : commit 44c2c398c06fee9f8b1d9b13a38d281dd0a42b56 Merge: f7de0ad
