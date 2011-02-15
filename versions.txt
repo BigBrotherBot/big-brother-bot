@@ -1,5 +1,5 @@
 project files/versions signature: 8e54466048bef6ae3aadb6fa2f81ccb3
-project files content signature: 15c27dc3588611e9f4370c4607930c92
+project files content signature: 85130c918cd87b16cdd2687b1b06529f
 b3\__init__.py 06b765e06577edcbdc064996d7a7e0f3 1.1.2
 b3\clients.py 1e73855e53f741044427aaf530df3938 1.3.1
 b3\config.py 9a08abbb8974661a5384cf8ff5ddcc9b 1.3.1
@@ -132,7 +132,7 @@ b3\plugins\tk.py b46762385fbb78505a6e83509b83b3c6 1.2.4
 b3\plugins\welcome.py 8d21d96e1a8842b4f37ed0d11cf4771b 1.1
 b3\querybuilder.py ea31f273c1342feadbf929bb06865ded 1.0.1
 b3\run.py 32a103988a829254859b949e2fc5cc80 1.3.3
-b3\setup.py d5c666da3e6c66ea70943b74d33fbb5f 0.6
+b3\setup.py 9199baf9dabcfae7cd6cfb123f1c8b17 0.6
 b3\storage.py beacd69df1534c959ba1d709971239b1 1.8
 b3\timezones.py ae7ca81b37e6d3ade739d8d1b648555f 1.0.0
 b3\tools\__init__.py d41d8cd98f00b204e9800998ecf8427e None
