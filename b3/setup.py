@@ -192,7 +192,7 @@ class Setup:
                                 ', remote log functionality\n  is not available prior to python version 2.6.0\nYou need to update to python version 2.6+ before you can run B3 for CoD7!')
                 self.testExit()
             elif self._set_parser == 'cod7':
-                self.add_buffer('\nNOTE: You\'re gamelog must be set to this format:\nhttp://logs.gameservers.com/127.0.0.1:1024/asdfasdf-1234-5678-9012-asdfasdfasdfasdf')
+                self.add_buffer('\nNOTE: You\'re gamelog must be set to this format:\nhttp://logs.gameservers.com/127.0.0.1:1024/xxxxx-1234-5678-9012-xxxxx')
             # determine if ftp functionality is available
             elif version.LooseVersion(self._pver) < version.LooseVersion('2.6.0'):
                 self.add_buffer('\n  NOTE for game_log:\n  You are running python '+self._pver+
@@ -344,12 +344,16 @@ class Setup:
 
     def load_template(self):
         """ Load an existing config file or use the packaged examples"""
-        if self._set_parser == 'bfbc2':
-            _dflttemplate = 'conf/b3.bfbc2_example.xml'
-        elif self._set_parser == 'moh':
-            _dflttemplate = 'conf/b3.moh_example.xml'
+        if functions.main_is_frozen():
+            self._configpath = os.environ['ALLUSERSPROFILE'] + '\\BigBrotherBot\\'
         else:
-            _dflttemplate = 'conf/b3.distribution.xml'
+            self._configpath = 'b3\\'
+        if self._set_parser == 'bfbc2':
+            _dflttemplate = self._configpath + 'conf\\b3.bfbc2_example.xml'
+        elif self._set_parser == 'moh':
+            _dflttemplate = self._configpath + 'conf\\b3.moh_example.xml'
+        else:
+            _dflttemplate = self._configpath + 'conf\\b3.distribution.xml'
         if self._template != '':
             # means we just backed-up an old config with the same name
             _result = self.raw_default("Do you want to use the values from the backed-up config (%s)?"

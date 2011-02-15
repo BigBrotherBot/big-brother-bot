@@ -33,7 +33,7 @@ def getVersion():
         return None
     
 myDataFiles = [
-        ('', ['README']),
+        ('', ['README.md']),
         ('', ['b3/PKG-INFO']),
         ('docs', listdirectory('b3/docs/')),
         ('sql', listdirectory('b3/sql/')),
