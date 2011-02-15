@@ -114,11 +114,15 @@
 #    * messages now support named $variables instead of %s
 # v1.7.14 - 08/11/2010 - GrosBedo
 #    * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
+# v1.7.15 - 21/12/2010 - SGT
+#    * fix CNCT ping error in getPlayersPings
+#    * fix incorrect game type for ffa
+#    * move getMapList after game initialization
 #
 
 
 __author__  = 'xlr8or'
-__version__ = '1.7.14'
+__version__ = '1.7.15'
 
 
 from b3.parsers.q3a.abstractParser import AbstractParser
@@ -290,8 +294,6 @@ class Iourt41Parser(AbstractParser):
         #if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
         #    self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
 
-        self._maplist = self.getMaps()
-
         # get map from the status rcon command
         map = self.getMap()
         if map:
@@ -319,6 +321,7 @@ class Iourt41Parser(AbstractParser):
             self.game.fs_homepath = None
             self.warning("Could not query server for fs_homepath")
 
+        self._maplist = self.getMaps()
 
         # initialize connected clients
         plist = self.getPlayerList()
@@ -419,7 +422,7 @@ class Iourt41Parser(AbstractParser):
         #self.debug('gameTypeInt: %s' % gameTypeInt)
 
         if gameTypeInt == '0':
-            _gameType = 'dm'
+            _gameType = 'ffa'
         elif gameTypeInt == '1':   # Dunno what this one is
             _gameType = 'dm'
         elif gameTypeInt == '2':   # Dunno either
@@ -1106,8 +1109,10 @@ class Iourt41Parser(AbstractParser):
                     # ignore them, let them not bother us with errors
                     pass
                 else:
-                    players[str(m.group('slot'))] = int(m.group('ping'))
-
+                    try:
+                        players[str(m.group('slot'))] = int(m.group('ping'))
+                    except:
+                        players[str(m.group('slot'))] = 999
         return players
 
     def sync(self):
