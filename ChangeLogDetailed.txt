@@ -1,3 +1,16 @@
+2011-02-15  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit b005de5df729ed94b817ebdd21e1978a84739721 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Tue Feb 15 19:41:26 2011 +0100
+
+2011-02-15  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: minor update
+
+2011-02-12  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/plugins/censor.py: Fix for reason keyword not working
+
 2011-02-11  Freelander <admin@fps-gamer.net>
 
 	* b3/parsers/cod7.py, b3/plugins/cod7http.py: added documentation
