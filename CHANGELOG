@@ -1,3 +1,17 @@
+1.4.1 -> 1.4.2
+----
+A list of changed files is available after release here:
+github.com/BigBrotherBot/big-brother-bot/compare/v1.4.1...v1.4.2
+----
+- Support for CoD:BO
+- Introduction of the q3a abstractparser
+- Introduction of caching for rcon status requests (q3a based parsers)
+- Setup procedure improved (can read previous config and install database tables)
+- Moved sql files from docs folder to sql folder
+- Config section <messages> changed format (no longer uses %s but readable names instead)
+- Config section <plugins>: Plugin can start in a disabled state (disabled="Yes")
+- XLRstats plugin can now enable on minimum number of players online
+
 1.4.0 -> 1.4.1
 ----
 A list of changed files is available after release here:
