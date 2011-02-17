@@ -57,7 +57,7 @@ class Wop15Parser(b3.parsers.wop.WopParser):
         if not len(msg) == 2:
             return None
 
-        client = self.clients.getByCiD(msg[0])
+        client = self.clients.getByCID(msg[0])
 
         if client:
             self.verbose('Client Found: %s' % client.name)
