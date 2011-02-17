@@ -33,6 +33,16 @@ import b3.parsers.wop
 class Wop15Parser(b3.parsers.wop.WopParser):
     gameName = 'wop15'
 
+    _commands = {}
+    _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
+    _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
+    _commands['say'] = 'ssay %(prefix)s^7 %(message)s'
+
+    _commands['set'] = 'set %(name)s "%(value)s"'
+    _commands['kick'] = 'clientkick %(cid)s'
+    _commands['ban'] = 'addip %(cid)s'
+    _commands['tempban'] = 'clientkick %(cid)s'
+
     _lineFormats = (
         #Generated with : WOP version 1.5
         #ClientConnect: 0 014D28A78B194CDA9CED1344D47B903B 84.167.190.158
