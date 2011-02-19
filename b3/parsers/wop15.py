@@ -34,8 +34,8 @@ class Wop15Parser(b3.parsers.wop.WopParser):
     gameName = 'wop15'
 
     _commands = {}
-    _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
-    _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
+    _commands['message'] = 'stell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
+    _commands['deadsay'] = 'stell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
     _commands['say'] = 'ssay %(prefix)s^7 %(message)s'
 
     _commands['set'] = 'set %(name)s "%(value)s"'
@@ -46,19 +46,28 @@ class Wop15Parser(b3.parsers.wop.WopParser):
     _lineFormats = (
         #Generated with : WOP version 1.5
         #ClientConnect: 0 014D28A78B194CDA9CED1344D47B903B 84.167.190.158
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<cl_guid>[0-9A-Z]{32})\s+(?P<ip>[0-9.]+))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<cl_guid>[0-9a-z]{32})\s+(?P<ip>[0-9.]+))$', re.IGNORECASE),
         #ClientConnect: 2  151.16.71.226
         re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s+(?P<ip>[0-9.]+))$', re.IGNORECASE),
         #Bot connecting
         #ClientConnect: 0
         re.compile(r'^(?P<action>ClientConnect):\s*(?P<data>(?P<bcid>[0-9]+))$', re.IGNORECASE),
 
-        #Kill: 3 2 8: Beinchen killed linux suse 10.3 by MOD_PLASMA
-        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
+        #Kill: $attacker-cid $means-of-death $target-cid
+        #Kill: 2 MOD_INJECTOR 0
+        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<acid>[0-9]+)\s(?P<aweap>[0-9a-z_]+)\s(?P<cid>[0-9]+))$', re.IGNORECASE),
         #Say: 0 insta machen?
         #Item: 3 ammo_spray_n
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>.*)$', re.IGNORECASE)
     )
+
+    #status
+    #map: wop_padcloisterctl
+    #num score team ping name            lastmsg address               qport rate
+    #--- ----- ---- ---- --------------- ------- --------------------- ----- -----
+    #  0     0    2    0 ^0PAD^4MAN^7           50 bot                       0 16384
+    #  1     0    3   43 PadPlayer^7           0 2001:41b8:9bf:fe04:f40c:d4ff:fe2b:6af9 45742 90000
+    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<team>[0-9]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
 
     # say
     def OnSay(self, action, data, match=None):
@@ -92,3 +101,113 @@ class Wop15Parser(b3.parsers.wop.WopParser):
             self.verbose('No Client Found!')
             return None
 
+"""
+game log information provided by GedankenBlitz:
+
+stell $cid $text
+Serverside tell chat.
+
+ssay $text
+Serverside say chat.
+
+sprint $cid $text
+Print text to a client. Text will be printed to the upper left chat area.
+
+New loglines;
+DropItem: $cid $classname
+Award: $cid $awardname
+AddScore: $cid $score $reason
+Vote: failed timeout
+Vote: failed
+Vote: passed
+CvarChange: $cvar-name $cvar-value
+AddTeamScore: $teamname $score $reason
+Callvote: $cid $vote
+
+Changed loglines;
+Kill: $attacker-cid $means-of-death $target-cid
+Teamscores: red $score-red blue $score-blue
+Score: $cid $score
+Say: $cid $text
+SayTeam: $cid $text
+Tell: $cid $target-cid $text
+
+rcon status currently includes an extra column for the player team;
+map: wop_padcloisterctl
+num score team ping name            lastmsg address               qport rate
+--- ----- ---- ---- --------------- ------- --------------------- ----- -----
+  0     0    2    0 ^0PAD^4MAN^7           50 bot                       0 16384
+  1     0    3   43 PadPlayer^7           0 2001:41b8:9bf:fe04:f40c:d4ff:fe2b:6af9 45742 90000
+
+Awardnames are;
+excellent
+gauntlet
+cap
+impressive
+defend
+assist
+denied
+spraygod
+spraykiller
+unkown
+
+Teamnames are;
+FREE
+RED
+BLUE
+SPECTATOR
+This order matches the team numbers, which start with index 0.
+
+Inbuilt score reasons include;
+suicide
+teamkill
+kill
+survive
+spray
+spray_wrongwall
+target_score
+frag_carrier
+carrier_protect
+defense
+recovery
+capture
+capture_team
+assist_return
+assist_frag_carrier
+flag
+spraykiller
+spraygod
+
+Means of death have changed to
+MOD_UNKNOWN = 0
+MOD_PUMPER
+MOD_PUNCHY
+MOD_NIPPER
+MOD_BALLOONY
+MOD_BALLOONY_SPLASH
+MOD_BETTY
+MOD_BETTY_SPLASH
+MOD_BUBBLEG
+MOD_BUBBLEG_SPLASH // should be unused
+MOD_SPLASHER
+MOD_BOASTER
+MOD_IMPERIUS
+MOD_IMPERIUS_SPLASH
+MOD_INJECTOR // new
+MOD_KILLERDUCKS
+MOD_WATER
+MOD_SLIME
+MOD_LAVA
+MOD_CRUSH
+MOD_TELEFRAG
+MOD_FALLING   // should be unused
+MOD_SUICIDE
+MOD_TARGET_LASER
+MOD_TRIGGER_HURT
+MOD_GRAPPLE   // should be unused
+MOD_BAMBAM // new
+MOD_BOOMIES // new
+
+Votes depend on the vote of course, an example is;
+map wop_dinerbb; set nextmap "wop_padcrashctl"
+"""
