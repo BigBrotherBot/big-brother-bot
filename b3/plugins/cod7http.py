@@ -48,20 +48,21 @@
 # 05.02.2011 - 1.0.9 - Bravo17
 #   * Added log_append config variable to control whether local log is deleted on startup
 #   * Changed lastlines functionality to being stored in memory rather than getting from local log 
-#       using Just a baka's lazy cursor
+#     using Just a baka's lazy cursor
 #   * Make sure that we have something worth decompressing before we attempt to do so
 #   * Added user agent to timeout request
 # 08.02.2011 - 1.0.10 - Just a baka
 #   * Fixed the bug which prevented b3 from parsing while the gzipped remote log is < 500 bytes
 # 10.02.2011 - 1.0.11 - Just a baka
 #   * Rewritten the inter-cycle sleeping mechanism to achieve a nearly-instant thread exit time
+# 25.02.2011 - 1.0.12 - Freelander
+#   * Reduced default timeout to 5 seconds
+#   * Arranged log messages
+#   * Fixed a minor bug
 #
 
-## @file
-#  This plugin downloads and maintains CoD7 game log file
-
 __author__  = 'Freelander, Bravo17, Just a baka'
-__version__ = '1.0.11'
+__version__ = '1.0.12'
 
 import b3, threading
 from b3 import functions
@@ -78,15 +79,11 @@ import re, sys
 user_agent =  "B3 Cod7Http plugin/%s" % __version__
 
 class Cod7HttpPlugin(b3.plugin.Plugin):
-    """Downloads and appends the remote game log file for CoD7 to a local
-    log file from a http location given by GSP.
-    """
-
     requiresConfigFile = False
 
     #Timout url set by gameservers.com
     _timeout_url = 'http://logs.gameservers.com/timeout'
-    _default_timeout = 10
+    _default_timeout = 5
     _logAppend = True
     lastlines = ''
 
@@ -94,15 +91,11 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         pass
 
     def initThread(self):
-        """Starts a thread for cod7http plugin."""
-
         thread1 = threading.Thread(target=self.processData)
         self.info("Starting cod7http thread")
         thread1.start()
 
     def onStartup(self):
-        """Sets and loads config values from the main config file."""
-
         versionsearch = re.search("^((?P<mainversion>[0-9]).(?P<lowerversion>[0-9]+)?)", sys.version)
         version = int(versionsearch.group(3))
         if version < 6:
@@ -145,7 +138,8 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             self.console.die()
 
     def writeCompletelog(self, locallog, remotelog):
-        """Will restart writing the local log when bot started for the first time
+        """\
+        Will restart writing the local log when bot started for the first time
         or if last line cannot be found in remote chunk
         """
 
@@ -183,8 +177,6 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             self.debug('Unpausing')
 
     def processData(self):
-        """Main method for plugin. It's processed by initThread method."""
-
         _lastLine = True
         _firstRead = True
         n = 0
@@ -205,7 +197,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
                          'Range' : bytes,
                          'Accept-encoding' : 'gzip' }
 
-            self.verbose('Sending request')
+            #self.verbose('Sending request')
 
             request = urllib2.Request(self._url, None, headers)
 
@@ -218,7 +210,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
                 if response != '':
                     remote_log_compressed = response.read()
                     remotelogsize = round((len(remote_log_compressed)/float(1024)), 2)
-                    self.verbose('Downloaded: %s KB total' % remotelogsize)
+                    #self.verbose('Downloaded: %s KB total' % remotelogsize)
 
                 try:
                     #close remote file
@@ -267,16 +259,12 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
                         # Remove any blank lines from end
                         
                         #append the additions to our log if there is something and update lazy cursor
-                        if newlog > 0:
+                        if len(newlog) > 0:
                             output = open(self.locallog,'ab')
                             output.write(newlog)
                             output.close()
                             self.lastlines = remotelog[-1000:]                        
-                            self.verbose('Added: %s, chars(s) to log' % len(newlog))
-
-                        else:
-                            self.verbose('No addition found, checking again')
-
+                            self.debug('Downloaded %s KB and added %s char(s) to log' % (remotelogsize, len(newlog)))
 
                     else:
                         _lastLine = False
@@ -302,8 +290,8 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             #calculate time to wait until next request. 
             timeout = float(self.timeout)
 
-            self.verbose('Given timeout value is %s seconds' % timeout)
-            self.verbose('Total time spent to process the downloaded file is %s seconds' % timespent)
+            #self.verbose('Given timeout value is %s seconds' % timeout)
+            #self.verbose('Total time spent to process the downloaded file is %s seconds' % timespent)
 
             #Calculate sleep time for next request. Adding 0.1 secs to prevent HTTP Error 403 errors
             wait = float((timeout - timespent) + 0.1)
@@ -311,7 +299,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             if wait <= 0:
                 wait = 1
 
-            self.verbose('Next request in %s second(s)' % wait)
+            #self.verbose('Next request in %s second(s)' % wait)
 
             # Make the plugin thread fast-killable
             i = 0
