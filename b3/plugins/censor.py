@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    2/12/2011 - 2.2.2 - Bravo17
+#       Fix for reason keyword not working
 #    1/16/2010 - 2.2.1 - xlr8or
 #       Plugin can now be disabled with !disable censor
 #    1/16/2010 - 2.2.0 - xlr8or
@@ -188,6 +190,9 @@ class CensorPlugin(b3.plugin.Plugin):
         This is the default penalisation for using bad language in say and teamsay
         """
         #self.debug("%s"%((penalty.type, penalty.reason, penalty.keyword, penalty.duration),))
+        # fix for reason keyword not working
+        if penalty.keyword == None:
+            penalty.keyword = penalty.reason
         self._adminPlugin.penalizeClient(penalty.type, client, penalty.reason, penalty.keyword, penalty.duration, None, data)
 
     def penalizeClientBadname(self, penalty, client, data=''):

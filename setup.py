@@ -23,7 +23,7 @@
 #
 
 # This section is DoxuGen information. More information on how to comment your code
-# is available at http://www.stack.nl/~dimitri/doxygen/docblocks.html
+# is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
 ## @file
 # The setuptools package creator for pypi.python.org
 
@@ -41,7 +41,7 @@ _setupinfo = {
     'packages' : find_packages(),
     'extras_require' : { 'mysql' : 'MySQL-python' },
     'package_data' : {
-        '': ['conf/*.xml', 'extplugins/conf/*.xml','sql/*', 'docs/*', 'README']
+        '': ['conf/*.xml', 'extplugins/conf/*.xml','sql/*', 'docs/*', 'README.md']
     },
     'zip_safe' : False,
     'author' : 'Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Leveil (Courgette)',

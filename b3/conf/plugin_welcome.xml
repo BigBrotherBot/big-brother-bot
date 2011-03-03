@@ -34,9 +34,9 @@
 		$connections = number of times a user has connected (only on welcome_user and welcome_announce_user)
 		-->
 		<!-- displayed to admins and regs -->
-		<set name="user">^7[^2Authed^7] Welcome back $name ^7(^3@$id^7), last visit ^3$lastVisit^7, you're a ^2$group^7, played $connections times</set>
+		<set name="user">^7[^2Authed^7] Welcome back $name ^7[^3@$id^7], last visit ^3$lastVisit^7, you're a ^2$group^7, played $connections times</set>
 		<!-- displayed to users who have not yet registered -->
-		<set name="newb">^7[^2Authed^7] Welcome back $name ^7(^3@$id^7), last visit ^3$lastVisit. Type !register in chat to register. Type !help for help</set>
+		<set name="newb">^7[^2Authed^7] Welcome back $name ^7[^3@$id^7], last visit ^3$lastVisit. Type !register in chat to register. Type !help for help</set>
 		<!-- displayed to everyone when a player with less than 15 connections joins -->
 		<set name="announce_user">^7Everyone welcome back $name^7, player number ^3#$id^7, to the server, played $connections times</set>
 		<!-- displayed to a user on his first connection -->

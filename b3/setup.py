@@ -37,27 +37,42 @@
 # 2010/11/07 - 0.5.2 - GrosBedo
 #    * added default values of lines_per_second and delay
 #    * added more infos about the http access for gamelog
+# 2011/02/06 - 0.6 - xlr8or
+#    * setup now reads values from an existing config or a distribution example
+#    * added COD7 support
 #
 
-__author__  = 'xlr8or'
-__version__ = '0.5.2'
+# This section is DoxuGen information. More information on how to comment your code
+# is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
+## @file
+# The setup procedure, to create a new configuration file (b3.xml)
 
-import platform, urllib2, shutil, os, sys, time, zipfile
+__author__  = 'xlr8or'
+__version__ = '0.6'
+
+import platform
+import urllib2
+import shutil
+import os
+import sys
+import time
+import zipfile
 import functions
-from distutils import version
+from lib.elementtree.ElementTree import ElementTree
 from lib.elementtree.SimpleXMLWriter import XMLWriter
+from distutils import version
 from urlparse import urlsplit
 from cStringIO import StringIO
 
-
-
 class Setup:
     _pver = sys.version.split()[0]
-    _indentation = "    "
-    _config = "b3/conf/b3.xml"
+    _indentation = '    '
+    _config = 'b3/conf/b3.xml'
+    _template = ''
     _buffer = ''
     _equaLength = 15
-    _PBSupportedParsers = ['cod','cod2','cod4','cod5'] #bfbc2 and moh need to be added later when parsers correctly implemented pb. 
+    ## @todo bfbc2 and moh need to be added later when parsers correctly implemented pb.
+    _PBSupportedParsers = ['cod','cod2','cod4','cod5', 'cod6', 'cod7']
     _frostBite = ['bfbc2', 'moh']
  
     def __init__(self, config=None):
@@ -68,13 +83,14 @@ class Setup:
         print self._config
         self.introduction()
         self.clearscreen()
-        self._outputFile = self.raw_default("Location and name of the configfile", self._config)
+        self._outputFile = self.raw_default("Location and name of the new configfile", self._config)
         #Creating Backup
         self.backupFile(self._outputFile)
         self.runSetup()
         raise SystemExit('Restart B3 or reconfigure B3 using option: -s')
 
     def runSetup(self):
+        """ The main function that handles the setup steps """
         global xml
         xml = XMLWriter(self._outputFile)
 
@@ -99,18 +115,30 @@ class Setup:
         # B3 settings
         self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
         xml.start("settings", name="b3")
-        self.add_set("parser", "cod", "Define your game: cod/cod2/cod4/cod5/cod6/iourt41/etpro/wop/smg/bfbc2/moh")
-        self.add_set("database", "mysql://b3:password@localhost/b3", "Your database info: [mysql]://[db-user]:[db-password]@[db-server[:port]]/[db-name]")
-
+        self.add_set("parser", "", "Define your game: cod/cod2/cod4/cod5/cod6/cod7/iourt41/etpro/wop/smg/bfbc2/moh")
+        # set a template xml file to read existing settings from
+        _result = False
+        while not _result:
+            _result = self.load_template()
+            if _result:
+                self.add_buffer('Configuration values from [%s] loaded successfully\n' %(self._template))
+                break
+        # getting database info, test it and set up the tables
+        self.add_set("database", self.read_element('b3', 'database', 'mysql://b3:password@localhost/b3'),
+                     "Your database info: [mysql]://[db-user]:[db-password]@[db-server[:port]]/[db-name]")
         self.add_buffer('Testing and Setting Up Database...\n')
         self.executeSql('@b3/sql/b3.sql')
 
-        self.add_set("bot_name", "b3", "Name of the bot")
-        self.add_set("bot_prefix", "^0(^2b3^0)^7:", "Ingame messages are prefixed with this code, you can use colorcodes")
-        self.add_set("time_format", "%I:%M%p %Z %m/%d/%y")
-        self.add_set("time_zone", "CST", "The timezone your bot is in")
-        self.add_set("log_level", "9", "How much detail in the logfile: 9 = verbose, 10 = debug, 21 = bot, 22 = console")
-        self.add_set("logfile", "b3.log", "Name of the logfile the bot will generate")
+        self.add_set("bot_name", self.read_element('b3', 'bot_name', 'b3'), "Name of the bot")
+        self.add_set("bot_prefix", self.read_element('b3', 'bot_prefix', '^0(^2b3^0)^7:'),
+                     "Ingame messages are prefixed with this code, you can use colorcodes")
+        self.add_set("time_format", self.read_element('b3', 'time_format', '%I:%M%p %Z %m/%d/%y'))
+        self.add_set("time_zone", self.read_element('b3', 'time_zone', 'CST'),
+                     "The timezone your bot is in")
+        self.add_set("log_level", self.read_element('b3', 'log_level', '9'),
+                     "How much detail in the logfile: 9 = verbose, 10 = debug, 21 = bot, 22 = console")
+        self.add_set("logfile", self.read_element('b3', 'logfile', 'b3.log'),
+                     "Name of the logfile the bot will generate")
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
@@ -119,7 +147,8 @@ class Setup:
         if self._set_parser == 'bfbc2':
             self.add_buffer('\n--BFBC2 SPECIFIC SETTINGS---------------------------------------\n')
             xml.start("settings", name="bfbc2")
-            self.add_set("max_say_line_length", "100", "how long do you want the lines to be restricted to in the chat zone. (maximum length is 100)")
+            self.add_set("max_say_line_length", self.read_element('bfbc2', 'max_say_line_length', '100'),
+                         "how long do you want the lines to be restricted to in the chat zone. (maximum length is 100)")
             xml.data("\n\t")
             xml.end()
             xml.data("\n\t")
@@ -128,7 +157,8 @@ class Setup:
         if self._set_parser == 'moh':
             self.add_buffer('\n--MOH SPECIFIC SETTINGS-----------------------------------------\n')
             xml.start("settings", name="moh")
-            self.add_set("max_say_line_length", "100", "how long do you want the lines to be restricted to in the chat zone. (maximum length is 100)")
+            self.add_set("max_say_line_length", self.read_element('moh', 'max_say_line_length', '100'),
+                         "how long do you want the lines to be restricted to in the chat zone. (maximum length is 100)")
             xml.data("\n\t")
             xml.end()
             xml.data("\n\t")
@@ -138,24 +168,50 @@ class Setup:
         xml.start("settings", name="server")
         # Frostbite specific
         if self._set_parser in self._frostBite:
-            self.add_set("public_ip", "11.22.33.44", "The IP address of your gameserver")
-            self.add_set("port", "", "The port people use to connect to your gameserver")
-            self.add_set("rcon_ip", "11.22.33.44", "The IP that the bot uses to send RCON commands. Usually the same as the public_ip")
-            self.add_set("rcon_port", "", "The port that the bot uses to send RCON commands. NOT the same as the normal port.")
-            self.add_set("rcon_password", "", "The RCON password of your gameserver.")
-            self.add_set("timeout", "3", "RCON timeout", silent=True)
+            self.add_set("public_ip", self.read_element('server', 'public_ip', ''),
+                         "The IP address of your gameserver")
+            self.add_set("port", self.read_element('server', 'port', ''),
+                         "The port people use to connect to your gameserver")
+            self.add_set("rcon_ip", self.read_element('server', 'rcon_ip', ''),
+                         "The IP that the bot uses to send RCON commands. Usually the same as the public_ip")
+            self.add_set("rcon_port", self.read_element('server', 'rcon_port', ''),
+                         "The port that the bot uses to send RCON commands. NOT the same as the normal port.")
+            self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
+                         "The RCON password of your gameserver.")
+            self.add_set("timeout", self.read_element('server', 'timeout', '3'),
+                         "RCON timeout", silent=True)
         # Q3Aa specific
         else:   
-            self.add_set("rcon_password", "", "The RCON pass of your gameserver")
-            self.add_set("port", "27960", "The port the server is running on")
+            self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
+                         "The RCON pass of your gameserver")
+            self.add_set("port", self.read_element('server', 'port', ''),
+                         "The port the server is running on")
+            # check if we can run cod7 remote gamelog retrieval
+            if version.LooseVersion(self._pver) < version.LooseVersion('2.6.0') and self._set_parser == 'cod7':
+                self.add_buffer('\nERROR:\n  You are running python '+self._pver+
+                                ', remote log functionality\n  is not available prior to python version 2.6.0\nYou need to update to python version 2.6+ before you can run B3 for CoD7!')
+                self.testExit()
+            elif self._set_parser == 'cod7':
+                self.add_buffer('\nNOTE: You\'re gamelog must be set to this format:\nhttp://logs.gameservers.com/127.0.0.1:1024/xxxxx-1234-5678-9012-xxxxx')
             # determine if ftp functionality is available
-            if version.LooseVersion(self._pver) < version.LooseVersion('2.6.0'):
-                self.add_buffer('\n  NOTE for game_log:\n  You are running python '+self._pver+', ftp functionality\n  is not available prior to python version 2.6.0\n')
+            elif version.LooseVersion(self._pver) < version.LooseVersion('2.6.0'):
+                self.add_buffer('\n  NOTE for game_log:\n  You are running python '+self._pver+
+                                ', ftp functionality\n  is not available prior to python version 2.6.0\n')
             else:
-                self.add_buffer('\n  NOTE for game_log:\n  You are running python '+self._pver+', the gamelog may also be\n  ftp-ed or http-ed in.\nDefine game_log like this:\n  ftp://[ftp-user]:[ftp-password]@[ftp-server]/path/to/games_mp.log\nOr for web access (you can use htaccess to secure):\n http://serverhost/path/to/games_mp.log\n')
-            self.add_set("game_log", "games_mp.log", "The gameserver generates a logfile, put the path and name here")
-            self.add_set("public_ip", "127.0.0.1", "The public IP your gameserver is residing on")
-            self.add_set("rcon_ip", "127.0.0.1", "The IP the bot can use to send RCON commands to (127.0.0.1 when on the same box)")
+                self.add_buffer('\n  NOTE for game_log:\n  You are running python '+self._pver+
+                                ', the gamelog may also be\n  ftp-ed or http-ed in.\n  Define game_log like this:\n   ftp://[ftp-user]:[ftp-password]@[ftp-server]/path/to/games_mp.log\n  Or for web access (you can use htaccess to secure):\n   http://serverhost/path/to/games_mp.log\n')
+            self.add_set("game_log", self.read_element('server', 'game_log', ''),
+                         "The gameserver generates a logfile, put the path and name here")
+            self.add_set("public_ip", self.read_element('server', 'public_ip', ''),
+                         "The public IP your gameserver is residing on")
+            self.add_set("rcon_ip", self.read_element('server', 'rcon_ip', ''),
+                         "The IP the bot can use to send RCON commands to (127.0.0.1 when on the same box)")
+            # configure default performances parameters
+            self.add_set("delay", self.read_element('server', 'delay', '0.33'),
+                         "Delay between each log reading. Set a higher value to consume less disk ressources or bandwidth if you remotely connect (ftp or http remote log access)", silent=True)
+            self.add_set("lines_per_second", self.read_element('server', 'lines_per_second', '50'),
+                         "Number of lines to process per second. Set a lower value to consume less CPU ressources",
+                         silent=True)
 
         # determine if PunkBuster is supported
         if self._set_parser in self._PBSupportedParsers:
@@ -163,9 +219,6 @@ class Setup:
         else:
             self.add_set("punkbuster", "off", "Is the gameserver running PunkBuster Anticheat: on/off", silent=True)
 
-        # configure default performances parameters
-        self.add_set("delay", "0.33", "Delay between each log reading. Set a higher value to consume less disk ressources or bandwidth if you remotely connect (ftp or http remote log access)", silent=True)
-        self.add_set("lines_per_second", "50", "Number of lines to process per second. Set a lower value to consume less CPU ressources", silent=True)
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
@@ -177,9 +230,11 @@ class Setup:
         xml.comment("Autodoc will generate a user documentation for all B3 commands") 
         xml.data("\t\t")
         xml.comment("by default, a html documentation is created in your conf folder")
-        self.add_set("type", "html", "html, htmltable or xml")
-        self.add_set("maxlevel", "100", "if you want to exclude commands reserved for higher levels")
-        self.add_set("destination", "test_doc.html", "Destination can be a file or a ftp url")
+        self.add_set("type", self.read_element('autodoc', 'type', 'html'), "html, htmltable or xml")
+        self.add_set("maxlevel", self.read_element('autodoc', 'maxlevel', '100'),
+                     "if you want to exclude commands reserved for higher levels")
+        self.add_set("destination", self.read_element('autodoc', 'destination', ''),
+                     "Destination can be a file or a ftp url")
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
@@ -187,14 +242,47 @@ class Setup:
         # messages settings
         self.add_buffer('\n--MESSAGES------------------------------------------------------\n')
         xml.start("settings", name="messages")
-        self.add_set("kicked_by", "$clientname^7 was kicked by $adminname^7 $reason")
-        self.add_set("kicked", "$clientname^7 was kicked $reason")
-        self.add_set("banned_by", "$clientname^7 was banned by $adminname^7 $reason")
-        self.add_set("banned", "$clientname^7 was banned $reason")
-        self.add_set("temp_banned_by", "$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason")
-        self.add_set("temp_banned", "$clientname^7 was temp banned for $banduration^7 $reason")
-        self.add_set("unbanned_by", "$clientname^7 was un-banned by $adminname^7 $reason")
-        self.add_set("unbanned", "$clientname^7 was un-banned $reason")
+        # in this section we also need to check if we have old version messages! they contain: %s
+        if '%s' in self.read_element('messages', 'kicked_by', '%s'):
+            self.add_set("kicked_by", "$clientname^7 was kicked by $adminname^7 $reason")
+        else:
+            self.add_set("kicked_by", self.read_element('messages', 'kicked', '$clientname^7 was kicked by $adminname^7 $reason'))
+
+        if '%s' in self.read_element('messages', 'kicked', '%s'):
+            self.add_set("kicked", "$clientname^7 was kicked $reason")
+        else:
+            self.add_set("kicked_by", self.read_element('messages', 'kicked_by', '$clientname^7 was kicked $reason'))
+
+        if '%s' in self.read_element('messages', 'banned_by', '%s'):
+            self.add_set("banned_by", "$clientname^7 was banned by $adminname^7 $reason")
+        else:
+            self.add_set("banned_by", self.read_element('messages', 'banned_by', '$clientname^7 was banned by $adminname^7 $reason'))
+
+        if '%s' in self.read_element('messages', 'banned', '%s'):
+            self.add_set("banned", "$clientname^7 was banned $reason")
+        else:
+            self.add_set("banned", self.read_element('messages', 'banned', '$clientname^7 was banned $reason'))
+
+        if '%s' in self.read_element('messages', 'temp_banned_by', '%s'):
+            self.add_set("temp_banned_by", "$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason")
+        else:
+            self.add_set("temp_banned_by", self.read_element('messages', 'temp_banned_by', '$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason'))
+
+        if '%s' in self.read_element('messages', 'temp_banned', '%s'):
+            self.add_set("temp_banned", "$clientname^7 was temp banned for $banduration^7 $reason")
+        else:
+            self.add_set("temp_banned", self.read_element('messages', 'temp_banned', '$clientname^7 was temp banned for $banduration^7 $reason'))
+
+        if '%s' in self.read_element('messages', 'unbanned_by', '%s'):
+            self.add_set("unbanned_by", "$clientname^7 was un-banned by $adminname^7 $reason")
+        else:
+            self.add_set("unbanned_by", self.read_element('messages', 'unbanned_by', '$clientname^7 was un-banned by $adminname^7 $reason'))
+
+        if '%s' in self.read_element('messages', 'unbanned', '%s'):
+            self.add_set("unbanned", "$clientname^7 was un-banned $reason")
+        else:
+            self.add_set("unbanned", self.read_element('messages', 'unbanned', '$clientname^7 was un-banned $reason'))
+
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
@@ -202,7 +290,7 @@ class Setup:
         # plugins settings
         self.add_buffer('\n--PLUGIN CONFIG PATH--------------------------------------------\n')
         xml.start("settings", name="plugins")
-        self.add_set("external_dir", "@b3/extplugins")
+        self.add_set("external_dir", self.read_element('plugins', 'external_dir', '@b3/extplugins'))
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
@@ -210,34 +298,39 @@ class Setup:
         # plugins
         self.add_buffer('\n--INSTALLING PLUGINS--------------------------------------------\n')
         xml.start("plugins")
+        xml.data("\n\t\t")
         xml.comment("plugin order is important. Plugins that add new in-game commands all depend on the admin plugin. Make sure to have the admin plugin before them.")
-        self.add_plugin("censor", "@conf/plugin_censor.xml")
-        self.add_plugin("spamcontrol", "@conf/plugin_spamcontrol.xml")
-        self.add_plugin("admin", "@conf/plugin_admin.xml", explanation="the admin plugin is compulsory.", prompt=False)
-        self.add_plugin("tk", "@conf/plugin_tk.xml")
-        self.add_plugin("stats", "@conf/plugin_stats.xml")
-        self.add_plugin("pingwatch", "@conf/plugin_pingwatch.xml")
-        self.add_plugin("adv", "@conf/plugin_adv.xml")
-        self.add_plugin("status", "@conf/plugin_status.xml")
-        self.add_plugin("welcome", "@conf/plugin_welcome.xml")
-        if self._set_punkbuster == "on":
-            self.add_plugin("punkbuster", "@conf/plugin_punkbuster.xml")
-            xml.data("\n\t\t")
+        self.autoinstallplugins = self.raw_default("Do you want to (auto)install all plugins from the template?", "yes")
+        if self.autoinstallplugins == 'yes':
+            self.read_plugins()
         else:
-            xml.data("\n\t\t")
-            xml.comment("The punkbuster plugin was not installed since punkbuster is not supported or disabled.")
+            self.add_plugin("censor", "@conf/plugin_censor.xml")
+            self.add_plugin("spamcontrol", "@conf/plugin_spamcontrol.xml")
+            self.add_plugin("admin", "@conf/plugin_admin.xml", explanation="the admin plugin is compulsory.", prompt=False)
+            self.add_plugin("tk", "@conf/plugin_tk.xml")
+            self.add_plugin("stats", "@conf/plugin_stats.xml")
+            self.add_plugin("pingwatch", "@conf/plugin_pingwatch.xml")
+            self.add_plugin("adv", "@conf/plugin_adv.xml")
+            self.add_plugin("status", "@conf/plugin_status.xml")
+            self.add_plugin("welcome", "@conf/plugin_welcome.xml")
+            if self._set_punkbuster == "on":
+                self.add_plugin("punkbuster", "@conf/plugin_punkbuster.xml")
+                xml.data("\n\t\t")
+            else:
+                xml.data("\n\t\t")
+                xml.comment("The punkbuster plugin was not installed since punkbuster is not supported or disabled.")
+                xml.data("\t\t")
+
+            # ext plugins
+            xml.comment("The next plugins are external, 3rd party plugins and should reside in the external_dir. Example:")
             xml.data("\t\t")
+            xml.comment("plugin config=\"@b3/extplugins/conf/newplugin.xml\" name=\"newplugin\"")
+            result = self.add_plugin("xlrstats", self._set_external_dir+"/conf/xlrstats.xml", default="no")
+            if result:
+                self.executeSql('@b3/sql/xlrstats.sql')
 
-        # ext plugins
-        xml.comment("The next plugins are external, 3rd party plugins and should reside in the external_dir. Example:")
-        xml.data("\t\t")
-        xml.comment("plugin config=\"@b3/extplugins/conf/newplugin.xml\" name=\"newplugin\"")
-        result = self.add_plugin("xlrstats", self._set_external_dir+"/conf/xlrstats.xml", default="no")
-        if result:
-            self.executeSql('@b3/sql/xlrstats.sql')
-
-        #self.add_plugin("registered", self._set_external_dir+"/conf/plugin_registered.xml", "Trying to download Registered", "http://www.bigbrotherbot.net/forums/downloads/?sa=downfile&id=22")
-        #self.add_plugin("countryfilter", self._set_external_dir+"/conf/countryfilter.xml", "Trying to download Countryfilter", "http://github.com/xlr8or/b3-plugin-countryfilter/zipball/master")
+            #self.add_plugin("registered", self._set_external_dir+"/conf/plugin_registered.xml", "Trying to download Registered", "http://www.bigbrotherbot.net/forums/downloads/?sa=downfile&id=22")
+            #self.add_plugin("countryfilter", self._set_external_dir+"/conf/countryfilter.xml", "Trying to download Countryfilter", "http://github.com/xlr8or/b3-plugin-countryfilter/zipball/master")
 
         # final comments
         xml.data("\n\t\t")
@@ -249,20 +342,79 @@ class Setup:
         xml.close(configuration)
         self.add_buffer('\n--FINISHED CONFIGURATION----------------------------------------\n')
 
+    def load_template(self):
+        """ Load an existing config file or use the packaged examples"""
+        if functions.main_is_frozen():
+            self._configpath = os.environ['ALLUSERSPROFILE'] + '\\BigBrotherBot\\'
+        else:
+            self._configpath = 'b3\\'
+        if self._set_parser == 'bfbc2':
+            _dflttemplate = self._configpath + 'conf\\b3.bfbc2_example.xml'
+        elif self._set_parser == 'moh':
+            _dflttemplate = self._configpath + 'conf\\b3.moh_example.xml'
+        else:
+            _dflttemplate = self._configpath + 'conf\\b3.distribution.xml'
+        if self._template != '':
+            # means we just backed-up an old config with the same name
+            _result = self.raw_default("Do you want to use the values from the backed-up config (%s)?"
+                                       %(self._template), "yes")
+            if _result != 'yes':
+                self._template = self.raw_default("Load values from an existing configfile", _dflttemplate)
+        else:
+            self._template = self.raw_default("Load values from an existing configfile", _dflttemplate)
+        self._template = self.getAbsolutePath(self._template)
+        self.tree = ElementTree()
+        try:
+            self.tree.parse(self._template)
+            return True
+        except Exception, msg:
+            #self.add_buffer('Could not parse xml file: %s\n' % msg)
+            # backed up config file must be corrupt or not completed last setup, reset it to the default
+            self.add_buffer('Your previous config file was either empty, corrupt or not finished.\
+             Suggest we load the default...\n')
+            self._template = ''
+            return False
+
+    def read_element(self, _set, _value, _default=''):
+        """ Returns a config value in _set with attribute _value """
+        l = list(self.tree.findall('settings'))
+        for s in l:
+            if s.attrib['name'] == _set:
+                i = list(s.findall('set'))
+                for v in i:
+                    if v.attrib['name'] == _value:
+                        return v.text
+        return _default
+                
+    def read_plugins(self):
+        """ Writes plugins to the config read from a template """
+        l = list(self.tree.findall('plugins'))
+        for s in l:
+            plugins = list(s.findall('plugin'))
+            for p in plugins:
+                _name = p.attrib['name']
+                _config = p.attrib['config']
+                self.add_plugin(_name, _config, prompt=False)
+        return None
+
     def add_explanation(self, etext):
+        """ Add an explanation to the question asked by the setup procedure """
         _prechar = "> "
         print _prechar+etext
 
     def add_buffer(self, addition, autowrite=True):
+        """ Add a line to the output buffer """
         self._buffer += addition
         if autowrite:
             self.writebuffer()
 
     def writebuffer(self):
+        """ Clear the screen and write the output buffer to the screen """
         self.clearscreen()
         print self._buffer
 
     def equaLize(self, _string):
+        """ Make the setup questions same length for prettier formatting """
         return (self._equaLength-len(str(_string)))*" "
 
     def add_set(self, sname, sdflt, explanation="", silent=False):
@@ -301,13 +453,19 @@ class Setup:
 
         if explanation:
             self.add_explanation(explanation)
-        _config = self.raw_default("config", sconfig)
+
+        if self.autoinstallplugins:
+            _config = sconfig
+        else:
+            _config = self.raw_default("config", sconfig)
+
         xml.data("\n\t\t")
         xml.element("plugin", name=sname, config=_config)
         self.add_buffer("plugin: "+str(sname)+", config: "+str(_config)+"\n")
         return True
 
     def raw_default(self, prompt, dflt=None):
+        """ Prompt user for input and don't accept an empty value"""
         if dflt: 
             prompt = "%s [%s]" % (prompt, dflt)
         else:
@@ -328,18 +486,23 @@ class Setup:
             os.system('clear')
 
     def backupFile(self, _file):
+        """ Create a backup of an existing config file """
         print "\n--BACKUP/CREATE CONFIGFILE--------------------------------------\n"
         print "    Trying to backup the original "+_file+"..."
         if not os.path.exists(_file):
-            print "\n    No backup needed.\n    A file with this location/name does not yet exist,\n    I'm about to generate a new config file!\n"
+            print "\n    No backup needed.\n"
+            print "    A file with this location/name does not yet exist,\n"
+            print "    I'm about to generate a new config file!\n"
             self.testExit()
         else:
             try:
                 _stamp = time.strftime("-%d_%b_%Y_%H.%M.%S", time.gmtime())
-                _fname = _file+_stamp+".xml"
+                _fname = _file.rstrip(".xml")+_stamp+".xml"
                 shutil.copy(_file, _fname)
                 print "    Backup success, "+_file+" copied to : %s" % _fname
                 print "    If you need to abort setup, you can restore by renaming the backup file."
+                # a config with this name already exists, use it as a template
+                self._template = _fname
                 self.testExit()
             except OSError, why:
                 print "\n    Error : %s\n" % str(why)
@@ -381,7 +544,9 @@ class Setup:
         print "www.bigbrotherbot.net"
         self.testExit(_question='[Enter] to continue to generate the configfile...')
 
-    def testExit(self, _key='', _question='[Enter] to continue, \'abort\' to abort Setup: ', _exitmessage='Setup aborted, run python b3_run.py -s to restart the procedure.'):
+    def testExit(self, _key='', _question='[Enter] to continue, \'abort\' to abort Setup: ',
+                 _exitmessage='Setup aborted, run python b3_run.py -s to restart the procedure.'):
+        """ Test the input for an exit code, give the user an option to abort setup """
         if _key == '':
             _key = raw_input('\n'+_question)
         if _key != 'abort':
@@ -396,13 +561,16 @@ class Setup:
         if _dsnDict['protocol'] == 'mysql':
             try:
                 import MySQLdb
-                _db = MySQLdb.connect(host=_dsnDict['host'], port=_dsnDict['port'], user=_dsnDict['user'], passwd=_dsnDict['password'], db=_dsnDict['path'][1:])
+                _db = MySQLdb.connect(host=_dsnDict['host'], port=_dsnDict['port'], user=_dsnDict['user'],
+                                      passwd=_dsnDict['password'], db=_dsnDict['path'][1:])
             except ImportError:
                 self.add_buffer("You need to install python-mysqldb. Look for 'dependencies' in B3 documentation.\n")
                 raise SystemExit()
             except Exception:
-                _db.close()
-                pass
+                try:
+                    _db.close()
+                except Exception:
+                    pass
         else:
             self.add_buffer("%s protocol is not supported. Use mysql instead\n" % _dsnDict['protocol'])
             self.testExit(_question='Do you still want to continue? [Enter] to continue, \'abort\' to abort Setup: ')
@@ -411,6 +579,7 @@ class Setup:
     def executeSql(self, file):
         """This method executes an external sql file on the current database"""
         self.db = self.connectToDatabase()
+        sqlFile = ''
         if self.db:
             self.add_buffer('Connected to the database. Installing the tables when they don\'t exist.\n')
             sqlFile = self.getAbsolutePath(file)
@@ -428,7 +597,7 @@ class Setup:
                 raise Exception('sqlFile does not exist: %s' %sqlFile)
             self.db.close()
         else:
-            self.add_buffer('Connection to the database failed. Check the documentation how to add the database tables manually.\n')
+            self.add_buffer('Connection to the database failed. Check the documentation how to add the database tables from %s manually.\n' %sqlFile)
             self.testExit(_question='Do you still want to continue? [Enter] to continue, \'abort\' to abort Setup: ')
         return None
 

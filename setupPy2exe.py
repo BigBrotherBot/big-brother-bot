@@ -1,5 +1,5 @@
 # This section is DoxuGen information. More information on how to comment your code
-# is available at http://www.stack.nl/~dimitri/doxygen/docblocks.html
+# is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
 ## @file
 # The Windows binary package creator
 
@@ -33,7 +33,7 @@ def getVersion():
         return None
     
 myDataFiles = [
-        ('', ['README']),
+        ('', ['README.md']),
         ('', ['b3/PKG-INFO']),
         ('docs', listdirectory('b3/docs/')),
         ('sql', listdirectory('b3/sql/')),

@@ -1,3 +1,397 @@
+2011-02-15  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/iourt41.py: iourt.py: v1.7.15 - 21/12/2010 - SGT    * fix CNCT ping error in getPlayersPings    * fix incorrect game type for ffa    * move getMapList after game initialization
+
+2011-02-15  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG, versions.txt: updated changelog and versions.txt
+
+2011-02-15  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt: changelogdetailed
+
+2011-02-15  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit b005de5df729ed94b817ebdd21e1978a84739721 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Tue Feb 15 19:41:26 2011 +0100
+
+2011-02-15  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: minor update
+
+2011-02-12  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/plugins/censor.py: Fix for reason keyword not working
+
+2011-02-11  Freelander <admin@fps-gamer.net>
+
+	* b3/parsers/cod7.py, b3/plugins/cod7http.py: added documentation
+	for doxygen
+
+2011-02-11  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py, b3/setup.py, b3_debug.py, b3_run.py,
+	listversions.py, setup.py, setupPy2exe.py: typo fix
+
+2011-02-11  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py, b3/setup.py, b3_debug.py, b3_run.py,
+	listversions.py, setup.py, setupPy2exe.py: doxugen
+	additions/alterations
+
+2011-02-11  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/conf/b3.distribution.xml, b3/setup.py: setup: autoinstall
+	plugins from template
+
+2011-02-11  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 4ce63199b0a62379370557ac55d7f556079e9760 Merge: 4cd189b
+	d773162 Author: Freelander <admin@fps-gamer.net> Date:   Thu Feb 10
+	09:53:59 2011 +0200
+
+2011-02-10  Just a baka <justabaka@gmail.com>
+
+	* b3/plugins/cod7http.py: Rewritten the inter-cycle sleeping
+	mechanism to achieve a nearly-instant thread exit time
+
+2011-02-10  Just a baka <justabaka@gmail.com>
+
+	* : Merge commit '70894e660d7264a389b52b04a0ccbc808fb68404' into
+	CoD7
+
+2011-02-09  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: setup: updated to test messages for old format in the
+	template and make that section somewhat intelligent
+
+2011-02-09  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit e672d55a56275ed8243ad55261ca5f0adc43032f Merge: 2abb8a2
+	151d31f Author: Just a baka <justabaka@gmail.com> Date:   Wed Feb 9
+	21:17:12 2011 +0600
+
+2011-02-09  Just a baka <justabaka@gmail.com>
+
+	* : Merge commit 'f7de0ade50ff780f6dbbf83a0ef70dd911d49095' into
+	CoD7
+
+2011-02-08  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/parsers/cod7.py: Changes to _regPlayer to cope with neg port
+	and neq qport
+
+2011-02-08  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt: update changelogdetailed
+
+2011-02-08  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 44c2c398c06fee9f8b1d9b13a38d281dd0a42b56 Merge: f7de0ad
+	a3570ab Author: Freelander <admin@fps-gamer.net> Date:   Tue Feb 8
+	16:06:21 2011 +0200
+
+2011-02-08  Freelander <admin@fps-gamer.net>
+
+	* : Merge remote branch 'b3/CoD7' into CoD7
+
+2011-02-07  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/iourt41.py: iuort41: harden getTeam()
+
+2011-02-07  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit b26904c4537d2176b3abace8f56c96c2d153c08e Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Mon Feb 7 21:25:48 2011 +0100
+
+2011-02-07  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/cache/empty.txt, b3/parsers/q3a/rcon.py: rcon.py: configurable
+	caching
+
+2011-02-06  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: setup: minor update
+
+2011-02-06  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: setup: minor update on executeSql()
+
+2011-02-06  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: setup: able to load values from backed up config when
+	creating a new one.
+
+2011-02-06  Freelander <admin@fps-gamer.net>
+
+	* : commit c8b9c2c021e40f379375f316ba643ec5688825c8 Author: Just a
+	baka <justabaka@gmail.com> Date:   Sun Feb 6 21:26:58 2011 +0600
+
+2011-02-06  Just a baka <justabaka@gmail.com>
+
+	* : Merge commit '18a23d198e6bf68c8617a0d8b476e946a993f735' into
+	CoD7
+
+2011-02-06  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 7f84f60789a98c275b9196a734fc70371c59d92a Author:
+	82ndab-Bravo17 <82ndab.bravo17@gmail.com> Date:   Sun Feb 6 01:37:39
+	2011 -0500
+
+2011-02-06  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/plugins/cod7http.py: #   * Added log_append config variable to
+	control whether local log is deleted on startup #   * Changed
+	lastlines functionality to being stored in memory rather than
+	getting from local log #       using Jastabaka's lazy curser #   *
+	Make sure that we have something worth decompressing before we
+	attempt to do so #   * Added user agent to timeout request
+
+2011-02-06  Just a baka <justabaka@gmail.com>
+
+	* b3/parsers/cod7.py: Forgotten 'import string'
+
+2011-02-06  Just a baka <justabaka@gmail.com>
+
+	* b3/parsers/cod7.py: Added a config option use_prematch_logic
+	support
+
+2011-02-06  Just a baka <justabaka@gmail.com>
+
+	* b3/parsers/cod7.py: Pre-Match Logic
+
+2011-02-06  Just a baka <justabaka@gmail.com>
+
+	* b3/parsers/q3a/rcon.py: Bugfix and a credits for excluding quit
+	from retrying
+
+2011-02-05  Freelander <admin@fps-gamer.net>
+
+	* : commit 353d7124d63adc9ba3595d1cf076cfd0f7db6bbc Author:
+	82ndab-Bravo17 <82ndab.bravo17@gmail.com> Date:   Sat Feb 5 16:42:48
+	2011 -0500
+
+2011-02-05  Freelander <admin@fps-gamer.net>
+
+	* : Merge remote branch 'b3/CoD7' into CoD7
+
+2011-02-05  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: minor update
+
+2011-02-05  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: setup: You can now load an existing config file.
+	Prevents us from having to type each setting when we already have a
+	good config. This does not work for the 'messages' division and the
+	'plugins'. They fall back to the defaults.
+
+2011-02-04  Freelander <admin@fps-gamer.net>
+
+	* : Merge remote branch 'b3/CoD7' into CoD7
+
+2011-02-03  Freelander <admin@fps-gamer.net>
+
+	* b3/plugins/cod7http.py: Bug fix
+
+2011-02-02  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/__init__.py, b3/conf/plugin_admin.xml, b3/conf/plugin_tk.xml,
+	b3/conf/plugin_welcome.xml, b3/plugins/stats.py, b3/plugins/tk.py,
+	b3/plugins/welcome.py: Change all (^3  to [^3 as black ops displays
+	(^3 as 3.
+
+2011-02-02  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/parsers/cod7_rcon.py, b3/parsers/q3a/rcon.py: Added rcon string
+	variables
+
+2011-02-03  Freelander <admin@fps-gamer.net>
+
+	* b3/plugins/cod7http.py: if unable to find last line restart
+	download process
+
+2011-02-02  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/wop15.py: wop15 parser: bugfix
+
+2011-02-02  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py: cod parser: add cod7 suicide lineformat
+
+2011-02-02  Freelander <admin@fps-gamer.net>
+
+	* b3/plugins/cod7http.py: fixing comments again!!!
+
+2011-02-02  Freelander <admin@fps-gamer.net>
+
+	* b3/plugins/cod7http.py: increase range header if last line is not
+	in remote log chunk
+
+2011-02-02  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/sql/b3.sql: updated b3 sql TYPE->ENGINE
+
+2011-02-02  Freelander <admin@fps-gamer.net>
+
+	* b3/parsers/cod7.py: Force glogsync to 1 on every round start
+
+2011-02-02  Freelander <admin@fps-gamer.net>
+
+	* b3/plugins/cod7http.py: fixed some comments
+
+2011-02-02  Freelander <admin@fps-gamer.net>
+
+	* b3/plugins/cod7http.py: now compares last 3 lines and python
+	version check on start up
+
+2011-02-01  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/moh.py: moh parser: adapted to server R9 version 615937
+	- fixed onPlayerSpawn and vars.noCrosshairs errors
+
+2011-02-01  Freelander <admin@fps-gamer.net>
+
+	* b3/plugins/cod7http.py: refactoring of the code and various
+	changes
+
+2011-01-31  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 0daf6624a7287ffece4c6ce8f680f565119c6e1d Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Mon Jan 31 12:18:29 2011 +0100
+
+2011-01-31  xlr8or <xlr8or@xlr8or.com>
+
+	* README.md: Updated links
+
+2011-01-31  xlr8or <xlr8or@xlr8or.com>
+
+	* README.md: Adding new README.md
+
+2011-01-31  xlr8or <xlr8or@xlr8or.com>
+
+	* README: Renamed README for proper git markdown
+
+2011-01-31  xlr8or <xlr8or@xlr8or.com>
+
+	* : 23	1	README
+
+2011-01-30  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py, b3/sql/recreate-xlrstats.sql, b3/sql/xlrstats.sql: 
+	setup procedure: add xlrstats tables when plugin is installed from
+	setup
+
+2011-01-30  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: xlrstats: update weapon tables
+	structures for cod7
+
+2011-01-28  bdgrell <bdgrell@gmail.com>
+
+	* b3/plugins/stats.py: Fixed the join commands to be consistent with
+	other plugins
+
+2011-01-29  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/q3a/rcon.py: caching update: delegate cache expiretime
+	to decorator only.
+
+2011-01-28  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 0611529dd9cb0e4d3773ad893ba1411392911294 Author:
+	Freelander <admin@fps-gamer.net> Date:   Fri Jan 28 11:03:17 2011
+	+0200
+
+2011-01-25  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py: cod.py: bugfix in Joining players on connection
+
+2011-01-24  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod6.py: cod6.py: replaced _commands dict to fix broken
+	ban command
+
+2011-01-23  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: xlrstats: bugfix
+
+2011-01-23  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: xlrstats: bugfix
+
+2011-01-23  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/lib/beaker/__init__.py, b3/lib/beaker/cache.py,
+	b3/lib/beaker/container.py, b3/lib/beaker/converters.py,
+	b3/lib/beaker/crypto/__init__.py,
+	b3/lib/beaker/crypto/jcecrypto.py, b3/lib/beaker/crypto/pbkdf2.py,
+	b3/lib/beaker/crypto/pycrypto.py, b3/lib/beaker/crypto/util.py,
+	b3/lib/beaker/exceptions.py, b3/lib/beaker/ext/__init__.py,
+	b3/lib/beaker/ext/database.py, b3/lib/beaker/ext/google.py,
+	b3/lib/beaker/ext/memcached.py, b3/lib/beaker/ext/sqla.py,
+	b3/lib/beaker/middleware.py, b3/lib/beaker/session.py,
+	b3/lib/beaker/synchronization.py, b3/lib/beaker/util.py: Adding the
+	beaker caching library
+
+2011-01-23  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/cache/empty.txt, b3/parsers/q3a/rcon.py: q3a rcon: Caching of
+	status responses using beaker library Using file type caching for
+	testing purposes
+
+2011-01-22  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: XLRstats: bugfix (:)
+
+2011-01-22  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: XLRstats: more debug information and
+	bugfix
+
+2011-01-22  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/wop15.py: wop15 update
+
+2011-01-21  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/wop15.py: First draft of Wop 1.5 parser
+
+2011-01-21  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: XLRstats: update
+
+2011-01-19  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: XLRstats: implementation of minPlayers
+	using a Sub-Plugin
+
+2011-01-17  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/conf/xlrstats.xml, b3/extplugins/xlrstats.py: First
+	draft: minplayers setting - Disable plugin when not enough players are online on roundstart.  - Enable it when the minplayers setting is met
+
+2011-01-16  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit af63ad0fcf6baef0ba202dcc4781b0850aff32d1 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sun Jan 16 10:01:55 2011 +0100
+
+2011-01-14  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/plugins/publist.py: bugfix in crontab timer calculation
+
+2011-01-08  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: Setup procedure now supports adding B3 database
+	tables when they do not exist.
+
+2011-01-07  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt, b3.egg-info/PKG-INFO,
+	b3.egg-info/SOURCES.txt, b3/PKG-INFO,
+	py2exe_builder/b3-installer-project.iss, setup.py, setupPy2exe.py,
+	versions.txt: Versioning to v1.4.2b
+
 2011-01-07  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/plugins/status.py: fixed redundant trailing bracket

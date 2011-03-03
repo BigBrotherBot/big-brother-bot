@@ -312,7 +312,7 @@ class StatsPlugin(b3.plugin.Plugin):
                 if i >= 6:
                     break
 
-                results.append('^3#%s^7 %s ^7(^3%s^7)' % (i, name, score))
+                results.append('^3#%s^7 %s ^7[^3%s^7]' % (i, name, score))
                 
             if client:        
                 client.message(client, '^3Top Stats:^7 %s' % string.join(results,', '))
@@ -345,7 +345,7 @@ class StatsPlugin(b3.plugin.Plugin):
                 if i >= 6:
                     break
 
-                results.append('^3#%s^7 %s ^7(^3%s^7)' % (i, name, score))
+                results.append('^3#%s^7 %s ^7[^3%s^7]' % (i, name, score))
 
             if client:
                 client.message(client, '^3Top Experienced Players:^7 %s' % string.join(results, ', '))
