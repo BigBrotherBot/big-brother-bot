@@ -59,13 +59,15 @@
 #   * Reduced default timeout to 5 seconds
 #   * Arranged log messages
 #   * Fixed a minor bug
+# 02.03.2011 - 1.0.13 - Freelander
+#   * Added exception for ValueError that may occur on an interrupted internet connection
 #
 
 ## @file
 #  This plugin downloads and maintains CoD7 game log file
 
 __author__  = 'Freelander, Bravo17, Just a baka'
-__version__ = '1.0.12'
+__version__ = '1.0.13'
 
 import b3, threading
 from b3 import functions
@@ -259,15 +261,19 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
 
                         #we'll get the new lines i.e what is available after the last line
                         #of our local log file
-                        checklog = remotelog.rpartition(self.lastlines)
-                        newlog = checklog[2]
-                        # Remove any broken last line
-                        i = newlog.rfind ('\r\n')
-                        newlog = newlog[:i + 2]
-                        # Remove any blank lines
-                        while newlog[-4:-2] == '\r\n':
-                            newlog = newlog[:-2]
-                            
+                        try:
+                            checklog = remotelog.rpartition(self.lastlines)
+                            newlog = checklog[2]
+                            # Remove any broken last line
+                            i = newlog.rfind ('\r\n')
+                            newlog = newlog[:i + 2]
+                            # Remove any blank lines
+                            while newlog[-4:-2] == '\r\n':
+                                newlog = newlog[:-2]
+                        except ValueError, error:
+                            self.error ('ValueError: %s' % error)
+                            newlog = ''
+
                         # Remove any blank lines from end
                         
                         #append the additions to our log if there is something and update lazy cursor
