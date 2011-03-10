@@ -40,6 +40,8 @@
 # 2011/02/06 - 0.6 - xlr8or
 #    * setup now reads values from an existing config or a distribution example
 #    * added COD7 support
+# 2011/03/10 - 0.7 - xlr8or
+#    * Don't let setup fail when SQL file cannot be opened
 #
 
 # This section is DoxuGen information. More information on how to comment your code
@@ -48,7 +50,7 @@
 # The setup procedure, to create a new configuration file (b3.xml)
 
 __author__  = 'xlr8or'
-__version__ = '0.6'
+__version__ = '0.7'
 
 import platform
 import urllib2
@@ -127,7 +129,13 @@ class Setup:
         self.add_set("database", self.read_element('b3', 'database', 'mysql://b3:password@localhost/b3'),
                      "Your database info: [mysql]://[db-user]:[db-password]@[db-server[:port]]/[db-name]")
         self.add_buffer('Testing and Setting Up Database...\n')
-        self.executeSql('@b3/sql/b3.sql')
+        # try to install the tables if they do not exist
+        _result = self.executeSql('@b3/sql/b3.sql')
+        if _result == 'could_not_open':
+            # give it another try using a different path
+            _result = self.executeSql('sql/b3.sql')
+            if _result == 'could_not_open':
+                self.add_buffer('Could not open SQL file, you will need to import the database tables manually')
 
         self.add_set("bot_name", self.read_element('b3', 'bot_name', 'b3'), "Name of the bot")
         self.add_set("bot_prefix", self.read_element('b3', 'bot_prefix', '^0(^2b3^0)^7:'),
@@ -584,14 +592,17 @@ class Setup:
             self.add_buffer('Connected to the database. Installing the tables when they don\'t exist.\n')
             sqlFile = self.getAbsolutePath(file)
             if os.path.exists(sqlFile):
-                f = open(sqlFile, 'r')
+                try:
+                    f = open(sqlFile, 'r')
+                except Exception:
+                    return 'could_not_open'
                 sql_text = f.read()
                 f.close()
                 sql_statements = sql_text.split(';')
                 for s in sql_statements:
                     try:
                         self.db.query(s)
-                    except:
+                    except Exception:
                         pass
             else:
                 raise Exception('sqlFile does not exist: %s' %sqlFile)
