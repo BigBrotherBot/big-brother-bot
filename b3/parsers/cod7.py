@@ -29,18 +29,22 @@
 #   * Pre-Match Logic
 # 08.02.2011 - 1.0.4 - Just a baka
 #   * Reworked Pre-Match logic to reflect latest changes to cod7http
+# 02.03.2011 - 1.0.5 -Bravo17
+#   * Added test to make sure cod7http still running
+#   * Tidied up startup console output
 
 ## @file
 #  CoD7 Parser
 
-__author__  = 'Freelander, Courgette, Just a baka'
-__version__ = '1.0.4'
+__author__  = 'Freelander, Courgette, Just a baka, Bravo17'
+__version__ = '1.0.5'
 
 import re
 import string
 import threading
 import b3.parsers.cod7_rcon as rcon
 import b3.parsers.cod5
+import os
 
 class Cod7Parser(b3.parsers.cod5.Cod5Parser):
     gameName = 'cod7'
@@ -55,6 +59,7 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
     _sgFound = False
     _logTimer = 0
     _logTimerOld = 0
+    _cod7httpplugin = None
 
     """\
     Next actions need translation to the EVT_CLIENT_ACTION (Treyarch has a different approach on actions)
@@ -76,6 +81,8 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
 
         # add the world client
         client = self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
+
+        self._cod7httpplugin = self.getPlugin('cod7http')
 
         # get map from the status rcon command
         map = self.getMap()
@@ -268,6 +275,26 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
             self.debug('%s connected, waiting for Authentication...' %name)
             self.debug('Our Authentication queue: %s' % self._counter)
 
+    def read(self):
+        """read from game server log file"""
+        # Getting the stats of the game log (we are looking for the size)
+        filestats = os.fstat(self.input.fileno())
+
+        thread_alive = self._cod7httpplugin.httpThreadalive()
+        if not thread_alive:
+            self.verbose('Cod7Http Plugin has stopped working, restarting')
+            self.restart()
+
+        # Compare the current cursor position against the current file size,
+        # if the cursor is at a number higher than the game log size, then
+        # there's a problem
+
+
+        if self.input.tell() > filestats.st_size:
+            self.debug('Parser: Game log is suddenly smaller than it was before (%s bytes, now %s), the log was probably either rotated or emptied. B3 will now re-adjust to the new size of the log.' % (str(self.input.tell()), str(filestats.st_size)) )
+            self.input.seek(0, os.SEEK_END)
+        return self.input.readlines()
+
 
 ###################################################################
 # ALTER THE WAY parser.py work for game logs starting with http://
@@ -291,6 +318,7 @@ def newLoadArbPlugins(self):
         and self.config.get('server','game_log')[0:7] == 'http://' :
         
         # undo httpytail load
+        self.screen.write('Unloading        : http Plugin\n')
         self._pluginOrder.remove('httpytail')
         del self._plugins['httpytail']
 
@@ -304,7 +332,7 @@ def newLoadArbPlugins(self):
             version = getattr(pluginModule, '__version__', 'Unknown Version')
             author  = getattr(pluginModule, '__author__', 'Unknown Author')
             self.bot('Plugin %s (%s - %s) loaded', p, version, author)
-            self.screen.write('.')
+            self.screen.write('Loading          : COD7 http Plugin\n')
             self.screen.flush()
         except Exception, msg:
             self.critical('Error loading plugin: %s', msg)

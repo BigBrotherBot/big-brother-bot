@@ -61,13 +61,15 @@
 #   * Fixed a minor bug
 # 02.03.2011 - 1.0.13 - Freelander
 #   * Added exception for ValueError that may occur on an interrupted internet connection
+# 02.03.2011 - 1.0.14 - Bravo17
+#   * Added method to test whether processData thread is still running, for use by parser
 #
 
 ## @file
 #  This plugin downloads and maintains CoD7 game log file
 
 __author__  = 'Freelander, Bravo17, Just a baka'
-__version__ = '1.0.13'
+__version__ = '1.0.14'
 
 import b3, threading
 from b3 import functions
@@ -95,6 +97,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
     _default_timeout = 5
     _logAppend = True
     lastlines = ''
+    httpthreadinst = None
 
     def onLoadConfig(self):
         pass
@@ -105,6 +108,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         thread1 = threading.Thread(target=self.processData)
         self.info("Starting cod7http thread")
         thread1.start()
+        self.httpthreadinst = thread1
 
     def onStartup(self):
         """Sets and loads config values from the main config file."""
@@ -150,6 +154,10 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             self.error('Your game log url doesn\'t seem to be valid. Please check your config file')
             self.console.die()
 
+    def httpThreadalive(self):
+        """Test whether processData thread is still running."""
+        return self.httpthreadinst.isAlive()
+
     def writeCompletelog(self, locallog, remotelog):
         """Will restart writing the local log when bot started for the first time
         or if last line cannot be found in remote chunk
@@ -167,7 +175,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         while remotelog[-4:-2] == '\r\n':
             remotelog = remotelog[:-2]
         
-        # use lazy cursor (c) Just a baka
+        # use Just a baka's lazy cursor
         self.lastlines = remotelog[-1000:]
 
         #create or open the local log file
