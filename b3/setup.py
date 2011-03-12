@@ -42,6 +42,9 @@
 #    * added COD7 support
 # 2011/03/10 - 0.7 - xlr8or
 #    * Don't let setup fail when SQL file cannot be opened
+# 2011/03/12 - 0.8 - xlr8or
+#    * Better handling of execution of b3.sql
+#    * Bugfix in message section
 #
 
 # This section is DoxuGen information. More information on how to comment your code
@@ -50,7 +53,7 @@
 # The setup procedure, to create a new configuration file (b3.xml)
 
 __author__  = 'xlr8or'
-__version__ = '0.7'
+__version__ = '0.8'
 
 import platform
 import urllib2
@@ -130,12 +133,19 @@ class Setup:
                      "Your database info: [mysql]://[db-user]:[db-password]@[db-server[:port]]/[db-name]")
         self.add_buffer('Testing and Setting Up Database...\n')
         # try to install the tables if they do not exist
-        _result = self.executeSql('@b3/sql/b3.sql')
-        if _result == 'could_not_open':
-            # give it another try using a different path
-            _result = self.executeSql('sql/b3.sql')
-            if _result == 'could_not_open':
-                self.add_buffer('Could not open SQL file, you will need to import the database tables manually')
+        _sqlfiles = ['@b3/sql/b3.sql', 'b3/sql/b3.sql', 'sql/b3.sql']
+        _sqlc = 0
+        _sqlresult = 'notfound'
+        while _sqlresult == 'notfound' and _sqlc < len(_sqlfiles):
+            _sqlresult = self.executeSql(_sqlfiles[_sqlc])
+            _sqlc += 1
+        # still not found? prompt for the complete path and filename
+        if _sqlresult == 'notfound':
+            _sqlfile = self.raw_default('I could not find b3/sql/b3.sql. Please provide the full path and filename.')
+            _sqlresult = self.executeSql(_sqlfile)
+        # giving up...
+        if _sqlresult == 'notfound':
+            self.add_buffer('Could not open SQL file, you will need to import the database tables manually')
 
         self.add_set("bot_name", self.read_element('b3', 'bot_name', 'b3'), "Name of the bot")
         self.add_set("bot_prefix", self.read_element('b3', 'bot_prefix', '^0(^2b3^0)^7:'),
@@ -254,12 +264,12 @@ class Setup:
         if '%s' in self.read_element('messages', 'kicked_by', '%s'):
             self.add_set("kicked_by", "$clientname^7 was kicked by $adminname^7 $reason")
         else:
-            self.add_set("kicked_by", self.read_element('messages', 'kicked', '$clientname^7 was kicked by $adminname^7 $reason'))
+            self.add_set("kicked_by", self.read_element('messages', 'kicked_by', '$clientname^7 was kicked by $adminname^7 $reason'))
 
         if '%s' in self.read_element('messages', 'kicked', '%s'):
             self.add_set("kicked", "$clientname^7 was kicked $reason")
         else:
-            self.add_set("kicked_by", self.read_element('messages', 'kicked_by', '$clientname^7 was kicked $reason'))
+            self.add_set("kicked", self.read_element('messages', 'kicked', '$clientname^7 was kicked $reason'))
 
         if '%s' in self.read_element('messages', 'banned_by', '%s'):
             self.add_set("banned_by", "$clientname^7 was banned by $adminname^7 $reason")
@@ -333,8 +343,8 @@ class Setup:
             xml.comment("The next plugins are external, 3rd party plugins and should reside in the external_dir. Example:")
             xml.data("\t\t")
             xml.comment("plugin config=\"@b3/extplugins/conf/newplugin.xml\" name=\"newplugin\"")
-            result = self.add_plugin("xlrstats", self._set_external_dir+"/conf/xlrstats.xml", default="no")
-            if result:
+            _result = self.add_plugin("xlrstats", self._set_external_dir+"/conf/xlrstats.xml", default="no")
+            if _result:
                 self.executeSql('@b3/sql/xlrstats.sql')
 
             #self.add_plugin("registered", self._set_external_dir+"/conf/plugin_registered.xml", "Trying to download Registered", "http://www.bigbrotherbot.net/forums/downloads/?sa=downfile&id=22")
@@ -587,7 +597,7 @@ class Setup:
     def executeSql(self, file):
         """This method executes an external sql file on the current database"""
         self.db = self.connectToDatabase()
-        sqlFile = ''
+        sqlFile = file
         if self.db:
             self.add_buffer('Connected to the database. Installing the tables when they don\'t exist.\n')
             sqlFile = self.getAbsolutePath(file)
