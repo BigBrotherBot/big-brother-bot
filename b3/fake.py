@@ -92,6 +92,7 @@ __version__ = '1.6'
 
 import re
 import time
+import traceback, sys
 from b3.plugins.admin import AdminPlugin
 import b3.parsers.punkbuster
 import b3.parser
