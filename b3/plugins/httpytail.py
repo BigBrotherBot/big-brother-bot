@@ -38,7 +38,7 @@ user_agent =  "B3 Httpytail plugin/%s" % __version__
 class HttpytailPlugin(b3.plugin.Plugin):
     ### settings
     _maxGap = 20480 # max gap in bytes between remote file and local file
-    _waitBeforeReconnect = 15 # time (in sec) to wait before reconnecting after loosing FTP connection : 
+    _waitBeforeReconnect = 15 # time (in sec) to wait before reconnecting after loosing HTTP connection : 
     _connectionTimeout = 30
     
     requiresConfigFile = False
@@ -72,7 +72,7 @@ class HttpytailPlugin(b3.plugin.Plugin):
             self._connectionTimeout = self.config.getint('settings', 'timeout')
         except: 
             self.warning("Error reading timeout from config file. Using default value")
-        self.info("FTP connection timeout: %s" % self._connectionTimeout)
+        self.info("HTTP connection timeout: %s" % self._connectionTimeout)
 
         try:
             self._maxGap = self.config.getint('settings', 'maxGapBytes')

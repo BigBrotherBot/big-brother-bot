@@ -11,7 +11,7 @@
    @conf : the folder containing this config file
   -->
 	<settings name="b3">
-		<!-- parser defines the game: cod/cod2/cod4/cod5/iourt41/etpro/wop/smg/bfbc2 -->
+		<!-- parser defines the game: cod/cod2/cod4/cod5/cod6/cod7/iourt41/etpro/wop/smg/bfbc2 -->
 		<set name="parser">bfbc2</set>
 		<set name="database">mysql://myuser:mypass@mydbhost/mydbname</set>
 		<set name="bot_name">b3</set>
