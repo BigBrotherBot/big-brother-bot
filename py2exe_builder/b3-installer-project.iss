@@ -3,7 +3,7 @@
 
 
 ;#define Debug
-#define B3_VERSION_NUMBER "1.4.2"
+#define B3_VERSION_NUMBER "1.5.0"
 #define B3_VERSION_SUFFIX "b"
 
 [Setup]

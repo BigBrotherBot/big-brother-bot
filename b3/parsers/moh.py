@@ -52,9 +52,11 @@
 # * add rotateMap and changeMap to fix !maprotate and !map#
 # 2011-02-01 - 1.1 - xlr8or
 # * adapted to server R9 version 615937 - fixed onPlayerSpawn and vars.noCrosshairs errors
+# 2011-03-05 - 1.2 - xlr8or
+# * admin.kickPlayer after ban now in try/except to avoid error msg when player is already gone
 #
 __author__  = 'Bakes, Courgette'
-__version__ = '1.0'
+__version__ = '1.2'
 
 import b3.events
 from b3.parsers.frostbite.abstractParser import AbstractParser
@@ -447,7 +449,10 @@ class MohParser(AbstractParser):
         self.debug('BAN : client: %s, reason: %s', client, reason)
         if isinstance(client, b3.clients.Client):
             self.write(self.getCommand('ban', guid=client.guid, reason=reason[:80]))
-            self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
+            try:
+                self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
+            except:
+                pass
             return
 
         if admin:
