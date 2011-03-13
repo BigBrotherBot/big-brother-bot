@@ -374,7 +374,8 @@ class Setup:
 
         # load the template based on the parser the user just chose
         _dflttemplate = self._configpath + 'conf/templates/b3.' + self._set_parser + '.tpl'
-        
+        if not os.path.exists(_dflttemplate):
+            _dflttemplate = self._configpath + 'conf/b3.distribution.xml'
 
         if self._template != '':
             # means we just backed-up an old config with the same name
@@ -393,7 +394,7 @@ class Setup:
             #self.add_buffer('Could not parse xml file: %s\n' % msg)
             # backed up config file must be corrupt or not completed last setup, reset it to the default
             self.add_buffer('Your previous config file was either empty, corrupt or not finished.\
-             Suggest we load the default...\n')
+             I Suggest we load the default...\n')
             self._template = ''
             return False
 
@@ -556,7 +557,7 @@ class Setup:
         self.testExit()
         print "First you will be prompted for a location and name for this"
         print "configuration file. This is for multiple server setups, or"
-        print "if you want to run B3 from a different setup file for your own."
+        print "if you want to run B3 from a different setup file for your own"
         print "reasons. In a basic single instance install you will not have to"
         print "change this location and/or name. If a configuration file exists"
         print "we will make a backup first and tag it with date and time, so"
