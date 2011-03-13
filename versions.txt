@@ -1,5 +1,5 @@
 project files/versions signature: e2dcb436a86e41a50c996e6fdebbdcc8
-project files content signature: 68978efe53ff9694313665ff3e1a73cf
+project files content signature: 2ccc577996f9741c70313d75a9264740
 b3\__init__.py 06b765e06577edcbdc064996d7a7e0f3 1.1.2
 b3\clients.py 1e73855e53f741044427aaf530df3938 1.3.1
 b3\config.py 9a08abbb8974661a5384cf8ff5ddcc9b 1.3.1
@@ -8,7 +8,7 @@ b3\cvar.py 779b8445ae8bca02f6028bd773150585 1.0.1
 b3\events.py 10b1aee821333387c2a49468cfe52437 1.1.2
 b3\extplugins\__init__.py 01abfc750a0c942167651c40d088531d None
 b3\extplugins\xlrstats.py 7bb0fb696be53dda32ed6fb4b1f48450 2.3.2
-b3\fake.py f525dd8a06a761e4c79ce3f3a2110b49 1.6
+b3\fake.py 00072025f0c01b895b6bd244272b60e5 1.6
 b3\functions.py 808f3c79983715352c45a23f31b014ab 1.3.2
 b3\game.py e80182dc6d87ef966ade52a3bbe4f14c 1.2.0
 b3\lib\PurePythonGeoIP.py 959d727e5fd89339c7464ea8ea9db54f None
@@ -119,7 +119,7 @@ b3\plugins\censor.py d939fe14c3f6ee881c9da37755183662 2.2.1
 b3\plugins\cod7http.py c27f5b4554d59a8fc5da7db188633233 1.0.14
 b3\plugins\codam.py 3f9eb16ba53188a81f001bc935199d6a 0.0.1
 b3\plugins\ftpytail.py 9bebe56aeead2a537b6c67adb19c9cbe 1.5.5
-b3\plugins\httpytail.py a6fb5db0f88db1dbb9b8711935a04e15 0.1
+b3\plugins\httpytail.py 5b4329c5067b0d165c75c569fe6f542b 0.1
 b3\plugins\login.py 281ddba7701105bb90053696eedcf31f 1.0.3
 b3\plugins\pingwatch.py 5d354a372d38d53a15a08b5320355b87 1.2.2
 b3\plugins\publist.py 921da6ca1b42162714e1f61e5f6a51f2 1.9.1
@@ -132,7 +132,7 @@ b3\plugins\tk.py b46762385fbb78505a6e83509b83b3c6 1.2.4
 b3\plugins\welcome.py 8d21d96e1a8842b4f37ed0d11cf4771b 1.1
 b3\querybuilder.py ea31f273c1342feadbf929bb06865ded 1.0.1
 b3\run.py 32a103988a829254859b949e2fc5cc80 1.3.3
-b3\setup.py 47aa890177134d45f86775a141af8749 0.8
+b3\setup.py c115b339e91a4a6ede2190666e051141 0.8
 b3\storage.py beacd69df1534c959ba1d709971239b1 1.8
 b3\timezones.py ae7ca81b37e6d3ade739d8d1b648555f 1.0.0
 b3\tools\__init__.py d41d8cd98f00b204e9800998ecf8427e None

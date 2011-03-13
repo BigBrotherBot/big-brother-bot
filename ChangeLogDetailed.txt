@@ -1,3 +1,30 @@
+2011-03-13  Courgette <courgette@ubu-team.org>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO,
+	py2exe_builder/b3-installer-project.iss: update B3 version to
+	v1.5.0b2
+
+2011-03-13  Courgette <courgette@ubu-team.org>
+
+	* setupPy2exe.py: force py2exe to import the dbhash modules as
+	py2exe dependencies crawler fails to detect it when importing the
+	anydbm modules (introduced with the rcon caching feature of B3)
+
+2011-03-13  Courgette <courgette@ubu-team.org>
+
+	* b3/fake.py: add missing imports to fake module
+
+2011-03-13  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/b3.bfbc2_example.xml, b3/conf/b3.distribution.xml,
+	b3/conf/b3.moh_example.xml, b3/plugins/httpytail.py: add cod6/cod7
+	de b3.xml examples and replace FTP with HTTP in httpytail.py
+
+2011-03-13  Courgette <courgette@ubu-team.org>
+
+	* : commit 20706e4b2c85c9e2514e3de0381b4fc3b2df5362 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sat Mar 12 21:02:08 2011 +0100
+
 2011-03-12  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/setup.py: * Better handling of execution of b3.sql * Bugfix in message section
@@ -34,9 +61,11 @@
 	* b3/plugins/cod7http.py: added value error exception that may occur
 	on a internet connection interruption
 
-2011-03-02  Freelander <freelander00@gmail.com>
+2011-03-03  Courgette <courgette@ubu-team.org>
 
-	* b3/plugins/cod7http.py: added back doxygen lines!
+	* : commit 699e9ae5c92927278796727a66b1015b2cf2d9bf Author:
+	Freelander <freelander00@gmail.com> Date:   Wed Mar 2 12:03:47 2011
+	+0200
 
 2011-03-02  Freelander <freelander00@gmail.com>
 
@@ -264,12 +293,11 @@
 
 	* b3/plugins/cod7http.py: Bug fix
 
-2011-02-02  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+2011-02-03  Courgette <courgette@ubu-team.org>
 
-	* b3/__init__.py, b3/conf/plugin_admin.xml, b3/conf/plugin_tk.xml,
-	b3/conf/plugin_welcome.xml, b3/plugins/stats.py, b3/plugins/tk.py,
-	b3/plugins/welcome.py: Change all (^3  to [^3 as black ops displays
-	(^3 as 3.
+	* : commit c413287b4fffa702bb0f4295220aa4f8b2bb2b0b Author:
+	82ndab-Bravo17 <82ndab.bravo17@gmail.com> Date:   Wed Feb 2 22:50:47
+	2011 -0500
 
 2011-02-02  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
 
@@ -526,9 +554,10 @@
 	* : commit d942bc6f87a31ceda2e629573a7f9b780472e120 Author:
 	Gammelbob <spam@kh3a.de> Date:   Thu Dec 30 04:25:11 2010 -0800
 
-2010-12-19  xlr8or <xlr8or@xlr8or.com>
+2010-12-22  Courgette <courgette@ubu-team.org>
 
-	* b3/parsers/bfbc2.py: 2010-11-21 - 2.1.1 - Durzo * adjust mapnames from mappack 7 and vietnam expansion
+	* : commit 817987be6231a81734eb2ae3421d3804fc2fbc6f Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sun Dec 19 11:06:59 2010 +0100
 
 2010-12-13  Courgette <courgette@ubu-team.org>
 

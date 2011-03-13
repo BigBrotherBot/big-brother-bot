@@ -120,7 +120,7 @@ class Setup:
         # B3 settings
         self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
         xml.start("settings", name="b3")
-        self.add_set("parser", "", "Define your game: cod/cod2/cod4/cod5/cod6/cod7/iourt41/etpro/wop/smg/bfbc2/moh")
+        self.add_set("parser", "", "Define your game: cod/cod2/cod4/cod5/cod6/cod7/iourt41/etpro/wop/smg/bfbc2/moh/oa081")
         # set a template xml file to read existing settings from
         _result = False
         while not _result:
