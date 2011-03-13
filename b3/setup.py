@@ -143,9 +143,9 @@ class Setup:
         if _sqlresult == 'notfound':
             _sqlfile = self.raw_default('I could not find b3/sql/b3.sql. Please provide the full path and filename.')
             _sqlresult = self.executeSql(_sqlfile)
-        # giving up...
-        if _sqlresult == 'notfound':
-            self.add_buffer('Could not open SQL file, you will need to import the database tables manually')
+        # still no luck? giving up...
+        if _sqlresult in ['notfound', 'couldnotopen']:
+            self.add_buffer('I give up, I could not find or open SQL file, you will need to import the database tables manually')
 
         self.add_set("bot_name", self.read_element('b3', 'bot_name', 'b3'), "Name of the bot")
         self.add_set("bot_prefix", self.read_element('b3', 'bot_prefix', '^0(^2b3^0)^7:'),
@@ -605,7 +605,8 @@ class Setup:
                 try:
                     f = open(sqlFile, 'r')
                 except Exception:
-                    return 'could_not_open'
+                    self.db.close()
+                    return 'couldnotopen'
                 sql_text = f.read()
                 f.close()
                 sql_statements = sql_text.split(';')
@@ -614,13 +615,14 @@ class Setup:
                         self.db.query(s)
                     except Exception:
                         pass
+                self.db.close()
             else:
-                raise Exception('sqlFile does not exist: %s' %sqlFile)
-            self.db.close()
+                self.db.close()
+                return 'notfound'
         else:
             self.add_buffer('Connection to the database failed. Check the documentation how to add the database tables from %s manually.\n' %sqlFile)
             self.testExit(_question='Do you still want to continue? [Enter] to continue, \'abort\' to abort Setup: ')
-        return None
+        return 'success'
 
     def getB3Path(self):
         if functions.main_is_frozen():
