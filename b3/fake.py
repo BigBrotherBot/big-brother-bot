@@ -206,9 +206,9 @@ class FakeConsole(b3.parser.Parser):
             self.write(self.getCommand('kick', cid=client, reason=reason))
             return
         elif admin:
-            reason = self.getMessage('kicked_by', client.exactName, admin.exactName, reason)
+            reason = self.getMessage('kicked_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
         else:
-            reason = self.getMessage('kicked', client.exactName, reason)
+            reason = self.getMessage('kicked', self.getMessageVariables(client=client, reason=reason))
 
         if self.PunkBuster:
             self.PunkBuster.kick(client, 0.5, reason)
