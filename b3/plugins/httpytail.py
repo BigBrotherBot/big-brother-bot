@@ -19,8 +19,10 @@
 # CHANGELOG:
 # 2010-09-04 - 0.1 - GrosBedo
 #     Initial release, with htaccess authentication support.
- 
-__version__ = '0.1'
+# 2011-03-17 - 0.2 - Courgette
+#     Make sure that maxGapBytes is never exceeded
+
+__version__ = '0.2'
 __author__ = 'GrosBedo'
  
 import b3, threading
@@ -148,7 +150,7 @@ class HttpytailPlugin(b3.plugin.Plugin):
                         self._remoteFileOffset = remoteSize
                 
                 # debug line
-                self.debug('Diff - current cursor: %s - remote file size: %s' % (str(self._remoteFileOffset), str(remoteSize)) ) # please leave this debug line, it can be very useful for users to catch some weird things happening without errors, like if the webserver redirects the request because of too many connections (b3/delay is too short)
+                #self.debug('Diff - current cursor: %s - remote file size: %s' % (str(self._remoteFileOffset), str(remoteSize)) ) # please leave this debug line, it can be very useful for users to catch some weird things happening without errors, like if the webserver redirects the request because of too many connections (b3/delay is too short)
 
                 # Detecting log rotation if remote file size is lower than our current cursor position
                 if remoteSize < self._remoteFileOffset:
@@ -160,8 +162,16 @@ class HttpytailPlugin(b3.plugin.Plugin):
                     # For that, we use a custom made opener so that we can download only the diff between what has been added since last cycle
                     DiffURLOpener = self.DiffURLOpener()
                     httpopener = urllib2.build_opener(DiffURLOpener)
+                    
+                    b1 = self._remoteFileOffset
+                    b2 = remoteSize
+                    if int(b2) - int(b1) > self._maxGap:
+                        b1 = int(b2) - self._maxGap
+                    
                     # We add the Range header here, this is the one permitting to fetch only a part of an http remote file
-                    req.add_header("Range","bytes=%s-" % (self._remoteFileOffset))
+                    range_bytes = "bytes=%s-%s" % (b1, b2)
+                    self.verbose("requesting range %s" % range_bytes)
+                    req.add_header("Range",range_bytes)
                     # Opening the section we want from the remote file
                     webFileDiff = httpopener.open(req)
 
@@ -169,6 +179,8 @@ class HttpytailPlugin(b3.plugin.Plugin):
                     self.file.write(webFileDiff.read())
                     # We update the current cursor position to the size of the remote file
                     self._remoteFileOffset = remoteSize
+                    
+                    self.verbose("%s bytes downloaded" % webFileDiff.info().getheader('Content-Length'))
                     # Finally, we close the distant file
                     webFileDiff.close()
 
@@ -230,12 +242,9 @@ if __name__ == '__main__':
     </configuration>
     """)
     p = HttpytailPlugin(fakeConsole, config)
-
-    
-    print "------------------------------------"
-    p = HttpytailPlugin(fakeConsole)
-
+    p.onStartup()
+    p._httpdelay = 5
     p.initThread('http://www.somewhere.tld/somepath/somefile.log')
-    time.sleep(30)
+    time.sleep(300)
     fakeConsole.shutdown()
     time.sleep(8)
