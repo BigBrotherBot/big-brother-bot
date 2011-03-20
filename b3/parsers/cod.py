@@ -44,9 +44,10 @@
 # 07/11/2010 - 1.4.16 - GrosBedo - messages now support named $variables instead of %s
 # 08/11/2010 - 1.4.17 - GrosBedo - messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
 # 02/02/2011 - 1.4.18 - xlr8or - add cod7 suicide _lineformat
+# 16/03/2011 - 1.4.19 - xlr8or - improve PunkBuster check
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.18'
+__version__ = '1.4.19'
 
 import re, string, threading
 import b3
@@ -128,7 +129,7 @@ class CodParser(AbstractParser):
         if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
             # test if PunkBuster is active
             result = self.write('PB_SV_Ver')
-            if result != '':
+            if result != '' and result[:7] != 'Unknown':
                 self.info('PunkBuster Active: %s' %result) 
                 self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
             else:

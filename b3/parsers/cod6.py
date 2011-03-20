@@ -17,6 +17,8 @@
 #
 # CHANGELOG
 #
+# 18/03/2011 - v0.4 - Freelander
+#  * Fixed a typo causing permanent bans fail
 # 24/01/2010 - v0.3 - xlr8or
 #  * replaced _commands dict to fix broken ban command 
 # 09/10/2010 - v0.2 - jerbob92 
@@ -26,7 +28,7 @@
 
 
 __author__  = 'NTAuthority'
-__version__ = '0.3'
+__version__ = '0.4'
 
 import b3.parsers.cod4
 import re
@@ -41,7 +43,7 @@ class Cod6Parser(b3.parsers.cod4.Cod4Parser):
     _commands['say'] = 'say %(prefix)s %(message)s'
     _commands['set'] = 'set %(name)s "%(value)s"'
     _commands['kick'] = 'clientkick %(cid)s'
-    _commands['ban'] = 'cientkick %(cid)s'
+    _commands['ban'] = 'clientkick %(cid)s'
     _commands['unban'] = 'unbanuser %(name)s' # remove players from game engine's ban.txt
     _commands['tempban'] = 'clientkick %(cid)s'
 
