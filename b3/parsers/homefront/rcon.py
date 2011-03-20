@@ -17,45 +17,80 @@
 #
 # CHANGELOG
 #
+# aaaa/mm/dd - who 
+#    blablbalb
 #
 
-"""
-dummy rcon module for Homefront to satisfy B3 parser. 
+__author__  = 'xx'
+__version__ = '0.0'
 
-Ideally, B3 parser should be change to allow games such as homefront to not require 
-a separated socket connection for rcon commands
+"""rcon module for Home Front. This module should focus on sending 
+commands to a rcon server presenting a python file like API"""
 
-To use that Rcon class, instanciate and use the set_homefront_client() method. 
-Then you can expect this class to work like the other Rcon classes
-"""
-
-__author__  = 'Courgette'
-__version__ = '0.1'
-
+import thread
+from connection import HomefrontConnection, HomefrontConnectionException, HomefrontCommandFailedError
 
 #--------------------------------------------------------------------------------------------------
 class Rcon:
-    def __init__(self, console, *args):
-        self.console = console
-        self.hfclient = None
-        
-    def set_homefront_client(self, hfclient):
-        self.hfclient = hfclient
+    _lock = thread.allocate_lock()
+    console = None
+    _conn = None
     
+    _rconIp = None
+    _rconPort = None
+    _rconPassword = None
+    
+
+    def __init__(self, console, host, password):
+        self.console = console
+        self._rconIp, self._rconPort = host
+        self._rconPassword = password
+        
+    def _connect(self):
+        if self._conn:
+            return
+        self.console.verbose('RCON: Connecting to HomeFront server ...')
+        self._conn = HomefrontConnection(self.console, self._rconIp, self._rconPort, self._rconPassword)
+
     def writelines(self, lines):
         for line in lines:
             self.write(line)
 
-    def write(self, cmd, *args, **kwargs):
-        if not self.hfclient:
-            return
-        self.hfclient.command(cmd)
-        
+    def write(self, cmd, maxRetries=1, needConfirmation=False):
+        self._lock.acquire()
+        try:
+            if self._conn is None:
+                self._connect()
+            tries = 0
+            while tries < maxRetries:
+                try:
+                    tries += 1
+                    self.console.verbose('RCON (%s/%s) %s' % (tries, maxRetries, cmd))
+                    response = self._conn.sendRequest(cmd)
+                    if response[0] != "OK" and response[0] != "NotFound":
+                        raise FrostbiteCommandFailedError(response)
+                    if needConfirmation:
+                        return response[0]
+                    else:
+                        return response[1:]
+                except HomefrontConnectionException, err:
+                    self.console.warning('RCON: sending \'%s\', %s' % (cmd, err))
+            self.console.error('RCON: failed to send \'%s\'', cmd)
+            try:
+                # we close the connection to make sure to have a brand new one 
+                # on the next write
+                self.close()
+            except: pass
+        finally:
+            self._lock.release()
+
     def flush(self):
         pass
 
     def close(self):
-        pass
+        self.console.info('RCON: disconnecting from BFBC2 server')
+        self._conn.close()
+
             
             
 if __name__ == '__main__':
@@ -64,10 +99,7 @@ if __name__ == '__main__':
     cd c:\whereever\is\b3
     c:\python26\python.exe b3/parsers/homefront/rcon.py <rcon_ip> <rcon_port> <rcon_password>
     """
-    import sys, time, asyncore, thread, threading
-    from b3.fake import fakeConsole
-    from protocol import Client as HomefrontClient
-
+    import sys
     if len(sys.argv) != 4:
         host = raw_input('Enter game server host IP/name: ')
         port = int(raw_input('Enter host port: '))
@@ -77,49 +109,8 @@ if __name__ == '__main__':
         port = int(sys.argv[2])
         pw = sys.argv[3]
     
+    from b3.fake import fakeConsole
     
-    def packetListener(packet):
-        print(">>> received : %s" % packet)
+    r = Rcon(fakeConsole, (host, port), pw)   
+    r.write('command1')  
     
-    
-    hfclient = HomefrontClient(fakeConsole, host, port, pw, keepalive=True)
-    hfclient.add_listener(packetListener)
-    working = True
-    
-    def run_hf_client(hfclient):
-        print('start client')
-        try:
-            while working and (hfclient.connected or not hfclient.authed):
-                #print("\t%s" % (time.time() - hfclient.last_pong_time))
-                if time.time() - hfclient.last_pong_time > 6 and hfclient.last_ping_time < hfclient.last_pong_time:
-                    hfclient.ping()
-                asyncore.loop(timeout=3, count=1)
-        except EOFError, KeyboardInterrupt:
-            hfclient.close()
-        print('end client')
-    
-    thread.start_new_thread(run_hf_client, (hfclient,))
-    
-    time.sleep(3)
-    
-    r = Rcon(fakeConsole, ("what", 1337), "ever")
-    r.set_homefront_client(hfclient)
-    
-    def close_hf_connection():
-        try:
-            hfclient.close()
-        except:
-            pass
-    t = threading.Timer(10.0, hfclient.close)
-    t.start()
-    
-    print('-----------------------------> test command : say "B3 test"')
-    r.write('say "B3 test"')  
-    
-    for i in range(30):
-        hfclient.ping()
-        time.sleep(.5)
-    
-    working = False
-    
-    print(".")
