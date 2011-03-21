@@ -62,12 +62,15 @@ import os
 import sys
 import time
 import zipfile
+import glob
+import pkg_handler
 import functions
 from lib.elementtree.ElementTree import ElementTree
 from lib.elementtree.SimpleXMLWriter import XMLWriter
 from distutils import version
 from urlparse import urlsplit
-from cStringIO import StringIO
+
+modulePath = pkg_handler.resource_directory(__name__)
 
 class Setup:
     _pver = sys.version.split()[0]
@@ -391,7 +394,7 @@ class Setup:
             self.tree.parse(self._template)
             return True
         except Exception, msg:
-            #self.add_buffer('Could not parse xml file: %s\n' % msg)
+            self.add_buffer('Could not parse xml file: %s\n' % msg)
             # backed up config file must be corrupt or not completed last setup, reset it to the default
             self.add_buffer('Your previous config file was either empty, corrupt or not finished.\
              I Suggest we load the default...\n')
@@ -417,7 +420,12 @@ class Setup:
             for p in plugins:
                 _name = p.attrib['name']
                 _config = p.attrib['config']
-                self.add_plugin(_name, _config, prompt=False)
+                try:
+                    # lets see if there is a plugin to download
+                    _dl = p.attrib['dlocation']
+                except:
+                    _dl = None
+                self.add_plugin(_name, _config, downlURL=_dl, prompt=False)
         return None
 
     def add_explanation(self, etext):
@@ -463,7 +471,7 @@ class Setup:
     def add_plugin(self, sname, sconfig, explanation=None, default="yes", downlURL=None, prompt=True):
         """
         A routine to add a plugin to the config
-        Usage: self.add_plugin(pluginname, default-configfile, optional-explanation, optional-downloadlocation, optional-prompt)
+        Usage: self.add_plugin(pluginname, default-configfile, optional-explanation, default-entry, optional-downloadlocation, optional-prompt)
         """
         if prompt:
             _q = "Install "+sname+" plugin? (yes/no)"
@@ -472,7 +480,10 @@ class Setup:
                 return False
 
         if downlURL:
+            #try:
             self.download(downlURL)
+            #except:
+            #    self.add_buffer("Couldn't get remote plugin %s, please install it manually.\n" %sname)
 
         if explanation:
             self.add_explanation(explanation)
@@ -633,7 +644,7 @@ class Setup:
         if functions.main_is_frozen():
             # which happens when running from the py2exe build
             return os.path.dirname(sys.executable)
-        return ""
+        return modulePath
 
     def getAbsolutePath(self, path):
         """Return an absolute path name and expand the user prefix (~)"""
@@ -650,8 +661,10 @@ class Setup:
         req = urllib2.Request(url)
         try:
             r = urllib2.urlopen(req)
+            self.add_buffer('  ... downloading ...\n')
         except Exception, msg:
-            print('Download failed: %s' % msg)
+            self.add_buffer('  ... download failed: %s\n' % msg)
+            return None
         if r.info().has_key('Content-Disposition'):
             # If the response has Content-Disposition, we take file name from it
             localName = r.info()['Content-Disposition'].split('filename=')[1]
@@ -663,50 +676,74 @@ class Setup:
         if localFileName: 
             # we can force to save the file as specified name
             localName = localFileName
+
         packageLocation = absPath+"/packages/"
-        localName = absPath+"/packages/"+localName
+        localName = packageLocation+localName
         if not os.path.isdir( packageLocation ):
             os.mkdir( packageLocation )
         f = open(localName, 'wb')
         f.write(r.read())
         f.close()
-        self.extract(localName, absPath)
-        #self.extract(localName, packageLocation)
-    
-    def extract(self, filename, dir):
-        zf = zipfile.ZipFile( filename )
-        namelist = zf.namelist()
-        dirlist = filter( lambda x: x.endswith( '/' ), namelist )
-        filelist = filter( lambda x: not x.endswith( '/' ), namelist )
-        # make base
-        pushd = os.getcwd()
-        if not os.path.isdir( dir ):
-            os.mkdir( dir )
-        os.chdir( dir )
-        # create directory structure
-        dirlist.sort()
-        for dirs in dirlist:
-            dirs = dirs.split( '/' )
-            prefix = ''
-            for dir in dirs:
-                dirname = os.path.join( prefix, dir )
-                if dir and not os.path.isdir( dirname ):
-                    os.mkdir( dirname )
-                prefix = dirname
-        # extract files
-        for fn in filelist:
-            try:
-                out = open( fn, 'wb' )
-                buffer = StringIO( zf.read( fn ))
-                buflen = 2 ** 20
-                datum = buffer.read( buflen )
-                while datum:
-                    out.write( datum )
-                    datum = buffer.read( buflen )
-                out.close()
-            finally:
-                print fn
-        os.chdir( pushd )
+        tempExtractDir = packageLocation + "/temp/"
+        self.extract(localName, tempExtractDir)
+        self.add_buffer('  ... extracting ...\n')
+        # move the appropriate files to the correct folders
+        for root, dirs, files in os.walk(tempExtractDir):
+            # move the python files to the extplugins dir
+            if root[-10:] == 'extplugins':
+                #self.add_buffer(root)
+                for data in glob.glob(root + '/*.py'):
+                    shutil.copy2(data, absPath)
+            # move the config files
+            if root[-4:] == 'conf':
+                for data in glob.glob(root + '/*.xml'):
+                    ## @todo: downloading an extplugin for the second time will overwrite the existing extplugins config.
+                    shutil.copy2(data, absPath + '/conf/')
+        # remove the tempdir and its content
+        shutil.rmtree(tempExtractDir)
+        #os.remove(localName)
+
+    def extract(self, file, dir):
+        if not dir.endswith(':') and not os.path.exists(dir):
+            os.mkdir(dir)
+
+        zf = zipfile.ZipFile(file)
+
+        # create directory structure to house files
+        self._createstructure(file, dir)
+
+        # extract files to directory structure
+        for i, name in enumerate(zf.namelist()):
+            if not name.endswith('/'):
+                outfile = open(os.path.join(dir, name), 'wb')
+                outfile.write(zf.read(name))
+                outfile.flush()
+                outfile.close()
+
+    def _createstructure(self, file, dir):
+        self._makedirs(self._listdirs(file), dir)
+
+    def _makedirs(self, directories, basedir):
+        """ Create any directories that don't currently exist """
+        for dir in directories:
+            curdir = os.path.join(basedir, dir)
+            if not os.path.exists(curdir):
+                os.mkdir(curdir)
+
+    def _listdirs(self, file):
+        """ Grabs all the directories in the zip structure
+        This is necessary to create the structure before trying
+        to extract the file to it. """
+        zf = zipfile.ZipFile(file)
+
+        dirs = []
+
+        for name in zf.namelist():
+            if name.endswith('/'):
+                dirs.append(name)
+
+        dirs.sort()
+        return dirs
 
 
 

@@ -15,7 +15,7 @@
 		<set name="parser">bfbc2</set>
 		<set name="database">mysql://myuser:mypass@mydbhost/mydbname</set>
 		<set name="bot_name">b3</set>
-		<set name="bot_prefix">^0(^2b3^0)^7:</set>
+		<set name="bot_prefix">[b3]:</set>
 		<set name="time_format">%I:%M%p %Z %m/%d/%y</set>
 		<set name="time_zone">CEST</set>
 		<!-- 9 = verbose, 10 = debug, 21 = bot, 22 = console -->
@@ -84,5 +84,6 @@
 			Extra database tables are necessary.
 		<plugin name="xlrstats" config="@b3/extplugins/conf/xlrstats.xml"/>
 		-->
+        <plugin name="countryfilter" config="@b3/extplugins/countryfilter.xml" dlocation="http://github.com/xlr8or/b3-plugin-countryfilter/zipball/master"/>
 	</plugins>
 </configuration>
