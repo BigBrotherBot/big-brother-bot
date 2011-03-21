@@ -480,10 +480,11 @@ class Setup:
                 return False
 
         if downlURL:
-            #try:
-            self.download(downlURL)
-            #except:
-            #    self.add_buffer("Couldn't get remote plugin %s, please install it manually.\n" %sname)
+            self.add_buffer('  ... getting external plugin %s:' %sname)
+            try:
+                self.download(downlURL)
+            except:
+                self.add_buffer("Couldn't get remote plugin %s, please install it manually.\n" %sname)
 
         if explanation:
             self.add_explanation(explanation)
