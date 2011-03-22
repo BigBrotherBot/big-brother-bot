@@ -1,3 +1,25 @@
+2011-03-22  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py: cod.py: fixed JT event regexp for cod5
+
+2011-03-18  Freelander <freelander00@gmail.com>
+
+	* b3/parsers/cod6.py: fixed a typo in cod6 parser causing permanent
+	bans fail
+
+2011-03-16  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py: cod.py: improve PunkBuster check
+
+2011-03-13  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py: setup: update setup
+
+2011-03-13  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt, b3/conf/b3.distribution.xml, b3/setup.py,
+	setup.py, versions.txt: update
+
 2011-03-13  Courgette <courgette@ubu-team.org>
 
 	* b3.egg-info/PKG-INFO, b3/PKG-INFO,

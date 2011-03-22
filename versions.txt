@@ -1,5 +1,5 @@
-project files/versions signature: e2dcb436a86e41a50c996e6fdebbdcc8
-project files content signature: 2ccc577996f9741c70313d75a9264740
+project files/versions signature: 4c0a1d4ee4923751f182b82ffaae6c47
+project files content signature: ea1884528de7fb7400e26e6d44521e65
 b3\__init__.py 06b765e06577edcbdc064996d7a7e0f3 1.1.2
 b3\clients.py 1e73855e53f741044427aaf530df3938 1.3.1
 b3\config.py 9a08abbb8974661a5384cf8ff5ddcc9b 1.3.1
@@ -83,11 +83,11 @@ b3\output.py 48e3a1d5eba26b0f1953acd3d9bca101 1.5.0
 b3\parser.py e602d13e2dd30d2b8676d22d634da5d8 1.22
 b3\parsers\__init__.py dc27db9710c1c207a8bd46935163efc1 None
 b3\parsers\bfbc2.py 4d25acb7e33d852f29c8c062ca15743a 2.1
-b3\parsers\cod.py 96fc63412ff59b2db5322136a611a0f4 1.4.18
+b3\parsers\cod.py cafeec6c9fe86f5e92f31358b1f7db3a 1.4.19
 b3\parsers\cod2.py 3bb23114dce7c4f071937aafeba570e2 1.2.5
 b3\parsers\cod4.py 5a6c2749670f659dd54ba85d2a6e5644 1.3.4
 b3\parsers\cod5.py 7874ac89b103c33f071104b7a665dfd1 1.3.1
-b3\parsers\cod6.py 6a3bcd54b8c03e98430e5ec0a669dd65 0.3
+b3\parsers\cod6.py 27b8aa9785493ac2de11b9d87c5c9389 0.4
 b3\parsers\cod7.py 7d4c85e2a1b91be23fa1fcf9e609be25 1.0.5
 b3\parsers\cod7_rcon.py aabbe8699094e5ed1faee3bc5324514a 1.1.0
 b3\parsers\et.py 57d24dc3b8ec4e9ff7f58502cbbb605d 0.0.1
@@ -132,7 +132,7 @@ b3\plugins\tk.py b46762385fbb78505a6e83509b83b3c6 1.2.4
 b3\plugins\welcome.py 8d21d96e1a8842b4f37ed0d11cf4771b 1.1
 b3\querybuilder.py ea31f273c1342feadbf929bb06865ded 1.0.1
 b3\run.py 32a103988a829254859b949e2fc5cc80 1.3.3
-b3\setup.py c115b339e91a4a6ede2190666e051141 0.8
+b3\setup.py cd2a05f027282c0a1467f297fad617bc 0.8
 b3\storage.py beacd69df1534c959ba1d709971239b1 1.8
 b3\timezones.py ae7ca81b37e6d3ade739d8d1b648555f 1.0.0
 b3\tools\__init__.py d41d8cd98f00b204e9800998ecf8427e None

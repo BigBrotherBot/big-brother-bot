@@ -31,13 +31,13 @@ __author__  = 'ThorN, xlr8or'
 __version__ = '2.0.1'
 
 
-import ez_setup, os, shutil, sys
+import ez_setup, shutil, sys
 ez_setup.use_setuptools()
 from setuptools import setup, find_packages
 
 _setupinfo = {
     'name' : "b3",
-    'version' : "1.5.0b2",
+    'version' : "1.5.0",
     'packages' : find_packages(),
     'extras_require' : { 'mysql' : 'MySQL-python' },
     'package_data' : {

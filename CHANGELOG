@@ -1,7 +1,7 @@
-1.4.1 -> 1.4.2
+1.4.1 -> 1.5.0
 ----
 A list of changed files is available after release here:
-github.com/BigBrotherBot/big-brother-bot/compare/v1.4.1...v1.4.2
+github.com/BigBrotherBot/big-brother-bot/compare/v1.4.1...v1.5.0
 ----
 - Support for CoD:BO
 - Introduction of the q3a abstractparser
@@ -11,6 +11,7 @@ github.com/BigBrotherBot/big-brother-bot/compare/v1.4.1...v1.4.2
 - Config section <messages> changed format (no longer uses %s but readable names instead)
 - Config section <plugins>: Plugin can start in a disabled state (disabled="Yes")
 - XLRstats plugin can now enable on minimum number of players online
+- many bugfixes and improvements
 
 1.4.0 -> 1.4.1
 ----
