@@ -100,13 +100,13 @@ class CodParser(AbstractParser):
         #team actions
         re.compile(r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]+);(?P<name>[^;]+);(?P<type>[a-z_]+))$', re.IGNORECASE),
         
-        # tell like events    
+        # Join Team (cod5)
+        re.compile(r'^(?P<action>JT);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]+);(?P<name>[^;]+))$', re.IGNORECASE),
+
+        # tell like events
         re.compile(r'^(?P<action>[a-z]+);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<name>[^;]+);(?P<aguid>[^;]+);(?P<acid>[0-9]{1,2});(?P<aname>[^;]+);(?P<text>.*))$', re.IGNORECASE),
         # say like events
         re.compile(r'^(?P<action>[a-z]+);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<name>[^;]+);(?P<text>.*))$', re.IGNORECASE),
-
-        # Join Team (cod5)
-        re.compile(r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]+);(?P<name>[^;]+))$', re.IGNORECASE),
 
         # all other events
         re.compile(r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<name>[^;]+))$', re.IGNORECASE)
