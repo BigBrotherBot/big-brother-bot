@@ -63,13 +63,15 @@
 #   * Added exception for ValueError that may occur on an interrupted internet connection
 # 02.03.2011 - 1.0.14 - Bravo17
 #   * Added method to test whether processData thread is still running, for use by parser
+# 22.03.2011 - 1.0.15 - Courgette
+#   * Do not fail if http response is not gzipped
 #
 
 ## @file
 #  This plugin downloads and maintains CoD7 game log file
 
 __author__  = 'Freelander, Bravo17, Just a baka'
-__version__ = '1.0.14'
+__version__ = '1.0.15'
 
 import b3, threading
 from b3 import functions
@@ -206,7 +208,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         while self.console.working:
             remotelog = ''
             response = ''
-            remote_log_compressed = ''
+            remote_log_data = ''
 
             #Specify range depending on if the last line
             #is in the remote log chunk or not
@@ -230,8 +232,8 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
 
                 #buffer/download remote log
                 if response != '':
-                    remote_log_compressed = response.read()
-                    remotelogsize = round((len(remote_log_compressed)/float(1024)), 2)
+                    remote_log_data = response.read()
+                    remotelogsize = round((len(remote_log_data)/float(1024)), 2)
                     #self.verbose('Downloaded: %s KB total' % remotelogsize)
 
                 try:
@@ -251,11 +253,15 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             #decompress remote log and return for use
             # First, make sure that there is domething worth decompressing
             # In case the server has just done a restart
-            if len(remote_log_compressed) > 0:
+            if len(remote_log_data) > 0:
                 try:
-                    compressedstream = StringIO.StringIO(remote_log_compressed)
-                    gzipper = gzip.GzipFile(fileobj=compressedstream)
-                    remotelog = gzipper.read()
+                    self.debug('Content-Encoding: %s' % headers.get('Content-Encoding'))
+                    if headers.get('Content-Encoding') == 'gzip':
+                        compressedstream = StringIO.StringIO(remote_log_data)
+                        gzipper = gzip.GzipFile(fileobj=compressedstream)
+                        remotelog = gzipper.read()
+                    else:
+                        remotelog = remote_log_data
                 except IOError, error:
                     remotelog = ''
                     self.error('IOERROR: %s' % error)
@@ -339,5 +345,11 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
 
 
 if __name__ == '__main__':
-    p = Cod7HttpPlugin()
+    from b3.fake import fakeConsole
+    
+    p = Cod7HttpPlugin(fakeConsole)
+    p._url = "http://www.example.com"
+    p.timeout = 5
+    p.locallog ='test.log'
     p.processData()
+    
