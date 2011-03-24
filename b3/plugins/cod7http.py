@@ -255,7 +255,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             # In case the server has just done a restart
             if len(remote_log_data) > 0:
                 try:
-                    #self.debug('Content-Encoding: %s' % headers.get('Content-Encoding'))
+                    self.debug('Content-Encoding: %s' % headers.get('Content-Encoding'))
                     if headers.get('Content-Encoding') == 'gzip':
                         compressedstream = StringIO.StringIO(remote_log_data)
                         gzipper = gzip.GzipFile(fileobj=compressedstream)
