@@ -214,8 +214,10 @@ class HomefrontParser(b3.parser.Parser):
     
     def onServerTeam_change(self, data):
         # [string: Name] [int: Team ID]
-        raise NotImplementedError, "onServerTeam_change"
-        
+        match = re.search(r"^(?P<name>.+) (?P<team>.*)$", data)
+        client = self.getClientByName(data)
+        client.team = self.getTeam(match.group('team'))
+
         
     def onChatterBroadcast(self, data):
         # [string: Name] [string: Context]: [string: Text]
@@ -299,6 +301,7 @@ class HomefrontParser(b3.parser.Parser):
         """\
         kick a given players
         """
+        self.verbose('KICK : client: %s, reason: %s', client.name, reason)
         if isinstance(client, str):
             self.write(self.getCommand('kick', name=client.name))
             return
@@ -320,7 +323,7 @@ class HomefrontParser(b3.parser.Parser):
         """\
         ban a given players
         """
-        self.debug('BAN : client: %s, reason: %s', client, reason)
+        self.verbose('BAN : client: %s, reason: %s', client.name, reason)
         if isinstance(client, b3.clients.Client):
             self.write(self.getCommand('ban', name=client.name))
 
@@ -340,7 +343,7 @@ class HomefrontParser(b3.parser.Parser):
         """\
         unban a given players
         """
-        self.debug('UNBAN: Name: %s' %client.name)
+        self.verbose('UNBAN: Name: %s' %client.name)
         response = self.write(self.getCommand('unban', name=client.name))
         ## @todo: unban: need to test response from the server
         self.verbose(response)
@@ -353,6 +356,7 @@ class HomefrontParser(b3.parser.Parser):
         """\
         tempban a given players
         """
+        self.verbose('TEMPBAN : client: %s, reason: %s', client.name, reason)
         self.write(self.getCommand('tempban', name=client.name))
 
         if isinstance(client, str):
@@ -408,7 +412,17 @@ class HomefrontParser(b3.parser.Parser):
         returns a dict having players' id for keys and players' scores for values
         """
         raise NotImplementedError
-        
+
+    def getTeam(self, team):
+        team = str(team).lower() # We convert to a string because there is a problem when trying to detect numbers if it's not a string
+        if team == '0':
+            result = b3.TEAM_RED
+        elif team == '1':
+            result = b3.TEAM_BLUE
+        else:
+            result = b3.TEAM_UNKNOWN
+        return result
+
     def inflictCustomPenalty(self, type, **kwargs):
         """
         Called if b3.admin.penalizeClient() does not know a given penalty type. 
