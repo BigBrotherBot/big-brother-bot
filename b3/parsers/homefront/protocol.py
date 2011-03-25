@@ -21,91 +21,52 @@
 # 2011/03/23 - Courgette 
 #    working so far : packet codec, login(), ping()
 #    todo : handle incoming data (split by homefront packet)
+# 2011/03/24 - Courgette 
+#    can maintain a connection, receive packets, send packets
 #
 
+"""
+module implementing the Homefront protocol. Provide the Client class which
+creates a connection to a Homefront gameserver
+"""
+
 __author__  = 'Courgette'
-__version__ = '0.1'
-
-"""module implementing the Homefront protocol"""
+__version__ = '0.2'
 
 
-from struct import *
+import asyncore, socket, time
+from struct import pack, unpack
 from hashlib import sha1
-import socket
 
-import sys
-import string
-import threading
-import os
 
-        
-class Connection(object):
-    host = None
-    port = None
-    password = None
-
-    _socket = None
-    _buffer = None
-    
-    def connect(self):
-        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        print('Connecting to : %s:%d...' % ( self.host, self.port ))
-        self._socket.connect((self.host, self.port))
-    
-    def command(self, text):
-        """send command to server"""
-        self._send(MessageType.CLIENT_TRANSMISSION, text)
-    
-    def ping(self):
-        """used to keep the connection alive. After 10 seconds of inactivity
-        the server will drop the connection"""
-        self._send(MessageType.CLIENT_PING, "PING")
-    
-    def login(self):
-        """authenticate to the server
-        
-        Message Type: ClientTransmission
-        Format : PASS: "[string: SHA1Hash]"
-        SHA1Hash: A 60 byte ASCII string with a 40-bit SHA1 Hash converted to 
-            uppercase hexadecimal text and spaces inserted between each pair.
-        """
-        def twobytwo(str):
-            i = 0
-            while i < len(str):
-                yield str[i:i+2]
-                i+=2
-        sha1_pass_bytes = sha1(self.password).hexdigest()
-        self.command('PASS: "%s"' % ' '.join(twobytwo(sha1_pass_bytes.upper())))
-    
-    def shutdown(self):
-        self._socket.close()
-        del self._socket
-    
-    def _send(self, messagetype, text):
-        packet = Packet()
-        packet.message = messagetype
-        packet.data = text
-        bytes = packet.encode()
-        self._socket.send(bytes)
-        
-    def recv(self):
-        """TODO : this is temporary, just for debugging"""
-        self._buffer = self._socket.recv(1024)
-        return self._buffer
-
-       
 
 class MessageType:
-    UNKNOWN = 0
     CONNECT = 'CC'
     CLIENT_TRANSMISSION = 'CT'
     CLIENT_DISCONNECT = 'CD'
     CLIENT_PING = 'CP'
     SERVER_ANNOUNCE = 'SA'
-    SERVER_RESPONSE = 'ST'
+    SERVER_RESPONSE = 'SR'
     SERVER_DISCONNECT = 'SD'
-    SERVER_TRANSMISSION = 'SR'
+    SERVER_TRANSMISSION = 'ST'
     
+    @staticmethod
+    def type2str(type):
+        names = {
+                 MessageType.CONNECT: "CONNECT",
+                 MessageType.CLIENT_TRANSMISSION: "CLIENT_TRANSMISSION",
+                 MessageType.CLIENT_DISCONNECT: "CLIENT_DISCONNECT",
+                 MessageType.CLIENT_PING: "CLIENT_PING",
+                 MessageType.SERVER_ANNOUNCE: "SERVER_ANNOUNCE",
+                 MessageType.SERVER_RESPONSE: "SERVER_RESPONSE",
+                 MessageType.SERVER_DISCONNECT: "SERVER_DISCONNECT",
+                 MessageType.SERVER_TRANSMISSION: "SERVER_TRANSMISSION",
+                 }
+        try:
+            return names[type]
+        except KeyError:
+            return "unkown(%s)" % type
+
 class ChannelType:
     BROADCAST = 0
     NORMAL = 1
@@ -126,7 +87,9 @@ class ChannelType:
             return names[type]
         except KeyError:
             return "unkown(%s)" % type
-       
+
+
+
 class Packet(object):
     message = None
     channel = None
@@ -148,6 +111,9 @@ class Packet(object):
         return str
     
     def decode(self, packet):
+        if len(packet) <= 7:
+            raise ValueError, "too few data to extract a packet"
+        
         ## Message Type
         ## type: 8-bit char[]
         ## byte length : 2
@@ -156,71 +122,193 @@ class Packet(object):
         ## type: 8-bit byte
         ## byte length : 1
         (self.channel,) = unpack('>B', packet[2])
+        ## Data length
+        ## type: 32-bit signed int (big-endian)
+        ## byte 4
+        datalength = Packet.decodeIncomingPacketSize(packet)
         ## Data
         ## type: 8-bit char[N]
         ## byte length : N
-        datalength = unpack('>i', packet[3:7])[0]
         self.data = packet[7:7+datalength]
         
+    @staticmethod
+    def decodeIncomingPacketSize(packet):
+        ## Data length
+        ## type: 32-bit signed int (big-endian)
+        ## byte 4
+        return unpack('>i', packet[3:7])[0]
+    
+    def getMessageTypeAsStr(self):
+        return MessageType.type2str(self.message)
+    
+    def getChannelTypeAsStr(self):
+        return ChannelType.type2str(self.channel)
+    
     def __str__(self):
-        return "[Message: %s], [Channel: %s], [Data: %s]" % (self.message, ChannelType.type2str(self.channel), self.data)
+        return "[Message: %s], [Channel: %s], [Data: %s]" % (self.getMessageTypeAsStr(), self.getChannelTypeAsStr(), self.data)
 
+
+
+class Client(asyncore.dispatcher):
+
+    def __init__(self, console, host, port, password, keepalive=False):
+        self.console = console
+        self._host = host
+        self._port = port
+        self._password = password
+        self.keepalive = keepalive
+        self._buffer_out = ''
+        self._buffer_in = ''
+        self.authed = False
+        self.server_version = None
+        self.last_pong_time = self.last_ping_time = time.time()
+        self._handlers = set()
+        asyncore.dispatcher.__init__(self)
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.connect( (self._host, self._port) )
+        
+    
+    def handle_connect(self):
+        self.console.verbose2('handle_connect')
+        self.login()
+        self.ping()
+        pass
+
+    def handle_close(self):
+        self.console.verbose2('handle_close')
+        self.close()
+        self.authed = False
+        if self.keepalive:
+            self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.connect((self._host, self._port))
+
+    def handle_read(self):
+        data = self.recv(8192)
+        self.console.verbose2('handle_read (%s char)' % len(data))
+        self._buffer_in += data
+        p = self._readPacket()
+        while p is not None:
+            for handler in self._handlers:
+                try:
+                    handler(p)
+                except Exception, err:
+                    self.console.exception(err)
+            p = self._readPacket()
+
+    def writable(self):
+        return (len(self._buffer_out) > 0)
+
+    def handle_write(self):
+        sent = self.send(self._buffer_out)
+        self._buffer_out = self._buffer_out[sent:]
+        
+    def add_listener(self, handler):
+        self._handlers.add(handler)
+        return self
+    
+    def remove_listener(self, handler):
+        try:
+            self._handlers.remove(handler)
+        except:
+            raise ValueError("Handler is not handling this event, so cannot unhandle it.")
+        return self            
+            
+    def login(self):
+        """authenticate to the server
+        
+        Message Type: ClientTransmission
+        Format : PASS: "[string: SHA1Hash]"
+        SHA1Hash: A 60 byte ASCII string with a 40-bit SHA1 Hash converted to 
+            uppercase hexadecimal text and spaces inserted between each pair.
+        """
+        def twobytwo(str):
+            i = 0
+            while i < len(str):
+                yield str[i:i+2]
+                i+=2
+        sha1_pass_bytes = sha1(self._password).hexdigest()
+        self.command('PASS: "%s"' % ' '.join(twobytwo(sha1_pass_bytes.upper())))
+
+    def ping(self):
+        """used to keep the connection alive. After 10 seconds of inactivity
+        the server will drop the connection"""
+        packet = Packet()
+        packet.message = MessageType.CLIENT_PING
+        packet.data = "PING"
+        self._buffer_out += packet.encode()
+        self.last_ping_time = time.time()
+    
+    def command(self, text):
+        """send command to server"""
+        packet = Packet()
+        packet.message = MessageType.CLIENT_TRANSMISSION
+        packet.data = text
+        self._buffer_out += packet.encode()
+        
+    def _readPacket(self):
+        if len(self._buffer_in) > 7:
+            packetlength = Packet.decodeIncomingPacketSize(self._buffer_in)
+            if len(self._buffer_in) >= 7 + packetlength:
+                p = Packet()
+                p.decode(self._buffer_in)
+                self._buffer_in = self._buffer_in[7 + packetlength:]
+                self._inspect_packet(p)
+                return p
+
+    def _inspect_packet(self, p):
+        if p.data == "PONG":
+            self.last_pong_time = time.time()
+        elif p.channel == ChannelType.SERVER and p.data == "AUTH: true":
+            self.authed = True
+        elif p.channel == ChannelType.SERVER and p.data.startswith("HELLO: "):
+            self.server_version = p.data[7:]
+            
+            
+            
+###################################################################################
+# Example program
 
 if __name__ == '__main__':
-    from getopt import getopt
-    import sys, time
-
-    print "Remote administration event listener for Homefront"
-
-    host = None
-    port = None
-    pw = None
-
-    opts, args = getopt(sys.argv[1:], 'h:p:e:a:')
-    for k, v in opts:
-        if k == '-h':
-            host = v
-        elif k == '-p':
-            port = int(v)
-        elif k == '-a':
-            pw = v
+    import sys
     
-    if not host:
-        host = raw_input('game server host IP/name: ')
-    if not port:
-        port = int(raw_input('port: '))
-    if not pw:
-        pw = raw_input('password: ')
-
+    if len(sys.argv) != 4:
+        host = raw_input('Enter game server host IP/name: ')
+        port = int(raw_input('Enter host port: '))
+        pw = raw_input('Enter password: ')
+    else:
+        host = sys.argv[1]
+        port = int(sys.argv[2])
+        pw = sys.argv[3]
+    
+    class MyConsole:
+        def debug(self, msg):
+            print "   DEBUG: " + msg
+        def info(self, msg):
+            print "    INFO: " + msg
+        def verbose2(self, msg):
+            print "VERBOSE2: " + msg
+        def warning(self, msg):
+            print "WARNING : " + msg
+    myConsole = MyConsole()
+    
+    
+    def packetListener(packet):
+        print(">>> received : %s" % packet)
+    
+    
+    print('start client')
+    hfclient = Client(myConsole, host, port, pw, keepalive=True)
+    hfclient.add_listener(packetListener)
+    
     try:
-        conn = Connection()
-        conn.host = host
-        conn.port = port
-        conn.password = pw
-
-        conn.connect()
-        p = Packet()
-        p.decode(conn.recv())
-        print p
-        
-        conn.login()
-        p = Packet()
-        p.decode(conn.recv())
-        print p
-        
-        time.sleep(2)
-        conn.ping()
-        p = Packet()
-        p.decode(conn.recv())
-        print p
-        
-        time.sleep(2)
-        conn.shutdown()
-        
-    except socket.error, detail:
-        print 'Network error:', detail[1]
-        conn.shutdown()
+        while hfclient.connected or not hfclient.authed:
+            #print("\t%s" % (time.time() - hfclient.last_pong_time))
+            if time.time() - hfclient.last_pong_time > 6 and hfclient.last_ping_time < hfclient.last_pong_time:
+                hfclient.ping()
+            asyncore.loop(timeout=3, count=1)
     except EOFError, KeyboardInterrupt:
-        conn.shutdown()
-    except:
-        raise
+        hfclient.close()
+    
+    print('end')
+    
+    
