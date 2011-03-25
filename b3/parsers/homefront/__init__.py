@@ -39,6 +39,10 @@ class HomefrontParser(b3.parser.Parser):
     PunkBuster = None 
     _serverConnection = None
 
+    # homefront engine does not support color code, so we need this property
+    # in order to get stripColors working
+    _reColor = re.compile(r'(\^[0-9])')
+
     _commands = {}
     _commands['message'] = ('say "%(prefix)s [%(name)s] %(message)s"')
     _commands['say'] = ('say "%(prefix)s %(message)s"')
@@ -172,9 +176,9 @@ class HomefrontParser(b3.parser.Parser):
     def onServerLogin(self, data):
         # [string: Name]
         self.debug('%s connecting' % data)
-        # @todo: handle connecting queue in a similar way to cod4 I suppose
+        ## @todo: onServerLogin: handle connecting queue in a similar way to cod4 I suppose
         # I don't think we can do anything here with just a name. Wait for onServerUid, then authenticate.
-        # login also occurs after a mapchange...
+        # (onServerLogin also occurs after a mapchange...)
         
     
     def onServerUid(self, data):
@@ -244,7 +248,7 @@ class HomefrontParser(b3.parser.Parser):
         Query the game server for connected players.
         return a dict having players' id for keys and players' data as another dict for values
         """
-        # @todo: make this wait for reply packets, stack them, and return full 
+        ## @todo: getPlayerlist: make this wait for reply packets, stack them, and return full
         # exhaustive list of players
         self.output.write("RETRIEVE PLAYERLIST")
 
@@ -272,45 +276,101 @@ class HomefrontParser(b3.parser.Parser):
         """\
         broadcast a message to all players
         """
+        msg = self.stripColors(msg)
         self.write(self.getCommand('say', prefix=self.msgPrefix, message=msg))
 
     def saybig(self, msg):
         """\
         broadcast a message to all players in a way that will catch their attention.
         """
+        msg = self.stripColors(msg)
         self.write(self.getCommand('saybig', prefix=self.msgPrefix, message=msg))
 
     def message(self, client, text):
         """\
         display a message to a given player
         """
-        # @todo: change that when the rcon protocol will allow us to
+        ## @todo: message: change that when the rcon protocol will allow us to
         # actually send private messages
+        text = self.stripColors(text)
         self.write(self.getCommand('message', prefix=self.msgPrefix, name=client.name, message=text))
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
         kick a given players
         """
-        self.write(self.getCommand('kick', name=client.name))
+        if isinstance(client, str):
+            self.write(self.getCommand('kick', name=client.name))
+            return
+
+        if admin:
+            fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+        else:
+            fullreason = self.getMessage('kicked', self.getMessageVariables(client=client, reason=reason))
+        fullreason = self.stripColors(fullreason)
+        reason = self.stripColors(reason)
+
+        if not silent and fullreason != '':
+            self.say(fullreason)
+
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_KICK, reason, client))
+        client.disconnect()
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
         ban a given players
         """
-        self.write(self.getCommand('ban', name=client.name))
+        self.debug('BAN : client: %s, reason: %s', client, reason)
+        if isinstance(client, b3.clients.Client):
+            self.write(self.getCommand('ban', name=client.name))
+
+        if admin:
+            fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+        else:
+            fullreason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
+        fullreason = self.stripColors(fullreason)
+        reason = self.stripColors(reason)
+
+        if not silent and fullreason != '':
+            self.say(fullreason)
+
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, reason, client))
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
         unban a given players
         """
-        self.write(self.getCommand('unban', name=client.name))
+        self.debug('UNBAN: Name: %s' %client.name)
+        response = self.write(self.getCommand('unban', name=client.name))
+        ## @todo: unban: need to test response from the server
+        self.verbose(response)
+        if response:
+            self.verbose('UNBAN: Removed name (%s) from banlist' %client.name)
+            if admin:
+                admin.message('Unbanned: Removed %s from banlist' %client.name)
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
         """\
         tempban a given players
         """
         self.write(self.getCommand('tempban', name=client.name))
+
+        if isinstance(client, str):
+            self.write(self.getCommand('tempban', name=client.name))
+            self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
+            return
+
+        if admin:
+            fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=b3.functions.minutesStr(duration)))
+        else:
+            fullreason = self.getMessage('temp_banned', self.getMessageVariables(client=client, reason=reason, banduration=b3.functions.minutesStr(duration)))
+        fullreason = self.stripColors(fullreason)
+        reason = self.stripColors(reason)
+
+        if not silent and fullreason != '':
+            self.say(fullreason)
+
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, reason, client))
 
     def getMap(self):
         """\
@@ -366,4 +426,4 @@ class HomefrontParser(b3.parser.Parser):
     def getClientByName(self, name):
         # try to get the client from the storage of already authed clients
         return self.clients.getByCID(name)
-        
+
