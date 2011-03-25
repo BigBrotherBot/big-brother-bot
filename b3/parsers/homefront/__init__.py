@@ -38,7 +38,16 @@ class HomefrontParser(b3.parser.Parser):
     OutputClass = rcon.Rcon
     PunkBuster = None 
     _serverConnection = None
-    
+
+    _commands = {}
+    _commands['message'] = ('say "%(prefix)s [%(name)s] %(message)s"')
+    _commands['say'] = ('say "%(prefix)s %(message)s"')
+    _commands['saybig'] = ('admin bigsay "%(prefix)s %(message)s"')
+    _commands['kick'] = ('admin kick "%(name)s"')
+    _commands['ban'] = ('admin kickban "%(name)s"')
+    _commands['unban'] = ('admin unban "%(name)s"')
+    _commands['tempban'] = ('admin kick "%(name)s"')
+
     def startup(self):
         self.debug("startup()")
         pass
@@ -161,8 +170,11 @@ class HomefrontParser(b3.parser.Parser):
 
 
     def onServerLogin(self, data):
+        # [string: Name]
         self.debug('%s connecting' % data)
         # @todo: handle connecting queue in a similar way to cod4 I suppose
+        # I don't think we can do anything here with just a name. Wait for onServerUid, then authenticate.
+        # login also occurs after a mapchange...
         
     
     def onServerUid(self, data):
@@ -171,9 +183,19 @@ class HomefrontParser(b3.parser.Parser):
         match = re.search(r"^(?P<name>.+) <(?P<uid>.*)>$", data)
         if not match:
             self.error("could not get UID in [%s]" % data)
+            return None
+
+        name = match.group('name')
+        uid = match.group('uid')
+
+        client = self.getClientByName(name)
+        if client:
+            self.verbose2('ClientObject already exists')
+            # update existing client
+            client.state = b3.STATE_ALIVE
+            # possible name change
+            client.name = name
         else:
-            name = match.group('name')
-            uid = match.group('uid')
             client = self.clients.newClient(name, guid=uid, name=name, team=b3.TEAM_UNKNOWN)
             return b3.events.Event(b3.events.EVT_CLIENT_JOIN, data, client)
     
@@ -250,13 +272,13 @@ class HomefrontParser(b3.parser.Parser):
         """\
         broadcast a message to all players
         """
-        self.output.write('say "%s"' % msg)
+        self.write(self.getCommand('say', prefix=self.msgPrefix, message=msg))
 
     def saybig(self, msg):
         """\
         broadcast a message to all players in a way that will catch their attention.
         """
-        raise NotImplementedError
+        self.write(self.getCommand('saybig', prefix=self.msgPrefix, message=msg))
 
     def message(self, client, text):
         """\
@@ -264,31 +286,31 @@ class HomefrontParser(b3.parser.Parser):
         """
         # @todo: change that when the rcon protocol will allow us to
         # actually send private messages
-        self.say('[-> %s] %s' % (client.name, text))
+        self.write(self.getCommand('message', prefix=self.msgPrefix, name=client.name, message=text))
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
         kick a given players
         """
-        raise NotImplementedError
+        self.write(self.getCommand('kick', name=client.name))
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
         ban a given players
         """
-        raise NotImplementedError
+        self.write(self.getCommand('ban', name=client.name))
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
         unban a given players
         """
-        raise NotImplementedError
+        self.write(self.getCommand('unban', name=client.name))
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
         """\
         tempban a given players
         """
-        raise NotImplementedError
+        self.write(self.getCommand('tempban', name=client.name))
 
     def getMap(self):
         """\
