@@ -24,7 +24,7 @@
 		<!-- Name of the bot -->
 		<set name="bot_name">b3</set>
 		<!-- Ingame messages are prefixed with this code, you can use colorcodes -->
-		<set name="bot_prefix">(b3):</set>
+		<set name="bot_prefix">^0(^2b3^0)^7:</set>
 		<set name="time_format">%I:%M%p %Z %m/%d/%y</set>
 		<!-- The timezone your bot is in -->
 		<set name="time_zone">CST</set>
