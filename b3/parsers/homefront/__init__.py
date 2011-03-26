@@ -315,10 +315,10 @@ class HomefrontParser(b3.parser.Parser):
 
         return b3.events.Event(event, (100, weapon, victim.hitloc), attacker, victim)
 
-    def onServerRoundOver(self, data):
+    def onServerRound_over(self, data):
         match = re.search(r"^(?P<team>.*)$", data)
         if not match:
-            self.error('onServerRoundOver failed match')
+            self.error('onServerRound_over failed match')
             return
 
         # teamid = The ID of the winning team
@@ -328,8 +328,19 @@ class HomefrontParser(b3.parser.Parser):
         teamid = match.group('team')
 
         event = b3.events.EVT_GAME_ROUND_END
-        self.verbose('onServerRoundOver: %s, winning team id: %s' % (data, teamid)) 
+        self.verbose('onServerRound_over: %s, winning team id: %s' % (data, teamid)) 
         return b3.events.Event(b3.events.EVT_GAME_ROUND_END, teamid)
+
+    def onServerChange_level(self, data):
+        match = re.search(r"^(?P<level>.*)$", data)
+        if not match:
+            self.error('onServerChange_level failed match')
+            return
+
+        levelname = match.group('level')
+        event = b3.events.EVT_GAME_ROUND_START
+        self.verbose('onServerChange_level, levelname: %s' % levelname)
+        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, levelname)
 
     def onChatterBroadcast(self, data):
         # [string: Name] [string: Context]: [string: Text]
