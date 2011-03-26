@@ -149,15 +149,15 @@ class Packet(object):
 
 
 
-class Client(asyncore.dispatcher):
+class Client(asyncore.dispatcher_with_send):
 
     def __init__(self, console, host, port, password, keepalive=False):
+        asyncore.dispatcher_with_send.__init__(self)
         self.console = console
         self._host = host
         self._port = port
         self._password = password
         self.keepalive = keepalive
-        self._buffer_out = ''
         self._buffer_in = ''
         self.authed = False
         self.server_version = None
@@ -167,15 +167,14 @@ class Client(asyncore.dispatcher):
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connect( (self._host, self._port) )
         
-    
     def handle_connect(self):
-        self.console.verbose2('handle_connect')
+        self.console.verbose('Now connected to Homefront gameserver')
         self.login()
         self.ping()
         pass
 
     def handle_close(self):
-        self.console.verbose2('handle_close')
+        self.console.verbose('Connection to Homefront gameserver closed')
         self.close()
         self.authed = False
         if self.keepalive:
@@ -184,7 +183,7 @@ class Client(asyncore.dispatcher):
 
     def handle_read(self):
         data = self.recv(8192)
-        self.console.verbose2('handle_read (%s char)' % len(data))
+        self.console.verbose2('read %s char from Homefront gameserver' % len(data))
         self._buffer_in += data
         p = self._readPacket()
         while p is not None:
@@ -195,13 +194,6 @@ class Client(asyncore.dispatcher):
                     self.console.exception(err)
             p = self._readPacket()
 
-    def writable(self):
-        return (len(self._buffer_out) > 0)
-
-    def handle_write(self):
-        sent = self.send(self._buffer_out)
-        self._buffer_out = self._buffer_out[sent:]
-        
     def add_listener(self, handler):
         self._handlers.add(handler)
         return self
@@ -235,7 +227,7 @@ class Client(asyncore.dispatcher):
         packet = Packet()
         packet.message = MessageType.CLIENT_PING
         packet.data = "PING"
-        self._buffer_out += packet.encode()
+        self.send(packet.encode())
         self.last_ping_time = time.time()
     
     def command(self, text):
@@ -243,7 +235,7 @@ class Client(asyncore.dispatcher):
         packet = Packet()
         packet.message = MessageType.CLIENT_TRANSMISSION
         packet.data = text
-        self._buffer_out += packet.encode()
+        self.send(packet.encode())
         
     def _readPacket(self):
         if len(self._buffer_in) > 7:
