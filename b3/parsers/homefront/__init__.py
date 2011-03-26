@@ -264,22 +264,32 @@ class HomefrontParser(b3.parser.Parser):
     def onServerKill(self, data):
         # [string: Killer Name] [string: DamageType] [string: Victim Name]
         # kill example: courgette EXP_Frag Freelander
-        # suicide example#1: Freelander Suicided Freelander
+        # suicide example#1: Freelander Suicided Freelander (triggers when player leaves the server)
         # suicide example#2: Freelander EXP_Frag Freelander
-        # TODO: Teamkills. Need to get player's team info for teamkill. Check the possibility of two players 
-        # having the exact same name which may lead to a false suicide event.
+        # TODO: Check the possibility of two players having the exact same name which may lead to a false 
+        # suicide event.
         match = re.search(r"^(?P<data>(?P<aname>[^;]+)\s+(?P<aweap>[A-z0-9_-]+)\s+(?P<vname>[^;]+))$", data)
         if not match:
             self.error("Can't parse kill line" % data)
             return None
         else:
             attacker = self.getClientByName(match.group('aname'))
-            if not attacker:
+            if attacker:
+                try:
+                    attacker.team = self._teamcache[attacker.name]
+                except:
+                    pass
+            else:
                 self.debug('No attacker!')
                 return None
 
             victim = self.getClientByName(match.group('vname'))
-            if not victim:
+            if victim:
+                try:
+                    victim.team = self._teamcache[victim.name]
+                except:
+                    pass
+            else:
                 self.debug('No victim!')
                 return None
 
@@ -295,9 +305,13 @@ class HomefrontParser(b3.parser.Parser):
 
         if weapon == 'Suicided' or attacker == victim:
             event = b3.events.EVT_CLIENT_SUICIDE
-            self.debug('%s suicided' % attacker.name)
+            self.verbose('%s suicided' % attacker.name)
         else:
-            self.debug('%s killed %s using %s' % (attacker.name, victim.name, weapon))
+            self.verbose('%s killed %s using %s' % (attacker.name, victim.name, weapon))
+
+        if attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
+            event = b3.events.EVT_CLIENT_KILL_TEAM
+            self.verbose('Team kill, attacker: %s, victim: %s' % (attacker.name, victim.name))
 
         return b3.events.Event(event, (100, weapon, victim.hitloc), attacker, victim)
 
