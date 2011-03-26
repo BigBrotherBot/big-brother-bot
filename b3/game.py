@@ -92,6 +92,12 @@ if __name__ == '__main__':
     from b3.fake import fakeConsole
     
     fakeplugin = Plugin(fakeConsole)
+    def onEvent(event):
+        if event.type == EVT_GAME_MAP_CHANGE:
+            fakeConsole.debug("event EVT_GAME_MAP_CHANGE : %r" % event.data)
+            fakeConsole.debug("previous map was %s" % event.data['old'])
+            fakeConsole.debug("new map is %s" % event.data['new'])
+    fakeplugin.onEvent = onEvent
     
     fakeConsole.registerHandler(EVT_GAME_MAP_CHANGE, fakeplugin)
     
