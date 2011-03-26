@@ -316,6 +316,33 @@ class HomefrontParser(b3.parser.Parser):
 
         return Event(event, (100, weapon, victim.hitloc), attacker, victim)
 
+    def onServerRound_over(self, data):
+        match = re.search(r"^(?P<team>.*)$", data)
+        if not match:
+            self.error('onServerRound_over failed match')
+            return
+
+        # teamid = The ID of the winning team
+        # 0 = KPA
+        # 1 = USA
+        # 2 = TIE
+        teamid = match.group('team')
+
+        event = b3.events.EVT_GAME_ROUND_END
+        self.verbose('onServerRound_over: %s, winning team id: %s' % (data, teamid)) 
+        return b3.events.Event(b3.events.EVT_GAME_ROUND_END, teamid)
+
+    def onServerChange_level(self, data):
+        match = re.search(r"^(?P<level>.*)$", data)
+        if not match:
+            self.error('onServerChange_level failed match')
+            return
+
+        levelname = match.group('level')
+        event = b3.events.EVT_GAME_ROUND_START
+        self.verbose('onServerChange_level, levelname: %s' % levelname)
+        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, levelname)
+
     def onChatterBroadcast(self, data):
         # [string: Name] [string: Context]: [string: Text]
         # example : courgette says: !register
