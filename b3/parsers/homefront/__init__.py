@@ -301,7 +301,7 @@ class HomefrontParser(b3.parser.Parser):
         """\
         kick a given players
         """
-        self.verbose('KICK : client: %s, reason: %s', client.name, reason)
+        self.debug('KICK : client: %s, reason: %s', client.name, reason)
         if isinstance(client, str):
             self.write(self.getCommand('kick', name=client.name))
             return
@@ -323,10 +323,7 @@ class HomefrontParser(b3.parser.Parser):
         """\
         ban a given players
         """
-        self.verbose('BAN : client: %s, reason: %s', client.name, reason)
-        if isinstance(client, b3.clients.Client):
-            self.write(self.getCommand('ban', name=client.name))
-
+        self.debug('BAN : client: %s, reason: %s', client.name, reason)
         if admin:
             fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
         else:
@@ -337,13 +334,15 @@ class HomefrontParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
+        self.write(self.getCommand('ban', name=client.name))
         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, reason, client))
+        client.disconnect()
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
         unban a given players
         """
-        self.verbose('UNBAN: Name: %s' %client.name)
+        self.debug('UNBAN: Name: %s' %client.name)
         response = self.write(self.getCommand('unban', name=client.name))
         ## @todo: unban: need to test response from the server
         self.verbose(response)
@@ -356,14 +355,7 @@ class HomefrontParser(b3.parser.Parser):
         """\
         tempban a given players
         """
-        self.verbose('TEMPBAN : client: %s, reason: %s', client.name, reason)
-        self.write(self.getCommand('tempban', name=client.name))
-
-        if isinstance(client, str):
-            self.write(self.getCommand('tempban', name=client.name))
-            self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
-            return
-
+        self.debug('TEMPBAN : client: %s, reason: %s', client.name, reason)
         if admin:
             fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=b3.functions.minutesStr(duration)))
         else:
@@ -374,7 +366,9 @@ class HomefrontParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
+        self.write(self.getCommand('tempban', name=client.name))
         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, reason, client))
+        client.disconnect()
 
     def getMap(self):
         """\
@@ -414,7 +408,7 @@ class HomefrontParser(b3.parser.Parser):
         raise NotImplementedError
 
     def getTeam(self, team):
-        team = str(team).lower() # We convert to a string because there is a problem when trying to detect numbers if it's not a string
+        team = str(team).lower()
         if team == '0':
             result = b3.TEAM_RED
         elif team == '1':
