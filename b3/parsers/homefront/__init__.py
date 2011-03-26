@@ -44,6 +44,7 @@ class HomefrontParser(b3.parser.Parser):
     OutputClass = rcon.Rcon
     PunkBuster = None 
     _serverConnection = None
+    _teamcache = {}
 
     # homefront engine does not support color code, so we need this property
     # in order to get stripColors working
@@ -213,30 +214,50 @@ class HomefrontParser(b3.parser.Parser):
             client.name = name
         else:
             client = self.clients.newClient(name, guid=uid, name=name, team=b3.TEAM_UNKNOWN)
+            #set the correct team
+            try:
+                client.team = self._teamcache[name]
+            except:
+                #fail, we'll have to wait for the next teamchange
+                pass
             return b3.events.Event(b3.events.EVT_CLIENT_CONNECT, data, client)
     
         
     def onServerLogout(self, data):
         self.debug('%s disconnected' % data)
+
+        # make sure we remove the player from the _teamcache
+        try:
+            self._teamcache.pop(data)
+        except:
+            pass
+
         client = self.getClientByName(data)
         if client:
             client.disconnect()
+            self.verbose2('_teamcache: %s' % self._teamcache)
         else:
             self.debug("client %s not found" % data)
     
     
     def onServerTeam_change(self, data):
         # [string: Name] [int: Team ID]
+        self.debug('onServerTeam: %s' % data)
         match = re.search(r"^(?P<name>.+) (?P<team>.*)$", data)
         if not match:
             self.error('onServerTeam_change failed match')
             return
         client = self.getClientByName(match.group('name'))
         if not client:
-            ## @todo: should we kick to reconnect? we cannot control this client.
             self.debug('Could not find client %s' % match.group('name'))
+            # if not yet authed, store it in _teamcache
+            self._teamcache[match.group('name')] = match.group('team')
+            self.verbose2('_teamcache: %s' % self._teamcache)
             return
         else:
+            # update _teamcache
+            self._teamcache[match.group('name')] = match.group('team')
+            self.verbose2('_teamcache: %s' % self._teamcache)
             client.team = self.getTeam(match.group('team'))
             self.verbose('%s changed team: %s' %(client.name, client.team) )
 
