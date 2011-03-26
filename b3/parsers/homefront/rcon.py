@@ -22,9 +22,9 @@
 #
 
 """
-dummy rcon module for Home Front to satisfy B3 parser. 
+dummy rcon module for Homefront to satisfy B3 parser. 
 
-Ideally, B3 parser should be change to allow games such as rcon to not require 
+Ideally, B3 parser should be change to allow games such as homefront to not require 
 a separated socket connection for rcon commands
 
 To use that Rcon class, instanciate and use the set_homefront_client() method. 
@@ -70,8 +70,8 @@ if __name__ == '__main__':
     """
     import sys, time, asyncore, thread
     from b3.fake import fakeConsole
-    from client import Client
-    
+    from protocol import Client as HomefrontClient
+
     if len(sys.argv) != 4:
         host = raw_input('Enter game server host IP/name: ')
         port = int(raw_input('Enter host port: '))
@@ -86,14 +86,14 @@ if __name__ == '__main__':
         print(">>> received : %s" % packet)
     
     
-    hfclient = Client(fakeConsole, host, port, pw, keepalive=True)
+    hfclient = HomefrontClient(fakeConsole, host, port, pw, keepalive=True)
     hfclient.add_listener(packetListener)
-    quit = False
+    working = True
     
     def run_hf_client(hfclient):
         print('start client')
         try:
-            while not quit and (hfclient.connected or not hfclient.authed):
+            while working and (hfclient.connected or not hfclient.authed):
                 #print("\t%s" % (time.time() - hfclient.last_pong_time))
                 if time.time() - hfclient.last_pong_time > 6 and hfclient.last_ping_time < hfclient.last_pong_time:
                     hfclient.ping()
@@ -113,6 +113,6 @@ if __name__ == '__main__':
     r.write('say "B3 test"')  
     
     time.sleep(20)
-    quit = True
+    working = False
     
     print(".")
