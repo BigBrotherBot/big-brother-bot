@@ -25,9 +25,15 @@ from b3.parsers.homefront.protocol import MessageType, ChannelType
 __author__  = 'xx'
 __version__ = '0.0'
 
-import sys, os, string, re, time, traceback, asyncore
-import b3, b3.parser
-import rcon, protocol
+import sys
+import string
+import re
+import time
+import asyncore
+import b3
+import b3.parser
+import rcon
+import protocol
 
 
 class HomefrontParser(b3.parser.Parser):
@@ -175,11 +181,17 @@ class HomefrontParser(b3.parser.Parser):
 
     def onServerLogin(self, data):
         # [string: Name]
-        self.debug('%s connecting' % data)
+        self.debug('Logging in %s' % data)
         ## @todo: onServerLogin: handle connecting queue in a similar way to cod4 I suppose
-        # I don't think we can do anything here with just a name. Wait for onServerUid, then authenticate.
         # (onServerLogin also occurs after a mapchange...)
-        
+        client = self.getClientByName(data)
+        if not client:
+            self.verbose('New client: %s, waiting for UserID...' % data)
+            return
+        else:
+            # join-event for mapcount reasons and so forth
+            return b3.events.Event(b3.events.EVT_CLIENT_JOIN, data, client)
+
     
     def onServerUid(self, data):
         # [string: Name] <[string: UID]>
@@ -201,10 +213,11 @@ class HomefrontParser(b3.parser.Parser):
             client.name = name
         else:
             client = self.clients.newClient(name, guid=uid, name=name, team=b3.TEAM_UNKNOWN)
-            return b3.events.Event(b3.events.EVT_CLIENT_JOIN, data, client)
+            return b3.events.Event(b3.events.EVT_CLIENT_CONNECT, data, client)
     
         
     def onServerLogout(self, data):
+        self.debug('%s disconnected' % data)
         client = self.getClientByName(data)
         if client:
             client.disconnect()
@@ -215,8 +228,17 @@ class HomefrontParser(b3.parser.Parser):
     def onServerTeam_change(self, data):
         # [string: Name] [int: Team ID]
         match = re.search(r"^(?P<name>.+) (?P<team>.*)$", data)
-        client = self.getClientByName(data)
-        client.team = self.getTeam(match.group('team'))
+        if not match:
+            self.error('onServerTeam_change failed match')
+            return
+        client = self.getClientByName(match.group('name'))
+        if not client:
+            ## @todo: should we kick to reconnect? we cannot control this client.
+            self.debug('Could not find client %s' % match.group('name'))
+            return
+        else:
+            client.team = self.getTeam(match.group('team'))
+            self.verbose('%s changed team: %s' %(client.name, client.team) )
 
     def onServerKill(self, data):
         # [string: Killer Name] [string: DamageType] [string: Victim Name]
@@ -271,6 +293,7 @@ class HomefrontParser(b3.parser.Parser):
             text = match.group('text')
             client = self.getClientByName(name)
             if not client:
+                ## @todo: should we kick to reconnect? we cannot control this client.
                 self.debug("could not find client %s " % name)
             else:
                 if type == 'team':
@@ -341,10 +364,6 @@ class HomefrontParser(b3.parser.Parser):
         kick a given players
         """
         self.debug('KICK : client: %s, reason: %s', client.name, reason)
-        if isinstance(client, str):
-            self.write(self.getCommand('kick', name=client.name))
-            return
-
         if admin:
             fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
         else:
@@ -355,6 +374,7 @@ class HomefrontParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
+        self.write(self.getCommand('kick', name=client.name))
         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_KICK, reason, client))
         client.disconnect()
 
