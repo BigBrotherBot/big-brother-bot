@@ -32,6 +32,7 @@ import time
 import asyncore
 import b3
 import b3.parser
+from b3.events import Event, EVT_UNKNOWN, EVT_CLIENT_JOIN, EVT_CLIENT_CONNECT, EVT_CLIENT_KILL, EVT_CLIENT_SUICIDE, EVT_CLIENT_KILL_TEAM, EVT_CLIENT_SAY, EVT_CLIENT_TEAM_SAY, EVT_CLIENT_KICK, EVT_CLIENT_BAN, EVT_CLIENT_BAN_TEMP
 import rcon
 import protocol
 
@@ -95,7 +96,7 @@ class HomefrontParser(b3.parser.Parser):
                         self.warning('TODO handle: %s(%s)' % (func, data))
                 else:
                     self.warning('TODO handle packet : %s' % packet)
-                    self.queueEvent(b3.events.Event(b3.events.EVT_UNKNOWN, packet))
+                    self.queueEvent(Event(EVT_UNKNOWN, packet))
                     
             elif packet.channel == ChannelType.CHATTER:
                 if packet.data.startswith('BROADCAST:'):
@@ -112,7 +113,7 @@ class HomefrontParser(b3.parser.Parser):
                         self.warning('TODO handle: %s(%s)' % (func, data))
                 else:
                     self.warning('TODO handle packet : %s' % packet)
-                    self.queueEvent(b3.events.Event(b3.events.EVT_UNKNOWN, packet))
+                    self.queueEvent(Event(EVT_UNKNOWN, packet))
             else:
                 self.warning("Unhandled channel type : %s" % packet.getChannelTypeAsStr())
         else:
@@ -191,7 +192,7 @@ class HomefrontParser(b3.parser.Parser):
             return
         else:
             # join-event for mapcount reasons and so forth
-            return b3.events.Event(b3.events.EVT_CLIENT_JOIN, data, client)
+            return Event(EVT_CLIENT_JOIN, data, client)
 
     
     def onServerUid(self, data):
@@ -220,7 +221,7 @@ class HomefrontParser(b3.parser.Parser):
             except:
                 #fail, we'll have to wait for the next teamchange
                 pass
-            return b3.events.Event(b3.events.EVT_CLIENT_CONNECT, data, client)
+            return Event(EVT_CLIENT_CONNECT, data, client)
     
         
     def onServerLogout(self, data):
@@ -301,19 +302,19 @@ class HomefrontParser(b3.parser.Parser):
             if not hasattr(victim, 'hitloc'):
                 victim.hitloc = 'body'
 
-        event = b3.events.EVT_CLIENT_KILL
+        event = EVT_CLIENT_KILL
 
         if weapon == 'Suicided' or attacker == victim:
-            event = b3.events.EVT_CLIENT_SUICIDE
+            event = EVT_CLIENT_SUICIDE
             self.verbose('%s suicided' % attacker.name)
         else:
             self.verbose('%s killed %s using %s' % (attacker.name, victim.name, weapon))
 
         if attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
-            event = b3.events.EVT_CLIENT_KILL_TEAM
+            event = EVT_CLIENT_KILL_TEAM
             self.verbose('Team kill, attacker: %s, victim: %s' % (attacker.name, victim.name))
 
-        return b3.events.Event(event, (100, weapon, victim.hitloc), attacker, victim)
+        return Event(event, (100, weapon, victim.hitloc), attacker, victim)
 
     def onChatterBroadcast(self, data):
         # [string: Name] [string: Context]: [string: Text]
@@ -332,11 +333,11 @@ class HomefrontParser(b3.parser.Parser):
                 self.debug("could not find client %s " % name)
             else:
                 if type == 'team':
-                    return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, text, client)
+                    return Event(EVT_CLIENT_TEAM_SAY, text, client)
                 elif type == 'squad':
                     raise NotImplementedError, "do squad say event"
                 else:
-                    return b3.events.Event(b3.events.EVT_CLIENT_SAY, text, client)
+                    return Event(EVT_CLIENT_SAY, text, client)
     
     # =======================================
     # implement parser interface
@@ -410,7 +411,7 @@ class HomefrontParser(b3.parser.Parser):
             self.say(fullreason)
 
         self.write(self.getCommand('kick', name=client.name))
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_KICK, reason, client))
+        self.queueEvent(Event(EVT_CLIENT_KICK, reason, client))
         client.disconnect()
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -429,7 +430,7 @@ class HomefrontParser(b3.parser.Parser):
             self.say(fullreason)
 
         self.write(self.getCommand('ban', name=client.name))
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, reason, client))
+        self.queueEvent(Event(EVT_CLIENT_BAN, reason, client))
         client.disconnect()
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -461,7 +462,7 @@ class HomefrontParser(b3.parser.Parser):
             self.say(fullreason)
 
         self.write(self.getCommand('tempban', name=client.name))
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, reason, client))
+        self.queueEvent(Event(EVT_CLIENT_BAN_TEMP, reason, client))
         client.disconnect()
 
     def getMap(self):
