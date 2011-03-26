@@ -65,7 +65,8 @@ class Events:
             ('EVT_GAME_ROUND_START', 'Game Round Start'),
             ('EVT_GAME_ROUND_END', 'Game Round End'),
             ('EVT_GAME_WARMUP', 'Game Warmup'),
-            ('EVT_GAME_EXIT', 'Game Exit')
+            ('EVT_GAME_EXIT', 'Game Exit'),
+            ('EVT_GAME_MAP_CHANGE', 'map changed'),
         ))        
 
     def createEvent(self, key, name=None):
