@@ -218,7 +218,46 @@ class HomefrontParser(b3.parser.Parser):
         client = self.getClientByName(data)
         client.team = self.getTeam(match.group('team'))
 
-        
+    def onServerKill(self, data):
+        # [string: Killer Name] [string: DamageType] [string: Victim Name]
+        # kill example: courgette EXP_Frag Freelander
+        # suicide example#1: Freelander Suicided Freelander
+        # suicide example#2: Freelander EXP_Frag Freelander
+        # TODO: Teamkills. Need to get player's team info for teamkill. Check the possibility of two players 
+        # having the exact same name which may lead to a false suicide event.
+        match = re.search(r"^(?P<data>(?P<aname>[^;]+)\s+(?P<aweap>[A-z0-9_-]+)\s+(?P<vname>[^;]+))$", data)
+        if not match:
+            self.error("Can't parse kill line" % data)
+            return None
+        else:
+            attacker = self.getClientByName(match.group('aname'))
+            if not attacker:
+                self.debug('No attacker!')
+                return None
+
+            victim = self.getClientByName(match.group('vname'))
+            if not victim:
+                self.debug('No victim!')
+                return None
+
+            weapon = match.group('aweap')
+            if not weapon:
+                self.debug('No weapon')
+                return None
+
+            if not hasattr(victim, 'hitloc'):
+                victim.hitloc = 'body'
+
+        event = b3.events.EVT_CLIENT_KILL
+
+        if weapon == 'Suicided' or attacker == victim:
+            event = b3.events.EVT_CLIENT_SUICIDE
+            self.debug('%s suicided' % attacker.name)
+        else:
+            self.debug('%s killed %s using %s' % (attacker.name, victim.name, weapon))
+
+        return b3.events.Event(event, (100, weapon, victim.hitloc), attacker, victim)
+
     def onChatterBroadcast(self, data):
         # [string: Name] [string: Context]: [string: Text]
         # example : courgette says: !register
