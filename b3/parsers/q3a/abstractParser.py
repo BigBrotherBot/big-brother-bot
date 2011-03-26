@@ -390,6 +390,7 @@ class AbstractParser(b3.parser.Parser):
             result = b3.TEAM_SPEC
         else:
             result = b3.TEAM_UNKNOWN
+        return result
 
 
     def message(self, client, text):
