@@ -45,7 +45,7 @@ class HomefrontParser(b3.parser.Parser):
     OutputClass = rcon.Rcon
     PunkBuster = None 
     _serverConnection = None
-    _teamcache = {}
+    teamcache = {}
 
     # homefront engine does not support color code, so we need this property
     # in order to get stripColors working
@@ -217,7 +217,7 @@ class HomefrontParser(b3.parser.Parser):
             client = self.clients.newClient(name, guid=uid, name=name, team=b3.TEAM_UNKNOWN)
             #set the correct team
             try:
-                client.team = self._teamcache[name]
+                client.team = self.teamcache[name]
             except:
                 #fail, we'll have to wait for the next teamchange
                 pass
@@ -229,14 +229,14 @@ class HomefrontParser(b3.parser.Parser):
 
         # make sure we remove the player from the _teamcache
         try:
-            self._teamcache.pop(data)
+            self.teamcache.pop(data)
         except:
             pass
 
         client = self.getClientByName(data)
         if client:
             client.disconnect()
-            self.verbose2('_teamcache: %s' % self._teamcache)
+            self.verbose2('_teamcache: %s' % self.teamcache)
         else:
             self.debug("client %s not found" % data)
     
@@ -252,13 +252,13 @@ class HomefrontParser(b3.parser.Parser):
         if not client:
             self.debug('Could not find client %s' % match.group('name'))
             # if not yet authed, store it in _teamcache
-            self._teamcache[match.group('name')] = match.group('team')
-            self.verbose2('_teamcache: %s' % self._teamcache)
+            self.teamcache[match.group('name')] = match.group('team')
+            self.verbose2('_teamcache: %s' % self.teamcache)
             return
         else:
             # update _teamcache
-            self._teamcache[match.group('name')] = match.group('team')
-            self.verbose2('_teamcache: %s' % self._teamcache)
+            self.teamcache[match.group('name')] = match.group('team')
+            self.verbose2('_teamcache: %s' % self.teamcache)
             client.team = self.getTeam(match.group('team'))
             self.verbose('%s changed team: %s' %(client.name, client.team) )
 
@@ -277,7 +277,7 @@ class HomefrontParser(b3.parser.Parser):
             attacker = self.getClientByName(match.group('aname'))
             if attacker:
                 try:
-                    attacker.team = self._teamcache[attacker.name]
+                    attacker.team = self.teamcache[attacker.name]
                 except:
                     pass
             else:
@@ -287,7 +287,7 @@ class HomefrontParser(b3.parser.Parser):
             victim = self.getClientByName(match.group('vname'))
             if victim:
                 try:
-                    victim.team = self._teamcache[victim.name]
+                    victim.team = self.teamcache[victim.name]
                 except:
                     pass
             else:
