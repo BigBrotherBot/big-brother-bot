@@ -452,18 +452,10 @@ class Parser(object):
 
     def startup(self):
         """\
-        Depreciated. Use onStartup().
+        Called after the parser is created before run(). Overwrite this
+        for anything you need to initialize you parser with.
         """
         pass
-
-    def onStartup(self):
-        """\
-        Called after the plugin is created before it is started. Overwrite this
-        for anything you need to initialize you plugin with.
-        """
-
-        # support backwards compatability
-        self.startup()
 
     def pause(self):
         """Pause B3 log parsing"""
