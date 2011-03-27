@@ -36,8 +36,12 @@ from b3.events import Event, EVT_UNKNOWN, EVT_CLIENT_JOIN, EVT_CLIENT_CONNECT, \
 EVT_CLIENT_KILL, EVT_CLIENT_SUICIDE, EVT_CLIENT_KILL_TEAM, EVT_CLIENT_SAY, \
 EVT_CLIENT_TEAM_SAY, EVT_CLIENT_KICK, EVT_CLIENT_BAN, EVT_CLIENT_BAN_TEMP, \
 EVT_GAME_ROUND_END, EVT_GAME_ROUND_START
+import os
 import rcon
 import protocol
+from ftplib import FTP
+import ftplib
+from b3 import functions
 
 
 class HomefrontParser(b3.parser.Parser):
@@ -52,6 +56,16 @@ class HomefrontParser(b3.parser.Parser):
     # homefront engine does not support color code, so we need this property
     # in order to get stripColors working
     _reColor = re.compile(r'(\^[0-9])')
+    # Map related
+    _currentmap = None
+    _ini_file = None
+    _currentmap = None
+    _mapline = re.compile(r'^(?P<start>Map=)(?P<mapname>[^\?]+)\?(?P<sep>GameMode=)(?P<gamemode>.*)$', re.IGNORECASE)
+    ftpconfig = None
+    _ftplib_debug_level = 0 # 0: no debug, 1: normal debug, 2: extended debug
+    _connectionTimeout = 30
+    maplist = None
+    mapgamelist = None
 
     _commands = {}
     _commands['message'] = ('say "%(prefix)s [%(name)s] %(message)s"')
@@ -61,6 +75,7 @@ class HomefrontParser(b3.parser.Parser):
     _commands['ban'] = ('admin kickban "%(name)s"')
     _commands['unban'] = ('admin unban "%(name)s"')
     _commands['tempban'] = ('admin kick "%(name)s"')
+    _commands['maprotate'] = ('admin nextmap')
     
     _settings = {'line_length': 90, 
                  'min_wrap_length': 100}
@@ -69,7 +84,28 @@ class HomefrontParser(b3.parser.Parser):
     
     def startup(self):
         self.debug("startup()")
-        pass
+        
+        if self.config.has_option('server','inifile'):
+            # open ini file
+            ini_file = self.config.get('server','inifile')
+            if ini_file[0:6] == 'ftp://':
+                    self.ftpconfig = functions.splitDSN(ini_file)
+                    self._ini_file = 'ftp'
+                    self.bot('ftp supported')
+            elif ini_file[0:7] == 'sftp://':
+                self.bot('sftp currently not supported')
+            else:
+                self.bot('Getting configs from %s', ini_file)
+                f = self.config.getpath('server', 'inifile')
+                if os.path.isfile(f):
+                    self.input  = file(f, 'r')
+                    self._ini_file = f
+
+        if not self._ini_file:
+            self.debug('Incorrect ini file or no ini file specified, map commands other than nextmap not available')
+            
+        
+        
         # add specific events
         #self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
                 
@@ -301,8 +337,10 @@ class HomefrontParser(b3.parser.Parser):
             self.error('onServerChange_level failed match')
             return
 
+
         levelname = match.group('level')
         self.verbose('onServerChange_level, levelname: %s' % levelname)
+        self._currentmap = levelname.lower()
         return Event(EVT_GAME_ROUND_START, levelname)
 
     def onChatterBroadcast(self, data):
@@ -463,17 +501,63 @@ class HomefrontParser(b3.parser.Parser):
         """
         raise NotImplementedError
 
+    def getNextMap(self):
+        """Return the name of the next map
+        """
+        nextmap=''
+        self.getMaps()
+        no_maps = len(self.maplist)
+        if self.maplist.count(self._currentmap) == 1:
+            i = self.maplist.index(self._currentmap)
+            if i < no_maps-1:
+                nextmap = self.mapgamelist[i+1]
+            else:
+                nextmap =self.mapgamelist[0]
+                
+        else:
+            nextmap = 'Unknown'
+        
+        return nextmap
+        
     def getMaps(self):
         """\
         return the available maps/levels name
         """
-        raise NotImplementedError
+        self.maplist = []
+        self.mapgamelist = []
+        if self._ini_file:
+            if self._ini_file == 'ftp':
+                self.getftpini()
+            else:
+                input = open(self._ini_file, 'r')
+                for line in input:
+                    mapline = self.checkMapline(line)
+                    if mapline:
+                        if mapline[1] == 'FL':
+                            mapline[1] = 'GC'
+                        if mapline[1] == 'FL,BC':
+                            mapline[1] = 'GC,BC'
+                        self.maplist.append(mapline[0])
+                        self.mapgamelist.append(self.getEasyName(mapline[0]) + ' [' + mapline[1] + ']')
+                
+                input.close()
+            return self.mapgamelist
+
+    def checkMapline(self, line):
+        map = re.match( self._mapline, line)
+        if map:
+            d = map.groupdict()
+            d2 = [d['mapname'], d['gamemode']]
+            return d2
+        else:
+            return None
 
     def rotateMap(self):
         """\
         load the next map/level
         """
-        raise NotImplementedError
+        #CT admin NextMap
+        self.write(self.getCommand('maprotate'))
         
     def changeMap(self, map):
         """\
@@ -482,6 +566,77 @@ class HomefrontParser(b3.parser.Parser):
         """
         raise NotImplementedError
 
+    def getftpini(self):
+        def handleDownload(line):
+            #self.debug('received %s bytes' % len(block))
+            line = line + '\n'
+            mapline = self.checkMapline(line)
+            if mapline:
+                self.maplist.append(mapline[0])
+                self.mapgamelist.append(self.getEasyName(mapline[0]) + ' [' + mapline[1] + ']')
+
+        ftp = None
+        try:
+            ftp = self.ftpconnect()
+            self._nbConsecutiveConnFailure = 0
+            remoteSize = ftp.size(os.path.basename(self.ftpconfig['path']))
+            self.verbose("Connection successful. Remote file size is %s" % remoteSize)
+            ftp.retrlines('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload)          
+
+        except ftplib.all_errors, e:
+            self.debug(str(e))
+            try:
+                ftp.close()
+                self.debug('FTP Connection Closed')
+            except:
+                pass
+            ftp = None
+
+        try:
+            ftp.close()
+        except:
+            pass
+
+
+    def ftpconnect(self):
+        #self.debug('Python Version %s.%s, so setting timeout of 10 seconds' % (versionsearch.group(2), versionsearch.group(3)))
+        self.verbose('Connecting to %s:%s ...' % (self.ftpconfig["host"], self.ftpconfig["port"]))
+        ftp = FTP()
+        ftp.set_debuglevel(self._ftplib_debug_level)
+        ftp.connect(self.ftpconfig['host'], self.ftpconfig['port'], self._connectionTimeout)
+        ftp.login(self.ftpconfig['user'], self.ftpconfig['password'])
+        ftp.voidcmd('TYPE I')
+        dir = os.path.dirname(self.ftpconfig['path'])
+        self.debug('trying to cwd to [%s]' % dir)
+        ftp.cwd(dir)
+        return ftp
+
+    def getEasyName(self, mapname):
+        """ Change levelname to real name """
+        if mapname == 'fl-angelisland':
+            return 'Angel Island'
+            
+        elif mapname == 'fl-crossroads':
+            return 'Crossroads'
+
+        elif mapname == 'fl-culdesac':
+            return 'Cul-de-Sac'
+
+        elif mapname == 'fl-farm':
+            return 'Farm'
+
+        elif mapname == 'fl-harbor':
+            return 'Green Zone'
+
+        elif mapname == 'fl-lowlands':
+            return 'Lowlands'
+
+        elif mapname == 'fl-borderlands':
+            return 'Borderlands'
+        else:
+            self.warning('unknown level name \'%s\'. Please report this on B3 forums' % mapname)
+            return mapname
+  
     def getPlayerPings(self):
         """\
         returns a dict having players' id for keys and players' ping for values
