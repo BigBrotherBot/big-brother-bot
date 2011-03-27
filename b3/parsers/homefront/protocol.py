@@ -163,7 +163,6 @@ class Client(asyncore.dispatcher_with_send):
         self.server_version = None
         self.last_pong_time = self.last_ping_time = time.time()
         self._handlers = set()
-        asyncore.dispatcher.__init__(self)
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connect( (self._host, self._port) )
         

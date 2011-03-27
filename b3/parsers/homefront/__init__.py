@@ -32,7 +32,10 @@ import time
 import asyncore
 import b3
 import b3.parser
-from b3.events import Event, EVT_UNKNOWN, EVT_CLIENT_JOIN, EVT_CLIENT_CONNECT, EVT_CLIENT_KILL, EVT_CLIENT_SUICIDE, EVT_CLIENT_KILL_TEAM, EVT_CLIENT_SAY, EVT_CLIENT_TEAM_SAY, EVT_CLIENT_KICK, EVT_CLIENT_BAN, EVT_CLIENT_BAN_TEMP
+from b3.events import Event, EVT_UNKNOWN, EVT_CLIENT_JOIN, EVT_CLIENT_CONNECT, \
+EVT_CLIENT_KILL, EVT_CLIENT_SUICIDE, EVT_CLIENT_KILL_TEAM, EVT_CLIENT_SAY, \
+EVT_CLIENT_TEAM_SAY, EVT_CLIENT_KICK, EVT_CLIENT_BAN, EVT_CLIENT_BAN_TEMP, \
+EVT_GAME_ROUND_END, EVT_GAME_ROUND_START
 import rcon
 import protocol
 
@@ -45,7 +48,6 @@ class HomefrontParser(b3.parser.Parser):
     OutputClass = rcon.Rcon
     PunkBuster = None 
     _serverConnection = None
-    teamcache = {}
 
     # homefront engine does not support color code, so we need this property
     # in order to get stripColors working
@@ -59,7 +61,12 @@ class HomefrontParser(b3.parser.Parser):
     _commands['ban'] = ('admin kickban "%(name)s"')
     _commands['unban'] = ('admin unban "%(name)s"')
     _commands['tempban'] = ('admin kick "%(name)s"')
-
+    
+    _settings = {'line_length': 90, 
+                 'min_wrap_length': 100}
+    
+    prefix = '%s: '
+    
     def startup(self):
         self.debug("startup()")
         pass
@@ -90,7 +97,6 @@ class HomefrontParser(b3.parser.Parser):
                         func = getattr(self, func)
                         event = func(data)
                         if event:
-                            self.debug('event : %s' % event)
                             self.queueEvent(event)
                     else:
                         self.warning('TODO handle: %s(%s)' % (func, data))
@@ -107,7 +113,6 @@ class HomefrontParser(b3.parser.Parser):
                         func = getattr(self, func)
                         event = func(data)
                         if event:
-                            self.debug('event : %s' % event)
                             self.queueEvent(event)
                     else:
                         self.warning('TODO handle: %s(%s)' % (func, data))
@@ -171,10 +176,12 @@ class HomefrontParser(b3.parser.Parser):
     # ================================================
        
     def onServerHello(self, data):
+        ## [int: Version]
         self.info("HF server (v %s) says hello to B3" % data)
 
             
     def onServerAuth(self, data):
+        ## [boolean: Result]
         if data == 'true':
             self.info("B3 correctly authenticated on game server")
         else:
@@ -183,16 +190,8 @@ class HomefrontParser(b3.parser.Parser):
 
     def onServerLogin(self, data):
         # [string: Name]
-        self.debug('Logging in %s' % data)
-        ## @todo: onServerLogin: handle connecting queue in a similar way to cod4 I suppose
         # (onServerLogin also occurs after a mapchange...)
-        client = self.getClientByName(data)
-        if not client:
-            self.verbose('New client: %s, waiting for UserID...' % data)
-            return
-        else:
-            # join-event for mapcount reasons and so forth
-            return Event(EVT_CLIENT_JOIN, data, client)
+        return Event(EVT_CLIENT_CONNECT, data, self.getClient(data))
 
     
     def onServerUid(self, data):
@@ -202,65 +201,37 @@ class HomefrontParser(b3.parser.Parser):
         if not match:
             self.error("could not get UID in [%s]" % data)
             return None
-
-        name = match.group('name')
-        uid = match.group('uid')
-
-        client = self.getClientByName(name)
-        if client:
-            self.verbose2('ClientObject already exists')
-            # update existing client
-            client.state = b3.STATE_ALIVE
-            # possible name change
-            client.name = name
-        else:
-            client = self.clients.newClient(name, guid=uid, name=name, team=b3.TEAM_UNKNOWN)
-            #set the correct team
-            try:
-                client.team = self.teamcache[name]
-            except:
-                #fail, we'll have to wait for the next teamchange
-                pass
-            return Event(EVT_CLIENT_CONNECT, data, client)
+        client = self.getClient(match.group('name'))
+        client.guid = match.group('uid')
+        client.auth()
     
-        
     def onServerLogout(self, data):
+        ## [string: Name]
         self.debug('%s disconnected' % data)
-
-        # make sure we remove the player from the _teamcache
-        try:
-            self.teamcache.pop(data)
-        except:
-            pass
-
-        client = self.getClientByName(data)
+        # do not call self.getClient() here because we do not want
+        # to create a new client
+        client = self.clients.getByCID(data)
         if client:
             client.disconnect()
-            self.verbose2('_teamcache: %s' % self.teamcache)
-        else:
-            self.debug("client %s not found" % data)
-    
     
     def onServerTeam_change(self, data):
         # [string: Name] [int: Team ID]
-        self.debug('onServerTeam: %s' % data)
+        self.debug('onServerTeam_change: %s' % data)
         match = re.search(r"^(?P<name>.+) (?P<team>.*)$", data)
         if not match:
             self.error('onServerTeam_change failed match')
             return
-        client = self.getClientByName(match.group('name'))
-        if not client:
-            self.debug('Could not find client %s' % match.group('name'))
-            # if not yet authed, store it in _teamcache
-            self.teamcache[match.group('name')] = match.group('team')
-            self.verbose2('_teamcache: %s' % self.teamcache)
+        client = self.getClient(match.group('name'))
+        client.team = self.getTeam(match.group('team'))
+
+    def onServerClan_change(self, data):
+        # [string: Name] [string: Clan Name]
+        match = re.search(r"^(?P<name>.+) (?P<clan>.*)$", data)
+        if not match:
+            self.error('onServerTeam_change failed match')
             return
-        else:
-            # update _teamcache
-            self.teamcache[match.group('name')] = match.group('team')
-            self.verbose2('_teamcache: %s' % self.teamcache)
-            client.team = self.getTeam(match.group('team'))
-            self.verbose('%s changed team: %s' %(client.name, client.team) )
+        client = self.getClient(match.group('name'))
+        client.clan = self.getTeam(match.group('clan'))
 
     def onServerKill(self, data):
         # [string: Killer Name] [string: DamageType] [string: Victim Name]
@@ -272,32 +243,22 @@ class HomefrontParser(b3.parser.Parser):
         match = re.search(r"^(?P<data>(?P<aname>[^;]+)\s+(?P<aweap>[A-z0-9_-]+)\s+(?P<vname>[^;]+))$", data)
         if not match:
             self.error("Can't parse kill line" % data)
-            return None
+            return
         else:
-            attacker = self.getClientByName(match.group('aname'))
-            if attacker:
-                try:
-                    attacker.team = self.teamcache[attacker.name]
-                except:
-                    pass
-            else:
+            attacker = self.getClient(match.group('aname'))
+            if not attacker:
                 self.debug('No attacker!')
-                return None
+                return
 
-            victim = self.getClientByName(match.group('vname'))
-            if victim:
-                try:
-                    victim.team = self.teamcache[victim.name]
-                except:
-                    pass
-            else:
+            victim = self.getClient(match.group('vname'))
+            if not victim:
                 self.debug('No victim!')
-                return None
+                return
 
             weapon = match.group('aweap')
             if not weapon:
                 self.debug('No weapon')
-                return None
+                return
 
             if not hasattr(victim, 'hitloc'):
                 victim.hitloc = 'body'
@@ -317,6 +278,7 @@ class HomefrontParser(b3.parser.Parser):
         return Event(event, (100, weapon, victim.hitloc), attacker, victim)
 
     def onServerRound_over(self, data):
+        ## [int: Team ID]
         match = re.search(r"^(?P<team>.*)$", data)
         if not match:
             self.error('onServerRound_over failed match')
@@ -328,20 +290,20 @@ class HomefrontParser(b3.parser.Parser):
         # 2 = TIE
         teamid = match.group('team')
 
-        event = b3.events.EVT_GAME_ROUND_END
         self.verbose('onServerRound_over: %s, winning team id: %s' % (data, teamid)) 
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_END, teamid)
+        return Event(EVT_GAME_ROUND_END, teamid)
 
     def onServerChange_level(self, data):
+        ## [string: Map]
+        ## example : fl-harbor
         match = re.search(r"^(?P<level>.*)$", data)
         if not match:
             self.error('onServerChange_level failed match')
             return
 
         levelname = match.group('level')
-        event = b3.events.EVT_GAME_ROUND_START
         self.verbose('onServerChange_level, levelname: %s' % levelname)
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, levelname)
+        return Event(EVT_GAME_ROUND_START, levelname)
 
     def onChatterBroadcast(self, data):
         # [string: Name] [string: Context]: [string: Text]
@@ -354,17 +316,15 @@ class HomefrontParser(b3.parser.Parser):
             type = match.group('type')
             name = match.group('name')
             text = match.group('text')
-            client = self.getClientByName(name)
-            if not client:
-                ## @todo: should we kick to reconnect? we cannot control this client.
-                self.debug("could not find client %s " % name)
+            client = self.getClient(name)
+            if type == 'team':
+                return Event(EVT_CLIENT_TEAM_SAY, text, client)
+            elif type == 'squad':
+                raise NotImplementedError, "do squad say event"
             else:
-                if type == 'team':
-                    return Event(EVT_CLIENT_TEAM_SAY, text, client)
-                elif type == 'squad':
-                    raise NotImplementedError, "do squad say event"
-                else:
-                    return Event(EVT_CLIENT_SAY, text, client)
+                return Event(EVT_CLIENT_SAY, text, client)
+    
+    
     
     # =======================================
     # implement parser interface
@@ -385,7 +345,9 @@ class HomefrontParser(b3.parser.Parser):
         the user in the database (usualy guid, or punkbuster id, ip) and call the 
         Client.auth() method 
         """
-        raise NotImplementedError
+        ## in Homefront, there is no synchronous way to obtain a player guid
+        ## the onServerUid event will be the one calling Client.auth()
+        pass
     
     def sync(self):
         """\
@@ -404,14 +366,16 @@ class HomefrontParser(b3.parser.Parser):
         broadcast a message to all players
         """
         msg = self.stripColors(msg)
-        self.write(self.getCommand('say', prefix=self.msgPrefix, message=msg))
+        for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+            self.write(self.getCommand('say',  prefix=self.msgPrefix, message=line))
 
     def saybig(self, msg):
         """\
         broadcast a message to all players in a way that will catch their attention.
         """
         msg = self.stripColors(msg)
-        self.write(self.getCommand('saybig', prefix=self.msgPrefix, message=msg))
+        for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+            self.write(self.getCommand('saybig',  prefix=self.msgPrefix, message=line))
 
     def message(self, client, text):
         """\
@@ -420,7 +384,8 @@ class HomefrontParser(b3.parser.Parser):
         ## @todo: message: change that when the rcon protocol will allow us to
         # actually send private messages
         text = self.stripColors(text)
-        self.write(self.getCommand('message', prefix=self.msgPrefix, name=client.name, message=text))
+        for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
+            self.write(self.getCommand('message', name=client.name, prefix=self.msgPrefix, message=line))
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
@@ -553,7 +518,15 @@ class HomefrontParser(b3.parser.Parser):
     # convenience methods
     # =======================================
 
-    def getClientByName(self, name):
-        # try to get the client from the storage of already authed clients
-        return self.clients.getByCID(name)
+    def getClient(self, name):
+        """return a already connected client (authed or not) by searching the 
+        clients name index. If not found, create a new client
+        
+        This method will always return a client object
+        """
+        client = self.clients.getByName(name)
+        if not client:
+            self.debug('client not found by name, creating new client')
+            client = self.clients.newClient(name, name=name, state=b3.STATE_UNKNOWN, team=b3.TEAM_UNKNOWN)
+        return client
 
