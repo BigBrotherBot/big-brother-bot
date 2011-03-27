@@ -408,7 +408,7 @@ class Parser(object):
     def start(self):
         """Start B3"""
 
-        self.onStartup()
+        self.startup()
         self.startPlugins()
         thread.start_new_thread(self.handleEvents, ())
 
