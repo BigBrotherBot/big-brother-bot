@@ -304,12 +304,11 @@ class HomefrontParser(b3.parser.Parser):
         if weapon == 'Suicided' or attacker == victim:
             event = EVT_CLIENT_SUICIDE
             self.verbose('%s suicided' % attacker.name)
-        else:
-            self.verbose('%s killed %s using %s' % (attacker.name, victim.name, weapon))
-
-        if attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
+        elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
             event = EVT_CLIENT_KILL_TEAM
             self.verbose('Team kill, attacker: %s, victim: %s' % (attacker.name, victim.name))
+        else:
+            self.verbose('%s killed %s using %s' % (attacker.name, victim.name, weapon))
 
         return Event(event, (100, weapon, victim.hitloc), attacker, victim)
 
