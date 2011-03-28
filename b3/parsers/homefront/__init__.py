@@ -274,8 +274,7 @@ class HomefrontParser(b3.parser.Parser):
         # kill example: courgette EXP_Frag Freelander
         # suicide example#1: Freelander Suicided Freelander (triggers when player leaves the server)
         # suicide example#2: Freelander EXP_Frag Freelander
-        # TODO: Check the possibility of two players having the exact same name which may lead to a false 
-        # suicide event.
+        ## @TODO: Check the possibility of two players having the exact same name which may lead to a false suicide event.
         match = re.search(r"^(?P<data>(?P<aname>[^;]+)\s+(?P<aweap>[A-z0-9_-]+)\s+(?P<vname>[^;]+))$", data)
         if not match:
             self.error("Can't parse kill line" % data)
