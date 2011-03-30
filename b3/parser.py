@@ -18,6 +18,9 @@
 #
 #
 # CHANGELOG
+#   2001/03/30 - 1.24 - Courgette
+#   * remove output option log2both and changed the behavior of log2console so
+#     that the console log steam is not replacing the stream going to the log file
 #   2011/02/03 - 1.23 - Bravo17
 #   * allow local log to be appended to instead of overwritten for games with remote logs
 #   2010/11/25 - 1.22 - Courgette
@@ -105,7 +108,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.22'
+__version__ = '1.24'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -238,8 +241,7 @@ class Parser(object):
         # set up logging
         logfile = self.config.getpath('b3', 'logfile')
         log2console = self.config.has_option('devmode', 'log2console') and self.config.getboolean('devmode', 'log2console')
-        log2both = self.config.has_option('devmode', 'log2both') and self.config.getboolean('devmode', 'log2both')
-        self.log = b3.output.getInstance(logfile, self.config.getint('b3', 'log_level'), log2console, log2both)
+        self.log = b3.output.getInstance(logfile, self.config.getint('b3', 'log_level'), log2console)
 
         # save screen output to self.screen
         self.screen = sys.stdout
