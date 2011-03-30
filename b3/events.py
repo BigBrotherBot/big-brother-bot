@@ -19,9 +19,11 @@
 # 27/6/2009 : xlr8or: added CLIENT_ACTION event
 # 11/11/2009 - 1.1.2 - Courgette
 #    * minor transparent changes to the code 
+# 30/03/2011 - 1.1.3 - SGT
+#    * add EVT_CLIENT_UNBAN
 
 __author__  = 'ThorN/xlr8or'
-__version__ = '1.1.2'
+__version__ = '1.1.3'
 
 import re
 import b3
@@ -59,6 +61,7 @@ class Events:
             ('EVT_CLIENT_BAN', 'Client Banned'),
             ('EVT_CLIENT_BAN_TEMP', 'Client Temp Banned'),
             ('EVT_CLIENT_KICK', 'Client Kicked'),
+            ('EVT_CLIENT_UNBAN', 'Client Unbanned'),
             ('EVT_GAME_ROUND_START', 'Game Round Start'),
             ('EVT_GAME_ROUND_END', 'Game Round End'),
             ('EVT_GAME_WARMUP', 'Game Warmup'),
