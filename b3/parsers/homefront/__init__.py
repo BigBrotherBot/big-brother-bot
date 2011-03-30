@@ -85,6 +85,9 @@ class HomefrontParser(b3.parser.Parser):
     def startup(self):
         self.debug("startup()")
         
+        # create the 'Server' client
+        self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
+
         if self.config.has_option('server','inifile'):
             # open ini file
             ini_file = self.config.get('server','inifile')
