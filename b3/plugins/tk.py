@@ -189,7 +189,7 @@ class TkPlugin(b3.plugin.Plugin):
                 self._grudge_level = self.config.getint('settings','grudge_level')
             except:
                 self.debug('Using default value (%s) for grudge_level', self._grudge_level)
-            if self._grudge_enable:
+            if grudge_enable:
                 self._adminPlugin.registerCommand(self, 'grudge', self._grudge_level, self.cmd_grudge, 'grudge')
 
 
