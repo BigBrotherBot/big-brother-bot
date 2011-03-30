@@ -17,8 +17,6 @@
 #
 # CHANGELOG
 #
-# aaaa/mm/dd - who 
-#    foo
 #
 
 """
