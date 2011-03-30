@@ -517,7 +517,10 @@ class HomefrontParser(b3.parser.Parser):
         """\
         return the current map/level name
         """
-        raise NotImplementedError
+        if self._currentmap is None:
+            return "Unknown"
+        else:
+            return self._currentmap
 
     def getNextMap(self):
         """Return the name of the next map
@@ -525,8 +528,9 @@ class HomefrontParser(b3.parser.Parser):
         nextmap=''
         self.getMaps()
         no_maps = len(self.maplist)
-        if self.maplist.count(self._currentmap) == 1:
-            i = self.maplist.index(self._currentmap)
+        currentmap = self.getMap()
+        if self.maplist.count(currentmap) == 1:
+            i = self.maplist.index(currentmap)
             if i < no_maps-1:
                 nextmap = self.mapgamelist[i+1]
             else:
