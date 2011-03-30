@@ -118,29 +118,26 @@ logging.setLoggerClass(OutputHandler)
 
 __output = None
 
-def getInstance(logfile='b3.log', loglevel=21, log2console=False, log2both=False):
+def getInstance(logfile='b3.log', loglevel=21, log2console=False):
     """NOTE: log2console is mostly useful for developers. This will make the bot
-    log everything to stderr instead of into the usual logfile.
-    log2both will write to both the logfile and also stderr."""
+    log everything to stderr additionally of into the usual logfile.
+    """
     global __output
 
     if __output == None:
         __output = logging.getLogger('output')
 
-        if log2console:
-            handler = logging.StreamHandler()
-        else:
-            if log2both:
-                handler2 = logging.StreamHandler()
-            handler = handlers.RotatingFileHandler(logfile, 'a', 10485760, 5)
-            handler.doRollover()
+        handler = handlers.RotatingFileHandler(logfile, 'a', 10485760, 5)
+        handler.doRollover()
         handler.setFormatter(logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s', '%y%m%d %H:%M:%S'))
-        
         __output.addHandler(handler)
-        if log2both:
+        
+        if log2console:
+            handler2 = logging.StreamHandler()
+            handler2.setFormatter(logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s', '%y%m%d %H:%M:%S'))
             __output.addHandler(handler2)
+           
         __output.setLevel(loglevel)
-    
     return __output
 
 if __name__ == '__main__':

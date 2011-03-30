@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    03/30/2011 - 1.2.5 - SGT
+#    * Introduction of grudge level
 #    11/22/2009 - 1.2.4 - Courgette
 #    * also send a msg to victim with instructions on how to forgive
 #    * add tests
@@ -38,7 +40,7 @@
 #    7/23/2005 - 1.0.2 - ThorN
 #    * Changed temp ban duration to be based on ban_length times the number of victims
 
-__version__ = '1.2.4'
+__version__ = '1.2.5'
 __author__  = 'ThorN'
 
 import b3, string, re, threading
@@ -156,6 +158,7 @@ class TkPlugin(b3.plugin.Plugin):
     _maxLevel = 0
     _maxPoints = 0
     _grudge_enable = True
+    _grudge_level = 0
     _private_messages = None
     _ffa = ['dm', 'ffa', 'syc-ffa']
 
@@ -179,12 +182,15 @@ class TkPlugin(b3.plugin.Plugin):
             #    10/20/2008 - 1.1.6b0 - mindriot
             #    * added grudge_enable to control grudge command registration
             try:
-                grudge_enable = self.config.getboolean('settings', 'grudge_enable')
+                self._grudge_enable = self.config.getboolean('settings', 'grudge_enable')
             except:
-                grudge_enable = self._grudge_enable
                 self.debug('Using default value (%s) for grudge_enable', self._grudge_enable)
-            if grudge_enable:
-                self._adminPlugin.registerCommand(self, 'grudge', 0, self.cmd_grudge, 'grudge')
+            try:
+                self._grudge_level = self.config.getint('settings','grudge_level')
+            except:
+                self.debug('Using default value (%s) for grudge_level', self._grudge_level)
+            if self._grudge_enable:
+                self._adminPlugin.registerCommand(self, 'grudge', self._grudge_level, self.cmd_grudge, 'grudge')
 
 
     def onLoadConfig(self):

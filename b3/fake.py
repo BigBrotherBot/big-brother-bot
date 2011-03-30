@@ -86,7 +86,7 @@ if __name__ == '__main__':
 # 1.6 - 2010/11/21
 # * remove more time.sleep()
 # * add message_history for FakeClient which allow to test if a client was sent a message afterward (unittest)
-
+#
 __version__ = '1.6'
 
 
@@ -97,9 +97,9 @@ from b3.plugins.admin import AdminPlugin
 import b3.parsers.punkbuster
 import b3.parser
 import b3.events
+from b3.cvar import Cvar
 from sys import stdout
 import StringIO
-
 
 class FakeConsole(b3.parser.Parser):
     Events = b3.events.eventManager
@@ -120,6 +120,8 @@ class FakeConsole(b3.parser.Parser):
         self.storage = FakeStorage()
         self.clients  = b3.clients.Clients(self)
         self.game = b3.game.Game(self, "fakeGame")
+        self.game.mapName = 'ut4_turnpike'
+        self.cvars = {}
         
         if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
             self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
@@ -129,7 +131,6 @@ class FakeConsole(b3.parser.Parser):
     
     def run(self):
         pass
-
     def queueEvent(self, event, expire=10):
         """Queue an event for processing. NO QUEUE, NO THREAD for faking speed up"""
         if not hasattr(event, 'type'):
@@ -164,7 +165,6 @@ class FakeConsole(b3.parser.Parser):
                 self.exitcode = e.code
             except Exception, msg:
                 self.error('handler %s could not handle event %s: %s: %s %s', hfunc.__class__.__name__, self.Events.getName(event.type), msg.__class__.__name__, msg, traceback.extract_tb(sys.exc_info()[2]))
-
     
     def getPlugin(self, name):
         if name == 'admin':
@@ -229,6 +229,15 @@ class FakeConsole(b3.parser.Parser):
         else:
             print "sending msg to %s: %s" % (client.name, re.sub(re.compile('\^[0-9]'), '', text).strip())
     
+    def getCvar(self, key):
+        print "get cvar %s" % key
+        return self.cvars.get(key)
+
+    def setCvar(self, key, value):
+        print "set cvar %s" % key
+        c = Cvar(name=key,value=value)
+        self.cvars[key] = c
+        
     ##############################
     
     def error(self, msg, *args, **kwargs):
@@ -332,6 +341,27 @@ class FakeStorage(object):
     _penalty_id_autoincrement = 0
     _groups = []
     db = None
+    
+    class Cursor:
+        _cursor = None
+        _conn = None
+        fields = None
+        EOF = True
+        rowcount = 0
+        lastrowid = 0    
+        
+        def moveNext(self):
+            return self.EOF
+
+        def getOneRow(self, default=None):
+            return default
+
+        def getValue(self, key, default=None):
+            return default
+
+        def getRow(self):
+            return {}
+                
     def __init__(self):
         G = b3.clients.Group()
         G.id = 1
@@ -343,14 +373,14 @@ class FakeStorage(object):
         G = b3.clients.Group()
         G.id = 2
         G.name = 'Regular'
-        G.keyword = 'regular'
+        G.keyword = 'reg'
         G.level = 2
         self._groups.append(G)
         
         G = b3.clients.Group()
         G.id = 8
         G.name = 'Moderator'
-        G.keyword = 'moderator'
+        G.keyword = 'mod'
         G.level = 20
         self._groups.append(G)
         
@@ -359,6 +389,20 @@ class FakeStorage(object):
         G.name = 'Admin'
         G.keyword = 'admin'
         G.level = 40
+        self._groups.append(G)
+        
+        G = b3.clients.Group()
+        G.id = 32
+        G.name = 'Full admin'
+        G.keyword = 'fulladmin'
+        G.level = 60
+        self._groups.append(G)
+        
+        G = b3.clients.Group()
+        G.id = 64
+        G.name = 'Senior Admin'
+        G.keyword = 'senioradmin'
+        G.level = 80
         self._groups.append(G)
         
         G = b3.clients.Group()
@@ -383,6 +427,11 @@ class FakeStorage(object):
         return self._client_id_autoincrement
     def getGroups(self):
         return self._groups
+    def getGroup(self, group):
+        for g in self._groups:
+            if group.keyword == g.keyword:
+                return g
+        raise KeyError, 'No group matching keyword %s' % group.keyword
     def shutdown(self):
         pass
     def status(self):
@@ -395,6 +444,8 @@ class FakeStorage(object):
     def numPenalties(self, client, type='Ban'):
         match = [k for k, v in self._penalties.iteritems() if v.clientId == client.id and v.type == type]
         return len(match)
+    def query(self, sql):
+        return self.Cursor()
     
 class FakeClient(b3.clients.Client):
     console = None
@@ -497,5 +548,7 @@ fakeAdminPlugin.onStartup()
 
 joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="zaerezarezar", groupBits=1, team=b3.TEAM_UNKNOWN)
 simon = FakeClient(fakeConsole, name="Simon", exactName="Simon", guid="qsdfdsqfdsqf", groupBits=0, team=b3.TEAM_UNKNOWN)
+reg = FakeClient(fakeConsole, name="Reg", exactName="Reg", guid="qsdfdsqfdsqf33", groupBits=4, team=b3.TEAM_UNKNOWN)
 moderator = FakeClient(fakeConsole, name="Moderator", exactName="Moderator", guid="sdf455ezr", groupBits=8, team=b3.TEAM_UNKNOWN)
+admin = FakeClient(fakeConsole, name="Level-40-Admin", exactName="Level-40-Admin", guid="875sasda", groupBits=16, team=b3.TEAM_UNKNOWN)
 superadmin = FakeClient(fakeConsole, name="God", exactName="God", guid="f4qfer654r", groupBits=128, team=b3.TEAM_UNKNOWN)

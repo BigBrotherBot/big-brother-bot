@@ -45,9 +45,10 @@
 # 08/11/2010 - 1.4.17 - GrosBedo - messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
 # 02/02/2011 - 1.4.18 - xlr8or - add cod7 suicide _lineformat
 # 16/03/2011 - 1.4.19 - xlr8or - improve PunkBuster check
+# 28/03/2011 - 1.4.20 - Bravo17 - CoD5 JT regexp fix
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.19'
+__version__ = '1.4.20'
 
 import re, string, threading
 import b3
@@ -101,7 +102,7 @@ class CodParser(AbstractParser):
         re.compile(r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]+);(?P<name>[^;]+);(?P<type>[a-z_]+))$', re.IGNORECASE),
         
         # Join Team (cod5)
-        re.compile(r'^(?P<action>JT);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]+);(?P<name>[^;]+))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>JT);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]+);(?P<name>[^;]+);)$', re.IGNORECASE),
 
         # tell like events
         re.compile(r'^(?P<action>[a-z]+);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<name>[^;]+);(?P<aguid>[^;]+);(?P<acid>[0-9]{1,2});(?P<aname>[^;]+);(?P<text>.*))$', re.IGNORECASE),

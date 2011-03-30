@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2011/02/26 - 1.10.2 - Courgette
+#   * fix doc for !spam command
 #   2010/12/12 - 1.10.1 - Courgette
 #   * registering a command can use group keywords instead of groups levels
 #   2010/11/25 - 1.9.1 - Courgette
@@ -80,7 +82,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.9.1'
+__version__ = '1.10.2'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import b3, string, re, time, threading, sys, traceback, thread, random
@@ -365,7 +367,7 @@ class AdminPlugin(b3.plugin.Plugin):
                     event.client.message('^7There was an error processing your command')
                     raise
                 else:
-                    self.console.queueEvent(self.console.getEvent('EVT_ADMIN_COMMAND', (command.func, data, results), event.client))
+                    self.console.queueEvent(self.console.getEvent('EVT_ADMIN_COMMAND', (command, data, results), event.client))
             else:
                 if self._warn_command_abusers and event.client.maxLevel < self.config.getint('settings', 'admins_level'):
                     if event.client.var(self, 'noCommand').value:
@@ -1795,7 +1797,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
     def cmd_spam(self, data, client=None, cmd=None):
         """\
-        <name> <message> - spam a predefined message
+        <message> - spam a predefined message
         """
         m = re.match('^([^ ]{2,})$', data)
         if not m:

@@ -1,3 +1,22 @@
+2011-03-24  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/cod7http.py: cod7http: remove boring debug line
+
+2011-03-24  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/cod7http.py: HTTPYTAIL : Do not fail if http response
+	is not gzipped
+
+2011-03-26  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/q3a/abstractParser.py: q3a: bugfix
+
+2011-03-22  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG, ChangeLogDetailed.txt, b3.egg-info/PKG-INFO,
+	b3/PKG-INFO, py2exe_builder/b3-installer-project.iss, setup.py,
+	versions.txt: versioning 1.5.0
+
 2011-03-22  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/parsers/cod.py: cod.py: fixed JT event regexp for cod5
