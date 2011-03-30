@@ -17,13 +17,13 @@
 #
 # CHANGELOG
 #
-# aaaa/mm/dd - who 
-#    blablbalb
+# 2011-03-30 : 0.1
+# * first alpha test
 #
 from b3.parsers.homefront.protocol import MessageType, ChannelType
 
-__author__  = 'xx'
-__version__ = '0.0'
+__author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
+__version__ = '0.1'
 
 import sys
 import string
