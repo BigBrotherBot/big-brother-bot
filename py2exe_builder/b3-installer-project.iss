@@ -3,19 +3,20 @@
 
 
 ;#define Debug
-#define B3_VERSION_NUMBER "1.5.0"
-#define B3_VERSION_SUFFIX ""
+#define B3_VERSION_NUMBER "1.6.0"
+#define B3_VERSION_SUFFIX "b"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
 ; Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{F04D6FC4-CF46-4409-995A-04BEB0B219E6}
+;AppId={{F04D6FC4-CF46-4409-995A-04BEB0B219E6}
+AppId=5FB180C6-A3B3-46CF-85E0-F00168F1569C
 AppName=BigBrotherBot
 AppVerName=BigBrotherBot {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}
 AppPublisher=BigBrotherBot
 AppPublisherURL=http://www.bigbrotherbot.net/
-AppSupportURL=http://www.bigbrotherbot.net/forums/
+AppSupportURL=http://www.bigbrotherbot.net/
 AppUpdatesURL=http://www.bigbrotherbot.net/
 DefaultDirName={pf}\BigBrotherBot_{#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}
 DefaultGroupName=BigBrotherBot
@@ -76,10 +77,10 @@ Name: {group}\extra\{cm:sql,sql}; Filename: {app}\sql\
 Name: {group}\{cm:UninstallProgram,BigBrotherBot}; Filename: {uninstallexe}
 Name: {group}\web\{cm:Website,BigBrotherBot}; Filename: http://www.bigbrotherbot.net/
 Name: {group}\web\{cm:Manual,Manual}; Filename: http://wiki.github.com/BigBrotherBot/big-brother-bot/manual
-Name: {group}\web\{cm:Forums,B3 Forums}; Filename: http://www.bigbrotherbot.net/forums/
-Name: {group}\web\{cm:DownloadPlugins,Download plugins}; Filename: http://www.bigbrotherbot.net/forums/downloads/?cat=4
+Name: {group}\web\{cm:Forums,B3 Forums}; Filename: http://forum.bigbrotherbot.net/
+Name: {group}\web\{cm:DownloadPlugins,Download plugins}; Filename: http://forum.bigbrotherbot.net/downloads/?cat=4
 Name: {group}\web\{cm:B3configGenerator,B3 config generator}; Filename: http://config.bigbrotherbot.net/; 
-Name: {group}\web\artwork; Filename: http://www.bigbrotherbot.net/forums/news-2/banners-n-buttons/
+Name: {group}\web\artwork; Filename: http://www1.bigbrotherbot.net/logos
 Name: {group}\web\other tools\{cm:Echelon,Echelon}; Filename: http://echelon.bigbrotherbot.net/
 Name: {group}\web\other tools\{cm:Xlrstats,XLRstats}; Filename: http://www.xlrstats.com/
 
