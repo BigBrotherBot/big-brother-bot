@@ -365,7 +365,7 @@ class AdminPlugin(b3.plugin.Plugin):
                     event.client.message('^7There was an error processing your command')
                     raise
                 else:
-                    self.console.queueEvent(self.console.getEvent('EVT_ADMIN_COMMAND', (command.func, data, results), event.client))
+                    self.console.queueEvent(self.console.getEvent('EVT_ADMIN_COMMAND', (command, data, results), event.client))
             else:
                 if self._warn_command_abusers and event.client.maxLevel < self.config.getint('settings', 'admins_level'):
                     if event.client.var(self, 'noCommand').value:

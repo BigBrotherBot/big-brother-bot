@@ -27,6 +27,8 @@
 #    21/05/2010 - 1.2.12 - xlr8or
 #    * Catch ValueError in clients.getByCID to allow names as CID's, but still
 #      fix the previous exploit in q3a based games 
+#    20/05/2010 - 1.2.11 - SGT
+#    add ip to aliasses
 #    11/05/2010 - 1.2.11 - Courgette
 #    * fix exploit by using player cid prefixed with '0' for commands making use
 #      of clients.getByCID
@@ -636,6 +638,8 @@ class Client(object):
         else:
             alias = Alias(clientId=self.id, alias=name)
 
+        alias.ip = self.ip
+
         alias.save(self.console)
         self.console.bot('New alias for %s: %s', str(self.id), alias.alias)
 
@@ -799,6 +803,7 @@ class ClientKick(Penalty):
 #-----------------------------------------------------------------------------------------------------------------------
 class Alias(Struct):
     alias    = ''
+    ip       = ''
     timeAdd  = 0
     timeEdit = 0
     numUsed  = 1
@@ -910,6 +915,7 @@ class Clients(dict):
             cleanname = re.sub(r'\s', '', c.name.lower())
             if not c.hide and needle in cleanname:
                 clist.append(c)
+
         return clist
 
     def getClientLikeName(self, name):

@@ -286,6 +286,8 @@ class Iourt41Parser(AbstractParser):
         # add UrT specific events
         self.Events.createEvent('EVT_GAME_FLAG_RETURNED', 'Flag returned')
         self.Events.createEvent('EVT_CLIENT_GEAR_CHANGE', 'Client gear change')
+        self.Events.createEvent('EVT_SURVIVOR_WIN', 'Survivor Winner')
+        self.Events.createEvent('EVT_CLIENT_UNBAN', 'Client Unbanned')
 
         # add the world client
         self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
@@ -964,6 +966,11 @@ class Iourt41Parser(AbstractParser):
         return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data, client, tclient)
         -------------------------------------------------------------------------------"""
 
+    # survivor winner
+    def OnSurvivorwinner(self, action, data, match=None):
+        self.debug('EVENT: OnSurvivorwinner')
+        return b3.events.Event(b3.events.EVT_SURVIVOR_WIN, data)  
+
     # endmap/shutdown
     def OnShutdowngame(self, action, data=None, match=None):
         self.debug('EVENT: OnShutdowngame')
@@ -1085,6 +1092,7 @@ class Iourt41Parser(AbstractParser):
             admin.message('^3Unbanned^7: ^1%s^7 (^2@%s^7). His last ip (^1%s^7) has been removed from banlist. Trying to remove duplicates...' % (client.exactName, client.id, client.ip))
         t1 = threading.Timer(1, self._unbanmultiple, (client, admin))
         t1.start()
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_UNBAN, admin, client))
 
     def _unbanmultiple(self, client, admin=None):
         # UrT adds multiple instances to banlist.txt Make sure we remove up to 4 remaining duplicates in a separate thread

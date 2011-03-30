@@ -47,7 +47,7 @@
 # Converted to use new event handlers
 
 __author__    = 'ThorN'
-__version__ = '1.4.4'
+__version__ = '1.4.4-SGT'
 
 import b3, time, os, StringIO
 import b3.plugin
@@ -64,6 +64,7 @@ class StatusPlugin(b3.plugin.Plugin):
     _cronTab = None
     _ftpstatus = False
     _ftpinfo = None
+    _matchMode = False
     _enableDBsvarSaving = False
     _enableDBclientSaving = False
     
@@ -85,7 +86,15 @@ class StatusPlugin(b3.plugin.Plugin):
             self._enableDBclientSaving = self.config.getboolean('settings', 'enableDBclientSaving')
         except:
             self._enableDBclientSaving = False
-
+        try:
+            self._matchinterval = self.config.getint('settings', 'match_interval')
+        except:
+            self._matchinterval = self._interval
+        try:
+            self._showpass = self.config.getboolean('settings','show_password')
+        except:
+            self._showpass = False
+            
         if self._enableDBsvarSaving:
             sql = "CREATE TABLE IF NOT EXISTS `current_svars` (`id` int(11) NOT NULL auto_increment,`name` varchar(255) NOT NULL,`value` varchar(255) NOT NULL, PRIMARY KEY  (`id`), UNIQUE KEY `name` (`name`)) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;"
             self.console.storage.query(sql)
@@ -96,10 +105,15 @@ class StatusPlugin(b3.plugin.Plugin):
         if self._cronTab:
             # remove existing crontab
             self.console.cron - self._cronTab
+        self._createCrontab(self._interval)
 
-        self._cronTab = b3.cron.PluginCronTab(self, self.update, '*/%s' % self._interval)
+    def _createCrontab(self, interval):
+        if interval > 60:
+            self._cronTab = b3.cron.PluginCronTab(self, self.update, 0, '*/%s' % str(interval/60))    
+        else:
+            self._cronTab = b3.cron.PluginCronTab(self, self.update, '*/%s' % interval)
         self.console.cron + self._cronTab
-
+        
     def onEvent(self, event):
         if event.type == b3.events.EVT_STOP:
             self.info('B3 stop/exit.. updating status')
@@ -111,6 +125,20 @@ class StatusPlugin(b3.plugin.Plugin):
             self.writeXML(xml.toprettyxml(indent="        "))
 
     def update(self):
+        
+        if self.console.getCvar('g_matchmode').getBoolean():
+            if not self._matchMode:
+                # install new crontab
+                self.console.cron - self._cronTab
+                self._createCrontab(self._matchinterval)
+                self._matchMode = True
+        else:
+            if self._matchMode:
+                # install new crontab
+                self.console.cron - self._cronTab
+                self._createCrontab(self._interval)
+                self._matchMode = False
+            
         clients = self.console.clients.getList()
         scoreList = self.console.getPlayerScores() 
                  
@@ -138,10 +166,10 @@ class StatusPlugin(b3.plugin.Plugin):
             gametype = c.gameType
         if c.mapName:
             mapname = c.mapName
-        if c.timelimit:
-            timelimit = c.timelimit
-        if c.fraglimit:
-            fraglimit = c.fraglimit
+        if c.timeLimit:
+            timelimit = c.timeLimit
+        if c.fragLimit:
+            fraglimit = c.fragLimit
         if c.captureLimit:
             capturelimit = c.captureLimit
         if c.rounds:
@@ -179,13 +207,41 @@ class StatusPlugin(b3.plugin.Plugin):
                 self.console.storage.query(sql)
             except:
                 self.error('Error: inserting svars. sqlqry=%s' % (sql))
+
+        # SGT - Scores
+        if len(clients)>0:
+            if self.console.game.gameType in ('ts','tdm','ctf','bomb'):
+                scores = self.console.getCvar( 'g_teamScores' )
+        else:
+            scores = None
+        if scores:
+            scores = scores.getString()
+        else:
+            scores = '--:--'
+            
+        data = xml.createElement("Data")
+        data.setAttribute("Name", "g_teamScores")
+        data.setAttribute("Value", scores)
+        game.appendChild(data)
+        
+        # SGT - Password
+        if self._showpass:
+            p = self.console.getCvar( 'g_password' )
+            if p:
+                p = p.getString()
+            else:
+                p = ''            
+            data = xml.createElement("Data")
+            data.setAttribute("Name", "g_password")
+            data.setAttribute("Value", p)
+            game.appendChild(data)
+            
         # --- End Game section        
 
         # --- Clients section
         b3clients = xml.createElement("Clients")
         b3clients.setAttribute("Total", str(len(clients)))
         b3status.appendChild(b3clients)
-
         if self._enableDBclientSaving:
             # empty table current_clients
             sql = "TRUNCATE TABLE `current_clients`;"
@@ -224,7 +280,11 @@ class StatusPlugin(b3.plugin.Plugin):
                 client.setAttribute("Updated", str(time.ctime(c.timeEdit)))
                 if scoreList and c.cid in scoreList:
                     client.setAttribute("Score", str(scoreList[c.cid]))
-                client.setAttribute("State", str(c.state))
+                # SGT - others gametypes do not refresh state
+                if gametype in ('ts','bomb'):
+                    client.setAttribute("State", str(c.state))
+                else:
+                    client.setAttribute("State", '2')
                 if self._enableDBclientSaving:
                     qryBuilderKey = ""
                     qryBuilderValue = ""
@@ -242,8 +302,8 @@ class StatusPlugin(b3.plugin.Plugin):
                         self.console.storage.query(sql)
                     except:
                         self.error('Error: inserting clients. sqlqry=%s' % (sql))
-
                 b3clients.appendChild(client)
+
                 for k,v in c.data.iteritems():
                     data = xml.createElement("Data")
                     data.setAttribute("Name", str(k))

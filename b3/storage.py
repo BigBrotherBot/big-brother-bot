@@ -17,12 +17,16 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2/22/2011  - 1.8a - SGT
+#   Order aliases by num_used
 #   07/01/2011 - 1.8 - xlr8or
 #   Added queryFromFile to execute .sql files
 #   12/12/2010 - 1.7.3 - courgette
 #   fix setGroup for update query
 #   29/06/2010 - 1.7.2 - xlr8or
 #   fixed typo myqsldb -> msqldb in error message (thanks ryry46d9)
+#   20/05/2010 - 1.7.2 - SGT
+#   add IP to aliasses
 #   27/03/2010 - 1.7.1 - xlr8or
 #   enable setting different port for mysql connections
 #   02/13/2010 - 1.7.0 - xlr8or
@@ -48,7 +52,7 @@
 #   Added data column to penalties table
 
 __author__  = 'ThorN'
-__version__ = '1.8'
+__version__ = '1.8a'
 
 import re, time, traceback, sys, thread, os
 
@@ -437,6 +441,7 @@ class DatabaseStorage(Storage):
         id  int(10)  UNSIGNED No    auto_increment              
         num_used  int(10)  UNSIGNED No  0                
         alias  varchar(32)   No                  
+        ip varchar(16) YES   NULL   
         client_id  int(10)  UNSIGNED No  0                
         time_add  int(10)  UNSIGNED No  0                
         time_edit  int(10)  UNSIGNED No  0            
@@ -449,7 +454,8 @@ class DatabaseStorage(Storage):
             'alias',
             'client_id',
             'time_add',
-            'time_edit'
+            'time_edit',
+            'ip'
         )
     
         if alias.id:
@@ -494,12 +500,12 @@ class DatabaseStorage(Storage):
         alias.timeEdit = int(g['time_edit'])
         alias.clientId = int(g['client_id'])
         alias.numUsed = int(g['num_used'])
-    
+        alias.ip = g['ip']
         return alias
 
     def getClientAliases(self, client):
         self.console.debug('Storage: getClientAliases %s' % str(client))
-        cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'aliases', { 'client_id' : client.id }, 'id'))
+        cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'aliases', { 'client_id' : client.id }, 'num_used DESC'))
 
         if not cursor:
             return ()

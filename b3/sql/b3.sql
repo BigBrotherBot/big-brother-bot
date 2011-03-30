@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS aliases (
   id int(10) unsigned NOT NULL auto_increment,
   num_used int(10) unsigned NOT NULL default '0',
   alias varchar(32) NOT NULL default '',
+  ip VARCHAR( 16 ) NOT NULL default '',
   client_id int(10) unsigned NOT NULL default '0',
   time_add int(10) unsigned NOT NULL default '0',
   time_edit int(10) unsigned NOT NULL default '0',

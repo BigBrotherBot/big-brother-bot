@@ -180,11 +180,13 @@ class TkPlugin(b3.plugin.Plugin):
             #    * added grudge_enable to control grudge command registration
             try:
                 grudge_enable = self.config.getboolean('settings', 'grudge_enable')
+                grudge_level = self.config.getint('settings','grudge_level')
             except:
                 grudge_enable = self._grudge_enable
+                grudge_level = 0
                 self.debug('Using default value (%s) for grudge_enable', self._grudge_enable)
             if grudge_enable:
-                self._adminPlugin.registerCommand(self, 'grudge', 0, self.cmd_grudge, 'grudge')
+                self._adminPlugin.registerCommand(self, 'grudge', grudge_level, self.cmd_grudge, 'grudge')
 
 
     def onLoadConfig(self):

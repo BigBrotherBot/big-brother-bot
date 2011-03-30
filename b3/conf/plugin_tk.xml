@@ -5,6 +5,7 @@
 		<set name="round_grace">7</set>
 		<set name="issue_warning">sfire</set>
 		<set name="grudge_enable">True</set>
+		<set name="grudge_level">2</set>
 		<set name="private_messages">True</set>
 	</settings>
 	<settings name="messages">
