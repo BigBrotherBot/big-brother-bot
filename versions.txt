@@ -1,5 +1,5 @@
-project files/versions signature: 4c0a1d4ee4923751f182b82ffaae6c47
-project files content signature: ea1884528de7fb7400e26e6d44521e65
+project files/versions signature: 952211bf31d6f9e1f9604c79908d5803
+project files content signature: bc4170975fc8d738cea6a85ef441e959
 b3\__init__.py 06b765e06577edcbdc064996d7a7e0f3 1.1.2
 b3\clients.py 1e73855e53f741044427aaf530df3938 1.3.1
 b3\config.py 9a08abbb8974661a5384cf8ff5ddcc9b 1.3.1
@@ -104,7 +104,7 @@ b3\parsers\moh.py 006a1210dc5522004d8d1f91b752c588 1.2
 b3\parsers\oa081.py d72d6c53bde2245cd49d945e1d1f2551 0.9.5
 b3\parsers\punkbuster.py d3209866e3308aec665df17574758cc1 1.0.2
 b3\parsers\q3a\__init__.py d41d8cd98f00b204e9800998ecf8427e None
-b3\parsers\q3a\abstractParser.py c5e0503f2387bc265ce105c848e65080 1.5.2
+b3\parsers\q3a\abstractParser.py 61d948feaf7cd8aa90f60242688bf2a0 1.5.2
 b3\parsers\q3a\rcon.py 6d97d077ed718d9a08a8b0e131223aee 1.3.8
 b3\parsers\smg.py 4a9cd1ae9c2b61a5858a3bd6ea1afad6 0.1.3
 b3\parsers\smg11.py 1090afdc4103cbf2ed14fc921c7ef513 0.9.1
@@ -116,7 +116,7 @@ b3\plugins\__init__.py 01abfc750a0c942167651c40d088531d None
 b3\plugins\admin.py 2b0fc031252c8cae174f6d467207406d 1.9.1
 b3\plugins\adv.py 1e38e4338e0c600eb1239b7245ddadd3 1.2.2
 b3\plugins\censor.py d939fe14c3f6ee881c9da37755183662 2.2.1
-b3\plugins\cod7http.py c27f5b4554d59a8fc5da7db188633233 1.0.14
+b3\plugins\cod7http.py 681a5a2af04747bed900b73b1f99d4a6 1.0.15
 b3\plugins\codam.py 3f9eb16ba53188a81f001bc935199d6a 0.0.1
 b3\plugins\ftpytail.py 9bebe56aeead2a537b6c67adb19c9cbe 1.5.5
 b3\plugins\httpytail.py 5b4329c5067b0d165c75c569fe6f542b 0.1
