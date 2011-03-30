@@ -105,7 +105,6 @@ class HomefrontParser(b3.parser.Parser):
             self.debug('Incorrect ini file or no ini file specified, map commands other than nextmap not available')
             
         
-        
         # add specific events
         #self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
                 
@@ -237,6 +236,9 @@ class HomefrontParser(b3.parser.Parser):
         if not match:
             self.error("could not get UID in [%s]" % data)
             return None
+        if match.group('uid') == '00':
+            self.info("banned player connecting")
+            return
         client = self.getClient(match.group('name'))
         client.guid = match.group('uid')
         client.auth()
@@ -360,6 +362,11 @@ class HomefrontParser(b3.parser.Parser):
             else:
                 return Event(EVT_CLIENT_SAY, text, client)
     
+    def onServerBan_remove(self, data):
+        self.write(self.getCommand('saybig',  prefix='', message="%s unbanned" % data))
+    
+    def onServerBan_added(self, data):
+        self.write(self.getCommand('saybig',  prefix='', message="%s banned" % data))
     
     
     # =======================================
@@ -395,6 +402,7 @@ class HomefrontParser(b3.parser.Parser):
         occupy. On map change, a player A on slot 1 can leave making room for player B who
         connects on slot 1.
         """
+        self.getPlayerList()
         raise NotImplementedError
     
     def say(self, msg):
@@ -427,7 +435,7 @@ class HomefrontParser(b3.parser.Parser):
         """\
         kick a given players
         """
-        self.debug('KICK : client: %s, reason: %s', client.name, reason)
+        self.debug('KICK : client: %s, reason: %s', client.cid, reason)
         if admin:
             fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
         else:
@@ -438,7 +446,7 @@ class HomefrontParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.write(self.getCommand('kick', name=client.name))
+        self.write(self.getCommand('kick', name=client.cid))
         self.queueEvent(Event(EVT_CLIENT_KICK, reason, client))
         client.disconnect()
 
@@ -446,7 +454,7 @@ class HomefrontParser(b3.parser.Parser):
         """\
         ban a given players
         """
-        self.debug('BAN : client: %s, reason: %s', client.name, reason)
+        self.debug('BAN : client: %s, reason: %s', client.cid, reason)
         if admin:
             fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
         else:
@@ -456,8 +464,16 @@ class HomefrontParser(b3.parser.Parser):
 
         if not silent and fullreason != '':
             self.say(fullreason)
-
-        self.write(self.getCommand('ban', name=client.name))
+        
+        banid = client.cid
+        if banid is None and client.name:
+            banid = client.name
+            self.debug('using name to ban : %s' % banid)
+        self.write(self.getCommand('ban', name=banid))
+        # saving banid in the name column in database
+        # so we can unban a unconnected player using name
+        client._name = banid
+        client.save()
         self.queueEvent(Event(EVT_CLIENT_BAN, reason, client))
         client.disconnect()
 
@@ -465,8 +481,12 @@ class HomefrontParser(b3.parser.Parser):
         """\
         unban a given players
         """
-        self.debug('UNBAN: Name: %s' %client.name)
-        response = self.write(self.getCommand('unban', name=client.name))
+        banid = client.cid
+        if banid is None and client.name:
+            self.debug('using name to unban')
+            banid = client.name
+        self.debug('UNBAN: %s' % banid)
+        response = self.write(self.getCommand('unban', name=banid))
         ## @todo: unban: need to test response from the server
         self.verbose(response)
         if response:
@@ -478,7 +498,7 @@ class HomefrontParser(b3.parser.Parser):
         """\
         tempban a given players
         """
-        self.debug('TEMPBAN : client: %s, reason: %s', client.name, reason)
+        self.debug('TEMPBAN : client: %s, reason: %s', client.cid, reason)
         if admin:
             fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=b3.functions.minutesStr(duration)))
         else:
@@ -489,7 +509,7 @@ class HomefrontParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.write(self.getCommand('tempban', name=client.name))
+        self.write(self.getCommand('tempban', name=client.cid))
         self.queueEvent(Event(EVT_CLIENT_BAN_TEMP, reason, client))
         client.disconnect()
 
@@ -564,51 +584,6 @@ class HomefrontParser(b3.parser.Parser):
         """
         raise NotImplementedError
 
-    def getftpini(self):
-        def handleDownload(line):
-            #self.debug('received %s bytes' % len(block))
-            line = line + '\n'
-            mapline = self.checkMapline(line)
-            if mapline:
-                self.maplist.append(mapline[0])
-                self.mapgamelist.append(self.getEasyName(mapline[0]) + ' [' + mapline[1] + ']')
-
-        ftp = None
-        try:
-            ftp = self.ftpconnect()
-            self._nbConsecutiveConnFailure = 0
-            remoteSize = ftp.size(os.path.basename(self.ftpconfig['path']))
-            self.verbose("Connection successful. Remote file size is %s" % remoteSize)
-            ftp.retrlines('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload)          
-
-        except ftplib.all_errors, e:
-            self.debug(str(e))
-            try:
-                ftp.close()
-                self.debug('FTP Connection Closed')
-            except:
-                pass
-            ftp = None
-
-        try:
-            ftp.close()
-        except:
-            pass
-
-
-    def ftpconnect(self):
-        #self.debug('Python Version %s.%s, so setting timeout of 10 seconds' % (versionsearch.group(2), versionsearch.group(3)))
-        self.verbose('Connecting to %s:%s ...' % (self.ftpconfig["host"], self.ftpconfig["port"]))
-        ftp = FTP()
-        ftp.set_debuglevel(self._ftplib_debug_level)
-        ftp.connect(self.ftpconfig['host'], self.ftpconfig['port'], self._connectionTimeout)
-        ftp.login(self.ftpconfig['user'], self.ftpconfig['password'])
-        ftp.voidcmd('TYPE I')
-        dir = os.path.dirname(self.ftpconfig['path'])
-        self.debug('trying to cwd to [%s]' % dir)
-        ftp.cwd(dir)
-        return ftp
-
     def getEasyName(self, mapname):
         """ Change levelname to real name """
         if mapname == 'fl-angelisland':
@@ -677,9 +652,54 @@ class HomefrontParser(b3.parser.Parser):
         
         This method will always return a client object
         """
-        client = self.clients.getByName(name)
+        client = self.clients.getByExactName(name)
         if not client:
             self.debug('client not found by name, creating new client')
             client = self.clients.newClient(name, name=name, state=b3.STATE_UNKNOWN, team=b3.TEAM_UNKNOWN)
         return client
 
+
+    def getftpini(self):
+        def handleDownload(line):
+            #self.debug('received %s bytes' % len(block))
+            line = line + '\n'
+            mapline = self.checkMapline(line)
+            if mapline:
+                self.maplist.append(mapline[0])
+                self.mapgamelist.append(self.getEasyName(mapline[0]) + ' [' + mapline[1] + ']')
+
+        ftp = None
+        try:
+            ftp = self.ftpconnect()
+            self._nbConsecutiveConnFailure = 0
+            remoteSize = ftp.size(os.path.basename(self.ftpconfig['path']))
+            self.verbose("Connection successful. Remote file size is %s" % remoteSize)
+            ftp.retrlines('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload)          
+
+        except ftplib.all_errors, e:
+            self.debug(str(e))
+            try:
+                ftp.close()
+                self.debug('FTP Connection Closed')
+            except:
+                pass
+            ftp = None
+
+        try:
+            ftp.close()
+        except:
+            pass
+
+
+    def ftpconnect(self):
+        #self.debug('Python Version %s.%s, so setting timeout of 10 seconds' % (versionsearch.group(2), versionsearch.group(3)))
+        self.verbose('Connecting to %s:%s ...' % (self.ftpconfig["host"], self.ftpconfig["port"]))
+        ftp = FTP()
+        ftp.set_debuglevel(self._ftplib_debug_level)
+        ftp.connect(self.ftpconfig['host'], self.ftpconfig['port'], self._connectionTimeout)
+        ftp.login(self.ftpconfig['user'], self.ftpconfig['password'])
+        ftp.voidcmd('TYPE I')
+        dir = os.path.dirname(self.ftpconfig['path'])
+        self.debug('trying to cwd to [%s]' % dir)
+        ftp.cwd(dir)
+        return ftp
