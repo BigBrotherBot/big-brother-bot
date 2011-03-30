@@ -3,8 +3,8 @@
 
 
 ;#define Debug
-#define B3_VERSION_NUMBER "1.5.0"
-#define B3_VERSION_SUFFIX ""
+#define B3_VERSION_NUMBER "1.6.0"
+#define B3_VERSION_SUFFIX "b"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
