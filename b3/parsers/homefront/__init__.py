@@ -64,9 +64,9 @@ class HomefrontParser(b3.parser.Parser):
     mapgamelist = None
 
     _commands = {}
-    _commands['message'] = ('say "%(prefix)s [%(name)s] %(message)s"')
-    _commands['say'] = ('say "%(prefix)s %(message)s"')
-    _commands['saybig'] = ('admin bigsay "%(prefix)s %(message)s"')
+    _commands['message'] = ('say %(prefix)s [%(name)s] %(message)s')
+    _commands['say'] = ('say %(prefix)s %(message)s')
+    _commands['saybig'] = ('admin bigsay %(prefix)s %(message)s')
     _commands['kick'] = ('admin kick "%(name)s"')
     _commands['ban'] = ('admin kickban "%(name)s"')
     _commands['unban'] = ('admin unban "%(name)s"')
