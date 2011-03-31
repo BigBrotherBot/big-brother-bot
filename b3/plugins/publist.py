@@ -269,6 +269,7 @@ if __name__ == '__main__':
     """)
 
     
+    
     def test_startup():
         p._initial_heartbeat_delay = 10
         p.onStartup()
@@ -292,6 +293,9 @@ if __name__ == '__main__':
                 'rconPort': None,
                 'python_version': sys.version
         })
+        
+    def test_heartbeat_homefront():
+        p.sendInfo({'python_version': '2.6.4 (r264:75708, Oct 26 2009, 08:23:19) [MSC v.1500 32 bit (Intel)]', 'ip': '205.234.152.101', 'parser': 'homefront', 'plugins': 'censor/2.2.1,spamcontrol/1.1.2,admin/1.10.2,tk/1.2.4,stats/1.3.5,adv/1.2.2,status/1.4.4,welcome/1.1,publist/1.9.1', 'port': 27015, 'database': 'mysql', 'parserversion': '0.0', 'version': '1.5.0', 'action': 'update', 'os': 'nt', 'rconPort': 27010})
     
     def test_heartbeat_local_urt():
         p.sendInfo({'version': '1.4.1b', 
@@ -350,6 +354,7 @@ if __name__ == '__main__':
     #test_heartbeat()
     #test_heartbeat_local_urt()
     #test_heartbeat_b3_bfbc2()
+    test_heartbeat_homefront()
     #test_crontab()
     
     time.sleep(120) # so we can see thread working
