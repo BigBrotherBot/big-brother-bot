@@ -276,6 +276,8 @@ if __name__ == '__main__':
             print "   DEBUG: " + msg
         def info(self, msg):
             print "    INFO: " + msg
+        def verbose(self, msg):
+            print "VERBOSE: " + msg
         def verbose2(self, msg):
             print "VERBOSE2: " + msg
         def warning(self, msg):
@@ -296,6 +298,7 @@ if __name__ == '__main__':
             #print("\t%s" % (time.time() - hfclient.last_pong_time))
             if time.time() - hfclient.last_pong_time > 6 and hfclient.last_ping_time < hfclient.last_pong_time:
                 hfclient.ping()
+                hfclient.command("RETRIEVE PLAYERLIST")
             asyncore.loop(timeout=3, count=1)
     except EOFError, KeyboardInterrupt:
         hfclient.close()
