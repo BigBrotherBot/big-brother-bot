@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 30/03/2011 - 1.4.5 - SGT
+# * bugfix camelCasing timeLimit and fragLimit
 # 06/01/2011 - 1.4.4 - Gammelbob
 # * additionally stores current svars and clients in database
 # 13/08/2010 - 1.4.3 - xlr8or
@@ -47,7 +49,7 @@
 # Converted to use new event handlers
 
 __author__    = 'ThorN'
-__version__ = '1.4.4'
+__version__ = '1.4.5'
 
 import b3, time, os, StringIO
 import b3.plugin
@@ -138,10 +140,10 @@ class StatusPlugin(b3.plugin.Plugin):
             gametype = c.gameType
         if c.mapName:
             mapname = c.mapName
-        if c.timelimit:
-            timelimit = c.timelimit
-        if c.fraglimit:
-            fraglimit = c.fraglimit
+        if c.timeLimit:
+            timelimit = c.timeLimit
+        if c.fragLimit:
+            fraglimit = c.fragLimit
         if c.captureLimit:
             capturelimit = c.captureLimit
         if c.rounds:

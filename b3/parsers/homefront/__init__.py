@@ -17,13 +17,13 @@
 #
 # CHANGELOG
 #
-# aaaa/mm/dd - who 
-#    blablbalb
+# 2011-03-30 : 0.1
+# * first alpha test
 #
 from b3.parsers.homefront.protocol import MessageType, ChannelType
 
-__author__  = 'xx'
-__version__ = '0.0'
+__author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
+__version__ = '0.1'
 
 import sys
 import string
@@ -32,10 +32,6 @@ import time
 import asyncore
 import b3
 import b3.parser
-from b3.events import Event, EVT_UNKNOWN, EVT_CLIENT_JOIN, EVT_CLIENT_CONNECT, \
-EVT_CLIENT_KILL, EVT_CLIENT_SUICIDE, EVT_CLIENT_KILL_TEAM, EVT_CLIENT_SAY, \
-EVT_CLIENT_TEAM_SAY, EVT_CLIENT_KICK, EVT_CLIENT_BAN, EVT_CLIENT_BAN_TEMP, \
-EVT_GAME_ROUND_END, EVT_GAME_ROUND_START
 import os
 import rcon
 import protocol
@@ -140,7 +136,7 @@ class HomefrontParser(b3.parser.Parser):
                         self.warning('TODO handle: %s(%s)' % (func, data))
                 else:
                     self.warning('TODO handle packet : %s' % packet)
-                    self.queueEvent(Event(EVT_UNKNOWN, packet))
+                    self.queueEvent(self.getEvent('EVT_UNKNOWN', packet))
                     
             elif packet.channel == ChannelType.CHATTER:
                 if packet.data.startswith('BROADCAST:'):
@@ -156,7 +152,7 @@ class HomefrontParser(b3.parser.Parser):
                         self.warning('TODO handle: %s(%s)' % (func, data))
                 else:
                     self.warning('TODO handle packet : %s' % packet)
-                    self.queueEvent(Event(EVT_UNKNOWN, packet))
+                    self.queueEvent(self.getEvent('EVT_UNKNOWN', packet))
             else:
                 self.warning("Unhandled channel type : %s" % packet.getChannelTypeAsStr())
         else:
@@ -181,21 +177,35 @@ class HomefrontParser(b3.parser.Parser):
                     self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
                     self._pauseNotice = True
             else:
-                
-                if self._serverConnection is None:
-                    self.verbose('Connecting to Homefront server ...')
-                    self._serverConnection = protocol.Client(self, self._rconIp, self._rconPort, self._rconPassword, keepalive=True)
-                    self._serverConnection.add_listener(self.routePacket)
-                    self.output.set_homefront_client(self._serverConnection)
+                try:
+                    if self._serverConnection is None:
+                        self.bot('Connecting to Homefront server ...')
+                        self._serverConnection = protocol.Client(self, self._rconIp, self._rconPort, self._rconPassword, keepalive=True)
+                        self._serverConnection.add_listener(self.routePacket)
+                        self.output.set_homefront_client(self._serverConnection)
                     
-                while self.working and not self._paused \
-                and (self._serverConnection.connected or not self._serverConnection.authed):
-                    #self.verbose2("\t%s" % (time.time() - self._serverConnection.last_pong_time))
-                    if time.time() - self._serverConnection.last_pong_time > 6 \
-                    and self._serverConnection.last_ping_time < self._serverConnection.last_pong_time:
-                        self._serverConnection.ping()
-                    asyncore.loop(timeout=3, count=1)
+                    self._nbConsecutiveConnFailure = 0
                     
+                    while self.working and not self._paused \
+                    and (self._serverConnection.connected or not self._serverConnection.authed):
+                        #self.verbose2("\t%s" % (time.time() - self._serverConnection.last_pong_time))
+                        if time.time() - self._serverConnection.last_pong_time > 6 \
+                        and self._serverConnection.last_ping_time < self._serverConnection.last_pong_time:
+                            self._serverConnection.ping()
+                        asyncore.loop(timeout=3, count=1)
+                except Exception, e:
+                    self.error(e)
+                    self._nbConsecutiveConnFailure += 1
+                    self._serverConnection.close()
+                    if self._nbConsecutiveConnFailure <= 20:
+                        self.debug('sleeping 2 sec...')
+                        time.sleep(2)
+                    elif self._nbConsecutiveConnFailure <= 60:
+                        self.debug('sleeping 5 sec...')
+                        time.sleep(5)
+                    else:
+                        self.debug('sleeping 15 sec...')
+                        time.sleep(15)
         self.bot('Stop listening.')
 
         if self.exiting.acquire(1):
@@ -215,13 +225,13 @@ class HomefrontParser(b3.parser.Parser):
        
     def onServerHello(self, data):
         ## [int: Version]
-        self.info("HF server (v %s) says hello to B3" % data)
+        self.bot("HF server (v %s) says hello to B3" % data)
 
             
     def onServerAuth(self, data):
         ## [boolean: Result]
         if data == 'true':
-            self.info("B3 correctly authenticated on game server")
+            self.bot("B3 correctly authenticated on game server")
         else:
             self.warning("B3 failed to authente on game server (%s)" % data)
 
@@ -229,7 +239,7 @@ class HomefrontParser(b3.parser.Parser):
     def onServerLogin(self, data):
         # [string: Name]
         # (onServerLogin also occurs after a mapchange...)
-        return Event(EVT_CLIENT_CONNECT, data, self.getClient(data))
+        return self.getEvent('EVT_CLIENT_CONNECT', data, self.getClient(data))
 
     
     def onServerUid(self, data):
@@ -303,18 +313,18 @@ class HomefrontParser(b3.parser.Parser):
             if not hasattr(victim, 'hitloc'):
                 victim.hitloc = 'body'
 
-        event = EVT_CLIENT_KILL
+        event = 'EVT_CLIENT_KILL'
 
         if weapon == 'Suicided' or attacker == victim:
-            event = EVT_CLIENT_SUICIDE
+            event = 'EVT_CLIENT_SUICIDE'
             self.verbose('%s suicided' % attacker.name)
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
-            event = EVT_CLIENT_KILL_TEAM
+            event = 'EVT_CLIENT_KILL_TEAM'
             self.verbose('Team kill, attacker: %s, victim: %s' % (attacker.name, victim.name))
         else:
             self.verbose('%s killed %s using %s' % (attacker.name, victim.name, weapon))
 
-        return Event(event, (100, weapon, victim.hitloc), attacker, victim)
+        return self.getEvent(event, (100, weapon, victim.hitloc), attacker, victim)
 
     def onServerRound_over(self, data):
         ## [int: Team ID]
@@ -330,7 +340,7 @@ class HomefrontParser(b3.parser.Parser):
         teamid = match.group('team')
 
         self.verbose('onServerRound_over: %s, winning team id: %s' % (data, teamid)) 
-        return Event(EVT_GAME_ROUND_END, teamid)
+        return self.getEvent('EVT_GAME_ROUND_END', teamid)
 
     def onServerChange_level(self, data):
         ## [string: Map]
@@ -344,7 +354,7 @@ class HomefrontParser(b3.parser.Parser):
         levelname = match.group('level')
         self.verbose('onServerChange_level, levelname: %s' % levelname)
         self._currentmap = levelname.lower()
-        return Event(EVT_GAME_ROUND_START, levelname)
+        return self.getEvent('EVT_GAME_ROUND_START', levelname)
 
     def onChatterBroadcast(self, data):
         # [string: Name] [string: Context]: [string: Text]
@@ -359,17 +369,18 @@ class HomefrontParser(b3.parser.Parser):
             text = match.group('text')
             client = self.getClient(name)
             if type == 'team':
-                return Event(EVT_CLIENT_TEAM_SAY, text, client)
+                return self.getEvent('EVT_CLIENT_TEAM_SAY', text, client)
             elif type == 'squad':
                 raise NotImplementedError, "do squad say event"
             else:
-                return Event(EVT_CLIENT_SAY, text, client)
+                return self.getEvent('EVT_CLIENT_SAY', text, client)
     
     def onServerBan_remove(self, data):
         self.write(self.getCommand('saybig',  prefix='', message="%s unbanned" % data))
     
     def onServerBan_added(self, data):
         self.write(self.getCommand('saybig',  prefix='', message="%s banned" % data))
+        return self.getEvent('EVT_CLIENT_BAN', data)
     
     
     # =======================================
@@ -450,7 +461,7 @@ class HomefrontParser(b3.parser.Parser):
             self.say(fullreason)
 
         self.write(self.getCommand('kick', name=client.cid))
-        self.queueEvent(Event(EVT_CLIENT_KICK, reason, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_KICK', reason, client))
         client.disconnect()
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -477,7 +488,7 @@ class HomefrontParser(b3.parser.Parser):
         # so we can unban a unconnected player using name
         client._name = banid
         client.save()
-        self.queueEvent(Event(EVT_CLIENT_BAN, reason, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', reason, client))
         client.disconnect()
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -496,6 +507,7 @@ class HomefrontParser(b3.parser.Parser):
             self.verbose('UNBAN: Removed name (%s) from banlist' %client.name)
             if admin:
                 admin.message('Unbanned: Removed %s from banlist' %client.name)
+        self.queueEvent(self.getEvent('EVT_CLIENT_UNBAN', reason, client))
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
         """\
@@ -513,7 +525,7 @@ class HomefrontParser(b3.parser.Parser):
             self.say(fullreason)
 
         self.write(self.getCommand('tempban', name=client.cid))
-        self.queueEvent(Event(EVT_CLIENT_BAN_TEMP, reason, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', reason, client))
         client.disconnect()
 
     def getMap(self):
