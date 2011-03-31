@@ -350,7 +350,6 @@ class HomefrontParser(b3.parser.Parser):
             self.error('onServerChange_level failed match')
             return
 
-
         levelname = match.group('level')
         self.verbose('onServerChange_level, levelname: %s' % levelname)
         self._currentmap = levelname.lower()
@@ -381,8 +380,24 @@ class HomefrontParser(b3.parser.Parser):
     def onServerBan_added(self, data):
         self.write(self.getCommand('saybig',  prefix='', message="%s banned" % data))
         return self.getEvent('EVT_CLIENT_BAN', data)
-    
-    
+
+    def onServerPlayer(self, data):
+        # [int: Team] [string: Clan] [string: Name] [int: Kills] [int: Deaths]
+        match = re.search(r"^(?P<data>(?P<team>[0-9]) (?P<clan>.*) (?P<name>.+) (?P<kills>[0-9]+) (?P<deaths>[0-9]+))$", data)
+        if not match:
+            self.error("onServerPlayer failed match")
+            return
+
+        #update the client object
+        client = self.getClient(match.group('name'))
+        ## @todo: ditch the GCDemoRecSpectator client here?
+        client.team = self.getTeam(match.group('team'))
+        client.clan = match.group('clan')
+        client.kills = match.group('kills')
+        client.deaths = match.group('deaths')
+        self.verbose2('onServerPlayer: name: %s, clan: %s, team: %s, kills: %s, deaths: %s' %( client.name, client.clan, client.team, client.kills, client.deaths ))
+
+
     # =======================================
     # implement parser interface
     # =======================================
@@ -394,7 +409,7 @@ class HomefrontParser(b3.parser.Parser):
         """
         ## @todo: getPlayerlist: make this wait for reply packets, stack them, and return full
         # exhaustive list of players
-        self.output.write("RETRIEVE PLAYERLIST")
+        self.write('RETRIEVE PLAYERLIST')
 
     def authorizeClients(self):
         """\
@@ -635,7 +650,14 @@ class HomefrontParser(b3.parser.Parser):
         """\
         returns a dict having players' id for keys and players' scores for values
         """
-        raise NotImplementedError
+        # trigger a 'retrieve playerlist' command
+        self.getPlayerList()
+
+        scores = {}
+        clients = self.clients.getList()
+        for c in clients:
+            scores[c.name] = int(c.kills)
+        return scores
 
     def getTeam(self, team):
         team = str(team).lower()
@@ -643,6 +665,10 @@ class HomefrontParser(b3.parser.Parser):
             result = b3.TEAM_RED
         elif team == '1':
             result = b3.TEAM_BLUE
+        elif team == '2':
+            result = b3.TEAM_SPEC
+        elif team == '3':
+            result = b3.TEAM_UNKNOWN
         else:
             result = b3.TEAM_UNKNOWN
         return result
@@ -670,7 +696,7 @@ class HomefrontParser(b3.parser.Parser):
         client = self.clients.getByExactName(name)
         if not client:
             self.debug('client not found by name, creating new client')
-            client = self.clients.newClient(name, name=name, state=b3.STATE_UNKNOWN, team=b3.TEAM_UNKNOWN)
+            client = self.clients.newClient(name, name=name, state=b3.STATE_UNKNOWN, team=b3.TEAM_UNKNOWN, kills='0', deaths='0')
         return client
 
 
