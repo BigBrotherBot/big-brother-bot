@@ -19,11 +19,13 @@
 #
 # 2011-03-30 : 0.1
 # * first alpha test
+# 2011-03-31 : 0.2
+# * remove try: catch: around the asyncore loop
 #
 from b3.parsers.homefront.protocol import MessageType, ChannelType
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.1'
+__version__ = '0.2'
 
 import sys
 import string
@@ -177,35 +179,21 @@ class HomefrontParser(b3.parser.Parser):
                     self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
                     self._pauseNotice = True
             else:
-                try:
-                    if self._serverConnection is None:
-                        self.bot('Connecting to Homefront server ...')
-                        self._serverConnection = protocol.Client(self, self._rconIp, self._rconPort, self._rconPassword, keepalive=True)
-                        self._serverConnection.add_listener(self.routePacket)
-                        self.output.set_homefront_client(self._serverConnection)
-                    
-                    self._nbConsecutiveConnFailure = 0
-                    
-                    while self.working and not self._paused \
-                    and (self._serverConnection.connected or not self._serverConnection.authed):
-                        #self.verbose2("\t%s" % (time.time() - self._serverConnection.last_pong_time))
-                        if time.time() - self._serverConnection.last_pong_time > 6 \
-                        and self._serverConnection.last_ping_time < self._serverConnection.last_pong_time:
-                            self._serverConnection.ping()
-                        asyncore.loop(timeout=3, count=1)
-                except Exception, e:
-                    self.error(e)
-                    self._nbConsecutiveConnFailure += 1
-                    self._serverConnection.close()
-                    if self._nbConsecutiveConnFailure <= 20:
-                        self.debug('sleeping 2 sec...')
-                        time.sleep(2)
-                    elif self._nbConsecutiveConnFailure <= 60:
-                        self.debug('sleeping 5 sec...')
-                        time.sleep(5)
-                    else:
-                        self.debug('sleeping 15 sec...')
-                        time.sleep(15)
+                if self._serverConnection is None:
+                    self.bot('Connecting to Homefront server ...')
+                    self._serverConnection = protocol.Client(self, self._rconIp, self._rconPort, self._rconPassword, keepalive=True)
+                    self._serverConnection.add_listener(self.routePacket)
+                    self.output.set_homefront_client(self._serverConnection)
+                
+                self._nbConsecutiveConnFailure = 0
+                
+                while self.working and not self._paused \
+                and (self._serverConnection.connected or not self._serverConnection.authed):
+                    #self.verbose2("\t%s" % (time.time() - self._serverConnection.last_pong_time))
+                    if time.time() - self._serverConnection.last_pong_time > 6 \
+                    and self._serverConnection.last_ping_time < self._serverConnection.last_pong_time:
+                        self._serverConnection.ping()
+                    asyncore.loop(timeout=3, count=1)
         self.bot('Stop listening.')
 
         if self.exiting.acquire(1):
