@@ -19,11 +19,13 @@
 #
 # 2011-03-30 : 0.1
 # * first alpha test
+# 2011-03-31 : 0.2
+# * remove try: catch: around the asyncore loop
 #
 from b3.parsers.homefront.protocol import MessageType, ChannelType
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.1'
+__version__ = '0.2'
 
 import sys
 import string
@@ -64,9 +66,9 @@ class HomefrontParser(b3.parser.Parser):
     mapgamelist = None
 
     _commands = {}
-    _commands['message'] = ('say "%(prefix)s [%(name)s] %(message)s"')
-    _commands['say'] = ('say "%(prefix)s %(message)s"')
-    _commands['saybig'] = ('admin bigsay "%(prefix)s %(message)s"')
+    _commands['message'] = ('say %(prefix)s [%(name)s] %(message)s')
+    _commands['say'] = ('say %(prefix)s %(message)s')
+    _commands['saybig'] = ('admin bigsay %(prefix)s %(message)s')
     _commands['kick'] = ('admin kick "%(name)s"')
     _commands['ban'] = ('admin kickban "%(name)s"')
     _commands['unban'] = ('admin unban "%(name)s"')
@@ -105,6 +107,8 @@ class HomefrontParser(b3.parser.Parser):
             
         
         # add specific events
+        self.Events.createEvent('EVT_CLIENT_SQUAD_SAY', 'Squad Say')
+        self.Events.createEvent('EVT_SERVER_SAY', 'Server Chatter')
         #self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
                 
         ## read game server info and store as much of it in self.game wich
@@ -151,8 +155,16 @@ class HomefrontParser(b3.parser.Parser):
                     else:
                         self.warning('TODO handle: %s(%s)' % (func, data))
                 else:
-                    self.warning('TODO handle packet : %s' % packet)
-                    self.queueEvent(self.getEvent('EVT_UNKNOWN', packet))
+                    data = packet.data
+                    func = 'onChatter'
+                    if hasattr(self, func):
+                        #self.debug('routing ----> %s' % func)
+                        func = getattr(self, func)
+                        event = func(data)
+                        if event:
+                            self.queueEvent(event)
+                    else:
+                        self.warning('TODO handle: %s(%s)' % (func, data))
             else:
                 self.warning("Unhandled channel type : %s" % packet.getChannelTypeAsStr())
         else:
@@ -177,35 +189,21 @@ class HomefrontParser(b3.parser.Parser):
                     self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
                     self._pauseNotice = True
             else:
-                try:
-                    if self._serverConnection is None:
-                        self.bot('Connecting to Homefront server ...')
-                        self._serverConnection = protocol.Client(self, self._rconIp, self._rconPort, self._rconPassword, keepalive=True)
-                        self._serverConnection.add_listener(self.routePacket)
-                        self.output.set_homefront_client(self._serverConnection)
-                    
-                    self._nbConsecutiveConnFailure = 0
-                    
-                    while self.working and not self._paused \
-                    and (self._serverConnection.connected or not self._serverConnection.authed):
-                        #self.verbose2("\t%s" % (time.time() - self._serverConnection.last_pong_time))
-                        if time.time() - self._serverConnection.last_pong_time > 6 \
-                        and self._serverConnection.last_ping_time < self._serverConnection.last_pong_time:
-                            self._serverConnection.ping()
-                        asyncore.loop(timeout=3, count=1)
-                except Exception, e:
-                    self.error(e)
-                    self._nbConsecutiveConnFailure += 1
-                    self._serverConnection.close()
-                    if self._nbConsecutiveConnFailure <= 20:
-                        self.debug('sleeping 2 sec...')
-                        time.sleep(2)
-                    elif self._nbConsecutiveConnFailure <= 60:
-                        self.debug('sleeping 5 sec...')
-                        time.sleep(5)
-                    else:
-                        self.debug('sleeping 15 sec...')
-                        time.sleep(15)
+                if self._serverConnection is None:
+                    self.bot('Connecting to Homefront server ...')
+                    self._serverConnection = protocol.Client(self, self._rconIp, self._rconPort, self._rconPassword, keepalive=True)
+                    self._serverConnection.add_listener(self.routePacket)
+                    self.output.set_homefront_client(self._serverConnection)
+                
+                self._nbConsecutiveConnFailure = 0
+                
+                while self.working and not self._paused \
+                and (self._serverConnection.connected or not self._serverConnection.authed):
+                    #self.verbose2("\t%s" % (time.time() - self._serverConnection.last_pong_time))
+                    if time.time() - self._serverConnection.last_pong_time > 6 \
+                    and self._serverConnection.last_ping_time < self._serverConnection.last_pong_time:
+                        self._serverConnection.ping()
+                    asyncore.loop(timeout=3, count=1)
         self.bot('Stop listening.')
 
         if self.exiting.acquire(1):
@@ -350,7 +348,6 @@ class HomefrontParser(b3.parser.Parser):
             self.error('onServerChange_level failed match')
             return
 
-
         levelname = match.group('level')
         self.verbose('onServerChange_level, levelname: %s' % levelname)
         self._currentmap = levelname.lower()
@@ -371,18 +368,43 @@ class HomefrontParser(b3.parser.Parser):
             if type == 'team':
                 return self.getEvent('EVT_CLIENT_TEAM_SAY', text, client)
             elif type == 'squad':
-                raise NotImplementedError, "do squad say event"
+                return self.getEvent('EVT_CLIENT_SQUAD_SAY', text, client)
             else:
                 return self.getEvent('EVT_CLIENT_SAY', text, client)
     
+    def onChatter(self, data):
+        """\
+        Everything that is said by the server or a player is sent over this channel.
+        All onChatterBroadcast messages also reappear here.
+        """
+        # [string: Text]
+        self.verbose2('Recieved Chatter: %s' % data )
+        return self.getEvent('EVT_SERVER_SAY', data)
+
     def onServerBan_remove(self, data):
         self.write(self.getCommand('saybig',  prefix='', message="%s unbanned" % data))
     
     def onServerBan_added(self, data):
         self.write(self.getCommand('saybig',  prefix='', message="%s banned" % data))
         return self.getEvent('EVT_CLIENT_BAN', data)
-    
-    
+
+    def onServerPlayer(self, data):
+        # [int: Team] [string: Clan] [string: Name] [int: Kills] [int: Deaths]
+        match = re.search(r"^(?P<data>(?P<team>[0-9]) (?P<clan>.*) (?P<name>.+) (?P<kills>[0-9]+) (?P<deaths>[0-9]+))$", data)
+        if not match:
+            self.error("onServerPlayer failed match")
+            return
+
+        #update the client object
+        client = self.getClient(match.group('name'))
+        ## @todo: ditch the GCDemoRecSpectator client here?
+        client.team = self.getTeam(match.group('team'))
+        client.clan = match.group('clan')
+        client.kills = match.group('kills')
+        client.deaths = match.group('deaths')
+        self.verbose2('onServerPlayer: name: %s, clan: %s, team: %s, kills: %s, deaths: %s' %( client.name, client.clan, client.team, client.kills, client.deaths ))
+
+
     # =======================================
     # implement parser interface
     # =======================================
@@ -394,7 +416,7 @@ class HomefrontParser(b3.parser.Parser):
         """
         ## @todo: getPlayerlist: make this wait for reply packets, stack them, and return full
         # exhaustive list of players
-        self.output.write("RETRIEVE PLAYERLIST")
+        self.write('RETRIEVE PLAYERLIST')
 
     def authorizeClients(self):
         """\
@@ -635,7 +657,14 @@ class HomefrontParser(b3.parser.Parser):
         """\
         returns a dict having players' id for keys and players' scores for values
         """
-        raise NotImplementedError
+        # trigger a 'retrieve playerlist' command
+        self.getPlayerList()
+
+        scores = {}
+        clients = self.clients.getList()
+        for c in clients:
+            scores[c.name] = int(c.kills)
+        return scores
 
     def getTeam(self, team):
         team = str(team).lower()
@@ -643,6 +672,10 @@ class HomefrontParser(b3.parser.Parser):
             result = b3.TEAM_RED
         elif team == '1':
             result = b3.TEAM_BLUE
+        elif team == '2':
+            result = b3.TEAM_SPEC
+        elif team == '3':
+            result = b3.TEAM_UNKNOWN
         else:
             result = b3.TEAM_UNKNOWN
         return result
@@ -670,7 +703,7 @@ class HomefrontParser(b3.parser.Parser):
         client = self.clients.getByExactName(name)
         if not client:
             self.debug('client not found by name, creating new client')
-            client = self.clients.newClient(name, name=name, state=b3.STATE_UNKNOWN, team=b3.TEAM_UNKNOWN)
+            client = self.clients.newClient(name, name=name, state=b3.STATE_UNKNOWN, team=b3.TEAM_UNKNOWN, kills='0', deaths='0')
         return client
 
 
