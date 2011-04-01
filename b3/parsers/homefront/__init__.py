@@ -351,6 +351,7 @@ class HomefrontParser(b3.parser.Parser):
         levelname = match.group('level')
         self.verbose('onServerChange_level, levelname: %s' % levelname)
         self._currentmap = levelname.lower()
+        self.game.mapName = levelname.lower()
         return self.getEvent('EVT_GAME_ROUND_START', levelname)
 
     def onChatterBroadcast(self, data):
