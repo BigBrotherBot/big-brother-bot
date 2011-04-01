@@ -107,6 +107,8 @@ class HomefrontParser(b3.parser.Parser):
             
         
         # add specific events
+        self.Events.createEvent('EVT_CLIENT_SQUAD_SAY', 'Squad Say')
+        self.Events.createEvent('EVT_SERVER_SAY', 'Server Chatter')
         #self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
                 
         ## read game server info and store as much of it in self.game wich
@@ -153,8 +155,16 @@ class HomefrontParser(b3.parser.Parser):
                     else:
                         self.warning('TODO handle: %s(%s)' % (func, data))
                 else:
-                    self.warning('TODO handle packet : %s' % packet)
-                    self.queueEvent(self.getEvent('EVT_UNKNOWN', packet))
+                    data = packet.data
+                    func = 'onChatter'
+                    if hasattr(self, func):
+                        #self.debug('routing ----> %s' % func)
+                        func = getattr(self, func)
+                        event = func(data)
+                        if event:
+                            self.queueEvent(event)
+                    else:
+                        self.warning('TODO handle: %s(%s)' % (func, data))
             else:
                 self.warning("Unhandled channel type : %s" % packet.getChannelTypeAsStr())
         else:
@@ -358,10 +368,19 @@ class HomefrontParser(b3.parser.Parser):
             if type == 'team':
                 return self.getEvent('EVT_CLIENT_TEAM_SAY', text, client)
             elif type == 'squad':
-                raise NotImplementedError, "do squad say event"
+                return self.getEvent('EVT_CLIENT_SQUAD_SAY', text, client)
             else:
                 return self.getEvent('EVT_CLIENT_SAY', text, client)
     
+    def onChatter(self, data):
+        """\
+        Everything that is said by the server or a player is sent over this channel.
+        All onChatterBroadcast messages also reappear here.
+        """
+        # [string: Text]
+        self.verbose2('Recieved Chatter: %s' % data )
+        return self.getEvent('EVT_SERVER_SAY', data)
+
     def onServerBan_remove(self, data):
         self.write(self.getCommand('saybig',  prefix='', message="%s unbanned" % data))
     
