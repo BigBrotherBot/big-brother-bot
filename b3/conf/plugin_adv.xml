@@ -26,7 +26,7 @@
 			@feed 1 (will pick the second latest item in line)
 			etc.
 		-->
-		<set name="url">http://forum.bigbrotherbot.net/news-2/?type=rss;action=.xml</set>
+		<set name="url"><![CDATA[http://forum.bigbrotherbot.net/news-2/?type=rss;action=.xml]]></set>
 		<set name="items">5</set>
 		<set name="pretext">News: </set>
 	</settings>
