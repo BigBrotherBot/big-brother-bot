@@ -17,13 +17,15 @@
 #
 # CHANGELOG
 #
-# aaaa/mm/dd - who 
-#    blablbalb
+# 2011-03-30 : 0.1
+# * first alpha test
+# 2011-03-31 : 0.2
+# * remove try: catch: around the asyncore loop
 #
 from b3.parsers.homefront.protocol import MessageType, ChannelType
 
-__author__  = 'xx'
-__version__ = '0.0'
+__author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
+__version__ = '0.2'
 
 import sys
 import string
@@ -32,10 +34,6 @@ import time
 import asyncore
 import b3
 import b3.parser
-from b3.events import Event, EVT_UNKNOWN, EVT_CLIENT_JOIN, EVT_CLIENT_CONNECT, \
-EVT_CLIENT_KILL, EVT_CLIENT_SUICIDE, EVT_CLIENT_KILL_TEAM, EVT_CLIENT_SAY, \
-EVT_CLIENT_TEAM_SAY, EVT_CLIENT_KICK, EVT_CLIENT_BAN, EVT_CLIENT_BAN_TEMP, \
-EVT_GAME_ROUND_END, EVT_GAME_ROUND_START
 import os
 import rcon
 import protocol
@@ -68,9 +66,9 @@ class HomefrontParser(b3.parser.Parser):
     mapgamelist = None
 
     _commands = {}
-    _commands['message'] = ('say "%(prefix)s [%(name)s] %(message)s"')
-    _commands['say'] = ('say "%(prefix)s %(message)s"')
-    _commands['saybig'] = ('admin bigsay "%(prefix)s %(message)s"')
+    _commands['message'] = ('say %(prefix)s [%(name)s] %(message)s')
+    _commands['say'] = ('say %(prefix)s %(message)s')
+    _commands['saybig'] = ('admin bigsay %(prefix)s %(message)s')
     _commands['kick'] = ('admin kick "%(name)s"')
     _commands['ban'] = ('admin kickban "%(name)s"')
     _commands['unban'] = ('admin unban "%(name)s"')
@@ -85,6 +83,9 @@ class HomefrontParser(b3.parser.Parser):
     def startup(self):
         self.debug("startup()")
         
+        # create the 'Server' client
+        self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
+
         if self.config.has_option('server','inifile'):
             # open ini file
             ini_file = self.config.get('server','inifile')
@@ -137,7 +138,7 @@ class HomefrontParser(b3.parser.Parser):
                         self.warning('TODO handle: %s(%s)' % (func, data))
                 else:
                     self.warning('TODO handle packet : %s' % packet)
-                    self.queueEvent(Event(EVT_UNKNOWN, packet))
+                    self.queueEvent(self.getEvent('EVT_UNKNOWN', packet))
                     
             elif packet.channel == ChannelType.CHATTER:
                 if packet.data.startswith('BROADCAST:'):
@@ -153,7 +154,7 @@ class HomefrontParser(b3.parser.Parser):
                         self.warning('TODO handle: %s(%s)' % (func, data))
                 else:
                     self.warning('TODO handle packet : %s' % packet)
-                    self.queueEvent(Event(EVT_UNKNOWN, packet))
+                    self.queueEvent(self.getEvent('EVT_UNKNOWN', packet))
             else:
                 self.warning("Unhandled channel type : %s" % packet.getChannelTypeAsStr())
         else:
@@ -178,13 +179,14 @@ class HomefrontParser(b3.parser.Parser):
                     self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
                     self._pauseNotice = True
             else:
-                
                 if self._serverConnection is None:
-                    self.verbose('Connecting to Homefront server ...')
+                    self.bot('Connecting to Homefront server ...')
                     self._serverConnection = protocol.Client(self, self._rconIp, self._rconPort, self._rconPassword, keepalive=True)
                     self._serverConnection.add_listener(self.routePacket)
                     self.output.set_homefront_client(self._serverConnection)
-                    
+                
+                self._nbConsecutiveConnFailure = 0
+                
                 while self.working and not self._paused \
                 and (self._serverConnection.connected or not self._serverConnection.authed):
                     #self.verbose2("\t%s" % (time.time() - self._serverConnection.last_pong_time))
@@ -192,7 +194,6 @@ class HomefrontParser(b3.parser.Parser):
                     and self._serverConnection.last_ping_time < self._serverConnection.last_pong_time:
                         self._serverConnection.ping()
                     asyncore.loop(timeout=3, count=1)
-                    
         self.bot('Stop listening.')
 
         if self.exiting.acquire(1):
@@ -212,13 +213,13 @@ class HomefrontParser(b3.parser.Parser):
        
     def onServerHello(self, data):
         ## [int: Version]
-        self.info("HF server (v %s) says hello to B3" % data)
+        self.bot("HF server (v %s) says hello to B3" % data)
 
             
     def onServerAuth(self, data):
         ## [boolean: Result]
         if data == 'true':
-            self.info("B3 correctly authenticated on game server")
+            self.bot("B3 correctly authenticated on game server")
         else:
             self.warning("B3 failed to authente on game server (%s)" % data)
 
@@ -226,7 +227,7 @@ class HomefrontParser(b3.parser.Parser):
     def onServerLogin(self, data):
         # [string: Name]
         # (onServerLogin also occurs after a mapchange...)
-        return Event(EVT_CLIENT_CONNECT, data, self.getClient(data))
+        return self.getEvent('EVT_CLIENT_CONNECT', data, self.getClient(data))
 
     
     def onServerUid(self, data):
@@ -300,18 +301,18 @@ class HomefrontParser(b3.parser.Parser):
             if not hasattr(victim, 'hitloc'):
                 victim.hitloc = 'body'
 
-        event = EVT_CLIENT_KILL
+        event = 'EVT_CLIENT_KILL'
 
         if weapon == 'Suicided' or attacker == victim:
-            event = EVT_CLIENT_SUICIDE
+            event = 'EVT_CLIENT_SUICIDE'
             self.verbose('%s suicided' % attacker.name)
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
-            event = EVT_CLIENT_KILL_TEAM
+            event = 'EVT_CLIENT_KILL_TEAM'
             self.verbose('Team kill, attacker: %s, victim: %s' % (attacker.name, victim.name))
         else:
             self.verbose('%s killed %s using %s' % (attacker.name, victim.name, weapon))
 
-        return Event(event, (100, weapon, victim.hitloc), attacker, victim)
+        return self.getEvent(event, (100, weapon, victim.hitloc), attacker, victim)
 
     def onServerRound_over(self, data):
         ## [int: Team ID]
@@ -327,7 +328,7 @@ class HomefrontParser(b3.parser.Parser):
         teamid = match.group('team')
 
         self.verbose('onServerRound_over: %s, winning team id: %s' % (data, teamid)) 
-        return Event(EVT_GAME_ROUND_END, teamid)
+        return self.getEvent('EVT_GAME_ROUND_END', teamid)
 
     def onServerChange_level(self, data):
         ## [string: Map]
@@ -337,11 +338,10 @@ class HomefrontParser(b3.parser.Parser):
             self.error('onServerChange_level failed match')
             return
 
-
         levelname = match.group('level')
         self.verbose('onServerChange_level, levelname: %s' % levelname)
         self._currentmap = levelname.lower()
-        return Event(EVT_GAME_ROUND_START, levelname)
+        return self.getEvent('EVT_GAME_ROUND_START', levelname)
 
     def onChatterBroadcast(self, data):
         # [string: Name] [string: Context]: [string: Text]
@@ -356,19 +356,36 @@ class HomefrontParser(b3.parser.Parser):
             text = match.group('text')
             client = self.getClient(name)
             if type == 'team':
-                return Event(EVT_CLIENT_TEAM_SAY, text, client)
+                return self.getEvent('EVT_CLIENT_TEAM_SAY', text, client)
             elif type == 'squad':
                 raise NotImplementedError, "do squad say event"
             else:
-                return Event(EVT_CLIENT_SAY, text, client)
+                return self.getEvent('EVT_CLIENT_SAY', text, client)
     
     def onServerBan_remove(self, data):
         self.write(self.getCommand('saybig',  prefix='', message="%s unbanned" % data))
     
     def onServerBan_added(self, data):
         self.write(self.getCommand('saybig',  prefix='', message="%s banned" % data))
-    
-    
+        return self.getEvent('EVT_CLIENT_BAN', data)
+
+    def onServerPlayer(self, data):
+        # [int: Team] [string: Clan] [string: Name] [int: Kills] [int: Deaths]
+        match = re.search(r"^(?P<data>(?P<team>[0-9]) (?P<clan>.*) (?P<name>.+) (?P<kills>[0-9]+) (?P<deaths>[0-9]+))$", data)
+        if not match:
+            self.error("onServerPlayer failed match")
+            return
+
+        #update the client object
+        client = self.getClient(match.group('name'))
+        ## @todo: ditch the GCDemoRecSpectator client here?
+        client.team = self.getTeam(match.group('team'))
+        client.clan = match.group('clan')
+        client.kills = match.group('kills')
+        client.deaths = match.group('deaths')
+        self.verbose2('onServerPlayer: name: %s, clan: %s, team: %s, kills: %s, deaths: %s' %( client.name, client.clan, client.team, client.kills, client.deaths ))
+
+
     # =======================================
     # implement parser interface
     # =======================================
@@ -380,7 +397,7 @@ class HomefrontParser(b3.parser.Parser):
         """
         ## @todo: getPlayerlist: make this wait for reply packets, stack them, and return full
         # exhaustive list of players
-        self.output.write("RETRIEVE PLAYERLIST")
+        self.write('RETRIEVE PLAYERLIST')
 
     def authorizeClients(self):
         """\
@@ -447,7 +464,7 @@ class HomefrontParser(b3.parser.Parser):
             self.say(fullreason)
 
         self.write(self.getCommand('kick', name=client.cid))
-        self.queueEvent(Event(EVT_CLIENT_KICK, reason, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_KICK', reason, client))
         client.disconnect()
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -474,7 +491,7 @@ class HomefrontParser(b3.parser.Parser):
         # so we can unban a unconnected player using name
         client._name = banid
         client.save()
-        self.queueEvent(Event(EVT_CLIENT_BAN, reason, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', reason, client))
         client.disconnect()
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -493,6 +510,7 @@ class HomefrontParser(b3.parser.Parser):
             self.verbose('UNBAN: Removed name (%s) from banlist' %client.name)
             if admin:
                 admin.message('Unbanned: Removed %s from banlist' %client.name)
+        self.queueEvent(self.getEvent('EVT_CLIENT_UNBAN', reason, client))
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
         """\
@@ -510,7 +528,7 @@ class HomefrontParser(b3.parser.Parser):
             self.say(fullreason)
 
         self.write(self.getCommand('tempban', name=client.cid))
-        self.queueEvent(Event(EVT_CLIENT_BAN_TEMP, reason, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', reason, client))
         client.disconnect()
 
     def getMap(self):
@@ -620,7 +638,14 @@ class HomefrontParser(b3.parser.Parser):
         """\
         returns a dict having players' id for keys and players' scores for values
         """
-        raise NotImplementedError
+        # trigger a 'retrieve playerlist' command
+        self.getPlayerList()
+
+        scores = {}
+        clients = self.clients.getList()
+        for c in clients:
+            scores[c.name] = int(c.kills)
+        return scores
 
     def getTeam(self, team):
         team = str(team).lower()
@@ -628,6 +653,10 @@ class HomefrontParser(b3.parser.Parser):
             result = b3.TEAM_RED
         elif team == '1':
             result = b3.TEAM_BLUE
+        elif team == '2':
+            result = b3.TEAM_SPEC
+        elif team == '3':
+            result = b3.TEAM_UNKNOWN
         else:
             result = b3.TEAM_UNKNOWN
         return result
@@ -655,7 +684,7 @@ class HomefrontParser(b3.parser.Parser):
         client = self.clients.getByExactName(name)
         if not client:
             self.debug('client not found by name, creating new client')
-            client = self.clients.newClient(name, name=name, state=b3.STATE_UNKNOWN, team=b3.TEAM_UNKNOWN)
+            client = self.clients.newClient(name, name=name, state=b3.STATE_UNKNOWN, team=b3.TEAM_UNKNOWN, kills='0', deaths='0')
         return client
 
 

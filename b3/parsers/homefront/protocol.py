@@ -21,8 +21,10 @@
 # 2011/03/23 - Courgette 
 #    working so far : packet codec, login(), ping()
 #    todo : handle incoming data (split by homefront packet)
-# 2011/03/24 - Courgette 
+# 2011/03/24 - 0.2 - Courgette 
 #    can maintain a connection, receive packets, send packets
+# 2011/03/31 - 0.3 - Courgette
+#    do not crash when send() raises a socket.error
 #
 
 """
@@ -31,7 +33,7 @@ creates a connection to a Homefront gameserver
 """
 
 __author__  = 'Courgette'
-__version__ = '0.2'
+__version__ = '0.3'
 
 
 import asyncore, socket, time
@@ -226,15 +228,21 @@ class Client(asyncore.dispatcher_with_send):
         packet = Packet()
         packet.message = MessageType.CLIENT_PING
         packet.data = "PING"
-        self.send(packet.encode())
-        self.last_ping_time = time.time()
+        try:
+            self.send(packet.encode())
+            self.last_ping_time = time.time()
+        except socket.error, e:
+            self.console.error(repr(e))
     
     def command(self, text):
         """send command to server"""
         packet = Packet()
         packet.message = MessageType.CLIENT_TRANSMISSION
         packet.data = text
-        self.send(packet.encode())
+        try:
+            self.send(packet.encode())
+        except socket.error, e:
+            self.console.error(repr(e))
         
     def _readPacket(self):
         if len(self._buffer_in) > 7:
@@ -276,6 +284,8 @@ if __name__ == '__main__':
             print "   DEBUG: " + msg
         def info(self, msg):
             print "    INFO: " + msg
+        def verbose(self, msg):
+            print "VERBOSE: " + msg
         def verbose2(self, msg):
             print "VERBOSE2: " + msg
         def warning(self, msg):
@@ -296,6 +306,7 @@ if __name__ == '__main__':
             #print("\t%s" % (time.time() - hfclient.last_pong_time))
             if time.time() - hfclient.last_pong_time > 6 and hfclient.last_ping_time < hfclient.last_pong_time:
                 hfclient.ping()
+                hfclient.command("RETRIEVE PLAYERLIST")
             asyncore.loop(timeout=3, count=1)
     except EOFError, KeyboardInterrupt:
         hfclient.close()

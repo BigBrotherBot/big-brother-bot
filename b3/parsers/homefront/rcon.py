@@ -17,8 +17,6 @@
 #
 # CHANGELOG
 #
-# aaaa/mm/dd - who 
-#    foo
 #
 
 """
@@ -51,8 +49,6 @@ class Rcon:
     def write(self, cmd, *args, **kwargs):
         if not self.hfclient:
             return
-        assert self.hfclient.connected, "Homefront client not connected to gameserver"
-        assert self.hfclient.authed, "Homefront client not authenticated"
         self.hfclient.command(cmd)
         
     def flush(self):
@@ -68,7 +64,7 @@ if __name__ == '__main__':
     cd c:\whereever\is\b3
     c:\python26\python.exe b3/parsers/homefront/rcon.py <rcon_ip> <rcon_port> <rcon_password>
     """
-    import sys, time, asyncore, thread
+    import sys, time, asyncore, thread, threading
     from b3.fake import fakeConsole
     from protocol import Client as HomefrontClient
 
@@ -103,16 +99,27 @@ if __name__ == '__main__':
         print('end client')
     
     thread.start_new_thread(run_hf_client, (hfclient,))
-        
+    
     time.sleep(3)
     
     r = Rcon(fakeConsole, ("what", 1337), "ever")
     r.set_homefront_client(hfclient)
     
+    def close_hf_connection():
+        try:
+            hfclient.close()
+        except:
+            pass
+    t = threading.Timer(10.0, hfclient.close)
+    t.start()
+    
     print('-----------------------------> test command : say "B3 test"')
     r.write('say "B3 test"')  
     
-    time.sleep(20)
+    for i in range(30):
+        hfclient.ping()
+        time.sleep(.5)
+    
     working = False
     
     print(".")
