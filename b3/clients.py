@@ -17,6 +17,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    30/03/2011 - 1.3.3 - Courgette
+#    * newClient() now returns the created client object
+#    26/03/2011 - 1.3.2 - Courgette
+#    * fix bug on Client.__init__()
 #    12/11/2010 - 1.3.1 - Courgette
 #    * harden _set_name for cases where console is not set
 #    01/11/2010 - 1.3.0 - Courgette
@@ -56,7 +60,7 @@
 #     Added data parameter to Client.tempban()
 
 __author__  = 'ThorN'
-__version__ = '1.3.1'
+__version__ = '1.3.3'
 
 import b3, string, re, time, functions, threading, traceback, sys
 
@@ -127,6 +131,10 @@ class Client(object):
         self.state = b3.STATE_UNKNOWN
         self._data = {}        
 
+        # make sure to set console before anything else
+        if 'console' in kwargs:
+            self.console = kwargs['console']
+            
         for k, v in kwargs.iteritems():
             setattr(self, k, v)
 
@@ -1088,6 +1096,7 @@ class Clients(dict):
             client.auth()
         elif not client.authed:
             self.authorizeClients()
+        return client
 
     def empty(self):
         self.clear()
