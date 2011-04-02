@@ -1461,7 +1461,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             ', `losestreak` , `rounds`, YEAR(NOW()), MONTH(NOW()), WEEK(NOW(),3), DAY(NOW())' + 
             '  FROM `' + PlayerStats._table + '`' )
         try:
-            self.query(sql, silent=True)
+            self.query(sql)
             self.verbose('Monthly XLRstats snapshot created')
         except Exception, msg:
             self.error('Creating history snapshot failed: %s' %msg)
@@ -1473,7 +1473,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             ', `losestreak` , `rounds`, YEAR(NOW()), MONTH(NOW()), WEEK(NOW(),3), DAY(NOW())' + 
             '  FROM `' + PlayerStats._table + '`' )
         try:
-            self.query(sql, silent=True)
+            self.query(sql)
             self.verbose('Weekly XLRstats snapshot created')
         except Exception, msg:
             self.error('Creating history snapshot failed: %s' %msg)
@@ -1491,7 +1491,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def _addTableColumn(self, c1, t1, specs):
         try:
-            self.query('SELECT `%s` FROM %s limit 1;' %(c1, t1), silent=True)
+            self.query('SELECT `%s` FROM %s limit 1;' %(c1, t1))
         except Exception, e:
             if e[0] == 1054:
                 self.console.debug('Column does not yet exist: %s' % (e))
