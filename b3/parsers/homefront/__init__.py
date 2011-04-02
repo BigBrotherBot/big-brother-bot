@@ -203,7 +203,7 @@ class HomefrontParser(b3.parser.Parser):
                     if time.time() - self._serverConnection.last_pong_time > 6 \
                     and self._serverConnection.last_ping_time < self._serverConnection.last_pong_time:
                         self._serverConnection.ping()
-                    asyncore.loop(timeout=3, count=1)
+                    asyncore.loop(timeout=3, use_poll=True, count=1)
         self.bot('Stop listening.')
 
         if self.exiting.acquire(1):
