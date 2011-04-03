@@ -109,6 +109,7 @@ class HomefrontParser(b3.parser.Parser):
         # add specific events
         self.Events.createEvent('EVT_CLIENT_SQUAD_SAY', 'Squad Say')
         self.Events.createEvent('EVT_SERVER_SAY', 'Server Chatter')
+        self.Events.createEvent('EVT_CLIENT_CLAN_CHANGE', 'Client Clan Change')
         #self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
                 
         ## read game server info and store as much of it in self.game wich
@@ -271,6 +272,7 @@ class HomefrontParser(b3.parser.Parser):
             self.error('onServerTeam_change failed match')
             return
         client = self.getClient(match.group('name'))
+        #This next line will also raise the EVT_CLIENT_TEAM_CHANGE event
         client.team = self.getTeam(match.group('team'))
 
     def onServerClan_change(self, data):
@@ -280,7 +282,8 @@ class HomefrontParser(b3.parser.Parser):
             self.error('onServerTeam_change failed match')
             return
         client = self.getClient(match.group('name'))
-        client.clan = self.getTeam(match.group('clan'))
+        client.clan = match.group('clan')
+        return self.getEvent('EVT_CLIENT_CLAN_CHANGE', client.clan, client)
 
     def onServerKill(self, data):
         # [string: Killer Name] [string: DamageType] [string: Victim Name]
