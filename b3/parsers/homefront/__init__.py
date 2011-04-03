@@ -109,6 +109,7 @@ class HomefrontParser(b3.parser.Parser):
         # add specific events
         self.Events.createEvent('EVT_CLIENT_SQUAD_SAY', 'Squad Say')
         self.Events.createEvent('EVT_SERVER_SAY', 'Server Chatter')
+        self.Events.createEvent('EVT_CLIENT_CLAN_CHANGE', 'Client Clan Change')
         #self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
                 
         ## read game server info and store as much of it in self.game wich
@@ -271,6 +272,7 @@ class HomefrontParser(b3.parser.Parser):
             self.error('onServerTeam_change failed match')
             return
         client = self.getClient(match.group('name'))
+        #This next line will also raise the EVT_CLIENT_TEAM_CHANGE event
         client.team = self.getTeam(match.group('team'))
 
     def onServerClan_change(self, data):
@@ -280,7 +282,8 @@ class HomefrontParser(b3.parser.Parser):
             self.error('onServerTeam_change failed match')
             return
         client = self.getClient(match.group('name'))
-        client.clan = self.getTeam(match.group('clan'))
+        client.clan = match.group('clan')
+        return self.getEvent('EVT_CLIENT_CLAN_CHANGE', client.clan, client)
 
     def onServerKill(self, data):
         # [string: Killer Name] [string: DamageType] [string: Victim Name]
@@ -555,7 +558,10 @@ class HomefrontParser(b3.parser.Parser):
         """\
         return the current map/level name
         """
-        raise NotImplementedError
+        if self._currentmap is None:
+            return "Unknown"
+        else:
+            return self._currentmap
 
     def getNextMap(self):
         """Return the name of the next map
@@ -563,8 +569,9 @@ class HomefrontParser(b3.parser.Parser):
         nextmap=''
         self.getMaps()
         no_maps = len(self.maplist)
-        if self.maplist.count(self._currentmap) == 1:
-            i = self.maplist.index(self._currentmap)
+        currentmap = self.getMap()
+        if self.maplist.count(currentmap) == 1:
+            i = self.maplist.index(currentmap)
             if i < no_maps-1:
                 nextmap = self.mapgamelist[i+1]
             else:
