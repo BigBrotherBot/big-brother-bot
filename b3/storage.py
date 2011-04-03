@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   02/03/2011 - 1.9 - Courgette
+#   Do not catch exception when query fails
 #   07/01/2011 - 1.8 - xlr8or
 #   Added queryFromFile to execute .sql files
 #   12/12/2010 - 1.7.3 - courgette
@@ -48,7 +50,7 @@
 #   Added data column to penalties table
 
 __author__  = 'ThorN'
-__version__ = '1.8'
+__version__ = '1.9'
 
 import re, time, traceback, sys, thread, os
 
@@ -255,7 +257,7 @@ class DatabaseStorage(Storage):
                 sql_statements = sql_text.split(';')
                 for s in sql_statements:
                     try:
-                        self.query(s, silent=True)
+                        self.query(s)
                     except:
                         pass
             else:
@@ -264,7 +266,7 @@ class DatabaseStorage(Storage):
         return None
 
 
-    def query(self, query, silent=False):
+    def query(self, query):
         # use existing connection or create a new one
         if self.db or self.connect():
             try:
@@ -284,11 +286,8 @@ class DatabaseStorage(Storage):
                         except Exception, e:
                             # fall through to log error message
                             pass
-
-                if silent:
-                    raise Exception(e[0], e[1])
                 else:
-                    self.console.error('Query failed - %s: %s' % (type(e), e))
+                    raise e
 
         return None
         
