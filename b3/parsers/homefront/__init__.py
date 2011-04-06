@@ -495,7 +495,10 @@ class HomefrontParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.write(self.getCommand('kick', name=client.cid))
+        if client.guid:
+            self.write(self.getCommand('kick', name=client.guid))
+        else:
+            self.write(self.getCommand('kick', name=client.cid))
         self.queueEvent(self.getEvent('EVT_CLIENT_KICK', reason, client))
         client.disconnect()
 
