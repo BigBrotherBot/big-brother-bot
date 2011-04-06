@@ -22,11 +22,11 @@
 # 2011-03-31 : 0.2
 # * remove try: catch: around the asyncore loop
 #
-from b3.parsers.homefront.protocol import MessageType, ChannelType
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
 __version__ = '0.2'
 
+from b3.parsers.homefront.protocol import MessageType, ChannelType
 import sys
 import string
 import re
@@ -230,8 +230,9 @@ class HomefrontParser(b3.parser.Parser):
         ## [boolean: Result]
         if data == 'true':
             self.bot("B3 correctly authenticated on game server")
+            self.getPlayerList()
         else:
-            self.warning("B3 failed to authente on game server (%s)" % data)
+            self.warning("B3 failed to authenticate on game server (%s)" % data)
 
 
     def onServerLogin(self, data):
@@ -243,7 +244,7 @@ class HomefrontParser(b3.parser.Parser):
     def onServerUid(self, data):
         # [string: Name] <[string: UID]>
         # example : courgette <1100012402D1245>
-        match = re.search(r"^(?P<name>.+) <(?P<uid>.*)>$", data)
+        match = re.search(r"^(?P<name>.+) (?P<uid>.*)$", data)
         if not match:
             self.error("could not get UID in [%s]" % data)
             return None
@@ -391,13 +392,21 @@ class HomefrontParser(b3.parser.Parser):
 
     def onServerPlayer(self, data):
         # [int: Team] [string: Clan] [string: Name] [int: Kills] [int: Deaths]
-        match = re.search(r"^(?P<data>(?P<team>[0-9]) (?P<clan>.*) (?P<name>.+) (?P<kills>[0-9]+) (?P<deaths>[0-9]+))$", data)
+        match = re.search(r"^(?P<data>(?P<uid>[0-9]+) (?P<team>[0-9]) (?P<clan>.*) (?P<name>[^ ]+) (?P<kills>[0-9]+) (?P<deaths>[0-9]+))$", data)
         if not match:
             self.error("onServerPlayer failed match")
             return
 
+        # try to get the client by guid
+        client = self.clients.getByGUID(match.group('uid'))
+        if not client:
+            # get the client by name or create it
+            client = self.getClient(match.group('name'))
+            # authenticate the client now that we know his Steam community ID
+            client.guid = match.group('uid')
+            client.auth()
+            
         #update the client object
-        client = self.getClient(match.group('name'))
         ## @todo: ditch the GCDemoRecSpectator client here?
         client.team = self.getTeam(match.group('team'))
         client.clan = match.group('clan')
