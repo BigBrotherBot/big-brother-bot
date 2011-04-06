@@ -1,3 +1,4 @@
+# coding: latin-1
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
@@ -367,7 +368,10 @@ class Client(object):
     #------------------------
     def _set_cid(self, cid):
         self.console.verbose('%s cid changed from %s to %s', self.id, self._cid, cid)
-        self._cid = str(cid)
+        if type(cid) is int:
+            self._cid = str(cid)
+        else:
+            self._cid = cid
 
     def _get_cid(self):
         return self._cid

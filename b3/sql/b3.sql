@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS aliases (
   PRIMARY KEY  (id),
   UNIQUE KEY alias (alias,client_id),
   KEY client_id (client_id)
-) ENGINE=MyISAM;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS clients (
   UNIQUE KEY guid (guid),
   KEY group_bits (group_bits),
   KEY name (name)
-) ENGINE=MyISAM;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS groups (
   PRIMARY KEY  (id),
   UNIQUE KEY keyword (keyword),
   KEY level (level)
-) ENGINE=MyISAM;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- 
 -- Dumping data for table `groups`
@@ -105,4 +105,4 @@ CREATE TABLE IF NOT EXISTS penalties (
   KEY admin_id (admin_id),
   KEY inactive (inactive),
   KEY client_id (client_id)
-) ENGINE=MyISAM;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
