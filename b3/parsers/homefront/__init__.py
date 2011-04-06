@@ -70,7 +70,7 @@ class HomefrontParser(b3.parser.Parser):
     _commands['say'] = ('say %(prefix)s %(message)s')
     _commands['saybig'] = ('admin bigsay %(prefix)s %(message)s')
     _commands['kick'] = ('admin kick "%(name)s"')
-    _commands['ban'] = ('admin kickban "%(name)s"')
+    _commands['ban'] = ('admin kickban "%(name)s" "%(admin)s" "[B3] %(reason)s"')
     _commands['unban'] = ('admin unban "%(name)s"')
     _commands['tempban'] = ('admin kick "%(name)s"')
     _commands['maprotate'] = ('admin nextmap')
@@ -515,7 +515,7 @@ class HomefrontParser(b3.parser.Parser):
         if banid is None and client.name:
             banid = client.name
             self.debug('using name to ban : %s' % banid)
-        self.write(self.getCommand('ban', name=banid))
+        self.write(self.getCommand('ban', name=banid, admin=admin, reason=reason))
         # saving banid in the name column in database
         # so we can unban a unconnected player using name
         client._name = banid
