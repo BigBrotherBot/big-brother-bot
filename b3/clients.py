@@ -711,6 +711,9 @@ class Client(object):
         else:
             return False
 
+    def __str__(self):
+        return "Client<%s>" % self.cid
+
 #-----------------------------------------------------------------------------------------------------------------------
 class Struct(object):
     def __init__(self, **kwargs):
