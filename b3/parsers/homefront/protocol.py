@@ -1,3 +1,4 @@
+# -*- coding: cp1252 -*-
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # 
@@ -109,7 +110,7 @@ class Packet(object):
         ## Data
         ## type: 8-bit char[N]
         ## byte length : N
-        str += self.data
+        str += self.data.encode('utf-8')
         return str
     
     def decode(self, packet):
@@ -131,7 +132,8 @@ class Packet(object):
         ## Data
         ## type: 8-bit char[N]
         ## byte length : N
-        self.data = packet[7:7+datalength]
+        str = packet[7:7+datalength]
+        self.data = str.decode('utf-8')
         
     @staticmethod
     def decodeIncomingPacketSize(packet):
@@ -268,7 +270,8 @@ class Client(asyncore.dispatcher_with_send):
 # Example program
 
 if __name__ == '__main__':
-    import sys
+    import sys, logging
+    from b3.output import OutputHandler
     
     if len(sys.argv) != 4:
         host = raw_input('Enter game server host IP/name: ')
@@ -279,25 +282,19 @@ if __name__ == '__main__':
         port = int(sys.argv[2])
         pw = sys.argv[3]
     
-    class MyConsole:
-        def debug(self, msg):
-            print "   DEBUG: " + msg
-        def info(self, msg):
-            print "    INFO: " + msg
-        def verbose(self, msg):
-            print "VERBOSE: " + msg
-        def verbose2(self, msg):
-            print "VERBOSE2: " + msg
-        def warning(self, msg):
-            print "WARNING : " + msg
-    myConsole = MyConsole()
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter("%(levelname)s\t%(message)s")
+    handler.setFormatter(formatter)
+    
+    myConsole = OutputHandler('console')
+    myConsole.addHandler(handler)
+    myConsole.setLevel(logging.NOTSET)
     
     
     def packetListener(packet):
-        print(">>> received : %s" % packet)
+        myConsole.console(">>> %s" % packet)    
     
-    
-    print('start client')
+    myConsole.info('start client')
     hfclient = Client(myConsole, host, port, pw, keepalive=True)
     hfclient.add_listener(packetListener)
     
@@ -311,6 +308,6 @@ if __name__ == '__main__':
     except EOFError, KeyboardInterrupt:
         hfclient.close()
     
-    print('end')
+    myConsole.info('end')
     
     
