@@ -21,10 +21,11 @@
 # * first alpha test
 # 2011-03-31 : 0.2
 # * remove try: catch: around the asyncore loop
-#
+# 2011-03-08 : 0.3
+# * do not create client without guid as name are not reliable alone
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.2'
+__version__ = '0.3'
 
 from b3.parsers.homefront.protocol import MessageType, ChannelType
 import sys
@@ -117,9 +118,13 @@ class HomefrontParser(b3.parser.Parser):
     
     
     def routePacket(self, packet):
-        self.console("%s" % packet)
         if packet is None:
             self.warning('cannot route empty packet')
+        if packet.message == MessageType.SERVER_TRANSMISSION \
+            and packet.data == "PONG":
+            self.verbose2("%s" % packet)
+        else:
+            self.console("%s" % packet)
         
         if packet.message == MessageType.SERVER_TRANSMISSION:
             if packet.channel == ChannelType.SERVER:
@@ -239,12 +244,13 @@ class HomefrontParser(b3.parser.Parser):
     def onServerLogin(self, data):
         # [string: Name]
         # (onServerLogin also occurs after a mapchange...)
-        return self.getEvent('EVT_CLIENT_CONNECT', data, self.getClient(data))
+        # we ignore that event as Name is not reliable
+        pass
 
     
     def onServerUid(self, data):
-        # [string: Name] <[string: UID]>
-        # example : courgette <1100012402D1245>
+        # [string: Name] [string: UID]
+        # example : courgette 1100012402D1245
         match = re.search(r"^(?P<name>.+) (?P<uid>.*)$", data)
         if not match:
             self.error("could not get UID in [%s]" % data)
@@ -252,15 +258,14 @@ class HomefrontParser(b3.parser.Parser):
         if match.group('uid') == '00':
             self.info("banned player connecting")
             return
-        client = self.getClient(match.group('name'))
-        client.guid = match.group('uid')
-        client.auth()
+        client = self.clients.getByGUID(match.group('uid'))
+        if client is None:
+            name = match.group('name')
+            client = self.clients.newClient(name, guid=match.group('uid'), name=name, team=b3.TEAM_UNKNOWN)
     
     def onServerLogout(self, data):
         ## [string: Name]
         self.debug('%s disconnected' % data)
-        # do not call self.getClient() here because we do not want
-        # to create a new client
         client = self.clients.getByCID(data)
         if client:
             client.disconnect()
@@ -273,6 +278,9 @@ class HomefrontParser(b3.parser.Parser):
             self.error('onServerTeam_change failed match')
             return
         client = self.getClient(match.group('name'))
+        if client is None:
+            self.debug("Could not find client")
+            return
         #This next line will also raise the EVT_CLIENT_TEAM_CHANGE event
         client.team = self.getTeam(match.group('team'))
 
@@ -283,6 +291,9 @@ class HomefrontParser(b3.parser.Parser):
             self.error('onServerTeam_change failed match')
             return
         client = self.getClient(match.group('name'))
+        if client is None:
+            self.debug("Could not find client")
+            return
         client.clan = match.group('clan')
         return self.getEvent('EVT_CLIENT_CLAN_CHANGE', client.clan, client)
 
@@ -370,6 +381,9 @@ class HomefrontParser(b3.parser.Parser):
             name = match.group('name')
             text = match.group('text')
             client = self.getClient(name)
+            if client is None:
+                self.debug("Could not find client")
+                return
             if type == 'team':
                 return self.getEvent('EVT_CLIENT_TEAM_SAY', text, client)
             elif type == 'squad':
@@ -399,18 +413,12 @@ class HomefrontParser(b3.parser.Parser):
         if not match:
             self.error("onServerPlayer failed match")
             return
-
         # try to get the client by guid
         client = self.clients.getByGUID(match.group('uid'))
         if not client:
-            # get the client by name or create it
-            client = self.getClient(match.group('name'))
-            # authenticate the client now that we know his Steam community ID
-            client.guid = match.group('uid')
-            client.auth()
-            
-        #update the client object
-        ## @todo: ditch the GCDemoRecSpectator client here?
+            client = self.clients.newClient(match.group('name'), guid=match.group('uid'), team=b3.TEAM_UNKNOWN)
+        # update client data
+        client.name = match.group('name')
         client.team = self.getTeam(match.group('team'))
         client.clan = match.group('clan')
         client.kills = match.group('kills')
@@ -715,17 +723,18 @@ class HomefrontParser(b3.parser.Parser):
     # =======================================
 
     def getClient(self, name):
-        """return a already connected client (authed or not) by searching the 
-        clients name index. If not found, create a new client
+        """return a already connected client by searching the 
+        clients cid index. If not found, call getPlayerList()
+        so next time we'll have more chances to get that player
         
-        This method will always return a client object
+        This method can return None
         """
-        client = self.clients.getByExactName(name)
-        if not client:
-            self.debug('client not found by name, creating new client')
-            client = self.clients.newClient(name, name=name, state=b3.STATE_UNKNOWN, team=b3.TEAM_UNKNOWN, kills='0', deaths='0')
-        return client
-
+        client = self.clients.getByCID(name)
+        if client:
+            return client
+        self.debug('client not found calling getPlayerList()')
+        self.getPlayerList()
+        return None
 
     def getftpini(self):
         def handleDownload(line):
