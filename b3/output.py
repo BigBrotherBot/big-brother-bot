@@ -22,10 +22,13 @@
 #      stderr instead
 # 22/10/2010 - 1.5.0 - xlr8or
 #    * add an option to write to both logfile and stderr 
-
+# 08/04/2011 - 1.6.0 - Courgette
+#    * make the console logger write to stdout and repeat errors on 
+#      stderr
+#
 
 __author__  = 'ThorN'
-__version__ = '1.5.0'
+__version__ = '1.6.0'
 
 import sys
 import logging
@@ -133,9 +136,14 @@ def getInstance(logfile='b3.log', loglevel=21, log2console=False):
         __output.addHandler(handler)
         
         if log2console:
-            handler2 = logging.StreamHandler()
-            handler2.setFormatter(logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s', '%M:%S'))
+            consoleFormatter = logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s', '%M:%S')
+            handler2 = logging.StreamHandler(strm=sys.stdout)
+            handler2.setFormatter(consoleFormatter)
             __output.addHandler(handler2)
+            handlerError = logging.StreamHandler(strm=sys.stderr)
+            handlerError.setFormatter(consoleFormatter)
+            handlerError.setLevel(logging.ERROR)
+            __output.addHandler(handlerError)
            
         __output.setLevel(loglevel)
     return __output
