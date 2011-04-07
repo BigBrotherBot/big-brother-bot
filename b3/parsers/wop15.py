@@ -30,10 +30,12 @@
 #  * don't fire teamkills/teamdamage events in gametypes with no teams (see TEAM_BASED_GAMETYPES)
 #  * add a DEBUG_EVENT flag
 #  * do not provides fake guid for bot, so they won't autheticate and won't make it to database
+# 2011-04-07 - 1.2.1 - Courgette
+#  * fix TEAM_BASED_GAMETYPES
 
 
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 from b3.parsers.q3a.abstractParser import AbstractParser
 import re, string
@@ -81,8 +83,8 @@ GAMETYPE_CTL = '6'
 GAMETYPE_TSYC = '7'
 GAMETYPE_BB = '8'
 
-TEAM_BASED_GAMETYPES = (GAMETYPE_1VS1, GAMETYPE_TFFA, GAMETYPE_CTL, \
-                        GAMETYPE_TSYC)
+TEAM_BASED_GAMETYPES = (GAMETYPE_TFFA, GAMETYPE_CTL, \
+                        GAMETYPE_TSYC, GAMETYPE_BB)
 
 #----------------------------------------------------------------------------------------------------------------------------------------------
 class Wop15Parser(AbstractParser):
