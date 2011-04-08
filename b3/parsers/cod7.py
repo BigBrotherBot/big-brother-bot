@@ -32,10 +32,8 @@
 # 02.03.2011 - 1.0.5 -Bravo17
 #   * Added test to make sure cod7http still running
 #   * Tidied up startup console output
-# 02.04.2011 - 1.0.6 - Freelander
-#   * onK: Fix for suicide events to be handled correctly by XLRstats
-#   * Set playercount to 4 in pre-match logic
-#
+# 09.04.2011 - 1.0.6 - Courgette
+#   * reflect that cid are not converted to int anymore in the clients module
 
 ## @file
 #  CoD7 Parser
@@ -84,7 +82,7 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
         """Implements some necessary tasks on initial B3 start."""
 
         # add the world client
-        client = self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
+        client = self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
 
         self._cod7httpplugin = self.getPlugin('cod7http')
 
@@ -103,14 +101,14 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
             playerList = self.getPlayerList()
             self._regPlayer, self._regPlayerWithDemoclient = self._regPlayerWithDemoclient, self._regPlayer
         
-            if len(playerList) >= 4:
-                self.verbose('PREMATCH OFF: PlayerCount >=4: not a Pre-Match')
+            if len(playerList) >= 6:
+                self.verbose('PREMATCH OFF: PlayerCount >=6: not a Pre-Match')
                 self._preMatch = False
             elif '0' in playerList and playerList['0']['guid'] == '0':
                 self.verbose('PREMATCH OFF: Got a democlient presence: not a Pre-Match')
                 self._preMatch = False
             else:
-                self.verbose('PREMATCH ON: PlayerCount < 4, got no democlient presence. Defaulting to a pre-match.')
+                self.verbose('PREMATCH ON: PlayerCount < 6, got no democlient presence. Defaulting to a pre-match.')
                 self._preMatch = True
         else:
             self._preMatch = False
@@ -279,43 +277,6 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
             self.debug('%s connected, waiting for Authentication...' %name)
             self.debug('Our Authentication queue: %s' % self._counter)
 
-    # kill
-    def OnK(self, action, data, match=None):
-        victim = self.clients.getByGUID(match.group('guid'))
-        if not victim:
-            self.debug('No victim %s' % match.groupdict())
-            self.OnJ(action, data, match)
-            return None
-
-        attacker = self.clients.getByGUID(match.group('aguid'))
-        if not attacker:
-            if match.group('acid') == '-1' or match.group('aname') == 'world':
-                self.verbose('World kill')
-                attacker = self.getClient(attacker=match)
-            else:
-                self.debug('No attacker %s' % match.groupdict())
-                return None
-
-        # COD5 first version doesn't report the team on kill, only use it if it's set
-        # Hopefully the team has been set on another event
-        if match.group('ateam'):
-            attacker.team = self.getTeam(match.group('ateam'))
-
-        if match.group('team'):
-            victim.team = self.getTeam(match.group('team'))
-
-        event = b3.events.EVT_CLIENT_KILL
-
-        if attacker == victim or attacker.cid == '-1':
-            self.verbose('Suicide Detected, attacker.cid: %s, victim.cid: %s' % (attacker.cid, victim.cid))
-            event = b3.events.EVT_CLIENT_SUICIDE
-        elif attacker.team != b3.TEAM_UNKNOWN and attacker.team and victim.team and attacker.team == victim.team:
-            self.verbose('Team kill detected, %s team killed %s' % (attacker.name, victim.name))
-            event = b3.events.EVT_CLIENT_KILL_TEAM
-
-        victim.state = b3.STATE_DEAD
-        return b3.events.Event(event, (float(match.group('damage')), match.group('aweap'), match.group('dlocation'), match.group('dtype')), attacker, victim)
-
     def read(self):
         """read from game server log file"""
         # Getting the stats of the game log (we are looking for the size)
@@ -335,6 +296,7 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
             self.debug('Parser: Game log is suddenly smaller than it was before (%s bytes, now %s), the log was probably either rotated or emptied. B3 will now re-adjust to the new size of the log.' % (str(self.input.tell()), str(filestats.st_size)) )
             self.input.seek(0, os.SEEK_END)
         return self.input.readlines()
+
 
 ###################################################################
 # ALTER THE WAY parser.py work for game logs starting with http://

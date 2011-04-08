@@ -179,7 +179,7 @@ class Smg11Parser(AbstractParser):
         self.Events.createEvent('EVT_CLIENT_SPEND_MONEY', 'Client spend money')
 
         # add the world client
-        self.clients.newClient(1022, guid='WORLD', name='World', hide=True, pbid='WORLD')
+        self.clients.newClient('1022', guid='WORLD', name='World', hide=True, pbid='WORLD')
         #if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
         #    self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
 

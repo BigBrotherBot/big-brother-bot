@@ -21,10 +21,11 @@
 # 11/30/2008: 1.0.1: OnKill, kill modes and XLRstats compatibility 
 # 31/01/2010 - 1.0.2 - Courgette
 # * getMap() is now inherited from q3a
-# 
+# 09/04/2011 - 1.0.3 - Courgette
+# * reflect that cid are not converted to int anymore in the clients module
 
 __author__  = 'xlr8or'
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 from b3.parsers.q3a.abstractParser import AbstractParser
 import re, string
@@ -120,7 +121,7 @@ class WopParser(AbstractParser):
 
     def startup(self):
         # add the world client
-        client = self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
+        client = self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
 
         if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
             self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
