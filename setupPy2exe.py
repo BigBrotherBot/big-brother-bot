@@ -68,7 +68,7 @@ setup(
                 "b3.parsers.frostbite.*",
                 "b3.extplugins.__init__",
                 ### additional modules for popular/useful 3rd party plugins ###
-                "smtplib", "email", "calendar", # contact plugin
+                "smtplib", "email", "calendar", "email.mime.text", # contact plugin
                 "dbhash", # to make anydbm imports work with py2exe
             ],
         }

@@ -21,16 +21,70 @@
 # 2011-04-04 - 1.1.0 - Courgette
 #  * remove inheritence from WopParser
 #  * made changes introduced with Wop 1.5.2 beta
-# 
+#  * auth() players at parser startup, making use of the dumpuser command
+# 2011-04-07 - 1.2.0 - Courgette
+#  * change rcon ban command to 'banaddr'
+#  * remove attacker fixes for special death
+#  * add EVT_CLIENT_PRIVATE_SAY
+#  * ENTITYNUM_WORLD : now a known 'client' in B3
+#  * don't fire teamkills/teamdamage events in gametypes with no teams (see TEAM_BASED_GAMETYPES)
+#  * add a DEBUG_EVENT flag
+#  * do not provides fake guid for bot, so they won't autheticate and won't make it to database
+# 2011-04-07 - 1.2.1 - Courgette
+#  * fix TEAM_BASED_GAMETYPES
+
 
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.1.0'
+__version__ = '1.2.1'
 
 from b3.parsers.q3a.abstractParser import AbstractParser
 import re, string
 import b3
 import b3.events
 from b3.events import EVT_GAME_WARMUP, EVT_GAME_ROUND_END
+
+DEBUG_EVENTS=False
+
+#kill modes
+MOD_UNKNOWN='0'
+MOD_SHOTGUN='1'
+MOD_GAUNTLET='2'
+MOD_MACHINEGUN='3'
+MOD_GRENADE='4'
+MOD_GRENADE_SPLASH='5'
+MOD_ROCKET='6'
+MOD_ROCKET_SPLASH='7'
+MOD_PLASMA='8'
+MOD_PLASMA_SPLASH='9'
+MOD_RAILGUN='10'
+MOD_LIGHTNING='11'
+MOD_BFG='12'
+MOD_BFG_SPLASH='13'
+MOD_KILLERDUCKS='14'
+MOD_WATER='15'
+MOD_SLIME='16'
+MOD_LAVA='17'
+MOD_CRUSH='18'
+MOD_TELEFRAG='19'
+MOD_FALLING='20' # not used in wop
+MOD_SUICIDE='21'
+MOD_TARGET_LASER='22' # not used in wop
+MOD_TRIGGER_HURT='23'
+MOD_GRAPPLE='24' # not used in wop
+
+# game types
+GAMETYPE_FFA = '0'
+GAMETYPE_1VS1 = '1'
+GAMETYPE_SP = '2'
+GAMETYPE_SYC = '3'
+GAMETYPE_LPS = '4'
+GAMETYPE_TFFA = '5'
+GAMETYPE_CTL = '6'
+GAMETYPE_TSYC = '7'
+GAMETYPE_BB = '8'
+
+TEAM_BASED_GAMETYPES = (GAMETYPE_TFFA, GAMETYPE_CTL, \
+                        GAMETYPE_TSYC, GAMETYPE_BB)
 
 #----------------------------------------------------------------------------------------------------------------------------------------------
 class Wop15Parser(AbstractParser):
@@ -44,10 +98,11 @@ class Wop15Parser(AbstractParser):
     _commands['message'] = 'stell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
     _commands['deadsay'] = 'stell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
     _commands['say'] = 'ssay %(prefix)s^7 %(message)s'
+    _commands['saybig'] = 'scp -1 %(prefix)s^7 %(message)s'
 
     _commands['set'] = 'set %(name)s "%(value)s"'
     _commands['kick'] = 'clientkick %(cid)s'
-    _commands['ban'] = 'addip %(cid)s'
+    _commands['ban'] = 'banAddr %(cid)s'
     _commands['tempban'] = 'clientkick %(cid)s'
 
 
@@ -66,9 +121,14 @@ class Wop15Parser(AbstractParser):
         re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<cl_guid>[0-9a-z]{32})\s+(?P<ip>[0-9.]+))$', re.IGNORECASE),
         #ClientConnect: 2  151.16.71.226
         re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s+(?P<ip>[0-9.]+))$', re.IGNORECASE),
+        #Tell: $cid $target-cid $text"
+        re.compile(r'^(?P<action>Tell):\s*(?P<data>(?P<cid>[0-9]+)\s+(?P<tcid>[0-9]+)\s+(?P<text>.+))$', re.IGNORECASE),
+        #Award: d gauntlet
+        ## disabled because no cid
+        #re.compile(r'^(?P<action>Award):\s*(?P<data>.+))$', re.IGNORECASE),
         #Bot connecting
         #ClientConnect: 0
-        re.compile(r'^(?P<action>ClientConnect):\s*(?P<data>(?P<bcid>[0-9]+))$', re.IGNORECASE),
+        #re.compile(r'^(?P<action>ClientConnect):\s*(?P<data>(?P<bcid>[0-9]+))$', re.IGNORECASE),
         #Damage: 2 1022 2 50 7
         re.compile(r'^(?P<action>Damage):\s*(?P<data>(?P<cid>[0-9]+)\s+(?P<aweap>[0-9a-z_]+)\s+(?P<acid>[0-9]+)\s+(?P<damage>\d+)\s+(?P<meansofdeath>\d+))$', re.IGNORECASE),
         #Kill: $attacker-cid $means-of-death $target-cid
@@ -91,32 +151,6 @@ class Wop15Parser(AbstractParser):
 
     PunkBuster = None
 
-    #kill modes
-    MOD_UNKNOWN='0'
-    MOD_SHOTGUN='1'
-    MOD_GAUNTLET='2'
-    MOD_MACHINEGUN='3'
-    MOD_GRENADE='4'
-    MOD_GRENADE_SPLASH='5'
-    MOD_ROCKET='6'
-    MOD_ROCKET_SPLASH='7'
-    MOD_PLASMA='8'
-    MOD_PLASMA_SPLASH='9'
-    MOD_RAILGUN='10'
-    MOD_LIGHTNING='11'
-    MOD_BFG='12'
-    MOD_BFG_SPLASH='13'
-    MOD_KILLERDUCKS='14'
-    MOD_WATER='15'
-    MOD_SLIME='16'
-    MOD_LAVA='17'
-    MOD_CRUSH='18'
-    MOD_TELEFRAG='19'
-    MOD_FALLING='20' # not used in wop
-    MOD_SUICIDE='21'
-    MOD_TARGET_LASER='22' # not used in wop
-    MOD_TRIGGER_HURT='23'
-    MOD_GRAPPLE='24' # not used in wop
 
 
     def startup(self):
@@ -137,118 +171,36 @@ class Wop15Parser(AbstractParser):
             if userinfostring:
                 self.OnClientuserinfo(None, userinfostring)
 
-    def getLineParts(self, line):
-        line = re.sub(self._lineClear, '', line, 1)
 
-        for f in self._lineFormats:
-            m = re.match(f, line)
-            if m:
-                #self.debug('line matched %s' % f.pattern)
-                break
-
-        if m:
-            client = None
-            target = None
-            return (m, m.group('action').lower(), m.group('data').strip(), client, target)
-        else:
-            self.verbose('line did not match format: %s' % line)
-
-    def parseUserInfo(self, info):
-        #3 n\Dr.Schraube\t\0\model\padman/padsoldier_red\hmodel\padman/padsoldier_red\c1\4\c2\1\hc\100\w\0\l\0\tt\0\tl\0\sl\
-        playerID, info = string.split(info, ' ', 1)
-
-        if info[:1] != '\\':
-            info = '\\' + info
-
-        options = re.findall(r'\\([^\\]+)\\([^\\]+)', info)
-
-        data = {}
-        for o in options:
-            data[o[0]] = o[1]
-
-        data['cid'] = playerID
-
-        if data.has_key('n'):
-            data['name'] = data['n']
-
-        t = 0
-        if data.has_key('team'):
-            t = data['team']
-        elif data.has_key('t'):
-            t = data['t']
-
-        data['team'] = self.getTeam(t)
-
-        if data.has_key('cl_guid') and not data.has_key('guid'):
-            data['guid'] = data['cl_guid']
-
-        return data
+    # ##########################################################################
+    #
+    # Game event handling
+    #
+    # ##########################################################################
 
     def OnClientconnect(self, action, data, match=None):
-        # we get user info in two parts:
-        # ClientConnect: 2 77F303414E4355E0860B483F2A07E4DF 151.16.71.226:27960
-        # ClientUserinfoChanged: 2 n\^3Ghost^2Pirate\t\0\model\piratpad/ghostpirate_red\hmodel\piratpad/ghostpirate_red\c1\4\c2\0\hc\70\w\0\l\0\skill\    2.00\tt\0\tl\0\sl\
-        # we need to store the ClientConnect ID, the guid and IP for the next call to Clientuserinfochanged only on initial connection
-
+        #ClientConnect: 2 77F303414E4355E0860B483F2A07E4DF 151.16.71.226:27960
+        #ClientConnect: 2  151.16.71.226
+        #ClientConnect: 0
         try:
-            self._clientConnectID = match.group('cid') # Normal client connected
-        except:
-            try:
-                self._clientConnectID = match.group('bcid') # Game Bot identifier
-                self._clientConnectGuid = 'BOT' + str(match.group('bcid'))
-                self._clientConnectIp = '0.0.0.0'
-                self.bot('Bot Connected')
-                return None
-            except:
-                self.error('Parser could not connect client')
-                return None
-
-        try:
-            self._clientConnectGuid = match.group('cl_guid') # If we have no cl_guid we'll use the ip instead.
-        except:
-            self._clientConnectGuid = match.group('ip')
-
-        self._clientConnectIp = match.group('ip')
-        self.verbose('Client Connected cid: %s, guid: %s, ip: %s' % (self._clientConnectID, self._clientConnectGuid, self._clientConnectIp))
+            cid = match.group('cid') # Normal client connected
+            client = self.getByCidOrJoinPlayer(cid)
+            self.verbose('Client Connected cid: %s' % cid)
+        except IndexError:
+            pass
+        
 
     def OnClientuserinfochanged(self, action, data, match=None):
-        try:
-            id = self._clientConnectID
-        except:
-            id = None # We've already connected before
-
-        self._clientConnectID = None
-
         bclient = self.parseUserInfo(data)
         self.verbose('Parsed user info %s' % bclient)
         if bclient:
             client = self.clients.getByCID(bclient['cid'])
 
-            if id:
-                bclient['cl_guid'] = self._clientConnectGuid
-                self._clientConnectGuid = None
-                bclient['ip'] = self._clientConnectIp
-                self._clientConnectIp = None
-            
             if client:
                 # update existing client
-                bclient['cl_guid'] = client.guid 
                 bclient['ip'] = client.ip
                 for k, v in bclient.iteritems():
                     setattr(client, k, v)
-            else:
-                if 'cl_guid' not in bclient:
-                    return
-                #make a new client
-                if "ip" in bclient:
-                    client = self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE, guid=bclient['cl_guid'], data={ 'guid' : bclient['cl_guid'] })
-                else:
-                    client = self.clients.newClient(bclient['cid'], name=bclient['name'], state=b3.STATE_ALIVE, guid=bclient['cl_guid'], data={ 'guid' : bclient['cl_guid'] })
-
-        if id:
-            return self.getEvent("EVT_CLIENT_JOIN", None, client)
-        else:
-            return None
 
     # disconnect
     def OnClientdisconnect(self, action, data, match=None):
@@ -309,9 +261,23 @@ class Wop15Parser(AbstractParser):
             self.verbose('No Client Found!')
             return None
 
+    # private say
+    def OnTell(self, action, data, match=None):
+        # Tell: $cid $target-cid $text
+        if match is None:
+            return
+        cid = match.group('cid')
+        client = self.getByCidOrJoinPlayer(cid)
+        target = self.getByCidOrJoinPlayer(match.group('tcid'))
+
+        if client and cid != -1:
+            return self.getEvent('EVT_CLIENT_PRIVATE_SAY', match.group('text'), client, target)
+
     #Damage: 2 1022 2 50 7
     def OnDamage(self, action, data, match=None):
-        victim = self.getByCidOrJoinPlayer(match.group('cid'))
+        # note : do not use getByCidOrJoinPlayer because cid in 
+        # damage line is sometimes bugged (numbers over 64)
+        victim = self.clients.getByCID(match.group('cid'))
         if not victim:
             self.debug('No victim')
             #self.OnClientuserinfo(action, data, match)
@@ -322,14 +288,7 @@ class Wop15Parser(AbstractParser):
             self.debug('No weapon')
             return None
 
-        ## Fix attacker
-        if match.group('aweap') in (self.MOD_WATER,self.MOD_LAVA,self.MOD_FALLING,self.MOD_TRIGGER_HURT,):
-            # those kills should be considered suicides
-            self.debug('OnDamage: water/lava/falling/trigger_hurt should be inflicted to self')
-            attacker = victim
-        else:
-            attacker = self.getByCidOrJoinPlayer(match.group('acid'))
-        ## end fix attacker
+        attacker = self.clients.getByCID(match.group('acid'))
           
         if not attacker:
             self.debug('No attacker')
@@ -340,7 +299,8 @@ class Wop15Parser(AbstractParser):
         # fix event for team change and suicides and tk
         if attacker.cid == victim.cid:
             event = 'EVT_CLIENT_DAMAGE_SELF'
-        elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
+        elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team \
+            and self.game.gameType in TEAM_BASED_GAMETYPES:
             event = 'EVT_CLIENT_DAMAGE_TEAM'
 
         # if not logging damage we need a general hitloc (for xlrstats)
@@ -395,7 +355,7 @@ class Wop15Parser(AbstractParser):
             return None
 
         ## Fix attacker
-        if match.group('aweap') in (self.MOD_WATER,self.MOD_LAVA,self.MOD_FALLING,self.MOD_TRIGGER_HURT,):
+        if match.group('aweap') in (MOD_WATER,MOD_LAVA,MOD_FALLING,MOD_TRIGGER_HURT,):
             # those kills should be considered suicides
             self.debug('OnKill: water/lava/falling/trigger_hurt should be suicides')
             attacker = victim
@@ -412,7 +372,8 @@ class Wop15Parser(AbstractParser):
         # fix event for team change and suicides and tk
         if attacker.cid == victim.cid:
             event = 'EVT_CLIENT_SUICIDE'
-        elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
+        elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team \
+            and self.game.gameType in TEAM_BASED_GAMETYPES:
             event = 'EVT_CLIENT_KILL_TEAM'
 
         # if not logging damage we need a general hitloc (for xlrstats)
@@ -434,32 +395,127 @@ class Wop15Parser(AbstractParser):
             return self.getEvent('EVT_CLIENT_ITEM_PICKUP', item, client)
         return None
 
+
+    def OnClientuserinfo(self, action, data, match=None):
+        bclient = self.parseUserInfo(data)
+        self.verbose('Parsed user info %s' % bclient)
+        
+        if not bclient.has_key('cl_guid') and bclient.has_key('skill'):
+            # must be a bot connecting
+            self.bot('Bot Connecting!')
+            bclient['ip'] = '0.0.0.0'
+            
+        if 'cl_guid' in bclient:
+            bclient['guid'] = bclient['cl_guid']
+        if bclient:
+            client = self.clients.getByCID(bclient['cid'])
+            if client:
+                # update existing client
+                for k, v in bclient.iteritems():
+                    setattr(client, k, v)
+            else:
+                cid = bclient['cid']
+                del bclient['cid']
+                client = self.clients.newClient(cid, state=b3.STATE_ALIVE, **bclient)
+                
+            self.debug("client is now : %s" % client)
+        return
+    
+
+    # ##########################################################################
+    #
+    # Parser API implementation
+    #
+    # ##########################################################################
+    
+    def say(self, msg):
+        lines = []
+        for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+            lines.append(self.getCommand('say', prefix=self.msgPrefix, message=line))
+
+        if len(lines):        
+            self.writelines(lines)
+
+
+    # ##########################################################################
+    #
+    # other
+    #
+    # ##########################################################################
+
+
+    def getLineParts(self, line):
+        line = re.sub(self._lineClear, '', line, 1)
+
+        for f in self._lineFormats:
+            m = re.match(f, line)
+            if m:
+                #self.debug('line matched %s' % f.pattern)
+                break
+
+        if m:
+            client = None
+            target = None
+            return (m, m.group('action').lower(), m.group('data').strip(), client, target)
+        else:
+            self.verbose('line did not match format: %s' % line)
+
+    def parseUserInfo(self, info):
+        #3 n\Dr.Schraube\t\0\model\padman/padsoldier_red\hmodel\padman/padsoldier_red\c1\4\c2\1\hc\100\w\0\l\0\tt\0\tl\0\sl\
+        playerID, info = string.split(info, ' ', 1)
+
+        if info[:1] != '\\':
+            info = '\\' + info
+
+        options = re.findall(r'\\([^\\]+)\\([^\\]+)', info)
+
+        data = {}
+        for o in options:
+            data[o[0]] = o[1]
+
+        data['cid'] = playerID
+
+        if data.has_key('n'):
+            data['name'] = data['n']
+
+        t = 0
+        if data.has_key('team'):
+            t = data['team']
+        elif data.has_key('t'):
+            t = data['t']
+
+        data['team'] = self.getTeam(t)
+
+        if data.has_key('cl_guid') and not data.has_key('guid'):
+            data['guid'] = data['cl_guid']
+
+        return data
+    
     # Translate the gameType to a readable format
     # //WoP gametypes: 0=FFA / 1=1v1 / 2=SP / 3=SYC-FFA / 4=LPS / 5=TDM / 6=CTL / 7=SYC-TP / 8=BB
     def defineGameType(self, gameTypeInt):
 
         _gameType = ''
-        _gameType = str(gameTypeInt)
         #self.debug('gameTypeInt: %s' % gameTypeInt)
         
-        if gameTypeInt == '0':
-            _gameType = 'dm'
-        elif gameTypeInt == '1':
-            _gameType = 'lvl'
-        elif gameTypeInt == '2':
-            _gameType = 'sp'
-        elif gameTypeInt == '3':
-            _gameType = 'syc-ffa'
-        elif gameTypeInt == '4':
-            _gameType = 'lps'
-        elif gameTypeInt == '5':
-            _gameType = 'tdm'
-        elif gameTypeInt == '6':
-            _gameType = 'ctl'
-        elif gameTypeInt == '7':
-            _gameType = 'syc-tp'
-        elif gameTypeInt == '8':
-            _gameType = 'bb'
+        if gameTypeInt == GAMETYPE_FFA:
+            _gameType = 'FFA'
+        elif gameTypeInt == GAMETYPE_1VS1:
+            _gameType = 'lVSl'
+        elif gameTypeInt == GAMETYPE_SP:
+            _gameType = 'SP'
+        elif gameTypeInt == GAMETYPE_SYC:
+            _gameType = 'SYC'
+        elif gameTypeInt == GAMETYPE_LPS:
+            _gameType = 'LPS'
+        elif gameTypeInt == GAMETYPE_TFFA:
+            _gameType = 'TFFA'
+        elif gameTypeInt == GAMETYPE_CTL:
+            _gameType = 'CTL'
+        elif gameTypeInt == GAMETYPE_TSYC:
+            _gameType = 'TSYC'
+        elif gameTypeInt == GAMETYPE_BB:
+            _gameType = 'BB'
         
         #self.debug('_gameType: %s' % _gameType)
         return _gameType
@@ -522,35 +578,22 @@ class Wop15Parser(AbstractParser):
         return datatransformed
 
     def getByCidOrJoinPlayer(self, cid):
+        if int(cid) > 63:
+            self.warning("a client cid cannot be over 63 ! received : %s" % cid)
         client = self.clients.getByCID(cid)
-        if client and client.authed:
-            return client
-        else:
+        if client is None:
             userinfostring = self.queryClientUserInfoByCid(cid)
             if userinfostring:
                 self.OnClientuserinfo(None, userinfostring)
-            return self.clients.getByCID(cid)
+            client = self.clients.getByCID(cid)
+        return client
 
-
-    def OnClientuserinfo(self, action, data, match=None):
-        bclient = self.parseUserInfo(data)
-        self.verbose('Parsed user info %s' % bclient)
-        if 'cl_guid' in bclient:
-            bclient['guid'] = bclient['cl_guid']
-        if bclient:
-            client = self.clients.getByCID(bclient['cid'])
-            if client:
-                # update existing client
-                for k, v in bclient.iteritems():
-                    setattr(client, k, v)
-            else:
-                cid = bclient['cid']
-                del bclient['cid']
-                client = self.clients.newClient(cid, **bclient)
-
-        return None
-
-
+    def queueEvent(self, event, expire=10):
+        try:
+            if DEBUG_EVENTS:
+                self.verbose2(event)
+        finally:
+            return b3.parser.Parser.queueEvent(self, event, expire)
 
 """
 game log information provided by GedankenBlitz:

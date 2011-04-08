@@ -18,6 +18,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    08/04/2011 - 1.3.4 - Courgette
+#    * changes to allow cid to be a unicode string
 #    30/03/2011 - 1.3.3 - Courgette
 #    * newClient() now returns the created client object
 #    26/03/2011 - 1.3.2 - Courgette
@@ -61,7 +63,7 @@
 #     Added data parameter to Client.tempban()
 
 __author__  = 'ThorN'
-__version__ = '1.3.3'
+__version__ = '1.3.4'
 
 import b3, string, re, time, functions, threading, traceback, sys
 
@@ -711,6 +713,9 @@ class Client(object):
         else:
             return False
 
+    def __str__(self):
+        return "Client<%s>" % self.cid
+
 #-----------------------------------------------------------------------------------------------------------------------
 class Struct(object):
     def __init__(self, **kwargs):
@@ -999,22 +1004,25 @@ class Clients(dict):
         return None
 
     def getByCID(self, cid):
-        try:
-            cleanedCid = int(cid)
-        except ValueError:
-            # Must ba a game using names or other strings as cid's, allow it.
-            # this will obviously fail for a nickname like '007'
+        if type(cid) is unicode:
             cleanedCid = cid
+        else:
+            try:
+                cleanedCid = int(cid)
+            except ValueError:
+                # Must ba a game using names or other strings as cid's, allow it.
+                # this will obviously fail for a nickname like '007'
+                cleanedCid = str(cid)
 
         try:
-            c = self[str(cleanedCid)]
+            c = self[cleanedCid]
         except KeyError:
             return None
         except Exception, e:
             self.console.error('Unexpected error getByCID(%s) - %s', cid, e)
         else:
             #self.console.debug('Found client by CID %s = %s', cid, c.name)
-            if c.cid == str(cleanedCid):
+            if c.cid == cleanedCid:
                 return c
             else: 
                 return None
@@ -1069,8 +1077,8 @@ class Clients(dict):
         client.connected = False
         if client.cid == None:
             return
-
-        cid = str(client.cid)
+        
+        cid = client.cid
         if self.has_key(cid):
             self[cid] = None
             del self[cid]
@@ -1119,7 +1127,9 @@ class Clients(dict):
 
         # add list of matching clients
         for cid, c in mlist.iteritems():
-            self[str(cid)] = c
+            if type(cid) is int:
+                cid = str(cid)
+            self[cid] = c
 
     def authorizeClients(self):
         if not self._authorizing:
