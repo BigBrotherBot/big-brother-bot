@@ -116,6 +116,8 @@ class Event:
         self.data = data
         self.client = client
         self.target = target
+    def __str__(self):
+        return "Event<%s>(%r, %s, %s)" % (eventManager.getName(self.type), self.data, self.client, self.target)
 
 #-----------------------------------------------------------------------------------------------------------------------
 # raise to cancel event processing

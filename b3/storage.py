@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   08/04/2011 - 1.9.1 - Courgette
+#    remove str() wherever we could have unicode
 #   02/03/2011 - 1.9 - Courgette
 #   Do not catch exception when query fails
 #   07/01/2011 - 1.8 - xlr8or
@@ -50,7 +52,7 @@
 #   Added data column to penalties table
 
 __author__  = 'ThorN'
-__version__ = '1.9'
+__version__ = '1.9.1'
 
 import re, time, traceback, sys, thread, os
 
@@ -325,7 +327,7 @@ class DatabaseStorage(Storage):
         return counts            
 
     def getClient(self, client):
-        self.console.debug('Storage: getClient %s' % str(client))
+        self.console.debug('Storage: getClient %s' % client)
 
         if client.id > 0:        
             cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'clients', { 'id' : client.id }, None, 1))
@@ -363,7 +365,7 @@ class DatabaseStorage(Storage):
         return client
     
     def getClientsMatching(self, match):
-        self.console.debug('Storage: getClientsMatching %s' % str(match))
+        self.console.debug('Storage: getClientsMatching %s' % match)
 
         cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'clients', match, 'time_edit DESC', 5))
 
@@ -400,7 +402,7 @@ class DatabaseStorage(Storage):
         group_bits int(11) 
         """
 
-        self.console.debug('Storage: setClient %s' % str(client))
+        self.console.debug('Storage: setClient %s' % client)
 
         fields = (
             'ip',
@@ -426,7 +428,7 @@ class DatabaseStorage(Storage):
                 data[f] = getattr(client, self.getVar(f))
 
 
-        self.console.debug('Storage: setClient data %s' % str(data))
+        self.console.debug('Storage: setClient data %s' % data)
         if client.id > 0:
             self.query(QueryBuilder(self.db).UpdateQuery(data, 'clients', { 'id' : client.id }))
         else:
@@ -448,7 +450,7 @@ class DatabaseStorage(Storage):
         time_edit  int(10)  UNSIGNED No  0            
         """
 
-        self.console.debug('Storage: setClientAlias %s' % str(alias))
+        self.console.debug('Storage: setClientAlias %s' % alias)
 
         fields = (
             'num_used',
@@ -467,7 +469,7 @@ class DatabaseStorage(Storage):
             if hasattr(alias, self.getVar(f)):
                 data[f] = getattr(alias, self.getVar(f))
 
-        self.console.debug('Storage: setClientAlias data %s' % str(data))
+        self.console.debug('Storage: setClientAlias data %s' % data)
         if alias.id:
             self.query(QueryBuilder(self.db).UpdateQuery(data, 'aliases', { 'id' : alias.id }))
         else:
@@ -481,7 +483,7 @@ class DatabaseStorage(Storage):
         return alias.id
 
     def getClientAlias(self, alias):
-        self.console.debug('Storage: getClientAlias %s' % str(alias))
+        self.console.debug('Storage: getClientAlias %s' % alias)
 
         cursor = None
         if hasattr(alias, 'id') and alias.id > 0:
@@ -504,7 +506,7 @@ class DatabaseStorage(Storage):
         return alias
 
     def getClientAliases(self, client):
-        self.console.debug('Storage: getClientAliases %s' % str(client))
+        self.console.debug('Storage: getClientAliases %s' % client)
         cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'aliases', { 'client_id' : client.id }, 'id'))
 
         if not cursor:
@@ -569,7 +571,7 @@ class DatabaseStorage(Storage):
             if hasattr(penalty, self.getVar(f)):
                 data[f] = getattr(penalty, self.getVar(f))
 
-        self.console.debug('Storage: setClientPenalty data %s' % str(data))
+        self.console.debug('Storage: setClientPenalty data %s' % data)
         if penalty.id:
             self.query(QueryBuilder(self.db).UpdateQuery(data, 'penalties', { 'id' : penalty.id }))
         else:
@@ -582,7 +584,7 @@ class DatabaseStorage(Storage):
         return penalty.id
 
     def getClientPenalty(self, penalty):
-        self.console.debug('Storage: getClientPenalty %s' % str(penalty))
+        self.console.debug('Storage: getClientPenalty %s' % penalty)
 
         cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'penalties', { 'id' : penalty.id }, None, 1))
         g = cursor.getOneRow()
@@ -605,7 +607,7 @@ class DatabaseStorage(Storage):
         return penalty
 
     def getClientPenalties(self, client, type='Ban'):
-        self.console.debug('Storage: getClientPenalties %s' % str(client))
+        self.console.debug('Storage: getClientPenalties %s' % client)
 
         where = QueryBuilder(self.db).WhereClause( { 'type' : type, 'client_id' : client.id, 'inactive' : 0 } )
         where += ' && (time_expire = -1 || time_expire > %s)' % int(time.time())
@@ -789,7 +791,7 @@ class DatabaseStorage(Storage):
         level  int(10)  UNSIGNED No  0
         """
 
-        self.console.debug('Storage: setGroup %s' % str(group))
+        self.console.debug('Storage: setGroup %s' % group)
 
         fields = (
             'time_edit',
@@ -809,7 +811,7 @@ class DatabaseStorage(Storage):
                 data[f] = getattr(group, self.getVar(f))
 
 
-        self.console.debug('Storage: setGroup data %s' % str(data))
+        self.console.debug('Storage: setGroup data %s' % data)
         if group.id:
             self.query(QueryBuilder(self.db).UpdateQuery(data, 'groups', { 'group' : group.id }))
         else:
