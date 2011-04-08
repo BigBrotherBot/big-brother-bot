@@ -313,7 +313,7 @@ class HomefrontParser(b3.parser.Parser):
         ## @TODO: Check the possibility of two players having the exact same name which may lead to a false suicide event.
         match = re.search(r"^(?P<data>(?P<aname>[^;]+)\s+(?P<aweap>[A-z0-9_-]+)\s+(?P<vname>[^;]+))$", data)
         if not match:
-            self.error("Can't parse kill line" % data)
+            self.error("Can't parse kill line: %s" % data)
             return
         else:
             attacker = self.getClient(match.group('aname'))
