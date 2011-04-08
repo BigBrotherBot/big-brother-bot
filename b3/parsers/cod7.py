@@ -34,6 +34,7 @@
 #   * Tidied up startup console output
 # 02.04.2011 - 1.0.6 - Freelander
 #   * onK: Fix for suicide events to be handled correctly by XLRstats
+#   * Set playercount to 4 in pre-match logic
 #
 
 ## @file
@@ -102,14 +103,14 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
             playerList = self.getPlayerList()
             self._regPlayer, self._regPlayerWithDemoclient = self._regPlayerWithDemoclient, self._regPlayer
         
-            if len(playerList) >= 6:
-                self.verbose('PREMATCH OFF: PlayerCount >=6: not a Pre-Match')
+            if len(playerList) >= 4:
+                self.verbose('PREMATCH OFF: PlayerCount >=4: not a Pre-Match')
                 self._preMatch = False
             elif '0' in playerList and playerList['0']['guid'] == '0':
                 self.verbose('PREMATCH OFF: Got a democlient presence: not a Pre-Match')
                 self._preMatch = False
             else:
-                self.verbose('PREMATCH ON: PlayerCount < 6, got no democlient presence. Defaulting to a pre-match.')
+                self.verbose('PREMATCH ON: PlayerCount < 4, got no democlient presence. Defaulting to a pre-match.')
                 self._preMatch = True
         else:
             self._preMatch = False
