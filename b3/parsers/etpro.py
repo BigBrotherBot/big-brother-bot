@@ -19,7 +19,8 @@
 # 05/04/2009: 0.0.1: Updating so that it works for etpro
 # 31/01/2010 - 0.0.2 - Courgette
 # * getMap() is now inherited from q3a
-# 
+# 09/04/2011 - 0.0.3 - Courgette
+# * reflect that cid are not converted to int anymore in the clients module
 #
 #
 # CREDITS
@@ -40,7 +41,7 @@
 
 
 __author__    = 'xlr8or, ailmanki'
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 import re, string
 import b3
@@ -204,7 +205,7 @@ class EtproParser(AbstractParser):
     def startup(self):
         # add the world client
         
-        client = self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
+        client = self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
         #if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
         #    self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
 

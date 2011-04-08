@@ -32,10 +32,14 @@
 #  * do not provides fake guid for bot, so they won't autheticate and won't make it to database
 # 2011-04-07 - 1.2.1 - Courgette
 #  * fix TEAM_BASED_GAMETYPES
-
+# 2011-04-07 - 1.2.2 - Courgette
+#  * fix Tell regexp when cid is -1
+#  * reflect that cid are not converted to int anymore in the clients module
+#  * do not try to fix attacket in OnKill
+#  * fix MOD_SHOTGUN -> MOD_PUMPER
 
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
 from b3.parsers.q3a.abstractParser import AbstractParser
 import re, string
@@ -47,7 +51,7 @@ DEBUG_EVENTS=False
 
 #kill modes
 MOD_UNKNOWN='0'
-MOD_SHOTGUN='1'
+MOD_PUMPER='1'
 MOD_GAUNTLET='2'
 MOD_MACHINEGUN='3'
 MOD_GRENADE='4'
@@ -122,8 +126,9 @@ class Wop15Parser(AbstractParser):
         #ClientConnect: 2  151.16.71.226
         re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s+(?P<ip>[0-9.]+))$', re.IGNORECASE),
         #Tell: $cid $target-cid $text"
-        re.compile(r'^(?P<action>Tell):\s*(?P<data>(?P<cid>[0-9]+)\s+(?P<tcid>[0-9]+)\s+(?P<text>.+))$', re.IGNORECASE),
-        #Award: d gauntlet
+        #Tell: -1 $target-cid $text"
+        re.compile(r'^(?P<action>Tell):\s*(?P<data>(?P<cid>[-]?[0-9]+)\s+(?P<tcid>[0-9]+)\s+(?P<text>.+))$', re.IGNORECASE),
+        #Award: 2 gauntlet
         ## disabled because no cid
         #re.compile(r'^(?P<action>Award):\s*(?P<data>.+))$', re.IGNORECASE),
         #Bot connecting
@@ -155,8 +160,8 @@ class Wop15Parser(AbstractParser):
 
     def startup(self):
         # add the world client
-        self.clients.newClient(-1, guid='WORLD', name='World', hide=True)
-        self.clients.newClient(1022, guid='ENTITYNUM_WORLD', name='World', hide=True)
+        self.clients.newClient('-1', guid='WORLD', name='World', hide=True)
+        self.world_client = self.clients.newClient('1022', guid='ENTITYNUM_WORLD', name='World', hide=True)
 
         # get map from the status rcon command
         map = self.getMap()
@@ -236,6 +241,9 @@ class Wop15Parser(AbstractParser):
         if not len(msg) == 2:
             return None
 
+        if msg[0] == '-1':
+            # server talking -> ignore
+            return
         client = self.getByCidOrJoinPlayer(msg[0])
 
         if client:
@@ -270,28 +278,38 @@ class Wop15Parser(AbstractParser):
         client = self.getByCidOrJoinPlayer(cid)
         target = self.getByCidOrJoinPlayer(match.group('tcid'))
 
-        if client and cid != -1:
+        if client and cid != '-1':
             return self.getEvent('EVT_CLIENT_PRIVATE_SAY', match.group('text'), client, target)
 
     #Damage: 2 1022 2 50 7
     def OnDamage(self, action, data, match=None):
         # note : do not use getByCidOrJoinPlayer because cid in 
         # damage line is sometimes bugged (numbers over 64)
-        victim = self.clients.getByCID(match.group('cid'))
+        cid = match.group('cid')
+        if not -1 < int(cid) < 64:
+            cid = '1022'
+        victim = self.clients.getByCID(cid)
         if not victim:
             self.debug('No victim')
             #self.OnClientuserinfo(action, data, match)
             return None
 
+        acid = match.group('acid')
+        if not -1 < int(acid) < 64:
+            acid = '1022'
+        attacker = self.clients.getByCID(acid)
+        if not attacker:
+            self.debug('No attacker')
+            return None
+
+        # ignore kills involving no player (world killing world)
+        if attacker.cid == victim.cid == '1022':
+            self.debug("World damaging World -> ignoring")
+            return
+
         weapon = match.group('aweap')
         if not weapon:
             self.debug('No weapon')
-            return None
-
-        attacker = self.clients.getByCID(match.group('acid'))
-          
-        if not attacker:
-            self.debug('No attacker')
             return None
 
         event = 'EVT_CLIENT_DAMAGE'
@@ -316,7 +334,7 @@ class Wop15Parser(AbstractParser):
         # kill modes caracteristics :
         """
          0:   MOD_UNKNOWN, Unknown Means od Death, shouldn't occur at all
-         1:   MOD_SHOTGUN, Pumper
+         1:   MOD_PUMPER, Pumper
          2:   MOD_GAUNTLET, Punchy
          3:   MOD_MACHINEGUN, Nipper
          4:   MOD_GRENADE, Balloony
@@ -342,31 +360,33 @@ class Wop15Parser(AbstractParser):
         24:   MOD_GRAPPLE, Killed by grapple, not used in WoP
         """
         self.debug('OnKill: %s (%s)'%(match.group('aweap'),match.group('data')))
-        
-        victim = self.getByCidOrJoinPlayer(match.group('cid'))
+        cid = match.group('cid')
+        if not -1 < int(cid) < 64:
+            cid = '1022'
+        victim = self.clients.getByCID(cid)
         if not victim:
             self.debug('No victim')
             #self.OnClientuserinfo(action, data, match)
             return None
 
-        weapon = match.group('aweap')
-        if not weapon:
-            self.debug('No weapon')
-            return None
-
-        ## Fix attacker
-        if match.group('aweap') in (MOD_WATER,MOD_LAVA,MOD_FALLING,MOD_TRIGGER_HURT,):
-            # those kills should be considered suicides
-            self.debug('OnKill: water/lava/falling/trigger_hurt should be suicides')
-            attacker = victim
-        else:
-            attacker = self.getByCidOrJoinPlayer(match.group('acid'))
-        ## end fix attacker
-          
+        acid = match.group('acid')
+        if not -1 < int(acid) < 64:
+            acid = '1022'
+        attacker = self.clients.getByCID(acid)
         if not attacker:
             self.debug('No attacker')
             return None
 
+        # ignore kills involving no player (world killing world)
+        if attacker.cid == victim.cid == '1022':
+            self.debug("World damaging World -> ignoring")
+            return
+
+        weapon = match.group('aweap')
+        if not weapon:
+            self.debug('No weapon')
+            return None
+        
         event = 'EVT_CLIENT_KILL'
 
         # fix event for team change and suicides and tk
@@ -557,6 +577,8 @@ class Wop15Parser(AbstractParser):
         Player 4 is not on the server
 
         """
+        if not -1 < int(cid) < 64:
+            return None
         data = self.write('dumpuser %s' % cid)
         if not data:
             return None
@@ -579,9 +601,12 @@ class Wop15Parser(AbstractParser):
 
     def getByCidOrJoinPlayer(self, cid):
         if int(cid) > 63:
-            self.warning("a client cid cannot be over 63 ! received : %s" % cid)
+            self.debug("a client cid cannot be over 63 ! received : %s" % cid)
+            return
         client = self.clients.getByCID(cid)
         if client is None:
+            self.debug('cannot find client by cid %r' % cid)
+            self.debug(repr(self.clients))
             userinfostring = self.queryClientUserInfoByCid(cid)
             if userinfostring:
                 self.OnClientuserinfo(None, userinfostring)

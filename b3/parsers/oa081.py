@@ -70,10 +70,11 @@
 # * messages now support named $variables instead of %s
 # 08/11/2010 - 0.9.5 - GrosBedo
 # * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
-#
+# 09/04/2011 - 0.9.6 - Courgette
+# * reflect that cid are not converted to int anymore in the clients module
 
 __author__  = 'Courgette, GrosBedo'
-__version__ = '0.9.5'
+__version__ = '0.9.6'
 
 import re, string, thread, time, threading
 import b3
@@ -244,7 +245,7 @@ class Oa081Parser(AbstractParser):
         self.Events.createEvent('EVT_GAME_FLAG_RETURNED', 'Flag returned')
 
         # add the world client
-        self.clients.newClient(1022, guid='WORLD', name='World', hide=True, pbid='WORLD')
+        self.clients.newClient('1022', guid='WORLD', name='World', hide=True, pbid='WORLD')
 
         # get map from the status rcon command
         map_name = self.getMap()

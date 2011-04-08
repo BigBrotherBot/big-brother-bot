@@ -20,6 +20,8 @@
 # $Id: q3a/abstractParser.py 103 2010-11-01 10:10:10Z xlr8or $
 #
 # CHANGELOG
+#    2011/04/09 - 1.5.3 - Courgette
+#    * reflect that cid are not converted to int anymore in the clients module
 #    2010/11/08 - 1.5.2 - GrosBedo
 #    * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
 #    2010/11/07 - 1.5.1 - GrosBedo
@@ -70,7 +72,7 @@
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.5.2'
+__version__ = '1.5.3'
 
 import re, string, time
 import b3
@@ -142,7 +144,7 @@ class AbstractParser(b3.parser.Parser):
 
     def startup(self):
         # add the world client
-        client = self.clients.newClient(1022, guid='WORLD', name='World', hide=True, pbid='WORLD')
+        client = self.clients.newClient('1022', guid='WORLD', name='World', hide=True, pbid='WORLD')
 
         if self.config.has_option('server', 'punkbuster') and self.config.getboolean('server', 'punkbuster'):
             self.PunkBuster = PunkBuster(self)

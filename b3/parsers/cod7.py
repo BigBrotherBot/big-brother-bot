@@ -32,12 +32,14 @@
 # 02.03.2011 - 1.0.5 -Bravo17
 #   * Added test to make sure cod7http still running
 #   * Tidied up startup console output
+# 09.04.2011 - 1.0.6 - Courgette
+#   * reflect that cid are not converted to int anymore in the clients module
 
 ## @file
 #  CoD7 Parser
 
 __author__  = 'Freelander, Courgette, Just a baka, Bravo17'
-__version__ = '1.0.5'
+__version__ = '1.0.6'
 
 import re
 import string
@@ -80,7 +82,7 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
         """Implements some necessary tasks on initial B3 start."""
 
         # add the world client
-        client = self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
+        client = self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
 
         self._cod7httpplugin = self.getPlugin('cod7http')
 

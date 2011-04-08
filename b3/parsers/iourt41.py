@@ -118,11 +118,12 @@
 #    * fix CNCT ping error in getPlayersPings
 #    * fix incorrect game type for ffa
 #    * move getMapList after game initialization
-#
+# v1.7.16 - 09/04/2011 - Courgette
+#    * reflect that cid are not converted to int anymore in the clients module
 
 
 __author__  = 'xlr8or'
-__version__ = '1.7.15'
+__version__ = '1.7.16'
 
 
 from b3.parsers.q3a.abstractParser import AbstractParser
@@ -288,7 +289,7 @@ class Iourt41Parser(AbstractParser):
         self.Events.createEvent('EVT_CLIENT_GEAR_CHANGE', 'Client gear change')
 
         # add the world client
-        self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
+        self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
 
         # PunkBuster for iourt is not supported!
         #if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
