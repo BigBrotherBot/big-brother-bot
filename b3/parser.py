@@ -718,7 +718,7 @@ class Parser(object):
         for obj in args:
             if obj is None:
                 continue
-            if type(obj).__name__ == 'str':
+            if type(obj).__name__ in ('str','unicode'):
                 if variables.has_key(obj) is False:
                     variables[obj] = obj
             else:
@@ -727,10 +727,10 @@ class Parser(object):
                     cleanattr = pattern.sub('', attr) # trim any underscore or any non alphanumeric character
                     variables[cleanattr] = getattr(obj,attr)
         for key, obj in kwargs.iteritems():
-            #self.debug('Type of kwarg %s: %s' % (key, type(obj).__name__))
+            self.debug('Type of kwarg %s: %s' % (key, type(obj).__name__))
             if obj is None:
                 continue
-            if type(obj).__name__ == 'str':
+            if type(obj).__name__ in ('str','unicode'):
                 if variables.has_key(key) is False:
                     variables[key] = obj
             #elif type(obj).__name__ == 'instance':
