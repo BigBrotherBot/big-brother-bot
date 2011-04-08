@@ -21,11 +21,13 @@
 # * first alpha test
 # 2011-03-31 : 0.2
 # * remove try: catch: around the asyncore loop
-# 2011-03-08 : 0.3
+# 2011-04-08 : 0.3
 # * do not create client without guid as name are not reliable alone
+# 2011-04-08 : 0.4
+# * refactor getPlayerList() and retrievePlayerList() with cron interval
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.3'
+__version__ = '0.4'
 
 from b3.parsers.homefront.protocol import MessageType, ChannelType
 import sys
@@ -35,6 +37,7 @@ import time
 import asyncore
 import b3
 import b3.parser
+import b3.cron
 import os
 import rcon
 import protocol
@@ -65,6 +68,8 @@ class HomefrontParser(b3.parser.Parser):
     _connectionTimeout = 30
     maplist = None
     mapgamelist = None
+    _cronTab = None
+    _playerlistInterval = 15
 
     _commands = {}
     _commands['message'] = ('say %(prefix)s [%(name)s] %(message)s')
@@ -106,7 +111,10 @@ class HomefrontParser(b3.parser.Parser):
         if not self._ini_file:
             self.debug('Incorrect ini file or no ini file specified, map commands other than nextmap not available')
             
-        
+        # start crontab to trigger playerlist events
+        self._cronTab = b3.cron.CronTab(self.retrievePlayerList, second='*/%s' % self._playerlistInterval)
+        self.cron + self._cronTab
+
         # add specific events
         self.Events.createEvent('EVT_CLIENT_SQUAD_SAY', 'Squad Say')
         self.Events.createEvent('EVT_SERVER_SAY', 'Server Chatter')
@@ -236,7 +244,7 @@ class HomefrontParser(b3.parser.Parser):
         ## [boolean: Result]
         if data == 'true':
             self.bot("B3 correctly authenticated on game server")
-            self.getPlayerList()
+            self.retrievePlayerList()
         else:
             self.warning("B3 failed to authenticate on game server (%s)" % data)
 
@@ -430,14 +438,19 @@ class HomefrontParser(b3.parser.Parser):
     # implement parser interface
     # =======================================
         
+    def retrievePlayerList(self):
+        """\
+        Send RETRIEVE PLAYERLIST to the server to trigger onServerPlayer return events
+        """
+        self.verbose2('Retrieving Playerlist')
+        self.write('RETRIEVE PLAYERLIST')
+
     def getPlayerList(self):
         """\
-        Query the game server for connected players.
-        return a dict having players' id for keys and players' data as another dict for values
+        Returns a list of client objects
         """
-        ## @todo: getPlayerlist: make this wait for reply packets, stack them, and return full
-        # exhaustive list of players
-        self.write('RETRIEVE PLAYERLIST')
+        clients = self.clients.getList()
+        return clients
 
     def authorizeClients(self):
         """\
@@ -686,7 +699,7 @@ class HomefrontParser(b3.parser.Parser):
         returns a dict having players' id for keys and players' scores for values
         """
         # trigger a 'retrieve playerlist' command
-        self.getPlayerList()
+        #self.retrievePlayerList()
 
         scores = {}
         clients = self.clients.getList()
@@ -732,8 +745,8 @@ class HomefrontParser(b3.parser.Parser):
         client = self.clients.getByCID(name)
         if client:
             return client
-        self.debug('client not found calling getPlayerList()')
-        self.getPlayerList()
+        #self.debug('client not found calling getPlayerList()')
+        #self.getPlayerList()
         return None
 
     def getftpini(self):
