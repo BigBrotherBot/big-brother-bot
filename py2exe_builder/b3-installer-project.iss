@@ -80,7 +80,7 @@ Name: {group}\web\{cm:Manual,Manual}; Filename: http://wiki.github.com/BigBrothe
 Name: {group}\web\{cm:Forums,B3 Forums}; Filename: http://forum.bigbrotherbot.net/
 Name: {group}\web\{cm:DownloadPlugins,Download plugins}; Filename: http://forum.bigbrotherbot.net/downloads/?cat=4
 Name: {group}\web\{cm:B3configGenerator,B3 config generator}; Filename: http://config.bigbrotherbot.net/; 
-Name: {group}\web\artwork; Filename: http://www1.bigbrotherbot.net/logos
+Name: {group}\web\artwork; Filename: http://www.bigbrotherbot.net/logos
 Name: {group}\web\other tools\{cm:Echelon,Echelon}; Filename: http://echelon.bigbrotherbot.net/
 Name: {group}\web\other tools\{cm:Xlrstats,XLRstats}; Filename: http://www.xlrstats.com/
 
