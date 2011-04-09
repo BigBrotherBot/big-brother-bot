@@ -1,3 +1,664 @@
+2011-04-09  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/sql/xlrstats.sql: update to xlrstats sql file
+
+2011-04-09  xlr8or <xlr8or@xlr8or.com>
+
+	* b3.egg-info/PKG-INFO, b3.egg-info/SOURCES.txt, b3/PKG-INFO,
+	versions.txt: versioning for beta release
+
+2011-04-09  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/__init__.py: HOMEFRONT: fix the "empty name
+	in database bug" reported by Platanos
+
+2011-04-09  Courgette <courgette@ubu-team.org>
+
+	* b3/clients.py, b3/parsers/cod.py, b3/parsers/cod7.py,
+	b3/parsers/etpro.py, b3/parsers/iourt41.py, b3/parsers/oa081.py,
+	b3/parsers/q3a/abstractParser.py, b3/parsers/smg.py,
+	b3/parsers/smg11.py, b3/parsers/wop.py, b3/parsers/wop15.py: Clients
+	module : now do not convert cid to string ! + reflect that change on
+	all parsers + WOP updates
+
+2011-04-08  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: minor bugfix
+
+2011-04-08  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parser.py: parser parse unicode...
+
+2011-04-08  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/PKG-INFO: versioning
+
+2011-04-08  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser: change
+	retrievePlayerList() and getPlayerList() and added crontab for
+	playerlist retrieval
+
+2011-04-08  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit b643bab38f41e1d939a1a6229a79f3e3eeee159d Author:
+	Courgette <courgette@ubu-team.org> Date:   Fri Apr 8 00:21:41 2011
+	+0200
+
+2011-04-08  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/sql/b3-update-v1.6.sql: sql update file
+
+2011-04-08  Courgette <courgette@ubu-team.org>
+
+	* b3/output.py: Output: minor change to option log2console
+
+2011-04-07  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/wop15.py: WOP15: fix team based gametypes
+
+2011-04-07  Courgette <courgette@ubu-team.org>
+
+	* setupPy2exe.py: py2exe: add email.mime.text module
+
+2011-04-07  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/wop15.py: WOP15 v1.2 ready for tests
+
+2011-04-07  Courgette <courgette@ubu-team.org>
+
+	* b3/clients.py, b3/events.py: defines __str__ for Event and Client
+	classes
+
+2011-04-07  Courgette <courgette@ubu-team.org>
+
+	* b3/clients.py, b3/output.py, b3/parsers/homefront/protocol.py,
+	b3/sql/b3-db.sql, b3/sql/b3.sql, b3/storage.py: UNICODE: UTF-8
+	charset now applies to : database, b3.log. Homefront protocol now
+	speaks Unicode as well. Client class won't try to convert unicode to
+	str anymore (only int)
+
+2011-04-06  Courgette <courgette@ubu-team.org>
+
+	* : commit ecf5ac951241bb70217ffaeb4b695cb955290178 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Wed Apr 6 21:29:23 2011 +0200
+
+2011-04-06  Freelander <freelander00@gmail.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser: able to kick by guid
+	with new patch
+
+2011-04-06  Freelander <freelander00@gmail.com>
+
+	* : Merge remote branch 'courgette/master'
+
+2011-04-05  Freelander <freelander00@gmail.com>
+
+	* : Merge remote branch 'courgette/master'
+
+2011-04-03  Courgette <courgette@ubu-team.org>
+
+	* : commit f7cd1de3e7536192304b819d88d4d1ec6267b146 Author:
+	Courgette <courgette@ubu-team.org> Date:   Sat Apr 2 19:30:11 2011
+	+0200
+
+2011-04-02  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser: change asyncore.loop
+	to use_poll=True for better reconnection handling
+
+2011-04-01  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser: set self.game.mapName
+	when server changes level
+
+2011-04-01  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser: added onChatter()
+	handler and 2 new events EVT_CLIENT_SQUAD_SAY and EVT_SERVER_SAY
+
+2011-03-31  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/__init__.py: HF remove try/catch around
+	asyncore loop
+
+2011-03-31  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/rcon.py: HF rcon : remove asserts
+
+2011-03-31  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/protocol.py: HF protocol : harden send()
+
+2011-03-31  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/protocol.py: minor update to protocol
+	__main__ function to test playerlist retrieval
+
+2011-03-31  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser: first draft of
+	onServerPLayer() also removed quotes from commands message, say and
+	saybig as they appear in the chatareas.
+
+2011-03-31  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: remove quotes from message, say
+	and saybig commands since they appear in the respective areas
+	ingame.
+
+2011-03-31  Courgette <courgette@ubu-team.org>
+
+	* b3/events.py, b3/parsers/homefront/__init__.py: HF parser : harden
+	main network loop. minor change regarding events. Add
+	EVT_CLIENT_UNBAN
+
+2011-03-31  Courgette <courgette@ubu-team.org>
+
+	* b3/output.py, b3/parser.py: merge options log2console and log2both
+
+2011-03-30  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/tk.py: fix tk plugin grudge_enable
+
+2011-03-30  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser: add 'Server' client
+	for the B3/gameserver instance
+
+2011-03-30  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/plugins/tk.py: introduction of grudge_level
+
+2011-03-30  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/plugins/status.py: bugfix to status.py
+
+2011-03-30  Courgette <courgette@ubu-team.org>
+
+	* b3/fake.py: add dahool (SGT) improvements for the fake module
+
+2011-03-30  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/plugins/admin.py: minor update to queue EVT_ADMIN_COMMAND
+
+2011-03-30  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/events.py: added EVT_CLIENT_UNBAN
+
+2011-03-30  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/__init__.py, b3/parsers/homefront/rcon.py,
+	b3/plugins/publist.py: add versions and credit to homefront files
+
+2011-03-30  xlr8or <xlr8or@xlr8or.com>
+
+	* py2exe_builder/b3-installer-project.iss, setup.py: version
+	preparations
+
+2011-03-30  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/__init__.py: use client.cid to send rcon
+	commands as client.name strip color codes
+
+2011-03-30  Courgette <courgette@ubu-team.org>
+
+	* b3/clients.py: newClient() now returns the created client object
+
+2011-03-28  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod.py: cod.py: CoD5 JT regexp fix
+
+2011-03-28  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: correct todo format for
+	doxygen: ## @todo:
+
+2011-03-27  Freelander <freelander00@gmail.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser task #10-2 update
+	(translate HF KILL event)
+
+2011-03-27  Courgette <courgette@ubu-team.org>
+
+	* b3/parser.py: improve fake regarding b3 groups and remove
+	parser.onStartup() as it is a duplicate of parser.startu() and is
+	never used (2)
+
+2011-03-27  Courgette <courgette@ubu-team.org>
+
+	* b3/fake.py, b3/parser.py: improve fake regarding b3 groups and
+	remove parser.onStartup() as it is a duplicate of parser.startu()
+	and is never used
+
+2011-03-27  xlr8or <xlr8or@xlr8or.com>
+
+	* py2exe_builder/b3-installer-project.iss: release v1.5.0
+
+2011-03-27  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt, versions.txt: release commits v1.5.0
+
+2011-03-26  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/parsers/homefront/__init__.py: Add Maps, nextmap using access
+	to the .ini file, either directly or by ftp (assuming we can ever do
+	that).  Also adds method to convert from fl-mapname format to Map
+	Name format.
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/admin.py: version update
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/admin.py: plugin admin : fix cmd_spam doc
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/b3.homefront_example.xml,
+	b3/parsers/homefront/__init__.py: HF parser : better handling of
+	connecting users, wrap lines and other minors stuff
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/clients.py: bug on Client.__init__()
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/protocol.py: HF Client now inherits from
+	asyncore.dispatcher_with_send (2)
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/protocol.py: HF Client now inherits from
+	asyncore.dispatcher_with_send
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/__init__.py: HF: explicitly import b3.events.
+	stuff so my IDE stop showing me syntax error everytime we use a
+	event name
+
+2011-03-26  Freelander <freelander00@gmail.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser task #10-8 (translate
+	HF CHANGE_LEVEL) and fixed the wrong method name
+
+2011-03-26  Freelander <freelander00@gmail.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser task #10-7 (translate
+	HF ROUND OVER)
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/rcon.py: HF Rcon : update tests
+
+2011-03-26  Freelander <freelander00@gmail.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser task #10-2 updated
+
+2011-03-26  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser update: create
+	_teamcache
+
+2011-03-26  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser update
+
+2011-03-26  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/q3a/abstractParser.py: q3a: bugfix
+
+2011-03-26  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf update
+
+2011-03-26  Freelander <freelander00@gmail.com>
+
+	* b3/parsers/homefront/__init__.py: Task #10-2: translate HF KILL
+	event
+
+2011-03-26  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf update
+
+2011-03-25  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser update: task #10-10
+	(commands dict and methods)
+
+2011-03-25  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser update: started
+	working on _commands dict and onServerUid
+
+2011-03-25  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/b3.homefront_example.xml,
+	b3/parsers/homefront/__init__.py,
+	b3/parsers/homefront/connection.py,
+	b3/parsers/homefront/protocol.py, b3/parsers/homefront/rcon.py: HF :
+	rcon connection now working. Parser work startedd
+
+2011-03-24  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/cod7http.py: cod7http: remove boring debug line
+
+2011-03-24  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/cod7http.py: HTTPYTAIL : Do not fail if http response
+	is not gzipped
+
+2011-03-23  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/protocol.py: HOMEFRONT: rcon protocol
+	implementation started
+
+2011-03-20  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/__init__.py,
+	b3/parsers/homefront/connection.py,
+	b3/parsers/homefront/protocol.py, b3/parsers/homefront/rcon.py: add
+	skeleton for the HomeFront parser
+
+2011-03-18  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/httpytail.py: HTTPYTAIL: Make sure that maxGapBytes is
+	never exceeded
+
+2011-03-16  Courgette <courgette@ubu-team.org>
+
+	* b3/fake.py: FAKE: fix fake kick due to new message formatting
+
+2011-04-03  Freelander <freelander00@gmail.com>
+
+	* : Merge remote branch 'bravo17/master'
+
+2011-04-02  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/parsers/homefront/__init__.py: add EVT_CLIENT_CLAN_CHANGE
+
+2011-04-02  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* : Merge remote branch 'courgette/master'
+
+2011-04-02  Freelander <freelander00@gmail.com>
+
+	* : commit 619af3412c56b0c41ca593d0fe8328c01117fac2 Merge: 88b02c9
+	b788a12 Author: Freelander <freelander00@gmail.com> Date:   Sat Apr
+	2 12:25:01 2011 +0300
+
+2011-04-02  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser: change asyncore.loop
+	to use_poll=True for better reconnection handling
+
+2011-04-02  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 0f2f08aed45c34812649ca93b05fb1989b5a9a86 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Fri Apr 1 21:00:11 2011 +0200
+
+2011-04-01  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser: set self.game.mapName
+	when server changes level
+
+2011-04-01  Freelander <freelander00@gmail.com>
+
+	* : commit 0cd0acc515b1bbf052457cd5e622f71bb2130a19 Merge: 2055b0a
+	501afaa Author: Freelander <freelander00@gmail.com> Date:   Fri Apr
+	1 14:30:26 2011 +0300
+
+2011-04-01  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser: added onChatter()
+	handler and 2 new events EVT_CLIENT_SQUAD_SAY and EVT_SERVER_SAY
+
+2011-03-31  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/__init__.py: HF remove try/catch around
+	asyncore loop
+
+2011-03-31  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/rcon.py: HF rcon : remove asserts
+
+2011-03-31  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/protocol.py: HF protocol : harden send()
+
+2011-03-31  Freelander <freelander00@gmail.com>
+
+	* : commit 2055b0a907112a9c3d226807c793381f66cb231a Merge: ffbc760
+	9c31c76 Author: Freelander <freelander00@gmail.com> Date:   Thu Mar
+	31 22:06:04 2011 +0300
+
+2011-03-31  Freelander <freelander00@gmail.com>
+
+	* : Merge remote branch 'courgette/master' into homefront
+
+2011-03-31  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/protocol.py: minor update to protocol
+	__main__ function to test playerlist retrieval
+
+2011-03-31  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser: first draft of
+	onServerPLayer() also removed quotes from commands message, say and
+	saybig as they appear in the chatareas.
+
+2011-03-31  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 2268d9d43c3829a2b4a97770e888d1ee6306bb37 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Thu Mar 31 09:39:13 2011 +0200
+
+2011-03-30  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* : Merge remote branch 'courgette/master'
+
+2011-03-31  Courgette <courgette@ubu-team.org>
+
+	* b3/output.py, b3/parser.py: merge options log2console and log2both
+
+2011-03-30  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/tk.py: fix tk plugin grudge_enable
+
+2011-03-30  Courgette <courgette@ubu-team.org>
+
+	* : commit c5346cf852e633230d75be80b58c47c0a7ff3ccd Merge: b020406
+	c1eec40 Author: Freelander <freelander00@gmail.com> Date:   Wed Mar
+	30 22:49:41 2011 +0300
+
+2011-03-30  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser: add 'Server' client
+	for the B3/gameserver instance
+
+2011-03-30  Freelander <freelander00@gmail.com>
+
+	* : commit c1eec40ed28be76bb6c0430a00eba361267ecac4 Merge: 5bb2cc7
+	5b485fe Author: Courgette <courgette@ubu-team.org> Date:   Wed Mar
+	30 21:43:49 2011 +0200
+
+2011-03-30  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/plugins/tk.py: introduction of grudge_level
+
+2011-03-30  Courgette <courgette@ubu-team.org>
+
+	* : commit b43168b2ed96711804de7617e96f93159cbbe0f1 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Wed Mar 30 21:42:30 2011 +0200
+
+2011-03-30  Courgette <courgette@ubu-team.org>
+
+	* b3/fake.py: add dahool (SGT) improvements for the fake module
+
+2011-03-30  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/plugins/admin.py: minor update to queue EVT_ADMIN_COMMAND
+
+2011-03-30  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/events.py: added EVT_CLIENT_UNBAN
+
+2011-03-30  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/__init__.py, b3/parsers/homefront/rcon.py,
+	b3/plugins/publist.py: add versions and credit to homefront files
+
+2011-03-30  Freelander <freelander00@gmail.com>
+
+	* : commit beada332a8ebe281c77c08b91f34d19005eda754 Merge: 14ef3dc
+	7a269f1 Author: Freelander <freelander00@gmail.com> Date:   Wed Mar
+	30 20:51:11 2011 +0300
+
+2011-03-30  Freelander <freelander00@gmail.com>
+
+	* : Merge remote branch 'b3/master' into homefront
+
+2011-03-30  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 205e647d56ef87d4f22b4587b08d8ae8434c4dac Merge: 7abe8be
+	548fa2c Author: xlr8or <xlr8or@xlr8or.com> Date:   Wed Mar 30
+	10:41:33 2011 +0200
+
+2011-03-30  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit a38530e280964a499e834d5f6c26c9ac58a8674f Author:
+	82ndab-Bravo17 <82ndab.bravo17@gmail.com> Date:   Tue Mar 29
+	21:36:08 2011 -0400
+
+2011-03-30  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/__init__.py: use client.cid to send rcon
+	commands as client.name strip color codes
+
+2011-03-30  Courgette <courgette@ubu-team.org>
+
+	* b3/clients.py: newClient() now returns the created client object
+
+2011-03-29  Courgette <courgette@ubu-team.org>
+
+	* : commit 1275bc47c4805730fa6e3ac0d743ac322cf82a80 Merge: 5bba376
+	50e64e9 Author: Courgette <courgette@ubu-team.org> Date:   Tue Mar
+	29 19:29:05 2011 +0200
+
+2011-03-28  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit daf1b504b3b79557634357619230fee29b2d2290 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Mon Mar 28 09:28:08 2011 +0200
+
+2011-03-28  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: correct todo format for
+	doxygen: ## @todo:
+
+2011-03-27  Courgette <courgette@ubu-team.org>
+
+	* : commit bde93c3830f87905b163f14a151f8482ae7c98c6 Merge: e04beb5
+	005713e Author: Courgette <courgette@ubu-team.org> Date:   Sun Mar
+	27 19:25:37 2011 +0200
+
+2011-03-27  Freelander <freelander00@gmail.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser task #10-2 update
+	(translate HF KILL event)
+
+2011-03-27  Freelander <freelander00@gmail.com>
+
+	* : Merge remote branch 'courgette/master' into homefront
+
+2011-03-27  Courgette <courgette@ubu-team.org>
+
+	* b3/fake.py, b3/parser.py: improve fake regarding b3 groups and
+	remove parser.onStartup() as it is a duplicate of parser.startu()
+	and is never used
+
+2011-03-27  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit a7a4537de366237602f6eb1479ab45e08029778e Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sun Mar 27 11:59:07 2011 +0200
+
+2011-03-27  xlr8or <xlr8or@xlr8or.com>
+
+	* py2exe_builder/b3-installer-project.iss: release v1.5.0
+
+2011-03-27  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt, versions.txt: release commits v1.5.0
+
+2011-03-26  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/parsers/homefront/__init__.py: Add Maps, nextmap using access
+	to the .ini file, either directly or by ftp (assuming we can ever do
+	that).  Also adds method to convert from fl-mapname format to Map
+	Name format.
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/admin.py: version update
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/admin.py: plugin admin : fix cmd_spam doc
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/b3.homefront_example.xml,
+	b3/parsers/homefront/__init__.py: HF parser : better handling of
+	connecting users, wrap lines and other minors stuff
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/clients.py: bug on Client.__init__()
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/protocol.py: HF Client now inherits from
+	asyncore.dispatcher_with_send (2)
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/protocol.py: HF Client now inherits from
+	asyncore.dispatcher_with_send
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* : commit 4e881c11621541a3d875b9997bbda58d96f542f3 Author:
+	Courgette <courgette@ubu-team.org> Date:   Sat Mar 26 15:41:44 2011
+	+0100
+
+2011-03-26  Freelander <freelander00@gmail.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser task #10-8 (translate
+	HF CHANGE_LEVEL) and fixed the wrong method name
+
+2011-03-26  Freelander <freelander00@gmail.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser task #10-7 (translate
+	HF ROUND OVER)
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/rcon.py: HF Rcon : update tests
+
+2011-03-26  Freelander <freelander00@gmail.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser task #10-2 updated
+
+2011-03-26  Freelander <freelander00@gmail.com>
+
+	* : commit 262b444820faaf8118b5f4ca78101f69e95a0763 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sat Mar 26 12:06:04 2011 +0100
+
+2011-03-26  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser update
+
 2011-03-24  Courgette <courgette@ubu-team.org>
 
 	* b3/plugins/cod7http.py: cod7http: remove boring debug line
@@ -11,24 +672,85 @@
 
 	* b3/parsers/q3a/abstractParser.py: q3a: bugfix
 
-2011-03-22  xlr8or <xlr8or@xlr8or.com>
+2011-03-26  xlr8or <xlr8or@xlr8or.com>
 
-	* CHANGELOG, ChangeLogDetailed.txt, b3.egg-info/PKG-INFO,
-	b3/PKG-INFO, py2exe_builder/b3-installer-project.iss, setup.py,
-	versions.txt: versioning 1.5.0
+	* b3/parsers/homefront/__init__.py: hf update
+
+2011-03-26  Freelander <freelander00@gmail.com>
+
+	* b3/parsers/homefront/__init__.py: Task #10-2: translate HF KILL
+	event
+
+2011-03-26  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf update
+
+2011-03-25  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser update: task #10-10
+	(commands dict and methods)
+
+2011-03-25  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: hf parser update: started
+	working on _commands dict and onServerUid
+
+2011-03-25  Courgette <courgette@ubu-team.org>
+
+	* b3/conf/b3.homefront_example.xml,
+	b3/parsers/homefront/__init__.py,
+	b3/parsers/homefront/connection.py,
+	b3/parsers/homefront/protocol.py, b3/parsers/homefront/rcon.py: HF :
+	rcon connection now working. Parser work startedd
+
+2011-03-24  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/cod7http.py: cod7http: remove boring debug line
+
+2011-03-24  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/cod7http.py: HTTPYTAIL : Do not fail if http response
+	is not gzipped
+
+2011-03-23  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/homefront/protocol.py: HOMEFRONT: rcon protocol
+	implementation started
+
+2011-03-23  Courgette <courgette@ubu-team.org>
+
+	* : commit b9342ea1da36d01bafbce55893ebede2b1df0ed2 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Tue Mar 22 21:10:19 2011 +0100
 
 2011-03-22  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/parsers/cod.py: cod.py: fixed JT event regexp for cod5
 
-2011-03-18  Freelander <freelander00@gmail.com>
+2011-03-20  Courgette <courgette@ubu-team.org>
 
-	* b3/parsers/cod6.py: fixed a typo in cod6 parser causing permanent
-	bans fail
+	* b3/parsers/homefront/__init__.py,
+	b3/parsers/homefront/connection.py,
+	b3/parsers/homefront/protocol.py, b3/parsers/homefront/rcon.py: add
+	skeleton for the HomeFront parser
+
+2011-03-20  Courgette <courgette@ubu-team.org>
+
+	* : commit 753a6d55411993c8c43a29969699d8e782a7df2a Author:
+	Freelander <freelander00@gmail.com> Date:   Fri Mar 18 10:23:26 2011
+	+0200
+
+2011-03-18  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/httpytail.py: HTTPYTAIL: Make sure that maxGapBytes is
+	never exceeded
 
 2011-03-16  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/parsers/cod.py: cod.py: improve PunkBuster check
+
+2011-03-16  Courgette <courgette@ubu-team.org>
+
+	* b3/fake.py: FAKE: fix fake kick due to new message formatting
 
 2011-03-13  xlr8or <xlr8or@xlr8or.com>
 
