@@ -111,6 +111,7 @@ class Client(object):
 
     # fields on object
     console = None
+    cid = None
     exactName = None
     team = b3.TEAM_UNKNOWN
     maxGroup = None
@@ -126,7 +127,6 @@ class Client(object):
     _timeAdd = 0
     _timeEdit = 0
     _tempLevel = None
-    _cid = None
     _data = None
 
     def __init__(self, **kwargs):
@@ -366,19 +366,6 @@ class Client(object):
         return self._timeAdd
 
     timeAdd = property(_get_timeAdd, _set_timeAdd)
-
-    #------------------------
-    def _set_cid(self, cid):
-        self.console.verbose('%s cid changed from %s to %s', self.id, self._cid, cid)
-        if type(cid) is int:
-            self._cid = str(cid)
-        else:
-            self._cid = cid
-
-    def _get_cid(self):
-        return self._cid
-
-    cid = property(_get_cid, _set_cid)
 
     #------------------------
     def _set_data(self, data):
@@ -1004,25 +991,15 @@ class Clients(dict):
         return None
 
     def getByCID(self, cid):
-        if type(cid) is unicode:
-            cleanedCid = cid
-        else:
-            try:
-                cleanedCid = int(cid)
-            except ValueError:
-                # Must ba a game using names or other strings as cid's, allow it.
-                # this will obviously fail for a nickname like '007'
-                cleanedCid = str(cid)
-
         try:
-            c = self[cleanedCid]
+            c = self[cid]
         except KeyError:
             return None
         except Exception, e:
             self.console.error('Unexpected error getByCID(%s) - %s', cid, e)
         else:
             #self.console.debug('Found client by CID %s = %s', cid, c.name)
-            if c.cid == cleanedCid:
+            if c.cid == cid:
                 return c
             else: 
                 return None
@@ -1127,8 +1104,6 @@ class Clients(dict):
 
         # add list of matching clients
         for cid, c in mlist.iteritems():
-            if type(cid) is int:
-                cid = str(cid)
             self[cid] = c
 
     def authorizeClients(self):

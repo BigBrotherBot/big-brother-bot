@@ -46,9 +46,10 @@
 # 02/02/2011 - 1.4.18 - xlr8or - add cod7 suicide _lineformat
 # 16/03/2011 - 1.4.19 - xlr8or - improve PunkBuster check
 # 28/03/2011 - 1.4.20 - Bravo17 - CoD5 JT regexp fix
+# 09/04/2011 - 1.4.21 - Courgette - reflect that cid are not converted to int anymore in the clients module
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.20'
+__version__ = '1.4.21'
 
 import re, string, threading
 import b3
@@ -125,7 +126,7 @@ class CodParser(AbstractParser):
         if self.IpsOnly:
             self.debug('Authentication Method: Using Ip\'s instead of GUID\'s!')
         # add the world client
-        client = self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
+        client = self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
 
         if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
             # test if PunkBuster is active

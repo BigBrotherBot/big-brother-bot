@@ -25,9 +25,11 @@
 # * fix the ban command
 # 15/09/2010 - 0.1.3 - GrosBedo
 # * added !nextmap and !maps support
+# 09/04/2011 - 0.1.4 - Courgette
+# * reflect that cid are not converted to int anymore in the clients module
 
 __author__  = 'xlr8or, Courgette'
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 
 import re, string, threading
 import b3
@@ -147,7 +149,7 @@ class SmgParser(AbstractParser):
     def startup(self):
         # add the world client
         
-        client = self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
+        client = self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
         #if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
         #    self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
 

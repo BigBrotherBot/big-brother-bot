@@ -35,13 +35,14 @@
 # 02.04.2011 - 1.0.6 - Freelander
 #   * onK: Fix for suicide events to be handled correctly by XLRstats
 #   * Set playercount to 4 in pre-match logic
-#
+# 09.04.2011 - 1.0.7 - Courgette
+#   * reflect that cid are not converted to int anymore in the clients module
 
 ## @file
 #  CoD7 Parser
 
 __author__  = 'Freelander, Courgette, Just a baka, Bravo17'
-__version__ = '1.0.6'
+__version__ = '1.0.7'
 
 import re
 import string
@@ -84,7 +85,7 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
         """Implements some necessary tasks on initial B3 start."""
 
         # add the world client
-        client = self.clients.newClient(-1, guid='WORLD', name='World', hide=True, pbid='WORLD')
+        client = self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
 
         self._cod7httpplugin = self.getPlugin('cod7http')
 
