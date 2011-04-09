@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS `xlr_bodyparts` (
   `suicides` smallint(5) unsigned NOT NULL default '0',
   PRIMARY KEY  (`id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=MyISAM;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS `xlr_mapstats` (
   `rounds` smallint(5) unsigned NOT NULL default '0',
   PRIMARY KEY  (`id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=MyISAM;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS `xlr_opponents` (
   PRIMARY KEY  (`id`),
   KEY `target_id` (`target_id`),
   KEY `killer_id` (`killer_id`)
-) ENGINE=MyISAM;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS `xlr_playerbody` (
   PRIMARY KEY  (`id`),
   KEY `bodypart_id` (`bodypart_id`),
   KEY `player_id` (`player_id`)
-) ENGINE=MyISAM;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS `xlr_playermaps` (
   PRIMARY KEY  (`id`),
   KEY `map_id` (`map_id`),
   KEY `player_id` (`player_id`)
-) ENGINE=MyISAM;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS `xlr_playerstats` (
   `hide` tinyint(4) NOT NULL default '0',
   `fixed_name` varchar(32) NOT NULL default '',  PRIMARY KEY  (`id`),
   UNIQUE KEY `client_id` (`client_id`)
-) ENGINE=MyISAM;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS `xlr_weaponstats` (
   `suicides` smallint(5) unsigned NOT NULL default '0',
   PRIMARY KEY  (`id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=MyISAM;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -162,7 +162,7 @@ CREATE TABLE IF NOT EXISTS `xlr_weaponusage` (
   PRIMARY KEY  (`id`),
   KEY `weapon_id` (`weapon_id`),
   KEY `player_id` (`player_id`)
-) ENGINE=MyISAM;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -176,7 +176,7 @@ CREATE TABLE IF NOT EXISTS `xlr_actionstats` (
   `count` mediumint(8) unsigned NOT NULL default '0',
   PRIMARY KEY  (`id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=MyISAM;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -192,7 +192,7 @@ CREATE TABLE IF NOT EXISTS `xlr_playeractions` (
   PRIMARY KEY  (`id`),
   KEY `action_id` (`action_id`),
   KEY `player_id` (`player_id`)
-) ENGINE=MyISAM;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -220,7 +220,7 @@ CREATE TABLE IF NOT EXISTS `xlr_history_monthly` (
   `week` int(2) NOT NULL,
   `day` int(2) NOT NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -248,4 +248,4 @@ CREATE TABLE IF NOT EXISTS `xlr_history_weekly` (
   `week` int(2) NOT NULL,
   `day` int(2) NOT NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
