@@ -37,6 +37,7 @@ b3.egg-info/requires.txt
 b3.egg-info/top_level.txt
 b3/conf/b3.bfbc2_example.xml
 b3/conf/b3.distribution.xml
+b3/conf/b3.homefront_example.xml
 b3/conf/b3.moh_example.xml
 b3/conf/plugin_admin.xml
 b3/conf/plugin_adv.xml
@@ -149,6 +150,9 @@ b3/parsers/frostbite/protocol.py
 b3/parsers/frostbite/punkbuster.py
 b3/parsers/frostbite/rcon.py
 b3/parsers/frostbite/util.py
+b3/parsers/homefront/__init__.py
+b3/parsers/homefront/protocol.py
+b3/parsers/homefront/rcon.py
 b3/parsers/q3a/__init__.py
 b3/parsers/q3a/abstractParser.py
 b3/parsers/q3a/rcon.py
@@ -172,6 +176,7 @@ b3/plugins/tk.py
 b3/plugins/welcome.py
 b3/sql/b3-db.sql
 b3/sql/b3-update-v1.3.sql
+b3/sql/b3-update-v1.6.sql
 b3/sql/b3.sql
 b3/sql/recreate-xlrstats.sql
 b3/sql/xlrstats.sql
