@@ -1,3 +1,19 @@
+1.5.0 -> 1.6.0
+----
+A list of changed files is available after release here:
+github.com/BigBrotherBot/big-brother-bot/compare/v1.5.0...v1.6.0
+----
+IMPORTANT: This version requires alterations to the database!
+Use the included b3.sql for new installs and the b3-update-v1.6.sql for existing installs.
+----
+- Added support for Homefront
+- Added support for World of Padman 1.5
+- Refactored core files to use unicode
+- bugixes to Call of Duty Black Ops (cod7) parser
+- bugfixes to Call of Duty Modern Warfare 2 (cod6) parser
+----
+
+
 1.4.1 -> 1.5.0
 ----
 A list of changed files is available after release here:
