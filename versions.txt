@@ -1,5 +1,5 @@
-project files/versions signature: 864593ee4c3bc6480176d1752da1add5
-project files content signature: 6fa9b28de59ea894dffe10140a359de8
+project files/versions signature: 1d19035a8dcb5f9fb51990d60bed3717
+project files content signature: c1831591cffac60d23d057049639a06c
 b3\__init__.py 8d79b97bece95f7fd17627ed5c316f13 1.1.2
 b3\clients.py 39f2b46593115843827336db0b60ae7f 1.3.4
 b3\config.py 9a08abbb8974661a5384cf8ff5ddcc9b 1.3.1
@@ -88,7 +88,7 @@ b3\parsers\cod2.py 3bb23114dce7c4f071937aafeba570e2 1.2.5
 b3\parsers\cod4.py 5a6c2749670f659dd54ba85d2a6e5644 1.3.4
 b3\parsers\cod5.py 7874ac89b103c33f071104b7a665dfd1 1.3.1
 b3\parsers\cod6.py 27b8aa9785493ac2de11b9d87c5c9389 0.4
-b3\parsers\cod7.py 4cc57b4fcbcb0ff30e71c16bef54c8ea 1.0.6
+b3\parsers\cod7.py 19008b7057fc3b4f6a927a1a91fd130a 1.0.7
 b3\parsers\cod7_rcon.py aabbe8699094e5ed1faee3bc5324514a 1.1.0
 b3\parsers\et.py 57d24dc3b8ec4e9ff7f58502cbbb605d 0.0.1
 b3\parsers\etpro.py 4ab714a7cd47bdbe454a0d2c129844a1 0.0.3
