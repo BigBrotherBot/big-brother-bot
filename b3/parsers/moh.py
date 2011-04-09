@@ -54,10 +54,14 @@
 # * adapted to server R9 version 615937 - fixed onPlayerSpawn and vars.noCrosshairs errors
 # 2011-03-05 - 1.2 - xlr8or
 # * admin.kickPlayer after ban now in try/except to avoid error msg when player is already gone
+# 2011-04-09 - 1.2.1 - Courgette
+# * import missing time module
 #
-__author__  = 'Bakes, Courgette'
-__version__ = '1.2'
 
+__author__  = 'Bakes, Courgette'
+__version__ = '1.2.1'
+
+import time
 import b3.events
 from b3.parsers.frostbite.abstractParser import AbstractParser
 from b3.parsers.frostbite.util import PlayerInfoBlock
