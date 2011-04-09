@@ -25,9 +25,11 @@
 # * do not create client without guid as name are not reliable alone
 # 2011-04-08 : 0.4
 # * refactor getPlayerList() and retrievePlayerList() with cron interval
+# 2011-04-08 : 0.5
+# * fix the "empty name in database bug" reported by Platanos
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.4'
+__version__ = '0.5'
 
 from b3.parsers.homefront.protocol import MessageType, ChannelType
 import sys
@@ -424,7 +426,7 @@ class HomefrontParser(b3.parser.Parser):
         # try to get the client by guid
         client = self.clients.getByGUID(match.group('uid'))
         if not client:
-            client = self.clients.newClient(match.group('name'), guid=match.group('uid'), team=b3.TEAM_UNKNOWN)
+            client = self.clients.newClient(match.group('name'), guid=match.group('uid'), name=match.group('name'), team=b3.TEAM_UNKNOWN)
         # update client data
         client.name = match.group('name')
         client.team = self.getTeam(match.group('team'))
