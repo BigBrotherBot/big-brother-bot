@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   11/04/2011 - 1.10.0 - Courgette
+#    the query() method now accepts a second parameter which can be an optional
+#    dict of variables to bind on the query
 #   08/04/2011 - 1.9.1 - Courgette
 #    remove str() wherever we could have unicode
 #   02/03/2011 - 1.9 - Courgette
@@ -52,7 +55,7 @@
 #   Added data column to penalties table
 
 __author__  = 'ThorN'
-__version__ = '1.9.1'
+__version__ = '1.10.0'
 
 import re, time, traceback, sys, thread, os
 
@@ -242,11 +245,11 @@ class DatabaseStorage(Storage):
         else:
             return False
 
-    def _query(self, query):
+    def _query(self, query, bindata=None):
         self._lock.acquire()
         try:
             cursor = self.db.cursor()
-            cursor.execute(query)
+            cursor.execute(query, bindata)
             c = DatabaseStorage.Cursor(cursor, self.db)
         finally:
             self._lock.release()
@@ -275,11 +278,11 @@ class DatabaseStorage(Storage):
         return None
 
 
-    def query(self, query):
+    def query(self, query, bindata=None):
         # use existing connection or create a new one
         if self.db or self.connect():
             try:
-                return self._query(query)
+                return self._query(query, bindata)
             except Exception, e:
                 # (2013, 'Lost connection to MySQL server during query')
                 # (2006, 'MySQL server has gone away')
@@ -291,7 +294,7 @@ class DatabaseStorage(Storage):
                     if self.connect():
                         try:
                             # retry query
-                            return self._query(query)
+                            return self._query(query, bindata)
                         except Exception, e:
                             # fall through to log error message
                             pass
