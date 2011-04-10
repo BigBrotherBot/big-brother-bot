@@ -9,8 +9,8 @@ Use the included b3.sql for new installs and the b3-update-v1.6.sql for existing
 - Added support for Homefront
 - Added support for World of Padman 1.5
 - Refactored core files to use unicode
-- bugixes to Call of Duty Black Ops (cod7) parser
-- bugfixes to Call of Duty Modern Warfare 2 (cod6) parser
+- bugfixes for Call of Duty World at War (in cod parser)  
+- bugfixes to Call of Duty Black Ops (cod7) parser
 ----
 
 
