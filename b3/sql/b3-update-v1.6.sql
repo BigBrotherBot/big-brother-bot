@@ -5,6 +5,11 @@ ALTER TABLE clients CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci;
 ALTER TABLE groups CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci;
 ALTER TABLE penalties CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci;
 
+#disable the auto_increment flag and add the Guest group at id 0:
+ALTER TABLE  `groups` CHANGE  `id`  `id` INT( 10 ) UNSIGNED NOT NULL;
+INSERT INTO `groups` (id, time_edit, name, keyword, time_add, level) VALUES (0, 0, 'Guest', 'guest', UNIX_TIMESTAMP(), 0);
+
+#modify existing xlrstats tables
 ALTER TABLE xlr_actionstats CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci;
 ALTER TABLE xlr_bodyparts CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci;
 ALTER TABLE xlr_history_monthly CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci;
