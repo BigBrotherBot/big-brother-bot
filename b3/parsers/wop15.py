@@ -37,9 +37,12 @@
 #  * reflect that cid are not converted to int anymore in the clients module
 #  * do not try to fix attacket in OnKill
 #  * fix MOD_SHOTGUN -> MOD_PUMPER
+# 2011-04-10 - 1.2.3 - Courgette
+#  * fix commands that should use quotation marks
+
 
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.2.2'
+__version__ = '1.2.3'
 
 from b3.parsers.q3a.abstractParser import AbstractParser
 import re, string
@@ -99,10 +102,10 @@ class Wop15Parser(AbstractParser):
     _settings['min_wrap_length'] = 100
 
     _commands = {}
-    _commands['message'] = 'stell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
-    _commands['deadsay'] = 'stell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
-    _commands['say'] = 'ssay %(prefix)s^7 %(message)s'
-    _commands['saybig'] = 'scp -1 %(prefix)s^7 %(message)s'
+    _commands['message'] = 'stell %(cid)s "%(prefix)s ^3[pm]^7 %(message)s"'
+    _commands['deadsay'] = 'stell %(cid)s "%(prefix)s [DEAD]^7 %(message)s"'
+    _commands['say'] = 'ssay "%(prefix)s^7 %(message)s"'
+    _commands['saybig'] = 'scp -1 "%(prefix)s^7 %(message)s"'
 
     _commands['set'] = 'set %(name)s "%(value)s"'
     _commands['kick'] = 'clientkick %(cid)s'
