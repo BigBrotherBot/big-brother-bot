@@ -27,9 +27,11 @@
 # * refactor getPlayerList() and retrievePlayerList() with cron interval
 # 2011-04-08 : 0.5
 # * fix the "empty name in database bug" reported by Platanos
+# 2011-04-09 : 0.6
+# * unban using UID if available
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.5'
+__version__ = '0.6'
 
 from b3.parsers.homefront.protocol import MessageType, ChannelType
 import sys
@@ -72,6 +74,9 @@ class HomefrontParser(b3.parser.Parser):
     mapgamelist = None
     _cronTab = None
     _playerlistInterval = 15
+    _server_banlist = {}
+    _cronTab_banlist = None
+    _banlistInterval = 60
 
     _commands = {}
     _commands['message'] = ('say %(prefix)s [%(name)s] %(message)s')
@@ -116,6 +121,10 @@ class HomefrontParser(b3.parser.Parser):
         # start crontab to trigger playerlist events
         self._cronTab = b3.cron.CronTab(self.retrievePlayerList, second='*/%s' % self._playerlistInterval)
         self.cron + self._cronTab
+
+        # start crontab to retrive banlist
+        self._cronTab_banlist = b3.cron.CronTab(self.retrieveBanList, minute='*/%s' % self._banlistInterval)
+        self.cron + self._cronTab_banlist
 
         # add specific events
         self.Events.createEvent('EVT_CLIENT_SQUAD_SAY', 'Squad Say')
@@ -247,6 +256,7 @@ class HomefrontParser(b3.parser.Parser):
         if data == 'true':
             self.bot("B3 correctly authenticated on game server")
             self.retrievePlayerList()
+            self.retrieveBanList()
         else:
             self.warning("B3 failed to authenticate on game server (%s)" % data)
 
@@ -312,7 +322,6 @@ class HomefrontParser(b3.parser.Parser):
         # kill example: courgette EXP_Frag Freelander
         # suicide example#1: Freelander Suicided Freelander (triggers when player leaves the server)
         # suicide example#2: Freelander EXP_Frag Freelander
-        ## @TODO: Check the possibility of two players having the exact same name which may lead to a false suicide event.
         match = re.search(r"^(?P<data>(?P<aname>[^;]+)\s+(?P<aweap>[A-z0-9_-]+)\s+(?P<vname>[^;]+))$", data)
         if not match:
             self.error("Can't parse kill line: %s" % data)
@@ -435,6 +444,17 @@ class HomefrontParser(b3.parser.Parser):
         client.deaths = match.group('deaths')
         self.verbose2('onServerPlayer: name: %s, clan: %s, team: %s, kills: %s, deaths: %s' %( client.name, client.clan, client.team, client.kills, client.deaths ))
 
+    def onServerBan_item(self, data):
+        # [string: Name] [string: Uid]
+        match = re.match(r"^(?P<data>(?P<name>[^ ]+) (?P<uid>[0-9]+))$", data)
+        if not match:
+            self.error('onServerBan_item failed match')
+            return
+
+        name = match.group('name')
+        guid = match.group('uid')
+
+        self._server_banlist[guid] = name
 
     # =======================================
     # implement parser interface
@@ -453,6 +473,13 @@ class HomefrontParser(b3.parser.Parser):
         """
         clients = self.clients.getList()
         return clients
+
+    def retrieveBanList(self):
+        """\
+        Send RETRIEVE BANLIST to the server
+        """
+        self.verbose2('Retrieving Banlist')
+        self.write('RETRIEVE BANLIST')
 
     def authorizeClients(self):
         """\
@@ -556,8 +583,10 @@ class HomefrontParser(b3.parser.Parser):
         """\
         unban a given players
         """
-        banid = client.cid
-        if banid is None and client.name:
+        if client.guid in self._server_banlist.keys():
+            self.debug('using guid to unban')
+            banid = self._server_banlist[client.guid]
+        else:
             self.debug('using name to unban')
             banid = client.name
         self.debug('UNBAN: %s' % banid)
