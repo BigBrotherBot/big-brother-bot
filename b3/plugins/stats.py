@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    04/13/2011 - 1.3.6 Courgette
+#    * import missing string module
 #    10/30/2010 - 1.3.5 GrosBedo
 #    * added show_awards and show_awards_xp
 #    10/20/2010 - 1.3.4 GrosBedo
@@ -40,10 +42,10 @@
 #    * Converted to use new event handlers
 
 __author__ = 'ThorN, GrosBedo'
-__version__ = '1.3.5'
+__version__ = '1.3.6'
 
 
-
+import string
 import b3
 import b3.events
 import b3.plugin
