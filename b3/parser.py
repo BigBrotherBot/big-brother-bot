@@ -279,6 +279,7 @@ class Parser(object):
 
         self.bot('%s', b3.getB3versionString())
         self.bot('Python: %s', sys.version)
+        self.bot('Default encoding: %s', sys.getdefaultencoding())
         self.bot('Starting %s v%s for server %s:%s', self.__class__.__name__, getattr(getModule(self.__module__), '__version__', ' Unknown'), self._rconIp, self._port)
 
         # get events
@@ -727,7 +728,7 @@ class Parser(object):
                     cleanattr = pattern.sub('', attr) # trim any underscore or any non alphanumeric character
                     variables[cleanattr] = getattr(obj,attr)
         for key, obj in kwargs.iteritems():
-            self.debug('Type of kwarg %s: %s' % (key, type(obj).__name__))
+            #self.debug('Type of kwarg %s: %s' % (key, type(obj).__name__))
             if obj is None:
                 continue
             if type(obj).__name__ in ('str','unicode'):
