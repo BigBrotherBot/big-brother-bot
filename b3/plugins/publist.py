@@ -65,14 +65,15 @@
 # * "400 Bad Request" response prevents the plugin from sending further update hearbeats
 # * when receiving "403 Forbidden", do not disable the plugin but remove the crontab
 #   instead, so the bot can still send a shutdown fainting heartbeat http://goo.gl/4QHoq
-# 3012/2010 - 1.9.1 - xlr8or
+# 30/12/2010 - 1.9.1 - xlr8or
 # * change initial delay timer into one time cron tab
+# 13/04/2011 - 1.10.0 - courgette
+# * add default_encoding to sent info 
 
-__version__ = '1.9.1'
+__version__ = '1.10.0'
 __author__  = 'ThorN, Courgette'
 
 import sys
-import thread, threading
 import urllib
 import urllib2
 import socket
@@ -200,7 +201,8 @@ class PublistPlugin(b3.plugin.Plugin):
             'database' : database,
             'plugins' : ','.join(plugins),
             'os' : os.name,
-            'python_version': sys.version
+            'python_version': sys.version,
+            'default_encoding': sys.getdefaultencoding()
         }
         
         if self.console.gameName in ('bfbc2', 'moh'):
@@ -291,11 +293,17 @@ if __name__ == '__main__':
                 'port': 27960, 
                 'parserversion': '1.2', 
                 'rconPort': None,
-                'python_version': sys.version
+                'python_version': sys.version,
+                'default_encoding': sys.getdefaultencoding()
         })
         
     def test_heartbeat_homefront():
-        p.sendInfo({'python_version': '2.6.4 (r264:75708, Oct 26 2009, 08:23:19) [MSC v.1500 32 bit (Intel)]', 'ip': '205.234.152.101', 'parser': 'homefront', 'plugins': 'censor/2.2.1,spamcontrol/1.1.2,admin/1.10.2,tk/1.2.4,stats/1.3.5,adv/1.2.2,status/1.4.4,welcome/1.1,publist/1.9.1', 'port': 27015, 'database': 'mysql', 'parserversion': '0.0', 'version': '1.5.0', 'action': 'update', 'os': 'nt', 'rconPort': 27010})
+        p.sendInfo({'python_version': '2.6.4 (r264:75708, Oct 26 2009, 08:23:19) [MSC v.1500 32 bit (Intel)]', 
+                    'ip': '205.234.152.101', 'parser': 'homefront', 
+                    'plugins': 'censor/2.2.1,spamcontrol/1.1.2,admin/1.10.2,tk/1.2.4,stats/1.3.5,adv/1.2.2,status/1.4.4,welcome/1.1,publist/1.9.1', 
+                    'port': 27015, 'database': 'mysql', 'parserversion': '0.0', 'version': '1.5.0', 
+                    'action': 'update', 'os': 'nt', 'rconPort': 27010,
+                    'default_encoding': sys.getdefaultencoding()})
     
     def test_heartbeat_local_urt():
         p.sendInfo({'version': '1.4.1b', 
@@ -308,7 +316,8 @@ if __name__ == '__main__':
                 'port': 27960, 
                 'parserversion': '1.7.12', 
                 'rconPort': 27960,
-                'python_version': '2.6.4 (r264:75708, Oct 26 2009, 08:23:19) [MSC v.1500 32 bit (Intel)]'
+                'python_version': '2.6.4 (r264:75708, Oct 26 2009, 08:23:19) [MSC v.1500 32 bit (Intel)]',
+                'default_encoding': sys.getdefaultencoding()
         })
         
     def test_heartbeat_b3_bfbc2():
@@ -325,6 +334,7 @@ if __name__ == '__main__':
                 'python_version': 'publist test',
                 'serverDescription': 'publist plugin test|from admin: Courgette|email: courgette@bigbrotherbot.net| visit our web site : www.bigbrotherbot.net',
                 'bannerUrl': 'http://www.lowpinggameservers.com/i/bc2.jpg',
+                'default_encoding': sys.getdefaultencoding()
         })
 
     def test_crontab():
@@ -341,6 +351,7 @@ if __name__ == '__main__':
                 'python_version': 'publist test',
                 'serverDescription': 'publist plugin test|from admin: Courgette|email: courgette@bigbrotherbot.net| visit our web site : www.bigbrotherbot.net',
                 'bannerUrl': 'http://www.lowpinggameservers.com/i/bc2.jpg',
+                'default_encoding': sys.getdefaultencoding()
                 })
         p._cronTab = b3.cron.PluginCronTab(p, myUpdate, second='*/10')
         p.console.cron + p._cronTab
