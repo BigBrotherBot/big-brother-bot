@@ -65,6 +65,7 @@ setup(
                 "b3.lib.*",
                 "b3.plugins.*",
                 "b3.parsers.*",
+                "b3.parsers.homefront",
                 "b3.parsers.frostbite.*",
                 "b3.extplugins.__init__",
                 ### additional modules for popular/useful 3rd party plugins ###
