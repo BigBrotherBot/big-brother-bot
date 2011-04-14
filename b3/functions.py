@@ -26,7 +26,13 @@
 __author__    = 'ThorN, xlr8or'
 __version__   = '1.3.2'
 
-import re, sys, imp, string, urllib2
+import b3
+import re
+import os
+import sys
+import imp
+import string
+import urllib2
 from lib.elementtree import ElementTree
 from distutils import version
 
@@ -292,6 +298,27 @@ def sanitizeMe(s):
     sanitized = re.sub(r'[\x00-\x1F]|[\x7F-\xff]', '?', str(s))
     return sanitized
 
+#--------------------------------------------------------------------------------------------------
+def executeSql(db, file):
+    """This method executes an external sql file on the current database"""
+    sqlFile = b3.getAbsolutePath(file)
+    if os.path.exists(sqlFile):
+        try:
+            f = open(sqlFile, 'r')
+        except Exception:
+            return 'couldnotopen'
+        sql_text = f.read()
+        f.close()
+        sql_statements = sql_text.split(';')
+        for s in sql_statements:
+            try:
+                db.query(s)
+            except Exception:
+                pass
+    else:
+        return 'notfound'
+    return 'success'
+#--------------------------------------------------------------------------------------------------
 
 
 if __name__ == '__main__':

@@ -123,7 +123,7 @@ import b3.cron
 import b3.parsers.q3a.rcon
 import b3.clients
 import b3.functions
-from b3.functions import main_is_frozen, getModule
+from b3.functions import main_is_frozen, getModule, executeSql
 
 
 class Parser(object):
@@ -399,6 +399,21 @@ class Parser(object):
 
         self.game = b3.game.Game(self, self.gameName)
         self.queue = Queue.Queue(15)    # event queue
+
+        # try to update the databasetables
+        try:
+            _sqlfiles = ['@b3/sql/b3-update.sql', 'b3/sql/b3-update.sql', 'sql/b3-update.sql']
+            _sqlc = 0
+            _sqlresult = 'notfound'
+            while _sqlresult == 'notfound' and _sqlc < len(_sqlfiles):
+                self.debug('Checking: %s' % _sqlfiles[_sqlc] )
+                _sqlresult = executeSql(self.storage.db, _sqlfiles[_sqlc])
+                _sqlc += 1
+            self.debug('Updating database tables finished')
+        except Exception:
+            # if we fail, do nothing
+            self.error('Updating database tables failed')
+            pass
 
         atexit.register(self.shutdown)
 
