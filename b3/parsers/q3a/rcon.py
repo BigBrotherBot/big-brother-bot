@@ -27,9 +27,11 @@
 # * added variables for rcon & qserver send & reply strings
 # 2011/04/02 - 1.3.8 - Just a baka
 # * Quit command should never be retried
+# 2011/04/13 - 1.3.9 - Courgette
+# * hopefully filter out non ascii characters
  
 __author__ = 'ThorN'
-__version__ = '1.3.8'
+__version__ = '1.3.9'
  
 import socket
 import sys
@@ -95,7 +97,7 @@ class Rcon:
         if maxRetries is None:
             maxRetries = 2
             
-        data = data.strip()
+        data = data.encode('ascii', 'replace').strip()
         self.console.verbose('QSERVER sending (%s:%s) %s', self.host[0], self.host[1], data)
         startTime = time.time()
 
@@ -141,7 +143,7 @@ class Rcon:
         if maxRetries is None:
             maxRetries = 2
             
-        data = data.strip()
+        data = data.encode('ascii', 'replace').strip()
         self.console.verbose('RCON sending (%s:%s) %s', self.host[0], self.host[1], data)
         startTime = time.time()
 
