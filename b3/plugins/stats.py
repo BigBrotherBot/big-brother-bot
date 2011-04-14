@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    04/14/2011 - 1.3.7 Courgette
+#    * fix bug with !topstats and  !topxp
 #    04/13/2011 - 1.3.6 Courgette
 #    * import missing string module
 #    10/30/2010 - 1.3.5 GrosBedo
@@ -42,7 +44,7 @@
 #    * Converted to use new event handlers
 
 __author__ = 'ThorN, GrosBedo'
-__version__ = '1.3.6'
+__version__ = '1.3.7'
 
 
 import string
@@ -317,7 +319,7 @@ class StatsPlugin(b3.plugin.Plugin):
                 results.append('^3#%s^7 %s ^7[^3%s^7]' % (i, name, score))
                 
             if client:        
-                client.message(client, '^3Top Stats:^7 %s' % string.join(results,', '))
+                client.message('^3Top Stats:^7 %s' % string.join(results,', '))
             else:
                 self.console.say('^3Top Stats:^7 %s' % string.join(results,', '))
         else:
@@ -350,7 +352,7 @@ class StatsPlugin(b3.plugin.Plugin):
                 results.append('^3#%s^7 %s ^7[^3%s^7]' % (i, name, score))
 
             if client:
-                client.message(client, '^3Top Experienced Players:^7 %s' % string.join(results, ', '))
+                client.message('^3Top Experienced Players:^7 %s' % string.join(results, ', '))
             else:
                 self.console.say('^3Top Experienced Players:^7 %s' % string.join(results, ', '))
         else:
