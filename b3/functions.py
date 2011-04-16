@@ -300,7 +300,11 @@ def sanitizeMe(s):
 
 #--------------------------------------------------------------------------------------------------
 def executeSql(db, file):
-    """This method executes an external sql file on the current database"""
+    """This method executes an external sql file on the current database
+    A similar function can be found in storage.DatabaseStorage.queryFromFile()
+    This one returns if a file is not found.
+    """
+    ## @TODO: see if functions.executeSQL() and storage.DatabaseStorage.queryFromFile() can be combined.
     sqlFile = b3.getAbsolutePath(file)
     if os.path.exists(sqlFile):
         try:
