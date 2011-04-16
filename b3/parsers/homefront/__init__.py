@@ -75,8 +75,6 @@ class HomefrontParser(b3.parser.Parser):
     _cronTab = None
     _playerlistInterval = 15
     _server_banlist = {}
-    _cronTab_banlist = None
-    _banlistInterval = 60
 
     _commands = {}
     _commands['message'] = ('say %(prefix)s [%(name)s] %(message)s')
@@ -121,10 +119,6 @@ class HomefrontParser(b3.parser.Parser):
         # start crontab to trigger playerlist events
         self._cronTab = b3.cron.CronTab(self.retrievePlayerList, second='*/%s' % self._playerlistInterval)
         self.cron + self._cronTab
-
-        # start crontab to retrive banlist
-        self._cronTab_banlist = b3.cron.CronTab(self.retrieveBanList, minute='*/%s' % self._banlistInterval)
-        self.cron + self._cronTab_banlist
 
         # add specific events
         self.Events.createEvent('EVT_CLIENT_SQUAD_SAY', 'Squad Say')
@@ -423,10 +417,13 @@ class HomefrontParser(b3.parser.Parser):
 
     def onServerBan_remove(self, data):
         self.write(self.getCommand('saybig',  prefix='', message="%s unbanned" % data))
+        # update banlist
+        self.retrieveBanList()
     
     def onServerBan_added(self, data):
         self.write(self.getCommand('saybig',  prefix='', message="%s banned" % data))
-        return self.getEvent('EVT_CLIENT_BAN', data)
+        # update banlist
+        self.retrieveBanList()
 
     def onServerPlayer(self, data):
         # [int: Team] [string: Clan] [string: Name] [int: Kills] [int: Deaths]
