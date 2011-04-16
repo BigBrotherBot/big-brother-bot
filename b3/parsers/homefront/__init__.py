@@ -264,8 +264,10 @@ class HomefrontParser(b3.parser.Parser):
     def onServerLogin(self, data):
         # [string: Name]
         # (onServerLogin also occurs after a mapchange...)
-        # we ignore that event as Name is not reliable
-        pass
+        # we need this event for xlrstats (counting playerrounds)
+        client = self.getClient(data)
+        if client:
+            self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', None, client))
 
     
     def onServerUid(self, data):
@@ -520,11 +522,11 @@ class HomefrontParser(b3.parser.Parser):
         for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
             self.write(self.getCommand('saybig',  prefix=self.msgPrefix, message=line))
 
+    ## @todo Change private messages when the rcon protocol will allow us to
     def message(self, client, text):
         """\
         display a message to a given player
         """
-        ## @todo: message: change that when the rcon protocol will allow us to
         # actually send private messages
         text = self.stripColors(text)
         for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
@@ -579,6 +581,7 @@ class HomefrontParser(b3.parser.Parser):
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN', reason, client))
         client.disconnect()
 
+    ## @todo Need to test response from the server
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
         unban a given players
@@ -591,7 +594,6 @@ class HomefrontParser(b3.parser.Parser):
             banid = client.name
         self.debug('UNBAN: %s' % banid)
         response = self.write(self.getCommand('unban', name=banid))
-        ## @todo: unban: need to test response from the server
         self.verbose(response)
         if response:
             self.verbose('UNBAN: Removed name (%s) from banlist' %client.name)
@@ -768,16 +770,13 @@ class HomefrontParser(b3.parser.Parser):
 
     def getClient(self, name):
         """return a already connected client by searching the 
-        clients cid index. If not found, call getPlayerList()
-        so next time we'll have more chances to get that player
-        
+        clients cid index.
+
         This method can return None
         """
         client = self.clients.getByCID(name)
         if client:
             return client
-        #self.debug('client not found calling getPlayerList()')
-        #self.getPlayerList()
         return None
 
     def getftpini(self):

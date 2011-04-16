@@ -1,11 +1,86 @@
+2011-04-14  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/stats.py: STATS PLUGIN : fix bug with !topstats and
+	!topxp
+
+2011-04-14  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 799c8fffb10fabc6e14aed8a6fe3fbeafe45993a Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Thu Apr 14 19:01:02 2011 +0200
+
+2011-04-13  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/q3a/rcon.py: filter out non ascii character in quake3
+	rcon
+
+2011-04-13  Courgette <courgette@ubu-team.org>
+
+	* b3/plugins/publist.py: PUBLIST PLUGIN : now send system default
+	encoding
+
+2011-04-13  xlr8or <xlr8or@xlr8or.com>
+
+	* : Merge remote branch 'remotes/courgette/master'
+
+2011-04-13  Courgette <courgette@ubu-team.org>
+
+	* b3/parser.py, setupPy2exe.py: fix setupPy2exe for Homefront, add
+	defaut encoding logging
+
+2011-04-13  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit d6647325c9b43243cf0569ef972caf21be21f137 Author: ThomasL
+	<courgette@bigbrotherbot.net> Date:   Wed Apr 13 03:58:57 2011 -0700
+
+2011-04-11  Freelander <freelander00@gmail.com>
+
+	* b3/parsers/homefront/__init__.py: HF parser: unban via UID
+
+2011-04-11  Freelander <freelander00@gmail.com>
+
+	* : commit bd55905db9fdd3427220e4d997dc59592f003865 Author:
+	Courgette <courgette@ubu-team.org> Date:   Mon Apr 11 01:38:36 2011
+	+0200
+
+2011-04-10  Courgette <courgette@ubu-team.org>
+
+	* b3/parsers/wop15.py: WOP15 : fix commands that should use
+	quotation marks
+
+2011-04-10  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG: fixed changelog
+
+2011-04-10  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/sql/b3-update-v1.6.sql, b3/sql/b3.sql: updates to sql
+
+2011-04-10  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 34be650d2eb96e5b1b7843889b7fbecbb0a22870 Author: ThomasL
+	<courgette@bigbrotherbot.net> Date:   Sat Apr 9 10:34:46 2011 -0700
+
+2011-04-09  xlr8or <xlr8or@xlr8or.com>
+
+	* versions.txt: update
+
+2011-04-09  xlr8or <xlr8or@xlr8or.com>
+
+	* py2exe_builder/b3-installer-project.iss: beta release updates
+
+2011-04-09  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 6f067a66212573ec6d90f6642462d7b6fc2885e7 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sat Apr 9 09:07:06 2011 +0200
+
 2011-04-09  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/sql/xlrstats.sql: update to xlrstats sql file
 
-2011-04-09  xlr8or <xlr8or@xlr8or.com>
+2011-04-09  Freelander <freelander00@gmail.com>
 
-	* b3.egg-info/PKG-INFO, b3.egg-info/SOURCES.txt, b3/PKG-INFO,
-	versions.txt: versioning for beta release
+	* : commit f032490f829d4e1da223ce2bebc532de2ffed6f9 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sat Apr 9 08:53:44 2011 +0200
 
 2011-04-09  Courgette <courgette@ubu-team.org>
 
@@ -21,13 +96,20 @@
 	module : now do not convert cid to string ! + reflect that change on
 	all parsers + WOP updates
 
-2011-04-08  xlr8or <xlr8or@xlr8or.com>
+2011-04-09  Freelander <freelander00@gmail.com>
 
-	* b3/parsers/homefront/__init__.py: minor bugfix
+	* : commit a4e05069b812160849778e774a60f57e0dc30998 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Fri Apr 8 22:01:40 2011 +0200
 
 2011-04-08  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/parser.py: parser parse unicode...
+
+2011-04-08  Freelander <freelander00@gmail.com>
+
+	* : commit 0374ddbe67de505378fb617b445e526b8347c025 Merge: ad81a54
+	487178f Author: Freelander <freelander00@gmail.com> Date:   Fri Apr
+	8 20:36:57 2011 +0300
 
 2011-04-08  xlr8or <xlr8or@xlr8or.com>
 
@@ -41,9 +123,25 @@
 
 2011-04-08  xlr8or <xlr8or@xlr8or.com>
 
-	* : commit b643bab38f41e1d939a1a6229a79f3e3eeee159d Author:
-	Courgette <courgette@ubu-team.org> Date:   Fri Apr 8 00:21:41 2011
-	+0200
+	* : commit 4094e44cfa406fe4e115fe34a7e8052ac41a62ee Author:
+	Freelander <freelander00@gmail.com> Date:   Fri Apr 8 12:14:13 2011
+	+0300
+
+2011-04-08  Freelander <freelander00@gmail.com>
+
+	* b3/parsers/cod7.py: Revert "cod7 parser: reduced playercount to 4
+	in pre-match logic" This reverts commit 539bb63fb83f6afe041cb923667e115a7272e068.
+
+2011-04-08  Freelander <freelander00@gmail.com>
+
+	* : commit bd2355bc0e462dbe7f040f6dc03bc6dd3a8713fb Merge: a36a775
+	ec9fc57 Author: Freelander <freelander00@gmail.com> Date:   Fri Apr
+	8 12:03:35 2011 +0300
+
+2011-04-08  Courgette <courgette@ubu-team.org>
+
+	* b3/clients.py, b3/parsers/homefront/__init__.py, b3/storage.py: 
+	HOMEFRONT: do not create client object without guid (#19-1)
 
 2011-04-08  xlr8or <xlr8or@xlr8or.com>
 
@@ -70,6 +168,12 @@
 	* b3/clients.py, b3/events.py: defines __str__ for Event and Client
 	classes
 
+2011-04-07  Freelander <freelander00@gmail.com>
+
+	* : commit 98e476e987bf31afa6b50081c47f427326c6a4cd Merge: 6bf34fa
+	ecf5ac9 Author: Freelander <freelander00@gmail.com> Date:   Thu Apr
+	7 21:15:56 2011 +0300
+
 2011-04-07  Courgette <courgette@ubu-team.org>
 
 	* b3/clients.py, b3/output.py, b3/parsers/homefront/protocol.py,
@@ -95,6 +199,16 @@
 2011-04-05  Freelander <freelander00@gmail.com>
 
 	* : Merge remote branch 'courgette/master'
+
+2011-04-04  Freelander <freelander00@gmail.com>
+
+	* b3/parsers/cod7.py: cod7 parser: reduced playercount to 4 in
+	pre-match logic
+
+2011-04-04  Freelander <freelander00@gmail.com>
+
+	* b3/parsers/cod7.py: cod7 parser: fix for suicides to be handled
+	correctly by xlrtats
 
 2011-04-03  Courgette <courgette@ubu-team.org>
 
