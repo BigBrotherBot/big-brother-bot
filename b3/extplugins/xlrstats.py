@@ -1486,9 +1486,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         except Exception, msg:
             self.error('Creating history snapshot failed: %s' %msg)
 
+    ## @todo: add mysql condition
     def updateTableColumns(self):
         self.verbose('Checking if we need to update tables for version 2.0.0')
-        #todo: add mysql condition
         #v2.0.0 additions to the playerstats table:
         self._addTableColumn('assists', PlayerStats._table, 'MEDIUMINT( 8 ) NOT NULL DEFAULT "0" AFTER `skill`')
         self._addTableColumn('assistskill', PlayerStats._table, 'FLOAT NOT NULL DEFAULT "0" AFTER `assists`')

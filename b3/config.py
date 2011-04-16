@@ -218,13 +218,13 @@ class CfgConfigParser(ConfigParser.ConfigParser):
     fileName = ''
     fileMtime = 0
 
+    ## @todo Use actual module path
     def getpath(self, section, setting):
         """Return an absolute path name and expand the user prefix (~)"""
         path = self.get(section, setting)
 
         if path[0:3] == '@b3':
-            # releative path to the b3 module directory
-            # TODO: use actual module path
+            # relative path to the b3 module directory
             path = path[1:]
         elif path[0:6] == '@conf/' or path[0:6] == '@conf\\':
             path = "%s/%s" % (b3.getConfPath(), path[5:])
