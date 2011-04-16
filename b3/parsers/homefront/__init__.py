@@ -264,8 +264,10 @@ class HomefrontParser(b3.parser.Parser):
     def onServerLogin(self, data):
         # [string: Name]
         # (onServerLogin also occurs after a mapchange...)
-        # we ignore that event as Name is not reliable
-        pass
+        # we need this event for xlrstats (counting playerrounds)
+        client = self.getClient(data)
+        if client:
+            self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', None, client))
 
     
     def onServerUid(self, data):
@@ -768,16 +770,13 @@ class HomefrontParser(b3.parser.Parser):
 
     def getClient(self, name):
         """return a already connected client by searching the 
-        clients cid index. If not found, call getPlayerList()
-        so next time we'll have more chances to get that player
-        
+        clients cid index.
+
         This method can return None
         """
         client = self.clients.getByCID(name)
         if client:
             return client
-        #self.debug('client not found calling getPlayerList()')
-        #self.getPlayerList()
         return None
 
     def getftpini(self):
