@@ -21,9 +21,11 @@
 #    * minor transparent changes to the code 
 # 30/03/2011 - 1.1.3 - SGT
 #    * add EVT_CLIENT_UNBAN
-
+# 26/03/2011 - 1.2 - Courgette
+#    * add event EVT_GAME_MAP_CHANGE
+#
 __author__  = 'ThorN/xlr8or'
-__version__ = '1.1.3'
+__version__ = '1.2'
 
 import re
 import b3
