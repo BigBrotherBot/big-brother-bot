@@ -175,8 +175,7 @@ b3/plugins/status.py
 b3/plugins/tk.py
 b3/plugins/welcome.py
 b3/sql/b3-db.sql
-b3/sql/b3-update-v1.3.sql
-b3/sql/b3-update-v1.6.sql
+b3/sql/b3-update.sql
 b3/sql/b3.sql
 b3/sql/recreate-xlrstats.sql
 b3/sql/xlrstats.sql
