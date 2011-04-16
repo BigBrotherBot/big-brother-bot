@@ -444,7 +444,7 @@ class FakeStorage(object):
     def numPenalties(self, client, type='Ban'):
         match = [k for k, v in self._penalties.iteritems() if v.clientId == client.id and v.type == type]
         return len(match)
-    def query(self, sql):
+    def query(self, sql, data=None):
         return self.Cursor()
     
 class FakeClient(b3.clients.Client):
