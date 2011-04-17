@@ -18,6 +18,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    08/04/2011 - 1.3.5 - Courgette
+#    * make sure Clients.empty() does not delete hidden clients
 #    08/04/2011 - 1.3.4 - Courgette
 #    * changes to allow cid to be a unicode string
 #    30/03/2011 - 1.3.3 - Courgette
@@ -63,7 +65,7 @@
 #     Added data parameter to Client.tempban()
 
 __author__  = 'ThorN'
-__version__ = '1.3.4'
+__version__ = '1.3.5'
 
 import b3, string, re, time, functions, threading, traceback, sys
 
@@ -116,7 +118,7 @@ class Client(object):
     team = b3.TEAM_UNKNOWN
     maxGroup = None
     authed = False
-    hide = False
+    hide = False # set to true for non-player clients (world entities)
 
     state = None
     authorizing = False
@@ -1093,7 +1095,7 @@ class Clients(dict):
     def clear(self):
         self.resetIndex()
         for cid,c in self.items():
-            if cid != '-1':
+            if not c.hide:
                 del self[cid]
 
     def sync(self):
