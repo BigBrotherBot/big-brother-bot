@@ -436,10 +436,20 @@ class HomefrontParser(b3.parser.Parser):
         if not match:
             self.error("onServerPlayer failed match")
             return
+        
+        uid = match.group('uid')
+        
+        if uid == '0':
+            # connecting player with no UID resolved yet --> ignore
+            return
+        
+        if len(uid) != 17:
+            self.warning(u"weird UID : [%s]" % uid)
+        
         # try to get the client by guid
-        client = self.clients.getByGUID(match.group('uid'))
+        client = self.clients.getByGUID(uid)
         if not client:
-            client = self.clients.newClient(match.group('name'), guid=match.group('uid'), name=match.group('name'), team=b3.TEAM_UNKNOWN)
+            client = self.clients.newClient(match.group('name'), guid=uid, name=match.group('name'), team=b3.TEAM_UNKNOWN)
         # update client data
         client.name = match.group('name')
         client.team = self.getTeam(match.group('team'))
