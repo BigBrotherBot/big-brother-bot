@@ -17,7 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
-# 30/03/2011 - 1.4.5 - Courgette
+# 17/04/2011 - 1.4.7 - Courgette
+# * XML file generated is now using UTF-8 encoding
+# 17/04/2011 - 1.4.6 - Courgette
 # * unicode compliant
 # 30/03/2011 - 1.4.5 - SGT
 # * bugfix camelCasing timeLimit and fragLimit
@@ -51,7 +53,7 @@
 # Converted to use new event handlers
 
 __author__    = 'ThorN'
-__version__ = '1.4.6'
+__version__ = '1.4.7'
 
 import b3, time, os, StringIO
 import b3.plugin
@@ -208,11 +210,11 @@ class StatusPlugin(b3.plugin.Plugin):
 
             try:
                 client = xml.createElement("Client")
-                client.setAttribute("Name", str(sanitizeMe(c.name)))
-                client.setAttribute("ColorName", str(sanitizeMe(c.exactName)))
+                client.setAttribute("Name", sanitizeMe(c.name))
+                client.setAttribute("ColorName", sanitizeMe(c.exactName))
                 client.setAttribute("DBID", str(c.id))
                 client.setAttribute("Connections", str(c.connections))
-                client.setAttribute("CID", str(c.cid))
+                client.setAttribute("CID", c.cid)
                 client.setAttribute("Level", str(_level))
                 if c.guid:
                     client.setAttribute("GUID", c.guid)
@@ -276,7 +278,7 @@ class StatusPlugin(b3.plugin.Plugin):
 
         # --- End Clients section
 
-        self.writeXML(xml.toprettyxml(indent="        "))
+        self.writeXML(xml.toprettyxml(encoding="UTF-8", indent="        "))
 
     def writeXML(self, xml):
         if self._ftpstatus == True:
