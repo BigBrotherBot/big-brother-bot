@@ -74,10 +74,8 @@ class HomefrontParser(b3.parser.Parser):
     _connectionTimeout = 30
     maplist = None
     mapgamelist = None
-    _cronTab = None
     _playerlistInterval = 15
     _server_banlist = {}
-    _cronTab_banlist = None
     _banlistInterval = 60
 
     _commands = {}
@@ -121,12 +119,11 @@ class HomefrontParser(b3.parser.Parser):
             self.debug('Incorrect ini file or no ini file specified, map commands other than nextmap not available')
             
         # start crontab to trigger playerlist events
-        self._cronTab = b3.cron.CronTab(self.retrievePlayerList, second='*/%s' % self._playerlistInterval)
-        self.cron + self._cronTab
+        self.cron + b3.cron.CronTab(self.retrievePlayerList, second='*/%s' % self._playerlistInterval)
 
         # start crontab to retrive banlist
-        self._cronTab_banlist = b3.cron.CronTab(self.retrieveBanList, minute='*/%s' % self._banlistInterval)
-        self.cron + self._cronTab_banlist
+        self.cron + b3.cron.CronTab(self.retrieveBanList, minute='*/%s' % self._banlistInterval)
+
 
         # add specific events
         self.Events.createEvent('EVT_CLIENT_SQUAD_SAY', 'Squad Say')
@@ -478,13 +475,6 @@ class HomefrontParser(b3.parser.Parser):
     # =======================================
     # implement parser interface
     # =======================================
-        
-    def retrievePlayerList(self):
-        """\
-        Send RETRIEVE PLAYERLIST to the server to trigger onServerPlayer return events
-        """
-        self.verbose2('Retrieving Playerlist')
-        self.write('RETRIEVE PLAYERLIST')
 
     def getPlayerList(self):
         """\
@@ -492,13 +482,6 @@ class HomefrontParser(b3.parser.Parser):
         """
         clients = self.clients.getList()
         return clients
-
-    def retrieveBanList(self):
-        """\
-        Send RETRIEVE BANLIST to the server
-        """
-        self.verbose2('Retrieving Banlist')
-        self.write('RETRIEVE BANLIST')
 
     def authorizeClients(self):
         """\
@@ -857,3 +840,20 @@ class HomefrontParser(b3.parser.Parser):
         self.debug('trying to cwd to [%s]' % dir)
         ftp.cwd(dir)
         return ftp
+    
+
+    def retrieveBanList(self):
+        """\
+        Send RETRIEVE BANLIST to the server
+        """
+        self.verbose2('Retrieving Banlist')
+        self.write('RETRIEVE BANLIST')
+
+
+    def retrievePlayerList(self):
+        """\
+        Send RETRIEVE PLAYERLIST to the server to trigger onServerPlayer return events
+        """
+        self.verbose2('Retrieving Playerlist')
+        self.write('RETRIEVE PLAYERLIST')
+
