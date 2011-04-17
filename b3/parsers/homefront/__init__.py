@@ -743,7 +743,7 @@ class HomefrontParser(b3.parser.Parser):
         """\
         returns a dict having players' id for keys and players' ping for values
         """
-        raise NotImplementedError
+        return {}
 
     def getPlayerScores(self):
         """\
