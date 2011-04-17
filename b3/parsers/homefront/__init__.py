@@ -29,9 +29,11 @@
 # * fix the "empty name in database bug" reported by Platanos
 # 2011-04-09 : 0.6
 # * unban using UID if available
+# 2011-04-16 : 0.6.1
+# * getPlayerScores do not raise an exception when client has no kills attribute
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.6'
+__version__ = '0.6.1'
 
 from b3.parsers.homefront.protocol import MessageType, ChannelType
 import sys
@@ -737,7 +739,10 @@ class HomefrontParser(b3.parser.Parser):
         scores = {}
         clients = self.clients.getList()
         for c in clients:
-            scores[c.name] = int(c.kills)
+            try:
+                scores[c.name] = int(c.kills)
+            except AttributeError:
+                pass
         return scores
 
     def getTeam(self, team):
