@@ -20,11 +20,13 @@
 #
 # 2011-04-16 - 1.0.2 - Courgette
 # * fix bug in escaping strings containing "
+# 2011-04-17 - 1.0.3 - Courgette
+# * fix bug introduced in 1.0.2
 #
 
 
 __author__  = 'ThorN'
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 class QueryBuilder(object):
     def __init__(self, db=None):
@@ -35,6 +37,8 @@ class QueryBuilder(object):
     def escape(self, word):
         if isinstance(word, int):
             return str(word)
+        elif word is None:
+            return '"None"'
         else:
             return '"%s"' % word.replace('"','\\"')
 
