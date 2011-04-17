@@ -45,7 +45,7 @@ class Cvar(object):
             return self.__dict__[key]
 
     def __repr__(self):
-        return '<%s name="%s", value="%s", default="%s">' % (self.__class__.__name__, self.name, self.value, self.default)
+        return '<%s name: "%s", value: "%s", default: "%s">' % (self.__class__.__name__, self.name, self.value, self.default)
 
     def getString(self):
         return str(self.value)

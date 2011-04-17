@@ -37,12 +37,15 @@
 #   * Set playercount to 4 in pre-match logic
 # 09.04.2011 - 1.0.7 - Courgette
 #   * reflect that cid are not converted to int anymore in the clients module
+# 14.04.2011 - 1.0.8 - Freelander
+#   * Fixed rcon set command that was changed as setadmindvar in CoD7
+#
 
 ## @file
 #  CoD7 Parser
 
 __author__  = 'Freelander, Courgette, Just a baka, Bravo17'
-__version__ = '1.0.7'
+__version__ = '1.0.8'
 
 import re
 import string
@@ -65,6 +68,16 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
     _logTimer = 0
     _logTimerOld = 0
     _cod7httpplugin = None
+
+    _commands = {}
+    _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
+    _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
+    _commands['say'] = 'say %(prefix)s %(message)s'
+    _commands['set'] = 'setadmindvar %(name)s "%(value)s"'
+    _commands['kick'] = 'clientkick %(cid)s'
+    _commands['ban'] = 'banclient %(cid)s'
+    _commands['unban'] = 'unbanuser %(name)s'
+    _commands['tempban'] = 'clientkick %(cid)s'
 
     """\
     Next actions need translation to the EVT_CLIENT_ACTION (Treyarch has a different approach on actions)
