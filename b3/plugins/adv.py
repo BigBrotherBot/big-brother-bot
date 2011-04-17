@@ -99,7 +99,7 @@ class AdvPlugin(b3.plugin.Plugin):
     _fileName = None
     _rate = None
     _feed = 'http://www.bigbrotherbot.net/forums/news-2/?&type=rss;action=.xml'
-    _feedpre = 'News: '
+    _feedpre = u'News: '
     _feedmaxitems = 5
     _feeditemnr = 0
     _replay = 0
@@ -260,7 +260,7 @@ class AdvPlugin(b3.plugin.Plugin):
         try:
             _item = f['entries'][i]['title']
             self._feeditemnr += 1
-            return self._feedpre + str(_item)
+            return self._feedpre + _item
         except:
             self.debug('Feeditem %s out of range' %i)
             self._feeditemnr = 0
