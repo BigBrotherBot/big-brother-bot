@@ -22,9 +22,10 @@
 # 08/11/2010 - 1.3.1 - GrosBedo - vars2printf is now more robust against empty strings
 # 01/12/2010 - 1.3.2 - Courgette - checkUpdate now uses a custom short timeout to
 #   prevent blocking the bot when the B3 server is hanging
+# 17/04/2011 - 1.3.3 - Courgette - make sanitizeMe unicode compliant
 
 __author__    = 'ThorN, xlr8or'
-__version__   = '1.3.2'
+__version__   = '1.3.3'
 
 import b3
 import re
@@ -295,7 +296,7 @@ def fuzzyGuidMatch(a, b):
 
 #--------------------------------------------------------------------------------------------------
 def sanitizeMe(s):
-    sanitized = re.sub(r'[\x00-\x1F]|[\x7F-\xff]', '?', str(s))
+    sanitized = re.sub(r'[\x00-\x1F]|[\x7F-\xff]', '?', s)
     return sanitized
 
 #--------------------------------------------------------------------------------------------------

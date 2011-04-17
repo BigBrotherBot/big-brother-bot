@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 30/03/2011 - 1.4.5 - Courgette
+# * unicode compliant
 # 30/03/2011 - 1.4.5 - SGT
 # * bugfix camelCasing timeLimit and fragLimit
 # 06/01/2011 - 1.4.4 - Gammelbob
@@ -49,7 +51,7 @@
 # Converted to use new event handlers
 
 __author__    = 'ThorN'
-__version__ = '1.4.5'
+__version__ = '1.4.6'
 
 import b3, time, os, StringIO
 import b3.plugin
@@ -248,8 +250,8 @@ class StatusPlugin(b3.plugin.Plugin):
                 b3clients.appendChild(client)
                 for k,v in c.data.iteritems():
                     data = xml.createElement("Data")
-                    data.setAttribute("Name", str(k))
-                    data.setAttribute("Value", str(sanitizeMe(v)))
+                    data.setAttribute("Name", "%s" % k)
+                    data.setAttribute("Value", sanitizeMe(v))
                     client.appendChild(data)
                         
                 if self._tkPlugin:
