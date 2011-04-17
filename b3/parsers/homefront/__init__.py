@@ -31,9 +31,13 @@
 # * unban using UID if available
 # 2011-04-16 : 0.6.1
 # * getPlayerScores do not raise an exception when client has no kills attribute
+# 2011-04-17 : 0.7.0
+# * implements sync()
+# * fix bug with UID '0'
+
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.6.1'
+__version__ = '0.7.0'
 
 from b3.parsers.homefront.protocol import MessageType, ChannelType
 import sys
