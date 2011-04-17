@@ -20,13 +20,13 @@
 #
 # 2011-04-16 - 1.0.2 - Courgette
 # * fix bug in escaping strings containing "
-# 2011-04-17 - 1.0.3 - Courgette
+# 2011-04-17 - 1.0.3 / 1.0.4 - Courgette
 # * fix bug introduced in 1.0.2
 #
 
 
 __author__  = 'ThorN'
-__version__ = '1.0.3'
+__version__ = '1.0.4'
 
 class QueryBuilder(object):
     def __init__(self, db=None):
@@ -35,7 +35,8 @@ class QueryBuilder(object):
         pass
 
     def escape(self, word):
-        if isinstance(word, int):
+        if isinstance(word, int) or isinstance(word, long) \
+            or isinstance(word, complex) or isinstance(word, float):
             return str(word)
         elif word is None:
             return '"None"'
