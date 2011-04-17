@@ -286,6 +286,7 @@ class HomefrontParser(b3.parser.Parser):
         if client is None:
             name = match.group('name')
             client = self.clients.newClient(name, guid=match.group('uid'), name=name, team=b3.TEAM_UNKNOWN)
+            client.last_update_time = time.time()
     
     def onServerLogout(self, data):
         ## [string: Name]
@@ -385,6 +386,9 @@ class HomefrontParser(b3.parser.Parser):
         if not match:
             self.error('onServerChange_level failed match')
             return
+        
+        # resync players to get rid of eventual 'phantom' players
+        self.clients.sync()
 
         levelname = match.group('level')
         self.verbose('onServerChange_level, levelname: %s' % levelname)
@@ -456,6 +460,7 @@ class HomefrontParser(b3.parser.Parser):
         client.clan = match.group('clan')
         client.kills = match.group('kills')
         client.deaths = match.group('deaths')
+        client.last_update_time = time.time() ## save the timestamp so sync() can use that info
         self.verbose2('onServerPlayer: name: %s, clan: %s, team: %s, kills: %s, deaths: %s' %( client.name, client.clan, client.team, client.kills, client.deaths ))
 
     def onServerBan_item(self, data):
@@ -515,8 +520,22 @@ class HomefrontParser(b3.parser.Parser):
         occupy. On map change, a player A on slot 1 can leave making room for player B who
         connects on slot 1.
         """
-        self.getPlayerList()
-        raise NotImplementedError
+        ## we are unable to get the exact list of connected players in a synchronous
+        ## way. So we use .last_update_time timestamp to detect player we still
+        ## have in self.clients but that are no longer on the game server
+        self.debug("synchronizing clients")
+        mlist = {}
+        now = time.time()
+        for client in self.clients.getList():
+            howlongago = now - client.last_update_time
+            self.debug(u"%s last seen %d seconds ago" % (client, howlongago))
+            if howlongago < (self._playerlistInterval * 2):
+                mlist[client.cid] = client
+            else:
+                self.info(u"%s last update is too old" % client)
+                client.disconnect()
+        return mlist
+        
     
     def say(self, msg):
         """\
