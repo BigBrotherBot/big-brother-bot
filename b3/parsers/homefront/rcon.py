@@ -17,20 +17,21 @@
 #
 # CHANGELOG
 #
-#
+# 2011-04-17 - 1.0 - Courgette
+# * add logging of sent commands
 
 """
 dummy rcon module for Homefront to satisfy B3 parser. 
 
-Ideally, B3 parser should be change to allow games such as homefront to not require 
-a separated socket connection for rcon commands
+Ideally, B3 parser should be changed to allow games such as homefront to 
+not require a separated socket connection for rcon commands
 
 To use that Rcon class, instanciate and use the set_homefront_client() method. 
 Then you can expect this class to work like the other Rcon classes
 """
 
 __author__  = 'Courgette'
-__version__ = '0.1'
+__version__ = '1.0'
 
 
 #--------------------------------------------------------------------------------------------------
@@ -49,6 +50,7 @@ class Rcon:
     def write(self, cmd, *args, **kwargs):
         if not self.hfclient:
             return
+        self.console.verbose(u'RCON :\t %s' % cmd)
         self.hfclient.command(cmd)
         
     def flush(self):
