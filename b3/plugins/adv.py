@@ -17,6 +17,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
+# 04/18/2011 - 1.3.0 - Courgette
+#    add the @admins keyword that displays the connected admins
+#    when the ad is @topstats or @amdins but no message is to be shown, then 
+#      try next ad
 # 10/24/2010 - 1.2.2 - Courgette
 #    Prevent crash when no feed is specified in config
 # 08/20/2010 - 1.2.1 - xlr8or
@@ -36,11 +40,12 @@
 #    Converted to use XML config
 
 __author__ = 'ThorN'
-__version__ = '1.2.2'
+__version__ = '1.3.0'
 
 import b3
 import os
 import time
+import string
 import b3.lib.feedparser as feedparser
 import b3.plugin
 import b3.cron
@@ -98,7 +103,7 @@ class AdvPlugin(b3.plugin.Plugin):
     _msg = None
     _fileName = None
     _rate = None
-    _feed = 'http://www.bigbrotherbot.net/forums/news-2/?&type=rss;action=.xml'
+    _feed = 'http://forum.bigbrotherbot.net/news-2/?type=rss;action=.xml'
     _feedpre = u'News: '
     _feedmaxitems = 5
     _feeditemnr = 0
@@ -213,7 +218,7 @@ class AdvPlugin(b3.plugin.Plugin):
                     w = self._adminPlugin.getSpam(w[6:])
                 self._msg.put(w)                
         
-    def adv(self):
+    def adv(self, firstTry=True):
         ad = self._msg.getnext()
         if ad:
             if ad == "@nextmap":
@@ -235,10 +240,26 @@ class AdvPlugin(b3.plugin.Plugin):
             elif ad == "@topstats":
                 if self._xlrstatsPlugin:
                     self._xlrstatsPlugin.cmd_xlrtopstats(data='3', client=None, cmd=None, ext=True)
-                    ad = None
+                    if firstTry:
+                        # try another ad
+                        self.adv(firstTry=False)
+                        return
+                    else:
+                        ad = None
                 else:
                     self.error('XLRstats not installed! Cannot use @topstats in adv plugin!')
                     ad = '@topstats not available, XLRstats is not installed!'
+            elif ad == "@admins":
+                admins = self._adminPlugin.getAdmins()
+                if len(admins)>0:
+                    ad = self._adminPlugin.getMessage('admins', string.join([c.name for c in admins], ', '))
+                else:
+                    if firstTry:
+                        # try another ad
+                        self.adv(firstTry=False)
+                        return
+                    else:
+                        ad = None
             if ad:
                 self.console.say(ad)
             self._replay = 0
@@ -332,65 +353,98 @@ class AdvPlugin(b3.plugin.Plugin):
     
 if __name__ == '__main__':
     from b3.fake import fakeConsole
-    from b3.fake import joe
+    from b3.fake import joe, moderator, superadmin
     from b3.config import XmlConfigParser
     
-    conf = XmlConfigParser()
-    conf.setXml("""
-<configuration plugin="adv">
-    <!--
-        Note: within ads, you can use the following variables : @nextmap @time
-        or rules as defined in the admin plugin config file. ie: /spam#rule1
-    -->
-    <settings name="settings">
-        <!-- rate in minutes-->
-        <set name="rate">5</set>
+    def test1():
+        conf = XmlConfigParser()
+        conf.setXml("""
+    <configuration plugin="adv">
         <!--
-            you can either set here a text file that will contain one ad per line
-            or fill the <ads> section below
+            Note: within ads, you can use the following variables : @nextmap @time
+            or rules as defined in the admin plugin config file. ie: /spam#rule1
         -->
-        <!-- <set name="ads">c:/somewhere/my_ads.txt</set> -->
-    </settings>
-  <settings name="newsfeed">
-        <!--
-            you can include newsitems in your adds by setting the section below
-            you can add feeditems in the adds like this:
-            @feed   (will pick the next newsitem each time it is included in the rotation,
-               rotating until 'items' is reached and then start over.)
-            @feed 0 (will pick the latest newsitem available from the feed and add it in the rotation)
-            @feed 1 (will pick the second latest item in line)
-            etc.
-        -->
-        <set name="url">http://www.bigbrotherbot.net/forums/news-2/?type=rss;action=.xml</set>
-        <set name="url.bak"></set>
-        <set name="items">5</set>
-        <set name="pretext">News: </set>
-    </settings>
-    <ads>
-        <ad>^2Big Brother Bot is watching you... www.BigBrotherBot.net</ad>
-        <ad>@feed</ad>
-        <ad>/spam#rule1</ad>
-        <ad>@time</ad>
-        <ad>@feed</ad>
-        <ad>^2Do you like B3? Consider donating to the project at www.BigBrotherBot.net</ad>
-        <ad>@nextmap</ad>
-    </ads>
-</configuration>
-    """)
-    p = AdvPlugin(fakeConsole, conf)
-    p.onStartup()
-    
-    p.adv()
-    print "-----------------------------"
-    time.sleep(2)
-    
-    joe.connects(1)
-    joe._maxLevel = 100
-    joe.says('!advlist')
-    time.sleep(2)
-    joe.says('!advrem 0')
-    time.sleep(2)
-    joe.says('!advrate 5s')
-    time.sleep(5)
-    
-    time.sleep(60)
+        <settings name="settings">
+            <!-- rate in minutes-->
+            <set name="rate">5</set>
+            <!--
+                you can either set here a text file that will contain one ad per line
+                or fill the <ads> section below
+            -->
+            <!-- <set name="ads">c:/somewhere/my_ads.txt</set> -->
+        </settings>
+      <settings name="newsfeed">
+            <!--
+                you can include newsitems in your adds by setting the section below
+                you can add feeditems in the adds like this:
+                @feed   (will pick the next newsitem each time it is included in the rotation,
+                   rotating until 'items' is reached and then start over.)
+                @feed 0 (will pick the latest newsitem available from the feed and add it in the rotation)
+                @feed 1 (will pick the second latest item in line)
+                etc.
+            -->
+            <set name="url">http://forum.bigbrotherbot.net/news-2/?type=rss;action=.xml</set>
+            <set name="url.bak"></set>
+            <set name="items">5</set>
+            <set name="pretext">News: </set>
+        </settings>
+        <ads>
+            <ad>^2Big Brother Bot is watching you... www.BigBrotherBot.net</ad>
+            <ad>@topstats</ad>
+            <ad>@feed</ad>
+            <ad>/spam#rule1</ad>
+            <ad>@time</ad>
+            <ad>@feed</ad>
+            <ad>^2Do you like B3? Consider donating to the project at www.BigBrotherBot.net</ad>
+            <ad>@nextmap</ad>
+        </ads>
+    </configuration>
+        """)
+        p = AdvPlugin(fakeConsole, conf)
+        p.onStartup()
+        
+        p.adv()
+        print "-----------------------------"
+        time.sleep(2)
+        
+        joe.connects(1)
+        joe._maxLevel = 100
+        joe.says('!advlist')
+        time.sleep(2)
+        joe.says('!advrem 0')
+        time.sleep(2)
+        joe.says('!advrate 5s')
+        time.sleep(5)
+        
+        time.sleep(60)
+        
+    def testAdmins():
+        conf = XmlConfigParser()
+        conf.setXml("""
+      <configuration plugin="adv">
+        <settings name="settings">
+            <set name="rate">1s</set>
+        </settings>
+        <ads>
+            <ad>^2Do you like B3? Consider donating to the project at www.BigBrotherBot.net</ad>
+            <ad>@admins</ad>
+        </ads>
+    </configuration>
+        """)
+        p = AdvPlugin(fakeConsole, conf)
+        p.onStartup()
+        
+        p.adv()
+        print "-----------------------------"
+        time.sleep(4)
+        joe.connects(1)
+        time.sleep(4)
+        moderator.connects(2)
+        time.sleep(4)
+        superadmin.connects(3)
+        
+        time.sleep(60)
+
+
+    #test1()
+    testAdmins()
