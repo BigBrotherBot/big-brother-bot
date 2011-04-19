@@ -36,10 +36,12 @@
 # * fix bug with UID '0'
 # 2011-04-18 : 0.7.1
 # * clear clients list on HF connection loss
+# 2011-04-18 : 0.7.2
+# * remove color codes before sending each line in say, saybig and message
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.7.1'
+__version__ = '0.7.2'
 
 from b3.parsers.homefront.protocol import MessageType, ChannelType
 import sys
