@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
+# 04/18/2011 - 1.3.1 - Courgette
+#    makes @admins show admins' level as well
 # 04/18/2011 - 1.3.0 - Courgette
 #    add the @admins keyword that displays the connected admins
 #    when the ad is @topstats or @amdins but no message is to be shown, then 
@@ -40,7 +42,7 @@
 #    Converted to use XML config
 
 __author__ = 'ThorN'
-__version__ = '1.3.0'
+__version__ = '1.3.1'
 
 import b3
 import os
@@ -251,8 +253,14 @@ class AdvPlugin(b3.plugin.Plugin):
                     ad = '@topstats not available, XLRstats is not installed!'
             elif ad == "@admins":
                 admins = self._adminPlugin.getAdmins()
-                if len(admins)>0:
-                    ad = self._adminPlugin.getMessage('admins', string.join([c.name for c in admins], ', '))
+                nlist = []
+                for c in admins:
+                    if c.maskGroup:
+                        nlist.append('%s^7 [^3%s^7]' % (c.exactName, c.maskGroup.level))
+                    else:
+                        nlist.append('%s^7 [^3%s^7]' % (c.exactName, c.maxLevel))
+                if len(nlist)>0:
+                    ad = self._adminPlugin.getMessage('admins', string.join(nlist, ', '))
                 else:
                     if firstTry:
                         # try another ad
