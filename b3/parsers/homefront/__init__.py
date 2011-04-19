@@ -544,6 +544,7 @@ class HomefrontParser(b3.parser.Parser):
         """
         msg = self.stripColors(msg)
         for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+            line = self.stripColors(line)
             self.write(self.getCommand('say',  prefix=self.msgPrefix, message=line))
 
     def saybig(self, msg):
@@ -552,6 +553,7 @@ class HomefrontParser(b3.parser.Parser):
         """
         msg = self.stripColors(msg)
         for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+            line = self.stripColors(line)
             self.write(self.getCommand('saybig',  prefix=self.msgPrefix, message=line))
 
     ## @todo Change private messages when the rcon protocol will allow us to
@@ -562,6 +564,7 @@ class HomefrontParser(b3.parser.Parser):
         # actually send private messages
         text = self.stripColors(text)
         for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
+            line = self.stripColors(line)
             self.write(self.getCommand('message', name=client.name, prefix=self.msgPrefix, message=line))
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
