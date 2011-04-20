@@ -31,10 +31,12 @@
 # * hopefully filter out non ascii characters
 # 2011/04/13 - 1.3.10 - Courgette
 # * should get rid of UnicodeDecodeError
-
+# 2011/04/20 - 1.4 - Courgette
+# * now sent data is encoded as UTF-8
+#
  
 __author__ = 'ThorN'
-__version__ = '1.3.10'
+__version__ = '1.4'
  
 import socket
 import sys
@@ -100,7 +102,7 @@ class Rcon:
         if maxRetries is None:
             maxRetries = 2
             
-        data = data.encode('ascii', 'replace').strip()
+        data = data.strip()
         self.console.verbose('QSERVER sending (%s:%s) %r', self.host[0], self.host[1], data)
         startTime = time.time()
 
@@ -112,7 +114,7 @@ class Rcon:
                 self.console.warning('QSERVER: %r', errors)
             elif len(writeables) > 0:
                 try:
-                    writeables[0].send(self.qserversendstring % data)
+                    writeables[0].send(self.qserversendstring % unicode(data).encode('UTF-8'))
                 except Exception, msg:
                     self.console.warning('QSERVER: ERROR sending: %r', msg)
                 else:
@@ -146,7 +148,7 @@ class Rcon:
         if maxRetries is None:
             maxRetries = 2
             
-        data = data.encode('ascii', 'replace').strip()
+        data = data.strip()
         self.console.verbose('RCON sending (%s:%s) %r', self.host[0], self.host[1], data)
         startTime = time.time()
 
@@ -158,7 +160,7 @@ class Rcon:
                 self.console.warning('RCON: %s', str(errors))
             elif len(writeables) > 0:
                 try:
-                    writeables[0].send(self.rconsendstring % (self.password, data))
+                    writeables[0].send(self.rconsendstring % (self.password, unicode(data).encode('UTF-8')))
                 except Exception, msg:
                     self.console.warning('RCON: ERROR sending: %r', msg)
                 else:
