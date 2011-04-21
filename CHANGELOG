@@ -3,8 +3,8 @@
 A list of changed files is available after release here:
 github.com/BigBrotherBot/big-brother-bot/compare/v1.5.0...v1.6.0
 ----
-IMPORTANT: This version requires alterations to the database!
-Use the included b3.sql for new installs and the b3-update-v1.6.sql for existing installs.
+IMPORTANT: Due to a bug in python 2.6 you can run into unicode errors. Please
+update your version of python to at least 2.6.6 to get them fixed. 
 ----
 - Added support for Homefront
 - Added support for World of Padman 1.5
