@@ -18,7 +18,9 @@
 #
 #
 # CHANGELOG
-#   2001/03/30 - 1.24 - Courgette
+#   2011/04/20 - 1.24.1 - Courgette
+#   * fix auto detection of locale timezone offset
+#   2011/03/30 - 1.24 - Courgette
 #   * remove output option log2both and changed the behavior of log2console so
 #     that the console log steam is not replacing the stream going to the log file
 #   2011/02/03 - 1.23 - Bravo17
@@ -108,7 +110,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.24'
+__version__ = '1.24.1'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -774,47 +776,35 @@ class Parser(object):
 
         return cmd % kwargs
         
+    def getTzOffsetFromName(self, tzName):
+        try:
+            tzOffset = b3.timezones.timezones[tzName] * 3600
+        except KeyError:
+            try:
+                self.warning("Unknown timezone name [%s]. Valid timezone codes can be found on http://wiki.bigbrotherbot.net/doku.php/usage:available_timezones" % tzName)
+                tzOffset = time.timezone
+                if tzOffset < 0:
+                    tzName = 'UTC%s' % (tzOffset/3600)
+                else:
+                    tzName = 'UTC+%s' % (tzOffset/3600)
+                self.info("using system offset [%s]", tzOffset)
+            except KeyError:
+                self.error("Unknown timezone name [%s]. Valid timezone codes can be found on http://wiki.bigbrotherbot.net/doku.php/usage:available_timezones" % tzName)
+                tzName = 'UTC'
+                tzOffset = 0
+        return (tzOffset, tzName)
+
     def formatTime(self, gmttime, tzName=None):
         """Return a time string formated to local time in the b3 config time_format"""
-
         if tzName:
             tzName = str(tzName).strip().upper()
-
             try:
                 tzOffset = float(tzName) * 3600
             except ValueError:
-                try:
-                    tzOffset = b3.timezones.timezones[tzName] * 3600
-                except KeyError:
-                    try:
-                        if time.daylight == 0:
-                            tzName = time.tzname[0]
-                        else:
-                            tzName = time.tzname[1]
-                        self.warning("Unknown timezone name [%s]. Valid timezone codes can be found on http://wiki.bigbrotherbot.net/doku.php/usage:available_timezones" % tzName)
-                        self.info("falling back on system default timezone [%s]", tzName)
-                        tzOffset = b3.timezones.timezones[tzName] * 3600
-                    except KeyError:
-                        self.error("Unknown timezone name [%s]. Valid timezone codes can be found on http://wiki.bigbrotherbot.net/doku.php/usage:available_timezones" % tzName)
-                        tzName = 'UTC'
-                        tzOffset = 0
+                tzOffset, tzName = self.getTzOffsetFromName(tzName)
         else:
             tzName = self.config.get('b3', 'time_zone').upper()
-            try:
-                tzOffset = b3.timezones.timezones[tzName] * 3600
-            except KeyError:
-                try:
-                    if time.daylight == 0:
-                        tzName = time.tzname[0]
-                    else:
-                        tzName = time.tzname[1]
-                    self.warning("Unknown timezone name [%s]. Valid timezone codes can be found on http://wiki.bigbrotherbot.net/doku.php/usage:available_timezones" % tzName)
-                    self.info("falling back on system default timezone [%s]", tzName)
-                    tzOffset = b3.timezones.timezones[tzName] * 3600
-                except KeyError:
-                    self.error("Unknown timezone name [%s]. Valid timezone codes can be found on http://wiki.bigbrotherbot.net/doku.php/usage:available_timezones" % tzName)
-                    tzName = 'UTC'
-                    tzOffset = 0
+            tzOffset, tzName = self.getTzOffsetFromName(tzName)
 
         timeFormat = self.config.get('b3', 'time_format').replace('%Z', tzName).replace('%z', tzName)
         self.debug('formatting time with timezone [%s], tzOffset : %s' % (tzName, tzOffset))

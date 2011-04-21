@@ -31,12 +31,25 @@
 		<set name="pretext">News: </set>
 	</settings>
 	<ads>
+    <!-- you can use the following keywords in your messages :
+      /spam#rule1 - rule 1 as defined in you admin plugin config file
+      @time - the server time
+      @feed - the next RSS feed item
+      @feed 0 - the lastest RSS feed item
+      @feed 1 - the 2nd lastest RSS feed item
+      @nextmap - the next map in your game server rotation list (if available)
+      @topstats - the top stats from XLRstats (if the plugin is enabled)
+      @admins - connected admins' names. You can change the message format in your admin plugin config
+    -->
 		<ad>^2Big Brother Bot is watching you... www.BigBrotherBot.net</ad>
 		<ad>@feed</ad>
+		<ad>server watched by @admins</ad>
 		<ad>/spam#rule1</ad>
 		<ad>@time</ad>
+		<ad>@admins</ad>
 		<ad>@feed</ad>
 		<ad>^2Do you like B3? Consider donating to the project at www.BigBrotherBot.net</ad>
 		<ad>@nextmap</ad>
+		<ad>@topstats</ad>
 	</ads>
 </configuration>

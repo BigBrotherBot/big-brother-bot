@@ -34,10 +34,14 @@
 # 2011-04-17 : 0.7.0
 # * implements sync()
 # * fix bug with UID '0'
+# 2011-04-18 : 0.7.1
+# * clear clients list on HF connection loss
+# 2011-04-18 : 0.7.2
+# * remove color codes before sending each line in say, saybig and message
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.7.0'
+__version__ = '0.7.2'
 
 from b3.parsers.homefront.protocol import MessageType, ChannelType
 import sys
@@ -215,7 +219,15 @@ class HomefrontParser(b3.parser.Parser):
                 if self._serverConnection is None:
                     self.bot('Connecting to Homefront server ...')
                     self._serverConnection = protocol.Client(self, self._rconIp, self._rconPort, self._rconPassword, keepalive=True)
+                    
+                    # hook on handle_close to protocol.Client
+                    self._original_connection_handle_close_method = self._serverConnection.handle_close
+                    self._serverConnection.handle_close = self._handle_connection_close
+                    
+                    # listen for incoming HF packets
                     self._serverConnection.add_listener(self.routePacket)
+                    
+                    # setup Rcon
                     self.output.set_homefront_client(self._serverConnection)
                 
                 self._nbConsecutiveConnFailure = 0
@@ -235,6 +247,12 @@ class HomefrontParser(b3.parser.Parser):
                 sys.exit(self.exitcode)
 
 
+    def _handle_connection_close(self):
+        if len(self.clients.getList()): 
+            self.debug("clearing player list")
+            self.clients.empty()
+        self._original_connection_handle_close_method()
+
 
     # ================================================
     # handle Game events.
@@ -253,7 +271,7 @@ class HomefrontParser(b3.parser.Parser):
         ## [boolean: Result]
         if data == 'true':
             self.bot("B3 correctly authenticated on game server")
-            self.retrievePlayerList()
+            self.clients.sync()
             self.retrieveBanList()
         else:
             self.warning("B3 failed to authenticate on game server (%s)" % data)
@@ -528,6 +546,7 @@ class HomefrontParser(b3.parser.Parser):
         """
         msg = self.stripColors(msg)
         for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+            line = self.stripColors(line)
             self.write(self.getCommand('say',  prefix=self.msgPrefix, message=line))
 
     def saybig(self, msg):
@@ -536,6 +555,7 @@ class HomefrontParser(b3.parser.Parser):
         """
         msg = self.stripColors(msg)
         for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+            line = self.stripColors(line)
             self.write(self.getCommand('saybig',  prefix=self.msgPrefix, message=line))
 
     ## @todo Change private messages when the rcon protocol will allow us to
@@ -546,6 +566,7 @@ class HomefrontParser(b3.parser.Parser):
         # actually send private messages
         text = self.stripColors(text)
         for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
+            line = self.stripColors(line)
             self.write(self.getCommand('message', name=client.name, prefix=self.msgPrefix, message=line))
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):

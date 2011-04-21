@@ -29,9 +29,14 @@
 # * Quit command should never be retried
 # 2011/04/13 - 1.3.9 - Courgette
 # * hopefully filter out non ascii characters
+# 2011/04/13 - 1.3.10 - Courgette
+# * should get rid of UnicodeDecodeError
+# 2011/04/20 - 1.4 - Courgette
+# * now sent data is encoded as UTF-8
+#
  
 __author__ = 'ThorN'
-__version__ = '1.3.9'
+__version__ = '1.4'
  
 import socket
 import sys
@@ -97,8 +102,8 @@ class Rcon:
         if maxRetries is None:
             maxRetries = 2
             
-        data = data.encode('ascii', 'replace').strip()
-        self.console.verbose('QSERVER sending (%s:%s) %s', self.host[0], self.host[1], data)
+        data = data.strip()
+        self.console.verbose('QSERVER sending (%s:%s) %r', self.host[0], self.host[1], data)
         startTime = time.time()
 
         retries = 0
@@ -106,19 +111,19 @@ class Rcon:
             readables, writeables, errors = select.select([], [self.socket], [self.socket], socketTimeout)
 
             if len(errors) > 0:
-                self.console.warning('QSERVER: %s', str(errors))
+                self.console.warning('QSERVER: %r', errors)
             elif len(writeables) > 0:
                 try:
-                    writeables[0].send(self.qserversendstring % data)
+                    writeables[0].send(self.qserversendstring % unicode(data).encode('UTF-8'))
                 except Exception, msg:
-                    self.console.warning('QSERVER: ERROR sending: %s', msg)
+                    self.console.warning('QSERVER: ERROR sending: %r', msg)
                 else:
                     try:
                         data = self.readSocket(self.socket, socketTimeout=socketTimeout)
-                        self.console.verbose2('QSERVER: Received %s' % data)
+                        self.console.verbose2('QSERVER: Received %r' % data)
                         return data
                     except Exception, msg:
-                        self.console.warning('QSERVER: ERROR reading: %s', msg)
+                        self.console.warning('QSERVER: ERROR reading: %r', msg)
                     
             else:
                 self.console.verbose('QSERVER: no writeable socket')
@@ -128,10 +133,10 @@ class Rcon:
             retries += 1
 
             if retries >= maxRetries:
-                self.console.error('QSERVER: too much tries. Abording (%s)', data.strip())
+                self.console.error('QSERVER: too much tries. Abording (%r)', data.strip())
                 break
  
-            self.console.verbose('QSERVER: retry sending %s (%s/%s)...', data.strip(), retries, maxRetries)
+            self.console.verbose('QSERVER: retry sending %r (%s/%s)...', data.strip(), retries, maxRetries)
  
  
         self.console.debug('QSERVER: Did not send any data')
@@ -143,8 +148,8 @@ class Rcon:
         if maxRetries is None:
             maxRetries = 2
             
-        data = data.encode('ascii', 'replace').strip()
-        self.console.verbose('RCON sending (%s:%s) %s', self.host[0], self.host[1], data)
+        data = data.strip()
+        self.console.verbose('RCON sending (%s:%s) %r', self.host[0], self.host[1], data)
         startTime = time.time()
 
         retries = 0
@@ -155,20 +160,20 @@ class Rcon:
                 self.console.warning('RCON: %s', str(errors))
             elif len(writeables) > 0:
                 try:
-                    writeables[0].send(self.rconsendstring % (self.password, data))
+                    writeables[0].send(self.rconsendstring % (self.password, unicode(data).encode('UTF-8')))
                 except Exception, msg:
-                    self.console.warning('RCON: ERROR sending: %s', msg)
+                    self.console.warning('RCON: ERROR sending: %r', msg)
                 else:
                     try:
                         data = self.readSocket(self.socket, socketTimeout=socketTimeout)
-                        self.console.verbose2('RCON: Received %s' % data)
+                        self.console.verbose2('RCON: Received %r' % data)
                         return data
                     except Exception, msg:
-                        self.console.warning('RCON: ERROR reading: %s', msg)
+                        self.console.warning('RCON: ERROR reading: %r', msg)
 
                 if re.match(r'^quit|map(_rotate)?.*', data):
                     # do not retry quits and map changes since they prevent the server from responding
-                    self.console.verbose2('RCON: no retry for %s', data)
+                    self.console.verbose2('RCON: no retry for %r', data)
                     return ''
                     
             else:
@@ -179,9 +184,9 @@ class Rcon:
             retries += 1
 
             if retries >= maxRetries:
-                self.console.error('RCON: too much tries. Abording (%s)', data.strip())
+                self.console.error('RCON: too much tries. Abording (%r)', data.strip())
                 break
-            self.console.verbose('RCON: retry sending %s (%s/%s)...', data.strip(), retries, maxRetries)
+            self.console.verbose('RCON: retry sending %r (%s/%s)...', data.strip(), retries, maxRetries)
 
 
 

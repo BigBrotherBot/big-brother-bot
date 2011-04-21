@@ -70,6 +70,7 @@ setup(
                 "b3.extplugins.__init__",
                 ### additional modules for popular/useful 3rd party plugins ###
                 "smtplib", "email.*", "calendar", "email.mime.*", # contact plugin
+                "telnetlib", # teamspeak* plugins
                 "dbhash", # to make anydbm imports work with py2exe
             ],
         }
