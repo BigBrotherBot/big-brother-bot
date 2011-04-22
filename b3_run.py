@@ -23,6 +23,7 @@
 # <p>This documentation is the Bigbrotherbot Reference for developers.</p>
 # <p>If you are a B3 developer, please document your classes, methods properly.<br />
 # More information on how to document code can be found on http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules</p>
+# <p><a href="http://doc.bigbrotherbot.net">doc.bigbrotherbot.net</a></p>
 ## @file
 # The entry point to run B3
 
