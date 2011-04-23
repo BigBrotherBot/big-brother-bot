@@ -73,9 +73,12 @@ Name: slovenian; MessagesFile: compiler:Languages\Slovenian.isl
 Name: spanish; MessagesFile: compiler:Languages\Spanish.isl
 
 [Icons]
+;Name: {group}\{cm:executable,b3_run}; Filename: {app}\b3_run.exe; Parameters: "--config ""{commonappdata}\BigBrotherBot\conf\b3.xml"""; WorkingDir: {app}; Flags: dontcloseonexit; IconFilename: {app}\b3.ico; Comment: Run BigBrotherBot {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}; IconIndex: 0
+;Name: {group}\{cm:configWizard,Config wizard}; Filename: {app}\b3_run.exe; Parameters: "--config ""{commonappdata}\BigBrotherBot\conf\b3.xml"" --setup"; WorkingDir: {app}; Comment: Run the B3 setup wizard; Flags: dontcloseonexit
+;Name: {group}\{cm:B3ConfDir,config}; Filename: {commonappdata}\BigBrotherBot\
 Name: {group}\{cm:executable,b3_run}; Filename: {app}\b3_run.exe; Parameters: "--config ""{app}\conf\b3.xml"""; WorkingDir: {app}; Flags: dontcloseonexit; IconFilename: {app}\b3.ico; Comment: "Run BigBrotherBot {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}"; 
 Name: {commondesktop}\{cm:executable,b3_run}; Filename: {app}\b3_run.exe; Parameters: "--config ""{app}\conf\b3.xml"""; WorkingDir: {app}; Flags: dontcloseonexit; IconFilename: {app}\b3.ico; Comment: "Run BigBrotherBot {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}"; 
-Name: "{group}\{cm:configWizard,Config wizard}"; Filename: {app}\b3_run.exe; Parameters: "--config ""{app}\conf\b3.xml"" --setup"; WorkingDir: {app}; Comment: "Run the B3 setup wizard"; Flags: dontcloseonexit; 
+Name: {group}\{cm:configWizard,Config wizard}; Filename: {app}\b3_run.exe; Parameters: "--config ""{app}\conf\b3.xml"" --setup"; WorkingDir: {app}; Comment: "Run the B3 setup wizard"; Flags: dontcloseonexit; 
 Name: {group}\{cm:B3ConfDir,config}; Filename: {app}\conf\
 Name: {group}\{cm:extplugins,extplugins}; Filename: {app}\extplugins\; IconFilename: {app}\b3-plugins-icon.ico; 
 Name: {group}\extra\{cm:docs,docs}; Filename: {app}\docs\
@@ -90,6 +93,9 @@ Name: {group}\web\artwork; Filename: http://www.bigbrotherbot.net/logos
 Name: {group}\web\other tools\{cm:Echelon,Echelon}; Filename: http://echelon.bigbrotherbot.net/
 Name: {group}\web\other tools\{cm:Xlrstats,XLRstats}; Filename: http://www.xlrstats.com/
 
+;[Dirs]
+;Name: {commonappdata}\BigBrotherBot; Permissions: users-full
+
 [Files]
 Source: {app}\conf\*; DestDir: {app}\conf\backup; Flags: external skipifsourcedoesntexist uninsneveruninstall
 Source: ..\..\dist_py2exe\b3_run.exe; DestDir: {app}
@@ -102,6 +108,7 @@ Source: ..\..\dist_py2exe\README.md; DestDir: {app};
 Source: ..\..\dist_py2exe\docs\*; DestDir: {app}\docs; Flags: recursesubdirs
 Source: ..\..\dist_py2exe\sql\*; DestDir: {app}\sql; Flags: recursesubdirs
 Source: ..\..\dist_py2exe\extplugins\*; DestDir: {app}\extplugins; Flags: recursesubdirs
+;Source: ..\..\dist_py2exe\conf\*; DestDir: {commonappdata}\BigBrotherBot\conf; Flags: recursesubdirs
 Source: ..\..\dist_py2exe\conf\*; DestDir: {app}\conf; Flags: recursesubdirs 
 Source: b3.ico; DestDir: {app}
 Source: b3-plugins-icon.ico; DestDir: {app}
@@ -126,4 +133,5 @@ docs=docs folder
 
 [Run]
 Filename: notepad.exe; Parameters: {app}\readme.txt; WorkingDir: {app};
+;Filename: {app}\b3_run.exe; Parameters: "--config ""{commonappdata}\conf\b3.xml"" --setup"; WorkingDir: {app}; Flags: ShellExec PostInstall; Description: "Run Setup?"; 
 Filename: {app}\b3_run.exe; Parameters: "--config ""{app}\conf\b3.xml"" --setup"; WorkingDir: {app}; Flags: ShellExec PostInstall; Description: "Run Setup?"; 

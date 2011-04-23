@@ -54,7 +54,9 @@ b3/docs/LICENSE.txt
 b3/docs/README.txt
 b3/docs/commands.txt
 b3/extplugins/__init__.py
+b3/extplugins/poweradminhf.py
 b3/extplugins/xlrstats.py
+b3/extplugins/conf/poweradminhf.xml
 b3/extplugins/conf/xlrstats.xml
 b3/lib/PurePythonGeoIP.py
 b3/lib/__init__.py
