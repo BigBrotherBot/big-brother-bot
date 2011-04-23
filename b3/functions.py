@@ -155,10 +155,17 @@ def splitDSN(url):
 def confirm(client):
     msg = 'No confirmation...'
     try:
-        f = urllib2.urlopen('http://www.bigbrotherbot.net/confirm.php?ip=%s' %client.ip)
+        #first test again known guids
+        f = urllib2.urlopen('http://www.bigbrotherbot.net/confirm.php?uid=%s' %client.guid)
         response = f.read()
         if not response == 'Error' and not response == 'False':
             msg = '%s is confirmed to be %s!' %(client.name, response)
+        else:
+            #if it fails, try ip (must be static)
+            f = urllib2.urlopen('http://www.bigbrotherbot.net/confirm.php?ip=%s' %client.ip)
+            response = f.read()
+            if not response == 'Error' and not response == 'False':
+                msg = '%s is confirmed to be %s!' %(client.name, response)
     except:
         pass
     return msg
