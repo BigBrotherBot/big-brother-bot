@@ -38,10 +38,11 @@
 # * clear clients list on HF connection loss
 # 2011-04-18 : 0.7.2
 # * remove color codes before sending each line in say, saybig and message
-
+# 2011-04-25 : 0.8.0
+# * read game server info through Source Query Protocol
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.7.2'
+__version__ = '0.8.0'
 
 from b3.parsers.homefront.protocol import MessageType, ChannelType
 import sys
@@ -58,6 +59,7 @@ import protocol
 from ftplib import FTP
 import ftplib
 from b3 import functions
+from b3.lib.SourceLib import SourceQuery
 
 
 class HomefrontParser(b3.parser.Parser):
@@ -136,6 +138,22 @@ class HomefrontParser(b3.parser.Parser):
                 
         ## read game server info and store as much of it in self.game wich
         ## is an instance of the b3.game.Game class
+        sq = SourceQuery.SourceQuery(self._publicIp, self._port, timeout=10)
+        try:
+            serverinfo = sq.info()
+            self.debug("server info : %r", serverinfo)
+            if 'map' in serverinfo:
+                self.game.mapName = serverinfo['map'].lower()
+            if 'steamid' in serverinfo:
+                self.game.steamid = serverinfo['steamid']
+            if 'hostname' in serverinfo:
+                self.game.sv_hostname = serverinfo['hostname']
+            if 'maxplayers' in serverinfo:
+                self.game.sv_maxclients = serverinfo['maxplayers']
+        except Exception, err:
+            self.exception(err)
+
+
     
     
     def routePacket(self, packet):
