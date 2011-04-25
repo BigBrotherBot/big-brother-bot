@@ -17,6 +17,8 @@
 #
 # CHANGELOG
 #
+# 25/04/2011 - v0.6 - xlr8or
+#  * action logging - get client by name.
 # 24/04/2011 - v0.5 - xlr8or
 #  * disable action logging - game engine bug.
 # 18/03/2011 - v0.4 - Freelander
@@ -30,7 +32,7 @@
 
 
 __author__  = 'NTAuthority'
-__version__ = '0.5'
+__version__ = '0.6'
 
 import b3.parsers.cod4
 import re
@@ -62,7 +64,13 @@ class Cod6Parser(b3.parsers.cod4.Cod4Parser):
 
     # action
     def OnA(self, action, data, match=None):
-        # Disable action logging for this game. Logfile does not ommit the correct guid/cid:
+        #bugged: cid and guid both 0
         #10420 19:24:38   CONSOLE   67:19 A;0;0;allies;clubdegamers12;hq_destroyed
-        self.verbose('Action handling not supported due to a bug in the cod6 game engine.')
-        pass
+        #can only get client by name...
+        client = self.clients.getByName(name)
+        if not client:
+            return None
+
+        actiontype = match.group('type')
+        self.verbose('OnAction: %s: %s' % (client.name, actiontype) )
+        return b3.events.Event(b3.events.EVT_CLIENT_ACTION, actiontype, client)
