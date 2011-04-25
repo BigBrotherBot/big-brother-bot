@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 25/04/2011 - 1.4.8 - Courgette
+# * in config file, settings/output_file can now use shortcuts such as @b3 and @conf
 # 17/04/2011 - 1.4.7 - Courgette
 # * XML file generated is now using UTF-8 encoding
 # 17/04/2011 - 1.4.6 - Courgette
@@ -53,7 +55,7 @@
 # Converted to use new event handlers
 
 __author__    = 'ThorN'
-__version__ = '1.4.7'
+__version__ = '1.4.8'
 
 import b3, time, os, StringIO
 import b3.plugin
@@ -78,7 +80,7 @@ class StatusPlugin(b3.plugin.Plugin):
                 self._ftpinfo = functions.splitDSN(self.config.get('settings','output_file'))
                 self._ftpstatus = True
         else:        
-                self._outputFile = os.path.expanduser(self.config.get('settings', 'output_file'))
+                self._outputFile = self.config.getpath('settings', 'output_file')
                 
         self._tkPlugin = self.console.getPlugin('tk')
         self._interval = self.config.getint('settings', 'interval')
