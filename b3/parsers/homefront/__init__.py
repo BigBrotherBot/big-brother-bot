@@ -59,7 +59,7 @@ import protocol
 from ftplib import FTP
 import ftplib
 from b3 import functions
-from b3.lib.SourceLib import SourceQuery
+from b3.lib.sourcelib import SourceQuery
 
 
 class HomefrontParser(b3.parser.Parser):
