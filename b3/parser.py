@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2011/04/27 - 1.24.2 - 82ndab-Bravo17
+#   Auto assign of unique local games_mp log file
 #   2011/04/20 - 1.24.1 - Courgette
 #   * fix auto detection of locale timezone offset
 #   2011/03/30 - 1.24 - Courgette
@@ -110,7 +112,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.24.1'
+__version__ = '1.24.2'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -331,7 +333,9 @@ class Parser(object):
                 if self.config.has_option('server', 'local_game_log'):
                     f = self.config.getpath('server', 'local_game_log')
                 else:
-                    f = os.path.normpath(os.path.expanduser('games_mp.log'))
+                    logext = str(self._publicIp.replace('.', '_'))
+                    logext = 'games_mp_' + logext + '_' + str(self._port) + '.log'
+                    f = os.path.normpath(os.path.expanduser(logext))
 
                 if self.config.has_option('server', 'log_append'):
                     if not (self.config.getboolean('server', 'log_append') and os.path.isfile(f)):

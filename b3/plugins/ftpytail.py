@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
+# 27/04/2011 - 1.5.6 - 82ndab-Bravo17
+#   *  Auto assign of unique local games_mp log file
 # 29/10/2010 - 1.5.5 - Courgette
 #   * Do not stop thread on FTP permanent error (2nd trial)
 #   * add 3 new settings in optional config file : short_delay, long_delay, 
@@ -55,7 +57,7 @@
 # 17/06/2009 - 1.0 - Bakes
 #     Initial Plugin, basic functionality.
  
-__version__ = '1.5.5'
+__version__ = '1.5.6'
 __author__ = 'Bakes, Courgette'
  
 import b3, threading
@@ -101,7 +103,20 @@ class FtpytailPlugin(b3.plugin.Plugin):
         if self.console.config.has_option('server', 'local_game_log'):
             self.lgame_log = self.console.config.getfloat('server', 'local_game_log')
         else:
-            self.lgame_log = os.path.normpath(os.path.expanduser('games_mp.log'))
+            # setup ip addresses
+            self._publicIp = self.console.config.get('server', 'public_ip')
+            self._port = self.console.config.getint('server', 'port')
+
+            if self._publicIp[0:1] == '~' or self._publicIp[0:1] == '/':
+                # load ip from a file
+                f = file(self.console.getAbsolutePath(self._publicIp))
+                self._publicIp = f.read().strip()
+                f.close()
+
+            logext = str(self._publicIp.replace('.', '_'))
+            logext = 'games_mp_' + logext + '_' + str(self._port) + '.log'
+            self.lgame_log = os.path.normpath(os.path.expanduser(logext))
+            self.debug('Local Game Log is %s' % self.lgame_log)
 
         if self.console.config.get('server','game_log')[0:6] == 'ftp://' :
             self.initThread(self.console.config.get('server','game_log'))

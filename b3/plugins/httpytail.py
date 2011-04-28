@@ -21,8 +21,10 @@
 #     Initial release, with htaccess authentication support.
 # 2011-03-17 - 0.2 - Courgette
 #     Make sure that maxGapBytes is never exceeded
+# 2011-04-27 - 0.2.1 - 82ndab-Bravo17
+#     Auto assign of unique local games_mp log file
 
-__version__ = '0.2'
+__version__ = '0.2.1'
 __author__ = 'GrosBedo'
  
 import b3, threading
@@ -64,7 +66,20 @@ class HttpytailPlugin(b3.plugin.Plugin):
         if self.console.config.has_option('server', 'local_game_log'):
             self.lgame_log = self.console.config.getfloat('server', 'local_game_log')
         else:
-            self.lgame_log = os.path.normpath(os.path.expanduser('games_mp.log'))
+            # setup ip addresses
+            self._publicIp = self.console.config.get('server', 'public_ip')
+            self._port = self.console.config.getint('server', 'port')
+
+            if self._publicIp[0:1] == '~' or self._publicIp[0:1] == '/':
+                # load ip from a file
+                f = file(self.console.getAbsolutePath(self._publicIp))
+                self._publicIp = f.read().strip()
+                f.close()
+
+            logext = str(self._publicIp.replace('.', '_'))
+            logext = 'games_mp_' + logext + '_' + str(self._port) + '.log'
+            self.lgame_log = os.path.normpath(os.path.expanduser(logext))
+            self.debug('Local Game Log is %s' % self.lgame_log)
             
         if self.console.config.get('server','game_log')[0:7] == 'http://' :
             self.initThread(self.console.config.get('server','game_log'))

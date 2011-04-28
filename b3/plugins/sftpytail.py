@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
+# 27/04/2011 - 1.0.1 - 82ndab-Bravo17
+#   * Auto assign of unique local games_mp log file
 # 22/10/2010 - 1.0 - Courgette
 #   * obbey the SFTP URI scheme as described in http://tools.ietf.org/html/draft-ietf-secsh-scp-sftp-ssh-uri-04
 # 07/09/2010 - 0.1.1 - GrosBedo
@@ -26,7 +28,7 @@
 # * first attempt. Briefly tested. Seems to work
 
 
-__version__ = '1.0'
+__version__ = '1.0.1'
 __author__ = 'Courgette'
  
 import b3, threading
@@ -67,7 +69,20 @@ class SftpytailPlugin(b3.plugin.Plugin):
         if self.console.config.has_option('server', 'local_game_log'):
             self.lgame_log = self.console.config.getfloat('server', 'local_game_log')
         else:
-            self.lgame_log = os.path.normpath(os.path.expanduser('games_mp.log'))
+            # setup ip addresses
+            self._publicIp = self.console.config.get('server', 'public_ip')
+            self._port = self.console.config.getint('server', 'port')
+
+            if self._publicIp[0:1] == '~' or self._publicIp[0:1] == '/':
+                # load ip from a file
+                f = file(self.console.getAbsolutePath(self._publicIp))
+                self._publicIp = f.read().strip()
+                f.close()
+                
+            logext = str(self._publicIp.replace('.', '_'))
+            logext = 'games_mp_' + logext + '_' + str(self._port) + '.log'
+            self.lgame_log = os.path.normpath(os.path.expanduser(logext))
+            self.debug('Local Game Log is %s' % self.lgame_log)
 
         if self.console.config.get('server','game_log')[0:7] == 'sftp://' :
             self.initThread(self.console.config.get('server','game_log'))

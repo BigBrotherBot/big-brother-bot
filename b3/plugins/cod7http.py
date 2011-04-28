@@ -65,13 +65,15 @@
 #   * Added method to test whether processData thread is still running, for use by parser
 # 22.03.2011 - 1.0.15 - Courgette
 #   * Do not fail if http response is not gzipped
+# 27.04.2011 - 1.0.16 - 82ndab-Bravo17
+#   * Auto assign of unique local games_mp log file
 #
 
 ## @file
 #  This plugin downloads and maintains CoD7 game log file
 
 __author__  = 'Freelander, Bravo17, Just a baka'
-__version__ = '1.0.15'
+__version__ = '1.0.16'
 
 import b3, threading
 from b3 import functions
@@ -124,7 +126,20 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         if self.console.config.has_option('server', 'local_game_log'):
             self.locallog = self.console.config.get('server', 'local_game_log')
         else:
-            self.locallog = os.path.normpath(os.path.expanduser('games_mp.log'))
+            # setup ip addresses
+            self._publicIp = self.console.config.get('server', 'public_ip')
+            self._port = self.console.config.getint('server', 'port')
+
+            if self._publicIp[0:1] == '~' or self._publicIp[0:1] == '/':
+                # load ip from a file
+                f = file(self.console.getAbsolutePath(self._publicIp))
+                self._publicIp = f.read().strip()
+                f.close()
+
+            logext = str(self._publicIp.replace('.', '_'))
+            logext = 'games_mp_' + logext + '_' + str(self._port) + '.log'
+            self.locallog = os.path.normpath(os.path.expanduser(logext))
+            self.debug('Local Game Log is %s' % self.locallog)
 
         if self.console.config.has_option('server', 'log_append'):
             self._logAppend =self.console.config.getboolean('server', 'log_append')
