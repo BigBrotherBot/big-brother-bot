@@ -101,7 +101,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
             self._gamelog_read_delay = self.console.config.getfloat('server', 'delay')
         
         if self.console.config.has_option('server', 'local_game_log'):
-            self.lgame_log = self.console.config.getfloat('server', 'local_game_log')
+            self.lgame_log = self.console.config.get('server', 'local_game_log')
         else:
             # setup ip addresses
             self._publicIp = self.console.config.get('server', 'public_ip')
