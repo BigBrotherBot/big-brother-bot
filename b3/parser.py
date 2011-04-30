@@ -1167,25 +1167,25 @@ class Parser(object):
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
-        kick a given players
+        kick a given player
         """
         raise NotImplementedError
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
-        ban a given players
+        ban a given player
         """
         raise NotImplementedError
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
-        unban a given players
+        unban a given player
         """
         raise NotImplementedError
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
         """\
-        tempban a given players
+        tempban a given player
         """
         raise NotImplementedError
 
