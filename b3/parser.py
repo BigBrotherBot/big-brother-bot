@@ -18,8 +18,14 @@
 #
 #
 # CHANGELOG
+#   2011/04/30 - 1.24.3 - Courgette
+#   * move the B3 start announcement that is broadcasted on the game server after
+#     the parser startup() method has been called to give a change to parsers to
+#     set up their rcon before it is used.
+#   * rcon_ip, rcon_password not mandatory anymore to suport games that have rcon
+#     working through files
 #   2011/04/27 - 1.24.2 - 82ndab-Bravo17
-#   Auto assign of unique local games_mp log file
+#   * Auto assign of unique local games_mp log file
 #   2011/04/20 - 1.24.1 - Courgette
 #   * fix auto detection of locale timezone offset
 #   2011/03/30 - 1.24 - Courgette
@@ -112,7 +118,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.24.2'
+__version__ = '1.24.3'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -257,10 +263,13 @@ class Parser(object):
         self._publicIp = self.config.get('server', 'public_ip')
         self._port = self.config.getint('server', 'port')
         self._rconPort = self._port # if rcon port is the same as the game port, rcon_port can be ommited
-        self._rconIp = self.config.get('server', 'rcon_ip')
+        self._rconIp = self._publicIp # if rcon ip is the same as the game port, rcon_ip can be ommited
+        if self.config.has_option('server', 'rcon_port'):
+            self._rconIp = self.config.get('server', 'rcon_ip')
         if self.config.has_option('server', 'rcon_port'):
             self._rconPort = self.config.getint('server', 'rcon_port')
-        self._rconPassword = self.config.get('server', 'rcon_password')
+        if self.config.has_option('server', 'rcon_password'):
+            self._rconPassword = self.config.get('server', 'rcon_password')
 
 
         if self._publicIp[0:1] == '~' or self._publicIp[0:1] == '/':
@@ -423,7 +432,7 @@ class Parser(object):
 
         atexit.register(self.shutdown)
 
-        self.say('%s ^2[ONLINE]' % b3.version)
+
 
     def getAbsolutePath(self, path):
         """Return an absolute path name and expand the user prefix (~)"""
@@ -431,11 +440,10 @@ class Parser(object):
 
     def start(self):
         """Start B3"""
-
         self.startup()
+        self.say('%s ^2[ONLINE]' % b3.version)
         self.startPlugins()
         thread.start_new_thread(self.handleEvents, ())
-
         self.run()
 
     def die(self):
