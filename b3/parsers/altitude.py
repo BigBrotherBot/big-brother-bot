@@ -23,6 +23,7 @@ __author__  = 'Courgette'
 __version__ = '0.1'
 
 import re
+import json
 from b3.parser import Parser
 
 
@@ -52,9 +53,68 @@ class AltitudeParser(Parser):
         commandfile_name = self.config.getpath('server', 'command_file')
         self.output = AltitudeRcon(console=self, commandfile=commandfile_name)
 
+    def parseLine(self, line):
+        """method call for each line of the game log file that must return
+        a B3 event"""
+        ## conveniently, Altitude log lines are encoded in JSON
+        ''' Examples of log lines :
+{"port":27276,"time":103197,"name":"Courgette test Server","type":"serverInit","maxPlayerCount":14}
+{"port":27276,"time":103344,"map":"ball_cave","type":"mapLoading"}
+{"port":27276,"time":103682,"type":"serverStart"}
+{"port":27276,"demo":false,"time":103691,"level":1,"player":0,"nickname":"Bot 1","aceRank":0,"vaporId":"00000000-0000-0000-0000-000000000000","type":"clientAdd","ip":"0.0.0.0:100001"}
+{"port":27276,"demo":false,"time":12108767,"level":9,"player":2,"nickname":"Courgette","aceRank":0,"vaporId":"d8123456-18a4-124e-a45b-155641685161","type":"clientAdd","ip":"192.168.10.1:27272"}
+{"port":27276,"time":12110927,"type":"pingSummary","pingByPlayer":{"2":0}}
+{"port":27276,"time":12123445,"player":2,"team":2,"type":"teamChange"}
+{"port":27276,"time":12124957,"plane":"Loopy","player":1,"perkRed":"Tracker","perkGreen":"Rubberized Hull","team":4,"type":"spawn","perkBlue":"Turbocharger","skin":"Flame Skin"}
+{"port":27276,"time":15048305,"streak":0,"source":"turret","player":-1,"victim":1,"multi":0,"xp":10,"type":"kill"}
+        '''
+        altitude_event = json.loads(line)
+        
+        ## we will route the handling of that altitude_event to a method dedicated 
+        ## to an alititude event type. The method will be name after the event type
+        ## capitalized name prefixed by 'OnAltitude'
+        method_name = "OnAltitude%s" % altitude_event['type'].capitalize()
+        
+        event = None
+        if not hasattr(self, method_name):
+            # no handling method for such event :(
+            # we fallback on creating a B3 event of type EVT_UNKNOWN
+            self.verbose("un-handled altitude event : %r", altitude_event)
+            event = self.getEvent('EVT_UNKNOWN', data=altitude_event)
+        else:
+            func = getattr(self, method_name)
+            event = func(altitude_event)
+        
+        # if we came up with a B3 event, then queue it up so it can be dispatched
+        # to the listening plugins
+        if event:
+            self.queueEvent(event)
+
+
+
+    # ================================================
+    # handle Game events.
+    #
+    # those methods are called by parseLine() and 
+    # may return a B3 Event object
+    # ================================================
+       
+    
+
+
+    # =======================================
+    # implement parser interface
+    # =======================================
 
     def say(self, msg):
         self.write('serverMessage %s' % self.stripColors(msg))
+
+    
+    # =======================================
+    # other methods
+    # =======================================
+
+
 
 
 class AltitudeRcon():
