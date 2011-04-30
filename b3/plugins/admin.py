@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2011/04/30 - 1.10.3 - Courgette
+#   * !help response won't include !register if already registered
 #   2011/02/26 - 1.10.2 - Courgette
 #   * fix doc for !spam command
 #   2010/12/12 - 1.10.1 - Courgette
@@ -82,17 +84,17 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.10.2'
+__version__ = '1.10.3'
 __author__  = 'ThorN, xlr8or, Courgette'
 
-import b3, string, re, time, threading, sys, traceback, thread, random
+import string, re, time, threading, sys, traceback, thread, random
 import ConfigParser
 
 from b3 import functions
 from b3 import clients
+from b3.events import EVT_CLIENT_SAY, EVT_CLIENT_PRIVATE_SAY
 import b3.events
 import b3.plugin
-import b3.timezones
 import copy
 
 #--------------------------------------------------------------------------------------------------
@@ -112,8 +114,8 @@ class AdminPlugin(b3.plugin.Plugin):
     PENALTY_BAN = 'ban'
 
     def startup(self):
-        self.registerEvent(b3.events.EVT_CLIENT_SAY)
-        self.registerEvent(b3.events.EVT_CLIENT_PRIVATE_SAY)
+        self.registerEvent(EVT_CLIENT_SAY)
+        self.registerEvent(EVT_CLIENT_PRIVATE_SAY)
         self.createEvent('EVT_ADMIN_COMMAND', 'Admin Command')
 
         try:
@@ -216,9 +218,9 @@ class AdminPlugin(b3.plugin.Plugin):
             return False
 
     def handle(self, event):
-        if event.type == b3.events.EVT_CLIENT_SAY:
+        if event.type == EVT_CLIENT_SAY:
             self.OnSay(event)
-        elif event.type == b3.events.EVT_CLIENT_PRIVATE_SAY and event.target and event.client.id == event.target.id:
+        elif event.type == EVT_CLIENT_PRIVATE_SAY and event.target and event.client.id == event.target.id:
             self.OnSay(event, True)
 
     def aquireCmdLock(self, cmd, client, delay, all=True):
@@ -826,6 +828,9 @@ class AdminPlugin(b3.plugin.Plugin):
         if len(commands) == 0:
             cmd.sayLoudOrPM(client, self.getMessage('help_none'))
         else:
+            # remove the !register command if already registered
+            if 'register' in commands and int(client.maxLevel) > 0:
+                commands.remove('register')
             commands.sort()
             cmd.sayLoudOrPM(client, self.getMessage('help_available', string.join(commands, ', ')))
 
@@ -1421,7 +1426,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
         sclient = self.findClientPrompt(m[0], client)
         if sclient:
-            self.OnSay(b3.events.Event(b3.events.EVT_CLIENT_SAY, m[1], sclient))
+            self.OnSay(b3.events.Event(EVT_CLIENT_SAY, m[1], sclient))
 
     def cmd_unban(self, data, client=None, cmd=None):
         """\
@@ -2136,24 +2141,26 @@ class Command:
     
 if __name__ == '__main__':
     from b3.fake import FakeConsole
-    from b3.fake import joe
+    from b3.fake import joe, simon
     import time
     
     print "___________________________________"
-    fakeConsole = FakeConsole('@b3/conf/b3.xml')
-    p = AdminPlugin(fakeConsole, '@b3/conf/plugin_admin.xml')
-    
-    def say(msg):
-        p.OnSay(b3.events.Event(b3.events.EVT_CLIENT_SAY, msg, joe))
+    fakeConsole = FakeConsole('@b3/conf/b3.distribution.xml')
+    p = AdminPlugin(fakeConsole, '@conf/plugin_admin.xml')
+    p.onStartup()
 
-    say('#test')
-    say('#clients')
-    say('#groups')
-    say('#vars')
-    say('#varsjoe')
-    say('#tkinfo')
-    say('#tkinfojoe')
-    say('!!')
-    say('!help')
-    say('hello')
-    
+    joe.connects(0)
+    simon.connects(1)
+
+    joe.says('#test')
+    joe.says('#clients')
+    joe.says('#groups')
+    joe.says('#vars')
+    joe.says('#varsjoe')
+    joe.says('#tkinfo')
+    joe.says('#tkinfojoe')
+    joe.says('!!')
+    joe.says('hello')
+    joe.says('!help')
+    simon.says('!help')
+    joe.says('!register')
