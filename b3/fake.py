@@ -197,6 +197,13 @@ class FakeConsole(b3.parser.Parser):
             # which happens for BFBC2
             print "### %s" % msg
     
+    def writelines(self, lines):
+        for line in lines:
+            self.write(line)
+
+    def authorizeClients(self):
+        pass
+
     def tempban(self, client, reason, duration, admin, silent):
         """tempban a client"""
         print '>>>tempbanning %s for %s (%s)' % (client.name, reason, duration)
