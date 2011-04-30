@@ -22,10 +22,28 @@
 __author__  = 'Courgette'
 __version__ = '0.1'
 
+
+"""
+ TIPS FOR CONTRIBUTORS :
+ =======================
+
+  * In your main config file, set log level down to 8 to see log message of
+    type VERBOS2.  <set name="log_level">8</set>
+
+  * You can add the section below in your b3.xml in order to display the log
+    file on your console :
+        <settings name="devmode">
+            <set name="log2console">true</set>
+        </settings>
+
+"""
+
 import re
 import json
-from b3.parser import Parser
 
+import b3
+from b3.parser import Parser
+from b3.events import EVT_CUSTOM
 
 class AltitudeParser(Parser):
     """B3 parser for the Altitude game. See http://altitudegame.com"""
@@ -36,6 +54,14 @@ class AltitudeParser(Parser):
     ## extract the time off a log line
     _lineTime  = re.compile(r'^{"port":[0-9]+, "time":(?P<seconds>[0-9]+),.*')
     
+    ## Direct event mapping between Altitude events type and B3 event types.
+    ## B3 event will be created with their data parameter set to the full
+    ## altitude event object
+    _eventMap = {
+        'consoleCommandExecute' : EVT_CUSTOM,
+    }
+
+
     def startup(self):
         self._initialize_rcon()
 
@@ -72,15 +98,19 @@ class AltitudeParser(Parser):
         
         ## we will route the handling of that altitude_event to a method dedicated 
         ## to an alititude event type. The method will be name after the event type
-        ## capitalized name prefixed by 'OnAltitude'
-        method_name = "OnAltitude%s" % altitude_event['type'].capitalize()
-        
+        ## capitalized name prefixed by 'OnAltitude'.
+        ## I.E.: type 'clientAdd' would route to 'OnAltitudeClientAdd' method
+        type = altitude_event['type']
+        method_name = "OnAltitude%s%s" % (type[:1].upper(), type[1:])
         event = None
         if not hasattr(self, method_name):
-            # no handling method for such event :(
-            # we fallback on creating a B3 event of type EVT_UNKNOWN
-            self.verbose("un-handled altitude event : %r", altitude_event)
-            event = self.getEvent('EVT_UNKNOWN', data=altitude_event)
+            if type in self._eventMap:
+                event = b3.events.Event(self._eventMap[type], data=altitude_event)
+            else:
+                # no handling method for such event :(
+                # we fallback on creating a B3 event of type EVT_UNKNOWN
+                self.verbose2("create method %s to handle event %r", method_name, altitude_event)
+                event = self.getEvent('EVT_UNKNOWN', data=altitude_event)
         else:
             func = getattr(self, method_name)
             event = func(altitude_event)
@@ -88,6 +118,7 @@ class AltitudeParser(Parser):
         # if we came up with a B3 event, then queue it up so it can be dispatched
         # to the listening plugins
         if event:
+            self.verbose2("event created for this log line : %s", event)
             self.queueEvent(event)
 
 
@@ -98,22 +129,62 @@ class AltitudeParser(Parser):
     # those methods are called by parseLine() and 
     # may return a B3 Event object
     # ================================================
-       
-    
 
+    def OnAltitudeClientAdd(self, altitude_event):
+        """ handle log lines of type clientAdd
+        example :
+        {"port":27276,"demo":false,"time":12108767,"level":9,"player":2,"nickname":"Courgette","aceRank":0,"vaporId":"a8654321-123a-414e-c71a-123123123131","type":"clientAdd","ip":"192.168.10.1:27272"}
+        """
+        ## self.clients is B3 currently connected player store. We tell the client store we got a new one.
+        self.clients.newClient(altitude_event['player'], guid=altitude_event['vaporId'], name=altitude_event['nickname'], team=b3.TEAM_UNKNOWN)
+
+
+    def OnAltitudeClientRemove(self, altitude_event):
+        """ handle log lines of type clientRemove
+        example :
+        {"port":27276,"message":"left","time":17317434,"player":2,"reason":"Client left.","nickname":"Courgette","vaporId":"a8654321-123a-414e-c71a-123123123131","type":"clientRemove","ip":"192.168.10.1:27272"}'
+        """
+        c = self.clients.getByCID(altitude_event['player'])
+        if c:
+            c.disconnect()
+
+
+    def OnAltitudeChat(self, altitude_event):
+        """ handle log lines of type clientRemove
+        example :
+        {"port":27276,"message":"test","time":326172,"player":2,"server":false,"type":"chat"}
+
+        Unfortunately, there is no distinction between a normal chat and team chat
+        {"port":27276,"message":"test team chat","time":1167491,"player":3,"server":false,"type":"chat"}
+        """
+        c = self.clients.getByCID(altitude_event['player'])
+        if c:
+            if altitude_event['server'] == False:
+                return self.getEvent('EVT_CLIENT_SAY', data=altitude_event['message'], client=c)
+            else:
+                return self.getEvent('EVT_CUSTOM', data=altitude_event, client=c)
 
     # =======================================
     # implement parser interface
     # =======================================
 
     def say(self, msg):
+        """\
+        broadcast a message to all players
+        """
         self.write('serverMessage %s' % self.stripColors(msg))
 
-    
+
+    def message(self, client, msg):
+        """\
+        display a message to a given player
+        """
+        self.write('serverWhisper %s %s' % (client.name, self.stripColors(msg)))
+
+
     # =======================================
     # other methods
     # =======================================
-
 
 
 
