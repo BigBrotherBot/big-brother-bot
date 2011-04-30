@@ -77,6 +77,7 @@ class Setup:
     _indentation = '    '
     _config = 'b3/conf/b3.xml'
     _template = ''
+    _templatevar = ''
     _buffer = ''
     _equaLength = 15
     ## @todo bfbc2 and moh need to be added later when parsers correctly implemented pb.
@@ -123,7 +124,8 @@ class Setup:
         # B3 settings
         self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
         xml.start("settings", name="b3")
-        self.add_set("parser", "", "Define your game: cod/cod2/cod4/cod5/cod6/cod7/iourt41/etpro/wop/smg/bfbc2/moh/oa081")
+        self.add_set("parser", "", "Define your game: cod/cod2/cod4/cod5/cod6/cod7/iourt41/etpro/wop/wop15/smg/bfbc2/moh/oa081/homefront")
+
         # set a template xml file to read existing settings from
         _result = False
         while not _result:
@@ -131,6 +133,7 @@ class Setup:
             if _result:
                 self.add_buffer('Configuration values from [%s] loaded successfully\n' %(self._template))
                 break
+
         # getting database info, test it and set up the tables
         self.add_set("database", self.read_element('b3', 'database', 'mysql://b3:password@localhost/b3'),
                      "Your database info: [mysql]://[db-user]:[db-password]@[db-server[:port]]/[db-name]")
@@ -187,6 +190,7 @@ class Setup:
         # server settings
         self.add_buffer('\n--GAME SERVER SETTINGS------------------------------------------\n')
         xml.start("settings", name="server")
+
         # Frostbite specific
         if self._set_parser in self._frostBite:
             self.add_set("public_ip", self.read_element('server', 'public_ip', ''),
@@ -201,7 +205,21 @@ class Setup:
                          "The RCON password of your gameserver.")
             self.add_set("timeout", self.read_element('server', 'timeout', '3'),
                          "RCON timeout", silent=True)
-        # Q3Aa specific
+
+        # Homefront specific
+        elif self._set_parser == 'homefront':
+            self.add_set("public_ip", self.read_element('server', 'public_ip', ''),
+                         "The IP address of your gameserver")
+            self.add_set("port", self.read_element('server', 'port', ''),
+                         "The port people use to connect to your gameserver")
+            self.add_set("rcon_ip", self.read_element('server', 'rcon_ip', ''),
+                         "The IP that the bot uses to send RCON commands. Usually the same as the public_ip")
+            self.add_set("rcon_port", self.read_element('server', 'rcon_port', ''),
+                         "The port that the bot uses to send RCON commands. NOT the same as the normal port.")
+            self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
+                         "The RCON password of your gameserver.")
+
+        # Q3A specific
         else:   
             self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
                          "The RCON pass of your gameserver")
@@ -229,9 +247,9 @@ class Setup:
                          "The IP the bot can use to send RCON commands to (127.0.0.1 when on the same box)")
             # configure default performances parameters
             self.add_set("delay", self.read_element('server', 'delay', '0.33'),
-                         "Delay between each log reading. Set a higher value to consume less disk ressources or bandwidth if you remotely connect (ftp or http remote log access)", silent=True)
+                         "Delay between each log reading. Set a higher value to consume less disk resources or bandwidth if you remotely connect (ftp or http remote log access)", silent=True)
             self.add_set("lines_per_second", self.read_element('server', 'lines_per_second', '50'),
-                         "Number of lines to process per second. Set a lower value to consume less CPU ressources",
+                         "Number of lines to process per second. Set a lower value to consume less CPU resources",
                          silent=True)
 
         # determine if PunkBuster is supported
@@ -321,9 +339,14 @@ class Setup:
         xml.start("plugins")
         xml.data("\n\t\t")
         xml.comment("plugin order is important. Plugins that add new in-game commands all depend on the admin plugin. Make sure to have the admin plugin before them.")
-        self.autoinstallplugins = self.raw_default("Do you want to (auto)install all plugins from the template?", "yes")
+        self.autoinstallplugins = self.raw_default("Do you want to (auto)install all plugins?", "yes")
         if self.autoinstallplugins == 'yes':
-            self.read_plugins()
+            self.read_plugins('plugins')
+            # check if we are using a template
+            if self._templatevar == 'template':
+                self.installextplugins = self.raw_default("Would you like me to download and install extra, game specific plugins?", "no")
+                if self.installextplugins == 'yes':
+                    self.read_plugins('extplugins')
         else:
             self.add_plugin("censor", "@conf/plugin_censor.xml")
             self.add_plugin("spamcontrol", "@conf/plugin_spamcontrol.xml")
@@ -350,9 +373,6 @@ class Setup:
             if _result:
                 self.executeSql('@b3/sql/xlrstats.sql')
 
-            #self.add_plugin("registered", self._set_external_dir+"/conf/plugin_registered.xml", "Trying to download Registered", "http://www.bigbrotherbot.net/forums/downloads/?sa=downfile&id=22")
-            #self.add_plugin("countryfilter", self._set_external_dir+"/conf/countryfilter.xml", "Trying to download Countryfilter", "http://github.com/xlr8or/b3-plugin-countryfilter/zipball/master")
-
         # final comments
         xml.data("\n\t\t")
         xml.comment("You can add new/custom plugins to this list using the same form as above.")
@@ -362,6 +382,8 @@ class Setup:
         xml.data("\n")
         xml.close(configuration)
         self.add_buffer('\n--FINISHED CONFIGURATION----------------------------------------\n')
+        self.testExit(_question='Done, [Enter] to close application')
+
 
     def load_template(self):
         """ Load an existing config file or use the packaged examples"""
@@ -377,17 +399,22 @@ class Setup:
 
         # load the template based on the parser the user just chose
         _dflttemplate = self._configpath + 'conf/templates/b3.' + self._set_parser + '.tpl'
+        self._templatevar = 'template'
         if not os.path.exists(_dflttemplate):
             _dflttemplate = self._configpath + 'conf/b3.distribution.xml'
+            self._templatevar = 'distribution'
 
         if self._template != '':
             # means we just backed-up an old config with the same name
             _result = self.raw_default("Do you want to use the values from the backed-up config (%s)?"
                                        %(self._template), "yes")
             if _result != 'yes':
-                self._template = self.raw_default("Load values from an existing configfile", _dflttemplate)
+                self._template = self.raw_default("Load values from a template", _dflttemplate)
+            else:
+                self._templatevar = 'backup'
         else:
-            self._template = self.raw_default("Load values from an existing configfile", _dflttemplate)
+            self._template = self.raw_default("Load values from a template", _dflttemplate)
+
         self._template = self.getAbsolutePath(self._template)
         self.tree = ElementTree()
         try:
@@ -412,14 +439,16 @@ class Setup:
                         return v.text
         return _default
                 
-    def read_plugins(self):
+    def read_plugins(self, _psection='plugins'):
         """ Writes plugins to the config read from a template """
-        l = list(self.tree.findall('plugins'))
+        l = list(self.tree.findall(_psection))
         for s in l:
             plugins = list(s.findall('plugin'))
             for p in plugins:
                 _name = p.attrib['name']
                 _config = p.attrib['config']
+                if _config[:12] == 'external_dir':
+                    _config = ''.join((self._set_external_dir, _config[12:]))
                 try:
                     # lets see if there is a plugin to download
                     _dl = p.attrib['dlocation']
@@ -474,13 +503,13 @@ class Setup:
         Usage: self.add_plugin(pluginname, default-configfile, optional-explanation, default-entry, optional-downloadlocation, optional-prompt)
         """
         if prompt:
-            _q = "Install "+sname+" plugin? (yes/no)"
+            _q = "Install %s plugin? (yes/no)" % sname
             _test = self.raw_default(_q, default)
             if _test != "yes":
                 return False
 
         if downlURL:
-            self.add_buffer('  ... getting external plugin %s:' %sname)
+            self.add_buffer('  ... getting external plugin %s:\n' %sname)
             try:
                 self.download(downlURL)
             except:
@@ -525,9 +554,9 @@ class Setup:
         print "\n--BACKUP/CREATE CONFIGFILE--------------------------------------\n"
         print "    Trying to backup the original "+_file+"..."
         if not os.path.exists(_file):
-            print "\n    No backup needed.\n"
-            print "    A file with this location/name does not yet exist,\n"
-            print "    I'm about to generate a new config file!\n"
+            print "    No backup needed."
+            print "    A file with this location/name does not yet exist,"
+            print "    I'm about to generate a new config file!"
             self.testExit()
         else:
             try:

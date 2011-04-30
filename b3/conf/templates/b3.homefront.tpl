@@ -1,30 +1,25 @@
 <configuration>
 	<settings name="b3">
-		<set name="parser">moh</set>
-		<set name="database">mysql://myuser:mypass@mydbhost/mydbname</set>
+		<set name="parser">homefront</set>
+		<set name="database">mysql://user:pass@localhost/dbname</set>
 		<set name="bot_name">b3</set>
-		<set name="bot_prefix">^0(^2b3^0)^7:</set>
+		<set name="bot_prefix">(b3):</set>
 		<set name="time_format">%I:%M%p %Z %m/%d/%y</set>
-		<set name="time_zone">CEST</set>
+		<set name="time_zone">CST</set>
 		<set name="log_level">9</set>
 		<set name="logfile">b3.log</set>
 	</settings>
-	<settings name="moh">
-		<set name="max_say_line_length">100</set>
-	</settings>
 	<settings name="server">
-		<set name="public_ip">11.22.33.44</set>
-		<set name="port">19567</set>
-		<set name="rcon_ip">11.22.33.44</set>
-		<set name="rcon_port">48888</set>
-		<set name="rcon_password">myrconpassword</set>
-		<set name="timeout">3</set>
-		<set name="punkbuster">off</set>
+		<set name="public_ip"></set>
+		<set name="port">27015</set>
+		<set name="rcon_ip"></set>
+		<set name="rcon_port">27015</set>
+		<set name="rcon_password"></set>
 	</settings>
 	<settings name="autodoc">
 		<set name="type">html</set>
 		<set name="maxlevel">100</set>
-        <set name="destination">b3_doc.htm</set>
+    <set name="destination">b3_doc.htm</set>
 	</settings>
 	<settings name="messages">
 		<set name="kicked_by">$clientname was kicked by $adminname $reason</set>
@@ -40,13 +35,16 @@
 		<set name="external_dir">@b3/extplugins</set>
 	</settings>
 	<plugins>
-		<plugin name="censor" config="@conf/plugin_censor.xml"/>
-		<plugin name="spamcontrol" config="@b3/conf/plugin_spamcontrol.xml"/>
-		<plugin name="admin" config="@conf/plugin_admin.xml"/>
+        <plugin name="censor" config="@conf/plugin_censor.xml" />
+		<plugin name="spamcontrol" config="@conf/plugin_spamcontrol.xml" />
+        <plugin name="admin" config="@conf/plugin_admin.xml"/>
+		<plugin name="tk" config="@conf/plugin_tk.xml" />
+		<plugin name="stats" config="@conf/plugin_stats.xml" />
 		<plugin name="pingwatch" config="@conf/plugin_pingwatch.xml" />
-		<plugin name="adv" config="@conf/plugin_adv.xml"/>
-		<plugin name="status" config="@conf/plugin_status.xml"/>
-		<plugin name="welcome" config="@conf/plugin_welcome.xml"/>
-		-->
+		<plugin name="adv" config="@conf/plugin_adv.xml" />
+		<plugin name="status" config="@conf/plugin_status.xml" />
 	</plugins>
+    <extplugins>
+        <plugin name="poweradminhf" config="external_dir/conf/poweradminhf.xml" dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=141" />
+    </extplugins>
 </configuration>
