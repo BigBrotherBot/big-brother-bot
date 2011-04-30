@@ -132,6 +132,6 @@ sql=sql folder
 docs=docs folder
 
 [Run]
-Filename: notepad.exe; Parameters: {app}\readme.txt; WorkingDir: {app};
+Filename: {app}\readme.txt; Flags: ShellExec SkipIfDoesntExist; 
 ;Filename: {app}\b3_run.exe; Parameters: "--config ""{commonappdata}\conf\b3.xml"" --setup"; WorkingDir: {app}; Flags: ShellExec PostInstall; Description: "Run Setup?"; 
 Filename: {app}\b3_run.exe; Parameters: "--config ""{app}\conf\b3.xml"" --setup"; WorkingDir: {app}; Flags: ShellExec PostInstall; Description: "Run Setup?"; 
