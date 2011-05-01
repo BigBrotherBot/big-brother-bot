@@ -17,10 +17,19 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+# CHANGELOG
 #
+# 2011-05-01 - 1.0 - Courgette
+# * first release. Need work regarding teams and teamkills
+#
+from b3.events import EVT_CUSTOM
+from b3.parser import Parser
+import b3
+import json
+import re
 
 __author__  = 'Courgette'
-__version__ = '0.1'
+__version__ = '1.0'
 
 
 """
@@ -38,12 +47,7 @@ __version__ = '0.1'
 
 """
 
-import re
-import json
 
-import b3
-from b3.parser import Parser
-from b3.events import EVT_CUSTOM
 
 class AltitudeParser(Parser):
     """B3 parser for the Altitude game. See http://altitudegame.com"""
@@ -59,11 +63,21 @@ class AltitudeParser(Parser):
     ## altitude event object
     _eventMap = {
         'consoleCommandExecute' : EVT_CUSTOM,
+        'mapLoading' : EVT_CUSTOM,
     }
+    
+    # store the last ping values received for all players in a dict where
+    # keys are player slot IDs and values their ping
+    _last_ping_report = {}
+    
+    # store the last stats received for all players in a dict where
+    # keys are player slot IDs and values their score
+    _last_endround_report = {}
 
 
     def startup(self):
         self._initialize_rcon()
+        self.clients.newClient(-1, name="WORLD", hide=True)
 
     def _initialize_rcon(self):
         """We need a way to send rcon commands to the gale server. In
@@ -96,6 +110,10 @@ class AltitudeParser(Parser):
         '''
         altitude_event = json.loads(line)
         
+        if altitude_event['port'] != self._port:
+            # One Altitude log file can contain info from multiple servers
+            return
+        
         ## we will route the handling of that altitude_event to a method dedicated 
         ## to an alititude event type. The method will be name after the event type
         ## capitalized name prefixed by 'OnAltitude'.
@@ -118,7 +136,7 @@ class AltitudeParser(Parser):
         # if we came up with a B3 event, then queue it up so it can be dispatched
         # to the listening plugins
         if event:
-            self.verbose2("event created for this log line : %s", event)
+            self.verbose2("event fired : %s", event)
             self.queueEvent(event)
 
 
@@ -136,7 +154,11 @@ class AltitudeParser(Parser):
         {"port":27276,"demo":false,"time":12108767,"level":9,"player":2,"nickname":"Courgette","aceRank":0,"vaporId":"a8654321-123a-414e-c71a-123123123131","type":"clientAdd","ip":"192.168.10.1:27272"}
         """
         ## self.clients is B3 currently connected player store. We tell the client store we got a new one.
-        self.clients.newClient(altitude_event['player'], guid=altitude_event['vaporId'], name=altitude_event['nickname'], team=b3.TEAM_UNKNOWN)
+        client = self.newClient(altitude_event['player'], guid=altitude_event['vaporId'], 
+                               name=altitude_event['nickname'], team=b3.TEAM_UNKNOWN, 
+                               ip=altitude_event['ip'].split(':')[0])
+        client.data = {'level': altitude_event['level'],
+                       'aceRank': altitude_event['aceRank']}
 
 
     def OnAltitudeClientRemove(self, altitude_event):
@@ -164,9 +186,250 @@ class AltitudeParser(Parser):
             else:
                 return self.getEvent('EVT_CUSTOM', data=altitude_event, client=c)
 
+
+    def OnAltitudeKill(self, altitude_event):
+        """ handle log lines of type kill
+        example :
+        {u'streak': 0, u'multi': 0, u'player': -1, u'source': u'plane', u'victim': 0, u'time': 3571497, u'xp': 10, u'type': u'kill', u'port': 27276}
+        """
+        attacker = self.clients.getByCID(altitude_event['player'])
+        if not attacker:
+            self.debug('No attacker!')
+            return
+        if 'xp' in altitude_event: attacker.currentXP = int(altitude_event['xp'])
+        if 'currentStreak' in altitude_event: attacker.currentStreak = altitude_event['currentStreak']
+
+        victim = self.clients.getByCID(altitude_event['victim'])
+        if not victim:
+            self.debug('No victim!')
+            return
+
+        weapon = altitude_event['source']
+        if not weapon:
+            self.debug('No weapon')
+            return
+
+        event = 'EVT_CLIENT_KILL'
+
+        if attacker == victim:
+            event = 'EVT_CLIENT_SUICIDE'
+        elif attacker.team not in (b3.TEAM_UNKNOWN, b3.TEAM_FREE) and attacker.team == victim.team:
+            event = 'EVT_CLIENT_KILL_TEAM'
+
+        return self.getEvent(event, (100, weapon, None), attacker, victim)
+    
+    
+    def OnAltitudeAssist(self, altitude_event):
+        """ handle log lines of type assist
+        example :
+        {u'player': 2, u'victim': 1, u'time': 10836645, u'xp': 8, u'type': u'assist', u'port': 27276}
+        """
+        attacker = self.clients.getByCID(altitude_event['player'])
+        if not attacker:
+            self.debug('No attacker!')
+            return
+        if 'xp' in altitude_event: attacker.currentXP = int(altitude_event['xp'])
+        victim = self.clients.getByCID(altitude_event['victim'])
+        if not victim:
+            self.debug('No victim!')
+            return
+        return self.getEvent("EVT_CLIENT_ACTION", data="assist", client=attacker, target=victim)
+
+
+    def OnAltitudeTeamChange(self, altitude_event):
+        """ handle log lines of type teamChange
+        example :
+        {"port":27276,"time":4768143,"player":2,"team":2,"type":"teamChange"}
+        """
+        client = self.clients.getByCID(altitude_event['player'])
+        if client:
+            client.team = self.getTeam(altitude_event['team'])
+        ## NOTE : the Client.team setter with fire the EVT_CLIENT_TEAM_CHANGE
+
+
+    def OnAltitudeSpawn(self, altitude_event):
+        """ handle log lines of type spawn
+        example :
+        {u'perkBlue': u'Reverse Thrust', u'team': 8, u'perkGreen': u'Heavy Armor', u'player': 1, u'plane': u'Biplane', u'perkRed': u'Heavy Cannon', u'time': 4454401, u'skin': u'No Skin', u'type': u'spawn', u'port': 27276}
+        """
+        client = self.clients.getByCID(altitude_event['player'])
+        if not client:
+            client = self.newClient(altitude_event['player'])
+        if client:
+            client.data = {"perkBlue": altitude_event["perkBlue"],
+                            "perkGreen": altitude_event["perkGreen"],
+                            "perkRed": altitude_event["perkRed"],
+                            "plane": altitude_event["plane"],
+                            "skin": altitude_event["skin"]}
+            client.team = self.getTeam(altitude_event['team'])
+            return self.getEvent("EVT_CLIENT_JOIN", data=altitude_event, client=client)
+
+    
+    def OnAltitudeRoundEnd(self, altitude_event):
+        """ handle log lines of type roundEnd
+        example :
+        {"port":27276,"time":4833834,"participantStatsByName":{"Crashes":[2,4,0,0,0],"Goals Scored":[0,0,0,0,0],"Kills":[22,12,2,0,31],"Damage Received":[1680,4090,100,2570,1540],"Assists":[8,0,1,1,4],"Multikill":[2,0,0,0,2],"Ball Possession Time":[0,0,0,0,0],"Experience":[267,190,24,12,346],"Longest Life":[207,46,61,41,307],"Goals Assisted":[0,0,0,0,0],"Damage Dealt to Enemy Buildings":[0,0,0,0,0],"Deaths":[8,35,0,24,6],"Damage Dealt":[1950,1170,80,250,2540],"Kill Streak":[14,3,2,0,21]},"winnerByAward":{"Best Multikill":0,"Longest Life":10,"Best Kill Streak":10,"Most Deadly":10,"Most Helpful":0},"type":"roundEnd","participants":[0,1,2,7,10]}
+        """
+        ## don't know yet if saving _last_ping_report will be of any use...
+        self._last_endround_report = {"time": altitude_event['time'],
+                                      "participantStatsByName": altitude_event['participantStatsByName'], 
+                                      "winnerByAward": altitude_event['participantStatsByName'], 
+                                      "participants": altitude_event['participants'],
+                                      }
+        stats = altitude_event['participantStatsByName']
+        ## for each player, save his stats in client.lastStats and the number
+        ## of kills in client.kills
+        for i in range(len(altitude_event['participants'])):
+            cid = altitude_event['participants'][i]
+            client = self.clients.getByCID(cid)
+            if not client: continue
+            client.lastStats = {}
+            for statname in stats:
+                client.lastStats[statname] = stats[statname][i]
+            client.kills = client.lastStats['Kills']
+        return self.getEvent("EVT_GAME_ROUND_END", data=altitude_event)
+
+
+    def OnAltitudeMapChange(self, altitude_event):
+        """ handle log lines of type mapChange
+        example :
+        {"port":27276,"time":4847790,"map":"ball_grotto","type":"mapChange","mode":"ball"}
+        """
+        self.game.mapName = altitude_event['map']
+        self.game.mapType = altitude_event['mode']
+        return self.getEvent("EVT_GAME_WARMUP", data=altitude_event)
+
+
+    def OnAltitudePowerupPickup(self, altitude_event):
+        """ handle log lines of type powerupPickup
+        example :
+        {"port":27276,"time":4549268,"powerup":"Homing Missile","player":10,"positionX":3572.41,"positionY":639.57,"type":"powerupPickup"}
+        """
+        client = self.clients.getByCID(altitude_event['player'])
+        if client:
+            client.lastPosition = (altitude_event['positionX'], altitude_event['positionY'])
+            return self.getEvent("EVT_CLIENT_ITEM_PICKUP", data=altitude_event["powerup"], client=client)
+
+    
+    def OnAltitudePowerupAutoUse(self, altitude_event):
+        """ handle log lines of type powerupAutoUse
+        example :
+        {"port":27276,"time":4551678,"powerup":"Health","player":10,"positionX":2898,"positionY":285,"type":"powerupAutoUse"}
+        """
+        client = self.clients.getByCID(altitude_event['player'])
+        if client:
+            client.lastPosition = (altitude_event['positionX'], altitude_event['positionY'])
+            return self.getEvent("EVT_CLIENT_ITEM_PICKUP", data=altitude_event["powerup"], client=client)
+
+    
+    def OnAltitudePowerupUse(self, altitude_event):
+        """ handle log lines of type powerupUse
+        example :
+        {"port":27276,"velocityX":-8.62,"time":5166541,"powerup":"Homing Missile","player":0,"positionX":2060.43,"velocityY":0.75,"positionY":726.69,"type":"powerupUse"}
+        """
+        client = self.clients.getByCID(altitude_event['player'])
+        if client:
+            client.lastPosition = (altitude_event['positionX'], altitude_event['positionY'])
+            return self.getEvent("EVT_CUSTOM", data=altitude_event, client=client)
+
+    
+    def OnAltitudePowerupDefuse(self, altitude_event):
+        """ handle log lines of type powerupDefuse
+        example :
+        {u'positionX': 1416.9, u'powerup': u'Bomb', u'player': 2, u'positionY': 522.83, u'time': 12243874, u'xp': 10, u'type': u'powerupDefuse', u'port': 27276}
+        """
+        client = self.clients.getByCID(altitude_event['player'])
+        if client:
+            client.lastPosition = (altitude_event['positionX'], altitude_event['positionY'])
+            if 'xp' in altitude_event: client.currentXP = int(altitude_event['xp'])
+            return self.getEvent("EVT_CLIENT_ACTION", data='defuse', client=client)
+
+
+    def OnAltitudeGoal(self, altitude_event):
+        """ handle log lines of type goal
+        example :
+        {"port":27276,"time":4927227,"player":1,"xp":50,"type":"goal","assister":-1}
+        """
+        client = self.clients.getByCID(altitude_event['player'])
+        if client:
+            if 'xp' in altitude_event: client.currentXP = int(altitude_event['xp'])
+            return self.getEvent("EVT_CLIENT_ACTION", data="goal", client=client)
+
+    
+    def OnAltitudeStructureDamage(self, altitude_event):
+        """ handle log lines of type structureDamage
+        example :
+        {u'target': u'base', u'player': 3, u'time': 11048551, u'xp': 31, u'type': u'structureDamage', u'port': 27276}
+        """
+        attacker = self.clients.getByCID(altitude_event['player'])
+        if not attacker:
+            self.debug('No attacker!')
+            return
+        if 'xp' in altitude_event: attacker.currentXP = int(altitude_event['xp'])
+        return self.getEvent("EVT_CLIENT_ACTION", data="structureDamage", client=attacker, target=altitude_event['target'])
+
+
+    def OnAltitudeStructureDestroy(self, altitude_event):
+        """ handle log lines of type structureDestroy
+        example :
+        {u'target': u'turret', u'player': 3, u'time': 13534409, u'xp': 10, u'type': u'structureDestroy', u'port': 27276}
+        """
+        client = self.clients.getByCID(altitude_event['player'])
+        if client:
+            if 'xp' in altitude_event: client.currentXP = int(altitude_event['xp'])
+            return self.getEvent("EVT_CLIENT_ACTION", data="structureDestroy", client=client, target=altitude_event['target'])
+
+
+    def OnAltitudePingSummary(self, altitude_event):
+        """ handle log lines of type pingSummary
+        example :
+        {u'pingByPlayer': {u'10': 138, u'7': 153, u'6': 0}, u'type': u'pingSummary', u'port': 27276, u'time': 4188098}
+        """
+        self._last_ping_report = altitude_event['pingByPlayer']
+
+
+
     # =======================================
     # implement parser interface
     # =======================================
+    
+    def getPlayerList(self):
+        """\
+        Query the game server for connected players.
+        return a dict having players' id for keys and players' data as another dict for values
+        """
+        ## In most games this does not returns client object as values but here we'll do
+        ## Also, we have no way to query the exact list of currently connected
+        ## players, so we use the last ping report as they are quite frequent
+        players = {}
+        for cid in self._last_ping_report.keys():
+            client = self.clients.getByCID(cid)
+            if client:
+                players[cid] = client
+        return players
+
+    def authorizeClients(self):
+        """\
+        For all connected players, fill the client object with properties allowing to find 
+        the user in the database (usualy guid, or punkbuster id, ip) and call the 
+        Client.auth() method 
+        """
+        # we don't need anything special to auth clients as the VaporId is supplied
+        # on the clientAdd event
+        pass
+    
+    def sync(self):
+        """\
+        For all connected players returned by self.getPlayerList(), get the matching Client
+        object from self.clients (with self.clients.getByCID(cid) or similar methods) and
+        look for inconsistencies. If required call the client.disconnect() method to remove
+        a client from self.clients.
+        This is mainly useful for games where clients are identified by the slot number they
+        occupy. On map change, a player A on slot 1 can leave making room for player B who
+        connects on slot 1.
+        """
+        # cannot be implemented as we have no means of retrieving the current player list
+        pass
 
     def say(self, msg):
         """\
@@ -174,6 +437,11 @@ class AltitudeParser(Parser):
         """
         self.write('serverMessage %s' % self.stripColors(msg))
 
+    def saybig(self, msg):
+        """\
+        broadcast a message to all players in a way that will catch their attention.
+        """
+        self.say(msg)
 
     def message(self, client, msg):
         """\
@@ -181,12 +449,156 @@ class AltitudeParser(Parser):
         """
         self.write('serverWhisper %s %s' % (client.name, self.stripColors(msg)))
 
+    def kick(self, client, reason='', admin=None, silent=False, *kwargs):
+        """\
+        kick a given player
+        """
+        if admin:
+            fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+        else:
+            fullreason = self.getMessage('kicked', self.getMessageVariables(client=client, reason=reason))
+        fullreason = self.stripColors(fullreason)
+        reason = self.stripColors(reason)
+        if not silent and fullreason != '':
+            self.say(fullreason)
+        self.write("kick %s" % client.name)
+        self.queueEvent(self.getEvent('EVT_CLIENT_KICK', data=reason, client=client))
+
+    def ban(self, client, reason='', admin=None, silent=False, *kwargs):
+        """\
+        ban a given player
+        """
+        if admin:
+            fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+        else:
+            fullreason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
+        fullreason = self.stripColors(fullreason)
+        reason = self.stripColors(reason)
+        if not silent and fullreason != '':
+            self.say(fullreason)
+        self.write("addBan %(vaporId)s %(duration)s %(timeunit)s %(reason)s" % {
+                            'vaporId': client.guid, 
+                            'duration': 1, 
+                            'timeunit':'forever', 
+                            'reason': reason})
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', data=reason, client=client))
+
+    def unban(self, client, reason='', admin=None, silent=False, *kwargs):
+        """\
+        unban a given player
+        """
+        self.write("addBan %(vaporId)s" % {'vaporId': client.guid})
+        admin.message('Unbanned: Removed %s from banlist' %client.name)
+        self.queueEvent(self.getEvent('EVT_CLIENT_UNBAN', data=reason, client=client))
+
+    def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
+        """\
+        tempban a given player
+        """
+        if admin:
+            fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=b3.functions.minutesStr(duration)))
+        else:
+            fullreason = self.getMessage('temp_banned', self.getMessageVariables(client=client, reason=reason, banduration=b3.functions.minutesStr(duration)))
+        fullreason = self.stripColors(fullreason)
+        reason = self.stripColors(reason)
+        if not silent and fullreason != '':
+            self.say(fullreason)
+        self.write("addBan %(vaporId)s %(duration)s %(timeunit)s %(reason)s" % {
+                            'vaporId': client.guid, 
+                            'duration': duration, 
+                            'timeunit':'minute', 
+                            'reason': reason})
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', data=reason, client=client))
+
+    def getMap(self):
+        """\
+        return the current map/level name
+        """
+        raise NotImplementedError
+
+    def getMaps(self):
+        """\
+        return the available maps/levels name
+        """
+        raise NotImplementedError
+
+    def rotateMap(self):
+        """\
+        load the next map/level
+        """
+        raise NotImplementedError
+        
+    def changeMap(self, map):
+        """\
+        load a given map/level
+        return a list of suggested map names in cases it fails to recognize the map that was provided
+        """
+        self.write("changeMap %s" % map)
+
+    def getPlayerPings(self):
+        """\
+        returns a dict having players' id for keys and players' ping for values
+        """
+        return self._last_ping_report
+
+    def getPlayerScores(self):
+        """\
+        returns a dict having players' id for keys and players' scores for values
+        """
+        scores = {} 
+        for cid, client in self.getPlayerList().items():
+            scores[cid] = client.kills
+        return scores
+        
+    def inflictCustomPenalty(self, type, **kwargs):
+        """
+        Called if b3.admin.penalizeClient() does not know a given penalty type. 
+        Overwrite this to add customized penalties for your game like 'slap', 'nuke', 
+        'mute' or anything you want.
+        /!\ This method must return True if the penalty was inflicted.
+        """
+        # no other penalty than kick, tempban, ban that I'm aware of
+        pass
+
 
     # =======================================
     # other methods
     # =======================================
 
+    def getTeam(self, teamAltitudeId):
+        """convert an Altitude team ID into a B3 team ID"""
+        if teamAltitudeId == 3:
+            # red
+            return b3.TEAM_FREE
+        if teamAltitudeId == 5:
+            # xxxxxxx
+            return b3.TEAM_FREE
+        elif teamAltitudeId == 6:
+            # yellow
+            return b3.TEAM_FREE
+        elif teamAltitudeId == 7:
+            # orange
+            return b3.TEAM_FREE
+        elif teamAltitudeId == 8:
+            # Azure
+            return b3.TEAM_FREE
+        elif teamAltitudeId == 2:
+            return b3.TEAM_SPEC
+        else:
+            return b3.TEAM_UNKNOWN
 
+    
+    def newClient(self, cid, **kwargs):
+        """ create a new client and initialize some Altitude specific 
+        attributes"""
+        client = self.clients.newClient(cid, **kwargs)
+        client.data = {}
+        client.lastPosition = None # (x, y) coordinates
+        client.kills = None
+        client.currentXP = None
+        client.currentStreak = None
+        client.lastStats = None
+        return client
 
 class AltitudeRcon():
     """Object that opens the Altitude command file and allows B3 to write
