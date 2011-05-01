@@ -460,9 +460,12 @@ class Setup:
             plugins = list(s.findall('plugin'))
             for p in plugins:
                 _name = p.attrib['name']
-                _config = p.attrib['config']
-                if _config[:12] == 'external_dir':
-                    _config = ''.join((self._set_external_dir, _config[12:]))
+                try:
+                    _config = p.attrib['config']
+                    if _config[:12] == 'external_dir':
+                        _config = ''.join((self._set_external_dir, _config[12:]))
+                except:
+                    _config = None
                 try:
                     # do we need to install database tables?
                     _sql = p.attrib['sql']
@@ -516,7 +519,7 @@ class Setup:
         if not silent:
             self.add_buffer(str(sname) + self.equaLize(sname) + ": " + str(_value) + "\n")
 
-    def add_plugin(self, sname, sconfig, explanation=None, default="yes", downlURL=None, sql=None, prompt=True):
+    def add_plugin(self, sname, sconfig=None, explanation=None, default="yes", downlURL=None, sql=None, prompt=True):
         """
         A routine to add a plugin to the config
         Usage: self.add_plugin(pluginname, default-configfile, optional-explanation, default-entry, optional-downloadlocation, optional-prompt)
@@ -553,8 +556,12 @@ class Setup:
             _config = self.raw_default("config", sconfig)
 
         xml.data("\n\t\t")
-        xml.element("plugin", name=sname, config=_config)
-        self.add_buffer("plugin: " + str(sname) + ", config: " + str(_config) + "\n")
+        if not _config:
+            xml.element("plugin", name=sname)
+            self.add_buffer("plugin: " + str(sname) + "\n")
+        else:
+            xml.element("plugin", name=sname, config=_config)
+            self.add_buffer("plugin: " + str(sname) + ", config: " + str(_config) + "\n")
         return True
 
     def raw_default(self, prompt, dflt=None):
@@ -755,15 +762,15 @@ class Setup:
                 #self.add_buffer(root)
                 for data in glob.glob(root + '/*.py'):
                     shutil.copy2(data, absPath)
-            # move the config files
+                # move the config files
             if root[-4:] == 'conf':
                 for data in glob.glob(root + '/*.xml'):
                     ## @todo: downloading an extplugin for the second time will overwrite the existing extplugins config.
                     shutil.copy2(data, absPath + '/conf/')
-            # check for .sql files and move them to the sql folder
+                # check for .sql files and move them to the sql folder
             for data in glob.glob(root + '/*.sql'):
                 shutil.copy2(data, self.getAbsolutePath('@b3/sql/'))
-            # remove the tempdir and its content
+                # remove the tempdir and its content
         shutil.rmtree(tempExtractDir)
         #os.remove(localName)
 
