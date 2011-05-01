@@ -21,15 +21,24 @@
 #
 # 2011-05-01 - 1.0 - Courgette
 # * first release. Need work regarding teams and teamkills
+# 2011-05-01 - 1.1 - Courgette
+# * fix unban
+# * add 3 new B3 events : EVT_CLIENT_CONSOLE_COMMAND, EVT_CLIENT_CALL_VOTE and 
+#   EVT_CLIENT_VOTE
+# * try to fight back when ppl call kick vote against admins
+# * unban admins who got kicked to pass by the default 2m tempban on kicks
+# * more team ID found. Still need to figure out the game mod that are team based
+#   to properly assign B3 team IDs
 #
 from b3.events import EVT_CUSTOM
 from b3.parser import Parser
 import b3
 import json
 import re
+import time
 
 __author__  = 'Courgette'
-__version__ = '1.0'
+__version__ = '1.1'
 
 
 """
@@ -61,7 +70,6 @@ class AltitudeParser(Parser):
     ## B3 event will be created with their data parameter set to the full
     ## altitude event object
     _eventMap = {
-        'consoleCommandExecute' : EVT_CUSTOM,
         'mapLoading' : EVT_CUSTOM,
     }
     
@@ -77,6 +85,12 @@ class AltitudeParser(Parser):
     def startup(self):
         self._initialize_rcon()
         self.clients.newClient(-1, name="WORLD", hide=True)
+        # add specific events
+        self.Events.createEvent('EVT_CLIENT_CONSOLE_COMMAND', 'Client exec a console command')
+        self.Events.createEvent('EVT_CLIENT_CALL_VOTE', 'Client call vote')
+        self.Events.createEvent('EVT_CLIENT_VOTE', 'Client vote')
+        # listen to some events
+        self.registerHandler("EVT_CLIENT_CALL_VOTE", self._OnClientCallVote)
 
     def _initialize_rcon(self):
         """We need a way to send rcon commands to the gale server. In
@@ -163,10 +177,27 @@ class AltitudeParser(Parser):
     def OnAltitudeClientRemove(self, altitude_event):
         """ handle log lines of type clientRemove
         example :
-        {"port":27276,"message":"left","time":17317434,"player":2,"reason":"Client left.","nickname":"Courgette","vaporId":"a8654321-123a-414e-c71a-123123123131","type":"clientRemove","ip":"192.168.10.1:27272"}'
+            {"port":27276, "message":"left", "time":17317434, 
+            "player":2, "reason":"Client left.", 
+            "nickname":"Courgette", "vaporId":"d6545616-17a3-4044-a74b-121231321321",
+            "type":"clientRemove", "ip":"192.168.10.1:27272"}
+            
+            {"port":27276, "message":"banned for 2 minutes", "time":3300620,
+            "player":2, "reason":"Kicked by vote.", "nickname":"Courgette",
+            "vaporId":"d6545616-17a3-4044-a74b-121231321321", "type":"clientRemove",
+            "ip":"192.168.10.1:27272"}
         """
-        c = self.clients.getByCID(altitude_event['player'])
+        c = self.clients.getByGUID(altitude_event['vaporId'])
         if c:
+            if altitude_event["reason"] == "Client left.":
+                pass
+            elif altitude_event["reason"] == "Kicked by vote.":
+                ## default Altitude kick is a 2 minute ban, we don't want
+                ## moderators and admins to have to wait 2 minutes
+                if c.maxLevel > 2:
+                    self.write("removeBan %(vaporId)s" % {'vaporId': c.guid})
+            else:
+                self.verbose2("unknown clientRemove reason : %s", altitude_event['reason'])
             c.disconnect()
 
 
@@ -191,6 +222,9 @@ class AltitudeParser(Parser):
         example :
         {u'streak': 0, u'multi': 0, u'player': -1, u'source': u'plane', u'victim': 0, u'time': 3571497, u'xp': 10, u'type': u'kill', u'port': 27276}
         """
+        '''
+        NOTE: there is no team kill in that game
+        '''
         attacker = self.clients.getByCID(altitude_event['player'])
         if not attacker:
             self.debug('No attacker!')
@@ -212,8 +246,6 @@ class AltitudeParser(Parser):
 
         if attacker == victim:
             event = 'EVT_CLIENT_SUICIDE'
-        elif attacker.team not in (b3.TEAM_UNKNOWN, b3.TEAM_FREE) and attacker.team == victim.team:
-            event = 'EVT_CLIENT_KILL_TEAM'
 
         return self.getEvent(event, (100, weapon, None), attacker, victim)
     
@@ -387,6 +419,68 @@ class AltitudeParser(Parser):
         self._last_ping_report = altitude_event['pingByPlayer']
 
 
+    def OnAltitudeConsoleCommandExecute(self, altitude_event):
+        """ handle log lines of type consoleCommandExecute
+        example :
+            {"port":27276, "time":3250286, "arguments":["kick","Courgette"],
+            "source":"c0aaf37d-e56d-4431-aa1e-69d5e18be5e6", "command":"vote",
+            "group":"Anonymous", "type":"consoleCommandExecute"}
+        """
+        ## we only handle commands from players and ignore those from server
+        if altitude_event['source'] == "00000000-0000-0000-0000-000000000000":
+            return
+        client = self.clients.getByGUID(altitude_event['source'])
+        if not client:
+            self.debug("client not found for %s" % altitude_event['source'])
+            return
+        ## depending on the command, we try to route the handling of that event
+        ## to a specific method
+        command = altitude_event['command']
+        method_name = "OnAltitudeCommand%s%s" % (command[:1].upper(), command[1:])
+        event = None
+        if not hasattr(self, method_name):
+            # no handling method for such command
+            # we fallback on creating a generic EVT_CLIENT_CONSOLE_COMMAND event
+            self.verbose2("create method %s to handle command %r", method_name, altitude_event)
+            event = self.getEvent('EVT_CLIENT_CONSOLE_COMMAND', data=altitude_event, client=client)
+        else:
+            func = getattr(self, method_name)
+            event = func(altitude_event)
+        
+        return event
+
+
+
+    # ==================================================================
+    # handle Game events for console commands.
+    #
+    # those methods are called by OnAltitudeConsoleCommandExecute() and 
+    # may return a B3 Event object
+    # ==================================================================
+
+    def OnAltitudeCommandVote(self, altitude_event):
+        """ handle vote console commands
+        example :
+            {"port":27276, "time":3250286, "arguments":["kick","Courgette"],
+            "source":"c0aaf37d-e56d-4431-aa1e-69d5e18be5e6", "command":"vote",
+            "group":"Anonymous", "type":"consoleCommandExecute"}
+        """ 
+        c = self.clients.getByGUID(altitude_event["vaporId"])
+        return self.getEvent("EVT_CLIENT_CALL_VOTE", data=altitude_event, client=c)
+
+
+    def OnAltitudeCommandCastBallot(self, altitude_event):
+        """ handle castBallot console commands
+        example :
+            {"port":27276,"time":3252183, "arguments":["1"],
+            "source":"86e487de-0190-43ff-8e9e-70a14a1751a2",
+            "command":"castBallot", "group":"Anonymous",
+            "type":"consoleCommandExecute"}
+        """ 
+        c = self.clients.getByGUID(altitude_event["source"])
+        return self.getEvent("EVT_CLIENT_VOTE", data=altitude_event, client=c)
+
+
 
     # =======================================
     # implement parser interface
@@ -429,12 +523,7 @@ class AltitudeParser(Parser):
         """
         # cannot be implemented as we have no means of retrieving the current player list
         pass
-
     
-    # =======================================
-    # implement parser interface
-    # =======================================
-
     def say(self, msg):
         """\
         broadcast a message to all players
@@ -491,8 +580,8 @@ class AltitudeParser(Parser):
         """\
         unban a given player
         """
-        self.write("addBan %(vaporId)s" % {'vaporId': client.guid})
-        admin.message('Unbanned: Removed %s from banlist' %client.name)
+        self.write("removeBan %(vaporId)s" % {'vaporId': client.guid})
+        if admin: admin.message('Unbanned: Removed %s from banlist' %client.name)
         self.queueEvent(self.getEvent('EVT_CLIENT_UNBAN', data=reason, client=client))
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
@@ -564,18 +653,50 @@ class AltitudeParser(Parser):
         # no other penalty than kick, tempban, ban that I'm aware of
         pass
 
+    
+    #===========================================================================
+    # a few event listeners
+    #===========================================================================
 
-    # =======================================
+    def _OnClientCallVote(self, b3event):
+        """ This game allows anyone to call a kick vote agains an admin.
+        Here we keep an eye on every kick vote and if we found someone calling
+        a kick vote on a player of higher level, then we kick him """
+        ''' example of altitude call vote event :
+            {"port":27276, "time":3250286, "arguments":["kick","Courgette"],
+            "source":"c0aaf37d-e56d-4431-aa1e-69d5e18be5e6", "command":"vote",
+            "group":"Anonymous", "type":"consoleCommandExecute"}
+        '''
+        altitude_event = b3event.data
+        kick_target = self.clients.getByName(altitude_event['arguments'][1])
+        vote_caller = b3event.client
+        if vote_caller and kick_target:
+            if kick_target.maxLevel > vote_caller.maxLevel:
+                vote_caller.message("Do not call kick vote against admins")
+                time.sleep(2)
+                vote_caller.tempban(duration="2m", reason="call vote against higher level admin", data=altitude_event)
+                
+        
+
+
+    #===========================================================================
     # other methods
-    # =======================================
+    #===========================================================================
 
     def getTeam(self, teamAltitudeId):
-        """convert an Altitude team ID into a B3 team ID"""
-        if teamAltitudeId == 3:
+        """convert an Altitude team ID into a B3 team ID
+        doc: http://altitudegame.com/forums/showpost.php?p=82191&postcount=30
+        """
+        if teamAltitudeId == 2:
+            return b3.TEAM_SPEC
+        elif teamAltitudeId == 3:
             # red
             return b3.TEAM_FREE
-        if teamAltitudeId == 5:
-            # xxxxxxx
+        elif teamAltitudeId == 4:
+            # blue
+            return b3.TEAM_FREE
+        elif teamAltitudeId == 5:
+            # green
             return b3.TEAM_FREE
         elif teamAltitudeId == 6:
             # yellow
@@ -584,10 +705,17 @@ class AltitudeParser(Parser):
             # orange
             return b3.TEAM_FREE
         elif teamAltitudeId == 8:
+            # purple
+            return b3.TEAM_FREE
+        elif teamAltitudeId == 9:
             # Azure
             return b3.TEAM_FREE
-        elif teamAltitudeId == 2:
-            return b3.TEAM_SPEC
+        elif teamAltitudeId == 10:
+            # brown/pink ?
+            return b3.TEAM_FREE
+        elif teamAltitudeId == 11:
+            # brown/pink ?
+            return b3.TEAM_FREE
         else:
             return b3.TEAM_UNKNOWN
 
