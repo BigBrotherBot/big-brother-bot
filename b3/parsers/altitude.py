@@ -48,7 +48,6 @@ __version__ = '1.0'
 """
 
 
-
 class AltitudeParser(Parser):
     """B3 parser for the Altitude game. See http://altitudegame.com"""
     
@@ -431,6 +430,11 @@ class AltitudeParser(Parser):
         # cannot be implemented as we have no means of retrieving the current player list
         pass
 
+    
+    # =======================================
+    # implement parser interface
+    # =======================================
+
     def say(self, msg):
         """\
         broadcast a message to all players
@@ -599,6 +603,7 @@ class AltitudeParser(Parser):
         client.currentStreak = None
         client.lastStats = None
         return client
+
 
 class AltitudeRcon():
     """Object that opens the Altitude command file and allows B3 to write
