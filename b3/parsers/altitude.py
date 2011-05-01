@@ -574,6 +574,7 @@ class AltitudeParser(Parser):
                             'duration': 1, 
                             'timeunit':'forever', 
                             'reason': reason})
+        self.write("kick %s" % client.name)
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN', data=reason, client=client))
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -598,9 +599,10 @@ class AltitudeParser(Parser):
             self.say(fullreason)
         self.write("addBan %(vaporId)s %(duration)s %(timeunit)s %(reason)s" % {
                             'vaporId': client.guid, 
-                            'duration': duration, 
+                            'duration': int(duration), 
                             'timeunit':'minute', 
                             'reason': reason})
+        self.write("kick %s" % client.name)
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', data=reason, client=client))
 
     def getMap(self):
