@@ -757,20 +757,18 @@ class Setup:
         # move the appropriate files to the correct folders
         for root, dirs, files in os.walk(tempExtractDir):
             # move the python files to the extplugins dir
-            self.add_buffer(root)
             if root[-10:] == 'extplugins':
-                #self.add_buffer(root)
                 for data in glob.glob(root + '/*.py'):
                     shutil.copy2(data, absPath)
-                # move the config files
+            # move the config files to the extplugins/conf folder
             if root[-4:] == 'conf':
                 for data in glob.glob(root + '/*.xml'):
                     ## @todo: downloading an extplugin for the second time will overwrite the existing extplugins config.
                     shutil.copy2(data, absPath + '/conf/')
-                # check for .sql files and move them to the sql folder
+            # check for .sql files and move them to the global sql folder
             for data in glob.glob(root + '/*.sql'):
                 shutil.copy2(data, self.getAbsolutePath('@b3/sql/'))
-                # remove the tempdir and its content
+        # remove the tempdir and its content
         shutil.rmtree(tempExtractDir)
         #os.remove(localName)
 
