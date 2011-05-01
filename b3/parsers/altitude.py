@@ -70,6 +70,7 @@ class AltitudeParser(Parser):
     ## B3 event will be created with their data parameter set to the full
     ## altitude event object
     _eventMap = {
+        'serverStart' : EVT_CUSTOM,
         'mapLoading' : EVT_CUSTOM,
     }
     
@@ -161,13 +162,29 @@ class AltitudeParser(Parser):
     # may return a B3 Event object
     # ================================================
 
+    def OnAltitudeServerInit(self, altitude_event):
+        """ handle log lines of type serverInit
+        example :
+        {'maxPlayerCount': 14, 
+        'type': 'serverInit', 'port': 27276, 
+        'name': u'Courgette test Server', 'time': 493}
+        """
+        ## this events is triggered when the Altitude server starts up
+        self.game.sv_hostname = altitude_event['name']
+        self.game.sv_maxclients = int(altitude_event['maxPlayerCount'])
+
+
     def OnAltitudeClientAdd(self, altitude_event):
         """ handle log lines of type clientAdd
         example :
         {"port":27276,"demo":false,"time":12108767,"level":9,"player":2,"nickname":"Courgette","aceRank":0,"vaporId":"a8654321-123a-414e-c71a-123123123131","type":"clientAdd","ip":"192.168.10.1:27272"}
         """
         ## self.clients is B3 currently connected player store. We tell the client store we got a new one.
-        client = self.newClient(altitude_event['player'], guid=altitude_event['vaporId'], 
+        vaporId = altitude_event['vaporId']
+        if vaporId == "00000000-0000-0000-0000-000000000000":
+            ## we do not want bots to get authenticated
+            vaporId = None
+        client = self.newClient(altitude_event['player'], guid=vaporId, 
                                name=altitude_event['nickname'], team=b3.TEAM_UNKNOWN, 
                                ip=altitude_event['ip'].split(':')[0])
         client.data = {'level': altitude_event['level'],
@@ -522,7 +539,11 @@ class AltitudeParser(Parser):
         connects on slot 1.
         """
         # cannot be implemented as we have no means of retrieving the current player list
-        pass
+        connected_clients = self.getPlayerList()
+        for c in self.clients.getList():
+            if c.cid not in connected_clients:
+                c.disconnect()
+        return connected_clients
     
     def say(self, msg):
         """\
@@ -542,10 +563,16 @@ class AltitudeParser(Parser):
         """
         self.write('serverWhisper %s %s' % (client.name, self.stripColors(msg)))
 
-    def kick(self, client, reason='', admin=None, silent=False, *kwargs):
+    def kick(self, clientOrCid, reason='', admin=None, silent=False, *kwargs):
         """\
         kick a given player
         """
+        if not isinstance(clientOrCid, b3.clients.Client):
+            ## in this game we cannot kick by cid
+            return
+        else:
+            client = clientOrCid
+        fullreason = ''
         if admin:
             fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
         else:
@@ -678,7 +705,22 @@ class AltitudeParser(Parser):
                 time.sleep(2)
                 vote_caller.tempban(duration="2m", reason="call vote against higher level admin", data=altitude_event)
                 
-        
+    
+    #===========================================================================
+    # overwriting some Parser methods
+    #===========================================================================
+
+    def shutdown(self):
+        """Shutdown B3"""
+        try:
+            ## erase Altitude command file content so the Altitude
+            ## server wron't try to redo those commands on restart
+            self.output.clear()
+        except Exception, e:
+            self.error(e)
+        finally:
+            ## call original shutdown()
+            Parser.shutdown(self)
 
 
     #===========================================================================
@@ -755,7 +797,8 @@ class AltitudeRcon():
         self._fh.write("%s,console,%s\n" % (self.console._port, cmd))
         
     def flush(self):
-        self._fh.flush()
+        try: self._fh.flush()
+        except Exception: pass
 
     def close(self):
         self._fh.close()
@@ -763,4 +806,9 @@ class AltitudeRcon():
     def _get_encoding(self):
         return self._fh.encoding
     encoding = property(_get_encoding)
-            
+        
+    def clear(self):
+        """ delete all content off the command file """
+        self.close()
+        self._fh = open(self._commandfile_name, 'w')
+        
