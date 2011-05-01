@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2011/05/31 - 1.24.4 - Courgette
+#   * add missing b3.timezones import
 #   2011/04/30 - 1.24.3 - Courgette
 #   * move the B3 start announcement that is broadcasted on the game server after
 #     the parser startup() method has been called to give a change to parsers to
@@ -118,7 +120,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.24.3'
+__version__ = '1.24.4'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -133,6 +135,7 @@ import b3.cron
 import b3.parsers.q3a.rcon
 import b3.clients
 import b3.functions
+import b3.timezones
 from b3.functions import main_is_frozen, getModule, executeSql
 
 
