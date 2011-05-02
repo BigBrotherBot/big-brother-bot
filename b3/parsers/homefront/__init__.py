@@ -40,9 +40,12 @@
 # * remove color codes before sending each line in say, saybig and message
 # 2011-04-25 : 0.8.0
 # * read game server info through Source Query Protocol
+# 2011-05-03 : 0.9.0
+# * add custom penalty 'kill'
+
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.8.0'
+__version__ = '0.9.0'
 
 from b3.parsers.homefront.protocol import MessageType, ChannelType
 import sys
@@ -812,14 +815,19 @@ class HomefrontParser(b3.parser.Parser):
             result = b3.TEAM_UNKNOWN
         return result
 
-    def inflictCustomPenalty(self, type, **kwargs):
+    def inflictCustomPenalty(self, type, client, reason=None, duration=None, admin=None, data=None):
         """
         Called if b3.admin.penalizeClient() does not know a given penalty type. 
         Overwrite this to add customized penalties for your game like 'slap', 'nuke', 
         'mute' or anything you want.
         /!\ This method must return True if the penalty was inflicted.
         """
-        pass
+        if type == 'kill' and client:
+            self.write('admin kill "%s"' % client.name)
+            if reason:
+                client.message("%s" % reason)
+            return True
+
 
     
     # =======================================
