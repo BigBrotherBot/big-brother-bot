@@ -18,7 +18,9 @@
 #
 #
 # CHANGELOG
-#   2011/05/31 - 1.24.4 - Courgette
+#   2011/05/03 - 1.24.5 - Courgette
+#   * fix bug regarding rcon_ip introduced in 1.24.4
+#   2011/04/31 - 1.24.4 - Courgette
 #   * add missing b3.timezones import
 #   2011/04/30 - 1.24.3 - Courgette
 #   * move the B3 start announcement that is broadcasted on the game server after
@@ -120,7 +122,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.24.4'
+__version__ = '1.24.5'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -267,7 +269,7 @@ class Parser(object):
         self._port = self.config.getint('server', 'port')
         self._rconPort = self._port # if rcon port is the same as the game port, rcon_port can be ommited
         self._rconIp = self._publicIp # if rcon ip is the same as the game port, rcon_ip can be ommited
-        if self.config.has_option('server', 'rcon_port'):
+        if self.config.has_option('server', 'rcon_ip'):
             self._rconIp = self.config.get('server', 'rcon_ip')
         if self.config.has_option('server', 'rcon_port'):
             self._rconPort = self.config.getint('server', 'rcon_port')
