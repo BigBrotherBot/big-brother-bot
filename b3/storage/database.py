@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -57,27 +57,20 @@
 __author__  = 'ThorN'
 __version__ = '1.10.0'
 
-import re, time, traceback, sys, thread, os
 
-from b3.querybuilder import QueryBuilder
-import b3.clients
-import b3
 from b3 import functions
+from b3.querybuilder import QueryBuilder
+from b3.storage import Storage
+import b3
+import os
+import re
+import sys
+import thread
+import time
+import traceback
 
-#--------------------------------------------------------------------------------------------------
-class Storage(object):
-    console = None
-        
-    def getClient(self, client):
-        return None
-    
-    def setClient(self, client):
-        return None
 
-    def shutdown(self):
-        pass
 
-#--------------------------------------------------------------------------------------------------
 class DatabaseStorage(Storage):
     _reName = re.compile(r'([A-Z])')
     _reVar  = re.compile(r'_([a-z])')
@@ -532,6 +525,96 @@ class DatabaseStorage(Storage):
         cursor.close()
 
         return aliases
+    
+    def setClientIpAddresse(self, ipalias):
+        """
+        id  int(10)  UNSIGNED No    auto_increment              
+        num_used  int(10)  UNSIGNED No  0                
+        ip  int(10)   UNSIGNED No                  
+        client_id  int(10)  UNSIGNED No  0                
+        time_add  int(10)  UNSIGNED No  0                
+        time_edit  int(10)  UNSIGNED No  0            
+        """
+
+        self.console.debug('Storage: setClientIpAddresse %s' % ipalias)
+
+        fields = (
+            'num_used',
+            'ip',
+            'client_id',
+            'time_add',
+            'time_edit'
+        )
+    
+        if ipalias.id:
+            data = { 'id' : ipalias.id }
+        else:
+            data = {}
+
+        for f in fields:
+            if hasattr(ipalias, self.getVar(f)):
+                data[f] = getattr(ipalias, self.getVar(f))
+
+        self.console.debug('Storage: setClientIpAddresse data %s' % data)
+        if ipalias.id:
+            self.query(QueryBuilder(self.db).UpdateQuery(data, 'ipaliases', { 'id' : ipalias.id }))
+        else:
+            cursor = self.query(QueryBuilder(self.db).InsertQuery(data, 'ipaliases'))
+
+            if cursor:
+                ipalias.id = cursor.lastrowid
+            else:
+                ipalias.id = None
+
+        return ipalias.id
+
+    def getClientIpAddress(self, ipalias):
+        self.console.debug('Storage: getClientIpAddress %s' % ipalias)
+
+        cursor = None
+        if hasattr(ipalias, 'id') and ipalias.id > 0:
+            cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'ipaliases', { 'id' : ipalias.id }, None, 1))
+        elif hasattr(ipalias, 'ip') and hasattr(ipalias, 'clientId'):
+            cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'ipaliases', { 'ip' : ipalias.ip, 'client_id' : ipalias.clientId }, None, 1))
+
+        if not cursor or cursor.EOF:
+            raise KeyError, 'No ip matching %s' % ipalias
+
+        g = cursor.getOneRow()
+
+        ipalias.id = int(g['id'])
+        ipalias.ip    = g['ip']
+        ipalias.timeAdd  = int(g['time_add'])
+        ipalias.timeEdit = int(g['time_edit'])
+        ipalias.clientId = int(g['client_id'])
+        ipalias.numUsed = int(g['num_used'])
+    
+        return ipalias
+
+    def getClientIpAddresses(self, client):
+        self.console.debug('Storage: getClientIpAddresses %s' % client)
+        cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'ipaliases', { 'client_id' : client.id }, 'id'))
+
+        if not cursor:
+            return ()
+
+        aliases = []
+        while not cursor.EOF:
+            g = cursor.getRow()
+
+            ip = b3.clients.IpAlias()
+            ip.id = int(g['id'])
+            ip.ip    = g['ip']
+            ip.timeAdd  = int(g['time_add'])
+            ip.timeEdit = int(g['time_edit'])
+            ip.clientId = int(g['client_id'])
+            ip.numUsed = int(g['num_used'])
+            aliases.append(ip)
+            cursor.moveNext()
+
+        cursor.close()
+
+        return aliases
 
     def setClientPenalty(self, penalty):
         """
@@ -826,10 +909,15 @@ class DatabaseStorage(Storage):
                 group.id = cursor.lastrowid
 
         return group.id
-
-#--------------------------------------------------------------------------------------------------
-def getStorage(type, *args):
-    return globals()['%sStorage' % type.title()](*args)
-
-if __name__ == '__main__':
-    print getStorage('database', 'test', 'test')
+    
+    
+    def executeSql(self, filename):
+        """This method executes an external sql file"""
+        sqlFile = b3.getAbsolutePath(filename)
+        f = open(sqlFile, 'r')
+        sql_text = f.read()
+        f.close()
+        sql_statements = sql_text.split(';')
+        for s in sql_statements:
+            if len(s.strip()):
+                self.query(s)
