@@ -818,6 +818,24 @@ class Alias(Struct):
         return console.storage.setClientAlias(self)
 
 #-----------------------------------------------------------------------------------------------------------------------
+class IpAlias(Struct):
+    ip = None
+    timeAdd  = 0
+    timeEdit = 0
+    numUsed  = 1
+    clientId = 0
+
+    def save(self, console):
+        self.timeEdit = console.time()
+
+        if not self.id:
+            self.timeAdd = console.time()
+        return console.storage.setClientIpAddresse(self)
+    
+    def __str__(self):
+        return "IpAlias(id=%s, ip=\"%s\", clientId=%s, numUsed=%s)" % (self.id, self.ip, self.clientId, self.numUsed)
+
+#-----------------------------------------------------------------------------------------------------------------------
 class Group(Struct):
     name    = ''
     keyword = ''
