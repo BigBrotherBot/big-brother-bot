@@ -65,6 +65,7 @@ import zipfile
 import glob
 import pkg_handler
 import functions
+import tempfile
 from lib.elementtree.ElementTree import ElementTree
 from lib.elementtree.SimpleXMLWriter import XMLWriter
 from distutils import version
@@ -93,15 +94,23 @@ class Setup:
         self.introduction()
         self.clearscreen()
         self._outputFile = self.raw_default("Location and name of the new configfile", self._config)
+        self._outputTempFile = tempfile.NamedTemporaryFile(delete=False)
         #Creating Backup
         self.backupFile(self._outputFile)
         self.runSetup()
+        # copy the config to it's final version
+        shutil.copy(self._outputTempFile.name, self._outputFile)
+        try:
+            # try to delete the tempfile. this fails on Windows in some cases
+            os.unlink(self._outputTempFile.name)
+        except:
+            pass
         raise SystemExit('Restart B3 or reconfigure B3 using option: -s')
 
     def runSetup(self):
         """ The main function that handles the setup steps """
         global xml
-        xml = XMLWriter(self._outputFile)
+        xml = XMLWriter(self._outputTempFile)
 
         # write appropriate header
         xml.declaration()
@@ -394,8 +403,9 @@ class Setup:
 
         xml.data("\n")
         xml.close(configuration)
+        xml.flush()
         self.add_buffer('\n--FINISHED CONFIGURATION----------------------------------------\n')
-        self.testExit(_question='Done, [Enter] to close application')
+        self.testExit(_question='Done, [Enter] to finish setup')
 
 
     def load_template(self):
@@ -760,15 +770,15 @@ class Setup:
             if root[-10:] == 'extplugins':
                 for data in glob.glob(root + '/*.py'):
                     shutil.copy2(data, absPath)
-            # move the config files to the extplugins/conf folder
+                # move the config files to the extplugins/conf folder
             if root[-4:] == 'conf':
                 for data in glob.glob(root + '/*.xml'):
                     ## @todo: downloading an extplugin for the second time will overwrite the existing extplugins config.
                     shutil.copy2(data, absPath + '/conf/')
-            # check for .sql files and move them to the global sql folder
+                # check for .sql files and move them to the global sql folder
             for data in glob.glob(root + '/*.sql'):
                 shutil.copy2(data, self.getAbsolutePath('@b3/sql/'))
-        # remove the tempdir and its content
+            # remove the tempdir and its content
         shutil.rmtree(tempExtractDir)
         #os.remove(localName)
 
