@@ -45,6 +45,7 @@
 # 2011/03/12 - 0.8 - xlr8or
 #    * Better handling of execution of b3.sql
 #    * Bugfix in message section
+#    * use tempfile until setup is completed
 #
 
 # This section is DoxuGen information. More information on how to comment your code
