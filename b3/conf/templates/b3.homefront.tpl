@@ -45,13 +45,13 @@
         <plugin name="status" config="@conf/plugin_status.xml"/>
     </plugins>
     <extplugins>
-        <plugin name="xlrstats" config="external_dir/conf/xlrstats.xml" sql="xlrstats.sql"/>
-        <plugin name="ctime" dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=146" sql="ctime.sql"/>
         <plugin name="poweradminhf" config="external_dir/conf/poweradminhf.xml"
                 dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=141"/>
         <plugin name="banlist" config="external_dir/conf/banlist.xml"
                 dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=6"/>
         <plugin name="chatlogger" config="external_dir/conf/plugin_chatlogger.xml"
                 dlocation="http://github.com/courgette/b3-plugin-chatlogger/zipball/v1.0" sql="chatlogger.sql"/>
+        <plugin name="xlrstats" config="external_dir/conf/xlrstats.xml" sql="xlrstats.sql"/>
+        <plugin name="ctime" dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=146" sql="ctime.sql"/>
     </extplugins>
 </configuration>

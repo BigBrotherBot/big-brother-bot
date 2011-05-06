@@ -49,6 +49,13 @@
 		<plugin name="welcome" config="@conf/plugin_welcome.xml"/>
 	</plugins>
     <extplugins>
-        <plugin name="poweradminbfbc2" config="external_dir/conf/poweradminbfbc2.xml" dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=58" />
+        <plugin name="poweradminbfbc2" config="external_dir/conf/poweradminbfbc2.xml"
+                dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=58"/>
+        <plugin name="banlist" config="external_dir/conf/banlist.xml"
+                dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=6"/>
+        <plugin name="chatlogger" config="external_dir/conf/plugin_chatlogger.xml"
+                dlocation="http://github.com/courgette/b3-plugin-chatlogger/zipball/v1.0" sql="chatlogger.sql"/>
+        <plugin name="xlrstats" config="external_dir/conf/xlrstats.xml" sql="xlrstats.sql"/>
+        <plugin name="ctime" dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=146" sql="ctime.sql"/>
     </extplugins>
 </configuration>
