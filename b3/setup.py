@@ -77,7 +77,7 @@ modulePath = pkg_handler.resource_directory(__name__)
 class Setup:
     _pver = sys.version.split()[0]
     _indentation = '    '
-    _config = 'b3/conf/b3.xml'
+    _config = r'b3/conf/b3.xml'
     _template = ''
     _templatevar = ''
     _buffer = ''
@@ -90,7 +90,7 @@ class Setup:
         if config:
             self._config = config
         elif self.getB3Path() != "":
-            self._config = self.getB3Path() + "\\conf\\b3.xml"
+            self._config = self.getB3Path() + r'/conf/b3.xml'
         print self._config
         self.introduction()
         self.clearscreen()
@@ -767,19 +767,19 @@ class Setup:
         self.extract(localName, tempExtractDir)
         # move the appropriate files to the correct folders
         for root, dirs, files in os.walk(tempExtractDir):
-            # move the python files to the extplugins dir
+            # move all available .py files to the extplugins folder
             if root[-10:] == 'extplugins':
                 for data in glob.glob(root + '/*.py'):
                     shutil.copy2(data, absPath)
-                # move the config files to the extplugins/conf folder
+            # move the config files to the extplugins/conf folder
             if root[-4:] == 'conf':
                 for data in glob.glob(root + '/*.xml'):
                     ## @todo: downloading an extplugin for the second time will overwrite the existing extplugins config.
                     shutil.copy2(data, absPath + '/conf/')
-                # check for .sql files and move them to the global sql folder
+            # check for .sql files and move them to the global sql folder
             for data in glob.glob(root + '/*.sql'):
                 shutil.copy2(data, self.getAbsolutePath('@b3/sql/'))
-            # remove the tempdir and its content
+        # remove the tempdir and its content
         shutil.rmtree(tempExtractDir)
         #os.remove(localName)
 
