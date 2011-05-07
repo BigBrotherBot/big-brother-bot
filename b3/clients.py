@@ -1121,33 +1121,3 @@ class Clients(dict):
         self.console.authorizeClients()
         self._authorizing = False
         
-        
-if __name__ == '__main__':
-    import unittest
-    from b3.fake import fakeConsole
-    
-    class TestClients(unittest.TestCase):
-        clients = None
-        joe = None
-        def setUp(self):
-            self.clients = Clients(fakeConsole)
-            self.clients.newClient(1, name='joe')
-            self.clients.newClient(2, name=' H a    x\t0r')
-        def test_getClientsByName(self):
-            clients = self.clients.getClientsByName('joe')
-            self.assertEqual(1, len(clients))
-            self.assertEqual('1', clients[0].cid)
-            
-            clients = self.clients.getClientsByName('oe')
-            self.assertEqual(1, len(clients))
-            self.assertEqual('1', clients[0].cid)
-            
-            clients = self.clients.getClientsByName('hax')
-            self.assertEqual(1, len(clients))
-            self.assertEqual('2', clients[0].cid)
-            
-            clients = self.clients.getClientsByName('qsdfqsdf fqsd fsqd fsd f')
-            self.assertEqual([], clients)
-
-
-    unittest.main()

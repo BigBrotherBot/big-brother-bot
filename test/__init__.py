@@ -16,9 +16,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-import unittest
 from mock import Mock
 import b3
+import time
+import unittest
 
 class B3TestCase(unittest.TestCase):
     '''
@@ -29,3 +30,4 @@ class B3TestCase(unittest.TestCase):
     def setUp(self):
         b3.console = Mock()
         b3.console.stripColors.side_effect = lambda x:x
+        b3.console.time = time.time
