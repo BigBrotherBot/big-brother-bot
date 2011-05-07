@@ -63,11 +63,19 @@
 #     Added data field to Penalty
 #     Added data parameter to Client.warn()
 #     Added data parameter to Client.tempban()
+import b3
+import b3.events
+import functions
+import re
+import string
+import sys
+import threading
+import time
+import traceback
 
 __author__  = 'ThorN'
 __version__ = '1.3.5'
 
-import b3, string, re, time, functions, threading, traceback, sys
 
 class ClientVar(object):
     value = None
@@ -216,6 +224,11 @@ class Client(object):
 
     aliases = property(getAliases)
 
+    def getIpAddresses(self):
+        return self.console.storage.getClientIpAddresses(self)
+
+    ip_addresses = property(getIpAddresses)
+
     def getattr(self, name, default=None):
         return getattr(self, name, default)
 
@@ -349,10 +362,9 @@ class Client(object):
     _ip = ''
     def _set_ip(self, ip):
         if ':' in ip:
-            self._ip = ip[0:ip.find(':')]
-        else:
-            self._ip = ip
-
+            ip = ip[0:ip.find(':')]
+        if self._ip != ip:
+            self.makeIpAlias(self._ip)
         self._ip = ip
 
     def _get_ip(self):
@@ -641,6 +653,26 @@ class Client(object):
 
         alias.save(self.console)
         self.console.bot('New alias for %s: %s', str(self.id), alias.alias)
+
+    def makeIpAlias(self, ip):
+        if not self.id or not ip:
+            return
+
+        try:
+            alias = self.console.storage.getClientIpAddress(IpAlias(clientId=self.id, ip=ip))
+        except KeyError:
+            alias = None
+
+        if alias:
+            if alias.numUsed > 0:
+                alias.numUsed += 1
+            else:
+                alias.numUsed = 1
+        else:
+            alias = IpAlias(clientId=self.id, ip=ip)
+
+        alias.save(self.console)
+        self.console.bot('New alias for %s: %s', str(self.id), alias.ip)
 
     def save(self, console=None):
         self.timeEdit = time.time()
