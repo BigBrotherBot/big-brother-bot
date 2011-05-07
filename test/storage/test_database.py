@@ -20,14 +20,7 @@ from b3.clients import IpAlias
 from b3.storage.database import DatabaseStorage
 from mock import Mock
 import time
-import unittest
-
-__author__  = 'Courgette'
-__version__ = '1.0.0'
-
-"""
-Requires : mock module from http://www.voidspace.org.uk/python/mock/
-"""
+import unittest, nose
 
 
 class TestMySQLDatabaseStorage(unittest.TestCase):
@@ -40,7 +33,10 @@ class TestMySQLDatabaseStorage(unittest.TestCase):
     def setUp(self):
         """this method is called before each test"""
         import MySQLdb
-        db = MySQLdb.connect(host='localhost', user='b3test', passwd='test') 
+        try:
+            db = MySQLdb.connect(host='localhost', user='b3test', passwd='test')
+        except MySQLdb.OperationalError, message:
+            self.fail("Error %d:\n%s" % (message[0], message[1]))
         db.query("DROP DATABASE IF EXISTS b3_test")
         db.query("CREATE DATABASE b3_test CHARACTER SET utf8;")
         self.console = Mock()
@@ -97,5 +93,6 @@ class TestMySQLDatabaseStorage(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    nose.main()
+    
     
