@@ -18,11 +18,15 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 #
-__author__  = 'Courgette'
-__version__ = '0.0'
+from b3.events import EVT_UNKNOWN
 from b3.parser import Parser
 from b3.parsers.q3a.rcon import Rcon as Q3Rcon
+import b3.events
+import re
 import select
+import string
+__author__  = 'Courgette'
+__version__ = '0.0'
 
 
 
@@ -74,9 +78,185 @@ class BrinkRcon(Q3Rcon):
 class BrinkParser(Parser):
     gameName = 'brink'
     OutputClass = BrinkRcon
-    rconTest = True
-        
+
+    # remove the time off of the line
+    _lineTime  = re.compile(r'^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:(?P<minutes>[0-9]+):(?P<seconds>[0-9]+).*')
+    _lineClear = re.compile(r'^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]+:[0-9]+ : ')
+
+    _lineFormats = (
+        # OnClientConnect: Clearing abilities for client 15
+        ("OnClientConnect", re.compile(r'^OnClientConnect: Clearing abilities for client (?P<cid>[0-9]+)$')),
+        ("OnClientDisconnect", re.compile(r'^client (?P<cid>[0-9]+) disconnected.$')),
+    )
+
     def startup(self):
+        pass
+
+    def getLineParts(self, line):
+        line = re.sub(self._lineClear, '', line, 1)
+        for f in self._lineFormats:
+            m = re.match(f[1], line)
+            if m:
+                self.debug('line matched %s' % f[1].pattern)
+                break
+        if m:
+            return (f[0], m)
+
+    def parseLine(self, line):           
+        result = self.getLineParts(line)
+        if not result:
+            return False
+        action, match = result
+        if hasattr(self, action):
+            func = getattr(self, action)
+            event = func(line, match)
+            if event:
+                self.queueEvent(event)
+        else:
+            self.verbose2("Implement method : def %s(self, line, match):", action)
+            self.queueEvent(b3.events.Event(EVT_UNKNOWN, "%s: %s" % (action, line)))
+
+
+
+
+    # ================================================
+    # handle Game events.
+    #
+    # those methods are called by parseLine() and 
+    # may return a B3 Event object
+    # ================================================
+    
+    def OnClientConnect(self, line, match):
+        cid = match.group('cid')
+        if cid:
+            self.clients.newClient(cid)
+            
+    def OnClientDisconnect(self, line, match):
+        cid = match.group('cid')
+        if cid:
+            client = self.clients.getByCID(cid)
+            if client:
+                client.disconnect()
+        
+
+    # =======================================
+    # implement parser interface
+    # =======================================
+    
+    def getPlayerList(self):
+        """\
+        Query the game server for connected players.
+        return a dict having players' id for keys and players' data as another dict for values
+        """
+        raise NotImplementedError
+
+    def authorizeClients(self):
+        """\
+        For all connected players, fill the client object with properties allowing to find 
+        the user in the database (usualy guid, or punkbuster id, ip) and call the 
+        Client.auth() method 
+        """
+        ## todo : find a way to obtain guid
+        pass
+    
+    def sync(self):
+        """\
+        For all connected players returned by self.getPlayerList(), get the matching Client
+        object from self.clients (with self.clients.getByCID(cid) or similar methods) and
+        look for inconsistencies. If required call the client.disconnect() method to remove
+        a client from self.clients.
+        This is mainly useful for games where clients are identified by the slot number they
+        occupy. On map change, a player A on slot 1 can leave making room for player B who
+        connects on slot 1.
+        """
+        raise NotImplementedError
+    
+    def say(self, msg):
+        """\
+        broadcast a message to all players
+        """
+        self.write("say %s" % msg)
+
+    def saybig(self, msg):
+        """\
+        broadcast a message to all players in a way that will catch their attention.
+        """
+        raise NotImplementedError
+
+    def message(self, client, text):
+        """\
+        display a message to a given player
+        """
+        raise NotImplementedError
+
+    def kick(self, client, reason='', admin=None, silent=False, *kwargs):
+        """\
+        kick a given player
+        """
+        raise NotImplementedError
+
+    def ban(self, client, reason='', admin=None, silent=False, *kwargs):
+        """\
+        ban a given player
+        """
+        raise NotImplementedError
+
+    def unban(self, client, reason='', admin=None, silent=False, *kwargs):
+        """\
+        unban a given player
+        """
+        raise NotImplementedError
+
+    def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
+        """\
+        tempban a given player
+        """
+        raise NotImplementedError
+
+    def getMap(self):
+        """\
+        return the current map/level name
+        """
+        raise NotImplementedError
+
+    def getMaps(self):
+        """\
+        return the available maps/levels name
+        """
+        raise NotImplementedError
+
+    def rotateMap(self):
+        """\
+        load the next map/level
+        """
+        raise NotImplementedError
+        
+    def changeMap(self, map):
+        """\
+        load a given map/level
+        return a list of suggested map names in cases it fails to recognize the map that was provided
+        """
+        raise NotImplementedError
+
+    def getPlayerPings(self):
+        """\
+        returns a dict having players' id for keys and players' ping for values
+        """
+        raise NotImplementedError
+
+    def getPlayerScores(self):
+        """\
+        returns a dict having players' id for keys and players' scores for values
+        """
+        raise NotImplementedError
+        
+    def inflictCustomPenalty(self, type, client, reason=None, duration=None, admin=None, data=None):
+        """
+        Called if b3.admin.penalizeClient() does not know a given penalty type. 
+        Overwrite this to add customized penalties for your game like 'slap', 'nuke', 
+        'mute', 'kill' or anything you want.
+        /!\ This method must return True if the penalty was inflicted.
+        """
         pass
 
 
