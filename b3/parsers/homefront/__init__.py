@@ -137,6 +137,9 @@ class HomefrontParser(b3.parser.Parser):
         self.Events.createEvent('EVT_CLIENT_SQUAD_SAY', 'Squad Say')
         self.Events.createEvent('EVT_SERVER_SAY', 'Server Chatter')
         self.Events.createEvent('EVT_CLIENT_CLAN_CHANGE', 'Client Clan Change')
+        self.Events.createEvent('EVT_CLIENT_VOTE_START', 'Client Vote Start')
+        self.Events.createEvent('EVT_CLIENT_VOTE', 'Client Vote')
+        self.Events.createEvent('EVT_SERVER_VOTE_END', 'Server Vote End')
         #self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
                 
         ## read game server info and store as much of it in self.game wich
@@ -529,6 +532,57 @@ class HomefrontParser(b3.parser.Parser):
         guid = match.group('uid')
 
         self._server_banlist[guid] = name
+
+    def onServerVotestart(self, data):
+        # [int: SteamID] [string: VoteType] [optional string: Target]
+        m = data.split(' ')
+        if len(m) > 2:
+            match = re.match(r"^(?P<data>(?P<uid>[0-9]+) (?P<vtype>.*) (?P<target>.*))$", data)
+        else:
+            match = re.match(r"^(?P<data>(?P<uid>[0-9]+) (?P<vtype>.*))$", data)
+
+        if not match:
+            self.error('onServerVotestart failed match')
+            return
+
+        client = self.clients.getByGUID(match.group('uid'))
+        votetype = match.group('vtype')
+
+        if match.group('target'):
+            target = match.group('target')
+        else:
+            target = None
+
+        return self.getEvent('EVT_CLIENT_VOTE_START', client, votetype, target)
+
+    def onServerVote(self, data):
+        # [int: SteamID] [boolean: Yes]
+        # boolean: 1 is vote for, 0 is vote against
+        match = re.match(r"^(?P<data>(?P<uid>[0-9]+) (?P<vote>[0-1]))$", data)
+        if not match:
+            self.error('onServerVotestart failed match')
+            return
+
+        client = self.clients.getByGUID(match.group('uid'))
+        vote = match.group('vote')
+
+        return self.getEvent('EVT_CLIENT_VOTE', client, vote)
+
+    def onServerVoteend(self, data):
+        # [int: YesVotes] [float: PercentFor] [string: Pass]
+        # YesVotes: Number of players that voted yes
+        # PercentFor: Percent of total players that voted yes (as a float)
+        # Pass: "passed" for success, "failed" for failure
+        match = re.match(r"^(?P<data>(?P<yesvotes>[0-9]+) (?P<percentfor>[.0-9]+) (?P<vresult>passed|failed))$", data)
+        if not match:
+            self.error('onServerVotestart failed match')
+            return
+
+        yesvotes = match.group('yesvotes')
+        percentfor = match.group('percentfor')
+        voteresult = match.group('vresult')
+
+        return self.getEvent('EVT_SERVER_VOTE_END', yesvotes, percentfor, voteresult)
 
     # =======================================
     # implement parser interface
