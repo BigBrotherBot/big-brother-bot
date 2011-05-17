@@ -45,6 +45,7 @@
 # 2011/03/12 - 0.8 - xlr8or
 #    * Better handling of execution of b3.sql
 #    * Bugfix in message section
+#    * use tempfile until setup is completed
 #
 
 # This section is DoxuGen information. More information on how to comment your code
@@ -52,7 +53,7 @@
 ## @file
 # The setup procedure, to create a new configuration file (b3.xml)
 
-__author__  = 'xlr8or'
+__author__ = 'xlr8or'
 __version__ = '0.8'
 
 import platform
@@ -62,42 +63,55 @@ import os
 import sys
 import time
 import zipfile
+import glob
+import pkg_handler
 import functions
+import tempfile
 from lib.elementtree.ElementTree import ElementTree
 from lib.elementtree.SimpleXMLWriter import XMLWriter
 from distutils import version
 from urlparse import urlsplit
-from cStringIO import StringIO
+
+modulePath = pkg_handler.resource_directory(__name__)
 
 class Setup:
     _pver = sys.version.split()[0]
     _indentation = '    '
-    _config = 'b3/conf/b3.xml'
+    _config = r'b3/conf/b3.xml'
     _template = ''
+    _templatevar = ''
     _buffer = ''
     _equaLength = 15
     ## @todo bfbc2 and moh need to be added later when parsers correctly implemented pb.
-    _PBSupportedParsers = ['cod','cod2','cod4','cod5', 'cod6', 'cod7']
+    _PBSupportedParsers = ['cod', 'cod2', 'cod4', 'cod5', 'cod6', 'cod7']
     _frostBite = ['bfbc2', 'moh']
- 
+
     def __init__(self, config=None):
         if config:
             self._config = config
         elif self.getB3Path() != "":
-            self._config = self.getB3Path() + "\\conf\\b3.xml"
+            self._config = self.getB3Path() + r'/conf/b3.xml'
         print self._config
         self.introduction()
         self.clearscreen()
         self._outputFile = self.raw_default("Location and name of the new configfile", self._config)
+        self._outputTempFile = tempfile.NamedTemporaryFile(delete=False)
         #Creating Backup
         self.backupFile(self._outputFile)
         self.runSetup()
+        # copy the config to it's final version
+        shutil.copy(self._outputTempFile.name, self._outputFile)
+        try:
+            # try to delete the tempfile. this fails on Windows in some cases
+            os.unlink(self._outputTempFile.name)
+        except:
+            pass
         raise SystemExit('Restart B3 or reconfigure B3 using option: -s')
 
     def runSetup(self):
         """ The main function that handles the setup steps """
         global xml
-        xml = XMLWriter(self._outputFile)
+        xml = XMLWriter(self._outputTempFile)
 
         # write appropriate header
         xml.declaration()
@@ -120,14 +134,17 @@ class Setup:
         # B3 settings
         self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
         xml.start("settings", name="b3")
-        self.add_set("parser", "", "Define your game: cod/cod2/cod4/cod5/cod6/cod7/iourt41/etpro/wop/smg/bfbc2/moh/oa081")
+        self.add_set("parser", "",
+                     "Define your game: cod/cod2/cod4/cod5/cod6/cod7/iourt41/etpro/wop/wop15/smg/bfbc2/moh/oa081/homefront")
+
         # set a template xml file to read existing settings from
         _result = False
         while not _result:
             _result = self.load_template()
             if _result:
-                self.add_buffer('Configuration values from [%s] loaded successfully\n' %(self._template))
+                self.add_buffer('Configuration values from [%s] loaded successfully\n' % (self._template))
                 break
+
         # getting database info, test it and set up the tables
         self.add_set("database", self.read_element('b3', 'database', 'mysql://b3:password@localhost/b3'),
                      "Your database info: [mysql]://[db-user]:[db-password]@[db-server[:port]]/[db-name]")
@@ -139,13 +156,14 @@ class Setup:
         while _sqlresult == 'notfound' and _sqlc < len(_sqlfiles):
             _sqlresult = self.executeSql(_sqlfiles[_sqlc])
             _sqlc += 1
-        # still not found? prompt for the complete path and filename
         if _sqlresult == 'notfound':
+            # still not found? prompt for the complete path and filename
             _sqlfile = self.raw_default('I could not find b3/sql/b3.sql. Please provide the full path and filename.')
             _sqlresult = self.executeSql(_sqlfile)
-        # still no luck? giving up...
         if _sqlresult in ['notfound', 'couldnotopen']:
-            self.add_buffer('I give up, I could not find or open SQL file, you will need to import the database tables manually')
+            # still no luck? giving up...
+            self.add_buffer(
+                'I give up, I could not find or open SQL file, you will need to import the database tables manually')
 
         self.add_set("bot_name", self.read_element('b3', 'bot_name', 'b3'), "Name of the bot")
         self.add_set("bot_prefix", self.read_element('b3', 'bot_prefix', '^0(^2b3^0)^7:'),
@@ -160,7 +178,7 @@ class Setup:
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
-        
+
         # BFBC2 specific settings
         if self._set_parser == 'bfbc2':
             self.add_buffer('\n--BFBC2 SPECIFIC SETTINGS---------------------------------------\n')
@@ -184,6 +202,7 @@ class Setup:
         # server settings
         self.add_buffer('\n--GAME SERVER SETTINGS------------------------------------------\n')
         xml.start("settings", name="server")
+
         # Frostbite specific
         if self._set_parser in self._frostBite:
             self.add_set("public_ip", self.read_element('server', 'public_ip', ''),
@@ -198,25 +217,40 @@ class Setup:
                          "The RCON password of your gameserver.")
             self.add_set("timeout", self.read_element('server', 'timeout', '3'),
                          "RCON timeout", silent=True)
-        # Q3Aa specific
-        else:   
+
+        # Homefront specific
+        elif self._set_parser == 'homefront':
+            self.add_set("public_ip", self.read_element('server', 'public_ip', ''),
+                         "The IP address of your gameserver")
+            self.add_set("port", self.read_element('server', 'port', ''),
+                         "The port people use to connect to your gameserver")
+            self.add_set("rcon_ip", self.read_element('server', 'rcon_ip', ''),
+                         "The IP that the bot uses to send RCON commands. Usually the same as the public_ip")
+            self.add_set("rcon_port", self.read_element('server', 'rcon_port', ''),
+                         "The port that the bot uses to send RCON commands. NOT the same as the normal port.")
+            self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
+                         "The RCON password of your gameserver.")
+
+        # Q3A specific
+        else:
             self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
                          "The RCON pass of your gameserver")
             self.add_set("port", self.read_element('server', 'port', ''),
                          "The port the server is running on")
             # check if we can run cod7 remote gamelog retrieval
             if version.LooseVersion(self._pver) < version.LooseVersion('2.6.0') and self._set_parser == 'cod7':
-                self.add_buffer('\nERROR:\n  You are running python '+self._pver+
+                self.add_buffer('\nERROR:\n  You are running python ' + self._pver +
                                 ', remote log functionality\n  is not available prior to python version 2.6.0\nYou need to update to python version 2.6+ before you can run B3 for CoD7!')
                 self.testExit()
             elif self._set_parser == 'cod7':
-                self.add_buffer('\nNOTE: You\'re gamelog must be set to this format:\nhttp://logs.gameservers.com/127.0.0.1:1024/xxxxx-1234-5678-9012-xxxxx')
+                self.add_buffer(
+                    '\nNOTE: You\'re gamelog must be set to this format:\nhttp://logs.gameservers.com/127.0.0.1:1024/xxxxx-1234-5678-9012-xxxxx')
             # determine if ftp functionality is available
             elif version.LooseVersion(self._pver) < version.LooseVersion('2.6.0'):
-                self.add_buffer('\n  NOTE for game_log:\n  You are running python '+self._pver+
+                self.add_buffer('\n  NOTE for game_log:\n  You are running python ' + self._pver +
                                 ', ftp functionality\n  is not available prior to python version 2.6.0\n')
             else:
-                self.add_buffer('\n  NOTE for game_log:\n  You are running python '+self._pver+
+                self.add_buffer('\n  NOTE for game_log:\n  You are running python ' + self._pver +
                                 ', the gamelog may also be\n  ftp-ed or http-ed in.\n  Define game_log like this:\n   ftp://[ftp-user]:[ftp-password]@[ftp-server]/path/to/games_mp.log\n  Or for web access (you can use htaccess to secure):\n   http://serverhost/path/to/games_mp.log\n')
             self.add_set("game_log", self.read_element('server', 'game_log', ''),
                          "The gameserver generates a logfile, put the path and name here")
@@ -226,9 +260,10 @@ class Setup:
                          "The IP the bot can use to send RCON commands to (127.0.0.1 when on the same box)")
             # configure default performances parameters
             self.add_set("delay", self.read_element('server', 'delay', '0.33'),
-                         "Delay between each log reading. Set a higher value to consume less disk ressources or bandwidth if you remotely connect (ftp or http remote log access)", silent=True)
+                         "Delay between each log reading. Set a higher value to consume less disk resources or bandwidth if you remotely connect (ftp or http remote log access)"
+                         , silent=True)
             self.add_set("lines_per_second", self.read_element('server', 'lines_per_second', '50'),
-                         "Number of lines to process per second. Set a lower value to consume less CPU ressources",
+                         "Number of lines to process per second. Set a lower value to consume less CPU resources",
                          silent=True)
 
         # determine if PunkBuster is supported
@@ -245,7 +280,7 @@ class Setup:
         self.add_buffer('\n--AUTODOC-------------------------------------------------------\n')
         xml.start("settings", name="autodoc")
         xml.data("\n\t\t")
-        xml.comment("Autodoc will generate a user documentation for all B3 commands") 
+        xml.comment("Autodoc will generate a user documentation for all B3 commands")
         xml.data("\t\t")
         xml.comment("by default, a html documentation is created in your conf folder")
         self.add_set("type", self.read_element('autodoc', 'type', 'html'), "html, htmltable or xml")
@@ -264,7 +299,8 @@ class Setup:
         if '%s' in self.read_element('messages', 'kicked_by', '%s'):
             self.add_set("kicked_by", "$clientname^7 was kicked by $adminname^7 $reason")
         else:
-            self.add_set("kicked_by", self.read_element('messages', 'kicked_by', '$clientname^7 was kicked by $adminname^7 $reason'))
+            self.add_set("kicked_by",
+                         self.read_element('messages', 'kicked_by', '$clientname^7 was kicked by $adminname^7 $reason'))
 
         if '%s' in self.read_element('messages', 'kicked', '%s'):
             self.add_set("kicked", "$clientname^7 was kicked $reason")
@@ -274,7 +310,8 @@ class Setup:
         if '%s' in self.read_element('messages', 'banned_by', '%s'):
             self.add_set("banned_by", "$clientname^7 was banned by $adminname^7 $reason")
         else:
-            self.add_set("banned_by", self.read_element('messages', 'banned_by', '$clientname^7 was banned by $adminname^7 $reason'))
+            self.add_set("banned_by",
+                         self.read_element('messages', 'banned_by', '$clientname^7 was banned by $adminname^7 $reason'))
 
         if '%s' in self.read_element('messages', 'banned', '%s'):
             self.add_set("banned", "$clientname^7 was banned $reason")
@@ -284,17 +321,20 @@ class Setup:
         if '%s' in self.read_element('messages', 'temp_banned_by', '%s'):
             self.add_set("temp_banned_by", "$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason")
         else:
-            self.add_set("temp_banned_by", self.read_element('messages', 'temp_banned_by', '$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason'))
+            self.add_set("temp_banned_by", self.read_element('messages', 'temp_banned_by',
+                                                             '$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason'))
 
         if '%s' in self.read_element('messages', 'temp_banned', '%s'):
             self.add_set("temp_banned", "$clientname^7 was temp banned for $banduration^7 $reason")
         else:
-            self.add_set("temp_banned", self.read_element('messages', 'temp_banned', '$clientname^7 was temp banned for $banduration^7 $reason'))
+            self.add_set("temp_banned", self.read_element('messages', 'temp_banned',
+                                                          '$clientname^7 was temp banned for $banduration^7 $reason'))
 
         if '%s' in self.read_element('messages', 'unbanned_by', '%s'):
             self.add_set("unbanned_by", "$clientname^7 was un-banned by $adminname^7 $reason")
         else:
-            self.add_set("unbanned_by", self.read_element('messages', 'unbanned_by', '$clientname^7 was un-banned by $adminname^7 $reason'))
+            self.add_set("unbanned_by", self.read_element('messages', 'unbanned_by',
+                                                          '$clientname^7 was un-banned by $adminname^7 $reason'))
 
         if '%s' in self.read_element('messages', 'unbanned', '%s'):
             self.add_set("unbanned", "$clientname^7 was un-banned $reason")
@@ -317,14 +357,22 @@ class Setup:
         self.add_buffer('\n--INSTALLING PLUGINS--------------------------------------------\n')
         xml.start("plugins")
         xml.data("\n\t\t")
-        xml.comment("plugin order is important. Plugins that add new in-game commands all depend on the admin plugin. Make sure to have the admin plugin before them.")
-        self.autoinstallplugins = self.raw_default("Do you want to (auto)install all plugins from the template?", "yes")
+        xml.comment(
+            "plugin order is important. Plugins that add new in-game commands all depend on the admin plugin. Make sure to have the admin plugin before them.")
+        self.autoinstallplugins = self.raw_default("Do you want to (auto)install all plugins?", "yes")
         if self.autoinstallplugins == 'yes':
-            self.read_plugins()
+            self.read_plugins('plugins')
+            # check if we are using a template
+            if self._templatevar == 'template':
+                self.installextplugins = self.raw_default(
+                    "Would you like me to download and install extra, game specific plugins?", "no")
+                if self.installextplugins == 'yes':
+                    self.read_plugins('extplugins')
         else:
             self.add_plugin("censor", "@conf/plugin_censor.xml")
             self.add_plugin("spamcontrol", "@conf/plugin_spamcontrol.xml")
-            self.add_plugin("admin", "@conf/plugin_admin.xml", explanation="the admin plugin is compulsory.", prompt=False)
+            self.add_plugin("admin", "@conf/plugin_admin.xml", explanation="the admin plugin is compulsory.",
+                            prompt=False)
             self.add_plugin("tk", "@conf/plugin_tk.xml")
             self.add_plugin("stats", "@conf/plugin_stats.xml")
             self.add_plugin("pingwatch", "@conf/plugin_pingwatch.xml")
@@ -340,15 +388,13 @@ class Setup:
                 xml.data("\t\t")
 
             # ext plugins
-            xml.comment("The next plugins are external, 3rd party plugins and should reside in the external_dir. Example:")
+            xml.comment(
+                "The next plugins are external, 3rd party plugins and should reside in the external_dir. Example:")
             xml.data("\t\t")
             xml.comment("plugin config=\"@b3/extplugins/conf/newplugin.xml\" name=\"newplugin\"")
-            _result = self.add_plugin("xlrstats", self._set_external_dir+"/conf/xlrstats.xml", default="no")
+            _result = self.add_plugin("xlrstats", self._set_external_dir + "/conf/xlrstats.xml", default="no")
             if _result:
                 self.executeSql('@b3/sql/xlrstats.sql')
-
-            #self.add_plugin("registered", self._set_external_dir+"/conf/plugin_registered.xml", "Trying to download Registered", "http://www.bigbrotherbot.net/forums/downloads/?sa=downfile&id=22")
-            #self.add_plugin("countryfilter", self._set_external_dir+"/conf/countryfilter.xml", "Trying to download Countryfilter", "http://github.com/xlr8or/b3-plugin-countryfilter/zipball/master")
 
         # final comments
         xml.data("\n\t\t")
@@ -358,38 +404,52 @@ class Setup:
 
         xml.data("\n")
         xml.close(configuration)
+        xml.flush()
         self.add_buffer('\n--FINISHED CONFIGURATION----------------------------------------\n')
+        self.testExit(_question='Done, [Enter] to finish setup')
+
 
     def load_template(self):
         """ Load an existing config file or use the packaged examples"""
-        if functions.main_is_frozen():
-            self._configpath = os.environ['ALLUSERSPROFILE'] + '\\BigBrotherBot\\'
+        if os.path.exists('b3/conf'):
+            self._configpath = 'b3/'
+        # perhaps setup is executed directly
+        elif os.path.exists('conf/'):
+            self._configpath = ''
+        elif functions.main_is_frozen():
+            self._configpath = os.environ['ALLUSERSPROFILE'] + '/BigBrotherBot/'
         else:
-            self._configpath = 'b3\\'
-        if self._set_parser == 'bfbc2':
-            _dflttemplate = self._configpath + 'conf\\b3.bfbc2_example.xml'
-        elif self._set_parser == 'moh':
-            _dflttemplate = self._configpath + 'conf\\b3.moh_example.xml'
-        else:
-            _dflttemplate = self._configpath + 'conf\\b3.distribution.xml'
+            self._configpath = self.raw_default(
+                "Could not locate the config folder, please provide the full path (using /)").rstrip('/') + '/'
+
+        # load the template based on the parser the user just chose
+        _dflttemplate = self._configpath + 'conf/templates/b3.' + self._set_parser + '.tpl'
+        self._templatevar = 'template'
+        if not os.path.exists(_dflttemplate):
+            _dflttemplate = self._configpath + 'conf/b3.distribution.xml'
+            self._templatevar = 'distribution'
+
         if self._template != '':
             # means we just backed-up an old config with the same name
             _result = self.raw_default("Do you want to use the values from the backed-up config (%s)?"
-                                       %(self._template), "yes")
+                                       % (self._template), "yes")
             if _result != 'yes':
-                self._template = self.raw_default("Load values from an existing configfile", _dflttemplate)
+                self._template = self.raw_default("Load values from a template", _dflttemplate)
+            else:
+                self._templatevar = 'backup'
         else:
-            self._template = self.raw_default("Load values from an existing configfile", _dflttemplate)
+            self._template = self.raw_default("Load values from a template", _dflttemplate)
+
         self._template = self.getAbsolutePath(self._template)
         self.tree = ElementTree()
         try:
             self.tree.parse(self._template)
             return True
         except Exception, msg:
-            #self.add_buffer('Could not parse xml file: %s\n' % msg)
+            self.add_buffer('Could not parse xml file: %s\n' % msg)
             # backed up config file must be corrupt or not completed last setup, reset it to the default
             self.add_buffer('Your previous config file was either empty, corrupt or not finished.\
-             Suggest we load the default...\n')
+             I Suggest we load the default...\n')
             self._template = ''
             return False
 
@@ -403,22 +463,37 @@ class Setup:
                     if v.attrib['name'] == _value:
                         return v.text
         return _default
-                
-    def read_plugins(self):
+
+    def read_plugins(self, _psection='plugins'):
         """ Writes plugins to the config read from a template """
-        l = list(self.tree.findall('plugins'))
+        l = list(self.tree.findall(_psection))
         for s in l:
             plugins = list(s.findall('plugin'))
             for p in plugins:
                 _name = p.attrib['name']
-                _config = p.attrib['config']
-                self.add_plugin(_name, _config, prompt=False)
+                try:
+                    _config = p.attrib['config']
+                    if _config[:12] == 'external_dir':
+                        _config = ''.join((self._set_external_dir, _config[12:]))
+                except:
+                    _config = None
+                try:
+                    # do we need to install database tables?
+                    _sql = p.attrib['sql']
+                except:
+                    _sql = None
+                try:
+                    # lets see if there is a plugin to download
+                    _dl = p.attrib['dlocation']
+                except:
+                    _dl = None
+                self.add_plugin(_name, _config, downlURL=_dl, sql=_sql, prompt=False)
         return None
 
     def add_explanation(self, etext):
         """ Add an explanation to the question asked by the setup procedure """
         _prechar = "> "
-        print _prechar+etext
+        print _prechar + etext
 
     def add_buffer(self, addition, autowrite=True):
         """ Add a line to the output buffer """
@@ -433,7 +508,7 @@ class Setup:
 
     def equaLize(self, _string):
         """ Make the setup questions same length for prettier formatting """
-        return (self._equaLength-len(str(_string)))*" "
+        return (self._equaLength - len(str(_string))) * " "
 
     def add_set(self, sname, sdflt, explanation="", silent=False):
         """
@@ -451,23 +526,37 @@ class Setup:
             _value = sdflt
         xml.element("set", _value, name=sname)
         #store values into a variable for later use ie. enabling the punkbuster plugin.
-        exec("self._set_"+str(sname)+" = \""+str(_value)+"\"")
+        exec("self._set_" + str(sname) + " = \"" + str(_value) + "\"")
         if not silent:
-            self.add_buffer(str(sname)+self.equaLize(sname)+": "+str(_value)+"\n")
+            self.add_buffer(str(sname) + self.equaLize(sname) + ": " + str(_value) + "\n")
 
-    def add_plugin(self, sname, sconfig, explanation=None, default="yes", downlURL=None, prompt=True):
+    def add_plugin(self, sname, sconfig=None, explanation=None, default="yes", downlURL=None, sql=None, prompt=True):
         """
         A routine to add a plugin to the config
-        Usage: self.add_plugin(pluginname, default-configfile, optional-explanation, optional-downloadlocation, optional-prompt)
+        Usage: self.add_plugin(pluginname, default-configfile, optional-explanation, default-entry, optional-downloadlocation, optional-prompt)
         """
         if prompt:
-            _q = "Install "+sname+" plugin? (yes/no)"
+            _q = "Install %s plugin? (yes/no)" % sname
             _test = self.raw_default(_q, default)
             if _test != "yes":
                 return False
 
         if downlURL:
-            self.download(downlURL)
+            self.add_buffer('  ... getting external plugin %s:\n' % sname)
+            try:
+                self.download(downlURL)
+            except:
+                self.add_buffer("Couldn't get remote plugin %s, please install it manually.\n" % sname)
+
+        if sql:
+            self.add_buffer('  ... installing databasetables (%s)\n' % sql)
+            _result = self.executeSql('@b3/sql/%s' % sql)
+            if _result == 'notfound':
+                self.add_buffer('  ... %s not found! Install database tables manually!\n' % sql)
+            elif _result == 'couldnotopen':
+                self.add_buffer('  ... unable to open %s! Install database tables manually!\n' % sql)
+            elif not _result:
+                self.add_buffer('  ... cannot execute %s! Install database tables manually!\n' % sql)
 
         if explanation:
             self.add_explanation(explanation)
@@ -478,24 +567,28 @@ class Setup:
             _config = self.raw_default("config", sconfig)
 
         xml.data("\n\t\t")
-        xml.element("plugin", name=sname, config=_config)
-        self.add_buffer("plugin: "+str(sname)+", config: "+str(_config)+"\n")
+        if not _config:
+            xml.element("plugin", name=sname)
+            self.add_buffer("plugin: " + str(sname) + "\n")
+        else:
+            xml.element("plugin", name=sname, config=_config)
+            self.add_buffer("plugin: " + str(sname) + ", config: " + str(_config) + "\n")
         return True
 
     def raw_default(self, prompt, dflt=None):
         """ Prompt user for input and don't accept an empty value"""
-        if dflt: 
+        if dflt:
             prompt = "%s [%s]" % (prompt, dflt)
         else:
             prompt = "%s" % (prompt)
-        res = raw_input(prompt+self.equaLize(prompt)+": ")
+        res = raw_input(prompt + self.equaLize(prompt) + ": ")
         if not res and dflt:
             res = dflt
         if res == "":
             print "ERROR: No value was entered! Give it another try!"
             res = self.raw_default(prompt, dflt)
         self.testExit(res)
-        return res         
+        return res
 
     def clearscreen(self):
         if platform.system() in ('Windows', 'Microsoft'):
@@ -505,19 +598,19 @@ class Setup:
 
     def backupFile(self, _file):
         """ Create a backup of an existing config file """
-        print "\n--BACKUP/CREATE CONFIGFILE--------------------------------------\n"
-        print "    Trying to backup the original "+_file+"..."
+        print "\n--BACKUP/CREATE CONFIGFILE--------------------------------------"
+        print "    Trying to backup the original " + _file + "..."
         if not os.path.exists(_file):
-            print "\n    No backup needed.\n"
-            print "    A file with this location/name does not yet exist,\n"
-            print "    I'm about to generate a new config file!\n"
+            print "    No backup needed."
+            print "    A file with this location/name does not yet exist,"
+            print "    I'm about to generate a new config file!"
             self.testExit()
         else:
             try:
                 _stamp = time.strftime("-%d_%b_%Y_%H.%M.%S", time.gmtime())
-                _fname = _file.rstrip(".xml")+_stamp+".xml"
+                _fname = _file.rstrip(".xml") + _stamp + ".xml"
                 shutil.copy(_file, _fname)
-                print "    Backup success, "+_file+" copied to : %s" % _fname
+                print "    Backup success, " + _file + " copied to : %s" % _fname
                 print "    If you need to abort setup, you can restore by renaming the backup file."
                 # a config with this name already exists, use it as a template
                 self._template = _fname
@@ -528,17 +621,17 @@ class Setup:
 
     def introduction(self):
         try:
-            _uname = platform.uname()[1]+", "
+            _uname = platform.uname()[1] + ", "
         except:
             _uname = "admin, "
         self.clearscreen()
-        print "    WELCOME "+_uname+"TO THE B3 SETUP PROCEDURE"
+        print "    WELCOME " + _uname + "TO THE B3 SETUP PROCEDURE"
         print "----------------------------------------------------------------"
         print "We're about to generate a main configuration file for "
         print "BigBrotherBot. This procedure is initiated when:\n"
         print " 1. you run B3 with the option --setup or -s"
         print " 2. the config you're trying to run does not exist"
-        print "    ("+self._config+")"
+        print "    (" + self._config + ")"
         print " 3. you did not modify the distributed b3.xml prior to"
         print "    starting B3."
         self.testExit()
@@ -552,7 +645,7 @@ class Setup:
         self.testExit()
         print "First you will be prompted for a location and name for this"
         print "configuration file. This is for multiple server setups, or"
-        print "if you want to run B3 from a different setup file for your own."
+        print "if you want to run B3 from a different setup file for your own"
         print "reasons. In a basic single instance install you will not have to"
         print "change this location and/or name. If a configuration file exists"
         print "we will make a backup first and tag it with date and time, so"
@@ -566,7 +659,7 @@ class Setup:
                  _exitmessage='Setup aborted, run python b3_run.py -s to restart the procedure.'):
         """ Test the input for an exit code, give the user an option to abort setup """
         if _key == '':
-            _key = raw_input('\n'+_question)
+            _key = raw_input('\n' + _question)
         if _key != 'abort':
             print "\n"
             return
@@ -579,6 +672,7 @@ class Setup:
         if _dsnDict['protocol'] == 'mysql':
             try:
                 import MySQLdb
+
                 _db = MySQLdb.connect(host=_dsnDict['host'], port=_dsnDict['port'], user=_dsnDict['user'],
                                       passwd=_dsnDict['password'], db=_dsnDict['path'][1:])
             except ImportError:
@@ -599,7 +693,7 @@ class Setup:
         self.db = self.connectToDatabase()
         sqlFile = file
         if self.db:
-            self.add_buffer('Connected to the database. Installing the tables when they don\'t exist.\n')
+            self.add_buffer('Connected to the database. Executing sql.\n')
             sqlFile = self.getAbsolutePath(file)
             if os.path.exists(sqlFile):
                 try:
@@ -620,7 +714,8 @@ class Setup:
                 self.db.close()
                 return 'notfound'
         else:
-            self.add_buffer('Connection to the database failed. Check the documentation how to add the database tables from %s manually.\n' %sqlFile)
+            self.add_buffer(
+                'Connection to the database failed. Check the documentation how to add the database tables from %s manually.\n' % sqlFile)
             self.testExit(_question='Do you still want to continue? [Enter] to continue, \'abort\' to abort Setup: ')
         return 'success'
 
@@ -628,7 +723,7 @@ class Setup:
         if functions.main_is_frozen():
             # which happens when running from the py2exe build
             return os.path.dirname(sys.executable)
-        return ""
+        return modulePath
 
     def getAbsolutePath(self, path):
         """Return an absolute path name and expand the user prefix (~)"""
@@ -638,76 +733,102 @@ class Setup:
 
     def url2name(self, url):
         return os.path.basename(urlsplit(url)[2])
-    
-    def download(self, url, localFileName = None):
+
+    def download(self, url, localFileName=None):
         absPath = self.getAbsolutePath(self._set_external_dir)
         localName = self.url2name(url)
         req = urllib2.Request(url)
         try:
             r = urllib2.urlopen(req)
+            self.add_buffer('  ... downloading ...\n')
         except Exception, msg:
-            print('Download failed: %s' % msg)
+            self.add_buffer('  ... download failed: %s\n' % msg)
+            return None
         if r.info().has_key('Content-Disposition'):
             # If the response has Content-Disposition, we take file name from it
             localName = r.info()['Content-Disposition'].split('filename=')[1]
             if localName[0] == '"' or localName[0] == "'":
                 localName = localName[1:-1]
-        elif r.url != url: 
-            # if we were redirected, the real file name we take from the final URL
+        elif r.url != url:
+        # if we were redirected, the real file name we take from the final URL
             localName = self.url2name(r.url)
-        if localFileName: 
-            # we can force to save the file as specified name
+        if localFileName:
+        # we can force to save the file as specified name
             localName = localFileName
-        packageLocation = absPath+"/packages/"
-        localName = absPath+"/packages/"+localName
-        if not os.path.isdir( packageLocation ):
-            os.mkdir( packageLocation )
+
+        packageLocation = absPath + "/packages/"
+        localName = packageLocation + localName
+        if not os.path.isdir(packageLocation):
+            os.mkdir(packageLocation)
         f = open(localName, 'wb')
         f.write(r.read())
         f.close()
-        self.extract(localName, absPath)
-        #self.extract(localName, packageLocation)
-    
-    def extract(self, filename, dir):
-        zf = zipfile.ZipFile( filename )
-        namelist = zf.namelist()
-        dirlist = filter( lambda x: x.endswith( '/' ), namelist )
-        filelist = filter( lambda x: not x.endswith( '/' ), namelist )
-        # make base
-        pushd = os.getcwd()
-        if not os.path.isdir( dir ):
-            os.mkdir( dir )
-        os.chdir( dir )
-        # create directory structure
-        dirlist.sort()
-        for dirs in dirlist:
-            dirs = dirs.split( '/' )
-            prefix = ''
-            for dir in dirs:
-                dirname = os.path.join( prefix, dir )
-                if dir and not os.path.isdir( dirname ):
-                    os.mkdir( dirname )
-                prefix = dirname
-        # extract files
-        for fn in filelist:
-            try:
-                out = open( fn, 'wb' )
-                buffer = StringIO( zf.read( fn ))
-                buflen = 2 ** 20
-                datum = buffer.read( buflen )
-                while datum:
-                    out.write( datum )
-                    datum = buffer.read( buflen )
-                out.close()
-            finally:
-                print fn
-        os.chdir( pushd )
+        tempExtractDir = packageLocation + "/temp/"
+        self.extract(localName, tempExtractDir)
+        # move the appropriate files to the correct folders
+        for root, dirs, files in os.walk(tempExtractDir):
+            # move all available .py files to the extplugins folder
+            if root[-10:] == 'extplugins':
+                for data in glob.glob(root + '/*.py'):
+                    shutil.copy2(data, absPath)
+            # move the config files to the extplugins/conf folder
+            if root[-4:] == 'conf':
+                for data in glob.glob(root + '/*.xml'):
+                    ## @todo: downloading an extplugin for the second time will overwrite the existing extplugins config.
+                    shutil.copy2(data, absPath + '/conf/')
+            # check for .sql files and move them to the global sql folder
+            for data in glob.glob(root + '/*.sql'):
+                shutil.copy2(data, self.getAbsolutePath('@b3/sql/'))
+        # remove the tempdir and its content
+        shutil.rmtree(tempExtractDir)
+        #os.remove(localName)
 
+    def extract(self, file, dir):
+        if not dir.endswith(':') and not os.path.exists(dir):
+            os.mkdir(dir)
+
+        zf = zipfile.ZipFile(file)
+
+        # create directory structure to house files
+        self._createstructure(file, dir)
+
+        # extract files to directory structure
+        for i, name in enumerate(zf.namelist()):
+            if not name.endswith('/'):
+                outfile = open(os.path.join(dir, name), 'wb')
+                outfile.write(zf.read(name))
+                outfile.flush()
+                outfile.close()
+
+    def _createstructure(self, file, dir):
+        self._makedirs(self._listdirs(file), dir)
+
+    def _makedirs(self, directories, basedir):
+        """ Create any directories that don't currently exist """
+        for dir in directories:
+            curdir = os.path.join(basedir, dir)
+            if not os.path.exists(curdir):
+                os.mkdir(curdir)
+
+    def _listdirs(self, file):
+        """ Grabs all the directories in the zip structure
+        This is necessary to create the structure before trying
+        to extract the file to it. """
+        zf = zipfile.ZipFile(file)
+
+        dirs = []
+
+        for name in zf.namelist():
+            if name.endswith('/'):
+                dirs.append(name)
+
+        dirs.sort()
+        return dirs
 
 
 if __name__ == '__main__':
     #from b3.fake import fakeConsole
     #from b3.fake import joe
     #from b3.fake import simon
-    
+
     Setup('test.xml')

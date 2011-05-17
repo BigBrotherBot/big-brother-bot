@@ -38,6 +38,7 @@ myDataFiles = [
         ('docs', listdirectory('b3/docs/')),
         ('sql', listdirectory('b3/sql/')),
         ('conf', listdirectory('b3/conf/')),
+        ('conf/templates', listdirectory('b3/conf/templates/')),
         ('extplugins', ['b3/extplugins/xlrstats.py']),
         ('extplugins/conf', listdirectory('b3/extplugins/conf/')),
     ]
