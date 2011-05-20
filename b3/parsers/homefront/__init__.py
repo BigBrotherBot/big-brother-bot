@@ -95,7 +95,7 @@ class HomefrontParser(b3.parser.Parser):
     _server_banlist = {}
 
     _commands = {}
-    _commands['message'] = ('adminpm %(prefix)s [pm] %(message)s')
+    _commands['message'] = ('adminpm %(name)s %(prefix)s [pm] %(message)s')
     _commands['say'] = ('adminsay %(prefix)s %(message)s')
     _commands['saybig'] = ('adminbigsay %(prefix)s %(message)s')
     _commands['kick'] = ('admin kick "%(name)s"')
@@ -592,7 +592,7 @@ class HomefrontParser(b3.parser.Parser):
         text = self.stripColors(text)
         for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
             line = self.stripColors(line)
-            self.write(self.getCommand('message', prefix=self.msgPrefix, message=line))
+            self.write(self.getCommand('message', name=client.guid, prefix=self.msgPrefix, message=line))
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
