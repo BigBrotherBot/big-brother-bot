@@ -46,7 +46,9 @@
 #    * Better handling of execution of b3.sql
 #    * Bugfix in message section
 #    * use tempfile until setup is completed
-#
+# 2011/05/19 - 1.0 - xlr8or
+#    * Added Update class
+#    * Version 1.0 merged into master branch (for B3 v1.6.0 release)
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -54,7 +56,7 @@
 # The setup procedure, to create a new configuration file (b3.xml)
 
 __author__ = 'xlr8or'
-__version__ = '0.8'
+__version__ = '1.0'
 
 import platform
 import urllib2
@@ -72,7 +74,13 @@ from lib.elementtree.SimpleXMLWriter import XMLWriter
 from distutils import version
 from urlparse import urlsplit
 
+__version__ = pkg_handler.version(__name__)
 modulePath = pkg_handler.resource_directory(__name__)
+
+_buffer = ''
+_equaLength = 15
+_indentation = '    '
+
 
 class Setup:
     _pver = sys.version.split()[0]
@@ -135,7 +143,7 @@ class Setup:
         self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
         xml.start("settings", name="b3")
         self.add_set("parser", "",
-                     "Define your game: cod/cod2/cod4/cod5/cod6/cod7/iourt41/etpro/wop/wop15/smg/bfbc2/moh/oa081/homefront")
+                     "Define your game: altitude/bfbc2/cod/cod2/cod4/cod5/cod6/cod7/etpro/homefront/iourt41/moh/oa081/smg/wop/wop15/")
 
         # set a template xml file to read existing settings from
         _result = False
@@ -154,12 +162,12 @@ class Setup:
         _sqlc = 0
         _sqlresult = 'notfound'
         while _sqlresult == 'notfound' and _sqlc < len(_sqlfiles):
-            _sqlresult = self.executeSql(_sqlfiles[_sqlc])
+            _sqlresult = self.executeSql(_sqlfiles[_sqlc], self._set_database)
             _sqlc += 1
         if _sqlresult == 'notfound':
             # still not found? prompt for the complete path and filename
             _sqlfile = self.raw_default('I could not find b3/sql/b3.sql. Please provide the full path and filename.')
-            _sqlresult = self.executeSql(_sqlfile)
+            _sqlresult = self.executeSql(_sqlfile, self._set_database)
         if _sqlresult in ['notfound', 'couldnotopen']:
             # still no luck? giving up...
             self.add_buffer(
@@ -394,7 +402,7 @@ class Setup:
             xml.comment("plugin config=\"@b3/extplugins/conf/newplugin.xml\" name=\"newplugin\"")
             _result = self.add_plugin("xlrstats", self._set_external_dir + "/conf/xlrstats.xml", default="no")
             if _result:
-                self.executeSql('@b3/sql/xlrstats.sql')
+                self.executeSql('@b3/sql/xlrstats.sql', self._set_database)
 
         # final comments
         xml.data("\n\t\t")
@@ -550,7 +558,7 @@ class Setup:
 
         if sql:
             self.add_buffer('  ... installing databasetables (%s)\n' % sql)
-            _result = self.executeSql('@b3/sql/%s' % sql)
+            _result = self.executeSql('@b3/sql/%s' % sql, self._set_database)
             if _result == 'notfound':
                 self.add_buffer('  ... %s not found! Install database tables manually!\n' % sql)
             elif _result == 'couldnotopen':
@@ -666,9 +674,9 @@ class Setup:
         else:
             raise SystemExit(_exitmessage)
 
-    def connectToDatabase(self):
+    def connectToDatabase(self, dbString):
         _db = None
-        _dsnDict = functions.splitDSN(self._set_database)
+        _dsnDict = functions.splitDSN(dbString)
         if _dsnDict['protocol'] == 'mysql':
             try:
                 import MySQLdb
@@ -688,9 +696,9 @@ class Setup:
             self.testExit(_question='Do you still want to continue? [Enter] to continue, \'abort\' to abort Setup: ')
         return _db
 
-    def executeSql(self, file):
+    def executeSql(self, file, dbString):
         """This method executes an external sql file on the current database"""
-        self.db = self.connectToDatabase()
+        self.db = self.connectToDatabase(dbString)
         sqlFile = file
         if self.db:
             self.add_buffer('Connected to the database. Executing sql.\n')
@@ -826,9 +834,104 @@ class Setup:
         return dirs
 
 
+class Update(Setup):
+    """ This class holds all update methods for the database"""
+
+    def __init__(self, config=None):
+
+        if config:
+            self._config = config
+        elif self.getB3Path() != "":
+            self._config = self.getB3Path() + r'/conf/b3.xml'
+        if os.path.exists(self._config):
+            self.add_buffer('Using configfile: %s\n' % self._config)
+            import config
+            _conf = config.load(self._config)
+        else:
+            raise SystemExit('Configfile not found, create one first (run setup) or correct the startup parameter.')
+
+        _dbstring = _conf.get('b3', 'database')
+        _currentversion = version.LooseVersion(__version__)
+        self.add_buffer('Current B3 version: %s\n' % _currentversion )
+
+        # update to v1.3.0
+        if _currentversion < '1.3.0':
+            self.executeSql('@b3/sql/b3-update-1.3.0.sql', _dbstring)
+            self.add_buffer('Updating database to version 1.3.0...\n')
+        else:
+            self.add_buffer('Version newer than 1.3.0...\n')
+
+        # update to v1.6.0
+        if _currentversion < '1.6.0':
+            self.executeSql('@b3/sql/b3-update-1.6.0.sql', _dbstring)
+            self.add_buffer('Updating database to version 1.6.0...\n')
+        else:
+            self.add_buffer('Version newer than 1.6.0...\n')
+
+        # need to update xlrstats?
+        _result = self.raw_default('Do you have xlrstats installed (with default table names)?', 'yes')
+        if _result == 'yes':
+            self.executeSql('@b3/sql/b3-update-2.0.0.sql', _dbstring)
+            self.executeSql('@b3/sql/b3-update-2.4.0.sql', _dbstring)
+
+        #self.db = self.connectToDatabase(_dbstring)
+        #self.optimizeTables()
+        #self.db.close()
+
+        raise SystemExit('Update finished, Restart B3 to continue.')
+
+    
+    def showTables(self):
+        _tables = []
+        q = 'SHOW TABLES'
+        cursor = self.db.query(q)
+        if (cursor and (cursor.rowcount > 0) ):
+            while not cursor.EOF:
+                r = cursor.getRow()
+                n = str(r.values()[0])
+                print r
+                _tables.append(r.values()[0])
+                cursor.moveNext()
+        self.add_buffer('Available tables in this database: %s\n' %_tables)
+        return _tables
+
+    def optimizeTables(self, t=None):
+        if not t:
+            t = self.showTables()
+        if type(t) == type(''):
+            _tables = str(t)
+        else:
+            _tables = ', '.join(t)
+        self.add_buffer('Optimizing Table(s): %s\n' % _tables)
+        try:
+            self.db.query('OPTIMIZE TABLE %s' % _tables )
+            self.add_buffer('Optimize Success\n')
+        except Exception, msg:
+            self.add_buffer('Optimizing Table(s) Failed: %s, trying to repair...\n' %msg)
+            self.repairTables(t)
+
+    def repairTables(self, t=None):
+        if not t:
+            t = self.showTables()
+        if type(t) == type(''):
+            _tables = str(t)
+        else:
+            _tables = ', '.join(t)
+        self.add_buffer('Repairing Table(s): %s\n' % _tables)
+        try:
+            self.db.query('REPAIR TABLE %s' % _tables )
+            self.add_buffer('Repair Success\n')
+        except Exception, msg:
+            self.add_buffer('Repairing Table(s) Failed: %s\n' %msg)
+
+
+    
+    
+#-----------------------------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
     #from b3.fake import fakeConsole
     #from b3.fake import joe
     #from b3.fake import simon
 
-    Setup('test.xml')
+    #Setup('test.xml')
+    Update('test.xml')
