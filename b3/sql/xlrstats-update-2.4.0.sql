@@ -1,17 +1,6 @@
--- Updating to version 1.3:
-ALTER TABLE `clients` CHANGE `guid` `guid` VARCHAR( 36 );
+-- SQL code to update default xlrstats database tables to xlrstats plugin version 2.4.0 --
 
--- Updating to version 1.6:
-ALTER TABLE `aliases` CONVERT TO CHARACTER SET utf8;
-ALTER TABLE `clients` CONVERT TO CHARACTER SET utf8;
-ALTER TABLE `groups` CONVERT TO CHARACTER SET utf8;
-ALTER TABLE `penalties` CONVERT TO CHARACTER SET utf8;
-
--- disable the auto_increment flag and add the Guest group at id 0:
-ALTER TABLE  `groups` CHANGE  `id`  `id` INT( 10 ) UNSIGNED NOT NULL;
-INSERT INTO `groups` (id, time_edit, name, keyword, time_add, level) VALUES (0, 0, 'Guest', 'guest', UNIX_TIMESTAMP(), 0);
-
--- modify existing xlrstats tables
+-- modify existing xlrstats tables to support unicode --
 ALTER TABLE `xlr_actionstats` CONVERT TO CHARACTER SET utf8;
 ALTER TABLE `xlr_bodyparts` CONVERT TO CHARACTER SET utf8;
 ALTER TABLE `xlr_history_monthly` CONVERT TO CHARACTER SET utf8;
@@ -24,3 +13,8 @@ ALTER TABLE `xlr_playermaps` CONVERT TO CHARACTER SET utf8;
 ALTER TABLE `xlr_playerstats` CONVERT TO CHARACTER SET utf8;
 ALTER TABLE `xlr_weaponstats` CONVERT TO CHARACTER SET utf8;
 ALTER TABLE `xlr_weaponusage` CONVERT TO CHARACTER SET utf8;
+
+-- need to update the weapon-identifier columns in these tables for cod7. This game knows over 255 weapons/variations --
+ALTER TABLE `xlr_weaponstats` CHANGE `id` `id` SMALLINT( 5 ) UNSIGNED NOT NULL AUTO_INCREMENT;
+ALTER TABLE `xlr_weaponusage` CHANGE `weapon_id` `weapon_id` SMALLINT( 5 ) UNSIGNED NOT NULL DEFAULT  '0';
+

@@ -42,10 +42,14 @@
 # * read game server info through Source Query Protocol
 # 2011-05-03 : 0.9.0
 # * add custom penalty 'kill'
+# 2011-05-20 : 0.9.1
+# * changes to support dedicated server version 0.0.0.201105181447
+# * support [pm] using adminpm
+# * changed adminbigsay and adminsay
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.9.0'
+__version__ = '0.9.1'
 
 from b3.parsers.homefront.protocol import MessageType, ChannelType
 import sys
@@ -91,9 +95,9 @@ class HomefrontParser(b3.parser.Parser):
     _server_banlist = {}
 
     _commands = {}
-    _commands['message'] = ('say %(prefix)s [%(name)s] %(message)s')
-    _commands['say'] = ('say %(prefix)s %(message)s')
-    _commands['saybig'] = ('admin bigsay %(prefix)s %(message)s')
+    _commands['message'] = ('adminpm %(prefix)s [pm] %(message)s')
+    _commands['say'] = ('adminsay %(prefix)s %(message)s')
+    _commands['saybig'] = ('adminbigsay %(prefix)s %(message)s')
     _commands['kick'] = ('admin kick "%(name)s"')
     _commands['ban'] = ('admin kickban "%(name)s" "%(admin)s" "[B3] %(reason)s"')
     _commands['unban'] = ('admin unban "%(name)s"')
@@ -588,7 +592,7 @@ class HomefrontParser(b3.parser.Parser):
         text = self.stripColors(text)
         for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
             line = self.stripColors(line)
-            self.write(self.getCommand('message', name=client.name, prefix=self.msgPrefix, message=line))
+            self.write(self.getCommand('message', prefix=self.msgPrefix, message=line))
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         """\

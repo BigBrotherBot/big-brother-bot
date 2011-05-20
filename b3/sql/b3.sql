@@ -107,3 +107,15 @@ CREATE TABLE IF NOT EXISTS penalties (
   KEY inactive (inactive),
   KEY client_id (client_id)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `data`
+--
+
+CREATE TABLE IF NOT EXISTS `data` (
+  `data_key` varchar(255) NOT NULL,
+  `data_value` varchar(255) NOT NULL,
+  PRIMARY KEY  (`data_key`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;

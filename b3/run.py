@@ -28,14 +28,17 @@
 #    * Fixing broken --restart mode
 # 2010/10/22 - 1.3.3 -  xlr8or
 #    * Restart counter
+# 2011/05/19 - 1.4.0 -  xlr8or
+#    * Added --update -u arg
 
 __author__  = 'ThorN'
-__version__ = '1.3.3'
+__version__ = '1.4.0'
 
 import b3, sys, os, time
 import traceback
 from b3.functions import main_is_frozen
 from b3.setup import Setup
+from b3.setup import Update
 from optparse import OptionParser
 import pkg_handler
 
@@ -139,7 +142,9 @@ def run(config=None, nosetup=False):
 
 def run_setup(config=None):
     Setup(config)
-    raise SystemExit('Configfile generated. Ready to restart!')
+
+def run_update(config=None):
+    Update(config)
 
 def main():
     parser = OptionParser(version=b3.getB3versionString())
@@ -151,6 +156,9 @@ def main():
     parser.add_option('-s', '--setup',
                       action='store_true', dest='setup', default=False,
                       help='Setup main b3.xml config file')
+    parser.add_option('-u', '--update',
+                      action='store_true', dest='update', default=False,
+                      help='Update B3 database to latest version')
     parser.add_option('-n', '--nosetup',
                       action="store_true", dest='nosetup', default=False,
                       help='Do not enter setup mode when config is missing')
@@ -163,6 +171,9 @@ def main():
 
     if options.setup:
         run_setup(config=options.config)
+
+    if options.update:
+        run_update(config=options.config)
 
     if options.restart:
         if options.config:
