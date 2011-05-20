@@ -95,7 +95,7 @@ class HomefrontParser(b3.parser.Parser):
     _server_banlist = {}
 
     _commands = {}
-    _commands['message'] = ('adminpm %(name)s %(prefix)s [pm] %(message)s')
+    _commands['message'] = ('adminpm %(uid)s %(prefix)s [pm] %(message)s')
     _commands['say'] = ('adminsay %(prefix)s %(message)s')
     _commands['saybig'] = ('adminbigsay %(prefix)s %(message)s')
     _commands['kick'] = ('admin kick "%(name)s"')
@@ -141,6 +141,9 @@ class HomefrontParser(b3.parser.Parser):
         self.Events.createEvent('EVT_CLIENT_SQUAD_SAY', 'Squad Say')
         self.Events.createEvent('EVT_SERVER_SAY', 'Server Chatter')
         self.Events.createEvent('EVT_CLIENT_CLAN_CHANGE', 'Client Clan Change')
+        self.Events.createEvent('EVT_CLIENT_VOTE_START', 'Client Vote Start')
+        self.Events.createEvent('EVT_CLIENT_VOTE', 'Client Vote')
+        self.Events.createEvent('EVT_SERVER_VOTE_END', 'Server Vote End')
         #self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
                 
         ## read game server info and store as much of it in self.game wich
@@ -291,7 +294,6 @@ class HomefrontParser(b3.parser.Parser):
         ## [int: Version]
         self.bot("HF server (v %s) says hello to B3" % data)
 
-            
     def onServerAuth(self, data):
         ## [boolean: Result]
         if data == 'true':
@@ -301,18 +303,26 @@ class HomefrontParser(b3.parser.Parser):
         else:
             self.warning("B3 failed to authenticate on game server (%s)" % data)
 
-
     def onServerLogin(self, data):
-        # [string: Name]
+        # [string: Name] [int: SteamID]
         # (onServerLogin also occurs after a mapchange...)
-        # we need this event for xlrstats (counting playerrounds)
-        client = self.getClient(data)
-        if client:
-            self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', None, client))
+        match = re.search(r"^(?P<name>.+) (?P<uid>.*)$", data)
+        if not match:
+            self.error("could not get UID in [%s]" % data)
+            return None
+        if match.group('uid') == '00':
+            self.info("banned player connecting")
+            return
+        client = self.clients.getByGUID(match.group('uid'))
+        if client is None:
+            client = self.clients.newClient(name, guid=match.group('uid'), name=match.group('name'), team=b3.TEAM_UNKNOWN)
+            client.last_update_time = time.time()
 
-    
+        # we need this event for xlrstats (counting playerrounds)
+        self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', None, client))
+
     def onServerUid(self, data):
-        # [string: Name] [string: UID]
+        # [string: Name] [int: SteamID]
         # example : courgette 1100012402D1245
         match = re.search(r"^(?P<name>.+) (?P<uid>.*)$", data)
         if not match:
@@ -323,38 +333,39 @@ class HomefrontParser(b3.parser.Parser):
             return
         client = self.clients.getByGUID(match.group('uid'))
         if client is None:
-            name = match.group('name')
-            client = self.clients.newClient(name, guid=match.group('uid'), name=name, team=b3.TEAM_UNKNOWN)
+            client = self.clients.newClient(name, guid=match.group('uid'), name=match.group('name'), team=b3.TEAM_UNKNOWN)
             client.last_update_time = time.time()
     
     def onServerLogout(self, data):
-        ## [string: Name]
-        self.debug('%s disconnected' % data)
-        client = self.clients.getByCID(data)
+        ## [int: SteamID]
+        client = self.clients.getByGUID(data)
         if client:
             client.disconnect()
+            self.debug('%s (%s) disconnected' % (client.name, data))
     
     def onServerTeam_change(self, data):
-        # [string: Name] [int: Team ID]
+        # [int: SteamID] [int: Team ID]
         self.debug('onServerTeam_change: %s' % data)
-        match = re.search(r"^(?P<name>.+) (?P<team>.*)$", data)
+        match = re.search(r"^(?P<uid>.*) (?P<team>.*)$", data)
         if not match:
             self.error('onServerTeam_change failed match')
             return
-        client = self.getClient(match.group('name'))
+        client = self.clients.getByGUID(match.group('uid'))
         if client is None:
             self.debug("Could not find client")
             return
         #This next line will also raise the EVT_CLIENT_TEAM_CHANGE event
         client.team = self.getTeam(match.group('team'))
 
+        self.debug('%s (%s) has switched team to %s' % (client.name, client.guid, client.team))
+
     def onServerClan_change(self, data):
-        # [string: Name] [string: Clan Name]
-        match = re.search(r"^(?P<name>.+) (?P<clan>.*)$", data)
+        # [int: SteamID] [string: Clan Name]
+        match = re.search(r"^(?P<uid>.*) (?P<clan>.*)$", data)
         if not match:
             self.error('onServerTeam_change failed match')
             return
-        client = self.getClient(match.group('name'))
+        client = self.clients.getByGUID(match.group('uid'))
         if client is None:
             self.debug("Could not find client")
             return
@@ -362,21 +373,18 @@ class HomefrontParser(b3.parser.Parser):
         return self.getEvent('EVT_CLIENT_CLAN_CHANGE', client.clan, client)
 
     def onServerKill(self, data):
-        # [string: Killer Name] [string: DamageType] [string: Victim Name]
-        # kill example: courgette EXP_Frag Freelander
-        # suicide example#1: Freelander Suicided Freelander (triggers when player leaves the server)
-        # suicide example#2: Freelander EXP_Frag Freelander
-        match = re.search(r"^(?P<data>(?P<aname>[^;]+)\s+(?P<aweap>[A-z0-9_-]+)\s+(?P<vname>[^;]+))$", data)
+        # [int: Killer SteamID] [string: DamageType] [int: Victim SteamID]
+        match = re.search(r"^(?P<data>(?P<auid>.*)\s+(?P<aweap>[A-z0-9_-]+)\s+(?P<vuid>.*))$", data)
         if not match:
             self.error("Can't parse kill line: %s" % data)
             return
         else:
-            attacker = self.getClient(match.group('aname'))
+            attacker = self.clients.getByGUID(match.group('auid'))
             if not attacker:
                 self.debug('No attacker!')
                 return
 
-            victim = self.getClient(match.group('vname'))
+            victim = self.clients.getByGUID(match.group('vuid'))
             if not victim:
                 self.debug('No victim!')
                 return
@@ -467,17 +475,29 @@ class HomefrontParser(b3.parser.Parser):
         return self.getEvent('EVT_SERVER_SAY', data)
 
     def onServerBan_remove(self, data):
+        # [string: Name]
         self.write(self.getCommand('saybig',  prefix='', message="%s unbanned" % data))
         # update banlist
         self.retrieveBanList()
     
     def onServerBan_added(self, data):
-        self.write(self.getCommand('saybig',  prefix='', message="%s banned" % data))
+        # [string: Name] [int: SteamID]
+        match = re.search(r"^(?P<data>(?P<name>[^ ]+)\s+(?P<uid>.*))$", data)
+        if not match:
+            self.error('onServerBan_added failed match')
+            return
+        client = self.clients.getByGUID(match.group('uid'))
+
+        if client:
+            self.write(self.getCommand('saybig',  prefix='', message="%s banned" % client.name))
+        else:
+            self.error('Cannot find banned client')
+
         # update banlist
         self.retrieveBanList()
 
     def onServerPlayer(self, data):
-        # [int: Team] [string: Clan] [string: Name] [int: Kills] [int: Deaths]
+        # [string: Uid] [int: Team] [string: Clan] [string: Name] [int: Kills] [int: Deaths]
         match = re.search(r"^(?P<data>(?P<uid>[0-9]+) (?P<team>[0-9]) (?P<clan>.*) (?P<name>[^ ]+) (?P<kills>[0-9]+) (?P<deaths>[0-9]+))$", data)
         if not match:
             self.error("onServerPlayer failed match")
@@ -516,6 +536,57 @@ class HomefrontParser(b3.parser.Parser):
         guid = match.group('uid')
 
         self._server_banlist[guid] = name
+
+    def onServerVotestart(self, data):
+        # [int: SteamID] [string: VoteType] [optional string: Target]
+        m = data.split(' ')
+        if len(m) > 2:
+            match = re.match(r"^(?P<data>(?P<uid>[0-9]+) (?P<vtype>.*) (?P<target>.*))$", data)
+        else:
+            match = re.match(r"^(?P<data>(?P<uid>[0-9]+) (?P<vtype>.*))$", data)
+
+        if not match:
+            self.error('onServerVotestart failed match')
+            return
+
+        client = self.clients.getByGUID(match.group('uid'))
+        votetype = match.group('vtype')
+
+        if match.group('target'):
+            target = match.group('target')
+        else:
+            target = None
+
+        return self.getEvent('EVT_CLIENT_VOTE_START', client, votetype, target)
+
+    def onServerVote(self, data):
+        # [int: SteamID] [boolean: Yes]
+        # boolean: 1 is vote for, 0 is vote against
+        match = re.match(r"^(?P<data>(?P<uid>[0-9]+) (?P<vote>[0-1]))$", data)
+        if not match:
+            self.error('onServerVotestart failed match')
+            return
+
+        client = self.clients.getByGUID(match.group('uid'))
+        vote = match.group('vote')
+
+        return self.getEvent('EVT_CLIENT_VOTE', client, vote)
+
+    def onServerVoteend(self, data):
+        # [int: YesVotes] [float: PercentFor] [string: Pass]
+        # YesVotes: Number of players that voted yes
+        # PercentFor: Percent of total players that voted yes (as a float)
+        # Pass: "passed" for success, "failed" for failure
+        match = re.match(r"^(?P<data>(?P<yesvotes>[0-9]+) (?P<percentfor>[.0-9]+) (?P<vresult>passed|failed))$", data)
+        if not match:
+            self.error('onServerVotestart failed match')
+            return
+
+        yesvotes = match.group('yesvotes')
+        percentfor = match.group('percentfor')
+        voteresult = match.group('vresult')
+
+        return self.getEvent('EVT_SERVER_VOTE_END', yesvotes, percentfor, voteresult)
 
     # =======================================
     # implement parser interface
@@ -592,11 +663,11 @@ class HomefrontParser(b3.parser.Parser):
         text = self.stripColors(text)
         for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
             line = self.stripColors(line)
-            self.write(self.getCommand('message', name=client.guid, prefix=self.msgPrefix, message=line))
+            self.write(self.getCommand('message', uid=client.guid, prefix=self.msgPrefix, message=line))
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
-        kick a given players
+        kick a given player
         """
         self.debug('KICK : client: %s, reason: %s', client.cid, reason)
         if admin:
@@ -618,7 +689,7 @@ class HomefrontParser(b3.parser.Parser):
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
-        ban a given players
+        ban a given player
         """
         self.debug('BAN : client: %s, reason: %s', client.cid, reason)
         if admin:
@@ -646,7 +717,7 @@ class HomefrontParser(b3.parser.Parser):
     ## @todo Need to test response from the server
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
-        unban a given players
+        unban a given player
         """
         if client.guid in self._server_banlist.keys():
             self.debug('using guid to unban')
@@ -665,7 +736,7 @@ class HomefrontParser(b3.parser.Parser):
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
         """\
-        tempban a given players
+        tempban a given player
         """
         self.debug('TEMPBAN : client: %s, reason: %s', client.cid, reason)
         if admin:
