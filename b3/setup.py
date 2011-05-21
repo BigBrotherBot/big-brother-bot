@@ -839,6 +839,8 @@ class Update(Setup):
 
     def __init__(self, config=None):
 
+        self.add_buffer('Updating the B3 database\n')
+        self.add_buffer('------------------------\n')
         if config:
             self._config = config
         elif self.getB3Path() != "":
@@ -855,14 +857,14 @@ class Update(Setup):
         self.add_buffer('Current B3 version: %s\n' % _currentversion )
 
         # update to v1.3.0
-        if _currentversion < '1.3.0':
+        if _currentversion >= '1.3.0':
             self.executeSql('@b3/sql/b3-update-1.3.0.sql', _dbstring)
             self.add_buffer('Updating database to version 1.3.0...\n')
         else:
             self.add_buffer('Version newer than 1.3.0...\n')
 
         # update to v1.6.0
-        if _currentversion < '1.6.0':
+        if _currentversion >= '1.6.0':
             self.executeSql('@b3/sql/b3-update-1.6.0.sql', _dbstring)
             self.add_buffer('Updating database to version 1.6.0...\n')
         else:
