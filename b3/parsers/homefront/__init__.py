@@ -306,35 +306,30 @@ class HomefrontParser(b3.parser.Parser):
     def onServerLogin(self, data):
         # [string: Name] [int: SteamID]
         # (onServerLogin also occurs after a mapchange...)
-        match = re.search(r"^(?P<name>.+) (?P<uid>.*)$", data)
+        # example : cou"rgette\u3010\u30c4\u3011 76561197963239764
+        match = re.search(r"^(?P<name>.+) (?P<uid>[0-9]+)$", data)
         if not match:
-            self.error("could not get UID in [%s]" % data)
+            self.error("could not parse LOGIN event [%s]" % data)
             return None
         if match.group('uid') == '00':
             self.info("banned player connecting")
             return
-        client = self.clients.getByGUID(match.group('uid'))
-        if client is None:
-            client = self.clients.newClient(name, guid=match.group('uid'), name=match.group('name'), team=b3.TEAM_UNKNOWN)
-            client.last_update_time = time.time()
-
-        # we need this event for xlrstats (counting playerrounds)
-        self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', None, client))
+        client = self.getClientByUidOrCreate(match.group('uid'), match.group('name'))
+        if client :
+            # we need this event for xlrstats (counting playerrounds)
+            self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', None, client))
 
     def onServerUid(self, data):
         # [string: Name] [int: SteamID]
         # example : courgette 1100012402D1245
-        match = re.search(r"^(?P<name>.+) (?P<uid>.*)$", data)
+        match = re.search(r"^(?P<name>.+) (?P<uid>[0-9]+)$", data)
         if not match:
             self.error("could not get UID in [%s]" % data)
             return None
         if match.group('uid') == '00':
             self.info("banned player connecting")
             return
-        client = self.clients.getByGUID(match.group('uid'))
-        if client is None:
-            client = self.clients.newClient(name, guid=match.group('uid'), name=match.group('name'), team=b3.TEAM_UNKNOWN)
-            client.last_update_time = time.time()
+        self.getClientByUidOrCreate(match.group('uid'), match.group('name'))
     
     def onServerLogout(self, data):
         ## [int: SteamID]
@@ -346,7 +341,7 @@ class HomefrontParser(b3.parser.Parser):
     def onServerTeam_change(self, data):
         # [int: SteamID] [int: Team ID]
         self.debug('onServerTeam_change: %s' % data)
-        match = re.search(r"^(?P<uid>.*) (?P<team>.*)$", data)
+        match = re.search(r"^(?P<uid>[0-9]+) (?P<team>.*)$", data)
         if not match:
             self.error('onServerTeam_change failed match')
             return
@@ -361,9 +356,9 @@ class HomefrontParser(b3.parser.Parser):
 
     def onServerClan_change(self, data):
         # [int: SteamID] [string: Clan Name]
-        match = re.search(r"^(?P<uid>.*) (?P<clan>.*)$", data)
+        match = re.search(r"^(?P<uid>[0-9]+) (?P<clan>.*)$", data)
         if not match:
-            self.error('onServerTeam_change failed match')
+            self.error('onServerClan_change failed match')
             return
         client = self.clients.getByGUID(match.group('uid'))
         if client is None:
@@ -373,18 +368,25 @@ class HomefrontParser(b3.parser.Parser):
         return self.getEvent('EVT_CLIENT_CLAN_CHANGE', client.clan, client)
 
     def onServerKill(self, data):
-        # [int: Killer SteamID] [string: DamageType] [int: Victim SteamID]
-        match = re.search(r"^(?P<data>(?P<auid>.*)\s+(?P<aweap>[A-z0-9_-]+)\s+(?P<vuid>.*))$", data)
+        # [string: Killer Name] [string: DamageType] [string: Victim Name]
+        # kill example: courgette EXP_Frag Freelander
+        # suicide example#1: Freelander Suicided Freelander (triggers when player leaves the server)
+        # suicide example#2: Freelander EXP_Frag Freelander
+        match = re.search(r"^(?P<data>(?P<aname>[^;]+)\s+(?P<aweap>[A-z0-9_-]+)\s+(?P<vname>[^;]+))$", data)
+        ## [int: Killer SteamID] [string: DamageType] [int: Victim SteamID]
+        #match = re.search(r"^(?P<data>(?P<auid>.*)\s+(?P<aweap>[A-z0-9_-]+)\s+(?P<vuid>.*))$", data)
         if not match:
             self.error("Can't parse kill line: %s" % data)
             return
         else:
-            attacker = self.clients.getByGUID(match.group('auid'))
+            attacker = self.getClient(match.group('aname'))
+            #attacker = self.clients.getByGUID(match.group('auid'))
             if not attacker:
                 self.debug('No attacker!')
                 return
 
-            victim = self.clients.getByGUID(match.group('vuid'))
+            victim = self.getClient(match.group('vname'))
+            #victim = self.clients.getByGUID(match.group('vuid'))
             if not victim:
                 self.debug('No victim!')
                 return
@@ -482,7 +484,7 @@ class HomefrontParser(b3.parser.Parser):
     
     def onServerBan_added(self, data):
         # [string: Name] [int: SteamID]
-        match = re.search(r"^(?P<data>(?P<name>[^ ]+)\s+(?P<uid>.*))$", data)
+        match = re.search(r"^(?P<data>(?P<name>[^ ]+)\s+(?P<uid>[0-9]+))$", data)
         if not match:
             self.error('onServerBan_added failed match')
             return
@@ -539,11 +541,7 @@ class HomefrontParser(b3.parser.Parser):
 
     def onServerVotestart(self, data):
         # [int: SteamID] [string: VoteType] [optional string: Target]
-        m = data.split(' ')
-        if len(m) > 2:
-            match = re.match(r"^(?P<data>(?P<uid>[0-9]+) (?P<vtype>.*) (?P<target>.*))$", data)
-        else:
-            match = re.match(r"^(?P<data>(?P<uid>[0-9]+) (?P<vtype>.*))$", data)
+        match = re.match(r"^(?P<data>(?P<uid>[0-9]+) (?P<vtype>[^ ]+)( (?P<target>.*))?)$", data)
 
         if not match:
             self.error('onServerVotestart failed match')
@@ -557,36 +555,36 @@ class HomefrontParser(b3.parser.Parser):
         else:
             target = None
 
-        return self.getEvent('EVT_CLIENT_VOTE_START', client, votetype, target)
+        return self.getEvent('EVT_CLIENT_VOTE_START', data=votetype, client=client, target=target)
 
     def onServerVote(self, data):
         # [int: SteamID] [boolean: Yes]
         # boolean: 1 is vote for, 0 is vote against
-        match = re.match(r"^(?P<data>(?P<uid>[0-9]+) (?P<vote>[0-1]))$", data)
+        match = re.match(r"^(?P<data>(?P<uid>[0-9]+) (?P<vote>[01]))$", data)
         if not match:
-            self.error('onServerVotestart failed match')
+            self.error('onServerVote failed match')
             return
 
         client = self.clients.getByGUID(match.group('uid'))
         vote = match.group('vote')
 
-        return self.getEvent('EVT_CLIENT_VOTE', client, vote)
+        return self.getEvent('EVT_CLIENT_VOTE', data=vote, client=client)
 
     def onServerVoteend(self, data):
         # [int: YesVotes] [float: PercentFor] [string: Pass]
         # YesVotes: Number of players that voted yes
         # PercentFor: Percent of total players that voted yes (as a float)
         # Pass: "passed" for success, "failed" for failure
-        match = re.match(r"^(?P<data>(?P<yesvotes>[0-9]+) (?P<percentfor>[.0-9]+) (?P<vresult>passed|failed))$", data)
+        match = re.match(r"^(?P<data>(?P<yesvotes>[0-9]+) (?P<percentfor>[0-9]+(\.[0-9]+)?) (?P<vresult>passed|failed))$", data)
         if not match:
-            self.error('onServerVotestart failed match')
+            self.error('onServerVoteend failed match')
             return
 
         yesvotes = match.group('yesvotes')
         percentfor = match.group('percentfor')
         voteresult = match.group('vresult')
 
-        return self.getEvent('EVT_SERVER_VOTE_END', yesvotes, percentfor, voteresult)
+        return self.getEvent('EVT_SERVER_VOTE_END', data={'yesvotes': yesvotes, 'percentfor': percentfor, 'voteresult': voteresult})
 
     # =======================================
     # implement parser interface
@@ -919,6 +917,21 @@ class HomefrontParser(b3.parser.Parser):
         if client:
             return client
         return None
+    
+    
+    def getClientByUidOrCreate(self, uid, name):
+        """return a already connected client by searching the 
+        clients guid index or create a new client
+        
+        This method can return None
+        """
+        client = self.clients.getByGUID(uid)
+        if client is None and name:
+            client = self.clients.newClient(name, guid=uid, name=name, team=b3.TEAM_UNKNOWN)
+            client.last_update_time = time.time()
+        return client
+    
+    
 
     def getftpini(self):
         def handleDownload(line):
