@@ -3,7 +3,7 @@
 
 ;#define Debug
 #define B3_VERSION_NUMBER "1.6.0"
-#define B3_VERSION_SUFFIX "-setup"
+#define B3_VERSION_SUFFIX ""
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -81,6 +81,7 @@ Name: spanish; MessagesFile: compiler:Languages\Spanish.isl
 Name: {group}\{cm:executable,b3_run}; Filename: {app}\b3_run.exe; Parameters: "--config ""{app}\conf\b3.xml"""; WorkingDir: {app}; Flags: dontcloseonexit; IconFilename: {app}\b3.ico; Comment: "Run BigBrotherBot {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}"; 
 Name: {commondesktop}\{cm:executable,b3_run}; Filename: {app}\b3_run.exe; Parameters: "--config ""{app}\conf\b3.xml"""; WorkingDir: {app}; Flags: dontcloseonexit; IconFilename: {app}\b3.ico; Comment: "Run BigBrotherBot {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}"; 
 Name: {group}\{cm:configWizard,Config wizard}; Filename: {app}\b3_run.exe; Parameters: "--config ""{app}\conf\b3.xml"" --setup"; WorkingDir: {app}; Comment: "Run the B3 setup wizard"; Flags: dontcloseonexit; 
+Name: {group}\{cm:updateWizard,Database update}; Filename: {app}\b3_run.exe; Parameters: "--config ""{app}\conf\b3.xml"" --update"; WorkingDir: {app}; Comment: "Run the B3 update wizard"; Flags: dontcloseonexit; 
 Name: {group}\{cm:B3ConfDir,config}; Filename: {app}\conf\
 Name: {group}\{cm:extplugins,extplugins}; Filename: {app}\extplugins\; IconFilename: {app}\b3-plugins-icon.ico; 
 Name: {group}\extra\{cm:docs,docs}; Filename: {app}\docs\
@@ -93,10 +94,10 @@ Name: {group}\web\{cm:DownloadPlugins,Download plugins}; Filename: http://forum.
 Name: {group}\web\{cm:B3configGenerator,B3 config generator}; Filename: http://config.bigbrotherbot.net/; 
 Name: {group}\web\artwork; Filename: http://www.bigbrotherbot.net/logos
 Name: {group}\web\other tools\{cm:Echelon,Echelon}; Filename: http://echelon.bigbrotherbot.net/
-Name: {group}\web\other tools\{cm:Xlrstats,XLRstats}; Filename: http://www.xlrstats.com/
 
 ;[Dirs]
 ;Name: {commonappdata}\BigBrotherBot; Permissions: users-full
+Name: {group}\web\other tools\{cm:Xlrstats,XLRstats}; Filename: http://www.xlrstats.com/
 
 [Files]
 Source: {app}\conf\*; DestDir: {app}\conf\backup; Flags: external skipifsourcedoesntexist uninsneveruninstall
@@ -125,6 +126,7 @@ Manual=Manual
 B3ConfDir=config folder
 extplugins=plugins folder
 configWizard=Run B3 config wizard
+updateWizard=Update B3 database
 executable=Run B3
 DownloadPlugins=Download more plugins
 Echelon=Echelon
@@ -136,4 +138,5 @@ docs=docs folder
 [Run]
 Filename: {app}\readme.txt; Flags: ShellExec SkipIfDoesntExist; 
 ;Filename: {app}\b3_run.exe; Parameters: "--config ""{commonappdata}\conf\b3.xml"" --setup"; WorkingDir: {app}; Flags: ShellExec PostInstall; Description: "Run Setup?"; 
-Filename: {app}\b3_run.exe; Parameters: "--config ""{app}\conf\b3.xml"" --setup"; WorkingDir: {app}; Flags: ShellExec PostInstall; Description: "Run Setup?"; 
+Filename: {app}\b3_run.exe; Parameters: "--config ""{app}\conf\b3.xml"" --setup"; WorkingDir: {app}; Flags: ShellExec PostInstall; Description: "Run Setup?";
+Filename: {app}\b3_run.exe; Parameters: "--config ""{app}\conf\b3.xml"" --update"; WorkingDir: {app}; Flags: ShellExec PostInstall Unchecked; Description: "Update database?"; 
