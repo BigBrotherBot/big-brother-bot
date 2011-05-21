@@ -270,6 +270,8 @@ class SourceQuery(object):
         packet = SourceQueryPacket()
         packet.putLong(WHOLE)
         packet.putByte(A2S_PLAYER)
+        if not challenge:
+            challenge = CHALLENGE
         packet.putLong(challenge)
 
         self.udp.send(packet.getvalue())
@@ -303,6 +305,8 @@ class SourceQuery(object):
         packet = SourceQueryPacket()
         packet.putLong(WHOLE)
         packet.putByte(A2S_RULES)
+        if not challenge:
+            challenge = CHALLENGE
         packet.putLong(challenge)
 
         self.udp.send(packet.getvalue())
