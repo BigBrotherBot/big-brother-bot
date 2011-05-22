@@ -8,6 +8,7 @@ update your version of python to at least 2.6.6 to get them fixed.
 ----
 - Added support for Homefront
 - Added support for World of Padman 1.5
+- Added beta support for Altitude
 - Refactored core files to use unicode
 - bugfixes for Call of Duty World at War (in cod parser)  
 - bugfixes to Call of Duty Black Ops (cod7) parser
