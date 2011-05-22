@@ -1,6 +1,30 @@
 2011-05-22  xlr8or <xlr8or@xlr8or.com>
 
+	* : commit 392826c9778822fae307cbe3c68baacbf811fdda Author:
+	Courgette <courgette@bigbrotherbot.net> Date:   Sun May 22 18:43:22
+	2011 +0200
+
+2011-05-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/homefront/__init__.py: HOMEFRONT : fix
+	onServerVotestart
+
+2011-05-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/fake.py: FAKE : add unban(), getClientPenalties(), warn()
+
+2011-05-22  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG, ChangeLogDetailed.txt: changelogs
+
+2011-05-22  xlr8or <xlr8or@xlr8or.com>
+
 	* b3.egg-info/SOURCES.txt, versions.txt: release updates
+
+2011-05-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/homefront/__init__.py: HOMEFRONT : fix target for vote
+	call
 
 2011-05-22  xlr8or <xlr8or@xlr8or.com>
 

@@ -1,5 +1,5 @@
-project files/versions signature: 2d33b07beed0c7094454567c81914c6c
-project files content signature: 95dfbc267461ae6f89d92e1b831d223b
+project files/versions signature: e6a85d2a3ea024a21b7236b06b5d5f13
+project files content signature: 3f8fb8ef66d1470525ccf64595d700bd
 b3\__init__.py 8d79b97bece95f7fd17627ed5c316f13 1.1.2
 b3\clients.py 1b5462125476c7306d7fe9ea2d459aae 1.3.5
 b3\config.py c270b8f2aefbe60563285f675b28dc8d 1.3.1
@@ -8,7 +8,7 @@ b3\cvar.py 39c0d99ceaeab3170936b6f540337368 1.0.1
 b3\events.py 9d7f4c7cf2cdbcf30feb7fdcb0720cf1 1.1.3
 b3\extplugins\__init__.py 01abfc750a0c942167651c40d088531d None
 b3\extplugins\xlrstats.py 62ef220d34e7c902c02d3473c73ad274 2.4.0
-b3\fake.py 0006c8284f9a3e50727ce849461a1bd6 1.6
+b3\fake.py ecebc35fe5af5598018442627294269a 1.6
 b3\functions.py bd19464524afc88154db0177796bc0d3 1.3.3
 b3\game.py e80182dc6d87ef966ade52a3bbe4f14c 1.2.0
 b3\lib\PurePythonGeoIP.py 959d727e5fd89339c7464ea8ea9db54f None
@@ -104,7 +104,7 @@ b3\parsers\frostbite\protocol.py 1c7755c8b3eae89a659118147a53d972 1.0.1
 b3\parsers\frostbite\punkbuster.py 3a4153415be31cf25d3a1588c1790301 1.1
 b3\parsers\frostbite\rcon.py 77598a0b767cc78bf39bf3b23ff19428 2.0
 b3\parsers\frostbite\util.py 1c8f30602d7bbccbf2500b2407199ae0 1.1
-b3\parsers\homefront\__init__.py 292e0a5a3f5f7217f63910f58d7d400a 0.9.2
+b3\parsers\homefront\__init__.py f9174776093069a91b0eaa6184c5ff31 1.0
 b3\parsers\homefront\protocol.py 6eef48f40731b5578c503fa08ddcedf2 0.3
 b3\parsers\homefront\rcon.py 087cbe58a0fa2b7367e89328842ba6ed 1.0
 b3\parsers\iourt41.py 76c1c32f139b18b7e6f729c48ebaa69e 1.7.17
