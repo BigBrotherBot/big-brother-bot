@@ -208,6 +208,10 @@ class FakeConsole(b3.parser.Parser):
         """tempban a client"""
         print '>>>tempbanning %s for %s (%s)' % (client.name, reason, duration)
     
+    def unban(self, client, reason='', admin=None, silent=False, *kwargs):
+        """unban a client"""
+        print '>>>unbanning %s (%s)' % (client.name, reason)
+    
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         if isinstance(client, str) and re.match('^[0-9]+$', client):
             self.write(self.getCommand('kick', cid=client, reason=reason))
@@ -448,6 +452,8 @@ class FakeStorage(object):
         penalty.id = self._penalty_id_autoincrement
         self._penalties[penalty.id] = penalty
         return penalty.id
+    def getClientPenalties(self, client, type='Ban'):
+        return [x for x in self._penalties.values() if x.clientId == client and x.inactive == 0]
     def numPenalties(self, client, type='Ban'):
         match = [k for k, v in self._penalties.iteritems() if v.clientId == client.id and v.type == type]
         return len(match)
@@ -474,7 +480,9 @@ class FakeClient(b3.clients.Client):
         cleanmsg = re.sub(re.compile('\^[0-9]'), '', msg).strip()
         self.message_history.append(cleanmsg)
         print "sending msg to %s: %s" % (self.name, cleanmsg)
-        
+    def warn(self, duration, warning, keyword=None, admin=None, data=''):
+        w = b3.clients.Client.warn(self, duration, warning, keyword=None, admin=None, data='')
+        print(">>>>%s gets a warning : %s" % (self, w))
     def connects(self, cid):
         print "\n%s connects to the game on slot #%s" % (self.name, cid)
         self.cid = cid
