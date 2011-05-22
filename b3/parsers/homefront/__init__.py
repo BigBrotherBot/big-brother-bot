@@ -48,6 +48,8 @@
 # * changed adminbigsay and adminsay
 # 2011-05-22 : 0.9.2
 # * do not rely on RETRIEVE BANLIST response to unban
+# 2011-05-22 : 0.9.3
+# * fix onServerVotestart
 #
 from b3 import functions
 from b3.clients import Client
@@ -69,7 +71,7 @@ import time
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.9.2'
+__version__ = '0.9.3'
 
 
 
@@ -559,7 +561,7 @@ class HomefrontParser(b3.parser.Parser):
         votetype = match.group('vtype')
 
         if match.group('target'):
-            target = self.clients.getByExactName(match.group('target'))
+            target = self.clients.getByGUID(match.group('target'))
         else:
             target = None
 
