@@ -559,7 +559,7 @@ class HomefrontParser(b3.parser.Parser):
         votetype = match.group('vtype')
 
         if match.group('target'):
-            target = match.group('target')
+            target = self.clients.getByExactName(match.group('target'))
         else:
             target = None
 
