@@ -46,27 +46,31 @@
 # * changes to support dedicated server version 0.0.0.201105181447
 # * support [pm] using adminpm
 # * changed adminbigsay and adminsay
+# 2011-05-22 : 0.9.2
+# * do not rely on RETRIEVE BANLIST response to unban
+#
+from b3 import functions
+from b3.clients import Client
+from b3.lib.sourcelib import SourceQuery
+from b3.parser import Parser
+from b3.parsers.homefront.protocol import MessageType, ChannelType
+from ftplib import FTP
+import asyncore
+import b3
+import b3.cron
+import ftplib
+import os
+import protocol
+import rcon
+import re
+import string
+import sys
+import time
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.9.1'
+__version__ = '0.9.2'
 
-from b3.parsers.homefront.protocol import MessageType, ChannelType
-import sys
-import string
-import re
-import time
-import asyncore
-import b3
-import b3.parser
-import b3.cron
-import os
-import rcon
-import protocol
-from ftplib import FTP
-import ftplib
-from b3 import functions
-from b3.lib.sourcelib import SourceQuery
 
 
 class HomefrontParser(b3.parser.Parser):
@@ -98,10 +102,10 @@ class HomefrontParser(b3.parser.Parser):
     _commands['message'] = ('adminpm %(uid)s %(prefix)s [pm] %(message)s')
     _commands['say'] = ('adminsay %(prefix)s %(message)s')
     _commands['saybig'] = ('adminbigsay %(prefix)s %(message)s')
-    _commands['kick'] = ('admin kick "%(name)s"')
-    _commands['ban'] = ('admin kickban "%(name)s" "%(admin)s" "[B3] %(reason)s"')
-    _commands['unban'] = ('admin unban "%(name)s"')
-    _commands['tempban'] = ('admin kick "%(name)s"')
+    _commands['kick'] = ('admin kick "%(playerid)s"')
+    _commands['ban'] = ('admin kickban "%(playerid)s" "%(admin)s" "[B3] %(reason)s"')
+    _commands['unban'] = ('admin unban %(playerId)s')
+    _commands['tempban'] = ('admin kick "%(playerid)s"')
     _commands['maprotate'] = ('admin nextmap')
     
     _settings = {'line_length': 90, 
@@ -477,8 +481,14 @@ class HomefrontParser(b3.parser.Parser):
         return self.getEvent('EVT_SERVER_SAY', data)
 
     def onServerBan_remove(self, data):
-        # [string: Name]
-        self.write(self.getCommand('saybig',  prefix='', message="%s unbanned" % data))
+        """ [int: SteamID] """
+        # we are using storage instead of self.clients because the player 
+        # is obviously not connected when banned
+        client = self.storage.getClient(Client(guid=data))
+        if client:
+            self.write(self.getCommand('saybig',  prefix='', message="%s removed from server banlist" % client.name))
+        else:
+            self.write(self.getCommand('saybig',  prefix='', message="%s unbanned" % data))
         # update banlist
         self.retrieveBanList()
     
@@ -488,13 +498,13 @@ class HomefrontParser(b3.parser.Parser):
         if not match:
             self.error('onServerBan_added failed match')
             return
-        client = self.clients.getByGUID(match.group('uid'))
-
+        # we are using storage instead of self.clients because the player might already
+        # have been kick
+        client = self.storage.getClient(Client(guid=match.group('uid')))
         if client:
-            self.write(self.getCommand('saybig',  prefix='', message="%s banned" % client.name))
+            self.write(self.getCommand('saybig',  prefix='', message="%s added to server banlist" % client.name))
         else:
             self.error('Cannot find banned client')
-
         # update banlist
         self.retrieveBanList()
 
@@ -533,10 +543,8 @@ class HomefrontParser(b3.parser.Parser):
         if not match:
             self.error('onServerBan_item failed match')
             return
-
         name = match.group('name')
         guid = match.group('uid')
-
         self._server_banlist[guid] = name
 
     def onServerVotestart(self, data):
@@ -679,9 +687,9 @@ class HomefrontParser(b3.parser.Parser):
             self.say(fullreason)
 
         if client.guid:
-            self.write(self.getCommand('kick', name=client.guid))
+            self.write(self.getCommand('kick', playerid=client.guid))
         else:
-            self.write(self.getCommand('kick', name=client.cid))
+            self.write(self.getCommand('kick', playerid=client.cid))
         self.queueEvent(self.getEvent('EVT_CLIENT_KICK', reason, client))
         client.disconnect()
 
@@ -700,15 +708,15 @@ class HomefrontParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
         
-        banid = client.cid
-        if banid is None and client.name:
-            banid = client.name
+        banid = client.guid
+        if banid is None:
+            banid = client.cid
             self.debug('using name to ban : %s' % banid)
-        self.write(self.getCommand('ban', name=banid, admin=admin, reason=reason))
-        # saving banid in the name column in database
-        # so we can unban a unconnected player using name
-        client._name = banid
-        client.save()
+            # saving banid in the name column in database
+            # so we can unban a unconnected player using name
+            client._name = banid
+            client.save()
+        self.write(self.getCommand('ban', playerid=banid, admin=admin.name.replace('"','\"'), reason=reason))
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN', reason, client))
         client.disconnect()
 
@@ -717,19 +725,15 @@ class HomefrontParser(b3.parser.Parser):
         """\
         unban a given player
         """
-        if client.guid in self._server_banlist.keys():
+        if client.guid:
             self.debug('using guid to unban')
-            banid = self._server_banlist[client.guid]
+            banid = client.guid
         else:
             self.debug('using name to unban')
             banid = client.name
-        self.debug('UNBAN: %s' % banid)
-        response = self.write(self.getCommand('unban', name=banid))
-        self.verbose(response)
-        if response:
-            self.verbose('UNBAN: Removed name (%s) from banlist' %client.name)
-            if admin:
-                admin.message('Unbanned: Removed %s from banlist' %client.name)
+        self.write(self.getCommand('unban', playerId=banid))
+        if admin:
+            admin.message('Unbanned: Removed %s from banlist' %client.name)
         self.queueEvent(self.getEvent('EVT_CLIENT_UNBAN', reason, client))
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
@@ -747,7 +751,10 @@ class HomefrontParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.write(self.getCommand('tempban', name=client.cid))
+        if client.guid:
+            self.write(self.getCommand('kick', playerid=client.guid))
+        else:
+            self.write(self.getCommand('kick', playerid=client.cid))
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', reason, client))
         client.disconnect()
 
