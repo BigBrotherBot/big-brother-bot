@@ -1,5 +1,5 @@
-project files/versions signature: cdb103da20848bfbf036fab8b1052708
-project files content signature: e548158f10f5957872855ac723cf7b83
+project files/versions signature: 2d33b07beed0c7094454567c81914c6c
+project files content signature: 95dfbc267461ae6f89d92e1b831d223b
 b3\__init__.py 8d79b97bece95f7fd17627ed5c316f13 1.1.2
 b3\clients.py 1b5462125476c7306d7fe9ea2d459aae 1.3.5
 b3\config.py c270b8f2aefbe60563285f675b28dc8d 1.3.1
@@ -104,7 +104,7 @@ b3\parsers\frostbite\protocol.py 1c7755c8b3eae89a659118147a53d972 1.0.1
 b3\parsers\frostbite\punkbuster.py 3a4153415be31cf25d3a1588c1790301 1.1
 b3\parsers\frostbite\rcon.py 77598a0b767cc78bf39bf3b23ff19428 2.0
 b3\parsers\frostbite\util.py 1c8f30602d7bbccbf2500b2407199ae0 1.1
-b3\parsers\homefront\__init__.py 4abc045bc4f7d1939c826ac63bd578b8 0.9.1
+b3\parsers\homefront\__init__.py 292e0a5a3f5f7217f63910f58d7d400a 0.9.2
 b3\parsers\homefront\protocol.py 6eef48f40731b5578c503fa08ddcedf2 0.3
 b3\parsers\homefront\rcon.py 087cbe58a0fa2b7367e89328842ba6ed 1.0
 b3\parsers\iourt41.py 76c1c32f139b18b7e6f729c48ebaa69e 1.7.17
