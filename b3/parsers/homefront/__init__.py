@@ -98,10 +98,10 @@ class HomefrontParser(b3.parser.Parser):
     _commands['message'] = ('adminpm %(uid)s %(prefix)s [pm] %(message)s')
     _commands['say'] = ('adminsay %(prefix)s %(message)s')
     _commands['saybig'] = ('adminbigsay %(prefix)s %(message)s')
-    _commands['kick'] = ('admin kick "%(name)s"')
-    _commands['ban'] = ('admin kickban "%(name)s" "%(admin)s" "[B3] %(reason)s"')
+    _commands['kick'] = ('admin kick "%(playerid)s"')
+    _commands['ban'] = ('admin kickban "%(playerid)s" "%(admin)s" "[B3] %(reason)s"')
     _commands['unban'] = ('admin unban "%(name)s"')
-    _commands['tempban'] = ('admin kick "%(name)s"')
+    _commands['tempban'] = ('admin kick "%(playerid)s"')
     _commands['maprotate'] = ('admin nextmap')
     
     _settings = {'line_length': 90, 
@@ -679,9 +679,9 @@ class HomefrontParser(b3.parser.Parser):
             self.say(fullreason)
 
         if client.guid:
-            self.write(self.getCommand('kick', name=client.guid))
+            self.write(self.getCommand('kick', playerid=client.guid))
         else:
-            self.write(self.getCommand('kick', name=client.cid))
+            self.write(self.getCommand('kick', playerid=client.cid))
         self.queueEvent(self.getEvent('EVT_CLIENT_KICK', reason, client))
         client.disconnect()
 
@@ -700,11 +700,11 @@ class HomefrontParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
         
-        banid = client.cid
-        if banid is None and client.name:
-            banid = client.name
+        banid = client.guid
+        if banid is None:
+            banid = client.cid
             self.debug('using name to ban : %s' % banid)
-        self.write(self.getCommand('ban', name=banid, admin=admin, reason=reason))
+        self.write(self.getCommand('ban', playerid=banid, admin=admin, reason=reason))
         # saving banid in the name column in database
         # so we can unban a unconnected player using name
         client._name = banid
@@ -747,7 +747,10 @@ class HomefrontParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.write(self.getCommand('tempban', name=client.cid))
+        if client.guid:
+            self.write(self.getCommand('kick', playerid=client.guid))
+        else:
+            self.write(self.getCommand('kick', playerid=client.cid))
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', reason, client))
         client.disconnect()
 
