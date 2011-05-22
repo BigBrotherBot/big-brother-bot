@@ -48,7 +48,7 @@
 # * changed adminbigsay and adminsay
 # 2011-05-22 : 0.9.2
 # * do not rely on RETRIEVE BANLIST response to unban
-# 2011-05-22 : 0.9.3
+# 2011-05-22 : 1.0
 # * fix onServerVotestart
 #
 from b3 import functions
@@ -71,7 +71,7 @@ import time
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.9.3'
+__version__ = '1.0'
 
 
 
