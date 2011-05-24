@@ -50,6 +50,9 @@
 # * do not rely on RETRIEVE BANLIST response to unban
 # 2011-05-22 : 1.0
 # * fix onServerVotestart
+# 2011-05-24 : 1.0.1
+# * "kill" penalty rcon command now uses SteamID instead of player name
+#
 #
 from b3 import functions
 from b3.clients import Client
@@ -71,7 +74,7 @@ import time
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.0'
+__version__ = '1.0.1'
 
 
 
@@ -905,7 +908,7 @@ class HomefrontParser(b3.parser.Parser):
         /!\ This method must return True if the penalty was inflicted.
         """
         if type == 'kill' and client:
-            self.write('admin kill "%s"' % client.name)
+            self.write('admin kill "%s"' % client.guid)
             if reason:
                 client.message("%s" % reason)
             return True
