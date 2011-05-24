@@ -32,9 +32,11 @@
 # 2011-05-22 - 1.4 - Courgette
 # * create specific events : EVT_GAME_ROUND_PLAYER_SCORES and EVT_GAME_ROUND_TEAM_SCORES
 # * handle Frostbite events : OnServerRoundover, OnServerRoundoverplayers and OnServerRoundoverteamscores
+# 2011-05-24 - 1.4.1 - Courgette
+# * fix getSupportedMaps() so it uses the maplist set for the next round instead of current
 #
 __author__  = 'Courgette'
-__version__ = '1.4'
+__version__ = '1.4.1'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -435,8 +437,8 @@ class AbstractParser(b3.parser.Parser):
 
     def getSupportedMaps(self):
         """return a list of supported levels for the current game mod"""
-        self.getServerInfo() ## make sure to update gameType first
-        supportedMaps = self.write(('admin.supportedMaps', self.game.gameType))
+        [currentMode] = self.write(('admin.getPlaylist'))
+        supportedMaps = self.write(('admin.supportedMaps', currentMode))
         return supportedMaps
 
     def getMapsSoundingLike(self, mapname):
