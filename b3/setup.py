@@ -49,7 +49,7 @@
 # 2011/05/19 - 1.0 - xlr8or
 #    * Added Update class
 #    * Version 1.0 merged into master branch (for B3 v1.6.0 release)
-
+#
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
 ## @file
@@ -861,14 +861,21 @@ class Update(Setup):
             self.executeSql('@b3/sql/b3-update-1.3.0.sql', _dbstring)
             self.add_buffer('Updating database to version 1.3.0...\n')
         else:
-            self.add_buffer('Version newer than 1.3.0...\n')
+            self.add_buffer('Version older than 1.3.0...\n')
 
         # update to v1.6.0
         if _currentversion >= '1.6.0':
             self.executeSql('@b3/sql/b3-update-1.6.0.sql', _dbstring)
             self.add_buffer('Updating database to version 1.6.0...\n')
         else:
-            self.add_buffer('Version newer than 1.6.0...\n')
+            self.add_buffer('Version older than 1.6.0...\n')
+
+        # update to v1.7.0
+        if _currentversion >= '1.7.0':
+            self.executeSql('@b3/sql/b3-update-1.7.0.sql', _dbstring)
+            self.add_buffer('Updating database to version 1.7.0...\n')
+        else:
+            self.add_buffer('Version older than 1.7.0...\n')
 
         # need to update xlrstats?
         _result = self.raw_default('Do you have xlrstats installed (with default table names)?', 'yes')
