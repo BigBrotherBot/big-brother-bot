@@ -34,9 +34,11 @@
 # * handle Frostbite events : OnServerRoundover, OnServerRoundoverplayers and OnServerRoundoverteamscores
 # 2011-05-24 - 1.4.1 - Courgette
 # * fix getSupportedMaps() so it uses the maplist set for the next round instead of current
+# 2011-05-25 - 1.4.2 - Courgette
+# * fix bug introduced in 1.4.1
 #
 __author__  = 'Courgette'
-__version__ = '1.4.1'
+__version__ = '1.4.2'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -437,7 +439,7 @@ class AbstractParser(b3.parser.Parser):
 
     def getSupportedMaps(self):
         """return a list of supported levels for the current game mod"""
-        [currentMode] = self.write(('admin.getPlaylist'))
+        [currentMode] = self.write(('admin.getPlaylist',))
         supportedMaps = self.write(('admin.supportedMaps', currentMode))
         return supportedMaps
 
