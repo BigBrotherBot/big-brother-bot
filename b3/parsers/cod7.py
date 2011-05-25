@@ -39,13 +39,15 @@
 #   * reflect that cid are not converted to int anymore in the clients module
 # 14.04.2011 - 1.0.8 - Freelander
 #   * Fixed rcon set command that was changed as setadmindvar in CoD7
+# 25.05.2011 - 1.1 - Courgette
+#   * kick commands now sends reason
 #
 
 ## @file
 #  CoD7 Parser
 
 __author__  = 'Freelander, Courgette, Just a baka, Bravo17'
-__version__ = '1.0.8'
+__version__ = '1.1'
 
 import re
 import string
@@ -74,10 +76,10 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
     _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
     _commands['say'] = 'say %(prefix)s %(message)s'
     _commands['set'] = 'setadmindvar %(name)s "%(value)s"'
-    _commands['kick'] = 'clientkick %(cid)s'
+    _commands['kick'] = 'clientkick %(cid)s "%(reason)s"'
     _commands['ban'] = 'banclient %(cid)s'
     _commands['unban'] = 'unbanuser %(name)s'
-    _commands['tempban'] = 'clientkick %(cid)s'
+    _commands['tempban'] = 'clientkick %(cid)s "%(reason)s"'
 
     """\
     Next actions need translation to the EVT_CLIENT_ACTION (Treyarch has a different approach on actions)
