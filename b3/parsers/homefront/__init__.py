@@ -52,7 +52,8 @@
 # * fix onServerVotestart
 # 2011-05-24 : 1.0.1
 # * "kill" penalty rcon command now uses SteamID instead of player name
-#
+# 2011-05-27 : 1.0.2
+# * KILL event correctly parsed with player names or player SteamID
 #
 from b3 import functions
 from b3.clients import Client
@@ -74,7 +75,7 @@ import time
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 
 
@@ -95,6 +96,7 @@ class HomefrontParser(b3.parser.Parser):
     _ini_file = None
     _currentmap = None
     _mapline = re.compile(r'^(?P<start>Map=)(?P<mapname>[^\?]+)\?(?P<sep>GameMode=)(?P<gamemode>.*)$', re.IGNORECASE)
+    _reSteamId64 = re.compile(r'^[0-9]{17}$')
     ftpconfig = None
     _ftplib_debug_level = 0 # 0: no debug, 1: normal debug, 2: extended debug
     _connectionTimeout = 30
@@ -379,23 +381,32 @@ class HomefrontParser(b3.parser.Parser):
     def onServerKill(self, data):
         # [string: Killer Name] [string: DamageType] [string: Victim Name]
         # kill example: courgette EXP_Frag Freelander
+        # kill example: 1100012402D1245 EXP_Frag 1100012402D1217
         # suicide example#1: Freelander Suicided Freelander (triggers when player leaves the server)
         # suicide example#2: Freelander EXP_Frag Freelander
-        match = re.search(r"^(?P<data>(?P<aname>[^;]+)\s+(?P<aweap>[A-z0-9_-]+)\s+(?P<vname>[^;]+))$", data)
+        match = re.search(r"^(?P<data>(?P<attacker>[^;]+)\s+(?P<aweap>[A-z0-9_-]+)\s+(?P<victim>[^;]+))$", data)
         ## [int: Killer SteamID] [string: DamageType] [int: Victim SteamID]
         #match = re.search(r"^(?P<data>(?P<auid>.*)\s+(?P<aweap>[A-z0-9_-]+)\s+(?P<vuid>.*))$", data)
         if not match:
             self.error("Can't parse kill line: %s" % data)
             return
         else:
-            attacker = self.getClient(match.group('aname'))
-            #attacker = self.clients.getByGUID(match.group('auid'))
+            attackerid = match.group('attacker')
+            if self._reSteamId64.match(attackerid):
+                attacker = self.clients.getByGUID(attackerid)
+            else:
+                # not a SteamID ? must be a player name
+                attacker = self.getClient(attackerid)
             if not attacker:
                 self.debug('No attacker!')
                 return
 
-            victim = self.getClient(match.group('vname'))
-            #victim = self.clients.getByGUID(match.group('vuid'))
+            victimid = match.group('victim')
+            if self._reSteamId64.match(victimid):
+                victim = self.clients.getByGUID(victimid)
+            else:
+                # not a SteamID ? must be a player name
+                victim = self.getClient(victimid)
             if not victim:
                 self.debug('No victim!')
                 return
