@@ -23,8 +23,10 @@
 #     Make sure that maxGapBytes is never exceeded
 # 2011-04-27 - 0.2.1 - 82ndab-Bravo17
 #     Auto assign of unique local games_mp log file
+# 2011-05-26 - 0.2.2 - 82ndab-Bravo17
+#   *  Append to local log implemented
 
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 __author__ = 'GrosBedo'
  
 import b3, threading
@@ -50,6 +52,7 @@ class HttpytailPlugin(b3.plugin.Plugin):
     buffer = None
     _remoteFileOffset = None
     _nbConsecutiveConnFailure = 0
+    _logAppend = False
     
     _httpdelay = 0.150
     
@@ -83,7 +86,12 @@ class HttpytailPlugin(b3.plugin.Plugin):
             
         if self.console.config.get('server','game_log')[0:7] == 'http://' :
             self.initThread(self.console.config.get('server','game_log'))
-    
+
+        if self.console.config.has_option('server', 'log_append'):
+            self._logAppend = self.console.config.getboolean('server', 'log_append')
+        else:
+            self._logAppend = False
+
     def onLoadConfig(self):
         try:
             self._connectionTimeout = self.config.getint('settings', 'timeout')
@@ -117,7 +125,9 @@ class HttpytailPlugin(b3.plugin.Plugin):
             try:
                 # Opening the local temporary file
                 self.file = open(self.lgame_log, 'ab')
-                
+                self.file.write('\r\n')
+                self.file.write('B3 has been restarted\r\n')
+                self.file.write('\r\n')
                 # Crafting the HTTP request
                 # - user agent header
                 headers =  { 'User-Agent'  : user_agent  }
@@ -215,7 +225,17 @@ class HttpytailPlugin(b3.plugin.Plugin):
                 self.debug(str(e))
 
                 self.file.close()
-                self.file = open(self.lgame_log, 'w')
+                self.debug('http error: resetting local log file?')
+                if self._logAppend:
+                    try:
+                        self.file = open(self.lgame_log, 'ab')
+                        self.file.write('\r\n')
+                        self.file.write('B3 has restarted writing the log file\r\n')
+                        self.file.write('\r\n')
+                    except:
+                        self.file = open(self.lgame_log, 'w')
+                else:
+                    self.file = open(self.lgame_log, 'w')
                 self.file.close()
                 self.file = open(self.lgame_log, 'ab')
                 try:

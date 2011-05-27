@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
+# 26/05/2011 - 1.0.2 - 82ndab-Bravo17
+#   *  Append to local log implemented
 # 27/04/2011 - 1.0.1 - 82ndab-Bravo17
 #   * Auto assign of unique local games_mp log file
 # 22/10/2010 - 1.0 - Courgette
@@ -28,7 +30,7 @@
 # * first attempt. Briefly tested. Seems to work
 
 
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 __author__ = 'Courgette'
  
 import b3, threading
@@ -59,7 +61,8 @@ class SftpytailPlugin(b3.plugin.Plugin):
     buffer = None
     _remoteFileOffset = None
     _nbConsecutiveConnFailure = 0
-    
+    _logAppend = False
+
     _sftpdelay = 0.150
     
     def onStartup(self):
@@ -86,7 +89,12 @@ class SftpytailPlugin(b3.plugin.Plugin):
 
         if self.console.config.get('server','game_log')[0:7] == 'sftp://' :
             self.initThread(self.console.config.get('server','game_log'))
-        
+
+        if self.console.config.has_option('server', 'log_append'):
+            self._logAppend = self.console.config.getboolean('server', 'log_append')
+        else:
+            self._logAppend = False
+
     def onLoadConfig(self):
         try:
             self._connectionTimeout = self.config.getint('settings', 'timeout')
@@ -118,6 +126,9 @@ class SftpytailPlugin(b3.plugin.Plugin):
         transport = sftp = None
         rfile = None
         self.file = open(self.lgame_log, 'ab')
+        self.file.write('\r\n')
+        self.file.write('B3 has been restarted\r\n')
+        self.file.write('\r\n')
         while self.console.working:
             try:
                 if not sftp:
@@ -162,7 +173,17 @@ class SftpytailPlugin(b3.plugin.Plugin):
                 if self.console._paused is False:
                     self.console.pause()
                 self.file.close()
-                self.file = open(self.lgame_log, 'w')
+                self.debug('sFtp error: resetting local log file?')
+                if self._logAppend:
+                    try:
+                        self.file = open(self.lgame_log, 'ab')
+                        self.file.write('\r\n')
+                        self.file.write('B3 has restarted writing the log file\r\n')
+                        self.file.write('\r\n')
+                    except:
+                        self.file = open(self.lgame_log, 'w')
+                else:
+                    self.file = open(self.lgame_log, 'w')
                 self.file.close()
                 self.file = open(self.lgame_log, 'ab')
                 try:
