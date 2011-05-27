@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
+# 11/05/2011 - 1.5.7 - 82ndab-Bravo17
+#   *  Append to local log implemented
 # 27/04/2011 - 1.5.6 - 82ndab-Bravo17
 #   *  Auto assign of unique local games_mp log file
 # 29/10/2010 - 1.5.5 - Courgette
@@ -57,7 +59,7 @@
 # 17/06/2009 - 1.0 - Bakes
 #     Initial Plugin, basic functionality.
  
-__version__ = '1.5.6'
+__version__ = '1.5.7'
 __author__ = 'Bakes, Courgette'
  
 import b3, threading
@@ -84,7 +86,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
     buffer = None
     _remoteFileOffset = None
     _nbConsecutiveConnFailure = 0
-    
+    _logAppend = False
     
     _ftplib_debug_level = 0 # 0: no debug, 1: normal debug, 2: extended debug
     
@@ -120,6 +122,11 @@ class FtpytailPlugin(b3.plugin.Plugin):
 
         if self.console.config.get('server','game_log')[0:6] == 'ftp://' :
             self.initThread(self.console.config.get('server','game_log'))
+            
+        if self.console.config.has_option('server', 'log_append'):
+            self._logAppend = self.console.config.getboolean('server', 'log_append')
+        else:
+            self._logAppend = False
     
     def onLoadConfig(self):
         try:
@@ -173,6 +180,9 @@ class FtpytailPlugin(b3.plugin.Plugin):
                 self.buffer = self.buffer + block
         ftp = None
         self.file = open(self.lgame_log, 'ab')
+        self.file.write('\r\n')
+        self.file.write('B3 has been restarted\r\n')
+        self.file.write('\r\n')
         while self.console.working:
             try:
                 if not ftp:
@@ -207,7 +217,17 @@ class FtpytailPlugin(b3.plugin.Plugin):
                 if self.console._paused is False:
                     self.console.pause()
                 self.file.close()
-                self.file = open(self.lgame_log, 'w')
+                self.debug('ftp error: resetting local log file?')
+                if self._logAppend:
+                    try:
+                        self.file = open(self.lgame_log, 'ab')
+                        self.file.write('\r\n')
+                        self.file.write('B3 has restarted writing the log file\r\n')
+                        self.file.write('\r\n')
+                    except:
+                        self.file = open(self.lgame_log, 'w')
+                else:
+                    self.file = open(self.lgame_log, 'w')
                 self.file.close()
                 self.file = open(self.lgame_log, 'ab')
                 try:
