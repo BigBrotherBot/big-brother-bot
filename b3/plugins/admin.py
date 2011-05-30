@@ -867,7 +867,7 @@ class AdminPlugin(b3.plugin.Plugin):
             cmd.sayLoudOrPM(client, self.getMessage('admins', string.join(nlist, ', ')))
         else:
             self.debug('no admins found')
-
+            cmd.sayLoudOrPM(client, 'There are no admins online')
     def cmd_rebuild(self, data, client, cmd=None):
         """\
         - sync up connected players
