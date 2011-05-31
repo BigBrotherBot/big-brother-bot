@@ -1,3 +1,4 @@
 MySQL-python
 nose
+nosexcover
 mock
