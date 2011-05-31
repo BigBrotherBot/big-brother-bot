@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   31/05/2011 - 1.11.0 - Courgette
+#    sqlite compatible
+#    few fixes discovered doing unittests
 #   11/04/2011 - 1.10.0 - Courgette
 #    the query() method now accepts a second parameter which can be an optional
 #    dict of variables to bind on the query
@@ -55,7 +58,7 @@
 #   Added data column to penalties table
 
 __author__  = 'ThorN'
-__version__ = '1.10.0'
+__version__ = '1.11.0'
 
 
 from b3 import functions
@@ -95,11 +98,11 @@ class DatabaseStorage(Storage):
             self.lastrowid = self._cursor.lastrowid
 
             try:
-                self.moveNext()
+                self.EOF = self.moveNext()
             except:
-                pass # not a select statement
+                # not a select statement
+                self.EOF = not self.fields or self.rowcount <= 0 or not self._cursor 
 
-            self.EOF = (not self.fields or self.rowcount <= 0 or not self._cursor)
 
         def moveNext(self):
             if not self.EOF:
@@ -174,13 +177,11 @@ class DatabaseStorage(Storage):
             except ImportError, err:
                 self.console.critical("%s. You need to install python-mysqldb. Look for 'dependencies' in B3 documentation.",err)
         elif protocol == 'sqlite':
-            # Break it off here
-            self.console.critical('SQLite is currently not supported!')
             import sqlite3
-            path = self.dsnDict['path']
-            if self.dsnDict['host']:
-                path = self.dsnDict['host'] + path
-            return sqlite3.connect(path)
+            path = self.dsn[9:]
+            conn = sqlite3.connect(path)
+            conn.isolation_level = None ## set autocommit mode
+            return conn
         else:
             raise Exception('Unknown database protocol %s' % protocol)
 
@@ -205,7 +206,10 @@ class DatabaseStorage(Storage):
         self.closeConnection()
 
     def connect(self):
-        self.console.bot('Attempting to connect to database %s://%s:******@%s%s...', self.dsnDict['protocol'], self.dsnDict['user'], self.dsnDict['host'], self.dsnDict['path'])
+        if self.dsnDict['protocol'] == 'mysql':
+            self.console.bot('Attempting to connect to database %s://%s:******@%s%s...', self.dsnDict['protocol'], self.dsnDict['user'], self.dsnDict['host'], self.dsnDict['path'])
+        else:
+            self.console.bot('Attempting to connect to database %s', self.dsn)
         self._count += 1
 
         self.closeConnection()
@@ -242,7 +246,10 @@ class DatabaseStorage(Storage):
         self._lock.acquire()
         try:
             cursor = self.db.cursor()
-            cursor.execute(query, bindata)
+            if bindata is None:
+                cursor.execute(query)
+            else:
+                cursor.execute(query, bindata)
             c = DatabaseStorage.Cursor(cursor, self.db)
         finally:
             self._lock.release()
@@ -279,6 +286,7 @@ class DatabaseStorage(Storage):
             except Exception, e:
                 # (2013, 'Lost connection to MySQL server during query')
                 # (2006, 'MySQL server has gone away')
+                self.console.error('[%s] %r' % (query, bindata))
 
                 if e[0] == 2013 or e[0] == 2006:
                     self.console.warning('Query failed, trying to reconnect - %s: %s' % (type(e), e))
@@ -594,7 +602,7 @@ class DatabaseStorage(Storage):
     def getClientIpAddresses(self, client):
         self.console.debug('Storage: getClientIpAddresses %s' % client)
         cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'ipaliases', { 'client_id' : client.id }, 'id'))
-
+        
         if not cursor:
             return ()
 
@@ -650,7 +658,7 @@ class DatabaseStorage(Storage):
         else:
             data = {}
 
-        if penalty.keyword and not re.match(r'^[a-z0-9]$', penalty.keyword, re.I):
+        if penalty.keyword and not re.match(r'^[a-z0-9]+$', penalty.keyword, re.I):
             penalty.keyword = ''
 
         for f in fields:
@@ -691,12 +699,39 @@ class DatabaseStorage(Storage):
         penalty.adminId = int(g['admin_id'])
     
         return penalty
+    
+    def _createPenaltyFromRow(self, g):
+        if g['type'] == 'Warning':
+            penalty = b3.clients.ClientWarning()
+        elif g['type'] == 'TempBan':
+            penalty = b3.clients.ClientTempBan()
+        elif g['type'] == 'Kick':
+            penalty = b3.clients.ClientKick()
+        elif g['type'] == 'Ban':
+            penalty = b3.clients.ClientBan()
+        elif g['type'] == 'Notice':
+            penalty = b3.clients.ClientNotice()
+        else:
+            penalty = b3.clients.Penalty()
+        penalty.id = int(g['id'])
+        penalty.type    = g['type']
+        penalty.keyword = g['keyword']
+        penalty.reason = g['reason']
+        penalty.data = g['data']
+        penalty.inactive    = int(g['inactive'])
+        penalty.timeAdd  = int(g['time_add'])
+        penalty.timeEdit = int(g['time_edit'])
+        penalty.timeExpire = int(g['time_expire'])
+        penalty.clientId = int(g['client_id'])
+        penalty.adminId = int(g['admin_id'])
+        penalty.duration = int(g['duration'])
+        return penalty
 
     def getClientPenalties(self, client, type='Ban'):
         self.console.debug('Storage: getClientPenalties %s' % client)
 
         where = QueryBuilder(self.db).WhereClause( { 'type' : type, 'client_id' : client.id, 'inactive' : 0 } )
-        where += ' && (time_expire = -1 || time_expire > %s)' % int(time.time())
+        where += ' and (time_expire = -1 or time_expire > %s)' % int(time.time())
 
         cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'penalties', where, 'time_add DESC'))
 
@@ -705,117 +740,39 @@ class DatabaseStorage(Storage):
 
         penalties = []
         while not cursor.EOF:
-            g = cursor.getRow()
-
-            if g['type'] == 'Warning':
-                penaltyType = b3.clients.ClientWarning
-            elif g['type'] == 'TempBan':
-                penaltyType = b3.clients.ClientTempBan
-            elif g['type'] == 'Kick':
-                penaltyType = b3.clients.ClientKick
-            elif g['type'] == 'Ban':
-                penaltyType = b3.clients.ClientBan
-            elif g['type'] == 'Notice':
-                penaltyType = b3.clients.ClientNotice
-            else:
-                penaltyType = b3.clients.Penalty
-
-            penalty = penaltyType()
-            penalty.id = int(g['id'])
-            penalty.type    = g['type']
-            penalty.keyword = g['keyword']
-            penalty.reason = g['reason']
-            penalty.data = g['data']
-            penalty.inactive    = int(g['inactive'])
-            penalty.timeAdd  = int(g['time_add'])
-            penalty.timeEdit = int(g['time_edit'])
-            penalty.timeExpire = int(g['time_expire'])
-            penalty.clientId = int(g['client_id'])
-            penalty.adminId = int(g['admin_id'])
-            penalty.duration = int(g['duration'])
-            penalties.append(penalty)
+            penalties.append(self._createPenaltyFromRow(cursor.getRow()))
             cursor.moveNext()
-
         cursor.close()
 
         return penalties
 
     def getClientLastPenalty(self, client, type='Ban'):
         where = QueryBuilder(self.db).WhereClause( { 'type' : type, 'client_id' : client.id, 'inactive' : 0 } )
-        where += ' && (time_expire = -1 || time_expire > %s)' % int(time.time())
+        where += ' and (time_expire = -1 or time_expire > %s)' % int(time.time())
 
         cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'penalties', where, 'time_add DESC', 1))
         g = cursor.getOneRow()
         if not g:
             return None
-
-        if g['type'] == 'Warning':
-            P = b3.clients.ClientWarning()
-        elif g['type'] == 'TempBan':
-            P = b3.clients.ClientTempBan()
-        elif g['type'] == 'Kick':
-            P = b3.clients.ClientKick()
-        elif g['type'] == 'Ban':
-            P = b3.clients.ClientBan()
-        else:
-            P = b3.clients.ClientPenalty()
-
-        P.id = int(g['id'])
-        P.type    = g['type']
-        P.keyword = g['keyword']
-        P.reason = g['reason']
-        P.data = g['data']
-        P.inactive    = int(g['inactive'])
-        P.timeAdd  = int(g['time_add'])
-        P.timeEdit = int(g['time_edit'])
-        P.timeExpire = int(g['time_expire'])
-        P.clientId = int(g['client_id'])
-        P.adminId = int(g['admin_id'])
-        P.duration = int(g['duration'])
-
-        return P
+        return self._createPenaltyFromRow(g)
 
     def getClientFirstPenalty(self, client, type='Ban'):
         where = QueryBuilder(self.db).WhereClause( { 'type' : type, 'client_id' : client.id, 'inactive' : 0 } )
-        where += ' && (time_expire = -1 || time_expire > %s)' % int(time.time())
+        where += ' and (time_expire = -1 or time_expire > %s)' % int(time.time())
 
         cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'penalties', where, 'time_expire DESC, time_add ASC', 1))
         g = cursor.getOneRow()
-        if g:
+        if not g:
             return None
+        return self._createPenaltyFromRow(g)
 
-        if g['type'] == 'Warning':
-            P = b3.clients.ClientWarning()
-        elif g['type'] == 'TempBan':
-            P = b3.clients.ClientTempBan()
-        elif g['type'] == 'Kick':
-            P = b3.clients.ClientKick()
-        elif g['type'] == 'Ban':
-            P = b3.clients.ClientBan()
-        else:
-            P = b3.clients.ClientPenalty()
-
-        P.id = int(g['id'])
-        P.type    = g['type']
-        P.keyword = g['keyword']
-        P.reason = g['reason']
-        P.data = g['data']
-        P.inactive    = int(g['inactive'])
-        P.timeAdd  = int(g['time_add'])
-        P.timeEdit = int(g['time_edit'])
-        P.timeExpire = int(g['time_expire'])
-        P.clientId = int(g['client_id'])
-        P.adminId = int(g['admin_id'])
-        P.duration = int(g['duration'])
-
-        return P
 
     def disableClientPenalties(self, client, type='Ban'):
         self.query(QueryBuilder(self.db).UpdateQuery( { 'inactive' : 1 }, 'penalties', { 'type' : type, 'client_id' : client.id, 'inactive' : 0 } ))        
 
     def numPenalties(self, client, type='Ban'):
         where = QueryBuilder(self.db).WhereClause( { 'type' : type, 'client_id' : client.id, 'inactive' : 0 } )
-        where += ' && (time_expire = -1 || time_expire > %s)' % int(time.time())
+        where += ' and (time_expire = -1 or time_expire > %s)' % int(time.time())
 
 
         cursor = self.query('SELECT COUNT(id) total FROM penalties WHERE %s' % where)
@@ -867,50 +824,7 @@ class DatabaseStorage(Storage):
     
         return group
 
-    def setGroup(self, group):
-        """
-        id  int(10)  UNSIGNED No    auto_increment              
-        time_edit  int(10)  UNSIGNED No  0                
-        name  varchar(32)   No                  
-        keyword  varchar(32)   No                  
-        time_add  int(10)  UNSIGNED No  0                
-        level  int(10)  UNSIGNED No  0
-        """
 
-        self.console.debug('Storage: setGroup %s' % group)
-
-        fields = (
-            'time_edit',
-            'name',
-            'keyword',
-            'time_add',
-            'level'
-        )
-    
-        if group.id:
-            data = { 'id' : group.id }
-        else:
-            data = {}
-
-        for f in fields:
-            if hasattr(group, self.getVar(f)):
-                data[f] = getattr(group, self.getVar(f))
-
-
-        self.console.debug('Storage: setGroup data %s' % data)
-        if group.id:
-            self.query(QueryBuilder(self.db).UpdateQuery(data, 'groups', { 'group' : group.id }))
-        else:
-            cursor = self.query(QueryBuilder(self.db).InsertQuery(data, 'groups'))
-
-            if not cursor:
-                group.id = None
-            else:
-                group.id = cursor.lastrowid
-
-        return group.id
-    
-    
     def executeSql(self, filename):
         """This method executes an external sql file"""
         sqlFile = b3.getAbsolutePath(filename)
@@ -920,4 +834,24 @@ class DatabaseStorage(Storage):
         sql_statements = sql_text.split(';')
         for s in sql_statements:
             if len(s.strip()):
+                self.console.verbose2(s)
                 self.query(s)
+
+if __name__ == '__main__':
+    import b3.output
+    console = b3.output.getInstance('../../debug.log', log2console=True)
+    console.screen = sys.stdout
+    console.setLevel(8)
+    SQLITE_DB = "sqlite://:memory:"
+    #SQLITE_DB = r"sqlite://c:/Users/Thomas/b3.db"
+    storage = DatabaseStorage(SQLITE_DB, console)
+    storage.executeSql('@b3/sql/sqlite/b3.sql')
+    storage.query("insert into ipaliases (ip, client_id) values ('1.2.4.5', 15)")
+    cursor = storage.query("select * from ipaliases")
+    print "-"*30
+    while not cursor.EOF:
+        print cursor.getRow()
+        cursor.moveNext()
+    print "-"*30
+    
+    
