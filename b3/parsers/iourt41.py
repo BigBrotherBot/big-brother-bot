@@ -122,9 +122,12 @@
 #    * reflect that cid are not converted to int anymore in the clients module
 # v1.7.17 - 03/05/2011 - Courgette
 #     * reflect changes in inflictCustomPenalty method signature
-
-__author__  = 'xlr8or'
-__version__ = '1.7.17'
+# v1.8.0 - 31/05/2011 - Courgette
+#     * Damage event now carry correct damage points
+#     * Damage event weapon code is now the same as the one used for Kill events
+#
+__author__  = 'xlr8or, Courgette'
+__version__ = '1.8.0'
 
 
 from b3.parsers.q3a.abstractParser import AbstractParser
@@ -282,6 +285,74 @@ class Iourt41Parser(AbstractParser):
     UT_MOD_M4='38'
     UT_MOD_FLAG='39'
     UT_MOD_GOOMBA='40'
+    
+    ## weapons id on Hit: lines are different than the one
+    ## on the Kill: lines. Here the translation table
+    hitweapon2killweapon = {
+        1: UT_MOD_KNIFE,
+        2: UT_MOD_BERETTA,
+        3: UT_MOD_DEAGLE,
+        4: UT_MOD_SPAS,
+        5: UT_MOD_MP5K,
+        6: UT_MOD_UMP45,
+        8: UT_MOD_LR300,
+        9: UT_MOD_G36,
+        10: UT_MOD_PSG1,
+        14: UT_MOD_SR8,
+        15: UT_MOD_AK103,
+        17: UT_MOD_NEGEV,
+        19: UT_MOD_M4,
+        22: UT_MOD_KNIFE_THROWN,
+    }
+
+    """ From data provided by Garreth http://bit.ly/jf4QXc on http://bit.ly/krwBCv :
+
+                                Head(0) Helmet(1)     Torso(2)     Kevlar(3)     Arms(4)    Legs(5)    Body(6)    Killed
+    MOD_TELEFRAG='5'             0        0             0             0             0         0         0         0
+    UT_MOD_KNIFE='12'           100      60            44            35            20        20        44        100
+    UT_MOD_KNIFE_THROWN='13'    100      60            44            35            20        20        44        100
+    UT_MOD_BERETTA='14'         100      34            30            20            11        11        30        100
+    UT_MOD_DEAGLE='15'          100      66            57            38            22        22        57        100
+    UT_MOD_SPAS='16'            25       25            25            25            25        25        25        100
+    UT_MOD_UMP45='17'           100      51            44            29            17        17        44        100
+    UT_MOD_MP5K='18'            50       34            30            20            11        11        30        100
+    UT_MOD_LR300='19'           100      51            44            29            17        17        44        100
+    UT_MOD_G36='20'             100      51            44            29            17        17        44        100
+    UT_MOD_PSG1='21'            100      63            97            63            36        36        97        100
+    UT_MOD_HK69='22'            50       50            50            50            50        50        50        100
+    UT_MOD_BLED='23'            15       15            15            15            15        15        15        15
+    UT_MOD_KICKED='24'          20       20            20            20            20        20        20        100
+    UT_MOD_HEGRENADE='25'       50       50            50            50            50        50        50        100
+    UT_MOD_SR8='28'             100      100           100           100           50        50        100       100
+    UT_MOD_AK103='30'           100      58            51            34            19        19        51        100
+    UT_MOD_NEGEV='35'           50       34            30            20            11        11        30        100
+    UT_MOD_HK69_HIT='37'        20       20            20            20            20        20        20        100
+    UT_MOD_M4='38'              100      51            44            29            17        17        44        100
+    UT_MOD_GOOMBA='40'          100      100           100           100           100       100       100       100
+    """
+    damage = {
+        MOD_TELEFRAG: [0, 0, 0, 0, 0, 0, 0, 0],
+        UT_MOD_KNIFE: [100, 60, 44, 35, 20, 20, 44, 100],
+        UT_MOD_KNIFE_THROWN: [100, 60, 44, 35, 20, 20, 44, 100],
+        UT_MOD_BERETTA: [100, 34, 30, 20, 11, 11, 30, 100],
+        UT_MOD_DEAGLE: [100, 66, 57, 38, 22, 22, 57, 100],
+        UT_MOD_SPAS: [25, 25, 25, 25, 25, 25, 25, 100],
+        UT_MOD_UMP45: [100, 51, 44, 29, 17, 17, 44, 100],
+        UT_MOD_MP5K: [50, 34, 30, 20, 11, 11, 30, 100],
+        UT_MOD_LR300: [100, 51, 44, 29, 17, 17, 44, 100],
+        UT_MOD_G36: [100, 51, 44, 29, 17, 17, 44, 100],
+        UT_MOD_PSG1: [100, 63, 97, 63, 36, 36, 97, 100],
+        UT_MOD_HK69: [50, 50, 50, 50, 50, 50, 50, 100],
+        UT_MOD_BLED: [15, 15, 15, 15, 15, 15, 15, 15],
+        UT_MOD_KICKED: [20, 20, 20, 20, 20, 20, 20, 100],
+        UT_MOD_HEGRENADE: [50, 50, 50, 50, 50, 50, 50, 100],
+        UT_MOD_SR8: [100, 100, 100, 100, 50, 50, 100, 100],
+        UT_MOD_AK103: [100, 58, 51, 34, 19, 19, 51, 100],
+        UT_MOD_NEGEV: [50, 34, 30, 20, 11, 11, 30, 100],
+        UT_MOD_HK69_HIT: [20, 20, 20, 20, 20, 20, 20, 100],
+        UT_MOD_M4: [100, 51, 44, 29, 17, 17, 44, 100],
+        UT_MOD_GOOMBA: [100, 100, 100, 100, 100, 100, 100, 100],
+     }
 
     def startup(self):
 
@@ -650,6 +721,8 @@ class Iourt41Parser(AbstractParser):
             event = b3.events.EVT_CLIENT_DAMAGE_TEAM
 
         victim.hitloc = match.group('hitloc')
+        weapon = self._convertHitWeaponToKillWeapon(match.group('aweap'))
+        points = self._getDamagePoints(weapon, victim.hitloc)
         #victim.state = b3.STATE_ALIVE
         # need to pass some amount of damage for the teamkill plugin - 15 seems okay
         return b3.events.Event(event, (15, match.group('aweap'), victim.hitloc), attacker, victim)
@@ -1381,8 +1454,23 @@ class Iourt41Parser(AbstractParser):
                 else:
                     self.debug('no client found for slot %s' % m.group('slot'))
 
-
-
+    def _getDamagePoints(self, weapon, hitloc):
+        try:
+            points = self.damage[weapon][int(hitloc)]
+            self.debug("_getDamagePoints(%s, %s) -> %s" % (weapon, hitloc, points))
+            return points
+        except KeyError, err:
+            self.warning("_getDamagePoints(%s, %s) cannot find value : %s" % (weapon, hitloc, err))
+            return 15
+        
+    def _convertHitWeaponToKillWeapon(self, hitweapon_id):
+        """on Hit: lines identifiers for weapons are different than
+        the one on Kill: lines"""
+        try:
+            return self.hitweapon2killweapon[int(hitweapon_id)]
+        except KeyError, err:
+            self.warning("unknown weapon id on Hit line: %s", err)
+            return None
 
 """
 #----- Actions -----------------------------------------------------------------
