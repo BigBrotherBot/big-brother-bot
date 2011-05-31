@@ -181,6 +181,13 @@ class DatabaseStorage(Storage):
             path = self.dsn[9:]
             conn = sqlite3.connect(path)
             conn.isolation_level = None ## set autocommit mode
+            if path == ':memory:':
+                # the user want the database to be created in memory
+                # usualy for testing purpose. In that case we need
+                # to create the tables first
+                sqlFile = b3.getAbsolutePath("@b3/sql/sqlite/b3.sql")
+                with open(sqlFile) as f:
+                    conn.executescript(f.read())
             return conn
         else:
             raise Exception('Unknown database protocol %s' % protocol)
