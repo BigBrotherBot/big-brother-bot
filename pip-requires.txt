@@ -1,0 +1,3 @@
+MySQL-python
+nose
+mock
