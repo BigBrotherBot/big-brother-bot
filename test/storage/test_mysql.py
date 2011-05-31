@@ -19,9 +19,9 @@
 from b3.storage.database import DatabaseStorage
 from test import B3TestCase
 from test.storage.common import StorageAPITest
-import MySQLdb
 import b3
 import nose
+import unittest
 
 """
     NOTE: to work properly you must be running a MySQL database on localhost
@@ -29,7 +29,41 @@ import nose
     all privileges over a table (already created or not) named 'b3_test'
 """
 MYSQL_DB = 'mysql://b3test:test@localhost/b3_test'
+MYSQL_HOST = 'localhost'
+MYSQL_USER = 'b3test'
+MYSQL_PASSWORD = 'test'
 
+#===============================================================================
+# 
+# Test if we can run the MySQL tests
+#
+#===============================================================================
+
+is_mysql_ready = True
+no_mysql_reason = ''
+
+try:
+    import MySQLdb
+except ImportError:
+    is_mysql_ready = False
+    no_mysql_reason = "no MySQLdb module available"
+
+try:
+    MySQLdb.connect(host=MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASSWORD)
+except MySQLdb.Error, err:
+    is_mysql_ready = False
+    no_mysql_reason = "%s" % err[1]
+except Exception, err:
+    is_mysql_ready = False
+    no_mysql_reason = "%s" % err
+
+
+#===============================================================================
+# 
+# Load the tests
+# 
+#===============================================================================
+@unittest.skipIf(not is_mysql_ready, no_mysql_reason)
 class Test_MySQL(B3TestCase, StorageAPITest):
 
     def setUp(self):
