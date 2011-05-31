@@ -347,11 +347,19 @@ class StorageAPITest(object):
 
 
     def test_getCounts(self):
-        self.assertEqual({'kicks': 0, 'tempbans': 0, 'clients': 0, 'bans': 0, 'warnings': 0}, self.storage.getCounts())
-        client_id = self.storage.setClient(Client(guid="aaaaaaaaa"))
-        self.assertIsInstance(client_id, int)
-        self.assertEqual({'kicks': 0, 'tempbans': 0, 'clients': 1, 'bans': 0, 'warnings': 0}, self.storage.getCounts())
-        client_id = self.storage.setClient(Client(guid="bbbbbbbbbb"))
-        self.assertIsInstance(client_id, int)
-        self.assertEqual({'kicks': 0, 'tempbans': 0, 'clients': 2, 'bans': 0, 'warnings': 0}, self.storage.getCounts())
-        raise NotImplementedError
+        c1 = Client(guid="aaaaaaaaa")
+        self.assertEqual({'Kicks': 0, 'TempBans': 0, 'clients': 0, 'Bans': 0, 'Warnings': 0}, self.storage.getCounts())
+        self.storage.setClient(c1)
+        self.assertEqual({'Kicks': 0, 'TempBans': 0, 'clients': 1, 'Bans': 0, 'Warnings': 0}, self.storage.getCounts())
+        self.storage.setClient(Client(guid="bbbbbbbbbb"))
+        self.assertEqual({'Kicks': 0, 'TempBans': 0, 'clients': 2, 'Bans': 0, 'Warnings': 0}, self.storage.getCounts())
+        Penalty(clientId=c1.id, adminId=0, type='Ban').save(b3.console)
+        self.assertEqual({'Kicks': 0, 'TempBans': 0, 'clients': 2, 'Bans': 1, 'Warnings': 0}, self.storage.getCounts())
+        Penalty(clientId=c1.id, adminId=0, type='Ban').save(b3.console)
+        self.assertEqual({'Kicks': 0, 'TempBans': 0, 'clients': 2, 'Bans': 2, 'Warnings': 0}, self.storage.getCounts())
+        Penalty(clientId=c1.id, adminId=0, type='TempBan').save(b3.console)
+        self.assertEqual({'Kicks': 0, 'TempBans': 1, 'clients': 2, 'Bans': 2, 'Warnings': 0}, self.storage.getCounts())
+        Penalty(clientId=c1.id, adminId=0, type='Kick').save(b3.console)
+        self.assertEqual({'Kicks': 1, 'TempBans': 1, 'clients': 2, 'Bans': 2, 'Warnings': 0}, self.storage.getCounts())
+        Penalty(clientId=c1.id, adminId=0, type='Warning').save(b3.console)
+        self.assertEqual({'Kicks': 1, 'TempBans': 1, 'clients': 2, 'Bans': 2, 'Warnings': 1}, self.storage.getCounts())
