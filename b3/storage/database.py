@@ -179,7 +179,7 @@ class DatabaseStorage(Storage):
         elif protocol == 'sqlite':
             import sqlite3
             path = self.dsn[9:]
-            conn = sqlite3.connect(path)
+            conn = sqlite3.connect(path, check_same_thread=False)
             conn.isolation_level = None ## set autocommit mode
             if path == ':memory:':
                 # the user want the database to be created in memory
