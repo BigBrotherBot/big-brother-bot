@@ -189,8 +189,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         #--end OBS
 
         # create default tables if not present
-        if self._defaultTableNames:
-            self.console.storage.queryFromFile("@b3/sql/xlrstats.sql", silent=True)
+        # removed to avoid MySQL 5.5 issues locking the db
+        #if self._defaultTableNames:
+        #    self.console.storage.queryFromFile("@b3/sql/xlrstats.sql", silent=True)
 
         # register the events we're interested in.
         self.registerEvent(b3.events.EVT_CLIENT_JOIN)
