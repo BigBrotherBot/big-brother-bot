@@ -314,10 +314,10 @@ class DatabaseStorage(Storage):
     def getCounts(self):
         counts = {
             'clients' : 0,
-            'bans' : 0,
-            'kicks' : 0,
-            'warnings' : 0,
-            'tempbans' : 0
+            'Bans' : 0,
+            'Kicks' : 0,
+            'Warnings' : 0,
+            'TempBans' : 0
         }
 
         cursor = self.query('SELECT COUNT(id) total FROM clients')
