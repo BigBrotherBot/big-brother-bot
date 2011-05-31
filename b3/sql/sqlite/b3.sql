@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS clients (
 
 
 CREATE TABLE IF NOT EXISTS groups (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id INTEGER PRIMARY KEY,
   name varchar(32) NOT NULL default '',
   keyword varchar(32) NOT NULL default '',
   level int(10) 	 NOT NULL default '0',
