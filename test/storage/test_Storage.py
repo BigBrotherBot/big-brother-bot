@@ -18,11 +18,12 @@
 #
 from b3.storage import Storage
 from b3.storage.database import DatabaseStorage
-from mock import Mock, patch
+from mock import Mock
+from test import B3TestCase
 import b3.storage
 import unittest
 
-class Test_Storage(unittest.TestCase):
+class Test_Storage(B3TestCase):
     storage = None
 
     def setUp(self):

@@ -17,12 +17,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 from b3.storage.database import DatabaseStorage
-from mock import Mock
 from test import B3TestCase
 from test.storage.common import StorageAPITest
 import b3
 import nose
-import time
 
 SQLITE_DB = ":memory:"
 #SQLITE_DB = "c:/Users/Thomas/b3.db"
