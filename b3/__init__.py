@@ -109,7 +109,8 @@ def getAbsolutePath(path):
     if path[0:4] == '@b3/':
         #print "B3 path: %s" % getB3Path()
         path = os.path.join(getB3Path(), path[4:])
-
+    elif path[0:6] == '@conf/':
+        path = os.path.join(getConfPath(), path[6:])
     return os.path.normpath(os.path.expanduser(path))
 
 def start(configFile, nosetup=False):
