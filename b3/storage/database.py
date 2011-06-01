@@ -179,12 +179,13 @@ class DatabaseStorage(Storage):
         elif protocol == 'sqlite':
             import sqlite3
             path = self.dsn[9:]
-            conn = sqlite3.connect(path, check_same_thread=False)
+            filepath = b3.getAbsolutePath(path)
+            self.console.info("Using database file : %s" % filepath)
+            isNewDatabase = not os.path.isfile(filepath)
+            conn = sqlite3.connect(filepath, check_same_thread=False)
             conn.isolation_level = None ## set autocommit mode
-            if path == ':memory:':
-                # the user want the database to be created in memory
-                # usually for testing purpose. In that case we need
-                # to create the tables first
+            if path == ':memory:' or isNewDatabase:
+                self.console.info("Creating tables")
                 sqlFile = b3.getAbsolutePath("@b3/sql/sqlite/b3.sql")
                 with open(sqlFile) as f:
                     conn.executescript(f.read())
