@@ -35,6 +35,22 @@ class StorageAPITest(object):
         self.assertEqual("123546abcdef", c2.pbid)
         self.assertEqual("some dude", c2.name)
         self.assertEqual("hi!", c2.greeting)
+        c3 = Client(id=c1_id, ip="5.6.7.8", connections=1, guid="ddddddddd", pbid="zzzzzzzzzzz", name="milka", greeting="hello")
+        self.storage.setClient(c3)
+        c4 = self.storage.getClient(Client(id=c1_id))
+        self.assertIsInstance(c4, Client)
+        self.assertEqual("5.6.7.8", c4.ip)
+        self.assertEqual(1, c4.connections)
+        self.assertEqual("ddddddddd", c4.guid)
+        self.assertEqual("zzzzzzzzzzz", c4.pbid)
+        self.assertEqual("milka", c4.name)
+        self.assertEqual("hello", c4.greeting)
+
+    def test_setClient_no_db(self):
+        self.storage.query = Mock(return_value=None)
+        c1 = Mock()
+        c1.id = None
+        self.assertIsNone(self.storage.setClient(c1))
 
     def test_getClient_id(self):
         c1 = Client(ip="1.2.3.4", connections=3, guid="mlkjmlkjqsdf", pbid="123546abcdef", name="some dude", greeting="hi!")
@@ -49,6 +65,7 @@ class StorageAPITest(object):
         self.assertEqual(1, c1_id)
         c2 = self.storage.getClient(Client(guid="mlkjmlkjqsdf"))
         self.assertIsInstance(c2, Client)
+        self.assertRaises(KeyError, self.storage.getClient, Client(guid='god'))
 
     def test_getClientsMatching(self):
         self.storage.setClient(Client(ip="1.2.3.4", connections=2, guid="mlkjmlkjqsdf", pbid="123546abcdef", name="bill"))
@@ -81,13 +98,23 @@ class StorageAPITest(object):
         self.assertEqual(1, len(result))
         self.assertEqual('jack', result[0].name)
 
-
+    def test_getClientsMatching_no_db(self):
+        self.storage.query = Mock(return_value=None)
+        self.assertEquals((), self.storage.getClientsMatching({'guid': "xxxxxxxxxx"}))
 
     def test_setClientAlias(self):
         alias_id1 = self.storage.setClientAlias(Alias(alias='bill', clientId=1))
         self.assertIsNotNone(alias_id1)
         alias_id2 = self.storage.setClientAlias(Alias(alias='joe', clientId=1))
         self.assertEqual(alias_id1 + 1, alias_id2)
+        alias_id3 = self.storage.setClientAlias(Alias(id=alias_id1, alias='billy', clientId=1))
+        self.assertIsNotNone(alias_id3)
+
+    def test_setClientAlias_no_db(self):
+        self.storage.query = Mock(return_value=None)
+        alias = Mock()
+        alias.id = None
+        self.assertIsNone(self.storage.setClientAlias(alias))
 
     def test_getClientAlias(self):
         alias = Alias(alias='bill', timeAdd=12, timeEdit=654, numUsed=7, clientId=54)
@@ -99,6 +126,13 @@ class StorageAPITest(object):
         self.assertEqual(alias.timeEdit, 654)
         self.assertEqual(alias.numUsed, 7)
         self.assertEqual(alias.clientId, 54)
+        alias2 = self.storage.getClientAlias(Alias(clientId=54, alias='bill'))
+        self.assertEqual(alias.id, alias2.id)
+
+    def test_getClientAlias_KeyError(self):
+        alias = Mock()
+        alias.id = 132
+        self.assertRaises(KeyError, self.storage.getClientAlias, alias)
 
     def test_getClientAliases(self):
         client = Mock()
@@ -123,12 +157,25 @@ class StorageAPITest(object):
         self.assertIn('joe', bucket)
         self.assertNotIn('jack', bucket)
 
+    def test_getClientAliases_no_db(self):
+        self.storage.query = Mock(return_value=None)
+        client = Mock()
+        client.id = 15
+        self.assertEquals((), self.storage.getClientAliases(client))
 
     def test_setClientIpAddresse(self):
         ipalias_id1 = self.storage.setClientIpAddresse(IpAlias(ip='1.2.3.4', clientId=1))
         self.assertIsNotNone(ipalias_id1)
         ipalias_id2 = self.storage.setClientIpAddresse(IpAlias(ip='127.0.0.1', clientId=1))
         self.assertEqual(ipalias_id1 + 1, ipalias_id2)
+        ipalias_id3 = self.storage.setClientIpAddresse(IpAlias(id=ipalias_id1, ip='0.0.0.0', clientId=1))
+        self.assertEqual(ipalias_id1, ipalias_id3)
+    
+    def test_setClientIpAddresse_no_db(self):
+        self.storage.query = Mock(return_value=None)
+        ipalias = Mock()
+        ipalias.id = None
+        self.assertIsNone(self.storage.setClientIpAddresse(ipalias))
 
     def test_getClientIpAddress(self):
         ipalias = IpAlias(ip='88.44.55.22', timeAdd=12, timeEdit=654, numUsed=7, clientId=54)
@@ -140,6 +187,14 @@ class StorageAPITest(object):
         self.assertEqual(ipalias.timeEdit, 654)
         self.assertEqual(ipalias.numUsed, 7)
         self.assertEqual(ipalias.clientId, 54)
+        ipalias2 = self.storage.getClientIpAddress(IpAlias(clientId=ipalias.clientId, ip=ipalias.ip))
+        self.assertEqual(ipalias.id, ipalias2.id)
+
+    def test_getClientIpAddress_no_db(self):
+        self.storage.query = Mock(return_value=None)
+        client = Mock()
+        client.id = 15
+        self.assertRaises(KeyError, self.storage.getClientIpAddress, client)
 
     def test_getClientIpAddresses(self):
         client = Mock()
@@ -163,15 +218,35 @@ class StorageAPITest(object):
         self.assertIn('44.44.44.44', ips)
         self.assertIn('55.55.55.55', ips)
         self.assertNotIn('66.66.66.66', ips)
-
-
-
+        
+    def test_getClientIpAddresses_no_db(self):
+        self.storage.query = Mock(return_value=None)
+        client = Mock()
+        client.id = 15
+        self.assertEquals((), self.storage.getClientIpAddresses(client))
 
     def test_setClientPenalty(self):
         id1 = self.storage.setClientPenalty(Penalty(type='Ban', clientId=1, adminId=0))
         self.assertIsNotNone(id1)
         id2 = self.storage.setClientPenalty(Penalty(type='Kick', clientId=1, adminId=0))
         self.assertEqual(id1 + 1, id2)
+        id3 = self.storage.setClientPenalty(Penalty(id=id1, type='Warning', clientId=1, adminId=0))
+        self.assertEqual(id1, id3)
+
+    def test_setClientPenalty_bad_keyword(self):
+        id1 = self.storage.setClientPenalty(Penalty(keyword='!=+', clientId=1, adminId=0))
+        self.assertIsNotNone(id1)
+        p1 = self.storage.getClientPenalty(Penalty(id=id1, type='foo'))
+        self.assertIsInstance(p1, Penalty)
+        self.assertIs(type(p1), Penalty)
+        self.assertEquals('', p1.keyword)
+
+    def test_setClientPenalty_no_db(self):
+        self.storage.query = Mock(return_value=None)
+        p1 = Mock(spec=Penalty)
+        p1.id = None
+        p1.keyword = 'test'
+        self.assertIsNone(self.storage.setClientPenalty(p1))
 
     def test_getClientPenalty(self):
         tmp = Penalty(type='Kick', 
@@ -200,6 +275,7 @@ class StorageAPITest(object):
         self.assertEqual(penalty.timeEdit, 1234)
         self.assertEqual(penalty.timeExpire, 654)
         self.assertEqual(penalty.duration, 87)
+        self.assertRaises(KeyError, self.storage.getClientPenalty, Penalty(id=654654))
 
     def test_getClientPenalties(self):
         c1 = Mock()
@@ -231,6 +307,9 @@ class StorageAPITest(object):
                         penalties_in=('pB','pC'), penalties_notin=('pA','pD','pE','pF','pG'))
         assertPenalties(client=c2, types=('Ban', 'TempBan', 'Kick', 'Warning', 'Notice'), 
                         penalties_in=('pF','pG'), penalties_notin=('pA','pB','pC','pD','pE'))
+        
+        self.storage.query = Mock(return_value=None)
+        self.assertEquals((), self.storage.getClientPenalties(c1))
 
 
     def test_getClientLastPenalty(self):
@@ -251,6 +330,7 @@ class StorageAPITest(object):
         penalty = self.storage.getClientLastPenalty(client=client, type=('Ban', 'Kick','Notice'))
         self.assertIsInstance(penalty, Penalty)
         self.assertEqual(penalty.data, 'pE')
+        self.assertIsNone(self.storage.getClientLastPenalty(Penalty(clientId=3231)))
 
     def test_getClientFirstPenalty(self):
         client = Mock()
@@ -270,6 +350,7 @@ class StorageAPITest(object):
         penalty = self.storage.getClientFirstPenalty(client=client, type=('Ban', 'Kick','Notice'))
         self.assertIsInstance(penalty, Penalty)
         self.assertEqual(penalty.data, 'pC')
+        self.assertIsNone(self.storage.getClientFirstPenalty(Penalty(clientId=3231)))
 
 
     def test_disableClientPenalties(self):
@@ -331,7 +412,9 @@ class StorageAPITest(object):
         self.assertEqual(4, self.storage.numPenalties(client=c1, type=('Ban', 'TempBan', 'Kick', 'Warning', 'Notice')))
         self.assertEqual(0, self.storage.numPenalties(client=c2))
         self.assertEqual(2, self.storage.numPenalties(client=c2, type=('Ban', 'TempBan', 'Kick', 'Warning', 'Notice')))
-
+        
+        self.storage.query = Mock(return_value=None)
+        self.assertEqual(0, self.storage.numPenalties(client=c1))
 
 
     def test_getGroups(self):
@@ -339,11 +422,15 @@ class StorageAPITest(object):
         self.assertEqual(8, len(groups))
         for g in groups:
             self.assertIsInstance(g, Group)
+    
+    def test_getGroups_unknown(self):
+        self.storage.query = Mock(return_value=None)
+        self.assertEqual([], self.storage.getGroups())
 
     def test_getGroup(self):
         g = self.storage.getGroup(Group(keyword='superadmin'))
         self.assertIsInstance(g, Group)
-
+        self.assertRaises(KeyError, self.storage.getGroup, Group(keyword='foo'))
 
 
     def test_getCounts(self):
