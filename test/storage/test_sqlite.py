@@ -43,7 +43,7 @@ class Test_sqlite(B3TestCase, StorageAPITest):
     def tearDown(self):
         """this method is called after each test"""
         B3TestCase.tearDown(self)
-        self.storage.closeConnection()
+        self.storage.shutdown()
 
 
 if __name__ == '__main__':

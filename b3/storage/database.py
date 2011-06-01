@@ -363,6 +363,7 @@ class DatabaseStorage(Storage):
             cursor.close()
             raise KeyError, 'No client matching guid %s' % client.guid
 
+        found = False
         for k,v in cursor.getRow().iteritems():
             """
             if hasattr(client, k) and getattr(client, k):
@@ -370,10 +371,14 @@ class DatabaseStorage(Storage):
                 continue
             """
             setattr(client, self.getVar(k), v)
+            found = True
         
         cursor.close()
 
-        return client
+        if found:
+            return client
+        else:
+            raise KeyError, 'No client matching guid %s' % client.guid
     
     def getClientsMatching(self, match):
         self.console.debug('Storage: getClientsMatching %s' % match)
@@ -684,29 +689,6 @@ class DatabaseStorage(Storage):
 
         return penalty.id
 
-    def getClientPenalty(self, penalty):
-        self.console.debug('Storage: getClientPenalty %s' % penalty)
-
-        cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'penalties', { 'id' : penalty.id }, None, 1))
-        g = cursor.getOneRow()
-        if not g:
-            raise KeyError, 'No penalty matching id %s' % penalty.id
-    
-        penalty.id = int(g['id'])
-        penalty.type    = g['type']
-        penalty.keyword = g['keyword']
-        penalty.reason = g['reason']
-        penalty.data = g['data']
-        penalty.duration = g['duration']
-        penalty.inactive    = int(g['inactive'])
-        penalty.timeAdd  = int(g['time_add'])
-        penalty.timeEdit = int(g['time_edit'])
-        penalty.timeExpire = int(g['time_expire'])
-        penalty.clientId = int(g['client_id'])
-        penalty.adminId = int(g['admin_id'])
-    
-        return penalty
-    
     def _createPenaltyFromRow(self, g):
         if g['type'] == 'Warning':
             penalty = b3.clients.ClientWarning()
@@ -734,6 +716,16 @@ class DatabaseStorage(Storage):
         penalty.duration = int(g['duration'])
         return penalty
 
+    def getClientPenalty(self, penalty):
+        self.console.debug('Storage: getClientPenalty %s' % penalty)
+
+        cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'penalties', { 'id' : penalty.id }, None, 1))
+        g = cursor.getOneRow()
+        if not g:
+            raise KeyError, 'No penalty matching id %s' % penalty.id
+        
+        return self._createPenaltyFromRow(g)
+    
     def getClientPenalties(self, client, type='Ban'):
         self.console.debug('Storage: getClientPenalties %s' % client)
 
@@ -844,21 +836,5 @@ class DatabaseStorage(Storage):
                 self.console.verbose2(s)
                 self.query(s)
 
-if __name__ == '__main__':
-    import b3.output
-    console = b3.output.getInstance('../../debug.log', log2console=True)
-    console.screen = sys.stdout
-    console.setLevel(8)
-    SQLITE_DB = "sqlite://:memory:"
-    #SQLITE_DB = r"sqlite://c:/Users/Thomas/b3.db"
-    storage = DatabaseStorage(SQLITE_DB, console)
-    storage.executeSql('@b3/sql/sqlite/b3.sql')
-    storage.query("insert into ipaliases (ip, client_id) values ('1.2.4.5', 15)")
-    cursor = storage.query("select * from ipaliases")
-    print "-"*30
-    while not cursor.EOF:
-        print cursor.getRow()
-        cursor.moveNext()
-    print "-"*30
     
     
