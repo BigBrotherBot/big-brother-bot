@@ -125,9 +125,11 @@
 # v1.8.0 - 31/05/2011 - Courgette
 #     * Damage event now carry correct damage points
 #     * Damage event weapon code is now the same as the one used for Kill events
+# v1.8.1 - 01/06/2011 - Courgette
+#     * fix Damage points
 #
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.8.0'
+__version__ = '1.8.1'
 
 
 from b3.parsers.q3a.abstractParser import AbstractParser
@@ -725,7 +727,7 @@ class Iourt41Parser(AbstractParser):
         points = self._getDamagePoints(weapon, victim.hitloc)
         #victim.state = b3.STATE_ALIVE
         # need to pass some amount of damage for the teamkill plugin - 15 seems okay
-        return b3.events.Event(event, (15, match.group('aweap'), victim.hitloc), attacker, victim)
+        return b3.events.Event(event, (points, match.group('aweap'), victim.hitloc), attacker, victim)
 
     # kill
     #6:37 Kill: 0 1 16: XLR8or killed =lvl1=Cheetah by UT_MOD_SPAS
