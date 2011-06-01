@@ -125,11 +125,12 @@
 # v1.8.0 - 31/05/2011 - Courgette
 #     * Damage event now carry correct damage points
 #     * Damage event weapon code is now the same as the one used for Kill events
-# v1.8.1 - 01/06/2011 - Courgette
+# v1.8.1 / 1.8.2 - 01/06/2011 - Courgette
 #     * fix Damage points
+#     * when game log provides hit info, Kill event will use last damage points instead of 100
 #
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.8.1'
+__version__ = '1.8.2'
 
 
 from b3.parsers.q3a.abstractParser import AbstractParser
@@ -722,12 +723,14 @@ class Iourt41Parser(AbstractParser):
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
             event = b3.events.EVT_CLIENT_DAMAGE_TEAM
 
-        victim.hitloc = match.group('hitloc')
+        hitloc = match.group('hitloc')
         weapon = self._convertHitWeaponToKillWeapon(match.group('aweap'))
-        points = self._getDamagePoints(weapon, victim.hitloc)
+        points = self._getDamagePoints(weapon, hitloc)
+        event_data = (points, weapon, hitloc)
+        victim.data['lastDamageTaken'] = event_data
         #victim.state = b3.STATE_ALIVE
         # need to pass some amount of damage for the teamkill plugin - 15 seems okay
-        return b3.events.Event(event, (points, match.group('aweap'), victim.hitloc), attacker, victim)
+        return self.getEvent(event, event_data, attacker, victim)
 
     # kill
     #6:37 Kill: 0 1 16: XLR8or killed =lvl1=Cheetah by UT_MOD_SPAS
@@ -820,13 +823,16 @@ class Iourt41Parser(AbstractParser):
             event = b3.events.EVT_CLIENT_KILL_TEAM
 
         # if not logging damage we need a general hitloc (for xlrstats)
-        if not hasattr(victim, 'hitloc'):
-            victim.hitloc = 'body'
+        if 'lastDamageTaken' in victim.data:
+            lastDamageData = victim.data['lastDamageTaken']
+            del victim.data['lastDamageTaken']
+        else:
+            lastDamageData = (100, weapon, 'body')
 
         victim.state = b3.STATE_DEAD
         #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (victim.name, attacker.name, weapon, victim.hitloc, dType))
         # need to pass some amount of damage for the teamkill plugin - 100 is a kill
-        return b3.events.Event(event, (100, weapon, victim.hitloc, dType), attacker, victim)
+        return self.getEvent(event, (lastDamageData[0], weapon, lastDamageData[2], dType), attacker, victim)
 
     # disconnect
     def OnClientdisconnect(self, action, data, match=None):
