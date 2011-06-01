@@ -833,7 +833,6 @@ class DatabaseStorage(Storage):
         sql_statements = sql_text.split(';')
         for s in sql_statements:
             if len(s.strip()):
-                self.console.verbose2(s)
                 self.query(s)
 
     
