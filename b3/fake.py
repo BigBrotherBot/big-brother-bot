@@ -86,8 +86,10 @@ if __name__ == '__main__':
 # 1.6 - 2010/11/21
 # * remove more time.sleep()
 # * add message_history for FakeClient which allow to test if a client was sent a message afterward (unittest)
+# 1.7 - 2011/06/04
+# * replace FakeStorage with DatabaseStorage("sqlite://:memory:")
 #
-__version__ = '1.6'
+__version__ = '1.7'
 
 
 import re
@@ -100,6 +102,7 @@ import b3.events
 from b3.cvar import Cvar
 from sys import stdout
 import StringIO
+from b3.storage.database import DatabaseStorage
 
 class FakeConsole(b3.parser.Parser):
     Events = b3.events.eventManager
@@ -117,7 +120,7 @@ class FakeConsole(b3.parser.Parser):
         else:
             self.config = b3.config.load(config)
         
-        self.storage = FakeStorage()
+        self.storage =  DatabaseStorage("sqlite://:memory:", self)
         self.clients  = b3.clients.Clients(self)
         self.game = b3.game.Game(self, "fakeGame")
         self.game.mapName = 'ut4_turnpike'
@@ -344,122 +347,7 @@ class FakeColoredConsole(FakeConsole):
     def critical(self, msg, *args, **kwargs):
         """Log a message from the console"""
         self.printColor( '<red>CRITICAL</red> : ' + msg % args)
-        
-class FakeStorage(object):
-    _clients = {}
-    _client_id_autoincrement = 0
-    _penalties = {}
-    _penalty_id_autoincrement = 0
-    _groups = []
-    db = None
-    
-    class Cursor:
-        _cursor = None
-        _conn = None
-        fields = None
-        EOF = True
-        rowcount = 0
-        lastrowid = 0    
-        
-        def moveNext(self):
-            return self.EOF
 
-        def getOneRow(self, default=None):
-            return default
-
-        def getValue(self, key, default=None):
-            return default
-
-        def getRow(self):
-            return {}
-                
-    def __init__(self):
-        G = b3.clients.Group()
-        G.id = 1
-        G.name = 'User'
-        G.keyword = 'user'
-        G.level = 1
-        self._groups.append(G)
-        
-        G = b3.clients.Group()
-        G.id = 2
-        G.name = 'Regular'
-        G.keyword = 'reg'
-        G.level = 2
-        self._groups.append(G)
-        
-        G = b3.clients.Group()
-        G.id = 8
-        G.name = 'Moderator'
-        G.keyword = 'mod'
-        G.level = 20
-        self._groups.append(G)
-        
-        G = b3.clients.Group()
-        G.id = 16
-        G.name = 'Admin'
-        G.keyword = 'admin'
-        G.level = 40
-        self._groups.append(G)
-        
-        G = b3.clients.Group()
-        G.id = 32
-        G.name = 'Full admin'
-        G.keyword = 'fulladmin'
-        G.level = 60
-        self._groups.append(G)
-        
-        G = b3.clients.Group()
-        G.id = 64
-        G.name = 'Senior Admin'
-        G.keyword = 'senioradmin'
-        G.level = 80
-        self._groups.append(G)
-        
-        G = b3.clients.Group()
-        G.id = 128
-        G.name = 'Super Admin'
-        G.keyword = 'superadmin'
-        G.level = 100
-        self._groups.append(G)
-        
-    def getClient(self, client):
-        if client.id and client.id > 0:        
-            return self._clients[client.id]
-        else:
-            match = [k for k, v in self._clients.iteritems() if v.guid == client.guid]
-            if len(match)>0:
-                return match[0]
-        raise KeyError, 'No client found in fakestorage for {id: %s, guid: %s}' % (client.id, client.guid)
-    def setClient(self, client):
-        self._client_id_autoincrement += 1
-        client.id = self._client_id_autoincrement
-        self._clients[self._client_id_autoincrement] = client
-        return self._client_id_autoincrement
-    def getGroups(self):
-        return self._groups
-    def getGroup(self, group):
-        for g in self._groups:
-            if group.keyword == g.keyword:
-                return g
-        raise KeyError, 'No group matching keyword %s' % group.keyword
-    def shutdown(self):
-        pass
-    def status(self):
-        return True
-    def setClientPenalty(self, penalty):
-        self._penalty_id_autoincrement += 1
-        penalty.id = self._penalty_id_autoincrement
-        self._penalties[penalty.id] = penalty
-        return penalty.id
-    def getClientPenalties(self, client, type='Ban'):
-        return [x for x in self._penalties.values() if x.clientId == client and x.inactive == 0]
-    def numPenalties(self, client, type='Ban'):
-        match = [k for k, v in self._penalties.iteritems() if v.clientId == client.id and v.type == type]
-        return len(match)
-    def query(self, sql, data=None):
-        return self.Cursor()
-    
 class FakeClient(b3.clients.Client):
     console = None
     message_history = [] # this allows unittests to check if a message was sent to the client
