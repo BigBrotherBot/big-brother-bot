@@ -128,9 +128,11 @@
 # v1.8.1 / 1.8.2 - 01/06/2011 - Courgette
 #     * fix Damage points
 #     * when game log provides hit info, Kill event will use last damage points instead of 100
+# v1.9.0 - 2011-06-04 - Courgette
+# makes use of the new pluginsStarted parser hook
 #
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.8.2'
+__version__ = '1.9.0'
 
 
 from b3.parsers.q3a.abstractParser import AbstractParser
@@ -399,6 +401,7 @@ class Iourt41Parser(AbstractParser):
 
         self._maplist = self.getMaps()
 
+    def pluginsStarted(self):
         # initialize connected clients
         plist = self.getPlayerList()
         for cid, c in plist.iteritems():

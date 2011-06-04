@@ -59,10 +59,11 @@
 # 2011-05-22 - 1.2.2 - Courgette
 # * move events EVT_GAME_ROUND_PLAYER_SCORES and EVT_GAME_ROUND_TEAM_SCORES to abstract Frostbite parser 
 #   as they also exist in BFBC2
+# 2011-06-04 - 1.3.0 - Courgette
+# makes use of the new pluginsStarted parser hook
 #
-
 __author__  = 'Bakes, Courgette'
-__version__ = '1.2.2'
+__version__ = '1.3.0'
 
 import time
 import b3.events
@@ -130,6 +131,8 @@ class MohParser(AbstractParser):
             
         self.verbose('GameType: %s, Map: %s' %(self.game.gameType, self.game.mapName))
         
+
+    def pluginsStarted(self):
         self.info('connecting all players...')
         plist = self.getPlayerList()
         for cid, p in plist.iteritems():
