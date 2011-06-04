@@ -27,9 +27,11 @@
 #      stderr
 # 20/04/2011 - 1.6.1 - Courgette
 #    * should get rid of UnicodeDecodeError
-
+# 20/04/2011 - 1.6.2 - Courgette
+#    * again getting rid of UnicodeDecodeError
+#
 __author__  = 'ThorN'
-__version__ = '1.6.1'
+__version__ = '1.6.2'
 
 import sys
 import logging
@@ -133,7 +135,7 @@ def getInstance(logfile='b3.log', loglevel=21, log2console=False):
 
         handler = handlers.RotatingFileHandler(logfile, 'a', 10485760, 5, encoding="UTF-8")
         handler.doRollover()
-        handler.setFormatter(logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s', '%y%m%d %H:%M:%S'))
+        handler.setFormatter(logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)r', '%y%m%d %H:%M:%S'))
         __output.addHandler(handler)
         
         if log2console:

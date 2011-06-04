@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2011/05/03 - 1.24.6 - Courgette
+#   * do not run update sql queries on startup
 #   2011/05/03 - 1.24.5 - Courgette
 #   * fix bug regarding rcon_ip introduced in 1.24.4
 #   2011/04/31 - 1.24.4 - Courgette
@@ -122,7 +124,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.24.5'
+__version__ = '1.24.6'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -419,21 +421,6 @@ class Parser(object):
 
         self.game = b3.game.Game(self, self.gameName)
         self.queue = Queue.Queue(15)    # event queue
-
-        # try to update the databasetables
-        try:
-            _sqlfiles = ['@b3/sql/b3-update.sql', 'b3/sql/b3-update.sql', 'sql/b3-update.sql']
-            _sqlc = 0
-            _sqlresult = 'notfound'
-            while _sqlresult == 'notfound' and _sqlc < len(_sqlfiles):
-                self.debug('Checking: %s' % _sqlfiles[_sqlc] )
-                _sqlresult = executeSql(self.storage.db, _sqlfiles[_sqlc])
-                _sqlc += 1
-            self.debug('Updating database tables finished')
-        except Exception:
-            # if we fail, do nothing
-            self.error('Updating database tables failed')
-            pass
 
         atexit.register(self.shutdown)
 
