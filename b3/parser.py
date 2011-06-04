@@ -18,6 +18,9 @@
 #
 #
 # CHANGELOG
+#   2011/06/04 - 1.25.0 - Courgette
+#   * add a new parser hook "pluginsStarted" which is called once all plugins
+#     have started 
 #   2011/05/03 - 1.24.5 - Courgette
 #   * fix bug regarding rcon_ip introduced in 1.24.4
 #   2011/04/31 - 1.24.4 - Courgette
@@ -122,7 +125,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.24.5'
+__version__ = '1.25.0'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -445,10 +448,16 @@ class Parser(object):
 
     def start(self):
         """Start B3"""
+        self.bot("Starting parser")
         self.startup()
         self.say('%s ^2[ONLINE]' % b3.version)
+        self.bot("Starting plugins")
         self.startPlugins()
+        self.bot("all plugins started")
+        self.pluginsStarted()
+        self.bot("starting event dispatching thread")
         thread.start_new_thread(self.handleEvents, ())
+        self.bot("start reading game events")
         self.run()
 
     def die(self):
@@ -491,6 +500,13 @@ class Parser(object):
         """\
         Called after the parser is created before run(). Overwrite this
         for anything you need to initialize you parser with.
+        """
+        pass
+
+    def pluginsStarted(self):
+        """\
+        Called after the parser loaded and started all plugins. 
+        Overwrite this in parsers to take actions once plugins are ready
         """
         pass
 
@@ -829,7 +845,6 @@ class Parser(object):
 
     def run(self):
         """Main worker thread for B3"""
-        self.bot('Start reading...')
         self.screen.write('Startup Complete : B3 is running! Let\'s get to work!\n\n')
         self.screen.write('(If you run into problems, check %s in the B3 root directory for detailed log info)\n' % self.config.getpath('b3', 'logfile'))
         #self.screen.flush()
@@ -1029,7 +1044,7 @@ class Parser(object):
         text = re.split(r'\s+', text)
 
         lines = []
-        color = '^7';
+        color = '^7'
 
         line = text[0]
         for t in text[1:]:
