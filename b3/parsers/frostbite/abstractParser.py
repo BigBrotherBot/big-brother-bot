@@ -36,9 +36,11 @@
 # * fix getSupportedMaps() so it uses the maplist set for the next round instead of current
 # 2011-05-25 - 1.4.2 - Courgette
 # * fix bug introduced in 1.4.1
+# 2011-06-05 - 1.5.0 - Courgette
+# * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
 #
 __author__  = 'Courgette'
-__version__ = '1.4.2'
+__version__ = '1.5.0'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -875,7 +877,10 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, reason, client))
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, {'reason': reason, 
+                                                              'duration': duration, 
+                                                              'admin': admin}
+                                        , client))
 
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -938,7 +943,7 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
         
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, reason, client))
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
 
 
     def authorizeClients(self):

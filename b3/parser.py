@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2011/06/05 - 1.26.0 - Courgette
+#   * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
 #   2011/06/04 - 1.25.0 - Courgette
 #   * add a new parser hook "pluginsStarted" which is called once all plugins
 #     have started 
@@ -131,7 +133,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.25.0'
+__version__ = '1.26.0'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket, threading
@@ -1215,19 +1217,23 @@ class Parser(object):
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
-        ban a given player
+        ban a given player on the game server and in case of success
+        fire the event ('EVT_CLIENT_BAN', data={'reason': reason, 
+        'admin': admin}, client=target)
         """
         raise NotImplementedError
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
-        unban a given player
+        unban a given player on the game server
         """
         raise NotImplementedError
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
         """\
-        tempban a given player
+        tempban a given player on the game server and in case of success
+        fire the event ('EVT_CLIENT_BAN_TEMP', data={'reason': reason, 
+        'duration': duration, 'admin': admin}, client=target)
         """
         raise NotImplementedError
 

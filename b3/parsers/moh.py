@@ -61,9 +61,11 @@
 #   as they also exist in BFBC2
 # 2011-06-04 - 1.3.0 - Courgette
 # makes use of the new pluginsStarted parser hook
+# 2011-06-05 - 1.4.0 - Courgette
+# * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
 #
 __author__  = 'Bakes, Courgette'
-__version__ = '1.3.0'
+__version__ = '1.4.0'
 
 import time
 import b3.events
@@ -418,7 +420,10 @@ class MohParser(AbstractParser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, reason, client))
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, {'reason': reason, 
+                                                              'duration': duration, 
+                                                              'admin': admin}
+                                        , client))
 
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -460,7 +465,7 @@ class MohParser(AbstractParser):
         if not silent:
             self.say(reason)
         
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, reason, client))
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
 
 
     def rotateMap(self):

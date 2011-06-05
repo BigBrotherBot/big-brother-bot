@@ -72,9 +72,11 @@
 # * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
 # 09/04/2011 - 0.9.6 - Courgette
 # * reflect that cid are not converted to int anymore in the clients module
+# 06/06/2011 - 0.10.0 - Courgette
+# * change data format for EVT_CLIENT_BAN events
 
 __author__  = 'Courgette, GrosBedo'
-__version__ = '0.9.6'
+__version__ = '0.10.0'
 
 import re, string, thread, time, threading
 import b3
@@ -756,7 +758,7 @@ class Oa081Parser(AbstractParser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, reason, client))
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
         client.disconnect()
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
