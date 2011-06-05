@@ -88,8 +88,10 @@ if __name__ == '__main__':
 # * add message_history for FakeClient which allow to test if a client was sent a message afterward (unittest)
 # 1.7 - 2011/06/04
 # * replace FakeStorage with DatabaseStorage("sqlite://:memory:")
-#
-__version__ = '1.7'
+# 1.8 - 2011/06/06
+# * add ban()
+# * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
+__version__ = '1.8'
 
 
 import re
@@ -207,13 +209,25 @@ class FakeConsole(b3.parser.Parser):
     def authorizeClients(self):
         pass
 
+    def ban(self, client, reason, admin, silent):
+        """permban a client"""
+        print '>>>permbanning %s (%s)' % (client.name, reason)
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
+        client.disconnect()
+    
     def tempban(self, client, reason, duration, admin, silent):
         """tempban a client"""
         print '>>>tempbanning %s for %s (%s)' % (client.name, reason, duration)
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason, 
+                                                              'duration': duration, 
+                                                              'admin': admin}
+                                      , client))
+        client.disconnect()
     
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
         """unban a client"""
         print '>>>unbanning %s (%s)' % (client.name, reason)
+        self.queueEvent(self.getEvent('EVT_CLIENT_UNBAN', reason, client))
     
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         if isinstance(client, str) and re.match('^[0-9]+$', client):

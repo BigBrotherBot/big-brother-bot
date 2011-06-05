@@ -20,6 +20,8 @@
 # $Id: q3a/abstractParser.py 103 2010-11-01 10:10:10Z xlr8or $
 #
 # CHANGELOG
+#    2011/06/05 - 1.6.0 - Courgette
+#    * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
 #    2011/04/09 - 1.5.3 - Courgette
 #    * reflect that cid are not converted to int anymore in the clients module
 #    2010/11/08 - 1.5.2 - GrosBedo
@@ -72,7 +74,7 @@
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.5.3'
+__version__ = '1.6.0'
 
 import re, string, time
 import b3
@@ -490,7 +492,7 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, reason, client))
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
         client.disconnect()
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -541,7 +543,10 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, reason, client))
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, {'reason': reason, 
+                                                              'duration': duration, 
+                                                              'admin': admin}
+                                        , client))
         client.disconnect()
 
     def rotateMap(self):
