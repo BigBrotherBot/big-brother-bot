@@ -408,13 +408,13 @@ class AdminPlugin(b3.plugin.Plugin):
                     names.append('[^2%s^7] %s' % (_p.cid, _p.name))
 
                 if client:
-                    client.message(self.getMessage('players_matched', id, ', '.join(names)))
+                    client.message(self.getMessage('players_matched', client_id, ', '.join(names)))
                 return False
             else:
                 return matches[0]
         else:
             if client:
-                client.message(self.getMessage('no_players', id))
+                client.message(self.getMessage('no_players', client_id))
             return None
 
     def parseUserCmd(self, cmd, req=False):
