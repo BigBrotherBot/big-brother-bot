@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2011/05/03 - 1.24.8 - Courgette
+#   * event queue size can be set in b3.xml in section 'b3/event_queue_size'
 #   2011/05/03 - 1.24.7 - Courgette
 #   * add periodic events stats dumping to detect slow plugins
 #   2011/05/03 - 1.24.6 - Courgette
@@ -126,7 +128,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.24.7'
+__version__ = '1.24.8'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket, threading
@@ -142,6 +144,7 @@ import b3.parsers.q3a.rcon
 import b3.clients
 import b3.functions
 import b3.timezones
+from ConfigParser import NoOptionError
 from b3.functions import main_is_frozen, getModule, executeSql
 
 
@@ -424,7 +427,16 @@ class Parser(object):
         self.loadArbPlugins()
 
         self.game = b3.game.Game(self, self.gameName)
-        self.queue = Queue.Queue(15)    # event queue
+        
+        try:
+            queuesize = self.config.getint('b3', 'event_queue_size')
+        except NoOptionError:
+            queuesize = 15
+        except Exception, err:
+            self.warning(err)
+            queuesize = 15
+        self.debug("creating the event queue with size %s", queuesize)
+        self.queue = Queue.Queue(queuesize)    # event queue
 
         atexit.register(self.shutdown)
 
