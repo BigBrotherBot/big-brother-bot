@@ -21,12 +21,17 @@
 #    * minor transparent changes to the code 
 # 30/03/2011 - 1.1.3 - SGT
 #    * add EVT_CLIENT_UNBAN
+# 06/06/2011 - 1.1.4 - Courgette
+#    * add EventsStats class
+#
 
 __author__  = 'ThorN/xlr8or'
-__version__ = '1.1.3'
+__version__ = '1.1.4'
 
 import re
+from collections import deque
 import b3
+from b3.functions import meanstdv
 
 class Events:
     def __init__(self):
@@ -119,6 +124,36 @@ class Event:
     def __str__(self):
         return "Event<%s>(%r, %s, %s)" % (eventManager.getName(self.type), self.data, self.client, self.target)
 
+
+class EventsStats(object):
+    def __init__(self, console, max_samples=100):
+        self.console = console
+        self._max_samples = max_samples
+        self._handling_timers = {}
+        self._queue_wait = deque(maxlen=max_samples)
+        
+    def add_event_handled(self, plugin_name, event_name, milliseconds_elapsed):
+        if not self._handling_timers.has_key(plugin_name):
+            self._handling_timers[plugin_name] = {}
+        if not self._handling_timers[plugin_name].has_key(event_name):
+            self._handling_timers[plugin_name][event_name] = deque(maxlen=self._max_samples)
+        self._handling_timers[plugin_name][event_name].append(milliseconds_elapsed)
+        self.console.verbose2("%s event handled by %s in %0.3f ms", event_name, plugin_name, milliseconds_elapsed)
+
+    def add_event_wait(self,milliseconds_wait):
+        self._queue_wait.append(milliseconds_wait)
+        
+    def dumpStats(self):
+        for plugin_name, plugin_timers in self._handling_timers.iteritems():
+            for event_name, event_timers in plugin_timers.iteritems():
+                mean, stdv = meanstdv(event_timers)
+                self.console.verbose("%s %s : (ms) min(%0.1f), max(%0.1f), mean(%0.1f), stddev(%0.1f)", 
+                          plugin_name, event_name,  min(event_timers), 
+                          max(event_timers), mean, stdv)
+        mean, stdv = meanstdv(self._queue_wait)
+        self.console.verbose("wait in queue stats : (ms) min(%0.1f), max(%0.1f), mean(%0.1f), stddev(%0.1f)",
+                             min(self._queue_wait), max(self._queue_wait), mean, stdv)
+    
 #-----------------------------------------------------------------------------------------------------------------------
 # raise to cancel event processing
 class VetoEvent(Exception):
