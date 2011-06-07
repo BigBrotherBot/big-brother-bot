@@ -23,9 +23,10 @@
 # 01/12/2010 - 1.3.2 - Courgette - checkUpdate now uses a custom short timeout to
 #   prevent blocking the bot when the B3 server is hanging
 # 17/04/2011 - 1.3.3 - Courgette - make sanitizeMe unicode compliant
+# 06/06/2011 - 1.4.0 - Courgette - add meanstdv()
 
 __author__    = 'ThorN, xlr8or'
-__version__   = '1.3.3'
+__version__   = '1.4.0'
 
 import b3
 import re
@@ -280,6 +281,26 @@ def soundex(str):
     str2 = str2+"0000"
     return str2[:4]
 
+
+"""
+Calculate mean and standard deviation of data x[]:
+    mean = {\sum_i x_i \over n}
+    std = sqrt(\sum_i (x_i - mean)^2 \over n-1)
+credit: http://www.physics.rutgers.edu/~masud/computing/WPark_recipes_in_python.html
+"""
+def meanstdv(x):
+    from math import sqrt
+    n, mean, std = len(x), 0, 0
+    for a in x:
+        mean = mean + a
+    mean = mean / float(n)
+    for a in x:
+        std = std + (a - mean)**2
+    try:
+        std = sqrt(std / float(n-1))
+    except ZeroDivisionError:
+        std = 0
+    return mean, std
 
 def fuzzyGuidMatch(a, b):
     a = a.upper()
