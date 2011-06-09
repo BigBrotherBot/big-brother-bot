@@ -91,20 +91,27 @@ if __name__ == '__main__':
 # 1.8 - 2011/06/06
 # * add ban()
 # * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
-__version__ = '1.8'
+# 1.9 - 2011/06/09
+# * FakeConsole now uses the logging module
+#
+__version__ = '1.9'
 
 
-import re
-import time
-import traceback, sys
-from b3.plugins.admin import AdminPlugin
-import b3.parsers.punkbuster
-import b3.parser
-import b3.events
 from b3.cvar import Cvar
+from b3.plugins.admin import AdminPlugin
+from b3.storage.database import DatabaseStorage
 from sys import stdout
 import StringIO
-from b3.storage.database import DatabaseStorage
+import b3.events
+import b3.output
+import b3.parser
+import b3.parsers.punkbuster
+import logging
+from logging import handlers
+import re
+import time
+import traceback
+import sys
 
 class FakeConsole(b3.parser.Parser):
     Events = b3.events.eventManager
@@ -115,6 +122,10 @@ class FakeConsole(b3.parser.Parser):
     def __init__(self, config):
         b3.console = self
         self._timeStart = self.time()
+        
+        logging.basicConfig(level=b3.output.VERBOSE2, format='%(asctime)s\t%(levelname)s\t%(message)s')
+        self.log = logging.getLogger('output')
+        
         
         if isinstance(config, b3.config.XmlConfigParser) \
             or isinstance(config, b3.config.CfgConfigParser):
@@ -265,102 +276,8 @@ class FakeConsole(b3.parser.Parser):
         print "set cvar %s" % key
         c = Cvar(name=key,value=value)
         self.cvars[key] = c
-        
-    ##############################
-    
-    def error(self, msg, *args, **kwargs):
-        """Log an error"""
-        print 'ERROR    : ' + msg % args
 
-    def debug(self, msg, *args, **kwargs):
-        """Log a debug message"""
-        print 'DEBUG    : ' + msg % args
 
-    def bot(self, msg, *args, **kwargs):
-        """Log a bot message"""
-        print 'BOT      : ' + msg % args
-
-    def verbose(self, msg, *args, **kwargs):
-        """Log a verbose message"""
-        if self.noVerbose: return
-        print 'VERBOSE  : ' + msg % args
-
-    def verbose2(self, msg, *args, **kwargs):
-        """Log an extra verbose message"""
-        print 'VERBOSE2 : ' + msg % args
-
-    def console(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        print 'CONSOLE  : ' + msg % args
-
-    def warning(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        print 'WARNING  : ' + msg % args
-
-    def info(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        print 'INFO     : ' + msg % args
-
-    def exception(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        print 'EXCEPTION: ' + msg % args
-
-    def critical(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        print 'CRITICAL : ' + msg % args
-        
-class FakeColoredConsole(FakeConsole):
-    
-    def printColor (self, string):
-        colors = {"default":0, "black":30, "red":31, "green":32, "yellow":33,
-                    "blue":34,"magenta":35, "cyan":36, "white":37, "black":38,
-                    "black":39} #33[%colors%m
-        
-        for color in colors:
-            color_string = "\033[%dm\033[1m" % colors[color]
-            string = string.replace("<%s>" % color, color_string).replace("</%s>" % color, "\033[0m")
-        
-        print string
-        
-    def error(self, msg, *args, **kwargs):
-        """Log an error"""
-        self.printColor('<red>ERROR</red>    : ' + msg % args)
-
-    def debug(self, msg, *args, **kwargs):
-        """Log a debug message"""
-        self.printColor( '<cyan>DEBUG</cyan>    : ' + msg % args)
-
-    def bot(self, msg, *args, **kwargs):
-        """Log a bot message"""
-        self.printColor( 'BOT      : ' + msg % args)
-
-    def verbose(self, msg, *args, **kwargs):
-        """Log a verbose message"""
-        self.printColor( '<green>VERBOSE</green>  : ' + msg % args)
-
-    def verbose2(self, msg, *args, **kwargs):
-        """Log an extra verbose message"""
-        self.printColor( '<green>VERBOSE2</green> : ' + msg % args)
-
-    def console(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        self.printColor( 'CONSOLE  : ' + msg % args)
-
-    def warning(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        self.printColor( '<yellow>WARNING</yellow>  : ' + msg % args)
-
-    def info(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        self.printColor( 'INFO     : ' + msg % args)
-
-    def exception(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        self.printColor( '<red>EXCEPTION</red>: ' + msg % args)
-
-    def critical(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        self.printColor( '<red>CRITICAL</red> : ' + msg % args)
 
 class FakeClient(b3.clients.Client):
     console = None
