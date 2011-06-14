@@ -132,9 +132,11 @@
 # makes use of the new pluginsStarted parser hook
 # v1.10.0 - 2011-06-05 - Courgette
 # * change data format for EVT_CLIENT_BAN events
+# 14/06/2011 - 1.11.0 - Courgette
+# * cvar code moved to q3a AbstractParser
 #
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.10.0'
+__version__ = '1.11.0'
 
 
 from b3.parsers.q3a.abstractParser import AbstractParser
@@ -245,17 +247,6 @@ class Iourt41Parser(AbstractParser):
     _reTeamScores = re.compile(r'^Scores:\s+R:(?P<RedScore>.+)\s+B:(?P<BlueScore>.+)$', re.I)
     _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): (?P<name>.*) (?P<team>RED|BLUE|SPECTATOR|FREE) k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) ping:(?P<ping>[0-9]+|CNCT|ZMBI)( (?P<ip>[0-9.]+):(?P<port>[0-9-]+))?$', re.I) # NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
 
-    _reCvarName = re.compile(r'^[a-z0-9_.]+$', re.I)
-    _reCvar = (
-        #"sv_maxclients" is:"16^7" default:"8^7"
-        #latched: "12"
-        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?"\s+default:\s*"(?P<default>.*?)(\^7)?"$', re.I | re.M),
-        #"g_maxGameClients" is:"0^7", the default
-        #latched: "1"
-        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?",\s+the\sdefault$', re.I | re.M),
-        #"mapname" is:"ut4_abbey^7"
-        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?"$', re.I | re.M),
-    )
 
     PunkBuster = None
 
@@ -450,27 +441,6 @@ class Iourt41Parser(AbstractParser):
         data['cid'] = playerID
         return data
 
-    def getCvar(self, cvarName):
-        if self._reCvarName.match(cvarName):
-            #"g_password" is:"^7" default:"scrim^7"
-            val = self.write(cvarName)
-            self.debug('Get cvar %s = [%s]', cvarName, val)
-            #sv_mapRotation is:gametype sd map mp_brecourt map mp_carentan map mp_dawnville map mp_depot map mp_harbor map mp_hurtgen map mp_neuville map mp_pavlov map mp_powcamp map mp_railyard map mp_rocket map mp_stalingrad^7 default:^7
-
-            for f in self._reCvar:
-                m = re.match(f, val)
-                if m:
-                    #self.debug('line matched %s' % f.pattern)
-                    break
-
-            if m:
-                #self.debug('m.lastindex %s' % m.lastindex)
-                if m.group('cvar').lower() == cvarName.lower() and m.lastindex > 3:
-                    return b3.cvar.Cvar(m.group('cvar'), value=m.group('value'), default=m.group('default'))
-                elif m.group('cvar').lower() == cvarName.lower():
-                    return b3.cvar.Cvar(m.group('cvar'), value=m.group('value'), default=m.group('value'))
-            else:
-                return None
 
     def getTeam(self, team):
         if str(team).lower() == 'red':
