@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2011/06/05 - 1.26.1 - Courgette
+#   * fix periodic events stats dumping blocking B3 restart/shutdown
 #   2011/06/05 - 1.26.0 - Courgette
 #   * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
 #   2011/06/04 - 1.25.0 - Courgette
@@ -133,7 +135,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.26.0'
+__version__ = '1.26.1'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket, threading
@@ -453,7 +455,6 @@ class Parser(object):
 
     def _dumpEventsStats(self):
         self._eventsStats.dumpStats()
-        threading.Timer(60, self._dumpEventsStats, ()).start()
 
     def start(self):
         """Start B3"""
@@ -465,7 +466,8 @@ class Parser(object):
         self.bot("all plugins started")
         self.pluginsStarted()
         self.bot("starting event dispatching thread")
-        threading.Timer(60, self._dumpEventsStats, ()).start()
+        self._eventsStats_cronTab = b3.cron.CronTab(self._dumpEventsStats)
+        self.cron + self._eventsStats_cronTab
         thread.start_new_thread(self.handleEvents, ())
         self.bot("start reading game events")
         self.run()
