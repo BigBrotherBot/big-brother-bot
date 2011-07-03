@@ -20,17 +20,18 @@
 # CHANGELOG
 #
 #
-import md5
 import asyncore
+import md5
 import re
 import socket
+import time
 """
 module implementing the Frontline protocol. Provide the Client class which
 creates a connection to a Frontline gameserver
 """
 
 __author__  = 'Courgette'
-__version__ = '1.0'
+__version__ = '1.1'
 
 RE_CHALLENGE = re.compile(r'WELCOME! Frontlines: Fuel of War \(RCON\) VER=\d+ CHALLENGE=(?P<challenge>.+)')
 CMD_TERMINATOR = '\x04'
@@ -51,6 +52,7 @@ class Client(asyncore.dispatcher_with_send):
         self.authed = False
         self._handlers = set()
         self._auth_failures = 0
+        self.lastResponseTime = None
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connect( (self._host, self._port) )
         
@@ -64,9 +66,9 @@ class Client(asyncore.dispatcher_with_send):
         self.close()
         self.authed = False
         if self.keepalive:
-            if self._auth_failures > 10:
+            if self._auth_failures > 500:
                 self.console.error("Too many failures. Could not connect to Frontline server")
-                del self
+                self.keepalive = False
             else:
                 self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.connect((self._host, self._port))
@@ -74,7 +76,7 @@ class Client(asyncore.dispatcher_with_send):
     def handle_read(self):
         data = self.recv(1024)
         if len(data):
-            self.console.verbose2('read %s char from Frontline gameserver %r' % (len(data), data))
+            #self.console.verbose2('read %s char from Frontline gameserver %r' % (len(data), data))
             self._buffer_in += data
             p = self._readPacket()
             while p is not None:
@@ -133,7 +135,7 @@ class Client(asyncore.dispatcher_with_send):
     def ping(self):
         """used to keep the connection alive. After 10 seconds of inactivity
         the server will drop the connection"""
-        self.command("PING")
+        self.command("ECHONET PING")
     
     def command(self, text):
         """send command to server"""
@@ -142,7 +144,7 @@ class Client(asyncore.dispatcher_with_send):
         if not self.authed:
             self.console.warning("not authenticated, cannot send command")
             return
-        self.console.verbose("sending RCON %s" % text)
+        #self.console.verbose("sending RCON %s" % text)
         packet = "%s%s" % (text.strip(), CMD_TERMINATOR)
         try:
             self.send(packet)
@@ -157,7 +159,7 @@ class Client(asyncore.dispatcher_with_send):
             return p
 
     def _inspect_packet(self, p):
-        self.console.verbose2("inpecting packet %r" % p)
+        self.lastResponseTime = time.time()
         if not self.authed:
             if p.startswith('Login SUCCESS!'):
                 self.authed = True
