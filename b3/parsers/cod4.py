@@ -35,12 +35,14 @@
 #    * messages now support named $variables instead of %s
 # 8/11/2010 - 1.3.4 - GrosBedo
 #    * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
+# 3/7/2011 - 1.3.5 - 82ndab.Bravo17
+#    * Set cid to str in sync()
 #
 
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.3.4'
+__version__ = '1.3.5'
 
 import b3.parsers.cod2
 import b3.functions
@@ -126,6 +128,7 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
         mlist = {}
 
         for cid, c in plist.iteritems():
+            cid = str(cid)
             client = self.clients.getByCID(cid)
             if client:
                 if client.guid and c.has_key('guid') and not self.IpsOnly:

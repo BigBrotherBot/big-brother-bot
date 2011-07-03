@@ -47,9 +47,10 @@
 # 16/03/2011 - 1.4.19 - xlr8or - improve PunkBuster check
 # 28/03/2011 - 1.4.20 - Bravo17 - CoD5 JT regexp fix
 # 09/04/2011 - 1.4.21 - Courgette - reflect that cid are not converted to int anymore in the clients module
+# 03/07/2011 - 1.4.22 - 82ndab.Bravo17 - set cid to str in sync()
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.21'
+__version__ = '1.4.22'
 
 import re, string, threading
 import b3
@@ -498,6 +499,7 @@ class CodParser(AbstractParser):
         mlist = {}
 
         for cid, c in plist.iteritems():
+            cid = str(cid)
             client = self.clients.getByCID(cid)
             if client:
                 if client.guid and c.has_key('guid') and not self.IpsOnly:
