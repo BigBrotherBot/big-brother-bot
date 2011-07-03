@@ -1,15 +1,15 @@
-project files/versions signature: e6a85d2a3ea024a21b7236b06b5d5f13
-project files content signature: 3f8fb8ef66d1470525ccf64595d700bd
+project files/versions signature: 289c770ed555f7fe608f87ded7400fbe
+project files content signature: 9feb331eb0988abe472529a6d5bfd479
 b3\__init__.py 8d79b97bece95f7fd17627ed5c316f13 1.1.2
 b3\clients.py 1b5462125476c7306d7fe9ea2d459aae 1.3.5
 b3\config.py c270b8f2aefbe60563285f675b28dc8d 1.3.1
 b3\cron.py 86eb161acf14104b829056fd7471d943 1.4.1
 b3\cvar.py 39c0d99ceaeab3170936b6f540337368 1.0.1
-b3\events.py 9d7f4c7cf2cdbcf30feb7fdcb0720cf1 1.1.3
+b3\events.py 1b5630ea9f23133ec470ab78fea0aa3c 1.1.4
 b3\extplugins\__init__.py 01abfc750a0c942167651c40d088531d None
-b3\extplugins\xlrstats.py 62ef220d34e7c902c02d3473c73ad274 2.4.0
-b3\fake.py ecebc35fe5af5598018442627294269a 1.6
-b3\functions.py bd19464524afc88154db0177796bc0d3 1.3.3
+b3\extplugins\xlrstats.py 6e729a7031ca047701ea5c7d7ca4020a 2.4.0
+b3\fake.py bed01b598d5321ac090484db94cc93a4 1.6
+b3\functions.py d0d8286ebbb651a94e3677f01d82b3e9 1.4.0
 b3\game.py e80182dc6d87ef966ade52a3bbe4f14c 1.2.0
 b3\lib\PurePythonGeoIP.py 959d727e5fd89339c7464ea8ea9db54f None
 b3\lib\__init__.py 01abfc750a0c942167651c40d088531d None
@@ -83,8 +83,8 @@ b3\lib\yaml\resolver.py 9051450257e216588ea41fd8073f497d None
 b3\lib\yaml\scanner.py b5c7fbb502536bd06bd52f838c430370 None
 b3\lib\yaml\serializer.py c75e5461f4d4a763a17ac5bdc12a6301 None
 b3\lib\yaml\tokens.py 33423c7f46708cc3884a32b8ed937ac6 None
-b3\output.py b5098198fc4cd35071efb13122f67d87 1.6.1
-b3\parser.py b473776af10331ac563895a10ae4e12c 1.24.5
+b3\output.py 0de940fec7d47d3e367cf8d441054f62 1.6.2
+b3\parser.py 0ad6c95b3b99e8c20d9affe5376dcad4 1.24.8
 b3\parsers\__init__.py dc27db9710c1c207a8bd46935163efc1 None
 b3\parsers\altitude.py fd3aeb6b87d38df427f431785a7f8e7f 1.1
 b3\parsers\bfbc2.py 4d25acb7e33d852f29c8c062ca15743a 2.1
@@ -93,7 +93,7 @@ b3\parsers\cod2.py 3bb23114dce7c4f071937aafeba570e2 1.2.5
 b3\parsers\cod4.py 5a6c2749670f659dd54ba85d2a6e5644 1.3.4
 b3\parsers\cod5.py 7874ac89b103c33f071104b7a665dfd1 1.3.1
 b3\parsers\cod6.py 61da6652089c0ef56fa6d77ac1153fa0 0.6
-b3\parsers\cod7.py fa9343922b41724e35b66ce2879f53e5 1.0.8
+b3\parsers\cod7.py 9a133bf90b81860acc33fb71825aecd3 1.1
 b3\parsers\cod7_rcon.py aabbe8699094e5ed1faee3bc5324514a 1.1.0
 b3\parsers\et.py 57d24dc3b8ec4e9ff7f58502cbbb605d 0.0.1
 b3\parsers\etpro.py 4ab714a7cd47bdbe454a0d2c129844a1 0.0.3
@@ -104,7 +104,7 @@ b3\parsers\frostbite\protocol.py 1c7755c8b3eae89a659118147a53d972 1.0.1
 b3\parsers\frostbite\punkbuster.py 3a4153415be31cf25d3a1588c1790301 1.1
 b3\parsers\frostbite\rcon.py 77598a0b767cc78bf39bf3b23ff19428 2.0
 b3\parsers\frostbite\util.py 1c8f30602d7bbccbf2500b2407199ae0 1.1
-b3\parsers\homefront\__init__.py f9174776093069a91b0eaa6184c5ff31 1.0
+b3\parsers\homefront\__init__.py 1616443de5220e033a1c717cd3bca495 1.0.2
 b3\parsers\homefront\protocol.py 6eef48f40731b5578c503fa08ddcedf2 0.3
 b3\parsers\homefront\rcon.py 087cbe58a0fa2b7367e89328842ba6ed 1.0
 b3\parsers\iourt41.py 76c1c32f139b18b7e6f729c48ebaa69e 1.7.17
