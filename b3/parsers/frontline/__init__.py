@@ -37,7 +37,7 @@ from ConfigParser import NoOptionError
 
 
 __author__  = 'Courgette'
-__version__ = '0.2'
+__version__ = '0.3'
 
 _gameevents_mapping = list()
 def gameEvent(*decorator_param):
@@ -137,7 +137,7 @@ class FrontlineParser(b3.parser.Parser):
                     self._pauseNotice = True
             else:
                 if self._serverConnection is None:
-                    self.bot('Connecting to Frontline server ...')
+                    self.bot('Connecting to Frontline server %s:%s with user %s ...', self._rconIp, self._rconPort, self._rconUser)
                     self._serverConnection = protocol.Client(self, self._rconIp, self._rconPort, self._rconUser, self._rconPassword, keepalive=True)
                     
                     # hook on handle_close to protocol.Client
@@ -178,10 +178,12 @@ class FrontlineParser(b3.parser.Parser):
     # be queued
     # ================================================
 
-    @gameEvent(r'^DEBUG: ((Script)?Log|Error|(Perf|Script)Warning)|SeamlessTravel: .*',
-               r'^DEBUG: (DevOnline|NetComeGo|RendezVous): .*',
-               r'^DEBUG: DevNet: (Level server received|Join|NotifyAccepting).*',
+    @gameEvent(r'^DEBUG: ((Script)?Log|Error|(Perf|Script)Warning|SeamlessTravel): .*',
+               r'^DEBUG: (DevOnline|NetComeGo|RendezVous|LoadingScreenLog|Difficulty|LineCheckLog): .*',
+               r'^DEBUG: Warning: .*',
+               r'^DEBUG: DevNet: .*',
                r'^UnBan failed! Player ProfileID or Hash is not banned: .*',
+               r'^Forced transition to next map$',
                )
     def ignoreGameEvent(self, *args, **kwargs):
         """do nothing"""
@@ -220,7 +222,7 @@ ID    Name    Ping    Team    Squad    Score    Kills    Deaths    TK    CP    T
                 if pdata['ProfileID'] == 0:
                     self.debug("Profile id is 0")
                     continue
-                self.info("player : %r", pdata)
+                self.debug("player : %r", pdata)
                 client = self.getClientOrCreate(pdata['ID'], pdata['ProfileID'], pdata['Name'])
                 if client:
                     client.name = pdata['Name']
