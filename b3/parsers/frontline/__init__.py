@@ -37,7 +37,7 @@ from ConfigParser import NoOptionError
 
 
 __author__  = 'Courgette'
-__version__ = '0.3'
+__version__ = '0.4'
 
 _gameevents_mapping = list()
 def gameEvent(*decorator_param):
@@ -184,6 +184,7 @@ class FrontlineParser(b3.parser.Parser):
                r'^DEBUG: DevNet: .*',
                r'^UnBan failed! Player ProfileID or Hash is not banned: .*',
                r'^Forced transition to next map$',
+               r'^\^5PunkBuster Server: Player List: [Slot #] [GUID] [Address] [Status] [Power] [Auth Rate] [Recent SS] [O/S] [Name]$',
                )
     def ignoreGameEvent(self, *args, **kwargs):
         """do nothing"""
@@ -235,6 +236,7 @@ ID    Name    Ping    Team    Squad    Score    Kills    Deaths    TK    CP    T
         self.bot("B3 correctly authenticated on game server as user %r.", user)
         self.write("CHATLOGGING TRUE")
         self.write("DebugLogging TRUE")
+        self.write("Punkbusterlogging TRUE")
 
     @gameEvent(r"^DEBUG: RendezVous: Update Gathering .*")
     def onServerPlayerLogin(self):
@@ -260,7 +262,21 @@ ID    Name    Ping    Team    Squad    Score    Kills    Deaths    TK    CP    T
 
     @gameEvent(r"""^\^5PunkBuster Server: Player GUID Computed (?P<pbid>[0-9a-f]+)\(-\) \(slot #(?P<cid>\d+)\) (?P<ip>[0-9.]+):(?P<port>\d+) (?P<name>.+)$""")
     def onPunkbusterGUID(self, pbid, cid, ip, port, name):
-        self.debug("TODO onPunkbusterGUID : %r", [pbid, cid, ip, port, name])
+        client = self.clients.getByCID(cid)
+        if client:
+            client.pbid(pbid)
+            client.ip = ip
+            client.save()
+
+
+    @gameEvent(r"""^\^5PunkBuster Server: (?P<cid>\d+)\s+(?P<pbid>[a-z0-9]+)?\(-\) (?P<ip>[0-9.]+):(?P<port>\d+) (\w+)\s+(\d+)\s+([\d.]+)\s+(\d+)\s+\((.)\) "(?P<name>.+)"$""")
+    def onPunkbusterPlayerList(self, pbid, cid, ip, port, name):
+        client = self.clients.getByCID(cid)
+        if client:
+            if pbid:
+                client.pbid(pbid)
+            client.ip = ip
+            client.save()
 
     @gameEvent(re.compile(r"""^Banned Player: PlayerName="(?P<name>.+)" PlayerID=(?P<cid>(-1|\d+)) ProfileID=(?P<guid>\d+) Hash=(?P<hash>.*) BanDuration=(?P<duration>-?\d+)( Permanently)?$""", re.MULTILINE))
     def onServerBan(self, name, cid, guid, hash, duration):
