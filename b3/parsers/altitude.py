@@ -29,6 +29,8 @@
 # * unban admins who got kicked to pass by the default 2m tempban on kicks
 # * more team ID found. Still need to figure out the game mod that are team based
 #   to properly assign B3 team IDs
+# 2011-06-05 - 1.2 - Courgette
+# * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
 #
 from b3.events import EVT_CUSTOM
 from b3.parser import Parser
@@ -38,7 +40,7 @@ import re
 import time
 
 __author__  = 'Courgette'
-__version__ = '1.1'
+__version__ = '1.2'
 
 
 """
@@ -602,7 +604,7 @@ class AltitudeParser(Parser):
                             'timeunit':'forever', 
                             'reason': reason})
         self.write("kick %s" % client.name)
-        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', data=reason, client=client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', data={'reason': reason, 'admin': admin}, client=client))
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
@@ -630,7 +632,9 @@ class AltitudeParser(Parser):
                             'timeunit':'minute', 
                             'reason': reason})
         self.write("kick %s" % client.name)
-        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', data=reason, client=client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', data={'reason': reason, 
+                                                              'duration': duration, 
+                                                              'admin': admin}, client=client))
 
     def getMap(self):
         """\

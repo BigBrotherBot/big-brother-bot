@@ -20,6 +20,10 @@
 # $Id: q3a/abstractParser.py 103 2010-11-01 10:10:10Z xlr8or $
 #
 # CHANGELOG
+#    14/06/2011 - 1.7.0 - Courgette
+#    * cvar code changed to han
+#    2011/06/05 - 1.6.0 - Courgette
+#    * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
 #    2011/04/09 - 1.5.3 - Courgette
 #    * reflect that cid are not converted to int anymore in the clients module
 #    2010/11/08 - 1.5.2 - GrosBedo
@@ -72,7 +76,7 @@
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.5.3'
+__version__ = '1.7.0'
 
 import re, string, time
 import b3
@@ -137,7 +141,16 @@ class AbstractParser(b3.parser.Parser):
     _regPlayerShort = re.compile(r'\s+(?P<slot>[0-9]+)\s+(?P<score>[0-9]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*)\^7\s+', re.I)
     _reColor = re.compile(r'(\^[0-9a-z])|[\x80-\xff]')
     _reCvarName = re.compile(r'^[a-z0-9_.]+$', re.I)
-    _reCvar = re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?"\s+default:\s*"(?P<default>.*?)(\^7)?"$', re.I)
+    _reCvar = (
+        #"sv_maxclients" is:"16^7" default:"8^7"
+        #latched: "12"
+        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?"\s+default:\s*"(?P<default>.*?)(\^7)?"$', re.I | re.M),
+        #"g_maxGameClients" is:"0^7", the default
+        #latched: "1"
+        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<default>(?P<value>.*?))(\^7)?",\s+the\sdefault$', re.I | re.M),
+        #"mapname" is:"ut4_abbey^7"
+        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?"$', re.I | re.M),
+    )
     _reMapNameFromStatus = re.compile(r'^map:\s+(?P<map>.+)$', re.I)
 
     PunkBuster = None
@@ -490,7 +503,7 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, reason, client))
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
         client.disconnect()
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -541,7 +554,10 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, reason, client))
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, {'reason': reason, 
+                                                              'duration': duration, 
+                                                              'admin': admin}
+                                        , client))
         client.disconnect()
 
     def rotateMap(self):
@@ -629,11 +645,22 @@ class AbstractParser(b3.parser.Parser):
             self.debug('Get cvar %s = [%s]', cvarName, val)
             #sv_mapRotation is:gametype sd map mp_brecourt map mp_carentan map mp_dawnville map mp_depot map mp_harbor map mp_hurtgen map mp_neuville map mp_pavlov map mp_powcamp map mp_railyard map mp_rocket map mp_stalingrad^7 default:^7
 
-            m = self._reCvar.match(val)
-            if m and m.group('cvar').lower() == cvarName.lower():
-                return b3.cvar.Cvar(m.group('cvar'), value=m.group('value'), default=m.group('default'))
+            for f in self._reCvar:
+                m = re.match(f, val)
+                if m:
+                    #self.debug('line matched %s' % f.pattern)
+                    break
 
-        return None
+            if m:
+                #self.debug('m.lastindex %s' % m.lastindex)
+                if m.group('cvar').lower() == cvarName.lower():
+                    try:
+                        default_value = m.group('default')
+                    except IndexError:
+                        default_value = None
+                    return b3.cvar.Cvar(m.group('cvar'), value=m.group('value'), default=default_value)
+            else:
+                return None
 
     def set(self, cvarName, value):
         self.warning('Parser.set() is depreciated, use Parser.setCvar() instead')

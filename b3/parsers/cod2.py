@@ -20,10 +20,12 @@
 # 18/04/2010 - 1.2.3 - xlr8or - Forcing g_logsync to make server write unbuffered gamelogs
 # 30/05/2010 - 1.2.4 - xlr8or - Setting exception for 31 char PBid in shortversion v1.2
 # 17/10/2010 - 1.2.5 - xlr8or - Don't let version exceptions be inherited by later parsers
+# 14/06/2011 - 1.3.0 - courgette - remove cvar specifics as the cvar regexp and code is 
+#                                  now working good on the q3a AbstractParser
 
 
 __author__  = 'ThorN, ttlogic, xlr8or'
-__version__ = '1.2.5'
+__version__ = '1.3.0'
 
 import b3.parsers.cod
 import re
@@ -33,8 +35,6 @@ class Cod2Parser(b3.parsers.cod.CodParser):
     IpsOnly = False
     _logSync = 1 # Value for unbuffered game logging
 
-    # cod2 needs the multiline flag because it adds "Domain is 0 or 1" to the cvar output
-    _reCvar = re.compile(b3.parsers.q3a.abstractParser.AbstractParser._reCvar.pattern, re.I | re.M)
 
     # set exceptions for this specific version of cod2
     def setVersionExceptions(self):

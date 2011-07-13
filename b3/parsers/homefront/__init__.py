@@ -54,6 +54,8 @@
 # * "kill" penalty rcon command now uses SteamID instead of player name
 # 2011-05-27 : 1.0.2
 # * KILL event correctly parsed with player names or player SteamID
+# 2011-06-05 : 1.1.0
+# * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
 #
 from b3 import functions
 from b3.clients import Client
@@ -75,7 +77,7 @@ import time
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.0.2'
+__version__ = '1.1.0'
 
 
 
@@ -733,7 +735,7 @@ class HomefrontParser(b3.parser.Parser):
             client._name = banid
             client.save()
         self.write(self.getCommand('ban', playerid=banid, admin=admin.name.replace('"','\"'), reason=reason))
-        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', reason, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
         client.disconnect()
 
     ## @todo Need to test response from the server
@@ -771,7 +773,10 @@ class HomefrontParser(b3.parser.Parser):
             self.write(self.getCommand('kick', playerid=client.guid))
         else:
             self.write(self.getCommand('kick', playerid=client.cid))
-        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', reason, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason, 
+                                                              'duration': duration, 
+                                                              'admin': admin}
+                                      , client))
         client.disconnect()
 
     def getMap(self):

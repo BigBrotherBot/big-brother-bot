@@ -161,6 +161,8 @@
 # * import rotateMap and changeMap from abstractParser 
 # 2010-11-21 - 2.1.1 - Durzo
 # * adjust mapnames from mappack 7 and vietnam expansion 
+# 2011-06-04 - 2.2 - Courgette
+# makes use of the new pluginsStarted parser hook
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -195,7 +197,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '2.1'
+__version__ = '2.2'
 
 import time, threading, Queue
 import b3.events
@@ -285,9 +287,10 @@ class Bfbc2Parser(AbstractParser):
                 self.error('failed to read max_say_line_length setting "%s" : %s' % (self.config.get('bfbc2', 'max_say_line_length'), err))
         self.debug('line_length: %s' % self._settings['line_length'])
             
-
         self.verbose('GameType: %s, Map: %s' %(self.game.gameType, self.game.mapName))
         
+
+    def pluginsStarted(self):
         self.info('connecting all players...')
         plist = self.getPlayerList()
         for cid, p in plist.iteritems():
@@ -300,8 +303,8 @@ class Bfbc2Parser(AbstractParser):
                 self.debug('client %s found on the server' % cid)
                 client = self.clients.newClient(cid, guid=p['guid'], name=name, team=p['teamId'], squad=p['squadId'], data=p)
                 self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
-              
-                
+
+
     def saybigqueuelistener(self):
         while self.working:
             msg = self.saybigqueue.get()

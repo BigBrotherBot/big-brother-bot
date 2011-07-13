@@ -23,10 +23,11 @@
 #    * add EVT_CLIENT_UNBAN
 # 06/06/2011 - 1.1.4 - Courgette
 #    * add EventsStats class
+# 26/03/2011 - 1.2 - Courgette
+#    * add event EVT_GAME_MAP_CHANGE
 #
-
 __author__  = 'ThorN/xlr8or'
-__version__ = '1.1.4'
+__version__ = '1.2'
 
 import re
 from collections import deque
@@ -70,7 +71,8 @@ class Events:
             ('EVT_GAME_ROUND_START', 'Game Round Start'),
             ('EVT_GAME_ROUND_END', 'Game Round End'),
             ('EVT_GAME_WARMUP', 'Game Warmup'),
-            ('EVT_GAME_EXIT', 'Game Exit')
+            ('EVT_GAME_EXIT', 'Game Exit'),
+            ('EVT_GAME_MAP_CHANGE', 'map changed'),
         ))        
 
     def createEvent(self, key, name=None):

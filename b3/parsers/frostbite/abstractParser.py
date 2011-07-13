@@ -29,9 +29,18 @@
 #    * OnServerLoadinglevel() now fills game.rounds and game.sv_maxrounds 
 # 2010-11-21 - 1.3 - Courgette
 #    * remove rotateMap and changeMap as their implementation differs for MoH 
+# 2011-05-22 - 1.4 - Courgette
+# * create specific events : EVT_GAME_ROUND_PLAYER_SCORES and EVT_GAME_ROUND_TEAM_SCORES
+# * handle Frostbite events : OnServerRoundover, OnServerRoundoverplayers and OnServerRoundoverteamscores
+# 2011-05-24 - 1.4.1 - Courgette
+# * fix getSupportedMaps() so it uses the maplist set for the next round instead of current
+# 2011-05-25 - 1.4.2 - Courgette
+# * fix bug introduced in 1.4.1
+# 2011-06-05 - 1.5.0 - Courgette
+# * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
 #
 __author__  = 'Courgette'
-__version__ = '1.3'
+__version__ = '1.5.0'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -210,6 +219,8 @@ class AbstractParser(b3.parser.Parser):
         self.Events.createEvent('EVT_PUNKBUSTER_LOST_PLAYER', 'PunkBuster client connection lost')
         self.Events.createEvent('EVT_PUNKBUSTER_NEW_CONNECTION', 'PunkBuster client received IP')
         self.Events.createEvent('EVT_CLIENT_SPAWN', 'Client Spawn')
+        self.Events.createEvent('EVT_GAME_ROUND_PLAYER_SCORES', 'round player scores')
+        self.Events.createEvent('EVT_GAME_ROUND_TEAM_SCORES', 'round team scores')
                 
         self.getServerVars()
         self.getServerInfo()
@@ -430,8 +441,8 @@ class AbstractParser(b3.parser.Parser):
 
     def getSupportedMaps(self):
         """return a list of supported levels for the current game mod"""
-        self.getServerInfo() ## make sure to update gameType first
-        supportedMaps = self.write(('admin.supportedMaps', self.game.gameType))
+        [currentMode] = self.write(('admin.getPlaylist',))
+        supportedMaps = self.write(('admin.supportedMaps', currentMode))
         return supportedMaps
 
     def getMapsSoundingLike(self, mapname):
@@ -656,6 +667,35 @@ class AbstractParser(b3.parser.Parser):
         self.joinPlayers()
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
             
+        
+    def OnServerRoundover(self, action, data):
+        """
+        server.onRoundOver <winning team: Team ID>
+        
+        Effect: The round has just ended, and <winning team> won
+        """
+        #['server.onRoundOver', '2']
+        return b3.events.Event(b3.events.EVT_GAME_ROUND_END, data[0])
+        
+        
+    def OnServerRoundoverplayers(self, action, data):
+        """
+        server.onRoundOverPlayers <end-of-round soldier info : player info block>
+        
+        Effect: The round has just ended, and <end-of-round soldier info> is the final detailed player stats
+        """
+        #['server.onRoundOverPlayers', '8', 'clanTag', 'name', 'guid', 'teamId', 'kills', 'deaths', 'score', 'ping', '17', 'RAID', 'mavzee', 'EA_4444444444444444555555555555C023', '2', '20', '17', '310', '147', 'RAID', 'NUeeE', 'EA_1111111111111555555555555554245A', '2', '30', '18', '445', '146', '', 'Strzaerl', 'EA_88888888888888888888888888869F30', '1', '12', '7', '180', '115', '10tr', 'russsssssssker', 'EA_E123456789461416564796848C26D0CD', '2', '12', '12', '210', '141', '', 'Daezch', 'EA_54567891356479846516496842E17F4D', '1', '25', '14', '1035', '129', '', 'Oldqsdnlesss', 'EA_B78945613465798645134659F3079E5A', '1', '8', '12', '120', '256', '', 'TTETqdfs', 'EA_1321654656546544645798641BB6D563', '1', '11', '16', '180', '209', '', 'bozer', 'EA_E3987979878946546546565465464144', '1', '22', '14', '475', '152', '', 'Asdf 1977', 'EA_C65465413213216656546546546029D6', '2', '13', '16', '180', '212', '', 'adfdasse', 'EA_4F313565464654646446446644664572', '1', '4', '25', '45', '162', 'SG1', 'De56546ess', 'EA_123132165465465465464654C2FC2FBB', '2', '5', '8', '75', '159', 'bsG', 'N06540RZ', 'EA_787897944546565656546546446C9467', '2', '8', '14', '100', '115', '', 'Psfds', 'EA_25654321321321000006546464654B81', '2', '15', '15', '245', '140', '', 'Chezear', 'EA_1FD89876543216548796130EB83E411F', '1', '9', '14', '160', '185', '', 'IxSqsdfOKxI', 'EA_481321313132131313213212313112CE', '1', '21', '12', '625', '236', '', 'Ledfg07', 'EA_1D578987994651615166516516136450', '1', '5', '6', '85', '146', '', '5 56 mm', 'EA_90488E6543216549876543216549877B', '2', '0', '0', '0', '192']
+        return b3.events.Event(b3.events.EVT_GAME_ROUND_PLAYER_SCORES, PlayerInfoBlock(data))
+        
+        
+    def OnServerRoundoverteamscores(self, action, data):
+        """
+        server.onRoundOverTeamScores <end-of-round scores: team scores>
+        
+        Effect: The round has just ended, and <end-of-round scores> is the final ticket/kill/life count for each team
+        """
+        #['server.onRoundOverTeamScores', '2', '1180', '1200', '1200']
+        return b3.events.Event(b3.events.EVT_GAME_ROUND_TEAM_SCORES, data[1])
 
     def OnPunkbusterMessage(self, action, data):
         """handles all punkbuster related events and 
@@ -837,7 +877,10 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, reason, client))
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, {'reason': reason, 
+                                                              'duration': duration, 
+                                                              'admin': admin}
+                                        , client))
 
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -900,7 +943,7 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
         
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, reason, client))
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
 
 
     def authorizeClients(self):

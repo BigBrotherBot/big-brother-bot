@@ -122,9 +122,21 @@
 #    * reflect that cid are not converted to int anymore in the clients module
 # v1.7.17 - 03/05/2011 - Courgette
 #     * reflect changes in inflictCustomPenalty method signature
-
-__author__  = 'xlr8or'
-__version__ = '1.7.17'
+# v1.8.0 - 31/05/2011 - Courgette
+#     * Damage event now carry correct damage points
+#     * Damage event weapon code is now the same as the one used for Kill events
+# v1.8.1 / 1.8.2 - 01/06/2011 - Courgette
+#     * fix Damage points
+#     * when game log provides hit info, Kill event will use last damage points instead of 100
+# v1.9.0 - 2011-06-04 - Courgette
+# makes use of the new pluginsStarted parser hook
+# v1.10.0 - 2011-06-05 - Courgette
+# * change data format for EVT_CLIENT_BAN events
+# 14/06/2011 - 1.11.0 - Courgette
+# * cvar code moved to q3a AbstractParser
+#
+__author__  = 'xlr8or, Courgette'
+__version__ = '1.11.0'
 
 
 from b3.parsers.q3a.abstractParser import AbstractParser
@@ -235,17 +247,6 @@ class Iourt41Parser(AbstractParser):
     _reTeamScores = re.compile(r'^Scores:\s+R:(?P<RedScore>.+)\s+B:(?P<BlueScore>.+)$', re.I)
     _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): (?P<name>.*) (?P<team>RED|BLUE|SPECTATOR|FREE) k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) ping:(?P<ping>[0-9]+|CNCT|ZMBI)( (?P<ip>[0-9.]+):(?P<port>[0-9-]+))?$', re.I) # NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
 
-    _reCvarName = re.compile(r'^[a-z0-9_.]+$', re.I)
-    _reCvar = (
-        #"sv_maxclients" is:"16^7" default:"8^7"
-        #latched: "12"
-        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?"\s+default:\s*"(?P<default>.*?)(\^7)?"$', re.I | re.M),
-        #"g_maxGameClients" is:"0^7", the default
-        #latched: "1"
-        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?",\s+the\sdefault$', re.I | re.M),
-        #"mapname" is:"ut4_abbey^7"
-        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?"$', re.I | re.M),
-    )
 
     PunkBuster = None
 
@@ -282,6 +283,74 @@ class Iourt41Parser(AbstractParser):
     UT_MOD_M4='38'
     UT_MOD_FLAG='39'
     UT_MOD_GOOMBA='40'
+    
+    ## weapons id on Hit: lines are different than the one
+    ## on the Kill: lines. Here the translation table
+    hitweapon2killweapon = {
+        1: UT_MOD_KNIFE,
+        2: UT_MOD_BERETTA,
+        3: UT_MOD_DEAGLE,
+        4: UT_MOD_SPAS,
+        5: UT_MOD_MP5K,
+        6: UT_MOD_UMP45,
+        8: UT_MOD_LR300,
+        9: UT_MOD_G36,
+        10: UT_MOD_PSG1,
+        14: UT_MOD_SR8,
+        15: UT_MOD_AK103,
+        17: UT_MOD_NEGEV,
+        19: UT_MOD_M4,
+        22: UT_MOD_KNIFE_THROWN,
+    }
+
+    """ From data provided by Garreth http://bit.ly/jf4QXc on http://bit.ly/krwBCv :
+
+                                Head(0) Helmet(1)     Torso(2)     Kevlar(3)     Arms(4)    Legs(5)    Body(6)    Killed
+    MOD_TELEFRAG='5'             0        0             0             0             0         0         0         0
+    UT_MOD_KNIFE='12'           100      60            44            35            20        20        44        100
+    UT_MOD_KNIFE_THROWN='13'    100      60            44            35            20        20        44        100
+    UT_MOD_BERETTA='14'         100      34            30            20            11        11        30        100
+    UT_MOD_DEAGLE='15'          100      66            57            38            22        22        57        100
+    UT_MOD_SPAS='16'            25       25            25            25            25        25        25        100
+    UT_MOD_UMP45='17'           100      51            44            29            17        17        44        100
+    UT_MOD_MP5K='18'            50       34            30            20            11        11        30        100
+    UT_MOD_LR300='19'           100      51            44            29            17        17        44        100
+    UT_MOD_G36='20'             100      51            44            29            17        17        44        100
+    UT_MOD_PSG1='21'            100      63            97            63            36        36        97        100
+    UT_MOD_HK69='22'            50       50            50            50            50        50        50        100
+    UT_MOD_BLED='23'            15       15            15            15            15        15        15        15
+    UT_MOD_KICKED='24'          20       20            20            20            20        20        20        100
+    UT_MOD_HEGRENADE='25'       50       50            50            50            50        50        50        100
+    UT_MOD_SR8='28'             100      100           100           100           50        50        100       100
+    UT_MOD_AK103='30'           100      58            51            34            19        19        51        100
+    UT_MOD_NEGEV='35'           50       34            30            20            11        11        30        100
+    UT_MOD_HK69_HIT='37'        20       20            20            20            20        20        20        100
+    UT_MOD_M4='38'              100      51            44            29            17        17        44        100
+    UT_MOD_GOOMBA='40'          100      100           100           100           100       100       100       100
+    """
+    damage = {
+        MOD_TELEFRAG: [0, 0, 0, 0, 0, 0, 0, 0],
+        UT_MOD_KNIFE: [100, 60, 44, 35, 20, 20, 44, 100],
+        UT_MOD_KNIFE_THROWN: [100, 60, 44, 35, 20, 20, 44, 100],
+        UT_MOD_BERETTA: [100, 34, 30, 20, 11, 11, 30, 100],
+        UT_MOD_DEAGLE: [100, 66, 57, 38, 22, 22, 57, 100],
+        UT_MOD_SPAS: [25, 25, 25, 25, 25, 25, 25, 100],
+        UT_MOD_UMP45: [100, 51, 44, 29, 17, 17, 44, 100],
+        UT_MOD_MP5K: [50, 34, 30, 20, 11, 11, 30, 100],
+        UT_MOD_LR300: [100, 51, 44, 29, 17, 17, 44, 100],
+        UT_MOD_G36: [100, 51, 44, 29, 17, 17, 44, 100],
+        UT_MOD_PSG1: [100, 63, 97, 63, 36, 36, 97, 100],
+        UT_MOD_HK69: [50, 50, 50, 50, 50, 50, 50, 100],
+        UT_MOD_BLED: [15, 15, 15, 15, 15, 15, 15, 15],
+        UT_MOD_KICKED: [20, 20, 20, 20, 20, 20, 20, 100],
+        UT_MOD_HEGRENADE: [50, 50, 50, 50, 50, 50, 50, 100],
+        UT_MOD_SR8: [100, 100, 100, 100, 50, 50, 100, 100],
+        UT_MOD_AK103: [100, 58, 51, 34, 19, 19, 51, 100],
+        UT_MOD_NEGEV: [50, 34, 30, 20, 11, 11, 30, 100],
+        UT_MOD_HK69_HIT: [20, 20, 20, 20, 20, 20, 20, 100],
+        UT_MOD_M4: [100, 51, 44, 29, 17, 17, 44, 100],
+        UT_MOD_GOOMBA: [100, 100, 100, 100, 100, 100, 100, 100],
+     }
 
     def startup(self):
 
@@ -325,6 +394,7 @@ class Iourt41Parser(AbstractParser):
 
         self._maplist = self.getMaps()
 
+    def pluginsStarted(self):
         # initialize connected clients
         plist = self.getPlayerList()
         for cid, c in plist.iteritems():
@@ -371,27 +441,6 @@ class Iourt41Parser(AbstractParser):
         data['cid'] = playerID
         return data
 
-    def getCvar(self, cvarName):
-        if self._reCvarName.match(cvarName):
-            #"g_password" is:"^7" default:"scrim^7"
-            val = self.write(cvarName)
-            self.debug('Get cvar %s = [%s]', cvarName, val)
-            #sv_mapRotation is:gametype sd map mp_brecourt map mp_carentan map mp_dawnville map mp_depot map mp_harbor map mp_hurtgen map mp_neuville map mp_pavlov map mp_powcamp map mp_railyard map mp_rocket map mp_stalingrad^7 default:^7
-
-            for f in self._reCvar:
-                m = re.match(f, val)
-                if m:
-                    #self.debug('line matched %s' % f.pattern)
-                    break
-
-            if m:
-                #self.debug('m.lastindex %s' % m.lastindex)
-                if m.group('cvar').lower() == cvarName.lower() and m.lastindex > 3:
-                    return b3.cvar.Cvar(m.group('cvar'), value=m.group('value'), default=m.group('default'))
-                elif m.group('cvar').lower() == cvarName.lower():
-                    return b3.cvar.Cvar(m.group('cvar'), value=m.group('value'), default=m.group('value'))
-            else:
-                return None
 
     def getTeam(self, team):
         if str(team).lower() == 'red':
@@ -649,10 +698,14 @@ class Iourt41Parser(AbstractParser):
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
             event = b3.events.EVT_CLIENT_DAMAGE_TEAM
 
-        victim.hitloc = match.group('hitloc')
+        hitloc = match.group('hitloc')
+        weapon = self._convertHitWeaponToKillWeapon(match.group('aweap'))
+        points = self._getDamagePoints(weapon, hitloc)
+        event_data = (points, weapon, hitloc)
+        victim.data['lastDamageTaken'] = event_data
         #victim.state = b3.STATE_ALIVE
         # need to pass some amount of damage for the teamkill plugin - 15 seems okay
-        return b3.events.Event(event, (15, match.group('aweap'), victim.hitloc), attacker, victim)
+        return self.getEvent(event, event_data, attacker, victim)
 
     # kill
     #6:37 Kill: 0 1 16: XLR8or killed =lvl1=Cheetah by UT_MOD_SPAS
@@ -745,13 +798,16 @@ class Iourt41Parser(AbstractParser):
             event = b3.events.EVT_CLIENT_KILL_TEAM
 
         # if not logging damage we need a general hitloc (for xlrstats)
-        if not hasattr(victim, 'hitloc'):
-            victim.hitloc = 'body'
+        if 'lastDamageTaken' in victim.data:
+            lastDamageData = victim.data['lastDamageTaken']
+            del victim.data['lastDamageTaken']
+        else:
+            lastDamageData = (100, weapon, 'body')
 
         victim.state = b3.STATE_DEAD
         #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (victim.name, attacker.name, weapon, victim.hitloc, dType))
         # need to pass some amount of damage for the teamkill plugin - 100 is a kill
-        return b3.events.Event(event, (100, weapon, victim.hitloc, dType), attacker, victim)
+        return self.getEvent(event, (lastDamageData[0], weapon, lastDamageData[2], dType), attacker, victim)
 
     # disconnect
     def OnClientdisconnect(self, action, data, match=None):
@@ -1054,7 +1110,7 @@ class Iourt41Parser(AbstractParser):
         if admin:
             admin.message('^3banned^7: ^1%s^7 (^2@%s^7). His last ip (^1%s^7) has been added to banlist'%(client.exactName, client.id, client.ip))
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, reason, client))
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
         client.disconnect()
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -1381,8 +1437,23 @@ class Iourt41Parser(AbstractParser):
                 else:
                     self.debug('no client found for slot %s' % m.group('slot'))
 
-
-
+    def _getDamagePoints(self, weapon, hitloc):
+        try:
+            points = self.damage[weapon][int(hitloc)]
+            self.debug("_getDamagePoints(%s, %s) -> %s" % (weapon, hitloc, points))
+            return points
+        except KeyError, err:
+            self.warning("_getDamagePoints(%s, %s) cannot find value : %s" % (weapon, hitloc, err))
+            return 15
+        
+    def _convertHitWeaponToKillWeapon(self, hitweapon_id):
+        """on Hit: lines identifiers for weapons are different than
+        the one on Kill: lines"""
+        try:
+            return self.hitweapon2killweapon[int(hitweapon_id)]
+        except KeyError, err:
+            self.warning("unknown weapon id on Hit line: %s", err)
+            return None
 
 """
 #----- Actions -----------------------------------------------------------------

@@ -22,11 +22,11 @@
 # * fix bug in escaping strings containing "
 # 2011-04-17 - 1.0.3 / 1.0.4 - Courgette
 # * fix bug introduced in 1.0.2
+# 2011-05-31 - 1.1.0 - courgette
+# * sqlite compatible
 #
-
-
 __author__  = 'ThorN'
-__version__ = '1.0.4'
+__version__ = '1.1.0'
 
 class QueryBuilder(object):
     def __init__(self, db=None):
@@ -64,7 +64,7 @@ class QueryBuilder(object):
         else:
             raise TypeError, 'Field must be a tuple, list, or string'
 
-    def WhereClause(self, fields=None, values=None, concat=' && '):
+    def WhereClause(self, fields=None, values=None, concat=' and '):
         sql = []
             
         if isinstance(fields, tuple) and values == None \
