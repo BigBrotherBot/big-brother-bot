@@ -77,10 +77,10 @@ class StatusPlugin(b3.plugin.Plugin):
     
     def onLoadConfig(self):
         if self.config.get('settings','output_file')[0:6] == 'ftp://':
-                self._ftpinfo = functions.splitDSN(self.config.get('settings','output_file'))
-                self._ftpstatus = True
+            self._ftpinfo = functions.splitDSN(self.config.get('settings','output_file'))
+            self._ftpstatus = True
         else:        
-                self._outputFile = self.config.getpath('settings', 'output_file')
+            self._outputFile = self.config.getpath('settings', 'output_file')
                 
         self._tkPlugin = self.console.getPlugin('tk')
         self._interval = self.config.getint('settings', 'interval')
