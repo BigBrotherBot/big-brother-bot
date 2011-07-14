@@ -1439,7 +1439,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             client.message('^7Invalid data, try !help xlrhide')
             return False
     
-        if not len(input[1]):
+        if not input[1]:
             client.message('^7Missing data, try !help xlrhide')
             return False
         
