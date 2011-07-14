@@ -40,12 +40,7 @@ class Sof2Parser(AbstractParser):
     _settings['min_wrap_length'] = 100
 
     _commands = {}
-
-    if privateMsg:
-        _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
-    else:
-        _commands['message'] = 'say %(prefix)s [^3%(name)s^7]: %(message)s'
-
+    _commands['message'] = 'say %(prefix)s [^3%(name)s^7]: %(message)s'
     _commands['deadsay'] = 'say %(prefix)s^7 %(message)s'
     _commands['say'] = 'say %(prefix)s^7 %(message)s'
 
@@ -87,18 +82,24 @@ class Sof2Parser(AbstractParser):
             re.IGNORECASE),
 
         #Bot connecting
-        #ClientConnect: 0
-        re.compile(r'^(?P<action>ClientConnect):\s*(?P<data>(?P<bcid>[0-9]+))$', re.IGNORECASE),
+        #ClientConnect: 4 -  []
+        re.compile(r'^(?P<action>ClientConnect):\s*(?P<data>(?P<bcid>[0-9]+)\s-\s\s\[\])$', re.IGNORECASE),
 
         #Falling thru?
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>.*)$', re.IGNORECASE)
         )
 
     #status
-	#map: mp_jor1
-	#num score ping name            lastmsg address               qport rate
-	#--- ----- ---- --------------- ------- --------------------- ----- -----
-	#  0     0  100 xlr8or                0 145.99.135.000:-12949 46278  9000
+    #map: mp_shop
+    #num score ping name            lastmsg address               qport rate
+    #--- ----- ---- --------------- ------- --------------------- ----- -----
+    #  0     0  103 xlr8or               50 145.99.135.000:-2820  64603  9000
+    #  1    24  121 ~cGs*Pr3z~      0 178.202.104.000:20100 23805 25000
+    #  2    20  108 ~cGs*Jonkie*     50 84.85.84.000:-268      18496 25000
+    #  3    18  999 *DS*88  18200 188.157.129.000:20100  29389  9000
+    #  4     3    0 Homer~Sexual         50 bot                   54183 16384
+    #  7     6    0 Wet~Sponge           50 bot                       0 16384
+    #  8     4    0 PaashaasSchaamhaarVerzamelaar     50 bot                       0 16384
 
     #_regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
     _regPlayer = re.compile(
@@ -238,10 +239,7 @@ class Sof2Parser(AbstractParser):
             else:
                 lines = []
                 for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
-                    if self.privateMsg:
-                        lines.append(self.getCommand('message', cid=client.cid, prefix=self.msgPrefix, message=line))
-                    else:
-                        lines.append(self.getCommand('message', prefix=self.msgPrefix, name=client.name, message=line))
+                    lines.append(self.getCommand('message', prefix=self.msgPrefix, name=client.name, message=line))
 
                 self.writelines(lines)
         except:
@@ -287,10 +285,16 @@ class Sof2Parser(AbstractParser):
 
         # split port from ip field
         if bclient.has_key('ip'):
-            ipPortData = string.split(bclient['ip'], ':', 1)
-            bclient['ip'] = ipPortData[0]
-            if len(ipPortData) > 1:
-                bclient['port'] = ipPortData[1]
+            if bclient['ip'] == 'bot':
+                #not sure if this one works...
+                self.bot('Bot Connected!')
+                bclient['ip'] = '0.0.0.0'
+                bclient['cl_guid'] = 'BOT' + str(bclient['cid'])
+            else:
+                ipPortData = string.split(bclient['ip'], ':', 1)
+                bclient['ip'] = ipPortData[0]
+                if len(ipPortData) > 1:
+                    bclient['port'] = ipPortData[1]
 
         if bclient.has_key('team'):
             bclient['team'] = self.getTeam(bclient['team'])
@@ -419,10 +423,10 @@ class Sof2Parser(AbstractParser):
         client = self.clients.getByExactName(msg[0])
 
         if client:
-            self.verbose('Client Found: %s' % client.name)
+            self.verbose('OnSay: Client Found: %s' % client.name)
             return b3.events.Event(b3.events.EVT_CLIENT_SAY, msg[1], client)
         else:
-            self.verbose('No Client Found!')
+            self.verbose('OnSay: No Client Found!')
             return None
 
     # sayteam
@@ -435,10 +439,10 @@ class Sof2Parser(AbstractParser):
         client = self.clients.getByExactName(msg[0])
 
         if client:
-            self.verbose('Client Found: %s' % client.name)
+            self.verbose('OnSayTeam: Client Found: %s' % client.name)
             return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, msg[1], client, client.team)
         else:
-            self.verbose('No Client Found!')
+            self.verbose('OnSayTeam: No Client Found!')
             return None
 
     # damage

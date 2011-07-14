@@ -29,3 +29,28 @@ class Sof2PmParser(Sof2Parser):
     gameName = 'sof2pm'
     privateMsg = True
 
+    _commands = {}
+    _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
+    _commands['deadsay'] = 'say %(prefix)s^7 %(message)s'
+    _commands['say'] = 'say %(prefix)s^7 %(message)s'
+
+    _commands['set'] = 'set %(name)s "%(value)s"'
+    _commands['kick'] = 'clientkick %(cid)s'
+    _commands['ban'] = 'addip %(cid)s'
+    _commands['tempban'] = 'clientkick %(cid)s'
+
+    def message(self, client, text):
+        try:
+            if client == None:
+                self.say(text)
+            elif client.cid == None:
+                pass
+            else:
+                lines = []
+                for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
+                    lines.append(self.getCommand('message', cid=client.cid, prefix=self.msgPrefix, message=line))
+
+                self.writelines(lines)
+        except:
+            pass
+
