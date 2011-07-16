@@ -18,6 +18,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    16/07/2011 - 1.3.6 - xlr8or
+#    * Client.bot added - ability to identify a bot
 #    08/04/2011 - 1.3.5 - Courgette
 #    * make sure Clients.empty() does not delete hidden clients
 #    08/04/2011 - 1.3.4 - Courgette
@@ -74,7 +76,7 @@ import time
 import traceback
 
 __author__  = 'ThorN'
-__version__ = '1.3.5'
+__version__ = '1.3.6'
 
 
 class ClientVar(object):
@@ -127,6 +129,7 @@ class Client(object):
     maxGroup = None
     authed = False
     hide = False # set to true for non-player clients (world entities)
+    bot = False
 
     state = None
     authorizing = False
