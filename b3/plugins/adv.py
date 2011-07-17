@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
+# 07/17/2011 - 1.3.2 - Freelander
+#    prevent error if next map is not returned
 # 04/18/2011 - 1.3.1 - Courgette
 #    makes @admins show admins' level as well
 # 04/18/2011 - 1.3.0 - Courgette
@@ -42,7 +44,7 @@
 #    Converted to use XML config
 
 __author__ = 'ThorN'
-__version__ = '1.3.1'
+__version__ = '1.3.2'
 
 import b3
 import os
@@ -224,7 +226,11 @@ class AdvPlugin(b3.plugin.Plugin):
         ad = self._msg.getnext()
         if ad:
             if ad == "@nextmap":
-                ad = "^2Next map: ^3" + self.console.getNextMap()
+                if self.console.getNextMap():
+                    ad = "^2Next map: ^3" + self.console.getNextMap()
+                else:
+                    self.debug('Cannot get map rotation')
+                    ad = None
             elif ad == "@time":
                 ad = "^2Time: ^3" + self.console.formatTime(time.time())
             elif ad[:5] == "@feed" and self._feed:
