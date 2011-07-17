@@ -47,9 +47,10 @@
 # 16/03/2011 - 1.4.19 - xlr8or - improve PunkBuster check
 # 28/03/2011 - 1.4.20 - Bravo17 - CoD5 JT regexp fix
 # 09/04/2011 - 1.4.21 - Courgette - reflect that cid are not converted to int anymore in the clients module
+# 16/07/2011 - 1.4.22 - Freelander - Minor bugfix to flag disconnecting client properly if found in authentication queue 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.21'
+__version__ = '1.4.22'
 
 import re, string, threading
 import b3
@@ -247,6 +248,7 @@ class CodParser(AbstractParser):
             # Check if we're in the authentication queue
             if match.group('cid') in self._counter:
                 # Flag it to remove from the queue
+                cid = match.group('cid')
                 self._counter[cid] = 'Disconnected'
                 self.debug('slot %s has disconnected or was forwarded to our http download location, removing from authentication queue...' % cid)
         return None
