@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2011/07/19 - 1.24.9 - Courgette
+#   * fix periodic events stats dumping blocking B3 restart/shutdown
 #   2011/05/03 - 1.24.8 - Courgette
 #   * event queue size can be set in b3.xml in section 'b3/event_queue_size'
 #   2011/05/03 - 1.24.7 - Courgette
@@ -128,7 +130,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.24.8'
+__version__ = '1.24.9'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket, threading
@@ -448,14 +450,14 @@ class Parser(object):
 
     def _dumpEventsStats(self):
         self._eventsStats.dumpStats()
-        threading.Timer(60, self._dumpEventsStats, ()).start()
 
     def start(self):
         """Start B3"""
         self.startup()
         self.say('%s ^2[ONLINE]' % b3.version)
         self.startPlugins()
-        threading.Timer(60, self._dumpEventsStats, ()).start()
+        self._eventsStats_cronTab = b3.cron.CronTab(self._dumpEventsStats)
+        self.cron + self._eventsStats_cronTab
         thread.start_new_thread(self.handleEvents, ())
         self.run()
 
