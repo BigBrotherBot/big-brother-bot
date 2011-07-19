@@ -1,3 +1,69 @@
+2011-06-07  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit f5820a057622017cf4ee50d979cbeec42e967ed3 Author:
+	Courgette <courgette@bigbrotherbot.net> Date:   Mon Jun 6 20:02:07
+	2011 +0200
+
+2011-06-06  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/events.py, b3/functions.py, b3/parser.py: add events stats add periodic stats about the time it takes to handle events and the
+	time events wait in queue before being processed
+
+2011-06-04  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 489d8222779b01af9fd6eeb87c5dd2802b38e2ee Author:
+	Courgette <courgette@bigbrotherbot.net> Date:   Sat Jun 4 16:56:47
+	2011 +0200
+
+2011-05-31  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: xlrstats: removed sql execution code to
+	avoid MySQL 5.5 issues locking the db
+
+2011-05-31  xlr8or <xlr8or@xlr8or.com>
+
+	* py2exe_builder/b3-installer-project.iss: Make installer use system
+	drive, not use previous install dir.
+
+2011-05-30  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parser.py, b3/sql/b3-update.sql: Don't run b3-update.sql on
+	startup
+
+2011-05-29  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/fake.py: FAKE: fixes to getClientPenalties and numPenalties
+
+2011-05-29  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/conf/plugin_admin.xml: ADMIN PLUGIN: fix typo in config
+
+2011-05-27  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/homefront/__init__.py, test/parsers/__init__.py,
+	test/parsers/homefront/__init__.py,
+	test/parsers/homefront/test_HomefrontParser.py: HOMEFRONT : KILL
+	event correctly parsed with player names or player SteamID
+
+2011-05-27  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO,
+	py2exe_builder/b3-installer-project.iss: version change to 1.6.1
+
+2011-05-25  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/cod7.py: COD7: kick commands now sends reason
+
+2011-05-24  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/homefront/__init__.py: "kill" penalty rcon command now
+	uses SteamID instead of player name
+
+2011-05-22  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt, b3.egg-info/PKG-INFO, b3/PKG-INFO,
+	setup.py, versions.txt: release preparation
+
 2011-05-22  xlr8or <xlr8or@xlr8or.com>
 
 	* : commit 392826c9778822fae307cbe3c68baacbf811fdda Author:

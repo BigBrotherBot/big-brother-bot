@@ -51,6 +51,9 @@
 #   Make sure we hide WORLD and Server in the webfront
 # 16-05-2011 - 2.4.0 - Mark Weirath
 #   Make use of sql files for updating table, no more methods in the plugin
+# 15-07-2011 - 2.5.0 - Mark Weirath
+#   Pythonized code.
+#   Added ability to hide bots from webfront and exclude damage/kills to and from bots to be processed
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -58,7 +61,7 @@
 # XLRstats Real Time playerstats plugin
 
 __author__  = 'Tim ter Laak / Mark Weirath'
-__version__ = '2.4.0'
+__version__ = '2.5.0'
 
 # Version = major.minor.patches
 
@@ -83,6 +86,10 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     _ffa = ['dm', 'ffa', 'syc-ffa']
     _damage_able_games = ['cod'] # will only count assists when damage is 50 points or more.
     _damage_ability = False
+    hide_bots = True # set client.hide to True so bots are hidden from the stats
+    exclude_bots = True # kills and damage to and from bots do not affect playerskill
+
+    # history management
     _cronTabWeek = None
     _cronTabMonth = None
     _cronTabKillBonus = None
@@ -189,8 +196,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         #--end OBS
 
         # create default tables if not present
-        if self._defaultTableNames:
-            self.console.storage.queryFromFile("@b3/sql/xlrstats.sql", silent=True)
+        # removed to avoid MySQL 5.5 issues locking the db
+        #if self._defaultTableNames:
+        #    self.console.storage.queryFromFile("@b3/sql/xlrstats.sql", silent=True)
 
         # register the events we're interested in.
         self.registerEvent(b3.events.EVT_CLIENT_JOIN)
@@ -205,18 +213,18 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         sclient = self.console.clients.getByGUID("WORLD")
         if sclient is None:
             sclient = self.console.clients.getByGUID("Server")
-        if (sclient is not None):
+        if sclient is not None:
             self._world_clientid = sclient.id
             self.debug('Got client id for B3: %s; %s' %(self._world_clientid, sclient.name))
             #make sure its hidden in the webfront
             player = self.get_PlayerStats(sclient)
-            if (player):
+            if player:
                 player.hide = 1
                 self.save_Stat(player)
 
 
         #determine the ability to work with damage based assists
-        if ( self.console.gameName[:3] in self._damage_able_games ):
+        if self.console.gameName[:3] in self._damage_able_games:
             self._damage_ability = True
             self.assist_timespan = self.damage_assist_release
 
@@ -224,7 +232,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         if self.keep_history:
             self._xlrstatstables = [self.playerstats_table, self.weaponstats_table, self.weaponusage_table, self.bodyparts_table, self.playerbody_table, self.opponents_table, self.mapstats_table, self.playermaps_table, self.actionstats_table, self.playeractions_table, self.history_monthly_table, self.history_weekly_table]
             _tables = self.showTables(xlrstats=True)
-            if ( (self.history_monthly_table in _tables) and (self.history_monthly_table in _tables) ):
+            if (self.history_monthly_table in _tables) and (self.history_monthly_table in _tables):
                 self.verbose('History Tables are present! Installing history Crontabs:')
                 # remove existing crontabs
                 if self._cronTabMonth:
@@ -278,6 +286,16 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         #end startup sequence
 
     def onLoadConfig(self):
+        try:
+            self.hide_bots = self.config.gebool('settings', 'hide_bots')
+        except:
+            self.debug('Using default value (%s) for settings::hide_bots', self.hide_bots)
+
+        try:
+            self.exclude_bots = self.config.getbool('settings', 'exclude_botkills')
+        except:
+            self.debug('Using default value (%s) for settings::exclude_botkills', self.exclude_bots)
+
         try:
             self.minPlayers = self.config.getint('settings', 'minplayers')
         except:
@@ -468,22 +486,22 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def onEvent(self, event):
 
-        if (event.type == b3.events.EVT_CLIENT_JOIN):
+        if event.type == b3.events.EVT_CLIENT_JOIN:
             self.join(event.client)
-        elif (event.type == b3.events.EVT_CLIENT_KILL):
+        elif event.type == b3.events.EVT_CLIENT_KILL:
             self.kill(event.client, event.target, event.data)
-        elif (event.type == b3.events.EVT_CLIENT_KILL_TEAM):
+        elif event.type == b3.events.EVT_CLIENT_KILL_TEAM:
             if self.console.game.gameType in self._ffa:
                 self.kill(event.client, event.target, event.data)
             else:
                 self.teamkill(event.client, event.target, event.data)
-        elif (event.type == b3.events.EVT_CLIENT_DAMAGE):
+        elif event.type == b3.events.EVT_CLIENT_DAMAGE:
             self.damage(event.client, event.target, event.data)
-        elif (event.type == b3.events.EVT_CLIENT_SUICIDE):
+        elif event.type == b3.events.EVT_CLIENT_SUICIDE:
             self.suicide(event.client, event.target, event.data)
-        elif (event.type == b3.events.EVT_GAME_ROUND_START):
+        elif event.type == b3.events.EVT_GAME_ROUND_START:
             self.roundstart()
-        elif (event.type == b3.events.EVT_CLIENT_ACTION):
+        elif event.type == b3.events.EVT_CLIENT_ACTION:
             self.action(event.client, event.data)
         else:       
             self.dumpEvent(event)
@@ -494,20 +512,20 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             event.type, event.client, event.target, event.data)
         
     def win_prob(self, player_skill, opponent_skill):    
-        return ( 1 / ( 10 ** ( (opponent_skill - player_skill) / self.steepness ) + 1 ) )
+        return 1 / ( 10 ** ( (opponent_skill - player_skill) / self.steepness ) + 1 )
      
      
     # Retrieves an existing stats record for given client,
     # or makes a new one IFF client's level is high enough
     # Otherwise (also on error), it returns None.
     def get_PlayerStats(self, client=None):
-        if (client is None):
+        if client is None:
             id = self._world_clientid
         else:
             id = client.id
         q = 'SELECT * from %s WHERE client_id = %s LIMIT 1' % (self.playerstats_table, id)
         cursor = self.query(q)
-        if (cursor and (cursor.rowcount > 0) ):
+        if cursor and (cursor.rowcount > 0):
             r = cursor.getRow()
             s = PlayerStats()
             s.id = r['id']
@@ -527,7 +545,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             s.rounds = r['rounds']
             s.hide = r['hide']
             return s
-        elif ( (client is None) or (client.maxLevel >= self.minlevel) ):
+        elif (client is None) or (client.maxLevel >= self.minlevel):
             s = PlayerStats()
             s._new = True
             s.skill = self.defaultskill
@@ -543,7 +561,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         s = WeaponStats()
         q = 'SELECT * from %s WHERE name = "%s" LIMIT 1' % (self.weaponstats_table, name)
         cursor = self.query(q)
-        if (cursor and (cursor.rowcount > 0) ):
+        if cursor and (cursor.rowcount > 0):
             r = cursor.getRow()
             s.id = r['id']
             s.name = r['name']
@@ -560,7 +578,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         s = Bodyparts()
         q = 'SELECT * from %s WHERE name = "%s" LIMIT 1' % (self.bodyparts_table, name)
         cursor = self.query(q)
-        if (cursor and (cursor.rowcount > 0) ):
+        if cursor and (cursor.rowcount > 0):
             r = cursor.getRow()
             s.id = r['id']
             s.name = r['name']
@@ -577,7 +595,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         s = MapStats()
         q = 'SELECT * from %s WHERE name = "%s" LIMIT 1' % (self.mapstats_table, name)
         cursor = self.query(q)
-        if (cursor and (cursor.rowcount > 0) ):
+        if cursor and (cursor.rowcount > 0):
             r = cursor.getRow()
             s.id = r['id']
             s.name = r['name']
@@ -596,7 +614,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         s = WeaponUsage()
         q = 'SELECT * from %s WHERE weapon_id = %s AND player_id = %s LIMIT 1' % (self.weaponusage_table, weaponid, playerid)
         cursor = self.query(q)
-        if (cursor and (cursor.rowcount > 0) ):
+        if cursor and (cursor.rowcount > 0):
             r = cursor.getRow()
             s.id = r['id']
             s.player_id = r['player_id']
@@ -617,7 +635,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         s = Opponents()
         q = 'SELECT * from %s WHERE killer_id = %s AND target_id = %s LIMIT 1' % (self.opponents_table, killerid, targetid)
         cursor = self.query(q)
-        if (cursor and (cursor.rowcount > 0) ):
+        if cursor and (cursor.rowcount > 0):
             r = cursor.getRow()
             s.id = r['id']
             s.killer_id = r['killer_id']
@@ -635,7 +653,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         s = PlayerBody()
         q = 'SELECT * from %s WHERE bodypart_id = %s AND player_id = %s LIMIT 1' % (self.playerbody_table, bodypartid, playerid)
         cursor = self.query(q)
-        if (cursor and (cursor.rowcount > 0) ):
+        if cursor and (cursor.rowcount > 0):
             r = cursor.getRow()
             s.id = r['id']
             s.player_id = r['player_id']
@@ -656,7 +674,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         s = PlayerMaps()
         q = 'SELECT * from %s WHERE map_id = %s AND player_id = %s LIMIT 1' % (self.playermaps_table, mapid, playerid)
         cursor = self.query(q)
-        if (cursor and (cursor.rowcount > 0) ):
+        if cursor and (cursor.rowcount > 0):
             r = cursor.getRow()
             s.id = r['id']
             s.player_id = r['player_id']
@@ -678,7 +696,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         s = ActionStats()
         q = 'SELECT * from %s WHERE name = "%s" LIMIT 1' % (self.actionstats_table, name)
         cursor = self.query(q)
-        if (cursor and (cursor.rowcount > 0) ):
+        if cursor and (cursor.rowcount > 0):
             r = cursor.getRow()
             s.id = r['id']
             s.name = r['name']
@@ -693,7 +711,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         s = PlayerActions()
         q = 'SELECT * from %s WHERE action_id = %s AND player_id = %s LIMIT 1' % (self.playeractions_table, actionid, playerid)
         cursor = self.query(q)
-        if (cursor and (cursor.rowcount > 0) ):
+        if cursor and (cursor.rowcount > 0):
             r = cursor.getRow()
             s.id = r['id']
             s.player_id = r['player_id']
@@ -714,7 +732,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             q = stat._insertquery()
             #self.debug('Inserting using: ', q)
             cursor = self.query(q)
-            if (cursor.rowcount > 0):
+            if cursor.rowcount > 0:
                 stat.id = cursor.lastrowid
                 delattr(stat, '_new')
         else:
@@ -743,12 +761,12 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             ainfo = target._attackers
 
         for k, v in ainfo.iteritems():
-            if (k == client.cid):
+            if k == client.cid:
                 #don't award the killer for the assist aswell
                 continue
-            elif (time.time() - v < self.assist_timespan):
+            elif time.time() - v < self.assist_timespan:
                 assister = self.console.clients.getByCID(k)
-                self.verbose('----> XLRstats: assister = %s' %(assister.name))
+                self.verbose('----> XLRstats: assister = %s' % assister.name)
 
                 anonymous = None
                
@@ -756,20 +774,20 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 assiststats = self.get_PlayerStats(assister)
 
                 # if both should be anonymous, we have no work to do
-                if ( (assiststats is None) and (victimstats is None) ):
+                if (assiststats is None) and (victimstats is None):
                     self.verbose('----> XLRstats: check_Assists: %s & %s both anonymous, continueing' %(assister.name, target.name))
                     continue
                     
-                if (victimstats == None):
+                if victimstats is None:
                     anonymous = VICTIM
                     victimstats = self.get_PlayerAnon()
-                    if (victimstats == None):
+                    if victimstats is None:
                         continue
 
-                if (assiststats == None):
+                if assiststats is None:
                     anonymous = ASSISTER
                     assiststats = self.get_PlayerAnon()
-                    if (assiststats == None):
+                    if assiststats is None:
                         continue
 
                 #calculate the win probability for the assister and victim
@@ -793,14 +811,14 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                     weapon_factor = 1.0
          
                 #calculate new skill for the assister
-                if ( anonymous != ASSISTER ):
-                    if (assiststats.kills > self.Kswitch_kills):
+                if anonymous != ASSISTER:
+                    if assiststats.kills > self.Kswitch_kills:
                         Kfactor = self.Kfactor_low
                     else:
                         Kfactor = self.Kfactor_high
     
                     oldskill = assiststats.skill
-                    if (( target.team == assister.team ) and not ( self.console.game.gameType in self._ffa )):
+                    if ( target.team == assister.team ) and not ( self.console.game.gameType in self._ffa ):
                         #assister is a teammate and needs skill and assists reduced
                         _assistbonus = self.assist_bonus * Kfactor * weapon_factor * (0-assist_prob)
                         assiststats.skill = float(assiststats.skill) + _assistbonus
@@ -825,14 +843,14 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                     self.save_Stat(assiststats)
 
                 #calculate new skill for the victim
-                if (anonymous != VICTIM):
-                    if (victimstats.kills > self.Kswitch_kills):
+                if anonymous != VICTIM:
+                    if victimstats.kills > self.Kswitch_kills:
                         Kfactor = self.Kfactor_low
                     else:
                         Kfactor = self.Kfactor_high
     
                     oldskill = victimstats.skill
-                    if (( target.team == assister.team ) and not ( self.console.game.gameType in self._ffa )):
+                    if ( target.team == assister.team ) and not ( self.console.game.gameType in self._ffa ):
                         #assister was a teammate, this should not affect victims skill.
                         pass
                     else:
@@ -847,13 +865,18 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         return _count, _sum, _vsum
 
     def kill(self, client, target, data):
-        if (client == None) or (client.id == self._world_clientid):
+        if (client is None) or (client.id == self._world_clientid):
             return
-        if (target == None):
+        if target is None:
             return
-        if (data == None):
+        if data is None:
             return
-            
+
+        # exclude botkills?
+        if (client.bot or target.bot) and self.exclude_bots:
+            self.verbose('Bot involved, do not process!')
+            return
+
         _assists_count, _assists_sum, _victim_sum = self.check_Assists(client, target, data, 'kill')
 
         anonymous = None
@@ -862,20 +885,20 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         victimstats = self.get_PlayerStats(target)
 
         # if both should be anonymous, we have no work to do
-        if ( (killerstats is None) and (victimstats is None) ):
+        if (killerstats is None) and (victimstats is None):
             return
             
-        if (killerstats == None):
+        if killerstats is None:
             anonymous = KILLER
             killerstats = self.get_PlayerAnon()
-            if (killerstats is None):
+            if killerstats is None:
                 return
             killerstats.skill = self.defaultskill
                 
-        if (victimstats == None):
+        if victimstats is None:
             anonymous = VICTIM
             victimstats = self.get_PlayerAnon()
-            if (victimstats == None):
+            if victimstats is None:
                 return
 
         #calculate winning probabilities for both players
@@ -897,8 +920,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             weapon_factor = 1.0
          
         #calculate new stats for the killer
-        if ( anonymous != KILLER ):
-            if (killerstats.kills > self.Kswitch_kills):
+        if anonymous != KILLER:
+            if killerstats.kills > self.Kswitch_kills:
                 Kfactor = self.Kfactor_low
             else:
                 Kfactor = self.Kfactor_high
@@ -907,9 +930,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             #pure skilladdition for a 100% kill
             _skilladdition = self.kill_bonus * Kfactor * weapon_factor * (1-killer_prob)
             #deduct the assists from the killers skill, but no more than 50%
-            if ( _assists_sum == 0 ):
+            if _assists_sum == 0:
                 pass
-            elif (_assists_sum >= ( _skilladdition / 2 )):
+            elif _assists_sum >= ( _skilladdition / 2 ):
                 _skilladdition /= 2
                 self.verbose('----> XLRstats: Killer: assists > 50perc: %.3f - skilladd: %.3f' %(_assists_sum, _skilladdition))
             else:
@@ -920,17 +943,17 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.verbose('----> XLRstats: Killer: oldsk: %.3f - newsk: %.3f' %(oldskill, killerstats.skill))
             killerstats.kills = int(killerstats.kills) + 1
  
-            if ( int(killerstats.deaths) != 0):
+            if int(killerstats.deaths) != 0:
                 killerstats.ratio = float(killerstats.kills) / float(killerstats.deaths)
             else:
                 killerstats.ratio = 0.0
 
-            if ( int(killerstats.curstreak) > 0):
+            if int(killerstats.curstreak) > 0:
                 killerstats.curstreak = int(killerstats.curstreak) + 1
             else:
                 killerstats.curstreak = 1
 
-            if ( int(killerstats.curstreak) > int(killerstats.winstreak) ):
+            if int(killerstats.curstreak) > int(killerstats.winstreak):
                 killerstats.winstreak = int(killerstats.curstreak)
             else:
                 killerstats.winstreak = int(killerstats.winstreak)        
@@ -940,8 +963,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.save_Stat(killerstats)
 
         #calculate new stats for the victim
-        if (anonymous != VICTIM):
-            if (victimstats.kills > self.Kswitch_kills):
+        if anonymous != VICTIM:
+            if victimstats.kills > self.Kswitch_kills:
                 Kfactor = self.Kfactor_low
             else:
                 Kfactor = self.Kfactor_high    
@@ -951,9 +974,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             #pure skilldeduction for a 100% kill
             _skilldeduction = Kfactor * weapon_factor * (0-victim_prob)
             #deduct the assists from the victims skill deduction, but no more than 50%
-            if ( _victim_sum == 0 ):
+            if _victim_sum == 0:
                 pass
-            elif ( _victim_sum <= ( _skilldeduction / 2 )): #carefull, negative numbers here
+            elif _victim_sum <= ( _skilldeduction / 2 ): #carefull, negative numbers here
                 _skilldeduction /= 2
                 self.verbose('----> XLRstats: Victim: assists > 50perc: %.3f - skilldeduct: %.3f' %( _victim_sum, _skilldeduction))
             else:
@@ -966,12 +989,12 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
             victimstats.ratio = float(victimstats.kills) / float(victimstats.deaths)
 
-            if ( int(victimstats.curstreak) < 0):
+            if int(victimstats.curstreak) < 0:
                 victimstats.curstreak = int(victimstats.curstreak) - 1
             else:
                 victimstats.curstreak = -1
 
-            if ( victimstats.curstreak < int(victimstats.losestreak) ):
+            if victimstats.curstreak < int(victimstats.losestreak):
                 victimstats.losestreak = victimstats.curstreak
             else:
                 victimstats.losestreak = int(victimstats.losestreak)        
@@ -981,17 +1004,17 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.save_Stat(victimstats)
 
         #make sure the record for anonymous is really created with an insert once
-        if (anonymous):
-            if ( (anonymous == KILLER) and (hasattr(killerstats, '_new')) ):
+        if anonymous:
+            if (anonymous == KILLER) and (hasattr(killerstats, '_new')):
                 self.save_Stat(killerstats)
-            elif ( (anonymous == VICTIM) and (hasattr(victimstats, '_new')) ):
+            elif (anonymous == VICTIM) and (hasattr(victimstats, '_new')):
                 self.save_Stat(victimstats)  
         
         #adjust the "opponents" table to register who killed who
         opponent = self.get_Opponent(targetid=victimstats.id, killerid=killerstats.id)
         retal = self.get_Opponent(targetid=killerstats.id, killerid=victimstats.id)
         #the above should always succeed, but you never know...
-        if (opponent and retal):
+        if opponent and retal:
             opponent.kills += 1
             retal.retals += 1
             self.save_Stat(opponent)
@@ -999,13 +1022,13 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             
         #adjust weapon statistics
         weaponstats = self.get_WeaponStats(name=actualweapon)
-        if (weaponstats):
+        if weaponstats:
             weaponstats.kills += 1
             self.save_Stat(weaponstats)
             
             w_usage_killer = self.get_WeaponUsage(playerid=killerstats.id, weaponid=weaponstats.id)
             w_usage_victim = self.get_WeaponUsage(playerid=victimstats.id, weaponid=weaponstats.id)
-            if (w_usage_killer and w_usage_victim):
+            if w_usage_killer and w_usage_victim:
                 w_usage_killer.kills += 1
                 w_usage_victim.deaths += 1
                 self.save_Stat(w_usage_killer)
@@ -1013,13 +1036,13 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         
         #adjust bodypart statistics
         bodypart = self.get_Bodypart(name=data[2])
-        if (bodypart):
+        if bodypart:
             bodypart.kills += 1
             self.save_Stat(bodypart)
          
             bp_killer = self.get_PlayerBody(playerid=killerstats.id, bodypartid=bodypart.id)
             bp_victim = self.get_PlayerBody(playerid=victimstats.id, bodypartid=bodypart.id)
-            if (bp_killer and bp_victim):
+            if bp_killer and bp_victim:
                 bp_killer.kills += 1
                 bp_victim.deaths += 1
                 self.save_Stat(bp_killer)
@@ -1027,13 +1050,13 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         #adjust map statistics
         map = self.get_MapStats(self.console.game.mapName)
-        if (map):
+        if map:
             map.kills += 1
             self.save_Stat(map)
             
             map_killer = self.get_PlayerMaps(playerid=killerstats.id, mapid=map.id)
             map_victim = self.get_PlayerMaps(playerid=victimstats.id, mapid=map.id)
-            if (map_killer and map_victim):
+            if map_killer and map_victim:
                 map_killer.kills += 1
                 map_victim.deaths += 1
                 self.save_Stat(map_killer)
@@ -1046,12 +1069,16 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         if client.id == self._world_clientid:
             self.verbose('----> XLRstats: onDamage: WORLD-damage, moving on...')
             return None
-        if (client.cid == target.cid):
+        if client.cid == target.cid:
             self.verbose('----> XLRstats: onDamage: self damage: %s damaged %s, continueing' %(client.name, target.name))
+            return None
+        # exclude botdamage?
+        if (client.bot or target.bot) and self.exclude_bots:
+            self.verbose('Bot involved, do not process!')
             return None
 
         #check if game is _damage_able -> 50 points or more damage will award an assist
-        if ( self._damage_ability and data[0] < 50 ):
+        if self._damage_ability and data[0] < 50:
             self.verbose('---> XLRstats: Not enough damage done to award an assist')
             return
 
@@ -1061,30 +1088,30 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             target._attackers = {}
             target._attackers[client.cid] = time.time()
         self.verbose('----> XLRstats: onDamage: attacker added: %s (%s) damaged %s (%s)' %(client.name, client.cid, target.name, target.cid))
-        self.verbose('----> XLRstats: Assistinfo: %s' %(target._attackers))
+        self.verbose('----> XLRstats: Assistinfo: %s' % target._attackers)
 
     def suicide(self, client, target, data):
-        if (client == None):
+        if client is None:
             return
-        if (target == None):
+        if target is None:
             return
-        if (data == None):
+        if data is None:
             return
 
         self.check_Assists(client, target, data, 'suicide')
 
         playerstats = self.get_PlayerStats(client)
 
-        if (playerstats is None):
+        if playerstats is None:
             #anonymous player. We're not interested :)
             return
         
         playerstats.suicides += 1
-        if ( playerstats.curstreak < 0):
+        if playerstats.curstreak < 0:
             playerstats.curstreak -= 1
         else:
             playerstats.curstreak = -1
-        if ( playerstats.curstreak < playerstats.losestreak ):
+        if playerstats.curstreak < playerstats.losestreak:
             playerstats.losestreak = playerstats.curstreak
         
         oldskill = playerstats.skill
@@ -1103,34 +1130,34 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         #update weapon stats
         weaponstats = self.get_WeaponStats(name=actualweapon)
-        if (weaponstats):
+        if weaponstats:
             weaponstats.suicides += 1
             self.save_Stat(weaponstats)
             
             w_usage = self.get_WeaponUsage(playerid=playerstats.id, weaponid=weaponstats.id)
-            if (w_usage):
+            if w_usage:
                 w_usage.suicides += 1
                 self.save_Stat(w_usage)
                 
         #update bodypart stats
         bodypart = self.get_Bodypart(name=data[2])
-        if (bodypart):
+        if bodypart:
             bodypart.suicides += 1
             self.save_Stat(bodypart)
             
             bp_player = self.get_PlayerBody(playerid=playerstats.id, bodypartid=bodypart.id)
-            if(bp_player):
+            if bp_player:
                 bp_player.suicides = int(bp_player.suicides) + 1
                 self.save_Stat(bp_player)
 
         #adjust map statistics
         map = self.get_MapStats(self.console.game.mapName)
-        if (map):
+        if map:
             map.suicides += 1
             self.save_Stat(map)
             
             map_player = self.get_PlayerMaps(playerid=playerstats.id, mapid=map.id)
-            if (map_player):
+            if map_player:
                 map_player.suicides += 1
                 self.save_Stat(map_player)
 
@@ -1138,11 +1165,11 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         return
         
     def teamkill(self, client, target, data):
-        if (client == None):
+        if client is None:
             return
-        if (target == None):
+        if target is None:
             return
-        if (data == None):
+        if data is None:
             return
 
         anonymous = None
@@ -1153,24 +1180,24 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         victimstats = self.get_PlayerStats(target)
 
         # if both should be anonymous, we have no work to do
-        if ( (killerstats is None) and (victimstats is None) ):
+        if (killerstats is None) and (victimstats is None):
             return
 
-        if (killerstats == None):
+        if killerstats is None:
             anonymous = KILLER
             killerstats = self.get_PlayerAnon()
-            if (killerstats is None):
+            if killerstats is None:
                 return
             killerstats.skill = self.defaultskill
                 
-        if (victimstats == None):
+        if victimstats is None:
             anonymous = VICTIM
             victimstats = self.get_PlayerAnon()
-            if (victimstats == None):
+            if victimstats is None:
                 return
             victimstats.skill = self.defaultskill
 
-        if (anonymous != KILLER):
+        if anonymous != KILLER:
             #Calculate new stats for the killer
             oldskill = killerstats.skill
             killerstats.skill = (1 - (self.tk_penalty_percent / 100.0) ) * float(killerstats.skill) 
@@ -1180,7 +1207,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 client.message('^5XLRstats:^7 Teamkill -> skill: ^1%.3f^7 -> ^2%.1f^7' %(killerstats.skill-oldskill, killerstats.skill))
             self.save_Stat(killerstats)
 
-        if (anonymous !=VICTIM):
+        if anonymous !=VICTIM:
             #Calculate new stats for the victim
             victimstats.teamdeaths += 1
             self.save_Stat(victimstats)
@@ -1197,13 +1224,13 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         #adjust weapon statistics
         weaponstats = self.get_WeaponStats(name=actualweapon)
-        if (weaponstats):
+        if weaponstats:
             weaponstats.teamkills += 1
             self.save_Stat(weaponstats)
             
             w_usage_killer = self.get_WeaponUsage(playerid=killerstats.id, weaponid=weaponstats.id)
             w_usage_victim = self.get_WeaponUsage(playerid=victimstats.id, weaponid=weaponstats.id)
-            if (w_usage_killer and w_usage_victim):
+            if w_usage_killer and w_usage_victim:
                 w_usage_killer.teamkills += 1
                 w_usage_victim.teamdeaths += 1
                 self.save_Stat(w_usage_killer)
@@ -1211,13 +1238,13 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         
         #adjust bodypart statistics
         bodypart = self.get_Bodypart(name=data[2])
-        if (bodypart):
+        if bodypart:
             bodypart.teamkills += 1
             self.save_Stat(bodypart)
 
             bp_killer = self.get_PlayerBody(playerid=killerstats.id, bodypartid=bodypart.id)
             bp_victim = self.get_PlayerBody(playerid=victimstats.id, bodypartid=bodypart.id)
-            if (bp_killer and bp_victim):
+            if bp_killer and bp_victim:
                 bp_killer.teamkills += 1
                 bp_victim.teamdeaths += 1
                 self.save_Stat(bp_killer)
@@ -1225,13 +1252,13 @@ class XlrstatsPlugin(b3.plugin.Plugin):
            
         #adjust map statistics
         map = self.get_MapStats(self.console.game.mapName)
-        if (map):
+        if map:
             map.teamkills += 1
             self.save_Stat(map)
             
             map_killer = self.get_PlayerMaps(playerid=killerstats.id, mapid=map.id)
             map_victim = self.get_PlayerMaps(playerid=victimstats.id, mapid=map.id)
-            if (map_killer and map_victim):
+            if map_killer and map_victim:
                 map_killer.teamkills += 1
                 map_victim.teamdeaths += 1
                 self.save_Stat(map_killer)
@@ -1242,18 +1269,30 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             
             
     def join(self, client):
-        if (client == None):
+        if client is None:
             return
 
+        # test if it is a bot and flag it
+        if client.guid[:3] == 'BOT':
+            self.verbose('Bot found!')
+            client.bot = True
+
         player = self.get_PlayerStats(client)
-        if (player):
+        if player:
             player.rounds = int(player.rounds) + 1
+            if client.bot:
+                if self.hide_bots:
+                    self.verbose('Hiding Bot!')
+                    player.hide = True
+                else:
+                    self.verbose('Unhiding Bot!')
+                    player.hide = False
             self.save_Stat(player)
             
             map = self.get_MapStats(self.console.game.mapName)
-            if (map):
+            if map:
                 playermap = self.get_PlayerMaps(player.id, map.id)
-                if (playermap):
+                if playermap:
                     playermap.rounds += 1
                     self.save_Stat(playermap)
         return
@@ -1261,11 +1300,11 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     def roundstart(self):
         #disable k/d counting if minimum players are not met
 
-        if ( self.last_map == None):
+        if self.last_map is None:
             self.last_map = self.console.game.mapName
             #self.last_roundtime = self.console.game._roundTimeStart
         else:
-            if ( not self.onemaponly and ( self.last_map == self.console.game.mapName) and  (self.console.game.roundTime() < self.prematch_maxtime) ):
+            if not self.onemaponly and ( self.last_map == self.console.game.mapName) and  (self.console.game.roundTime() < self.prematch_maxtime):
                 #( self.console.game._roundTimeStart - self.last_roundtime < self.prematch_maxtime) ):
                 return
             else:
@@ -1273,7 +1312,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 #self.last_roundtime = self.console.game._roundTimeStart
 
         map = self.get_MapStats(self.console.game.mapName)
-        if (map):
+        if map:
             map.rounds += 1
             self.save_Stat(map)
 
@@ -1281,7 +1320,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def action(self, client, data):
         #self.verbose('----> XLRstats: Entering actionfunc.')
-        if client == None:
+        if client is None:
             return
 
         action = self.get_ActionStats(name=data)
@@ -1297,7 +1336,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         #is it an anonymous client, stop here
         playerstats = self.get_PlayerStats(client)
-        if playerstats == None:
+        if playerstats is None:
             #self.verbose('----> XLRstats: Anonymous client')
             return
         
@@ -1393,8 +1432,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         self.clients_table, self.playerstats_table, limit)
 
         cursor = self.query(q)
-        if (cursor and (cursor.rowcount > 0) ):
-            message = '^3XLR Stats Top %s Players:' % (limit)
+        if cursor and (cursor.rowcount > 0):
+            message = '^3XLR Stats Top %s Players:' % limit
             if ext:
                 self.console.say(message)
             else:
@@ -1457,7 +1496,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             client.message('^7Invalid or missing data, try !help xlrhide')
 
         player = self.get_PlayerStats(sclient)
-        if (player):
+        if player:
             player.hide = int(hide)
             self.save_Stat(player)
             
@@ -1503,7 +1542,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.query('SELECT `%s` FROM %s limit 1;' %(c1, t1))
         except Exception, e:
             if e[0] == 1054:
-                self.console.debug('Column does not yet exist: %s' % (e))
+                self.console.debug('Column does not yet exist: %s' % e)
                 self.query('ALTER TABLE %s ADD `%s` %s ;' %(t1, c1, specs))
                 self.console.info('Created new column `%s` on %s' %(c1, t1))
             else:
@@ -1512,8 +1551,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     def _updateTableColumns(self):
         try:
             #need to update the weapon-identifier columns in these tables for cod7. This game knows over 255 weapons/variations
-            self.query('ALTER TABLE  `%s` CHANGE  `id`  `id` SMALLINT( 5 ) UNSIGNED NOT NULL AUTO_INCREMENT;' %(WeaponStats._table))
-            self.query('ALTER TABLE  `%s` CHANGE  `weapon_id`  `weapon_id` SMALLINT( 5 ) UNSIGNED NOT NULL DEFAULT  "0";' %(WeaponUsage._table))
+            self.query('ALTER TABLE  `%s` CHANGE  `id`  `id` SMALLINT( 5 ) UNSIGNED NOT NULL AUTO_INCREMENT;' % WeaponStats._table)
+            self.query('ALTER TABLE  `%s` CHANGE  `weapon_id`  `weapon_id` SMALLINT( 5 ) UNSIGNED NOT NULL DEFAULT  "0";' % WeaponUsage._table)
         except:
             pass
 
@@ -1521,7 +1560,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         _tables = []
         q = 'SHOW TABLES'
         cursor = self.query(q)
-        if (cursor and (cursor.rowcount > 0) ):
+        if cursor and (cursor.rowcount > 0):
             while not cursor.EOF:
                 r = cursor.getRow()
                 n = str(r.values()[0])
@@ -1611,9 +1650,9 @@ class XlrstatscontrollerPlugin(b3.plugin.Plugin):
         self.registerEvent(b3.events.EVT_GAME_ROUND_START)
 
     def onEvent(self, event):
-        if (event.type == b3.events.EVT_CLIENT_JOIN):
+        if event.type == b3.events.EVT_CLIENT_JOIN:
             self.checkMinPlayers()
-        elif (event.type == b3.events.EVT_GAME_ROUND_START):
+        elif event.type == b3.events.EVT_GAME_ROUND_START:
             self.checkMinPlayers(_roundstart=True)
 
     def checkMinPlayers(self, _roundstart=False):
@@ -1635,7 +1674,7 @@ class XlrstatscontrollerPlugin(b3.plugin.Plugin):
                 _status = 'Enabled'
             else:
                 _status = 'Disabled'
-            self.debug('Nothing to do at the moment. XLRstats is already %s' %(_status) )
+            self.debug('Nothing to do at the moment. XLRstats is already %s' % _status)
 
 
 # This is an abstract class. Do not call directly.

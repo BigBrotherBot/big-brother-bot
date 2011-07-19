@@ -37,7 +37,7 @@ from setuptools import setup, find_packages
 
 _setupinfo = {
     'name' : "b3",
-    'version' : "1.6.0",
+    'version' : "1.6.1",
     'packages' : find_packages(),
     'extras_require' : { 'mysql' : 'MySQL-python' },
     'package_data' : {

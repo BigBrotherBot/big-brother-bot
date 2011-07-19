@@ -180,7 +180,6 @@ b3/plugins/welcome.py
 b3/sql/b3-db.sql
 b3/sql/b3-update-1.3.0.sql
 b3/sql/b3-update-1.6.0.sql
-b3/sql/b3-update.sql
 b3/sql/b3.sql
 b3/sql/recreate-xlrstats.sql
 b3/sql/xlrstats-update-2.0.0.sql
@@ -195,5 +194,8 @@ test/__init__.py
 test/clients/__init__.py
 test/clients/test_Client.py
 test/clients/test_Clients.py
+test/parsers/__init__.py
+test/parsers/homefront/__init__.py
+test/parsers/homefront/test_HomefrontParser.py
 test/plugins/__init__.py
 test/plugins/test_censor.py
