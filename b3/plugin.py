@@ -24,9 +24,12 @@
 #    display a user friendly error message when a plugin config file as broken XML
 #    29/11/2009 - 1.4.0 - Courgette
 #    constructor now also accepts an instance of Config in place of a config file name
-
+#    29/11/2009 - 1.4.1 - Courgette
+#    the onLoadConfig callback is now always called after loadConfig() is called. This
+#    aims to make sure onLoadConfig is called after the user use the !reconfig command
+#
 __author__  = 'ThorN'
-__version__ = '1.4.0'
+__version__ = '1.4.1'
 
 import os
 import b3.config
@@ -55,14 +58,7 @@ class Plugin:
                 self.critical("The config file XML syntax is broken: %s" %e)
                 self.critical("Use a XML editor to modify your config files, it makes easy to spot errors")
                 raise 
-        
-                
-        # empty message cache
-        self._messages = {}
 
-        if self.config:
-            self.onLoadConfig()
-        
         self.registerEvent(b3.events.EVT_STOP)
         self.registerEvent(b3.events.EVT_EXIT)
 
@@ -112,6 +108,11 @@ class Plugin:
             else:
                 self.bot('No config file found for %s. (was not required either)'%self.__class__.__name__)
                 return True
+            
+        # empty message cache
+        self._messages = {}
+
+        self.onLoadConfig()
 
 
     def onLoadConfig(self):

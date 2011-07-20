@@ -16,6 +16,10 @@
 		<set name="minlevel">1</set>
 		<set name="onemaponly">False</set>
 		<set name="keep_history">False</set>
+		<!-- exclude the bots from the webfront -->
+		<set name="hide_bots">True</set>
+		<!-- do not count kills and damages to and from bots -->
+		<set name="exclude_bots">True</set>
 
 <!--  
   The next settings enable the plugin to retrieve certain config settings from your webfront install

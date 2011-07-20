@@ -86,20 +86,32 @@ if __name__ == '__main__':
 # 1.6 - 2010/11/21
 # * remove more time.sleep()
 # * add message_history for FakeClient which allow to test if a client was sent a message afterward (unittest)
+# 1.7 - 2011/06/04
+# * replace FakeStorage with DatabaseStorage("sqlite://:memory:")
+# 1.8 - 2011/06/06
+# * add ban()
+# * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
+# 1.9 - 2011/06/09
+# * FakeConsole now uses the logging module
 #
-__version__ = '1.6'
+__version__ = '1.9'
 
 
-import re
-import time
-import traceback, sys
-from b3.plugins.admin import AdminPlugin
-import b3.parsers.punkbuster
-import b3.parser
-import b3.events
 from b3.cvar import Cvar
+from b3.plugins.admin import AdminPlugin
+from b3.storage.database import DatabaseStorage
 from sys import stdout
 import StringIO
+import b3.events
+import b3.output
+import b3.parser
+import b3.parsers.punkbuster
+import logging
+from logging import handlers
+import re
+import time
+import traceback
+import sys
 
 class FakeConsole(b3.parser.Parser):
     Events = b3.events.eventManager
@@ -111,13 +123,17 @@ class FakeConsole(b3.parser.Parser):
         b3.console = self
         self._timeStart = self.time()
         
+        logging.basicConfig(level=b3.output.VERBOSE2, format='%(asctime)s\t%(levelname)s\t%(message)s')
+        self.log = logging.getLogger('output')
+        
+        
         if isinstance(config, b3.config.XmlConfigParser) \
             or isinstance(config, b3.config.CfgConfigParser):
             self.config = config
         else:
             self.config = b3.config.load(config)
         
-        self.storage = FakeStorage()
+        self.storage =  DatabaseStorage("sqlite://:memory:", self)
         self.clients  = b3.clients.Clients(self)
         self.game = b3.game.Game(self, "fakeGame")
         self.game.mapName = 'ut4_turnpike'
@@ -204,13 +220,25 @@ class FakeConsole(b3.parser.Parser):
     def authorizeClients(self):
         pass
 
+    def ban(self, client, reason, admin, silent):
+        """permban a client"""
+        print '>>>permbanning %s (%s)' % (client.name, reason)
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
+        client.disconnect()
+    
     def tempban(self, client, reason, duration, admin, silent):
         """tempban a client"""
         print '>>>tempbanning %s for %s (%s)' % (client.name, reason, duration)
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason, 
+                                                              'duration': duration, 
+                                                              'admin': admin}
+                                      , client))
+        client.disconnect()
     
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
         """unban a client"""
         print '>>>unbanning %s (%s)' % (client.name, reason)
+        self.queueEvent(self.getEvent('EVT_CLIENT_UNBAN', reason, client))
     
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         if isinstance(client, str) and re.match('^[0-9]+$', client):
@@ -248,226 +276,9 @@ class FakeConsole(b3.parser.Parser):
         print "set cvar %s" % key
         c = Cvar(name=key,value=value)
         self.cvars[key] = c
-        
-    ##############################
-    
-    def error(self, msg, *args, **kwargs):
-        """Log an error"""
-        print 'ERROR    : ' + msg % args
 
-    def debug(self, msg, *args, **kwargs):
-        """Log a debug message"""
-        print 'DEBUG    : ' + msg % args
 
-    def bot(self, msg, *args, **kwargs):
-        """Log a bot message"""
-        print 'BOT      : ' + msg % args
 
-    def verbose(self, msg, *args, **kwargs):
-        """Log a verbose message"""
-        if self.noVerbose: return
-        print 'VERBOSE  : ' + msg % args
-
-    def verbose2(self, msg, *args, **kwargs):
-        """Log an extra verbose message"""
-        print 'VERBOSE2 : ' + msg % args
-
-    def console(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        print 'CONSOLE  : ' + msg % args
-
-    def warning(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        print 'WARNING  : ' + msg % args
-
-    def info(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        print 'INFO     : ' + msg % args
-
-    def exception(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        print 'EXCEPTION: ' + msg % args
-
-    def critical(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        print 'CRITICAL : ' + msg % args
-        
-class FakeColoredConsole(FakeConsole):
-    
-    def printColor (self, string):
-        colors = {"default":0, "black":30, "red":31, "green":32, "yellow":33,
-                    "blue":34,"magenta":35, "cyan":36, "white":37, "black":38,
-                    "black":39} #33[%colors%m
-        
-        for color in colors:
-            color_string = "\033[%dm\033[1m" % colors[color]
-            string = string.replace("<%s>" % color, color_string).replace("</%s>" % color, "\033[0m")
-        
-        print string
-        
-    def error(self, msg, *args, **kwargs):
-        """Log an error"""
-        self.printColor('<red>ERROR</red>    : ' + msg % args)
-
-    def debug(self, msg, *args, **kwargs):
-        """Log a debug message"""
-        self.printColor( '<cyan>DEBUG</cyan>    : ' + msg % args)
-
-    def bot(self, msg, *args, **kwargs):
-        """Log a bot message"""
-        self.printColor( 'BOT      : ' + msg % args)
-
-    def verbose(self, msg, *args, **kwargs):
-        """Log a verbose message"""
-        self.printColor( '<green>VERBOSE</green>  : ' + msg % args)
-
-    def verbose2(self, msg, *args, **kwargs):
-        """Log an extra verbose message"""
-        self.printColor( '<green>VERBOSE2</green> : ' + msg % args)
-
-    def console(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        self.printColor( 'CONSOLE  : ' + msg % args)
-
-    def warning(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        self.printColor( '<yellow>WARNING</yellow>  : ' + msg % args)
-
-    def info(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        self.printColor( 'INFO     : ' + msg % args)
-
-    def exception(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        self.printColor( '<red>EXCEPTION</red>: ' + msg % args)
-
-    def critical(self, msg, *args, **kwargs):
-        """Log a message from the console"""
-        self.printColor( '<red>CRITICAL</red> : ' + msg % args)
-        
-class FakeStorage(object):
-    _clients = {}
-    _client_id_autoincrement = 0
-    _penalties = {}
-    _penalty_id_autoincrement = 0
-    _groups = []
-    db = None
-    
-    class Cursor:
-        _cursor = None
-        _conn = None
-        fields = None
-        EOF = True
-        rowcount = 0
-        lastrowid = 0    
-        
-        def moveNext(self):
-            return self.EOF
-
-        def getOneRow(self, default=None):
-            return default
-
-        def getValue(self, key, default=None):
-            return default
-
-        def getRow(self):
-            return {}
-                
-    def __init__(self):
-        G = b3.clients.Group()
-        G.id = 1
-        G.name = 'User'
-        G.keyword = 'user'
-        G.level = 1
-        self._groups.append(G)
-        
-        G = b3.clients.Group()
-        G.id = 2
-        G.name = 'Regular'
-        G.keyword = 'reg'
-        G.level = 2
-        self._groups.append(G)
-        
-        G = b3.clients.Group()
-        G.id = 8
-        G.name = 'Moderator'
-        G.keyword = 'mod'
-        G.level = 20
-        self._groups.append(G)
-        
-        G = b3.clients.Group()
-        G.id = 16
-        G.name = 'Admin'
-        G.keyword = 'admin'
-        G.level = 40
-        self._groups.append(G)
-        
-        G = b3.clients.Group()
-        G.id = 32
-        G.name = 'Full admin'
-        G.keyword = 'fulladmin'
-        G.level = 60
-        self._groups.append(G)
-        
-        G = b3.clients.Group()
-        G.id = 64
-        G.name = 'Senior Admin'
-        G.keyword = 'senioradmin'
-        G.level = 80
-        self._groups.append(G)
-        
-        G = b3.clients.Group()
-        G.id = 128
-        G.name = 'Super Admin'
-        G.keyword = 'superadmin'
-        G.level = 100
-        self._groups.append(G)
-        
-    def getClient(self, client):
-        if client.id and client.id > 0:        
-            return self._clients[client.id]
-        else:
-            match = [k for k, v in self._clients.iteritems() if v.guid == client.guid]
-            if len(match)>0:
-                return match[0]
-        raise KeyError, 'No client found in fakestorage for {id: %s, guid: %s}' % (client.id, client.guid)
-    def setClient(self, client):
-        self._client_id_autoincrement += 1
-        client.id = self._client_id_autoincrement
-        self._clients[self._client_id_autoincrement] = client
-        return self._client_id_autoincrement
-    def getGroups(self):
-        return self._groups
-    def getGroup(self, group):
-        for g in self._groups:
-            if group.keyword == g.keyword:
-                return g
-        raise KeyError, 'No group matching keyword %s' % group.keyword
-    def shutdown(self):
-        pass
-    def status(self):
-        return True
-    def setClientPenalty(self, penalty):
-        self._penalty_id_autoincrement += 1
-        penalty.id = self._penalty_id_autoincrement
-        self._penalties[penalty.id] = penalty
-        return penalty.id
-    def getClientPenalties(self, client, type='Ban'):
-        if isinstance(type, basestring):
-            types = (type,)
-        else:
-            types = type
-        return [x for x in self._penalties.values() if x.clientId == client.id and x.inactive == 0 and x.type in types]
-    def numPenalties(self, client, type='Ban'):
-        if isinstance(type, basestring):
-            types = (type,)
-        else:
-            types = type
-        match = [k for k, v in self._penalties.iteritems() if v.clientId == client.id and v.type in types]
-        return len(match)
-    def query(self, sql, data=None):
-        return self.Cursor()
-    
 class FakeClient(b3.clients.Client):
     console = None
     message_history = [] # this allows unittests to check if a message was sent to the client
