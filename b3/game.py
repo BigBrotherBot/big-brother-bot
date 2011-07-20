@@ -20,10 +20,12 @@
 #
 # 26/03/2011 - 1.3 - Courgette
 #    * add event EVT_GAME_MAP_CHANGE
+# 21/07/2011 - 1.3.1 - Freelander
+#    * prevent status plugin errors during map change
 #
 
 __author__  = 'ThorN'
-__version__ = '1.3'
+__version__ = '1.3.1'
 
 import time
 from b3.events import Event, EVT_GAME_MAP_CHANGE
@@ -65,7 +67,9 @@ class Game(object):
     mapName = property(_get_mapName, _set_mapName)
 
     def mapTime(self):
-        return self.console.time()  - self._mapTimeStart
+        if self._mapTimeStart:
+            return self.console.time() - self._mapTimeStart
+        return None
 
     def roundTime(self):
         return self.console.time() - self._roundTimeStart

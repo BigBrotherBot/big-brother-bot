@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 19/07/2011 - 1.4.9 - Freelander
+# * fix errors during map change
 # 25/04/2011 - 1.4.8 - Courgette
 # * in config file, settings/output_file can now use shortcuts such as @b3 and @conf
 # 17/04/2011 - 1.4.7 - Courgette
@@ -55,7 +57,7 @@
 # Converted to use new event handlers
 
 __author__    = 'ThorN'
-__version__ = '1.4.8'
+__version__ = '1.4.9'
 
 import b3, time, os, StringIO
 import b3.plugin
@@ -156,7 +158,7 @@ class StatusPlugin(b3.plugin.Plugin):
             rounds = c.rounds
         if c.roundTime:
             roundTime = c.roundTime()
-        if c.mapTime:
+        if c.mapTime():
             mapTime = c.mapTime()
         game = xml.createElement("Game")
         game.setAttribute("Name", str(gamename))
