@@ -17,22 +17,29 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
-#   27/08/2009 - 1.0.9 - Bakes
-#   Use command levels set in punkbuster plugin config not admin plugin.
-#    11/30/2005 - 1.0.8 - ThorN
+# 19/07/2011 - 1.1.0 - Freelander
+#    Support for ftp access to pbbans.dat
+# 27/08/2009 - 1.0.9 - Bakes
+#    Use command levels set in punkbuster plugin config not admin plugin.
+# 11/30/2005 - 1.0.8 - ThorN
 #    Use PluginCronTab instead of CronTab
 
 __author__  = 'ThorN'
-__version__ = '1.0.8'
+__version__ = '1.1.0'
 
 import b3, time
 import b3.plugin
 import b3.cron
+from b3 import functions
+import StringIO
+import ftplib
 
 #--------------------------------------------------------------------------------------------------
 class PunkbusterPlugin(b3.plugin.Plugin):
     _cronTab = None
     _rebuildBans = 0
+    _remoteBansFile = False
+    _ftpConfig = None
 
     def onStartup(self):
         self._adminPlugin = self.console.getPlugin('admin')
@@ -42,7 +49,15 @@ class PunkbusterPlugin(b3.plugin.Plugin):
             self._adminPlugin.registerCommand(self, 'pbbuildbans', self.config.getint('commands', 'pbbuildbans'), self.cmd_pbbuildbans)
 
     def onLoadConfig(self):
-        self._bansFile = self.console.getAbsolutePath(self.config.get('settings', 'bans_file'))
+        if self.config.get('settings','bans_file')[0:6] == 'ftp://':
+            self._bansFile = self.config.get('settings','bans_file')
+            self._remoteBansFile = True
+            self._ftpConfig = functions.splitDSN(self._bansFile)
+            self.info('Accessing pbbans.dat file in remote mode')
+        else:
+            self._bansFile = self.console.getAbsolutePath(self.config.get('settings', 'bans_file'))
+
+
         self._rebuildBans = self.config.get('settings', 'rebuild_bans')
 
         if self._cronTab:
@@ -67,7 +82,10 @@ p.time_expire = -1
 ORDER BY p.time_add""")
 
         i = 0
-        f = file(self._bansFile , 'w')
+        if self._remoteBansFile:
+            f = StringIO.StringIO()
+        else:
+            f = file(self._bansFile , 'w')
 
         while not cursor.EOF:
             r = cursor.getRow()
@@ -82,7 +100,18 @@ ORDER BY p.time_add""")
 
         cursor.close()
 
-        f.close()
+        if self._remoteBansFile:
+            ftp = ftplib.FTP(self._ftpConfig['host'], self._ftpConfig['user'], self._ftpConfig['password'])
+            f.seek(0)
+            try:
+                ftp.storbinary('STOR %s' % self._ftpConfig['path'], f)
+            except Exception, err:
+                self.error('ERROR: %s' % err)
+            ftp.quit()
+            self.debug('Uploaded pbbans.dat to FTP server successfully.')
+        else:
+            f.close()
+            self.debug('Updated pbbans.dat successfully.')
 
         self.console.write('PB_SV_BanEmpty')
         self.console.write('PB_SV_BanLoad')
