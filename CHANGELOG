@@ -3,14 +3,24 @@
 A list of changed files is available after release here:
 github.com/BigBrotherBot/big-brother-bot/compare/v1.6.1...v1.7.0
 ----
-- Support for Soldier of Fortune 2 (modified ROCmod by: cgs-clan.com)
-- Homefront patch additions
-- Beta support for Frontlines, Fuel of War
-- Store IP aliases for players
-- Improved damagehandling on Urban Terror
+Improvements :
+- Homefront : additions to support last game server patch
+- Urban Terror : improved damagehandling
+- Cod7 : the !kick command will now display the reason the the kicked player
+- BFBC2 and MoH : fix map related commands when game mode would change at next round
 - XLRstats added options to hide/disregard ingame playerbots
+- Store IP aliases for players
 - ftp, sftp and http now able to append to local log
+- add experimental support for sqlite databases (no need to have a MySQL server anymore)
 - many minor fixes and improvements
+New games supported :
+- Support for Soldier of Fortune 2 (modified ROCmod by: cgs-clan.com)
+- Beta support for Frontlines, Fuel of War
+Changes for plugin developers :
+- all games : new event EVT_GAME_MAP_CHANGE available
+- all games : data provided with EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN changed to provide more info (might break some plugins)
+- BFBC2 : add EVT_GAME_ROUND_TEAM_SCORES and EVT_GAME_ROUND_PLAYER_SCORES events
+- the !reconfig command will call onLoadConfig() from all plugins 
 
 1.6.0 -> 1.6.1
 ----
