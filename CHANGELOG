@@ -11,7 +11,8 @@ Improvements :
 - XLRstats added options to hide/disregard ingame playerbots
 - Store IP aliases for players
 - ftp, sftp and http now able to append to local log
-- add experimental support for sqlite databases (no need to have a MySQL server anymore)
+- add experimental support for sqlite databases
+- Punkbuster Plugin: FTP support to update pbbans.dat
 - many minor fixes and improvements
 New games supported :
 - Support for Soldier of Fortune 2 (modified ROCmod by: cgs-clan.com)
