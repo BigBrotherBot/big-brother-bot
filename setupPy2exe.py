@@ -37,6 +37,7 @@ myDataFiles = [
         ('', ['b3/PKG-INFO']),
         ('docs', listdirectory('b3/docs/')),
         ('sql', listdirectory('b3/sql/')),
+        ('sql/sqlite', listdirectory('b3/sql/sqlite')),
         ('conf', listdirectory('b3/conf/')),
         ('conf/templates', listdirectory('b3/conf/templates/')),
         ('extplugins', ['b3/extplugins/xlrstats.py']),
@@ -73,6 +74,7 @@ setup(
                 "smtplib", "email.*", "calendar", "email.mime.*", # contact plugin
                 "telnetlib", # teamspeak* plugins
                 "dbhash", # to make anydbm imports work with py2exe
+                "uuid", # metabans and ggcstream plugins
             ],
         }
     },

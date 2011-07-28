@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS `xlr_bodyparts` (
 -- 
 
 CREATE TABLE IF NOT EXISTS `xlr_mapstats` (
-  `id` tinyint(3) unsigned NOT NULL auto_increment,
+  `id` smallint(5) unsigned NOT NULL auto_increment,
   `name` varchar(25) NOT NULL default '',
   `kills` mediumint(8) unsigned NOT NULL default '0',
   `teamkills` smallint(5) unsigned NOT NULL default '0',
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS `xlr_playerbody` (
 
 CREATE TABLE IF NOT EXISTS `xlr_playermaps` (
   `id` mediumint(8) unsigned NOT NULL auto_increment,
-  `map_id` tinyint(3) unsigned NOT NULL default '0',
+  `map_id` smallint(5) unsigned NOT NULL default '0',
   `player_id` smallint(5) unsigned NOT NULL default '0',
   `kills` mediumint(8) unsigned NOT NULL default '0',
   `deaths` mediumint(8) unsigned NOT NULL default '0',

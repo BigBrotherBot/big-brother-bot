@@ -2,8 +2,8 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 ;#define Debug
-#define B3_VERSION_NUMBER "1.6.1"
-#define B3_VERSION_SUFFIX ""
+#define B3_VERSION_NUMBER "1.7.0"
+#define B3_VERSION_SUFFIX "b"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.

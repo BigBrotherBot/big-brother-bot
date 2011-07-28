@@ -1,19 +1,498 @@
+2011-07-20  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 60d953b39364f3dc996d3a78019abdcf1cc1fa0a Merge: 4b0c86c
+	e1f8b59 Author: xlr8or <xlr8or@xlr8or.com> Date:   Wed Jul 20
+	18:16:16 2011 +0200
+
+2011-07-20  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parser.py: fix periodic events stats dumping blocking B3
+	restart/shutdown
+
+2011-07-18  Freelander <freelander00@gmail.com>
+
+	* b3/parsers/cod.py: cod parser: Minor bugfix to flag disconnecting
+	client properly if found in authentication queue
+
+2011-07-18  Freelander <freelander00@gmail.com>
+
+	* b3/plugins/adv.py: adv plugin: prevent error if next map is not
+	returned
+
+2011-05-27  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/plugins/httpytail.py, b3/plugins/sftpytail.py: Added local log
+	append to httpytail and sftpytail
+
+2011-05-27  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/plugins/ftpytail.py: Add append log to ftpytail
+
+2011-02-06  bdgrell <bdgrell@gmail.com>
+
+	* b3/sql/xlrstats.sql: Its possible to have over 255 maps, so
+	changing mapstats.id from tinyint to smallint
+
+2011-05-31  EHDSpoon <spoon@cod4zombies.co.uk>
+
+	* b3/plugins/admin.py: Edited b3/plugins/admin.py via GitHub
+
+2011-05-31  EHDSpoon <spoon@cod4zombies.co.uk>
+
+	* b3/plugins/admin.py: Added message to "!admins" when no admins are
+	online.
+
+2011-07-19  Courgette <courgette@bigbrotherbot.net>
+
+	* : commit 44dbcfee6f5bce4cf5cb0be7bce7779fbd4dc0ae Merge: 31619ff
+	1ae5b41 Author: Courgette <courgette@bigbrotherbot.net> Date:   Tue
+	Jul 19 23:51:58 2011 +0200
+
+2011-07-19  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parser.py: fix periodic events stats dumping blocking B3
+	restart/shutdown
+
+2011-07-17  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/brink.py: remove brink parser as there is no hope with
+	that one
+
+2011-07-17  Freelander <freelander00@gmail.com>
+
+	* b3/parsers/cod.py: cod parser: Minor bugfix to flag disconnecting
+	client properly if found in authentication queue
+
+2011-07-17  Freelander <freelander00@gmail.com>
+
+	* b3/plugins/adv.py: adv plugin: prevent error if next map is not
+	returned
+
+2011-07-16  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/clients.py: Client.bot added - ability to identify a bot
+
+2011-07-16  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/conf/xlrstats.xml, b3/extplugins/xlrstats.py: 
+	XLRstats: Pythonized code and added ability to hide bots from
+	webfront and exclude damage/kills to and from bots to be processed
+
+2011-07-14  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/sof2.py, b3/parsers/sof2pm.py: updates in sof2 parsers
+
+2011-07-14  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/sof2.py, b3/parsers/sof2pm.py: first drafts of sof2
+	parsers
+
+2011-07-14  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: minor update
+
+2011-07-14  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/plugins/status.py: indentation fix to status plugin
+
+2011-07-14  Freelander <freelander00@gmail.com>
+
+	* b3/parsers/homefront/__init__.py: HF parser: implemented new dedi
+	server changes, getPlayerPings() and new DLC map names
+
+2011-07-13  Freelander <freelander00@gmail.com>
+
+	* : commit 294f0c1f3774266a6869066243d41f3d76d12583 Author:
+	Courgette <courgette@bigbrotherbot.net> Date:   Wed Jul 6 21:49:26
+	2011 +0200
+
+2011-07-03  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/frontline/__init__.py: FRONTLINE: more regexp handled
+
+2011-07-03  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/frontline/__init__.py,
+	b3/parsers/frontline/protocol.py: FRONTLINE: more progress with the
+	parser
+
+2011-07-01  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/conf/templates/b3.frontline.tpl,
+	b3/parsers/frontline/__init__.py, b3/parsers/frontline/protocol.py,
+	b3/parsers/frontline/rcon.py: add experimental support for Frontline
+	Fuel of War
+
+2011-06-28  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/plugin.py: makes sure plugins' onLoadConfig callback is called
+	whenever the config is read
+
+2011-06-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/plugins/publist.py: PUBLIST PLUGIN: fix minor error on B3
+	shutdown/restart
+
+2011-06-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parser.py: fix periodic events stats dumping blocking B3
+	restart/shutdown
+
+2011-06-14  Courgette <courgette@bigbrotherbot.net>
+
+	* setupPy2exe.py: add the uuid module to py2exe setup
+
+2011-06-14  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/cod2.py, b3/parsers/iourt41.py, b3/parsers/oa081.py,
+	b3/parsers/q3a/abstractParser.py, test/parsers/q3a/__init__.py,
+	test/parsers/q3a/test_abstractParser.py: changed getCvar code for
+	Quake3 based games. See http://bit.ly/kSfh72
+
+2011-06-10  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/functions.py: fix meanstdv()
+
+2011-06-10  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/fake.py: FAKE: uses the logging module. more reliable
+
 2011-06-07  xlr8or <xlr8or@xlr8or.com>
 
-	* : commit f5820a057622017cf4ee50d979cbeec42e967ed3 Author:
-	Courgette <courgette@bigbrotherbot.net> Date:   Mon Jun 6 20:02:07
-	2011 +0200
+	* CHANGELOG, ChangeLogDetailed.txt, b3.egg-info/SOURCES.txt,
+	setup.py, versions.txt: release v1.6.1 preparation
+
+2011-06-07  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 6a278ce315511399f373776580d0b75a12216ed4 Merge: 8d93047
+	3aa5f28 Author: Courgette <courgette@bigbrotherbot.net> Date:   Tue
+	Jun 7 01:36:40 2011 +0200
+
+2011-06-05  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/plugins/admin.py: ADMIN PLUGIN : fix findClientPrompt
+
+2011-06-05  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/fake.py, b3/parser.py, b3/parsers/altitude.py,
+	b3/parsers/frostbite/abstractParser.py,
+	b3/parsers/homefront/__init__.py, b3/parsers/iourt41.py,
+	b3/parsers/moh.py, b3/parsers/oa081.py,
+	b3/parsers/q3a/abstractParser.py: ALL PARSERS: change data format
+	for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
+
+2011-06-04  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/fake.py: fake module now uses
+	DatabaseStorage("sqlite://:memory:")
+
+2011-06-04  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parser.py, b3/parsers/bfbc2.py, b3/parsers/iourt41.py,
+	b3/parsers/moh.py: add a new parser hook "pluginsStarted" which is
+	called once all plugins have started
+
+2011-06-01  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/database.py: SQLITE: database file path can use @b3 and
+	@conf shortcuts. When using a sqlite file database for the first
+	time, create tables
+
+2011-06-01  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/__init__.py: b3.getAbsolutePath() now also resolves @conf
+
+2011-06-01  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/iourt41.py: IOURT41 PARSER : when game log provides hit
+	info, Kill event will use last damage points instead of 100
+
+2011-06-01  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/iourt41.py: IOURT41 PARSER: fix damage points
+
+2011-06-01  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/database.py: do no log queries
+
+2011-06-01  Courgette <courgette@bigbrotherbot.net>
+
+	* test/storage/test_Storage.py, test/storage/test_sqlite.py: TEST:
+	fix test_Storage.py
+
+2011-06-01  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/__init__.py, b3/storage/database.py,
+	test/storage/common.py, test/storage/test_DatabaseStorage.py,
+	test/storage/test_Storage.py, test/storage/test_mysql.py,
+	test/storage/test_sqlite.py: refactor storage module * implement abstract Storage class for doc purpose * fixes to DatabaseStorage * more unittests
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* pip-requires.txt: CI: add pylint to pip-requires.txt
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/plugins/admin.py: ADMIN PLUGIN : refactoring
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* pylint.rc: CI: add pylint config file
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/iourt41.py: IOURT41: improve Damage event Damage events now carry true damage points and same weapon id as for
+	Kill events
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* pip-requires.txt: TEST: add nose-xcover to pip-requires.txt
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/database.py, test/__init__.py, test/storage/common.py: 
+	fix storage.getCounts() and update tests
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/database.py, test/run.py: TEST: add run.py to run all
+	tests
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* pip-requires.txt: add pip-requires.txt to root dir this file is meant to be used by continuous integration to set up a
+	virtual environment for the tests
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* test/storage/test_mysql.py: TEST: MySQL tests are skipped if no
+	MySQLDb module is found or no database is running
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/sql/sqlite/b3.sql: SQLITE : update b3.sql
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/database.py: SQLITE: removing threadsafe alerts. B3 as
+	a lock around db cursor use, so hopefully this is enough
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/database.py: SQLITE: create tables when using :memory:
+	as a sqlite database
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* test/__init__.py, test/storage/common.py,
+	test/storage/test_database.py, test/storage/test_mysql.py,
+	test/storage/test_sqlite.py, test/test_functions.py: TESTS : add
+	tests for all public methods of the B3 Storage API and allow those
+	tests to be run for both MySQL and sqlite add tests for the
+	functions module
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/querybuilder.py, b3/sql/sqlite/b3.sql, b3/storage/database.py: 
+	SQLITE experimental support added
+
+2011-05-27  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/sql/b3-update-1.7.0.sql: fix sql update file for B3 1.7
+
+2011-05-25  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/setup.py, b3/sql/b3-update-1.7.0.sql: add update sql files for
+	1.7
+
+2011-05-07  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/test.py: add ip alias related methods to Client class
+	add mysql storage test units for ip aliases
+
+2011-05-05  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/test.py: start implementing IP address aliases. SQL and
+	storage done, need to work on Client class. Module b3.storage
+	splitted in different files
+
+2011-05-07  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/test.py: add ip alias related methods to Client class
+	add mysql storage test units for ip aliases
+
+2011-05-05  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/test.py: start implementing IP address aliases. SQL and
+	storage done, need to work on Client class. Module b3.storage
+	splitted in different files
+
+2011-05-25  unknown <thomas.leveil@.domaine.local>
+
+	* b3/parsers/frostbite/abstractParser.py: FROSTBITE: fix bug
+	introduced in abstractParser 1.4.1
+
+2011-05-24  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/frostbite/abstractParser.py: FROSTBITE: fix
+	getSupportedMaps()
+
+2011-05-07  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/test.py: add ip alias related methods to Client class
+	add mysql storage test units for ip aliases
+
+2011-05-05  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/test.py: start implementing IP address aliases. SQL and
+	storage done, need to work on Client class. Module b3.storage
+	splitted in different files
+
+2011-05-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/frostbite/abstractParser.py, b3/parsers/moh.py: 
+	FROSTBITE: move end-of-round related events from the MoH parser to
+	the AbstractParser so BFBC2 can also make use of them
+
+2011-05-21  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/brink.py: BRINK: more progress, still no way to get
+	in-game chat
+
+2011-05-21  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/lib/sourcelib/SourceQuery.py: sourcelib : update to support
+	game server that do not send challenge
+
+2011-05-12  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/brink.py: BRINK : can read log file
+
+2011-05-12  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/brink.py: BRINK: add rcon capabilities
+
+2011-05-10  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/brink.py: add skeleton for brink parser
+
+2011-05-07  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/clients.py, b3/storage/test.py, test/clients/test_Client.py,
+	test/storage/__init__.py, test/storage/test_database.py: add ip
+	alias related methods to Client class add mysql storage test units
+	for ip aliases
+
+2011-05-05  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/clients.py, b3/sql/b3.sql, b3/storage.py,
+	b3/storage/__init__.py, b3/storage/database.py, b3/storage/test.py: 
+	start implementing IP address aliases. SQL and storage done, need to
+	work on Client class. Module b3.storage splitted in different files
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/game.py: Introduce new B3 event : EVT_GAME_MAP_CHANGE. No
+	parser need to be changed to fire this new event, b3.game.Game will
+	manage
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/game.py: plugin usage example added to Game class test for
+	event EVT_GAME_MAP_CHANGE
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/events.py, b3/game.py: Introduce new B3 event :
+	EVT_GAME_MAP_CHANGE. No parser need to be changed to fire this new
+	event, b3.game.Game will manage
+
+2011-06-06  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parser.py: event queue size can be set in b3.xml in section
+	'b3/event_queue_size'
 
 2011-06-06  Courgette <courgette@bigbrotherbot.net>
 
 	* b3/events.py, b3/functions.py, b3/parser.py: add events stats add periodic stats about the time it takes to handle events and the
 	time events wait in queue before being processed
 
+2011-06-05  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/plugins/admin.py: ADMIN PLUGIN : fix findClientPrompt
+
+2011-06-05  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/fake.py, b3/parser.py, b3/parsers/altitude.py,
+	b3/parsers/frostbite/abstractParser.py,
+	b3/parsers/homefront/__init__.py, b3/parsers/iourt41.py,
+	b3/parsers/moh.py, b3/parsers/oa081.py,
+	b3/parsers/q3a/abstractParser.py: ALL PARSERS: change data format
+	for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
+
+2011-06-04  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/fake.py: fake module now uses
+	DatabaseStorage("sqlite://:memory:")
+
 2011-06-04  xlr8or <xlr8or@xlr8or.com>
 
 	* : commit 489d8222779b01af9fd6eeb87c5dd2802b38e2ee Author:
 	Courgette <courgette@bigbrotherbot.net> Date:   Sat Jun 4 16:56:47
 	2011 +0200
+
+2011-06-04  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parser.py, b3/parsers/bfbc2.py, b3/parsers/iourt41.py,
+	b3/parsers/moh.py: add a new parser hook "pluginsStarted" which is
+	called once all plugins have started
+
+2011-06-01  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/database.py: SQLITE: database file path can use @b3 and
+	@conf shortcuts. When using a sqlite file database for the first
+	time, create tables
+
+2011-06-01  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/__init__.py: b3.getAbsolutePath() now also resolves @conf
+
+2011-06-01  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/iourt41.py: IOURT41 PARSER : when game log provides hit
+	info, Kill event will use last damage points instead of 100
+
+2011-06-01  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/iourt41.py: IOURT41 PARSER: fix damage points
+
+2011-06-01  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/database.py: do no log queries
+
+2011-06-01  Courgette <courgette@bigbrotherbot.net>
+
+	* test/storage/test_Storage.py, test/storage/test_sqlite.py: TEST:
+	fix test_Storage.py
+
+2011-06-01  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/__init__.py, b3/storage/database.py,
+	test/storage/common.py, test/storage/test_DatabaseStorage.py,
+	test/storage/test_Storage.py, test/storage/test_mysql.py,
+	test/storage/test_sqlite.py: refactor storage module * implement abstract Storage class for doc purpose * fixes to DatabaseStorage * more unittests
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* pip-requires.txt: CI: add pylint to pip-requires.txt
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/plugins/admin.py: ADMIN PLUGIN : refactoring
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* pylint.rc: CI: add pylint config file
 
 2011-05-31  xlr8or <xlr8or@xlr8or.com>
 
@@ -24,6 +503,63 @@
 
 	* py2exe_builder/b3-installer-project.iss: Make installer use system
 	drive, not use previous install dir.
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/iourt41.py: IOURT41: improve Damage event Damage events now carry true damage points and same weapon id as for
+	Kill events
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* pip-requires.txt: TEST: add nose-xcover to pip-requires.txt
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/database.py, test/__init__.py, test/storage/common.py: 
+	fix storage.getCounts() and update tests
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/database.py, test/run.py: TEST: add run.py to run all
+	tests
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* pip-requires.txt: add pip-requires.txt to root dir this file is meant to be used by continuous integration to set up a
+	virtual environment for the tests
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* test/storage/test_mysql.py: TEST: MySQL tests are skipped if no
+	MySQLDb module is found or no database is running
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/sql/sqlite/b3.sql: SQLITE : update b3.sql
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/database.py: SQLITE: removing threadsafe alerts. B3 as
+	a lock around db cursor use, so hopefully this is enough
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/database.py: SQLITE: create tables when using :memory:
+	as a sqlite database
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* test/__init__.py, test/storage/common.py,
+	test/storage/test_database.py, test/storage/test_mysql.py,
+	test/storage/test_sqlite.py, test/test_functions.py: TESTS : add
+	tests for all public methods of the B3 Storage API and allow those
+	tests to be run for both MySQL and sqlite add tests for the
+	functions module
+
+2011-05-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/querybuilder.py, b3/sql/sqlite/b3.sql, b3/storage/database.py: 
+	SQLITE experimental support added
 
 2011-05-30  Courgette <courgette@bigbrotherbot.net>
 
@@ -40,6 +576,12 @@
 
 2011-05-27  Courgette <courgette@bigbrotherbot.net>
 
+	* : commit 0560c7a57b1e5a168b4e768f60736cc97d175484 Author:
+	Courgette <courgette@bigbrotherbot.net> Date:   Fri May 27 03:51:40
+	2011 +0200
+
+2011-05-27  Courgette <courgette@bigbrotherbot.net>
+
 	* b3/parsers/homefront/__init__.py, test/parsers/__init__.py,
 	test/parsers/homefront/__init__.py,
 	test/parsers/homefront/test_HomefrontParser.py: HOMEFRONT : KILL
@@ -52,12 +594,156 @@
 
 2011-05-25  Courgette <courgette@bigbrotherbot.net>
 
+	* b3/setup.py, b3/sql/b3-update-1.7.0.sql: add update sql files for
+	1.7
+
+2011-05-25  Courgette <courgette@bigbrotherbot.net>
+
 	* b3/parsers/cod7.py: COD7: kick commands now sends reason
+
+2011-05-25  Courgette <courgette@bigbrotherbot.net>
+
+	* : commit 15129006a5aad5d7319c8d041f2a3857a2b19d19 Merge: 91cd8e4
+	0e9e419 Author: Courgette <courgette@bigbrotherbot.net> Date:   Wed
+	May 25 21:31:06 2011 +0200
+
+2011-05-25  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/cod7.py: COD7: kick commands now sends reason
+
+2011-05-25  unknown <thomas.leveil@.domaine.local>
+
+	* b3/parsers/frostbite/abstractParser.py: FROSTBITE: fix bug
+	introduced in abstractParser 1.4.1
+
+2011-05-24  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/frostbite/abstractParser.py: FROSTBITE: fix
+	getSupportedMaps()
+
+2011-05-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO: versioning 1.7.0a
+
+2011-05-07  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/test.py: add ip alias related methods to Client class
+	add mysql storage test units for ip aliases
+
+2011-05-05  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/test.py: start implementing IP address aliases. SQL and
+	storage done, need to work on Client class. Module b3.storage
+	splitted in different files
+
+2011-05-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/frostbite/abstractParser.py, b3/parsers/moh.py: 
+	FROSTBITE: move end-of-round related events from the MoH parser to
+	the AbstractParser so BFBC2 can also make use of them
+
+2011-05-21  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/brink.py: BRINK: more progress, still no way to get
+	in-game chat
+
+2011-05-21  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/lib/sourcelib/SourceQuery.py: sourcelib : update to support
+	game server that do not send challenge
+
+2011-05-12  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/brink.py: BRINK : can read log file
+
+2011-05-12  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/brink.py: BRINK: add rcon capabilities
+
+2011-05-10  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/brink.py: add skeleton for brink parser
+
+2011-05-07  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/clients.py, b3/storage/test.py, test/clients/test_Client.py,
+	test/storage/__init__.py, test/storage/test_database.py: add ip
+	alias related methods to Client class add mysql storage test units
+	for ip aliases
+
+2011-05-05  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/clients.py, b3/sql/b3.sql, b3/storage.py,
+	b3/storage/__init__.py, b3/storage/database.py, b3/storage/test.py: 
+	start implementing IP address aliases. SQL and storage done, need to
+	work on Client class. Module b3.storage splitted in different files
+
+2011-05-25  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/cod7.py: COD7: kick commands now sends reason
+
+2011-05-25  unknown <thomas.leveil@.domaine.local>
+
+	* b3/parsers/frostbite/abstractParser.py: FROSTBITE: fix bug
+	introduced in abstractParser 1.4.1
+
+2011-05-24  Courgette <courgette@bigbrotherbot.net>
+
+	* : commit 7dcf3acf39365cd6e93c6ff2640a945460c9e206 Author:
+	Courgette <courgette@bigbrotherbot.net> Date:   Tue May 24 23:20:19
+	2011 +0200
 
 2011-05-24  Courgette <courgette@bigbrotherbot.net>
 
 	* b3/parsers/homefront/__init__.py: "kill" penalty rcon command now
 	uses SteamID instead of player name
+
+2011-05-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/frostbite/abstractParser.py, b3/parsers/moh.py: 
+	FROSTBITE: move end-of-round related events from the MoH parser to
+	the AbstractParser so BFBC2 can also make use of them
+
+2011-05-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO,
+	py2exe_builder/b3-installer-project.iss, setup.py: versioning 1.7.0a
+
+2011-05-21  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/brink.py: BRINK: more progress, still no way to get
+	in-game chat
+
+2011-05-21  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/lib/sourcelib/SourceQuery.py: sourcelib : update to support
+	game server that do not send challenge
+
+2011-05-12  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/brink.py: BRINK : can read log file
+
+2011-05-12  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/brink.py: BRINK: add rcon capabilities
+
+2011-05-10  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/brink.py: add skeleton for brink parser
+
+2011-05-07  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/clients.py, b3/storage/test.py, test/clients/test_Client.py,
+	test/storage/__init__.py, test/storage/test_database.py: add ip
+	alias related methods to Client class add mysql storage test units
+	for ip aliases
+
+2011-05-05  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/clients.py, b3/sql/b3.sql, b3/storage.py,
+	b3/storage/__init__.py, b3/storage/database.py, b3/storage/test.py: 
+	start implementing IP address aliases. SQL and storage done, need to
+	work on Client class. Module b3.storage splitted in different files
 
 2011-05-22  xlr8or <xlr8or@xlr8or.com>
 
@@ -103,6 +789,17 @@
 	* b3/parsers/homefront/__init__.py: HOMEFRONT : update kick/kickban
 	commands for using players uid instead of name
 
+2011-05-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/frostbite/abstractParser.py, b3/parsers/moh.py: 
+	FROSTBITE: move end-of-round related events from the MoH parser to
+	the AbstractParser so BFBC2 can also make use of them
+
+2011-05-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO,
+	py2exe_builder/b3-installer-project.iss, setup.py: versioning 1.7.0a
+
 2011-05-21  xlr8or <xlr8or@xlr8or.com>
 
 	* b3.egg-info/PKG-INFO, b3.egg-info/SOURCES.txt,
@@ -113,6 +810,16 @@
 2011-05-21  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/setup.py: update
+
+2011-05-21  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/brink.py: BRINK: more progress, still no way to get
+	in-game chat
+
+2011-05-21  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/lib/sourcelib/SourceQuery.py: sourcelib : update to support
+	game server that do not send challenge
 
 2011-05-21  Courgette <courgette@bigbrotherbot.net>
 
@@ -159,19 +866,47 @@
 	* b3/parsers/homefront/__init__.py: homefront parser update for the
 	upcoming server version (untested)
 
+2011-05-12  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/brink.py: BRINK : can read log file
+
+2011-05-12  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/brink.py: BRINK: add rcon capabilities
+
 2011-05-11  ThomasL <courgette@bigbrotherbot.net>
 
 	* b3/tools/documentationBuilder.py: AUTODOC : update B3 website URL
 	on generated doc
 
-2011-05-07  Courgette <courgette@bigbrotherbot.net>
+2011-05-10  Courgette <courgette@bigbrotherbot.net>
 
-	* test/README: english
+	* b3/parsers/brink.py: add skeleton for brink parser
+
+2011-05-10  Courgette <courgette@bigbrotherbot.net>
+
+	* : commit 19d672e8eeb131985eb8ed3615c9ed63041264c4 Author:
+	Courgette <courgette@bigbrotherbot.net> Date:   Sat May 7 16:59:56
+	2011 +0200
 
 2011-05-07  Courgette <courgette@bigbrotherbot.net>
 
 	* test/__init__.py: TEST : add b3.events modules to make sure all B3
 	events are created before running tests
+
+2011-05-07  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/clients.py, b3/storage/test.py, test/clients/test_Client.py,
+	test/storage/__init__.py, test/storage/test_database.py: add ip
+	alias related methods to Client class add mysql storage test units
+	for ip aliases
+
+2011-05-05  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/clients.py, b3/sql/b3.sql, b3/storage.py,
+	b3/storage/__init__.py, b3/storage/database.py, b3/storage/test.py: 
+	start implementing IP address aliases. SQL and storage done, need to
+	work on Client class. Module b3.storage splitted in different files
 
 2011-05-07  Courgette <courgette@bigbrotherbot.net>
 
@@ -577,6 +1312,18 @@
 	* : commit f98897e4b8b053520246cae6c3bae29e2640a4a9 Merge: 5d94b63
 	80d0c9d Author: Courgette <courgette@bigbrotherbot.net> Date:   Sat
 	Apr 16 14:15:23 2011 +0200
+
+2011-04-16  Courgette <courgette@bigbrotherbot.net>
+
+	* : commit c3f988b194fb389dbaf1d58aa49955d9fdb325a6 Author:
+	Courgette <courgette@ubu-team.org> Date:   Sat Mar 26 15:29:24 2011
+	+0100
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/events.py, b3/game.py: Introduce new B3 event :
+	EVT_GAME_MAP_CHANGE. No parser need to be changed to fire this new
+	event, b3.game.Game will manage
 
 2011-04-16  Courgette <courgette@bigbrotherbot.net>
 
@@ -1823,16 +2570,16 @@
 
 	* : Merge remote branch 'courgette/master'
 
+2011-04-02  Courgette <courgette@ubu-team.org>
+
+	* : commit 04cd34b0d49c42e8a8d439fb75a67f121d37ea42 Merge: 619af34
+	b0a3657 Author: Freelander <freelander00@gmail.com> Date:   Sat Apr
+	2 12:28:37 2011 +0300
+
 2011-04-02  Freelander <freelander00@gmail.com>
 
-	* : commit 619af3412c56b0c41ca593d0fe8328c01117fac2 Merge: 88b02c9
-	b788a12 Author: Freelander <freelander00@gmail.com> Date:   Sat Apr
-	2 12:25:01 2011 +0300
-
-2011-04-02  xlr8or <xlr8or@xlr8or.com>
-
-	* b3/parsers/homefront/__init__.py: hf parser: change asyncore.loop
-	to use_poll=True for better reconnection handling
+	* : commit b0a3657110e42021bed3c6221e5b340b518085ff Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sat Apr 2 10:28:48 2011 +0200
 
 2011-04-02  xlr8or <xlr8or@xlr8or.com>
 
@@ -2071,10 +2818,21 @@
 	Courgette <courgette@ubu-team.org> Date:   Sat Mar 26 15:41:44 2011
 	+0100
 
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/game.py: plugin usage example added to Game class test for
+	event EVT_GAME_MAP_CHANGE
+
 2011-03-26  Freelander <freelander00@gmail.com>
 
 	* b3/parsers/homefront/__init__.py: hf parser task #10-8 (translate
 	HF CHANGE_LEVEL) and fixed the wrong method name
+
+2011-03-26  Courgette <courgette@ubu-team.org>
+
+	* b3/events.py, b3/game.py: Introduce new B3 event :
+	EVT_GAME_MAP_CHANGE. No parser need to be changed to fire this new
+	event, b3.game.Game will manage
 
 2011-03-26  Freelander <freelander00@gmail.com>
 

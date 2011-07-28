@@ -54,6 +54,12 @@
 # * "kill" penalty rcon command now uses SteamID instead of player name
 # 2011-05-27 : 1.0.2
 # * KILL event correctly parsed with player names or player SteamID
+# 2011-06-05 : 1.1.0
+# * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
+# 2011-07-14 : 1.1.1
+# * changes to support new dedicated server version 420003
+# * implemented getPlayerPings()
+# * added new DLC map names
 #
 from b3 import functions
 from b3.clients import Client
@@ -75,7 +81,7 @@ import time
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.0.2'
+__version__ = '1.1.1'
 
 
 
@@ -190,10 +196,11 @@ class HomefrontParser(b3.parser.Parser):
             if packet.channel == ChannelType.SERVER:
                 if packet.data == "PONG":
                     return
-                match = re.search(r"^(?P<event>[A-Z ]+): (?P<data>.*)$", packet.data)
+                match = re.search(r"^(?P<event>[A-Z ]+): (?P<data>.*)$", packet.data, re.MULTILINE | re.DOTALL)
                 if match:
                     func = 'onServer%s' % (string.capitalize(match.group('event').replace(' ','_')))
                     data = match.group('data')
+                    #self.debug('DATA: %s' % data)
                     #self.debug("-==== FUNC!!: " + func)
                     
                     if hasattr(self, func):
@@ -465,6 +472,20 @@ class HomefrontParser(b3.parser.Parser):
         self.game.mapName = levelname.lower()
         return self.getEvent('EVT_GAME_ROUND_START', levelname)
 
+    def onServerPlayerping(self, data):
+        # [int: SteamID] [int: Ping]
+        # example: 74569798001346241 48
+        match = re.search(r"^(?P<uid>[0-9]+) (?P<ping>[0-9]+)$", data)
+        if not match:
+            self.error('onServerPlayerping failed match')
+            return
+
+        guid = match.group('uid')
+        ping = match.group('ping')
+        client = self.clients.getByGUID(guid)
+        if client:
+            client.ping = ping
+
     def onChatterBroadcast(self, data):
         # [string: Name] [string: Context]: [string: Text]
         # example : courgette says: !register
@@ -526,7 +547,8 @@ class HomefrontParser(b3.parser.Parser):
 
     def onServerPlayer(self, data):
         # [string: Uid] [int: Team] [string: Clan] [string: Name] [int: Kills] [int: Deaths]
-        match = re.search(r"^(?P<data>(?P<uid>[0-9]+) (?P<team>[0-9]) (?P<clan>.*) (?P<name>[^ ]+) (?P<kills>[0-9]+) (?P<deaths>[0-9]+))$", data)
+        # example: 71897609803318218\n1\nB3bot\nFreelander\n0\n0
+        match = re.search(r"^(?P<data>(?P<uid>[0-9]+)\n(?P<team>[0-9])\n(?P<clan>.*)\n(?P<name>[^ ]+)\n(?P<kills>[0-9]+)\n(?P<deaths>[0-9]+))$", data)
         if not match:
             self.error("onServerPlayer failed match")
             return
@@ -733,7 +755,7 @@ class HomefrontParser(b3.parser.Parser):
             client._name = banid
             client.save()
         self.write(self.getCommand('ban', playerid=banid, admin=admin.name.replace('"','\"'), reason=reason))
-        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', reason, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
         client.disconnect()
 
     ## @todo Need to test response from the server
@@ -771,7 +793,10 @@ class HomefrontParser(b3.parser.Parser):
             self.write(self.getCommand('kick', playerid=client.guid))
         else:
             self.write(self.getCommand('kick', playerid=client.cid))
-        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', reason, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason, 
+                                                              'duration': duration, 
+                                                              'admin': admin}
+                                      , client))
         client.disconnect()
 
     def getMap(self):
@@ -871,6 +896,12 @@ class HomefrontParser(b3.parser.Parser):
 
         elif mapname == 'fl-borderlands':
             return 'Borderlands'
+
+        elif mapname == 'fl-spillway':
+            return 'Spillway'
+
+        elif mapname == 'fl-bigbox':
+            return 'Big Box'
         else:
             self.warning('unknown level name \'%s\'. Please report this on B3 forums' % mapname)
             return mapname
@@ -879,7 +910,14 @@ class HomefrontParser(b3.parser.Parser):
         """\
         returns a dict having players' id for keys and players' ping for values
         """
-        return {}
+        pings = {}
+        clients = self.clients.getList()
+        for c in clients:
+            try:
+                pings[c.name] = int(c.ping)
+            except AttributeError:
+                pass
+        return pings
 
     def getPlayerScores(self):
         """\

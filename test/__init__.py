@@ -30,5 +30,10 @@ class B3TestCase(unittest.TestCase):
 
     def setUp(self):
         b3.console = Mock()
+        b3.console.screen = Mock()
         b3.console.stripColors.side_effect = lambda x:x
         b3.console.time = time.time
+        
+        def myError(msg, *args, **kwargs):
+            print(("ERROR: %s" % msg) % args)
+        b3.console.error = myError

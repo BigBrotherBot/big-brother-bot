@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2011/06/05 - 1.26.1 - Courgette
+#   * fix periodic events stats dumping blocking B3 restart/shutdown
 #   2011/05/03 - 1.24.8 - Courgette
 #   * event queue size can be set in b3.xml in section 'b3/event_queue_size'
 #   2011/05/03 - 1.24.7 - Courgette
@@ -128,7 +130,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.24.8'
+__version__ = '1.26.1'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket, threading
@@ -448,15 +450,19 @@ class Parser(object):
 
     def _dumpEventsStats(self):
         self._eventsStats.dumpStats()
-        threading.Timer(60, self._dumpEventsStats, ()).start()
 
     def start(self):
         """Start B3"""
+        self.bot("Starting parser")
         self.startup()
         self.say('%s ^2[ONLINE]' % b3.version)
+        self.bot("Starting plugins")
         self.startPlugins()
-        threading.Timer(60, self._dumpEventsStats, ()).start()
+        self.bot("all plugins started")
+        self.pluginsStarted()
+        self.bot("starting event dispatching thread")
         thread.start_new_thread(self.handleEvents, ())
+        self.bot("start reading game events")
         self.run()
 
     def die(self):
@@ -499,6 +505,13 @@ class Parser(object):
         """\
         Called after the parser is created before run(). Overwrite this
         for anything you need to initialize you parser with.
+        """
+        pass
+
+    def pluginsStarted(self):
+        """\
+        Called after the parser loaded and started all plugins. 
+        Overwrite this in parsers to take actions once plugins are ready
         """
         pass
 
@@ -837,7 +850,6 @@ class Parser(object):
 
     def run(self):
         """Main worker thread for B3"""
-        self.bot('Start reading...')
         self.screen.write('Startup Complete : B3 is running! Let\'s get to work!\n\n')
         self.screen.write('(If you run into problems, check %s in the B3 root directory for detailed log info)\n' % self.config.getpath('b3', 'logfile'))
         #self.screen.flush()
@@ -1043,7 +1055,7 @@ class Parser(object):
         text = re.split(r'\s+', text)
 
         lines = []
-        color = '^7';
+        color = '^7'
 
         line = text[0]
         for t in text[1:]:
@@ -1200,19 +1212,23 @@ class Parser(object):
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
-        ban a given player
+        ban a given player on the game server and in case of success
+        fire the event ('EVT_CLIENT_BAN', data={'reason': reason, 
+        'admin': admin}, client=target)
         """
         raise NotImplementedError
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
-        unban a given player
+        unban a given player on the game server
         """
         raise NotImplementedError
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
         """\
-        tempban a given player
+        tempban a given player on the game server and in case of success
+        fire the event ('EVT_CLIENT_BAN_TEMP', data={'reason': reason, 
+        'duration': duration, 'admin': admin}, client=target)
         """
         raise NotImplementedError
 

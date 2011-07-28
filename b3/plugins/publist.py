@@ -69,8 +69,10 @@
 # * change initial delay timer into one time cron tab
 # 13/04/2011 - 1.10.0 - courgette
 # * add default_encoding to sent info 
-
-__version__ = '1.10.0'
+# 22/06/2011 - 1.10.1 - courgette
+# * fix error on B3 shutdown/restart
+#
+__version__ = '1.10.1'
 __author__  = 'ThorN, Courgette'
 
 import sys
@@ -161,8 +163,6 @@ class PublistPlugin(b3.plugin.Plugin):
     def shutdown(self):
         """Send a shutdown heartbeat to B3 master server"""
         self.info('Sending shutdown info to B3 master')
-        if self._initial_heartbeat_timer is not None:
-            self._initial_heartbeat_timer.cancel()
         info = {
             'action' : 'shutdown',
             'ip' : self.console._publicIp,

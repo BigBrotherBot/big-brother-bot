@@ -37,11 +37,11 @@ from setuptools import setup, find_packages
 
 _setupinfo = {
     'name' : "b3",
-    'version' : "1.6.1",
+    'version' : "1.7.0b",
     'packages' : find_packages(),
     'extras_require' : { 'mysql' : 'MySQL-python' },
     'package_data' : {
-        '': ['conf/*.xml', 'extplugins/conf/*.xml','sql/*', 'docs/*', 'README.md']
+        '': ['conf/*.xml', 'extplugins/conf/*.xml','sql/*.*', 'sql/sqlite/*', 'docs/*', 'README.md']
     },
     'zip_safe' : False,
     'author' : 'Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Leveil (Courgette)',

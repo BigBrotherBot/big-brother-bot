@@ -24,9 +24,10 @@
 #   prevent blocking the bot when the B3 server is hanging
 # 17/04/2011 - 1.3.3 - Courgette - make sanitizeMe unicode compliant
 # 06/06/2011 - 1.4.0 - Courgette - add meanstdv()
+# 07/06/2011 - 1.4.1 - Courgette - fix meanstdv()
 
 __author__    = 'ThorN, xlr8or'
-__version__   = '1.4.0'
+__version__   = '1.4.1'
 
 import b3
 import re
@@ -293,7 +294,10 @@ def meanstdv(x):
     n, mean, std = len(x), 0, 0
     for a in x:
         mean = mean + a
-    mean = mean / float(n)
+    try:
+        mean = mean / float(n)
+    except ZeroDivisionError:
+        mean = 0
     for a in x:
         std = std + (a - mean)**2
     try:

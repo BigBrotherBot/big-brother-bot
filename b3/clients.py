@@ -18,6 +18,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    16/07/2011 - 1.3.6 - xlr8or
+#    * Client.bot added - ability to identify a bot
 #    08/04/2011 - 1.3.5 - Courgette
 #    * make sure Clients.empty() does not delete hidden clients
 #    08/04/2011 - 1.3.4 - Courgette
@@ -63,11 +65,19 @@
 #     Added data field to Penalty
 #     Added data parameter to Client.warn()
 #     Added data parameter to Client.tempban()
+import b3
+import b3.events
+import functions
+import re
+import string
+import sys
+import threading
+import time
+import traceback
 
 __author__  = 'ThorN'
-__version__ = '1.3.5'
+__version__ = '1.3.6'
 
-import b3, string, re, time, functions, threading, traceback, sys
 
 class ClientVar(object):
     value = None
@@ -119,6 +129,7 @@ class Client(object):
     maxGroup = None
     authed = False
     hide = False # set to true for non-player clients (world entities)
+    bot = False
 
     state = None
     authorizing = False
@@ -215,6 +226,11 @@ class Client(object):
         return self.console.storage.getClientAliases(self)
 
     aliases = property(getAliases)
+
+    def getIpAddresses(self):
+        return self.console.storage.getClientIpAddresses(self)
+
+    ip_addresses = property(getIpAddresses)
 
     def getattr(self, name, default=None):
         return getattr(self, name, default)
@@ -349,10 +365,9 @@ class Client(object):
     _ip = ''
     def _set_ip(self, ip):
         if ':' in ip:
-            self._ip = ip[0:ip.find(':')]
-        else:
-            self._ip = ip
-
+            ip = ip[0:ip.find(':')]
+        if self._ip != ip:
+            self.makeIpAlias(self._ip)
         self._ip = ip
 
     def _get_ip(self):
@@ -642,6 +657,26 @@ class Client(object):
         alias.save(self.console)
         self.console.bot('New alias for %s: %s', str(self.id), alias.alias)
 
+    def makeIpAlias(self, ip):
+        if not self.id or not ip:
+            return
+
+        try:
+            alias = self.console.storage.getClientIpAddress(IpAlias(clientId=self.id, ip=ip))
+        except KeyError:
+            alias = None
+
+        if alias:
+            if alias.numUsed > 0:
+                alias.numUsed += 1
+            else:
+                alias.numUsed = 1
+        else:
+            alias = IpAlias(clientId=self.id, ip=ip)
+
+        alias.save(self.console)
+        self.console.bot('New alias for %s: %s', str(self.id), alias.ip)
+
     def save(self, console=None):
         self.timeEdit = time.time()
 
@@ -816,6 +851,24 @@ class Alias(Struct):
         if not self.id:
             self.timeAdd = console.time()
         return console.storage.setClientAlias(self)
+
+#-----------------------------------------------------------------------------------------------------------------------
+class IpAlias(Struct):
+    ip = None
+    timeAdd  = 0
+    timeEdit = 0
+    numUsed  = 1
+    clientId = 0
+
+    def save(self, console):
+        self.timeEdit = console.time()
+
+        if not self.id:
+            self.timeAdd = console.time()
+        return console.storage.setClientIpAddresse(self)
+    
+    def __str__(self):
+        return "IpAlias(id=%s, ip=\"%s\", clientId=%s, numUsed=%s)" % (self.id, self.ip, self.clientId, self.numUsed)
 
 #-----------------------------------------------------------------------------------------------------------------------
 class Group(Struct):
