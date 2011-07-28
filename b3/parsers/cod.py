@@ -48,7 +48,7 @@
 # 28/03/2011 - 1.4.20 - Bravo17 - CoD5 JT regexp fix
 # 09/04/2011 - 1.4.21 - Courgette - reflect that cid are not converted to int anymore in the clients module
 # 16/07/2011 - 1.4.22 - Freelander - Minor bugfix to flag disconnecting client properly if found in authentication queue 
-# 03/07/2011 - 1.4.23 - 82ndab.Bravo17 - set cid to str in sync()
+# 03/07/2011 - 1.4.23 - 82ndab.Bravo17 - set cid to str in sync() and adjust sync() timing
 
 __author__  = 'ThorN, xlr8or'
 __version__ = '1.4.23'
