@@ -123,11 +123,13 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
     def sync(self):
         self.debug('Synchronising Clients')
         plist = self.getPlayerList(maxRetries=4)
+        self.verbose2('plist: %s' % plist)
         mlist = {}
 
         for cid, c in plist.iteritems():
             client = self.clients.getByCID(cid)
             if client:
+                self.verbose2('Client found: %s' % client.name)
                 if client.guid and c.has_key('guid') and not self.IpsOnly:
                     if functions.fuzzyGuidMatch(client.guid, c['guid']):
                         # player matches
@@ -146,6 +148,8 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
                         client.disconnect()
                 else:
                     self.debug('no-sync: no guid or ip found.')
+            else:
+                self.verbose2('No client found for cid: %s' % cid)
         
         return mlist
 
