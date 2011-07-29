@@ -346,7 +346,7 @@ class FakeClient(b3.clients.Client):
             e = b3.events.EVT_CLIENT_DAMAGE
         self.console.queueEvent( b3.events.Event(e, (points, 1, 1, 1), self, victim))
         
-    def kills(self, victim):
+    def kills(self, victim, damage=100, weapon=1, location=1, damage_type=1):
         print "\n%s kills %s" % (self.name, victim.name)
         if self == victim:
             self.suicides()
@@ -355,7 +355,7 @@ class FakeClient(b3.clients.Client):
             e = b3.events.EVT_CLIENT_KILL_TEAM
         else:
             e = b3.events.EVT_CLIENT_KILL
-        self.console.queueEvent(b3.events.Event(e, (100, 1, 1, 1), self, victim))
+        self.console.queueEvent(b3.events.Event(e, (damage, weapon, location, damage_type), self, victim))
         
     def suicides(self):
         print "\n%s kills himself" % self.name
