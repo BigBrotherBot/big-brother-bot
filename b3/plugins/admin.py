@@ -615,8 +615,6 @@ class AdminPlugin(b3.plugin.Plugin):
                 client.message('^7Un-Masked %s' % sclient.name)
             sclient.message('^7Un-Masked')
 
-
-
     def cmd_clear(self, data, client, cmd=None):
         """\
         [<player>] - clear all tk points and warnings
@@ -626,13 +624,11 @@ class AdminPlugin(b3.plugin.Plugin):
 
             if sclient:
                 self.clearAll(sclient, client)
-
-                self.console.say('%s^7 has cleared %s^7 of all points' % (client.exactName, sclient.exactName))
+                self.console.say('%s^7 has cleared %s^7 of all tk-points and warnings' % (client.exactName, sclient.exactName))
         else:
             for cid,c in self.console.clients.items():
                 self.clearAll(c, client)
-
-            self.console.say('%s^7 has cleared everyones points' % client.exactName)
+            self.console.say('%s^7 has cleared everyones tk-points and warnings' % client.exactName)
 
     def clearAll(self, sclient, client=None):
         for w in sclient.warnings:
