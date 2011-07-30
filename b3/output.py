@@ -153,7 +153,7 @@ def getInstance(logfile='b3.log', loglevel=21, log2console=False):
 
 if __name__ == '__main__':
     # test output handler
-    log = getInstance('test.log', 1, False, True)
+    log = getInstance('test.log', 1, True)
     log.error('Test error')
     log.debug('Test debug')
     log.console('Test console')
