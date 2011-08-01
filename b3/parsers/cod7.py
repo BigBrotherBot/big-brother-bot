@@ -41,8 +41,7 @@
 #   * Fixed rcon set command that was changed as setadmindvar in CoD7
 # 25.05.2011 - 1.1 - Courgette
 #   * kick commands now sends reason
-# 27.07.11 - 1.11 - 82ndab.Bravo17
-#   * Adjust new cod parser behaviour to Sync clients 30 sec after InitGame except in pre-match after new map
+
 #
 
 ## @file
@@ -243,32 +242,6 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
                     target
                 ))
 
-    def OnInitgame(self, action, data, match=None):
-        options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)
-
-        for o in options:
-            if o[0] == 'mapname':
-                self.game.mapName = o[1]
-            elif o[0] == 'g_gametype':
-                self.game.gameType = o[1]
-            elif o[0] == 'fs_game':
-                self.game.modName = o[1]
-            else:
-                setattr(self.game, o[0], o[1])
-
-        self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
-        self.game.startRound()
-
-        #Sync clients 30 sec after InitGame except in pre-match after new map
-        if self._syncNewMap == 0:
-            t = threading.Timer(30, self.clients.sync)
-            t.start()
-        else:
-            self._syncNewMap = 0
-            
-
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
-        
     def OnJ(self, action, data, match=None):
         """Client join"""
 

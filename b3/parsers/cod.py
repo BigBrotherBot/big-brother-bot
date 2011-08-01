@@ -48,7 +48,7 @@
 # 28/03/2011 - 1.4.20 - Bravo17 - CoD5 JT regexp fix
 # 09/04/2011 - 1.4.21 - Courgette - reflect that cid are not converted to int anymore in the clients module
 # 16/07/2011 - 1.4.22 - Freelander - Minor bugfix to flag disconnecting client properly if found in authentication queue 
-# 03/07/2011 - 1.4.23 - 82ndab.Bravo17 - set cid to str in sync() and adjust sync() timing
+# 03/07/2011 - 1.4.23 - 82ndab.Bravo17 - set cid to unicode in sync() and adjust sync() timing
 
 __author__  = 'ThorN, xlr8or'
 __version__ = '1.4.23'
@@ -401,18 +401,11 @@ class CodParser(AbstractParser):
         self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
         self.game.startRound()
 
-        #Sync clients 30 sec after InitGame or 60 sec after ExitLevel
-        if self._syncNewMap == 0:
-            t = threading.Timer(30, self.clients.sync)
-        else:
-            t = threading.Timer(60, self.clients.sync)
-            self._syncNewMap = 0
-            
-        t.start()
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
 
     def OnExitlevel(self, action, data, match=None):
-    
+        t = threading.Timer(60, self.clients.sync)
+        t.start()
         self._syncNewMap = 1
         self.game.mapEnd()
         return b3.events.Event(b3.events.EVT_GAME_EXIT, data)
@@ -509,7 +502,7 @@ class CodParser(AbstractParser):
         mlist = {}
 
         for cid, c in plist.iteritems():
-            cid = str(cid)
+            cid = unicode(cid)
             client = self.clients.getByCID(cid)
             if client:
                 if client.guid and c.has_key('guid') and not self.IpsOnly:

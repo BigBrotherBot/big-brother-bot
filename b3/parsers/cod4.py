@@ -35,8 +35,8 @@
 #    * messages now support named $variables instead of %s
 # 8/11/2010 - 1.3.4 - GrosBedo
 #    * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
-# 31/7/2011 - 1.3.5 -82ndab.Bravo17
-#    * convert cid to unicode in sync proir to call to getByCID()
+# 30/7/2011 - 1.3.5 - 82ndab.Bravo17
+#    * set cid to unicode in sync() before call to clients.getByCID(cid)
 #
 
 
