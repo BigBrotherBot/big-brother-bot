@@ -139,7 +139,7 @@ class PunkBuster(object):
             if m:
                 d = m.groupdict()
                 d['guid'] = d['pbid']
-                players[int(m.group('slot')) - 1] = d
+                players[str(int(m.group('slot')) - 1)] = d
 
         return players
 
