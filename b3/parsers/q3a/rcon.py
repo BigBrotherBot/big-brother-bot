@@ -1,3 +1,4 @@
+
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
@@ -33,10 +34,12 @@
 # * should get rid of UnicodeDecodeError
 # 2011/04/20 - 1.4 - Courgette
 # * now sent data is encoded as UTF-8
+# 2011/08/05 - 1.5 - Courgette
+# * reverts back as it was in 1.3.8 after report by -real- at http://forum.bigbrotherbot.net/general-usage-support/problem-with-commands/
 #
- 
+
 __author__ = 'ThorN'
-__version__ = '1.4'
+__version__ = '1.5.0'
  
 import socket
 import sys
@@ -114,7 +117,7 @@ class Rcon:
                 self.console.warning('QSERVER: %r', errors)
             elif len(writeables) > 0:
                 try:
-                    writeables[0].send(self.qserversendstring % unicode(data).encode('UTF-8'))
+                    writeables[0].send(self.qserversendstring % data)
                 except Exception, msg:
                     self.console.warning('QSERVER: ERROR sending: %r', msg)
                 else:
@@ -157,10 +160,10 @@ class Rcon:
             readables, writeables, errors = select.select([], [self.socket], [self.socket], socketTimeout)
 
             if len(errors) > 0:
-                self.console.warning('RCON: %s', str(errors))
+                self.console.warning('RCON: %r', errors)
             elif len(writeables) > 0:
                 try:
-                    writeables[0].send(self.rconsendstring % (self.password, unicode(data).encode('UTF-8')))
+                    writeables[0].send(self.rconsendstring % (self.password, data))
                 except Exception, msg:
                     self.console.warning('RCON: ERROR sending: %r', msg)
                 else:
