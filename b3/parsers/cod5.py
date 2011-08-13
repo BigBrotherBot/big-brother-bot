@@ -39,7 +39,7 @@
 # 14/11/2010 - 1.3.1 - xlr8or 
 #  fix bug in onJT() and translateAction()
 # 9/7/2011 - 1.3.2 - 82ndab.Bravo17
-#  Add fuzzy guid search in sync() from COD4 series and convert cid to unicode
+#  Add fuzzy guid search in sync() from COD4 series
 
 __author__  = 'xlr8or'
 __version__ = '1.3.2'
@@ -175,7 +175,6 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
         mlist = {}
 
         for cid, c in plist.iteritems():
-            cid = unicode(cid)
             client = self.clients.getByCID(cid)
             if client:
                 if client.guid and c.has_key('guid') and not self.IpsOnly:
