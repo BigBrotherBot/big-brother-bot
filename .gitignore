@@ -8,6 +8,7 @@ desktop.ini
 *.log.5
 *.orig
 *.patch
+*.lnk
 releases/*
 conf/b3.xml
 build/*
