@@ -1,3 +1,67 @@
+2011-08-27  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/clients.py: minor addition (testing purposes)
+
+2011-08-27  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/homefront/__init__.py: homefront: Added DLC maps that
+	come with patch 1.0.5
+
+2011-08-06  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/q3a/rcon.py: Q3a rcon and cyrillic. See
+
+	http://forum.bigbrotherbot.net/beta-board-(beta-only)/unicodedecodeerror/
+
+2011-08-02  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/punkbuster.py: fix PB version of getPlayerList() where
+	cid was forced to int() leading to losing sync for all clients on
+	mapchange
+
+2011-07-30  xlr8or <xlr8or@xlr8or.com>
+
+	* .gitignore, b3/output.py: minor changes
+
+2011-07-29  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/plugins/admin.py: More descriptive response on !clear command
+
+2011-07-29  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/cod4.py: some verbose2 messages for sync method
+
+2011-07-27  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/sof2.py, b3/parsers/sof2pm.py: credits for sof2 parsers
+	adjusted
+
+2011-07-23  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG, versions.txt: last minute changes to changelog
+
+2011-07-21  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit aea7f5a45ea8cdceeeae9e170b99076d5c25a1c2 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Thu Jul 21 19:57:59 2011 +0200
+
+2011-07-21  Freelander <freelander00@gmail.com>
+
+	* b3/conf/plugin_punkbuster.xml, b3/plugins/punkbuster.py: 
+	Punkbuster Plugin: ftp support for pbbans.dat access
+
+2011-07-21  Freelander <freelander00@gmail.com>
+
+	* b3/game.py, b3/plugins/status.py: Status Plugin: fix error
+	messages during map change
+
+2011-07-20  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG, ChangeLogDetailed.txt, MANIFEST.in,
+	b3.egg-info/PKG-INFO, b3.egg-info/SOURCES.txt, b3/PKG-INFO,
+	py2exe_builder/b3-installer-project.iss, setup.py, setupPy2exe.py,
+	versions.txt: packaging preparations and versioning
+
 2011-07-20  xlr8or <xlr8or@xlr8or.com>
 
 	* : commit 60d953b39364f3dc996d3a78019abdcf1cc1fa0a Merge: 4b0c86c
