@@ -1,3 +1,14 @@
+2011-08-30  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/q3a/rcon.py: rolled back q3a/rcon.py to version 1.4
+
+2011-08-27  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG, ChangeLogDetailed.txt, b3.egg-info/PKG-INFO,
+	b3/PKG-INFO, b3/__init__.py,
+	py2exe_builder/b3-installer-project.iss, setup.py, versions.txt: 
+	Versioning for release
+
 2011-08-27  xlr8or <xlr8or@xlr8or.com>
 
 	* b3/clients.py: minor addition (testing purposes)
