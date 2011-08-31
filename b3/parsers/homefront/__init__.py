@@ -62,6 +62,8 @@
 # * added new DLC map names
 # 2011-08-27 : 1.1.2
 # * Added DLC maps that come with patch 1.0.5
+# 2011-08-31 : 1.1.3
+# * Fixed typo in mapname
 #
 from b3 import functions
 from b3.clients import Client
@@ -83,7 +85,7 @@ import time
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.1.2'
+__version__ = '1.1.3'
 
 
 
@@ -911,7 +913,7 @@ class HomefrontParser(b3.parser.Parser):
         elif mapname == 'fl-bridge':
             return 'Bridge'
 
-        elif mapname == 'fl-waterway':
+        elif mapname == 'fl-tdmspillway':
             return 'Waterway'
 
         elif mapname == 'fl-overpass':
@@ -1069,4 +1071,3 @@ class HomefrontParser(b3.parser.Parser):
         """
         self.verbose2('Retrieving Playerlist')
         self.write('RETRIEVE PLAYERLIST')
-
