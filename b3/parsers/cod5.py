@@ -151,7 +151,8 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
         elif attacker.team != b3.TEAM_UNKNOWN and \
              attacker.team and \
              victim.team and \
-             attacker.team == victim.team:
+             attacker.team == victim.team and \
+             match.group('aweap') != 'briefcase_bomb_mp':
             event = b3.events.EVT_CLIENT_KILL_TEAM
 
         victim.state = b3.STATE_DEAD
