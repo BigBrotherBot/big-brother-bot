@@ -50,9 +50,10 @@
 # 16/07/2011 - 1.4.22 - Freelander - Minor bugfix to flag disconnecting client properly if found in authentication queue 
 # 03/07/2011 - 1.4.23 - 82ndab.Bravo17 - adjust sync() timing for high slot count servers and login plugin
 #                       Sync now occurs 60 seconds after ExitLevel (map change) rather than 30 seconds after every round start
+# 11/09/2011 - 1.4.24 - 82ndab.Bravo17 - New client will now join Auth queue if slot shows as 'Disconnected' in Auth queue
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.23'
+__version__ = '1.4.24'
 
 import re, string, threading
 import b3
@@ -294,7 +295,7 @@ class CodParser(AbstractParser):
             # Join-event for mapcount reasons and so forth
             return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
         else:
-            if self._counter.get(cid):
+            if self._counter.get(cid) and self._counter.get(cid) != 'Disconnected':
                 self.verbose('cid: %s already in authentication queue. Aborting Join.' %cid)
                 return None
             self._counter[cid] = 1
