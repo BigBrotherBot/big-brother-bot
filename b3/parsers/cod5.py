@@ -38,18 +38,13 @@
 #  Add JoinTeam event processing
 # 14/11/2010 - 1.3.1 - xlr8or 
 #  fix bug in onJT() and translateAction()
-# 9/7/2011 - 1.3.2 - 82ndab.Bravo17
-#  Add fuzzy guid search in sync() from COD4 series
 
 __author__  = 'xlr8or'
-__version__ = '1.3.2'
+__version__ = '1.3.1'
 
 import b3.parsers.cod2
 import b3.functions
-import re
-import threading
-import string
-from b3 import functions
+import re, threading, string
 
 class Cod5Parser(b3.parsers.cod2.Cod2Parser):
     gameName = 'cod5'
@@ -167,33 +162,3 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
             if not client:
                 return None
         client.team = self.getTeam(match.group('team'))
-        
-    # sync
-    def sync(self):
-        self.debug('Synchronising Clients')
-        plist = self.getPlayerList(maxRetries=4)
-        mlist = {}
-
-        for cid, c in plist.iteritems():
-            client = self.clients.getByCID(cid)
-            if client:
-                if client.guid and c.has_key('guid') and not self.IpsOnly:
-                    if functions.fuzzyGuidMatch(client.guid, c['guid']):
-                        # player matches
-                        self.debug('in-sync %s == %s', client.guid, c['guid'])
-                        mlist[str(cid)] = client
-                    else:
-                        self.debug('no-sync %s <> %s', client.guid, c['guid'])
-                        client.disconnect()
-                elif client.ip and c.has_key('ip'):
-                    if client.ip == c['ip']:
-                        # player matches
-                        self.debug('in-sync %s == %s', client.ip, c['ip'])
-                        mlist[str(cid)] = client
-                    else:
-                        self.debug('no-sync %s <> %s', client.ip, c['ip'])
-                        client.disconnect()
-                else:
-                    self.debug('no-sync: no guid or ip found.')
-        
-        return mlist

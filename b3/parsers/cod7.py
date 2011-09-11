@@ -41,14 +41,13 @@
 #   * Fixed rcon set command that was changed as setadmindvar in CoD7
 # 25.05.2011 - 1.1 - Courgette
 #   * kick commands now sends reason
-
 #
 
 ## @file
 #  CoD7 Parser
 
 __author__  = 'Freelander, Courgette, Just a baka, Bravo17'
-__version__ = '1.11'
+__version__ = '1.1'
 
 import re
 import string

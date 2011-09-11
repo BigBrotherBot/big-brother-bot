@@ -17,8 +17,6 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
-#   2011/08/14 - 1.11.1 - 82ndab-Bravo17
-#   * changed !list output for easier reading
 #   2011/05/31 - 1.11.0 - Courgette
 #   * refactoring
 #   2011/04/30 - 1.10.3 - Courgette
@@ -88,7 +86,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.11.1'
+__version__ = '1.11.0'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import re, time, threading, sys, traceback, thread, random
@@ -407,7 +405,7 @@ class AdminPlugin(b3.plugin.Plugin):
             if len(matches) > 1:
                 names = []
                 for _p in matches:
-                    names.append('^7%s [^2%s^7]' % (_p.name, _p.cid))
+                    names.append('[^2%s^7] %s' % (_p.cid, _p.name))
 
                 if client:
                     client.message(self.getMessage('players_matched', client_id, ', '.join(names)))
@@ -617,8 +615,6 @@ class AdminPlugin(b3.plugin.Plugin):
                 client.message('^7Un-Masked %s' % sclient.name)
             sclient.message('^7Un-Masked')
 
-
-
     def cmd_clear(self, data, client, cmd=None):
         """\
         [<player>] - clear all tk points and warnings
@@ -628,13 +624,11 @@ class AdminPlugin(b3.plugin.Plugin):
 
             if sclient:
                 self.clearAll(sclient, client)
-
-                self.console.say('%s^7 has cleared %s^7 of all points' % (client.exactName, sclient.exactName))
+                self.console.say('%s^7 has cleared %s^7 of all tk-points and warnings' % (client.exactName, sclient.exactName))
         else:
             for cid,c in self.console.clients.items():
                 self.clearAll(c, client)
-
-            self.console.say('%s^7 has cleared everyones points' % client.exactName)
+            self.console.say('%s^7 has cleared everyones tk-points and warnings' % client.exactName)
 
     def clearAll(self, sclient, client=None):
         for w in sclient.warnings:
@@ -843,7 +837,7 @@ class AdminPlugin(b3.plugin.Plugin):
     def doList(self, client, cmd):
         names = []
         for c in self.console.clients.getClientsByLevel():
-            names.append(self.getMessage('player_id', c.name, c.cid))
+            names.append(self.getMessage('player_id', c.cid, c.name))
 
         cmd.sayLoudOrPM(client, ', '.join(names))
         return True

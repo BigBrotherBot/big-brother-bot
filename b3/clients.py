@@ -1173,4 +1173,15 @@ class Clients(dict):
     def _authorizeClients(self):
         self.console.authorizeClients()
         self._authorizing = False
-        
+
+if __name__ == '__main__':
+    from b3.fake import fakeConsole
+    from b3.fake import joe
+
+    game = b3.game.Game(fakeConsole, 'fakegamename')
+    joe.connects(cid=3)
+
+    print 'maxLevel: '
+    print joe.maxLevel
+    print type(joe.maxLevel)
+
