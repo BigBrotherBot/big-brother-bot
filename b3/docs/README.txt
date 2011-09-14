@@ -7,7 +7,7 @@ Big Brother Bot
 
 ### Requirements
 
-1. Python 2.4+ - http://www.python.org
+1. Python 2.6+ - http://www.python.org
 2. MySQL-python (Tested with 0.9.2 and 1.0) - http://sourceforge.net/project/showfiles.php?group_id=22307&package_id=15775
 3. MySQL (Tested with 3.23) - http://www.mysql.com/
 4. setuptools - http://peak.telecommunity.com/dist/ez_setup.py (download and run)
@@ -84,6 +84,15 @@ This only works in Python 2.6.
 
    Leave log_level at 9 for debugging, If there is a bug found we will 
    need your b3.log.   
+
+### Upgrading B3
+
+Make sure to read the release note.
+
+1. Make a backup of your database
+2. Run b3_run with the --update option to migrate your database :
+    `b3_run -c /home/b3/conf/b3.xml --update`
+
 
 ### Running B3
 
