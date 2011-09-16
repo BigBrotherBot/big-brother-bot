@@ -287,14 +287,14 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def onLoadConfig(self):
         try:
-            self.hide_bots = self.config.gebool('settings', 'hide_bots')
+            self.hide_bots = self.config.getbool('settings', 'hide_bots')
         except:
             self.debug('Using default value (%s) for settings::hide_bots', self.hide_bots)
 
         try:
-            self.exclude_bots = self.config.getbool('settings', 'exclude_botkills')
+            self.exclude_bots = self.config.getbool('settings', 'exclude_bots')
         except:
-            self.debug('Using default value (%s) for settings::exclude_botkills', self.exclude_bots)
+            self.debug('Using default value (%s) for settings::exclude_bots', self.exclude_bots)
 
         try:
             self.minPlayers = self.config.getint('settings', 'minplayers')
