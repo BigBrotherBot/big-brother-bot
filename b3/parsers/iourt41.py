@@ -137,10 +137,13 @@
 # 12/09/2011 - 1.11.1 - Courgette
 # * EVT_CLIENT_JOIN event is now triggered when player actually join a team
 # * the call to self.clients.sync() that was made each round is now made on game init and in its own thread  
+# 29/09/2011 - 1.11.2 - Courgette
+# * fix MOD_TELEFRAG attacker on kill event to prevent people from being considered
+#   as tkers in such cases.
 #
 
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.11.1'
+__version__ = '1.11.2'
 
 from b3.parsers.q3a.abstractParser import AbstractParser
 import re, string, threading, time, os, thread
@@ -771,7 +774,7 @@ class Iourt41Parser(AbstractParser):
             return None
 
         ## Fix attacker
-        if match.group('aweap') in (self.UT_MOD_SLAPPED,self.UT_MOD_NUKED):
+        if match.group('aweap') in (self.UT_MOD_SLAPPED, self.UT_MOD_NUKED, self.MOD_TELEFRAG):
             self.debug('OnKill: slap/nuke => attacker should be None')
             attacker = self.clients.getByCID(-1) # make the attacker 'World'
         elif match.group('aweap') in (self.MOD_WATER,self.MOD_LAVA,self.MOD_FALLING,self.MOD_TRIGGER_HURT,self.UT_MOD_BOMBED,self.UT_MOD_FLAG):
