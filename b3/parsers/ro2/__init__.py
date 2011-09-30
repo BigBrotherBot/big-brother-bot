@@ -74,6 +74,7 @@ class Ro2Parser(b3.parser.Parser):
     password=''
     password_hash=''
     cj=None
+    headers = {}
     opener=None
     map_rotation = {}
     map_cycles = {}
@@ -121,6 +122,7 @@ class Ro2Parser(b3.parser.Parser):
         self.cron + b3.cron.CronTab(self.retrievePlayerList, second='*/%s' % self._playerlistInterval)
     
         self.user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
+        self.headers = {'User-Agent' : self.user_agent, "Accept": "ext/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language" : "en-us,en;q =0.5", "Content-type": "application/x-www-form-urlencoded", "Accept-Charset" : "ISO-8859-1,utf-8;q=0.7,*;q=0.7", "Referer" : ''}
         self.site=self._publicIp + ':' + str(self._rconPort)
         #self.debug(self.site)
         self.login_page="ServerAdmin"
@@ -130,40 +132,6 @@ class Ro2Parser(b3.parser.Parser):
         self.password_hash = "$sha1$%s" % hashlib.sha1("%s%s" % (self.password, self.username)).hexdigest()
 
         self.url = "http://%s/%s" % (self.site, self.login_page)
-        
-    def webconnect(self):
-        
-        remember=-1        
-        password=''
-        login_url = self.url + '/'
-        headers = {'Content-type' : 'application/x-www-form-urlencoded', 'User-Agent' : self.user_agent}
-        self.cj = cookielib.LWPCookieJar()
-        self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
-        urllib2.install_opener(self.opener)
-        request = urllib2.Request(login_url, None, headers)
-        page = urllib2.urlopen(request)
-        response=page.read()
-        
-        #<input type="hidden" name="token" value="3309899D" />
-        token_start = response.partition('<input type="hidden" name="token" value="')
-        token = token_start[2]
-        token_value = token[0:8]
-
-        referer = login_url
-        params = urllib.urlencode({ 'token' : token_value, 'password_hash' : self.password_hash, 'username' : self.username, 'password' : password, 'remember' : remember })
-        headers = {'User-Agent' : self.user_agent, "Accept": "ext/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language" : "en-us,en;q =0.5", "Content-type": "application/x-www-form-urlencoded", "Accept-Charset" : "ISO-8859-1,utf-8;q=0.7,*;q=0.7", "Referer" : referer} 
-
-        request = urllib2.Request(login_url, params, headers)
-
-        try:
-            main_page = self.opener.open(request)
-            response = main_page.read()
-            return True
-   
-        except:
-            print "Failed open URL\n"
-            raise
-            return False
         
     def handle_chat(self, data):
         if string.capitalize(data['div_class']) == 'Chatnotice':
@@ -234,8 +202,50 @@ class Ro2Parser(b3.parser.Parser):
             self._serverConnection.close()
             if self.exitcode:
                 sys.exit(self.exitcode)
+                
+    def readwriteweb(self, data= None, referer=None, addurl=None):
+        data_url = self.url + addurl
+        if not referer:
+            referer = data_url
+        else:
+            referer = self.url + referer
+            
+        self.headers['Referer'] = referer
+        request_console = urllib2.Request(data_url, data, self.headers)
+        try:
+            console_read = self.opener.open(request_console)
+            console_data = console_read.read()
+            return console_data
+            
+        except:
+            print "Failed to open URL\n"
+            raise
+            return 
 
+    def webconnect(self):
+        
+        remember=-1        
+        password=''
+        login_url = self.url + '/'
+        headers = {'Content-type' : 'application/x-www-form-urlencoded', 'User-Agent' : self.user_agent}
+        self.cj = cookielib.LWPCookieJar()
+        self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
+        urllib2.install_opener(self.opener)
+        request = urllib2.Request(login_url, None, headers)
+        page = urllib2.urlopen(request)
+        response=page.read()
+        
+        #<input type="hidden" name="token" value="3309899D" />
+        token_start = response.partition('<input type="hidden" name="token" value="')
+        token = token_start[2]
+        token_value = token[0:8]
 
+        login_url = '/'
+        referer = None
+        data = urllib.urlencode({ 'token' : token_value, 'password_hash' : self.password_hash, 'username' : self.username, 'password' : password, 'remember' : remember })
+        chat_data = self.readwriteweb(data, referer, login_url)
+
+        
     def readwriteajax(self, message = None):
         if message:
             message_text = self.addplus(message)
@@ -248,20 +258,18 @@ class Ro2Parser(b3.parser.Parser):
         #<span class="message">test message from game</span>
         #</div>
         
-        chatdata_url = self.url + '/current/chat/data'
+        chatdata_url = '/current/chat/data'
         #data = 'ajax=1&message=message+from+b3&teamsay=-1'
         data = 'ajax=1' + message_text
-        referer = self.url + '/current/chat'
-        headers = {'User-Agent' : self.user_agent, "Accept": "ext/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-encoding" : "gzip, deflate", "Accept-Language" : "en-us,en;q =0.5", "Content-type": "application/x-www-form-urlencoded", "Accept-Charset" : "ISO-8859-1,utf-8;q=0.7,*;q=0.7", "Referer" : referer}
-        request_chat = urllib2.Request(chatdata_url, data, headers)
-        chat_read = self.opener.open(request_chat)
-        chat_data = chat_read.read()
+        referer = '/current/chat'
+        chat_data = self.readwriteweb(data, referer, chatdata_url)
         #'<div class="chatnotice">\r\n<span class="noticesymbol">***</span> [<span class="username"></span>]\r\n<span class="message">82ndAB ADMIN: No offensive names.</span>\r\n</div>\r\n\r\n'
         if len(chat_data) > 0:
             self.decode_chat_data(chat_data)
  
         return
         
+
     def addplus(self, message):
         #ajax=1&message=test+chat&teamsay=-1
         message.replace(' ', '+')
@@ -432,12 +440,10 @@ class Ro2Parser(b3.parser.Parser):
         Returns a list of client objects
         """
         self.verbose2('Retrieving Playerlist')
-        playerlist_url = self.url + '/current/players'
-        referer = self.url + '/current'
-        headers = {'User-Agent' : self.user_agent, "Accept": "ext/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language" : "en-us,en;q =0.5", "Content-type": "application/x-www-form-urlencoded", "Accept-Charset" : "ISO-8859-1,utf-8;q=0.7,*;q=0.7", "Referer" : referer}
-        request_playerlist = urllib2.Request(playerlist_url, None, headers)
-        playerlist_read = self.opener.open(request_playerlist)
-        playerlist_data = playerlist_read.read()
+        playerlist_url = '/current/players'
+        referer = '/current'
+        data = None
+        playerlist_data = self.readwriteweb(data, referer, playerlist_url)
         if playerlist_data.find('<em>There are no players</em>') != -1:
             self.debug('No players on server')
             clients = {}
@@ -553,13 +559,11 @@ class Ro2Parser(b3.parser.Parser):
 
         
         
-        bandata_url = self.url + '/policy/bans'
+        bandata_url = '/policy/bans'
         data = 'action=add&uniqueid=' + banid
+        referer = None
         self.debug('Ban data %s' % data)
-        headers = {'User-Agent' : self.user_agent, "Accept": "ext/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language" : "en-us,en;q =0.5", "Content-type": "application/x-www-form-urlencoded", "Accept-Charset" : "ISO-8859-1,utf-8;q=0.7,*;q=0.7", "Referer" : bandata_url}
-        request_console = urllib2.Request(bandata_url, data, headers)
-        banconsole_read = self.opener.open(request_console)
-        console_data = banconsole_read.read()
+        console_data = self.readwriteweb(data, referer, bandata_url)
         
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
         client.disconnect()
@@ -584,14 +588,10 @@ class Ro2Parser(b3.parser.Parser):
         if ban_no:
             ban_no = str(ban_no[8:])
         
-            banlist_url = self.url + '/policy/bans'
-            referer = self.url + '/policy/bans'
+            bandata_url = '/policy/bans'
+            referer = None
             data = 'banid=plainid%3A' + ban_no + '&action=delete'
-            self.debug(data)
-            headers = {'User-Agent' : self.user_agent, "Accept": "ext/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language" : "en-us,en;q =0.5", "Content-type": "application/x-www-form-urlencoded", "Accept-Charset" : "ISO-8859-1,utf-8;q=0.7,*;q=0.7", "Referer" : referer}
-            request_banlist = urllib2.Request(banlist_url, data, headers)
-            banlist_read = self.opener.open(request_banlist)
-            banlist_data = banlist_read.read()
+            banlist_data = self.readwriteweb(data, referer, bandata_url)
             if admin:
                 admin.message('Removed %s from Server banlist' %client.name)
         
@@ -630,6 +630,7 @@ class Ro2Parser(b3.parser.Parser):
         self.map_rotation = []
         self.map_cycles = {}
         self.map_cycle_no = 0
+        self.active_map_cycle = -1
         if self._ini_file:
             if self._ini_file == 'ftp':
                 self.getftpini()
@@ -641,6 +642,8 @@ class Ro2Parser(b3.parser.Parser):
                     if line[0:14] == 'GameMapCycles=':
                         self.map_cycles[str(self.map_cycle_no)] = line
                         self.map_cycle_no += 1
+                        if self.active_map_cycle >= 0 and self.map_cycle_no > self.active_map_cycle:
+                            break
 
                 input.close()
                 
