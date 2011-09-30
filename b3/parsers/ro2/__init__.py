@@ -17,10 +17,12 @@
 #
 # CHANGELOG
 #
-# 2011-09-10 : 0.1
+# 2011-03-30 : 0.1
 # * first alpha test
 # 2011-09-28 : 0.2
-# * first commit to repo
+# * First commit to repo
+# 2011-09-29 : 0.3
+# * Added !maps, found !map functionality broken in Web Admin 
 
 #
 from b3 import functions
@@ -46,12 +48,12 @@ import hashlib
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.2'
+__version__ = '0.3'
 
 
 class Ro2Parser(b3.parser.Parser):
     '''
-    The Red Orchestra 2 B3 parser class
+    The Ref Orchestra 2 B3 parser class
     '''
     gameName = "redorchestra2"
     OutputClass = rcon.Rcon
@@ -73,6 +75,10 @@ class Ro2Parser(b3.parser.Parser):
     password_hash=''
     cj=None
     opener=None
+    map_rotation = {}
+    map_cycles = {}
+    map_cycle_no = 0
+    active_map_cycle = 0
 
     _commands = {}
     _commands['message'] = '%(prefix)s %(message)s'
@@ -91,7 +97,27 @@ class Ro2Parser(b3.parser.Parser):
         
         # create the 'Admin' client
         self.clients.newClient('Admin', guid='Server', name='Admin', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
+        
+        if self.config.has_option('server','inifile'):
+            # open ini file
+            ini_file = self.config.get('server','inifile')
+            if ini_file[0:6] == 'ftp://':
+                    self.ftpconfig = functions.splitDSN(ini_file)
+                    self._ini_file = 'ftp'
+                    self.bot('ftp supported')
+            elif ini_file[0:7] == 'sftp://':
+                self.bot('sftp currently not supported')
+            else:
+                self.bot('Getting configs from %s', ini_file)
+                f = self.config.getpath('server', 'inifile')
+                if os.path.isfile(f):
+                    self.input  = file(f, 'r')
+                    self._ini_file = f
 
+        if not self._ini_file:
+            self.debug('Incorrect ini file or no ini file specified, map commands other than nextmap not available')
+        
+        
         self.cron + b3.cron.CronTab(self.retrievePlayerList, second='*/%s' % self._playerlistInterval)
     
         self.user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
@@ -342,6 +368,25 @@ class Ro2Parser(b3.parser.Parser):
             player['team'] = self.getTeam(color[0])
         
         return player
+        
+        
+    def decodeBans(self, data):
+        ban_list = {}
+        if data.find('<!--<td><%ban.playername%></td>-->') == -1:
+            self.debug('No bans in list')
+            return ban_list
+
+        while data.find('<!--<td><%ban.playername%></td>-->') != -1:
+            data = data.partition('<!--<td><%ban.playername%></td>-->')[2]
+            data = data.partition('<td>')[2]
+            banid = data.partition('</td>')[0]
+            data = data.partition('<input type="hidden" name="banid" value="')[2]
+            ban_no = data.partition('"')[0]
+            ban_list[str(banid)] = ban_no
+            
+        return ban_list
+            
+            
     # =======================================
     # implement parser interface
     # =======================================
@@ -523,14 +568,36 @@ class Ro2Parser(b3.parser.Parser):
         """\
         unban a given player
         """
-        if client.guid:
-            self.debug('using guid to unban')
-            banid = client.guid
-        else:
-            self.debug('using name to unban')
-            banid = client.name
+        ban_list = self.retrieveBanlist()
+
+
+        self.debug('using guid to unban')
+        banid = client.guid
+        self.debug (banid)
+        ban_no = None
+        try:
+            ban_no = ban_list[banid]
+        except:
+            if admin:
+                admin.message(' %s not in server banlist' %client.name)
+
+        if ban_no:
+            ban_no = str(ban_no[8:])
+        
+            banlist_url = self.url + '/policy/bans'
+            referer = self.url + '/policy/bans'
+            data = 'banid=plainid%3A' + ban_no + '&action=delete'
+            self.debug(data)
+            headers = {'User-Agent' : self.user_agent, "Accept": "ext/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language" : "en-us,en;q =0.5", "Content-type": "application/x-www-form-urlencoded", "Accept-Charset" : "ISO-8859-1,utf-8;q=0.7,*;q=0.7", "Referer" : referer}
+            request_banlist = urllib2.Request(banlist_url, data, headers)
+            banlist_read = self.opener.open(request_banlist)
+            banlist_data = banlist_read.read()
+            if admin:
+                admin.message('Removed %s from Server banlist' %client.name)
+        
         if admin:
-            admin.message('Unbanned: Removed %s from banlist' %client.name)
+            admin.message('Removed %s from B3 banlist' %client.name)
+            
         self.queueEvent(self.getEvent('EVT_CLIENT_UNBAN', reason, client))
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
@@ -555,6 +622,39 @@ class Ro2Parser(b3.parser.Parser):
                                       , client))
         client.disconnect()
 
+        
+    def getMaps(self):
+        """\
+        return the available maps/levels name
+        """
+        self.map_rotation = []
+        self.map_cycles = {}
+        self.map_cycle_no = 0
+        if self._ini_file:
+            if self._ini_file == 'ftp':
+                self.getftpini()
+            else:
+                input = open(self._ini_file, 'r')
+                for line in input:
+                    if line[0:15] == 'ActiveMapCycle=':
+                        self.active_map_cycle = int(line.partition('ActiveMapCycle=')[2])
+                    if line[0:14] == 'GameMapCycles=':
+                        self.map_cycles[str(self.map_cycle_no)] = line
+                        self.map_cycle_no += 1
+
+                input.close()
+                
+            map_line = self.map_cycles[str(self.active_map_cycle)]
+            map_line = map_line.partition('Maps=("')[2]
+            map_line = map_line.partition('"),RoundLimits=')[0]
+            self.map_rotation.append(map_line.partition('","')[0])
+            while map_line.find('","') != -1:
+                map_line= map_line.partition('","')[2]
+                self.map_rotation.append(map_line.partition('","')[0])
+
+        self.debug(self.map_rotation)
+        return self.map_rotation
+
     def rotateMap(self):
         """\
         load the next map/level
@@ -567,6 +667,10 @@ class Ro2Parser(b3.parser.Parser):
         return a list of suggested map names in cases it fails to recognize the map that was provided
         """
         raise NotImplementedError
+        map.replace('-', '&2d')
+        cmd = 'AdminChangeMap&20' + map
+        self.writeAdminCommand(cmd)
+        
 
     def getPlayerPings(self):
         """\
@@ -631,4 +735,66 @@ class Ro2Parser(b3.parser.Parser):
         if len(client_list) != 0:
             self.sync(client_list)
 
+    def retrieveBanlist(self):
+        """\
+        Returns a list of banned player from the server
+        """
+        self.verbose2('Retrieving Banlist')
+        banlist_url = self.url + '/policy/bans'
+        referer = self.url + '/policy/bans'
+        headers = {'User-Agent' : self.user_agent, "Accept": "ext/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language" : "en-us,en;q =0.5", "Content-type": "application/x-www-form-urlencoded", "Accept-Charset" : "ISO-8859-1,utf-8;q=0.7,*;q=0.7", "Referer" : referer}
+        request_banlist = urllib2.Request(banlist_url, None, headers)
+        banlist_read = self.opener.open(request_banlist)
+        banlist_data = banlist_read.read()
+        ban_list = self.decodeBans(banlist_data)
 
+        
+        return ban_list
+        
+    
+
+    def getftpini(self):
+        def handleDownload(line):
+            if line[0:15] == 'ActiveMapCycle=':
+                self.active_map_cycle = int(line.partition('ActiveMapCycle=')[2])
+            if line[0:14] == 'GameMapCycles=':
+                self.map_cycles[str(self.map_cycle_no)] = line
+                self.map_cycle_no += 1
+
+
+        ftp = None
+        try:
+            ftp = self.ftpconnect()
+            self._nbConsecutiveConnFailure = 0
+            remoteSize = ftp.size(os.path.basename(self.ftpconfig['path']))
+            self.verbose("Connection successful. Remote file size is %s" % remoteSize)
+            ftp.retrlines('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload)          
+
+        except ftplib.all_errors, e:
+            self.debug(str(e))
+            try:
+                ftp.close()
+                self.debug('FTP Connection Closed')
+            except:
+                pass
+            ftp = None
+
+        try:
+            ftp.close()
+        except:
+            pass
+
+
+    def ftpconnect(self):
+        #self.debug('Python Version %s.%s, so setting timeout of 10 seconds' % (versionsearch.group(2), versionsearch.group(3)))
+        self.verbose('Connecting to %s:%s ...' % (self.ftpconfig["host"], self.ftpconfig["port"]))
+        ftp = FTP()
+        ftp.set_debuglevel(self._ftplib_debug_level)
+        ftp.connect(self.ftpconfig['host'], self.ftpconfig['port'], self._connectionTimeout)
+        ftp.login(self.ftpconfig['user'], self.ftpconfig['password'])
+        ftp.voidcmd('TYPE I')
+        dir = os.path.dirname(self.ftpconfig['path'])
+        self.debug('trying to cwd to [%s]' % dir)
+        ftp.cwd(dir)
+        return ftp
+    
