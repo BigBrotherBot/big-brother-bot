@@ -25,11 +25,12 @@ __version__ = '0.0'
 
 import time
 import b3.events
-from b3.parsers.frostbite.abstractParser import AbstractParser
-from b3.parsers.frostbite.util import PlayerInfoBlock
+from b3.parsers.frostbite2.abstractParser import AbstractParser
+from b3.parsers.frostbite2.util import PlayerInfoBlock
 import b3.functions
 
 SAY_LINE_MAX_LENGTH = 100
+
 
 class Bf3Parser(AbstractParser):
     gameName = 'bf3'
@@ -99,11 +100,61 @@ class Bf3Parser(AbstractParser):
                 #self.clients.newClient(playerdata['cid'], guid=playerdata['guid'], name=playerdata['name'], team=playerdata['team'], squad=playerdata['squad'])
                 name = p['name']
                 self.debug('client %s found on the server' % cid)
-                client = self.clients.newClient(cid, guid=p['guid'], name=name, team=p['teamId'], squad=p['squadId'], data=p)
+                client = self.clients.newClient(cid, guid=p['name'], name=name, team=p['teamId'], squad=p['squadId'], data=p)
                 self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
                 
+
+
+
+    ###############################################################################################
+    #
+    #    Frostbite2 events handlers
+    #    
+    ###############################################################################################
+
+    def OnPlayerSwitchteam(self, action, data):
+        """
+        player.switchTeam <soldier name: player name> <team: Team ID> <squad: Squad ID>
+        Effect: Player might have changed team
+        """
+        # ['player.switchTeam', 'Cucurbitaceae', '1', '0']
+        client = self.getClient(data[0])
+        if client:
+            client.team = self.getTeam(data[1]) # .team setter will send team change event
+            client.teamId = int(data[1])
+            client.squad = int(data[2])
+            
+            
+    def TODOOnPlayerSquadchange(self, action, data):
+        """
+        player.onSquadChange <soldier name: player name> <team: Team ID> <squad: Squad ID>    
         
-        
+        Effect: Player might have changed squad
+        """
+        client = self.getClient(data[0])
+        if client:
+            client.team = self.getTeam(data[1]) # .team setter will send team change event
+            client.teamId = int(data[1])
+            if client.squad != data[2]:
+                client.squad = int(data[2])
+                return b3.events.Event(b3.events.EVT_CLIENT_SQUAD_CHANGE, data[1:], client)
+
+
+    ###############################################################################################
+    #
+    #    B3 Parser interface implementation
+    #    
+    ###############################################################################################
+
+
+
+    ###############################################################################################
+    #
+    #    Other methods
+    #    
+    ###############################################################################################
+
+
     def checkVersion(self):
         version = self.output.write('version')
         self.info('server version : %s' % version)
@@ -131,8 +182,8 @@ class Bf3Parser(AbstractParser):
             name = p['name']
 
             # Let's see if we have a guid, either from the PlayerInfoBlock, or passed to us by OnPlayerAuthenticated()
-            if p['guid']:
-                guid = p['guid']
+            if p['name']: # TODO : change this back to 'if p['guid']:' once we have proper guid
+                guid = p['name']
             elif _guid:
                 guid = _guid
             else:
@@ -142,7 +193,7 @@ class Bf3Parser(AbstractParser):
 
             if 'clanTag' in p and len(p['clanTag']) > 0:
                 name = "[" + p['clanTag'] + "] " + p['name']
-            client = self.clients.newClient(cid, guid=guid, name=name, team=self.getTeam(p['teamId']), teamId=int(p['teamId']), data=p)
+            client = self.clients.newClient(cid, guid=name, name=name, team=self.getTeam(p['teamId']), teamId=int(p['teamId']), data=p)
             self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
         
         return client
@@ -235,3 +286,15 @@ class Bf3Parser(AbstractParser):
         self.game.uptime = int(data[4])
         return data
 
+    def getTeam(self, team):
+        """convert BFBC2 team numbers to B3 team numbers"""
+        # FIXME: guessed team numbers. Need to check with Frostbite2 protocol documents
+        team = int(team)
+        if team == 1:
+            return b3.TEAM_RED
+        elif team == 2:
+            return b3.TEAM_BLUE
+        elif team == 3:
+            return b3.TEAM_SPEC
+        else:
+            return b3.TEAM_UNKNOWN
