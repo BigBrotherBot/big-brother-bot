@@ -23,6 +23,8 @@
 # * First commit to repo
 # 2011-09-29 : 0.3
 # * Added !maps, found !map functionality broken in Web Admin 
+# 2011-09-30 : 0.4
+# * Made webconnect a method and added comments to new methods
 
 #
 from b3 import functions
@@ -48,7 +50,7 @@ import hashlib
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.3'
+__version__ = '0.4'
 
 
 class Ro2Parser(b3.parser.Parser):
@@ -134,6 +136,7 @@ class Ro2Parser(b3.parser.Parser):
         self.url = "http://%s/%s" % (self.site, self.login_page)
         
     def handle_chat(self, data):
+        """Handle the chat from players"""
         if string.capitalize(data['div_class']) == 'Chatnotice':
             return
         func = 'onChat_type%s' % (string.capitalize(data['div_class']))
@@ -204,6 +207,7 @@ class Ro2Parser(b3.parser.Parser):
                 sys.exit(self.exitcode)
                 
     def readwriteweb(self, data= None, referer=None, addurl=None):
+        """Handles Reading and Writing to the web interface"""
         data_url = self.url + addurl
         if not referer:
             referer = data_url
@@ -223,7 +227,7 @@ class Ro2Parser(b3.parser.Parser):
             return 
 
     def webconnect(self):
-        
+        """Login and make initial connection to the web interface"""
         remember=-1        
         password=''
         login_url = self.url + '/'
@@ -247,6 +251,7 @@ class Ro2Parser(b3.parser.Parser):
 
         
     def readwriteajax(self, message = None):
+        """Read and Write to the Ajax interface"""
         if message:
             message_text = self.addplus(message)
         else:
@@ -271,13 +276,14 @@ class Ro2Parser(b3.parser.Parser):
         
 
     def addplus(self, message):
+        """Replace spaces with plusses ready for sending to the Ajax interface"""
         #ajax=1&message=test+chat&teamsay=-1
         message.replace(' ', '+')
         message = '&message=' + message + '&teamsay=-1'
         return message
         
     def decode_chat_data(self, data):
-        
+        """Decode the data reeived from the web interface and extract the chat data"""
         data = data.partition('div class="')[2]
         while data != '':
             chat_decoded = {}
@@ -299,6 +305,7 @@ class Ro2Parser(b3.parser.Parser):
             self._read_queue.append(chat_decoded)
         
     def onChat_typeChatnotice(self,data):
+        """Ignore Admin messages"""
         #Admin Chat ignore
         return None
         
@@ -310,6 +317,7 @@ class Ro2Parser(b3.parser.Parser):
         #</div>     
         
     def onChat_typeChatmessage(self, data):
+        """Handle player chat"""
         name = self.getUsername(data['username'])
         text = data['message']
 
@@ -321,6 +329,7 @@ class Ro2Parser(b3.parser.Parser):
         return self.getEvent('EVT_CLIENT_SAY', text, client)
         
     def getUsername(self, name):
+        """Retrieve the username and make it 'safe' """
         name = '%r' % name
         name = name.replace("\'", "")
         name = name.strip()
@@ -332,6 +341,7 @@ class Ro2Parser(b3.parser.Parser):
         return name
  
     def decodeplayers(self, data):
+        """Get the list of players from the web data"""
         players = {}
         data = data.partition('<table id="players" class="grid">')[2]
         data = data.partition('<tbody>')[2]
@@ -346,6 +356,7 @@ class Ro2Parser(b3.parser.Parser):
         return players
         
     def decode_nextplayer(self, data):
+        """Get the next players details from the web data"""
         player={}
         data = data.partition('<td style=')[2]
         data = data.partition('>')[2]
@@ -379,6 +390,7 @@ class Ro2Parser(b3.parser.Parser):
         
         
     def decodeBans(self, data):
+        """Retrieve the list of Bans from the web data"""
         ban_list = {}
         if data.find('<!--<td><%ban.playername%></td>-->') == -1:
             self.debug('No bans in list')
@@ -425,7 +437,7 @@ class Ro2Parser(b3.parser.Parser):
             return
             
     def writeAdminCommand(self, cmd):
-
+        """Write an Admin command via the Web interface console (Limited in what actually works)"""
         consoledata_url = self.url + '/console'
         data = 'command=' + cmd
         self.debug('Admin Command data %s' % data)
@@ -462,7 +474,7 @@ class Ro2Parser(b3.parser.Parser):
         pass
     
     def findNewPlayers(self, c_client_list):
-
+        """Gets a list of non-authed players on teh server"""
         for c in c_client_list:
             cl = c_client_list[c]
             uid = cl['guid']
@@ -689,6 +701,7 @@ class Ro2Parser(b3.parser.Parser):
         return pings
 
     def getTeam(self, team):
+        """Get the players team"""
         team = str(team).lower()
         if team == '0':
             result = b3.TEAM_RED
