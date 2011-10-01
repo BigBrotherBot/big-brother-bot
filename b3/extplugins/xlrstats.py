@@ -288,6 +288,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         p = XlrstatscontrollerPlugin(self.console, self.minPlayers)
         p.startup()
 
+        msg = 'XLRstats v. %s by %s started.' % (__version__, __name__)
+        self.console.say(msg)
         #end startup sequence
 
     def onLoadConfig(self):
