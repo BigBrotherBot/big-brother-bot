@@ -134,13 +134,16 @@
 # * change data format for EVT_CLIENT_BAN events
 # 14/06/2011 - 1.11.0 - Courgette
 # * cvar code moved to q3a AbstractParser
+# 12/09/2011 - 1.11.1 - Courgette
+# * EVT_CLIENT_JOIN event is now triggered when player actually join a team
+# * the call to self.clients.sync() that was made each round is now made on game init and in its own thread  
 #
-__author__  = 'xlr8or, Courgette'
-__version__ = '1.11.0'
 
+__author__  = 'xlr8or, Courgette'
+__version__ = '1.11.1'
 
 from b3.parsers.q3a.abstractParser import AbstractParser
-import re, string, threading, time, os
+import re, string, threading, time, os, thread
 import b3
 import b3.events
 
@@ -555,6 +558,13 @@ class Iourt41Parser(AbstractParser):
         self.debug('Client Connected - ready to parse Userinfoline')
         #client = self.clients.getByCID(data)
         #return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
+
+    def OnClientbegin(self, action, data, match=None):
+        # we get user info in two parts:
+        # 19:42.36 ClientBegin: 4
+        client = self.getByCidOrJoinPlayer(data)
+        if client:
+            return b3.events.Event(b3.events.EVT_CLIENT_JOIN, data=data, client=client)
 
     # Parse Userinfo
     def OnClientuserinfo(self, action, data, match=None):
@@ -1032,8 +1042,8 @@ class Iourt41Parser(AbstractParser):
 
         self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
         self.game.startMap()
-
         self.game.rounds = 0
+        thread.start_new_thread(self.clients.sync, ())
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
 
 
@@ -1067,12 +1077,6 @@ class Iourt41Parser(AbstractParser):
 
         self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
         self.game.startRound()
-
-        self.debug('Synchronizing client info')
-        self.clients.sync()
-
-        self.debug('Joining Players')
-        self.joinPlayers()
 
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
 
@@ -1151,6 +1155,7 @@ class Iourt41Parser(AbstractParser):
         return players
 
     def sync(self):
+        self.debug('Synchronizing client info')
         plist = self.getPlayerList(maxRetries=4)
         mlist = {}
 
@@ -1321,16 +1326,6 @@ class Iourt41Parser(AbstractParser):
 
         return scores
 
-    def joinPlayers(self):
-        plist = self.getPlayerList()
-
-        for cid, c in plist.iteritems():
-            client = self.clients.getByCID(cid)
-            if client:
-                self.debug('Joining %s' % client.name)
-                self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client))
-
-        return None
 
     def queryClientUserInfoByCid(self, cid):
         """
@@ -1454,6 +1449,7 @@ class Iourt41Parser(AbstractParser):
         except KeyError, err:
             self.warning("unknown weapon id on Hit line: %s", err)
             return None
+
 
 """
 #----- Actions -----------------------------------------------------------------

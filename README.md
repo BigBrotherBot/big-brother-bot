@@ -15,7 +15,7 @@ _For developers:_
 
 ### Installation, configuration and usage
 
-A quick and dirty rundown can be found in the b3/docs/README.txt but this is not the prefered documentation, it covers just global steps to take. Please refer to our documentation wiki as linked above for a full manual.
+A quick and dirty rundown can be found in the b3/docs/README.txt but this is not the preferred documentation, it covers just global steps to take. Please refer to our documentation wiki as linked above for a full manual.
 
 ### Previous and Current Developers (Hall of Fame)
 
