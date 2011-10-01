@@ -172,7 +172,7 @@ class AbstractParser(b3.parser.Parser):
             self.debug("looking for event handling method called : " + func)
             
         if match and hasattr(self, func):
-            self.debug('routing ----> %s' % func)
+            self.debug('routing ----> %s(%r)' % (func,eventData))
             func = getattr(self, func)
             event = func(eventType, eventData)
             #self.debug('event : %s' % event)
@@ -371,16 +371,16 @@ class AbstractParser(b3.parser.Parser):
         return b3.events.Event(event, (), spawner)
 
 
-    def TODOOnPlayerKill(self, action, data):
+    def OnPlayerKilled(self, action, data):
         """
-        Request: player.onKill <killing soldier name: string> <killed soldier name: string> <weapon: string> <headshot: boolean> <killer location: 3 x integer> <killed location: 3 x integes>
+        Request: player.killed' <killing soldier name: string> <killed soldier name: string> <weapon: string> <headshot: boolean>
 
-        Effect: Player with name <killing soldier name> has killed <killed soldier name> Suicide is indicated with the same soldier name for killer and victim. If the server kills the player (through admin.killPlayer), it is indicated by showing the killing soldier name as Server. The locations of the killer and the killed have a random error of up to 10 meters in each direction.
+        Effect: Player with name <killing soldier name> has killed <killed soldier name> Suicide is indicated with the same soldier name for killer and victim. If the server kills the player (through admin.killPlayer), it is indicated by showing the killing soldier name as Server. 
         """
-        #R15: player.onKill: ['Brou88', 'kubulina', 'S20K', 'true', '-77', '68', '-195', '-76', '62', '-209']
-        if len(data) < 2:
-            return None
-
+        # example suicide : ['Cucurbitaceae', 'Cucurbitaceae', 'M67', 'false']
+        # example killed by fire : ['', 'Cucurbitaceae', 'DamageArea', 'false']
+        if data[0] == '':
+            data[0] = 'Server'
         attacker = self.getClient(data[0])
         if not attacker:
             self.debug('No attacker')
@@ -391,41 +391,19 @@ class AbstractParser(b3.parser.Parser):
             self.debug('No victim')
             return None
         
-        if data[2]:
-            weapon = data[2]
-        else:
-            # to accomodate pre R15 servers
-            weapon = None
+        weapon = data[2]
 
-        if data[3]:
-            if data[3] == 'true':
-                hitloc = 'head'
-            else:
-                hitloc = 'torso'
+        if data[3] == 'true':
+            hitloc = 'head'
         else:
-            # to accomodate pre R15 servers
-            hitloc = None
-
-        attackerloc = []
-        victimloc = []
-        if data[4] and data[9]:
-            attackerloc.append(data[4])
-            attackerloc.append(data[5])
-            attackerloc.append(data[6])
-            victimloc.append(data[7])
-            victimloc.append(data[8])
-            victimloc.append(data[9])
-        else:
-            # to accomodate pre R15 servers
-            attackerloc.append('None')
-            victimloc.append('None')
+            hitloc = 'torso'
 
         event = b3.events.EVT_CLIENT_KILL
         if victim == attacker:
             event = b3.events.EVT_CLIENT_SUICIDE
         elif attacker.team == victim.team and attacker.team != b3.TEAM_UNKNOWN and attacker.team != b3.TEAM_SPEC:
             event = b3.events.EVT_CLIENT_KILL_TEAM
-        return b3.events.Event(event, (100, weapon, hitloc, attackerloc, victimloc), attacker, victim)
+        return b3.events.Event(event, (100, weapon, hitloc), attacker, victim)
 
 
 
