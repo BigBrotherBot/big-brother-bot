@@ -69,7 +69,7 @@ class AbstractParser(b3.parser.Parser):
     _commands['tempban'] = ('banList.add', 'guid', '%(guid)s', 'seconds', '%(duration)d', '%(reason)s')
 
     _eventMap = {
-        'player.onKicked': b3.events.EVT_CLIENT_KICK,
+        'player.kicked': b3.events.EVT_CLIENT_KICK, # TODO: test this event
     }
     
     _punkbusterMessageFormats = (
@@ -289,7 +289,6 @@ class AbstractParser(b3.parser.Parser):
                     remaining = remaining[wrappoint:]
             return lines
         
-    ##########################################################################
  
 
     
@@ -790,7 +789,7 @@ class AbstractParser(b3.parser.Parser):
         """Return the map list for the current rotation. (as easy map names)
         This does not return all available maps
         """
-        levelnames = self.write(('mapList.list',))
+        levelnames = self.write(('mapSequencer.list',))
         mapList = []
         for l in levelnames:
             mapList.append(self.getEasyName(l))
@@ -801,20 +800,48 @@ class AbstractParser(b3.parser.Parser):
         """\
         load the next map/level
         """
-        raise NotImplementedError
+        self.write(('mapSequencer.runNextMap'))
 
 
     def changeMap(self, map):
         """\
         load a given map/level
         return a list of suggested map names in cases it fails to recognize the map that was provided
-        """
-        raise NotImplementedError
+        
+        1) determine the level name
+            If map is of the form 'Levels/MP_001' and 'Levels/MP_001' is a supported
+            level for the current game mod, then this level is loaded.
+            
+            In other cases, this method assumes it is given a 'easy map name' (like
+            'Port Valdez') and it will do its best to find the level name that seems
+            to be for 'Port Valdez' within the supported levels.
+        
+            If no match is found, then instead of loading the map, this method 
+            returns a list of candidate map names
+            
+        2) if we got a level name
+            if the level is not in the current rotation list, then add it to 
+            the map list and load it
+        """        
+        supportedMaps = self.getSupportedMapIds()
+        if map not in supportedMaps:
+            match = self.getMapsSoundingLike(map)
+            if len(match) == 1:
+                map = match[0]
+            else:
+                return match
+            
+        if map in supportedMaps:
+            self.write(('mapSequencer.setNextMap', map))
+            self.say('Changing map to %s' % map)
+            time.sleep(1)
+            self.write(('mapSequencer.runNextMap'))
 
         
     def getPlayerPings(self):
         """Ask the server for a given client's pings
         """
+        raise NotImplemented
         pings = {}
         try:
             pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
@@ -843,6 +870,14 @@ class AbstractParser(b3.parser.Parser):
     #    Other methods
     #    
     ###############################################################################################
+
+    def getHardName(self, mapname):
+        """ Change human map name to map id """
+        raise NotImplemented('getHardName must be implemented in concrete classes')
+
+    def getEasyName(self, mapname):
+        """ Change map id to map human name """
+        raise NotImplemented('getEasyName must be implemented in concrete classes')
 
     def getCvar(self, cvarName):
         """Read a server var"""
@@ -895,46 +930,30 @@ class AbstractParser(b3.parser.Parser):
         
     def getServerInfo(self):
         """query server info, update self.game and return query results
-        Response: OK <serverName: string> <current playercount: integer> <max playercount: integer> 
-        <current gamemode: string> <current map: string> <roundsPlayed: integer> 
-        <roundsTotal: string> <scores: team scores> <onlineState: online state>
         """
-        data = self.write(('serverInfo',))
-        self.game.sv_hostname = data[0]
-        self.game.sv_maxclients = int(data[2])
-        self.game.gameType = data[3]
-        if not self.game.mapName:
-            self.game.mapName = data[4]
-        self.game.rounds = int(data[5])
-        self.game.g_maxrounds = int(data[6])
-        return data
+        raise NotImplemented('getServerInfo must be implemented in concrete classes')
 
         
     def getNextMap(self):
         """Return the name of the next map
         """
-        nextLevelIndex = self.getNextMapIndex()
-        if nextLevelIndex == -1:
-            return 'none'
-        levelnames = self.write(('mapList.list',))
-        return self.getEasyName(levelnames[nextLevelIndex])
-    
-    def getNextMapIndex(self):
-        [nextLevelIndex] = self.write(('mapList.nextLevelIndex',))
-        nextLevelIndex = int(nextLevelIndex)
-        if nextLevelIndex == -1:
-            return -1
-        levelnames = self.write(('mapList.list',))
-        if levelnames[nextLevelIndex] == self.getMap():
-            nextLevelIndex = (nextLevelIndex+1)%len(levelnames)
-        return nextLevelIndex
-    
+        levelnames = self.write(('mapSequencer.list',))
+        self.getServerInfo()
+        currentName = self.game.mapName
+        if len(levelnames) == 0:
+            return self.getEasyName(currentName)
+        elif len(levelnames) == 1:
+            return self.getEasyName(levelnames[0])
+        elif currentName not in levelnames:
+            return self.getEasyName(levelnames[0])
+        else:
+            nextmap = levelnames[(levelnames.index(currentName) + 1) % len(levelnames)]
+            return self.getEasyName(nextmap)
+        
 
-    def getSupportedMaps(self):
+    def getSupportedMapIds(self):
         """return a list of supported levels for the current game mod"""
-        [currentMode] = self.write(('admin.getPlaylist',))
-        supportedMaps = self.write(('admin.supportedMaps', currentMode))
-        return supportedMaps
+        return self.write(('mapSequencer.availableMaps'))
 
     def getMapsSoundingLike(self, mapname):
         """found matching level names for the given mapname (which can either
@@ -942,7 +961,7 @@ class AbstractParser(b3.parser.Parser):
         If no exact match is found, then return close candidates using soundex
         and then LevenshteinDistance algoritms
         """
-        supportedMaps = self.getSupportedMaps()
+        supportedMaps = self.getSupportedMapIds()
         supportedEasyNames = {}
         for m in supportedMaps:
             supportedEasyNames[self.getEasyName(m)] = m
