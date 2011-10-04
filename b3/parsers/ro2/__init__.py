@@ -25,6 +25,10 @@
 # * Added !maps, found !map functionality broken in Web Admin 
 # 2011-09-30 : 0.4
 # * Made webconnect a method and added comments to new methods
+# 2011-10-03 : 0.5
+# * Seperate out Team and Global chat - squad chat is totally missing from log and web admin
+# * Make sure IP's get logged
+# * Remove rcon references and rcon.py
 
 #
 from b3 import functions
@@ -37,7 +41,6 @@ import b3
 import b3.cron
 import ftplib
 import os
-import rcon
 import re
 import string
 import sys
@@ -50,7 +53,7 @@ import hashlib
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.4'
+__version__ = '0.5'
 
 
 class Ro2Parser(b3.parser.Parser):
@@ -58,7 +61,6 @@ class Ro2Parser(b3.parser.Parser):
     The Ref Orchestra 2 B3 parser class
     '''
     gameName = "redorchestra2"
-    OutputClass = rcon.Rcon
     PunkBuster = None 
     # RO2 engine does not support color code, so we need this property
     # in order to get stripColors working
@@ -180,6 +182,7 @@ class Ro2Parser(b3.parser.Parser):
                     self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
                     self._pauseNotice = True
             else:
+                self._pauseNotice = False
                 counter = 0
                 while len(self._write_queue) == 0 and counter < 5:
                     time.sleep(.2)
@@ -222,8 +225,8 @@ class Ro2Parser(b3.parser.Parser):
             return console_data
             
         except:
-            print "Failed to open URL\n"
-            raise
+            self.debug('Failed to open URL')
+            self.webconnect()
             return 
 
     def webconnect(self):
@@ -244,10 +247,27 @@ class Ro2Parser(b3.parser.Parser):
         token = token_start[2]
         token_value = token[0:8]
 
-        login_url = '/'
-        referer = None
+        login_url = self.url + '/'
+        referer = login_url
         data = urllib.urlencode({ 'token' : token_value, 'password_hash' : self.password_hash, 'username' : self.username, 'password' : password, 'remember' : remember })
-        chat_data = self.readwriteweb(data, referer, login_url)
+        #chat_data = self.readwriteweb(data, referer, login_url)
+        self.headers['Referer'] = referer
+        request_console = urllib2.Request(login_url, data, self.headers)
+        login_attempt = 1
+        while login_attempt < 11:
+            try:
+                console_read = self.opener.open(request_console)
+                return True
+            except:
+                self.debug('Failed to open URL %s' % login_attempt)
+                self._paused = True
+                login_attempt += 1
+                if login_attempt > 10:
+                    raise
+                time.sleep(1)
+        
+        self._paused = False
+        return
 
         
     def readwriteajax(self, message = None):
@@ -263,12 +283,18 @@ class Ro2Parser(b3.parser.Parser):
         #<span class="message">test message from game</span>
         #</div>
         
+        #<div class="chatmessage">        #<span class="teamcolor" style="background: #8FB9B0;">&#160;</span>        #<span class="teamnotice" style="color: #8FB9B0;">(Team)</span>        #<span class="username" title="Axis">&lt;82ndAB&gt;1LT.Bravo17 </span>:        #<span class="message">Team chat</span>        #</div>
+                #<div class="chatnotice">
+        #<span class="noticesymbol">***</span> [<span class="username"></span>]
+        #<span class="message">82ndAB ADMIN: No offensive names.</span>
+        #</div>
+        
         chatdata_url = '/current/chat/data'
         #data = 'ajax=1&message=message+from+b3&teamsay=-1'
         data = 'ajax=1' + message_text
         referer = '/current/chat'
         chat_data = self.readwriteweb(data, referer, chatdata_url)
-        #'<div class="chatnotice">\r\n<span class="noticesymbol">***</span> [<span class="username"></span>]\r\n<span class="message">82ndAB ADMIN: No offensive names.</span>\r\n</div>\r\n\r\n'
+
         if len(chat_data) > 0:
             self.decode_chat_data(chat_data)
  
@@ -302,6 +328,7 @@ class Ro2Parser(b3.parser.Parser):
                 
             data = data.partition('div class="')[2]
             chat_decoded['username'] = self.getUsername(chat_decoded['username'])
+            self.debug(chat_decoded)
             self._read_queue.append(chat_decoded)
         
     def onChat_typeChatnotice(self,data):
@@ -320,13 +347,20 @@ class Ro2Parser(b3.parser.Parser):
         """Handle player chat"""
         name = self.getUsername(data['username'])
         text = data['message']
-
+        team = False
+        if data.has_key('teamnotice'):
+            team = True
+            
         client = self.clients.getByName(name)
         if client is None:
             self.debug("Could not find client")
             return
 
-        return self.getEvent('EVT_CLIENT_SAY', text, client)
+        if team:
+            return self.getEvent('EVT_CLIENT_TEAM_SAY', text, client, client.team)
+        else:
+            return self.getEvent('EVT_CLIENT_SAY', text, client)
+
         
     def getUsername(self, name):
         """Retrieve the username and make it 'safe' """
@@ -474,7 +508,7 @@ class Ro2Parser(b3.parser.Parser):
         pass
     
     def findNewPlayers(self, c_client_list):
-        """Gets a list of non-authed players on teh server"""
+        """Gets a list of non-authed players on the server"""
         for c in c_client_list:
             cl = c_client_list[c]
             uid = cl['guid']
@@ -484,12 +518,16 @@ class Ro2Parser(b3.parser.Parser):
             # try to get the client by guid
             client = self.clients.getByGUID(uid)
             if not client:
+
                 self.debug('adding client')
-                client = self.clients.newClient(cl['playerid'], guid=uid, name=cl['name'], team=b3.TEAM_UNKNOWN)
-            # update client data
-            client.name = cl['name']
-            client.team = cl['team']
-            client.cid = cl['playerid']
+                self.debug(cl)
+                client = self.clients.newClient(cl['playerid'], guid=uid, name=cl['name'], team=b3.TEAM_UNKNOWN, ip=cl['ip'])
+                # update client data
+                client.name = cl['name']
+                client.team = cl['team']
+                client.cid = cl['playerid']
+                client.ip = cl['ip']
+
             self.verbose2('onServerPlayer: name: %s, team: %s' %( client.name, client.team ))
 
             
