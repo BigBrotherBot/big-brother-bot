@@ -141,7 +141,7 @@ class FrostbiteConnection(object):
         tell the frostbite2 server to send us events
         """
         self.console.debug('subscribing to Frostbite2 events')
-        response = self.sendRequest("vars.eventsEnabled", "true")
+        response = self.sendRequest("admin.eventsEnabled", "true")
 
         # if the server didn't know about the command, abort
         if response[0] != "OK":

@@ -207,7 +207,7 @@ class AbstractParser(b3.parser.Parser):
         self.getServerInfo()
         
         if self.config.has_option('server', 'punkbuster') and self.config.getboolean('server', 'punkbuster'):
-            self.info('kick/ban by punkbuster is unsupported yet')
+            self.info('kick/ban by punkbuster is unsupported')
             #self.debug('punkbuster enabled in config')
             #self.PunkBuster = Bfbc2PunkBuster(self)
         
