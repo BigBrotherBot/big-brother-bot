@@ -36,34 +36,43 @@ class Bf3Parser(AbstractParser):
     gameName = 'bf3'
     
     _gameServerVars = (
-        'serverName', # vars.serverName [name] Set the server name 
-        'gamePassword', # vars.gamePassword [password] Set the game password for the server 
-        #'punkBuster', # vars.punkBuster [enabled] Set if the server will use PunkBuster or not 
-        #'hardCore', # vars.hardCore [enabled] Set hardcore mode 
-        #'ranked', # vars.ranked [enabled] Set ranked or not 
-        #'skillLimit', # vars.skillLimit [lower, upper] Set the skill limits allowed on to the server 
-        #'noUnlocks', # vars.noUnlocks [enabled] Set if unlocks should be disabled 
-        #'noAmmoPickups', # vars.noAmmoPickups [enabled] Set if pickups should be disabled 
-        #'realisticHealth', # vars.realisticHealth [enabled] Set if health should be realistic 
-        #'supportAction', # vars.supportAction [enabled] Set if support action should be enabled 
-        #'preRoundLimit', # vars.preRoundLimit [upper, lower] Set pre round limits. Setting both to zero means the game uses whatever settings are used on the specific levels. On ranked servers, the lowest values allowed are lower = 2 and upper = 4.
-        #'roundStartTimerPlayersLimit', # vars.roundStartTimerPlayersLimit [limit] Get/Set the number of players that need to spawn on each team for the round start timer to start counting down.
-        #'roundStartTimerDelay', # vars.roundStartTimerDelay [delay] If set to other than -1, this value overrides the round start delay set on the individual levels.
-        #'tdmScoreCounterMaxScore', # vars.tdmScoreCounterMaxScore [score] If set to other than -1, this value overrides the score needed to win a round of Team Assault, Sector Control or Hot Zone. 
-        #'clanTeams', # vars.clanTeams [enabled] Set if clan teams should be used 
-        'friendlyFire', # vars.friendlyFire [enabled] Set if the server should allow team damage 
-        #'currentPlayerLimit', # vars.currentPlayerLimit Retrieve the current maximum number of players 
-        #'maxPlayerLimit', # vars.maxPlayerLimit Retrieve the server-enforced maximum number of players 
-        #'playerLimit', # vars.playerLimit [nr of players] Set desired maximum number of players 
-        #'bannerUrl', # vars.bannerUrl [url] Set banner url 
-        'serverDescription', # vars.serverDescription [description] Set server description 
-        #'noCrosshair', # vars.noCrosshair [enabled] Set if crosshairs for all weapons is hidden
-        #'noSpotting', # vars.noSpotting [enabled] Set if spotted targets are disabled in the 3d-world 
-        'teamKillCountForKick', # vars.teamKillCountForKick [count] Set number of teamkills allowed during a round 
-        'teamKillValueForKick', # vars.teamKillValueForKick [count] Set max kill-value allowed for a player before he/she is kicked 
-        'teamKillValueIncrease', # vars.teamKillValueIncrease [count] Set kill-value increase for a teamkill 
-        'teamKillValueDecreasePerSecond', # vars.teamKillValueDecreasePerSecond [count] Set kill-value decrease per second
-        #'idleTimeout', # vars.idleTimeout [time] Set idle timeout vars.profanityFilter [enabled] Set if profanity filter is enabled
+        '3dSpotting',
+        '3pCam',
+        'autoBalance',
+        'bannerUrl',
+        'bulletDamage',
+        'clientSideDamageArbitration',
+        'friendlyFire',
+        'gameModeCounter',
+        'gamePassword',
+        'hud',
+        'killCam',
+        'killRotation',
+        'maxPlayerCount',
+        'minimap',
+        'minimapSpotting',
+        'nameTag',
+        'noInteractivityRoundBan',
+        'noInteractivityThresholdLimit',
+        'noInteractivityTimeoutTime',
+        'onlySquadLeaderSpawn',
+        'playerManDownTime',
+        'playerRespawnTime',
+        'regenerateHealth',
+        'roundRestartPlayerCount',
+        'roundStartPlayerCount',
+        'roundsPerMap',
+        'serverDescription',
+        'serverMessage',
+        'serverName',
+        'soldierHealth',
+        'teamKillCountForKick',
+        'teamKillKickForBan',
+        'teamKillValueDecreasePerSecond',
+        'teamKillValueForKick',
+        'teamKillValueIncrease',
+        'vehicleSpawnAllowed',
+        'vehicleSpawnDelay',
     )
     
     def startup(self):
@@ -158,7 +167,7 @@ class Bf3Parser(AbstractParser):
     def checkVersion(self):
         version = self.output.write('version')
         self.info('server version : %s' % version)
-        if version[0] != 'BF':
+        if version[0] != 'BF3':
             raise Exception("the bf3 parser can only work with Battlefield 3")
 
     def getClient(self, cid, _guid=None):
@@ -217,73 +226,80 @@ class Bf3Parser(AbstractParser):
 
     def getServerVars(self):
         """Update the game property from server fresh data"""
-        try: self.game.serverName = self.getCvar('serverName').getBoolean()
-        except: pass
-        try: self.game.gamePassword = self.getCvar('gamePassword').getBoolean()
-        except: pass
-#        try: self.game.punkBuster = self.getCvar('punkBuster').getBoolean()
-#        except: pass
-#        try: self.game.hardCore = self.getCvar('hardCore').getBoolean()
-#        except: pass
-#        try: self.game.ranked = self.getCvar('ranked').getBoolean()
-#        except: pass
-#        try: self.game.skillLimit = self.getCvar('skillLimit').getBoolean()
-#        except: pass
-#        try: self.game.noUnlocks = self.getCvar('noUnlocks').getBoolean()
-#        except: pass
-#        try: self.game.noAmmoPickups = self.getCvar('noAmmoPickups').getBoolean()
-#        except: pass
-#        try: self.game.realisticHealth = self.getCvar('realisticHealth').getBoolean()
-#        except: pass
-#        try: self.game.supportAction = self.getCvar('supportAction').getBoolean()
-#        except: pass
-#        try: self.game.preRoundLimit = self.getCvar('preRoundLimit').getBoolean()
-#        except: pass
-#        try: self.game.roundStartTimerPlayersLimit = self.getCvar('roundStartTimerPlayersLimit').getBoolean()
-#        except: pass
-#        try: self.game.roundStartTimerDelay = self.getCvar('roundStartTimerDelay').getBoolean()
-#        except: pass
-#        try: self.game.tdmScoreCounterMaxScore = self.getCvar('tdmScoreCounterMaxScore').getBoolean()
-#        except: pass
-#        try: self.game.clanTeams = self.getCvar('clanTeams').getBoolean()
-#        except: pass
-        try: self.game.friendlyFire = self.getCvar('friendlyFire').getBoolean()
-        except: pass
-#        try: self.game.currentPlayerLimit = self.getCvar('currentPlayerLimit').getBoolean()
-#        except: pass
-#        try: self.game.maxPlayerLimit = self.getCvar('maxPlayerLimit').getBoolean()
-#        except: pass
-#        try: self.game.playerLimit = self.getCvar('playerLimit').getBoolean()
-#        except: pass
-#        try: self.game.bannerUrl = self.getCvar('bannerUrl').getBoolean()
-#        except: pass
-        try: self.game.serverDescription = self.getCvar('serverDescription').getBoolean()
-        except: pass
-#        try: self.game.noCrosshair = self.getCvar('noCrosshair').getBoolean()
-#        except: pass
-#        try: self.game.noSpotting = self.getCvar('noSpotting').getBoolean()
-#        except: pass
-        try: self.game.teamKillCountForKick = self.getCvar('teamKillCountForKick').getBoolean()
-        except: pass
-        try: self.game.teamKillValueForKick = self.getCvar('teamKillValueForKick').getBoolean()
-        except: pass
-        try: self.game.teamKillValueIncrease = self.getCvar('teamKillValueIncrease').getBoolean()
-        except: pass
-        try: self.game.teamKillValueDecreasePerSecond = self.getCvar('teamKillValueDecreasePerSecond').getBoolean()
-        except: pass
-#        try: self.game.idleTimeout = self.getCvar('idleTimeout').getBoolean()
-#        except: pass
+        def getCvar(cvar):
+            try:
+                return self.getCvar(cvar).getString()
+            except:
+                pass
+        def getCvarBool(cvar):
+            try:
+                return self.getCvar(cvar).getBoolean()
+            except:
+                pass
+        def getCvarInt(cvar):
+            try:
+                return self.getCvar(cvar).getInt()
+            except:
+                pass
+        def getCvarFloat(cvar):
+            try:
+                return self.getCvar(cvar).getFloat()
+            except:
+                pass
+        self.game['3dSpotting'] = getCvarBool('3dSpotting')
+        self.game['3pCam'] = getCvarBool('3pCam')
+        self.game['autoBalance'] = getCvarBool('autoBalance')
+        self.game['bannerUrl'] = getCvar('bannerUrl')
+        self.game['bulletDamage'] = getCvarInt('bulletDamage')
+        self.game['clientSideDamageArbitration'] = getCvarBool('clientSideDamageArbitration')
+        self.game['friendlyFire'] = getCvarBool('friendlyFire')
+        self.game['gameModeCounter'] = getCvarInt('gameModeCounter')
+        self.game['hud'] = getCvarBool('hud')
+        self.game['killCam'] = getCvarBool('killCam')
+        self.game['killRotation'] = getCvarBool('killRotation')
+        self.game['maxPlayerCount'] = getCvarInt('maxPlayerCount')
+        self.game['minimap'] = getCvarBool('minimap')
+        self.game['minimapSpotting'] = getCvarBool('minimapSpotting')
+        self.game['nameTag'] = getCvarBool('nameTag')
+        self.game['noInteractivityRoundBan'] = getCvar('noInteractivityRoundBan') # TODO: check cvar type
+        self.game['noInteractivityThresholdLimit'] = getCvarFloat('noInteractivityThresholdLimit')
+        self.game['noInteractivityTimeoutTime'] = getCvar('noInteractivityTimeoutTime') # TODO: check cvar type
+        self.game['onlySquadLeaderSpawn'] = getCvar('onlySquadLeaderSpawn') # TODO: wtf responds 100 ?!?
+        self.game['playerManDownTime'] = getCvar('playerManDownTime') # TODO: wtf responds 100 ?!?
+        self.game['playerRespawnTime'] = getCvar('playerRespawnTime') # TODO: wtf responds 100 ?!?
+        self.game['regenerateHealth'] = getCvarBool('regenerateHealth')
+        self.game['roundRestartPlayerCount'] = getCvarInt('roundRestartPlayerCount')
+        self.game['roundStartPlayerCount'] = getCvarInt('roundStartPlayerCount')
+        self.game['roundsPerMap'] = getCvarInt('roundsPerMap')
+        self.game['serverDescription'] = getCvar('serverDescription')
+        self.game['serverMessage'] = getCvar('serverMessage')
+        self.game['soldierHealth'] = getCvarInt('soldierHealth')
+        self.game['teamKillCountForKick'] = getCvarInt('teamKillCountForKick')
+        self.game['teamKillKickForBan'] = getCvarInt('teamKillKickForBan') # TODO: check cvar type
+        self.game['teamKillValueDecreasePerSecond'] = getCvarFloat('teamKillValueDecreasePerSecond')
+        self.game['teamKillValueForKick'] = getCvarFloat('teamKillValueForKick')
+        self.game['teamKillValueIncrease'] = getCvarFloat('teamKillValueIncrease')
+        self.game['vehicleSpawnAllowed'] = getCvarBool('vehicleSpawnAllowed')
+        self.game['vehicleSpawnDelay'] = getCvar('vehicleSpawnDelay') # TODO: check cvar type
+        self.game.timeLimit = self.game.gameModeCounter
+        self.game.fragLimit = self.game.gameModeCounter
+        self.game.captureLimit = self.game.gameModeCounter
         
     
     def getServerInfo(self):
         """query server info, update self.game and return query results
-        Response: OK <serverName: string> <current playercount: integer> <current map: string> <private: bool> <uptime: integer>
+        Response: OK <serverName: string> <current playercount: integer> <max playercount: integer> 
+        <current map: string> <current gamemode: string> <roundsPlayed: integer> 
+        <roundsTotal: string> <?: boolean> <?: boolean> <?: boolean> <?: integer> <?: integer>
         """
+        # TODO : complete getServerInfo
         data = self.write(('serverInfo',))
         self.game.sv_hostname = data[0]
-        self.game.mapName = data[2]
-        self.game.private = data[3] == "true"
-        self.game.uptime = int(data[4])
+        self.game.sv_maxclients = int(data[2])
+        self.game.mapName = data[3]
+        self.game.gameType = data[4]
+        self.game.rounds = int(data[5])
+        self.game.g_maxrounds = int(data[6])
         return data
 
     def getTeam(self, team):
