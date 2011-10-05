@@ -164,7 +164,7 @@ class AbstractParser(b3.parser.Parser):
         eventType = packet[0]
         eventData = packet[1:]
         
-        match = re.search(r"^(?P<actor>[^.]+)\.(?P<event>.+)$", eventType)
+        match = re.search(r"^(?P<actor>[^.]+)\.(on)?(?P<event>.+)$", eventType)
         func = None
         if match:
             func = 'On%s%s' % (string.capitalize(match.group('actor')), \
@@ -339,20 +339,22 @@ class AbstractParser(b3.parser.Parser):
             client.disconnect() # this triggers the EVT_CLIENT_DISCONNECT event
         return None
 
-    def TODOOnPlayerJoin(self, action, data):
+    def OnPlayerJoin(self, action, data):
         """
-        we don't have guid at this point. Wait for player.onAuthenticated
+        player.onJoin <soldier name: string>
         """
-        pass
+        client = self.getClient(data[0])
+        if client:
+            return b3.events.Event(b3.events.EVT_CLIENT_JOIN, (), client)
         
 
     def OnPlayerAuthenticated(self, action, data):
         """
-        player.authenticated <soldier name: string>
+        player.authenticated <soldier name: string> <EA_GUID: string>
         
         Effect: Player with name <soldier name> has been authenticated
         """
-        self.getClient(data[0])
+        self.getClient(data[0], guid=data[1])
 
 
     def OnPlayerSpawn(self, action, data):
@@ -917,7 +919,7 @@ class AbstractParser(b3.parser.Parser):
     def getServerVars(self):
         raise NotImplemented('getServerVars must be implemented in concrete classes')
 
-    def getClient(self, cid, _guid=None):
+    def getClient(self, cid, guid=None):
         """Get a connected client from storage or create it
         B3 CID   <--> ingame character name
         B3 GUID  <--> EA_guid
