@@ -29,6 +29,10 @@
 # * Seperate out Team and Global chat - squad chat is totally missing from log and web admin
 # * Make sure IP's get logged
 # * Remove rcon references and rcon.py
+# 2011-10-06 : 0.6
+# * Kick client if on server when banned
+# * Keep running on map change
+# * Allow for username in xml file
 
 #
 from b3 import functions
@@ -53,7 +57,7 @@ import hashlib
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.5'
+__version__ = '0.6'
 
 
 class Ro2Parser(b3.parser.Parser):
@@ -102,6 +106,11 @@ class Ro2Parser(b3.parser.Parser):
         
         # create the 'Admin' client
         self.clients.newClient('Admin', guid='Server', name='Admin', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
+        if self.config.has_option('server','ro2admin'):
+            self.username = self.config.get('server', 'ro2admin')
+        else:
+            self.username="Admin"
+        
         
         if self.config.has_option('server','inifile'):
             # open ini file
@@ -130,7 +139,6 @@ class Ro2Parser(b3.parser.Parser):
         self.site=self._publicIp + ':' + str(self._rconPort)
         #self.debug(self.site)
         self.login_page="ServerAdmin"
-        self.username="Admin"
         self.password=self._rconPassword
         
         self.password_hash = "$sha1$%s" % hashlib.sha1("%s%s" % (self.password, self.username)).hexdigest()
@@ -218,8 +226,10 @@ class Ro2Parser(b3.parser.Parser):
             referer = self.url + referer
             
         self.headers['Referer'] = referer
-        request_console = urllib2.Request(data_url, data, self.headers)
+        
         try:
+            #self.debug('Attempting to find Web page (readwriteweb)')
+            request_console = urllib2.Request(data_url, data, self.headers)
             console_read = self.opener.open(request_console)
             console_data = console_read.read()
             return console_data
@@ -238,10 +248,26 @@ class Ro2Parser(b3.parser.Parser):
         self.cj = cookielib.LWPCookieJar()
         self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
         urllib2.install_opener(self.opener)
-        request = urllib2.Request(login_url, None, headers)
-        page = urllib2.urlopen(request)
-        response=page.read()
-        
+        findpage_attempt = 0
+        foundpage = False
+        self._paused = True
+        while findpage_attempt < 11:
+            try:
+                #self.debug('Attempting to find Web page (webconnect)')
+                request = urllib2.Request(login_url, None, headers)
+                page = urllib2.urlopen(request)
+                response=page.read()
+                break
+            except:
+                findpage_attempt += 1
+                if findpage_attempt > 10:
+                    self.debug('Failed to find web page - wait 10 seconds')
+                    time.sleep(10)
+                    findpage_attempt = 1
+                else:
+                    time.sleep(1)
+                    self.debug('Failed to find Web page %s - Wait 1 second' % findpage_attempt)
+                    
         #<input type="hidden" name="token" value="3309899D" />
         token_start = response.partition('<input type="hidden" name="token" value="')
         token = token_start[2]
@@ -252,23 +278,23 @@ class Ro2Parser(b3.parser.Parser):
         data = urllib.urlencode({ 'token' : token_value, 'password_hash' : self.password_hash, 'username' : self.username, 'password' : password, 'remember' : remember })
         #chat_data = self.readwriteweb(data, referer, login_url)
         self.headers['Referer'] = referer
-        request_console = urllib2.Request(login_url, data, self.headers)
+        
         login_attempt = 1
         while login_attempt < 11:
             try:
+                self.debug('Login attempt %s' % login_attempt)
+                request_console = urllib2.Request(login_url, data, self.headers)
                 console_read = self.opener.open(request_console)
+                self._paused = False
                 return True
             except:
-                self.debug('Failed to open URL %s' % login_attempt)
+                self.debug('Failed to login %s' % login_attempt)
                 self._paused = True
                 login_attempt += 1
-                if login_attempt > 10:
+                if login_attempt > 11:
                     raise
                 time.sleep(1)
         
-        self._paused = False
-        return
-
         
     def readwriteajax(self, message = None):
         """Read and Write to the Ajax interface"""
@@ -295,8 +321,9 @@ class Ro2Parser(b3.parser.Parser):
         referer = '/current/chat'
         chat_data = self.readwriteweb(data, referer, chatdata_url)
 
-        if len(chat_data) > 0:
-            self.decode_chat_data(chat_data)
+        if chat_data:
+            if len(chat_data) > 0:
+                self.decode_chat_data(chat_data)
  
         return
         
@@ -328,7 +355,7 @@ class Ro2Parser(b3.parser.Parser):
                 
             data = data.partition('div class="')[2]
             chat_decoded['username'] = self.getUsername(chat_decoded['username'])
-            self.debug(chat_decoded)
+            #self.debug(chat_decoded)
             self._read_queue.append(chat_decoded)
         
     def onChat_typeChatnotice(self,data):
@@ -414,7 +441,7 @@ class Ro2Parser(b3.parser.Parser):
         player['playerid'] = data.partition('"')[0]
         data = data.partition('<input type="hidden" name="playerkey" value="')[2]
         player['playerkey'] = data.partition('"')[0]
-        self.debug(player)
+        #self.debug(player)
         if spec.lower() == 'yes':
             player['team'] = self.getTeam('2')
         else:
@@ -455,7 +482,7 @@ class Ro2Parser(b3.parser.Parser):
         else:
             msg = self.stripColors(msg)
             self._write_queue.append(msg)
-            self.debug(self._write_queue)
+            #self.debug(self._write_queue)
             return
 
     def writelines(self, msg):
@@ -474,7 +501,7 @@ class Ro2Parser(b3.parser.Parser):
         """Write an Admin command via the Web interface console (Limited in what actually works)"""
         consoledata_url = self.url + '/console'
         data = 'command=' + cmd
-        self.debug('Admin Command data %s' % data)
+        #self.debug('Admin Command data %s' % data)
         headers = {'User-Agent' : self.user_agent, "Accept": "ext/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language" : "en-us,en;q =0.5", "Content-type": "application/x-www-form-urlencoded", "Accept-Charset" : "ISO-8859-1,utf-8;q=0.7,*;q=0.7", "Referer" : consoledata_url}
         request_console = urllib2.Request(consoledata_url, data, headers)
         adminconsole_read = self.opener.open(request_console)
@@ -547,7 +574,7 @@ class Ro2Parser(b3.parser.Parser):
             
             if (client_cid_list.count(client.cid) == 0):
                 self.debug( 'Removing %s from list' % client.name)
-                self.debug(client)
+                #self.debug(client)
                 client.disconnect()
 
                 
@@ -606,8 +633,6 @@ class Ro2Parser(b3.parser.Parser):
             self.say(fullreason)
         
         banid = client.guid
-
-        
         
         bandata_url = '/policy/bans'
         data = 'action=add&uniqueid=' + banid
@@ -616,6 +641,12 @@ class Ro2Parser(b3.parser.Parser):
         console_data = self.readwriteweb(data, referer, bandata_url)
         
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
+        
+        #If client is on server kick them
+        c = self.clients.getByGUID(uid)
+        if c:
+            self.writeAdminCommand(self.getCommand('kick', playerid=c.cid))
+        
         client.disconnect()
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -627,7 +658,7 @@ class Ro2Parser(b3.parser.Parser):
 
         self.debug('using guid to unban')
         banid = client.guid
-        self.debug (banid)
+        #self.debug (banid)
         ban_no = None
         try:
             ban_no = ban_list[banid]
@@ -705,7 +736,7 @@ class Ro2Parser(b3.parser.Parser):
                 map_line= map_line.partition('","')[2]
                 self.map_rotation.append(map_line.partition('","')[0])
 
-        self.debug(self.map_rotation)
+        #self.debug(self.map_rotation)
         return self.map_rotation
 
     def rotateMap(self):
@@ -784,6 +815,8 @@ class Ro2Parser(b3.parser.Parser):
         """\
         Send RETRIEVE PLAYERLIST to the server to trigger onServerPlayer return events
         """
+        if self._paused:
+            return
         client_list = self.getPlayerList()
         self.findNewPlayers(client_list)
         if len(client_list) != 0:
@@ -801,7 +834,6 @@ class Ro2Parser(b3.parser.Parser):
         banlist_read = self.opener.open(request_banlist)
         banlist_data = banlist_read.read()
         ban_list = self.decodeBans(banlist_data)
-
         
         return ban_list
         
