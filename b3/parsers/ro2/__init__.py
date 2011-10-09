@@ -33,6 +33,9 @@
 # * Kick client if on server when banned
 # * Keep running on map change
 # * Allow for username in xml file
+# 2011-10-8 : 0.7
+# * Correct error in ban-kick
+# * Rewrite player names logic for extended characters
 
 #
 from b3 import functions
@@ -57,7 +60,7 @@ import hashlib
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.6'
+__version__ = '0.7'
 
 
 class Ro2Parser(b3.parser.Parser):
@@ -329,10 +332,13 @@ class Ro2Parser(b3.parser.Parser):
         
 
     def addplus(self, message):
-        """Replace spaces with plusses ready for sending to the Ajax interface"""
+        """Replace spaces with plusses ready for sending to the Ajax interface
+        also replaces other characters that mess up html"""
         #ajax=1&message=test+chat&teamsay=-1
-        message.replace(' ', '+')
+        message = message.replace(' ', '+')
+        message = message.replace('?','&quest;')
         message = '&message=' + message + '&teamsay=-1'
+        self.debug(message)
         return message
         
     def decode_chat_data(self, data):
@@ -392,13 +398,17 @@ class Ro2Parser(b3.parser.Parser):
     def getUsername(self, name):
         """Retrieve the username and make it 'safe' """
         name = '%r' % name
+        self.debug('namebefore = %s' % name)
         name = name.replace("\'", "")
+        name = name.replace(r"\\", "\\")
         name = name.strip()
+
 
         if name.find('&') != -1:
             name = name.replace('&lt;', '<')
             name = name.replace('&gt;', '>')
             
+        self.debug('nameafter = %s' % name)            
         return name
  
     def decodeplayers(self, data):
@@ -643,7 +653,7 @@ class Ro2Parser(b3.parser.Parser):
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
         
         #If client is on server kick them
-        c = self.clients.getByGUID(uid)
+        c = self.clients.getByGUID(banid)
         if c:
             self.writeAdminCommand(self.getCommand('kick', playerid=c.cid))
         
