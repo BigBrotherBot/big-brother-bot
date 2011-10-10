@@ -69,7 +69,7 @@ class AbstractParser(b3.parser.Parser):
     _commands['tempban'] = ('banList.add', 'guid', '%(guid)s', 'seconds', '%(duration)d', '%(reason)s')
 
     _eventMap = {
-        'player.onKicked': b3.events.EVT_CLIENT_KICK,
+        'player.kicked': b3.events.EVT_CLIENT_KICK, # TODO: test this event
     }
     
     _punkbusterMessageFormats = (
@@ -164,7 +164,7 @@ class AbstractParser(b3.parser.Parser):
         eventType = packet[0]
         eventData = packet[1:]
         
-        match = re.search(r"^(?P<actor>[^.]+)\.(?P<event>.+)$", eventType)
+        match = re.search(r"^(?P<actor>[^.]+)\.(on)?(?P<event>.+)$", eventType)
         func = None
         if match:
             func = 'On%s%s' % (string.capitalize(match.group('actor')), \
@@ -172,7 +172,7 @@ class AbstractParser(b3.parser.Parser):
             self.debug("looking for event handling method called : " + func)
             
         if match and hasattr(self, func):
-            self.debug('routing ----> %s' % func)
+            self.debug('routing ----> %s(%r)' % (func,eventData))
             func = getattr(self, func)
             event = func(eventType, eventData)
             #self.debug('event : %s' % event)
@@ -207,7 +207,7 @@ class AbstractParser(b3.parser.Parser):
         self.getServerInfo()
         
         if self.config.has_option('server', 'punkbuster') and self.config.getboolean('server', 'punkbuster'):
-            self.info('kick/ban by punkbuster is unsupported yet')
+            self.info('kick/ban by punkbuster is unsupported')
             #self.debug('punkbuster enabled in config')
             #self.PunkBuster = Bfbc2PunkBuster(self)
         
@@ -289,7 +289,6 @@ class AbstractParser(b3.parser.Parser):
                     remaining = remaining[wrappoint:]
             return lines
         
-    ##########################################################################
  
 
     
@@ -340,20 +339,22 @@ class AbstractParser(b3.parser.Parser):
             client.disconnect() # this triggers the EVT_CLIENT_DISCONNECT event
         return None
 
-    def TODOOnPlayerJoin(self, action, data):
+    def OnPlayerJoin(self, action, data):
         """
-        we don't have guid at this point. Wait for player.onAuthenticated
+        player.onJoin <soldier name: string>
         """
-        pass
+        client = self.getClient(data[0])
+        if client:
+            return b3.events.Event(b3.events.EVT_CLIENT_JOIN, (), client)
         
 
     def OnPlayerAuthenticated(self, action, data):
         """
-        player.authenticated <soldier name: string>
+        player.authenticated <soldier name: string> <EA_GUID: string>
         
         Effect: Player with name <soldier name> has been authenticated
         """
-        self.getClient(data[0])
+        self.getClient(data[0], guid=data[1])
 
 
     def OnPlayerSpawn(self, action, data):
@@ -371,16 +372,16 @@ class AbstractParser(b3.parser.Parser):
         return b3.events.Event(event, (), spawner)
 
 
-    def TODOOnPlayerKill(self, action, data):
+    def OnPlayerKilled(self, action, data):
         """
-        Request: player.onKill <killing soldier name: string> <killed soldier name: string> <weapon: string> <headshot: boolean> <killer location: 3 x integer> <killed location: 3 x integes>
+        Request: player.killed' <killing soldier name: string> <killed soldier name: string> <weapon: string> <headshot: boolean>
 
-        Effect: Player with name <killing soldier name> has killed <killed soldier name> Suicide is indicated with the same soldier name for killer and victim. If the server kills the player (through admin.killPlayer), it is indicated by showing the killing soldier name as Server. The locations of the killer and the killed have a random error of up to 10 meters in each direction.
+        Effect: Player with name <killing soldier name> has killed <killed soldier name> Suicide is indicated with the same soldier name for killer and victim. If the server kills the player (through admin.killPlayer), it is indicated by showing the killing soldier name as Server. 
         """
-        #R15: player.onKill: ['Brou88', 'kubulina', 'S20K', 'true', '-77', '68', '-195', '-76', '62', '-209']
-        if len(data) < 2:
-            return None
-
+        # example suicide : ['Cucurbitaceae', 'Cucurbitaceae', 'M67', 'false']
+        # example killed by fire : ['', 'Cucurbitaceae', 'DamageArea', 'false']
+        if data[0] == '':
+            data[0] = 'Server'
         attacker = self.getClient(data[0])
         if not attacker:
             self.debug('No attacker')
@@ -391,41 +392,19 @@ class AbstractParser(b3.parser.Parser):
             self.debug('No victim')
             return None
         
-        if data[2]:
-            weapon = data[2]
-        else:
-            # to accomodate pre R15 servers
-            weapon = None
+        weapon = data[2]
 
-        if data[3]:
-            if data[3] == 'true':
-                hitloc = 'head'
-            else:
-                hitloc = 'torso'
+        if data[3] == 'true':
+            hitloc = 'head'
         else:
-            # to accomodate pre R15 servers
-            hitloc = None
-
-        attackerloc = []
-        victimloc = []
-        if data[4] and data[9]:
-            attackerloc.append(data[4])
-            attackerloc.append(data[5])
-            attackerloc.append(data[6])
-            victimloc.append(data[7])
-            victimloc.append(data[8])
-            victimloc.append(data[9])
-        else:
-            # to accomodate pre R15 servers
-            attackerloc.append('None')
-            victimloc.append('None')
+            hitloc = 'torso'
 
         event = b3.events.EVT_CLIENT_KILL
         if victim == attacker:
             event = b3.events.EVT_CLIENT_SUICIDE
         elif attacker.team == victim.team and attacker.team != b3.TEAM_UNKNOWN and attacker.team != b3.TEAM_SPEC:
             event = b3.events.EVT_CLIENT_KILL_TEAM
-        return b3.events.Event(event, (100, weapon, hitloc, attackerloc, victimloc), attacker, victim)
+        return b3.events.Event(event, (100, weapon, hitloc), attacker, victim)
 
 
 
@@ -812,7 +791,7 @@ class AbstractParser(b3.parser.Parser):
         """Return the map list for the current rotation. (as easy map names)
         This does not return all available maps
         """
-        levelnames = self.write(('mapList.list',))
+        levelnames = self.write(('mapSequencer.list',))
         mapList = []
         for l in levelnames:
             mapList.append(self.getEasyName(l))
@@ -823,20 +802,48 @@ class AbstractParser(b3.parser.Parser):
         """\
         load the next map/level
         """
-        raise NotImplementedError
+        self.write(('mapSequencer.runNextMap'))
 
 
     def changeMap(self, map):
         """\
         load a given map/level
         return a list of suggested map names in cases it fails to recognize the map that was provided
-        """
-        raise NotImplementedError
+        
+        1) determine the level name
+            If map is of the form 'Levels/MP_001' and 'Levels/MP_001' is a supported
+            level for the current game mod, then this level is loaded.
+            
+            In other cases, this method assumes it is given a 'easy map name' (like
+            'Port Valdez') and it will do its best to find the level name that seems
+            to be for 'Port Valdez' within the supported levels.
+        
+            If no match is found, then instead of loading the map, this method 
+            returns a list of candidate map names
+            
+        2) if we got a level name
+            if the level is not in the current rotation list, then add it to 
+            the map list and load it
+        """        
+        supportedMaps = self.getSupportedMapIds()
+        if map not in supportedMaps:
+            match = self.getMapsSoundingLike(map)
+            if len(match) == 1:
+                map = match[0]
+            else:
+                return match
+            
+        if map in supportedMaps:
+            self.write(('mapSequencer.setNextMap', map))
+            self.say('Changing map to %s' % map)
+            time.sleep(1)
+            self.write(('mapSequencer.runNextMap'))
 
         
     def getPlayerPings(self):
         """Ask the server for a given client's pings
         """
+        raise NotImplemented
         pings = {}
         try:
             pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
@@ -865,6 +872,14 @@ class AbstractParser(b3.parser.Parser):
     #    Other methods
     #    
     ###############################################################################################
+
+    def getHardName(self, mapname):
+        """ Change human map name to map id """
+        raise NotImplemented('getHardName must be implemented in concrete classes')
+
+    def getEasyName(self, mapname):
+        """ Change map id to map human name """
+        raise NotImplemented('getEasyName must be implemented in concrete classes')
 
     def getCvar(self, cvarName):
         """Read a server var"""
@@ -904,7 +919,7 @@ class AbstractParser(b3.parser.Parser):
     def getServerVars(self):
         raise NotImplemented('getServerVars must be implemented in concrete classes')
 
-    def getClient(self, cid, _guid=None):
+    def getClient(self, cid, guid=None):
         """Get a connected client from storage or create it
         B3 CID   <--> ingame character name
         B3 GUID  <--> EA_guid
@@ -917,46 +932,30 @@ class AbstractParser(b3.parser.Parser):
         
     def getServerInfo(self):
         """query server info, update self.game and return query results
-        Response: OK <serverName: string> <current playercount: integer> <max playercount: integer> 
-        <current gamemode: string> <current map: string> <roundsPlayed: integer> 
-        <roundsTotal: string> <scores: team scores> <onlineState: online state>
         """
-        data = self.write(('serverInfo',))
-        self.game.sv_hostname = data[0]
-        self.game.sv_maxclients = int(data[2])
-        self.game.gameType = data[3]
-        if not self.game.mapName:
-            self.game.mapName = data[4]
-        self.game.rounds = int(data[5])
-        self.game.g_maxrounds = int(data[6])
-        return data
+        raise NotImplemented('getServerInfo must be implemented in concrete classes')
 
         
     def getNextMap(self):
         """Return the name of the next map
         """
-        nextLevelIndex = self.getNextMapIndex()
-        if nextLevelIndex == -1:
-            return 'none'
-        levelnames = self.write(('mapList.list',))
-        return self.getEasyName(levelnames[nextLevelIndex])
-    
-    def getNextMapIndex(self):
-        [nextLevelIndex] = self.write(('mapList.nextLevelIndex',))
-        nextLevelIndex = int(nextLevelIndex)
-        if nextLevelIndex == -1:
-            return -1
-        levelnames = self.write(('mapList.list',))
-        if levelnames[nextLevelIndex] == self.getMap():
-            nextLevelIndex = (nextLevelIndex+1)%len(levelnames)
-        return nextLevelIndex
-    
+        levelnames = self.write(('mapSequencer.list',))
+        self.getServerInfo()
+        currentName = self.game.mapName
+        if len(levelnames) == 0:
+            return self.getEasyName(currentName)
+        elif len(levelnames) == 1:
+            return self.getEasyName(levelnames[0])
+        elif currentName not in levelnames:
+            return self.getEasyName(levelnames[0])
+        else:
+            nextmap = levelnames[(levelnames.index(currentName) + 1) % len(levelnames)]
+            return self.getEasyName(nextmap)
+        
 
-    def getSupportedMaps(self):
+    def getSupportedMapIds(self):
         """return a list of supported levels for the current game mod"""
-        [currentMode] = self.write(('admin.getPlaylist',))
-        supportedMaps = self.write(('admin.supportedMaps', currentMode))
-        return supportedMaps
+        return self.write(('mapSequencer.availableMaps'))
 
     def getMapsSoundingLike(self, mapname):
         """found matching level names for the given mapname (which can either
@@ -964,7 +963,7 @@ class AbstractParser(b3.parser.Parser):
         If no exact match is found, then return close candidates using soundex
         and then LevenshteinDistance algoritms
         """
-        supportedMaps = self.getSupportedMaps()
+        supportedMaps = self.getSupportedMapIds()
         supportedEasyNames = {}
         for m in supportedMaps:
             supportedEasyNames[self.getEasyName(m)] = m
