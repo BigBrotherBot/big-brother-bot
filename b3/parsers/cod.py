@@ -48,9 +48,12 @@
 # 28/03/2011 - 1.4.20 - Bravo17 - CoD5 JT regexp fix
 # 09/04/2011 - 1.4.21 - Courgette - reflect that cid are not converted to int anymore in the clients module
 # 16/07/2011 - 1.4.22 - Freelander - Minor bugfix to flag disconnecting client properly if found in authentication queue 
+# 03/07/2011 - 1.4.23 - 82ndab.Bravo17 - adjust sync() timing for high slot count servers and login plugin
+#                       Sync now occurs 60 seconds after ExitLevel (map change) rather than 30 seconds after every round start
+# 11/09/2011 - 1.4.24 - 82ndab.Bravo17 - New client will now join Auth queue if slot shows as 'Disconnected' in Auth queue
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.22'
+__version__ = '1.4.24'
 
 import re, string, threading
 import b3
@@ -292,7 +295,7 @@ class CodParser(AbstractParser):
             # Join-event for mapcount reasons and so forth
             return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
         else:
-            if self._counter.get(cid):
+            if self._counter.get(cid) and self._counter.get(cid) != 'Disconnected':
                 self.verbose('cid: %s already in authentication queue. Aborting Join.' %cid)
                 return None
             self._counter[cid] = 1
@@ -399,12 +402,11 @@ class CodParser(AbstractParser):
         self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
         self.game.startRound()
 
-        #Sync clients 30 sec after InitGame
-        t = threading.Timer(30, self.clients.sync)
-        t.start()
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
 
     def OnExitlevel(self, action, data, match=None):
+        t = threading.Timer(60, self.clients.sync)
+        t.start()
         self.game.mapEnd()
         return b3.events.Event(b3.events.EVT_GAME_EXIT, data)
 
