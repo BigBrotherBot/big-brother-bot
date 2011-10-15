@@ -55,7 +55,6 @@ class Bf3Parser(AbstractParser):
         'minimapSpotting',
         'nameTag',
         'noInteractivityRoundBan',
-        'noInteractivityThresholdLimit',
         'noInteractivityTimeoutTime',
         'onlySquadLeaderSpawn',
         'playerManDownTime',
@@ -123,9 +122,9 @@ class Bf3Parser(AbstractParser):
     #    
     ###############################################################################################
 
-    def OnPlayerSwitchteam(self, action, data):
+    def OnPlayerTeamchange(self, action, data):
         """
-        player.switchTeam <soldier name: player name> <team: Team ID> <squad: Squad ID>
+        player.onTeamChange <soldier name: player name> <team: Team ID> <squad: Squad ID>
         Effect: Player might have changed team
         """
         # ['player.switchTeam', 'Cucurbitaceae', '1', '0']
@@ -140,7 +139,7 @@ class Bf3Parser(AbstractParser):
         """
         player.onSquadChange <soldier name: player name> <team: Team ID> <squad: Squad ID>    
         
-        Effect: Player have changed squad
+        Effect: Player might have changed squad
         NOTE: this event also happens after a player left the game
         """
         client = self.getClient(data[0])
@@ -247,7 +246,6 @@ class Bf3Parser(AbstractParser):
         self.game['minimapSpotting'] = getCvarBool('minimapSpotting')
         self.game['nameTag'] = getCvarBool('nameTag')
         self.game['noInteractivityRoundBan'] = getCvar('noInteractivityRoundBan') # TODO: check cvar type
-        self.game['noInteractivityThresholdLimit'] = getCvarFloat('noInteractivityThresholdLimit')
         self.game['noInteractivityTimeoutTime'] = getCvar('noInteractivityTimeoutTime') # TODO: check cvar type
         self.game['onlySquadLeaderSpawn'] = getCvar('onlySquadLeaderSpawn') # TODO: wtf responds 100 ?!?
         self.game['playerManDownTime'] = getCvar('playerManDownTime') # TODO: wtf responds 100 ?!?
@@ -278,6 +276,7 @@ class Bf3Parser(AbstractParser):
         then the targetScore. (e.g. in TDM/SQDM this is the number of kills to win)
         So when you start a Squad Deathmatch round with 50 kills needed to win, it will look like this:
         4,0,0,0,0,50
+        
         """
         data = self.write(('serverInfo',))
         data2 = Bf3Parser.decodeServerinfo(data)
@@ -304,47 +303,39 @@ class Bf3Parser(AbstractParser):
     @staticmethod
     def decodeServerinfo(data):
         """
-        >>> d = c.decodeServerinfo(["b3 server", "5", "32", "map1", "SQDM", "0", "0", "true", "true", "true", "120", "58"]).items(); d.sort(); d
-        [('gameModeCounter', '0'), ('gamemode', 'SQDM'), ('hasPassword', 'true'), ('hasPunkbuster', 'true'), ('isRanked', 'true'), ('level', 'map1'), ('maxPlayers', '32'), ('numOfTeams', '0'), ('numPlayers', '5'), ('roundTime', '58'), ('serverName', 'b3 server'), ('serverUptime', '120'), ('team1score', None), ('team2score', None), ('team3score', None), ('team4score', None)]
-        
-        >>> d = c.decodeServerinfo(["b3 server", "5", "32", "map1", "SQDM", "1", "45", "150", "false", "true", "true", "120", "58"]).items(); d.sort(); d
-        [('gameModeCounter', '150'), ('gamemode', 'SQDM'), ('hasPassword', 'true'), ('hasPunkbuster', 'true'), ('isRanked', 'false'), ('level', 'map1'), ('maxPlayers', '32'), ('numOfTeams', '1'), ('numPlayers', '5'), ('roundTime', '58'), ('serverName', 'b3 server'), ('serverUptime', '120'), ('team1score', '45'), ('team2score', None), ('team3score', None), ('team4score', None)]
-        
-        >>> d = c.decodeServerinfo(["b3 server", "5", "32", "map1", "SQDM", "2", "32", "14", "150", "true", "false", "true", "120", "58"]).items(); d.sort(); d
-        [('gameModeCounter', '150'), ('gamemode', 'SQDM'), ('hasPassword', 'true'), ('hasPunkbuster', 'false'), ('isRanked', 'true'), ('level', 'map1'), ('maxPlayers', '32'), ('numOfTeams', '2'), ('numPlayers', '5'), ('roundTime', '58'), ('serverName', 'b3 server'), ('serverUptime', '120'), ('team1score', '32'), ('team2score', '14'), ('team3score', None), ('team4score', None)]
-        
-        >>> d = c.decodeServerinfo(["b3 server", "5", "32", "map1", "SQDM", "3", "32", "14", "78", "150", "true", "true", "false", "120", "58"]).items(); d.sort(); d
-        [('gameModeCounter', '150'), ('gamemode', 'SQDM'), ('hasPassword', 'false'), ('hasPunkbuster', 'true'), ('isRanked', 'true'), ('level', 'map1'), ('maxPlayers', '32'), ('numOfTeams', '3'), ('numPlayers', '5'), ('roundTime', '58'), ('serverName', 'b3 server'), ('serverUptime', '120'), ('team1score', '32'), ('team2score', '14'), ('team3score', '78'), ('team4score', None)]
-    
-        >>> d = c.decodeServerinfo(["b3 server", "5", "32", "map1", "SQDM", "4", "32", "14", "78", "30", "150", "false", "false", "false", "120", "58"]).items(); d.sort(); d
-        [('gameModeCounter', '150'), ('gamemode', 'SQDM'), ('hasPassword', 'false'), ('hasPunkbuster', 'false'), ('isRanked', 'false'), ('level', 'map1'), ('maxPlayers', '32'), ('numOfTeams', '4'), ('numPlayers', '5'), ('roundTime', '58'), ('serverName', 'b3 server'), ('serverUptime', '120'), ('team1score', '32'), ('team2score', '14'), ('team3score', '78'), ('team4score', '30')]
+        "NL i3D.net - BigBrotherBot" "0" "48" "ConquestLarge0" "MP_007" "" "" "2" "300" "300" "0" "" "true" "true" "false" "1074" "1050"
+        'NL i3D.net - BigBrotherBot', '0', '48', 'ConquestLarge0', 'MP_007', '', '', '2', '300', '300', '0', '', 'true', 'true', 'false', '4351', '4327']
+        ['PL G4G.pl [DEV TEST 2]', '0', '32', 'RushLarge0', 'MP_Subway', '', '', '0', '0', '', 'true', 'true', 'false', '7690', '7688']
         """
-        numOfTeams = int(data[5])
+        numOfTeams = 0
+        if data[5] != '':
+            numOfTeams = int(data[5])
+        
         response = {
             'serverName': data[0],
             'numPlayers': data[1],
             'maxPlayers': data[2],
-            'level': data[3],
-            'gamemode': data[4],
+            'gamemode': data[3],
+            'level': data[4],
             'numOfTeams': data[5],
             'team1score': None,
             'team2score': None,
             'team3score': None,
             'team4score': None,
-            'gameModeCounter': data[5 + numOfTeams + 1],
-            'isRanked': data[5 + numOfTeams + 2],
-            'hasPunkbuster': data[5 + numOfTeams + 3],
-            'hasPassword': data[5 + numOfTeams + 4],
-            'serverUptime': data[5 + numOfTeams + 5],
-            'roundTime': data[5 + numOfTeams + 6],
+#            'gameModeCounter': data[5 + numOfTeams + 1],
+#            'isRanked': data[5 + numOfTeams + 2],
+#            'hasPunkbuster': data[5 + numOfTeams + 3],
+#            'hasPassword': data[5 + numOfTeams + 4],
+#            'serverUptime': data[5 + numOfTeams + 5],
+#            'roundTime': data[5 + numOfTeams + 6],
         }
-        if int(data[5]) >= 1:
-            response['team1score'] = data[6]
-        if int(data[5]) >= 2:
-            response['team2score'] = data[7]
-        if int(data[5]) >= 3:
-            response['team3score'] = data[8]
-        if int(data[5]) == 4:
-            response['team4score'] = data[9]
+#        if int(data[5]) >= 1:
+#            response['team1score'] = data[6]
+#        if int(data[5]) >= 2:
+#            response['team2score'] = data[7]
+#        if int(data[5]) >= 3:
+#            response['team3score'] = data[8]
+#        if int(data[5]) == 4:
+#            response['team4score'] = data[9]
         return response
 
