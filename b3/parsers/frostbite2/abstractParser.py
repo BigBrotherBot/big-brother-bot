@@ -24,9 +24,10 @@ __version__ = '0.0'
 
 
 import sys, re, traceback, time, string, Queue, threading
+import logging
 import b3.parser
-import b3.parsers.frostbite2.rcon as rcon
-from b3.parsers.frostbite2.connection import FrostbiteConnection, FrostbiteException, FrostbiteCommandFailedError
+from b3.parsers.frostbite2.rcon import Rcon as FrostbiteRcon
+from b3.parsers.frostbite2.protocol import FrostbiteServer, CommandFailedError, FrostbiteError
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 import b3.events
 #from b3.parsers.frostbite.punkbuster import PunkBuster as Bfbc2PunkBuster
@@ -40,10 +41,11 @@ class AbstractParser(b3.parser.Parser):
     An abstract base class to help with developing frostbite2 parsers 
     '''
     gameName = None
-    OutputClass = rcon.Rcon
+    OutputClass = FrostbiteRcon
     _serverConnection = None
     _nbConsecutiveConnFailure = 0
     
+    frostbite_event_queue = Queue.Queue()
     sayqueue = Queue.Queue()
     sayqueuelistener = None
 
@@ -69,7 +71,6 @@ class AbstractParser(b3.parser.Parser):
     _commands['tempban'] = ('banList.add', 'guid', '%(guid)s', 'seconds', '%(duration)d', '%(reason)s')
 
     _eventMap = {
-        'player.kicked': b3.events.EVT_CLIENT_KICK, # TODO: test this event
     }
     
     _punkbusterMessageFormats = (
@@ -94,60 +95,33 @@ class AbstractParser(b3.parser.Parser):
 
         self.updateDocumentation()
 
-        while self.working:
-            """
-            While we are working, connect to the frostbite2 server
-            """
-            if self._paused:
-                if self._pauseNotice == False:
-                    self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
-                    self._pauseNotice = True
-            else:
-                
-                try:                
-                    if self._serverConnection is None:
-                        self.verbose('Connecting to frostbite2 server ...')
-                        self._serverConnection = FrostbiteConnection(self, self._rconIp, self._rconPort, self._rconPassword, "event connection")
+#        frostbiteServerLogger = logging.getLogger("FrostbiteServer")
+#        for handler in logging.getLogger('output').handlers:
+#            frostbiteServerLogger.addHandler(handler)
+#        frostbiteServerLogger.setLevel(logging.getLogger('output').level)
 
-                    self._serverConnection.subscribeToEvents()
-                    self.clients.sync()
-                    self._nbConsecutiveConnFailure = 0
-                        
-                    nbConsecutiveReadFailure = 0
-                    while self.working:
-                        """
-                        While we are working and connected, read a packet
-                        """
-                        if not self._paused:
-                            try:
-                                packet = self._serverConnection.readEvent()
-                                self.console("%s" % packet)
-                                try:
-                                    self.routeFrostbitePacket(packet)
-                                except SystemExit:
-                                    raise
-                                except Exception, msg:
-                                    self.error('%s: %s', msg, traceback.extract_tb(sys.exc_info()[2]))
-                            except FrostbiteException, e:
-                                #self.debug(e)
-                                nbConsecutiveReadFailure += 1
-                                if nbConsecutiveReadFailure > 5:
-                                    raise e
-                except FrostbiteException, e:
-                    self.debug(e)
-                    self._nbConsecutiveConnFailure += 1
-                    self._serverConnection.close()
-                    if self._nbConsecutiveConnFailure <= 20:
-                        self.debug('sleeping 0.5 sec...')
-                        time.sleep(0.5)
-                    elif self._nbConsecutiveConnFailure <= 60:
-                        self.debug('sleeping 2 sec...')
-                        time.sleep(2)
-                    else:
-                        self.debug('sleeping 30 sec...')
-                        time.sleep(30)
-                    
-        self.bot('Stop listening.')
+        
+        self.verbose('Connecting to frostbite2 server ...')
+        self._serverConnection = FrostbiteServer(self._rconIp, self._rconPort, self._rconPassword)
+        self._serverConnection.start()
+        time.sleep(.5)
+        
+        # listen for incoming game server events
+        self._serverConnection.subscribe(self.OnFrosbiteEvent)
+
+        self._serverConnection.auth()
+        self._serverConnection.command('admin.eventsEnabled', 'true')
+        #self._serverConnection.handle_authenticated = self.OnRconReady
+        
+        # setup Rcon
+        self.output.set_frostbite_server(self._serverConnection)
+
+        self.checkVersion()
+        self.getServerVars()
+        self.getServerInfo()
+        self.clients.sync()
+
+        threading.Thread(target=self.frostbite_event_consumer).start()
 
         if self.exiting.acquire(1):
             #self.input.close()
@@ -155,12 +129,21 @@ class AbstractParser(b3.parser.Parser):
 
             if self.exitcode:
                 sys.exit(self.exitcode)
-
+                
+        
+    def OnFrosbiteEvent(self, packet):
+        self.console(repr(packet))
+        self.frostbite_event_queue.put((self.time(), self.time() + 10, packet), block=True, timeout=2)
+            
+    def frostbite_event_consumer(self):
+        """Frostbite Event handler thread"""
+        while self.working:
+            added, expire, packet = self.frostbite_event_queue.get(True)
+            self.routeFrostbitePacket(packet)
 
     def routeFrostbitePacket(self, packet):
         if packet is None:
             self.warning('cannot route empty packet : %s' % traceback.extract_tb(sys.exc_info()[2]))
-        
         eventType = packet[0]
         eventData = packet[1:]
         
@@ -193,18 +176,15 @@ class AbstractParser(b3.parser.Parser):
 
 
     def startup(self):
-        self.checkVersion()
-        
+       
         # add specific events
         self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
+        self.Events.createEvent('EVT_CLIENT_SPAWN', 'Client Spawn')
         self.Events.createEvent('EVT_PUNKBUSTER_SCHEDULED_TASK', 'PunkBuster scheduled task')
         self.Events.createEvent('EVT_PUNKBUSTER_LOST_PLAYER', 'PunkBuster client connection lost')
         self.Events.createEvent('EVT_PUNKBUSTER_NEW_CONNECTION', 'PunkBuster client received IP')
         self.Events.createEvent('EVT_GAME_ROUND_PLAYER_SCORES', 'round player scores')
         self.Events.createEvent('EVT_GAME_ROUND_TEAM_SCORES', 'round team scores')
-                
-        self.getServerVars()
-        self.getServerInfo()
         
         if self.config.has_option('server', 'punkbuster') and self.config.getboolean('server', 'punkbuster'):
             self.info('kick/ban by punkbuster is unsupported')
@@ -288,8 +268,6 @@ class AbstractParser(b3.parser.Parser):
                     lines.append(remaining[0:wrappoint])
                     remaining = remaining[wrappoint:]
             return lines
-        
- 
 
     
     ###############################################################################################
@@ -299,22 +277,16 @@ class AbstractParser(b3.parser.Parser):
     ###############################################################################################
 
     
-    def TODOOnPlayerChat(self, action, data):
+    def OnPlayerChat(self, action, data):
         """
-        player.onChat <source soldier name: string> <text: string> <target group: player subset>
+        player.onChat <source soldier name: string> <text: string>
         
         Effect: Player with name <source soldier name> (or the server, or the 
-        server admin) has sent chat message <text> to some people
+            server admin) has sent chat message <text> to some people
         
-        Comment: The chat text is as represented before the profanity filtering 
-        If <source soldier name> is 'Server', then the message was sent from the 
-        server rather than from an actual player If sending to a specific player, 
-        and the player doesn't exist, then the target group will be 'player' ''
+        Comment: If <source soldier name> is "Server", then the message was sent 
+            from the server rather than from an actual player
         """
-        #['envex', 'gg', 'team', 1]
-        #['envex', 'gg', 'all']
-        #['envex', 'gg', 'squad' 2]
-        #['envex', 'gg', 'player', 'Courgette']
         client = self.getClient(data[0])
         if client is None:
             self.warning("Could not get client :( %s" % traceback.extract_tb(sys.exc_info()[2]))
@@ -322,16 +294,10 @@ class AbstractParser(b3.parser.Parser):
         if client.cid == 'Server':
             # ignore chat events for Server
             return
-        if data[2] == 'all':
-            return b3.events.Event(b3.events.EVT_CLIENT_SAY, data[1].lstrip('/'), client, 'all')
-        elif data[2] == 'team' or data[2] == 'squad':
-            return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data[1].lstrip('/'), client, data[2] + ' ' + data[3])
-        elif data[2] == 'player':
-            target = self.getClient(data[3])
-            return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data[1].lstrip('/'), client, target)
+        return b3.events.Event(b3.events.EVT_CLIENT_SAY, data[1].lstrip('/'), client)
         
 
-    def OnPlayerLeft(self, action, data):
+    def OnPlayerLeave(self, action, data):
         #player.onLeave: ['GunnDawg']
         client = self.getClient(data[0])
         if client: 
@@ -341,9 +307,13 @@ class AbstractParser(b3.parser.Parser):
 
     def OnPlayerJoin(self, action, data):
         """
-        player.onJoin <soldier name: string>
+        player.onJoin <soldier name: string> <id : EAID>
         """
-        client = self.getClient(data[0])
+        try:
+            _guid = data[1]
+        except IndexError:
+            _guid = None
+        client = self.getClient(data[0], guid=_guid)
         if client:
             return b3.events.Event(b3.events.EVT_CLIENT_JOIN, (), client)
         
@@ -354,7 +324,11 @@ class AbstractParser(b3.parser.Parser):
         
         Effect: Player with name <soldier name> has been authenticated
         """
-        self.getClient(data[0], guid=data[1])
+        try:
+            _guid = data[1]
+        except IndexError:
+            _guid = None
+        self.getClient(data[0], guid=_guid)
 
 
     def OnPlayerSpawn(self, action, data):
@@ -368,15 +342,17 @@ class AbstractParser(b3.parser.Parser):
         spawner = self.getClient(data[0])
         spawner.team = self.getTeam(data[1])
 
-        event = b3.events.EVT_CLIENT_JOIN
-        return b3.events.Event(event, (), spawner)
+        return b3.events.Event(b3.events.EVT_CLIENT_SPAWN, (), spawner)
 
 
-    def OnPlayerKilled(self, action, data):
+    def OnPlayerKill(self, action, data):
         """
-        Request: player.killed' <killing soldier name: string> <killed soldier name: string> <weapon: string> <headshot: boolean>
+        Request: player.onKill <killing soldier name: string> 
+            <killed soldier name: string> <weapon: string> <headshot: boolean>
 
-        Effect: Player with name <killing soldier name> has killed <killed soldier name> Suicide is indicated with the same soldier name for killer and victim. If the server kills the player (through admin.killPlayer), it is indicated by showing the killing soldier name as Server. 
+        Effect: Player with name <killing soldier name> has killed 
+            <killed soldier name> Suicide indication is unknown at this moment. 
+            If the server kills the player (through admin.killPlayer), the result is unknown. 
         """
         # example suicide : ['Cucurbitaceae', 'Cucurbitaceae', 'M67', 'false']
         # example killed by fire : ['', 'Cucurbitaceae', 'DamageArea', 'false']
@@ -407,23 +383,34 @@ class AbstractParser(b3.parser.Parser):
         return b3.events.Event(event, (100, weapon, hitloc), attacker, victim)
 
 
+    def OnPlayerKicked(self, action, data):
+        """
+        Request: player.onKicked <soldier name: string> <reason: string>
+        Effect: Player with name <soldier name> has been kicked
+        """
+        if len(data) < 2:
+            return None
+        client = self.getClient(data[0])
+        reason = data[1]
+        return b3.events.Event(b3.events.EVT_CLIENT_KICK, data=reason, client=client)
 
-    def TODOOnServerLoadinglevel(self, action, data):
+
+    def OnServerLevelLoaded(self, action, data):
         """
-        server.onLoadingLevel <level name: string> <roundsPlayed: int> <roundsTotal: int>
+        server.onLevelLoaded <level name: string> <gamemode: string> <roundsPlayed: int> <roundsTotal: int>
         
-        Effect: Level is loading
+        Effect: Level has completed loading, and will start in a bit
         """
-        #['server.onLoadingLevel', 'levels/mp_04', '0', '2']
-        self.debug("OnServerLoadinglevel: %s" % data)
+        self.debug("OnServerLevelLoaded: %s" % data)
         if not self.game.mapName:
             self.game.mapName = data[0]
         if self.game.mapName != data[0]:
             # map change detected
             self.game.startMap()
         self.game.mapName = data[0]
-        self.game.rounds = int(data[1])
-        self.game.g_maxrounds = int(data[2])
+        self.game.gameMod = data[1]
+        self.game.rounds = int(data[2])
+        self.game.g_maxrounds = int(data[3])
         self.getServerInfo()
         # to debug getEasyName()
         self.info('Loading %s [%s]'  % (self.getEasyName(self.game.mapName), self.game.gameType))
@@ -444,7 +431,7 @@ class AbstractParser(b3.parser.Parser):
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
             
         
-    def TODOOnServerRoundover(self, action, data):
+    def OnServerRoundover(self, action, data):
         """
         server.onRoundOver <winning team: Team ID>
         
@@ -454,7 +441,7 @@ class AbstractParser(b3.parser.Parser):
         return b3.events.Event(b3.events.EVT_GAME_ROUND_END, data[0])
         
         
-    def TODOOnServerRoundoverplayers(self, action, data):
+    def OnServerRoundoverplayers(self, action, data):
         """
         server.onRoundOverPlayers <end-of-round soldier info : player info block>
         
@@ -464,7 +451,7 @@ class AbstractParser(b3.parser.Parser):
         return b3.events.Event(b3.events.EVT_GAME_ROUND_PLAYER_SCORES, PlayerInfoBlock(data))
         
         
-    def TODOOnServerRoundoverteamscores(self, action, data):
+    def OnServerRoundoverteamscores(self, action, data):
         """
         server.onRoundOverTeamScores <end-of-round scores: team scores>
         
@@ -473,10 +460,14 @@ class AbstractParser(b3.parser.Parser):
         #['server.onRoundOverTeamScores', '2', '1180', '1200', '1200']
         return b3.events.Event(b3.events.EVT_GAME_ROUND_TEAM_SCORES, data[1])
 
-    def TODOOnPunkbusterMessage(self, action, data):
+    def OnPunkbusterMessage(self, action, data):
         """handles all punkbuster related events and 
         route them to the appropriate method depending
         on the type of PB message.
+        
+        Request: punkBuster.onMessage <message: string>
+        Effect: PunkBuster server has output a message
+        Comment: The entire message is sent as a raw string. It may contain newlines and whatnot.
         """
         #self.debug("PB> %s" % data)
         if data and data[0]:
@@ -492,14 +483,14 @@ class AbstractParser(b3.parser.Parser):
             else:
                 return b3.events.Event(b3.events.EVT_UNKNOWN, data)
                 
-    def TODOOnPBVersion(self, match,data):
+    def OnPBVersion(self, match,data):
         """PB notifies us of the version numbers
         version = match.group('version')"""
         #self.debug('PunkBuster server named: %s' % match.group('servername') )
         #self.debug('PunkBuster Server version: %s' %( match.group('version') ) )
         pass
 
-    def TODOOnPBNewConnection(self, match, data):
+    def OnPBNewConnection(self, match, data):
         """PunkBuster tells us a new player identified. The player is
         normally already connected and authenticated by B3 by ea_guid
         
@@ -521,7 +512,7 @@ class AbstractParser(b3.parser.Parser):
         else:
             self.warning('OnPBNewConnection: we\'ve been unable to get the client')
 
-    def TODOOnPBLostConnection(self, match, data):
+    def OnPBLostConnection(self, match, data):
         """PB notifies us it lost track of a player. This is the only change
         we have to save the ip of clients.
         This event is triggered after the OnPlayerLeave, so normaly the client
@@ -555,7 +546,7 @@ class AbstractParser(b3.parser.Parser):
         self.verbose('PB lost connection: %s' %dict)
         return b3.events.Event(b3.events.EVT_PUNKBUSTER_LOST_PLAYER, dict)
 
-    def TODOOnPBScheduledTask(self, match, data):
+    def OnPBScheduledTask(self, match, data):
         """We get notified the server ran a PB scheduled task
         Nothing much to do but it can be interresting to have
         this information logged
@@ -564,13 +555,13 @@ class AbstractParser(b3.parser.Parser):
         task = match.group('task')
         return b3.events.Event(b3.events.EVT_PUNKBUSTER_SCHEDULED_TASK, {'slot': slot, 'task': task})
 
-    def TODOOnPBMasterQuerySent(self, match, data):
+    def OnPBMasterQuerySent(self, match, data):
         """We get notified that the server sent a ping to the PB masters"""
         #pbmaster = match.group('pbmaster')
         #ip = match.group('ip')
         pass
 
-    def TODOOnPBPlayerGuid(self, match, data):
+    def OnPBPlayerGuid(self, match, data):
         """We get notified of a player punkbuster GUID"""
         pbid = match.group('pbid')
         #slot = match.group('slot')
@@ -843,7 +834,7 @@ class AbstractParser(b3.parser.Parser):
     def getPlayerPings(self):
         """Ask the server for a given client's pings
         """
-        raise NotImplemented
+        raise NotImplementedError
         pings = {}
         try:
             pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
@@ -875,11 +866,11 @@ class AbstractParser(b3.parser.Parser):
 
     def getHardName(self, mapname):
         """ Change human map name to map id """
-        raise NotImplemented('getHardName must be implemented in concrete classes')
+        raise NotImplementedError('getHardName must be implemented in concrete classes')
 
     def getEasyName(self, mapname):
         """ Change map id to map human name """
-        raise NotImplemented('getEasyName must be implemented in concrete classes')
+        raise NotImplementedError('getEasyName must be implemented in concrete classes')
 
     def getCvar(self, cvarName):
         """Read a server var"""
@@ -889,7 +880,7 @@ class AbstractParser(b3.parser.Parser):
         
         try:
             words = self.write(('vars.%s' % cvarName,))
-        except FrostbiteCommandFailedError, err:
+        except CommandFailedError, err:
             self.error(err)
             return
         self.debug('Get cvar %s = %s', cvarName, words)
@@ -910,30 +901,30 @@ class AbstractParser(b3.parser.Parser):
         self.debug('Set cvar %s = \'%s\'', cvarName, value)
         try:
             self.write(('vars.%s' % cvarName, value))
-        except FrostbiteCommandFailedError, err:
+        except CommandFailedError, err:
             self.error(err)
 
     def checkVersion(self):
-        raise NotImplemented('checkVersion must be implemented in concrete classes')
+        raise NotImplementedError('checkVersion must be implemented in concrete classes')
         
     def getServerVars(self):
-        raise NotImplemented('getServerVars must be implemented in concrete classes')
+        raise NotImplementedError('getServerVars must be implemented in concrete classes')
 
     def getClient(self, cid, guid=None):
         """Get a connected client from storage or create it
         B3 CID   <--> ingame character name
         B3 GUID  <--> EA_guid
         """
-        raise NotImplemented('getClient must be implemented in concrete classes')
+        raise NotImplementedError('getClient must be implemented in concrete classes')
     
     def getTeam(self, team):
         """convert frostbite team numbers to B3 team numbers"""
-        raise NotImplemented('getTeam must be implemented in concrete classes')
+        raise NotImplementedError('getTeam must be implemented in concrete classes')
         
     def getServerInfo(self):
         """query server info, update self.game and return query results
         """
-        raise NotImplemented('getServerInfo must be implemented in concrete classes')
+        raise NotImplementedError('getServerInfo must be implemented in concrete classes')
 
         
     def getNextMap(self):
@@ -992,12 +983,12 @@ class AbstractParser(b3.parser.Parser):
                 if m.find(data) != -1:
                     shortmaplist.append(m)
             if len(shortmaplist) > 0:
-                shortmaplist.sort(key=lambda map: levenshteinDistance(data, string.replace(map.strip())))
+                shortmaplist.sort(key=lambda _map: levenshteinDistance(data, string.replace(_map.strip())))
                 self.debug("shortmaplist sorted by distance : %s" % shortmaplist)
                 match = shortmaplist[:3]
             else:
                 easyNames = supportedEasyNames.keys()
-                easyNames.sort(key=lambda map: levenshteinDistance(data, map.strip()))
+                easyNames.sort(key=lambda _map: levenshteinDistance(data, _map.strip()))
                 self.debug("maplist sorted by distance : %s" % easyNames)
                 match = easyNames[:3]
         return match
