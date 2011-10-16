@@ -403,14 +403,27 @@ class Iourt41Parser(AbstractParser):
 
     def pluginsStarted(self):
         # initialize connected clients
-        player_teams = self.getPlayerTeams()
         plist = self.getPlayerList()
         for cid in plist.keys():
             userinfostring = self.queryClientUserInfoByCid(cid)
             if userinfostring:
                 self.OnClientuserinfo(None, userinfostring)
+        
+        player_teams = {}
+        tries = 0
+        while tries < 3:
+            try:
+                tries += 1
+                player_teams = self.getPlayerTeams()
+                break
+            except Exception, err:
+                if tries < 3:
+                    self.warning(err)
+                else:
+                    self.error("cannot fix players teams : %s" % err) 
+        for cid in plist.keys():
             client = self.clients.getByCID(cid)
-            if client:
+            if client and client.cid in player_teams:
                 newteam = player_teams[client.cid]
                 if newteam != client.team:
                     self.debug('Fixing client team for %s : %s is now %s' % (client.name, client.team, newteam))
