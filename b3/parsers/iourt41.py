@@ -140,10 +140,11 @@
 # 29/09/2011 - 1.11.2 - Courgette
 # * fix MOD_TELEFRAG attacker on kill event to prevent people from being considered
 #   as tkers in such cases.
-#
+# 15/10/2011 - 1.11.3 - Courgette
+# * better team recognition of existing players at B3 start
 
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.11.2'
+__version__ = '1.11.3'
 
 from b3.parsers.q3a.abstractParser import AbstractParser
 import re, string, threading, time, os, thread
@@ -372,9 +373,9 @@ class Iourt41Parser(AbstractParser):
         #    self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
 
         # get map from the status rcon command
-        map = self.getMap()
+        map_name = self.getMap()
         if map:
-            self.game.mapName = map
+            self.game.mapName = map_name
             self.info('map is: %s'%self.game.mapName)
 
         # get gamepaths/vars
@@ -403,11 +404,31 @@ class Iourt41Parser(AbstractParser):
     def pluginsStarted(self):
         # initialize connected clients
         plist = self.getPlayerList()
-        for cid, c in plist.iteritems():
+        for cid in plist.keys():
             userinfostring = self.queryClientUserInfoByCid(cid)
             if userinfostring:
                 self.OnClientuserinfo(None, userinfostring)
-        self.CorrectPlayersTeam()
+        
+        player_teams = {}
+        tries = 0
+        while tries < 3:
+            try:
+                tries += 1
+                player_teams = self.getPlayerTeams()
+                break
+            except Exception, err:
+                if tries < 3:
+                    self.warning(err)
+                else:
+                    self.error("cannot fix players teams : %s" % err) 
+        for cid in plist.keys():
+            client = self.clients.getByCID(cid)
+            if client and client.cid in player_teams:
+                newteam = player_teams[client.cid]
+                if newteam != client.team:
+                    self.debug('Fixing client team for %s : %s is now %s' % (client.name, client.team, newteam))
+                    setattr(client, 'team', newteam)
+            
 
     def getLineParts(self, line):
         line = re.sub(self._lineClear, '', line, 1)
@@ -1393,8 +1414,11 @@ class Iourt41Parser(AbstractParser):
                 self.OnClientuserinfo(None, userinfostring)
             return self.clients.getByCID(cid)
 
-    def CorrectPlayersTeam(self):
-        """/rcon players
+    def getPlayerTeams(self):
+        """return a dict having cid as keys and a B3 team as value for
+        as many slots as we can get a team for.
+        
+        /rcon players
         Map: ut4_heroic_beta1
         Players: 16
         Scores: R:51 B:92
@@ -1414,26 +1438,29 @@ class Iourt41Parser(AbstractParser):
         13: {'OuT'}ToinetoX RED k:6 d:13 ping:67 81.48.189.135:27960
         14: GibsonSG BLUE k:-1 d:2 ping:37 84.60.3.67:27960
         15: Kjeldor BLUE k:16 d:9 ping:80 85.246.3.196:50851
-        """
-        """
+
         NOTE: this won't work fully if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
         """
-        data = self.write('players')
-        if not data:
-            return None
-
-        for line in data.split('\n')[3:]:
+        player_teams = {}
+        letters2slots = {'A': '0', 'C': '2', 'B': '1', 'E': '4', 'D': '3', 'G': '6', 'F': '5', 'I': '8', 'H': '7', 'K': '10', 'J': '9', 'M': '12', 'L': '11', 'O': '14', 'N': '13', 'Q': '16', 'P': '15', 'S': '18', 'R': '17', 'U': '20', 'T': '19', 'W': '22', 'V': '21', 'Y': '24', 'X': '23', 'Z': '25'}
+        
+        players_data = self.write('players')
+        for line in players_data.split('\n')[3:]:
             self.debug(line.strip())
             m = re.match(self._rePlayerScore, line.strip())
-            if m:
-                client = self.clients.getByCID(int(m.group('slot')))
-                if client:
-                    newteam = self.getTeam(m.group('team'))
-                    if newteam != client.team:
-                        self.debug('Fixing client team for %s : %s is now %s' %(m.group('name'), client.team, newteam))
-                        setattr(client, 'team', newteam)
-                else:
-                    self.debug('no client found for slot %s' % m.group('slot'))
+            if m and line.strip() != '0:  FREE k:0 d:0 ping:0':
+                cid = m.group('slot')
+                team = self.getTeam(m.group('team'))
+                player_teams[cid] = team
+
+        g_blueteamlist = self.getCvar('g_blueteamlist')
+        for letter in g_blueteamlist.getString():
+            player_teams[letters2slots[letter]] = b3.TEAM_BLUE
+
+        g_redteamlist = self.getCvar('g_redteamlist')
+        for letter in g_redteamlist.getString():
+            player_teams[letters2slots[letter]] = b3.TEAM_RED
+        return player_teams
 
     def _getDamagePoints(self, weapon, hitloc):
         try:
