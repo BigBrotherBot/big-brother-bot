@@ -640,7 +640,7 @@ class AbstractParser(b3.parser.Parser):
                         players[str(m.group('slot'))] = d
                         
                     else:
-                        self.console.debug('Duplicate or Incorrect slot number - client ignored %s lastslot %s' % (m.group('slot'), lastslot)
+                        self.console.debug('Duplicate or Incorrect slot number - client ignored %s lastslot %s' % (m.group('slot'), lastslot))
 
         return players
 
