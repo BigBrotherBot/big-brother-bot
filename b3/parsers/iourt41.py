@@ -374,7 +374,7 @@ class Iourt41Parser(AbstractParser):
 
         # get map from the status rcon command
         map_name = self.getMap()
-        if map:
+        if map_name:
             self.game.mapName = map_name
             self.info('map is: %s'%self.game.mapName)
 
