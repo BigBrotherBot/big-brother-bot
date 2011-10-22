@@ -20,26 +20,19 @@
 # CHANGELOG
 # 
 #
-from b3.parsers.frostbite2.abstractParser import AbstractParser
-from b3.parsers.frostbite2.util import PlayerInfoBlock
-import b3.events
 __author__  = 'Courgette'
 __version__ = '0.0'
 
+import time
+import b3.events
+from b3.parsers.frostbite2.abstractParser import AbstractParser
+from b3.parsers.frostbite2.util import PlayerInfoBlock
+import b3.functions
 
 SAY_LINE_MAX_LENGTH = 100
 
 SQUAD_NOSQUAD = 8
 SQUAD_ALPHA = 0
-
-GAME_MODES_NAMES = {
-    "ConquestLarge0": "Conquest64",
-    "ConquestSmall0": "Conquest",
-    "RushLarge0": "Rush",
-    "SquadRush0": "Squad Rush",
-    "SquadDeathMatch0": "Squad Deathmatch",
-    "TeamDeathMatch0": "Team Deathmatch",
-    }
 
 class Bf3Parser(AbstractParser):
     gameName = 'bf3'
@@ -164,18 +157,7 @@ class Bf3Parser(AbstractParser):
     #    
     ###############################################################################################
 
-    def saybig(self, msg):
-        """\
-        broadcast a message to all players in a way that will catch their attention.
-        """
-        return self.say(msg)
 
-        
-    def getPlayerPings(self):
-        """Ask the server for a given client's pings
-        """
-        # TODO: implements getPlayerPings when pings available on admin.listPlayers
-        return {}
 
     ###############################################################################################
     #
@@ -206,71 +188,22 @@ class Bf3Parser(AbstractParser):
             if cid == 'Server':
                 return self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
             if guid:
-                client = self.clients.newClient(cid, guid=guid, name=cid, team=b3.TEAM_UNKNOWN, teamId=None, squad=None)
-            else:
-                # must be the first time we see this client
-                # query client info
-                words = self.write(('admin.listPlayers', 'player', cid))
-                pib = PlayerInfoBlock(words)
-                if len(pib) == 0:
-                    self.debug('no such client found')
-                    return None
-                p = pib[0]
-                if 'guid' in p: 
-                    cid = p['name']
-                    name = p['name']
-                    guid = p['guid']
-                    teamId = p['teamId']
-                    squadId = p['squadId']
-                    client = self.clients.newClient(cid, guid=guid, name=name, team=self.getTeam(teamId), teamId=int(teamId), squad=squadId, data=p)
-                    self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
+                client = self.clients.newClient(cid, guid=guid, name=cid, team=b3.TEAM_UNKNOWN, teamId=SQUAD_NOSQUAD)
         return client
 
     def getHardName(self, mapname):
         """ Change real name to level name """
         mapname = mapname.lower()
-        if mapname == 'grand bazaar':
-            return 'MP_001'
-        elif mapname == 'teheran highway':
-            return 'MP_003'
-        elif mapname == 'caspian border':
-            return 'MP_007'
-        elif mapname == 'seine crossing':
-            return 'MP_011'
-        elif mapname == 'operation firestorm':
-            return 'MP_012'
-        elif mapname == 'damavand peak':
-            return 'MP_013'
-        elif mapname == 'noshahar canals':
-            return 'MP_017'
-        elif mapname == 'kharg island':
-            return 'MP_018'
-        elif mapname == 'operation metro':
-            return 'MP_Subway'
+        if mapname.startswith('subway'):
+            return 'Levels/MP_Subway/MP_Subway'
         else:
             self.warning('unknown level name \'%s\'. Please make sure you have entered a valid mapname' % mapname)
             return mapname
 
     def getEasyName(self, mapname):
         """ Change levelname to real name """
-        if mapname == 'MP_001':
-            return 'Grand Bazaar'
-        elif mapname == 'MP_003':
-            return 'Teheran Highway'
-        elif mapname == 'MP_007':
-            return 'Caspian Border'
-        elif mapname == 'MP_011':
-            return 'Seine Crossing'
-        elif mapname == 'MP_012':
-            return 'Operation Firestorm'
-        elif mapname == 'MP_013':
-            return 'Damavand Peak'
-        elif mapname == 'MP_017':
-            return 'Noshahar Canals'
-        elif mapname == 'MP_018':
-            return 'Kharg Island'
-        elif mapname == 'MP_Subway':
-            return 'Operation Metro'
+        if mapname.lower().startswith('levels/mp_subway/'):
+            return 'Subway'
         else:
             self.warning('unknown level name \'%s\'. Please report this on B3 forums' % mapname)
             return mapname
