@@ -405,7 +405,7 @@ class AdminPlugin(b3.plugin.Plugin):
             if len(matches) > 1:
                 names = []
                 for _p in matches:
-                    names.append('[^2%s^7] %s' % (_p.cid, _p.name))
+                    names.append('^7%s [^2%s^7]' % (_p.name, _p.cid))
 
                 if client:
                     client.message(self.getMessage('players_matched', client_id, ', '.join(names)))
@@ -614,6 +614,8 @@ class AdminPlugin(b3.plugin.Plugin):
             if sclient != client:
                 client.message('^7Un-Masked %s' % sclient.name)
             sclient.message('^7Un-Masked')
+
+
 
     def cmd_clear(self, data, client, cmd=None):
         """\
@@ -837,7 +839,7 @@ class AdminPlugin(b3.plugin.Plugin):
     def doList(self, client, cmd):
         names = []
         for c in self.console.clients.getClientsByLevel():
-            names.append(self.getMessage('player_id', c.cid, c.name))
+            names.append(self.getMessage('player_id', c.name, c.cid))
 
         cmd.sayLoudOrPM(client, ', '.join(names))
         return True
