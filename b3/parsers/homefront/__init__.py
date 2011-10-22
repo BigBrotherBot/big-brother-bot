@@ -59,7 +59,6 @@
 # 2011-07-14 : 1.1.1
 # * changes to support new dedicated server version 420003
 # * implemented getPlayerPings()
-# * added new DLC map names
 # 2011-08-27 : 1.1.2
 # * Added DLC maps that come with patch 1.0.5
 # 2011-08-31 : 1.1.3
