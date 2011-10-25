@@ -102,12 +102,12 @@ def EncodeClientResponse(sequence, words):
     
 def printPacket(packet):
 
-    if (packet[0]):
+    if packet[0]:
         print "IsFromServer, ",
     else:
         print "IsFromClient, ",
     
-    if (packet[1]):
+    if packet[1]:
         print "Response, ",
     else:
         print "Request, ",
@@ -148,7 +148,7 @@ def receivePacket(_socket, receiveBuffer):
         #Make sure we raise a socket error when the socket is hanging on a loose end (receiving no data after server restart) 
         if not data:
             raise socket.error('No data received - Remote end unexpectedly closed socket')
-        receiveBuffer += data;
+        receiveBuffer += data
 
     packetSize = DecodeInt32(receiveBuffer[4:8])
 
@@ -284,7 +284,6 @@ class FrostbiteServer(threading.Thread):
         self.pending_commands = {}
         self.__command_reply_event = threading.Event()
         self.observers = set()
-        self.working = True
 
     #===============================================================================
     # 
@@ -379,6 +378,8 @@ class FrostbiteServer(threading.Thread):
         """block until response to for given command_id has been received or until timeout is reached."""
         expire_time = time.time() + self.command_timeout
         while command_id in self.pending_commands and self.pending_commands[command_id] is None:
+            if not self.connected:
+                raise NetworkError("Lost connection to Frostbite2 server")
             if time.time() >= expire_time:
                 del self.pending_commands[command_id]
                 raise CommandTimeoutError("Did not receive any response for sequence #%i." % command_id)

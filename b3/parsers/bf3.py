@@ -22,6 +22,7 @@
 #
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock
+import b3
 import b3.events
 __author__  = 'Courgette'
 __version__ = '0.0'
@@ -57,12 +58,10 @@ class Bf3Parser(AbstractParser):
         'hud',
         'killCam',
         'killRotation',
-        'maxPlayerCount',
+        'maxPlayers',
         'minimap',
         'minimapSpotting',
         'nameTag',
-        'noInteractivityRoundBan',
-        'noInteractivityTimeoutTime',
         'onlySquadLeaderSpawn',
         'playerManDownTime',
         'playerRespawnTime',
@@ -212,7 +211,7 @@ class Bf3Parser(AbstractParser):
                 # query client info
                 words = self.write(('admin.listPlayers', 'player', cid))
                 pib = PlayerInfoBlock(words)
-                if len(pib) == 0:
+                if not len(pib):
                     self.debug('no such client found')
                     return None
                 p = pib[0]
@@ -280,22 +279,22 @@ class Bf3Parser(AbstractParser):
         def getCvar(cvar):
             try:
                 return self.getCvar(cvar).getString()
-            except:
+            except Exception:
                 pass
         def getCvarBool(cvar):
             try:
                 return self.getCvar(cvar).getBoolean()
-            except:
+            except Exception:
                 pass
         def getCvarInt(cvar):
             try:
                 return self.getCvar(cvar).getInt()
-            except:
+            except Exception:
                 pass
         def getCvarFloat(cvar):
             try:
                 return self.getCvar(cvar).getFloat()
-            except:
+            except Exception:
                 pass
         self.game['3dSpotting'] = getCvarBool('3dSpotting')
         self.game['3pCam'] = getCvarBool('3pCam')
@@ -308,15 +307,13 @@ class Bf3Parser(AbstractParser):
         self.game['hud'] = getCvarBool('hud')
         self.game['killCam'] = getCvarBool('killCam')
         self.game['killRotation'] = getCvarBool('killRotation')
-        self.game['maxPlayerCount'] = getCvarInt('maxPlayerCount')
+        self.game['maxPlayers'] = getCvarInt('maxPlayers')
         self.game['minimap'] = getCvarBool('minimap')
         self.game['minimapSpotting'] = getCvarBool('minimapSpotting')
         self.game['nameTag'] = getCvarBool('nameTag')
-        self.game['noInteractivityRoundBan'] = getCvar('noInteractivityRoundBan') # TODO: check cvar type
-        self.game['noInteractivityTimeoutTime'] = getCvar('noInteractivityTimeoutTime') # TODO: check cvar type
-        self.game['onlySquadLeaderSpawn'] = getCvar('onlySquadLeaderSpawn') # TODO: wtf responds 100 ?!?
-        self.game['playerManDownTime'] = getCvar('playerManDownTime') # TODO: wtf responds 100 ?!?
-        self.game['playerRespawnTime'] = getCvar('playerRespawnTime') # TODO: wtf responds 100 ?!?
+        self.game['onlySquadLeaderSpawn'] = getCvarBool('onlySquadLeaderSpawn')
+        self.game['playerManDownTime'] = getCvarInt('playerManDownTime')
+        self.game['playerRespawnTime'] = getCvarInt('playerRespawnTime')
         self.game['regenerateHealth'] = getCvarBool('regenerateHealth')
         self.game['roundRestartPlayerCount'] = getCvarInt('roundRestartPlayerCount')
         self.game['roundStartPlayerCount'] = getCvarInt('roundStartPlayerCount')
@@ -325,17 +322,17 @@ class Bf3Parser(AbstractParser):
         self.game['serverMessage'] = getCvar('serverMessage')
         self.game['soldierHealth'] = getCvarInt('soldierHealth')
         self.game['teamKillCountForKick'] = getCvarInt('teamKillCountForKick')
-        self.game['teamKillKickForBan'] = getCvarInt('teamKillKickForBan') # TODO: check cvar type
+        self.game['teamKillKickForBan'] = getCvarInt('teamKillKickForBan')
         self.game['teamKillValueDecreasePerSecond'] = getCvarFloat('teamKillValueDecreasePerSecond')
         self.game['teamKillValueForKick'] = getCvarFloat('teamKillValueForKick')
         self.game['teamKillValueIncrease'] = getCvarFloat('teamKillValueIncrease')
         self.game['vehicleSpawnAllowed'] = getCvarBool('vehicleSpawnAllowed')
-        self.game['vehicleSpawnDelay'] = getCvar('vehicleSpawnDelay') # TODO: check cvar type
+        self.game['vehicleSpawnDelay'] = getCvarInt('vehicleSpawnDelay')
         self.game.timeLimit = self.game.gameModeCounter
         self.game.fragLimit = self.game.gameModeCounter
         self.game.captureLimit = self.game.gameModeCounter
-        
-    
+
+
     def getServerInfo(self):
         """query server info, update self.game and return query results
         Response: OK,serverName,numPlayers,maxPlayers,level,gamemode,[teamscores],isRanked,hasPunkbuster,hasPassword,serverUptime,roundTime
@@ -347,6 +344,7 @@ class Bf3Parser(AbstractParser):
         """
         data = self.write(('serverInfo',))
         data2 = Bf3Parser.decodeServerinfo(data)
+        self.debug("decoded server info : %r" % data2)
         self.game.sv_hostname = data2['serverName']
         self.game.sv_maxclients = int(data2['maxPlayers'])
         self.game.mapName = data2['level']
@@ -370,13 +368,17 @@ class Bf3Parser(AbstractParser):
     @staticmethod
     def decodeServerinfo(data):
         """
-        "NL i3D.net - BigBrotherBot" "0" "48" "ConquestLarge0" "MP_007" "" "" "2" "300" "300" "0" "" "true" "true" "false" "1074" "1050"
-        'NL i3D.net - BigBrotherBot', '0', '48', 'ConquestLarge0', 'MP_007', '', '', '2', '300', '300', '0', '', 'true', 'true', 'false', '4351', '4327']
-        ['PL G4G.pl [DEV TEST 2]', '0', '32', 'RushLarge0', 'MP_Subway', '', '', '0', '0', '', 'true', 'true', 'false', '7690', '7688']
+        <serverName: string> <current playercount: integer> <max playercount: integer> <current gamemode: string>
+        <current map: string> <roundsPlayed: integer> <roundsTotal: string> <scores: team scores>
+        <onlineState: online state> <ranked: boolean> <punkBuster: boolean> <hasGamePassword: boolean>
+        <serverUpTime: seconds> <roundTime: seconds>
+
+        ['BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '0', '2', '2', '300', '300', '0', '', 'true', 'true', 'false', '5148', '455']
+
         """
         numOfTeams = 0
-        if data[5] != '':
-            numOfTeams = int(data[5])
+        if data[7] != '':
+            numOfTeams = int(data[7])
         
         response = {
             'serverName': data[0],
@@ -384,25 +386,29 @@ class Bf3Parser(AbstractParser):
             'maxPlayers': data[2],
             'gamemode': data[3],
             'level': data[4],
-            'numOfTeams': data[5],
+            'roundsPlayed': data[5],
+            'roundsTotal': data[6],
+            'numTeams': data[7],
+            # depending on numTeams, there might be between 0 and 4 team scores here
             'team1score': None,
             'team2score': None,
             'team3score': None,
             'team4score': None,
-#            'gameModeCounter': data[5 + numOfTeams + 1],
-#            'isRanked': data[5 + numOfTeams + 2],
-#            'hasPunkbuster': data[5 + numOfTeams + 3],
-#            'hasPassword': data[5 + numOfTeams + 4],
-#            'serverUptime': data[5 + numOfTeams + 5],
-#            'roundTime': data[5 + numOfTeams + 6],
+            'targetScore': data[-7],
+            'onlineState': data[-6],
+            'isRanked': data[-5],
+            'hasPunkbuster': data[-4],
+            'hasPassword': data[-3],
+            'serverUptime': data[-2],
+            'roundTime': data[-1],
         }
-#        if int(data[5]) >= 1:
-#            response['team1score'] = data[6]
-#        if int(data[5]) >= 2:
-#            response['team2score'] = data[7]
-#        if int(data[5]) >= 3:
-#            response['team3score'] = data[8]
-#        if int(data[5]) == 4:
-#            response['team4score'] = data[9]
+        if numOfTeams >= 1:
+            response['team1score'] = data[8]
+        if numOfTeams >= 2:
+            response['team2score'] = data[9]
+        if numOfTeams >= 3:
+            response['team3score'] = data[10]
+        if numOfTeams == 4:
+            response['team4score'] = data[11]
         return response
 
