@@ -938,21 +938,16 @@ class AbstractParser(b3.parser.Parser):
 
         
     def getNextMap(self):
-        """Return the name of the next map
-        """
-        levelnames = self.write(('mapSequencer.list',))
-        self.getServerInfo()
-        currentName = self.game.mapName
-        if len(levelnames) == 0:
-            return self.getEasyName(currentName)
-        elif len(levelnames) == 1:
-            return self.getEasyName(levelnames[0])
-        elif currentName not in levelnames:
-            return self.getEasyName(levelnames[0])
-        else:
-            nextmap = levelnames[(levelnames.index(currentName) + 1) % len(levelnames)]
-            return self.getEasyName(nextmap)
-        
+        """Return the name of the next map and gamemode"""
+        levelnames = self.write(('mapList.list',))
+        mapnames = levelnames[2::3]
+        gamemodenames = levelnames[3::3]
+
+        mapIndices = self.write(('mapList.getMapIndices', ))
+        nextmap = mapnames[int(mapIndices[1])]
+        nextgamemode = gamemodenames[int(mapIndices[1])]
+
+        return ('%s (%s)' % (self.getEasyName(nextmap), self.getGameMode(nextgamemode)))
 
     def getSupportedMapIds(self):
         """return a list of supported levels for the current game mod"""
