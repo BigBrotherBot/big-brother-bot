@@ -808,7 +808,9 @@ class AbstractParser(b3.parser.Parser):
         """\
         load the next map/level
         """
-        self.write(('mapSequencer.runNextMap'))
+        mapIndices = self.write(('mapList.getMapIndices', ))
+        self.write(('mapList.setNextMapIndex', mapIndices[1]))
+        self.write(('mapList.endRound', '1')) #TODO: can we declare the currently winning team here?
 
 
     def changeMap(self, map):
