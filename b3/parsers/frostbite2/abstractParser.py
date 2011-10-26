@@ -60,7 +60,7 @@ class AbstractParser(b3.parser.Parser):
     _gameServerVars = () # list available cvar
 
     _commands = {}
-    _commands['message'] = ('admin.say', '%(message)s', 'player', '%(cid)s')
+    _commands['message'] = ('admin.say', '%(message)s', 'all', '%(cid)s') # FIXME : send private messages when available
     _commands['say'] = ('admin.say', '%(message)s', 'all')
     _commands['kick'] = ('admin.kickPlayer', '%(cid)s', '%(reason)s')
     _commands['ban'] = ('banList.add', 'guid', '%(guid)s', 'perm', '%(reason)s')
