@@ -792,10 +792,15 @@ class AbstractParser(b3.parser.Parser):
         """Return the map list for the current rotation. (as easy map names)
         This does not return all available maps
         """
-        levelnames = self.write(('mapSequencer.list',))
+        levelnames = self.write(('mapList.list',))
+        mapnames = levelnames[2::3]
+        gamemodenames = levelnames[3::3]
         mapList = []
-        for l in levelnames:
-            mapList.append(self.getEasyName(l))
+
+        n = 0
+        for l in mapnames:
+            mapList.append('%s (%s)' % (self.getEasyName(l), self.getGameMode(gamemodenames[n])))
+            n += 1
         return mapList
 
 
@@ -881,6 +886,10 @@ class AbstractParser(b3.parser.Parser):
     def getEasyName(self, mapname):
         """ Change map id to map human name """
         raise NotImplementedError('getEasyName must be implemented in concrete classes')
+
+    def getGameMode(self, gamemode):
+        """ Get game mode in real name """
+        raise NotImplementedError('getGameMode must be implemented in concrete classes')
 
     def getCvar(self, cvarName):
         """Read a server var"""
