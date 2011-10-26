@@ -274,6 +274,15 @@ class Bf3Parser(AbstractParser):
             self.warning('unknown level name \'%s\'. Please report this on B3 forums' % mapname)
             return mapname
 
+    def getGameMode(self, gamemode_id):
+        """ Get game mode in real name """
+        if gamemode_id in GAME_MODES_NAMES:
+            return GAME_MODES_NAMES[gamemode_id]
+        else:
+            self.warning("unknown gamemode \"%s\"" % gamemode_id)
+            # fallback by sending gamemode id
+            return gamemode_id
+
     def getServerVars(self):
         """Update the game property from server fresh data"""
         def getCvar(cvar):
