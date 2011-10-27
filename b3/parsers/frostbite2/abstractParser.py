@@ -523,13 +523,10 @@ class AbstractParser(b3.parser.Parser):
             self.warning('OnPBNewConnection: we\'ve been unable to get the client')
 
     def OnPBLostConnection(self, match, data):
-        """PB notifies us it lost track of a player. This is the only change
-        we have to save the ip of clients.
+        """PB notifies us it lost track of a player.
         This event is triggered after the OnPlayerLeave, so normaly the client
-        is not connected. Anyway our task here is to save data into db not to 
+        is not connected. Anyway our task here is to raise an event not to
         connect/disconnect the client.
-        
-        Part of this code is obsolete since R15, IP is saved to DB on OnPBNewConnection()
         """
         name = match.group('name')
         dict = {
@@ -539,20 +536,6 @@ class AbstractParser(b3.parser.Parser):
             'pbuid': match.group('pbuid'),
             'name': name
         }
-        """ Code Obsolete since R15:
-        client = self.clients.getByCID(dict['name'])
-        if not client:
-            matchingClients = self.storage.getClientsMatching( {'pbid': match.group('pbuid')} )
-            if matchingClients and len(matchingClients) == 0:
-                client = matchingClients[0]
-        if not client:
-            self.error('unable to find client %s. weird' %name )
-        else:
-            # update client data with PB id and IP
-            client.pbid = dict['pbuid']
-            client.ip = dict['ip']
-            client.save()
-        """
         self.verbose('PB lost connection: %s' %dict)
         return b3.events.Event(b3.events.EVT_PUNKBUSTER_LOST_PLAYER, dict)
 
