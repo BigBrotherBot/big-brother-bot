@@ -18,6 +18,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    28/10/2012 - 1.4.0 - courgette
+#    * Client.save() now raises a EVT_CLIENT_UPDATE event
 #    16/07/2011 - 1.3.6 - xlr8or
 #    * Client.bot added - ability to identify a bot
 #    08/04/2011 - 1.3.5 - Courgette
@@ -76,7 +78,7 @@ import time
 import traceback
 
 __author__  = 'ThorN'
-__version__ = '1.3.6'
+__version__ = '1.4.0'
 
 
 class ClientVar(object):
@@ -684,6 +686,8 @@ class Client(object):
             # can't save a client without a guid
             return False
         else:
+            if console:
+                self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_UPDATE, data=self, client=self))
             return self.console.storage.setClient(self)
 
     def auth(self):
