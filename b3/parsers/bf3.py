@@ -148,7 +148,7 @@ class Bf3Parser(AbstractParser):
         Effect: Player might have changed squad
         NOTE: this event also happens after a player left the game
         """
-        client = self.getClient(data[0])
+        client = self.clients.getByCID(data[0])
         if client:
             client.team = self.getTeam(data[1]) # .team setter will send team change event
             client.teamId = int(data[1])
