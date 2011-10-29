@@ -61,6 +61,8 @@ class AbstractParser(b3.parser.Parser):
 
     _commands = {}
     _commands['message'] = ('admin.say', '%(message)s', 'all', '%(cid)s') # FIXME : send private messages when available
+    _commands['saySquad'] = ('admin.say', '%(message)s', 'squad', '%(teamId)s', '%(squadId)s')
+    _commands['sayTeam'] = ('admin.say', '%(message)s', 'team', '%(teamId)s')
     _commands['say'] = ('admin.say', '%(message)s', 'all')
     _commands['kick'] = ('admin.kickPlayer', '%(cid)s', '%(reason)s')
     _commands['ban'] = ('banList.add', 'guid', '%(guid)s', 'perm', '%(reason)s')
