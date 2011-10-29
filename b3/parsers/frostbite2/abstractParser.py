@@ -35,23 +35,26 @@ from b3.functions import soundex, levenshteinDistance
 
 SAY_LINE_MAX_LENGTH = 100
 
+# how long should the bot try to connect to the Frostbite server before giving out (in second)
+GAMESERVER_CONNECTION_WAIT_TIMEOUT = 600
+
 class AbstractParser(b3.parser.Parser):
     """
-    An abstract base class to help with developing frostbite2 parsers 
+    An abstract base class to help with developing frostbite2 parsers
     """
     gameName = None
     OutputClass = FrostbiteRcon
     _serverConnection = None
     _nbConsecutiveConnFailure = 0
-    
+
     frostbite_event_queue = Queue.Queue()
     sayqueue = Queue.Queue()
     sayqueuelistener = None
 
     # frostbite2 engine does not support color code, so we need this property
     # in order to get stripColors working
-    _reColor = re.compile(r'(\^[0-9])') 
-    
+    _reColor = re.compile(r'(\^[0-9])')
+
     _settings = {}
     _settings['line_length'] = 65
     _settings['min_wrap_length'] = 60
@@ -73,7 +76,7 @@ class AbstractParser(b3.parser.Parser):
 
     _eventMap = {
     }
-    
+
     _punkbusterMessageFormats = (
         (re.compile(r'^(?P<servername>.*): PunkBuster Server for .+ \((?P<version>.+)\)\sEnabl.*$'), 'OnPBVersion'),
         (re.compile(r'^(?P<servername>.*): Running PB Scheduled Task \(slot #(?P<slot>\d+)\)\s+(?P<task>.*)$'), 'OnPBScheduledTask'),
@@ -84,9 +87,9 @@ class AbstractParser(b3.parser.Parser):
      )
 
     PunkBuster = None
-           
-           
-           
+
+
+
     def run(self):
         """Main worker thread for B3"""
         self.bot('Start listening ...')
@@ -96,6 +99,7 @@ class AbstractParser(b3.parser.Parser):
 
         self.updateDocumentation()
 
+        ## the block below can activate additional logging for the FrostbiteServer class
 #        import logging
 #        frostbiteServerLogger = logging.getLogger("FrostbiteServer")
 #        for handler in logging.getLogger('output').handlers:
@@ -106,6 +110,7 @@ class AbstractParser(b3.parser.Parser):
             if not self._serverConnection or not self._serverConnection.connected:
                 self.setup_frostbite_connection()
             try:
+                self.verbose2("waiting for game server event")
                 added, expire, packet = self.frostbite_event_queue.get(timeout=1)
                 self.routeFrostbitePacket(packet)
             except Queue.Empty:
@@ -119,19 +124,25 @@ class AbstractParser(b3.parser.Parser):
 
             if self.exitcode:
                 sys.exit(self.exitcode)
-                
+
     def setup_frostbite_connection(self):
         self.verbose('Connecting to frostbite2 server ...')
-        if self._serverConnection and self._serverConnection.isAlive():
-            try:
-                self._serverConnection.close()
-            except Exception:
-                pass
-            self._serverConnection.stop()
-
+        if self._serverConnection:
+            self.close_frostbite_connection()
         self._serverConnection = FrostbiteServer(self._rconIp, self._rconPort, self._rconPassword)
-        self._serverConnection.start()
-        time.sleep(.5)
+
+        timeout = GAMESERVER_CONNECTION_WAIT_TIMEOUT + time.time()
+        while time.time() < timeout and not self._serverConnection.connected:
+            self.verbose("retrying to connect to game server...")
+            time.sleep(2)
+            self.close_frostbite_connection()
+            self._serverConnection = FrostbiteServer(self._rconIp, self._rconPort, self._rconPassword)
+
+        if self._serverConnection is None or not self._serverConnection.connected:
+            self.error("Could not connect to Frostbite2 server")
+            self.close_frostbite_connection()
+            self.shutdown()
+            raise SystemExit()
 
         # listen for incoming game server events
         self._serverConnection.subscribe(self.OnFrosbiteEvent)
@@ -146,6 +157,17 @@ class AbstractParser(b3.parser.Parser):
         self.getServerVars()
         self.getServerInfo()
         self.clients.sync()
+
+    def close_frostbite_connection(self):
+        try:
+            self._serverConnection.close()
+        except Exception:
+            pass
+        try:
+            self._serverConnection.stop()
+        except Exception:
+            pass
+        self._serverConnection = None
 
     def OnFrosbiteEvent(self, packet):
         self.console(repr(packet))
