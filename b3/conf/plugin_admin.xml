@@ -96,7 +96,7 @@
 		<set name="temp_ban_self">^7%s ^7Can't ban yourself newb</set>
 		<set name="groups_in">^7%s^7 is in groups %s</set>
 		<set name="say">^7%s^7: %s</set>
-		<set name="player_id">^7[^2%s^7] %s^7</set>
+		<set name="player_id">^7%s [^2%s^7]</set>
 		<set name="seen">^7%s ^7was last seen on %s</set>
 		<set name="help_no_command">^7Command not found %s</set>
 		<set name="lookup_found">^7[^2@%s^7] %s^7 [^3%s^7]</set>
