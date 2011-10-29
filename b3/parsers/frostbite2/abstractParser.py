@@ -154,6 +154,7 @@ class AbstractParser(b3.parser.Parser):
         self.output.set_frostbite_server(self._serverConnection)
 
         self.checkVersion()
+        self.say('%s ^2[ONLINE]' % b3.version)
         self.getServerVars()
         self.getServerInfo()
         self.clients.sync()
