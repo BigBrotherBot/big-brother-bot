@@ -54,8 +54,8 @@ class AbstractParser(b3.parser.Parser):
     
     _settings = {}
     _settings['line_length'] = 65
-    _settings['min_wrap_length'] = 65
-    _settings['message_delay'] = 2
+    _settings['min_wrap_length'] = 60
+    _settings['message_delay'] = .8
 
     _gameServerVars = () # list available cvar
 
@@ -686,15 +686,23 @@ class AbstractParser(b3.parser.Parser):
         if client.cid is None:
             # ban by ip, this happens when we !permban @xx a player that is not connected
             self.debug('EFFECTIVE BAN : %s',self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
-            self.write(self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
-            if admin:
-                admin.message('banned: %s (@%s). His last ip (%s) has been added to banlist'%(client.exactName, client.id, client.ip))
+            try:
+                self.write(self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
+                self.write(('banList.save',))
+                if admin:
+                    admin.message('banned: %s (@%s). His last ip (%s) has been added to banlist'%(client.exactName, client.id, client.ip))
+            except CommandFailedError, err:
+                self.error(err)
         else:
             # ban by cid
             self.debug('EFFECTIVE BAN : %s',self.getCommand('ban', guid=client.guid, reason=reason[:80]))
-            self.write(self.getCommand('ban', cid=client.cid, reason=reason[:80]))
-            if admin:
-                admin.message('banned: %s (@%s) has been added to banlist'%(client.exactName, client.id))
+            self.write(('banList.save',))
+            try:
+                self.write(self.getCommand('ban', cid=client.cid, reason=reason[:80]))
+                if admin:
+                    admin.message('banned: %s (@%s) has been added to banlist'%(client.exactName, client.id))
+            except CommandFailedError, err:
+                self.error(err)
 
         if self.PunkBuster:
             self.PunkBuster.banGUID(client, reason)
@@ -708,9 +716,10 @@ class AbstractParser(b3.parser.Parser):
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
         self.debug('UNBAN: Name: %s, Ip: %s, Guid: %s' %(client.name, client.ip, client.guid))
         if client.ip:
-            response = self.write(self.getCommand('unbanByIp', ip=client.ip, reason=reason), needConfirmation=True)
-            #self.verbose(response)
-            if response == "OK":
+            try:
+                response = self.write(self.getCommand('unbanByIp', ip=client.ip, reason=reason), needConfirmation=True)
+                self.write(('banList.save',))
+                #self.verbose(response)
                 self.verbose('UNBAN: Removed ip (%s) from banlist' %client.ip)
                 if admin:
                     admin.message('Unbanned: %s. His last ip (%s) has been removed from banlist.' % (client.exactName, client.ip))
@@ -720,14 +729,25 @@ class AbstractParser(b3.parser.Parser):
                     fullreason = self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason))
                 if not silent and fullreason != '':
                     self.say(fullreason)
-        
-        response = self.write(self.getCommand('unban', guid=client.guid, reason=reason), needConfirmation=True)
-        #self.verbose(response)
-        if response == "OK":
+            except CommandFailedError, err:
+                if "NotInList" in err.message:
+                    pass
+                else:
+                    raise
+
+        try:
+            response = self.write(self.getCommand('unban', guid=client.guid, reason=reason), needConfirmation=True)
+            self.write(('banList.save',))
+            #self.verbose(response)
             self.verbose('UNBAN: Removed guid (%s) from banlist' %client.guid)
             if admin:
                 admin.message('Unbanned: Removed %s guid from banlist' % (client.exactName))
-        
+        except CommandFailedError, err:
+            if "NotInList" in err.message:
+                pass
+            else:
+                raise
+
         if self.PunkBuster:
             self.PunkBuster.unBanGUID(client)
 
@@ -754,8 +774,15 @@ class AbstractParser(b3.parser.Parser):
                 duration = 1440
 
             self.PunkBuster.kick(client, duration, reason)
-        
-        self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
+
+        try:
+            self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
+            self.write(('banList.save',))
+        except CommandFailedError, err:
+            if admin:
+                admin.message("server replied with error %s" % err.message[0])
+            else:
+                self.error(err)
         
         
         if not silent and fullreason != '':
