@@ -1032,7 +1032,9 @@ class AbstractParser(b3.parser.Parser):
 
     def getSupportedMapIds(self):
         """return a list of supported levels for the current game mod"""
-        return self.write(('mapSequencer.availableMaps'))
+        # TODO : test this once the command work in BF3
+        # TODO : to test this latter, remove getSupportedMapIds from bf3.py
+        return self.write(('mapList.availableMaps',))
 
     def getMapsSoundingLike(self, mapname):
         """found matching level names for the given mapname (which can either
