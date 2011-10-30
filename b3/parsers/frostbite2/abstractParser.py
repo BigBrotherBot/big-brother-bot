@@ -44,59 +44,55 @@ class AbstractParser(b3.parser.Parser):
 
     gameName = None
 
-    def __init__(self, config):
-        self.OutputClass = FrostbiteRcon
-        self._serverConnection = None
-        self._nbConsecutiveConnFailure = 0
+    OutputClass = FrostbiteRcon
+    _serverConnection = None
+    _nbConsecutiveConnFailure = 0
 
-        self.frostbite_event_queue = Queue.Queue()
-        self.sayqueue = Queue.Queue()
-        self.sayqueuelistener = None
+    frostbite_event_queue = Queue.Queue()
+    sayqueue = Queue.Queue()
+    sayqueuelistener = None
 
-        # frostbite2 engine does not support color code, so we need this property
-        # in order to get stripColors working
-        self._reColor = re.compile(r'(\^[0-9])')
+    # frostbite2 engine does not support color code, so we need this property
+    # in order to get stripColors working
+    _reColor = re.compile(r'(\^[0-9])')
 
-        self._settings = {
-            'line_length': 65,
-            'min_wrap_length': 60,
-            'message_delay': .8,
-            }
-
-        self._gameServerVars = () # list available cvar
-
-        self._commands = {
-            'message': ('admin.say', '%(message)s', 'all', '%(cid)s'), # FIXME : send private messages when available
-            'saySquad': ('admin.say', '%(message)s', 'squad', '%(teamId)s', '%(squadId)s'),
-            'sayTeam': ('admin.say', '%(message)s', 'team', '%(teamId)s'),
-            'say': ('admin.say', '%(message)s', 'all'),
-            'kick': ('admin.kickPlayer', '%(cid)s', '%(reason)s'),
-            'ban': ('banList.add', 'guid', '%(guid)s', 'perm', '%(reason)s'),
-            'banByIp': ('banList.add', 'ip', '%(ip)s', 'perm', '%(reason)s'),
-            'unban': ('banList.remove', 'guid', '%(guid)s'),
-            'unbanByIp': ('banList.remove', 'ip', '%(ip)s'),
-            'tempban': ('banList.add', 'guid', '%(guid)s', 'seconds', '%(duration)d', '%(reason)s'),
+    _settings = {
+        'line_length': 65,
+        'min_wrap_length': 60,
+        'message_delay': .8,
         }
 
-        self._eventMap = {
-        }
+    _gameServerVars = () # list available cvar
 
-        self._punkbusterMessageFormats = (
-            (re.compile(r'^(?P<servername>.*): PunkBuster Server for .+ \((?P<version>.+)\)\sEnabl.*$'), 'OnPBVersion'),
-            (re.compile(r'^(?P<servername>.*): Running PB Scheduled Task \(slot #(?P<slot>\d+)\)\s+(?P<task>.*)$'), 'OnPBScheduledTask'),
-            (re.compile(r'^(?P<servername>.*): Lost Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) (?P<pbuid>[^\s]+)\(-\)\s(?P<name>.+)$'), 'OnPBLostConnection'),
-            (re.compile(r'^(?P<servername>.*): Master Query Sent to \((?P<pbmaster>[^\s]+)\) (?P<ip>[^:]+)$'), 'OnPBMasterQuerySent'),
-            (re.compile(r'^(?P<servername>.*): Player GUID Computed (?P<pbid>[0-9a-fA-F]+)\(-\) \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+)\s(?P<name>.+)$'), 'OnPBPlayerGuid'),
-            (re.compile(r'^(?P<servername>.*): New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection')
-        )
+    _commands = {
+        'message': ('admin.say', '%(message)s', 'all', '%(cid)s'), # FIXME : send private messages when available
+        'saySquad': ('admin.say', '%(message)s', 'squad', '%(teamId)s', '%(squadId)s'),
+        'sayTeam': ('admin.say', '%(message)s', 'team', '%(teamId)s'),
+        'say': ('admin.say', '%(message)s', 'all'),
+        'kick': ('admin.kickPlayer', '%(cid)s', '%(reason)s'),
+        'ban': ('banList.add', 'guid', '%(guid)s', 'perm', '%(reason)s'),
+        'banByIp': ('banList.add', 'ip', '%(ip)s', 'perm', '%(reason)s'),
+        'unban': ('banList.remove', 'guid', '%(guid)s'),
+        'unbanByIp': ('banList.remove', 'ip', '%(ip)s'),
+        'tempban': ('banList.add', 'guid', '%(guid)s', 'seconds', '%(duration)d', '%(reason)s'),
+    }
 
-        self.PunkBuster = None
+    _eventMap = {
+    }
 
-        # flag to find out if we need to fire a EVT_GAME_ROUND_START event.
-        self._waiting_for_round_start = True
+    _punkbusterMessageFormats = (
+        (re.compile(r'^(?P<servername>.*): PunkBuster Server for .+ \((?P<version>.+)\)\sEnabl.*$'), 'OnPBVersion'),
+        (re.compile(r'^(?P<servername>.*): Running PB Scheduled Task \(slot #(?P<slot>\d+)\)\s+(?P<task>.*)$'), 'OnPBScheduledTask'),
+        (re.compile(r'^(?P<servername>.*): Lost Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) (?P<pbuid>[^\s]+)\(-\)\s(?P<name>.+)$'), 'OnPBLostConnection'),
+        (re.compile(r'^(?P<servername>.*): Master Query Sent to \((?P<pbmaster>[^\s]+)\) (?P<ip>[^:]+)$'), 'OnPBMasterQuerySent'),
+        (re.compile(r'^(?P<servername>.*): Player GUID Computed (?P<pbid>[0-9a-fA-F]+)\(-\) \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+)\s(?P<name>.+)$'), 'OnPBPlayerGuid'),
+        (re.compile(r'^(?P<servername>.*): New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection')
+    )
 
-        b3.parser.Parser.__init__(self, config)
+    PunkBuster = None
 
+    # flag to find out if we need to fire a EVT_GAME_ROUND_START event.
+    _waiting_for_round_start = True
 
 
 
@@ -121,7 +117,7 @@ class AbstractParser(b3.parser.Parser):
                 self.setup_frostbite_connection()
             try:
                 self.verbose2("waiting for game server event")
-                added, expire, packet = self.frostbite_event_queue.get(timeout=1)
+                added, expire, packet = self.frostbite_event_queue.get(timeout=10)
                 self.routeFrostbitePacket(packet)
             except Queue.Empty:
                 pass
@@ -941,7 +937,7 @@ class AbstractParser(b3.parser.Parser):
             pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
             for p in pib:
                 pings[p['name']] = int(p['ping'])
-        except:
+        except Exception:
             self.debug('Unable to retrieve pings from playerlist')
         return pings
 
@@ -954,7 +950,7 @@ class AbstractParser(b3.parser.Parser):
             pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
             for p in pib:
                 scores[p['name']] = int(p['score'])
-        except:
+        except Exception:
             self.debug('Unable to retrieve scores from playerlist')
         return scores
 
