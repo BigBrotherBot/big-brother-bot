@@ -27,7 +27,7 @@ import sys, re, traceback, time, string, Queue, threading
 import b3.parser
 from b3.parsers.frostbite2.rcon import Rcon as FrostbiteRcon
 from b3.parsers.frostbite2.protocol import FrostbiteServer, CommandFailedError, FrostbiteError
-from b3.parsers.frostbite2.util import PlayerInfoBlock
+from b3.parsers.frostbite2.util import PlayerInfoBlock, MapListBlock
 import b3.events
 #from b3.parsers.frostbite.punkbuster import PunkBuster as Bfbc2PunkBuster
 import b3.cvar
@@ -829,16 +829,10 @@ class AbstractParser(b3.parser.Parser):
         """Return the map list for the current rotation. (as easy map names)
         This does not return all available maps
         """
-        levelnames = self.write(('mapList.list',))
-        mapnames = levelnames[2::3]
-        gamemodenames = levelnames[3::3]
-        mapList = []
-
-        n = 0
-        for l in mapnames:
-            mapList.append('%s (%s)' % (self.getEasyName(l), self.getGameMode(gamemodenames[n])))
-            n += 1
-        return mapList
+        response = []
+        for map_list in MapListBlock(self.write(('mapList.list',))):
+            response.append('%s (%s)' % (self.getEasyName(map_list['name']), self.getGameMode(map_list['gamemode'])))
+        return response
 
 
     def rotateMap(self):
