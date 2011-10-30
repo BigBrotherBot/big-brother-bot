@@ -839,6 +839,18 @@ class AbstractParser(b3.parser.Parser):
         """\
         load the next map/level
         """
+        maplist = MapListBlock(self.write(('mapList.list',)))
+        if not len(maplist):
+            # maplist is empty, fix this situation by loading save mapList from disk
+            try:
+                self.write(('mapList.load',))
+            except Exception, err:
+                self.warning(err)
+            maplist = MapListBlock(self.write(('mapList.list',)))
+            if not len(maplist):
+                # maplist is still empty, fix this situation by adding current map to map list
+                current_max_rounds = self.write(('mapList.getRounds',))[1]
+                self.write(('mapList.add', self.game.mapName, self.game.gameType, current_max_rounds, 0))
         mapIndices = self.write(('mapList.getMapIndices', ))
         self.write(('mapList.setNextMapIndex', mapIndices[1]))
         self.write(('mapList.runNextRound',))
