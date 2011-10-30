@@ -1011,43 +1011,56 @@ class AbstractParser(b3.parser.Parser):
         """found matching level names for the given mapname (which can either
         be a level name or map name)
         If no exact match is found, then return close candidates using soundex
-        and then LevenshteinDistance algoritms
+        and then LevenshteinDistance algorithms
         """
         supportedMaps = self.getSupportedMapIds()
         supportedEasyNames = {}
         for m in supportedMaps:
-            supportedEasyNames[self.getEasyName(m)] = m
+            supportedEasyNames[self.getEasyName(m).lower()] = m
             
-        data = mapname.strip()
-        soundex1 = soundex(data)
+        clean_map_name = mapname.strip().lower()
+        soundex1 = soundex(mapname)
         #self.debug('soundex %s : %s' % (data, soundex1))
-        
+
         match = []
-        if data in supportedMaps:
-            match = [data]
-        elif data in supportedEasyNames:
-            match = [supportedEasyNames[data]]
+        # given mapname could be the exact map id
+        if clean_map_name in supportedMaps:
+            match = [clean_map_name]
         else:
-            for m in supportedEasyNames:
-                s = soundex(m)
-                #self.debug('soundex %s : %s' % (m, s))
-                if s == soundex1:
-                    #self.debug('probable map : %s', m)
-                    match.append(supportedEasyNames[m])
-        
-        if len(match) == 0:
+            # or we assume it is not a map id but a map name
+            if clean_map_name in supportedEasyNames:
+                # we are lucky to have an exact match
+                match = [supportedEasyNames[clean_map_name]]
+            else:
+                # compute a list of map id for which we can find clean_map_name in their map name
+                maps_matching_subset = [(map_id, map_name) for map_name, map_id in supportedEasyNames.items() if map_name.lower().find(clean_map_name) >= 0]
+                if len(maps_matching_subset) == 1:
+                    match = [maps_matching_subset[0][0]]
+                elif len(maps_matching_subset) > 1:
+                    match = [map_name for map_id, map_name in maps_matching_subset]
+                else:
+                    # no luck with subset lookup, fallback on soundex magic
+                    for m in supportedEasyNames:
+                        s = soundex(m)
+                        #self.debug('soundex %s : %s' % (m, s))
+                        if s == soundex1:
+                            #self.debug('probable map : %s', m)
+                            match.append(supportedEasyNames[m])
+
+
+        if not len(match):
             # suggest closest spellings
             shortmaplist = []
             for m in supportedEasyNames:
-                if m.find(data) != -1:
+                if m.find(clean_map_name) != -1:
                     shortmaplist.append(m)
             if len(shortmaplist) > 0:
-                shortmaplist.sort(key=lambda _map: levenshteinDistance(data, string.replace(_map.strip())))
+                shortmaplist.sort(key=lambda _map: levenshteinDistance(clean_map_name, string.replace(_map.strip())))
                 self.debug("shortmaplist sorted by distance : %s" % shortmaplist)
                 match = shortmaplist[:3]
             else:
                 easyNames = supportedEasyNames.keys()
-                easyNames.sort(key=lambda _map: levenshteinDistance(data, _map.strip()))
+                easyNames.sort(key=lambda _map: levenshteinDistance(clean_map_name, _map.strip()))
                 self.debug("maplist sorted by distance : %s" % easyNames)
                 match = easyNames[:3]
         return match
@@ -1061,7 +1074,7 @@ class AbstractParser(b3.parser.Parser):
 #
 # why ?
 # because doing so make sure we're not broking any other 
-# working and long tested parser. The change we make here
+# working and long tested parser. The changes we make here
 # are only applied when the frostbite parser is loaded.
 #############################################################
   
