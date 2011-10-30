@@ -449,6 +449,8 @@ class AbstractParser(b3.parser.Parser):
         self.getServerInfo()
         # to debug getEasyName()
         self.info('Loading %s [%s]'  % (self.getEasyName(self.game.mapName), self.game.gameType))
+        # clean up the zombies
+        self.sync()
         return b3.events.Event(b3.events.EVT_GAME_WARMUP, data[0])
 
     def TODOOnServerLevelstarted(self, action, data):
