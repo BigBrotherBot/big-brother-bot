@@ -42,8 +42,9 @@ class AbstractParser(b3.parser.Parser):
     An abstract base class to help with developing frostbite2 parsers
     """
 
+    gameName = None
+
     def __init__(self, config):
-        self.gameName = None
         self.OutputClass = FrostbiteRcon
         self._serverConnection = None
         self._nbConsecutiveConnFailure = 0
@@ -90,6 +91,9 @@ class AbstractParser(b3.parser.Parser):
         )
 
         self.PunkBuster = None
+
+        # flag to find out if we need to fire a EVT_GAME_ROUND_START event.
+        self._waiting_for_round_start = True
 
         b3.parser.Parser.__init__(self, config)
 
@@ -373,11 +377,9 @@ class AbstractParser(b3.parser.Parser):
     def OnPlayerSpawn(self, action, data):
         """
         Request: player.onSpawn <spawning soldier name: string> <team: int>
-        TODO: confirm team parameter
         """
         if len(data) < 2:
             return None
-
         spawner = self.getClient(data[0])
         spawner.team = self.getTeam(data[1])
 
@@ -437,7 +439,7 @@ class AbstractParser(b3.parser.Parser):
     def OnServerLevelloaded(self, action, data):
         """
         server.onLevelLoaded <level name: string> <gamemode: string> <roundsPlayed: int> <roundsTotal: int>
-        
+
         Effect: Level has completed loading, and will start in a bit
 
         example: ['server.onLevelLoaded', 'MP_001', 'ConquestLarge0', '1', '2']
@@ -462,7 +464,7 @@ class AbstractParser(b3.parser.Parser):
     def TODOOnServerLevelstarted(self, action, data):
         """
         server.onLevelStarted
-        
+
         Effect: Level is started"""
         # next function call will increase roundcount by one, this is not wanted
         # as the game server provides us the exact round number in OnServerLoadinglevel()
@@ -470,10 +472,10 @@ class AbstractParser(b3.parser.Parser):
         # we'll still leave the call here since it provides us self.game.roundTime()
         self.game.startRound()
         self.game.rounds -= 1
-        
+
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
-            
-        
+
+
     def OnServerRoundover(self, action, data):
         """
         server.onRoundOver <winning team: Team ID>

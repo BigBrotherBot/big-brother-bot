@@ -51,10 +51,10 @@ GAME_MODES_NAMES = {
     }
 
 class Bf3Parser(AbstractParser):
+    gameName = 'bf3'
 
     def __init__(self, config):
 
-        self.gameName = 'bf3'
 
         self._gameServerVars = (
             '3dSpotting',
