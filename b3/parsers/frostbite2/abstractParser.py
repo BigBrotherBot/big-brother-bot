@@ -443,7 +443,7 @@ class AbstractParser(b3.parser.Parser):
             # map change detected
             self.game.startMap()
         self.game.mapName = data[0]
-        self.game.gameMod = data[1]
+        self.game.gameType = data[1]
         self.game.rounds = int(data[2])
         self.game.g_maxrounds = int(data[3])
         self.getServerInfo()
@@ -885,16 +885,43 @@ class AbstractParser(b3.parser.Parser):
                 return match
             
         if map in supportedMaps:
-            self.write(('mapSequencer.setNextMap', map))
-            self.say('Changing map to %s' % map)
+            mapList = MapListBlock(self.write(('mapList.list',)))
+
+            # we want to find the next index to set for mapList
+            nextMapListIndex = None
+
+            # simple case : mapList is empty. Then just add our map at index 0 and load it
+            if not len(mapList):
+                nextMapListIndex = 0
+                self.write(('mapList.add', map, self.game.gameType, 2, nextMapListIndex))
+            else:
+                # the wanted map could already be in the rotation list (for the current gamemode)
+                maps_for_current_gamemode = mapList.getByNameAndGamemode(map, self.game.gameType)
+                if len(maps_for_current_gamemode):
+                    nextMapListIndex = maps_for_current_gamemode.keys()[0]
+
+                # or it could be in map rotation list for another gamemode
+                if nextMapListIndex is None:
+                    filtered_mapList = mapList.getByName(map)
+                    if len(filtered_mapList):
+                        nextMapListIndex = filtered_mapList.keys()[0]
+
+                # or map is not found in mapList and we need to insert it after the index of the current map
+                current_index = self.write(('mapList.getMapIndices',))[0]
+                nextMapListIndex = int(current_index) + 1
+                self.write(('mapList.add', map, self.game.gameType, 2, nextMapListIndex))
+
+            # now we have a nextMapListIndex correctly set to the wanted map
+            self.write(('mapList.setNextMapIndex', nextMapListIndex))
+            self.say('Changing map to %s (%s)' % (self.getEasyName(map), self.getGameMode(self.game.gameType)))
             time.sleep(1)
-            self.write(('mapSequencer.runNextMap'))
+            self.write(('mapList.runNextRound',))
 
         
     def getPlayerPings(self):
         """Ask the server for a given client's pings
         """
-        raise NotImplementedError
+        raise NotImplementedError # TODO : implement getPlayerPings when BF3 allows this
         pings = {}
         try:
             pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
