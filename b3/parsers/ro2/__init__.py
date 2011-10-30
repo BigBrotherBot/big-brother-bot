@@ -321,8 +321,14 @@ class Ro2Parser(b3.parser.Parser):
         #<span class="message">test message from game</span>
         #</div>
         
-        #<div class="chatmessage">        #<span class="teamcolor" style="background: #8FB9B0;">&#160;</span>        #<span class="teamnotice" style="color: #8FB9B0;">(Team)</span>        #<span class="username" title="Axis">&lt;82ndAB&gt;1LT.Bravo17 </span>:        #<span class="message">Team chat</span>        #</div>
-                #<div class="chatnotice">
+        #<div class="chatmessage">
+        #<span class="teamcolor" style="background: #8FB9B0;">&#160;</span>
+        #<span class="teamnotice" style="color: #8FB9B0;">(Team)</span>
+        #<span class="username" title="Axis">&lt;82ndAB&gt;1LT.Bravo17 </span>:
+        #<span class="message">Team chat</span>
+        #</div>
+        
+        #<div class="chatnotice">
         #<span class="noticesymbol">***</span> [<span class="username"></span>]
         #<span class="message">82ndAB ADMIN: No offensive names.</span>
         #</div>
