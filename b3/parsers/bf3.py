@@ -51,44 +51,49 @@ GAME_MODES_NAMES = {
     }
 
 class Bf3Parser(AbstractParser):
-    gameName = 'bf3'
 
-    _gameServerVars = (
-        '3dSpotting',
-        '3pCam',
-        'autoBalance',
-        'bannerUrl',
-        'bulletDamage',
-        'clientSideDamageArbitration',
-        'friendlyFire',
-        'gameModeCounter',
-        'gamePassword',
-        'hud',
-        'killCam',
-        'killRotation',
-        'maxPlayers',
-        'minimap',
-        'minimapSpotting',
-        'nameTag',
-        'onlySquadLeaderSpawn',
-        'playerManDownTime',
-        'playerRespawnTime',
-        'regenerateHealth',
-        'roundRestartPlayerCount',
-        'roundStartPlayerCount',
-        'roundsPerMap',
-        'serverDescription',
-        'serverMessage',
-        'serverName',
-        'soldierHealth',
-        'teamKillCountForKick',
-        'teamKillKickForBan',
-        'teamKillValueDecreasePerSecond',
-        'teamKillValueForKick',
-        'teamKillValueIncrease',
-        'vehicleSpawnAllowed',
-        'vehicleSpawnDelay',
-    )
+    def __init__(self, config):
+
+        self.gameName = 'bf3'
+
+        self._gameServerVars = (
+            '3dSpotting',
+            '3pCam',
+            'autoBalance',
+            'bannerUrl',
+            'bulletDamage',
+            'clientSideDamageArbitration',
+            'friendlyFire',
+            'gameModeCounter',
+            'gamePassword',
+            'hud',
+            'killCam',
+            'killRotation',
+            'maxPlayers',
+            'minimap',
+            'minimapSpotting',
+            'nameTag',
+            'onlySquadLeaderSpawn',
+            'playerManDownTime',
+            'playerRespawnTime',
+            'regenerateHealth',
+            'roundRestartPlayerCount',
+            'roundStartPlayerCount',
+            'roundsPerMap',
+            'serverDescription',
+            'serverMessage',
+            'serverName',
+            'soldierHealth',
+            'teamKillCountForKick',
+            'teamKillKickForBan',
+            'teamKillValueDecreasePerSecond',
+            'teamKillValueForKick',
+            'teamKillValueIncrease',
+            'vehicleSpawnAllowed',
+            'vehicleSpawnDelay',
+        )
+        AbstractParser.__init__(self, config)
+
     
     def startup(self):
         AbstractParser.startup(self)

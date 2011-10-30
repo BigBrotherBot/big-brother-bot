@@ -29,7 +29,6 @@ from b3.parsers.frostbite2.rcon import Rcon as FrostbiteRcon
 from b3.parsers.frostbite2.protocol import FrostbiteServer, CommandFailedError, FrostbiteError
 from b3.parsers.frostbite2.util import PlayerInfoBlock, MapListBlock
 import b3.events
-#from b3.parsers.frostbite.punkbuster import PunkBuster as Bfbc2PunkBuster
 import b3.cvar
 from b3.functions import soundex, levenshteinDistance
 
@@ -42,51 +41,58 @@ class AbstractParser(b3.parser.Parser):
     """
     An abstract base class to help with developing frostbite2 parsers
     """
-    gameName = None
-    OutputClass = FrostbiteRcon
-    _serverConnection = None
-    _nbConsecutiveConnFailure = 0
 
-    frostbite_event_queue = Queue.Queue()
-    sayqueue = Queue.Queue()
-    sayqueuelistener = None
+    def __init__(self, config):
+        self.gameName = None
+        self.OutputClass = FrostbiteRcon
+        self._serverConnection = None
+        self._nbConsecutiveConnFailure = 0
 
-    # frostbite2 engine does not support color code, so we need this property
-    # in order to get stripColors working
-    _reColor = re.compile(r'(\^[0-9])')
+        self.frostbite_event_queue = Queue.Queue()
+        self.sayqueue = Queue.Queue()
+        self.sayqueuelistener = None
 
-    _settings = {}
-    _settings['line_length'] = 65
-    _settings['min_wrap_length'] = 60
-    _settings['message_delay'] = .8
+        # frostbite2 engine does not support color code, so we need this property
+        # in order to get stripColors working
+        self._reColor = re.compile(r'(\^[0-9])')
 
-    _gameServerVars = () # list available cvar
+        self._settings = {
+            'line_length': 65,
+            'min_wrap_length': 60,
+            'message_delay': .8,
+            }
 
-    _commands = {}
-    _commands['message'] = ('admin.say', '%(message)s', 'all', '%(cid)s') # FIXME : send private messages when available
-    _commands['saySquad'] = ('admin.say', '%(message)s', 'squad', '%(teamId)s', '%(squadId)s')
-    _commands['sayTeam'] = ('admin.say', '%(message)s', 'team', '%(teamId)s')
-    _commands['say'] = ('admin.say', '%(message)s', 'all')
-    _commands['kick'] = ('admin.kickPlayer', '%(cid)s', '%(reason)s')
-    _commands['ban'] = ('banList.add', 'guid', '%(guid)s', 'perm', '%(reason)s')
-    _commands['banByIp'] = ('banList.add', 'ip', '%(ip)s', 'perm', '%(reason)s')
-    _commands['unban'] = ('banList.remove', 'guid', '%(guid)s')
-    _commands['unbanByIp'] = ('banList.remove', 'ip', '%(ip)s')
-    _commands['tempban'] = ('banList.add', 'guid', '%(guid)s', 'seconds', '%(duration)d', '%(reason)s')
+        self._gameServerVars = () # list available cvar
 
-    _eventMap = {
-    }
+        self._commands = {
+            'message': ('admin.say', '%(message)s', 'all', '%(cid)s'), # FIXME : send private messages when available
+            'saySquad': ('admin.say', '%(message)s', 'squad', '%(teamId)s', '%(squadId)s'),
+            'sayTeam': ('admin.say', '%(message)s', 'team', '%(teamId)s'),
+            'say': ('admin.say', '%(message)s', 'all'),
+            'kick': ('admin.kickPlayer', '%(cid)s', '%(reason)s'),
+            'ban': ('banList.add', 'guid', '%(guid)s', 'perm', '%(reason)s'),
+            'banByIp': ('banList.add', 'ip', '%(ip)s', 'perm', '%(reason)s'),
+            'unban': ('banList.remove', 'guid', '%(guid)s'),
+            'unbanByIp': ('banList.remove', 'ip', '%(ip)s'),
+            'tempban': ('banList.add', 'guid', '%(guid)s', 'seconds', '%(duration)d', '%(reason)s'),
+        }
 
-    _punkbusterMessageFormats = (
-        (re.compile(r'^(?P<servername>.*): PunkBuster Server for .+ \((?P<version>.+)\)\sEnabl.*$'), 'OnPBVersion'),
-        (re.compile(r'^(?P<servername>.*): Running PB Scheduled Task \(slot #(?P<slot>\d+)\)\s+(?P<task>.*)$'), 'OnPBScheduledTask'),
-        (re.compile(r'^(?P<servername>.*): Lost Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) (?P<pbuid>[^\s]+)\(-\)\s(?P<name>.+)$'), 'OnPBLostConnection'),
-        (re.compile(r'^(?P<servername>.*): Master Query Sent to \((?P<pbmaster>[^\s]+)\) (?P<ip>[^:]+)$'), 'OnPBMasterQuerySent'),
-        (re.compile(r'^(?P<servername>.*): Player GUID Computed (?P<pbid>[0-9a-fA-F]+)\(-\) \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+)\s(?P<name>.+)$'), 'OnPBPlayerGuid'),
-        (re.compile(r'^(?P<servername>.*): New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection')
-     )
+        self._eventMap = {
+        }
 
-    PunkBuster = None
+        self._punkbusterMessageFormats = (
+            (re.compile(r'^(?P<servername>.*): PunkBuster Server for .+ \((?P<version>.+)\)\sEnabl.*$'), 'OnPBVersion'),
+            (re.compile(r'^(?P<servername>.*): Running PB Scheduled Task \(slot #(?P<slot>\d+)\)\s+(?P<task>.*)$'), 'OnPBScheduledTask'),
+            (re.compile(r'^(?P<servername>.*): Lost Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) (?P<pbuid>[^\s]+)\(-\)\s(?P<name>.+)$'), 'OnPBLostConnection'),
+            (re.compile(r'^(?P<servername>.*): Master Query Sent to \((?P<pbmaster>[^\s]+)\) (?P<ip>[^:]+)$'), 'OnPBMasterQuerySent'),
+            (re.compile(r'^(?P<servername>.*): Player GUID Computed (?P<pbid>[0-9a-fA-F]+)\(-\) \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+)\s(?P<name>.+)$'), 'OnPBPlayerGuid'),
+            (re.compile(r'^(?P<servername>.*): New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection')
+        )
+
+        self.PunkBuster = None
+
+        b3.parser.Parser.__init__(self, config)
+
 
 
 
@@ -1028,7 +1034,7 @@ class AbstractParser(b3.parser.Parser):
         nextmap = mapnames[int(mapIndices[1])]
         nextgamemode = gamemodenames[int(mapIndices[1])]
 
-        return ('%s (%s)' % (self.getEasyName(nextmap), self.getGameMode(nextgamemode)))
+        return '%s (%s)' % (self.getEasyName(nextmap), self.getGameMode(nextgamemode))
 
     def getSupportedMapIds(self):
         """return a list of supported levels for the current game mod"""
