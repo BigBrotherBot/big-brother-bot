@@ -383,6 +383,8 @@ class AbstractParser(b3.parser.Parser):
         spawner = self.getClient(data[0])
         spawner.team = self.getTeam(data[1])
 
+        self._OnServerLevelstarted(action=None, data=None)
+
         return b3.events.Event(b3.events.EVT_CLIENT_SPAWN, (), spawner)
 
 
@@ -452,30 +454,34 @@ class AbstractParser(b3.parser.Parser):
             self.game.startMap()
         self.game.mapName = data[0]
         self.game.gameType = data[1]
-        self.game.rounds = int(data[2])
+        self.game.rounds = int(data[2]) + 1 # round index starts at 0
         self.game.g_maxrounds = int(data[3])
         self.getServerInfo()
         # to debug getEasyName()
         self.info('Loading %s [%s]'  % (self.getEasyName(self.game.mapName), self.game.gameType))
+        self._waiting_for_round_start = True
         # clean up the zombies
         self.sync()
         return b3.events.Event(b3.events.EVT_GAME_WARMUP, data[0])
 
-    def TODOOnServerLevelstarted(self, action, data):
+    def _OnServerLevelstarted(self, action, data):
         """
-        server.onLevelStarted
+        Event server.onLevelStarted was used to be sent in Frostbite1. Unfortunately it does not exists anymore
+        in Frostbite2.
+        Instead we call this method from OnPlayerSpawn and maintain a flag which tells if we need to fire the
+        EVT_GAME_ROUND_START event
+        """
+        if self._waiting_for_round_start:
+            self._waiting_for_round_start = False
 
-        Effect: Level is started"""
-        # next function call will increase roundcount by one, this is not wanted
-        # as the game server provides us the exact round number in OnServerLoadinglevel()
-        # hence we need to deduct one to compensate?
-        # we'll still leave the call here since it provides us self.game.roundTime()
-        self.game.startRound()
-        self.game.rounds -= 1
+            # as the game server provides us the exact round number in OnServerLoadinglevel()
+            # hence we need to deduct one to compensate?
+            # we'll still leave the call here since it provides us self.game.roundTime()
+            # next function call will increase roundcount by one, this is not wanted
+            self.game.startRound()
+            self.queueEvent(b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game))
 
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
-
-
+        
     def OnServerRoundover(self, action, data):
         """
         server.onRoundOver <winning team: Team ID>
