@@ -28,7 +28,7 @@ __author__  = 'Courgette'
 __version__ = '0.0'
 
 
-SAY_LINE_MAX_LENGTH = 100
+SAY_LINE_MAX_LENGTH = 90
 
 SQUAD_NOSQUAD = 0
 SQUAD_ALPHA = 1
@@ -309,6 +309,11 @@ class Bf3Parser(AbstractParser):
             self.warning("unknown gamemode \"%s\"" % gamemode_id)
             # fallback by sending gamemode id
             return gamemode_id
+
+    def getSupportedMapIds(self):
+        """return a list of supported levels for the current game mod"""
+        # TODO : remove this method once the on from AbstractParser is working
+        return ["MP_001", "MP_003", "MP_007", "MP_011", "MP_012", "MP_013", "MP_017", "MP_018", "MP_Subway"]
 
     def getServerVars(self):
         """Update the game property from server fresh data"""
