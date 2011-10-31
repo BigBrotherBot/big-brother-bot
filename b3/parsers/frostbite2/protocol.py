@@ -284,6 +284,8 @@ class FrostbiteServer(threading.Thread):
         self.pending_commands = {}
         self.__command_reply_event = threading.Event()
         self.observers = set()
+        self.start()
+        time.sleep(1.5)
 
     #===============================================================================
     # 
@@ -570,8 +572,7 @@ if __name__ == '__main__':
                     
         t_conn = FrostbiteServer(host, port, pw)
         t_conn.subscribe(frosbiteEventListener)
-        t_conn.start()
-        
+
 #        try:
 #            t_conn.command('logout')
 #        except CommandError, err:

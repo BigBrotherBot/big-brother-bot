@@ -28,10 +28,18 @@ __author__  = 'Courgette'
 __version__ = '0.0'
 
 
-SAY_LINE_MAX_LENGTH = 100
+SAY_LINE_MAX_LENGTH = 90
 
-SQUAD_NOSQUAD = 8
-SQUAD_ALPHA = 0
+SQUAD_NOSQUAD = 0
+SQUAD_ALPHA = 1
+SQUAD_BRAVO = 2
+SQUAD_CHARLIE = 3
+SQUAD_DELTA = 4
+SQUAD_ECHO = 5
+SQUAD_FOXTROT = 6
+SQUAD_GOLF = 7
+SQUAD_HOTEL = 8
+SQUAD_NEUTRAL = 24
 
 GAME_MODES_NAMES = {
     "ConquestLarge0": "Conquest64",
@@ -44,7 +52,7 @@ GAME_MODES_NAMES = {
 
 class Bf3Parser(AbstractParser):
     gameName = 'bf3'
-    
+
     _gameServerVars = (
         '3dSpotting',
         '3pCam',
@@ -81,6 +89,7 @@ class Bf3Parser(AbstractParser):
         'vehicleSpawnAllowed',
         'vehicleSpawnDelay',
     )
+
     
     def startup(self):
         AbstractParser.startup(self)
@@ -148,7 +157,7 @@ class Bf3Parser(AbstractParser):
         Effect: Player might have changed squad
         NOTE: this event also happens after a player left the game
         """
-        client = self.getClient(data[0])
+        client = self.clients.getByCID(data[0])
         if client:
             client.team = self.getTeam(data[1]) # .team setter will send team change event
             client.teamId = int(data[1])
@@ -169,6 +178,25 @@ class Bf3Parser(AbstractParser):
         """
         return self.say(msg)
 
+    def message(self, client, text):
+        try:
+            if client == None:
+                self.say(text)
+            elif client.cid == None:
+                pass
+            else:
+                #self.write(self.getCommand('message', message=text, cid=client.cid)) # FIXME: uncomment this once private chat is working
+                if client.teamId is not None and client.squad is not None:
+                # until private chat works, we try to send the message to the squad only
+                    self.write(self.getCommand('saySquad', message=text, teamId=client.teamId, squadId=client.squad))
+                elif client.teamId:
+                    # or the team only
+                    self.write(self.getCommand('sayTeam', message=text, teamId=client.teamId))
+                else:
+                    # or fallback on all players
+                    self.say(text)
+        except Exception, err:
+            self.warning(err)
         
     def getPlayerPings(self):
         """Ask the server for a given client's pings
@@ -203,7 +231,7 @@ class Bf3Parser(AbstractParser):
             client = self.clients.getByCID(cid)
         if not client:
             if cid == 'Server':
-                return self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
+                return self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN, teamId=None, squadId=None)
             if guid:
                 client = self.clients.newClient(cid, guid=guid, name=cid, team=b3.TEAM_UNKNOWN, teamId=None, squad=None)
             else:
@@ -282,6 +310,11 @@ class Bf3Parser(AbstractParser):
             self.warning("unknown gamemode \"%s\"" % gamemode_id)
             # fallback by sending gamemode id
             return gamemode_id
+
+    def getSupportedMapIds(self):
+        """return a list of supported levels for the current game mod"""
+        # TODO : remove this method once the on from AbstractParser is working
+        return ["MP_001", "MP_003", "MP_007", "MP_011", "MP_012", "MP_013", "MP_017", "MP_018", "MP_Subway"]
 
     def getServerVars(self):
         """Update the game property from server fresh data"""

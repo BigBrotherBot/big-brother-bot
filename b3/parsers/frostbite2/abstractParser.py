@@ -27,51 +27,59 @@ import sys, re, traceback, time, string, Queue, threading
 import b3.parser
 from b3.parsers.frostbite2.rcon import Rcon as FrostbiteRcon
 from b3.parsers.frostbite2.protocol import FrostbiteServer, CommandFailedError, FrostbiteError
-from b3.parsers.frostbite2.util import PlayerInfoBlock
+from b3.parsers.frostbite2.util import PlayerInfoBlock, MapListBlock
 import b3.events
-#from b3.parsers.frostbite.punkbuster import PunkBuster as Bfbc2PunkBuster
 import b3.cvar
 from b3.functions import soundex, levenshteinDistance
 
 SAY_LINE_MAX_LENGTH = 100
 
+# how long should the bot try to connect to the Frostbite server before giving out (in second)
+GAMESERVER_CONNECTION_WAIT_TIMEOUT = 600
+
 class AbstractParser(b3.parser.Parser):
     """
-    An abstract base class to help with developing frostbite2 parsers 
+    An abstract base class to help with developing frostbite2 parsers
     """
+
     gameName = None
+
     OutputClass = FrostbiteRcon
     _serverConnection = None
     _nbConsecutiveConnFailure = 0
-    
+
     frostbite_event_queue = Queue.Queue()
     sayqueue = Queue.Queue()
     sayqueuelistener = None
 
     # frostbite2 engine does not support color code, so we need this property
     # in order to get stripColors working
-    _reColor = re.compile(r'(\^[0-9])') 
-    
-    _settings = {}
-    _settings['line_length'] = 65
-    _settings['min_wrap_length'] = 65
-    _settings['message_delay'] = 2
+    _reColor = re.compile(r'(\^[0-9])')
+
+    _settings = {
+        'line_length': 65,
+        'min_wrap_length': 60,
+        'message_delay': .8,
+        }
 
     _gameServerVars = () # list available cvar
 
-    _commands = {}
-    _commands['message'] = ('admin.say', '%(message)s', 'all', '%(cid)s') # FIXME : send private messages when available
-    _commands['say'] = ('admin.say', '%(message)s', 'all')
-    _commands['kick'] = ('admin.kickPlayer', '%(cid)s', '%(reason)s')
-    _commands['ban'] = ('banList.add', 'guid', '%(guid)s', 'perm', '%(reason)s')
-    _commands['banByIp'] = ('banList.add', 'ip', '%(ip)s', 'perm', '%(reason)s')
-    _commands['unban'] = ('banList.remove', 'guid', '%(guid)s')
-    _commands['unbanByIp'] = ('banList.remove', 'ip', '%(ip)s')
-    _commands['tempban'] = ('banList.add', 'guid', '%(guid)s', 'seconds', '%(duration)d', '%(reason)s')
+    _commands = {
+        'message': ('admin.say', '%(message)s', 'all', '%(cid)s'), # FIXME : send private messages when available
+        'saySquad': ('admin.say', '%(message)s', 'squad', '%(teamId)s', '%(squadId)s'),
+        'sayTeam': ('admin.say', '%(message)s', 'team', '%(teamId)s'),
+        'say': ('admin.say', '%(message)s', 'all'),
+        'kick': ('admin.kickPlayer', '%(cid)s', '%(reason)s'),
+        'ban': ('banList.add', 'guid', '%(guid)s', 'perm', '%(reason)s'),
+        'banByIp': ('banList.add', 'ip', '%(ip)s', 'perm', '%(reason)s'),
+        'unban': ('banList.remove', 'guid', '%(guid)s'),
+        'unbanByIp': ('banList.remove', 'ip', '%(ip)s'),
+        'tempban': ('banList.add', 'guid', '%(guid)s', 'seconds', '%(duration)d', '%(reason)s'),
+    }
 
     _eventMap = {
     }
-    
+
     _punkbusterMessageFormats = (
         (re.compile(r'^(?P<servername>.*): PunkBuster Server for .+ \((?P<version>.+)\)\sEnabl.*$'), 'OnPBVersion'),
         (re.compile(r'^(?P<servername>.*): Running PB Scheduled Task \(slot #(?P<slot>\d+)\)\s+(?P<task>.*)$'), 'OnPBScheduledTask'),
@@ -79,12 +87,15 @@ class AbstractParser(b3.parser.Parser):
         (re.compile(r'^(?P<servername>.*): Master Query Sent to \((?P<pbmaster>[^\s]+)\) (?P<ip>[^:]+)$'), 'OnPBMasterQuerySent'),
         (re.compile(r'^(?P<servername>.*): Player GUID Computed (?P<pbid>[0-9a-fA-F]+)\(-\) \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+)\s(?P<name>.+)$'), 'OnPBPlayerGuid'),
         (re.compile(r'^(?P<servername>.*): New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection')
-     )
+    )
 
     PunkBuster = None
-           
-           
-           
+
+    # flag to find out if we need to fire a EVT_GAME_ROUND_START event.
+    _waiting_for_round_start = True
+
+
+
     def run(self):
         """Main worker thread for B3"""
         self.bot('Start listening ...')
@@ -94,6 +105,7 @@ class AbstractParser(b3.parser.Parser):
 
         self.updateDocumentation()
 
+        ## the block below can activate additional logging for the FrostbiteServer class
 #        import logging
 #        frostbiteServerLogger = logging.getLogger("FrostbiteServer")
 #        for handler in logging.getLogger('output').handlers:
@@ -104,7 +116,8 @@ class AbstractParser(b3.parser.Parser):
             if not self._serverConnection or not self._serverConnection.connected:
                 self.setup_frostbite_connection()
             try:
-                added, expire, packet = self.frostbite_event_queue.get(timeout=1)
+                self.verbose2("waiting for game server event")
+                added, expire, packet = self.frostbite_event_queue.get(timeout=10)
                 self.routeFrostbitePacket(packet)
             except Queue.Empty:
                 pass
@@ -117,19 +130,25 @@ class AbstractParser(b3.parser.Parser):
 
             if self.exitcode:
                 sys.exit(self.exitcode)
-                
+
     def setup_frostbite_connection(self):
         self.verbose('Connecting to frostbite2 server ...')
-        if self._serverConnection and self._serverConnection.isAlive():
-            try:
-                self._serverConnection.close()
-            except Exception:
-                pass
-            self._serverConnection.stop()
-
+        if self._serverConnection:
+            self.close_frostbite_connection()
         self._serverConnection = FrostbiteServer(self._rconIp, self._rconPort, self._rconPassword)
-        self._serverConnection.start()
-        time.sleep(.5)
+
+        timeout = GAMESERVER_CONNECTION_WAIT_TIMEOUT + time.time()
+        while time.time() < timeout and not self._serverConnection.connected:
+            self.verbose("retrying to connect to game server...")
+            time.sleep(2)
+            self.close_frostbite_connection()
+            self._serverConnection = FrostbiteServer(self._rconIp, self._rconPort, self._rconPassword)
+
+        if self._serverConnection is None or not self._serverConnection.connected:
+            self.error("Could not connect to Frostbite2 server")
+            self.close_frostbite_connection()
+            self.shutdown()
+            raise SystemExit()
 
         # listen for incoming game server events
         self._serverConnection.subscribe(self.OnFrosbiteEvent)
@@ -141,9 +160,21 @@ class AbstractParser(b3.parser.Parser):
         self.output.set_frostbite_server(self._serverConnection)
 
         self.checkVersion()
+        self.say('%s ^2[ONLINE]' % b3.version)
         self.getServerVars()
         self.getServerInfo()
         self.clients.sync()
+
+    def close_frostbite_connection(self):
+        try:
+            self._serverConnection.close()
+        except Exception:
+            pass
+        try:
+            self._serverConnection.stop()
+        except Exception:
+            pass
+        self._serverConnection = None
 
     def OnFrosbiteEvent(self, packet):
         self.console(repr(packet))
@@ -203,6 +234,8 @@ class AbstractParser(b3.parser.Parser):
         self.sayqueuelistener.setDaemon(True)
         self.sayqueuelistener.start()
 
+        # start crontab to trigger playerlist events
+        self.cron + b3.cron.CronTab(self.clients.sync, minute='*/5')
     
     def sayqueuelistener(self):
         while self.working:
@@ -342,13 +375,13 @@ class AbstractParser(b3.parser.Parser):
     def OnPlayerSpawn(self, action, data):
         """
         Request: player.onSpawn <spawning soldier name: string> <team: int>
-        TODO: confirm team parameter
         """
         if len(data) < 2:
             return None
-
         spawner = self.getClient(data[0])
         spawner.team = self.getTeam(data[1])
+
+        self._OnServerLevelstarted(action=None, data=None)
 
         return b3.events.Event(b3.events.EVT_CLIENT_SPAWN, (), spawner)
 
@@ -406,7 +439,7 @@ class AbstractParser(b3.parser.Parser):
     def OnServerLevelloaded(self, action, data):
         """
         server.onLevelLoaded <level name: string> <gamemode: string> <roundsPlayed: int> <roundsTotal: int>
-        
+
         Effect: Level has completed loading, and will start in a bit
 
         example: ['server.onLevelLoaded', 'MP_001', 'ConquestLarge0', '1', '2']
@@ -418,28 +451,33 @@ class AbstractParser(b3.parser.Parser):
             # map change detected
             self.game.startMap()
         self.game.mapName = data[0]
-        self.game.gameMod = data[1]
-        self.game.rounds = int(data[2])
+        self.game.gameType = data[1]
+        self.game.rounds = int(data[2]) + 1 # round index starts at 0
         self.game.g_maxrounds = int(data[3])
         self.getServerInfo()
         # to debug getEasyName()
         self.info('Loading %s [%s]'  % (self.getEasyName(self.game.mapName), self.game.gameType))
+        self._waiting_for_round_start = True
+
         return b3.events.Event(b3.events.EVT_GAME_WARMUP, data[0])
 
-    def TODOOnServerLevelstarted(self, action, data):
+    def _OnServerLevelstarted(self, action, data):
         """
-        server.onLevelStarted
-        
-        Effect: Level is started"""
-        # next function call will increase roundcount by one, this is not wanted
-        # as the game server provides us the exact round number in OnServerLoadinglevel()
-        # hence we need to deduct one to compensate?
-        # we'll still leave the call here since it provides us self.game.roundTime()
-        self.game.startRound()
-        self.game.rounds -= 1
-        
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
-            
+        Event server.onLevelStarted was used to be sent in Frostbite1. Unfortunately it does not exists anymore
+        in Frostbite2.
+        Instead we call this method from OnPlayerSpawn and maintain a flag which tells if we need to fire the
+        EVT_GAME_ROUND_START event
+        """
+        if self._waiting_for_round_start:
+            self._waiting_for_round_start = False
+
+            # as the game server provides us the exact round number in OnServerLoadinglevel()
+            # hence we need to deduct one to compensate?
+            # we'll still leave the call here since it provides us self.game.roundTime()
+            # next function call will increase roundcount by one, this is not wanted
+            self.game.startRound()
+            self.queueEvent(b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game))
+
         
     def OnServerRoundover(self, action, data):
         """
@@ -523,13 +561,10 @@ class AbstractParser(b3.parser.Parser):
             self.warning('OnPBNewConnection: we\'ve been unable to get the client')
 
     def OnPBLostConnection(self, match, data):
-        """PB notifies us it lost track of a player. This is the only change
-        we have to save the ip of clients.
+        """PB notifies us it lost track of a player.
         This event is triggered after the OnPlayerLeave, so normaly the client
-        is not connected. Anyway our task here is to save data into db not to 
+        is not connected. Anyway our task here is to raise an event not to
         connect/disconnect the client.
-        
-        Part of this code is obsolete since R15, IP is saved to DB on OnPBNewConnection()
         """
         name = match.group('name')
         dict = {
@@ -539,20 +574,6 @@ class AbstractParser(b3.parser.Parser):
             'pbuid': match.group('pbuid'),
             'name': name
         }
-        """ Code Obsolete since R15:
-        client = self.clients.getByCID(dict['name'])
-        if not client:
-            matchingClients = self.storage.getClientsMatching( {'pbid': match.group('pbuid')} )
-            if matchingClients and len(matchingClients) == 0:
-                client = matchingClients[0]
-        if not client:
-            self.error('unable to find client %s. weird' %name )
-        else:
-            # update client data with PB id and IP
-            client.pbid = dict['pbuid']
-            client.ip = dict['ip']
-            client.save()
-        """
         self.verbose('PB lost connection: %s' %dict)
         return b3.events.Event(b3.events.EVT_PUNKBUSTER_LOST_PLAYER, dict)
 
@@ -701,15 +722,23 @@ class AbstractParser(b3.parser.Parser):
         if client.cid is None:
             # ban by ip, this happens when we !permban @xx a player that is not connected
             self.debug('EFFECTIVE BAN : %s',self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
-            self.write(self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
-            if admin:
-                admin.message('banned: %s (@%s). His last ip (%s) has been added to banlist'%(client.exactName, client.id, client.ip))
+            try:
+                self.write(self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
+                self.write(('banList.save',))
+                if admin:
+                    admin.message('banned: %s (@%s). His last ip (%s) has been added to banlist'%(client.exactName, client.id, client.ip))
+            except CommandFailedError, err:
+                self.error(err)
         else:
             # ban by cid
             self.debug('EFFECTIVE BAN : %s',self.getCommand('ban', guid=client.guid, reason=reason[:80]))
-            self.write(self.getCommand('ban', cid=client.cid, reason=reason[:80]))
-            if admin:
-                admin.message('banned: %s (@%s) has been added to banlist'%(client.exactName, client.id))
+            self.write(('banList.save',))
+            try:
+                self.write(self.getCommand('ban', cid=client.cid, reason=reason[:80]))
+                if admin:
+                    admin.message('banned: %s (@%s) has been added to banlist'%(client.exactName, client.id))
+            except CommandFailedError, err:
+                self.error(err)
 
         if self.PunkBuster:
             self.PunkBuster.banGUID(client, reason)
@@ -723,9 +752,10 @@ class AbstractParser(b3.parser.Parser):
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
         self.debug('UNBAN: Name: %s, Ip: %s, Guid: %s' %(client.name, client.ip, client.guid))
         if client.ip:
-            response = self.write(self.getCommand('unbanByIp', ip=client.ip, reason=reason), needConfirmation=True)
-            #self.verbose(response)
-            if response == "OK":
+            try:
+                response = self.write(self.getCommand('unbanByIp', ip=client.ip, reason=reason), needConfirmation=True)
+                self.write(('banList.save',))
+                #self.verbose(response)
                 self.verbose('UNBAN: Removed ip (%s) from banlist' %client.ip)
                 if admin:
                     admin.message('Unbanned: %s. His last ip (%s) has been removed from banlist.' % (client.exactName, client.ip))
@@ -735,14 +765,25 @@ class AbstractParser(b3.parser.Parser):
                     fullreason = self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason))
                 if not silent and fullreason != '':
                     self.say(fullreason)
-        
-        response = self.write(self.getCommand('unban', guid=client.guid, reason=reason), needConfirmation=True)
-        #self.verbose(response)
-        if response == "OK":
+            except CommandFailedError, err:
+                if "NotInList" in err.message:
+                    pass
+                else:
+                    raise
+
+        try:
+            response = self.write(self.getCommand('unban', guid=client.guid, reason=reason), needConfirmation=True)
+            self.write(('banList.save',))
+            #self.verbose(response)
             self.verbose('UNBAN: Removed guid (%s) from banlist' %client.guid)
             if admin:
                 admin.message('Unbanned: Removed %s guid from banlist' % (client.exactName))
-        
+        except CommandFailedError, err:
+            if "NotInList" in err.message:
+                pass
+            else:
+                raise
+
         if self.PunkBuster:
             self.PunkBuster.unBanGUID(client)
 
@@ -769,8 +810,15 @@ class AbstractParser(b3.parser.Parser):
                 duration = 1440
 
             self.PunkBuster.kick(client, duration, reason)
-        
-        self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
+
+        try:
+            self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
+            self.write(('banList.save',))
+        except CommandFailedError, err:
+            if admin:
+                admin.message("server replied with error %s" % err.message[0])
+            else:
+                self.error(err)
         
         
         if not silent and fullreason != '':
@@ -792,25 +840,31 @@ class AbstractParser(b3.parser.Parser):
         """Return the map list for the current rotation. (as easy map names)
         This does not return all available maps
         """
-        levelnames = self.write(('mapList.list',))
-        mapnames = levelnames[2::3]
-        gamemodenames = levelnames[3::3]
-        mapList = []
-
-        n = 0
-        for l in mapnames:
-            mapList.append('%s (%s)' % (self.getEasyName(l), self.getGameMode(gamemodenames[n])))
-            n += 1
-        return mapList
+        response = []
+        for map_list in MapListBlock(self.write(('mapList.list',))):
+            response.append('%s (%s)' % (self.getEasyName(map_list['name']), self.getGameMode(map_list['gamemode'])))
+        return response
 
 
     def rotateMap(self):
         """\
         load the next map/level
         """
+        maplist = MapListBlock(self.write(('mapList.list',)))
+        if not len(maplist):
+            # maplist is empty, fix this situation by loading save mapList from disk
+            try:
+                self.write(('mapList.load',))
+            except Exception, err:
+                self.warning(err)
+            maplist = MapListBlock(self.write(('mapList.list',)))
+            if not len(maplist):
+                # maplist is still empty, fix this situation by adding current map to map list
+                current_max_rounds = self.write(('mapList.getRounds',))[1]
+                self.write(('mapList.add', self.game.mapName, self.game.gameType, current_max_rounds, 0))
         mapIndices = self.write(('mapList.getMapIndices', ))
         self.write(('mapList.setNextMapIndex', mapIndices[1]))
-        self.write(('mapList.endRound', '1')) #TODO: can we declare the currently winning team here?
+        self.write(('mapList.runNextRound',))
 
 
     def changeMap(self, map):
@@ -842,22 +896,49 @@ class AbstractParser(b3.parser.Parser):
                 return match
             
         if map in supportedMaps:
-            self.write(('mapSequencer.setNextMap', map))
-            self.say('Changing map to %s' % map)
+            mapList = MapListBlock(self.write(('mapList.list',)))
+
+            # we want to find the next index to set for mapList
+            nextMapListIndex = None
+
+            # simple case : mapList is empty. Then just add our map at index 0 and load it
+            if not len(mapList):
+                nextMapListIndex = 0
+                self.write(('mapList.add', map, self.game.gameType, 2, nextMapListIndex))
+            else:
+                # the wanted map could already be in the rotation list (for the current gamemode)
+                maps_for_current_gamemode = mapList.getByNameAndGamemode(map, self.game.gameType)
+                if len(maps_for_current_gamemode):
+                    nextMapListIndex = maps_for_current_gamemode.keys()[0]
+
+                # or it could be in map rotation list for another gamemode
+                if nextMapListIndex is None:
+                    filtered_mapList = mapList.getByName(map)
+                    if len(filtered_mapList):
+                        nextMapListIndex = filtered_mapList.keys()[0]
+
+                # or map is not found in mapList and we need to insert it after the index of the current map
+                current_index = self.write(('mapList.getMapIndices',))[0]
+                nextMapListIndex = int(current_index) + 1
+                self.write(('mapList.add', map, self.game.gameType, 2, nextMapListIndex))
+
+            # now we have a nextMapListIndex correctly set to the wanted map
+            self.write(('mapList.setNextMapIndex', nextMapListIndex))
+            self.say('Changing map to %s (%s)' % (self.getEasyName(map), self.getGameMode(self.game.gameType)))
             time.sleep(1)
-            self.write(('mapSequencer.runNextMap'))
+            self.write(('mapList.runNextRound',))
 
         
     def getPlayerPings(self):
         """Ask the server for a given client's pings
         """
-        raise NotImplementedError
+        raise NotImplementedError # TODO : implement getPlayerPings when BF3 allows this
         pings = {}
         try:
             pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
             for p in pib:
                 pings[p['name']] = int(p['ping'])
-        except:
+        except Exception:
             self.debug('Unable to retrieve pings from playerlist')
         return pings
 
@@ -870,7 +951,7 @@ class AbstractParser(b3.parser.Parser):
             pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
             for p in pib:
                 scores[p['name']] = int(p['score'])
-        except:
+        except Exception:
             self.debug('Unable to retrieve scores from playerlist')
         return scores
 
@@ -958,53 +1039,68 @@ class AbstractParser(b3.parser.Parser):
         nextmap = mapnames[int(mapIndices[1])]
         nextgamemode = gamemodenames[int(mapIndices[1])]
 
-        return ('%s (%s)' % (self.getEasyName(nextmap), self.getGameMode(nextgamemode)))
+        return '%s (%s)' % (self.getEasyName(nextmap), self.getGameMode(nextgamemode))
 
     def getSupportedMapIds(self):
         """return a list of supported levels for the current game mod"""
-        return self.write(('mapSequencer.availableMaps'))
+        # TODO : test this once the command work in BF3
+        # TODO : to test this latter, remove getSupportedMapIds from bf3.py
+        return self.write(('mapList.availableMaps',))
 
     def getMapsSoundingLike(self, mapname):
         """found matching level names for the given mapname (which can either
         be a level name or map name)
         If no exact match is found, then return close candidates using soundex
-        and then LevenshteinDistance algoritms
+        and then LevenshteinDistance algorithms
         """
         supportedMaps = self.getSupportedMapIds()
         supportedEasyNames = {}
         for m in supportedMaps:
-            supportedEasyNames[self.getEasyName(m)] = m
+            supportedEasyNames[self.getEasyName(m).lower()] = m
             
-        data = mapname.strip()
-        soundex1 = soundex(data)
+        clean_map_name = mapname.strip().lower()
+        soundex1 = soundex(mapname)
         #self.debug('soundex %s : %s' % (data, soundex1))
-        
+
         match = []
-        if data in supportedMaps:
-            match = [data]
-        elif data in supportedEasyNames:
-            match = [supportedEasyNames[data]]
+        # given mapname could be the exact map id
+        if clean_map_name in supportedMaps:
+            match = [clean_map_name]
         else:
-            for m in supportedEasyNames:
-                s = soundex(m)
-                #self.debug('soundex %s : %s' % (m, s))
-                if s == soundex1:
-                    #self.debug('probable map : %s', m)
-                    match.append(supportedEasyNames[m])
-        
-        if len(match) == 0:
+            # or we assume it is not a map id but a map name
+            if clean_map_name in supportedEasyNames:
+                # we are lucky to have an exact match
+                match = [supportedEasyNames[clean_map_name]]
+            else:
+                # compute a list of map id for which we can find clean_map_name in their map name
+                maps_matching_subset = [(map_id, map_name) for map_name, map_id in supportedEasyNames.items() if map_name.lower().find(clean_map_name) >= 0]
+                if len(maps_matching_subset) == 1:
+                    match = [maps_matching_subset[0][0]]
+                elif len(maps_matching_subset) > 1:
+                    match = [map_name for map_id, map_name in maps_matching_subset]
+                else:
+                    # no luck with subset lookup, fallback on soundex magic
+                    for m in supportedEasyNames:
+                        s = soundex(m)
+                        #self.debug('soundex %s : %s' % (m, s))
+                        if s == soundex1:
+                            #self.debug('probable map : %s', m)
+                            match.append(supportedEasyNames[m])
+
+
+        if not len(match):
             # suggest closest spellings
             shortmaplist = []
             for m in supportedEasyNames:
-                if m.find(data) != -1:
+                if m.find(clean_map_name) != -1:
                     shortmaplist.append(m)
             if len(shortmaplist) > 0:
-                shortmaplist.sort(key=lambda _map: levenshteinDistance(data, string.replace(_map.strip())))
+                shortmaplist.sort(key=lambda _map: levenshteinDistance(clean_map_name, string.replace(_map.strip())))
                 self.debug("shortmaplist sorted by distance : %s" % shortmaplist)
                 match = shortmaplist[:3]
             else:
                 easyNames = supportedEasyNames.keys()
-                easyNames.sort(key=lambda _map: levenshteinDistance(data, _map.strip()))
+                easyNames.sort(key=lambda _map: levenshteinDistance(clean_map_name, _map.strip()))
                 self.debug("maplist sorted by distance : %s" % easyNames)
                 match = easyNames[:3]
         return match
@@ -1018,7 +1114,7 @@ class AbstractParser(b3.parser.Parser):
 #
 # why ?
 # because doing so make sure we're not broking any other 
-# working and long tested parser. The change we make here
+# working and long tested parser. The changes we make here
 # are only applied when the frostbite parser is loaded.
 #############################################################
   

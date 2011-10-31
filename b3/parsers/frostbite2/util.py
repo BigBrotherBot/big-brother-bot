@@ -259,12 +259,36 @@ class MapListBlock:
     
     def __repr__(self):
         txt = "MapListBlock["
+        map_info_repr = []
         for p in self:
-            txt += "%r" % p
+            map_info_repr.append("%(name)s:%(gamemode)s:%(num_of_rounds)s" % p)
+        txt += ", ".join(map_info_repr)
         txt += "]"
         return txt
-    
-    
+
+    def getByName(self, map_name):
+        """Returns a dict with map indexes as keys and map info as values for all maps of given name"""
+        response = {}
+        i = 0
+        while i < self._num_maps:
+            map_info = self[i]
+            if map_info['name'] == map_name:
+                response[i] = map_info
+            i += 1
+        return response
+
+    def getByNameAndGamemode(self, map_name, gamemode):
+        """Returns a dict with map indexes as keys and map info as values for all maps of given name and given gamemode"""
+        response = {}
+        i = 0
+        while i < self._num_maps:
+            map_info = self[i]
+            if map_info['name'] == map_name and map_info['gamemode'] == gamemode:
+                response[i] = map_info
+            i += 1
+        return response
+
+
 if __name__ == '__main__':
         
     import unittest
@@ -362,13 +386,16 @@ if __name__ == '__main__':
             self.assertEqual(0, len(MapListBlock(['0','3'])))
             self.assertEqual(1, len(MapListBlock(['1', '3', 'test','mode', '2'])))
             self.assertEqual('MapListBlock[]', repr(MapListBlock(['0','3'])))
+            self.assertEqual(0, len(MapListBlock(['0','3']).getByName('MP_003')))
         def test_1(self):
             bloc = MapListBlock(['1', '3', 'test','mode', '2'])
             self.assertEqual(1, len(bloc))
             self.assertEqual('test', bloc[0]['name'])
             self.assertEqual('mode', bloc[0]['gamemode'])
             self.assertEqual(2, bloc[0]['num_of_rounds'])
-            self.assertEqual("MapListBlock[{'gamemode': 'mode', 'name': 'test', 'num_of_rounds': 2}]", repr(bloc))
+            self.assertEqual("MapListBlock[test:mode:2]", repr(bloc))
+            self.assertEqual(0, len(bloc.getByName('MP_003')))
+            self.assertEqual(1, len(bloc.getByName('test')))
         def test_2(self):
             bloc = MapListBlock(['2','3','map1','mode1', '1', 'map2', 'mode2', '2'])
             self.assertEqual(2, len(bloc))
@@ -378,5 +405,44 @@ if __name__ == '__main__':
             self.assertEqual('map2', bloc[1]['name'])
             self.assertEqual('mode2', bloc[1]['gamemode'])
             self.assertEqual(2, bloc[1]['num_of_rounds'])
-            self.assertEqual("MapListBlock[{'gamemode': 'mode1', 'name': 'map1', 'num_of_rounds': 1}{'gamemode': 'mode2', 'name': 'map2', 'num_of_rounds': 2}]", repr(bloc))
+            self.assertEqual("MapListBlock[map1:mode1:1, map2:mode2:2]", repr(bloc))
+            self.assertEqual(0, len(bloc.getByName('MP_003')))
+            self.assertEqual(1, len(bloc.getByName('map1')))
+            self.assertEqual(1, len(bloc.getByName('map2')))
+            self.assertIn(0, bloc.getByName('map1'))
+            self.assertIn(1, bloc.getByName('map2'))
+            self.assertTrue(bloc.getByName('map1')[0]['gamemode'] == 'mode1')
+            self.assertTrue(bloc.getByName('map2')[1]['gamemode'] == 'mode2')
+            self.assertEqual(0, len(bloc.getByNameAndGamemode('map1', 'mode?')))
+            self.assertEqual(1, len(bloc.getByNameAndGamemode('map1', 'mode1')))
+            self.assertEqual(0, len(bloc.getByNameAndGamemode('map2', 'mode?')))
+            self.assertEqual(1, len(bloc.getByNameAndGamemode('map2', 'mode2')))
+            self.assertIn(0, bloc.getByNameAndGamemode('map1', 'mode1'))
+            self.assertIn(1, bloc.getByNameAndGamemode('map2', 'mode2'))
+
+
+        def test_3(self):
+            bloc = MapListBlock(['3','3', 'map1','mode1','1', 'map2','mode2','2', 'map1','mode2','2'])
+            self.assertEqual(3, len(bloc))
+            self.assertEqual('map1', bloc[2]['name'])
+            self.assertEqual('mode2', bloc[2]['gamemode'])
+            self.assertEqual(0, len(bloc.getByName('MP_003')))
+            self.assertEqual(2, len(bloc.getByName('map1')))
+            self.assertEqual(1, len(bloc.getByName('map2')))
+            self.assertEqual("MapListBlock[map1:mode1:1, map2:mode2:2, map1:mode2:2]", repr(bloc))
+            self.assertIn(0, bloc.getByName('map1'))
+            self.assertIn(1, bloc.getByName('map2'))
+            self.assertIn(2, bloc.getByName('map1'))
+            self.assertTrue(bloc.getByName('map1')[0]['gamemode'] == 'mode1')
+            self.assertTrue(bloc.getByName('map1')[2]['gamemode'] == 'mode2')
+            self.assertTrue(bloc.getByName('map2')[1]['gamemode'] == 'mode2')
+            self.assertEqual(0, len(bloc.getByNameAndGamemode('map1', 'mode?')))
+            self.assertEqual(1, len(bloc.getByNameAndGamemode('map1', 'mode1')))
+            self.assertEqual(1, len(bloc.getByNameAndGamemode('map1', 'mode2')))
+            self.assertEqual(0, len(bloc.getByNameAndGamemode('map2', 'mode?')))
+            self.assertEqual(0, len(bloc.getByNameAndGamemode('map2', 'mode1')))
+            self.assertEqual(1, len(bloc.getByNameAndGamemode('map2', 'mode2')))
+            self.assertIn(0, bloc.getByNameAndGamemode('map1', 'mode1'))
+            self.assertIn(1, bloc.getByNameAndGamemode('map2', 'mode2'))
+            self.assertIn(2, bloc.getByNameAndGamemode('map1', 'mode2'))
     unittest.main()
