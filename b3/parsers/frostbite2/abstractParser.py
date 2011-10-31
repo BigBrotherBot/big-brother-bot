@@ -234,6 +234,8 @@ class AbstractParser(b3.parser.Parser):
         self.sayqueuelistener.setDaemon(True)
         self.sayqueuelistener.start()
 
+        # start crontab to trigger playerlist events
+        self.cron + b3.cron.CronTab(self.clients.sync, minute='*/5')
     
     def sayqueuelistener(self):
         while self.working:
@@ -456,8 +458,7 @@ class AbstractParser(b3.parser.Parser):
         # to debug getEasyName()
         self.info('Loading %s [%s]'  % (self.getEasyName(self.game.mapName), self.game.gameType))
         self._waiting_for_round_start = True
-        # clean up the zombies
-        self.sync()
+
         return b3.events.Event(b3.events.EVT_GAME_WARMUP, data[0])
 
     def _OnServerLevelstarted(self, action, data):
