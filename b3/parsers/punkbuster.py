@@ -16,8 +16,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#   CHANGELOG
+#   18/10/2011 - 1.0.3 - Bravo17
+#   Check slot number go up in order in getplayerlist to weed out data errors
+
 __author__  = 'ThorN'
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 import re
 
@@ -134,12 +138,18 @@ class PunkBuster(object):
             return {}
 
         players = {}
+        lastslot = 0
         for line in data.split('\n'):
             m = re.match(self.regPlayer, line)
             if m:
                 d = m.groupdict()
-                d['guid'] = d['pbid']
-                players[str(int(m.group('slot')) - 1)] = d
+                if int(m.group('slot')) > lastslot:
+                    d['guid'] = d['pbid']
+                    lastslot = int(m.group('slot'))
+                    players[str(lastslot - 1)] = d
+                    
+                else:
+                    self.console.debug('Duplicate or Incorrect PB slot number - client ignored %s lastslot %s' % (m.group('slot'), lastslot))
 
         return players
 
