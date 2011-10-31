@@ -41,8 +41,7 @@ from distutils import version
 
 
 ## url from where we can get the latest B3 version number
-#URL_B3_LATEST_VERSION = 'http://www.bigbrotherbot.net/version.json'
-URL_B3_LATEST_VERSION = 'http://www.cucurb.net/b3-version.json' # TODO: revert back to official website before public release
+URL_B3_LATEST_VERSION = 'http://master.bigbrotherbot.net/version.json'
 
 # supported update channels
 UPDATE_CHANNEL_STABLE = 'stable'
