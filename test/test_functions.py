@@ -16,12 +16,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-from _pyio import StringIO
-from b3 import functions
-from mock import Mock
-import StringIO
-import sys
 import time
+import sys
+from b3 import functions
 import unittest
     
 class TestSplitDSN(unittest.TestCase):
@@ -126,27 +123,111 @@ class TestTime2minutes(unittest.TestCase):
         self.assertEqual(functions.time2minutes('5w'), 5*7*24*60)
         self.assertEqual(functions.time2minutes('90w'), 90*7*24*60)
 
-class TestCheckUpdate(unittest.TestCase):
-    _time_start = 0
+
+class TestCheckUpdateUrl(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.original_url = functions.URL_B3_LATEST_VERSION
     def setUp(self):
+        self._time_start = 0
         self._time_start = time.time()
-        functions.urllib2.urlopen = Mock(return_value=StringIO.StringIO("""<?xml version='1.0'?><version>1.3.0</version>"""))
     def tearDown(self):
+        # make sure to restore update url between tests
+        functions.URL_B3_LATEST_VERSION = self.__class__.original_url
         ms = ((time.time() - self._time_start)*1000)
-        print "test took %0.1f ms" % ms
-        self.assertTrue(ms < 5500, "Test exceeded timeout")
-    def test_1(self):
-        self.assertIsInstance(functions.checkUpdate('1.2', singleLine=True, showErrormsg=True), basestring)
-    def test_2(self):
-        self.assertIsNone(functions.checkUpdate('1.4', singleLine=True, showErrormsg=True))
-    def test_3(self):
-        self.assertIsNone(functions.checkUpdate('1.4.1', singleLine=True, showErrormsg=True))
-    def test_4(self):
-        sys.modules[__name__].URL_B3_LATEST_VERSION = 'http://no.where.lol/'
-        self.assertNotEqual(None, functions.checkUpdate('1.2', singleLine=True, showErrormsg=True))
-    def test_5(self):
-        sys.modules[__name__].URL_B3_LATEST_VERSION = 'http://localhost:9000/'
-        self.assertNotEqual(None, functions.checkUpdate('1.2', singleLine=True, showErrormsg=True))
+        self.assertTrue(ms < 4000, "Test exceeded timeout")
+    def test_official_url(self):
+        result = functions.checkUpdate('1.2', singleLine=False, showErrormsg=True)
+        self.assertIsNotNone(result)
+        self.assertNotIn('Could not check updates', result)
+    def test_not_existing_url(self):
+        functions.URL_B3_LATEST_VERSION = 'http://no.where.local/'
+        result = functions.checkUpdate('1.2', singleLine=True, showErrormsg=True)
+        self.assertIn('Could not check updates', result)
+
+
+class TestCheckUpdate (unittest.TestCase):
+    def setUp(self):
+        def urlopen(*args, **kwargs):
+            """
+            will fake urllib2.urlopen
+            """
+            import StringIO
+            return StringIO.StringIO("""
+                {
+                    "B3": {
+                        "channels": {
+                            "stable": {
+                                "url": "http://www.url.stable.fake",
+                                "latest-version": "1.4.3"
+                            },
+                            "beta": {
+                                "url": "http:///www.url.beta.fake",
+                                "latest-version": "1.5.3b3"
+                            },
+                            "dev": {
+                                "url": "http:///www.url.dev.fake",
+                                "latest-version": "1.6dev5"
+                            }
+                        }
+                    }
+                }
+            """)
+        import urllib2
+        urllib2.urlopen = urlopen
+
+    def test_stable_channel(self):
+        expected_when_update = u'*** NOTICE: B3 1.4.3 is available. See http://www.url.stable.fake ! ***'
+        for v in ('1.0dev15','1.0b', '1.0', '1.1.1', '1.1.1b', '1.1.1b2', '1.1.1dev7', '1.4', '1.4.2', '1.4.3dev',
+                  '1.4.3dev1', '1.4.3b', '1.4.3b1'):
+            self.assertEqual(expected_when_update, functions.checkUpdate(v))
+        for v in ('1.4.3', '1.4.3', '1.4.4dev', '1.4.4b', '1.4.4', '1.5', '1.5.2', '1.5.3dev', '1.5.3dev1',
+                  '1.5.3b', '1.5.3b1', '1.5.3b2', '1.5.3b3', '1.5.3b4', '1.5.3', '1.5.4dev', '1.5.4b', '1.5.4',
+                  '1.6dev', '1.6dev4', '1.6dev5', '1.6dev6', '1.6b', '1.6b1', '1.6', '1.6.1'):
+            self.assertEqual(None, functions.checkUpdate(v))
+    def test_beta_channel(self):
+        expected_when_update = u'*** NOTICE: B3 1.5.3b3 is available. See http:///www.url.beta.fake ! ***'
+        for v in ('1.0dev15','1.0b', '1.0', '1.1.1', '1.1.1b', '1.1.1b2', '1.1.1dev7', '1.4', '1.4.2', '1.4.3dev',
+                  '1.4.3dev1', '1.4.3b', '1.4.3b1', '1.4.3', '1.4.3', '1.4.4dev', '1.4.4b', '1.4.4', '1.5',
+                  '1.5.2', '1.5.3dev', '1.5.3dev1', '1.5.3b', '1.5.3b1', '1.5.3b2'):
+            self.assertEqual(expected_when_update, functions.checkUpdate(v, channel=functions.UPDATE_CHANNEL_BETA))
+        for v in ('1.5.3b3', '1.5.3b4', '1.5.3', '1.5.4dev', '1.5.4b', '1.5.4', '1.6dev', '1.6dev4', '1.6dev5',
+                  '1.6dev6', '1.6b', '1.6b1', '1.6', '1.6.1'):
+            self.assertEqual(None, functions.checkUpdate(v, channel=functions.UPDATE_CHANNEL_BETA))
+    def test_dev_channel(self):
+        expected_when_update = u'*** NOTICE: B3 1.6dev5 is available. See http:///www.url.dev.fake ! ***'
+        for v in ('1.0dev15','1.0b', '1.0', '1.1.1', '1.1.1b', '1.1.1b2', '1.1.1dev7', '1.4', '1.4.2', '1.4.3dev',
+                  '1.4.3dev1', '1.4.3b', '1.4.3b1', '1.4.3', '1.4.3', '1.4.4dev', '1.4.4b', '1.4.4', '1.5',
+                  '1.5.2', '1.5.3dev', '1.5.3dev1', '1.5.3b', '1.5.3b1', '1.5.3b2', '1.5.3b3', '1.5.3b4', '1.5.3',
+                  '1.5.4dev', '1.5.4b', '1.5.4', '1.6dev', '1.6dev4'):
+            self.assertEqual(expected_when_update, functions.checkUpdate(v, channel=functions.UPDATE_CHANNEL_DEV))
+        for v in ('1.6dev5',
+                  '1.6dev6', '1.6b', '1.6b1', '1.6', '1.6.1'):
+            self.assertEqual(None, functions.checkUpdate(v, channel=functions.UPDATE_CHANNEL_DEV))
+    def test_unknown_channel(self):
+        self.assertIn("unknown channel 'foo'", functions.checkUpdate('1.0', channel="foo", showErrormsg=True))
+    @unittest.expectedFailure
+    def test_bad_version(self):
+        functions.checkUpdate('one.two', showErrormsg=True)
+    def test_broken_json(self):
+        def urlopen2(*args, **kwargs):
+            """
+            will fake urllib2.urlopen
+            """
+            import StringIO
+            return StringIO.StringIO("""
+                {
+                    "B3": {
+                        "channels": {
+                            "stable": {
+                                "url": "http://www.url.stable.fake",
+                                "latest-version": "1.4.3"
+                            },
+                            "be
+            """)
+        import urllib2
+        urllib2.urlopen = urlopen2
+        self.assertIn("Could not check updates", functions.checkUpdate('1.0', showErrormsg=True))
 
 if __name__ == '__main__':
     unittest.main()

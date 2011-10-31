@@ -36,11 +36,19 @@ import sys
 import imp
 import string
 import urllib2
-from lib.elementtree import ElementTree
+import json
 from distutils import version
 
+
 ## url from where we can get the latest B3 version number
-URL_B3_LATEST_VERSION = 'http://www.bigbrotherbot.net/version.xml'
+#URL_B3_LATEST_VERSION = 'http://www.bigbrotherbot.net/version.json'
+URL_B3_LATEST_VERSION = 'http://www.cucurb.net/b3-version.json' # TODO: revert back to official website before public release
+
+# supported update channels
+UPDATE_CHANNEL_STABLE = 'stable'
+UPDATE_CHANNEL_BETA = 'beta'
+UPDATE_CHANNEL_DEV = 'dev'
+
 
 
 def getModule(name):
@@ -50,46 +58,66 @@ def getModule(name):
         mod = getattr(mod, comp)
     return mod
 
-def checkUpdate(currentVersion, singleLine=True, showErrormsg=False):
+
+
+
+def checkUpdate(currentVersion, channel=UPDATE_CHANNEL_STABLE, singleLine=True, showErrormsg=False):
     """
     check if an update of B3 is available
+
     """
-    timeout = 5
-    ## urllib2.urlopen support the timeout argument only from 2.6... too bad
-    ## instead we alter the default socket timeout
-    import socket
-    original_timeout = socket.getdefaulttimeout()
-    socket.setdefaulttimeout(timeout)
-    
+
+    class B3version(version.StrictVersion):
+        """
+        Version numbering for BigBrotherBot.
+        Compared to version.StrictVersion this class allows version numbers such as :
+            1.0dev
+            1.0dev2
+            1.0a
+            1.0alpha
+            1.0alpha34
+            1.0b
+            1.0b1
+            1.0beta3
+        And make sure that any 'dev' prerelease is inferior to any 'alpha' prerelease
+        """
+        def __init__(self, vstring=None):
+            version.StrictVersion.__init__(self, vstring)
+
+        version_re = re.compile(r'^(\d+) \. (\d+) (\. (\d+))? (([ab]|dev)(\d+)?)?$',
+                                re.VERBOSE)
+
+        def parse (self, vstring):
+            match = self.version_re.match(vstring)
+            if not match:
+                raise ValueError, "invalid version number '%s'" % vstring
+
+            (major, minor, patch, prerelease, prerelease_num) = \
+                match.group(1, 2, 4, 6, 7)
+
+            if patch:
+                self.version = tuple(map(string.atoi, [major, minor, patch]))
+            else:
+                self.version = tuple(map(string.atoi, [major, minor]) + [0])
+
+            if prerelease:
+                if prerelease == "dev":
+                    prerelease = "*" # we want that dev < [a]lpha < [b]eta
+                self.prerelease = (prerelease[0], string.atoi(prerelease_num if prerelease_num else '0'))
+            else:
+                self.prerelease = None
+
+    timeout = 4
+
     if not singleLine:
         sys.stdout.write("checking for updates... \n")
 
     message = None
     errorMessage = None
+    version_info = None
     try:
-        f = urllib2.urlopen(URL_B3_LATEST_VERSION)
-        _xml = ElementTree.parse(f)
-        latestVersion = _xml.getroot().text
-        not singleLine and sys.stdout.write("latest B3 version is %s\n" % latestVersion)
-        _lver = version.LooseVersion(latestVersion)
-        _cver = version.LooseVersion(currentVersion)
-        if _cver < _lver:
-            if singleLine:
-                message = "*** NOTICE: A newer version of B3 is available. See www.bigbrotherbot.net! ***"
-            else:
-                message = """
-         _\|/_
-         (o o)
- +----oOO-{_}-OOo---------------------+
- |                                    |
- |                                    |
- | A newer version of B3 is available |
- |     See www.bigbrotherbot.net      |
- |                                    |
- |                                    |
- +------------------------------------+
- 
-"""
+        json_data = urllib2.urlopen(URL_B3_LATEST_VERSION, timeout=timeout).read()
+        version_info = json.loads(json_data)
     except IOError, e:
         if hasattr(e, 'reason'):
             errorMessage = "%s" % e.reason
@@ -98,10 +126,51 @@ def checkUpdate(currentVersion, singleLine=True, showErrormsg=False):
         else:
             errorMessage = "%s" % e
     except Exception, e:
-        errorMessage = "%s" % e
-    finally:
-        socket.setdefaulttimeout(original_timeout)
-        
+        errorMessage = repr(e)
+    else:
+        latestVersion = None
+        latestUrl = None
+        channels = {}
+        try:
+            channels = version_info['B3']['channels']
+        except KeyError, err:
+            errorMessage = repr(err) + ". %s" % version_info
+        else:
+            if channel not in channels:
+                errorMessage = "unknown channel '%s'. Expecting one of '%s'"  % (channel, ", '".join(channels.keys()))
+            else:
+                try:
+                    latestVersion = channels[channel]['latest-version']
+                except KeyError:
+                    errorMessage = repr(err) + ". %s" % version_info
+
+        if not errorMessage:
+            try:
+                latestUrl = version_info['B3']['channels'][channel]['url']
+            except KeyError:
+                latestUrl = "www.bigbrotherbot.net"
+
+            not singleLine and sys.stdout.write("latest B3 %s version is %s\n" % (channel, latestVersion))
+            _lver = B3version(latestVersion)
+            _cver = B3version(currentVersion)
+            if _cver < _lver:
+                if singleLine:
+                    message = "*** NOTICE: B3 %s is available. See %s ! ***" % (latestVersion, latestUrl)
+                else:
+                    message = """
+                 _\|/_
+                 (o o)    {version:^21}
+         +----oOO---OOo-----------------------+
+         |                                    |
+         |                                    |
+         | A newer version of B3 is available |
+         |                                    |
+         | {url:^34} |
+         |                                    |
+         +------------------------------------+
+
+        """.format(version=latestVersion, url=latestUrl)
+
     if errorMessage and showErrormsg:
         return "Could not check updates. %s" % errorMessage
     elif message:
@@ -356,131 +425,4 @@ def executeSql(db, file):
         return 'notfound'
     return 'success'
 #--------------------------------------------------------------------------------------------------
-
-
-if __name__ == '__main__':
-    
-    import unittest, time
-    
-    class TestSpliDSN(unittest.TestCase):
-        def assertDsnEqual(self, url, expected):
-            tmp = splitDSN(url)
-            self.assertEqual(tmp, expected)
-    
-        def test_sqlite(self):
-            self.assertDsnEqual('sqlite://c|/mydatabase/test.db', 
-            {'protocol': 'sqlite', 'host': 'c|', 'user': None, 
-            'path': '/mydatabase/test.db', 'password': None, 'port': None })
-    
-        def test_ftp(self):
-            self.assertDsnEqual('ftp://username@domain.com/index.html', 
-            {'protocol': 'ftp', 'host': 'domain.com', 'user': 'username', 
-             'path': '/index.html', 'password': None, 'port': None })
-            
-        def test_ftp2(self):
-            self.assertDsnEqual('ftp://username:password@domain.com/index.html', 
-            {'protocol': 'ftp', 'host': 'domain.com', 'user': 'username', 
-             'path': '/index.html', 'password': 'password', 'port': None })
-            
-        def test_ftp3(self):
-            self.assertDsnEqual('ftp://username@domain.com:password@domain.com/index.html', 
-            {'protocol': 'ftp', 'host': 'domain.com', 'user': 'username@domain.com', 
-             'path': '/index.html', 'password': 'password', 'port': None })
-            
-        def test_mysql(self):
-            self.assertDsnEqual('mysql://b3:password@localhost/b3', 
-            {'protocol': 'mysql', 'host': 'localhost', 'user': 'b3', 
-             'path': '/b3', 'password': 'password', 'port': 3306} )
-            
-    class TestFuzziGuidMatch(unittest.TestCase):
-        def test_1(self):
-            self.assertTrue(fuzzyGuidMatch( '098f6bcd4621d373cade4e832627b4f6', '098f6bcd4621d373cade4e832627b4f6'))
-            self.assertTrue(fuzzyGuidMatch( '098f6bcd4621d373cade4e832627b4f6', '098f6bcd4621d373cade4e832627b4f'))
-            self.assertTrue(fuzzyGuidMatch( '098f6bcd4621d373cade4e832627b4f6', '098f6bcd4621d373cde4e832627b4f6'))
-            self.assertTrue(fuzzyGuidMatch( '098f6bcd4621d373cade4e832627bf6',  '098f6bcd4621d373cade4e832627b4f6'))
-            self.assertFalse(fuzzyGuidMatch('098f6bcd4621d373cade4e832627b4f6', '098f6bcd46d373cade4e832627b4f6'))
-            self.assertFalse(fuzzyGuidMatch('098f6bcd4621d373cade4832627b4f6',  '098f6bcd4621d73cade4e832627b4f6'))
-        
-        def test_caseInsensitive(self):
-            self.assertTrue(fuzzyGuidMatch( '098F6BCD4621D373CADE4E832627B4F6', '098f6bcd4621d373cade4e832627b4f6'))
-            self.assertTrue(fuzzyGuidMatch( '098F6BCD4621D373CADE4E832627B4F6', '098f6bcd4621d373cade4e832627b4f'))
-            self.assertTrue(fuzzyGuidMatch( '098F6BCD4621D373CADE4E832627B4F6', '098f6bcd4621d373cde4e832627b4f6'))
-            self.assertFalse(fuzzyGuidMatch('098F6BCD4621D373CADE4E832627B4F6', '098f6bcd46d373cade4e832627b4f6'))
-            self.assertTrue(fuzzyGuidMatch( '098F6BCD4621D373CADE4E832627BF6', '098f6bcd4621d373cade4e832627b4f6'))
-            self.assertFalse(fuzzyGuidMatch('098F6BCD4621D373CADE4832627B4F6', '098f6bcd4621d73cade4e832627b4f6'))
-            
-    class TestMinutes2int(unittest.TestCase):
-        def test_NaN(self):
-            self.assertEqual(minutes2int('mlkj'), 0)
-            self.assertEqual(minutes2int(''), 0)
-            self.assertEqual(minutes2int('50,654'), 0)
-        def test_int(self):
-            self.assertEqual(minutes2int('50'), 50)
-            self.assertEqual(minutes2int('50.654'), 50.65)
-          
-    class TestTime2minutes(unittest.TestCase):
-        def test_None(self):
-            self.assertEqual(time2minutes(None), 0)
-        def test_int(self):
-            self.assertEqual(time2minutes(0), 0)
-            self.assertEqual(time2minutes(1), 1)
-            self.assertEqual(time2minutes(154), 154)
-        def test_str(self):
-            self.assertEqual(time2minutes(''), 0)
-        def test_str_h(self):
-            self.assertEqual(time2minutes('145h'), 145*60)
-            self.assertEqual(time2minutes('0 h'), 0)
-            self.assertEqual(time2minutes('0    h'), 0)
-            self.assertEqual(time2minutes('5h'), 5*60)
-        def test_str_m(self):
-            self.assertEqual(time2minutes('145m'), 145)
-            self.assertEqual(time2minutes('0 m'), 0)
-            self.assertEqual(time2minutes('0    m'), 0)
-            self.assertEqual(time2minutes('5m'), 5)
-        def test_str_s(self):
-            self.assertEqual(time2minutes('0 s'), 0)
-            self.assertEqual(time2minutes('0    s'), 0)
-            self.assertEqual(time2minutes('60s'), 1)
-            self.assertEqual(time2minutes('120s'), 2)
-            self.assertEqual(time2minutes('5s'), 5.0/60)
-            self.assertEqual(time2minutes('90s'), 1.5)
-        def test_str_d(self):
-            self.assertEqual(time2minutes('0 d'), 0)
-            self.assertEqual(time2minutes('0    d'), 0)
-            self.assertEqual(time2minutes('60d'), 60*24*60)
-            self.assertEqual(time2minutes('120d'), 120*24*60)
-            self.assertEqual(time2minutes('5d'), 5*24*60)
-            self.assertEqual(time2minutes('90d'), 90*24*60)
-        def test_str_w(self):
-            self.assertEqual(time2minutes('0 w'), 0)
-            self.assertEqual(time2minutes('0    w'), 0)
-            self.assertEqual(time2minutes('60w'), 60*7*24*60)
-            self.assertEqual(time2minutes('120w'), 120*7*24*60)
-            self.assertEqual(time2minutes('5w'), 5*7*24*60)
-            self.assertEqual(time2minutes('90w'), 90*7*24*60)
-
-    class TestCheckUpdate(unittest.TestCase):
-        _time_start = 0
-        def setUp(self):
-            self._time_start = time.time()
-        def tearDown(self):
-            ms = ((time.time() - self._time_start)*1000)
-            print "test took %0.1f ms" % ms
-            self.assertTrue(ms < 5500, "Test exceeded timeout")
-        def test_1(self):
-            self.assertNotEqual(None, checkUpdate('1.2', False, True))
-        def test_2(self):
-            self.assertNotEqual(None, checkUpdate('1.4', False, True))
-        def test_3(self):
-            self.assertEqual(None, checkUpdate('1.4.1', False, True))
-        def test_4(self):
-            sys.modules[__name__].URL_B3_LATEST_VERSION = 'http://no.where.lol/'
-            self.assertNotEqual(None, checkUpdate('1.2', False, True))
-        def test_5(self):
-            sys.modules[__name__].URL_B3_LATEST_VERSION = 'http://localhost:9000/'
-            self.assertNotEqual(None, checkUpdate('1.2', False, True))
-    
-    #unittest.main()
-    mytests = unittest.TestLoader().loadTestsFromTestCase(TestCheckUpdate)
-    unittest.TextTestRunner().run(mytests)
 

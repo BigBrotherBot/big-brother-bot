@@ -284,6 +284,33 @@ class Setup:
         xml.end()
         xml.data("\n\t")
 
+        # update channel settings
+        self.add_buffer('\n--UPDATE CHANNEL-------------------------------------------------\n')
+        self.add_buffer("""
+  B3 checks if a new version is available at startup against 3 different channels. Choose the
+  channel you want to check against.
+
+  Available channels are :
+    stable : will only show stable releases of B3
+    beta : will also check if a beta release is available
+    dev : will also check if a development release is available
+
+""")
+        xml.start("settings", name="update")
+        xml.data("\n\t\t")
+        xml.comment("""B3 checks if a new version is available at startup. Choose here what channel you want to check against.
+            Available channels are :
+                stable : will only show stable releases of B3
+                beta   : will also check if a beta release is available
+                dev    : will also check if a development release is available
+            If you don't know what channel to use, use 'stable'
+        """)
+        xml.data("\t\t")
+        self.add_set("channel", self.read_element('update', 'channel', 'stable'), "stable, beta or dev")
+        xml.data("\n\t")
+        xml.end()
+        xml.data("\n\t")
+
         # autodoc settings
         self.add_buffer('\n--AUTODOC-------------------------------------------------------\n')
         xml.start("settings", name="autodoc")

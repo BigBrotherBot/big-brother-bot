@@ -36,7 +36,7 @@ __version__ = '1.1.2'
 
 import pkg_handler
 from b3.functions import main_is_frozen
-from b3.functions import checkUpdate
+from b3.functions import checkUpdate, UPDATE_CHANNEL_STABLE
 from b3.setup import Setup
 
 __version__ = pkg_handler.version(__name__)
@@ -117,21 +117,9 @@ def start(configFile, nosetup=False):
     configFile = getAbsolutePath(configFile)
     clearScreen()
 
-    # Check if a newer version of B3 is available
-    _update = checkUpdate(__version__, singleLine=False, showErrormsg=True)
-    if _update:
-        print _update
-        _delay = 5
-        print "...resuming in %s seconds" %_delay
-        time.sleep(_delay)
-    else:
-        print "...no update available."
-        _delay = 1
-        time.sleep(_delay)
-    clearScreen()
-    
     print 'Starting %s\n' % getB3versionString()
 
+    conf = None
     if os.path.exists(configFile):
         print 'Using config file: %s' % configFile
         global _confDir
@@ -145,6 +133,21 @@ def start(configFile, nosetup=False):
         else:
             Setup(configFile)
 
+
+    # Check if a newer version of B3 is available
+    try:
+        update_channel = conf.get('update', 'channel')
+    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+        update_channel = UPDATE_CHANNEL_STABLE
+    _update = checkUpdate(__version__, channel=update_channel, singleLine=False, showErrormsg=True)
+    if _update:
+        print _update
+        time.sleep(5)
+    else:
+        print "...no update available."
+        time.sleep(1)
+
+
     try:
         parserType = conf.get('b3', 'parser')
         if not parserType:
@@ -155,7 +158,7 @@ def start(configFile, nosetup=False):
         except ImportError, err:
             raise SystemExit("CRITICAL: Cannot find parser '%s'. Check you main config file (b3.xml)\nB3 failed to start.\n%r"% (parserType, err))
     
-        extplugins_dir = conf.getpath('plugins', 'external_dir');
+        extplugins_dir = conf.getpath('plugins', 'external_dir')
         print "Using external plugin directory: %s" % extplugins_dir
         
         global console
