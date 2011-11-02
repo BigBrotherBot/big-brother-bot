@@ -42,6 +42,8 @@
 #   2011-11-01 : 1.0
 # * Some re-writes and corrections
 # * Implement !nextmap
+#   2011-11-02 : 1.01
+# * Allow use of # instead of @ for client id nos (@ brings up console on some keyboard layouts and cannot go into chat)
 #
 #
 from b3 import functions
@@ -62,7 +64,7 @@ import hashlib
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.0'
+__version__ = '1.01'
 
 
 class Ro2Parser(b3.parser.Parser):
@@ -381,6 +383,13 @@ class Ro2Parser(b3.parser.Parser):
         """Handle player chat"""
         name = self.getUsername(data['username'])
         text = data['message']
+        # if a command and it contains #no convert to @no
+        if text[0] == '!':
+            match = re.search(r' #([0-9]+)\b', text)
+            if match:
+                start = match.start()
+                text = (text[0:start+1] + '@' + text[start+2:])
+                
         team = False
         if data.has_key('teamnotice'):
             team = True
