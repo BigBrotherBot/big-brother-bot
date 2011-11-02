@@ -39,8 +39,9 @@
 #   2011-10-16 : 0.8
 # * !map working
 # * Player with funny accented i character now show in !list
-#   2011-10-30 : 1.0
-# * Some re-writes
+#   2011-11-01 : 1.0
+# * Some re-writes and corrections
+# * Implement !nextmap
 #
 #
 from b3 import functions
@@ -76,6 +77,7 @@ class Ro2Parser(b3.parser.Parser):
     _reSteamId64 = re.compile(r'^[0-9]{17}$')
     ftpconfig = None
     _ftplib_debug_level = 0 # 0: no debug, 1: normal debug, 2: extended debug
+    _ftpconnectionTimeout = 30
     _playerlistInterval = 30
     _server_banlist = {}
     _read_write_delay=1
@@ -217,7 +219,7 @@ class Ro2Parser(b3.parser.Parser):
                     self.handle_chat(chat_data)
                 
                 counter = 0
-                time.sleep(.2)
+                time.sleep(.5)
         self.bot('Stop listening.')
 
         if self.exiting.acquire(1) and self.exitcode:
@@ -770,12 +772,6 @@ class Ro2Parser(b3.parser.Parser):
 
         return map_rotation
 
-    def rotateMap(self):
-        """\
-        load the next map/level
-        """
-        raise NotImplementedError
-        
     def changeMap(self, map):
         """\
         load a given map/level
@@ -792,7 +788,49 @@ class Ro2Parser(b3.parser.Parser):
             self.write(self.getCommand('say',  prefix=self.msgPrefix, message='Incorrect Gametype-Map combination'))
 
             return
-
+            
+    def getMap(self):
+        """\
+        load the next map/level
+        """
+        #<dt>Map</dt>
+        #<dd><code>mapname</code>
+        current_url = '/current'
+        referer = None
+        data = None
+        current_data = self.readwriteweb(data, referer, current_url)
+        if current_data.find('<dt>Map</dt>') == -1:
+            self.debug('Map error')
+            return None
+        current_data = current_data.partition('<dt>Map</dt>')[2]
+        if current_data.find('<dd><code>') == -1:
+            self.debug('Map error')
+            return None
+        current_data = current_data.partition('<dd><code>')[2]
+        mapname = current_data.partition('</code>')[0]
+        
+        return mapname
+    
+    def getNextMap(self):
+        """\
+        load the next map/level
+        """
+        nextmap=''
+        map_rotation = self.getMaps()
+        no_maps = len(map_rotation)
+        currentmap = self.getMap()
+        if map_rotation.count(currentmap) == 1:
+            i = map_rotation.index(currentmap)
+            if i < no_maps-1:
+                nextmap = map_rotation[i+1]
+            else:
+                nextmap = map_rotation[0]
+                
+        else:
+            nextmap = 'Unknown'
+        
+        return nextmap
+        
     def getPlayerPings(self):
         """\
         returns a dict having players' id for keys and players' ping for values
@@ -894,7 +932,9 @@ class Ro2Parser(b3.parser.Parser):
                 self.active_map_cycle = int(line.partition('ActiveMapCycle=')[2])
             if line[0:14] == 'GameMapCycles=':
                 self.map_cycles[str(self.map_cycle_no)] = line
+                self.debug(line)
                 self.map_cycle_no += 1
+
 
 
         ftp = None
@@ -925,7 +965,7 @@ class Ro2Parser(b3.parser.Parser):
         self.verbose('Connecting to %s:%s ...' % (self.ftpconfig["host"], self.ftpconfig["port"]))
         ftp = FTP()
         ftp.set_debuglevel(self._ftplib_debug_level)
-        ftp.connect(self.ftpconfig['host'], self.ftpconfig['port'], self._connectionTimeout)
+        ftp.connect(self.ftpconfig['host'], self.ftpconfig['port'], self._ftpconnectionTimeout)
         ftp.login(self.ftpconfig['user'], self.ftpconfig['password'])
         ftp.voidcmd('TYPE I')
         dir = os.path.dirname(self.ftpconfig['path'])
@@ -933,3 +973,14 @@ class Ro2Parser(b3.parser.Parser):
         ftp.cwd(dir)
         return ftp
     
+    # =======================================
+    # Not Implemented methods
+    # =======================================
+    
+    def rotateMap(self):
+        """\
+        load the next map/level
+        """
+        self.say('Rotate Map not implemented')
+    
+
