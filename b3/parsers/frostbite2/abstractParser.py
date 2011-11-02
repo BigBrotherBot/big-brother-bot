@@ -350,11 +350,11 @@ class AbstractParser(b3.parser.Parser):
         """
         player.onJoin <soldier name: string> <id : EAID>
         """
-        # we receive this event very early and even before the game client start to connect to the game server.
-        # It some occasions, the game client fails to properly connects and the game server then fails to send
-        # us a player.onLeave event resulting in B3 thinking players are connected while they are not.
-        # The trick is to ignore such events. If the game client successfully connected, then we'll receive other
-        # events like player.onTeamChange which will create the Client object.
+        # we receive this event very early and even before the game client starts to connect to the game server.
+        # In some occasions, the game client fails to properly connect and the game server then fails to send
+        # us a player.onLeave event resulting in B3 thinking the player is connected while it is not.
+        # The fix is to ignore this event. If the game client successfully connect, then we'll receive other
+        # events like player.onTeamChange or even a event from punkbuster which will create the Client object.
         pass
 
     def OnPlayerAuthenticated(self, action, data):
