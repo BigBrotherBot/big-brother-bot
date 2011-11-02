@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2011/06/05 - 1.27 - xlr8or
+#   * implementation of game server encoding/decoding
 #   2011/06/05 - 1.26.1 - Courgette
 #   * fix periodic events stats dumping blocking B3 restart/shutdown
 #   2011/05/03 - 1.24.8 - Courgette
@@ -130,7 +132,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.26.1'
+__version__ = '1.27'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket, threading
@@ -164,6 +166,7 @@ class Parser(object):
     _messages = {}
     _timeStart = None
 
+    encoding = 'latin-1'
     clients  = None
     delay = 0.33 # to apply between each game log lines fetching (max time before a command is detected by the bot + (delay2*nb_of_lines) )
     delay2 = 0.02 # to apply between each game log line processing (max number of lines processed in one second)
@@ -262,6 +265,10 @@ class Parser(object):
             print('CRITICAL ERROR : COULD NOT LOAD CONFIG')
             raise SystemExit(220)
 
+        # set game server encoding
+        if self.config.has_option('server', 'encoding'):
+            self.encoding = self.config.get('server', 'encoding')
+
         # set up logging
         logfile = self.config.getpath('b3', 'logfile')
         log2console = self.config.has_option('devmode', 'log2console') and self.config.getboolean('devmode', 'log2console')
@@ -306,7 +313,7 @@ class Parser(object):
 
         self.bot('%s', b3.getB3versionString())
         self.bot('Python: %s', sys.version)
-        self.bot('Default encoding: %s', sys.getdefaultencoding())
+        self.bot('System encoding: %s, Server encoding: %s', sys.getdefaultencoding(), self.encoding)
         self.bot('Starting %s v%s for server %s:%s', self.__class__.__name__, getattr(getModule(self.__module__), '__version__', ' Unknown'), self._rconIp, self._port)
 
         # get events
