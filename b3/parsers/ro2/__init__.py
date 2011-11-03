@@ -42,7 +42,7 @@
 #   2011-11-01 : 1.0
 # * Some re-writes and corrections
 # * Implement !nextmap
-#   2011-11-02 : 1.01
+#   2011-11-02 : 1.1
 # * Allow use of # instead of @ for client id nos (@ brings up console on some keyboard layouts and cannot go into chat)
 #
 #
@@ -64,7 +64,7 @@ import hashlib
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.01'
+__version__ = '1.1'
 
 
 class Ro2Parser(b3.parser.Parser):
@@ -316,8 +316,14 @@ class Ro2Parser(b3.parser.Parser):
         #<span class="message">test message from game</span>
         #</div>
         
-        #<div class="chatmessage">        #<span class="teamcolor" style="background: #8FB9B0;">&#160;</span>        #<span class="teamnotice" style="color: #8FB9B0;">(Team)</span>        #<span class="username" title="Axis">&lt;82ndAB&gt;1LT.Bravo17 </span>:        #<span class="message">Team chat</span>        #</div>
-                #<div class="chatnotice">
+        #<div class="chatmessage">
+        #<span class="teamcolor" style="background: #8FB9B0;">&#160;</span>
+        #<span class="teamnotice" style="color: #8FB9B0;">(Team)</span>
+        #<span class="username" title="Axis">&lt;82ndAB&gt;1LT.Bravo17 </span>:
+        #<span class="message">Team chat</span>
+        #</div>
+        
+        #<div class="chatnotice">
         #<span class="noticesymbol">***</span> [<span class="username"></span>]
         #<span class="message">82ndAB ADMIN: No offensive names.</span>
         #</div>

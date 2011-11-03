@@ -18,6 +18,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    28/10/2012 - 1.4.0 - courgette
+#    * Client.save() now raises a EVT_CLIENT_UPDATE event
 #    16/07/2011 - 1.3.6 - xlr8or
 #    * Client.bot added - ability to identify a bot
 #    08/04/2011 - 1.3.5 - Courgette
@@ -76,7 +78,7 @@ import time
 import traceback
 
 __author__  = 'ThorN'
-__version__ = '1.3.6'
+__version__ = '1.4.0'
 
 
 class ClientVar(object):
@@ -214,10 +216,14 @@ class Client(object):
             self._groups = []
             groups = self.console.storage.getGroups()
 
+            guest_group = None
             for g in groups:
+                if g.id == 0:
+                    guest_group = g
                 if g.id & self._groupBits:
                     self._groups.append(g)
-
+            if not len(self._groups) and guest_group:
+                self._groups.append(guest_group)
         return self._groups
 
     groups = property(getGroups)
@@ -457,7 +463,7 @@ class Client(object):
     def _get_maxLevel(self):
         if self._maxLevel == None:
             if self.groups and len(self.groups):
-                m = 0
+                m = -1
                 for g in self.groups:
                     if g.level > m:
                         m = g.level
@@ -684,6 +690,8 @@ class Client(object):
             # can't save a client without a guid
             return False
         else:
+            if console:
+                self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_UPDATE, data=self, client=self))
             return self.console.storage.setClient(self)
 
     def auth(self):
