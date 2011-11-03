@@ -20,6 +20,9 @@
 # CHANGELOG
 #   2011/06/05 - 1.27 - xlr8or
 #   * implementation of game server encoding/decoding
+#   2011/09/12 - 1.26.2 - Courgette
+#   * start the admin plugin first as many plugins relie on it (does not affect
+#     plugin priority in regard to B3 events dispatching)
 #   2011/06/05 - 1.26.1 - Courgette
 #   * fix periodic events stats dumping blocking B3 restart/shutdown
 #   2011/05/03 - 1.24.8 - Courgette
@@ -730,15 +733,27 @@ class Parser(object):
         """Start all loaded plugins"""
         self.screen.write('Starting Plugins : ')
         self.screen.flush()
-        for k in self._pluginOrder:
-            p = self._plugins[k]
-            self.bot('Starting Plugin %s', k)
+
+        _plugins = self._pluginOrder
+        def start_plugin(plugin_name):
+            p = self._plugins[plugin_name]
+            self.bot('Starting Plugin %s', plugin_name)
             p.onStartup()
             p.start()
             #time.sleep(1)    # give plugin time to crash, er...start
             self.screen.write('.')
             self.screen.flush()
-        self.screen.write(' (%s)\n' % len(self._pluginOrder))
+
+        # handle admin plugin first as many plugins relie on it
+        if 'admin' in _plugins:
+            start_plugin('admin')
+            _plugins.remove('admin')
+
+        # start other plugins
+        for plugin_name in _plugins:
+            start_plugin(plugin_name)
+
+        self.screen.write(' (%s)\n' % len(_plugins))
 
     def disablePlugins(self):
         """Disable all plugins except for publist, ftpytail and admin"""
