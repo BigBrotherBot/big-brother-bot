@@ -191,10 +191,10 @@ class AbstractParser(b3.parser.Parser):
         if match:
             func = 'On%s%s' % (string.capitalize(match.group('actor')), \
                                string.capitalize(match.group('event')))
-            self.debug("looking for event handling method called : " + func)
+            self.verbose2("looking for event handling method called : " + func)
             
         if match and hasattr(self, func):
-            self.debug('routing ----> %s(%r)' % (func,eventData))
+            self.verbose2('routing ----> %s(%r)' % (func,eventData))
             func = getattr(self, func)
             event = func(eventType, eventData)
             #self.debug('event : %s' % event)
@@ -521,12 +521,17 @@ class AbstractParser(b3.parser.Parser):
                 match = re.match(regexp, str(data[0]).strip())
                 if match:
                     break
-            if match and hasattr(self, funcName):
-                func = getattr(self, funcName)
-                event = func(match, data[0])
-                if event:
-                    self.queueEvent(event)     
+            if match:
+                if hasattr(self, funcName):
+                    func = getattr(self, funcName)
+                    event = func(match, data[0])
+                    if event:
+                        self.queueEvent(event)
+                else:
+                    self.debug("func %s not found, defaulting to EVT_UNKNOWN" % funcName)
+                    return b3.events.Event(b3.events.EVT_UNKNOWN, data)
             else:
+                self.debug("no pattern matching \"%s\", defaulting to EVT_UNKNOWN" % str(data[0]).strip())
                 return b3.events.Event(b3.events.EVT_UNKNOWN, data)
                 
     def OnPBVersion(self, match,data):
