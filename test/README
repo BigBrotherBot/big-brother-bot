@@ -1,4 +1,4 @@
-To run test, you need python modules installed : mock 
+To run test, you need python modules installed :
 
-
-http://www.voidspace.org.uk/python/mock/
+mock: http://www.voidspace.org.uk/python/mock/
+nose: http://pypi.python.org/pypi/nose
