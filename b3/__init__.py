@@ -36,7 +36,7 @@ __version__ = '1.1.2'
 
 import pkg_handler
 from b3.functions import main_is_frozen
-from b3.functions import checkUpdate, UPDATE_CHANNEL_STABLE
+from b3.update import checkUpdate
 from b3.setup import Setup
 
 __version__ = pkg_handler.version(__name__)
@@ -135,10 +135,11 @@ def start(configFile, nosetup=False):
 
 
     # Check if a newer version of B3 is available
+    update_channel = None
     try:
         update_channel = conf.get('update', 'channel')
     except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-        update_channel = UPDATE_CHANNEL_STABLE
+        pass
     _update = checkUpdate(__version__, channel=update_channel, singleLine=False, showErrormsg=True)
     if _update:
         print _update
