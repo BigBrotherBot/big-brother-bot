@@ -33,11 +33,12 @@
 # * should get rid of UnicodeDecodeError
 # 2011/04/20 - 1.4 - Courgette
 # * now sent data is encoded as UTF-8
-#
- 
+# 2011/10/30 - 1.5 - xlr8or, 82ndab-Bravo17
+# * Add encoding to QSERVER and RCON snd methods
+
 __author__ = 'ThorN'
-__version__ = '1.4'
- 
+__version__ = '1.5'
+
 import socket
 import sys
 import select
@@ -64,9 +65,9 @@ class Rcon:
 
     #caching options
     cache_opts = {
-    'cache.data_dir': 'b3/cache/data',
-    'cache.lock_dir': 'b3/cache/lock',
-    }
+        'cache.data_dir': 'b3/cache/data',
+        'cache.lock_dir': 'b3/cache/lock',
+        }
     #create cache
     cache = CacheManager(**parse_cache_config_options(cache_opts))
     #default expiretime for the status cache in seconds and cache type
@@ -85,7 +86,8 @@ class Rcon:
             self.statusCacheExpireTime = abs(self.console.config.getint('caching', 'status_cache_expire'))
             if self.statusCacheExpireTime > 5:
                 self.statusCacheExpireTime = 5
-        self.console.bot('rcon status Cache Expire Time: [%s sec] Type: [%s]' %(self.statusCacheExpireTime, self.statusCacheType))
+        self.console.bot(
+            'rcon status Cache Expire Time: [%s sec] Type: [%s]' % (self.statusCacheExpireTime, self.statusCacheType))
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.host = host
@@ -96,13 +98,31 @@ class Rcon:
         self._stopEvent = threading.Event()
         thread.start_new_thread(self._writelines, ())
 
+    def encode_data(self, data, source):
+        try:
+            if isinstance(data, str):
+                data=unicode(data, errors='ignore')
+                self.console.debug('Data was a string')
+            else:
+                self.console.debug('Data was a unicode')
+            data=data.encode(self.console.encoding, 'replace')
+        except Exception, msg:
+            self.console.warning('%s: ERROR encoding data: %r', source, msg)
+            data = 'Encoding error'
+            
+        return data
+        
     def send(self, data, maxRetries=None, socketTimeout=None):
         if socketTimeout is None:
             socketTimeout = self.socket_timeout
         if maxRetries is None:
             maxRetries = 2
-            
+
         data = data.strip()
+        # encode the data
+        if self.console.encoding:
+            data = self.encode_data(data, 'QSERVER')
+
         self.console.verbose('QSERVER sending (%s:%s) %r', self.host[0], self.host[1], data)
         startTime = time.time()
 
@@ -114,7 +134,7 @@ class Rcon:
                 self.console.warning('QSERVER: %r', errors)
             elif len(writeables) > 0:
                 try:
-                    writeables[0].send(self.qserversendstring % unicode(data).encode('UTF-8'))
+                    writeables[0].send(self.qserversendstring % data)
                 except Exception, msg:
                     self.console.warning('QSERVER: ERROR sending: %r', msg)
                 else:
@@ -124,7 +144,7 @@ class Rcon:
                         return data
                     except Exception, msg:
                         self.console.warning('QSERVER: ERROR reading: %r', msg)
-                    
+
             else:
                 self.console.verbose('QSERVER: no writeable socket')
 
@@ -135,20 +155,23 @@ class Rcon:
             if retries >= maxRetries:
                 self.console.error('QSERVER: too much tries. Abording (%r)', data.strip())
                 break
- 
+
             self.console.verbose('QSERVER: retry sending %r (%s/%s)...', data.strip(), retries, maxRetries)
- 
- 
+
         self.console.debug('QSERVER: Did not send any data')
         return ''
-        
+
     def sendRcon(self, data, maxRetries=None, socketTimeout=None):
         if socketTimeout is None:
             socketTimeout = self.socket_timeout
         if maxRetries is None:
             maxRetries = 2
-            
+
         data = data.strip()
+        # encode the data
+        if self.console.encoding:
+            data = self.encode_data(data, 'RCON')
+
         self.console.verbose('RCON sending (%s:%s) %r', self.host[0], self.host[1], data)
         startTime = time.time()
 
@@ -160,7 +183,7 @@ class Rcon:
                 self.console.warning('RCON: %s', str(errors))
             elif len(writeables) > 0:
                 try:
-                    writeables[0].send(self.rconsendstring % (self.password, unicode(data).encode('UTF-8')))
+                    writeables[0].send(self.rconsendstring % (self.password, data))
                 except Exception, msg:
                     self.console.warning('RCON: ERROR sending: %r', msg)
                 else:
@@ -175,7 +198,7 @@ class Rcon:
                     # do not retry quits and map changes since they prevent the server from responding
                     self.console.verbose2('RCON: no retry for %r', data)
                     return ''
-                    
+
             else:
                 self.console.verbose('RCON: no writeable socket')
 
@@ -187,8 +210,6 @@ class Rcon:
                 self.console.error('RCON: too much tries. Abording (%r)', data.strip())
                 break
             self.console.verbose('RCON: retry sending %r (%s/%s)...', data.strip(), retries, maxRetries)
-
-
 
         self.console.debug('RCON: Did not send any data')
         return ''
@@ -212,14 +233,14 @@ class Rcon:
                         # pause and give time for last send to finish
                         time.sleep(1)
 
-                    if not cmd: 
+                    if not cmd:
                         continue
 
                     d = self.sendRcon(cmd)
                     if d:
                         data += d
 
-                    i+=1
+                    i += 1
             finally:
                 self.lock.release()
 
@@ -283,11 +304,11 @@ class Rcon:
     def readSocket(self, sock, size=4096, socketTimeout=None):
         if socketTimeout is None:
             socketTimeout = self.socket_timeout
-            
+
         data = ''
 
         readables, writeables, errors = select.select([sock], [], [sock], socketTimeout)
-        
+
         if not len(readables):
             raise Exception('No readable socket')
 
@@ -297,7 +318,7 @@ class Rcon:
             if d:
                 # remove rcon header
                 data += d.replace(self.rconreplystring, '')
-            
+
             readables, writeables, errors = select.select([sock], [], [sock], socketTimeout)
 
             if len(readables):
@@ -307,7 +328,7 @@ class Rcon:
 
     def close(self):
         pass
-        
+
     def getRules(self):
         self.lock.acquire()
         try:
@@ -319,7 +340,7 @@ class Rcon:
             return data
         else:
             return ''
-            
+
     def getInfo(self):
         self.lock.acquire()
         try:
@@ -331,16 +352,16 @@ class Rcon:
             return data
         else:
             return ''
-            
+
 if __name__ == '__main__':
     """
 To run tests : python b3/parsers/q3a_rcon.py <rcon_ip> <rcon_port> <rcon_password>
 """
-    
+
     from b3.fake import fakeConsole
 
     r = Rcon(fakeConsole, (sys.argv[1], int(sys.argv[2])), sys.argv[3])
-    
+
     for cmd in ['say "test1"', 'say "test2"', 'say "test3"', 'say "test4"', 'say "test5"']:
         fakeConsole.info('Writing %s', cmd)
         data = r.write(cmd)
@@ -357,18 +378,18 @@ To run tests : python b3/parsers/q3a_rcon.py <rcon_ip> <rcon_port> <rcon_passwor
         fakeConsole.info('Writing %s', cmd)
         data = r.write(cmd)
         fakeConsole.info('Recieved %s', data)
-        
+
     print '----------------------------------------'
     for cmd in ['.B3', '.Administrator', '.Admin', 'status', 'sv_mapRotation', 'players']:
         fakeConsole.info('Writing %s', cmd)
         data = r.write(cmd, socketTimeout=0.55)
         fakeConsole.info('Recieved %s', data)
-    
+
     print '----------------------------------------'
     fakeConsole.info('getRules')
     data = r.getRules()
     fakeConsole.info('Recieved %s', data)
-    
+
     print '----------------------------------------'
     fakeConsole.info('getInfo')
     data = r.getInfo()
