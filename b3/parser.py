@@ -316,7 +316,7 @@ class Parser(object):
 
         self.bot('%s', b3.getB3versionString())
         self.bot('Python: %s', sys.version)
-        self.bot('System encoding: %s, Server encoding: %s', sys.getdefaultencoding(), self.encoding)
+        self.bot('Default encoding: %s', sys.getdefaultencoding())
         self.bot('Starting %s v%s for server %s:%s', self.__class__.__name__, getattr(getModule(self.__module__), '__version__', ' Unknown'), self._rconIp, self._port)
 
         # get events
