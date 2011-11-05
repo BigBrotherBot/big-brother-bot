@@ -124,10 +124,19 @@ class AbstractParser(b3.parser.Parser):
 
         # exiting B3
         with self.exiting:
-            self._serverConnection.close()
-            #self.input.close()
-            self.output.close()
+            # If !die or !restart was called, then  we have the lock only after parser.handleevent Thread releases it
+            # and set self.working = False and this is one way to get this code is executed.
+            # Else there was an unhandled exception above and we end up here. We get the lock instantly.
 
+            # The Frostbite conection is running its own thread to communicate with the game server. We need to tell
+            # this thread to stop.
+            self.close_frostbite_connection()
+
+            # If !die was called, exitcode have been set to 222
+            # If !restart was called, exitcode have been set to 221
+            # In both cases, the SystemExit exception that triggered exitcode to be filled with an exit value was
+            # caught. Now that we are sure that everything was gracefully stopped, we can re-raise the SystemExit
+            # exception.
             if self.exitcode:
                 sys.exit(self.exitcode)
 
@@ -167,16 +176,14 @@ class AbstractParser(b3.parser.Parser):
 
     def close_frostbite_connection(self):
         try:
-            self._serverConnection.close()
-        except Exception:
-            pass
-        try:
             self._serverConnection.stop()
         except Exception:
             pass
         self._serverConnection = None
 
     def OnFrosbiteEvent(self, packet):
+        if not self.working:
+            self.verbose("dropping Frostbite event %r" % packet)
         self.console(repr(packet))
         self.frostbite_event_queue.put((self.time(), self.time() + 10, packet), timeout=2)
 
