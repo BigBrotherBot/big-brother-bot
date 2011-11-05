@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2011-11-05 - 1.27.1 - Courgette
+#   * makes sure to release the self.exiting lock
 #   2011/06/05 - 1.27 - xlr8or
 #   * implementation of game server encoding/decoding
 #   2011/09/12 - 1.26.2 - Courgette
@@ -135,7 +137,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.27'
+__version__ = '1.27.1'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket, threading
@@ -929,7 +931,7 @@ class Parser(object):
 
         self.bot('Stop reading.')
 
-        if self.exiting.acquire(1):
+        with self.exiting:
             self.input.close()
             self.output.close()
 
@@ -1008,9 +1010,6 @@ class Parser(object):
                     
         self.bot('Shutting down event handler')
 
-        if self.exiting.locked():
-            self.exiting.release()
-
     def write(self, msg, maxRetries=None):
         """Write a message to Rcon/Console"""
         if self.replay:
@@ -1048,16 +1047,17 @@ class Parser(object):
     def shutdown(self):
         """Shutdown B3"""
         try:
-            if self.working and self.exiting.acquire():
-                self.bot('Shutting down...')
-                self.working = False
-                for k,plugin in self._plugins.items():
-                    plugin.parseEvent(b3.events.Event(b3.events.EVT_STOP, ''))
-                if self._cron:
-                    self._cron.stop()
+            if self.working:
+                with self.exiting:
+                    self.bot('Shutting down...')
+                    self.working = False
+                    for k,plugin in self._plugins.items():
+                        plugin.parseEvent(b3.events.Event(b3.events.EVT_STOP, ''))
+                    if self._cron:
+                        self._cron.stop()
 
-                self.bot('Shutting down database connections...')
-                self.storage.shutdown()
+                    self.bot('Shutting down database connections...')
+                    self.storage.shutdown()
         except Exception, e:
             self.error(e)
 

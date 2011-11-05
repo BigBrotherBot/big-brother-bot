@@ -123,7 +123,7 @@ class AbstractParser(b3.parser.Parser):
                 pass
 
         # exiting B3
-        if self.exiting.acquire(1):
+        with self.exiting:
             self._serverConnection.close()
             #self.input.close()
             self.output.close()

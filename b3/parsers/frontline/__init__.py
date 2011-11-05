@@ -157,7 +157,7 @@ class FrontlineParser(b3.parser.Parser):
                     asyncore.loop(timeout=3, use_poll=True, count=1)
         self.bot('Stop listening.')
 
-        if self.exiting.acquire(1):
+        with self.exiting:
             self._serverConnection.close()
             if self.exitcode:
                 sys.exit(self.exitcode)
