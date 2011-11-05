@@ -605,6 +605,21 @@ class AbstractParser(b3.parser.Parser):
         client = self.getClient(name)
         client.ip = ip
         client.pbid = pbid
+        if not client.guid:
+            # a bug in the BF3 server can make admin.listPlayers response reply with players having an
+            # empty string as guid. What we can do here is to try to get the guid from the pbid in the
+            # B3 database.
+            try:
+                matching_clients = self.console.storage.getClientsMatching({'pbid': pbid})
+                if len(matching_clients) == 0:
+                    self.debug("no client found by pbid")
+                elif len(matching_clients) > 1:
+                    self.debug("too many clients found by pbid")
+                else:
+                    client.guid = matching_clients[0].guid
+                    client.auth()
+            except Exception, err:
+                self.warning("failed to try to auth %s by pbid. %r" % (name, err))
         client.save()
 
 
