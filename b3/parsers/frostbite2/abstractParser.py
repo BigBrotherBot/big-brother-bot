@@ -128,6 +128,8 @@ class AbstractParser(b3.parser.Parser):
             # and set self.working = False and this is one way to get this code is executed.
             # Else there was an unhandled exception above and we end up here. We get the lock instantly.
 
+            self.output.frostbite_server = None
+
             # The Frostbite conection is running its own thread to communicate with the game server. We need to tell
             # this thread to stop.
             self.close_frostbite_connection()
