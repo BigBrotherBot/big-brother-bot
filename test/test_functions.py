@@ -16,12 +16,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-from _pyio import StringIO
-from b3 import functions
-from mock import Mock
-import StringIO
-import sys
 import time
+import sys
+from b3 import functions
 import unittest
     
 class TestSplitDSN(unittest.TestCase):
@@ -125,28 +122,3 @@ class TestTime2minutes(unittest.TestCase):
         self.assertEqual(functions.time2minutes('120w'), 120*7*24*60)
         self.assertEqual(functions.time2minutes('5w'), 5*7*24*60)
         self.assertEqual(functions.time2minutes('90w'), 90*7*24*60)
-
-class TestCheckUpdate(unittest.TestCase):
-    _time_start = 0
-    def setUp(self):
-        self._time_start = time.time()
-        functions.urllib2.urlopen = Mock(return_value=StringIO.StringIO("""<?xml version='1.0'?><version>1.3.0</version>"""))
-    def tearDown(self):
-        ms = ((time.time() - self._time_start)*1000)
-        print "test took %0.1f ms" % ms
-        self.assertTrue(ms < 5500, "Test exceeded timeout")
-    def test_1(self):
-        self.assertIsInstance(functions.checkUpdate('1.2', singleLine=True, showErrormsg=True), basestring)
-    def test_2(self):
-        self.assertIsNone(functions.checkUpdate('1.4', singleLine=True, showErrormsg=True))
-    def test_3(self):
-        self.assertIsNone(functions.checkUpdate('1.4.1', singleLine=True, showErrormsg=True))
-    def test_4(self):
-        sys.modules[__name__].URL_B3_LATEST_VERSION = 'http://no.where.lol/'
-        self.assertNotEqual(None, functions.checkUpdate('1.2', singleLine=True, showErrormsg=True))
-    def test_5(self):
-        sys.modules[__name__].URL_B3_LATEST_VERSION = 'http://localhost:9000/'
-        self.assertNotEqual(None, functions.checkUpdate('1.2', singleLine=True, showErrormsg=True))
-
-if __name__ == '__main__':
-    unittest.main()

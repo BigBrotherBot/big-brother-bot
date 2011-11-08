@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2011/11/05 - 1.11.1 - Courgette
+#   * do not tell "There was an error processing your command" to the player if catch a SystemExit
 #   2011/05/31 - 1.11.0 - Courgette
 #   * refactoring
 #   2011/04/30 - 1.10.3 - Courgette
@@ -86,7 +88,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.11.0'
+__version__ = '1.11.1'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import re, time, threading, sys, traceback, thread, random
@@ -366,7 +368,11 @@ class AdminPlugin(b3.plugin.Plugin):
                         results = command.executeBig(data, event.client)
                     else:
                         results = command.execute(data, event.client)
-                except:
+                except SystemExit, err:
+                    if err.code not in (221, 222):
+                        event.client.message('^7There was an error processing your command')
+                    raise
+                except Exception:
                     event.client.message('^7There was an error processing your command')
                     raise
                 else:

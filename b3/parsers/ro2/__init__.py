@@ -36,7 +36,10 @@
 # 2011-10-8 : 0.7
 # * Correct error in ban-kick
 # * Rewrite player names logic for extended characters
-
+#   2011-10-16 : 0.8
+# * !map working
+# * Player with funny accented i character now show in !list
+#
 #
 from b3 import functions
 from b3.clients import Client
@@ -60,7 +63,7 @@ import hashlib
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.7'
+__version__ = '0.8'
 
 
 class Ro2Parser(b3.parser.Parser):
@@ -78,6 +81,7 @@ class Ro2Parser(b3.parser.Parser):
     _read_write_delay=1
     _write_queue=[]
     _read_queue=[]
+    _ini_file = False
     url=''
     login_page=''
     site=''
@@ -91,6 +95,11 @@ class Ro2Parser(b3.parser.Parser):
     map_cycles = {}
     map_cycle_no = 0
     active_map_cycle = 0
+    _gametypes = {"TE" : "ROGame.ROGameInfoTerritories", "CD" : "ROGame.ROGameInfoCountdown", "FF" : "ROGame.ROGameInfoFirefight" }
+    _maps = {"TE" : ['TE-Apartments', 'TE-Barracks', 'TE-CommisarsHouse', 'TE-FallenFighters', 'TE-GrainElevator', 'TE-Gumrak', 'TE-PavlovsHouse', 'TE-RedOctoberFactory', 'TE-Spartanovka', 'TE-Station'],
+            "CD" : ['CD-Apartments', 'CD-Barracks', 'CD-CommisarsHouse', 'CD-FallenFighters', 'CD-GrainElevator', 'CD-Gumrak', 'CD-PavlovsHouse', 'CD-RedOctoberFactory', 'CD-Spartanovka', 'CD-Station'],
+            "FF" : ['FF-Apartments', 'FF-Barracks', 'FF-GrainElevator', 'FF-Station']
+            }
 
     _commands = {}
     _commands['message'] = '%(prefix)s %(message)s'
@@ -312,8 +321,14 @@ class Ro2Parser(b3.parser.Parser):
         #<span class="message">test message from game</span>
         #</div>
         
-        #<div class="chatmessage">        #<span class="teamcolor" style="background: #8FB9B0;">&#160;</span>        #<span class="teamnotice" style="color: #8FB9B0;">(Team)</span>        #<span class="username" title="Axis">&lt;82ndAB&gt;1LT.Bravo17 </span>:        #<span class="message">Team chat</span>        #</div>
-                #<div class="chatnotice">
+        #<div class="chatmessage">
+        #<span class="teamcolor" style="background: #8FB9B0;">&#160;</span>
+        #<span class="teamnotice" style="color: #8FB9B0;">(Team)</span>
+        #<span class="username" title="Axis">&lt;82ndAB&gt;1LT.Bravo17 </span>:
+        #<span class="message">Team chat</span>
+        #</div>
+        
+        #<div class="chatnotice">
         #<span class="noticesymbol">***</span> [<span class="username"></span>]
         #<span class="message">82ndAB ADMIN: No offensive names.</span>
         #</div>
@@ -336,7 +351,7 @@ class Ro2Parser(b3.parser.Parser):
         also replaces other characters that mess up html"""
         #ajax=1&message=test+chat&teamsay=-1
         message = message.replace(' ', '+')
-        message = message.replace('?','&quest;')
+        message = message.replace('?','%3F')
         message = '&message=' + message + '&teamsay=-1'
         self.debug(message)
         return message
@@ -760,11 +775,17 @@ class Ro2Parser(b3.parser.Parser):
         load a given map/level
         return a list of suggested map names in cases it fails to recognize the map that was provided
         """
-        raise NotImplementedError
-        map.replace('-', '&2d')
-        cmd = 'AdminChangeMap&20' + map
-        self.writeAdminCommand(cmd)
-        
+        #gametype=ROGame.ROGameInfoTerritories&map=TE-Barracks&mutatorGroupCount=0&urlextra=&action=change
+        gametype = map[0:2]
+        if self._gametypes.has_key(gametype) and self._maps[gametype].count(map) > 0:
+            mapchange_url = '/current/change'
+            data = 'gametype=' + self._gametypes[gametype] + '&map=' + map + '&mutatorGroupCount=0&urlextra=&action=change'
+            referer = None
+            console_data = self.readwriteweb(data, referer, mapchange_url)
+        else:
+            self.write(self.getCommand('say',  prefix=self.msgPrefix, message='Incorrect Gametype-Map combination'))
+
+            return
 
     def getPlayerPings(self):
         """\

@@ -277,6 +277,7 @@ class FrostbiteServer(threading.Thread):
     def __init__(self, host, port, password=None, command_timeout=5.0):
         threading.Thread.__init__(self, name="FrosbiteServerThread")
         self.frostbite_dispatcher = FrostbiteDispatcher(host, port)
+        self._stopEvent = threading.Event()
         self.password = password
         self.command_timeout = command_timeout
         self.frostbite_dispatcher.set_frostbite_event_hander(self._on_event)
@@ -337,6 +338,10 @@ class FrostbiteServer(threading.Thread):
     
     def close(self):
         self.frostbite_dispatcher.close()
+
+    def stop(self):
+        self._stopEvent.set()
+        self.close()
     
     #===============================================================================
     # 
@@ -353,11 +358,15 @@ class FrostbiteServer(threading.Thread):
     def getLogger(self):
         return logging.getLogger("FrostbiteServer")
 
+    def isStopped(self):
+        return self._stopEvent.is_set()
+
     def run(self):
         """Threaded code"""
         self.getLogger().info('start loop')
         try:
-            asyncore.loop()
+            while not self.isStopped():
+                asyncore.loop(count=1, timeout=1)
         except (EOFError, KeyboardInterrupt):
             self.frostbite_dispatcher.close()
         self.getLogger().info('end loop')
@@ -541,7 +550,7 @@ if __name__ == '__main__':
 
         from random import sample, random
         class CommandRequester(threading.Thread):
-            running = True
+            _stop = threading.Event()
             nb_instances = 0
             def __init__(self, frostbite_server, commands=('serverInfo',), delay=5):
                 self.__class__.nb_instances += 1
@@ -555,7 +564,7 @@ if __name__ == '__main__':
             
             def run(self):
                 self.getLogger().info("starting spamming commands")
-                while self.__class__.running:
+                while not self.__class__._stop.is_set():
                     cmd = sample(self.commands, 1)[0]
                     self.getLogger().info("###\trequesting \t%s" % repr(cmd))
                     try:
@@ -566,6 +575,9 @@ if __name__ == '__main__':
                     time.sleep(self.delay + random())
                 self.getLogger().info("stopped spamming commands")
 
+            @classmethod
+            def stopAll(cls):
+                cls._stop.set()
 
         logging.basicConfig(level=logging.NOTSET, format=FORMAT)
         logging.info("here we go")
@@ -616,9 +628,9 @@ if __name__ == '__main__':
 #        time.sleep(.5)
 #        CommandRequester(t_conn, (('login.plainText', 'faux password'), 'login.plainText')).start()
         
-        time.sleep(30)
-        #t_conn.close()
-        CommandRequester.running = False
+        time.sleep(5)
+        t_conn.stop()
+        CommandRequester.stopAll()
         logging.info("here we die")
 
     #run_low_level()

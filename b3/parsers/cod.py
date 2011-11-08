@@ -51,9 +51,10 @@
 # 03/07/2011 - 1.4.23 - 82ndab.Bravo17 - adjust sync() timing for high slot count servers and login plugin
 #                       Sync now occurs 60 seconds after ExitLevel (map change) rather than 30 seconds after every round start
 # 11/09/2011 - 1.4.24 - 82ndab.Bravo17 - New client will now join Auth queue if slot shows as 'Disconnected' in Auth queue
+# 10/30/2011 - 1.4.25 -xlr8or - Add decoding to data in say, sayTeam and Tell methods
 
-__author__  = 'ThorN, xlr8or'
-__version__ = '1.4.24'
+__author__ = 'ThorN, xlr8or'
+__version__ = '1.4.25'
 
 import re, string, threading
 import b3
@@ -83,8 +84,8 @@ class CodParser(AbstractParser):
     _commands['tempban'] = 'clientkick %(cid)s'
 
     _eventMap = {
-        'warmup' : b3.events.EVT_GAME_WARMUP,
-        'restartgame' : b3.events.EVT_GAME_ROUND_END
+        'warmup': b3.events.EVT_GAME_WARMUP,
+        'restartgame': b3.events.EVT_GAME_ROUND_END
     }
 
     # remove the time off of the line
@@ -95,61 +96,78 @@ class CodParser(AbstractParser):
         re.compile(r'^(?P<action>[a-z]+):\s?(?P<data>.*)$', re.IGNORECASE),
 
         # world kills
-        re.compile(r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9-]{1,2});(?P<team>[a-z]+);(?P<name>[^;]+);(?P<aguid>[^;]*);(?P<acid>-1);(?P<ateam>world);(?P<aname>[^;]*);(?P<aweap>[a-z0-9_-]+);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$', re.IGNORECASE),
+        re.compile(
+            r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9-]{1,2});(?P<team>[a-z]+);(?P<name>[^;]+);(?P<aguid>[^;]*);(?P<acid>-1);(?P<ateam>world);(?P<aname>[^;]*);(?P<aweap>[a-z0-9_-]+);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$'
+            , re.IGNORECASE),
         # player kills/damage
-        re.compile(r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]*);(?P<name>[^;]+);(?P<aguid>[^;]+);(?P<acid>[0-9]{1,2});(?P<ateam>[a-z]*);(?P<aname>[^;]+);(?P<aweap>[a-z0-9_-]+);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$', re.IGNORECASE),
+        re.compile(
+            r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]*);(?P<name>[^;]+);(?P<aguid>[^;]+);(?P<acid>[0-9]{1,2});(?P<ateam>[a-z]*);(?P<aname>[^;]+);(?P<aweap>[a-z0-9_-]+);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$'
+            , re.IGNORECASE),
         # suicides (cod4/cod5)
-        re.compile(r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]*);(?P<name>[^;]+);(?P<aguid>[^;]*);(?P<acid>-1);(?P<ateam>[a-z]*);(?P<aname>[^;]+);(?P<aweap>[a-z0-9_-]+);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$', re.IGNORECASE),
+        re.compile(
+            r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]*);(?P<name>[^;]+);(?P<aguid>[^;]*);(?P<acid>-1);(?P<ateam>[a-z]*);(?P<aname>[^;]+);(?P<aweap>[a-z0-9_-]+);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$'
+            , re.IGNORECASE),
         # suicides (cod7)
-        re.compile(r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]*);(?P<name>[^;]+);(?P<aguid>[^;]*);(?P<acid>[0-9]{1,2});(?P<ateam>[a-z]*);(?P<aname>[^;]+);(?P<aweap>[a-z0-9_-]+);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$', re.IGNORECASE),
+        re.compile(
+            r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]*);(?P<name>[^;]+);(?P<aguid>[^;]*);(?P<acid>[0-9]{1,2});(?P<ateam>[a-z]*);(?P<aname>[^;]+);(?P<aweap>[a-z0-9_-]+);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$'
+            , re.IGNORECASE),
 
         #team actions
-        re.compile(r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]+);(?P<name>[^;]+);(?P<type>[a-z_]+))$', re.IGNORECASE),
-        
+        re.compile(
+            r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]+);(?P<name>[^;]+);(?P<type>[a-z_]+))$'
+            , re.IGNORECASE),
+
         # Join Team (cod5)
-        re.compile(r'^(?P<action>JT);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]+);(?P<name>[^;]+);)$', re.IGNORECASE),
+        re.compile(r'^(?P<action>JT);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]+);(?P<name>[^;]+);)$',
+                   re.IGNORECASE),
 
         # tell like events
-        re.compile(r'^(?P<action>[a-z]+);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<name>[^;]+);(?P<aguid>[^;]+);(?P<acid>[0-9]{1,2});(?P<aname>[^;]+);(?P<text>.*))$', re.IGNORECASE),
+        re.compile(
+            r'^(?P<action>[a-z]+);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<name>[^;]+);(?P<aguid>[^;]+);(?P<acid>[0-9]{1,2});(?P<aname>[^;]+);(?P<text>.*))$'
+            , re.IGNORECASE),
         # say like events
-        re.compile(r'^(?P<action>[a-z]+);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<name>[^;]+);(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<name>[^;]+);(?P<text>.*))$',
+                   re.IGNORECASE),
 
         # all other events
         re.compile(r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<name>[^;]+))$', re.IGNORECASE)
-    )
+        )
     # All Log Line Formats see bottom of File
 
     #num score ping guid   name            lastmsg address               qport rate
     #--- ----- ---- ------ --------------- ------- --------------------- ----- -----
     #2     0   29 465030 <-{^4AS^7}-^3ThorN^7->^7       50 68.63.6.62:-32085      6597  5000
-    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+    _regPlayer = re.compile(
+        r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$'
+        , re.I)
 
     PunkBuster = None
 
     def startup(self):
         if self.IpsOnly:
             self.debug('Authentication Method: Using Ip\'s instead of GUID\'s!')
-        # add the world client
+            # add the world client
         client = self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
 
         if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
             # test if PunkBuster is active
             result = self.write('PB_SV_Ver')
             if result != '' and result[:7] != 'Unknown':
-                self.info('PunkBuster Active: %s' %result) 
+                self.info('PunkBuster Active: %s' % result)
                 self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
             else:
-                self.warning('PunkBuster test FAILED, Check your game server setup and B3 config! Disabling PB support!')
+                self.warning(
+                    'PunkBuster test FAILED, Check your game server setup and B3 config! Disabling PB support!')
 
         # get map from the status rcon command
         map = self.getMap()
         if map:
             self.game.mapName = map
-            self.info('map is: %s'%self.game.mapName)
+            self.info('map is: %s' % self.game.mapName)
 
         # Force g_logsync
         self.debug('Forcing server cvar g_logsync to %s' % self._logSync)
-        self.write('set g_logsync %s' %self._logSync)
+        self.write('set g_logsync %s' % self._logSync)
 
         # get gamepaths/vars
         try:
@@ -214,7 +232,9 @@ class CodParser(AbstractParser):
             event = b3.events.EVT_CLIENT_KILL_TEAM
 
         victim.state = b3.STATE_DEAD
-        return b3.events.Event(event, (float(match.group('damage')), match.group('aweap'), match.group('dlocation'), match.group('dtype')), attacker, victim)
+        return b3.events.Event(event,
+            (float(match.group('damage')), match.group('aweap'), match.group('dlocation'), match.group('dtype')),
+                               attacker, victim)
 
     # damage
     def OnD(self, action, data, match=None):
@@ -240,7 +260,9 @@ class CodParser(AbstractParser):
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
             event = b3.events.EVT_CLIENT_DAMAGE_TEAM
 
-        return b3.events.Event(event, (float(match.group('damage')), match.group('aweap'), match.group('dlocation'), match.group('dtype')), attacker, victim)
+        return b3.events.Event(event,
+            (float(match.group('damage')), match.group('aweap'), match.group('dlocation'), match.group('dtype')),
+                               attacker, victim)
 
     # disconnect
     def OnQ(self, action, data, match=None):
@@ -253,7 +275,8 @@ class CodParser(AbstractParser):
                 # Flag it to remove from the queue
                 cid = match.group('cid')
                 self._counter[cid] = 'Disconnected'
-                self.debug('slot %s has disconnected or was forwarded to our http download location, removing from authentication queue...' % cid)
+                self.debug(
+                    'slot %s has disconnected or was forwarded to our http download location, removing from authentication queue...' % cid)
         return None
 
     # join
@@ -261,10 +284,10 @@ class CodParser(AbstractParser):
         codguid = match.group('guid')
         cid = match.group('cid')
         name = match.group('name')
-        
+
         if len(codguid) < self._guidLength:
             # invalid guid
-            self.verbose2('Invalid GUID: %s' %codguid)
+            self.verbose2('Invalid GUID: %s' % codguid)
             codguid = None
 
         client = self.getClient(match)
@@ -276,19 +299,19 @@ class CodParser(AbstractParser):
                 if self.IpsOnly:
                     # this needs testing since the name cleanup code may interfere with this next condition
                     if name != client.name:
-                        self.debug('This is not the correct client (%s <> %s), disconnecting' %(name, client.name))
+                        self.debug('This is not the correct client (%s <> %s), disconnecting' % (name, client.name))
                         client.disconnect()
                         return None
                     else:
-                        self.verbose2('client.name in sync: %s == %s' %(name, client.name))
+                        self.verbose2('client.name in sync: %s == %s' % (name, client.name))
                 else:
                     if codguid != client.guid:
-                        self.debug('This is not the correct client (%s <> %s), disconnecting' %(codguid, client.guid))
+                        self.debug('This is not the correct client (%s <> %s), disconnecting' % (codguid, client.guid))
                         client.disconnect()
                         return None
                     else:
-                        self.verbose2('client.guid in sync: %s == %s' %(codguid, client.guid))
-            # update existing client
+                        self.verbose2('client.guid in sync: %s == %s' % (codguid, client.guid))
+                # update existing client
             client.state = b3.STATE_ALIVE
             # possible name changed
             client.name = name
@@ -296,12 +319,12 @@ class CodParser(AbstractParser):
             return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
         else:
             if self._counter.get(cid) and self._counter.get(cid) != 'Disconnected':
-                self.verbose('cid: %s already in authentication queue. Aborting Join.' %cid)
+                self.verbose('cid: %s already in authentication queue. Aborting Join.' % cid)
                 return None
             self._counter[cid] = 1
             t = threading.Timer(2, self.newPlayer, (cid, codguid, name))
             t.start()
-            self.debug('%s connected, waiting for Authentication...' %name)
+            self.debug('%s connected, waiting for Authentication...' % name)
             self.debug('Our Authentication queue: %s' % self._counter)
 
 
@@ -312,7 +335,7 @@ class CodParser(AbstractParser):
         if not client:
             self.debug('No client - attempt join')
             self.OnJ(action, data, match)
-            
+
             client = self.getClient(match)
 
             if not client:
@@ -320,7 +343,7 @@ class CodParser(AbstractParser):
 
         client.name = match.group('name')
         actiontype = match.group('type')
-        self.verbose('OnAction: %s: %s' % (client.name, actiontype) )
+        self.verbose('OnAction: %s: %s' % (client.name, actiontype))
         return b3.events.Event(b3.events.EVT_CLIENT_ACTION, actiontype, client)
 
     def OnSay(self, action, data, match=None):
@@ -329,7 +352,7 @@ class CodParser(AbstractParser):
         if not client:
             self.debug('No client - attempt join')
             self.OnJ(action, data, match)
-            
+
             client = self.getClient(match)
 
             if not client:
@@ -338,6 +361,13 @@ class CodParser(AbstractParser):
         data = match.group('text')
         if data and ord(data[:1]) == 21:
             data = data[1:]
+
+        # decode the server data
+        if self.encoding:
+            try:
+                data = data.decode(self.encoding)
+            except Exception, msg:
+                self.warning('ERROR Decoding data: %r', msg)
 
         if client.name != match.group('name'):
             client.name = match.group('name')
@@ -349,7 +379,7 @@ class CodParser(AbstractParser):
         if not client:
             self.debug('No client - attempt join')
             self.OnJ(action, data, match)
-            
+
             client = self.getClient(match)
 
             if not client:
@@ -360,6 +390,13 @@ class CodParser(AbstractParser):
         # remove if it is there
         if data and ord(data[:1]) == 21:
             data = data[1:]
+
+        # decode the server data
+        if self.encoding:
+            try:
+                data = data.decode(self.encoding)
+            except Exception, msg:
+                self.warning('ERROR Decoding data: %r', msg)
 
         if client.name != match.group('name'):
             client.name = match.group('name')
@@ -373,7 +410,7 @@ class CodParser(AbstractParser):
         if not client:
             self.debug('No client - attempt join')
             self.OnJ(action, data, match)
-            
+
             client = self.getClient(match)
 
             if not client:
@@ -382,6 +419,13 @@ class CodParser(AbstractParser):
         data = match.group('text')
         if data and ord(data[:1]) == 21:
             data = data[1:]
+
+        # decode the server data
+        if self.encoding:
+            try:
+                data = data.decode(self.encoding)
+            except Exception, msg:
+                self.warning('ERROR Decoding data: %r', msg)
 
         client.name = match.group('name')
         return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data, client, tclient)
@@ -401,6 +445,7 @@ class CodParser(AbstractParser):
 
         self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
         self.game.startRound()
+
 
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
 
@@ -422,11 +467,12 @@ class CodParser(AbstractParser):
             if client.pbid:
                 result = self.PunkBuster.unBanGUID(client)
 
-                if result:                    
+                if result:
                     admin.message('^3Unbanned^7: %s^7: %s' % (client.exactName, result))
 
                 if admin:
-                    fullreason = self.getMessage('unbanned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+                    fullreason = self.getMessage('unbanned_by',
+                                                 self.getMessageVariables(client=client, reason=reason, admin=admin))
                 else:
                     fullreason = self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason))
 
@@ -449,6 +495,7 @@ class CodParser(AbstractParser):
             return b3.TEAM_UNKNOWN
 
     _reMap = re.compile(r'map ([a-z0-9_-]+)', re.I)
+
     def getMaps(self):
         maps = self.getCvar('sv_mapRotation')
 
@@ -466,7 +513,7 @@ class CodParser(AbstractParser):
 
     def getNextMap(self):
         if not self.game.mapName: return None
-        
+
         maps = self.getCvar('sv_mapRotation')
 
         if maps:
@@ -522,7 +569,7 @@ class CodParser(AbstractParser):
                         client.disconnect()
                 else:
                     self.debug('no-sync: no guid or ip found.')
-        
+
         return mlist
 
     def connectClient(self, ccid):
@@ -532,7 +579,7 @@ class CodParser(AbstractParser):
         for cid, p in players.iteritems():
             #self.debug('cid: %s, ccid: %s, p: %s' %(cid, ccid, p))
             if int(cid) == int(ccid):
-                self.debug('%s found in status/playerList' %p['name'])
+                self.debug('%s found in status/playerList' % p['name'])
                 return p
 
     def newPlayer(self, cid, codguid, name):
@@ -540,10 +587,10 @@ class CodParser(AbstractParser):
             self.verbose('newPlayer thread no longer needed, Key no longer available')
             return None
         if self._counter.get(cid) == 'Disconnected':
-            self.debug('%s disconnected, removing from authentication queue' %name)
+            self.debug('%s disconnected, removing from authentication queue' % name)
             self._counter.pop(cid)
             return None
-        self.debug('newClient: %s, %s, %s' %(cid, codguid, name) )
+        self.debug('newClient: %s, %s, %s' % (cid, codguid, name))
         sp = self.connectClient(cid)
         # PunkBuster is enabled, using PB guid
         if sp and self.PunkBuster:
@@ -551,7 +598,7 @@ class CodParser(AbstractParser):
             # test if pbid is valid, otherwise break off and wait for another cycle to authenticate
             if not re.match(self._pbRegExp, sp['pbid']):
                 self.debug('PB-id is not valid! Giving it another try.')
-                self._counter[cid] +=1
+                self._counter[cid] += 1
                 t = threading.Timer(4, self.newPlayer, (cid, codguid, name))
                 t.start()
                 return None
@@ -591,16 +638,17 @@ class CodParser(AbstractParser):
         # Player is not in the status response (yet), retry
         else:
             if self._counter.get(cid):
-                self.debug('%s not yet fully connected, retrying...#:%s' %(name, self._counter.get(cid)))
-                self._counter[cid] +=1
+                self.debug('%s not yet fully connected, retrying...#:%s' % (name, self._counter.get(cid)))
+                self._counter[cid] += 1
                 t = threading.Timer(4, self.newPlayer, (cid, codguid, name))
                 t.start()
             else:
                 #Falling trough
                 self.warning('All authentication attempts failed.')
             return None
-            
-        client = self.clients.newClient(cid, name=name, ip=ip, state=b3.STATE_ALIVE, guid=guid, pbid=pbid, data={ 'codguid' : codguid })
+
+        client = self.clients.newClient(cid, name=name, ip=ip, state=b3.STATE_ALIVE, guid=guid, pbid=pbid,
+                                        data={'codguid': codguid})
         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client))
 
     def authorizeClients(self):
@@ -611,7 +659,7 @@ class CodParser(AbstractParser):
             sp = self.clients.getByCID(cid)
             if sp:
                 # Only set provided data, otherwise use the currently set data
-                sp.ip   = p.get('ip', sp.ip)
+                sp.ip = p.get('ip', sp.ip)
                 sp.pbid = p.get('pbid', sp.pbid)
                 if self.IpsOnly:
                     sp.guid = p.get('ip', sp.guid)

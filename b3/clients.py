@@ -216,10 +216,14 @@ class Client(object):
             self._groups = []
             groups = self.console.storage.getGroups()
 
+            guest_group = None
             for g in groups:
+                if g.id == 0:
+                    guest_group = g
                 if g.id & self._groupBits:
                     self._groups.append(g)
-
+            if not len(self._groups) and guest_group:
+                self._groups.append(guest_group)
         return self._groups
 
     groups = property(getGroups)
@@ -459,7 +463,7 @@ class Client(object):
     def _get_maxLevel(self):
         if self._maxLevel == None:
             if self.groups and len(self.groups):
-                m = 0
+                m = -1
                 for g in self.groups:
                     if g.level > m:
                         m = g.level

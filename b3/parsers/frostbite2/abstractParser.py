@@ -123,11 +123,22 @@ class AbstractParser(b3.parser.Parser):
                 pass
 
         # exiting B3
-        if self.exiting.acquire(1):
-            self._serverConnection.close()
-            #self.input.close()
-            self.output.close()
+        with self.exiting:
+            # If !die or !restart was called, then  we have the lock only after parser.handleevent Thread releases it
+            # and set self.working = False and this is one way to get this code is executed.
+            # Else there was an unhandled exception above and we end up here. We get the lock instantly.
 
+            self.output.frostbite_server = None
+
+            # The Frostbite conection is running its own thread to communicate with the game server. We need to tell
+            # this thread to stop.
+            self.close_frostbite_connection()
+
+            # If !die was called, exitcode have been set to 222
+            # If !restart was called, exitcode have been set to 221
+            # In both cases, the SystemExit exception that triggered exitcode to be filled with an exit value was
+            # caught. Now that we are sure that everything was gracefully stopped, we can re-raise the SystemExit
+            # exception.
             if self.exitcode:
                 sys.exit(self.exitcode)
 
@@ -167,16 +178,14 @@ class AbstractParser(b3.parser.Parser):
 
     def close_frostbite_connection(self):
         try:
-            self._serverConnection.close()
-        except Exception:
-            pass
-        try:
             self._serverConnection.stop()
         except Exception:
             pass
         self._serverConnection = None
 
     def OnFrosbiteEvent(self, packet):
+        if not self.working:
+            self.verbose("dropping Frostbite event %r" % packet)
         self.console(repr(packet))
         self.frostbite_event_queue.put((self.time(), self.time() + 10, packet), timeout=2)
 
@@ -191,10 +200,10 @@ class AbstractParser(b3.parser.Parser):
         if match:
             func = 'On%s%s' % (string.capitalize(match.group('actor')), \
                                string.capitalize(match.group('event')))
-            self.debug("looking for event handling method called : " + func)
+            self.verbose2("looking for event handling method called : " + func)
             
         if match and hasattr(self, func):
-            self.debug('routing ----> %s(%r)' % (func,eventData))
+            self.verbose2('routing ----> %s(%r)' % (func,eventData))
             func = getattr(self, func)
             event = func(eventType, eventData)
             #self.debug('event : %s' % event)
@@ -350,14 +359,12 @@ class AbstractParser(b3.parser.Parser):
         """
         player.onJoin <soldier name: string> <id : EAID>
         """
-        try:
-            _guid = data[1]
-        except IndexError:
-            _guid = None
-        client = self.getClient(data[0], guid=_guid)
-        if client:
-            return b3.events.Event(b3.events.EVT_CLIENT_JOIN, (), client)
-        
+        # we receive this event very early and even before the game client starts to connect to the game server.
+        # In some occasions, the game client fails to properly connect and the game server then fails to send
+        # us a player.onLeave event resulting in B3 thinking the player is connected while it is not.
+        # The fix is to ignore this event. If the game client successfully connect, then we'll receive other
+        # events like player.onTeamChange or even a event from punkbuster which will create the Client object.
+        pass
 
     def OnPlayerAuthenticated(self, action, data):
         """
@@ -523,12 +530,17 @@ class AbstractParser(b3.parser.Parser):
                 match = re.match(regexp, str(data[0]).strip())
                 if match:
                     break
-            if match and hasattr(self, funcName):
-                func = getattr(self, funcName)
-                event = func(match, data[0])
-                if event:
-                    self.queueEvent(event)     
+            if match:
+                if hasattr(self, funcName):
+                    func = getattr(self, funcName)
+                    event = func(match, data[0])
+                    if event:
+                        self.queueEvent(event)
+                else:
+                    self.debug("func %s not found, defaulting to EVT_UNKNOWN" % funcName)
+                    return b3.events.Event(b3.events.EVT_UNKNOWN, data)
             else:
+                self.debug("no pattern matching \"%s\", defaulting to EVT_UNKNOWN" % str(data[0]).strip())
                 return b3.events.Event(b3.events.EVT_UNKNOWN, data)
                 
     def OnPBVersion(self, match,data):
@@ -600,9 +612,25 @@ class AbstractParser(b3.parser.Parser):
         #port = match.group('port')
         name = match.group('name')
         client = self.getClient(name)
-        client.ip = ip
-        client.pbid = pbid
-        client.save()
+        if client:
+            client.ip = ip
+            client.pbid = pbid
+            if not client.guid:
+                # a bug in the BF3 server can make admin.listPlayers response reply with players having an
+                # empty string as guid. What we can do here is to try to get the guid from the pbid in the
+                # B3 database.
+                try:
+                    matching_clients = self.console.storage.getClientsMatching({'pbid': pbid})
+                    if len(matching_clients) == 0:
+                        self.debug("no client found by pbid")
+                    elif len(matching_clients) > 1:
+                        self.debug("too many clients found by pbid")
+                    else:
+                        client.guid = matching_clients[0].guid
+                        client.auth()
+                except Exception, err:
+                    self.warning("failed to try to auth %s by pbid. %r" % (name, err))
+            client.save()
 
 
 

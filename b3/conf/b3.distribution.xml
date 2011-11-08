@@ -68,6 +68,16 @@
 		<!-- <set name="destination">C:\Users\b3\Desktop\test_doc.htm</set> -->
 		<!-- <set name="destination">ftp://user:pass@somewhere.com/www/test_doc.htm</set> -->
 	</settings>
+    <settings name="update">
+        <!-- B3 checks if a new version is available at startup. Choose here what channel you want to check against.
+            Available channels are :
+                stable : will only show stable releases of B3
+                beta : will also check if a beta release is available
+                dev : will also check if a development release is available
+            If you don't know what channel to use, use 'stable'
+        -->
+        <set name="channel">stable</set>
+    </settings>
 	<settings name="messages">
 		<set name="kicked_by">$clientname^7 was kicked by $adminname^7 $reason</set>
 		<set name="kicked">$clientname^7 was kicked $reason</set>
