@@ -188,7 +188,8 @@ def start(configFile, nosetup=False):
         print 'Exiting: %s' % msg
         raise
     except Exception, msg:
-        print 'Error: %s\n%s' % (msg, ''.join(traceback.format_list(traceback.extract_tb(sys.exc_info()[2]))))
+        print 'Error: %s' % msg
+        traceback.print_exc()
         sys.exit(223)
 
 def clearScreen():
