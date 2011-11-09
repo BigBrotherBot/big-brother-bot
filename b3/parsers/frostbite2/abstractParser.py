@@ -122,7 +122,14 @@ class AbstractParser(b3.parser.Parser):
                         self.exitcode = 220
                         break
                     else:
-                        raise
+                        self.error(err.message)
+                except IOError, err:
+                    self.error("IOError %s"% err)
+                except Exception, err:
+                    self.error(err)
+                    self.exitcode = 220
+                    break
+
             try:
                 self.verbose2("waiting for game server event")
                 added, expire, packet = self.frostbite_event_queue.get(timeout=10)
