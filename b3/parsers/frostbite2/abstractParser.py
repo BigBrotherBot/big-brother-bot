@@ -57,8 +57,8 @@ class AbstractParser(b3.parser.Parser):
     _reColor = re.compile(r'(\^[0-9])')
 
     _settings = {
-        'line_length': 65,
-        'min_wrap_length': 60,
+        'line_length': 67,
+        'min_wrap_length': 67,
         'message_delay': .8,
         }
 
@@ -114,7 +114,22 @@ class AbstractParser(b3.parser.Parser):
 
         while self.working:
             if not self._serverConnection or not self._serverConnection.connected:
-                self.setup_frostbite_connection()
+                try:
+                    self.setup_frostbite_connection()
+                except CommandFailedError, err:
+                    if err.message[0] == 'InvalidPasswordHash':
+                        self.error("your rcon password is incorrect. Check setting 'rcon_password' in your main config file.")
+                        self.exitcode = 220
+                        break
+                    else:
+                        self.error(err.message)
+                except IOError, err:
+                    self.error("IOError %s"% err)
+                except Exception, err:
+                    self.error(err)
+                    self.exitcode = 220
+                    break
+
             try:
                 self.verbose2("waiting for game server event")
                 added, expire, packet = self.frostbite_event_queue.get(timeout=10)

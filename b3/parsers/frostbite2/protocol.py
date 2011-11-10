@@ -285,6 +285,10 @@ class FrostbiteServer(threading.Thread):
         self.pending_commands = {}
         self.__command_reply_event = threading.Event()
         self.observers = set()
+        # test connection
+        sock = socket.create_connection((host, port), timeout=2)
+        sock.close()
+        # ok start working
         self.start()
         time.sleep(1.5)
 
@@ -367,7 +371,9 @@ class FrostbiteServer(threading.Thread):
         try:
             while not self.isStopped():
                 asyncore.loop(count=1, timeout=1)
-        except (EOFError, KeyboardInterrupt):
+        except KeyboardInterrupt:
+            pass
+        finally:
             self.frostbite_dispatcher.close()
         self.getLogger().info('end loop')
 
