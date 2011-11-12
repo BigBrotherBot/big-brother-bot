@@ -49,6 +49,8 @@
 # 2011/05/19 - 1.0 - xlr8or
 #    * Added Update class
 #    * Version 1.0 merged into master branch (for B3 v1.6.0 release)
+# 2011/11/12 - 1.1 - courgette
+#    * can install external plugins having a module defined as a directory instead as as a python file
 #
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -56,7 +58,7 @@
 # The setup procedure, to create a new configuration file (b3.xml)
 
 __author__ = 'xlr8or'
-__version__ = '1.0'
+__version__ = '1.1'
 
 import platform
 import urllib2
@@ -90,7 +92,6 @@ class Setup:
     _templatevar = ''
     _buffer = ''
     _equaLength = 15
-    ## @todo bfbc2 and moh need to be added later when parsers correctly implemented pb.
     _PBSupportedParsers = ['cod', 'cod2', 'cod4', 'cod5', 'cod6', 'cod7']
     _frostBite = ['bfbc2', 'moh', 'bf3']
 
@@ -579,7 +580,7 @@ class Setup:
         if downlURL:
             self.add_buffer('  ... getting external plugin %s:\n' % sname)
             try:
-                self.download(downlURL)
+                self.download(sname, downlURL)
             except:
                 self.add_buffer("Couldn't get remote plugin %s, please install it manually.\n" % sname)
 
@@ -769,7 +770,7 @@ class Setup:
     def url2name(self, url):
         return os.path.basename(urlsplit(url)[2])
 
-    def download(self, url, localFileName=None):
+    def download(self, plugin_name, url, localFileName=None):
         absPath = self.getAbsolutePath(self._set_external_dir)
         localName = self.url2name(url)
         req = urllib2.Request(url)
@@ -806,6 +807,11 @@ class Setup:
             if root[-10:] == 'extplugins':
                 for data in glob.glob(root + '/*.py'):
                     shutil.copy2(data, absPath)
+            if root.endswith(os.path.join('extplugins', plugin_name)):
+                # some plugin have a directory as the plugin module
+                os.mkdir(os.path.join(absPath, plugin_name))
+                for data in glob.glob(root + '/*.py'):
+                    shutil.copy2(data, os.path.join(absPath, plugin_name))
             # move the config files to the extplugins/conf folder
             if root[-4:] == 'conf':
                 for data in glob.glob(root + '/*.xml'):
@@ -821,45 +827,9 @@ class Setup:
     def extract(self, file, dir):
         if not dir.endswith(':') and not os.path.exists(dir):
             os.mkdir(dir)
-
         zf = zipfile.ZipFile(file)
-
-        # create directory structure to house files
-        self._createstructure(file, dir)
-
-        # extract files to directory structure
-        for i, name in enumerate(zf.namelist()):
-            if not name.endswith('/'):
-                outfile = open(os.path.join(dir, name), 'wb')
-                outfile.write(zf.read(name))
-                outfile.flush()
-                outfile.close()
-
-    def _createstructure(self, file, dir):
-        self._makedirs(self._listdirs(file), dir)
-
-    def _makedirs(self, directories, basedir):
-        """ Create any directories that don't currently exist """
-        for dir in directories:
-            curdir = os.path.join(basedir, dir)
-            if not os.path.exists(curdir):
-                os.mkdir(curdir)
-
-    def _listdirs(self, file):
-        """ Grabs all the directories in the zip structure
-        This is necessary to create the structure before trying
-        to extract the file to it. """
-        zf = zipfile.ZipFile(file)
-
-        dirs = []
-
-        for name in zf.namelist():
-            if name.endswith('/'):
-                dirs.append(name)
-
-        dirs.sort()
-        return dirs
-
+        zf.extractall(path=dir)
+        
 
 class Update(Setup):
     """ This class holds all update methods for the database"""
