@@ -219,9 +219,9 @@ class Setup:
             self.add_set("port", self.read_element('server', 'port', ''),
                          "The port people use to connect to your gameserver")
             self.add_set("rcon_ip", self.read_element('server', 'rcon_ip', ''),
-                         "The IP that the bot uses to send RCON commands. Usually the same as the public_ip")
+                         "The IP of your gameserver B3 will connect to in order to send RCON commands. Usually the same as the public_ip")
             self.add_set("rcon_port", self.read_element('server', 'rcon_port', ''),
-                         "The port that the bot uses to send RCON commands. NOT the same as the normal port.")
+                         "The port of your gameserver that B3 will connect to in order to send RCON commands. NOT the same as the normal port.")
             self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
                          "The RCON password of your gameserver.")
             self.add_set("timeout", self.read_element('server', 'timeout', '3'),
@@ -234,9 +234,9 @@ class Setup:
             self.add_set("port", self.read_element('server', 'port', ''),
                          "The port people use to connect to your gameserver")
             self.add_set("rcon_ip", self.read_element('server', 'rcon_ip', ''),
-                         "The IP that the bot uses to send RCON commands. Usually the same as the public_ip")
+                         "The IP of your gameserver B3 will connect to in order to send RCON commands. Usually the same as the public_ip")
             self.add_set("rcon_port", self.read_element('server', 'rcon_port', ''),
-                         "The port that the bot uses to send RCON commands. NOT the same as the normal port.")
+                         "The port of your gameserver that B3 will connect to in order to send RCON commands. NOT the same as the normal port.")
             self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
                          "The RCON password of your gameserver.")
 
