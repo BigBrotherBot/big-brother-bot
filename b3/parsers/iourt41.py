@@ -142,9 +142,11 @@
 #   as tkers in such cases.
 # 15/10/2011 - 1.11.3 - Courgette
 # * better team recognition of existing players at B3 start
-
+# 15/11/2011 - 1.11.4 - Courgette
+# * players's team get refreshed after unpausing the bot (useful when used with FTP and B3 lose the connection for a while)
+#
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.11.3'
+__version__ = '1.11.4'
 
 from b3.parsers.q3a.abstractParser import AbstractParser
 import re, string, threading, time, os, thread
@@ -429,6 +431,10 @@ class Iourt41Parser(AbstractParser):
                     self.debug('Fixing client team for %s : %s is now %s' % (client.name, client.team, newteam))
                     setattr(client, 'team', newteam)
             
+    def unpause(self):
+        self.pluginsStarted() # so we get teams refreshed
+        self.clients.sync()
+        b3.parser.Parser.unpause(self)
 
     def getLineParts(self, line):
         line = re.sub(self._lineClear, '', line, 1)
@@ -1454,12 +1460,14 @@ class Iourt41Parser(AbstractParser):
                 player_teams[cid] = team
 
         g_blueteamlist = self.getCvar('g_blueteamlist')
-        for letter in g_blueteamlist.getString():
-            player_teams[letters2slots[letter]] = b3.TEAM_BLUE
+        if g_blueteamlist:
+            for letter in g_blueteamlist.getString():
+                player_teams[letters2slots[letter]] = b3.TEAM_BLUE
 
         g_redteamlist = self.getCvar('g_redteamlist')
-        for letter in g_redteamlist.getString():
-            player_teams[letters2slots[letter]] = b3.TEAM_RED
+        if g_redteamlist:
+            for letter in g_redteamlist.getString():
+                player_teams[letters2slots[letter]] = b3.TEAM_RED
         return player_teams
 
     def _getDamagePoints(self, weapon, hitloc):
