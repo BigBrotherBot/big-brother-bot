@@ -47,7 +47,6 @@
 		<plugin name="adv" config="@conf/plugin_adv.xml"/>
 		<plugin name="status" config="@conf/plugin_status.xml"/>
 		<plugin name="welcome" config="@conf/plugin_welcome.xml"/>
-		-->
 	</plugins>
     <extplugins>
         <plugin name="poweradminbf3" config="external_dir/conf/plugin_poweradminbf3.xml"
