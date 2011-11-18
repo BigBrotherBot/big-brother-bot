@@ -162,7 +162,6 @@ class FrostbiteError(Exception): pass
 
 class CommandError(FrostbiteError): pass
 class CommandTimeoutError(CommandError): pass
-class BadPasswordError(CommandError): pass
 class CommandFailedError(CommandError): pass
 
 class NetworkError(FrostbiteError): pass
@@ -339,7 +338,7 @@ class FrostbiteServer(threading.Thread):
         # Send password hash to server
         self.command("login.hashed", passwordHashHexString)
         self.getLogger().info("authentication done")
-    
+
     def close(self):
         self.frostbite_dispatcher.close()
 
