@@ -3,7 +3,7 @@
 
 ;#define Debug
 #define B3_VERSION_NUMBER "1.8.0"
-#define B3_VERSION_SUFFIX "dev9"
+#define B3_VERSION_SUFFIX "dev10"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -20,7 +20,7 @@ AppUpdatesURL=http://www.bigbrotherbot.net/
 AppCopyright=Copyright (C) 2005-2011 BigBrotherBot.net
 DefaultDirName={sd}\BigBrotherBot
 DefaultGroupName=BigBrotherBot
-LicenseFile=gpl-2.0.txt
+LicenseFile=assets_common\gpl-2.0.txt
 OutputBaseFilename=BigBrotherBot-{#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}
 Compression=lzma/Ultra64
 SolidCompression=true
@@ -37,20 +37,21 @@ ExtraDiskSpaceRequired=11790316
 RestartIfNeededByRun=false
 PrivilegesRequired=none
 WizardImageBackColor=clBlack
-WindowVisible=true
+WindowVisible=false
 BackColor=clBlack
 BackColor2=clGray
-WizardSmallImageFile=WizB3SmallImage.bmp
-WizardImageFile=WizB3Image.bmp
-UsePreviousAppDir=false
+WizardSmallImageFile=assets_common\WizB3SmallImage.bmp
+WizardImageFile=assets_common\WizB3Image.bmp
+UsePreviousAppDir=true
 AlwaysShowDirOnReadyPage=true
 AlwaysShowGroupOnReadyPage=true
 VersionInfoCompany=BigBrotherBot.net
 WindowShowCaption=false
 WindowResizable=false
-SetupIconFile=b3.ico
-EnableDirDoesntExistWarning=true
+SetupIconFile=assets_common\b3.ico
+EnableDirDoesntExistWarning=false
 DirExistsWarning=yes
+DisableProgramGroupPage=auto
 
 [Languages]
 Name: english; MessagesFile: compiler:Default.isl
@@ -101,6 +102,7 @@ Name: {group}\web\other tools\{cm:Xlrstats,XLRstats}; Filename: http://www.xlrst
 
 [Files]
 Source: {app}\conf\*; DestDir: {app}\conf\backup; Flags: external skipifsourcedoesntexist uninsneveruninstall
+Source: "assets_common\readme-windows.txt"; DestDir: "{app}"
 Source: ..\..\dist_py2exe\b3_run.exe; DestDir: {app}
 Source: ..\..\dist_py2exe\b3.lib; DestDir: {app}
 Source: ..\..\dist_py2exe\PKG-INFO; DestDir: {app}
@@ -113,8 +115,8 @@ Source: ..\..\dist_py2exe\sql\*; DestDir: {app}\sql; Flags: recursesubdirs
 Source: ..\..\dist_py2exe\extplugins\*; DestDir: {app}\extplugins; Flags: recursesubdirs
 ;Source: ..\..\dist_py2exe\conf\*; DestDir: {commonappdata}\BigBrotherBot\conf; Flags: recursesubdirs
 Source: ..\..\dist_py2exe\conf\*; DestDir: {app}\conf; Flags: recursesubdirs 
-Source: b3.ico; DestDir: {app}
-Source: b3-plugins-icon.ico; DestDir: {app}
+Source: assets_common\b3.ico; DestDir: {app}
+Source: assets_common\b3-plugins-icon.ico; DestDir: {app}
 
 [UninstallDelete]
 Name: {app}\*; Type: filesandordirs

@@ -4,12 +4,12 @@ and an installer.
 REQUIREMENTS:
     Environment :
         * a Windows OS
-        * with python2.5
-        * with elementtree (if required)
+        * with python2.6+
         * with mysqldb
     Tools:
-        * py2exe2.5
-        * Innosetup
+        * py2exe2.6+
+        * InnoSetup
+        * InnoSetup preprocessor
         * ISTools (optional)
     
 HOW TO BUILD THE .EXE RELEASE:

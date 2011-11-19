@@ -26,7 +26,7 @@ __version__ = '0.0'
 import sys, re, traceback, time, string, Queue, threading
 import b3.parser
 from b3.parsers.frostbite2.rcon import Rcon as FrostbiteRcon
-from b3.parsers.frostbite2.protocol import FrostbiteServer, CommandFailedError, FrostbiteError
+from b3.parsers.frostbite2.protocol import FrostbiteServer, CommandFailedError, CommandError
 from b3.parsers.frostbite2.util import PlayerInfoBlock, MapListBlock
 import b3.events
 import b3.cvar
@@ -134,6 +134,10 @@ class AbstractParser(b3.parser.Parser):
                 self.verbose2("waiting for game server event")
                 added, expire, packet = self.frostbite_event_queue.get(timeout=10)
                 self.routeFrostbitePacket(packet)
+            except CommandError, err:
+                # it does not matter from the parser perspective if Frostbite command failed
+                # (timeout or bad reply)
+                self.warning(err)
             except Queue.Empty:
                 pass
 
@@ -187,8 +191,8 @@ class AbstractParser(b3.parser.Parser):
 
         self.checkVersion()
         self.say('%s ^2[ONLINE]' % b3.version)
-        self.getServerVars()
         self.getServerInfo()
+        self.getServerVars()
         self.clients.sync()
 
     def close_frostbite_connection(self):

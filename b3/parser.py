@@ -284,8 +284,13 @@ class Parser(object):
         sys.stderr = b3.output.stderrLogger(self.log)
 
         # setup ip addresses
-        self._publicIp = self.config.get('server', 'public_ip')
-        self._port = self.config.getint('server', 'port')
+        if self.gameName in ('bf3'):
+            # for some games we do not need any game ip:port
+            self._publicIp = self.config.get('server', 'public_ip') if self.config.has_option('server', 'public_ip') else ''
+            self._port = self.config.getint('server', 'port') if self.config.has_option('server', 'port') else ''
+        else:
+            self._publicIp = self.config.get('server', 'public_ip')
+            self._port = self.config.getint('server', 'port')
         self._rconPort = self._port # if rcon port is the same as the game port, rcon_port can be ommited
         self._rconIp = self._publicIp # if rcon ip is the same as the game port, rcon_ip can be ommited
         if self.config.has_option('server', 'rcon_ip'):
@@ -296,13 +301,13 @@ class Parser(object):
             self._rconPassword = self.config.get('server', 'rcon_password')
 
 
-        if self._publicIp[0:1] == '~' or self._publicIp[0:1] == '/':
+        if self._publicIp and self._publicIp[0:1] in ('~', '/'):
             # load ip from a file
             f = file(self.getAbsolutePath(self._publicIp))
             self._publicIp = f.read().strip()
             f.close()
 
-        if self._rconIp[0:1] == '~' or self._rconIp[0:1] == '/':
+        if self._rconIp[0:1] in ('~', '/'):
             # load ip from a file
             f = file(self.getAbsolutePath(self._rconIp))
             self._rconIp = f.read().strip()
@@ -368,7 +373,7 @@ class Parser(object):
                 if self.config.has_option('server', 'local_game_log'):
                     f = self.config.getpath('server', 'local_game_log')
                 else:
-                    logext = str(self._publicIp.replace('.', '_'))
+                    logext = str(self._rconIp.replace('.', '_'))
                     logext = 'games_mp_' + logext + '_' + str(self._port) + '.log'
                     f = os.path.normpath(os.path.expanduser(logext))
 

@@ -1,0 +1,40 @@
+<configuration plugin="makeroom">
+
+    <settings name="global_settings">
+        <!-- level (inclusive) under which players to kick will be chosen from (default: 2) -->
+        <set name="non_member_level">2</set>
+        <!-- delay in seconds between the time the info_message is shown and the kick happens.
+        If you set this to 0, then no info_message will be shown and kick will happen
+        instantly -->
+        <set name="delay">5</set>
+    </settings>
+
+    <settings name="commands">
+        <!-- Command to free a slot -->
+        <set name="makeroom-mr">20</set>
+        <!-- Command to enable/disable automation -->
+        <set name="makeroomauto-mrauto">60</set>
+    </settings>
+    <settings name="messages">
+        <!-- You can use the following keywords in your messages :
+            $clientname
+        -->
+        <!-- kick_message will be displayed to all players when a player is kicked to free a slot -->
+        <set name="kick_message">kicking $clientname to free a slot</set>
+        <!-- kick_reason will be displayed to the player to be kicked -->
+        <set name="kick_reason">to make room for a server member</set>
+        <!-- info_message will be displayed to all before a player get kicked -->
+        <set name="info_message">Making room for clan member, please come back again</set>
+    </settings>
+    <settings name="automation">
+        <!-- enabled : yes/no
+          If yes, then this plugin will make sure that min_free_slots are kept free
+          and kick all connecting player until min_free_slots are free.
+         -->
+        <set name="enabled">no</set>
+        <!-- The total number of slots on the server  -->
+        <set name="total_slots">64</set>
+        <!-- The number of slots to keep free -->
+        <set name="min_free_slots">1</set>
+    </settings>
+</configuration>
