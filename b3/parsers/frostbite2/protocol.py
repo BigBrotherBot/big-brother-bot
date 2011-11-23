@@ -393,7 +393,7 @@ class FrostbiteServer(threading.Thread):
     def _wait_for_response(self, command_id):
         """block until response to for given command_id has been received or until timeout is reached."""
         expire_time = time.time() + self.command_timeout
-        while command_id in self.pending_commands and self.pending_commands[command_id] is None:
+        while not self.isStopped() and command_id in self.pending_commands and self.pending_commands[command_id] is None:
             if not self.connected:
                 raise NetworkError("Lost connection to Frostbite2 server")
             if time.time() >= expire_time:
@@ -402,9 +402,12 @@ class FrostbiteServer(threading.Thread):
             self.getLogger().debug("waiting for some command reply #%i : %r " % (command_id, self.pending_commands))
             self.__command_reply_event.clear()
             self.__command_reply_event.wait(self.command_timeout)
-        response = self.pending_commands[command_id]
-        del self.pending_commands[command_id]
-        return response
+        try:
+            response = self.pending_commands[command_id]
+            del self.pending_commands[command_id]
+            return response
+        except KeyError:
+            raise CommandTimeoutError("Did not receive any response for sequence #%i." % command_id)
 
 
 
