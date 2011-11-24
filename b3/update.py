@@ -24,6 +24,7 @@ import string
 import sys
 import urllib2
 from distutils import version
+from types import StringType
 
 
 ## url from where we can get the latest B3 version number
@@ -50,11 +51,11 @@ class B3version(version.StrictVersion):
             1.0b3
         And make sure that any 'dev' prerelease is inferior to any 'alpha' prerelease
         """
-        def __init__(self, vstring=None):
-            version.StrictVersion.__init__(self, vstring)
 
         version_re = re.compile(r'^(\d+) \. (\d+) (\. (\d+))? (([ab]|dev)(\d+)?)?$',
                                 re.VERBOSE)
+        prerelease_order = {'dev': 0, 'a': 1, 'b': 2}
+
 
         def parse (self, vstring):
             match = self.version_re.match(vstring)
@@ -70,12 +71,35 @@ class B3version(version.StrictVersion):
                 self.version = tuple(map(string.atoi, [major, minor]) + [0])
 
             if prerelease:
-                if prerelease == "dev":
-                    prerelease = "*" # we want that dev < [a]lpha < [b]eta
-                self.prerelease = (prerelease[0], string.atoi(prerelease_num if prerelease_num else '0'))
+                self.prerelease = (prerelease, string.atoi(prerelease_num if prerelease_num else '0'))
             else:
                 self.prerelease = None
 
+
+        def __cmp__ (self, other):
+            if isinstance(other, StringType):
+                other = B3version(other)
+
+            compare = cmp(self.version, other.version)
+            if compare == 0:              # have to compare prerelease
+
+                # case 1: neither has prerelease; they're equal
+                # case 2: self has prerelease, other doesn't; other is greater
+                # case 3: self doesn't have prerelease, other does: self is greater
+                # case 4: both have prerelease: must compare them!
+
+                if not self.prerelease and not other.prerelease:
+                    return 0
+                elif self.prerelease and not other.prerelease:
+                    return -1
+                elif not self.prerelease and other.prerelease:
+                    return 1
+                elif self.prerelease and other.prerelease:
+                    return cmp((self.prerelease_order[self.prerelease[0]], self.prerelease[1]),
+                        (self.prerelease_order[other.prerelease[0]], other.prerelease[1]))
+
+            else:                           # numeric versions don't match --
+                return compare              # prerelease stuff doesn't matter
 
 def getDefaultChannel(currentVersion):
     if currentVersion is None:
