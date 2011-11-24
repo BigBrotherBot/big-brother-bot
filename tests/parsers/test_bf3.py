@@ -18,7 +18,7 @@
 #
 import unittest
 from mock import Mock
-from parsers.bf3 import Bf3Parser
+from b3.parsers.bf3 import Bf3Parser
 
 class Test_Bf3Parser(unittest.TestCase):
 

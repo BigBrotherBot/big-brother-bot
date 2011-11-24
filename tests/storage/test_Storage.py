@@ -19,7 +19,7 @@
 from b3.storage import Storage
 from b3.storage.database import DatabaseStorage
 from mock import Mock
-from test import B3TestCase
+from tests import B3TestCase
 import b3.storage
 import unittest
 
