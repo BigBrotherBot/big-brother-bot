@@ -3,7 +3,7 @@
 
 ;#define Debug
 #define B3_VERSION_NUMBER "1.8.0"
-#define B3_VERSION_SUFFIX "dev10"
+#define B3_VERSION_SUFFIX "dev11"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -21,7 +21,7 @@ AppCopyright=Copyright (C) 2005-2011 BigBrotherBot.net
 DefaultDirName={sd}\BigBrotherBot
 DefaultGroupName=BigBrotherBot
 LicenseFile=assets_common\gpl-2.0.txt
-OutputBaseFilename=BigBrotherBot-{#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}
+OutputBaseFilename=BigBrotherBot-{#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}-win32
 Compression=lzma/Ultra64
 SolidCompression=true
 InternalCompressLevel=Normal
@@ -103,18 +103,18 @@ Name: {group}\web\other tools\{cm:Xlrstats,XLRstats}; Filename: http://www.xlrst
 [Files]
 Source: {app}\conf\*; DestDir: {app}\conf\backup; Flags: external skipifsourcedoesntexist uninsneveruninstall
 Source: "assets_common\readme-windows.txt"; DestDir: "{app}"
-Source: ..\..\dist_py2exe\b3_run.exe; DestDir: {app}
-Source: ..\..\dist_py2exe\b3.lib; DestDir: {app}
-Source: ..\..\dist_py2exe\PKG-INFO; DestDir: {app}
-;Source: ..\..\dist_py2exe\README; DestDir: {app}; DestName: README.txt
-Source: ..\..\dist_py2exe\license.txt; DestDir: {app}; 
-Source: ..\..\dist_py2exe\readme.txt; DestDir: {app}; 
-Source: ..\..\dist_py2exe\README.md; DestDir: {app}; 
-Source: ..\..\dist_py2exe\docs\*; DestDir: {app}\docs; Flags: recursesubdirs
-Source: ..\..\dist_py2exe\sql\*; DestDir: {app}\sql; Flags: recursesubdirs
-Source: ..\..\dist_py2exe\extplugins\*; DestDir: {app}\extplugins; Flags: recursesubdirs
-;Source: ..\..\dist_py2exe\conf\*; DestDir: {commonappdata}\BigBrotherBot\conf; Flags: recursesubdirs
-Source: ..\..\dist_py2exe\conf\*; DestDir: {app}\conf; Flags: recursesubdirs 
+Source: dist_py2exe\b3_run.exe; DestDir: {app}
+Source: dist_py2exe\b3.lib; DestDir: {app}
+Source: dist_py2exe\PKG-INFO; DestDir: {app}
+;Source: dist_py2exe\README; DestDir: {app}; DestName: README.txt
+Source: dist_py2exe\license.txt; DestDir: {app}; 
+Source: dist_py2exe\readme.txt; DestDir: {app}; 
+Source: dist_py2exe\README.md; DestDir: {app}; 
+Source: dist_py2exe\docs\*; DestDir: {app}\docs; Flags: recursesubdirs
+Source: dist_py2exe\sql\*; DestDir: {app}\sql; Flags: recursesubdirs
+Source: dist_py2exe\extplugins\*; DestDir: {app}\extplugins; Flags: recursesubdirs
+;Source: dist_py2exe\conf\*; DestDir: {commonappdata}\BigBrotherBot\conf; Flags: recursesubdirs
+Source: dist_py2exe\conf\*; DestDir: {app}\conf; Flags: recursesubdirs 
 Source: assets_common\b3.ico; DestDir: {app}
 Source: assets_common\b3-plugins-icon.ico; DestDir: {app}
 

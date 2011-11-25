@@ -20,7 +20,7 @@ from b3.clients import Client
 from mock import Mock
 import b3
 import unittest
-from test import B3TestCase
+from tests import B3TestCase
  
 class Test_Client(B3TestCase):
     

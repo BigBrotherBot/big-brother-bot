@@ -52,7 +52,7 @@ setup(
     console = [
         {
             "script" : "b3_run.py",
-            "icon_resources": [(0, "py2exe_builder/b3.ico")]
+            "icon_resources": [(0, "py2exe_builder/assets_common/b3.ico")]
         }
     ],
     zipfile = "b3.lib",
@@ -60,7 +60,7 @@ setup(
     data_files = myDataFiles,
     options = {
         "py2exe": {
-            "dist_dir": "../dist_py2exe",
+            "dist_dir": "py2exe_builder/dist_py2exe",
             "bundle_files": 1,
             "optimize": 1,
             "includes": [

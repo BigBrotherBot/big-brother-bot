@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 from b3.clients import Clients
-from test import B3TestCase
+from tests import B3TestCase
 import b3
 import unittest
 

@@ -33,10 +33,11 @@
 # 0.8.1 - fix crash with 0.8
 # 0.8.2 - fix issue #17 with !loadconfig
 # 0.9   - add command !listconfig, !loadconfig can understand mis-spelt names and suggest config names
+# 0.10  - ported xlr8or's configmanager plugin for cod series. Automagically loads server config files based on maps/gamemodes
 import re
 from b3.functions import soundex, levenshteinDistance
 
-__version__ = '0.9'
+__version__ = '0.10'
 __author__  = 'Courgette'
 
 import random
@@ -130,7 +131,9 @@ class Poweradminbf3Plugin(Plugin):
     def __init__(self, console, config=None):
         self._adminPlugin = None
         self._configPath = ''
+        self._configManager_configPath = ''
         self.no_level_check_level = 100
+        self._configmanager_delay = 5
         self._scrambling_planned = False
         self._autoscramble_rounds = False
         self._autoscramble_maps = False
@@ -154,6 +157,8 @@ class Poweradminbf3Plugin(Plugin):
         self._load_config_path()
         self._load_no_level_check_level()
         self._load_scrambler()
+        self._load_configmanager_config_path()
+        self._load_configmanager()
 
     def startup(self):
         """\
@@ -196,6 +201,11 @@ class Poweradminbf3Plugin(Plugin):
                 elif self._autoscramble_maps and self.console.game.rounds == 0:
                     self.debug('auto scramble is planned for maps')
                     self._scrambler.scrambleTeams()
+
+            if self._configmanager:
+                self.config_manager_construct_file_names()
+                time.sleep(self._configmanager_delay)
+                self.config_manager_check_config()
 
 
 ################################################################################################################
@@ -576,6 +586,13 @@ class Poweradminbf3Plugin(Plugin):
         else:
             self.info("Server config files directory : %s" % self._configPath)
 
+    def _load_configmanager_config_path(self):
+        self._configManager_configPath = self._get_server_config_directory('configmanager')
+        if self._configManager_configPath is None:
+            self.error('Could not find the configmanager directory. Create a directory named \'configmanager\' next to your plugin config file')
+        else:
+            self.info("ConfigManager directory : %s" % self._configManager_configPath)
+
     def _load_no_level_check_level(self):
         try:
             self.no_level_check_level = self.config.getint('preferences', 'no_level_check_level')
@@ -588,7 +605,13 @@ class Poweradminbf3Plugin(Plugin):
             self.error(err)
         self.info('no_level_check_level is %s' % self.no_level_check_level)
 
-
+    def _load_configmanager(self):
+        try:
+            self._configmanager = self.config.getboolean('configmanager', 'status')
+            self.debug('Configmanager: %s' % self._configmanager)
+        except:
+            self.debug('Unable to load configmanager status from config file, disabling it')
+            self._configmanager = False
 
     def _getCmd(self, cmd):
         cmd = 'cmd_%s' % cmd
@@ -645,12 +668,12 @@ class Poweradminbf3Plugin(Plugin):
         """
         Loads a preset config file to send to the server
         """
-        self.verbose('Loading %s' % file_path)
+        self.info('Loading %s' % file_path)
 
         lines = []
         with file(file_path, 'r') as f:
             lines = f.readlines()
-        self.verbose(repr(lines))
+        #self.verbose(repr(lines))
         if threaded:
             #delegate communication with the server to a new thread
             thread.start_new_thread(self.load_server_config, (client, config_name, lines))
@@ -687,15 +710,15 @@ class Poweradminbf3Plugin(Plugin):
                 try:
                     self.console.write((m.group('cvar'), m.group('value')))
                 except CommandFailedError, err:
-                    client.message('Error "%s" received at line %s when sending "%s" to server' % (err.message, line_index, line))
+                    self._sendMessage(client, ('Error "%s" received at line %s when sending "%s" to server' % (err.message, line_index, line)))
             else:
                 # read cvar
                 try:
                     result = self.console.write((m.group('cvar'),))
                     if len(result):
-                        client.message("%s is \"%s\"" % (m.group('cvar'), result[0]))
+                        self._sendMessage(client, ("%s is \"%s\"" % (m.group('cvar'), result[0])))
                 except CommandFailedError, err:
-                    client.message('Error "%s" received at line %s when sending "%s" to server' % (err.message, line_index, m.group('cvar')))
+                    self._sendMessage(client, ('Error "%s" received at line %s when sending "%s" to server' % (err.message, line_index, m.group('cvar'))))
 
         if len(map_item_matches):
             self.console.write(('mapList.clear',)) # clear current in-memory map rotation list
@@ -703,14 +726,14 @@ class Poweradminbf3Plugin(Plugin):
                 try:
                     self.console.write(('mapList.add', m.group('map_id'), m.group('gamemode'), m.group('num_rounds')))
                 except CommandFailedError, err:
-                    client.message("Error adding map \"%s\" on line %s : %s" % (line, line_index, err.message))
+                    self._sendMessage(client, ("Error adding map \"%s\" on line %s : %s" % (line, line_index, err.message)))
             try:
                 self.console.write(('mapList.save',)) # write current in-memory map list to server config file so if the server restarts our list is recovered.
-                client.message("New map rotation list written to disk.")
+                self._sendMessage(client, ("New map rotation list written to disk."))
             except CommandFailedError, err:
-                client.message("Error writing map rotation list to disk. %s" % err.message)
+                self._sendMessage(client, ("Error writing map rotation list to disk. %s" % err.message))
 
-        client.message("New config \"%s\" loaded" % config_name)
+        self._sendMessage(client, ("New config \"%s\" loaded" % config_name))
 
     def _list_available_server_config_files(self):
         self.info("looking for config files in directory : %s" % self._configPath)
@@ -752,3 +775,46 @@ class Poweradminbf3Plugin(Plugin):
             matches.sort(key=lambda name: levenshteinDistance(clean_config_name, name))
 
         return matches
+
+    def config_manager_construct_file_names(self):
+        """
+        Construct file names based on level name and game mode for configmanager feature
+        """
+        c = self.console.game
+
+        self._typeandmap = 'b3_%s_%s' % (c.gameType.lower(), c.mapName.lower())
+        self.debug('Type and Map Config: %s' %(self._typeandmap))
+
+        self._gametype = 'b3_%s' % (c.gameType.lower())
+        self.debug('Gametype Config: %s' %(self._gametype))
+
+    def config_manager_check_config(self):
+        """
+        Check and run the configs
+        """
+        if os.path.isfile(self._configManager_configPath + os.path.sep + self._typeandmap + '.cfg'): # b3_<gametype>_<mapname>.cfg
+            _fName = self._configManager_configPath + os.path.sep + self._typeandmap + '.cfg'
+            self.debug('Executing %s.cfg' %(self._typeandmap))
+            self._load_server_config_from_file(client=None, config_name=self._typeandmap, file_path=_fName, threaded=True)
+
+        elif os.path.isfile(self._configManager_configPath + os.path.sep + self._gametype + '.cfg'): # b3_<gametype>.cfg
+            _fName = self._configManager_configPath + os.path.sep + self._gametype + '.cfg'
+            self.debug('Executing %s.cfg' %(self._gametype))
+            self._load_server_config_from_file(client=None, config_name=self._gametype, file_path=_fName, threaded=True)
+
+        elif os.path.isfile(self._configManager_configPath + os.path.sep + 'b3_main.cfg'): # b3_main.cfg
+            _fName = self._configManager_configPath + os.path.sep + 'b3_main.cfg'
+            self.debug('Executing b3_main.cfg')
+            self._load_server_config_from_file(client=None, config_name='b3_main.cfg', file_path=_fName, threaded=True)
+
+        else:
+            self.debug('No matching configs found.')
+
+    def _sendMessage(self, client, msg):
+        """
+        send message to console when client is None
+        """
+        if client:
+            client.message(msg)
+        else:
+            self.debug(msg)

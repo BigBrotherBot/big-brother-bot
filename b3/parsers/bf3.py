@@ -56,14 +56,16 @@ class Bf3Parser(AbstractParser):
     _gameServerVars = (
         '3dSpotting',
         '3pCam',
+        'allUnlocksUnlocked',
         'autoBalance',
         'bannerUrl',
         'bulletDamage',
-        'clientSideDamageArbitration',
         'friendlyFire',
         'gameModeCounter',
         'gamePassword',
         'hud',
+        'idleBanRounds',
+        'idleTimeout',
         'killCam',
         'killRotation',
         'maxPlayers',
@@ -73,6 +75,7 @@ class Bf3Parser(AbstractParser):
         'onlySquadLeaderSpawn',
         'playerManDownTime',
         'playerRespawnTime',
+        'ranked',
         'regenerateHealth',
         'roundRestartPlayerCount',
         'roundStartPlayerCount',
@@ -313,7 +316,7 @@ class Bf3Parser(AbstractParser):
 
     def getSupportedMapIds(self):
         """return a list of supported levels for the current game mod"""
-        # TODO : remove this method once the on from AbstractParser is working
+        # TODO : remove this method once the method on from AbstractParser is working
         return ["MP_001", "MP_003", "MP_007", "MP_011", "MP_012", "MP_013", "MP_017", "MP_018", "MP_Subway"]
 
     def getServerVars(self):
@@ -391,12 +394,16 @@ class Bf3Parser(AbstractParser):
         self.game.sv_maxclients = int(data2['maxPlayers'])
         self.game.mapName = data2['level']
         self.game.gameType = data2['gamemode']
+        if 'gameIpAndPort' in data2 and data2['gameIpAndPort']:
+            try:
+                self._publicIp, self._gamePort = data2['gameIpAndPort'].split(':')
+            except ValueError:
+                pass
         self.game.serverinfo = data2
         return data
 
     def getTeam(self, team):
-        """convert BFBC2 team numbers to B3 team numbers"""
-        # FIXME: guessed team numbers. Need to check with Frostbite2 protocol documents
+        """convert team numbers to B3 team numbers"""
         team = int(team)
         if team == 1:
             return b3.TEAM_RED
@@ -436,13 +443,19 @@ class Bf3Parser(AbstractParser):
             'team2score': None,
             'team3score': None,
             'team4score': None,
-            'targetScore': data[-7],
-            'onlineState': data[-6],
-            'isRanked': data[-5],
-            'hasPunkbuster': data[-4],
-            'hasPassword': data[-3],
-            'serverUptime': data[-2],
-            'roundTime': data[-1],
+            'targetScore': data[7+numOfTeams + 1],
+            'onlineState': data[7+numOfTeams + 2],
+            'isRanked': data[7+numOfTeams + 3],
+            'hasPunkbuster': data[7+numOfTeams + 4],
+            'hasPassword': data[7+numOfTeams + 5],
+            'serverUptime': data[7+numOfTeams + 6],
+            'roundTime': data[7+numOfTeams + 7],
+            'gameIpAndPort': None,
+            'punkBusterVersion': None,
+            'joinQueueEnabled': None,
+            'region': None,
+            'closestPingSite': None,
+            'country': None,
         }
         if numOfTeams >= 1:
             response['team1score'] = data[8]
@@ -452,5 +465,15 @@ class Bf3Parser(AbstractParser):
             response['team3score'] = data[10]
         if numOfTeams == 4:
             response['team4score'] = data[11]
+
+        # since BF3 R9
+        new_info = 'gameIpAndPort', 'punkBusterVersion', 'joinQueueEnabled', 'region', 'closestPingSite', 'country'
+        start_index = 7 + numOfTeams + 8
+        for index, name in zip(range(start_index, start_index + len(new_info)), new_info):
+            try:
+                response[name] = data[index]
+            except IndexError:
+                pass
+
         return response
 
