@@ -2,18 +2,22 @@ import os
 import mmap
 import re
 import sys
-from b3.update import B3version
 import subprocess
 
 CONFIG_FILE = 'build.yaml'
 
+script_dir = os.path.abspath(os.path.dirname(__file__))
+
 try:
+    # make sure to import the b3 module from the parent directory
+    # (in case an other b3 module was installed system wide with an egg)
+    sys.path.insert(0, os.path.abspath(os.path.join(script_dir, '..')))
     from b3 import __version__ as b3_version
+    from b3.update import B3version
 except ImportError:
-    print "Could not import b3. Make sure the b3 module is part of your PYTHONPATH"
+    print "Could not import b3"
     raise
 
-script_dir = os.path.abspath(os.path.dirname(__file__))
 current_b3_version = B3version(b3_version)
 egg_pkginfo_file = os.path.abspath(os.path.join(script_dir, '../b3.egg-info/PKG-INFO'))
 config = None
@@ -194,7 +198,10 @@ def main():
 
     load_config()
 
-    print "{:>50} :  {}".format('current B3 version', current_b3_version)
+    print "{:>50} :  {}".format('detected current B3 version', current_b3_version)
+    choice = raw_input("\nDo you want to continue ? [Yn] : " % current_b3_version)
+    if choice.lower() not in ('y', 'Y', ''):
+        sys.exit(0)
 
     innosetup_scripts_versions = get_innosetup_script_version(config['innosetup_scripts'])
 
