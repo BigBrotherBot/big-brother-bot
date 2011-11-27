@@ -198,7 +198,7 @@ def main():
 
     load_config()
 
-    print "{:>50} :  {}".format('detected current B3 version', current_b3_version)
+    print "{0:>50} :  {1}".format('detected current B3 version', current_b3_version)
     choice = raw_input("\nDo you want to continue ? [Yn] : " % current_b3_version)
     if choice.lower() not in ('y', 'Y', ''):
         sys.exit(0)
@@ -208,7 +208,7 @@ def main():
     need_updates = False
     for file_name, version in innosetup_scripts_versions.items():
         need_updates = need_updates or (current_b3_version != version)
-        print "{:>50} :  {:<10} {}".format(os.path.relpath(file_name), version, 'need update' if current_b3_version != version else '')
+        print "{0:>50} :  {1:<10} {2}".format(os.path.relpath(file_name), version, 'need update' if current_b3_version != version else '')
 
     if not need_updates:
         print "\nall files have the right version number"
@@ -228,7 +228,7 @@ def main():
     print "\nBuild results :"
     print "---------------"
     for file_name, result in build_results:
-        print "{:>50} :  {}".format(os.path.relpath(file_name), result)
+        print "{0:>50} :  {1}".format(os.path.relpath(file_name), result)
 
 
 if __name__ == '__main__':
