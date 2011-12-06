@@ -56,7 +56,6 @@ class Bf3Parser(AbstractParser):
     _gameServerVars = (
         '3dSpotting',
         '3pCam',
-        'allUnlocksUnlocked',
         'autoBalance',
         'bannerUrl',
         'bulletDamage',
@@ -89,6 +88,7 @@ class Bf3Parser(AbstractParser):
         'teamKillValueDecreasePerSecond',
         'teamKillValueForKick',
         'teamKillValueIncrease',
+        'unlockMode',
         'vehicleSpawnAllowed',
         'vehicleSpawnDelay',
     )
@@ -343,7 +343,6 @@ class Bf3Parser(AbstractParser):
                 pass
         self.game['3dSpotting'] = getCvarBool('3dSpotting')
         self.game['3pCam'] = getCvarBool('3pCam')
-        self.game['allUnlocksUnlocked'] = getCvar('allUnlocksUnlocked')
         self.game['autoBalance'] = getCvarBool('autoBalance')
         self.game['bannerUrl'] = getCvar('bannerUrl')
         self.game['bulletDamage'] = getCvarInt('bulletDamage')
@@ -376,6 +375,7 @@ class Bf3Parser(AbstractParser):
         self.game['teamKillValueDecreasePerSecond'] = getCvarFloat('teamKillValueDecreasePerSecond')
         self.game['teamKillValueForKick'] = getCvarFloat('teamKillValueForKick')
         self.game['teamKillValueIncrease'] = getCvarFloat('teamKillValueIncrease')
+        self.game['unlockMode'] = getCvar('unlockMode')
         self.game['vehicleSpawnAllowed'] = getCvarBool('vehicleSpawnAllowed')
         self.game['vehicleSpawnDelay'] = getCvarInt('vehicleSpawnDelay')
         self.game.timeLimit = self.game.gameModeCounter
