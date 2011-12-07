@@ -21,6 +21,7 @@ import time
 from b3 import update
 import urllib2
 import unittest
+from mock import patch
 from b3.update import B3version
 
 class TestB3Version(unittest.TestCase):
@@ -145,9 +146,11 @@ class TestCheckUpdateUrl(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertNotIn('Could not check updates', result)
 
-    def test_not_existing_url(self):
+    @patch.object(urllib2, "urlopen")
+    def test_not_existing_url(self, mocked_urlopen):
         update.URL_B3_LATEST_VERSION = 'http://no.where.local/'
-        result = update.checkUpdate('1.2', singleLine=True, showErrormsg=True, timeout=1)
+        mocked_urlopen.side_effect = urllib2.URLError
+        result = update.checkUpdate('1.2', singleLine=True, showErrormsg=True)
         self.assertIn('Could not check updates', result)
 
 

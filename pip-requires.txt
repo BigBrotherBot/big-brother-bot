@@ -1,5 +1,7 @@
 MySQL-python
+pysqlite
 nose
 nosexcover
+nose-exclude
 mock
 pylint

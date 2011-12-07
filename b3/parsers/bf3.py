@@ -56,7 +56,6 @@ class Bf3Parser(AbstractParser):
     _gameServerVars = (
         '3dSpotting',
         '3pCam',
-        'allUnlocksUnlocked',
         'autoBalance',
         'bannerUrl',
         'bulletDamage',
@@ -89,6 +88,7 @@ class Bf3Parser(AbstractParser):
         'teamKillValueDecreasePerSecond',
         'teamKillValueForKick',
         'teamKillValueIncrease',
+        'unlockMode',
         'vehicleSpawnAllowed',
         'vehicleSpawnDelay',
     )
@@ -346,10 +346,12 @@ class Bf3Parser(AbstractParser):
         self.game['autoBalance'] = getCvarBool('autoBalance')
         self.game['bannerUrl'] = getCvar('bannerUrl')
         self.game['bulletDamage'] = getCvarInt('bulletDamage')
-        self.game['clientSideDamageArbitration'] = getCvarBool('clientSideDamageArbitration')
         self.game['friendlyFire'] = getCvarBool('friendlyFire')
         self.game['gameModeCounter'] = getCvarInt('gameModeCounter')
+        self.game['gamePassword'] = getCvar('gamePassword')
         self.game['hud'] = getCvarBool('hud')
+        self.game['idleBanRounds'] = getCvarInt('idleBanRounds')
+        self.game['idleTimeout'] = getCvarInt('idleTimeout')
         self.game['killCam'] = getCvarBool('killCam')
         self.game['killRotation'] = getCvarBool('killRotation')
         self.game['maxPlayers'] = getCvarInt('maxPlayers')
@@ -359,18 +361,21 @@ class Bf3Parser(AbstractParser):
         self.game['onlySquadLeaderSpawn'] = getCvarBool('onlySquadLeaderSpawn')
         self.game['playerManDownTime'] = getCvarInt('playerManDownTime')
         self.game['playerRespawnTime'] = getCvarInt('playerRespawnTime')
+        self.game['ranked'] = getCvarBool('ranked')
         self.game['regenerateHealth'] = getCvarBool('regenerateHealth')
         self.game['roundRestartPlayerCount'] = getCvarInt('roundRestartPlayerCount')
         self.game['roundStartPlayerCount'] = getCvarInt('roundStartPlayerCount')
         self.game['roundsPerMap'] = getCvarInt('roundsPerMap')
         self.game['serverDescription'] = getCvar('serverDescription')
         self.game['serverMessage'] = getCvar('serverMessage')
+        self.game['serverName'] = getCvar('serverName')
         self.game['soldierHealth'] = getCvarInt('soldierHealth')
         self.game['teamKillCountForKick'] = getCvarInt('teamKillCountForKick')
         self.game['teamKillKickForBan'] = getCvarInt('teamKillKickForBan')
         self.game['teamKillValueDecreasePerSecond'] = getCvarFloat('teamKillValueDecreasePerSecond')
         self.game['teamKillValueForKick'] = getCvarFloat('teamKillValueForKick')
         self.game['teamKillValueIncrease'] = getCvarFloat('teamKillValueIncrease')
+        self.game['unlockMode'] = getCvar('unlockMode')
         self.game['vehicleSpawnAllowed'] = getCvarBool('vehicleSpawnAllowed')
         self.game['vehicleSpawnDelay'] = getCvarInt('vehicleSpawnDelay')
         self.game.timeLimit = self.game.gameModeCounter
