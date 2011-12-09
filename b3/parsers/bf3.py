@@ -44,6 +44,7 @@ SQUAD_NEUTRAL = 24
 GAME_MODES_NAMES = {
     "ConquestLarge0": "Conquest64",
     "ConquestSmall0": "Conquest",
+    "ConquestSmall1": "Conquest Assault",
     "RushLarge0": "Rush",
     "SquadRush0": "Squad Rush",
     "SquadDeathMatch0": "Squad Deathmatch",
@@ -277,6 +278,14 @@ class Bf3Parser(AbstractParser):
             return 'MP_018'
         elif mapname == 'operation metro':
             return 'MP_Subway'
+        elif mapname == 'strike at karkand':
+            return 'XP1_001'
+        elif mapname == 'gulf of oman':
+            return 'Xp1_002'
+        elif mapname == 'sharqi peninsula':
+            return 'Xp1_003'
+        elif mapname == 'wake island':
+            return 'Xp1_004'
         else:
             self.warning('unknown level name \'%s\'. Please make sure you have entered a valid mapname' % mapname)
             return mapname
@@ -301,6 +310,14 @@ class Bf3Parser(AbstractParser):
             return 'Kharg Island'
         elif mapname == 'MP_Subway':
             return 'Operation Metro'
+        elif mapname == 'XP1_001':
+            return 'Strike At Karkand'
+        elif mapname == 'Xp1_002':
+            return 'Gulf of Oman'
+        elif mapname == 'XP1_003':
+            return 'Sharqi Peninsula'
+        elif mapname == 'XP1_004':
+            return 'Wake Island'
         else:
             self.warning('unknown level name \'%s\'. Please report this on B3 forums' % mapname)
             return mapname
