@@ -48,8 +48,8 @@ class AbstractParser(b3.parser.Parser):
     _serverConnection = None
     _nbConsecutiveConnFailure = 0
 
-    frostbite_event_queue = Queue.Queue()
-    sayqueue = Queue.Queue()
+    frostbite_event_queue = Queue.Queue(200)
+    sayqueue = Queue.Queue(100)
     sayqueuelistener = None
 
     # frostbite2 engine does not support color code, so we need this property
@@ -266,12 +266,18 @@ class AbstractParser(b3.parser.Parser):
         self.cron + b3.cron.CronTab(self.clients.sync, minute='*/5')
     
     def sayqueuelistener(self):
+        self.info("sayqueuelistener job started")
         while self.working:
-            msg = self.sayqueue.get()
-            for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
-                self.write(self.getCommand('say', message=line))
-                time.sleep(self._settings['message_delay'])
-
+            try:
+                msg = self.sayqueue.get(timeout=40)
+                for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
+                    self.write(self.getCommand('say', message=line))
+                    time.sleep(self._settings['message_delay'])
+            except Queue.Empty:
+                self.verbose2("sayqueuelistener: had nothing to do in the last 40 sec")
+            except Exception, err:
+                self.error(err)
+        self.info("sayqueuelistener job ended")
 
     def getCommand(self, cmd, **kwargs):
         """Return a reference to a loaded command"""
