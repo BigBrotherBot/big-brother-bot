@@ -181,7 +181,21 @@ class FakeConsole(b3.parser.Parser):
                 self.exitcode = e.code
             except Exception, msg:
                 self.error('handler %s could not handle event %s: %s: %s %s', hfunc.__class__.__name__, self.Events.getName(event.type), msg.__class__.__name__, msg, traceback.extract_tb(sys.exc_info()[2]))
-    
+
+    def shutdown(self):
+        """Shutdown B3 - needed to be changed in FakeConsole due to no thread for dispatching events"""
+        try:
+            if self.working and self.exiting.acquire():
+                self.bot('Shutting down...')
+                self.working = False
+                self._handleEvent(b3.events.Event(b3.events.EVT_STOP, ''))
+                if self._cron:
+                    self._cron.stop()
+                self.bot('Shutting down database connections...')
+                self.storage.shutdown()
+        except Exception, e:
+            self.error(e)
+
     def getPlugin(self, name):
         if name == 'admin':
             return fakeAdminPlugin
