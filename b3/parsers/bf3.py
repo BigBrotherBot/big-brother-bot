@@ -184,9 +184,9 @@ class Bf3Parser(AbstractParser):
 
     def message(self, client, text):
         try:
-            if client == None:
+            if client is None:
                 self.say(text)
-            elif client.cid == None:
+            elif client.cid is None:
                 pass
             else:
                 #self.write(self.getCommand('message', message=text, cid=client.cid)) # FIXME: uncomment this once private chat is working
@@ -281,11 +281,11 @@ class Bf3Parser(AbstractParser):
         elif mapname == 'strike at karkand':
             return 'XP1_001'
         elif mapname == 'gulf of oman':
-            return 'Xp1_002'
+            return 'XP1_002'
         elif mapname == 'sharqi peninsula':
-            return 'Xp1_003'
+            return 'XP1_003'
         elif mapname == 'wake island':
-            return 'Xp1_004'
+            return 'XP1_004'
         else:
             self.warning('unknown level name \'%s\'. Please make sure you have entered a valid mapname' % mapname)
             return mapname
@@ -312,7 +312,7 @@ class Bf3Parser(AbstractParser):
             return 'Operation Metro'
         elif mapname == 'XP1_001':
             return 'Strike At Karkand'
-        elif mapname == 'Xp1_002':
+        elif mapname == 'XP1_002':
             return 'Gulf of Oman'
         elif mapname == 'XP1_003':
             return 'Sharqi Peninsula'
@@ -334,7 +334,7 @@ class Bf3Parser(AbstractParser):
     def getSupportedMapIds(self):
         """return a list of supported levels for the current game mod"""
         # TODO : remove this method once the method on from AbstractParser is working
-        return ["MP_001", "MP_003", "MP_007", "MP_011", "MP_012", "MP_013", "MP_017", "MP_018", "MP_Subway"]
+        return ["MP_001", "MP_003", "MP_007", "MP_011", "MP_012", "MP_013", "MP_017", "MP_018", "MP_Subway", "XP1_001", "XP1_002", "XP1_003", "XP1_004"]
 
     def getServerVars(self):
         """Update the game property from server fresh data"""
