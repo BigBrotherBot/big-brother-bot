@@ -18,14 +18,15 @@
 #
 #
 # CHANGELOG
-#
+# 0.1
+#  functionnal parser but BF3 admin protocol is not fully implemented on the BF3 side. See TODOs
 #
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 import b3
 import b3.events
 __author__  = 'Courgette'
-__version__ = '0.0'
+__version__ = '0.1'
 
 
 SAY_LINE_MAX_LENGTH = 128
@@ -190,7 +191,7 @@ class Bf3Parser(AbstractParser):
             elif client.cid is None:
                 pass
             else:
-                #self.write(self.getCommand('message', message=text, cid=client.cid)) # FIXME: uncomment this once private chat is working
+                #self.write(self.getCommand('message', message=text, cid=client.cid)) # TODO: uncomment this once private chat is working
                 if client.teamId is not None and client.squad is not None:
                 # until private chat works, we try to send the message to the squad only
                     self.write(self.getCommand('saySquad', message=text, teamId=client.teamId, squadId=client.squad))

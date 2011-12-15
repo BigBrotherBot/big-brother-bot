@@ -16,11 +16,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-# CHANGELOG
-#
 
 __author__  = 'Courgette'
-__version__ = '0.0'
+__version__ = '0.1'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -65,7 +63,7 @@ class AbstractParser(b3.parser.Parser):
     _gameServerVars = () # list available cvar
 
     _commands = {
-        'message': ('admin.say', '%(message)s', 'all', '%(cid)s'), # FIXME : send private messages when available
+        'message': ('admin.say', '%(message)s', 'all', '%(cid)s'), # TODO : send private messages when available
         'saySquad': ('admin.say', '%(message)s', 'squad', '%(teamId)s', '%(squadId)s'),
         'sayTeam': ('admin.say', '%(message)s', 'team', '%(teamId)s'),
         'say': ('admin.say', '%(message)s', 'all'),
