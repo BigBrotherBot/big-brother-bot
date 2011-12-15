@@ -149,11 +149,11 @@ class Bf3Parser(AbstractParser):
         # ['player.switchTeam', 'Cucurbitaceae', '1', '0']
         client = self.getClient(data[0])
         if client:
-            client.team = self.getTeam(data[1]) # .team setter will send team change event
-            client.teamId = int(data[1])
             client.squad = int(data[2])
-            
-            
+            client.teamId = int(data[1])
+            client.team = self.getTeam(data[1]) # .team setter will send team change event
+
+
     def OnPlayerSquadchange(self, action, data):
         """
         player.onSquadChange <soldier name: player name> <team: Team ID> <squad: Squad ID>    
@@ -163,10 +163,11 @@ class Bf3Parser(AbstractParser):
         """
         client = self.clients.getByCID(data[0])
         if client:
-            client.team = self.getTeam(data[1]) # .team setter will send team change event
+            previous_squad = client.squad
+            client.squad = int(data[2])
             client.teamId = int(data[1])
-            if client.squad != data[2]:
-                client.squad = int(data[2])
+            client.team = self.getTeam(data[1]) # .team setter will send team change event
+            if client.squad != previous_squad:
                 return b3.events.Event(b3.events.EVT_CLIENT_SQUAD_CHANGE, data[1:], client)
 
 
