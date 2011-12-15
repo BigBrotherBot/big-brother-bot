@@ -55,8 +55,8 @@ class AbstractParser(b3.parser.Parser):
     _reColor = re.compile(r'(\^[0-9])')
 
     _settings = {
-        'line_length': 67,
-        'min_wrap_length': 67,
+        'line_length': 128,
+        'min_wrap_length': 128,
         'message_delay': .8,
         }
 
