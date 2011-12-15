@@ -18,7 +18,7 @@
 #
 #
 # CHANGELOG
-# 
+#
 #
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock
@@ -28,7 +28,7 @@ __author__  = 'Courgette'
 __version__ = '0.0'
 
 
-SAY_LINE_MAX_LENGTH = 90
+SAY_LINE_MAX_LENGTH = 128
 
 SQUAD_NOSQUAD = 0
 SQUAD_ALPHA = 1
