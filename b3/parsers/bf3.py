@@ -18,17 +18,18 @@
 #
 #
 # CHANGELOG
-# 
+# 0.1
+#  functionnal parser but BF3 admin protocol is not fully implemented on the BF3 side. See TODOs
 #
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 import b3
 import b3.events
 __author__  = 'Courgette'
-__version__ = '0.0'
+__version__ = '0.1'
 
 
-SAY_LINE_MAX_LENGTH = 90
+SAY_LINE_MAX_LENGTH = 128
 
 SQUAD_NOSQUAD = 0
 SQUAD_ALPHA = 1
@@ -149,11 +150,11 @@ class Bf3Parser(AbstractParser):
         # ['player.switchTeam', 'Cucurbitaceae', '1', '0']
         client = self.getClient(data[0])
         if client:
-            client.team = self.getTeam(data[1]) # .team setter will send team change event
-            client.teamId = int(data[1])
             client.squad = int(data[2])
-            
-            
+            client.teamId = int(data[1])
+            client.team = self.getTeam(data[1]) # .team setter will send team change event
+
+
     def OnPlayerSquadchange(self, action, data):
         """
         player.onSquadChange <soldier name: player name> <team: Team ID> <squad: Squad ID>    
@@ -163,10 +164,11 @@ class Bf3Parser(AbstractParser):
         """
         client = self.clients.getByCID(data[0])
         if client:
-            client.team = self.getTeam(data[1]) # .team setter will send team change event
+            previous_squad = client.squad
+            client.squad = int(data[2])
             client.teamId = int(data[1])
-            if client.squad != data[2]:
-                client.squad = int(data[2])
+            client.team = self.getTeam(data[1]) # .team setter will send team change event
+            if client.squad != previous_squad:
                 return b3.events.Event(b3.events.EVT_CLIENT_SQUAD_CHANGE, data[1:], client)
 
 
@@ -189,7 +191,7 @@ class Bf3Parser(AbstractParser):
             elif client.cid is None:
                 pass
             else:
-                #self.write(self.getCommand('message', message=text, cid=client.cid)) # FIXME: uncomment this once private chat is working
+                #self.write(self.getCommand('message', message=text, cid=client.cid)) # TODO: uncomment this once private chat is working
                 if client.teamId is not None and client.squad is not None:
                 # until private chat works, we try to send the message to the squad only
                     self.write(self.getCommand('saySquad', message=text, teamId=client.teamId, squadId=client.squad))

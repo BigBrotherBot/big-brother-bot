@@ -10,7 +10,7 @@
 		<set name="logfile">@conf/b3.log</set>
 	</settings>
 	<settings name="bf3">
-		<set name="max_say_line_length">100</set>
+		<set name="max_say_line_length">128</set>
 	</settings>
 	<settings name="server">
 		<set name="public_ip">11.22.33.44</set>

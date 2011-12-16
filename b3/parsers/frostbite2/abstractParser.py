@@ -16,11 +16,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-# CHANGELOG
-#
 
 __author__  = 'Courgette'
-__version__ = '0.0'
+__version__ = '0.1'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -57,15 +55,15 @@ class AbstractParser(b3.parser.Parser):
     _reColor = re.compile(r'(\^[0-9])')
 
     _settings = {
-        'line_length': 67,
-        'min_wrap_length': 67,
+        'line_length': 128,
+        'min_wrap_length': 128,
         'message_delay': .8,
         }
 
     _gameServerVars = () # list available cvar
 
     _commands = {
-        'message': ('admin.say', '%(message)s', 'all', '%(cid)s'), # FIXME : send private messages when available
+        'message': ('admin.say', '%(message)s', 'all', '%(cid)s'), # TODO : send private messages when available
         'saySquad': ('admin.say', '%(message)s', 'squad', '%(teamId)s', '%(squadId)s'),
         'sayTeam': ('admin.say', '%(message)s', 'team', '%(teamId)s'),
         'say': ('admin.say', '%(message)s', 'all'),
@@ -86,7 +84,8 @@ class AbstractParser(b3.parser.Parser):
         (re.compile(r'^(?P<servername>.*): Lost Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) (?P<pbuid>[^\s]+)\(-\)\s(?P<name>.+)$'), 'OnPBLostConnection'),
         (re.compile(r'^(?P<servername>.*): Master Query Sent to \((?P<pbmaster>[^\s]+)\) (?P<ip>[^:]+)$'), 'OnPBMasterQuerySent'),
         (re.compile(r'^(?P<servername>.*): Player GUID Computed (?P<pbid>[0-9a-fA-F]+)\(-\) \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+)\s(?P<name>.+)$'), 'OnPBPlayerGuid'),
-        (re.compile(r'^(?P<servername>.*): New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection')
+        (re.compile(r'^(?P<servername>.*): New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection'),
+        (re.compile(r'^PunkBuster Server: (?P<slot>\d+)\s+(?P<pbid>[0-9a-fA-F]+)\(-\) (?P<ip>[^:]+):(?P<port>\d+) (?P<status>.+)\s+(?P<power>\d+)\s+(?P<authrate>\d+\.\d+)\s+(?P<recentSS>\d+)\s+\((?P<os>.+)\)\s+"(?P<name>.+)".*$'), 'OnPBPlistItem'),
     )
 
     PunkBuster = None
@@ -194,6 +193,7 @@ class AbstractParser(b3.parser.Parser):
         self.getServerInfo()
         self.getServerVars()
         self.clients.sync()
+        self.write(('punkBuster.pb_sv_command', 'pb_sv_plist')) # will make punkbuster send IP address of currently connected players
 
     def close_frostbite_connection(self):
         try:
@@ -656,6 +656,10 @@ class AbstractParser(b3.parser.Parser):
                 except Exception, err:
                     self.warning("failed to try to auth %s by pbid. %r" % (name, err))
             client.save()
+
+    def OnPBPlistItem(self, match, data):
+        """we received one of the line containing details about one player"""
+        self.OnPBPlayerGuid(match, data)
 
 
 
