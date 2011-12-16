@@ -84,7 +84,8 @@ class AbstractParser(b3.parser.Parser):
         (re.compile(r'^(?P<servername>.*): Lost Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) (?P<pbuid>[^\s]+)\(-\)\s(?P<name>.+)$'), 'OnPBLostConnection'),
         (re.compile(r'^(?P<servername>.*): Master Query Sent to \((?P<pbmaster>[^\s]+)\) (?P<ip>[^:]+)$'), 'OnPBMasterQuerySent'),
         (re.compile(r'^(?P<servername>.*): Player GUID Computed (?P<pbid>[0-9a-fA-F]+)\(-\) \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+)\s(?P<name>.+)$'), 'OnPBPlayerGuid'),
-        (re.compile(r'^(?P<servername>.*): New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection')
+        (re.compile(r'^(?P<servername>.*): New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection'),
+        (re.compile(r'^PunkBuster Server: (?P<slot>\d+)\s+(?P<pbid>[0-9a-fA-F]+)\(-\) (?P<ip>[^:]+):(?P<port>\d+) (?P<status>.+)\s+(?P<power>\d+)\s+(?P<authrate>\d+\.\d+)\s+(?P<recentSS>\d+)\s+\((?P<os>.+)\)\s+"(?P<name>.+)".*$'), 'OnPBPlistItem'),
     )
 
     PunkBuster = None
@@ -192,6 +193,7 @@ class AbstractParser(b3.parser.Parser):
         self.getServerInfo()
         self.getServerVars()
         self.clients.sync()
+        self.write(('punkBuster.pb_sv_command', 'pb_sv_plist')) # will make punkbuster send IP address of currently connected players
 
     def close_frostbite_connection(self):
         try:
@@ -654,6 +656,10 @@ class AbstractParser(b3.parser.Parser):
                 except Exception, err:
                     self.warning("failed to try to auth %s by pbid. %r" % (name, err))
             client.save()
+
+    def OnPBPlistItem(self, match, data):
+        """we received one of the line containing details about one player"""
+        self.OnPBPlayerGuid(match, data)
 
 
 
