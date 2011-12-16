@@ -19,6 +19,7 @@
 
         <set name="listconfig">60</set>
         <set name="loadconfig">60</set>
+        <set name="unlockmode">60</set>
 
         <set name="roundnext-rnext">40</set>
         <set name="roundrestart-rrestart">40</set>

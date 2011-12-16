@@ -49,5 +49,7 @@
 		<plugin disabled="yes" name="status" config="@conf/plugin_status.xml"/>
 		<plugin disabled="yes" name="welcome" config="@conf/plugin_welcome.xml"/>
 		<plugin disabled="yes" name="makeroom" config="@conf/plugin_makeroom.xml"/>
+		
+		<!-- <plugin name="teamspeakbf" config="@conf/plugin_teamspeakbf.xml"/> -->
 	</plugins>
 </configuration>
