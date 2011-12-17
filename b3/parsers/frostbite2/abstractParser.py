@@ -115,7 +115,7 @@ class AbstractParser(b3.parser.Parser):
             if not self._serverConnection or not self._serverConnection.connected:
                 try:
                     self.setup_frostbite_connection()
-                except CommandFailedError, err:
+                except CommandError, err:
                     if err.message[0] == 'InvalidPasswordHash':
                         self.error("your rcon password is incorrect. Check setting 'rcon_password' in your main config file.")
                         self.exitcode = 220
