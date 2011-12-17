@@ -131,7 +131,7 @@ class AbstractParser(b3.parser.Parser):
 
             try:
                 self.verbose2("waiting for game server event")
-                added, expire, packet = self.frostbite_event_queue.get(timeout=10)
+                added, expire, packet = self.frostbite_event_queue.get(timeout=30)
                 self.routeFrostbitePacket(packet)
             except CommandError, err:
                 # it does not matter from the parser perspective if Frostbite command failed
@@ -148,7 +148,7 @@ class AbstractParser(b3.parser.Parser):
 
             self.output.frostbite_server = None
 
-            # The Frostbite conection is running its own thread to communicate with the game server. We need to tell
+            # The Frostbite connection is running its own thread to communicate with the game server. We need to tell
             # this thread to stop.
             self.close_frostbite_connection()
 
@@ -995,8 +995,8 @@ class AbstractParser(b3.parser.Parser):
             pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
             for p in pib:
                 pings[p['name']] = int(p['ping'])
-        except Exception:
-            self.debug('Unable to retrieve pings from playerlist')
+        except Exception, e:
+            self.debug('Unable to retrieve pings from playerlist (%r)' % e)
         return pings
 
 
@@ -1008,8 +1008,8 @@ class AbstractParser(b3.parser.Parser):
             pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
             for p in pib:
                 scores[p['name']] = int(p['score'])
-        except Exception:
-            self.debug('Unable to retrieve scores from playerlist')
+        except Exception, e:
+            self.debug('Unable to retrieve scores from playerlist (%r)' % e)
         return scores
 
 
