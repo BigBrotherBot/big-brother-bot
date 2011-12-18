@@ -16,11 +16,19 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+import logging
+import b3.output # do not remove, needed because the module alters some defaults of the logging module
+log = logging.getLogger('output')
+log.setLevel(logging.WARNING)
+
 import unittest
 from mock import Mock
 from b3.parsers.bf3 import Bf3Parser
+from b3.config import XmlConfigParser
+from tests import B3TestCase
 
-class Test_Bf3Parser(unittest.TestCase):
+
+class Test_getServerInfo(unittest.TestCase):
 
     def test_decodeServerinfo_pre_R9(self):
         self.assertDictContainsSubset({
@@ -361,3 +369,70 @@ class Test_Bf3Parser(unittest.TestCase):
             'closestPingSite': 'ams',
             'country': 'DE',
         }, parser.game.serverinfo)
+
+
+class Test_punkbuster_events(B3TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        from b3.parsers.frostbite2.abstractParser import AbstractParser
+        from b3.fake import FakeConsole
+        AbstractParser.__bases__ = (FakeConsole,)
+        # Now parser inheritence hierarchy is :
+        # BF3Parser -> AbstractParser -> FakeConsole -> Parser
+
+        cls.conf = XmlConfigParser()
+        cls.conf.loadFromString("""
+            <configuration>
+            </configuration>
+        """)
+
+    def setUp(self):
+        self.parser = Bf3Parser(self.__class__.conf)
+        self.parser.startup()
+
+    def pb(self, msg):
+        return self.parser.OnPunkbusterMessage(action=None, data=[msg])
+
+    def assert_pb_misc_evt(self, msg):
+        assert str(self.pb(msg)).startswith('Event<PunkBuster misc>')
+
+    def test_PB_SV_BanList(self):
+        self.assert_pb_misc_evt('PunkBuster Server: 1   b59ffffffffffffffffffffffffffc7d {13/15} "Cucurbitaceae" "87.45.14.2:3659" retest" ""')
+        self.assert_pb_misc_evt('PunkBuster Server: 1   b59ffffffffffffffffffffffffffc7d {0/1440} "Cucurbitaceae" "87.45.14.2:3659" mlkjsqfd" ""')
+
+        self.assertEquals(
+            '''Event<PunkBuster unknown>(['PunkBuster Server: 1   (UnBanned) b59ffffffffffffffffffffffffffc7d {15/15} "Cucurbitaceae" "87.45.14.2:3659" retest" ""'], None, None)''',
+            str(self.pb('PunkBuster Server: 1   (UnBanned) b59ffffffffffffffffffffffffffc7d {15/15} "Cucurbitaceae" "87.45.14.2:3659" retest" ""')))
+
+        self.assert_pb_misc_evt('PunkBuster Server: Guid=b59ffffffffffffffffffffffffffc7d" Not Found in the Ban List')
+        self.assert_pb_misc_evt('PunkBuster Server: End of Ban List (1 of 1 displayed)')
+
+    def test_PB_UCON_message(self):
+        result = self.pb('PunkBuster Server: PB UCON "ggc_85.214.107.154"@85.214.107.154:14516 [admin.say "GGC-Stream.com - Welcome Cucurbitaceae with the GUID 31077c7d to our server." all]\n')
+        self.assertEqual('Event<PunkBuster UCON>({\'ip\': \'85.214.107.154\', \'cmd\': \'admin.say "GGC-Stream.com - Welcome Cucurbitaceae with the GUID 31077c7d to our server." all\', \'from\': \'ggc_85.214.107.154\', \'port\': \'14516\'}, None, None)', str(result))
+
+    def test_PB_SV_PList(self):
+        self.assert_pb_misc_evt("PunkBuster Server: Player List: [Slot #] [GUID] [Address] [Status] [Power] [Auth Rate] [Recent SS] [O/S] [Name]")
+        self.assert_pb_misc_evt('PunkBuster Server: End of Player List (0 Players)')
+
+    def test_PB_Ver(self):
+        self.assertIsNone(self.pb('PunkBuster Server: PunkBuster Server for BF3 (v1.839 | A1386 C2.279) Enabled\n'))
+
+    def test_PB_SV_BanGuid(self):
+        self.assert_pb_misc_evt('PunkBuster Server: Ban Added to Ban List')
+        self.assert_pb_misc_evt('PunkBuster Server: Ban Failed')
+
+    def test_PB_SV_UnBanGuid(self):
+        self.assert_pb_misc_evt('PunkBuster Server: Guid b59f190e5ef725e06531387231077c7d has been Unbanned')
+
+    def test_PB_SV_UpdBanFile(self):
+        self.assert_pb_misc_evt("PunkBuster Server: 0 Ban Records Updated in d:\\localuser\\g119142\\pb\\pbbans.dat")
+
+    def test_misc(self):
+        self.assertEqual("Event<PunkBuster client connection lost>({'slot': '1', 'ip': 'x.x.x.x', 'port': '3659', 'name': 'joe', 'pbuid': '0837c128293d42aaaaaaaaaaaaaaaaa'}, None, None)",
+            str(self.pb("PunkBuster Server: Lost Connection (slot #1) x.x.x.x:3659 0837c128293d42aaaaaaaaaaaaaaaaa(-) joe")))
+
+        self.assert_pb_misc_evt("PunkBuster Server: Invalid Player Specified: None")
+        self.assert_pb_misc_evt("PunkBuster Server: Matched: Cucurbitaceae (slot #1)")
+        self.assert_pb_misc_evt("PunkBuster Server: Received Master Security Information")
