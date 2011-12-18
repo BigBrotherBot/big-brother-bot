@@ -16,11 +16,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-import logging
-import b3.output # do not remove, needed because the module alters some defaults of the logging module
-log = logging.getLogger('output')
-log.setLevel(logging.WARNING)
-
 import unittest
 from mock import Mock
 from b3.parsers.bf3 import Bf3Parser
