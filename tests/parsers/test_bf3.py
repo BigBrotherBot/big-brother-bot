@@ -22,6 +22,19 @@ from b3.parsers.bf3 import Bf3Parser
 from b3.config import XmlConfigParser
 from tests import B3TestCase
 
+class BF3TestCase(B3TestCase):
+    """
+    Test case that is suitable for testing BF3 parser specific features
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        from b3.parsers.frostbite2.abstractParser import AbstractParser
+        from b3.fake import FakeConsole
+        AbstractParser.__bases__ = (FakeConsole,)
+        # Now parser inheritance hierarchy is :
+        # BF3Parser -> AbstractParser -> FakeConsole -> Parser
+
 
 class Test_getServerInfo(unittest.TestCase):
 
@@ -366,24 +379,49 @@ class Test_getServerInfo(unittest.TestCase):
         }, parser.game.serverinfo)
 
 
-class Test_punkbuster_events(B3TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        from b3.parsers.frostbite2.abstractParser import AbstractParser
-        from b3.fake import FakeConsole
-        AbstractParser.__bases__ = (FakeConsole,)
-        # Now parser inheritence hierarchy is :
-        # BF3Parser -> AbstractParser -> FakeConsole -> Parser
-
-        cls.conf = XmlConfigParser()
-        cls.conf.loadFromString("""
-            <configuration>
-            </configuration>
-        """)
+class Test_bf3_events(BF3TestCase):
 
     def setUp(self):
-        self.parser = Bf3Parser(self.__class__.conf)
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.parser = Bf3Parser(self.conf)
+        self.parser.startup()
+
+    def test_cmd_rotateMap_generates_EVT_GAME_ROUND_END(self):
+        # prepare fake BF3 server responses
+        def fake_write(data):
+            if data == ('mapList.list',):
+                return ['4', '3', 'MP_007', 'RushLarge0', '4', 'MP_011', 'RushLarge0', '4', 'MP_012',
+                        'SquadRush0', '4', 'MP_013', 'SquadRush0', '4']
+            elif data == ('mapList.getMapIndices', ):
+                return [0, 1]
+            else:
+                return []
+        self.parser.write = Mock(side_effect=fake_write)
+
+        # mock parser queueEvent method so we can make assertions on it later on
+        self.parser.queueEvent = Mock(name="queueEvent method")
+
+        self.parser.rotateMap()
+        self.assertEqual(1, self.parser.queueEvent.call_count)
+        self.assertEqual(self.parser.getEventID("EVT_GAME_ROUND_END"), self.parser.queueEvent.call_args[0][0].type)
+        self.assertIsNone(self.parser.queueEvent.call_args[0][0].data)
+
+
+
+class Test_punkbuster_events(BF3TestCase):
+
+    def setUp(self):
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.parser = Bf3Parser(self.conf)
         self.parser.startup()
 
     def pb(self, msg):

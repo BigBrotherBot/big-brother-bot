@@ -18,7 +18,7 @@
 #
 
 __author__  = 'Courgette'
-__version__ = '0.1'
+__version__ = '0.2'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -989,6 +989,9 @@ class AbstractParser(b3.parser.Parser):
         mapIndices = self.write(('mapList.getMapIndices', ))
         self.write(('mapList.setNextMapIndex', mapIndices[1]))
         self.write(('mapList.runNextRound',))
+        # we create a EVT_GAME_ROUND_END event as the game server won't make one.
+        # https://github.com/courgette/big-brother-bot/issues/52
+        self.queueEvent(b3.events.Event(b3.events.EVT_GAME_ROUND_END, data=None))
 
 
     def changeMap(self, map):
