@@ -16,15 +16,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-
 __author__  = 'Courgette'
-__version__ = '0.2'
+__version__ = '0.3'
 
 
 import sys, re, traceback, time, string, Queue, threading
 import b3.parser
 from b3.parsers.frostbite2.rcon import Rcon as FrostbiteRcon
-from b3.parsers.frostbite2.protocol import FrostbiteServer, CommandFailedError, CommandError
+from b3.parsers.frostbite2.protocol import FrostbiteServer, CommandFailedError, CommandError, NetworkError
 from b3.parsers.frostbite2.util import PlayerInfoBlock, MapListBlock
 import b3.events
 import b3.cvar
@@ -147,16 +146,26 @@ class AbstractParser(b3.parser.Parser):
                     break
 
             try:
-                added, expire, packet = self.frostbite_event_queue.get(timeout=30)
+                added, expire, packet = self.frostbite_event_queue.get(timeout=5)
                 self.routeFrostbitePacket(packet)
+            except Queue.Empty:
+                self.verbose2("no game server event to treat in the last 5s")
             except CommandError, err:
                 # it does not matter from the parser perspective if Frostbite command failed
                 # (timeout or bad reply)
                 self.warning(err)
-            except Queue.Empty:
-                self.verbose2("no game server event to treat in the last 30s")
+            except NetworkError, e:
+                # the connection to the frostbite server is lost
+                self.warning(e)
+                self.close_frostbite_connection()
+            except Exception, e:
+                self.error("unexpected error, please report this on the B3 forums")
+                self.error(e)
+                # unexpected exception, better close the frostbite connection
+                self.close_frostbite_connection()
 
 
+        self.info("Stop listening for Frostbite2 events")
         # exiting B3
         with self.exiting:
             # If !die or !restart was called, then  we have the lock only after parser.handleevent Thread releases it
@@ -178,14 +187,14 @@ class AbstractParser(b3.parser.Parser):
                 sys.exit(self.exitcode)
 
     def setup_frostbite_connection(self):
-        self.verbose('Connecting to frostbite2 server ...')
+        self.info('Connecting to frostbite2 server ...')
         if self._serverConnection:
             self.close_frostbite_connection()
         self._serverConnection = FrostbiteServer(self._rconIp, self._rconPort, self._rconPassword)
 
         timeout = GAMESERVER_CONNECTION_WAIT_TIMEOUT + time.time()
         while time.time() < timeout and not self._serverConnection.connected:
-            self.verbose("retrying to connect to game server...")
+            self.info("retrying to connect to game server...")
             time.sleep(2)
             self.close_frostbite_connection()
             self._serverConnection = FrostbiteServer(self._rconIp, self._rconPort, self._rconPassword)
