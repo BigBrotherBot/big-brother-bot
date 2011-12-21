@@ -96,7 +96,7 @@ class CronTab(object):
     month = property(_get_month, _set_month)
 
     def _set_dow(self, value):
-        self._dow = self._getRate(value, 6)
+        self._dow = self._getRate(value, 7)
     def _get_dow(self):
         return self._dow
     dow = property(_get_dow, _set_dow)
@@ -251,6 +251,7 @@ class Cron(object):
         self._stopEvent.set()
 
     def run(self):
+        self.console.info("cron scheduler started")
         nextTime = self.getNextTime()
         while not self._stopEvent.isSet():
             now = self.time()
@@ -278,6 +279,8 @@ class Cron(object):
                             self.console.error('Error executing crontab %s: %s\n%s', c.command, msg, traceback.extract_tb(sys.exc_info()[2]))
 
             nextTime = nextTime + 1
+        self.console.info("cron scheduler ended")
+
 
     def getNextTime(self):
         # store the time first, we don't want it to change on us
@@ -288,85 +291,3 @@ class Cron(object):
         return (t - t % 1) + 1
 
 
-if __name__ == '__main__':
-    import unittest
-    class TestCrontabGetRate(unittest.TestCase):
-        _t = None
-        def setUp(self):
-            self._t = CronTab(None)
-        def tearDown(self):
-            pass
-        def t(self, param):
-            return self._t._getRate(param, 60)
-        def test_None(self):
-            self.assertRaises(TypeError, self.t, None)
-        def test_getRate_int(self):
-            self.assertEquals(0, self.t(0))
-            self.assertEquals(1, self.t(1))
-            self.assertEquals(59, self.t(59))
-            self.assertRaises(ValueError, self.t, 60)
-            self.assertRaises(ValueError, self.t, -1)
-        def test_float(self):
-            self.assertEquals(0, self.t(0.0))
-            self.assertEquals(1, self.t(1.0))
-            self.assertEquals(59, self.t(59.0))
-            self.assertRaises(ValueError, self.t, 60.0)
-            self.assertRaises(ValueError, self.t, -1.0)
-        def test_str_every(self):
-            self.assertEquals(-1, self.t('*'))
-        def test_str_everySo(self):
-            self.assertEquals(range(0,60,2), self.t('*/2') )
-            self.assertEquals(range(0,60,17), self.t('*/17'))
-            self.assertEquals([0,59], self.t('*/59'))
-            self.assertEquals([0], self.t('*/60'))
-            self.assertRaises(ValueError, self.t, ('*/61'))
-            self.assertRaises(TypeError, self.t, ('*/-1'))
-            self.assertRaises(ValueError, self.t, ('*/80'))
-        def test_str_range(self):
-            self.assertEquals(range(5,12), self.t('5-11'))
-            self.assertRaises(TypeError, self.t, ('-5-11'))
-            self.assertRaises(ValueError, self.t, ('35-11'))
-            self.assertRaises(TypeError, self.t, ('5--11'))
-            self.assertRaises(ValueError, self.t, ('5-80'))
-        def test_str_range_with_step(self):
-            self.assertEquals(range(5,12,2), self.t('5-11/2'))
-            self.assertEquals([5], self.t('5-11/60'))
-            self.assertRaises(ValueError, self.t, ('5-11/80'))
-            self.assertRaises(TypeError, self.t, ('5-11/'))
-            self.assertRaises(TypeError, self.t, ('5-11/-1'))
-        def test_str_other(self):
-            self.assertRaises(TypeError, self.t, (''))
-            self.assertRaises(TypeError, self.t, ('test'))
-        def test_list(self):
-            self.assertEquals([5,11,32,45], self.t('5,11,45,32'))
-            self.assertEquals([0,1,2,5,6,7,8], self.t('5-8,0-2'))
-            self.assertEquals([5,6,7,20,30], self.t('5-7, 20, 30'))
-            self.assertEquals([5,6,7,30,40], self.t('5-7,40,30'))
-            self.assertEquals([0,5,6,7,40], self.t('5-7,40,0'))
-            self.assertEquals([5,7,9,11,30,40,41,42], self.t('5-12/2, 30, 40-42'))
-            self.assertRaises(TypeError, self.t, ('5-12/2, -5, 40-42'))
-            
-        
-    def testCron():
-        from b3.fake import fakeConsole
-        c = Cron(fakeConsole)
-        print 'time : %s' % time.time()
-        
-        def every18Sec():
-            print "%s\t\tevery18Sec!" % time.time()
-        c.create(every18Sec, second='*/18')
-        
-        def every010_2030Sec():
-            print "%s\t\tevery010_2030Sec!" % time.time()
-        c.create(every010_2030Sec, second='0-10')
-    
-        def sec13():
-            print "%s\t\t\tsec13!" % time.time()
-        c.create(sec13, second='13')
-        
-        c.start()
-        time.sleep(120)
-
-
-    #testCron()
-    unittest.main()
