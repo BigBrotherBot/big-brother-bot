@@ -14,6 +14,11 @@
 		<set name="B3">B3 autoswitched channel</set>
 		<set name="team1">Team 1</set>
 		<set name="team2">Team 2</set>
+        <!-- DefaultTarget : will determine between which channels users will be switch to by default.
+            Expected values : 'team', 'squad' or 'off'
+            Default value : 'squad'
+        -->
+		<set name="DefaultTarget">squad</set>
 	</settings>
 	<settings name="commands">
 		<!-- set here levels needed to be allowed to use commands.

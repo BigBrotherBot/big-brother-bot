@@ -33,8 +33,12 @@
 # * ServerQuery is now more reactive when receiving a error as response
 # 2011/12/16 - 2.2
 # * fixes issue #1 : 'player aren't moved at round start' (requires b3 >= 1.8.0dev15)
+# 2011/12/18 - 2.3
+# * default switch target (squad or team) can be specified in the config file (thanks to 82ndab-Bravo17)
+# 2011/12/18 - 2.3.1
+# * default switch target can also be 'off'
 #
-__version__ = '2.2'
+__version__ = '2.3.1'
 __author__ = 'Courgette'
 
 import b3
@@ -211,7 +215,16 @@ class TeamspeakbfPlugin(b3.plugin.Plugin):
             self.info('teamspeakChannels::team2 : \'%s\'' % self.TS3ChannelTeam2)
         except:
             self.info('Cannot get teamspeakChannels::team2 from config file, using default : %s' % self.TS3ChannelTeam2)
-      
+
+        try:
+            _target = self.config.get('teamspeakChannels', 'DefaultTarget')
+            if _target not in ('team', 'squad', 'off'):
+                self.warning("teamspeakChannels::DefaultTarget : unexpected value '%s'. use 'team' or 'squad'" % _target)
+            else:
+                self.autoswitchDefaultTarget = _target
+            self.info('teamspeakChannels::DefaultTarget : \'%s\'' % self.autoswitchDefaultTarget)
+        except:
+            self.info('Cannot get teamspeakChannels::DefaultTarget from config file, using default : %s' % self.autoswitchDefaultTarget)
       
 
     def onEvent(self, event):
@@ -600,14 +613,15 @@ class TeamspeakbfPlugin(b3.plugin.Plugin):
             matches_by_ip = []
             matches_by_name = []
 
-            for c in clientlist:
-                clid = c['clid']
-                clients_info[clid] = info = self.tsSendCommand('clientinfo', {'clid': clid})
-                if client.ip and 'connection_client_ip' in info and info['connection_client_ip'] == client.ip:
-                    matches_by_ip.append(clid)
-                nick = info['client_nickname'].lower()
-                if nick in (client.name.lower()):
-                    matches_by_name.append(clid)
+            if clientlist:
+                for c in clientlist:
+                    clid = c['clid']
+                    clients_info[clid] = info = self.tsSendCommand('clientinfo', {'clid': clid})
+                    if client.ip and 'connection_client_ip' in info and info['connection_client_ip'] == client.ip:
+                        matches_by_ip.append(clid)
+                    nick = info['client_nickname'].lower()
+                    if nick in (client.name.lower()):
+                        matches_by_name.append(clid)
 
             found_client_data = None
             if len(matches_by_ip) == 1:
@@ -667,7 +681,7 @@ class TeamspeakbfPlugin(b3.plugin.Plugin):
 
     def tsTellClient(self, clid, msg):
         """Send a private message to a TS3 client"""
-        self.tsSendCommand('sendtextmessage', {'targetmode': 3, 'target': clid, 'msg': "[%s] %s" % (self.console.name, msg)})
+        self.tsSendCommand('sendtextmessage', {'targetmode': 1, 'target': clid, 'msg': "[%s] %s" % (self.console.name, msg)})
 
     
 ##################################################################################################
