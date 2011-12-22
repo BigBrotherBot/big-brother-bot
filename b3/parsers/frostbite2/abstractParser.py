@@ -1119,7 +1119,7 @@ class AbstractParser(b3.parser.Parser):
         try:
             words = self.write(('vars.%s' % cvarName,))
         except CommandFailedError, err:
-            self.error(err)
+            self.warning(err)
             return
         self.debug('Get cvar %s = %s', cvarName, words)
         
@@ -1140,7 +1140,7 @@ class AbstractParser(b3.parser.Parser):
         try:
             self.write(('vars.%s' % cvarName, value))
         except CommandFailedError, err:
-            self.error(err)
+            self.warning(err)
 
     def checkVersion(self):
         raise NotImplementedError('checkVersion must be implemented in concrete classes')
