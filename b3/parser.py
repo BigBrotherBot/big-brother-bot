@@ -339,6 +339,8 @@ class Parser(object):
         bot_prefix = self.config.get('b3', 'bot_prefix')
         if bot_prefix:
             self.prefix = bot_prefix
+        else:
+            self.prefix = ''
 
         self.msgPrefix = self.prefix
 
