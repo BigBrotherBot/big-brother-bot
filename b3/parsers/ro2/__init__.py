@@ -44,6 +44,9 @@
 # * Implement !nextmap
 #   2011-11-02 : 1.1
 # * Allow use of # instead of @ for client id nos (@ brings up console on some keyboard layouts and cannot go into chat)
+#   2011-12-19 : 1.2
+#   Don't process B3 messages as chat
+#   Auth client if not already authed when chat used
 #
 #
 from b3 import functions
@@ -64,7 +67,7 @@ import hashlib
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.1'
+__version__ = '1.2'
 
 
 class Ro2Parser(b3.parser.Parser):
@@ -370,6 +373,9 @@ class Ro2Parser(b3.parser.Parser):
                 data = data_split[2]
                 
             data = data.partition('div class="')[2]
+            #Ignore what B3 just wrote
+            if chat_decoded['username'] == 'Admin':
+                return
             chat_decoded['username'] = self.getUsername(chat_decoded['username'])
             self._read_queue.append(chat_decoded)
         
@@ -402,8 +408,12 @@ class Ro2Parser(b3.parser.Parser):
             
         client = self.clients.getByName(name)
         if client is None:
-            self.debug("Could not find client")
-            return
+            self.retrievePlayerList()
+            self.debug("Trying to Auth client")
+            client = self.clients.getByName(name)
+            if client is None:
+                self.debug("Unable to Auth client")
+                return
 
         if team:
             return self.getEvent('EVT_CLIENT_TEAM_SAY', text, client, client.team)
