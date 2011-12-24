@@ -93,6 +93,7 @@ class Ro2Parser(b3.parser.Parser):
     login_page=''
     site=''
     user_agent=''
+    username=''
     password=''
     password_hash=''
     cj=None
@@ -374,7 +375,7 @@ class Ro2Parser(b3.parser.Parser):
                 
             data = data.partition('div class="')[2]
             #Ignore what B3 just wrote
-            if chat_decoded['username'] == 'Admin':
+            if chat_decoded['username'] == self.username:
                 return
             chat_decoded['username'] = self.getUsername(chat_decoded['username'])
             self._read_queue.append(chat_decoded)
