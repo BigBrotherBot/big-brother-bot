@@ -227,7 +227,7 @@
 			<regexp>\^{2}(\d)\1</regexp>
 		</badname>
 		<badname name="ass">
-			<regexp>\s[a@][s$]{2}\s</regexp>
+			<regexp>\b[a@][s$]{2}\b</regexp>
 		</badname>
 		<badname name="fuck">
 			<regexp>f[u*.]ck</regexp>

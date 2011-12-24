@@ -32,7 +32,7 @@
 #       Put censored message/name in the warning data
 
 __author__  = 'ThorN'
-__version__ = '2.2.1'
+__version__ = '2.2.2a'
 
 import b3, re, traceback, sys, threading
 import b3.events
@@ -54,6 +54,7 @@ class CensorData:
         for k, v in kwargs.iteritems():
             setattr(self, k, v)
 
+    name = None
     penalty = None
     regexp = None
 
@@ -75,6 +76,7 @@ class CensorPlugin(b3.plugin.Plugin):
         self.registerEvent(b3.events.EVT_CLIENT_TEAM_SAY)
         self.registerEvent(b3.events.EVT_CLIENT_NAME_CHANGE)
         self.registerEvent(b3.events.EVT_CLIENT_AUTH)
+
 
     def onLoadConfig(self):
         try:
@@ -102,34 +104,54 @@ class CensorPlugin(b3.plugin.Plugin):
 
         # load bad words into memory
         self._badWords = []
-
         for e in self.config.get('badwords/badword'):
-            regexp  = e.find('regexp')
-            word    = e.find('word')
-            penalty = e.find('penalty')
-
-            if regexp != None:
-                # has a regular expression
-                self._badWords.append(self._getCensorData(e.get('name'), regexp.text.strip(), penalty, self._defaultBadWordPenalty))
-
-            if word != None:
-                # has a plain word
-                self._badWords.append(self._getCensorData(e.get('name'), '\\s' + word.text.strip() + '\\s', penalty, self._defaultBadWordPenalty))
+            penalty_node = e.find('penalty')
+            word_node = e.find('word')
+            regexp_node = e.find('regexp')
+            self._add_bad_word(rulename=e.get('name'),
+                penalty=penalty_node.text if penalty_node is not None else None,
+                word=word_node.text if word_node is not None else None,
+                regexp=regexp_node.text if regexp_node is not None else None)
 
         # load bad names into memory
         self._badNames = []
-
         for e in self.config.get('badnames/badname'):
-            regexp  = e.find('regexp')
-            word    = e.find('word')
-            penalty = e.find('penalty')
-            if regexp != None:
-                # has a regular expression
-                self._badNames.append(self._getCensorData(e.get('name'), regexp.text.strip(), penalty, self._defaultBadNamePenalty))
+            penalty_node = e.find('penalty')
+            word_node = e.find('word')
+            regexp_node = e.find('regexp')
+            self._add_bad_name(rulename=e.get('name'),
+                penalty=penalty_node.text if penalty_node is not None else None,
+                word=word_node.text if word_node is not None else None,
+                regexp=regexp_node.text if regexp_node is not None else None)
 
-            if word != None:
-                # has a plain word
-                self._badNames.append(self._getCensorData(e.get('name'), '\\s' + word.text.strip() + '\\s', penalty, self._defaultBadNamePenalty))
+
+    def _add_bad_word(self, rulename, penalty=None, word=None, regexp=None):
+        if word is regexp is None:
+            self.warning("badword rule [%s] has no word and no regular expression to search for" % rulename)
+        elif word is not None and regexp is not None:
+            self.warning("badword rule [%s] cannot have both a word and regular expression to search for" % rulename)
+        elif regexp is not None:
+            # has a regular expression
+            self._badWords.append(self._getCensorData(rulename, regexp.strip(), penalty, self._defaultBadNamePenalty))
+            self.debug("badword rule '%s' loaded" % rulename)
+        elif word is not None:
+            # has a plain word
+            self._badWords.append(self._getCensorData(rulename, '\\s' + word.strip() + '\\s', penalty, self._defaultBadNamePenalty))
+            self.debug("badword rule '%s' loaded" % rulename)
+
+    def _add_bad_name(self, rulename, penalty=None, word=None, regexp=None):
+        if word is regexp is None:
+            self.warning("badname rule [%s] has no word and no regular expression to search for" % rulename)
+        elif word is not None and regexp is not None:
+            self.warning("badname rule [%s] cannot have both a word and regular expression to search for" % rulename)
+        elif regexp is not None:
+            # has a regular expression
+            self._badNames.append(self._getCensorData(rulename, regexp.strip(), penalty, self._defaultBadNamePenalty))
+            self.debug("badname rule '%s' loaded" % rulename)
+        elif word is not None:
+            # has a plain word
+            self._badNames.append(self._getCensorData(rulename, '\\s' + word.strip() + '\\s', penalty, self._defaultBadNamePenalty))
+            self.debug("badname rule '%s' loaded" % rulename)
 
     def _getCensorData(self, name, regexp, penalty, defaultPenalty):
         try:
@@ -146,7 +168,7 @@ class CensorPlugin(b3.plugin.Plugin):
         else:
             pd = defaultPenalty
 
-        return CensorData(penalty = pd, regexp = regexp)
+        return CensorData(name=name, penalty=pd, regexp=regexp)
 
     def onEvent(self, event):
         try:
@@ -154,7 +176,7 @@ class CensorPlugin(b3.plugin.Plugin):
                 return
             elif not event.client:
                 return
-            elif event.client.cid == None:
+            elif event.client.cid is None:
                 return
             elif event.client.maxLevel > self._maxLevel:
                 return
@@ -191,7 +213,7 @@ class CensorPlugin(b3.plugin.Plugin):
         """
         #self.debug("%s"%((penalty.type, penalty.reason, penalty.keyword, penalty.duration),))
         # fix for reason keyword not working
-        if penalty.keyword == None:
+        if penalty.keyword is None:
             penalty.keyword = penalty.reason
         self._adminPlugin.penalizeClient(penalty.type, client, penalty.reason, penalty.keyword, penalty.duration, None, data)
 
@@ -207,27 +229,29 @@ class CensorPlugin(b3.plugin.Plugin):
             self.debug('Client not connected?')
             return
 
-        self.debug('Checking %s for badname' % (client.exactName))
-        name = ' ' + self.clean(client.exactName) + ' '
+        cleaned_name = ' ' + self.clean(client.exactName) + ' '
+        self.info("Checking '%s'=>'%s' for badname" % (client.exactName, cleaned_name))
+
+        was_penalized = False
+
         for w in self._badNames:
-            if w.regexp.search(name):
-                self.penalizeClientBadname(w.penalty, client, '%s => %s' % (client.exactName, name))
+            if w.regexp.search(client.exactName):
+                self.debug("badname rule [%s] matches '%s'" % (w.name, client.exactName))
+                self.penalizeClientBadname(w.penalty, client, '%s (rule %s)' % (client.exactName, w.name))
+                was_penalized = True
+                break
+            if w.regexp.search(cleaned_name):
+                self.debug("badname rule [%s] matches cleaned name '%s' for player '%s'" % (w.name, cleaned_name, client.exactName))
+                self.penalizeClientBadname(w.penalty, client, '%s (rule %s)' % (client.exactName, w.name))
+                was_penalized = True
+                break
 
-                t = threading.Timer(60, self.checkBadName, (client,))
-                t.start()
-                return
+        if was_penalized:
+            # check again in 1 minute
+            t = threading.Timer(60, self.checkBadName, (client,))
+            t.start()
+            return
 
-        if name != client.exactName:
-            # name has special characters, check those too
-            name = client.exactName
-            for w in self._badNames:
-                if w.regexp.search(name):
-                    self.penalizeClientBadname(w.penalty, client, client.exactName)
-
-                    t = threading.Timer(60, self.checkBadName, (client,))
-                    t.start()
-
-                    return
 
     def clean(self, data):
         return re.sub(self._reClean, ' ', self.console.stripColors(data.lower()))
