@@ -4,7 +4,11 @@ innosetup_scripts:
  - b3_lite_for_bf3-installer-project.iss
 
 # where to find the InnoSetup compiler
+# Courgettes location:
 iscc:  C:\Program Files (x86)\Inno Setup 5\ISCC.exe
+
+# xlr8ors location:
+#iscc:  C:\Program Files\Inno Setup 5\ISCC.exe
 
 # where to generate the distribution files
 output_dir: ../releases

@@ -12,5 +12,6 @@ desktop.ini
 releases/*
 conf/b3.xml
 build/*
+py2exe_builder/dist_py2exe/
 py2exe_builder/Output/
 .idea/*
