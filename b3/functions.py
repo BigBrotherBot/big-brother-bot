@@ -144,32 +144,34 @@ def time2minutes(timeStr):
 
 #--------------------------------------------------------------------------------------------------
 def minutesStr(timeStr):
-    mins = time2minutes(timeStr)
+    mins = float(time2minutes(timeStr))
 
-    s = ''
     if mins < 1:
-        num = round(mins * 60, 2)
-        s = '%s second' % num
+        num = round(mins * 60, 1)
+        s = '%s second'
     elif mins < 60:
-        num = round(mins, 2)
-        s = '%s minute' % num
+        num = round(mins, 1)
+        s = '%s minute'
     elif mins < 1440:
-        num = round(mins / 60, 2)
-        s = '%s hour' % num
+        num = round(mins / 60, 1)
+        s = '%s hour'
     elif mins < 10080:
-        num = round((mins / 60) / 24, 2)
-        s = '%s day' % num
+        num = round((mins / 60) / 24, 1)
+        s = '%s day'
     elif mins < 525600:
-        num = round(((mins / 60) / 24) / 7, 2)
-        s = '%s week' % num
+        num = round(((mins / 60) / 24) / 7, 1)
+        s = '%s week'
     else:
-        num = round(((mins / 60) / 24) / 365, 2)
-        s = '%s year' % num
+        num = round(((mins / 60) / 24) / 365, 1)
+        s = '%s year'
 
-    if num != 1.0:
+    # convert to int if num is whole
+    num = int(num) if num%1==0 else num
+
+    if num >= 2:
         s += 's'
 
-    return s
+    return s % num
 
 def vars2printf(inputStr):
     if inputStr is not None and inputStr != '':

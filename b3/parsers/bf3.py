@@ -18,17 +18,18 @@
 #
 #
 # CHANGELOG
-# 
+# 0.1
+#  functionnal parser but BF3 admin protocol is not fully implemented on the BF3 side. See TODOs
 #
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 import b3
 import b3.events
 __author__  = 'Courgette'
-__version__ = '0.0'
+__version__ = '0.1'
 
 
-SAY_LINE_MAX_LENGTH = 90
+SAY_LINE_MAX_LENGTH = 128
 
 SQUAD_NOSQUAD = 0
 SQUAD_ALPHA = 1
@@ -44,6 +45,7 @@ SQUAD_NEUTRAL = 24
 GAME_MODES_NAMES = {
     "ConquestLarge0": "Conquest64",
     "ConquestSmall0": "Conquest",
+    "ConquestSmall1": "Conquest Assault",
     "RushLarge0": "Rush",
     "SquadRush0": "Squad Rush",
     "SquadDeathMatch0": "Squad Deathmatch",
@@ -56,7 +58,6 @@ class Bf3Parser(AbstractParser):
     _gameServerVars = (
         '3dSpotting',
         '3pCam',
-        'allUnlocksUnlocked',
         'autoBalance',
         'bannerUrl',
         'bulletDamage',
@@ -89,6 +90,7 @@ class Bf3Parser(AbstractParser):
         'teamKillValueDecreasePerSecond',
         'teamKillValueForKick',
         'teamKillValueIncrease',
+        'unlockMode',
         'vehicleSpawnAllowed',
         'vehicleSpawnDelay',
     )
@@ -148,11 +150,11 @@ class Bf3Parser(AbstractParser):
         # ['player.switchTeam', 'Cucurbitaceae', '1', '0']
         client = self.getClient(data[0])
         if client:
-            client.team = self.getTeam(data[1]) # .team setter will send team change event
-            client.teamId = int(data[1])
             client.squad = int(data[2])
-            
-            
+            client.teamId = int(data[1])
+            client.team = self.getTeam(data[1]) # .team setter will send team change event
+
+
     def OnPlayerSquadchange(self, action, data):
         """
         player.onSquadChange <soldier name: player name> <team: Team ID> <squad: Squad ID>    
@@ -162,10 +164,11 @@ class Bf3Parser(AbstractParser):
         """
         client = self.clients.getByCID(data[0])
         if client:
-            client.team = self.getTeam(data[1]) # .team setter will send team change event
+            previous_squad = client.squad
+            client.squad = int(data[2])
             client.teamId = int(data[1])
-            if client.squad != data[2]:
-                client.squad = int(data[2])
+            client.team = self.getTeam(data[1]) # .team setter will send team change event
+            if client.squad != previous_squad:
                 return b3.events.Event(b3.events.EVT_CLIENT_SQUAD_CHANGE, data[1:], client)
 
 
@@ -183,12 +186,12 @@ class Bf3Parser(AbstractParser):
 
     def message(self, client, text):
         try:
-            if client == None:
+            if client is None:
                 self.say(text)
-            elif client.cid == None:
+            elif client.cid is None:
                 pass
             else:
-                #self.write(self.getCommand('message', message=text, cid=client.cid)) # FIXME: uncomment this once private chat is working
+                #self.write(self.getCommand('message', message=text, cid=client.cid)) # TODO: uncomment this once private chat is working
                 if client.teamId is not None and client.squad is not None:
                 # until private chat works, we try to send the message to the squad only
                     self.write(self.getCommand('saySquad', message=text, teamId=client.teamId, squadId=client.squad))
@@ -277,6 +280,14 @@ class Bf3Parser(AbstractParser):
             return 'MP_018'
         elif mapname == 'operation metro':
             return 'MP_Subway'
+        elif mapname == 'strike at karkand':
+            return 'XP1_001'
+        elif mapname == 'gulf of oman':
+            return 'XP1_002'
+        elif mapname == 'sharqi peninsula':
+            return 'XP1_003'
+        elif mapname == 'wake island':
+            return 'XP1_004'
         else:
             self.warning('unknown level name \'%s\'. Please make sure you have entered a valid mapname' % mapname)
             return mapname
@@ -301,6 +312,14 @@ class Bf3Parser(AbstractParser):
             return 'Kharg Island'
         elif mapname == 'MP_Subway':
             return 'Operation Metro'
+        elif mapname == 'XP1_001':
+            return 'Strike At Karkand'
+        elif mapname == 'XP1_002':
+            return 'Gulf of Oman'
+        elif mapname == 'XP1_003':
+            return 'Sharqi Peninsula'
+        elif mapname == 'XP1_004':
+            return 'Wake Island'
         else:
             self.warning('unknown level name \'%s\'. Please report this on B3 forums' % mapname)
             return mapname
@@ -317,7 +336,7 @@ class Bf3Parser(AbstractParser):
     def getSupportedMapIds(self):
         """return a list of supported levels for the current game mod"""
         # TODO : remove this method once the method on from AbstractParser is working
-        return ["MP_001", "MP_003", "MP_007", "MP_011", "MP_012", "MP_013", "MP_017", "MP_018", "MP_Subway"]
+        return ["MP_001", "MP_003", "MP_007", "MP_011", "MP_012", "MP_013", "MP_017", "MP_018", "MP_Subway", "XP1_001", "XP1_002", "XP1_003", "XP1_004"]
 
     def getServerVars(self):
         """Update the game property from server fresh data"""
@@ -343,7 +362,6 @@ class Bf3Parser(AbstractParser):
                 pass
         self.game['3dSpotting'] = getCvarBool('3dSpotting')
         self.game['3pCam'] = getCvarBool('3pCam')
-        self.game['allUnlocksUnlocked'] = getCvar('allUnlocksUnlocked')
         self.game['autoBalance'] = getCvarBool('autoBalance')
         self.game['bannerUrl'] = getCvar('bannerUrl')
         self.game['bulletDamage'] = getCvarInt('bulletDamage')
@@ -376,6 +394,7 @@ class Bf3Parser(AbstractParser):
         self.game['teamKillValueDecreasePerSecond'] = getCvarFloat('teamKillValueDecreasePerSecond')
         self.game['teamKillValueForKick'] = getCvarFloat('teamKillValueForKick')
         self.game['teamKillValueIncrease'] = getCvarFloat('teamKillValueIncrease')
+        self.game['unlockMode'] = getCvar('unlockMode')
         self.game['vehicleSpawnAllowed'] = getCvarBool('vehicleSpawnAllowed')
         self.game['vehicleSpawnDelay'] = getCvarInt('vehicleSpawnDelay')
         self.game.timeLimit = self.game.gameModeCounter

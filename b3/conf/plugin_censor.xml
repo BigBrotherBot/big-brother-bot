@@ -11,7 +11,7 @@
 		-->
 		<badword name="shit" lang="en">
 			<penalty type="warning" reason="^7Please don't use profanity" duration="1d"/>
-			<regexp>[s$]h[i!1\*]t\s</regexp>
+			<regexp>[s$]h[i!1\*]t\b</regexp>
 		</badword>
 		<badword name="ass" lang="en">
 			<word>ass</word>
@@ -52,7 +52,7 @@
 			<regexp>pu[s$]{2}y</regexp>
 		</badword>
 		<badword name="lul" lang="nl">
-			<regexp>lul$\s</regexp>
+			<regexp>lul$</regexp>
 		</badword>
 		<badword name="flikker" lang="nl">
 			<regexp>\sfl[i!1]kker\s</regexp>
@@ -227,7 +227,7 @@
 			<regexp>\^{2}(\d)\1</regexp>
 		</badname>
 		<badname name="ass">
-			<regexp>\s[a@][s$]{2}\s</regexp>
+			<regexp>\b[a@][s$]{2}\b</regexp>
 		</badname>
 		<badname name="fuck">
 			<regexp>f[u*.]ck</regexp>
@@ -242,6 +242,7 @@
 			<regexp>pu[s$][s$]y</regexp>
 		</badname>
 		<badname name="nigger">
+            <penalty type="ban" reasonkeyword="racism" />
 			<regexp>n[1i!.]gger</regexp>
 		</badname>
 		<badname name="cunt">
@@ -260,15 +261,15 @@
 			<regexp>H[i1!]t[l1][e3.]r</regexp>
 		</badname>
 		<badname name="asshole">
-			<regexp>[a@][s$]{2}h[o0]le</regexp>
+			<regexp>[a@][s$]{2}h[o0][l1]e</regexp>
 		</badname>
 		<badname name="kut">
 			<regexp>kut</regexp>
 		</badname>
 		<badname name="hoer">
-			<regexp>h[o0]er[^a]</regexp>
+			<regexp>h[o0]er[^a]</regexp>a
 		</badname>
-		<badname name="huor">
+		<badname name="huora">
 			<regexp>hu[o0]r[a@]</regexp>
 		</badname>
 		<badname name="puta">

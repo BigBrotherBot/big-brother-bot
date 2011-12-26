@@ -122,3 +122,58 @@ class TestTime2minutes(unittest.TestCase):
         self.assertEqual(functions.time2minutes('120w'), 120*7*24*60)
         self.assertEqual(functions.time2minutes('5w'), 5*7*24*60)
         self.assertEqual(functions.time2minutes('90w'), 90*7*24*60)
+
+class Test_misc(unittest.TestCase):
+    def test_minutesStr(self):
+        for test_data, expected in {
+            '3s': '3 seconds',
+            '4m': '4 minutes',
+            '41': '41 minutes',
+            '2h': '2 hours',
+            '2.5h': '2.5 hours',
+            '3d': '3 days',
+            '5w': '5 weeks',
+            0: '0 second',
+            0.5: '30 seconds',
+            60: '1 hour',
+            90: '1.5 hour',
+            120: '2 hours',
+            123: '2 hours',
+            1266: '21.1 hours',
+            1440: '1 day',
+            3600: '2.5 days',
+            10080: '1 week',
+            15120: '1.5 week',
+            60480: '6 weeks',
+            525600: '1 year',
+            861984: '1.6 year',
+            1051200: '2 years',
+            10512000: '20 years',
+        }.items():
+            result = functions.minutesStr(test_data)
+            if expected != result:
+                self.fail("%r, expecting '%s' but got '%s'" % (test_data, expected, result))
+
+    def test_vars2printf(self):
+        for test_data, expected in {
+            '': '',
+            'qsdf': 'qsdf',
+            'qsdf $azer xcw': 'qsdf %(azer)s xcw',
+            'qsdf $wdrf5 xcw': 'qsdf %(wdrf)s5 xcw',
+            '$test': '%(test)s',
+            '  $test ': '  %(test)s ',
+            '  $test $foo $ $bar': '  %(test)s %(foo)s $ %(bar)s',
+        }.items():
+            result = functions.vars2printf(test_data)
+            if expected != result:
+                self.fail("%r, expecting '%s' but got '%s'" % (test_data, expected, result))
+
+    def test_meanstdv(self):
+        for test_data, expected in {
+            (5,): (5.0, 0),
+            (10,): (10.0, 0),
+            (): (0, 0)
+        }.items():
+            result = functions.meanstdv(test_data)
+            if expected != result:
+                self.fail("%r, expecting '%s' but got '%s'" % (test_data, expected, result))

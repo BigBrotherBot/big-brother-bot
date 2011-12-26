@@ -16,17 +16,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-# CHANGELOG
-#
-
 __author__  = 'Courgette'
-__version__ = '0.0'
+__version__ = '0.3'
 
 
 import sys, re, traceback, time, string, Queue, threading
 import b3.parser
 from b3.parsers.frostbite2.rcon import Rcon as FrostbiteRcon
-from b3.parsers.frostbite2.protocol import FrostbiteServer, CommandFailedError, CommandError
+from b3.parsers.frostbite2.protocol import FrostbiteServer, CommandFailedError, CommandError, NetworkError
 from b3.parsers.frostbite2.util import PlayerInfoBlock, MapListBlock
 import b3.events
 import b3.cvar
@@ -48,8 +45,8 @@ class AbstractParser(b3.parser.Parser):
     _serverConnection = None
     _nbConsecutiveConnFailure = 0
 
-    frostbite_event_queue = Queue.Queue()
-    sayqueue = Queue.Queue()
+    frostbite_event_queue = Queue.Queue(200)
+    sayqueue = Queue.Queue(100)
     sayqueuelistener = None
 
     # frostbite2 engine does not support color code, so we need this property
@@ -57,15 +54,15 @@ class AbstractParser(b3.parser.Parser):
     _reColor = re.compile(r'(\^[0-9])')
 
     _settings = {
-        'line_length': 67,
-        'min_wrap_length': 67,
+        'line_length': 128,
+        'min_wrap_length': 128,
         'message_delay': .8,
         }
 
     _gameServerVars = () # list available cvar
 
     _commands = {
-        'message': ('admin.say', '%(message)s', 'all', '%(cid)s'), # FIXME : send private messages when available
+        'message': ('admin.say', '%(message)s', 'all', '%(cid)s'), # TODO : send private messages when available
         'saySquad': ('admin.say', '%(message)s', 'squad', '%(teamId)s', '%(squadId)s'),
         'sayTeam': ('admin.say', '%(message)s', 'team', '%(teamId)s'),
         'say': ('admin.say', '%(message)s', 'all'),
@@ -86,10 +83,28 @@ class AbstractParser(b3.parser.Parser):
         (re.compile(r'^(?P<servername>.*): Lost Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) (?P<pbuid>[^\s]+)\(-\)\s(?P<name>.+)$'), 'OnPBLostConnection'),
         (re.compile(r'^(?P<servername>.*): Master Query Sent to \((?P<pbmaster>[^\s]+)\) (?P<ip>[^:]+)$'), 'OnPBMasterQuerySent'),
         (re.compile(r'^(?P<servername>.*): Player GUID Computed (?P<pbid>[0-9a-fA-F]+)\(-\) \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+)\s(?P<name>.+)$'), 'OnPBPlayerGuid'),
-        (re.compile(r'^(?P<servername>.*): New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection')
+        (re.compile(r'^(?P<servername>.*): New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection'),
+        (re.compile(r'^PunkBuster Server:\s+(?P<index>\d+)\s+(?P<pbid>[0-9a-fA-F]+) {(?P<min_elapsed>\d+)/(?P<duration>\d+)}\s+"(?P<name>[^"]+)"\s+"(?P<ip>[^:]+):(?P<port>\d+)"\s+"?(?P<reason>.*)"\s+"(?P<private_reason>.*)"$'), None), # banlist item
+        (re.compile(r'^PunkBuster Server: Guid=(?P<search>.*) Not Found in the Ban List$'), None),
+        (re.compile(r'^PunkBuster Server: End of Ban List \(\d+ of \d+ displayed\)$'), None),
+        (re.compile(r'^PunkBuster Server: Guid (?P<pbid>[0-9a-fA-F]+) has been Unbanned$'), None),
+        (re.compile(r'^PunkBuster Server: PB UCON "(?P<from>.+)"@(?P<ip>[\d.]+):(?P<port>\d+) \[(?P<cmd>.*)\]$'), 'OnPBUCON'),
+        (re.compile(r'^PunkBuster Server: Player List: \[Slot #\] \[GUID\] \[Address\] \[Status\] \[Power\] \[Auth Rate\] \[Recent SS\] \[O/S\] \[Name\]$'), None),
+        (re.compile(r'^PunkBuster Server: (?P<slot>\d+)\s+(?P<pbid>[0-9a-fA-F]+)\(-\) (?P<ip>[^:]+):(?P<port>\d+) (?P<status>.+)\s+(?P<power>\d+)\s+(?P<authrate>\d+\.\d+)\s+(?P<recentSS>\d+)\s+\((?P<os>.+)\)\s+"(?P<name>.+)".*$'), 'OnPBPlistItem'),
+        (re.compile(r'^PunkBuster Server: End of Player List \(\d+ Players\)$'), None),
+        (re.compile(r'^PunkBuster Server: Invalid Player Specified: (?P<data>.*)$'), None),
+        (re.compile(r'^PunkBuster Server: Received Download File: (?P<file>.*)$'), None),
+        (re.compile(r'^PunkBuster Server: Matched: (?P<name>.*) \(slot #(?P<slot>\d+)\)$'), None),
+        (re.compile(r'^PunkBuster Server: (?P<num>\d+) Ban Records Updated in (?P<filename>.*)$'), None),
+        (re.compile(r'^PunkBuster Server: Ban Added to Ban List$'), None),
+        (re.compile(r'^PunkBuster Server: Ban Failed$'), None),
+        (re.compile(r'^PunkBuster Server: Received Master Security Information$'), None),
     )
 
+    # if Punkbuster is set, then it will be used to kick/ban/unban
     PunkBuster = None
+    # if ban_with_server is True, then the Frostbite server will be used for ban
+    ban_with_server = True
 
     # flag to find out if we need to fire a EVT_GAME_ROUND_START event.
     _waiting_for_round_start = True
@@ -116,7 +131,7 @@ class AbstractParser(b3.parser.Parser):
             if not self._serverConnection or not self._serverConnection.connected:
                 try:
                     self.setup_frostbite_connection()
-                except CommandFailedError, err:
+                except CommandError, err:
                     if err.message[0] == 'InvalidPasswordHash':
                         self.error("your rcon password is incorrect. Check setting 'rcon_password' in your main config file.")
                         self.exitcode = 220
@@ -131,16 +146,26 @@ class AbstractParser(b3.parser.Parser):
                     break
 
             try:
-                self.verbose2("waiting for game server event")
-                added, expire, packet = self.frostbite_event_queue.get(timeout=10)
+                added, expire, packet = self.frostbite_event_queue.get(timeout=5)
                 self.routeFrostbitePacket(packet)
+            except Queue.Empty:
+                self.verbose2("no game server event to treat in the last 5s")
             except CommandError, err:
                 # it does not matter from the parser perspective if Frostbite command failed
                 # (timeout or bad reply)
                 self.warning(err)
-            except Queue.Empty:
-                pass
+            except NetworkError, e:
+                # the connection to the frostbite server is lost
+                self.warning(e)
+                self.close_frostbite_connection()
+            except Exception, e:
+                self.error("unexpected error, please report this on the B3 forums")
+                self.error(e)
+                # unexpected exception, better close the frostbite connection
+                self.close_frostbite_connection()
 
+
+        self.info("Stop listening for Frostbite2 events")
         # exiting B3
         with self.exiting:
             # If !die or !restart was called, then  we have the lock only after parser.handleevent Thread releases it
@@ -149,7 +174,7 @@ class AbstractParser(b3.parser.Parser):
 
             self.output.frostbite_server = None
 
-            # The Frostbite conection is running its own thread to communicate with the game server. We need to tell
+            # The Frostbite connection is running its own thread to communicate with the game server. We need to tell
             # this thread to stop.
             self.close_frostbite_connection()
 
@@ -162,14 +187,14 @@ class AbstractParser(b3.parser.Parser):
                 sys.exit(self.exitcode)
 
     def setup_frostbite_connection(self):
-        self.verbose('Connecting to frostbite2 server ...')
+        self.info('Connecting to frostbite2 server ...')
         if self._serverConnection:
             self.close_frostbite_connection()
         self._serverConnection = FrostbiteServer(self._rconIp, self._rconPort, self._rconPassword)
 
         timeout = GAMESERVER_CONNECTION_WAIT_TIMEOUT + time.time()
         while time.time() < timeout and not self._serverConnection.connected:
-            self.verbose("retrying to connect to game server...")
+            self.info("retrying to connect to game server...")
             time.sleep(2)
             self.close_frostbite_connection()
             self._serverConnection = FrostbiteServer(self._rconIp, self._rconPort, self._rconPassword)
@@ -194,6 +219,20 @@ class AbstractParser(b3.parser.Parser):
         self.getServerInfo()
         self.getServerVars()
         self.clients.sync()
+
+        # checkout punkbuster support
+        try:
+            result = self._serverConnection.command('punkBuster.isActive')
+        except CommandError, e:
+            self.error("could not get punkbuster status : %r" % e)
+            self.PunkBuster = None
+            self.ban_with_server = True
+        else:
+            if result and result[0] == 'true':
+                self.write(('punkBuster.pb_sv_command', 'pb_sv_plist')) # will make punkbuster send IP address of currently connected players
+            elif not self.ban_with_server:
+                self.ban_with_server = True
+                self.warning("Forcing ban agent to 'server' as we failed to verify that punkbuster is active on the server")
 
     def close_frostbite_connection(self):
         try:
@@ -222,7 +261,7 @@ class AbstractParser(b3.parser.Parser):
             self.verbose2("looking for event handling method called : " + func)
             
         if match and hasattr(self, func):
-            self.verbose2('routing ----> %s(%r)' % (func,eventData))
+            #self.verbose2('routing ----> %s(%r)' % (func,eventData))
             func = getattr(self, func)
             event = func(eventType, eventData)
             #self.debug('event : %s' % event)
@@ -247,16 +286,41 @@ class AbstractParser(b3.parser.Parser):
         # add specific events
         self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
         self.Events.createEvent('EVT_CLIENT_SPAWN', 'Client Spawn')
+        self.Events.createEvent('EVT_GAME_ROUND_PLAYER_SCORES', 'round player scores')
+        self.Events.createEvent('EVT_GAME_ROUND_TEAM_SCORES', 'round team scores')
+        self.Events.createEvent('EVT_PUNKBUSTER_UNKNOWN', 'PunkBuster unknown')
+        self.Events.createEvent('EVT_PUNKBUSTER_MISC', 'PunkBuster misc')
         self.Events.createEvent('EVT_PUNKBUSTER_SCHEDULED_TASK', 'PunkBuster scheduled task')
         self.Events.createEvent('EVT_PUNKBUSTER_LOST_PLAYER', 'PunkBuster client connection lost')
         self.Events.createEvent('EVT_PUNKBUSTER_NEW_CONNECTION', 'PunkBuster client received IP')
-        self.Events.createEvent('EVT_GAME_ROUND_PLAYER_SCORES', 'round player scores')
-        self.Events.createEvent('EVT_GAME_ROUND_TEAM_SCORES', 'round team scores')
-        
-        if self.config.has_option('server', 'punkbuster') and self.config.getboolean('server', 'punkbuster'):
-            self.info('kick/ban by punkbuster is unsupported')
-            #self.debug('punkbuster enabled in config')
-            #self.PunkBuster = Bfbc2PunkBuster(self)
+        self.Events.createEvent('EVT_PUNKBUSTER_UCON', 'PunkBuster UCON')
+
+        # setting up ban agent
+        self.PunkBuster = None
+        self.ban_with_server = True
+        if self.config.has_option('server', 'ban_agent'):
+            ban_agent = self.config.get('server', 'ban_agent')
+            if ban_agent.lower() not in ('server', 'punkbuster', 'both'):
+                self.warning("unexpected value '%s' for ban_agent config option. Expecting one of 'server', 'punkbuster', 'both'." % ban_agent)
+            else:
+                if ban_agent.lower() == 'server':
+                    self.PunkBuster = None
+                    self.ban_with_server = True
+                    self.info("ban_agent is 'server' -> B3 will ban using the game server banlist")
+                elif ban_agent.lower() == 'punkbuster':
+                    from b3.parsers.frostbite2.punkbuster import PunkBuster
+                    self.PunkBuster = PunkBuster(console=self)
+                    self.ban_with_server = False
+                    self.info("ban_agent is 'punkbuster' -> B3 will ban using the punkbuster banlist")
+                elif ban_agent.lower() == 'both':
+                    from b3.parsers.frostbite2.punkbuster import PunkBuster
+                    self.PunkBuster = PunkBuster(console=self)
+                    self.ban_with_server = True
+                    self.info("ban_agent is 'both' -> B3 will ban using both the game server banlist and punkbuster")
+                else:
+                    self.error("unexpected value '%s' for ban_agent" % ban_agent)
+        self.info("ban agent 'server' : %s" % ('activated' if self.ban_with_server else 'deactivated'))
+        self.info("ban agent 'punkbuster' : %s" % ('activated' if self.PunkBuster else 'deactivated'))
         
         self.sayqueuelistener = threading.Thread(target=self.sayqueuelistener)
         self.sayqueuelistener.setDaemon(True)
@@ -266,12 +330,18 @@ class AbstractParser(b3.parser.Parser):
         self.cron + b3.cron.CronTab(self.clients.sync, minute='*/5')
     
     def sayqueuelistener(self):
+        self.info("sayqueuelistener job started")
         while self.working:
-            msg = self.sayqueue.get()
-            for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
-                self.write(self.getCommand('say', message=line))
-                time.sleep(self._settings['message_delay'])
-
+            try:
+                msg = self.sayqueue.get(timeout=40)
+                for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
+                    self.write(self.getCommand('say', message=line))
+                    time.sleep(self._settings['message_delay'])
+            except Queue.Empty:
+                self.verbose2("sayqueuelistener: had nothing to do in the last 40 sec")
+            except Exception, err:
+                self.error(err)
+        self.info("sayqueuelistener job ended")
 
     def getCommand(self, cmd, **kwargs):
         """Return a reference to a loaded command"""
@@ -550,17 +620,17 @@ class AbstractParser(b3.parser.Parser):
                 if match:
                     break
             if match:
+                if funcName is None:
+                    return b3.events.Event(b3.events.EVT_PUNKBUSTER_MISC, match)
                 if hasattr(self, funcName):
                     func = getattr(self, funcName)
-                    event = func(match, data[0])
-                    if event:
-                        self.queueEvent(event)
+                    return func(match, data[0])
                 else:
-                    self.debug("func %s not found, defaulting to EVT_UNKNOWN" % funcName)
-                    return b3.events.Event(b3.events.EVT_UNKNOWN, data)
+                    self.warning("func %s not found, defaulting to EVT_PUNKBUSTER_UNKNOWN" % funcName)
+                    return b3.events.Event(b3.events.EVT_PUNKBUSTER_UNKNOWN, data)
             else:
-                self.debug("no pattern matching \"%s\", defaulting to EVT_UNKNOWN" % str(data[0]).strip())
-                return b3.events.Event(b3.events.EVT_UNKNOWN, data)
+                self.debug("no pattern matching \"%s\", defaulting to EVT_PUNKBUSTER_UNKNOWN" % str(data[0]).strip())
+                return b3.events.Event(b3.events.EVT_PUNKBUSTER_UNKNOWN, data)
                 
     def OnPBVersion(self, match,data):
         """PB notifies us of the version numbers
@@ -651,7 +721,15 @@ class AbstractParser(b3.parser.Parser):
                     self.warning("failed to try to auth %s by pbid. %r" % (name, err))
             client.save()
 
+    def OnPBPlistItem(self, match, data):
+        """we received one of the line containing details about one player"""
+        self.OnPBPlayerGuid(match, data)
 
+    def OnPBUCON(self, match, data):
+        """We get notified of a UCON command
+        match groups : from, ip, port, cmd
+        """
+        return b3.events.Event(b3.events.EVT_PUNKBUSTER_UCON, match.groupdict())
 
 
     ###############################################################################################
@@ -721,7 +799,7 @@ class AbstractParser(b3.parser.Parser):
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         self.debug('kick reason: [%s]' % reason)
         if isinstance(client, str):
-            self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
+            self.write(self.getCommand('kick', cid=client, reason=reason[:80]))
             return
         
         if admin:
@@ -733,7 +811,7 @@ class AbstractParser(b3.parser.Parser):
 
         if self.PunkBuster:
             self.PunkBuster.kick(client, 0.5, reason)
-        
+
         self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
 
         if not silent and fullreason != '':
@@ -755,8 +833,9 @@ class AbstractParser(b3.parser.Parser):
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
         """Permanent ban"""
         self.debug('BAN : client: %s, reason: %s', client, reason)
-        if isinstance(client, b3.clients.Client):
-            self.write(self.getCommand('ban', guid=client.guid, reason=reason[:80]))
+        if isinstance(client, str):
+            traceback.print_stack() # TODO: remove this stack trace when we figured out when tempban is called with a str as client
+            self.write(self.getCommand('ban', guid=client, reason=reason[:80]))
             return
 
         if admin:
@@ -766,29 +845,33 @@ class AbstractParser(b3.parser.Parser):
         fullreason = self.stripColors(fullreason)
         reason = self.stripColors(reason)
 
-        if client.cid is None:
-            # ban by ip, this happens when we !permban @xx a player that is not connected
-            self.debug('EFFECTIVE BAN : %s',self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
-            try:
-                self.write(self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
+        if self.ban_with_server:
+            if client.cid is None:
+                # ban by ip, this happens when we !permban @xx a player that is not connected
+                self.debug('EFFECTIVE BAN : %s',self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
+                try:
+                    self.write(self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
+                    self.write(('banList.save',))
+                    if admin:
+                        admin.message('banned: %s (@%s). His last ip (%s) has been added to banlist'%(client.exactName, client.id, client.ip))
+                except CommandFailedError, err:
+                    self.error(err)
+            else:
+                # ban by cid
+                self.debug('EFFECTIVE BAN : %s',self.getCommand('ban', guid=client.guid, reason=reason[:80]))
                 self.write(('banList.save',))
-                if admin:
-                    admin.message('banned: %s (@%s). His last ip (%s) has been added to banlist'%(client.exactName, client.id, client.ip))
-            except CommandFailedError, err:
-                self.error(err)
-        else:
-            # ban by cid
-            self.debug('EFFECTIVE BAN : %s',self.getCommand('ban', guid=client.guid, reason=reason[:80]))
-            self.write(('banList.save',))
-            try:
-                self.write(self.getCommand('ban', cid=client.cid, reason=reason[:80]))
-                if admin:
-                    admin.message('banned: %s (@%s) has been added to banlist'%(client.exactName, client.id))
-            except CommandFailedError, err:
-                self.error(err)
+                try:
+                    self.write(self.getCommand('ban', cid=client.cid, reason=reason[:80]))
+                    if admin:
+                        admin.message('banned: %s (@%s) has been added to banlist'%(client.exactName, client.id))
+                except CommandFailedError, err:
+                    self.error(err)
 
         if self.PunkBuster:
             self.PunkBuster.banGUID(client, reason)
+            # Also issue a server kick in case we do not ban with the server and punkbuster fails
+            if client.cid: # only if client is currently connected
+                self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
         
         if not silent and fullreason != '':
             self.say(fullreason)
@@ -839,6 +922,7 @@ class AbstractParser(b3.parser.Parser):
         duration = b3.functions.time2minutes(duration)
 
         if isinstance(client, str):
+            traceback.print_stack() # TODO: remove this stack trace when we figured out when tempban is called with a str as client
             self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
             return
         
@@ -850,24 +934,26 @@ class AbstractParser(b3.parser.Parser):
         reason = self.stripColors(reason)
 
         if self.PunkBuster:
-            # punkbuster acts odd if you ban for more than a day
-            # tempban for a day here and let b3 re-ban if the player
-            # comes back
-            if duration > 1440:
-                duration = 1440
+            if client.cid is not None: # only if player is currently on the server
+                # punkbuster acts odd if you ban for more than a day
+                # tempban for a day here and let b3 re-ban if the player
+                # comes back
+                if duration > 1440:
+                    duration = 1440
+                self.PunkBuster.kick(client, duration, reason)
+                # Also issue a server kick in case we do not ban with the server and punkbuster fails
+                self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
 
-            self.PunkBuster.kick(client, duration, reason)
+        if self.ban_with_server:
+            try:
+                self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
+                self.write(('banList.save',))
+            except CommandFailedError, err:
+                if admin:
+                    admin.message("server replied with error %s" % err.message[0])
+                else:
+                    self.error(err)
 
-        try:
-            self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
-            self.write(('banList.save',))
-        except CommandFailedError, err:
-            if admin:
-                admin.message("server replied with error %s" % err.message[0])
-            else:
-                self.error(err)
-        
-        
         if not silent and fullreason != '':
             self.say(fullreason)
 
@@ -912,6 +998,9 @@ class AbstractParser(b3.parser.Parser):
         mapIndices = self.write(('mapList.getMapIndices', ))
         self.write(('mapList.setNextMapIndex', mapIndices[1]))
         self.write(('mapList.runNextRound',))
+        # we create a EVT_GAME_ROUND_END event as the game server won't make one.
+        # https://github.com/courgette/big-brother-bot/issues/52
+        self.queueEvent(b3.events.Event(b3.events.EVT_GAME_ROUND_END, data=None))
 
 
     def changeMap(self, map):
@@ -985,8 +1074,8 @@ class AbstractParser(b3.parser.Parser):
             pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
             for p in pib:
                 pings[p['name']] = int(p['ping'])
-        except Exception:
-            self.debug('Unable to retrieve pings from playerlist')
+        except Exception, e:
+            self.debug('Unable to retrieve pings from playerlist (%r)' % e)
         return pings
 
 
@@ -998,8 +1087,8 @@ class AbstractParser(b3.parser.Parser):
             pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
             for p in pib:
                 scores[p['name']] = int(p['score'])
-        except Exception:
-            self.debug('Unable to retrieve scores from playerlist')
+        except Exception, e:
+            self.debug('Unable to retrieve scores from playerlist (%r)' % e)
         return scores
 
 
@@ -1030,7 +1119,7 @@ class AbstractParser(b3.parser.Parser):
         try:
             words = self.write(('vars.%s' % cvarName,))
         except CommandFailedError, err:
-            self.error(err)
+            self.warning(err)
             return
         self.debug('Get cvar %s = %s', cvarName, words)
         
@@ -1051,7 +1140,7 @@ class AbstractParser(b3.parser.Parser):
         try:
             self.write(('vars.%s' % cvarName, value))
         except CommandFailedError, err:
-            self.error(err)
+            self.warning(err)
 
     def checkVersion(self):
         raise NotImplementedError('checkVersion must be implemented in concrete classes')

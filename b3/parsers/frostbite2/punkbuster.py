@@ -16,19 +16,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-# CHANGELOG
-# 2010/03/24 - 1.1 - Courgette
-#   * make sure to fallback on the parsers' getPlayerList() method as in the BFBC2 
-#     the PB_SV_PList command is asynchronous and cannot be used as expected
-#     with other B3 parsers
-#   * make sure not to ban with slot id as this is not reliable
-#
-#
-
 __author__  = 'Courgette'
-__version__ = '1.1'
+__version__ = '1.2'
 
-import re
 import b3.parsers.punkbuster
 
 #--------------------------------------------------------------------------------------------------
@@ -41,7 +31,39 @@ class PunkBuster(b3.parsers.punkbuster.PunkBuster):
         return self.console.getPlayerList()
 
     def ban(self, client, reason='', private=''):
-        # in BFBC2 we do not have reliable slot id for connected players.
+        # in BF3 we do not have reliable slot id for connected players.
         # fallback on banning by GUID instead
-        return self.banGUID(client, reason)
-            
+        self.banGUID(client, reason)
+        self.send('pb_sv_updbanfile')
+
+    def kick(self, client, minutes=1, reason='', private=''):
+        """
+        PB_SV_Kick [name or slot #] [minutes] [displayed_reason] | [optional_private_reason]
+        Removes a player from the game and won't let the player rejoin until specified [minutes]
+        has passed or until the server is restarted, whichever comes first - kicks are not written
+        to the pbbans.dat file but they are logged and will show up in the output from the pb_sv_banlist command
+        """
+        if client and client.connected:
+            self.send('PB_SV_Kick "%s" "%s" "%s" "%s"' % (client.cid, minutes, reason, private))
+            self.send('pb_sv_updbanfile')
+
+    def banGUID(self, client, reason=''):
+        """
+        PB_SV_BanGuid [guid] [player_name] [IP_Address] [reason]
+        Adds a guid directly to PB's permanent ban list; if the player_name or IP_Address
+        are not known, we recommend using "???"
+        """
+        if client.pbid:
+            name = client.name if client.name else '?'
+            ip = client.ip if client.ip else '?'
+            self.send('PB_SV_BanGuid %s "%s" "%s" "%s"' % (client.pbid, name, ip, reason))
+
+    def unBanGUID(self, client):
+        """
+        PB_SV_UnBanGuid [guid]
+        Unbans a guid from the ban list stored in memory; use pb_sv_updbanfile to update the
+        permanent ban file after using this command
+        """
+        if client.pbid:
+            self.send('PB_SV_UnBanGuid %s' % client.pbid)
+            self.send('pb_sv_updbanfile')

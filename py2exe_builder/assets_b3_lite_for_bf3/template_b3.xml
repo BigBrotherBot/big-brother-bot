@@ -19,7 +19,15 @@
 		<set name="rcon_port">{rcon_port}</set>
 		<set name="rcon_password">{rcon_password}</set>
 		<set name="timeout">3</set>
-		<set name="punkbuster">off</set>
+        <!-- ban_agent : choose how to ban players.
+            Available agents are : 'server' or 'punkbuster'.
+            Available options are :
+             'server' : to save bans in the BF3 server banlist only
+             'punkbuster' : to save bans in punkbuster only
+             'both' : to save bans in both the BF3 server and punkbuster banlists
+            Default value is 'server'
+        -->
+        <set name="ban_agent">server</set>
 	</settings>
 	<settings name="autodoc">
 		<set name="type">html</set>
@@ -48,6 +56,9 @@
 		<plugin disabled="no" name="adv" config="@conf/plugin_adv.xml"/>
 		<plugin disabled="yes" name="status" config="@conf/plugin_status.xml"/>
 		<plugin disabled="yes" name="welcome" config="@conf/plugin_welcome.xml"/>
+        <!-- <plugin name="punkbuster" config="@conf/plugin_punkbuster.xml"/> -->
 		<plugin disabled="yes" name="makeroom" config="@conf/plugin_makeroom.xml"/>
+		
+		<!-- <plugin name="teamspeakbf" config="@conf/plugin_teamspeakbf.xml"/> -->
 	</plugins>
 </configuration>

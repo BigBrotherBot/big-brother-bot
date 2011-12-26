@@ -34,10 +34,13 @@
 # 0.8.2 - fix issue #17 with !loadconfig
 # 0.9   - add command !listconfig, !loadconfig can understand mis-spelt names and suggest config names
 # 0.10  - ported xlr8or's configmanager plugin for cod series. Automagically loads server config files based on maps/gamemodes
+# 0.11  - fix issue with configmanager examples' filenames
+# 0.12  - add command !unlockmode
+# 0.13  - fixes #22 : !swap reports everything went fine even when failing
 import re
 from b3.functions import soundex, levenshteinDistance
 
-__version__ = '0.10'
+__version__ = '0.13'
 __author__  = 'Courgette'
 
 import random
@@ -50,6 +53,7 @@ from b3.plugin import Plugin
 from ConfigParser import NoOptionError
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import MapListBlock, PlayerInfoBlock
+from b3.parsers.bf3 import GAME_MODES_NAMES
 
 
 class Scrambler:
@@ -174,6 +178,7 @@ class Poweradminbf3Plugin(Plugin):
 
         # Register our events
         self.registerEvent(b3.events.EVT_GAME_ROUND_START)
+        self.registerEvent(b3.events.EVT_GAME_ROUND_END)
         self.registerEvent(b3.events.EVT_GAME_ROUND_PLAYER_SCORES)
         self.registerEvent(b3.events.EVT_CLIENT_AUTH)
         self.registerEvent(b3.events.EVT_CLIENT_DISCONNECT)
@@ -201,10 +206,9 @@ class Poweradminbf3Plugin(Plugin):
                 elif self._autoscramble_maps and self.console.game.rounds == 0:
                     self.debug('auto scramble is planned for maps')
                     self._scrambler.scrambleTeams()
-
+        elif event.type == b3.events.EVT_GAME_ROUND_END:
             if self._configmanager:
                 self.config_manager_construct_file_names()
-                time.sleep(self._configmanager_delay)
                 self.config_manager_check_config()
 
 
@@ -348,17 +352,20 @@ class Poweradminbf3Plugin(Plugin):
         teamA, teamB = sclientA.teamId, sclientB.teamId
         squadA, squadB = sclientA.squad, sclientB.squad
 
-        # move player A to teamB/NO_SQUAD
-        self._movePlayer(sclientA, teamB)
+        try:
+            # move player A to teamB/NO_SQUAD
+            self._movePlayer(sclientA, teamB)
 
-        # move player B to teamA/squadA
-        self._movePlayer(sclientB, teamA, squadA)
+            # move player B to teamA/squadA
+            self._movePlayer(sclientB, teamA, squadA)
 
-        # move player A to teamB/squadB if squadB != 0
-        if squadB:
-            self._movePlayer(sclientA, teamB, squadB)
+            # move player A to teamB/squadB if squadB != 0
+            if squadB:
+                self._movePlayer(sclientA, teamB, squadB)
 
-        cmd.sayLoudOrPM(client, 'swapped player %s with %s' % (sclientA.cid, sclientB.cid))
+            cmd.sayLoudOrPM(client, 'swapped player %s with %s' % (sclientA.cid, sclientB.cid))
+        except CommandFailedError, e:
+            client.message("Error while trying to swap %s with %s. (%s)" % (sclientA.cid, sclientB.cid, e.message[0]))
 
 
     def cmd_punkbuster(self, data, client, cmd=None):
@@ -524,6 +531,28 @@ class Poweradminbf3Plugin(Plugin):
             else:
                 client.message("invalid data. Expecting one of [off, round, map]")
 
+
+    def cmd_unlockmode(self, data, client, cmd=None):
+        """\
+        <all|common|stats|none> set the weapons unlocks mode
+        """
+        expected_values = ('all', 'common', 'stats', 'none')
+        if not data or data.lower() not in expected_values:
+            if data.lower() not in expected_values and data != '':
+                client.message("unexpected value '%s'. Available modes : %s" % (data, ', '.join(expected_values)))
+            try:
+                current_mode = self.console.getCvar('unlockMode').getString()
+                self.console.game['unlockMode'] = current_mode
+            except Exception:
+                current_mode = 'unknown'
+            cmd.sayLoudOrPM(client=client, message="Current unlock mode is [%s]" % current_mode)
+        else:
+            wanted_mode = data.lower()
+            self.console.setCvar('unlockMode', wanted_mode)
+            self.console.game['unlockMode'] = wanted_mode
+            cmd.sayLoudOrPM(client=client, message="Unlock mode set to %s" % wanted_mode)
+
+
 ################################################################################################################
 #
 #    Other methods
@@ -541,7 +570,7 @@ class Poweradminbf3Plugin(Plugin):
             self.debug('Using default value (random) for scrambling strategy')
 
         try:
-            mode = self.config.get('scrambler', 'mode').tolower()
+            mode = self.config.get('scrambler', 'mode').lower()
             if mode not in ('off', 'round', 'map'):
                 raise ValueError
             if mode == 'off':
@@ -634,11 +663,8 @@ class Poweradminbf3Plugin(Plugin):
                     self._adminPlugin.registerCommand(self, cmd, level, func, alias)
 
     def _movePlayer(self, client, teamId, squadId=0):
-        try:
-            client.setvar(self, 'movedByBot', True)
-            self.console.write(('admin.movePlayer', client.cid, teamId, squadId, 'true'))
-        except CommandFailedError, err:
-            self.warning('Error, server replied %s' % err)
+        self.console.write(('admin.movePlayer', client.cid, teamId, squadId, 'true'))
+        client.setvar(self, 'movedByBot', True)
 
     def _get_server_config_directory(self, dir_name=''):
         """returns an existing absolute directory path supposed to contain some game server config files.
@@ -733,7 +759,7 @@ class Poweradminbf3Plugin(Plugin):
             except CommandFailedError, err:
                 self._sendMessage(client, ("Error writing map rotation list to disk. %s" % err.message))
 
-        self._sendMessage(client, ("New config \"%s\" loaded" % config_name))
+        self._sendMessage(client, ("config \"%s\" loaded" % config_name))
 
     def _list_available_server_config_files(self):
         self.info("looking for config files in directory : %s" % self._configPath)
@@ -778,29 +804,50 @@ class Poweradminbf3Plugin(Plugin):
 
     def config_manager_construct_file_names(self):
         """
-        Construct file names based on level name and game mode for configmanager feature
+        Construct file names based on next level name and next game mode for configmanager feature
         """
-        c = self.console.game
+        #check if we have more rounds to play
+        _rounds_left = self._get_rounds_left()
+        if _rounds_left > 0:
+            self.debug('%s more round(s) to go' % _rounds_left)
+            #get current map and gametype
+            c = self.console.game
 
-        self._typeandmap = 'b3_%s_%s' % (c.gameType.lower(), c.mapName.lower())
-        self.debug('Type and Map Config: %s' %(self._typeandmap))
+            self._next_typeandmap = 'b3_%s_%s' % (c.gameType.lower(), c.mapName.lower())
+            self.debug('Type and Map Config: %s' %(self._next_typeandmap))
 
-        self._gametype = 'b3_%s' % (c.gameType.lower())
-        self.debug('Gametype Config: %s' %(self._gametype))
+            self._next_gametype = 'b3_%s' % (c.gameType.lower())
+            self.debug('Gametype Config: %s' %(self._next_gametype))
+        else:
+            #get next map and gametype
+            next_map_gametype = self.console.getNextMap()
+            p = next_map_gametype.split('(')
+            next_mapName = p[0].strip()
+            next_mapName = self.console.getHardName(next_mapName)
+
+            game_modes_names_inverse = dict((GAME_MODES_NAMES[k], k) for k in GAME_MODES_NAMES)
+            next_gameType = p[1][:-1].strip()
+            next_gameType = game_modes_names_inverse[next_gameType]
+
+            self._next_typeandmap = 'b3_%s_%s' % (next_gameType.lower(), next_mapName.lower())
+            self.debug('Type and Map Config for Next Map: %s' %(self._next_typeandmap))
+
+            self._next_gametype = 'b3_%s' % (next_gameType.lower())
+            self.debug('Gametype Config for Next Map: %s' %(self._next_gametype))
 
     def config_manager_check_config(self):
         """
         Check and run the configs
         """
-        if os.path.isfile(self._configManager_configPath + os.path.sep + self._typeandmap + '.cfg'): # b3_<gametype>_<mapname>.cfg
-            _fName = self._configManager_configPath + os.path.sep + self._typeandmap + '.cfg'
-            self.debug('Executing %s.cfg' %(self._typeandmap))
-            self._load_server_config_from_file(client=None, config_name=self._typeandmap, file_path=_fName, threaded=True)
+        if os.path.isfile(self._configManager_configPath + os.path.sep + self._next_typeandmap + '.cfg'): # b3_<gametype>_<mapname>.cfg
+            _fName = self._configManager_configPath + os.path.sep + self._next_typeandmap + '.cfg'
+            self.debug('Executing %s.cfg' %(self._next_typeandmap))
+            self._load_server_config_from_file(client=None, config_name=self._next_typeandmap, file_path=_fName, threaded=True)
 
-        elif os.path.isfile(self._configManager_configPath + os.path.sep + self._gametype + '.cfg'): # b3_<gametype>.cfg
-            _fName = self._configManager_configPath + os.path.sep + self._gametype + '.cfg'
-            self.debug('Executing %s.cfg' %(self._gametype))
-            self._load_server_config_from_file(client=None, config_name=self._gametype, file_path=_fName, threaded=True)
+        elif os.path.isfile(self._configManager_configPath + os.path.sep + self._next_gametype + '.cfg'): # b3_<gametype>.cfg
+            _fName = self._configManager_configPath + os.path.sep + self._next_gametype + '.cfg'
+            self.debug('Executing %s.cfg' %(self._next_gametype))
+            self._load_server_config_from_file(client=None, config_name=self._next_gametype, file_path=_fName, threaded=True)
 
         elif os.path.isfile(self._configManager_configPath + os.path.sep + 'b3_main.cfg'): # b3_main.cfg
             _fName = self._configManager_configPath + os.path.sep + 'b3_main.cfg'
@@ -818,3 +865,13 @@ class Poweradminbf3Plugin(Plugin):
             client.message(msg)
         else:
             self.debug(msg)
+
+    def _get_rounds_left(self):
+        """
+        check and return rounds left
+        """
+        rounds = self.console.write(('mapList.getRounds',))
+        current_round = int(rounds[0]) + 1
+        total_rounds = int(rounds[1])
+        rounds_left = total_rounds - current_round
+        return rounds_left

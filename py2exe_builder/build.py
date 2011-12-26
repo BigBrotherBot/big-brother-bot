@@ -215,7 +215,6 @@ def main():
     else:
         choice = raw_input("\nDo you want to update the files with the current version \"%s\" ? [Yn] : " % current_b3_version)
         if choice.lower() != 'n':
-            update_egg_script(current_b3_version)
             update_innosetup_scripts(config['innosetup_scripts'], current_b3_version)
         else:
             print "not updating scripts"

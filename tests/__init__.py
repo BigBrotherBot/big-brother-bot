@@ -16,6 +16,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+import logging
+import b3.output # do not remove, needed because the module alters some defaults of the logging module
+log = logging.getLogger('output')
+log.setLevel(logging.WARNING)
+
 from mock import Mock
 import b3
 import b3.events # needed due to the fact that all B3 events (even natives) are created at module load time
@@ -33,6 +38,7 @@ class B3TestCase(unittest.TestCase):
         b3.console.screen = Mock()
         b3.console.stripColors.side_effect = lambda x:x
         b3.console.time = time.time
+        b3.console.upTime = Mock(return_value=3)
         
         def myError(msg, *args, **kwargs):
             print(("ERROR: %s" % msg) % args)
