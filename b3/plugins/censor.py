@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    2011/12/26 - 3.0 - Courgette
+#       Refactor and make the checks on raw text before checks on cleaned text. Add tests
 #    2/12/2011 - 2.2.2 - Bravo17
 #       Fix for reason keyword not working
 #    1/16/2010 - 2.2.1 - xlr8or
@@ -32,7 +34,7 @@
 #       Put censored message/name in the warning data
 
 __author__  = 'ThorN'
-__version__ = '2.2.2a'
+__version__ = '3.0'
 
 import b3, re, traceback, sys, threading
 import b3.events
@@ -109,7 +111,7 @@ class CensorPlugin(b3.plugin.Plugin):
             word_node = e.find('word')
             regexp_node = e.find('regexp')
             self._add_bad_word(rulename=e.get('name'),
-                penalty=penalty_node.text if penalty_node is not None else None,
+                penalty=penalty_node,
                 word=word_node.text if word_node is not None else None,
                 regexp=regexp_node.text if regexp_node is not None else None)
 
@@ -120,7 +122,7 @@ class CensorPlugin(b3.plugin.Plugin):
             word_node = e.find('word')
             regexp_node = e.find('regexp')
             self._add_bad_name(rulename=e.get('name'),
-                penalty=penalty_node.text if penalty_node is not None else None,
+                penalty=penalty_node,
                 word=word_node.text if word_node is not None else None,
                 regexp=regexp_node.text if regexp_node is not None else None)
 
@@ -132,11 +134,11 @@ class CensorPlugin(b3.plugin.Plugin):
             self.warning("badword rule [%s] cannot have both a word and regular expression to search for" % rulename)
         elif regexp is not None:
             # has a regular expression
-            self._badWords.append(self._getCensorData(rulename, regexp.strip(), penalty, self._defaultBadNamePenalty))
+            self._badWords.append(self._getCensorData(rulename, regexp.strip(), penalty, self._defaultBadWordPenalty))
             self.debug("badword rule '%s' loaded" % rulename)
         elif word is not None:
             # has a plain word
-            self._badWords.append(self._getCensorData(rulename, '\\s' + word.strip() + '\\s', penalty, self._defaultBadNamePenalty))
+            self._badWords.append(self._getCensorData(rulename, '\\s' + word.strip() + '\\s', penalty, self._defaultBadWordPenalty))
             self.debug("badword rule '%s' loaded" % rulename)
 
     def _add_bad_name(self, rulename, penalty=None, word=None, regexp=None):
@@ -170,6 +172,7 @@ class CensorPlugin(b3.plugin.Plugin):
 
         return CensorData(name=name, penalty=pd, regexp=regexp)
 
+
     def onEvent(self, event):
         try:
             if not self.isEnabled():
@@ -189,17 +192,7 @@ class CensorPlugin(b3.plugin.Plugin):
             elif len(event.data) > self._ignoreLength:
                 if event.type == b3.events.EVT_CLIENT_SAY or \
                    event.type == b3.events.EVT_CLIENT_TEAM_SAY:
-                    raw = ' ' + event.data + ' '
-                    cleaned = ' ' + self.clean(event.data) + ' '
-
-                    for w in self._badWords:
-                        if w.regexp.search(cleaned):
-                            self.penalizeClient(w.penalty, event.client, '%s => %s' % (event.data, cleaned))
-                            raise b3.events.VetoEvent
-                        elif raw != cleaned and w.regexp.search(raw):
-                            # Data has special characters, check those too
-                            self.penalizeClient(w.penalty, event.client, event.data)
-                            raise b3.events.VetoEvent
+                    self.checkBadWord(event.data, event.client)
 
 
         except b3.events.VetoEvent:
@@ -252,30 +245,22 @@ class CensorPlugin(b3.plugin.Plugin):
             t.start()
             return
 
+    def checkBadWord(self, text, client):
+        cleaned = ' ' + self.clean(text) + ' '
+        self.debug("cleaned text: [%s]" % cleaned)
+        for w in self._badWords:
+            if w.regexp.search(text):
+                self.debug("badword rule [%s] matches '%s'" % (w.name, text))
+                self.penalizeClient(w.penalty, client, text)
+                raise b3.events.VetoEvent
+            if w.regexp.search(cleaned):
+                self.debug("badword rule [%s] matches cleaned text '%s'" % (w.name, cleaned))
+                self.penalizeClient(w.penalty, client, '%s => %s' % (text, cleaned))
+                raise b3.events.VetoEvent
+
 
     def clean(self, data):
         return re.sub(self._reClean, ' ', self.console.stripColors(data.lower()))
     
-    
-if __name__ == '__main__':
-    import time
-    from b3.fake import fakeConsole
-    from b3.fake import joe
-    
-    p = CensorPlugin(fakeConsole, '@b3/conf/plugin_censor.xml')
-    p.onStartup()
 
-    fakeConsole.noVerbose = True
-    joe._maxLevel = 0
-    joe.connected = True
-    
-    #p.onEvent(b3.events.Event(b3.events.EVT_CLIENT_SAY, "fuck", joe))
-    joe.says('hello')
-    joe.says('fuck')
-    joe.says('nothing wrong')
-    joe.says('ass')
-    joe.says('shit')
-    
-    time.sleep(2)
-    
     
