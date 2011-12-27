@@ -170,20 +170,14 @@ class Test_Censor_badname(CensorTestCase):
         self.assert_name_is_penalized('what an ass')
 
 
-
+@patch("threading.Timer") # to prevent the plugin from scheduling tasks
 class Censor_functional_test(B3TestCase):
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         from b3.fake import fakeConsole
-
-        # Timer needs to be patched or the Censor plugin would schedule a 2nd check one minute after
-        # penalizing a player.
-        self.timer_patcher = patch('threading.Timer')
-        self.timer_patcher.start()
-
-        super(Censor_functional_test, self).setUp()
-        self.conf = XmlConfigParser()
-        self.conf.setXml(r"""
+        cls.conf = XmlConfigParser()
+        cls.conf.setXml(r"""
             <configuration plugin="censor">
                 <settings name="settings">
                     <set name="max_level">40</set>
@@ -204,30 +198,28 @@ class Censor_functional_test(B3TestCase):
                 </badnames>
             </configuration>
         """)
-        self.p = CensorPlugin(fakeConsole, self.conf)
-        self.p.onLoadConfig()
-        self.p.onStartup()
-
-    def tearDown(self):
-        self.timer_patcher.stop()
-
-    def test_conf(self):
-        self.assertEqual(1, len(self.p._badWords))
+        cls.p = CensorPlugin(fakeConsole, cls.conf)
+        cls.p.onLoadConfig()
+        cls.p.onStartup()
 
 
-    def test_joe_says_badword(self):
+    def test_conf(self, timer_patch):
+        self.assertEqual(1, len(Censor_functional_test.p._badWords))
+
+
+    def test_joe_says_badword(self, timer_patch):
         from b3.fake import joe
         joe.warn = Mock()
         joe.connects(0)
         joe.says("qsfdl f0o!")
         self.assertEqual(1, joe.warn.call_count)
 
-    def test_cunt_connects(self):
+    def test_cunt_connects(self, timer_patch):
         from b3.fake import joe
         joe.name = joe.exactName = "cunt"
         joe.warn = Mock()
         joe.connects(0)
-        self.assertLessEqual(1, joe.warn.call_count)
+        self.assertEqual(1, joe.warn.call_count)
 
 
 default_plugin_file = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../b3/conf/plugin_censor.xml"))
