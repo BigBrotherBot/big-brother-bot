@@ -304,10 +304,18 @@ class FakeClient(b3.clients.Client):
     def clearMessageHistory(self):
         self.message_history = []
     def getMessageHistoryLike(self, needle):
+        clean_needle = re.sub(re.compile('\^[0-9]'), '', needle).strip()
         for m in self.message_history:
-            if needle in m:
+            if clean_needle in m:
                 return m
         return None
+    def getAllMessageHistoryLike(self, needle):
+        result = []
+        clean_needle = re.sub(re.compile('\^[0-9]'), '', needle).strip()
+        for m in self.message_history:
+            if clean_needle in m:
+                result.append(m)
+        return result
     
     def message(self, msg):
         cleanmsg = re.sub(re.compile('\^[0-9]'), '', msg).strip()
