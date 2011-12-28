@@ -21,10 +21,10 @@ from tests import B3TestCase
 import unittest
 
 import b3
+from b3.plugin import Plugin
 from b3.plugins.admin import AdminPlugin, Command
 from b3.config import XmlConfigParser
-from b3.fake import fakeConsole
-from b3.clients import Client
+from b3.clients import Client, Group, ClientVar
 
  
 class Test_parseUserCmd(B3TestCase):
@@ -68,6 +68,7 @@ class Test_parseUserCmd(B3TestCase):
 class Test_getGroupLevel(B3TestCase):
 
     def setUp(self):
+        from b3.fake import fakeConsole
         B3TestCase.setUp(self)
         self.conf = XmlConfigParser()
         self.conf.setXml("""
@@ -184,8 +185,231 @@ class Test_misc_cmd(B3TestCase):
                 self.fail("b3.console.say was not called for %r" % param)
 
 
+    def test_enable(self):
+        mock_client = Mock(spec=Client, name="client")
+        mock_client.maxLevel = 0
+        mock_command = Mock(spec=Command, name='cmd')
+
+        self.p.cmd_enable(data='', client=mock_client, cmd=mock_command)
+        mock_client.message.assert_called_once_with('^7You must supply a plugin name to enable.')
+
+        mock_client.reset_mock()
+        self.p.cmd_enable(data='admin', client=mock_client, cmd=mock_command)
+        mock_client.message.assert_called_once_with('^7You cannot disable/enable the admin plugin.')
+
+        mock_client.reset_mock()
+        self.p.console.getPlugin = Mock(return_value=None)
+        self.p.cmd_enable(data='foo', client=mock_client, cmd=mock_command)
+        mock_client.message.assert_called_once_with('^7No plugin named foo loaded.')
+
+        mock_client.reset_mock()
+        mock_pluginA = Mock(spec=Plugin)
+        mock_pluginA.isEnabled = Mock(return_value=True)
+        self.p.console.getPlugin = Mock(return_value=mock_pluginA)
+        self.p.cmd_enable(data='foo', client=mock_client, cmd=mock_command)
+        mock_client.message.assert_called_once_with('^7Plugin foo is already enabled.')
+
+        mock_client.reset_mock()
+        mock_pluginA = Mock(spec=Plugin)
+        mock_pluginA.__class__.__name__ = "MockPlugin"
+        mock_pluginA.isEnabled = Mock(return_value=False)
+        self.p.console.getPlugin = Mock(return_value=mock_pluginA)
+        self.p.cmd_enable(data='foo', client=mock_client, cmd=mock_command)
+        self.p.console.say.assert_called_once_with('^7MockPlugin is now ^2ON')
 
 
+    def test_disable(self):
+        mock_client = Mock(spec=Client, name="client")
+        mock_client.maxLevel = 0
+        mock_command = Mock(spec=Command, name='cmd')
+
+        self.p.cmd_disable(data='', client=mock_client, cmd=mock_command)
+        mock_client.message.assert_called_once_with('^7You must supply a plugin name to disable.')
+
+        mock_client.reset_mock()
+        self.p.cmd_disable(data='admin', client=mock_client, cmd=mock_command)
+        mock_client.message.assert_called_once_with('^7You cannot disable/enable the admin plugin.')
+
+        mock_client.reset_mock()
+        self.p.console.getPlugin = Mock(return_value=None)
+        self.p.cmd_disable(data='foo', client=mock_client, cmd=mock_command)
+        mock_client.message.assert_called_once_with('^7No plugin named foo loaded.')
+
+        mock_client.reset_mock()
+        mock_pluginA = Mock(spec=Plugin)
+        mock_pluginA.isEnabled = Mock(return_value=False)
+        self.p.console.getPlugin = Mock(return_value=mock_pluginA)
+        self.p.cmd_disable(data='foo', client=mock_client, cmd=mock_command)
+        mock_client.message.assert_called_once_with('^7Plugin foo is already disable.')
+
+        mock_client.reset_mock()
+        mock_pluginA = Mock(spec=Plugin)
+        mock_pluginA.__class__.__name__ = "MockPlugin"
+        mock_pluginA.isEnabled = Mock(return_value=True)
+        self.p.console.getPlugin = Mock(return_value=mock_pluginA)
+        self.p.cmd_disable(data='foo', client=mock_client, cmd=mock_command)
+        self.p.console.say.assert_called_once_with('^7MockPlugin is now ^1OFF')
+
+
+    def test_rebuild(self):
+        mock_client = Mock(spec=Client, name="client")
+        mock_client.maxLevel = 0
+        mock_command = Mock(spec=Command, name='cmd')
+
+        assert not self.p.console.clients.sync.called
+        self.p.cmd_rebuild(data='', client=mock_client, cmd=mock_command)
+        assert self.p.console.clients.sync.called
+
+
+class CommandTestCase(B3TestCase):
+    def setUp(self):
+        B3TestCase.setUp(self)
+        self.conf = XmlConfigParser()
+        self.conf.setXml("""
+            <configuration plugin="admin">
+                <settings name="warn">
+                    <set name="warn_delay">5</set>
+                </settings>
+            </configuration>
+        """)
+        self.p = AdminPlugin(b3.console, self.conf)
+        self.mock_client = Mock(spec=Client, name="client")
+        self.mock_client.maxLevel = 0
+        self.mock_command = Mock(spec=Command, name='cmd')
+
+
+
+class Test_cmd_iamgod(CommandTestCase):
+
+    def iamgod(self, data=''):
+        return self.p.cmd_iamgod(data=data, client=self.mock_client, cmd=self.mock_command)
+
+
+    def test_when_there_is_already_a_superadmin(self):
+        self.p._commands['iamgod'] = 'foo'
+        self.p.warning = Mock()
+        self.p.console.clients.lookupSuperAdmins = Mock(return_value=[Mock(spec=Client)])
+
+        self.iamgod()
+        self.p.warning.assert_called()
+        self.assertNotIn('iamgod', self.p._commands)
+
+
+    def test_is_already_superadmin(self):
+        mock_iamgod_cmd = Mock(spec=Command, name="iamgod command")
+        mock_superadmin_group = Mock(spec=Group)
+        mock_superadmin_group.exactName = "superadmin"
+        self.p._commands['iamgod'] = mock_iamgod_cmd
+        self.p.console.clients.lookupSuperAdmins = Mock(return_value=[])
+        self.p.console.storage.getGroup = Mock(return_value=mock_superadmin_group)
+        self.mock_client.groups = [mock_superadmin_group]
+
+        self.iamgod()
+        self.mock_client.message.assert_called_once_with('^7You are already a superadmin')
+
+
+    def test_when_there_is_no_superadmin(self):
+        mock_iamgod_cmd = Mock(spec=Command, name="iamgod command")
+        mock_superadmin_group = Mock(spec=Group)
+        self.p._commands['iamgod'] = mock_iamgod_cmd
+        self.p.console.clients.lookupSuperAdmins = Mock(return_value=[])
+        self.p.console.storage.getGroup = Mock(return_value=mock_superadmin_group)
+        self.mock_client.groups = []
+
+        self.iamgod()
+        self.mock_client.setGroup.assert_called_once_with(mock_superadmin_group)
+        self.mock_client.save.assert_called_once_with()
+        self.mock_client.message.assert_called_once_with('^7You are now a %s' % mock_superadmin_group.name)
+
+
+class Test_cmd_warn(CommandTestCase):
+
+    def setUp(self):
+        CommandTestCase.setUp(self)
+        self.p.warnClient = Mock()
+        self.p.getMessage = Mock()
+
+    def warn(self, data=''):
+        return self.p.cmd_warn(data=data, client=self.mock_client, cmd=self.mock_command)
+
+    def test_no_parameter(self):
+        self.warn()
+        self.mock_client.message.assert_called_once_with('^7Invalid parameters')
+        assert not self.p.warnClient.called
+
+    def test_invalid_parameter(self):
+        self.warn()
+        self.mock_client.message.assert_called_once_with('^7Invalid parameters')
+        assert not self.p.warnClient.called
+
+    def test_player_not_found(self):
+        self.p.findClientPrompt = Mock(return_value=None)
+        self.warn('foo')
+        self.p.findClientPrompt.assert_called_once_with('foo', self.mock_client)
+        assert not self.p.warnClient.called
+
+    def test_prevent_warn_self(self):
+        foo_player = self.mock_client
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.warn('foo')
+        self.p.getMessage.assert_called_once_with('warn_self', self.mock_client.exactName)
+        assert not self.p.warnClient.called
+
+    def test_player_is_higher_level(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 20
+        self.mock_client.maxLevel = 0
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.warn('foo')
+        self.p.getMessage.assert_called_once_with('warn_denied', self.mock_client.exactName, foo_player.exactName)
+        assert not self.p.warnClient.called
+
+    def test_already_warned_recently(self):
+        self.p.console.time = Mock(return_value=8)
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 0
+        foo_player.var = Mock(return_value=ClientVar(5))
+        self.mock_client.maxLevel = 20
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.warn('foo')
+        self.mock_client.message.assert_called_once_with('^7Only one warning per 5 seconds can be issued')
+        assert not self.p.warnClient.called
+
+    def test_nominal_no_keyword(self):
+        self.p.console.time = Mock(return_value=8)
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 0
+        foo_player.var = Mock(return_value=ClientVar(None))
+        self.mock_client.maxLevel = 20
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.warn('foo')
+        self.p.warnClient.assert_called_once_with(foo_player, None, self.mock_client)
+
+    def test_nominal_with_keyword(self):
+        self.p.console.time = Mock(return_value=8)
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 0
+        foo_player.var = Mock(return_value=ClientVar(None))
+        self.mock_client.maxLevel = 20
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.warn('foo thekeyword')
+        self.p.warnClient.assert_called_once_with(foo_player, 'thekeyword', self.mock_client)
+
+class Test_cmd_kick(CommandTestCase):
+    # TODO
+    pass
+
+class Test_cmd_permban(CommandTestCase):
+    # TODO
+    pass
+
+class Test_cmd_tempban(CommandTestCase):
+    # TODO
+    pass
+
+class Test_cmd_unban(CommandTestCase):
+    # TODO
+    pass
 
 
 if __name__ == '__main__':
