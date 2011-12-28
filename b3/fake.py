@@ -93,8 +93,9 @@ if __name__ == '__main__':
 # * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
 # 1.9 - 2011/06/09
 # * FakeConsole now uses the logging module
-#
-__version__ = '1.9'
+# 1.10 - 2011/12/29
+# * fix issue with plugins' registered events when importing fakeConsole in different TestSuites
+__version__ = '1.10'
 
 
 from b3.cvar import Cvar
@@ -138,6 +139,7 @@ class FakeConsole(b3.parser.Parser):
         self.game = b3.game.Game(self, "fakeGame")
         self.game.mapName = 'ut4_turnpike'
         self.cvars = {}
+        self._handlers = {}
         
         if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
             self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
