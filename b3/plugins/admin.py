@@ -1103,7 +1103,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
 
         if not self.console.storage.status():
-            cmd.sayLoudOrPM(client, '^7Cannot lookup, database apears to be ^1DOWN')
+            cmd.sayLoudOrPM(client, '^7Cannot lookup, database appears to be ^1DOWN')
             return
 
         m = re.match('^(.{1,})$', data)
