@@ -275,6 +275,7 @@ class CommandTestCase(B3TestCase):
         self.p = AdminPlugin(b3.console, self.conf)
         self.mock_client = Mock(spec=Client, name="client")
         self.mock_client.maxLevel = 0
+        self.mock_client.exactName = "MockClient"
         self.mock_command = Mock(spec=Command, name='cmd')
 
 
@@ -337,11 +338,6 @@ class Test_cmd_warn(CommandTestCase):
         self.mock_client.message.assert_called_once_with('^7Invalid parameters')
         assert not self.p.warnClient.called
 
-    def test_invalid_parameter(self):
-        self.warn()
-        self.mock_client.message.assert_called_once_with('^7Invalid parameters')
-        assert not self.p.warnClient.called
-
     def test_player_not_found(self):
         self.p.findClientPrompt = Mock(return_value=None)
         self.warn('foo')
@@ -395,21 +391,300 @@ class Test_cmd_warn(CommandTestCase):
         self.warn('foo thekeyword')
         self.p.warnClient.assert_called_once_with(foo_player, 'thekeyword', self.mock_client)
 
+
+
 class Test_cmd_kick(CommandTestCase):
-    # TODO
-    pass
+
+    def setUp(self):
+        CommandTestCase.setUp(self)
+        self.p.getMessage = Mock()
+
+        def my_getint(section, option):
+            if section == "settings" and option == "noreason_level":
+                return 2
+            else:
+                return self.p.config.getint(section, option)
+        self.p.config.getint = Mock(side_effect=my_getint)
+
+    def kick(self, data=''):
+        return self.p.cmd_kick(data=data, client=self.mock_client, cmd=self.mock_command)
+
+    def test_no_parameter(self):
+        self.kick()
+        self.mock_client.message.assert_called_once_with('^7Invalid parameters')
+        assert not self.mock_client.kick.called
+
+    def test_no_reason(self):
+        self.p.config.getint = Mock(return_value=4)
+        self.mock_client.maxLevel = 3
+        assert self.mock_client.maxLevel < self.p.config.getint('whatever')
+        self.kick('foo')
+        self.mock_client.message.assert_called_once_with('^1ERROR: ^7You must supply a reason')
+        assert not self.mock_client.kick.called
+
+    def test_player_not_found(self):
+        self.p.findClientPrompt = Mock(return_value=None)
+        self.mock_client.maxLevel = 3
+        self.kick('foo')
+        self.p.findClientPrompt.assert_called_once_with('foo', self.mock_client)
+        assert not self.mock_client.kick.called
+
+    def test_prevent_kick_self(self):
+        foo_player = self.mock_client
+        self.mock_client.maxLevel = 3
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.kick('foo')
+        self.p.getMessage.assert_called_once_with('kick_self', self.mock_client.exactName)
+        assert not self.mock_client.kick.called
+
+    def test_player_is_higher_level(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 20
+        foo_player.maskGroup = None
+        self.mock_client.maxLevel = 5
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.kick('foo')
+        self.p.getMessage.assert_called_once_with('kick_denied', foo_player.exactName, self.mock_client.exactName, foo_player.exactName)
+        assert not self.mock_client.kick.called
+
+    def test_player_is_higher_level_but_masked(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 20
+        foo_player.maskGroup = Mock()
+        foo_player.exactName = "Foo"
+        self.mock_client.maxLevel = 5
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.kick('foo')
+        self.mock_client.message.assert_called_once_with('^7%s ^7is a masked higher level player, can\'t kick' % foo_player.exactName)
+        assert not self.mock_client.kick.called
+
+    def test_nominal_no_reason(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 0
+        self.mock_client.maxLevel = 20
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.kick('foo')
+        foo_player.kick.assert_called_once_with('', None, self.mock_client)
+
+    def test_nominal_with_reason(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 0
+        self.mock_client.maxLevel = 20
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.kick('foo theReason')
+        foo_player.kick.assert_called_once_with('theReason', 'theReason', self.mock_client)
+
+    def test_nominal_with_reason_keyword(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 0
+        self.mock_client.maxLevel = 20
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.p.getReason = Mock(return_value="aReason")
+        self.kick('foo theKeyword')
+        foo_player.kick.assert_called_once_with('aReason', 'theKeyword', self.mock_client)
+
+
 
 class Test_cmd_permban(CommandTestCase):
-    # TODO
-    pass
+
+    def setUp(self):
+        CommandTestCase.setUp(self)
+        self.p.getMessage = Mock()
+
+        def my_getint(section, option):
+            if section == "settings" and option == "noreason_level":
+                return 2
+            else:
+                return self.p.config.getint(section, option)
+        self.p.config.getint = Mock(side_effect=my_getint)
+
+    def permban(self, data=''):
+        return self.p.cmd_permban(data=data, client=self.mock_client, cmd=self.mock_command)
+
+    def test_no_parameter(self):
+        self.permban()
+        self.mock_client.message.assert_called_once_with('^7Invalid parameters')
+        assert not self.mock_client.ban.called
+
+    def test_no_reason(self):
+        self.p.config.getint = Mock(return_value=4)
+        self.mock_client.maxLevel = 3
+        assert self.mock_client.maxLevel < self.p.config.getint('whatever')
+        self.permban('foo')
+        self.mock_client.message.assert_called_once_with('^1ERROR: ^7You must supply a reason')
+        assert not self.mock_client.ban.called
+
+    def test_player_not_found(self):
+        self.p.findClientPrompt = Mock(return_value=None)
+        self.mock_client.maxLevel = 3
+        self.permban('foo')
+        self.p.findClientPrompt.assert_called_once_with('foo', self.mock_client)
+        assert not self.mock_client.ban.called
+
+    def test_prevent_permban_self(self):
+        foo_player = self.mock_client
+        self.mock_client.maxLevel = 3
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.permban('foo')
+        self.p.getMessage.assert_called_once_with('ban_self', self.mock_client.exactName)
+        assert not self.mock_client.ban.called
+
+    def test_player_is_higher_level(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 20
+        foo_player.maskGroup = None
+        self.mock_client.maxLevel = 5
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.permban('foo')
+        self.p.getMessage.assert_called_once_with('ban_denied', self.mock_client.exactName, foo_player.exactName)
+        assert not self.mock_client.ban.called
+
+    def test_player_is_higher_level_but_masked(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 20
+        foo_player.maskGroup = Mock()
+        foo_player.exactName = "Foo"
+        self.mock_client.maxLevel = 5
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.permban('foo')
+        self.mock_client.message.assert_called_once_with('^7%s ^7is a masked higher level player, can\'t ban' % foo_player.exactName)
+        assert not self.mock_client.ban.called
+
+    def test_nominal_no_reason(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 0
+        self.mock_client.maxLevel = 20
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.permban('foo')
+        foo_player.ban.assert_called_once_with('', None, self.mock_client)
+
+    def test_nominal_with_reason(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 0
+        self.mock_client.maxLevel = 20
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.permban('foo theReason')
+        foo_player.ban.assert_called_once_with('theReason', 'theReason', self.mock_client)
+
+    def test_nominal_with_reason_keyword(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 0
+        self.mock_client.maxLevel = 20
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.p.getReason = Mock(return_value="aReason")
+        self.permban('foo theKeyword')
+        foo_player.ban.assert_called_once_with('aReason', 'theKeyword', self.mock_client)
+
 
 class Test_cmd_tempban(CommandTestCase):
-    # TODO
-    pass
 
-class Test_cmd_unban(CommandTestCase):
-    # TODO
-    pass
+    def setUp(self):
+        CommandTestCase.setUp(self)
+        self.p.getMessage = Mock()
+
+        original_getint = self.p.config.getint
+        def my_getint(section, option):
+            if section == "settings" and option == "noreason_level":
+                return 2
+            elif section == "settings" and option == "long_tempban_level":
+                return 2
+            else:
+                return original_getint(section, option)
+        self.p.config.getint = my_getint
+
+    def tempban(self, data=''):
+        return self.p.cmd_tempban(data=data, client=self.mock_client, cmd=self.mock_command)
+
+    def test_no_parameter(self):
+        self.tempban()
+        self.mock_client.message.assert_called_once_with('^7Invalid parameters')
+        assert not self.mock_client.tempban.called
+
+    def test_invalid_duration(self):
+        self.p.config.getint = Mock(return_value=4)
+        self.mock_client.maxLevel = 3
+        assert self.mock_client.maxLevel < self.p.config.getint('whatever')
+        self.tempban('foo sdf')
+        self.mock_client.message.assert_called_once_with('^7Invalid parameters')
+        assert not self.mock_client.tempban.called
+
+    def test_no_duration(self):
+        self.p.config.getint = Mock(return_value=4)
+        self.mock_client.maxLevel = 3
+        assert self.mock_client.maxLevel < self.p.config.getint('whatever')
+        self.tempban('foo')
+        self.mock_client.message.assert_called_once_with('^7Invalid parameters')
+        assert not self.mock_client.tempban.called
+
+    def test_no_reason(self):
+        self.p.config.getint = Mock(return_value=4)
+        self.mock_client.maxLevel = 3
+        assert self.mock_client.maxLevel < self.p.config.getint('whatever')
+        self.tempban('foo 3h')
+        self.mock_client.message.assert_called_once_with('^1ERROR: ^7You must supply a reason')
+        assert not self.mock_client.tempban.called
+
+    def test_player_not_found(self):
+        self.p.findClientPrompt = Mock(return_value=None)
+        self.mock_client.maxLevel = 3
+        self.tempban('foo 3h')
+        self.p.findClientPrompt.assert_called_once_with('foo', self.mock_client)
+        assert not self.mock_client.tempban.called
+
+    def test_prevent_tempban_self(self):
+        foo_player = self.mock_client
+        self.mock_client.maxLevel = 3
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.tempban('foo 3h')
+        self.p.getMessage.assert_called_once_with('temp_ban_self', self.mock_client.exactName)
+        assert not self.mock_client.tempban.called
+
+    def test_player_is_higher_level(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 20
+        foo_player.maskGroup = None
+        self.mock_client.maxLevel = 5
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.tempban('foo 3h')
+        self.p.getMessage.assert_called_once_with('temp_ban_denied', self.mock_client.exactName, foo_player.exactName)
+        assert not self.mock_client.tempban.called
+
+    def test_player_is_higher_level_but_masked(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 20
+        foo_player.maskGroup = Mock()
+        foo_player.exactName = "Foo"
+        self.mock_client.maxLevel = 5
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.tempban('foo 3h')
+        self.mock_client.message.assert_called_once_with('^7%s ^7is a masked higher level player, can\'t temp ban' % foo_player.exactName)
+        assert not self.mock_client.tempban.called
+
+    def test_nominal_no_reason(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 0
+        self.mock_client.maxLevel = 20
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.tempban('foo 3h')
+        foo_player.tempban.assert_called_once_with('', None, 3*60, self.mock_client)
+
+    def test_nominal_with_reason(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 0
+        self.mock_client.maxLevel = 20
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.tempban('foo 3h theReason')
+        foo_player.tempban.assert_called_once_with('theReason', 'theReason', 3*60, self.mock_client)
+
+    def test_nominal_with_reason_keyword(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 0
+        self.mock_client.maxLevel = 20
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.p.getReason = Mock(return_value="aReason")
+        self.tempban('foo 3h theKeyword')
+        foo_player.tempban.assert_called_once_with('aReason', 'theKeyword', 3*60, self.mock_client)
+
 
 
 if __name__ == '__main__':
