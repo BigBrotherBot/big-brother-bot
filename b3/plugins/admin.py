@@ -1892,7 +1892,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = self.parseUserCmd(data)
 
-        if not m:
+        if not m or not m[1]:
             client.message('^7Invalid parameters')
             return False
 
@@ -2149,28 +2149,3 @@ class Command:
             params.append(buf)
 
         return params
-    
-if __name__ == '__main__':
-    from b3.fake import FakeConsole
-    from b3.fake import joe, simon
-    
-    print "___________________________________"
-    fakeConsole = FakeConsole('@b3/conf/b3.distribution.xml')
-    p = AdminPlugin(fakeConsole, '@conf/plugin_admin.xml')
-    p.onStartup()
-
-    joe.connects(0)
-    simon.connects(1)
-
-    joe.says('#test')
-    joe.says('#clients')
-    joe.says('#groups')
-    joe.says('#vars')
-    joe.says('#varsjoe')
-    joe.says('#tkinfo')
-    joe.says('#tkinfojoe')
-    joe.says('!!')
-    joe.says('hello')
-    joe.says('!help')
-    simon.says('!help')
-    joe.says('!register')
