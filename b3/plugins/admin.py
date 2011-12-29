@@ -1200,7 +1200,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 return True
             elif sclient.maxLevel >= client.maxLevel:
                 if sclient.maskGroup:
-                    client.message('^7%s ^7is a masked higher level player, can\'t kick' % client.exactName)
+                    client.message('^7%s ^7is a masked higher level player, can\'t kick' % sclient.exactName)
                 else:
                     self.console.say(self.getMessage('kick_denied', sclient.exactName, client.exactName, sclient.exactName))
                 return True
@@ -1259,7 +1259,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 return True
             elif sclient.maxLevel >= client.maxLevel:
                 if sclient.maskGroup:
-                    client.message('^7%s ^7is a masked higher level player, can\'t spank' % client.exactName)
+                    client.message('^7%s ^7is a masked higher level player, can\'t spank' % sclient.exactName)
                 else:
                     self.console.say(self.getMessage('kick_denied', sclient.exactName, client.exactName, sclient.exactName))
                 return True
@@ -1326,7 +1326,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 return True
             elif sclient.maxLevel >= client.maxLevel:
                 if sclient.maskGroup:
-                    client.message('^7%s ^7is a masked higher level player, can\'t ban' % client.exactName)
+                    client.message('^7%s ^7is a masked higher level player, can\'t ban' % sclient.exactName)
                 else:
                     self.console.say(self.getMessage('ban_denied', client.exactName, sclient.exactName))
                 return True
@@ -1933,7 +1933,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 return True
             elif sclient.maxLevel >= client.maxLevel:
                 if sclient.maskGroup:
-                    client.message('^7%s ^7is a masked higher level player, can\'t temp ban' % client.exactName)
+                    client.message('^7%s ^7is a masked higher level player, can\'t temp ban' % sclient.exactName)
                 else:
                     self.console.say(self.getMessage('temp_ban_denied', client.exactName, sclient.exactName))
                 return True

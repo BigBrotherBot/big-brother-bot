@@ -484,6 +484,97 @@ class Test_cmd_kick(CommandTestCase):
         foo_player.kick.assert_called_once_with('aReason', 'theKeyword', self.mock_client)
 
 
+class Test_cmd_spank(CommandTestCase):
+
+    def setUp(self):
+        CommandTestCase.setUp(self)
+        self.p.getMessage = Mock()
+
+        def my_getint(section, option):
+            if section == "settings" and option == "noreason_level":
+                return 2
+            else:
+                return self.p.config.getint(section, option)
+        self.p.config.getint = Mock(side_effect=my_getint)
+
+    def spank(self, data=''):
+        return self.p.cmd_spank(data=data, client=self.mock_client, cmd=self.mock_command)
+
+    def test_no_parameter(self):
+        self.spank()
+        self.mock_client.message.assert_called_once_with('^7Invalid parameters')
+        assert not self.mock_client.kick.called
+
+    def test_no_reason(self):
+        self.p.config.getint = Mock(return_value=4)
+        self.mock_client.maxLevel = 3
+        assert self.mock_client.maxLevel < self.p.config.getint('whatever')
+        self.spank('foo')
+        self.mock_client.message.assert_called_once_with('^1ERROR: ^7You must supply a reason')
+        assert not self.mock_client.kick.called
+
+    def test_player_not_found(self):
+        self.p.findClientPrompt = Mock(return_value=None)
+        self.mock_client.maxLevel = 3
+        self.spank('foo')
+        self.p.findClientPrompt.assert_called_once_with('foo', self.mock_client)
+        assert not self.mock_client.kick.called
+
+    def test_prevent_kick_self(self):
+        foo_player = self.mock_client
+        self.mock_client.maxLevel = 3
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.spank('foo')
+        self.p.getMessage.assert_called_once_with('kick_self', self.mock_client.exactName)
+        assert not self.mock_client.kick.called
+
+    def test_player_is_higher_level(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 20
+        foo_player.maskGroup = None
+        self.mock_client.maxLevel = 5
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.spank('foo')
+        self.p.getMessage.assert_called_once_with('kick_denied', foo_player.exactName, self.mock_client.exactName, foo_player.exactName)
+        assert not self.mock_client.kick.called
+
+    def test_player_is_higher_level_but_masked(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 20
+        foo_player.maskGroup = Mock()
+        foo_player.exactName = "Foo"
+        self.mock_client.maxLevel = 5
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.spank('foo')
+        self.mock_client.message.assert_called_once_with('^7%s ^7is a masked higher level player, can\'t spank' % foo_player.exactName)
+        assert not self.mock_client.kick.called
+
+    def test_nominal_no_reason(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 0
+        self.mock_client.maxLevel = 20
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.spank('foo')
+        foo_player.kick.assert_called_once_with('', None, self.mock_client, silent=True)
+
+    def test_nominal_with_reason(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 0
+        self.mock_client.maxLevel = 20
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.spank('foo theReason')
+        foo_player.kick.assert_called_once_with('theReason', 'theReason', self.mock_client, silent=True)
+
+    def test_nominal_with_reason_keyword(self):
+        foo_player = Mock(spec=Client, name="foo")
+        foo_player.maxLevel = 0
+        self.mock_client.maxLevel = 20
+        self.p.findClientPrompt = Mock(return_value=foo_player)
+        self.p.getReason = Mock(return_value="aReason")
+        self.spank('foo theKeyword')
+        foo_player.kick.assert_called_once_with('aReason', 'theKeyword', self.mock_client, silent=True)
+
+
 
 class Test_cmd_permban(CommandTestCase):
 
