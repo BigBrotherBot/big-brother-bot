@@ -176,7 +176,10 @@ class Ro2Parser(b3.parser.Parser):
             func = getattr(self, func)
             event = func(data)
             if event:
-                self.queueEvent(event)
+                if event != 'Unable to Auth client':
+                    self.queueEvent(event)
+                else:
+                    return
             else:
                 self.warning('TODO handle: %s(%s)' % (func, data))
         else:
@@ -419,7 +422,7 @@ class Ro2Parser(b3.parser.Parser):
             client = self.clients.getByName(name)
             if client is None:
                 self.debug("Unable to Auth client")
-                return
+                return 'Unable to Auth client'
 
         if team:
             return self.getEvent('EVT_CLIENT_TEAM_SAY', text, client, client.team)
