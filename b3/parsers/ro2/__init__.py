@@ -44,6 +44,11 @@
 # * Implement !nextmap
 #   2011-11-02 : 1.1
 # * Allow use of # instead of @ for client id nos (@ brings up console on some keyboard layouts and cannot go into chat)
+#   2011-12-19 : 1.2
+#   Don't process B3 messages as chat
+#   Auth client if not already authed when chat used
+#   2011-12-28 : 1.3
+#   Allow Q3 Color Codes in names, since game doesn't filter them out
 #
 #
 from b3 import functions
@@ -64,7 +69,7 @@ import hashlib
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.1'
+__version__ = '1.3'
 
 
 class Ro2Parser(b3.parser.Parser):
@@ -90,6 +95,7 @@ class Ro2Parser(b3.parser.Parser):
     login_page=''
     site=''
     user_agent=''
+    username=''
     password=''
     password_hash=''
     cj=None
@@ -170,7 +176,10 @@ class Ro2Parser(b3.parser.Parser):
             func = getattr(self, func)
             event = func(data)
             if event:
-                self.queueEvent(event)
+                if event != 'Unable to Auth client':
+                    self.queueEvent(event)
+                else:
+                    return
             else:
                 self.warning('TODO handle: %s(%s)' % (func, data))
         else:
@@ -370,7 +379,13 @@ class Ro2Parser(b3.parser.Parser):
                 data = data_split[2]
                 
             data = data.partition('div class="')[2]
+            #Ignore what B3 just wrote
             chat_decoded['username'] = self.getUsername(chat_decoded['username'])
+            if chat_decoded['username'] == self.username:
+                return
+            #Ignore new format for server messages 
+            if chat_decoded['username'] == '' and chat_decoded['noticesymbol'] == '***':
+                return
             self._read_queue.append(chat_decoded)
         
     def onChat_typeChatnotice(self,data):
@@ -402,8 +417,12 @@ class Ro2Parser(b3.parser.Parser):
             
         client = self.clients.getByName(name)
         if client is None:
-            self.debug("Could not find client")
-            return
+            self.retrievePlayerList()
+            self.debug("Trying to Auth client")
+            client = self.clients.getByName(name)
+            if client is None:
+                self.debug("Unable to Auth client")
+                return 'Unable to Auth client'
 
         if team:
             return self.getEvent('EVT_CLIENT_TEAM_SAY', text, client, client.team)
@@ -419,6 +438,7 @@ class Ro2Parser(b3.parser.Parser):
         name = name.replace(r"\\", "\\")
         name = name.strip()
 
+        name = self.stripColors(name)
 
         if name.find('&') != -1:
             name = name.replace('&lt;', '<')
@@ -511,7 +531,7 @@ class Ro2Parser(b3.parser.Parser):
         elif self.output is None:
             pass
         else:
-            msg = self.stripColors(msg)
+            msg = self.stripMsgColors(msg)
             self._write_queue.append(msg)
             return
 
@@ -633,9 +653,9 @@ class Ro2Parser(b3.parser.Parser):
         """\
         broadcast a message to all players
         """
-        msg = self.stripColors(msg)
+        msg = self.stripMsgColors(msg)
         for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
-            line = self.stripColors(line)
+            line = self.stripMsgColors(line)
             self.write(self.getCommand('say',  prefix=self.msgPrefix, message=line))
 
     def message(self, client, text):
@@ -643,9 +663,9 @@ class Ro2Parser(b3.parser.Parser):
         display a message to a given player
         """
         # actually send private messages
-        text = self.stripColors(text)
+        text = self.stripMsgColors(text)
         for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
-            line = self.stripColors(line)
+            line = self.stripMsgColors(line)
             self.write(self.getCommand('message', uid=client.guid, prefix=self.msgPrefix, message=line))
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -657,8 +677,8 @@ class Ro2Parser(b3.parser.Parser):
             fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
         else:
             fullreason = self.getMessage('kicked', self.getMessageVariables(client=client, reason=reason))
-        fullreason = self.stripColors(fullreason)
-        reason = self.stripColors(reason)
+        fullreason = self.stripMsgColors(fullreason)
+        reason = self.stripMsgColors(reason)
 
         if not silent and fullreason != '':
             self.say(fullreason)
@@ -677,8 +697,8 @@ class Ro2Parser(b3.parser.Parser):
             fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
         else:
             fullreason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
-        fullreason = self.stripColors(fullreason)
-        reason = self.stripColors(reason)
+        fullreason = self.stripMsgColors(fullreason)
+        reason = self.stripMsgColors(reason)
 
         if not silent and fullreason != '':
             self.say(fullreason)
@@ -739,8 +759,8 @@ class Ro2Parser(b3.parser.Parser):
             fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=b3.functions.minutesStr(duration)))
         else:
             fullreason = self.getMessage('temp_banned', self.getMessageVariables(client=client, reason=reason, banduration=b3.functions.minutesStr(duration)))
-        fullreason = self.stripColors(fullreason)
-        reason = self.stripColors(reason)
+        fullreason = self.stripMsgColors(fullreason)
+        reason = self.stripMsgColors(reason)
 
         if not silent and fullreason != '':
             self.say(fullreason)
@@ -938,8 +958,13 @@ class Ro2Parser(b3.parser.Parser):
         ban_list = self.decodeBans(banlist_data)
         
         return ban_list
-        
-    
+
+    def stripMsgColors(self, text):
+        return re.sub(self._reColor, '', text).strip()
+
+    def stripColors(self, text):
+        return text.strip()
+
 
     def getftpini(self):
         def handleDownload(line):

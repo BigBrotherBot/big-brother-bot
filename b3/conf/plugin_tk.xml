@@ -6,6 +6,8 @@
 		<set name="issue_warning">sfire</set>
 		<set name="grudge_enable">True</set>
 		<set name="private_messages">True</set>
+		<set name="damage_threshold">100</set>
+		<set name="warn_level">2</set>
 	</settings>
 	<settings name="messages">
 		<set name="ban">^7team damage over limit</set>
