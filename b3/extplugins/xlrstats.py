@@ -56,6 +56,9 @@
 #   Added ability to hide bots from webfront and exclude damage/kills to and from bots to be processed
 # 24-09-2011 - 2.6.0 - Mark Weirath
 #   history functionality and crontabs moved to separate sub-plugin
+# 24-09-2011 - 2.6.1 - Mark Weirath
+#   added update .sql file to distro to enable weaponnames > 32 characters.
+#   no actual code was altered in the plugin except for the version to mark the change.
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -63,7 +66,7 @@
 # XLRstats Real Time playerstats plugin
 
 __author__ = 'Tim ter Laak / Mark Weirath'
-__version__ = '2.6.0'
+__version__ = '2.6.1'
 
 # Version = major.minor.patches
 

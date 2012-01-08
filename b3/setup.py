@@ -49,14 +49,17 @@
 # 2011/05/19 - 1.0 - xlr8or
 #    * Added Update class
 #    * Version 1.0 merged into master branch (for B3 v1.6.0 release)
-#
+# 2012/01/08 - 1.0.1 - xlr8or
+#    * Added: xlrstats-update-2.6.1.sql
+#    * Fixed bug that would not update the xlrstats tables
+
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
 ## @file
 # The setup procedure, to create a new configuration file (b3.xml)
 
 __author__ = 'xlr8or'
-__version__ = '1.0'
+__version__ = '1.0.1'
 
 import platform
 import urllib2
@@ -880,8 +883,9 @@ class Update(Setup):
         # need to update xlrstats?
         _result = self.raw_default('Do you have xlrstats installed (with default table names)?', 'yes')
         if _result == 'yes':
-            self.executeSql('@b3/sql/b3-update-2.0.0.sql', _dbstring)
-            self.executeSql('@b3/sql/b3-update-2.4.0.sql', _dbstring)
+            self.executeSql('@b3/sql/xlrstats-update-2.0.0.sql', _dbstring)
+            self.executeSql('@b3/sql/xlrstats-update-2.4.0.sql', _dbstring)
+            self.executeSql('@b3/sql/xlrstats-update-2.6.1.sql', _dbstring)
 
         #self.db = self.connectToDatabase(_dbstring)
         #self.optimizeTables()
