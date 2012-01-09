@@ -22,6 +22,16 @@
 		<set name="maxlevel">100</set>
         <set name="destination">b3_doc.htm</set>
 	</settings>
+    <settings name="update">
+        <!-- B3 checks if a new version is available at startup. Choose here what channel you want to check against.
+            Available channels are :
+                stable : will only show stable releases of B3
+                beta : will also check if a beta release is available
+                dev : will also check if a development release is available
+            If you don't know what channel to use, use 'stable'
+        -->
+        <set name="channel">stable</set>
+    </settings>
 	<settings name="messages">
 		<set name="kicked_by">$clientname was kicked by $adminname $reason</set>
 		<set name="kicked">$clientname was kicked $reason</set>

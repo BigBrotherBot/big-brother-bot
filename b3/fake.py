@@ -93,8 +93,9 @@ if __name__ == '__main__':
 # * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
 # 1.9 - 2011/06/09
 # * FakeConsole now uses the logging module
-#
-__version__ = '1.9'
+# 1.10 - 2011/12/29
+# * fix issue with plugins' registered events when importing fakeConsole in different TestSuites
+__version__ = '1.10'
 
 
 from b3.cvar import Cvar
@@ -138,6 +139,7 @@ class FakeConsole(b3.parser.Parser):
         self.game = b3.game.Game(self, "fakeGame")
         self.game.mapName = 'ut4_turnpike'
         self.cvars = {}
+        self._handlers = {}
         
         if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
             self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
@@ -181,7 +183,21 @@ class FakeConsole(b3.parser.Parser):
                 self.exitcode = e.code
             except Exception, msg:
                 self.error('handler %s could not handle event %s: %s: %s %s', hfunc.__class__.__name__, self.Events.getName(event.type), msg.__class__.__name__, msg, traceback.extract_tb(sys.exc_info()[2]))
-    
+
+    def shutdown(self):
+        """Shutdown B3 - needed to be changed in FakeConsole due to no thread for dispatching events"""
+        try:
+            if self.working and self.exiting.acquire():
+                self.bot('Shutting down...')
+                self.working = False
+                self._handleEvent(b3.events.Event(b3.events.EVT_STOP, ''))
+                if self._cron:
+                    self._cron.stop()
+                self.bot('Shutting down database connections...')
+                self.storage.shutdown()
+        except Exception, e:
+            self.error(e)
+
     def getPlugin(self, name):
         if name == 'admin':
             return fakeAdminPlugin
@@ -290,10 +306,18 @@ class FakeClient(b3.clients.Client):
     def clearMessageHistory(self):
         self.message_history = []
     def getMessageHistoryLike(self, needle):
+        clean_needle = re.sub(re.compile('\^[0-9]'), '', needle).strip()
         for m in self.message_history:
-            if needle in m:
+            if clean_needle in m:
                 return m
         return None
+    def getAllMessageHistoryLike(self, needle):
+        result = []
+        clean_needle = re.sub(re.compile('\^[0-9]'), '', needle).strip()
+        for m in self.message_history:
+            if clean_needle in m:
+                result.append(m)
+        return result
     
     def message(self, msg):
         cleanmsg = re.sub(re.compile('\^[0-9]'), '', msg).strip()

@@ -31,13 +31,20 @@ __author__  = 'ThorN, xlr8or'
 __version__ = '2.0.1'
 
 
-import ez_setup, shutil, sys
+import ez_setup, shutil, sys, re
 ez_setup.use_setuptools()
 from setuptools import setup, find_packages
 
+# read version from the b3/PKG-INFO file
+re_pkginfo_version = re.compile('^\s*Version:\s*(?P<version>(\d+\.\d+(\.\d+)?((a|b|dev)\d*)?)?)\s*$', re.MULTILINE)
+b3version = None
+with open('b3/PKG-INFO', 'r') as f:
+    m = re_pkginfo_version.search(f.read())
+b3version = m.group("version")
+
 _setupinfo = {
     'name' : "b3",
-    'version' : "1.8.0b",
+    'version' : b3version,
     'packages' : find_packages(),
     'extras_require' : { 'mysql' : 'MySQL-python' },
     'package_data' : {

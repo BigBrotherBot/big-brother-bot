@@ -4,22 +4,16 @@ and an installer.
 REQUIREMENTS:
     Environment :
         * a Windows OS
-        * with python2.5
-        * with elementtree (if required)
+        * with python2.6+
         * with mysqldb
     Tools:
-        * py2exe2.5
-        * Innosetup
+        * py2exe2.6+
+        * InnoSetup
+        * InnoSetup preprocessor
         * ISTools (optional)
     
-HOW TO BUILD THE .EXE RELEASE:
-    * edit build_py2exe.bat with your python path
-    * run it
-    * check that there is no error
-    * build is ready to test in the "dist_py2exe" folder
-    
-HOW TO BUILD THE INSTALLER:
-    * open b3-installer-project.iss with InnoSetup or ISTools
-    * compile it
-    * test it
+HOW TO BUILD THE .EXE RELEASE and distributions :
+    * check the build.yaml config file
+    * run python.exe build.py
+
     

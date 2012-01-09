@@ -30,9 +30,11 @@
 #    * Restart counter
 # 2011/05/19 - 1.4.0 -  xlr8or
 #    * Added --update -u arg
+# 2011/12/03 - 1.4.1 -  courgette
+#    * fix crash at bot start in restart mode when installed from egg
 
 __author__  = 'ThorN'
-__version__ = '1.4.0'
+__version__ = '1.4.1'
 
 import b3, sys, os, time
 import traceback
@@ -52,6 +54,9 @@ def run_autorestart(args=None):
         script = ''
     else:
         script = os.path.join(modulePath[:-3], 'b3_run.py')
+        if not os.path.isfile(script):
+            # must be running from the egg
+            script = os.path.join(modulePath[:-3], 'b3', 'run.py')
         if os.path.isfile(script + 'c'):
             script += 'c'
 

@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2011/11/15 - 1.11.3 - Courgette
+#   * fix bug xlr8or/big-brother-bot#54 - Plugin Admin: parseUserCommand issue
 #   2011/11/15 - 1.11.2 - Courgette
 #   * cmd_pause now uses console pause() and unpause() methods instead of sleep()
 #   2011/11/05 - 1.11.1 - Courgette
@@ -90,7 +92,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.11.2'
+__version__ = '1.11.3'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import re, time, threading, sys, traceback, thread, random
@@ -422,18 +424,26 @@ class AdminPlugin(b3.plugin.Plugin):
             return None
 
     def parseUserCmd(self, cmd, req=False):
+        """
+        Return a tuple of two elements extracted from cmd :
+         - a player identifier
+         - optional parameters
+        req: set to True if parameters is required.
+        Return None if could cmd is not in the expected format
+        """
         m = re.match(self._parseUserCmdRE, cmd)
 
         if m:
             cid = m.group('cid')
             parms = m.group('parms')
 
-            if req and not len(parms): return None
+            if req and not (parms and len(parms)):
+                return None
 
             if cid[:1] == "'" and cid[-1:] == "'":
                 cid = cid[1:-1]
 
-            return (cid, parms)
+            return cid, parms
         else:
             return None
 
@@ -1093,7 +1103,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
 
         if not self.console.storage.status():
-            cmd.sayLoudOrPM(client, '^7Cannot lookup, database apears to be ^1DOWN')
+            cmd.sayLoudOrPM(client, '^7Cannot lookup, database appears to be ^1DOWN')
             return
 
         m = re.match('^(.{1,})$', data)
@@ -1190,7 +1200,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 return True
             elif sclient.maxLevel >= client.maxLevel:
                 if sclient.maskGroup:
-                    client.message('^7%s ^7is a masked higher level player, can\'t kick' % client.exactName)
+                    client.message('^7%s ^7is a masked higher level player, can\'t kick' % sclient.exactName)
                 else:
                     self.console.say(self.getMessage('kick_denied', sclient.exactName, client.exactName, sclient.exactName))
                 return True
@@ -1249,7 +1259,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 return True
             elif sclient.maxLevel >= client.maxLevel:
                 if sclient.maskGroup:
-                    client.message('^7%s ^7is a masked higher level player, can\'t spank' % client.exactName)
+                    client.message('^7%s ^7is a masked higher level player, can\'t spank' % sclient.exactName)
                 else:
                     self.console.say(self.getMessage('kick_denied', sclient.exactName, client.exactName, sclient.exactName))
                 return True
@@ -1316,7 +1326,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 return True
             elif sclient.maxLevel >= client.maxLevel:
                 if sclient.maskGroup:
-                    client.message('^7%s ^7is a masked higher level player, can\'t ban' % client.exactName)
+                    client.message('^7%s ^7is a masked higher level player, can\'t ban' % sclient.exactName)
                 else:
                     self.console.say(self.getMessage('ban_denied', client.exactName, sclient.exactName))
                 return True
@@ -1882,7 +1892,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = self.parseUserCmd(data)
 
-        if not m:
+        if not m or not m[1]:
             client.message('^7Invalid parameters')
             return False
 
@@ -1923,7 +1933,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 return True
             elif sclient.maxLevel >= client.maxLevel:
                 if sclient.maskGroup:
-                    client.message('^7%s ^7is a masked higher level player, can\'t temp ban' % client.exactName)
+                    client.message('^7%s ^7is a masked higher level player, can\'t temp ban' % sclient.exactName)
                 else:
                     self.console.say(self.getMessage('temp_ban_denied', client.exactName, sclient.exactName))
                 return True
@@ -2139,28 +2149,3 @@ class Command:
             params.append(buf)
 
         return params
-    
-if __name__ == '__main__':
-    from b3.fake import FakeConsole
-    from b3.fake import joe, simon
-    
-    print "___________________________________"
-    fakeConsole = FakeConsole('@b3/conf/b3.distribution.xml')
-    p = AdminPlugin(fakeConsole, '@conf/plugin_admin.xml')
-    p.onStartup()
-
-    joe.connects(0)
-    simon.connects(1)
-
-    joe.says('#test')
-    joe.says('#clients')
-    joe.says('#groups')
-    joe.says('#vars')
-    joe.says('#varsjoe')
-    joe.says('#tkinfo')
-    joe.says('#tkinfojoe')
-    joe.says('!!')
-    joe.says('hello')
-    joe.says('!help')
-    simon.says('!help')
-    joe.says('!register')

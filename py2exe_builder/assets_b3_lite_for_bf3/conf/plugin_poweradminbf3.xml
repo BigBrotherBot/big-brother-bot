@@ -1,0 +1,84 @@
+<configuration plugin="poweradminbf3">
+    <settings name="commands">
+        <!-- This section defines the level required to use the commands
+              0 : guest
+              1 : user
+              2 : regular
+              20 : moderator
+              40 : admin
+              60 : fulladmin
+              80 : senioradmin
+              100 : superadmin
+          -->
+        <!-- Also, you can define command aliases by adding it after the command name, separating them with '-'.
+            For example if you want to use !ct instead of !changeteam, use the name "changeteam-ct" when
+            defining the command level below.
+          -->
+
+        <set name="punkbuster-punk">100</set>
+
+        <set name="listconfig">60</set>
+        <set name="loadconfig">60</set>
+        <set name="unlockmode">60</set>
+
+        <set name="roundnext-rnext">40</set>
+        <set name="roundrestart-rrestart">40</set>
+        <set name="kill">40</set>
+
+        <set name="changeteam">20</set>
+        <set name="swap">20</set>
+        <set name="setnextmap-snmap">20</set>
+
+        <set name="scramble">20</set>
+        <set name="scramblemode">20</set>
+        <set name="autoscramble">20</set>
+    </settings>
+
+    <settings name="messages">
+        <!--
+            In this section you can customize some of the messages displayed to users.
+        -->
+        <set name="operation_denied">Operation denied</set>
+        <set name="operation_denied_level">Operation denied because %(name)s is in the %(group)s group</set>
+    </settings>
+
+	<settings name="preferences">
+        <!-- config_path : the path to the preset bf3 server config files to be used by the !loadconfig command. -->
+		<set name="config_path">serverconfigs</set>
+        <!-- no_level_check_level : a level at which a player can swap anyone without any level restriction.
+            For example, if no_level_check_level is 40 (admin), then admins can !swap players of level above them.
+            While a moderator will only be able to swap players of level moderator or below.
+            This applies to commands !swap and !changeteam
+         -->
+        <set name="no_level_check_level">60</set>
+	</settings>
+
+    <settings name="scrambler">
+        <!-- mode can be one of : off, round, map
+            'off': no auto scrambling
+            'round': auto scrambling will run at each round start
+            'map': auto scrambling will run at each map start
+        -->
+        <set name="mode">off</set>
+        <!-- There are two scrambling strategies : 'random' and 'score'
+            When 'score', players will be scrambled based on players' score to try to even team skills
+        -->
+        <set name="strategy">random</set>
+	</settings>
+	<settings name="configmanager">
+		<!-- Configmanager setting enables you to load different server config files from 'configmanager' folder
+			 based on gametypes/maps. (Ported from xlr8or's config manager plugin for cod series)
+
+			 It will first look if a b3_<gametype>_<mapname>.cfg exists (example: b3_teamdeathmatch0_mp001.cfg)
+			 and execute it. If it doesn't exist, it checks for b3_<gametype>.cfg (example: b3_rushlarge0.cfg). 
+
+			 If none of them exist, it will look for b3_main.cfg. This file makes it possible to reset certain 
+			 vars, so always create a b3_main.cfg if you want to enable and use this feature.
+
+			 Options:
+			 on  : enable configmanager
+			 off : disable configmanager
+		-->
+		<set name="status">on</set>
+	</settings>
+</configuration>

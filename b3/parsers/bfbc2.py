@@ -163,6 +163,8 @@
 # * adjust mapnames from mappack 7 and vietnam expansion 
 # 2011-06-04 - 2.2 - Courgette
 # makes use of the new pluginsStarted parser hook
+# 2011-12-15 - 2.3 - Courgette
+# makes sure EVT_CLIENT_TEAM_CHANGE gets fired after updating the squad info
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -197,7 +199,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '2.2'
+__version__ = '2.3'
 
 import time, threading, Queue
 import b3.events
@@ -331,11 +333,11 @@ class Bfbc2Parser(AbstractParser):
         """
         client = self.getClient(data[0])
         if client:
-            client.team = self.getTeam(data[1]) # .team setter will send team change event
             client.teamId = int(data[1])
             client.squad = int(data[2])
-            
-            
+            client.team = self.getTeam(data[1]) # .team setter will send team change event
+
+
     def OnPlayerSquadchange(self, action, data):
         """
         player.onSquadChange <soldier name: player name> <team: Team ID> <squad: Squad ID>    
@@ -344,12 +346,12 @@ class Bfbc2Parser(AbstractParser):
         """
         client = self.getClient(data[0])
         if client:
-            client.team = self.getTeam(data[1]) # .team setter will send team change event
+            previous_squad = client.squad
+            client.squad = int(data[2])
             client.teamId = int(data[1])
-            if client.squad != data[2]:
-                client.squad = int(data[2])
+            client.team = self.getTeam(data[1]) # .team setter will send team change event
+            if client.squad != previous_squad:
                 return b3.events.Event(b3.events.EVT_CLIENT_SQUAD_CHANGE, data[1:], client)
-
 
     def getEasyName(self, mapname):
         """ Change levelname to real name """

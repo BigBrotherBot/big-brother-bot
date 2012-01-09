@@ -49,17 +49,19 @@
 # 2011/05/19 - 1.0 - xlr8or
 #    * Added Update class
 #    * Version 1.0 merged into master branch (for B3 v1.6.0 release)
-# 2012/01/08 - 1.0.1 - xlr8or
+# 2011/11/12 - 1.1 - courgette
+#    * can install external plugins having a module defined as a directory instead as as a python file
+# 2012/01/08 - 1.2 - xlr8or
 #    * Added: xlrstats-update-2.6.1.sql
 #    * Fixed bug that would not update the xlrstats tables
-
+#
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
 ## @file
 # The setup procedure, to create a new configuration file (b3.xml)
 
 __author__ = 'xlr8or'
-__version__ = '1.0.1'
+__version__ = '1.2'
 
 import platform
 import urllib2
@@ -95,7 +97,7 @@ class Setup:
     _equaLength = 15
     ## @todo bfbc2 and moh need to be added later when parsers correctly implemented pb.
     _PBSupportedParsers = ['cod', 'cod2', 'cod4', 'cod5', 'cod6', 'cod7']
-    _frostBite = ['bfbc2', 'moh']
+    _frostBite = ['bfbc2', 'moh', 'bf3']
 
     def __init__(self, config=None):
         if config:
@@ -146,7 +148,7 @@ class Setup:
         self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
         xml.start("settings", name="b3")
         self.add_set("parser", "",
-                     "Define your game: altitude/bfbc2/cod/cod2/cod4/cod5/cod6/cod7/etpro/homefront/iourt41/moh/oa081/smg/wop/wop15/")
+                     "Define your game: altitude/bf3/bfbc2/cod/cod2/cod4/cod5/cod6/cod7/etpro/homefront/iourt41/moh/oa081/smg/sof2/wop/wop15/")
 
         # set a template xml file to read existing settings from
         _result = False
@@ -221,9 +223,9 @@ class Setup:
             self.add_set("port", self.read_element('server', 'port', ''),
                          "The port people use to connect to your gameserver")
             self.add_set("rcon_ip", self.read_element('server', 'rcon_ip', ''),
-                         "The IP that the bot uses to send RCON commands. Usually the same as the public_ip")
+                         "The IP of your gameserver B3 will connect to in order to send RCON commands. Usually the same as the public_ip")
             self.add_set("rcon_port", self.read_element('server', 'rcon_port', ''),
-                         "The port that the bot uses to send RCON commands. NOT the same as the normal port.")
+                         "The port of your gameserver that B3 will connect to in order to send RCON commands. NOT the same as the normal port.")
             self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
                          "The RCON password of your gameserver.")
             self.add_set("timeout", self.read_element('server', 'timeout', '3'),
@@ -236,9 +238,9 @@ class Setup:
             self.add_set("port", self.read_element('server', 'port', ''),
                          "The port people use to connect to your gameserver")
             self.add_set("rcon_ip", self.read_element('server', 'rcon_ip', ''),
-                         "The IP that the bot uses to send RCON commands. Usually the same as the public_ip")
+                         "The IP of your gameserver B3 will connect to in order to send RCON commands. Usually the same as the public_ip")
             self.add_set("rcon_port", self.read_element('server', 'rcon_port', ''),
-                         "The port that the bot uses to send RCON commands. NOT the same as the normal port.")
+                         "The port of your gameserver that B3 will connect to in order to send RCON commands. NOT the same as the normal port.")
             self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
                          "The RCON password of your gameserver.")
 
@@ -283,6 +285,33 @@ class Setup:
         else:
             self.add_set("punkbuster", "off", "Is the gameserver running PunkBuster Anticheat: on/off", silent=True)
 
+        xml.data("\n\t")
+        xml.end()
+        xml.data("\n\t")
+
+        # update channel settings
+        self.add_buffer('\n--UPDATE CHANNEL-------------------------------------------------\n')
+        self.add_buffer("""
+  B3 checks if a new version is available at startup against 3 different channels. Choose the
+  channel you want to check against.
+
+  Available channels are :
+    stable : will only show stable releases of B3
+    beta : will also check if a beta release is available
+    dev : will also check if a development release is available
+
+""")
+        xml.start("settings", name="update")
+        xml.data("\n\t\t")
+        xml.comment("""B3 checks if a new version is available at startup. Choose here what channel you want to check against.
+            Available channels are :
+                stable : will only show stable releases of B3
+                beta   : will also check if a beta release is available
+                dev    : will also check if a development release is available
+            If you don't know what channel to use, use 'stable'
+        """)
+        xml.data("\t\t")
+        self.add_set("channel", self.read_element('update', 'channel', 'stable'), "stable, beta or dev")
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
@@ -555,7 +584,7 @@ class Setup:
         if downlURL:
             self.add_buffer('  ... getting external plugin %s:\n' % sname)
             try:
-                self.download(downlURL)
+                self.download(sname, downlURL)
             except:
                 self.add_buffer("Couldn't get remote plugin %s, please install it manually.\n" % sname)
 
@@ -745,7 +774,7 @@ class Setup:
     def url2name(self, url):
         return os.path.basename(urlsplit(url)[2])
 
-    def download(self, url, localFileName=None):
+    def download(self, plugin_name, url, localFileName=None):
         absPath = self.getAbsolutePath(self._set_external_dir)
         localName = self.url2name(url)
         req = urllib2.Request(url)
@@ -782,6 +811,11 @@ class Setup:
             if root[-10:] == 'extplugins':
                 for data in glob.glob(root + '/*.py'):
                     shutil.copy2(data, absPath)
+            if root.endswith(os.path.join('extplugins', plugin_name)):
+                # some plugin have a directory as the plugin module
+                os.mkdir(os.path.join(absPath, plugin_name))
+                for data in glob.glob(root + '/*.py'):
+                    shutil.copy2(data, os.path.join(absPath, plugin_name))
             # move the config files to the extplugins/conf folder
             if root[-4:] == 'conf':
                 for data in glob.glob(root + '/*.xml'):
@@ -797,45 +831,9 @@ class Setup:
     def extract(self, file, dir):
         if not dir.endswith(':') and not os.path.exists(dir):
             os.mkdir(dir)
-
         zf = zipfile.ZipFile(file)
-
-        # create directory structure to house files
-        self._createstructure(file, dir)
-
-        # extract files to directory structure
-        for i, name in enumerate(zf.namelist()):
-            if not name.endswith('/'):
-                outfile = open(os.path.join(dir, name), 'wb')
-                outfile.write(zf.read(name))
-                outfile.flush()
-                outfile.close()
-
-    def _createstructure(self, file, dir):
-        self._makedirs(self._listdirs(file), dir)
-
-    def _makedirs(self, directories, basedir):
-        """ Create any directories that don't currently exist """
-        for dir in directories:
-            curdir = os.path.join(basedir, dir)
-            if not os.path.exists(curdir):
-                os.mkdir(curdir)
-
-    def _listdirs(self, file):
-        """ Grabs all the directories in the zip structure
-        This is necessary to create the structure before trying
-        to extract the file to it. """
-        zf = zipfile.ZipFile(file)
-
-        dirs = []
-
-        for name in zf.namelist():
-            if name.endswith('/'):
-                dirs.append(name)
-
-        dirs.sort()
-        return dirs
-
+        zf.extractall(path=dir)
+        
 
 class Update(Setup):
     """ This class holds all update methods for the database"""
