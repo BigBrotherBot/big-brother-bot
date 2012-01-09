@@ -857,11 +857,11 @@ class AbstractParser(b3.parser.Parser):
                 except CommandFailedError, err:
                     self.error(err)
             else:
-                # ban by cid
+                # ban by guid
                 self.debug('EFFECTIVE BAN : %s',self.getCommand('ban', guid=client.guid, reason=reason[:80]))
-                self.write(('banList.save',))
                 try:
-                    self.write(self.getCommand('ban', cid=client.cid, reason=reason[:80]))
+                    self.write(self.getCommand('ban', guid=client.guid, reason=reason[:80]))
+                    self.write(('banList.save',))
                     if admin:
                         admin.message('banned: %s (@%s) has been added to banlist'%(client.exactName, client.id))
                 except CommandFailedError, err:
