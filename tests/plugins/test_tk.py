@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 import os
-from mock import Mock, patch, Sentinel
+from mock import Mock, patch, sentinel
 import unittest
 
 import b3
@@ -172,7 +172,7 @@ class Test_TkInfo(unittest.TestCase):
 
     def test_getAttackerPoints(self):
         cidA = 2
-        s = Sentinel()
+        s = sentinel
         self.info._attackers[cidA] = s
         self.assertEqual(s, self.info.getAttackerPoints(cidA))
 
