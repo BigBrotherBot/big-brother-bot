@@ -18,7 +18,7 @@
 #
 import time
 import unittest
-from mock import Sentinel, Mock
+from mock import sentinel, Mock
 from b3.cron import CronTab, OneTimeCronTab, PluginCronTab, Cron
 from tests import B3TestCase
 import b3
@@ -26,7 +26,7 @@ import b3
 class Test_Crontab(unittest.TestCase):
 
     def test_constructor_defaults(self):
-        command = Sentinel()
+        command = sentinel
         tab = CronTab(command)
         self.assertEqual(command, tab.command)
         self.assertEqual(0, tab.second)
@@ -38,7 +38,7 @@ class Test_Crontab(unittest.TestCase):
         self.assertEqual(0, tab.maxRuns)
 
     def test_constructor(self):
-        command = Sentinel()
+        command = sentinel
         tab = CronTab(command, second=1, minute=2, hour=3, day=4, month=5, dow=1)
         self.assertEqual(command, tab.command)
         self.assertEqual(1, tab.second)

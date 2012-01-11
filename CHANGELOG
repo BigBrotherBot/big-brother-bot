@@ -1,3 +1,15 @@
+1.7.1 -> 1.8.0
+----
+A list of changed files is available after release here:
+github.com/BigBrotherBot/big-brother-bot/compare/v1.7.1...v1.8.0
+----
+New games :
+- Red Orchestra 2
+- BattleField 3
+Improvements :
+- Urban Terror : improved team handling
+
+
 1.6.1 -> 1.7.1
 ----
 (version 1.7.0 was only available for a few hours, thus can be ignored.

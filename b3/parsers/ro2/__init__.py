@@ -39,14 +39,21 @@
 #   2011-10-16 : 0.8
 # * !map working
 # * Player with funny accented i character now show in !list
+#   2011-11-01 : 1.0
+# * Some re-writes and corrections
+# * Implement !nextmap
+#   2011-11-02 : 1.1
+# * Allow use of # instead of @ for client id nos (@ brings up console on some keyboard layouts and cannot go into chat)
+#   2011-12-19 : 1.2
+#   Don't process B3 messages as chat
+#   Auth client if not already authed when chat used
+#   2011-12-28 : 1.3
+#   Allow Q3 Color Codes in names, since game doesn't filter them out
 #
 #
 from b3 import functions
-from b3.clients import Client
-from b3.lib.sourcelib import SourceQuery
 from b3.parser import Parser
 from ftplib import FTP
-import asyncore
 import b3
 import b3.cron
 import ftplib
@@ -57,25 +64,27 @@ import sys
 import time
 import urllib
 import urllib2
-import httplib
 import cookielib
 import hashlib
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '0.8'
+__version__ = '1.3'
 
 
 class Ro2Parser(b3.parser.Parser):
-    '''
+    """
     The Ref Orchestra 2 B3 parser class
-    '''
+    """
     gameName = "redorchestra2"
     PunkBuster = None 
     # RO2 engine does not support color code, so we need this property
     # in order to get stripColors working
     _reColor = re.compile(r'(\^[0-9])')
     _reSteamId64 = re.compile(r'^[0-9]{17}$')
+    ftpconfig = None
+    _ftplib_debug_level = 0 # 0: no debug, 1: normal debug, 2: extended debug
+    _ftpconnectionTimeout = 30
     _playerlistInterval = 30
     _server_banlist = {}
     _read_write_delay=1
@@ -86,12 +95,12 @@ class Ro2Parser(b3.parser.Parser):
     login_page=''
     site=''
     user_agent=''
+    username=''
     password=''
     password_hash=''
     cj=None
     headers = {}
     opener=None
-    map_rotation = {}
     map_cycles = {}
     map_cycle_no = 0
     active_map_cycle = 0
@@ -149,7 +158,6 @@ class Ro2Parser(b3.parser.Parser):
         self.user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
         self.headers = {'User-Agent' : self.user_agent, "Accept": "ext/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language" : "en-us,en;q =0.5", "Content-type": "application/x-www-form-urlencoded", "Accept-Charset" : "ISO-8859-1,utf-8;q=0.7,*;q=0.7", "Referer" : ''}
         self.site=self._publicIp + ':' + str(self._rconPort)
-        #self.debug(self.site)
         self.login_page="ServerAdmin"
         self.password=self._rconPassword
         
@@ -168,7 +176,10 @@ class Ro2Parser(b3.parser.Parser):
             func = getattr(self, func)
             event = func(data)
             if event:
-                self.queueEvent(event)
+                if event != 'Unable to Auth client':
+                    self.queueEvent(event)
+                else:
+                    return
             else:
                 self.warning('TODO handle: %s(%s)' % (func, data))
         else:
@@ -193,12 +204,10 @@ class Ro2Parser(b3.parser.Parser):
         self.working=True
 
         while self.working:
-            """
-            While we are working, connect to the RO2 server
-            """
+            #While we are working, connect to the RO2 server
             self._paused=False
             if self._paused:
-                if self._pauseNotice == False:
+                if not self._pauseNotice:
                     self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
                     self._pauseNotice = True
             else:
@@ -208,7 +217,7 @@ class Ro2Parser(b3.parser.Parser):
                     time.sleep(.2)
                     counter +=1
                 
-                if len(self._write_queue) == 0:
+                if not len(self._write_queue):
                     self.readwriteajax()
                 else:
                     self.debug('Go to ajax')
@@ -216,18 +225,16 @@ class Ro2Parser(b3.parser.Parser):
                     self.debug(self._write_queue)
                     self.readwriteajax(message)
                     
-                while len(self._read_queue) != 0:
+                while len(self._read_queue):
                     chat_data = self._read_queue.pop(0)
                     self.handle_chat(chat_data)
                 
                 counter = 0
-                time.sleep(.2)
+                time.sleep(.5)
         self.bot('Stop listening.')
 
-        if self.exiting.acquire(1):
-            self._serverConnection.close()
-            if self.exitcode:
-                sys.exit(self.exitcode)
+        if self.exiting.acquire(1) and self.exitcode:
+            sys.exit(self.exitcode)
                 
     def readwriteweb(self, data= None, referer=None, addurl=None):
         """Handles Reading and Writing to the web interface"""
@@ -240,13 +247,12 @@ class Ro2Parser(b3.parser.Parser):
         self.headers['Referer'] = referer
         
         try:
-            #self.debug('Attempting to find Web page (readwriteweb)')
             request_console = urllib2.Request(data_url, data, self.headers)
             console_read = self.opener.open(request_console)
             console_data = console_read.read()
             return console_data
             
-        except:
+        except Exception:
             self.debug('Failed to open URL')
             self.webconnect()
             return 
@@ -261,16 +267,15 @@ class Ro2Parser(b3.parser.Parser):
         self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
         urllib2.install_opener(self.opener)
         findpage_attempt = 0
-        foundpage = False
         self._paused = True
+        response = ""
         while findpage_attempt < 11:
             try:
-                #self.debug('Attempting to find Web page (webconnect)')
                 request = urllib2.Request(login_url, None, headers)
                 page = urllib2.urlopen(request)
-                response=page.read()
+                response = page.read()
                 break
-            except:
+            except Exception:
                 findpage_attempt += 1
                 if findpage_attempt > 10:
                     self.debug('Failed to find web page - wait 10 seconds')
@@ -288,7 +293,6 @@ class Ro2Parser(b3.parser.Parser):
         login_url = self.url + '/'
         referer = login_url
         data = urllib.urlencode({ 'token' : token_value, 'password_hash' : self.password_hash, 'username' : self.username, 'password' : password, 'remember' : remember })
-        #chat_data = self.readwriteweb(data, referer, login_url)
         self.headers['Referer'] = referer
         
         login_attempt = 1
@@ -299,7 +303,7 @@ class Ro2Parser(b3.parser.Parser):
                 console_read = self.opener.open(request_console)
                 self._paused = False
                 return True
-            except:
+            except Exception:
                 self.debug('Failed to login %s' % login_attempt)
                 self._paused = True
                 login_attempt += 1
@@ -375,8 +379,13 @@ class Ro2Parser(b3.parser.Parser):
                 data = data_split[2]
                 
             data = data.partition('div class="')[2]
+            #Ignore what B3 just wrote
             chat_decoded['username'] = self.getUsername(chat_decoded['username'])
-            #self.debug(chat_decoded)
+            if chat_decoded['username'] == self.username:
+                return
+            #Ignore new format for server messages 
+            if chat_decoded['username'] == '' and chat_decoded['noticesymbol'] == '***':
+                return
             self._read_queue.append(chat_decoded)
         
     def onChat_typeChatnotice(self,data):
@@ -395,14 +404,25 @@ class Ro2Parser(b3.parser.Parser):
         """Handle player chat"""
         name = self.getUsername(data['username'])
         text = data['message']
+        # if a command and it contains #no convert to @no
+        if text[0] == '!':
+            match = re.search(r' #([0-9]+)\b', text)
+            if match:
+                start = match.start()
+                text = (text[0:start+1] + '@' + text[start+2:])
+                
         team = False
         if data.has_key('teamnotice'):
             team = True
             
         client = self.clients.getByName(name)
         if client is None:
-            self.debug("Could not find client")
-            return
+            self.retrievePlayerList()
+            self.debug("Trying to Auth client")
+            client = self.clients.getByName(name)
+            if client is None:
+                self.debug("Unable to Auth client")
+                return 'Unable to Auth client'
 
         if team:
             return self.getEvent('EVT_CLIENT_TEAM_SAY', text, client, client.team)
@@ -418,6 +438,7 @@ class Ro2Parser(b3.parser.Parser):
         name = name.replace(r"\\", "\\")
         name = name.strip()
 
+        name = self.stripColors(name)
 
         if name.find('&') != -1:
             name = name.replace('&lt;', '<')
@@ -466,7 +487,6 @@ class Ro2Parser(b3.parser.Parser):
         player['playerid'] = data.partition('"')[0]
         data = data.partition('<input type="hidden" name="playerkey" value="')[2]
         player['playerkey'] = data.partition('"')[0]
-        #self.debug(player)
         if spec.lower() == 'yes':
             player['team'] = self.getTeam('2')
         else:
@@ -497,27 +517,32 @@ class Ro2Parser(b3.parser.Parser):
     # implement parser interface
     # =======================================
     
+    def getPlayerList(self):
+        """\
+        Returns a list of client objects
+        """
+        clients = self.clients.getList()
+        return clients
 
     def write(self, msg, maxRetries=None):
         """Write a message to Console via Ajax"""
         if self.replay:
             self.bot('Sent rcon message: %s' % msg)
-        elif self.output == None:
+        elif self.output is None:
             pass
         else:
-            msg = self.stripColors(msg)
+            msg = self.stripMsgColors(msg)
             self._write_queue.append(msg)
-            #self.debug(self._write_queue)
             return
 
     def writelines(self, msg):
         """Write a sequence of messages to Console via Ajax."""
         if self.replay:
             self.bot('Sent rcon message: %s' % msg)
-        elif self.output == None:
+        elif self.output is None:
             pass
         else:
-            for line in lines:
+            for line in msg:
                 self.write(line)
                 time.sleep(0.1)
             return
@@ -526,14 +551,13 @@ class Ro2Parser(b3.parser.Parser):
         """Write an Admin command via the Web interface console (Limited in what actually works)"""
         consoledata_url = self.url + '/console'
         data = 'command=' + cmd
-        #self.debug('Admin Command data %s' % data)
         headers = {'User-Agent' : self.user_agent, "Accept": "ext/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language" : "en-us,en;q =0.5", "Content-type": "application/x-www-form-urlencoded", "Accept-Charset" : "ISO-8859-1,utf-8;q=0.7,*;q=0.7", "Referer" : consoledata_url}
         request_console = urllib2.Request(consoledata_url, data, headers)
         adminconsole_read = self.opener.open(request_console)
         console_data = adminconsole_read.read()
     
     
-    def getPlayerList(self):
+    def getServerPlayerList(self):
         """\
         Returns a list of client objects
         """
@@ -583,33 +607,55 @@ class Ro2Parser(b3.parser.Parser):
             self.verbose2('onServerPlayer: name: %s, team: %s' %( client.name, client.team ))
 
             
-    def sync(self, c_client_list):
+    def syncDeletions(self, connected_clients):
         """\
-        Check Clients list against all connected players returned by self.getPlayerList() and 
+        Check Clients list against all connected players returned by self.getServerPlayerList() and 
         if required call the client.disconnect() method to remove a client from self.clients.
         """
 
-        self.debug("synchronizing clients")
         client_cid_list = []
-        for c in c_client_list:
-            cl = c_client_list[c]
-            client_cid_list.append(cl['playerid'])
-        
-        for client in self.clients.getList():
-            
-            if (client_cid_list.count(client.cid) == 0):
-                self.debug( 'Removing %s from list' % client.name)
-                #self.debug(client)
-                client.disconnect()
 
+        for cl in connected_clients.values():
+            client_cid_list.append(cl['playerid'])
+
+        for client in self.clients.getList():
+
+            if client.cid not in client_cid_list:
+                self.debug('Removing %s from list' % client.name)
+                client.disconnect()
                 
+
+    def sync(self, connected_clients=None):
+        """\
+        if connected_clients is None :
+            get dict of connected players from self.getPlayerList()
+        else use connected_clients as the list of connected players 
+        For all connected players, get the matching Client
+        object from self.clients (with self.clients.getByCID(cid) or similar methods) and
+        look for inconsistencies. If required call the client.disconnect() method to remove
+        a client from self.clients.
+        This is mainly useful for games where clients are identified by the slot number they
+        occupy. On map change, a player A on slot 1 can leave making room for player B who
+        connects on slot 1.
+        """
+        if connected_clients is None:
+            connected_clients = self.getPlayerList()
+            
+        self.debug("synchronizing clients")
+        mlist = {}
+
+        for client in connected_clients:
+            mlist[client.cid] = client
+
+        return mlist
+
     def say(self, msg):
         """\
         broadcast a message to all players
         """
-        msg = self.stripColors(msg)
+        msg = self.stripMsgColors(msg)
         for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
-            line = self.stripColors(line)
+            line = self.stripMsgColors(line)
             self.write(self.getCommand('say',  prefix=self.msgPrefix, message=line))
 
     def message(self, client, text):
@@ -617,9 +663,9 @@ class Ro2Parser(b3.parser.Parser):
         display a message to a given player
         """
         # actually send private messages
-        text = self.stripColors(text)
+        text = self.stripMsgColors(text)
         for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
-            line = self.stripColors(line)
+            line = self.stripMsgColors(line)
             self.write(self.getCommand('message', uid=client.guid, prefix=self.msgPrefix, message=line))
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -631,8 +677,8 @@ class Ro2Parser(b3.parser.Parser):
             fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
         else:
             fullreason = self.getMessage('kicked', self.getMessageVariables(client=client, reason=reason))
-        fullreason = self.stripColors(fullreason)
-        reason = self.stripColors(reason)
+        fullreason = self.stripMsgColors(fullreason)
+        reason = self.stripMsgColors(reason)
 
         if not silent and fullreason != '':
             self.say(fullreason)
@@ -651,8 +697,8 @@ class Ro2Parser(b3.parser.Parser):
             fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
         else:
             fullreason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
-        fullreason = self.stripColors(fullreason)
-        reason = self.stripColors(reason)
+        fullreason = self.stripMsgColors(fullreason)
+        reason = self.stripMsgColors(reason)
 
         if not silent and fullreason != '':
             self.say(fullreason)
@@ -680,14 +726,12 @@ class Ro2Parser(b3.parser.Parser):
         """
         ban_list = self.retrieveBanlist()
 
-
         self.debug('using guid to unban')
         banid = client.guid
-        #self.debug (banid)
         ban_no = None
         try:
             ban_no = ban_list[banid]
-        except:
+        except Exception:
             if admin:
                 admin.message(' %s not in server banlist' %client.name)
 
@@ -715,8 +759,8 @@ class Ro2Parser(b3.parser.Parser):
             fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=b3.functions.minutesStr(duration)))
         else:
             fullreason = self.getMessage('temp_banned', self.getMessageVariables(client=client, reason=reason, banduration=b3.functions.minutesStr(duration)))
-        fullreason = self.stripColors(fullreason)
-        reason = self.stripColors(reason)
+        fullreason = self.stripMsgColors(fullreason)
+        reason = self.stripMsgColors(reason)
 
         if not silent and fullreason != '':
             self.say(fullreason)
@@ -733,7 +777,7 @@ class Ro2Parser(b3.parser.Parser):
         """\
         return the available maps/levels name
         """
-        self.map_rotation = []
+        map_rotation = []
         self.map_cycles = {}
         self.map_cycle_no = 0
         self.active_map_cycle = -1
@@ -756,20 +800,13 @@ class Ro2Parser(b3.parser.Parser):
             map_line = self.map_cycles[str(self.active_map_cycle)]
             map_line = map_line.partition('Maps=("')[2]
             map_line = map_line.partition('"),RoundLimits=')[0]
-            self.map_rotation.append(map_line.partition('","')[0])
+            map_rotation.append(map_line.partition('","')[0])
             while map_line.find('","') != -1:
                 map_line= map_line.partition('","')[2]
-                self.map_rotation.append(map_line.partition('","')[0])
+                map_rotation.append(map_line.partition('","')[0])
 
-        #self.debug(self.map_rotation)
-        return self.map_rotation
+        return map_rotation
 
-    def rotateMap(self):
-        """\
-        load the next map/level
-        """
-        raise NotImplementedError
-        
     def changeMap(self, map):
         """\
         load a given map/level
@@ -786,7 +823,49 @@ class Ro2Parser(b3.parser.Parser):
             self.write(self.getCommand('say',  prefix=self.msgPrefix, message='Incorrect Gametype-Map combination'))
 
             return
-
+            
+    def getMap(self):
+        """\
+        load the next map/level
+        """
+        #<dt>Map</dt>
+        #<dd><code>mapname</code>
+        current_url = '/current'
+        referer = None
+        data = None
+        current_data = self.readwriteweb(data, referer, current_url)
+        if current_data.find('<dt>Map</dt>') == -1:
+            self.debug('Map error')
+            return None
+        current_data = current_data.partition('<dt>Map</dt>')[2]
+        if current_data.find('<dd><code>') == -1:
+            self.debug('Map error')
+            return None
+        current_data = current_data.partition('<dd><code>')[2]
+        mapname = current_data.partition('</code>')[0]
+        
+        return mapname
+    
+    def getNextMap(self):
+        """\
+        load the next map/level
+        """
+        nextmap=''
+        map_rotation = self.getMaps()
+        no_maps = len(map_rotation)
+        currentmap = self.getMap()
+        if map_rotation.count(currentmap) == 1:
+            i = map_rotation.index(currentmap)
+            if i < no_maps-1:
+                nextmap = map_rotation[i+1]
+            else:
+                nextmap = map_rotation[0]
+                
+        else:
+            nextmap = 'Unknown'
+        
+        return nextmap
+        
     def getPlayerPings(self):
         """\
         returns a dict having players' id for keys and players' ping for values
@@ -799,7 +878,20 @@ class Ro2Parser(b3.parser.Parser):
             except AttributeError:
                 pass
         return pings
-
+        
+    def getPlayerScores(self):
+        """\
+        returns a dict having players' id for keys and players' scores for values
+        """
+        scores = {}
+        clients = self.clients.getList()
+        for c in clients:
+            try:
+                scores[c.name] = 0
+            except AttributeError:
+                pass
+        return scores
+    
     def getTeam(self, team):
         """Get the players team"""
         team = str(team).lower()
@@ -844,14 +936,13 @@ class Ro2Parser(b3.parser.Parser):
     
     def retrievePlayerList(self):
         """\
-        Send RETRIEVE PLAYERLIST to the server to trigger onServerPlayer return events
+        Retrieve list of players on the server
         """
         if self._paused:
             return
-        client_list = self.getPlayerList()
+        client_list = self.getServerPlayerList()
         self.findNewPlayers(client_list)
-        if len(client_list) != 0:
-            self.sync(client_list)
+        self.syncDeletions(client_list)
 
     def retrieveBanlist(self):
         """\
@@ -867,8 +958,13 @@ class Ro2Parser(b3.parser.Parser):
         ban_list = self.decodeBans(banlist_data)
         
         return ban_list
-        
-    
+
+    def stripMsgColors(self, text):
+        return re.sub(self._reColor, '', text).strip()
+
+    def stripColors(self, text):
+        return text.strip()
+
 
     def getftpini(self):
         def handleDownload(line):
@@ -876,7 +972,9 @@ class Ro2Parser(b3.parser.Parser):
                 self.active_map_cycle = int(line.partition('ActiveMapCycle=')[2])
             if line[0:14] == 'GameMapCycles=':
                 self.map_cycles[str(self.map_cycle_no)] = line
+                self.debug(line)
                 self.map_cycle_no += 1
+
 
 
         ftp = None
@@ -892,13 +990,13 @@ class Ro2Parser(b3.parser.Parser):
             try:
                 ftp.close()
                 self.debug('FTP Connection Closed')
-            except:
+            except Exception:
                 pass
             ftp = None
 
         try:
             ftp.close()
-        except:
+        except Exception:
             pass
 
 
@@ -907,7 +1005,7 @@ class Ro2Parser(b3.parser.Parser):
         self.verbose('Connecting to %s:%s ...' % (self.ftpconfig["host"], self.ftpconfig["port"]))
         ftp = FTP()
         ftp.set_debuglevel(self._ftplib_debug_level)
-        ftp.connect(self.ftpconfig['host'], self.ftpconfig['port'], self._connectionTimeout)
+        ftp.connect(self.ftpconfig['host'], self.ftpconfig['port'], self._ftpconnectionTimeout)
         ftp.login(self.ftpconfig['user'], self.ftpconfig['password'])
         ftp.voidcmd('TYPE I')
         dir = os.path.dirname(self.ftpconfig['path'])
@@ -915,3 +1013,14 @@ class Ro2Parser(b3.parser.Parser):
         ftp.cwd(dir)
         return ftp
     
+    # =======================================
+    # Not Implemented methods
+    # =======================================
+    
+    def rotateMap(self):
+        """\
+        load the next map/level
+        """
+        self.say('Rotate Map not implemented')
+    
+

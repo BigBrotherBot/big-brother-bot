@@ -264,7 +264,7 @@ class Bf3Parser(AbstractParser):
         mapname = mapname.lower()
         if mapname == 'grand bazaar':
             return 'MP_001'
-        elif mapname == 'teheran highway':
+        elif mapname == 'tehran highway':
             return 'MP_003'
         elif mapname == 'caspian border':
             return 'MP_007'
@@ -297,7 +297,7 @@ class Bf3Parser(AbstractParser):
         if mapname == 'MP_001':
             return 'Grand Bazaar'
         elif mapname == 'MP_003':
-            return 'Teheran Highway'
+            return 'Tehran Highway'
         elif mapname == 'MP_007':
             return 'Caspian Border'
         elif mapname == 'MP_011':

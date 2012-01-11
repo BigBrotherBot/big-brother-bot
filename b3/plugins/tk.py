@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    01/06/2012 - 1.2.6 - 82ndab-Bravo17
+#    * Add configurable values for sending damage messages
 #    03/30/2011 - 1.2.5 - SGT
 #    * Introduction of grudge level
 #    11/22/2009 - 1.2.4 - Courgette
@@ -40,7 +42,7 @@
 #    7/23/2005 - 1.0.2 - ThorN
 #    * Changed temp ban duration to be based on ban_length times the number of victims
 
-__version__ = '1.2.5'
+__version__ = '1.2.6'
 __author__  = 'ThorN'
 
 import b3, string, re, threading
@@ -160,6 +162,8 @@ class TkPlugin(b3.plugin.Plugin):
     _grudge_enable = True
     _grudge_level = 0
     _private_messages = None
+    _damage_threshold = 100
+    _warn_level = 2
     _ffa = ['dm', 'ffa', 'syc-ffa']
 
     
@@ -217,6 +221,18 @@ class TkPlugin(b3.plugin.Plugin):
         except:
             self._private_messages = True
         self.debug('Send messages privately ? %s' % self._private_messages)
+        
+        try:
+            self._damage_threshold = self.config.get('settings','damage_threshold')
+        except:
+            self._damage_threshold = 100
+        self.debug('Damage Threshold is %s' % self._damage_threshold)
+        
+        try:
+            self._warn_level = self.config.get('settings','warn_level')
+        except:
+            self._warn_level = 2
+        self.debug('Max warn level is %s' % self._warn_level)
         
 
     def onEvent(self, event):
@@ -337,7 +353,7 @@ class TkPlugin(b3.plugin.Plugin):
         if self._round_grace and self._issue_warning and self.console.game.roundTime() < self._round_grace and a.lastWarnTime + 60 < self.console.time():
             a.lastWarnTime = self.console.time()
             self._adminPlugin.warnClient(attacker, self._issue_warning, None, False)
-        elif points > 100 and attacker.maxLevel < 2 and a.lastWarnTime + 180 < self.console.time():
+        elif points > self._damage_threshold and attacker.maxLevel < self._warn_level and a.lastWarnTime + 180 < self.console.time():
             a.lastWarnTime = self.console.time()
             warning = self._adminPlugin.warnClient(attacker, '^3Do not attack teammates, ^1Attacked: ^7%s ^7[^3%s^7]' % (victim.exactName, points), None, False)
             a.warn(v.cid, warning)

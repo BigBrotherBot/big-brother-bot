@@ -51,6 +51,9 @@
 #    * Version 1.0 merged into master branch (for B3 v1.6.0 release)
 # 2011/11/12 - 1.1 - courgette
 #    * can install external plugins having a module defined as a directory instead as as a python file
+# 2012/01/08 - 1.2 - xlr8or
+#    * Added: xlrstats-update-2.6.1.sql
+#    * Fixed bug that would not update the xlrstats tables
 #
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -58,7 +61,7 @@
 # The setup procedure, to create a new configuration file (b3.xml)
 
 __author__ = 'xlr8or'
-__version__ = '1.1'
+__version__ = '1.2'
 
 import platform
 import urllib2
@@ -92,6 +95,7 @@ class Setup:
     _templatevar = ''
     _buffer = ''
     _equaLength = 15
+    ## @todo bfbc2 and moh need to be added later when parsers correctly implemented pb.
     _PBSupportedParsers = ['cod', 'cod2', 'cod4', 'cod5', 'cod6', 'cod7']
     _frostBite = ['bfbc2', 'moh', 'bf3']
 
@@ -877,8 +881,9 @@ class Update(Setup):
         # need to update xlrstats?
         _result = self.raw_default('Do you have xlrstats installed (with default table names)?', 'yes')
         if _result == 'yes':
-            self.executeSql('@b3/sql/b3-update-2.0.0.sql', _dbstring)
-            self.executeSql('@b3/sql/b3-update-2.4.0.sql', _dbstring)
+            self.executeSql('@b3/sql/xlrstats-update-2.0.0.sql', _dbstring)
+            self.executeSql('@b3/sql/xlrstats-update-2.4.0.sql', _dbstring)
+            self.executeSql('@b3/sql/xlrstats-update-2.6.1.sql', _dbstring)
 
         #self.db = self.connectToDatabase(_dbstring)
         #self.optimizeTables()
@@ -939,5 +944,5 @@ if __name__ == '__main__':
     #from b3.fake import joe
     #from b3.fake import simon
 
-    Setup('test.xml')
-    #Update('test.xml')
+    #Setup('test.xml')
+    Update('test.xml')

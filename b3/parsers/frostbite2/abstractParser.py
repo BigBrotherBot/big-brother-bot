@@ -99,6 +99,8 @@ class AbstractParser(b3.parser.Parser):
         (re.compile(r'^PunkBuster Server: Ban Added to Ban List$'), None),
         (re.compile(r'^PunkBuster Server: Ban Failed$'), None),
         (re.compile(r'^PunkBuster Server: Received Master Security Information$'), None),
+        (re.compile(r'^PunkBuster Server: Auto Screenshot\s+(?P<ssid>\d+)\s+Requested from (?P<slot>\d+) (?P<name>.+)$'), None),
+        (re.compile(r'^PunkBuster Server: Screenshot (?P<imgpath>.+)\s+successfully received \(MD5=(?P<md5>[0-9A-F]+)\) from (?P<slot>\d+) (?P<name>.+) \[(?P<pbid>[0-9a-fA-F]+)\(-\) (?P<ip>[^:]+):(?P<port>\d+)\]$'), 'OnPBScreenshotReceived'),
     )
 
     # if Punkbuster is set, then it will be used to kick/ban/unban
@@ -294,6 +296,7 @@ class AbstractParser(b3.parser.Parser):
         self.Events.createEvent('EVT_PUNKBUSTER_LOST_PLAYER', 'PunkBuster client connection lost')
         self.Events.createEvent('EVT_PUNKBUSTER_NEW_CONNECTION', 'PunkBuster client received IP')
         self.Events.createEvent('EVT_PUNKBUSTER_UCON', 'PunkBuster UCON')
+        self.Events.createEvent('EVT_PUNKBUSTER_SCREENSHOT_RECEIVED', 'PunkBuster Screenshot received')
 
         # setting up ban agent
         self.PunkBuster = None
@@ -731,6 +734,10 @@ class AbstractParser(b3.parser.Parser):
         """
         return b3.events.Event(b3.events.EVT_PUNKBUSTER_UCON, match.groupdict())
 
+    def OnPBScreenshotReceived(self, match, data):
+        """We get notified that a screenshot was successfully received by the server"""
+        return b3.events.Event(b3.events.EVT_PUNKBUSTER_SCREENSHOT_RECEIVED, match.groupdict())
+
 
     ###############################################################################################
     #
@@ -857,11 +864,11 @@ class AbstractParser(b3.parser.Parser):
                 except CommandFailedError, err:
                     self.error(err)
             else:
-                # ban by cid
+                # ban by guid
                 self.debug('EFFECTIVE BAN : %s',self.getCommand('ban', guid=client.guid, reason=reason[:80]))
-                self.write(('banList.save',))
                 try:
-                    self.write(self.getCommand('ban', cid=client.cid, reason=reason[:80]))
+                    self.write(self.getCommand('ban', guid=client.guid, reason=reason[:80]))
+                    self.write(('banList.save',))
                     if admin:
                         admin.message('banned: %s (@%s) has been added to banlist'%(client.exactName, client.id))
                 except CommandFailedError, err:
