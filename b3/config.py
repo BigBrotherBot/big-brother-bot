@@ -24,15 +24,16 @@
 # - detect xml parsing errors and raise a specific exception in that case
 # 22/11/2009 - 1.2.3 - Courgette
 # - fix bug with resolution of @conf on linux
-# 29/11/2209 - 1.3.0 - Courgette
+# 29/11/2009 - 1.3.0 - Courgette
 # XmlConfigParser can also be parsed from string
-# 20/12/2209 - 1.3.1 - Courgette
+# 20/12/2009 - 1.3.1 - Courgette
 # Fix bug in resolving @b3 which was failing for the win32 standalone release
-#
+# 03/12/2011 - 1.3.2 - Courgette
+# Fixes xlr8or/big-brother-bot#18 : @conf in XML only works when b3_run.py config parameter contains path component
 
 
 __author__  = 'ThorN'
-__version__ = '1.3.1'
+__version__ = '1.3.2'
 
 import sys, time
 import b3
@@ -167,7 +168,7 @@ class XmlConfigParser:
         if path[0:3] == '@b3':
             path = "%s/%s" % (b3.getB3Path(), path[3:])
         elif path[0:6] == '@conf/' or path[0:6] == '@conf\\':
-            path = "%s/%s" % (b3.getConfPath(), path[5:])
+            path = os.path.join(b3.getConfPath(), path[6:])
 
         return os.path.normpath(os.path.expanduser(path))
 

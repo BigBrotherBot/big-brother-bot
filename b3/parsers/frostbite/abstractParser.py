@@ -38,9 +38,10 @@
 # * fix bug introduced in 1.4.1
 # 2011-06-05 - 1.5.0 - Courgette
 # * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
-#
+# 2011-11-05 - 1.5.1 - Courgette
+# * make sure to release the self.exiting lock
 __author__  = 'Courgette'
-__version__ = '1.5.0'
+__version__ = '1.5.1'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -169,7 +170,7 @@ class AbstractParser(b3.parser.Parser):
                     
         self.bot('Stop listening.')
 
-        if self.exiting.acquire(1):
+        with self.exiting:
             #self.input.close()
             self.output.close()
 

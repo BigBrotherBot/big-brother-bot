@@ -20,6 +20,8 @@
 # $Id: q3a/abstractParser.py 103 2010-11-01 10:10:10Z xlr8or $
 #
 # CHANGELOG
+#    18/10/2011 - 1.7.1 - 82ndab-Bravo17
+#    Check slot number go up in order in getplayerlist to weed out data errors
 #    14/06/2011 - 1.7.0 - Courgette
 #    * cvar code changed to han
 #    2011/06/05 - 1.6.0 - Courgette
@@ -76,7 +78,7 @@
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.7.0'
+__version__ = '1.7.1'
 
 import re, string, time
 import b3
@@ -627,16 +629,21 @@ class AbstractParser(b3.parser.Parser):
                 return {}
 
             players = {}
+            lastslot = -1
             for line in data.split('\n')[3:]:
                 m = re.match(self._regPlayer, line.strip())
                 if m:
                     d = m.groupdict()
-                    d['pbid'] = None
-                    players[str(m.group('slot'))] = d
-                #elif '------' not in line and 'map: ' not in line and 'num score ping' not in line:
-                    #self.verbose('getPlayerList() = Line did not match format: %s' % line)
+                    if int(m.group('slot')) > lastslot:
+                        lastslot = int(m.group('slot'))
+                        d['pbid'] = None
+                        players[str(m.group('slot'))] = d
+                        
+                    else:
+                        self.console.debug('Duplicate or Incorrect slot number - client ignored %s lastslot %s' % (m.group('slot'), lastslot))
 
         return players
+
 
     def getCvar(self, cvarName):
         if self._reCvarName.match(cvarName):

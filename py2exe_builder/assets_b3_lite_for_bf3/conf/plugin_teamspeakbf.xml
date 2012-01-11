@@ -1,0 +1,48 @@
+<configuration plugin="teamspeakbf">
+	<settings name="teamspeakServer">
+		<!-- IP or domain where your teamspeak server is hosted -->
+		<set name="host">127.0.0.1</set>
+		<!-- query port of your teamspeak server (default: 10011) -->
+		<set name="queryport">10011</set>
+		<!-- Teamspeak virtual server ID -->
+		<set name="id">1</set>
+		<!-- B3 login information. You need to create a ServerQuery Login for B3. video tutorial : http://bit.ly/a5qcjp -->
+		<set name="login">b3test</set>
+		<set name="password">secretTSServerQueryPassword</set>
+	</settings>
+	<settings name="teamspeakChannels">
+		<set name="B3">B3 autoswitched channel</set>
+		<set name="team1">Team 1</set>
+		<set name="team2">Team 2</set>
+        <!-- DefaultTarget : will determine between which channels users will be switch to by default.
+            Expected values : 'team', 'squad' or 'off'
+            Default value : 'squad'
+        -->
+		<set name="DefaultTarget">squad</set>
+	</settings>
+	<settings name="commands">
+		<!-- set here levels needed to be allowed to use commands.
+			You can define a command alias adding '-' and the alias after the command name.
+			Levels:
+			0 : everyone
+			1 : registered users
+			2 : regular users
+			20 : moderators
+			40 : admins
+			60 : full admins
+			80 : senior admins
+			100 : super admins
+		-->
+
+		<!-- Allow admins to reconnect/disconnect B3 to the teamspeak server -->
+		<set name="tsreconnect">100</set>
+		<set name="tsdisconnect">100</set>
+
+		<!-- give the player info about the current Teamspeak server and his status -->
+		<set name="teamspeak-ts">0</set>
+
+		<!-- !tsauto allow players to change their autoswitch preferences between one
+			of 'off', 'team', 'squad' -->
+		<set name="tsauto-tsa">0</set>
+	</settings>
+</configuration>
