@@ -29,6 +29,7 @@ class Test_BanlistContent(unittest.TestCase):
         self.assertRaises(BanlistContentError, BanlistContent, ['1', 'a1','a2','a3'])
         self.assertRaises(BanlistContentError, BanlistContent, ['1', 'a1','a2','a3','a4','a5','a6'])
         self.assertRaises(BanlistContentError, BanlistContent, ['2', 'a1','a2','a3','a4','a5', 'b1','b2'])
+        self.assertRaises(BanlistContentError, BanlistContent, 'foo')
 
     def test_minimal(self):
         blc = BanlistContent([])
@@ -186,16 +187,6 @@ class Test_TeamScoreBlock(unittest.TestCase):
 
 class Test_MapListBlock(unittest.TestCase):
 
-    def _assertRaiseMapListBlockError(self, data):
-        try:
-            MapListBlock(data)
-        except MapListBlockError, err:
-            return err
-        except Exception, err:
-            self.fail("expecting MapListBlockError but got %r instead" % err)
-        else:
-            self.fail("expecting MapListBlockError")
-
     def test_no_param(self):
         self.assertEqual(0, len(MapListBlock()))
 
@@ -206,12 +197,15 @@ class Test_MapListBlock(unittest.TestCase):
         self.assertRaises(MapListBlockError, MapListBlock, ([],))
 
     def test_bad_list(self):
-        self._assertRaiseMapListBlockError([None])
-        self._assertRaiseMapListBlockError([0])
-        self._assertRaiseMapListBlockError([0,1])
-        self._assertRaiseMapListBlockError(['a','b','c','d'])
-        self._assertRaiseMapListBlockError(['1','3', 'a1','b1','1', 'a2'])
-        self._assertRaiseMapListBlockError(['1','3', 'a1','b1','xxx'])
+        self.assertRaises(MapListBlockError, MapListBlock, ('foo',))
+        self.assertRaises(MapListBlockError, MapListBlock, (['x'],))
+        self.assertRaises(MapListBlockError, MapListBlock, ([None],))
+        self.assertRaises(MapListBlockError, MapListBlock, ([0],))
+        self.assertRaises(MapListBlockError, MapListBlock, ([0,1],))
+        self.assertRaises(MapListBlockError, MapListBlock, ([0,'x'],))
+        self.assertRaises(MapListBlockError, MapListBlock, (['a','b','c','d'],))
+        self.assertRaises(MapListBlockError, MapListBlock, (['1','3', 'a1','b1','1', 'a2'],))
+        self.assertRaises(MapListBlockError, MapListBlock, (['1','3', 'a1','b1','xxx'],))
 
     def test_minimal(self):
         self.assertEqual(0, len(MapListBlock([0,3])))
