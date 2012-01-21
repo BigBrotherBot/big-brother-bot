@@ -18,22 +18,31 @@
 #
 
 import unittest
-from b3.parsers.frostbite2.util import BanlistContent, PlayerInfoBlock, TeamScoresBlock, MapListBlock, MapListBlockError
+from b3.parsers.frostbite2.util import BanlistContent, BanlistContentError, PlayerInfoBlock, TeamScoresBlock, MapListBlock, MapListBlockError
 
 
 class Test_BanlistContent(unittest.TestCase):
 
     def test_bad(self):
-        self.assertRaises(TypeError, BanlistContent, None)
-        self.assertRaises(IndexError, BanlistContent, [])
+        self.assertRaises(BanlistContentError, BanlistContent, ['x'])
+        self.assertRaises(BanlistContentError, BanlistContent, ['1'])
+        self.assertRaises(BanlistContentError, BanlistContent, ['1', 'a1','a2','a3'])
+        self.assertRaises(BanlistContentError, BanlistContent, ['1', 'a1','a2','a3','a4','a5','a6'])
+        self.assertRaises(BanlistContentError, BanlistContent, ['2', 'a1','a2','a3','a4','a5', 'b1','b2'])
 
     def test_minimal(self):
-        self.assertEqual(0, len(BanlistContent([0])))
-        self.assertEqual('BanlistContent[]', repr(BanlistContent([0])))
-        self.assertEqual(0, len(BanlistContent(['0'])))
-        self.assertEqual('BanlistContent[]', repr(BanlistContent(['0'])))
-        self.assertEqual(1, len(BanlistContent(['1','d1','d2','d3','d4','d5'])))
-        self.assertEqual("BanlistContent[{'idType': 'd1', 'reason': 'd5', 'banType': 'd3', 'id': 'd2', 'time': 'd4'}]", repr(BanlistContent(['1','d1','d2','d3','d4','d5'])))
+        blc = BanlistContent([])
+        self.assertEqual(0, len(blc))
+        self.assertEqual('BanlistContent[]', repr(blc))
+        blc = BanlistContent([0])
+        self.assertEqual(0, len(blc))
+        self.assertEqual('BanlistContent[]', repr(blc))
+        blc = BanlistContent(['0'])
+        self.assertEqual(0, len(blc))
+        self.assertEqual('BanlistContent[]', repr(blc))
+        blc = BanlistContent(['1','d1','d2','d3','d4','d5'])
+        self.assertEqual(1, len(blc))
+        self.assertEqual("BanlistContent[{'idType': 'd1', 'reason': 'd5', 'banType': 'd3', 'id': 'd2', 'time': 'd4'}]", repr(blc))
 
     def test_1(self):
         bloc = BanlistContent(['2','d1','d2','d3','d4','d5','p1','p2','p3','p4','p5'])
@@ -62,6 +71,27 @@ class Test_BanlistContent(unittest.TestCase):
         self.assertEqual('seconds', bloc[1:3][1]['banType'])
         self.assertEqual(60, bloc[1:3][1]['time'])
         self.assertEqual('reason 3', bloc[1:3][1]['reason'])
+
+
+    def test_append(self):
+        data1 = ['2','a1','a2','a3','a4','a5','b1','b2','b3','b4','b5']
+        data2 = ['1','c1','c2','c3','c4','c5']
+        # check both data lists make valid MapListBlock individually
+        blc1 = BanlistContent(data1)
+        self.assertEqual(2, len(blc1))
+        blc2 = BanlistContent(data2)
+        self.assertEqual(1, len(blc2))
+        # check both 2nd list can be appended to the 1st one.
+        blc3 = BanlistContent(data1)
+        blc3.append(data2)
+        # check new list length
+        blc3_length = len(blc3)
+        self.assertEqual(len(blc1) + len(blc2), blc3_length)
+        # check appending empty stuff does not affect current length
+        blc3.append([])
+        self.assertEqual(blc3_length, len(blc3))
+        blc3.append([0])
+        self.assertEqual(blc3_length, len(blc3))
 
 
 

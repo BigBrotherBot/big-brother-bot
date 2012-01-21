@@ -23,23 +23,28 @@
 #    * add __repr__
 #    * fix minor bug in BanlistContent
 #    * add automated tests
+# 1.2 - 2012/01/21 - Courgette
+#    * add a append() method to BanlistContent and MapListBlock classes
+#
 
 """\
 This module provides different utilities specific to the Frostbite engine
 """
- 
+
 __author__  = 'Courgette'
-__version__ = '1.1'
+__version__ = '1.2'
 
 
+class BanlistContentError(Exception):
+    pass
 
-class BanlistContent:
+class BanlistContent(object):
     """
     help extract banlist info from a frostbite banList.list response
     
     usage :
         words = [2, 
-            'name', 'Courgette', 'perm', , 'test',  
+            'name', 'Courgette', 'perm',         , 'test',
             'name', 'Courgette', 'seconds', 3600 , 'test2'] 
         bansInfo = BanlistContent(words)
         print "num of bans : %s" % len(bansInfo)
@@ -49,8 +54,8 @@ class BanlistContent:
         for b in bansInfo:
             print b
     """
-    
-    def __init__(self, data):
+
+    def __init__(self, data=None):
         """Represent a frostbite banList.list response
         Request: banList.list 
         Response: OK <player ban entries> 
@@ -59,12 +64,41 @@ class BanlistContent:
         Comment: The list starts with a number telling how many bans the list is holding. 
                  After that, 5 words (Id-type, id, ban-type, time and reason) are received for every ban in the list.
         """
-        self.numOfBans = data[0]
-        self.bansData = data[1:]
-    
+        self.numOfBans = 0
+        self.bansData = []
+        if data is not None:
+            self.append(data)
+
+
+    def append(self, data):
+        """Parses and appends the maps from raw_data.
+        data : words as received from the Frostbite2 mapList.list command
+        """
+        # validation
+        if type(data) not in (tuple, list):
+            raise BanlistContentError("invalid data. Expecting data as a tuple or as a list. Received '%s' instead" % type(data))
+
+        if len(data) == 0:
+            # banList.list returns nothing when the banlist contains no ban instead of returning the header [0] which
+            # would explicitly tell there are no ban.
+            return
+
+        try:
+            num_bans = int(data[0])
+        except ValueError, err:
+            raise BanlistContentError("invalid data. First element should be a integer, got %r" % data[0], err)
+
+        if len(data) != (1 + (num_bans * 5)):
+            raise BanlistContentError("invalid data. The total number of elements is not coherent with the number of bans declared. %s != (1 + %s * 5)" % (len(data), num_bans))
+
+        # append data
+        self.bansData += data[1:]
+        self.numOfBans += (len(data) - 1) // 5
+
+
     def __len__(self):
         return int(self.numOfBans)
-    
+
     def __getitem__(self, key):
         """Returns the ban data, for provided key (int or slice)"""
         if isinstance(key, slice):
@@ -90,10 +124,10 @@ class BanlistContent:
         for p in self:
             txt += "%r" % p
         txt += "]"
-        return txt        
-        
-        
-        
+        return txt
+
+
+
 class PlayerInfoBlock:
     """
     help extract player info from a frostbite Player Info Block which we obtain
@@ -111,7 +145,7 @@ class PlayerInfoBlock:
         for p in playersInfo:
             print p
     """
-    
+
     def __init__(self, data):
         """Represent a frostbite Player info block
         The standard set of info for a group of players contains a lot of different 
@@ -140,10 +174,10 @@ class PlayerInfoBlock:
         self._parameter_types = data[1:1+self._num_parameters]
         self._num_players = int(data[1+self._num_parameters])
         self._players_data = data[2+self._num_parameters:]
-    
+
     def __len__(self):
         return self._num_players
-    
+
     def __getitem__(self, key):
         """Returns the player data, for provided key (int or slice)"""
         if isinstance(key, slice):
@@ -159,7 +193,7 @@ class PlayerInfoBlock:
         playerData = self._players_data[index*self._num_parameters:(index+1)*self._num_parameters]
         for i in range(self._num_parameters):
             data[self._parameter_types[i]] = playerData[i]
-        return data 
+        return data
 
     def __repr__(self):
         txt = "PlayerInfoBlock["
@@ -167,8 +201,8 @@ class PlayerInfoBlock:
             txt += "%r" % p
         txt += "]"
         return txt
-    
-    
+
+
 class TeamScoresBlock:
     """
     help extract team scores info from frostbite data obtain from game events
@@ -183,7 +217,7 @@ class TeamScoresBlock:
         for p in teamScores:
             print p
     """
-    
+
     def __init__(self, data):
         """Represent a frostbite Team Scores block
             
@@ -196,14 +230,14 @@ class TeamScoresBlock:
         self._num_teams = int(data[0])
         self._scores = tuple([int(x) for x in data[1:1+self._num_teams]])
         self._target_score = int(data[1+self._num_teams])
-    
+
     def __len__(self):
         return self._num_teams
-    
+
     def __getitem__(self, key):
         """Returns the team score data, for provided key (int or slice)"""
         return self._scores[key]
-    
+
     def get_target_score(self):
         return self._target_score
 
@@ -212,7 +246,7 @@ class TeamScoresBlock:
         txt += ", ".join([repr(x) for x in self._scores])
         txt += "], target: %s" % self._target_score
         return txt
-    
+
 
 class MapListBlockError(Exception):
     pass
@@ -231,7 +265,7 @@ class MapListBlock:
         for p in mapList:
             print p
     """
-    
+
     def __init__(self, data=None):
         """This describes the set of maps which the server rotates through. 
 
@@ -297,14 +331,14 @@ class MapListBlock:
         self._num_maps = len(self._map_data)
         if self._num_words is None:
             self._num_words = num_words
-    
+
     def __len__(self):
         return self._num_maps
-    
+
     def __getitem__(self, key):
         """Returns the map data, for provided key (int or slice)"""
         return self._map_data[key]
-    
+
     def __repr__(self):
         txt = "MapListBlock["
         map_info_repr = []
