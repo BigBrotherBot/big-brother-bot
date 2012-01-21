@@ -114,19 +114,6 @@ class Tk_functional_test(B3TestCase):
         self.assertEqual(0, joe.warn.call_count)
 
 
-    def test_dammage_within_10s(self, timer_patch):
-        Tk_functional_test.p._round_grace = 10
-        joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="joeguid", groupBits=1, team=b3.TEAM_RED)
-        mike = FakeClient(fakeConsole, name="Mike", exactName="Mike", guid="mikeguid", groupBits=1, team=b3.TEAM_RED)
-
-        joe.warn = Mock()
-        joe.connects(0)
-        mike.connects(1)
-
-        joe.damages(mike)
-        self.assertEqual(1, joe.warn.call_count)
-
-
     def test_kill_within_10s(self, timer_patch):
         Tk_functional_test.p._round_grace = 10
         joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="joeguid", groupBits=1, team=b3.TEAM_RED)
