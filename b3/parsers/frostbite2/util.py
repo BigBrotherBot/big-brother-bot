@@ -213,6 +213,10 @@ class TeamScoresBlock:
         txt += "], target: %s" % self._target_score
         return txt
     
+
+class MapListBlockError(Exception):
+    pass
+
 class MapListBlock:
     """
     help extract map list from frostbite data
@@ -228,11 +232,11 @@ class MapListBlock:
             print p
     """
     
-    def __init__(self, data):
+    def __init__(self, data=None):
         """This describes the set of maps which the server rotates through. 
 
         Format is as follows: 
-            <number of maps: integer> - number of maps that follow 
+            <number of maps: integer> - number of maps that follow
             <number of words per map: integer> - number of words per map 
             <map name: string> - name of map 
             <gamemode name: string> - name of gamemode 
@@ -242,13 +246,57 @@ class MapListBlock:
         in the future, DICE might add extra words per map after the first three. However, 
         the first three words are very likely to remain the same. 
         """
-        self._num_maps = int(data[0])
-        self._num_words = int(data[1])
+        self._num_maps = 0
+        self._num_words = None
+        self._map_data = tuple()
+        if data is not None:
+            self.append(data)
+
+    def append(self, data):
+        """Parses and appends the maps from raw_data.
+        data : words as received from the Frostbite2 mapList.list command
+        """
+        # validation
+        if type(data) not in (tuple, list):
+            raise MapListBlockError("invalid data. Expecting data as a tuple or as a list. Received '%s' instead" % type(data))
+
+        if len(data) < 2:
+            raise MapListBlockError("invalid data. Data should have at least 2 elements. %r", data)
+
+        try:
+            num_maps = int(data[0])
+        except ValueError, err:
+            raise MapListBlockError("invalid data. First element should be a integer, got %r" % data[0], err)
+
+        try:
+            num_words = int(data[1])
+        except ValueError, err:
+            raise MapListBlockError("invalid data. Second element should be a integer, got %r" % data[1], err)
+
+        if len(data) != (2 + (num_maps * num_words)):
+            raise MapListBlockError("invalid data. The total number of elements is not coherent with the number of maps declared. %s != (2 + %s * %s)" % (len(data), num_maps, num_words))
+
+        if num_words < 3:
+            raise MapListBlockError("invalid data. Expecting at least 3 words of data per map")
+
+        if self._num_words is not None and self._num_words != num_words:
+            raise MapListBlockError("cannot append data. nums_words are different from existing data.")
+
+        # parse data
         map_data = []
-        for i in range(self._num_maps):
-            base_index = 2 + (i * self._num_words)
-            map_data.append({'name': data[base_index+0], 'gamemode': data[base_index+1], 'num_of_rounds': int(data[base_index+2])})
-        self._map_data = tuple(map_data)
+        for i in range(num_maps):
+            base_index = 2 + (i * num_words)
+            try:
+                num_rounds = int(data[base_index+2])
+            except ValueError:
+                raise MapListBlockError("invalid data. %sth element should be a integer, got %r" % (base_index + 2, data[base_index + 2]))
+            map_data.append({'name': data[base_index+0], 'gamemode': data[base_index+1], 'num_of_rounds': num_rounds})
+
+        # append data
+        self._map_data += tuple(map_data)
+        self._num_maps = len(self._map_data)
+        if self._num_words is None:
+            self._num_words = num_words
     
     def __len__(self):
         return self._num_maps

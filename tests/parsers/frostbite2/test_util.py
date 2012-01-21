@@ -18,10 +18,10 @@
 #
 
 import unittest
-from b3.parsers.frostbite2.util import BanlistContent, PlayerInfoBlock, TeamScoresBlock, MapListBlock
+from b3.parsers.frostbite2.util import BanlistContent, PlayerInfoBlock, TeamScoresBlock, MapListBlock, MapListBlockError
 
 
-class TestBanlistContent(unittest.TestCase):
+class Test_BanlistContent(unittest.TestCase):
 
     def test_bad(self):
         self.assertRaises(TypeError, BanlistContent, None)
@@ -65,7 +65,7 @@ class TestBanlistContent(unittest.TestCase):
 
 
 
-class TestPlayerInfoBlock(unittest.TestCase):
+class Test_PlayerInfoBlock(unittest.TestCase):
 
     def test_no_param(self):
         self.assertRaises(TypeError, PlayerInfoBlock, None)
@@ -121,7 +121,7 @@ class TestPlayerInfoBlock(unittest.TestCase):
         self.assertEqual("[{'param2': 'player1-p2', 'param1': 'player1-p1'}, {'param2': 'player2-p2', 'param1': 'player2-p1'}]", repr(bloc[1:3]))
 
 
-class TestTeamScoreBlock(unittest.TestCase):
+class Test_TeamScoreBlock(unittest.TestCase):
 
     def test_no_param(self):
         self.assertRaises(TypeError, TeamScoresBlock, None)
@@ -154,27 +154,41 @@ class TestTeamScoreBlock(unittest.TestCase):
 
 
 
-class TestMapListBlock(unittest.TestCase):
+class Test_MapListBlock(unittest.TestCase):
+
+    def _assertRaiseMapListBlockError(self, data):
+        try:
+            MapListBlock(data)
+        except MapListBlockError, err:
+            return err
+        except Exception, err:
+            self.fail("expecting MapListBlockError but got %r instead" % err)
+        else:
+            self.fail("expecting MapListBlockError")
 
     def test_no_param(self):
-        self.assertRaises(TypeError, MapListBlock, None)
+        self.assertEqual(0, len(MapListBlock()))
 
     def test_none(self):
-        self.assertRaises(TypeError, MapListBlock, (None,))
+        self.assertRaises(MapListBlockError, MapListBlock, (None,))
 
     def test_empty_list(self):
-        self.assertRaises(TypeError, MapListBlock, ([],))
+        self.assertRaises(MapListBlockError, MapListBlock, ([],))
 
     def test_bad_list(self):
-        self.assertRaises(TypeError, MapListBlock, ([None],))
-        self.assertRaises(TypeError, MapListBlock, ([0],))
-        self.assertRaises(TypeError, MapListBlock, ([0,1],))
+        self._assertRaiseMapListBlockError([None])
+        self._assertRaiseMapListBlockError([0])
+        self._assertRaiseMapListBlockError([0,1])
+        self._assertRaiseMapListBlockError(['a','b','c','d'])
+        self._assertRaiseMapListBlockError(['1','3', 'a1','b1','1', 'a2'])
+        self._assertRaiseMapListBlockError(['1','3', 'a1','b1','xxx'])
 
     def test_minimal(self):
-        self.assertEqual(0, len(MapListBlock([0,0])))
-        self.assertEqual('MapListBlock[]', repr(MapListBlock([0,0])))
+        self.assertEqual(0, len(MapListBlock([0,3])))
+        self.assertEqual('MapListBlock[]', repr(MapListBlock([0,3])))
         self.assertEqual(0, len(MapListBlock(['0','3'])))
-        self.assertEqual(1, len(MapListBlock(['1', '3', 'test','mode', '2'])))
+        tmp = MapListBlock(['1', '3', 'test','mode', '2'])
+        self.assertEqual(1, len(tmp), repr(tmp))
         self.assertEqual('MapListBlock[]', repr(MapListBlock(['0','3'])))
         self.assertEqual(0, len(MapListBlock(['0','3']).getByName('MP_003')))
 
@@ -238,6 +252,41 @@ class TestMapListBlock(unittest.TestCase):
         self.assertIn(1, bloc.getByNameAndGamemode('map2', 'mode2'))
         self.assertIn(2, bloc.getByNameAndGamemode('map1', 'mode2'))
 
+
+class Test_MapListBlock_append(unittest.TestCase):
+
+    def test_append_list_with_different_num_words(self):
+        data1 = [1, 3, 'a1','a2',1]
+        data2 = [1, 4, 'b1','b2',1,'b4']
+        # check both data lists make valid MapListBlock individually
+        self.assertEqual(1, len(MapListBlock(data1)))
+        self.assertEqual(1, len(MapListBlock(data2)))
+        # check both 2nd list cannot be appended to the 1st one.
+        mlb1 = MapListBlock(data1)
+        self.assertEqual(3, mlb1._num_words)
+        try:
+            mlb1.append(data2)
+        except MapListBlockError, err:
+            self.assertIn('cannot append data', err.message, "expecting error message to contain 'cannot append data' but got %r instead" % err)
+        except Exception, err:
+            self.fail("expecting MapListBlockError but got %r instead" % err)
+        else:
+            self.fail("expecting MapListBlockError")
+
+
+    def test_append_list_with_same_num_words(self):
+        data1 = [1, 3, 'a1','a2',1]
+        data2 = [1, 3, 'b1','b2',2]
+        # check both data lists make valid MapListBlock individually
+        mlb1 = MapListBlock(data1)
+        self.assertEqual(1, len(mlb1))
+        mlb2 = MapListBlock(data2)
+        self.assertEqual(1, len(mlb2))
+        # check both 2nd list can be appended to the 1st one.
+        mlb3 = MapListBlock(data1)
+        mlb3.append(data2)
+        # check new list length
+        self.assertEqual(len(mlb1) + len(mlb2), len(mlb3))
 
 
 if __name__ == '__main__':
