@@ -58,6 +58,19 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
     _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[a-z0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9-]+)\s+(?P<rate>[0-9]+)$', re.I)
 
 
+    # join team (Some mods eg OW use JT)
+    def OnJt(self, action, data, match=None):
+        client = self.getClient(match)
+        if not client:
+            self.debug('No client - attempt join')
+            self.OnJ(action, data, match)
+            client = self.getClient(match)
+            if not client:
+                return None
+        client.team = self.getTeam(match.group('team'))
+        self.debug('%s has just changed team to %s' % (client.name, client.team))
+        
+    
     # kill
     def OnK(self, action, data, match=None):
         victim = self.getClient(victim=match)
