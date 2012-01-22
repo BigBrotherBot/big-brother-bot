@@ -18,7 +18,7 @@
 #
 from b3.clients import Clients, Client
 from tests import B3TestCase
-from mock import Mock
+from mock import Mock, patch
 import b3
 
 
@@ -51,11 +51,8 @@ class TestClients(B3TestCase):
         clients = self.clients.getClientsByName('qsdfqsdf fqsd fsqd fsd f')
         self.assertEqual([], clients)
 
-
-    def test_disconnect(self):
-        b3.console.queueEvent = Mock()
-        b3.events.Event = Mock()
-
+    @patch.object(b3.events, 'Event')
+    def test_disconnect(self, Event_mock):
         joe = self.clients.getByCID(1)
         self.assertIsInstance(joe, Client)
         self.assertTrue(1 in self.clients)
@@ -71,6 +68,4 @@ class TestClients(B3TestCase):
         self.assertIsNone(self.clients.getByName('joe'))
 
         # verify that an proper event was fired
-        assert b3.console.queueEvent.called
-        event = b3.console.queueEvent.call_args[0][0]
-        b3.events.Event.assert_called_once_with(b3.events.EVT_CLIENT_DISCONNECT, 1, client=joe)
+        Event_mock.assert_called_once_with(b3.events.EVT_CLIENT_DISCONNECT, 1, client=joe)
