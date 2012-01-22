@@ -43,7 +43,7 @@ class BanlistContent(object):
     help extract banlist info from a frostbite banList.list response
     
     usage :
-        words = [2, 
+        words = [
             'name', 'Courgette', 'perm',         , 'test',
             'name', 'Courgette', 'seconds', 3600 , 'test2'] 
         bansInfo = BanlistContent(words)
@@ -61,8 +61,13 @@ class BanlistContent(object):
         Response: OK <player ban entries> 
         Response: InvalidArguments 
         Effect: Return list of banned players/IPs/GUIDs. 
-        Comment: The list starts with a number telling how many bans the list is holding. 
-                 After that, 5 words (Id-type, id, ban-type, time and reason) are received for every ban in the list.
+        Comment: 6 words (Id-type, id, ban-type, seconds left, rounds left, and reason) are received for every ban in
+        the list.
+        If no startOffset is supplied, it is assumed to be 0.
+        At most 100 entries will be returned by the command. To retrieve the full list, perform several banList.list
+        calls with increasing offset until the server returns 0 entries.
+        (There is an unsolved synchronization problem hidden there: if a ban expires during this process, then one other
+        entry will be skipped during retrieval. There is no known workaround for this.)
         """
         self.numOfBans = 0
         self.bansData = []
@@ -79,21 +84,15 @@ class BanlistContent(object):
             raise BanlistContentError("invalid data. Expecting data as a tuple or as a list. Received '%s' instead" % type(data))
 
         if len(data) == 0:
-            # banList.list returns nothing when the banlist contains no ban instead of returning the header [0] which
-            # would explicitly tell there are no ban.
+            # banList.list returns nothing when the banlist contains no ban.
             return
 
-        try:
-            num_bans = int(data[0])
-        except ValueError, err:
-            raise BanlistContentError("invalid data. First element should be a integer, got %r" % data[0], err)
-
-        if len(data) != (1 + (num_bans * 5)):
-            raise BanlistContentError("invalid data. The total number of elements is not coherent with the number of bans declared. %s != (1 + %s * 5)" % (len(data), num_bans))
+        if len(data) % 6 != 0:
+            raise BanlistContentError("invalid data. The total number of elements is not divisible by 6 (%s)" % len(data))
 
         # append data
-        self.bansData += data[1:]
-        self.numOfBans += (len(data) - 1) // 5
+        self.bansData += data
+        self.numOfBans += len(data) / 6
 
 
     def __len__(self):
@@ -110,21 +109,18 @@ class BanlistContent(object):
     def getData(self, index):
         if index >= self.numOfBans:
             raise IndexError
-        tmp = self.bansData[index*5:(index+1)*5]
+        tmp = self.bansData[index*6:(index+1)*6]
         return {
             'idType': tmp[0], # name | ip | guid
             'id': tmp[1],
             'banType': tmp[2], # perm | round | seconds
-            'time': tmp[3],
-            'reason': tmp[4], # 80 chars max
+            'seconds_left': tmp[3],
+            'rounds_left': tmp[4],
+            'reason': tmp[5], # 80 chars max
         }
 
     def __repr__(self):
-        txt = "BanlistContent["
-        for p in self:
-            txt += "%r" % p
-        txt += "]"
-        return txt
+        return "BanlistContent[%s]" % ', '.join([repr(x) for x in self])
 
 
 
