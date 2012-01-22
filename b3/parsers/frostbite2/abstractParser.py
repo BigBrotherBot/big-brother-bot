@@ -24,7 +24,7 @@ import sys, re, traceback, time, string, Queue, threading
 import b3.parser
 from b3.parsers.frostbite2.rcon import Rcon as FrostbiteRcon
 from b3.parsers.frostbite2.protocol import FrostbiteServer, CommandFailedError, CommandError, NetworkError
-from b3.parsers.frostbite2.util import PlayerInfoBlock, MapListBlock
+from b3.parsers.frostbite2.util import PlayerInfoBlock, MapListBlock, BanlistContent
 import b3.events
 import b3.cvar
 from b3.functions import soundex, levenshteinDistance
@@ -1117,6 +1117,20 @@ class AbstractParser(b3.parser.Parser):
             response.append(tmp)
             tmp = self.write(('mapList.list', len(response)))
             tmp_num_maps = len(MapListBlock(tmp))
+        return response
+
+    def getFullBanList(self):
+        """query the Frostbite2 game server and return a BanlistContent object containing all bans stored on the game
+        server memory.
+        """
+        response = BanlistContent()
+        offset = 0
+        tmp = self.write(('banList.list', offset))
+        tmp_num_bans = len(BanlistContent(tmp))
+        while tmp_num_bans:
+            response.append(tmp)
+            tmp = self.write(('banList.list', len(response)))
+            tmp_num_bans = len(BanlistContent(tmp))
         return response
 
     def getHardName(self, mapname):

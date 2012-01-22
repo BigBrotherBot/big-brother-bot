@@ -206,3 +206,97 @@ class Test_getFullMapRotationList(Write_controlled_TestCase):
             ((('mapList.list', 10),), {}),
             ((('mapList.list', 15),), {}),
         ], self.parser.write.call_args_list
+
+
+
+class Test_getFullBanList(Write_controlled_TestCase):
+    """
+    getFullBanList is a method of AbstractParser that calls the Frostbite2 banList.list command the number of
+    times required to obtain the exhaustive list of bans.
+    """
+
+    bans = (
+        ('name', 'Joe', 'perm', '0', '0', 'Banned by admin'),
+        ('name', 'Jack', 'rounds', '0', '4', 'tk'),
+        ('name', 'Averell', 'seconds', '3576', '0', 'being stupid'),
+        ('name', 'William', 'perm', '0', '0', 'hacking'),
+    )
+
+    def setUp(self):
+
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.parser = AbstractParser(self.conf)
+        self.parser.startup()
+
+        # simulate responses we can expect from the rcon command mapList.list
+        def write(data):
+            if type(data) in (tuple, list):
+                if data[0].lower() == 'banlist.list':
+                    offset = 0
+                    if len(data) > 1:
+                        try:
+                            offset = int(data[1])
+                        except ValueError:
+                            raise CommandFailedError(['InvalidArguments'])
+                            # simulate that the Frostbite2 server responds with 5 bans at most for the banList.list command
+                    bans_to_send = self.__class__.bans[offset:offset+5]
+                    return list(reduce(tuple.__add__, bans_to_send, tuple()))
+            return []
+        self.parser.write = Mock(side_effect=write)
+
+
+    def test_empty(self):
+        # setup context
+        self.__class__.bans = tuple()
+        # verify
+        bl = self.parser.getFullBanList()
+        self.assertEqual(0, len(bl))
+        self.assertEqual(1, self.parser.write.call_count)
+
+    def test_one_ban(self):
+        # setup context
+        self.__class__.bans = (('name', 'Foo1 ', 'perm', '0', '0', 'Banned by admin'),)
+        # verify
+        mlb = self.parser.getFullBanList()
+        self.assertEqual("BanlistContent[{'idType': 'name', 'seconds_left': '0', 'reason': 'Banned by admin', 'banType': 'perm', 'rounds_left': '0', 'id': 'Foo1 '}]", repr(mlb))
+        self.assertEqual(2, self.parser.write.call_count)
+
+    def test_two_bans(self):
+        # setup context
+        self.__class__.bans = (
+            ('name', 'Foo1 ', 'perm', '0', '0', 'Banned by admin'),
+            ('name', 'Foo2 ', 'perm', '0', '0', 'Banned by admin'),
+            )
+        # verify
+        mlb = self.parser.getFullBanList()
+        self.assertEqual("BanlistContent[{'idType': 'name', 'seconds_left': '0', 'reason': 'Banned by admin', 'banType': 'perm', 'rounds_left': '0', 'id': 'Foo1 '}, \
+{'idType': 'name', 'seconds_left': '0', 'reason': 'Banned by admin', 'banType': 'perm', 'rounds_left': '0', 'id': 'Foo2 '}]", repr(mlb))
+        self.assertEqual(2, self.parser.write.call_count)
+
+
+    def test_lots_of_bans(self):
+        # setup context
+        self.__class__.bans = (
+            ('name', 'Foo1 ', 'perm', '0', '0', 'Banned by admin'),
+            ('name', 'Foo2 ', 'perm', '0', '0', 'Banned by admin'),
+            ('name', 'Foo3 ', 'perm', '0', '0', 'Banned by admin'),
+            ('name', 'Foo4 ', 'perm', '0', '0', 'Banned by admin'),
+            ('name', 'Foo5 ', 'perm', '0', '0', 'Banned by admin'),
+            ('name', 'Foo6 ', 'perm', '0', '0', 'Banned by admin'),
+            ('name', 'Foo7 ', 'perm', '0', '0', 'Banned by admin'),
+            ('name', 'Foo8 ', 'perm', '0', '0', 'Banned by admin'),
+            ('name', 'Foo9 ', 'perm', '0', '0', 'Banned by admin'),
+        )
+        # verify
+        mlb = self.parser.getFullBanList()
+        self.assertEqual(9, len(mlb))
+        # check in details what were the 3 calls made to the write method
+        assert [
+            ((('banList.list', 0),), {}),
+            ((('banList.list', 5),), {}),
+            ((('banList.list', 10),), {}),
+        ], self.parser.write.call_args_list
