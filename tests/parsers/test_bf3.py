@@ -20,6 +20,7 @@ import unittest
 from mock import Mock
 from b3.parsers.bf3 import Bf3Parser
 from b3.config import XmlConfigParser
+from b3.parsers.frostbite2.util import MapListBlock
 from tests import B3TestCase
 
 class BF3TestCase(B3TestCase):
@@ -394,14 +395,13 @@ class Test_bf3_events(BF3TestCase):
     def test_cmd_rotateMap_generates_EVT_GAME_ROUND_END(self):
         # prepare fake BF3 server responses
         def fake_write(data):
-            if data == ('mapList.list',):
-                return ['4', '3', 'MP_007', 'RushLarge0', '4', 'MP_011', 'RushLarge0', '4', 'MP_012',
-                        'SquadRush0', '4', 'MP_013', 'SquadRush0', '4']
-            elif data == ('mapList.getMapIndices', ):
+            if data ==  ('mapList.getMapIndices', ):
                 return [0, 1]
             else:
                 return []
         self.parser.write = Mock(side_effect=fake_write)
+        self.parser.getFullMapRotationList = Mock(return_value=MapListBlock(['4', '3', 'MP_007', 'RushLarge0', '4', 'MP_011', 'RushLarge0', '4', 'MP_012',
+                                                                             'SquadRush0', '4', 'MP_013', 'SquadRush0', '4']))
 
         # mock parser queueEvent method so we can make assertions on it later on
         self.parser.queueEvent = Mock(name="queueEvent method")
