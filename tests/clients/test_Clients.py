@@ -16,10 +16,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-from b3.clients import Clients
+from b3.clients import Clients, Client
 from tests import B3TestCase
+from mock import Mock
 import b3
-import unittest
+
 
 
 class TestClients(B3TestCase):
@@ -28,10 +29,12 @@ class TestClients(B3TestCase):
     
     def setUp(self):
         B3TestCase.setUp(self)
+        Clients.authorizeClients = Mock()
         self.clients = Clients(b3.console)
         self.clients.newClient(1, name='joe')
         self.clients.newClient(2, name=' H a    x\t0r')
-        
+
+
     def test_getClientsByName(self):
         clients = self.clients.getClientsByName('joe')
         self.assertEqual(1, len(clients))
@@ -49,6 +52,25 @@ class TestClients(B3TestCase):
         self.assertEqual([], clients)
 
 
-if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
-    unittest.main()
+    def test_disconnect(self):
+        b3.console.queueEvent = Mock()
+        b3.events.Event = Mock()
+
+        joe = self.clients.getByCID(1)
+        self.assertIsInstance(joe, Client)
+        self.assertTrue(1 in self.clients)
+        self.assertEqual(joe, self.clients[1])
+
+        self.assertEqual(2, len(self.clients))
+        self.clients.disconnect(joe)
+        self.assertEqual(1, len(self.clients))
+
+        # verify that the Client object is removed from Clients
+        self.assertFalse(1 in self.clients)
+        self.assertIsNone(self.clients.getByCID(1))
+        self.assertIsNone(self.clients.getByName('joe'))
+
+        # verify that an proper event was fired
+        assert b3.console.queueEvent.called
+        event = b3.console.queueEvent.call_args[0][0]
+        b3.events.Event.assert_called_once_with(b3.events.EVT_CLIENT_DISCONNECT, 1, client=joe)
