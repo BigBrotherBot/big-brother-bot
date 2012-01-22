@@ -35,12 +35,13 @@
 #    * messages now support named $variables instead of %s
 # 8/11/2010 - 1.3.4 - GrosBedo
 #    * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
-#
+# 22/1/2012 - 1.3.5 -92ndab-Bravo17
+#    * Add JT method for some COD4 mods
 
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.3.4'
+__version__ = '1.3.5'
 
 import b3.parsers.cod2
 import b3.functions
