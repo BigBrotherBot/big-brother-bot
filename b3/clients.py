@@ -1122,8 +1122,7 @@ class Clients(dict):
         if self.has_key(cid):
             self[cid] = None
             del self[cid]
-            del client
-            self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_DISCONNECT, cid))
+            self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_DISCONNECT, cid, client=client))
 
         self.resetIndex()
 
