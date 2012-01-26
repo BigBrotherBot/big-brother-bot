@@ -152,6 +152,15 @@ def run_update(config=None):
     Update(config)
 
 def main():
+    if sys.version_info < (2, 5):
+        print "Sorry, cannot continue, B3 needs a newer version (2.6+) of python."
+        raw_input("Press the [ENTER] key")
+        raise
+    elif sys.version_info > 3:
+        print "Sorry, cannot continue, B3 is not yet compatible with python version 3!"
+        raw_input("Press the [ENTER] key")
+        raise
+
     parser = OptionParser(version=b3.getB3versionString())
     parser.add_option('-c', '--config', dest='config', default=None,
                       help='B3 config file. Example: -c b3.xml')
