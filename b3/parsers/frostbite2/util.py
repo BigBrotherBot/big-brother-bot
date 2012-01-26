@@ -23,23 +23,28 @@
 #    * add __repr__
 #    * fix minor bug in BanlistContent
 #    * add automated tests
+# 1.2 - 2012/01/21 - Courgette
+#    * add a append() method to BanlistContent and MapListBlock classes
+#
 
 """\
 This module provides different utilities specific to the Frostbite engine
 """
- 
+
 __author__  = 'Courgette'
-__version__ = '1.1'
+__version__ = '1.2'
 
 
+class BanlistContentError(Exception):
+    pass
 
-class BanlistContent:
+class BanlistContent(object):
     """
     help extract banlist info from a frostbite banList.list response
     
     usage :
-        words = [2, 
-            'name', 'Courgette', 'perm', , 'test',  
+        words = [
+            'name', 'Courgette', 'perm',         , 'test',
             'name', 'Courgette', 'seconds', 3600 , 'test2'] 
         bansInfo = BanlistContent(words)
         print "num of bans : %s" % len(bansInfo)
@@ -49,22 +54,50 @@ class BanlistContent:
         for b in bansInfo:
             print b
     """
-    
-    def __init__(self, data):
+
+    def __init__(self, data=None):
         """Represent a frostbite banList.list response
         Request: banList.list 
         Response: OK <player ban entries> 
         Response: InvalidArguments 
         Effect: Return list of banned players/IPs/GUIDs. 
-        Comment: The list starts with a number telling how many bans the list is holding. 
-                 After that, 5 words (Id-type, id, ban-type, time and reason) are received for every ban in the list.
+        Comment: 6 words (Id-type, id, ban-type, seconds left, rounds left, and reason) are received for every ban in
+        the list.
+        If no startOffset is supplied, it is assumed to be 0.
+        At most 100 entries will be returned by the command. To retrieve the full list, perform several banList.list
+        calls with increasing offset until the server returns 0 entries.
+        (There is an unsolved synchronization problem hidden there: if a ban expires during this process, then one other
+        entry will be skipped during retrieval. There is no known workaround for this.)
         """
-        self.numOfBans = data[0]
-        self.bansData = data[1:]
-    
+        self.numOfBans = 0
+        self.bansData = []
+        if data is not None:
+            self.append(data)
+
+
+    def append(self, data):
+        """Parses and appends the maps from raw_data.
+        data : words as received from the Frostbite2 mapList.list command
+        """
+        # validation
+        if type(data) not in (tuple, list):
+            raise BanlistContentError("invalid data. Expecting data as a tuple or as a list. Received '%s' instead" % type(data))
+
+        if len(data) == 0:
+            # banList.list returns nothing when the banlist contains no ban.
+            return
+
+        if len(data) % 6 != 0:
+            raise BanlistContentError("invalid data. The total number of elements is not divisible by 6 (%s)" % len(data))
+
+        # append data
+        self.bansData += data
+        self.numOfBans += len(data) / 6
+
+
     def __len__(self):
         return int(self.numOfBans)
-    
+
     def __getitem__(self, key):
         """Returns the ban data, for provided key (int or slice)"""
         if isinstance(key, slice):
@@ -76,24 +109,21 @@ class BanlistContent:
     def getData(self, index):
         if index >= self.numOfBans:
             raise IndexError
-        tmp = self.bansData[index*5:(index+1)*5]
+        tmp = self.bansData[index*6:(index+1)*6]
         return {
             'idType': tmp[0], # name | ip | guid
             'id': tmp[1],
             'banType': tmp[2], # perm | round | seconds
-            'time': tmp[3],
-            'reason': tmp[4], # 80 chars max
+            'seconds_left': tmp[3],
+            'rounds_left': tmp[4],
+            'reason': tmp[5], # 80 chars max
         }
 
     def __repr__(self):
-        txt = "BanlistContent["
-        for p in self:
-            txt += "%r" % p
-        txt += "]"
-        return txt        
-        
-        
-        
+        return "BanlistContent[%s]" % ', '.join([repr(x) for x in self])
+
+
+
 class PlayerInfoBlock:
     """
     help extract player info from a frostbite Player Info Block which we obtain
@@ -111,7 +141,7 @@ class PlayerInfoBlock:
         for p in playersInfo:
             print p
     """
-    
+
     def __init__(self, data):
         """Represent a frostbite Player info block
         The standard set of info for a group of players contains a lot of different 
@@ -140,10 +170,10 @@ class PlayerInfoBlock:
         self._parameter_types = data[1:1+self._num_parameters]
         self._num_players = int(data[1+self._num_parameters])
         self._players_data = data[2+self._num_parameters:]
-    
+
     def __len__(self):
         return self._num_players
-    
+
     def __getitem__(self, key):
         """Returns the player data, for provided key (int or slice)"""
         if isinstance(key, slice):
@@ -159,7 +189,7 @@ class PlayerInfoBlock:
         playerData = self._players_data[index*self._num_parameters:(index+1)*self._num_parameters]
         for i in range(self._num_parameters):
             data[self._parameter_types[i]] = playerData[i]
-        return data 
+        return data
 
     def __repr__(self):
         txt = "PlayerInfoBlock["
@@ -167,8 +197,8 @@ class PlayerInfoBlock:
             txt += "%r" % p
         txt += "]"
         return txt
-    
-    
+
+
 class TeamScoresBlock:
     """
     help extract team scores info from frostbite data obtain from game events
@@ -183,7 +213,7 @@ class TeamScoresBlock:
         for p in teamScores:
             print p
     """
-    
+
     def __init__(self, data):
         """Represent a frostbite Team Scores block
             
@@ -196,14 +226,14 @@ class TeamScoresBlock:
         self._num_teams = int(data[0])
         self._scores = tuple([int(x) for x in data[1:1+self._num_teams]])
         self._target_score = int(data[1+self._num_teams])
-    
+
     def __len__(self):
         return self._num_teams
-    
+
     def __getitem__(self, key):
         """Returns the team score data, for provided key (int or slice)"""
         return self._scores[key]
-    
+
     def get_target_score(self):
         return self._target_score
 
@@ -212,7 +242,11 @@ class TeamScoresBlock:
         txt += ", ".join([repr(x) for x in self._scores])
         txt += "], target: %s" % self._target_score
         return txt
-    
+
+
+class MapListBlockError(Exception):
+    pass
+
 class MapListBlock:
     """
     help extract map list from frostbite data
@@ -227,12 +261,12 @@ class MapListBlock:
         for p in mapList:
             print p
     """
-    
-    def __init__(self, data):
+
+    def __init__(self, data=None):
         """This describes the set of maps which the server rotates through. 
 
         Format is as follows: 
-            <number of maps: integer> - number of maps that follow 
+            <number of maps: integer> - number of maps that follow
             <number of words per map: integer> - number of words per map 
             <map name: string> - name of map 
             <gamemode name: string> - name of gamemode 
@@ -242,21 +276,65 @@ class MapListBlock:
         in the future, DICE might add extra words per map after the first three. However, 
         the first three words are very likely to remain the same. 
         """
-        self._num_maps = int(data[0])
-        self._num_words = int(data[1])
+        self._num_maps = 0
+        self._num_words = None
+        self._map_data = tuple()
+        if data is not None:
+            self.append(data)
+
+    def append(self, data):
+        """Parses and appends the maps from raw_data.
+        data : words as received from the Frostbite2 mapList.list command
+        """
+        # validation
+        if type(data) not in (tuple, list):
+            raise MapListBlockError("invalid data. Expecting data as a tuple or as a list. Received '%s' instead" % type(data))
+
+        if len(data) < 2:
+            raise MapListBlockError("invalid data. Data should have at least 2 elements. %r", data)
+
+        try:
+            num_maps = int(data[0])
+        except ValueError, err:
+            raise MapListBlockError("invalid data. First element should be a integer, got %r" % data[0], err)
+
+        try:
+            num_words = int(data[1])
+        except ValueError, err:
+            raise MapListBlockError("invalid data. Second element should be a integer, got %r" % data[1], err)
+
+        if len(data) != (2 + (num_maps * num_words)):
+            raise MapListBlockError("invalid data. The total number of elements is not coherent with the number of maps declared. %s != (2 + %s * %s)" % (len(data), num_maps, num_words))
+
+        if num_words < 3:
+            raise MapListBlockError("invalid data. Expecting at least 3 words of data per map")
+
+        if self._num_words is not None and self._num_words != num_words:
+            raise MapListBlockError("cannot append data. nums_words are different from existing data.")
+
+        # parse data
         map_data = []
-        for i in range(self._num_maps):
-            base_index = 2 + (i * self._num_words)
-            map_data.append({'name': data[base_index+0], 'gamemode': data[base_index+1], 'num_of_rounds': int(data[base_index+2])})
-        self._map_data = tuple(map_data)
-    
+        for i in range(num_maps):
+            base_index = 2 + (i * num_words)
+            try:
+                num_rounds = int(data[base_index+2])
+            except ValueError:
+                raise MapListBlockError("invalid data. %sth element should be a integer, got %r" % (base_index + 2, data[base_index + 2]))
+            map_data.append({'name': data[base_index+0], 'gamemode': data[base_index+1], 'num_of_rounds': num_rounds})
+
+        # append data
+        self._map_data += tuple(map_data)
+        self._num_maps = len(self._map_data)
+        if self._num_words is None:
+            self._num_words = num_words
+
     def __len__(self):
         return self._num_maps
-    
+
     def __getitem__(self, key):
         """Returns the map data, for provided key (int or slice)"""
         return self._map_data[key]
-    
+
     def __repr__(self):
         txt = "MapListBlock["
         map_info_repr = []
@@ -287,162 +365,3 @@ class MapListBlock:
                 response[i] = map_info
             i += 1
         return response
-
-
-if __name__ == '__main__':
-        
-    import unittest
-    class TestBanlistContent(unittest.TestCase):
-        def test_bad(self):
-            self.assertRaises(TypeError, BanlistContent, None)
-            self.assertRaises(IndexError, BanlistContent, [])
-        def test_minimal(self):
-            self.assertEqual(0, len(BanlistContent([0])))
-            self.assertEqual('BanlistContent[]', repr(BanlistContent([0])))
-            self.assertEqual(0, len(BanlistContent(['0'])))
-            self.assertEqual('BanlistContent[]', repr(BanlistContent(['0'])))
-            self.assertEqual(1, len(BanlistContent(['1','d1','d2','d3','d4','d5'])))
-            self.assertEqual("BanlistContent[{'idType': 'd1', 'reason': 'd5', 'banType': 'd3', 'id': 'd2', 'time': 'd4'}]", repr(BanlistContent(['1','d1','d2','d3','d4','d5'])))
-        def test_1(self):
-            bloc = BanlistContent(['2','d1','d2','d3','d4','d5','p1','p2','p3','p4','p5'])
-            self.assertEqual(2, len(bloc))
-            self.assertEqual("BanlistContent[{'idType': 'd1', 'reason': 'd5', 'banType': 'd3', 'id': 'd2', 'time': 'd4'}{'idType': 'p1', 'reason': 'p5', 'banType': 'p3', 'id': 'p2', 'time': 'p4'}]", repr(bloc))
-            
-    class TestPlayerInfoBlock(unittest.TestCase):
-        def test_no_param(self):
-            self.assertRaises(TypeError, PlayerInfoBlock, None)
-        def test_none(self):
-            self.assertRaises(TypeError, PlayerInfoBlock, (None,))
-        def test_empty_list(self):
-            self.assertRaises(TypeError, PlayerInfoBlock, ([],))
-        def test_bad_list(self):
-            self.assertRaises(TypeError, PlayerInfoBlock, ([None],))
-            self.assertRaises(TypeError, PlayerInfoBlock, ([0],))
-            self.assertRaises(TypeError, PlayerInfoBlock, ([0,1],))
-        def test_minimal(self):
-            self.assertEqual(0, len(PlayerInfoBlock([0,0])))
-            self.assertEqual('PlayerInfoBlock[]', repr(PlayerInfoBlock([0,0])))
-            self.assertEqual(0, len(PlayerInfoBlock(['0','0'])))
-            self.assertEqual(0, len(PlayerInfoBlock(['1','test','0'])))
-            self.assertEqual('PlayerInfoBlock[]', repr(PlayerInfoBlock(['1','test','0'])))
-        def test_1(self):
-            bloc = PlayerInfoBlock(['1','param1','1','blabla'])
-            self.assertEqual(1, len(bloc))
-            self.assertEqual('blabla', bloc[0]['param1'])
-            self.assertEqual("PlayerInfoBlock[{'param1': 'blabla'}]", repr(bloc))
-        def test_2(self):
-            bloc = PlayerInfoBlock(['1','param1','2','bla1', 'bla2'])
-            self.assertEqual(2, len(bloc))
-            self.assertEqual('bla1', bloc[0]['param1'])
-            self.assertEqual('bla2', bloc[1]['param1'])
-            self.assertEqual("PlayerInfoBlock[{'param1': 'bla1'}{'param1': 'bla2'}]", repr(bloc))
-        def test_3(self):
-            bloc = PlayerInfoBlock(['2','param1','param2','2','bla1','bla2','foo1','foo2'])
-            self.assertEqual(2, len(bloc))
-            self.assertEqual('bla1', bloc[0]['param1'])
-            self.assertEqual('bla2', bloc[0]['param2'])
-            self.assertEqual('foo1', bloc[1]['param1'])
-            self.assertEqual('foo2', bloc[1]['param2'])
-            self.assertEqual("PlayerInfoBlock[{'param2': 'bla2', 'param1': 'bla1'}{'param2': 'foo2', 'param1': 'foo1'}]", repr(bloc))
-
-    class TestTeamScoreBlock(unittest.TestCase):
-        def test_no_param(self):
-            self.assertRaises(TypeError, TeamScoresBlock, None)
-        def test_none(self):
-            self.assertRaises(TypeError, TeamScoresBlock, (None,))
-        def test_empty_list(self):
-            self.assertRaises(TypeError, TeamScoresBlock, ([],))
-        def test_bad_list(self):
-            self.assertRaises(TypeError, TeamScoresBlock, ([None],))
-            self.assertRaises(TypeError, TeamScoresBlock, ([0],))
-            self.assertRaises(TypeError, TeamScoresBlock, ([0,1],))
-        def test_minimal(self):
-            self.assertEqual(0, len(TeamScoresBlock([0,1000])))
-            self.assertEqual('TeamScoresBlock[], target: 100', repr(TeamScoresBlock([0,100])))
-            self.assertEqual(0, len(TeamScoresBlock(['0','0'])))
-            self.assertEqual(1, len(TeamScoresBlock(['1','10','5000'])))
-            self.assertEqual('TeamScoresBlock[10], target: 5000', repr(TeamScoresBlock(['1','10','5000'])))
-        def test_1(self):
-            bloc = TeamScoresBlock(['2','15','48','2500'])
-            self.assertEqual(2, len(bloc))
-            self.assertEqual(15, bloc[0])
-            self.assertEqual(48, bloc[1])
-            self.assertEqual("TeamScoresBlock[15, 48], target: 2500", repr(bloc))
-            
-    class TestMapListBlock(unittest.TestCase):
-        def test_no_param(self):
-            self.assertRaises(TypeError, MapListBlock, None)
-        def test_none(self):
-            self.assertRaises(TypeError, MapListBlock, (None,))
-        def test_empty_list(self):
-            self.assertRaises(TypeError, MapListBlock, ([],))
-        def test_bad_list(self):
-            self.assertRaises(TypeError, MapListBlock, ([None],))
-            self.assertRaises(TypeError, MapListBlock, ([0],))
-            self.assertRaises(TypeError, MapListBlock, ([0,1],))
-        def test_minimal(self):
-            self.assertEqual(0, len(MapListBlock([0,0])))
-            self.assertEqual('MapListBlock[]', repr(MapListBlock([0,0])))
-            self.assertEqual(0, len(MapListBlock(['0','3'])))
-            self.assertEqual(1, len(MapListBlock(['1', '3', 'test','mode', '2'])))
-            self.assertEqual('MapListBlock[]', repr(MapListBlock(['0','3'])))
-            self.assertEqual(0, len(MapListBlock(['0','3']).getByName('MP_003')))
-        def test_1(self):
-            bloc = MapListBlock(['1', '3', 'test','mode', '2'])
-            self.assertEqual(1, len(bloc))
-            self.assertEqual('test', bloc[0]['name'])
-            self.assertEqual('mode', bloc[0]['gamemode'])
-            self.assertEqual(2, bloc[0]['num_of_rounds'])
-            self.assertEqual("MapListBlock[test:mode:2]", repr(bloc))
-            self.assertEqual(0, len(bloc.getByName('MP_003')))
-            self.assertEqual(1, len(bloc.getByName('test')))
-        def test_2(self):
-            bloc = MapListBlock(['2','3','map1','mode1', '1', 'map2', 'mode2', '2'])
-            self.assertEqual(2, len(bloc))
-            self.assertEqual('map1', bloc[0]['name'])
-            self.assertEqual('mode1', bloc[0]['gamemode'])
-            self.assertEqual(1, bloc[0]['num_of_rounds'])
-            self.assertEqual('map2', bloc[1]['name'])
-            self.assertEqual('mode2', bloc[1]['gamemode'])
-            self.assertEqual(2, bloc[1]['num_of_rounds'])
-            self.assertEqual("MapListBlock[map1:mode1:1, map2:mode2:2]", repr(bloc))
-            self.assertEqual(0, len(bloc.getByName('MP_003')))
-            self.assertEqual(1, len(bloc.getByName('map1')))
-            self.assertEqual(1, len(bloc.getByName('map2')))
-            self.assertIn(0, bloc.getByName('map1'))
-            self.assertIn(1, bloc.getByName('map2'))
-            self.assertTrue(bloc.getByName('map1')[0]['gamemode'] == 'mode1')
-            self.assertTrue(bloc.getByName('map2')[1]['gamemode'] == 'mode2')
-            self.assertEqual(0, len(bloc.getByNameAndGamemode('map1', 'mode?')))
-            self.assertEqual(1, len(bloc.getByNameAndGamemode('map1', 'mode1')))
-            self.assertEqual(0, len(bloc.getByNameAndGamemode('map2', 'mode?')))
-            self.assertEqual(1, len(bloc.getByNameAndGamemode('map2', 'mode2')))
-            self.assertIn(0, bloc.getByNameAndGamemode('map1', 'mode1'))
-            self.assertIn(1, bloc.getByNameAndGamemode('map2', 'mode2'))
-
-
-        def test_3(self):
-            bloc = MapListBlock(['3','3', 'map1','mode1','1', 'map2','mode2','2', 'map1','mode2','2'])
-            self.assertEqual(3, len(bloc))
-            self.assertEqual('map1', bloc[2]['name'])
-            self.assertEqual('mode2', bloc[2]['gamemode'])
-            self.assertEqual(0, len(bloc.getByName('MP_003')))
-            self.assertEqual(2, len(bloc.getByName('map1')))
-            self.assertEqual(1, len(bloc.getByName('map2')))
-            self.assertEqual("MapListBlock[map1:mode1:1, map2:mode2:2, map1:mode2:2]", repr(bloc))
-            self.assertIn(0, bloc.getByName('map1'))
-            self.assertIn(1, bloc.getByName('map2'))
-            self.assertIn(2, bloc.getByName('map1'))
-            self.assertTrue(bloc.getByName('map1')[0]['gamemode'] == 'mode1')
-            self.assertTrue(bloc.getByName('map1')[2]['gamemode'] == 'mode2')
-            self.assertTrue(bloc.getByName('map2')[1]['gamemode'] == 'mode2')
-            self.assertEqual(0, len(bloc.getByNameAndGamemode('map1', 'mode?')))
-            self.assertEqual(1, len(bloc.getByNameAndGamemode('map1', 'mode1')))
-            self.assertEqual(1, len(bloc.getByNameAndGamemode('map1', 'mode2')))
-            self.assertEqual(0, len(bloc.getByNameAndGamemode('map2', 'mode?')))
-            self.assertEqual(0, len(bloc.getByNameAndGamemode('map2', 'mode1')))
-            self.assertEqual(1, len(bloc.getByNameAndGamemode('map2', 'mode2')))
-            self.assertIn(0, bloc.getByNameAndGamemode('map1', 'mode1'))
-            self.assertIn(1, bloc.getByNameAndGamemode('map2', 'mode2'))
-            self.assertIn(2, bloc.getByNameAndGamemode('map1', 'mode2'))
-    unittest.main()

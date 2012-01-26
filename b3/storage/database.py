@@ -167,15 +167,21 @@ class DatabaseStorage(Storage):
 
         if protocol == 'mysql':
             try:
-                import MySQLdb
-                return MySQLdb.connect(
-                                       host=self.dsnDict['host'], 
-                                       port=self.dsnDict['port'], 
-                                       user=self.dsnDict['user'], 
-                                       passwd=self.dsnDict['password'], 
-                                       db=self.dsnDict['path'][1:], 
-                                       charset = "utf8", 
-                                       use_unicode = True) 
+                # validate dsnDict
+                if not self.dsnDict['host']:
+                    self.console.critical("invalid MySQL host in %(protocol)s://%(user)s:******@%(host)s:%(port)s%(path)s" % self.dsnDict)
+                elif not self.dsnDict['path'] or not self.dsnDict['path'][1:]:
+                    self.console.critical("missing MySQL database name in %(protocol)s://%(user)s:******@%(host)s:%(port)s%(path)s" % self.dsnDict)
+                else:
+                    import MySQLdb
+                    return MySQLdb.connect(
+                                           host=self.dsnDict['host'],
+                                           port=self.dsnDict['port'],
+                                           user=self.dsnDict['user'],
+                                           passwd=self.dsnDict['password'],
+                                           db=self.dsnDict['path'][1:],
+                                           charset = "utf8",
+                                           use_unicode = True)
             except ImportError, err:
                 self.console.critical("%s. You need to install python-mysqldb. Look for 'dependencies' in B3 documentation.",err)
         elif protocol == 'sqlite':

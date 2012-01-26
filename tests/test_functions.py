@@ -55,7 +55,13 @@ class TestSplitDSN(unittest.TestCase):
         self.assertDsnEqual('mysql://b3:password@localhost/b3', 
         {'protocol': 'mysql', 'host': 'localhost', 'user': 'b3', 
          'path': '/b3', 'password': 'password', 'port': 3306} )
-        
+        self.assertDsnEqual('mysql://b3:password@localhost:3406/b3',
+        {'protocol': 'mysql', 'host': 'localhost', 'user': 'b3',
+         'path': '/b3', 'password': 'password', 'port': 3406} )
+        self.assertDsnEqual("mysql://someuser:somepasswd@somehost:3326/",
+        {'protocol': 'mysql', 'host': 'somehost', 'user': 'someuser',
+         'path': '/', 'password': 'somepasswd', 'port': 3326} )
+
 class TestFuzziGuidMatch(unittest.TestCase):
     def test_1(self):
         self.assertTrue(functions.fuzzyGuidMatch( '098f6bcd4621d373cade4e832627b4f6', '098f6bcd4621d373cade4e832627b4f6'))
