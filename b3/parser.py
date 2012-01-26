@@ -760,7 +760,7 @@ class Parser(object):
         for plugin_name in _plugins:
             start_plugin(plugin_name)
 
-        self.screen.write(' (%s)\n' % len(_plugins))
+        self.screen.write(' (%s)\n' % (len(_plugins)+1))
 
     def disablePlugins(self):
         """Disable all plugins except for publist, ftpytail and admin"""
