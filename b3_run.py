@@ -30,7 +30,11 @@
 __author__  = 'ThorN'
 __version__ = '1.1.1'
 
-import b3.run
+try:
+    import b3.run
+except:
+    print("Sorry, cannot continue, B3 is not yet compatible with python version 3 and is not compatible with versions older than 2.6!")
+    exit(1)
 
 def main():
     b3.run.main()
