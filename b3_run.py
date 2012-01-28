@@ -30,11 +30,15 @@
 __author__  = 'ThorN'
 __version__ = '1.1.1'
 
-try:
-    import b3.run
-except:
-    print("Sorry, cannot continue, B3 is not yet compatible with python version 3 and is not compatible with versions older than 2.6!")
-    exit(1)
+
+
+import sys
+if sys.version_info >= (3,):
+    raise SystemExit("Sorry, cannot continue, B3 is not yet compatible with python version 3!")
+if sys.version_info < (2,6):
+    raise SystemExit("Sorry, cannot continue, B3 is not compatible with python versions earlier than 2.6!")  
+    
+import b3.run    
 
 def main():
     b3.run.main()
