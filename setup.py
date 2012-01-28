@@ -37,10 +37,10 @@ from setuptools import setup, find_packages
 
 # read version from the b3/PKG-INFO file
 re_pkginfo_version = re.compile('^\s*Version:\s*(?P<version>(\d+\.\d+(\.\d+)?((a|b|dev)\d*)?)?)\s*$', re.MULTILINE)
-b3version = None
-with open('b3/PKG-INFO', 'r') as f:
-    m = re_pkginfo_version.search(f.read())
-b3version = m.group("version")
+b3version = "1.8.0b2"
+#with open('b3/PKG-INFO', 'r') as f:
+#    m = re_pkginfo_version.search(f.read())
+#b3version = m.group("version")
 
 _setupinfo = {
     'name' : "b3",
@@ -48,7 +48,7 @@ _setupinfo = {
     'packages' : find_packages(),
     'extras_require' : { 'mysql' : 'MySQL-python' },
     'package_data' : {
-        '': ['conf/*.xml', 'extplugins/conf/*.xml','sql/*.*', 'sql/sqlite/*', 'docs/*', 'README.md']
+        '': ['conf/*.xml', 'conf/templates/*.tpl', 'extplugins/conf/*.xml','sql/*.*', 'sql/sqlite/*', 'docs/*', 'README.md']
     },
     'zip_safe' : False,
     'author' : 'Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Leveil (Courgette)',
