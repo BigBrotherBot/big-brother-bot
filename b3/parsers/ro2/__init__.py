@@ -49,6 +49,8 @@
 #   Auth client if not already authed when chat used
 #   2011-12-28 : 1.3
 #   Allow Q3 Color Codes in names, since game doesn't filter them out
+#   2012-01-27 : 1.4
+#   Track team changes for eg teamspeak plugin
 #
 #
 from b3 import functions
@@ -69,7 +71,7 @@ import hashlib
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.3'
+__version__ = '1.4'
 
 
 class Ro2Parser(b3.parser.Parser):
@@ -603,7 +605,10 @@ class Ro2Parser(b3.parser.Parser):
                 client.team = cl['team']
                 client.cid = cl['playerid']
                 client.ip = cl['ip']
-
+            else:
+                if client.team != cl['team']:
+                    self.verbose2('Team change detected for %s' % client.name)
+                    client.team = cl['team']
             self.verbose2('onServerPlayer: name: %s, team: %s' %( client.name, client.team ))
 
             
