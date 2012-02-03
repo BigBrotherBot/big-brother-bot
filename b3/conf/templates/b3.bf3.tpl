@@ -10,7 +10,10 @@
 		<set name="logfile">@conf/b3.log</set>
 	</settings>
 	<settings name="bf3">
+        <!-- max_say_line_length : when sending a message, lines will have at most this number of characters. -->
 		<set name="max_say_line_length">128</set>
+		<!-- message_delay : the delay (in second) to wait between two messages -->
+        <set name="message_delay">0.8</set>
 	</settings>
 	<settings name="server">
 		<set name="public_ip">11.22.33.44</set>

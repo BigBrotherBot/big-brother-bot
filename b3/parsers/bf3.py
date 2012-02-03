@@ -95,29 +95,16 @@ class Bf3Parser(AbstractParser):
         'vehicleSpawnDelay',
     )
 
-    
+
     def startup(self):
         AbstractParser.startup(self)
         
         # create the 'Server' client
         self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN, squad=None)
 
-        if self.config.has_option('bf3', 'max_say_line_length'):
-            try:
-                maxlength = self.config.getint('bf3', 'max_say_line_length')
-                if maxlength > SAY_LINE_MAX_LENGTH:
-                    self.warning('max_say_line_length cannot be greater than %s' % SAY_LINE_MAX_LENGTH)
-                    maxlength = SAY_LINE_MAX_LENGTH
-                if maxlength < 20:
-                    self.warning('max_say_line_length is way too short. using default')
-                    maxlength = self._settings['line_length']
-                self._settings['line_length'] = maxlength
-                self._settings['min_wrap_length'] = maxlength
-            except Exception, err:
-                self.error('failed to read max_say_line_length setting "%s" : %s' % (self.config.get('bf3', 'max_say_line_length'), err))
-        self.debug('line_length: %s' % self._settings['line_length'])
-            
-            
+        self.load_conf_max_say_line_length()
+        self.load_config_message_delay()
+
         self.verbose('GameType: %s, Map: %s' %(self.game.gameType, self.game.mapName))
         
 
@@ -215,6 +202,42 @@ class Bf3Parser(AbstractParser):
     #    Other methods
     #    
     ###############################################################################################
+
+
+
+    def load_config_message_delay(self):
+        if self.config.has_option('bf3', 'message_delay'):
+            try:
+                delay_sec = self.config.getfloat('bf3', 'message_delay')
+                if delay_sec > 3:
+                    self.warning('message_delay cannot be greater than 3')
+                    delay_sec = 3
+                if delay_sec < .5:
+                    self.warning('message_delay cannot be less than 0.5 second.')
+                    delay_sec = .5
+                self._settings['message_delay'] = delay_sec
+            except Exception, err:
+                self.error(
+                    'failed to read message_delay setting "%s" : %s' % (self.config.get('bf3', 'message_delay'), err))
+        self.debug('message_delay: %s' % self._settings['message_delay'])
+
+
+    def load_conf_max_say_line_length(self):
+        if self.config.has_option('bf3', 'max_say_line_length'):
+            try:
+                maxlength = self.config.getint('bf3', 'max_say_line_length')
+                if maxlength > SAY_LINE_MAX_LENGTH:
+                    self.warning('max_say_line_length cannot be greater than %s' % SAY_LINE_MAX_LENGTH)
+                    maxlength = SAY_LINE_MAX_LENGTH
+                if maxlength < 20:
+                    self.warning('max_say_line_length is way too short. using minimum value 20')
+                    maxlength = 20
+                self._settings['line_length'] = maxlength
+                self._settings['min_wrap_length'] = maxlength
+            except Exception, err:
+                self.error('failed to read max_say_line_length setting "%s" : %s' % (
+                    self.config.get('bf3', 'max_say_line_length'), err))
+        self.debug('line_length: %s' % self._settings['line_length'])
 
 
     def checkVersion(self):
