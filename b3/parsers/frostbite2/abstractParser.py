@@ -24,7 +24,7 @@ import sys, re, traceback, time, string, Queue, threading
 import b3.parser
 from b3.parsers.frostbite2.rcon import Rcon as FrostbiteRcon
 from b3.parsers.frostbite2.protocol import FrostbiteServer, CommandFailedError, CommandError, NetworkError
-from b3.parsers.frostbite2.util import PlayerInfoBlock, MapListBlock
+from b3.parsers.frostbite2.util import PlayerInfoBlock, MapListBlock, BanlistContent
 import b3.events
 import b3.cvar
 from b3.functions import soundex, levenshteinDistance
@@ -981,7 +981,7 @@ class AbstractParser(b3.parser.Parser):
         This does not return all available maps
         """
         response = []
-        for map_list in MapListBlock(self.write(('mapList.list',))):
+        for map_list in self.getFullMapRotationList():
             response.append('%s (%s)' % (self.getEasyName(map_list['name']), self.getGameMode(map_list['gamemode'])))
         return response
 
@@ -990,14 +990,14 @@ class AbstractParser(b3.parser.Parser):
         """\
         load the next map/level
         """
-        maplist = MapListBlock(self.write(('mapList.list',)))
+        maplist = self.getFullMapRotationList()
         if not len(maplist):
             # maplist is empty, fix this situation by loading save mapList from disk
             try:
                 self.write(('mapList.load',))
             except Exception, err:
                 self.warning(err)
-            maplist = MapListBlock(self.write(('mapList.list',)))
+            maplist = self.getFullMapRotationList()
             if not len(maplist):
                 # maplist is still empty, fix this situation by adding current map to map list
                 current_max_rounds = self.write(('mapList.getRounds',))[1]
@@ -1039,7 +1039,7 @@ class AbstractParser(b3.parser.Parser):
                 return match
             
         if map in supportedMaps:
-            mapList = MapListBlock(self.write(('mapList.list',)))
+            mapList = self.getFullMapRotationList()
 
             # we want to find the next index to set for mapList
             nextMapListIndex = None
@@ -1104,6 +1104,34 @@ class AbstractParser(b3.parser.Parser):
     #    Other methods
     #    
     ###############################################################################################
+
+    def getFullMapRotationList(self):
+        """query the Frostbite2 game server and return a MapListBlock containing all maps of the current
+         map rotation list.
+        """
+        response = MapListBlock()
+        offset = 0
+        tmp = self.write(('mapList.list', offset))
+        tmp_num_maps = len(MapListBlock(tmp))
+        while tmp_num_maps:
+            response.append(tmp)
+            tmp = self.write(('mapList.list', len(response)))
+            tmp_num_maps = len(MapListBlock(tmp))
+        return response
+
+    def getFullBanList(self):
+        """query the Frostbite2 game server and return a BanlistContent object containing all bans stored on the game
+        server memory.
+        """
+        response = BanlistContent()
+        offset = 0
+        tmp = self.write(('banList.list', offset))
+        tmp_num_bans = len(BanlistContent(tmp))
+        while tmp_num_bans:
+            response.append(tmp)
+            tmp = self.write(('banList.list', len(response)))
+            tmp_num_bans = len(BanlistContent(tmp))
+        return response
 
     def getHardName(self, mapname):
         """ Change human map name to map id """
@@ -1174,15 +1202,16 @@ class AbstractParser(b3.parser.Parser):
         
     def getNextMap(self):
         """Return the name of the next map and gamemode"""
-        levelnames = self.write(('mapList.list',))
-        mapnames = levelnames[2::3]
-        gamemodenames = levelnames[3::3]
-
-        mapIndices = self.write(('mapList.getMapIndices', ))
-        nextmap = mapnames[int(mapIndices[1])]
-        nextgamemode = gamemodenames[int(mapIndices[1])]
-
-        return '%s (%s)' % (self.getEasyName(nextmap), self.getGameMode(nextgamemode))
+        maps = self.getFullMapRotationList()
+        if len(maps) == 0:
+            next_map_name = self.game.mapName
+            next_map_gamemode = self.game.gameType
+        else:
+            mapIndices = self.write(('mapList.getMapIndices', ))
+            next_map_info = maps[int(mapIndices[1])]
+            next_map_name = next_map_info['name']
+            next_map_gamemode = next_map_info['gamemode']
+        return '%s (%s)' % (self.getEasyName(next_map_name), self.getGameMode(next_map_gamemode))
 
     def getSupportedMapIds(self):
         """return a list of supported levels for the current game mod"""

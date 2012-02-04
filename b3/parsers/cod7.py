@@ -80,7 +80,7 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
     _commands['set'] = 'setadmindvar %(name)s "%(value)s"'
     _commands['kick'] = 'clientkick %(cid)s "%(reason)s"'
     _commands['ban'] = 'banclient %(cid)s'
-    _commands['unban'] = 'unbanuser %(name)s'
+    _commands['unban'] = 'unbanuser "%(name)s"'
     _commands['tempban'] = 'clientkick %(cid)s "%(reason)s"'
 
     """\
