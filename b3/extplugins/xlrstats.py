@@ -131,6 +131,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     prematch_maxtime = 70
     announce = False
     keep_history = True
+    keep_time = True
     minPlayers = 3 # minimum number of players to collect stats
     _currentNrPlayers = 0 # current number of players present
 
@@ -299,8 +300,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         self.console.cron + self._cronTabKillBonus
 
         #start the ctime subplugin
-        p = CtimePlugin(self.console, self.ctime_table)
-        p.startup()
+        if self.keep_time:
+            p = CtimePlugin(self.console, self.ctime_table)
+            p.startup()
 
         #start the xlrstats controller
         p = XlrstatscontrollerPlugin(self.console, self.minPlayers)
@@ -423,6 +425,12 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.debug('Using default value (%d) for settings::announce', self.announce)
 
         try:
+            self.keep_time = self.config.getboolean('settings', 'keep_time')
+        except:
+            self.debug('Using default value (%d) for settings::keep_time', self.keep_time)
+
+        # Tablenames and stuff
+        try:
             self.playerstats_table = self.config.get('tables', 'playerstats')
             self._defaultTableNames = False
         except:
@@ -496,6 +504,14 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         except:
             self.history_weekly_table = 'xlr_history_weekly'
             self.debug('Using default value (%s) for tables::history_weekly', self.history_weekly_table)
+
+        #ctime table
+        try:
+            self.ctime_table = self.config.get('tables', 'ctime')
+            self._defaultTableNames = False
+        except:
+            self.ctime_table = 'ctime'
+            self.debug('Using default value (%s) for tables::ctime', self.ctime_table)
 
         return
 
