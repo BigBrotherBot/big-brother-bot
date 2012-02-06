@@ -121,13 +121,23 @@ class HttpytailPlugin(b3.plugin.Plugin):
             pass
 
     def update(self):
+        try:
+            self.file = open(self.lgame_log, 'ab')
+            self.file.write('\r\n')
+            self.file.write('B3 has been restarted\r\n')
+            self.file.write('\r\n')
+            self.file.close()
+        except Exception, e:
+            if hasattr(e, 'reason'):
+                self.error(str(e.reason))
+            if hasattr(e, 'code'):
+                self.error(str(e.code))
+            self.debug(str(e))
+            
         while self.console.working:
             try:
                 # Opening the local temporary file
                 self.file = open(self.lgame_log, 'ab')
-                self.file.write('\r\n')
-                self.file.write('B3 has been restarted\r\n')
-                self.file.write('\r\n')
                 # Crafting the HTTP request
                 # - user agent header
                 headers =  { 'User-Agent'  : user_agent  }
