@@ -51,10 +51,11 @@
 # 03/07/2011 - 1.4.23 - 82ndab.Bravo17 - adjust sync() timing for high slot count servers and login plugin
 #                       Sync now occurs 60 seconds after ExitLevel (map change) rather than 30 seconds after every round start
 # 11/09/2011 - 1.4.24 - 82ndab.Bravo17 - New client will now join Auth queue if slot shows as 'Disconnected' in Auth queue
-# 10/30/2011 - 1.4.25 -xlr8or - Add decoding to data in say, sayTeam and Tell methods
+# 10/30/2011 - 1.4.25 - xlr8or - Add decoding to data in say, sayTeam and Tell methods
+# 01/28/2012 - 1.4.26 - 82ndab.Bravo17 - Add special case COD7 suicide regex where attacker team and name appear to be swapped in the console output
 
 __author__ = 'ThorN, xlr8or'
-__version__ = '1.4.25'
+__version__ = '1.4.26'
 
 import re, string, threading
 import b3
@@ -111,6 +112,11 @@ class CodParser(AbstractParser):
         re.compile(
             r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]*);(?P<name>[^;]+);(?P<aguid>[^;]*);(?P<acid>[0-9]{1,2});(?P<ateam>[a-z]*);(?P<aname>[^;]+);(?P<aweap>[a-z0-9_-]+);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$'
             , re.IGNORECASE),
+        # For this one they appear to have swapped the attacker team and name in the output, hence the specific entry for attacker name as it is a unique case
+        re.compile(
+            r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]*);(?P<name>[^;]+);(?P<aguid>[^;]*);(?P<acid>[0-9]{1,2});(?P<aname>world);(?P<ateam>);(?P<aweap>none);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$'
+            , re.IGNORECASE),
+
 
         #team actions
         re.compile(
