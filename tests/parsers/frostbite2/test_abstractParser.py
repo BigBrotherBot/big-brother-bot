@@ -300,3 +300,40 @@ class Test_getFullBanList(Write_controlled_TestCase):
             ((('banList.list', 5),), {}),
             ((('banList.list', 10),), {}),
         ], self.parser.write.call_args_list
+
+
+
+class Test_patch_b3_clients_getByMagic(AbstractParser_TestCase):
+
+    def setUp(self):
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.parser = AbstractParser(self.conf)
+        # setup context
+        self.foobar = self.parser.clients.newClient(cid='Foobar', name='Foobar', guid="aaaaaaa5555555")
+        self.joe = self.parser.clients.newClient(cid='joe', name='joe', guid="bbbbbbbb5555555")
+        self.jack = self.parser.clients.newClient(cid='jack', name='jack', guid="ccccccccc5555555")
+        self.jacky = self.parser.clients.newClient(cid='jacky', name='jacky', guid="ddddddddd5555555")
+        self.p123456 = self.parser.clients.newClient(cid='123456', name='123456', guid="eeeeeee5555555")
+
+    def test_exact_name(self):
+        self.assertEqual([self.foobar], self.parser.clients.getByMagic('Foobar'))
+        self.assertEqual([self.foobar], self.parser.clients.getByMagic('fOObAr'))
+
+    def test_partial_name(self):
+        self.assertEqual([self.foobar], self.parser.clients.getByMagic('foo'))
+        self.assertEqual([self.foobar], self.parser.clients.getByMagic('oba'))
+        self.assertSetEqual(set([self.jacky, self.jack]), set(self.parser.clients.getByMagic('jac')))
+        self.assertSetEqual(set([self.jacky, self.jack]), set(self.parser.clients.getByMagic('jack')))
+
+    def test_player_123456_with_exact_name(self):
+        self.assertEqual([self.p123456], self.parser.clients.getByMagic('123456'))
+
+    def test_player_123456_with_partial_name(self):
+        """
+        This test will fail if the b3.clients.Clients.getByMagic method was not patched
+        """
+        self.assertEqual([self.p123456], self.parser.clients.getByMagic('345'))
