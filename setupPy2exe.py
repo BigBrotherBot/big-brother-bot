@@ -74,7 +74,8 @@ setup(
                 "smtplib", "email.*", "calendar", "email.mime.*", # contact plugin
                 "telnetlib", # teamspeak* plugins
                 "dbhash", # to make anydbm imports work with py2exe
-                "uuid", # metabans and ggcstream plugins
+                "uuid", # metabans, ggcstream and telnet plugins
+                "SocketServer", # telnet plugin
             ],
         }
     },

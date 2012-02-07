@@ -31,7 +31,6 @@ __author__  = 'ThorN'
 __version__ = '1.1.1'
 
 
-
 import sys
 if sys.version_info >= (3,):
     raise SystemExit("Sorry, cannot continue, B3 is not yet compatible with python version 3!")

@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 __author__  = 'Courgette'
-__version__ = '0.3'
+__version__ = '0.4'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -45,7 +45,7 @@ class AbstractParser(b3.parser.Parser):
     _serverConnection = None
     _nbConsecutiveConnFailure = 0
 
-    frostbite_event_queue = Queue.Queue(200)
+    frostbite_event_queue = Queue.Queue(400)
     sayqueue = Queue.Queue(100)
     sayqueuelistener = None
 
@@ -247,7 +247,10 @@ class AbstractParser(b3.parser.Parser):
         if not self.working:
             self.verbose("dropping Frostbite event %r" % packet)
         self.console(repr(packet))
-        self.frostbite_event_queue.put((self.time(), self.time() + 10, packet), timeout=2)
+        try:
+            self.frostbite_event_queue.put((self.time(), self.time() + 10, packet), timeout=2)
+        except Queue.Full:
+            self.error("Frostbite event queue full, dropping event %r" % packet)
 
     def routeFrostbitePacket(self, packet):
         if packet is None:
