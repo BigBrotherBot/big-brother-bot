@@ -1809,8 +1809,6 @@ class CtimePlugin(b3.plugin.Plugin):
         self.ctime_table = cTimeTable
         self.registerEvent(b3.events.EVT_CLIENT_AUTH)
         self.registerEvent(b3.events.EVT_CLIENT_DISCONNECT)
-
-    def onStartup(self):
         self.query = self.console.storage.query
         tzName = self.console.config.get('b3', 'time_zone').upper()
         tzOffest = b3.timezones.timezones[tzName]
