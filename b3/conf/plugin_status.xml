@@ -2,10 +2,19 @@
 	<settings name="settings">
 		<set name="interval">60</set>
 		<!-- This can either be a path on  the local filesystem, or an ftp directory.
-		To use an ftp directory, use this syntax: ftp://username:password@host/path/to/status.xml
+		 To use an ftp directory, use this syntax: ftp://username:password@host/path/to/status.xml
 		-->
 		<set name="output_file">~/status.xml</set>
+        <!-- If you prefer to save status information in a databasetable instead of in a file,
+         you can enable next settings
+        -->
 		<set name="enableDBsvarSaving">False</set>
 		<set name="enableDBclientSaving">False</set>
+        <!-- For multi server support  and different database tables per server,
+         you can change the default table names by using these example settings:
+
+        <set name="svar_table">alternate_svar_table</set>
+        <set name="client_table">alternate_client_table</set>
+        -->
 	</settings>
 </configuration>
