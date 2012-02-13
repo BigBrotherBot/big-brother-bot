@@ -114,7 +114,7 @@ class AbstractParser(b3.parser.Parser):
 
     def __new__(cls, *args, **kwargs):
         AbstractParser.patch_b3_Clients_getByMagic()
-        return b3.parser.Parser.__new__(cls, *args, **kwargs)
+        return b3.parser.Parser.__new__(cls)
 
     @staticmethod
     def patch_b3_Clients_getByMagic():
