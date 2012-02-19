@@ -37,7 +37,7 @@ from setuptools import setup, find_packages
 
 # read version from the b3/PKG-INFO file
 re_pkginfo_version = re.compile('^\s*Version:\s*(?P<version>(\d+\.\d+(\.\d+)?((a|b|dev)\d*)?)?)\s*$', re.MULTILINE)
-b3version = "1.8.0b2"
+b3version = "1.8.0"
 #with open('b3/PKG-INFO', 'r') as f:
 #    m = re_pkginfo_version.search(f.read())
 #b3version = m.group("version")

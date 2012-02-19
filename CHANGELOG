@@ -8,6 +8,10 @@ New games :
 - BattleField 3
 Improvements :
 - Urban Terror : improved team handling
+- CoD7: better suicide handling
+- TK-plugin adapted to BF3
+- Better error handlng, improved error messages and python version checking
+- Multiple core enhancements
 
 
 1.6.1 -> 1.7.1
