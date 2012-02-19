@@ -17,6 +17,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    01/29/2012 - 1.2.7 - 82ndab-Bravo17
+#    * Check for ROUND_END event to halve TK points for BF3
+#    * Add configurable TK point 'half-life' to halve TK points at intervals in long rounds
+#    * Add configurable duration for auto TK warning
 #    01/06/2012 - 1.2.6 - 82ndab-Bravo17
 #    * Add configurable values for sending damage messages
 #    03/30/2011 - 1.2.5 - SGT
@@ -42,12 +46,14 @@
 #    7/23/2005 - 1.0.2 - ThorN
 #    * Changed temp ban duration to be based on ban_length times the number of victims
 
-__version__ = '1.2.6'
+__version__ = '1.2.7'
 __author__  = 'ThorN'
 
 import b3, string, re, threading
 import b3.events
 import b3.plugin
+import b3.cron
+import time
 
 class TkInfo:
     def __init__(self, plugin, cid):
@@ -165,6 +171,11 @@ class TkPlugin(b3.plugin.Plugin):
     _damage_threshold = 100
     _warn_level = 2
     _ffa = ['dm', 'ffa', 'syc-ffa']
+    _tkpointsHalflife = 0
+    _cronTab_tkhalflife = None
+    _round_end_games = 'bf3'
+    _use_round_end = False
+    _tk_warn_duration = '1h'
 
     
     def onStartup(self):
@@ -172,6 +183,8 @@ class TkPlugin(b3.plugin.Plugin):
         self.registerEvent(b3.events.EVT_CLIENT_KILL_TEAM)
         self.registerEvent(b3.events.EVT_CLIENT_DISCONNECT)
         self.registerEvent(b3.events.EVT_GAME_EXIT)
+        self.registerEvent(b3.events.EVT_GAME_ROUND_END)
+        self.registerEvent(b3.events.EVT_GAME_ROUND_START)
 
         self._adminPlugin = self.console.getPlugin('admin')
         if self._adminPlugin:
@@ -195,6 +208,13 @@ class TkPlugin(b3.plugin.Plugin):
                 self.debug('Using default value (%s) for grudge_level', self._grudge_level)
             if self._grudge_enable:
                 self._adminPlugin.registerCommand(self, 'grudge', self._grudge_level, self.cmd_grudge, 'grudge')
+                
+        if self._tkpointsHalflife > 0:
+            (min, sec) = self.crontab_time()
+            self._cronTab_tkhalflife = b3.cron.OneTimeCronTab(self.halveTKPoints, second=sec, minute=min)
+            self.console.cron + self._cronTab_tkhalflife
+            self.debug('TK Crontab started')
+
 
 
     def onLoadConfig(self):
@@ -223,17 +243,34 @@ class TkPlugin(b3.plugin.Plugin):
         self.debug('Send messages privately ? %s' % self._private_messages)
         
         try:
-            self._damage_threshold = self.config.get('settings','damage_threshold')
+            self._damage_threshold = self.config.getint('settings','damage_threshold')
         except:
             self._damage_threshold = 100
         self.debug('Damage Threshold is %s' % self._damage_threshold)
         
         try:
-            self._warn_level = self.config.get('settings','warn_level')
+            self._tk_warn_duration = self.config.get('settings','warn_duration')
+        except:
+            self._tk_warn_duration = '1h'
+        self.debug('TK Warning duration is %s' % self._tk_warn_duration)  
+        
+        try:
+            self._warn_level = self.config.getint('settings','warn_level')
         except:
             self._warn_level = 2
         self.debug('Max warn level is %s' % self._warn_level)
         
+        try:
+            self._tkpointsHalflife = self.config.getint('settings','halflife')
+        except:
+            self._tkpointsHalflife = 0
+        self.debug('Half life for TK points is %s (0 is disabled)' % self._tkpointsHalflife)
+        
+        if self.console.gameName in self._round_end_games:
+            self._use_round_end = True
+            self.debug('Using ROUND_END event to halve TK points')
+        else:
+            self.debug('Using GAME_EXIT event to halve TK points')
 
     def onEvent(self, event):
         if self.console.game.gameType in self._ffa: 
@@ -251,21 +288,21 @@ class TkPlugin(b3.plugin.Plugin):
             self.forgiveAll(event.data)
             return
 
-        elif event.type == b3.events.EVT_GAME_EXIT:
-            self.debug('Map End: cutting all tk points in half')
-            for cid,c in self.console.clients.items():
-                try:
-                    tkinfo = self.getClientTkInfo(c)
-                    for acid,points in tkinfo.attackers.items():
-                        points = int(round(points / 2))
-
-                        if points == 0:
-                            self.forgive(acid, c, True)
-                        else:
-                            try: tkinfo._attackers[acid] = points
-                            except: pass
-                except:
-                    pass
+        elif (event.type == b3.events.EVT_GAME_EXIT and not self._use_round_end) or (event.type == b3.events.EVT_GAME_ROUND_END and self._use_round_end):
+            if self._cronTab_tkhalflife:
+                # remove existing crontab
+                self.console.cron - self._cronTab_tkhalflife
+            self.halveTKPoints('Map End: cutting all tk points in half')
+            
+        elif event.type == b3.events.EVT_GAME_ROUND_START:
+            if self._tkpointsHalflife > 0:
+                if self._cronTab_tkhalflife:
+                    # remove existing crontab
+                    self.console.cron - self._cronTab_tkhalflife
+                (min, sec) = self.crontab_time()
+                self._cronTab_tkhalflife = b3.cron.OneTimeCronTab(self.halveTKPoints, second=sec, minute=min)
+                self.console.cron + self._cronTab_tkhalflife
+                client.message('TK Crontab started')
 
             return
         else:
@@ -316,6 +353,46 @@ class TkPlugin(b3.plugin.Plugin):
 
             client.tempban(self.getMessage('ban'), 'tk', duration)
 
+    def halveTKPoints(self, msg=None):
+        if msg == None:
+            msg = ('Halving all TK Points')
+        self.debug(msg)
+        for cid,c in self.console.clients.items():
+            try:
+                tkinfo = self.getClientTkInfo(c)
+                for acid,points in tkinfo.attackers.items():
+                    points = int(round(points / 2))
+
+                    if points == 0:
+                        self.forgive(acid, c, True)
+                    else:
+                        try: tkinfo._attackers[acid] = points
+                        except: pass
+            except:
+                pass
+        if self._tkpointsHalflife > 0: 
+            if self._cronTab_tkhalflife:
+                # remove existing crontab
+                self.console.cron - self._cronTab_tkhalflife
+            (min, sec) = self.crontab_time()
+            self._cronTab_tkhalflife = b3.cron.OneTimeCronTab(self.halveTKPoints, second=sec, minute=min)
+            self.console.cron + self._cronTab_tkhalflife
+            #self.console.say('TK Crontab re-started')
+            self.debug('TK Crontab re-started')
+            
+    def crontab_time(self):
+        sec = self._tkpointsHalflife
+        min = int(time.strftime('%M'))
+        sec = sec + int(time.strftime('%S'))
+        while sec > 59:
+            min += 1
+            sec -= 60
+            
+        if min > 59:
+            min -= 60
+            
+        return (min, sec)    
+    
     def getMultipliers(self, client):
         level = ()
         for lev,mult in self._levels.iteritems():
@@ -349,13 +426,15 @@ class TkPlugin(b3.plugin.Plugin):
 
         a.damage(v.cid, points)
         v.damaged(a.cid, points)
+        
+        self.debug('Attacker: %s, TK Points: %s, attacker.maxLevel: %s, last warn time: %s, Console time: %s' % (attacker.exactName, points, attacker.maxLevel, a.lastWarnTime, self.console.time()))
 
         if self._round_grace and self._issue_warning and self.console.game.roundTime() < self._round_grace and a.lastWarnTime + 60 < self.console.time():
             a.lastWarnTime = self.console.time()
             self._adminPlugin.warnClient(attacker, self._issue_warning, None, False)
         elif points > self._damage_threshold and attacker.maxLevel < self._warn_level and a.lastWarnTime + 180 < self.console.time():
             a.lastWarnTime = self.console.time()
-            warning = self._adminPlugin.warnClient(attacker, '^3Do not attack teammates, ^1Attacked: ^7%s ^7[^3%s^7]' % (victim.exactName, points), None, False)
+            warning = self._adminPlugin.warnClient(attacker, '^3Do not attack teammates, ^1Attacked: ^7%s ^7[^3%s^7]' % (victim.exactName, points), None, False, newDuration = self._tk_warn_duration)
             a.warn(v.cid, warning)
             victim.message('^7type ^3!fp ^7 to forgive ^3%s' % (attacker.exactName))
 

@@ -34,6 +34,7 @@ class Tk_functional_test(B3TestCase):
     @classmethod
     def setUpClass(cls):
 
+        fakeConsole.gameName = 'f00'
         cls.conf = XmlConfigParser()
         cls.conf.setXml(r"""
         <configuration plugin="tk">
