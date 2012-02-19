@@ -33,7 +33,7 @@
          -->
         <set name="enabled">no</set>
         <!-- The total number of slots on the server  -->
-        <set name="total_slots">64</set>
+        <set name="total_slots">32</set>
         <!-- The number of slots to keep free -->
         <set name="min_free_slots">1</set>
     </settings>

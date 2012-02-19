@@ -34,16 +34,18 @@
 #   whatever his level
 # 2011-07-11 - 1.4.1 
 # * just more debug messages
+# 2011-11-20 - 1.5
+# * fix config option "non_member_level" not being read
+# * only one kick action can take place at once. If there is a delay set, then wait for the first request
+#   to complete before accepting a new one
 #
-__version__ = '1.4.1'
+__version__ = '1.5'
 __author__  = 'Courgette'
 
 from ConfigParser import NoOptionError
 from b3.config import ConfigParser
 from b3.plugin import Plugin
 from b3.events import EVT_CLIENT_AUTH
-import time
-import string
 import threading
 
 class MakeroomPlugin(Plugin):
@@ -56,6 +58,8 @@ class MakeroomPlugin(Plugin):
     _automation_enabled = None #None if not installed, False if installed but disabled
     _total_slots = None
     _min_free_slots = None
+    _delay = None
+    _kick_in_progress = threading.Lock()
     
 
     def onLoadConfig(self):
@@ -82,14 +86,14 @@ class MakeroomPlugin(Plugin):
 
         # load non-member group level
         try:
-            self._non_member_level = self.config.getint('global_settings', 'immunity_level')
-        except:
+            self._non_member_level = self.config.getint('global_settings', 'non_member_level')
+        except Exception:
             self._non_member_level = 2
         self.info('non member level : %s' % self._non_member_level)
 
         try:
             self._delay = self.config.getfloat('global_settings', 'delay')
-        except:
+        except Exception:
             self._delay = 5.0
         self.info('delay before kick: %s seconds' % self._delay)
 
@@ -187,46 +191,50 @@ class MakeroomPlugin(Plugin):
             if client:
                 client.message('No non-member found to kick !')
         else:
-            if self._delay == 0:
-                self._free_a_slot(client)
+            if not self._kick_in_progress.acquire(False):
+                client.message("There is already a makeroom request in progress. Try again later")
             else:
-                try:
-                    info_message = self.getMessage('info_message', self.console.getMessageVariables(client=client))
-                except ConfigParser.NoOptionError:
-                    info_message = "Making room for clan member, please come back again"
-                self.console.say(info_message)
-                threading.Timer(self._delay, self._free_a_slot, (client, )).start()
+                if self._delay == 0:
+                    self._free_a_slot(client)
+                else:
+                    try:
+                        info_message = self.getMessage('info_message', self.console.getMessageVariables(client=client))
+                    except ConfigParser.NoOptionError:
+                        info_message = "Making room for clan member, please come back again"
+                    self.console.say(info_message)
+                    threading.Timer(self._delay, self._free_a_slot, (client, )).start()
 
 
     def _free_a_slot(self, client):
-        clients = self.console.clients.getClientsByLevel(min=0, max=self._non_member_level)
-        self.debug("players subject to kick : %r", ["%s(%s)" % (x, x.maxLevel) for x in clients])
-        clientToKick = None
-        if len(clients) == 0:
-            if client:
-                client.message('No non-member found to kick !')
-        else:
-            # sort players by group and connection time
-            clientsByGroup = sorted(clients, key=lambda x:x.maxLevel)
-            #self.debug([(x.name, x.maxLevel) for x in clientsByGroup])
-            lowestGroup = clientsByGroup[0].maxLevel
-            lowestClients = [x for x in clientsByGroup if x.maxLevel == lowestGroup]
-            #self.debug([(x.name, x.timeAdd) for x in lowestClients])
-            clientsByTime = sorted(lowestClients, key=lambda x:x.timeAdd, reverse=True)
-            #self.debug([(x.name, x.timeAdd) for x in clientsByTime])
-            client2kick = clientsByTime[0]
-            try:
-                kick_message = self.getMessage('kick_message', self.console.getMessageVariables(client=client2kick))
-            except ConfigParser.NoOptionError:
-                kick_message = "kicking %s to free a slot" % client2kick.name
-            self.console.say(kick_message)
-            time.sleep(1.5)
-            try:
-                kick_reason = self.getMessage('kick_reason', self.console.getMessageVariables(client=client2kick))
-            except ConfigParser.NoOptionError:
-                kick_reason = "to free a slot"
-            client2kick.kick(reason=kick_reason, keyword="makeroom", silent=True, admin=client)
-
+        try:
+            clients = self.console.clients.getClientsByLevel(min=0, max=self._non_member_level)
+            self.debug("players subject to kick : %r", ["%s(%s)" % (x, x.maxLevel) for x in clients])
+            clientToKick = None
+            if len(clients) == 0:
+                if client:
+                    client.message('No non-member found to kick !')
+            else:
+                # sort players by group and connection time
+                clientsByGroup = sorted(clients, key=lambda x:x.maxLevel)
+                #self.debug([(x.name, x.maxLevel) for x in clientsByGroup])
+                lowestGroup = clientsByGroup[0].maxLevel
+                lowestClients = [x for x in clientsByGroup if x.maxLevel == lowestGroup]
+                #self.debug([(x.name, x.timeAdd) for x in lowestClients])
+                clientsByTime = sorted(lowestClients, key=lambda x:x.timeAdd, reverse=True)
+                #self.debug([(x.name, x.timeAdd) for x in clientsByTime])
+                client2kick = clientsByTime[0]
+                try:
+                    kick_message = self.getMessage('kick_message', self.console.getMessageVariables(client=client2kick))
+                except ConfigParser.NoOptionError:
+                    kick_message = "kicking %s to free a slot" % client2kick.name
+                self.console.say(kick_message)
+                try:
+                    kick_reason = self.getMessage('kick_reason', self.console.getMessageVariables(client=client2kick))
+                except ConfigParser.NoOptionError:
+                    kick_reason = "to free a slot"
+                client2kick.kick(reason=kick_reason, keyword="makeroom", silent=True, admin=client)
+        finally:
+            self._kick_in_progress.release()
 
     def check_free_slots(self, last_connected_client):
         nb_players = len(self.console.clients.getList())
@@ -247,207 +255,3 @@ class MakeroomPlugin(Plugin):
                 self.info("someone will be kicked")
                 self.cmd_makeroom()
 
-
-if __name__ == '__main__':
-
-    from b3.fake import fakeConsole, moderator
-    from b3.fake import FakeClient
-    from b3.config import XmlConfigParser
-
-    conf1 = XmlConfigParser()
-    conf1.loadFromString("""
-        <configuration plugin="makeroom">
-
-            <settings name="global_settings">
-                <!-- level under which players to kick will be chosen from (default: 2) -->
-                <set name="non_member_level">2</set>
-                <!-- delay in seconds between the time the info_message is shown and the kick happens.
-                If you set this to 0, then no info_message will be shown and kick will happen
-                instantly -->
-                <set name="delay">1</set>
-            </settings>
-
-            <settings name="commands">
-                <!-- Command to free a slot -->
-                <set name="makeroom-mr">20</set>
-                <!-- Command to enable/disable automation -->
-                <set name="makeroomauto-mrauto">60</set>
-            </settings>
-
-            <settings name="messages">
-                <!-- You can use the following keywords in your messages :
-                    $clientname
-                    $clientguid
-                -->
-                <!-- kick_message will be displayed to all players when a player is kicked to free a slot -->
-                <set name="kick_messaged">kicking $clientname to free a slot</set>
-                <!-- kick_reason will be displayed to the player to be kicked -->
-                <set name="kick_reasond">to make room for a server member</set>
-                <!-- info_message will be displayed to all before a player get kicked -->
-                <set name="info_message">Making ROOM !!!!!</set>
-            </settings>
-            
-            <settings name="automation">
-                <!-- enabled : yes/no
-                  If yes, then this plugin will make sure that min_free_slots are kept free
-                  and kick all connecting player until min_free_slots are free.
-                 -->
-                <set name="enabled">no</set>
-                <!-- The total number of slots on the server  -->
-                <set name="total_slots">3</set>
-                <!-- The number of slots to keep free -->
-                <set name="min_free_slots">1</set>
-            </settings>
-        </configuration>
-    """)
-    p = MakeroomPlugin(fakeConsole, conf1)
-    p.onLoadConfig()
-    p.onStartup()
-
-    def testPlugin1():
-        jack = FakeClient(fakeConsole, name="Jack", guid="qsd654sqf", _maxLevel=0)
-        jack.connects(0)
-        jack.says('!makeroom')
-    
-    def testPlugin2():
-        moderator.connects(0)
-        moderator.says('!makeroom')
-
-    def testPlugin3():
-        jack = FakeClient(fakeConsole, name="Jack", guid="qsd654sqf", _maxLevel=0)
-        jack.connects(1)
-        moderator.connects(0)
-        moderator.says('!makeroom')
-
-    def testPlugin4():
-        jack = FakeClient(fakeConsole, name="Jack", _maxLevel=0)
-        jack.connects(1)
-        time.sleep(1.1)
-        joe = FakeClient(fakeConsole, name="Joe", _maxLevel=0)
-        joe.connects(2)
-        moderator.connects(0)
-        moderator.says('!makeroom')
-
-    def testPlugin5():
-        jack = FakeClient(fakeConsole, name="Jack", _maxLevel=0)
-        jack.connects(1)
-        time.sleep(1.1)
-        joe = FakeClient(fakeConsole, name="Joe", _maxLevel=2)
-        joe.connects(2)
-        moderator.connects(0)
-        moderator.says('!makeroom')
-
-    def testMessage1():
-        conf = XmlConfigParser()
-        conf.loadFromString("""
-            <configuration plugin="makeroom">
-    
-                <settings name="global_settings">
-                    <!-- level under which players to kick will be chosen from (default: 2) -->
-                    <set name="non_member_level">2</set>
-                </settings>
-    
-                <settings name="commands">
-                    <!-- Command to free a slot -->
-                    <set name="makeroom-mr">20</set>
-                </settings>
-
-            </configuration>
-        """)
-        p = MakeroomPlugin(fakeConsole, conf)
-        p.onStartup()
-        jack = FakeClient(fakeConsole, name="Jack", guid="qsd654sqf", _maxLevel=0)
-        jack.connects(1)
-        moderator.connects(2)
-        moderator.says('!makeroom')
-
-    def testMessage2():
-        conf = XmlConfigParser()
-        conf.loadFromString("""
-            <configuration plugin="makeroom">
-    
-                <settings name="global_settings">
-                    <!-- level (inclusive) under which players to kick will be chosen from (default: 2) -->
-                    <set name="non_member_level">2</set>
-                    <!-- delay in seconds between the time the info_message is shown and the kick happens.
-                    If you set this to 0, then no info_message will be shown and kick will happen
-                    instantly -->
-                    <set name="delay">0</set>
-                </settings>
-    
-                <settings name="commands">
-                    <!-- Command to free a slot -->
-                    <set name="makeroom-mr">20</set>
-                </settings>
-    
-                <settings name="messages">
-                    <!-- You can use the following keywords in your messages :
-                        $clientname
-                    -->
-                    <!-- kick_message will be displayed to all players when a player is kicked to free a slot -->
-                    <set name="kick_message">kicking $clientname to make room for a member xxxxxxxxxx</set>
-                    <!-- kick_reason will be displayed to the player to be kicked -->
-                    <set name="kick_reason">to free a slot ! mlkjmlkj</set>
-                </settings>
-            </configuration>
-        """)
-        p = MakeroomPlugin(fakeConsole, conf)
-        p.onStartup()
-        jack = FakeClient(fakeConsole, name="Jack", guid="qsd654sqf", _maxLevel=0)
-        jack.connects(1)
-        moderator.connects(2)
-        moderator.says('!makeroom')
-        
-        
-    def testAutomation1():
-        from b3.fake import superadmin
-        superadmin.connects(0)
-        superadmin.says('!makeroomauto')
-        time.sleep(1)
-        superadmin.says('!makeroomauto on')
-        superadmin.says('!makeroomauto off')
-
-    def testAutomation2():
-        from b3.fake import superadmin, joe
-        p._automation_enabled = True
-        p._delay = 3
-        p._total_slots = 2
-        p._min_free_slots = 1
-        superadmin.connects(0)
-        time.sleep(.3)
-        joe.connects(1)
-        time.sleep(.3)
-
-    def testAutomation3():
-        from b3.fake import superadmin, joe
-        p._automation_enabled = True
-        p._delay = 3
-        p._total_slots = 2
-        p._min_free_slots = 1
-        joe.connects(1)
-        time.sleep(.3)
-        superadmin.connects(0)
-        time.sleep(.3)
-
-    def testAutomation4():
-        from b3.fake import superadmin, joe
-        p._automation_enabled = True
-        p._delay = 0
-        p._total_slots = 3
-        p._min_free_slots = 1
-        joe.connects(0)
-        time.sleep(.3)
-        superadmin.connects(1)
-        time.sleep(.3)
-        jack = FakeClient(fakeConsole, name="Jack", guid="qsd654sqf", _maxLevel=2)
-        jack.connects(2)
-
-
-    #testPlugin3()
-    #testPlugin5()
-    #testMessage2()
-    #testAutomation1()
-    #testAutomation2()
-    #testAutomation3()
-    testAutomation4()
-    time.sleep(30)
