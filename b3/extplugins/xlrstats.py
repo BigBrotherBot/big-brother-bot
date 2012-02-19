@@ -59,6 +59,8 @@
 # 24-09-2011 - 2.6.1 - Mark Weirath
 #   added update .sql file to distro to enable weaponnames > 32 characters.
 #   no actual code was altered in the plugin except for the version to mark the change.
+# 19-10-2011 - 2.6.2 - Mark Weirath
+#   moved polling for webfront variables to a separate thread, to avoid startup delay when website is offline
 # 31-01-2012 - 2.7.0 - Mark Weirath
 #   integration of the ctime plugin as a subplugin
 
@@ -76,10 +78,12 @@ __version__ = '2.7.0'
 
 # Version = major.minor.patches
 
+import string
 import datetime
 import time
 import re
 import thread
+import threading
 import urllib2
 import b3
 import b3.events
@@ -275,20 +279,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         #let's try and get some variables from our webfront installation
         if self.webfrontUrl and self.webfrontUrl != '':
-            _request = str(self.webfrontUrl.rstrip('/')) + '/?config=' + str(self.webfrontConfigNr) + '&func=pluginreq'
-            try:
-                f = urllib2.urlopen(_request)
-                _result = f.readline().split(',')
-                # Our webfront will present us 3 values
-                if len(_result) == 3:
-                    # Force the collected strings to their final type. If an error occurs they will fail the try statement.
-                    self._minKills = int(_result[0])
-                    self._minRounds = int(_result[1])
-                    self._maxDays = int(_result[2])
-                    self.debug('Successfuly retrieved webfront variables: minkills: %i, minrounds: %i, maxdays: %i' % (
-                        self._minKills, self._minRounds, self._maxDays))
-            except:
-                self.debug('Couldn\'t retrieve webfront variables, using defaults')
+            thread1 = threading.Thread(target=self.getWebsiteVariables)
+            thread1.start()
         else:
             self.debug('No Webfront Url available, using defaults')
 
@@ -311,6 +303,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         msg = 'XLRstats v. %s by %s started.' % (__version__, __author__)
         self.console.say(msg)
         #end startup sequence
+
 
     def onLoadConfig(self):
         try:
@@ -550,6 +543,27 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     def dumpEvent(self, event):
         self.debug('xlrstats.dumpEvent -- Type %s, Client %s, Target %s, Data %s',
                    event.type, event.client, event.target, event.data)
+
+
+    def getWebsiteVariables(self):
+        """
+        Thread that polls for XLRstats webfront variables
+        """
+        _request = str(self.webfrontUrl.rstrip('/')) + '/?config=' + str(self.webfrontConfigNr) + '&func=pluginreq'
+        try:
+            f = urllib2.urlopen(_request)
+            _result = f.readline().split(',')
+            # Our webfront will present us 3 values
+            if len(_result) == 3:
+                # Force the collected strings to their final type. If an error occurs they will fail the try statement.
+                self._minKills = int(_result[0])
+                self._minRounds = int(_result[1])
+                self._maxDays = int(_result[2])
+                self.debug('Successfuly retrieved webfront variables: minkills: %i, minrounds: %i, maxdays: %i' % (
+                    self._minKills, self._minRounds, self._maxDays))
+        except Exception:
+            self.debug('Couldn\'t retrieve webfront variables, using defaults')
+
 
     def win_prob(self, player_skill, opponent_skill):
         return 1 / ( 10 ** ( (opponent_skill - player_skill) / self.steepness ) + 1 )
