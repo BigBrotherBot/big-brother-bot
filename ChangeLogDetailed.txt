@@ -1,5 +1,24 @@
 2012-02-19  Courgette <courgette@bigbrotherbot.net>
 
+	* py2exe_builder/assets_b3_lite_for_bf3/conf/plugin_makeroom.xml,
+	py2exe_builder/assets_b3_lite_for_bf3/conf/plugin_poweradminbf3.xml
+	,
+	py2exe_builder/assets_b3_lite_for_bf3/conf/serverconfigs/hardcore-r
+	ush.cfg,
+	py2exe_builder/assets_b3_lite_for_bf3/conf/serverconfigs/training.c
+	fg, py2exe_builder/assets_b3_lite_for_bf3/extplugins/makeroom.py,
+	py2exe_builder/assets_b3_lite_for_bf3/extplugins/poweradminbf3.py: 
+	[B3 Lite for BF3] update packaged extplugins
+
+2012-02-19  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG, ChangeLogDetailed.txt, b3.egg-info/PKG-INFO,
+	b3/PKG-INFO, py2exe_builder/b3-installer-project.iss,
+	py2exe_builder/b3_lite_for_bf3-installer-project.iss, setup.py,
+	versions.txt: versioning 1.8.0 - preparing for release
+
+2012-02-19  Courgette <courgette@bigbrotherbot.net>
+
 	* b3/conf/plugin_tk.xml, b3/parser.py, b3/plugins/tk.py,
 	tests/plugins/test_tk.py, tests/plugins/test_tk_functional.py: TK:
 	merges pull request Courgette/big-brother-bot#64 from 82ndab-Bravo17
