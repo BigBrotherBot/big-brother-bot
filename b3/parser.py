@@ -727,7 +727,7 @@ class Parser(object):
                 mod = getattr(mod, comp)
             return mod
         except ImportError, m:
-            self.info('Could not load built in plugin %s (%s)', name, m)
+            self.info('%s is not a built-in plugin (%s)', name, m)
             self.info('trying external plugin directory : %s', self.config.getpath('plugins', 'external_dir'))
             fp, pathname, description = imp.find_module(name, [self.config.getpath('plugins', 'external_dir')])
             try:

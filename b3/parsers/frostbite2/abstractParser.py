@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 __author__  = 'Courgette'
-__version__ = '0.3'
+__version__ = '0.5'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -45,7 +45,7 @@ class AbstractParser(b3.parser.Parser):
     _serverConnection = None
     _nbConsecutiveConnFailure = 0
 
-    frostbite_event_queue = Queue.Queue(200)
+    frostbite_event_queue = Queue.Queue(400)
     sayqueue = Queue.Queue(100)
     sayqueuelistener = None
 
@@ -111,6 +111,32 @@ class AbstractParser(b3.parser.Parser):
     # flag to find out if we need to fire a EVT_GAME_ROUND_START event.
     _waiting_for_round_start = True
 
+
+    def __new__(cls, *args, **kwargs):
+        AbstractParser.patch_b3_Clients_getByMagic()
+        return b3.parser.Parser.__new__(cls)
+
+    @staticmethod
+    def patch_b3_Clients_getByMagic():
+        """
+        The b3.clients.Client.getByMagic method does not behave as intended for Frostbive server when id is a string
+        composed of digits exclusively. In such case it behave as if id was a slot number as for Quake3 servers.
+        This method patches the self.clients object so that it getByMagic method behaves as expected for Frostbite servers.
+        """
+        def new_clients_getByMagic(self, id):
+            id = id.strip()
+
+            if re.match(r'^@([0-9]+)$', id):
+                return self.getByDB(id)
+            elif id[:1] == '\\':
+                c = self.getByName(id[1:])
+                if c and not c.hide:
+                    return [c]
+                else:
+                    return []
+            else:
+                return self.getClientsByName(id)
+        b3.clients.Clients.getByMagic = new_clients_getByMagic
 
 
     def run(self):
@@ -247,7 +273,10 @@ class AbstractParser(b3.parser.Parser):
         if not self.working:
             self.verbose("dropping Frostbite event %r" % packet)
         self.console(repr(packet))
-        self.frostbite_event_queue.put((self.time(), self.time() + 10, packet), timeout=2)
+        try:
+            self.frostbite_event_queue.put((self.time(), self.time() + 10, packet), timeout=2)
+        except Queue.Full:
+            self.error("Frostbite event queue full, dropping event %r" % packet)
 
     def routeFrostbitePacket(self, packet):
         if packet is None:

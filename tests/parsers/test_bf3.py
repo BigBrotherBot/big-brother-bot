@@ -16,8 +16,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+from copy import copy
 import unittest
 from mock import Mock
+from b3.parsers import bf3
 from b3.parsers.bf3 import Bf3Parser
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.util import MapListBlock
@@ -35,6 +37,103 @@ class BF3TestCase(B3TestCase):
         AbstractParser.__bases__ = (FakeConsole,)
         # Now parser inheritance hierarchy is :
         # BF3Parser -> AbstractParser -> FakeConsole -> Parser
+
+
+class Test_bf3_config_max_say_line_length(unittest.TestCase):
+
+    MAX_SAY_LINE_LENGTH__DEFAULT = bf3.SAY_LINE_MAX_LENGTH
+    MAX_SAY_LINE_LENGTH__MIN = 20
+    MAX_SAY_LINE_LENGTH__MAX = bf3.SAY_LINE_MAX_LENGTH
+
+    def setUp(self):
+        self.parser = Mock(spec=Bf3Parser)
+        self.parser._settings = copy(Bf3Parser._settings)
+
+    def _assert(self, conf_data=None, expected=None):
+        self.parser.config = XmlConfigParser()
+        self.parser.config.loadFromString("""
+            <configuration>
+                <settings name="bf3">%s</settings>
+            </configuration>
+            """ % (('<set name="max_say_line_length">%s</set>' % conf_data) if conf_data is not None else ''))
+        Bf3Parser.load_conf_max_say_line_length(self.parser)
+        if expected:
+            self.assertEqual(expected, self.parser._settings['line_length'])
+
+
+    def test_max_say_line_length__None(self):
+        self._assert(conf_data=None, expected=self.MAX_SAY_LINE_LENGTH__DEFAULT)
+
+    def test_max_say_line_length__empty(self):
+        self._assert(conf_data='', expected=self.MAX_SAY_LINE_LENGTH__DEFAULT)
+
+    def test_max_say_line_length__nan(self):
+        self._assert(conf_data='foo', expected=self.MAX_SAY_LINE_LENGTH__DEFAULT)
+
+    def test_max_say_line_length__too_low(self):
+        self._assert(conf_data=self.MAX_SAY_LINE_LENGTH__MIN - 1, expected=self.MAX_SAY_LINE_LENGTH__MIN)
+
+    def test_max_say_line_length__lowest(self):
+        self._assert(conf_data=self.MAX_SAY_LINE_LENGTH__MIN, expected=self.MAX_SAY_LINE_LENGTH__MIN)
+
+    def test_max_say_line_length__25(self):
+        self._assert(conf_data='25', expected=25)
+
+    def test_max_say_line_length__highest(self):
+        self._assert(conf_data=self.MAX_SAY_LINE_LENGTH__MAX, expected=self.MAX_SAY_LINE_LENGTH__MAX)
+
+    def test_max_say_line_length__too_high(self):
+        self._assert(conf_data=self.MAX_SAY_LINE_LENGTH__MAX+1, expected=self.MAX_SAY_LINE_LENGTH__MAX)
+
+
+class Test_bf3_config_message_delay(unittest.TestCase):
+    MESSAGE_DELAY__DEFAULT = .8
+    MESSAGE_DELAY__MIN = .5
+    MESSAGE_DELAY__MAX = 3
+
+    def setUp(self):
+        self.parser = Mock(spec=Bf3Parser)
+        self.parser._settings = copy(Bf3Parser._settings)
+
+    def _test_message_delay(self, conf_data=None, expected=None):
+        self.parser.config = XmlConfigParser()
+        self.parser.config.loadFromString("""
+            <configuration>
+                <settings name="bf3">%s</settings>
+            </configuration>
+            """ % (('<set name="message_delay">%s</set>' % conf_data) if conf_data is not None else ''))
+        Bf3Parser.load_config_message_delay(self.parser)
+        if expected:
+            self.assertEqual(expected, self.parser._settings['message_delay'])
+
+
+    def test_message_delay__None(self):
+        self._test_message_delay(conf_data=None, expected=self.MESSAGE_DELAY__DEFAULT)
+
+    def test_message_delay__empty(self):
+        self._test_message_delay(conf_data='', expected=self.MESSAGE_DELAY__DEFAULT)
+
+    def test_message_delay__nan(self):
+        self._test_message_delay(conf_data='foo', expected=self.MESSAGE_DELAY__DEFAULT)
+
+    def test_message_delay__too_low(self):
+        self._test_message_delay(conf_data=self.MESSAGE_DELAY__MIN-.1, expected=self.MESSAGE_DELAY__MIN)
+
+    def test_message_delay__minimum(self):
+        self._test_message_delay(conf_data=self.MESSAGE_DELAY__MIN, expected=self.MESSAGE_DELAY__MIN)
+
+    def test_message_delay__2(self):
+        self._test_message_delay(conf_data='2', expected=2)
+
+    def test_message_delay__maximum(self):
+        self._test_message_delay(conf_data=self.MESSAGE_DELAY__MAX, expected=self.MESSAGE_DELAY__MAX)
+
+    def test_message_delay__too_high(self):
+        self._test_message_delay(conf_data=self.MESSAGE_DELAY__MAX+1, expected=self.MESSAGE_DELAY__MAX)
+
+
+
+
 
 
 class Test_getServerInfo(unittest.TestCase):

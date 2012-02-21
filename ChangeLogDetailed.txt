@@ -1,3 +1,190 @@
+2012-02-19  Courgette <courgette@bigbrotherbot.net>
+
+	* py2exe_builder/assets_b3_lite_for_bf3/conf/plugin_makeroom.xml,
+	py2exe_builder/assets_b3_lite_for_bf3/conf/plugin_poweradminbf3.xml
+	,
+	py2exe_builder/assets_b3_lite_for_bf3/conf/serverconfigs/hardcore-r
+	ush.cfg,
+	py2exe_builder/assets_b3_lite_for_bf3/conf/serverconfigs/training.c
+	fg, py2exe_builder/assets_b3_lite_for_bf3/extplugins/makeroom.py,
+	py2exe_builder/assets_b3_lite_for_bf3/extplugins/poweradminbf3.py: 
+	[B3 Lite for BF3] update packaged extplugins
+
+2012-02-19  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG, ChangeLogDetailed.txt, b3.egg-info/PKG-INFO,
+	b3/PKG-INFO, py2exe_builder/b3-installer-project.iss,
+	py2exe_builder/b3_lite_for_bf3-installer-project.iss, setup.py,
+	versions.txt: versioning 1.8.0 - preparing for release
+
+2012-02-19  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/conf/plugin_tk.xml, b3/parser.py, b3/plugins/tk.py,
+	tests/plugins/test_tk.py, tests/plugins/test_tk_functional.py: TK:
+	merges pull request Courgette/big-brother-bot#64 from 82ndab-Bravo17
+	- TK Plugin changes and external plugin message change
+
+2012-02-13  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/frostbite2/abstractParser.py: BF3: fixes deprecation
+	warning when using python 2.6 see xlr8or/big-brother-bot#81
+
+2012-02-07  Courgette <courgette@bigbrotherbot.net>
+
+	* : Merge remote-tracking branch 'origin/master'
+
+2012-02-07  Thomas LÉVEIL <courgette@bigbrotherbot.net>
+
+	* : Merge pull request #63 from 82ndab-Bravo17/master Add re for misformed COD7 suicide and adjust httpytail restart
+	notification
+
+2012-02-06  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* : Merge remote branch 'courgette/master'
+
+2012-02-06  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/frostbite2/abstractParser.py: BF3: fixes
+	xlr8or/big-brother-bot#79 : bot crash on Queue.Full exception
+
+2012-02-03  Courgette <courgette@bigbrotherbot.net>
+
+	* setupPy2exe.py: py2exe: add the SocketServer module so the telnet
+	plugin can work
+
+2012-02-03  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/conf/templates/b3.bf3.tpl, b3/parsers/bf3.py,
+	tests/parsers/test_bf3.py: BF3 : can set the delay between messages
+	in the config file
+
+2012-01-28  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 6c162a80cf3d29c8c7bad3d55cfae8976ac8ff7d Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sat Jan 28 16:56:36 2012 +0100
+
+2012-01-27  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/parsers/ro2/__init__.py: Now tracks team changes for teamspeak
+	plugin etc
+
+2012-01-27  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/run.py, b3_run.py: New version test
+
+2012-01-27  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/run.py, b3_run.py: CORE: fix xlr8or/big-brother-bot#75 - detect
+	python 3 and fail gracefully
+
+2012-01-26  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/run.py, b3_run.py: Detect Python versions on startup
+
+2012-01-26  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/run.py: friendly message when python version is not correct
+	fixes issue #75 (needs confirmation)
+
+2012-01-25  Thomas LÉVEIL <courgette@bigbrotherbot.net>
+
+	* : Merge pull request #61 from 82ndab-Bravo17/master COD4: add JT to COD4 Core: Tidy up plugin start count
+
+2012-01-25  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* : Merge remote branch 'courgette/master'
+
+2012-01-24  Courgette <courgette@bigbrotherbot.net>
+
+	* : commit 5e85910da30a2e8918f4687dfa4a5af8f3db9939 Author:
+	Courgette <courgette@bigbrotherbot.net> Date:   Sun Jan 22 18:58:55
+	2012 +0100
+
+2012-01-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/clients.py, tests/clients/test_Clients.py: CORE: fixes
+	xlr8or/big-brother-bot#47 - Client disconnect event send non
+	existing CID
+
+2012-01-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/storage/database.py, tests/storage/test_DatabaseStorage.py,
+	tests/test_functions.py: CORE: fixes xlr8or/big-brother-bot#66 - B3
+	does not detect that database name is missing in config
+
+2012-01-22  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/parsers/cod4.py: Change version info
+
+2012-01-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/frostbite2/abstractParser.py,
+	tests/parsers/frostbite2/test_abstractParser.py: BF3: add method
+	getFullBanList to frostbite2 AbstractParser. fixes
+	Courgette/big-brother-bot#58
+
+2012-01-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/frostbite2/util.py,
+	tests/parsers/frostbite2/test_util.py: BF3: fix the BanlistContent
+	class to work with the Frostbite2 response format for the
+	banList.list command
+
+2012-01-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/frostbite2/abstractParser.py,
+	tests/parsers/frostbite2/test_abstractParser.py,
+	tests/parsers/test_bf3.py: BF3: replace all direct calls to the
+	mapList.list command to the new parser getFullMapRotationList()
+	method. Fixes Courgette/big-brother-bot#59 and fixes
+	Courgette/big-brother-bot#60
+
+2012-01-22  Courgette <courgette@bigbrotherbot.net>
+
+	* tests/plugins/test_tk_functional.py: TESTS:  remove a test that
+	sometimes fails or succeeds with no apparent logic without any code
+	modification
+
+2012-01-21  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/parsers/cod4.py: Add JT to cod4 parser, some mods (eg OW) add
+	this to the log
+
+2012-01-21  Courgette <courgette@bigbrotherbot.net>
+
+	* tests/parsers/frostbite2/test_util.py: TESTS:  100% coverage of
+	b3.parsers.frostbite2.util
+
+2012-01-21  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/frostbite2/util.py,
+	tests/parsers/frostbite2/test_util.py: BF3: update BanlistContent
+	class to prepare for changes in BF3 R12 update. See
+	Courgette/big-brother-bot#58
+
+2012-01-21  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/frostbite2/util.py,
+	tests/parsers/frostbite2/test_util.py: BF3: update MapListBlock
+	class to prepare for changes in BF3 R12 update. See
+	Courgette/big-brother-bot#59
+
+2012-01-10  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/frostbite2/util.py,
+	tests/parsers/frostbite2/__init__.py,
+	tests/parsers/frostbite2/test_util.py: TESTS: improve coverage of
+	b3.parers.frostbite2.util module
+
+2012-01-09  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 1882b69c26adfab0b969bf3a1b01fc7ba6ec8b84 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Mon Jan 9 20:11:47 2012 +0100
+
+2012-01-09  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG, ChangeLogDetailed.txt: beta release preparations
+
 2012-01-09  Courgette <courgette@bigbrotherbot.net>
 
 	* : merge BF3 branch into master

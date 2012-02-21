@@ -34,6 +34,7 @@ class Test_Tk_plugin(B3TestCase):
 
     def setUp(self):
         super(Test_Tk_plugin, self).setUp()
+        b3.console.gameName = 'f00'
         self.conf = XmlConfigParser()
         self.p = TkPlugin(b3.console, self.conf)
 
@@ -107,6 +108,7 @@ class Test_Tk_default_config(B3TestCase):
 
     def setUp(self):
         super(Test_Tk_default_config, self).setUp()
+        b3.console.gameName = 'f00'
         self.conf = XmlConfigParser()
         self.conf.load(default_plugin_file)
         self.p = TkPlugin(b3.console, self.conf)

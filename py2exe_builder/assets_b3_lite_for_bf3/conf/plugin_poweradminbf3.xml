@@ -14,16 +14,18 @@
             For example if you want to use !ct instead of !changeteam, use the name "changeteam-ct" when
             defining the command level below.
           -->
-
+        <set name="serverreboot">100</set>
         <set name="punkbuster-punk">100</set>
 
         <set name="listconfig">60</set>
         <set name="loadconfig">60</set>
         <set name="unlockmode">60</set>
+        <set name="endround-eol">60</set>
 
         <set name="roundnext-rnext">40</set>
         <set name="roundrestart-rrestart">40</set>
         <set name="kill">40</set>
+        <set name="idle">40</set>
 
         <set name="changeteam">20</set>
         <set name="swap">20</set>
@@ -32,6 +34,11 @@
         <set name="scramble">20</set>
         <set name="scramblemode">20</set>
         <set name="autoscramble">20</set>
+
+        <set name="autoassign">20</set>
+        <set name="autobalance">20</set>
+
+        <set name="vehicles">20</set>
     </settings>
 
     <settings name="messages">
@@ -51,6 +58,12 @@
             This applies to commands !swap and !changeteam
          -->
         <set name="no_level_check_level">60</set>
+        <!-- no_autoassign_level : Players this level and above will not be auto assigned-->
+        <set name="no_autoassign_level">20</set>
+        <set name="autoassign">On</set>
+        <set name="autobalance">On</set>
+        <set name="autobalance_timer">120</set>
+        <set name="team_swap_threshold">3</set>
 	</settings>
 
     <settings name="scrambler">
@@ -70,9 +83,9 @@
 			 based on gametypes/maps. (Ported from xlr8or's config manager plugin for cod series)
 
 			 It will first look if a b3_<gametype>_<mapname>.cfg exists (example: b3_teamdeathmatch0_mp001.cfg)
-			 and execute it. If it doesn't exist, it checks for b3_<gametype>.cfg (example: b3_rushlarge0.cfg). 
+			 and execute it. If it doesn't exist, it checks for b3_<gametype>.cfg (example: b3_rushlarge0.cfg).
 
-			 If none of them exist, it will look for b3_main.cfg. This file makes it possible to reset certain 
+			 If none of them exist, it will look for b3_main.cfg. This file makes it possible to reset certain
 			 vars, so always create a b3_main.cfg if you want to enable and use this feature.
 
 			 Options:
