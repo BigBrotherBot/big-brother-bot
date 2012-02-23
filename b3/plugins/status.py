@@ -59,7 +59,11 @@
 __author__    = 'ThorN'
 __version__ = '1.4.9'
 
-import b3, time, os, StringIO
+import b3
+import time
+import os
+import StringIO
+import re
 import b3.plugin
 import b3.cron
 from cgi import escape
@@ -75,7 +79,9 @@ class StatusPlugin(b3.plugin.Plugin):
     _ftpstatus = False
     _ftpinfo = None
     _enableDBsvarSaving = False
+    _svarTable = 'current_svars'
     _enableDBclientSaving = False
+    _clientTable = 'current_clients'
     
     def onLoadConfig(self):
         if self.config.get('settings','output_file')[0:6] == 'ftp://':
@@ -90,17 +96,27 @@ class StatusPlugin(b3.plugin.Plugin):
             self._enableDBsvarSaving = self.config.getboolean('settings', 'enableDBsvarSaving')
         except:
             self._enableDBsvarSaving = False
-
         try:
             self._enableDBclientSaving = self.config.getboolean('settings', 'enableDBclientSaving')
         except:
             self._enableDBclientSaving = False
 
+        try:
+            self._svarTable = self.config.getboolean('settings', 'svar_table')
+            self.debug('Using custom table for saving server svars: %s' % self._svarTable)
+        except:
+            self.debug('Using default table for saving server svars: %s' % self._svarTable)
+        try:
+            self._clientTable = self.config.getboolean('settings', 'client_table')
+            self.debug('Using custom table for saving current clients: %s' % self._clientTable)
+        except:
+            self.debug('Using default table for saving current clients: %s' % self._clientTable)
+
         if self._enableDBsvarSaving:
-            sql = "CREATE TABLE IF NOT EXISTS `current_svars` (`id` int(11) NOT NULL auto_increment,`name` varchar(255) NOT NULL,`value` varchar(255) NOT NULL, PRIMARY KEY  (`id`), UNIQUE KEY `name` (`name`)) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;"
+            sql = "CREATE TABLE IF NOT EXISTS `%s` (`id` int(11) NOT NULL auto_increment,`name` varchar(255) NOT NULL,`value` varchar(255) NOT NULL, PRIMARY KEY  (`id`), UNIQUE KEY `name` (`name`)) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;" % (self._svarTable)
             self.console.storage.query(sql)
         if self._enableDBclientSaving:
-            sql = "CREATE TABLE IF NOT EXISTS `current_clients` (`id` INT(3) NOT NULL AUTO_INCREMENT,`Updated` VARCHAR( 255 ) NOT NULL ,`Name` VARCHAR( 255 ) NOT NULL ,`Level` VARCHAR( 255 ) NOT NULL ,`DBID` VARCHAR( 255 ) NOT NULL ,`CID` VARCHAR( 255 ) NOT NULL ,`Joined` VARCHAR( 255 ) NOT NULL ,`Connections` VARCHAR( 255 ) NOT NULL ,`State` VARCHAR( 255 ) NOT NULL ,`Score` VARCHAR( 255 ) NOT NULL ,`IP` VARCHAR( 255 ) NOT NULL ,`GUID` VARCHAR( 255 ) NOT NULL ,`PBID` VARCHAR( 255 ) NOT NULL ,`Team` VARCHAR( 255 ) NOT NULL ,`ColorName` VARCHAR( 255 ) NOT NULL, PRIMARY KEY (`id`)) ENGINE = MYISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;"
+            sql = "CREATE TABLE IF NOT EXISTS `%s` (`id` INT(3) NOT NULL AUTO_INCREMENT,`Updated` VARCHAR( 255 ) NOT NULL ,`Name` VARCHAR( 255 ) NOT NULL ,`Level` VARCHAR( 255 ) NOT NULL ,`DBID` VARCHAR( 255 ) NOT NULL ,`CID` VARCHAR( 255 ) NOT NULL ,`Joined` VARCHAR( 255 ) NOT NULL ,`Connections` VARCHAR( 255 ) NOT NULL ,`State` VARCHAR( 255 ) NOT NULL ,`Score` VARCHAR( 255 ) NOT NULL ,`IP` VARCHAR( 255 ) NOT NULL ,`GUID` VARCHAR( 255 ) NOT NULL ,`PBID` VARCHAR( 255 ) NOT NULL ,`Team` VARCHAR( 255 ) NOT NULL ,`ColorName` VARCHAR( 255 ) NOT NULL, PRIMARY KEY (`id`)) ENGINE = MYISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;" % (self._clientTable)
             self.console.storage.query(sql)
 
         if self._cronTab:
@@ -178,13 +194,16 @@ class StatusPlugin(b3.plugin.Plugin):
             data.setAttribute("Value", str(v))
             game.appendChild(data)
             if self._enableDBsvarSaving:
-                sql = "INSERT INTO current_svars (name, value) VALUES ('%s','%s') ON DUPLICATE KEY UPDATE value = VALUES(value);" % (str(k),str(v))
+                #remove forbidden sql characters
+                _k = re.sub("'", "", str(k))
+                _v = re.sub("'", "", str(v))[:255] # length of the database varchar field
+                sql = "INSERT INTO %s (name, value) VALUES ('%s','%s') ON DUPLICATE KEY UPDATE value = VALUES(value);" % (self._svarTable, _k, _v)
                 try:
                     self.console.storage.query(sql)
                 except:
                     self.error('Error: inserting svars. sqlqry=%s' % (sql))
         if self._enableDBsvarSaving:
-            sql = "INSERT INTO current_svars (name, value) VALUES ('lastupdate',UNIX_TIMESTAMP()) ON DUPLICATE KEY UPDATE value = VALUES(value);"
+            sql = "INSERT INTO %s (name, value) VALUES ('lastupdate',UNIX_TIMESTAMP()) ON DUPLICATE KEY UPDATE value = VALUES(value);" % (self._svarTable)
             try:
                 self.console.storage.query(sql)
             except:
@@ -198,7 +217,7 @@ class StatusPlugin(b3.plugin.Plugin):
 
         if self._enableDBclientSaving:
             # empty table current_clients
-            sql = "TRUNCATE TABLE `current_clients`;"
+            sql = "TRUNCATE TABLE `%s`;" % (self._clientTable)
             self.console.storage.query(sql)
 
         for c in clients:
@@ -248,7 +267,7 @@ class StatusPlugin(b3.plugin.Plugin):
                     qryBuilderValue = qryBuilderValue[:-1]
                     # and insert
                     try:
-                        sql = "INSERT INTO current_clients (%s) VALUES (%s); " % (qryBuilderKey,qryBuilderValue)
+                        sql = "INSERT INTO %s (%s) VALUES (%s); " % (self._clientTable, qryBuilderKey, qryBuilderValue)
                         self.console.storage.query(sql)
                     except:
                         self.error('Error: inserting clients. sqlqry=%s' % (sql))
