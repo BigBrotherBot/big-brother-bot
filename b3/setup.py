@@ -878,12 +878,19 @@ class Update(Setup):
         else:
             self.add_buffer('Version older than 1.7.0...\n')
 
+        # update to v1.8.1
+        if _currentversion >= '1.8.1':
+            self.executeSql('@b3/sql/b3-update-1.8.1.sql', _dbstring)
+            self.add_buffer('Updating database to version 1.8.1...\n')
+        else:
+            self.add_buffer('Version older than 1.8.1...\n')
+
         # need to update xlrstats?
-        _result = self.raw_default('Do you have xlrstats installed (with default table names)?', 'yes')
-        if _result == 'yes':
-            self.executeSql('@b3/sql/xlrstats-update-2.0.0.sql', _dbstring)
-            self.executeSql('@b3/sql/xlrstats-update-2.4.0.sql', _dbstring)
-            self.executeSql('@b3/sql/xlrstats-update-2.6.1.sql', _dbstring)
+        #_result = self.raw_default('Do you have xlrstats installed (with default table names)?', 'yes')
+        #if _result == 'yes':
+        #    self.executeSql('@b3/sql/xlrstats-update-2.0.0.sql', _dbstring)
+        #    self.executeSql('@b3/sql/xlrstats-update-2.4.0.sql', _dbstring)
+        #    self.executeSql('@b3/sql/xlrstats-update-2.6.1.sql', _dbstring)
 
         #self.db = self.connectToDatabase(_dbstring)
         #self.optimizeTables()

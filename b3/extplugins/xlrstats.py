@@ -59,6 +59,14 @@
 # 24-09-2011 - 2.6.1 - Mark Weirath
 #   added update .sql file to distro to enable weaponnames > 32 characters.
 #   no actual code was altered in the plugin except for the version to mark the change.
+# 19-10-2011 - 2.6.2 - Mark Weirath
+#   moved polling for webfront variables to a separate thread, to avoid startup delay when website is offline
+# 31-01-2012 - 2.7.0 - Mark Weirath
+#   integration of the ctime plugin as a subplugin
+
+# CTime Plugin was created by Anubis and integrated in XLRstats since version 2.7.0
+# Updates to this part of the plugin by:
+# AFC~Gagi2~ (gagi2@austrian-funclan.com) and xlr8or
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -66,18 +74,21 @@
 # XLRstats Real Time playerstats plugin
 
 __author__ = 'Tim ter Laak / Mark Weirath'
-__version__ = '2.6.1'
+__version__ = '2.7.0'
 
 # Version = major.minor.patches
 
 import string
+import datetime
 import time
 import re
 import thread
+import threading
 import urllib2
 import b3
 import b3.events
 import b3.plugin
+import b3.cron
 
 KILLER = "killer"
 VICTIM = "victim"
@@ -124,6 +135,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     prematch_maxtime = 70
     announce = False
     keep_history = True
+    keep_time = True
     minPlayers = 3 # minimum number of players to collect stats
     _currentNrPlayers = 0 # current number of players present
 
@@ -144,8 +156,12 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     playeractions_table = 'xlr_playeractions'
     clients_table = 'clients'
     penalties_table = 'penalties'
+    # default tablenames for the history subplugin
     history_monthly_table = 'xlr_history_monthly'
     history_weekly_table = 'xlr_history_weekly'
+    # default table name for the ctime subplugin
+    ctime_table = 'ctime'
+    #
     _defaultTableNames = True
 
 
@@ -263,20 +279,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         #let's try and get some variables from our webfront installation
         if self.webfrontUrl and self.webfrontUrl != '':
-            _request = str(self.webfrontUrl.rstrip('/')) + '/?config=' + str(self.webfrontConfigNr) + '&func=pluginreq'
-            try:
-                f = urllib2.urlopen(_request)
-                _result = f.readline().split(',')
-                # Our webfront will present us 3 values
-                if len(_result) == 3:
-                    # Force the collected strings to their final type. If an error occurs they will fail the try statement.
-                    self._minKills = int(_result[0])
-                    self._minRounds = int(_result[1])
-                    self._maxDays = int(_result[2])
-                    self.debug('Successfuly retrieved webfront variables: minkills: %i, minrounds: %i, maxdays: %i' % (
-                        self._minKills, self._minRounds, self._maxDays))
-            except:
-                self.debug('Couldn\'t retrieve webfront variables, using defaults')
+            thread1 = threading.Thread(target=self.getWebsiteVariables)
+            thread1.start()
         else:
             self.debug('No Webfront Url available, using defaults')
 
@@ -287,6 +291,11 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         self._cronTabKillBonus = b3.cron.PluginCronTab(self, self.calculateKillBonus, 0, '*/10')
         self.console.cron + self._cronTabKillBonus
 
+        #start the ctime subplugin
+        if self.keep_time:
+            p = CtimePlugin(self.console, self.ctime_table)
+            p.startup()
+
         #start the xlrstats controller
         p = XlrstatscontrollerPlugin(self.console, self.minPlayers)
         p.startup()
@@ -294,6 +303,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         msg = 'XLRstats v. %s by %s started.' % (__version__, __author__)
         self.console.say(msg)
         #end startup sequence
+
 
     def onLoadConfig(self):
         try:
@@ -408,6 +418,12 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.debug('Using default value (%d) for settings::announce', self.announce)
 
         try:
+            self.keep_time = self.config.getboolean('settings', 'keep_time')
+        except:
+            self.debug('Using default value (%d) for settings::keep_time', self.keep_time)
+
+        # Tablenames and stuff
+        try:
             self.playerstats_table = self.config.get('tables', 'playerstats')
             self._defaultTableNames = False
         except:
@@ -482,6 +498,14 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.history_weekly_table = 'xlr_history_weekly'
             self.debug('Using default value (%s) for tables::history_weekly', self.history_weekly_table)
 
+        #ctime table
+        try:
+            self.ctime_table = self.config.get('tables', 'ctime')
+            self._defaultTableNames = False
+        except:
+            self.ctime_table = 'ctime'
+            self.debug('Using default value (%s) for tables::ctime', self.ctime_table)
+
         return
 
 
@@ -519,6 +543,27 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     def dumpEvent(self, event):
         self.debug('xlrstats.dumpEvent -- Type %s, Client %s, Target %s, Data %s',
                    event.type, event.client, event.target, event.data)
+
+
+    def getWebsiteVariables(self):
+        """
+        Thread that polls for XLRstats webfront variables
+        """
+        _request = str(self.webfrontUrl.rstrip('/')) + '/?config=' + str(self.webfrontConfigNr) + '&func=pluginreq'
+        try:
+            f = urllib2.urlopen(_request)
+            _result = f.readline().split(',')
+            # Our webfront will present us 3 values
+            if len(_result) == 3:
+                # Force the collected strings to their final type. If an error occurs they will fail the try statement.
+                self._minKills = int(_result[0])
+                self._minRounds = int(_result[1])
+                self._maxDays = int(_result[2])
+                self.debug('Successfuly retrieved webfront variables: minkills: %i, minrounds: %i, maxdays: %i' % (
+                    self._minKills, self._minRounds, self._maxDays))
+        except Exception:
+            self.debug('Couldn\'t retrieve webfront variables, using defaults')
+
 
     def win_prob(self, player_skill, opponent_skill):
         return 1 / ( 10 ** ( (opponent_skill - player_skill) / self.steepness ) + 1 )
@@ -1758,6 +1803,106 @@ class XlrstatshistoryPlugin(b3.plugin.Plugin):
         except Exception, msg:
             self.error('Creating history snapshot failed: %s' % msg)
 
+class TimeStats:
+    came = None
+    left = None
+    client = None
+
+class CtimePlugin(b3.plugin.Plugin):
+    """This is a helper class/plugin that saves client join and disconnect time info
+    It can not be called directly or separately from the XLRstats plugin!"""
+
+    _clients = {}
+    _cronTab = None
+    _max_age_in_days = 31
+    _hours = 5
+    _minutes = 0
+
+    def __init__(self, console, cTimeTable):
+        self.console = console
+        self.ctime_table = cTimeTable
+        self.registerEvent(b3.events.EVT_CLIENT_AUTH)
+        self.registerEvent(b3.events.EVT_CLIENT_DISCONNECT)
+        self.query = self.console.storage.query
+        tzName = self.console.config.get('b3', 'time_zone').upper()
+        tzOffest = b3.timezones.timezones[tzName]
+        hoursGMT = (self._hours - tzOffest)%24
+        self.debug(u'%02d:%02d %s => %02d:%02d UTC' % (self._hours, self._minutes, tzName, hoursGMT, self._minutes))
+        self.info(u'everyday at %2d:%2d %s, connection info older than %s days will be deleted' % (self._hours, self._minutes, tzName, self._max_age_in_days))
+        self._cronTab = b3.cron.PluginCronTab(self, self.purge, 0, self._minutes, hoursGMT, '*', '*', '*')
+        self.console.cron + self._cronTab
+
+    def purge(self):
+        if not self._max_age_in_days or self._max_age_in_days == 0:
+            self.warning(u'max_age is invalid [%s]' % self._max_age_in_days)
+            return False
+
+        self.info(u'purge of connection info older than %s days ...' % self._max_age_in_days)
+        q = "DELETE FROM %s WHERE came < %i" % (self.ctime_table, (self.console.time() - (self._max_age_in_days*24*60*60)))
+        self.debug(u'CTIME QUERY: %s ' % q)
+        cursor = self.console.storage.query(q)
+
+    def onEvent(self, event):
+        if event.type == b3.events.EVT_CLIENT_AUTH:
+            if  not event.client or\
+                not event.client.id or\
+                event.client.cid == None or\
+                not event.client.connected or\
+                event.client.hide:
+                return
+
+            self.update_time_stats_connected(event.client)
+
+        elif event.type == b3.events.EVT_CLIENT_DISCONNECT:
+            self.update_time_stats_exit(event.data)
+
+    def update_time_stats_connected(self, client):
+        if (self._clients.has_key(client.cid)):
+            self.debug(u'CTIME CONNECTED: Client exist! : %s' % client.cid);
+            tmpts = self._clients[client.cid]
+            if(tmpts.client.guid == client.guid):
+                self.debug(u'CTIME RECONNECTED: Player %s connected again, but playing since: %s' %  (client.exactName, tmpts.came))
+                return
+            else:
+                del self._clients[client.cid]
+
+        ts = TimeStats()
+        ts.client = client
+        ts.came = datetime.datetime.now()
+        self._clients[client.cid] = ts
+        self.debug(u'CTIME CONNECTED: Player %s started playing at: %s' % (client.exactName, ts.came))
+
+    def formatTD(self, td):
+        hours = td // 3600
+        minutes = (td % 3600) // 60
+        seconds = td % 60
+        return '%s:%s:%s' % (hours, minutes, seconds)
+
+    def update_time_stats_exit(self, clientid):
+        self.debug(u'CTIME LEFT:')
+        if (self._clients.has_key(clientid)):
+            ts = self._clients[clientid]
+            # Fail: Sometimes PB in cod4 returns 31 character guids, we need to dump them. Lets look ahead and do this for the whole codseries.
+            #if(self.console.gameName[:3] == 'cod' and self.console.PunkBuster and len(ts.client.guid) != 32):
+            #    pass
+            #else:
+            ts.left = datetime.datetime.now()
+            diff = (int(time.mktime(ts.left.timetuple())) - int(time.mktime(ts.came.timetuple())))
+
+            self.debug(u'CTIME LEFT: Player: %s played this time: %s sec' % (ts.client.exactName, diff))
+            self.debug(u'CTIME LEFT: Player: %s played this time: %s' % (ts.client.exactName, self.formatTD(diff)))
+            #INSERT INTO `ctime` (`guid`, `came`, `left`) VALUES ("6fcc4f6d9d8eb8d8457fd72d38bb1ed2", 1198187868, 1226081506)
+            q = 'INSERT INTO %s (guid, came, gone, nick) VALUES (\"%s\", \"%s\", \"%s\", \"%s\")' % (self.ctime_table, ts.client.guid, int(time.mktime(ts.came.timetuple())), int(time.mktime(ts.left.timetuple())), ts.client.name)
+            self.query(q)
+
+            self._clients[clientid].left = None
+            self._clients[clientid].came = None
+            self._clients[clientid].client = None
+
+            del self._clients[clientid]
+
+        else:
+            self.debug(u'CTIME LEFT: Player %s var not set!' % clientid)
 
 #-----------------------------------------------------------------------------------------------------------------------
 # This is an abstract class. Do not call directly.

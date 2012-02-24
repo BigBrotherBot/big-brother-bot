@@ -61,7 +61,6 @@
                 dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=6"/>
         <plugin name="chatlogger" config="external_dir/conf/plugin_chatlogger.xml"
                 dlocation="http://github.com/courgette/b3-plugin-chatlogger/zipball/v1.0" sql="chatlogger.sql"/>
-        <plugin name="xlrstats" config="external_dir/conf/xlrstats.xml" sql="xlrstats.sql"/>
-        <plugin name="ctime" dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=146" sql="ctime.sql"/>
+        <plugin name="xlrstats" config="external_dir/conf/xlrstats.xml"/>
     </extplugins>
 </configuration>

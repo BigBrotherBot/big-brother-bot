@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS `xlr_playerstats` (
 
 CREATE TABLE IF NOT EXISTS `xlr_weaponstats` (
   `id` smallint(5) unsigned NOT NULL auto_increment,
-  `name` varchar(32) NOT NULL default '',
+  `name` varchar(64) NOT NULL default '',
   `kills` mediumint(8) unsigned NOT NULL default '0',
   `teamkills` smallint(5) unsigned NOT NULL default '0',
   `suicides` smallint(5) unsigned NOT NULL default '0',
@@ -249,3 +249,18 @@ CREATE TABLE IF NOT EXISTS `xlr_history_weekly` (
   `day` int(2) NOT NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `ctime`
+--
+
+CREATE TABLE IF NOT EXISTS `ctime` (
+  `id` int(11) unsigned NOT NULL auto_increment,
+  `guid` varchar(36) NOT NULL,
+  `came` varchar(11) default NULL,
+  `gone` varchar(11) default NULL,
+  `nick` varchar(32) NOT NULL,
+  PRIMARY KEY  (`id`)
+) TYPE=MyISAM DEFAULT CHARSET=utf8;
