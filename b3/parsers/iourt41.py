@@ -144,9 +144,14 @@
 # * better team recognition of existing players at B3 start
 # 15/11/2011 - 1.11.4 - Courgette
 # * players's team get refreshed after unpausing the bot (useful when used with FTP and B3 lose the connection for a while)
-#
+# 03/03/2012 - 1.11.5 - SGT
+# Create Survivor Winner Event
+# Create Unban event
+# fix issue with OnSay when something like this come and the match could'nt find the name group
+# say: 7 -crespino-:
+
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.11.4'
+__version__ = '1.11.5'
 
 from b3.parsers.q3a.abstractParser import AbstractParser
 import re, string, threading, time, os, thread
@@ -217,7 +222,10 @@ class Iourt41Parser(AbstractParser):
         #15:37 say: 9 .:MS-T:.BstPL: this name is quite a challenge
         #2:28 sayteam: 12 New_UrT_Player_v4.1: woekele
         #16:33 Flag: 2 0: team_CTF_redflag
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<name>[^ ]+):\s+(?P<text>.*))$', re.IGNORECASE),
+        #re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<name>[^ ]+):\s+(?P<text>.*))$', re.IGNORECASE),
+        # SGT: fix issue with OnSay when something like this come and the match could'nt find the name group
+        # say: 7 -crespino-:
+        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<name>[^ ]+):\s*(?P<text>.*))$', re.IGNORECASE),
 
         #15:42 Flag Return: RED
         #15:42 Flag Return: BLUE
@@ -367,7 +375,8 @@ class Iourt41Parser(AbstractParser):
         # add UrT specific events
         self.Events.createEvent('EVT_GAME_FLAG_RETURNED', 'Flag returned')
         self.Events.createEvent('EVT_CLIENT_GEAR_CHANGE', 'Client gear change')
-
+        self.Events.createEvent('EVT_SURVIVOR_WIN', 'Survivor Winner')
+        
         # add the world client
         self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
 
@@ -926,6 +935,13 @@ class Iourt41Parser(AbstractParser):
             return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, item, client)
         return None
 
+    # survivor winner
+    def OnSurvivorwinner(self, action, data, match=None):
+        #SurvivorWinner: Blue
+        #SurvivorWinner: Red
+        self.debug('EVENT: OnSurvivorwinner')
+        return b3.events.Event(b3.events.EVT_SURVIVOR_WIN, data)  
+        
 #-------------------------------------------------------------------------------
     # say
     def OnSay(self, action, data, match=None):
@@ -1155,6 +1171,7 @@ class Iourt41Parser(AbstractParser):
             admin.message('^3Unbanned^7: ^1%s^7 (^2@%s^7). His last ip (^1%s^7) has been removed from banlist. Trying to remove duplicates...' % (client.exactName, client.id, client.ip))
         t1 = threading.Timer(1, self._unbanmultiple, (client, admin))
         t1.start()
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_UNBAN, admin, client))
 
     def _unbanmultiple(self, client, admin=None):
         # UrT adds multiple instances to banlist.txt Make sure we remove up to 4 remaining duplicates in a separate thread
