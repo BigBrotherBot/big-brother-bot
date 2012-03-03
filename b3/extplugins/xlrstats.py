@@ -78,7 +78,6 @@ __version__ = '2.7.0'
 
 # Version = major.minor.patches
 
-import string
 import datetime
 import time
 import re
@@ -138,6 +137,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     keep_time = True
     minPlayers = 3 # minimum number of players to collect stats
     _currentNrPlayers = 0 # current number of players present
+    silent = False # Disables the announcement when collecting stats = stealth mode
 
     # keep some private map data to detect prematches and restarts
     last_map = None
@@ -297,7 +297,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             p.startup()
 
         #start the xlrstats controller
-        p = XlrstatscontrollerPlugin(self.console, self.minPlayers)
+        p = XlrstatscontrollerPlugin(self.console, self.minPlayers, self.silent)
         p.startup()
 
         msg = 'XLRstats v. %s by %s started.' % (__version__, __author__)
@@ -306,6 +306,11 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
 
     def onLoadConfig(self):
+        try:
+            self.silent = self.config.getbool('settings', 'silent')
+        except:
+            self.debug('Using default value (%s) for settings::silent', self.silent)
+
         try:
             self.hide_bots = self.config.getbool('settings', 'hide_bots')
         except:
@@ -1664,6 +1669,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def calculateKillBonus(self):
         self.debug('Calculating kill_bonus')
+        # make sure max and diff are floating numbers (may be redundant)
         max = 0.0
         diff = 0.0
         _oldkillbonus = self.kill_bonus
@@ -1692,9 +1698,10 @@ class XlrstatscontrollerPlugin(b3.plugin.Plugin):
     """This is a helper class/plugin that enables and disables the main XLRstats plugin
     It can not be called directly or separately from the XLRstats plugin!"""
 
-    def __init__(self, console, minPlayers=3):
+    def __init__(self, console, minPlayers=3, silent=False):
         self.console = console
         self.minPlayers = minPlayers
+        self.silent = silent
         # empty message cache
         self._messages = {}
         self.registerEvent(b3.events.EVT_STOP)
@@ -1723,11 +1730,13 @@ class XlrstatscontrollerPlugin(b3.plugin.Plugin):
             'Checking number of players online. Minimum = %s, Current = %s' % (self.minPlayers, self._currentNrPlayers))
         if self._currentNrPlayers < self.minPlayers and self._xlrstatsPlugin.isEnabled() and _roundstart:
             self.info('Disabling XLRstats: Not enough players online')
-            self.console.say('XLRstats Disabled: Not enough players online!')
+            if not self.silent:
+                self.console.say('XLRstats Disabled: Not enough players online!')
             self._xlrstatsPlugin.disable()
         elif self._currentNrPlayers >= self.minPlayers and not self._xlrstatsPlugin.isEnabled():
             self.info('Enabling XLRstats: Collecting Stats')
-            self.console.say('XLRstats Enabled: Now collecting stats!')
+            if not self.silent:
+                self.console.say('XLRstats Enabled: Now collecting stats!')
             self._xlrstatsPlugin.enable()
         else:
             if self._xlrstatsPlugin.isEnabled():
@@ -1857,10 +1866,10 @@ class CtimePlugin(b3.plugin.Plugin):
             self.update_time_stats_exit(event.data)
 
     def update_time_stats_connected(self, client):
-        if (self._clients.has_key(client.cid)):
-            self.debug(u'CTIME CONNECTED: Client exist! : %s' % client.cid);
+        if self._clients.has_key(client.cid):
+            self.debug(u'CTIME CONNECTED: Client exist! : %s' % client.cid)
             tmpts = self._clients[client.cid]
-            if(tmpts.client.guid == client.guid):
+            if tmpts.client.guid == client.guid:
                 self.debug(u'CTIME RECONNECTED: Player %s connected again, but playing since: %s' %  (client.exactName, tmpts.came))
                 return
             else:
@@ -1880,7 +1889,7 @@ class CtimePlugin(b3.plugin.Plugin):
 
     def update_time_stats_exit(self, clientid):
         self.debug(u'CTIME LEFT:')
-        if (self._clients.has_key(clientid)):
+        if self._clients.has_key(clientid):
             ts = self._clients[clientid]
             # Fail: Sometimes PB in cod4 returns 31 character guids, we need to dump them. Lets look ahead and do this for the whole codseries.
             #if(self.console.gameName[:3] == 'cod' and self.console.PunkBuster and len(ts.client.guid) != 32):
