@@ -309,6 +309,7 @@ class Iourt41Parser(AbstractParser):
         15: UT_MOD_AK103,
         17: UT_MOD_NEGEV,
         19: UT_MOD_M4,
+        21: UT_MOD_HEGRENADE,
         22: UT_MOD_KNIFE_THROWN,
     }
 
