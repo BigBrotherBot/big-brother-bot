@@ -63,6 +63,8 @@
 #   moved polling for webfront variables to a separate thread, to avoid startup delay when website is offline
 # 31-01-2012 - 2.7.0 - Mark Weirath
 #   integration of the ctime plugin as a subplugin
+# 03-03-2012 - 2.7.1 - Mark Weirath
+#   added silent mode and some minor rewrites
 
 # CTime Plugin was created by Anubis and integrated in XLRstats since version 2.7.0
 # Updates to this part of the plugin by:
@@ -74,7 +76,7 @@
 # XLRstats Real Time playerstats plugin
 
 __author__ = 'Tim ter Laak / Mark Weirath'
-__version__ = '2.7.0'
+__version__ = '2.7.1'
 
 # Version = major.minor.patches
 
