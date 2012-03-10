@@ -53,9 +53,10 @@
 # 11/09/2011 - 1.4.24 - 82ndab.Bravo17 - New client will now join Auth queue if slot shows as 'Disconnected' in Auth queue
 # 10/30/2011 - 1.4.25 - xlr8or - Add decoding to data in say, sayTeam and Tell methods
 # 01/28/2012 - 1.4.26 - 82ndab.Bravo17 - Add special case COD7 suicide regex where attacker team and name appear to be swapped in the console output
+# 10/03/2012 - 1.4.27 - 82ndab.Bravo17 - pbid now empty string instead of None if pb disabled
 
 __author__ = 'ThorN, xlr8or'
-__version__ = '1.4.26'
+__version__ = '1.4.27'
 
 import re, string, threading
 import b3
@@ -630,7 +631,7 @@ class CodParser(AbstractParser):
                 return None
             else:
                 guid = codguid
-                pbid = None
+                pbid = ''
                 ip = sp['ip']
                 if self._counter.get(cid):
                     self._counter.pop(cid)
