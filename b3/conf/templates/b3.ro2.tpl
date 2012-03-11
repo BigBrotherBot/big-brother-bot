@@ -50,5 +50,10 @@
 	<plugins>
 		<plugin name="admin" config="@conf/plugin_admin.xml"/>
 		<plugin name="censor" config="@conf/plugin_censor.xml"/>
+		<plugin name="spamcontrol" config="@conf/plugin_spamcontrol.xml" />
+		<plugin name="pingwatch" config="@conf/plugin_pingwatch.xml" />
+		<plugin name="adv" config="@conf/plugin_adv.xml" />
+		<plugin name="status" config="@conf/plugin_status.xml" />
+		<plugin name="welcome" config="@conf/plugin_welcome.xml" />
 	</plugins>
 </configuration>
