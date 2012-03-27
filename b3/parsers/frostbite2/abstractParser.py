@@ -16,8 +16,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+# CHANGELOG
+# 1.0
+#  update parser for BF3 R20
 __author__  = 'Courgette'
-__version__ = '0.5'
+__version__ = '1.0'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -48,6 +51,8 @@ class AbstractParser(b3.parser.Parser):
     frostbite_event_queue = Queue.Queue(400)
     sayqueue = Queue.Queue(100)
     sayqueuelistener = None
+    yellqueue = Queue.Queue(100)
+    yellqueuelistener = None
 
     # frostbite2 engine does not support color code, so we need this property
     # in order to get stripColors working
@@ -57,15 +62,20 @@ class AbstractParser(b3.parser.Parser):
         'line_length': 128,
         'min_wrap_length': 128,
         'message_delay': .8,
+        'yell_duration': 2.2,
         }
 
     _gameServerVars = () # list available cvar
 
     _commands = {
-        'message': ('admin.say', '%(message)s', 'all', '%(cid)s'), # TODO : send private messages when available
+        'message': ('admin.say', '%(message)s', 'player', '%(cid)s'),
         'saySquad': ('admin.say', '%(message)s', 'squad', '%(teamId)s', '%(squadId)s'),
         'sayTeam': ('admin.say', '%(message)s', 'team', '%(teamId)s'),
         'say': ('admin.say', '%(message)s', 'all'),
+        'bigmessage': ('admin.yell', '%(message)s', '%(yell_duration)s', 'player', '%(cid)s'),
+        'yellSquad': ('admin.yell', '%(message)s', '%(yell_duration)s', 'squad', '%(teamId)s', '%(squadId)s'),
+        'yellTeam': ('admin.yell', '%(message)s', '%(yell_duration)s', 'team', '%(teamId)s'),
+        'yell': ('admin.yell', '%(message)s', '%(yell_duration)s'),
         'kick': ('admin.kickPlayer', '%(cid)s', '%(reason)s'),
         'ban': ('banList.add', 'guid', '%(guid)s', 'perm', '%(reason)s'),
         'banByIp': ('banList.add', 'ip', '%(ip)s', 'perm', '%(reason)s'),
@@ -353,15 +363,15 @@ class AbstractParser(b3.parser.Parser):
                     self.error("unexpected value '%s' for ban_agent" % ban_agent)
         self.info("ban agent 'server' : %s" % ('activated' if self.ban_with_server else 'deactivated'))
         self.info("ban agent 'punkbuster' : %s" % ('activated' if self.PunkBuster else 'deactivated'))
-        
-        self.sayqueuelistener = threading.Thread(target=self.sayqueuelistener)
-        self.sayqueuelistener.setDaemon(True)
-        self.sayqueuelistener.start()
+
+        self.start_sayqueue_worker()
+        self.start_yellqueue_worker()
 
         # start crontab to trigger playerlist events
         self.cron + b3.cron.CronTab(self.clients.sync, minute='*/5')
-    
-    def sayqueuelistener(self):
+
+
+    def sayqueuelistener_worker(self):
         self.info("sayqueuelistener job started")
         while self.working:
             try:
@@ -374,6 +384,31 @@ class AbstractParser(b3.parser.Parser):
             except Exception, err:
                 self.error(err)
         self.info("sayqueuelistener job ended")
+
+    def start_sayqueue_worker(self):
+        self.sayqueuelistener = threading.Thread(target=self.sayqueuelistener_worker)
+        self.sayqueuelistener.setDaemon(True)
+        self.sayqueuelistener.start()
+
+    def yellqueuelistener_worker(self):
+        self.info("yellqueuelistener job started")
+        while self.working:
+            try:
+                msg = self.yellqueue.get(timeout=40)
+                for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
+                    self.write(self.getCommand('yell', message=line, yell_duration=self._settings['yell_duration']))
+                    time.sleep(self._settings['yell_duration'])
+            except Queue.Empty:
+                self.verbose2("yellqueuelistener: had nothing to do in the last 40 sec")
+            except Exception, err:
+                self.error(err)
+        self.info("yellqueuelistener job ended")
+
+    def start_yellqueue_worker(self):
+        self.yellqueuelistener = threading.Thread(target=self.yellqueuelistener_worker)
+        self.yellqueuelistener.setDaemon(True)
+        self.yellqueuelistener.start()
+
 
     def getCommand(self, cmd, **kwargs):
         """Return a reference to a loaded command"""
@@ -829,7 +864,7 @@ class AbstractParser(b3.parser.Parser):
         """\
         broadcast a message to all players in a way that will catch their attention.
         """
-        raise NotImplementedError
+        self.yellqueue.put(msg)
 
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -856,14 +891,14 @@ class AbstractParser(b3.parser.Parser):
 
     def message(self, client, text):
         try:
-            if client == None:
+            if client is None:
                 self.say(text)
-            elif client.cid == None:
+            elif client.cid is None:
                 pass
             else:
                 self.write(self.getCommand('message', message=text, cid=client.cid))
-        except:
-            pass
+        except Exception, err:
+            self.warning(err)
 
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -1134,6 +1169,19 @@ class AbstractParser(b3.parser.Parser):
     #    
     ###############################################################################################
 
+
+    def yell(self, client, text):
+        """yell text to a given client"""
+        try:
+            if client is None:
+                self.saybig(text)
+            elif client.cid is None:
+                pass
+            else:
+                self.write(self.getCommand('bigmessage', message=text, cid=client.cid, yell_duration=self._settings['yell_duration']))
+        except Exception, err:
+            self.warning(err)
+
     def getFullMapRotationList(self):
         """query the Frostbite2 game server and return a MapListBlock containing all maps of the current
          map rotation list.
@@ -1329,7 +1377,7 @@ def frostbiteClientMessageQueueWorker(self):
         msg = self.messagequeue.get()
         if msg:
             self.console.message(self, msg)
-            time.sleep(int(self.console._settings['message_delay']))
+            time.sleep(float(self.console._settings['message_delay']))
 b3.clients.Client.messagequeueworker = frostbiteClientMessageQueueWorker
 
 ## override the Client.message() method at runtime
@@ -1350,3 +1398,39 @@ def frostbiteClientMessageMethod(self, msg):
         else:
             self.console.verbose('messagehandler for %s isAlive' %self.name)
 b3.clients.Client.message = frostbiteClientMessageMethod
+
+
+## add a new method to the Client class
+def frostbiteClientYellMessageQueueWorker(self):
+    """
+    This take a line off the queue and displays it
+    then pause for 'yell_duration' seconds
+    """
+    self.console.info("yellqueueworker job started for client %s" % self.cid)
+    while not self.yellqueue.empty():
+        msg = self.yellqueue.get()
+        if msg:
+            self.console.yell(self, msg)
+            time.sleep(float(self.console._settings['yell_duration']))
+    self.console.info("yellqueueworker job ended for client %s" % self.cid)
+b3.clients.Client.yellqueueworker = frostbiteClientYellMessageQueueWorker
+
+## override the Client.yell() method at runtime
+def frostbiteClientYellMethod(self, msg):
+    if msg and len(msg.strip())>0:
+        # do we have a queue?
+        if not hasattr(self, 'yellqueue'):
+            self.yellqueue = Queue.Queue()
+            # fill the queue
+        text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
+        for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
+            self.yellqueue.put(line)
+        # create a thread that executes the worker and pushes out the queue
+        if not hasattr(self, 'yellhandler') or not self.yellhandler.isAlive():
+            self.yellhandler = threading.Thread(target=self.yellqueueworker)
+            self.yellhandler.setDaemon(True)
+            self.yellhandler.start()
+        else:
+            self.console.verbose('yellhandler for %s isAlive' % self.name)
+b3.clients.Client.yell = frostbiteClientYellMethod
+

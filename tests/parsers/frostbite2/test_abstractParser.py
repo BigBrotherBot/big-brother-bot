@@ -16,15 +16,16 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+import logging
 
-import unittest
-from mock import Mock
-from tests import B3TestCase
+from mock import Mock, patch
+import time
+from tests import B3TestCase, extends_mock
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 
-
+extends_mock()
 
 class AbstractParser_TestCase(B3TestCase):
     """
@@ -35,10 +36,10 @@ class AbstractParser_TestCase(B3TestCase):
     def setUpClass(cls):
         from b3.parsers.frostbite2.abstractParser import AbstractParser
         from b3.fake import FakeConsole
+
         AbstractParser.__bases__ = (FakeConsole,)
         # Now parser inheritance hierarchy is :
         # AbstractParser -> FakeConsole -> Parser
-
 
 
 class Write_controlled_TestCase(AbstractParser_TestCase):
@@ -64,7 +65,7 @@ class Write_controlled_TestCase(AbstractParser_TestCase):
         ('MP_001 ', 'ConquestLarge0', '2'),
         ('MP_002 ', 'Rush0', '2'),
         ('MP_003 ', 'ConquestLarge0', '2'),
-    )
+        )
     map_indices = [1, 2]
 
     def setUp(self):
@@ -86,21 +87,23 @@ class Write_controlled_TestCase(AbstractParser_TestCase):
                             offset = int(data[1])
                         except ValueError:
                             raise CommandFailedError(['InvalidArguments'])
-                        # simulate that the Frostbite2 server responds with 5 maps at most for the mapList.list command
-                    maps_to_send = self.__class__.maps[offset:offset+5]
+                            # simulate that the Frostbite2 server responds with 5 maps at most for the mapList.list command
+                    maps_to_send = self.__class__.maps[offset:offset + 5]
                     return [len(maps_to_send), 3] + list(reduce(tuple.__add__, maps_to_send, tuple()))
                 elif data[0].lower() == 'maplist.getmapindices':
                     return self.__class__.map_indices
             return []
+
         self.parser.write = Mock(side_effect=write)
 
-        self.parser.getEasyName = Mock(side_effect=lambda x:x)
-        self.parser.getGameMode = Mock(side_effect=lambda x:x)
+        self.parser.getEasyName = Mock(side_effect=lambda x: x)
+        self.parser.getGameMode = Mock(side_effect=lambda x: x)
 
+    def tearDown(self):
+        self.parser.working = False
 
 
 class Test_getNextMap(Write_controlled_TestCase):
-
     def test_empty(self):
         # setup context
         Write_controlled_TestCase.maps = tuple()
@@ -122,7 +125,7 @@ class Test_getNextMap(Write_controlled_TestCase):
         Write_controlled_TestCase.maps = (
             ('MP_001', 'ConquestLarge0', '2'),
             ('MP_002', 'Rush0', '1'),
-        )
+            )
         Write_controlled_TestCase.map_indices = [0, 0]
         # verify
         self.assertEqual('MP_001 (ConquestLarge0)', self.parser.getNextMap())
@@ -132,12 +135,10 @@ class Test_getNextMap(Write_controlled_TestCase):
         Write_controlled_TestCase.maps = (
             ('MP_001', 'ConquestLarge0', '2'),
             ('MP_002', 'Rush0', '1'),
-        )
+            )
         Write_controlled_TestCase.map_indices = [0, 1]
         # verify
         self.assertEqual('MP_002 (Rush0)', self.parser.getNextMap())
-
-
 
 
 class Test_getFullMapRotationList(Write_controlled_TestCase):
@@ -195,7 +196,7 @@ class Test_getFullMapRotationList(Write_controlled_TestCase):
             ('MP_0010', 'ConquestLarge0', '2'),
             ('MP_0011', 'ConquestLarge0', '2'), # 3rd
             ('MP_0012', 'ConquestLarge0', '2'),
-        )
+            )
         # verify
         mlb = self.parser.getFullMapRotationList()
         self.assertEqual(12, len(mlb))
@@ -206,7 +207,6 @@ class Test_getFullMapRotationList(Write_controlled_TestCase):
             ((('mapList.list', 10),), {}),
             ((('mapList.list', 15),), {}),
         ], self.parser.write.call_args_list
-
 
 
 class Test_getFullBanList(Write_controlled_TestCase):
@@ -220,10 +220,9 @@ class Test_getFullBanList(Write_controlled_TestCase):
         ('name', 'Jack', 'rounds', '0', '4', 'tk'),
         ('name', 'Averell', 'seconds', '3576', '0', 'being stupid'),
         ('name', 'William', 'perm', '0', '0', 'hacking'),
-    )
+        )
 
     def setUp(self):
-
         self.conf = XmlConfigParser()
         self.conf.loadFromString("""
                 <configuration>
@@ -243,9 +242,10 @@ class Test_getFullBanList(Write_controlled_TestCase):
                         except ValueError:
                             raise CommandFailedError(['InvalidArguments'])
                             # simulate that the Frostbite2 server responds with 5 bans at most for the banList.list command
-                    bans_to_send = self.__class__.bans[offset:offset+5]
+                    bans_to_send = self.__class__.bans[offset:offset + 5]
                     return list(reduce(tuple.__add__, bans_to_send, tuple()))
             return []
+
         self.parser.write = Mock(side_effect=write)
 
 
@@ -262,7 +262,9 @@ class Test_getFullBanList(Write_controlled_TestCase):
         self.__class__.bans = (('name', 'Foo1 ', 'perm', '0', '0', 'Banned by admin'),)
         # verify
         mlb = self.parser.getFullBanList()
-        self.assertEqual("BanlistContent[{'idType': 'name', 'seconds_left': '0', 'reason': 'Banned by admin', 'banType': 'perm', 'rounds_left': '0', 'id': 'Foo1 '}]", repr(mlb))
+        self.assertEqual(
+            "BanlistContent[{'idType': 'name', 'seconds_left': '0', 'reason': 'Banned by admin', 'banType': 'perm', 'rounds_left': '0', 'id': 'Foo1 '}]"
+            , repr(mlb))
         self.assertEqual(2, self.parser.write.call_count)
 
     def test_two_bans(self):
@@ -274,7 +276,8 @@ class Test_getFullBanList(Write_controlled_TestCase):
         # verify
         mlb = self.parser.getFullBanList()
         self.assertEqual("BanlistContent[{'idType': 'name', 'seconds_left': '0', 'reason': 'Banned by admin', 'banType': 'perm', 'rounds_left': '0', 'id': 'Foo1 '}, \
-{'idType': 'name', 'seconds_left': '0', 'reason': 'Banned by admin', 'banType': 'perm', 'rounds_left': '0', 'id': 'Foo2 '}]", repr(mlb))
+{'idType': 'name', 'seconds_left': '0', 'reason': 'Banned by admin', 'banType': 'perm', 'rounds_left': '0', 'id': 'Foo2 '}]"
+            , repr(mlb))
         self.assertEqual(2, self.parser.write.call_count)
 
 
@@ -290,7 +293,7 @@ class Test_getFullBanList(Write_controlled_TestCase):
             ('name', 'Foo7 ', 'perm', '0', '0', 'Banned by admin'),
             ('name', 'Foo8 ', 'perm', '0', '0', 'Banned by admin'),
             ('name', 'Foo9 ', 'perm', '0', '0', 'Banned by admin'),
-        )
+            )
         # verify
         mlb = self.parser.getFullBanList()
         self.assertEqual(9, len(mlb))
@@ -302,9 +305,7 @@ class Test_getFullBanList(Write_controlled_TestCase):
         ], self.parser.write.call_args_list
 
 
-
 class Test_patch_b3_clients_getByMagic(AbstractParser_TestCase):
-
     def setUp(self):
         self.conf = XmlConfigParser()
         self.conf.loadFromString("""
@@ -318,6 +319,9 @@ class Test_patch_b3_clients_getByMagic(AbstractParser_TestCase):
         self.jack = self.parser.clients.newClient(cid='jack', name='jack', guid="ccccccccc5555555")
         self.jacky = self.parser.clients.newClient(cid='jacky', name='jacky', guid="ddddddddd5555555")
         self.p123456 = self.parser.clients.newClient(cid='123456', name='123456', guid="eeeeeee5555555")
+
+    def tearDown(self):
+        self.parser.working = False
 
     def test_exact_name(self):
         self.assertEqual([self.foobar], self.parser.clients.getByMagic('Foobar'))
@@ -337,3 +341,96 @@ class Test_patch_b3_clients_getByMagic(AbstractParser_TestCase):
         This test will fail if the b3.clients.Clients.getByMagic method was not patched
         """
         self.assertEqual([self.p123456], self.parser.clients.getByMagic('345'))
+
+
+class Test_patch_b3_client_yell(AbstractParser_TestCase):
+    def setUp(self):
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.parser = AbstractParser(self.conf)
+        self.yell_duration = self.parser._settings['yell_duration'] = '3.1'
+        # setup context
+        self.joe = self.parser.clients.newClient(cid='joe', name='joe', guid="bbbbbbbb5555555")
+
+    def tearDown(self):
+        self.parser.working = False
+
+    def test_client_yell(self):
+        with patch.object(time, 'sleep'):
+            with patch.object(AbstractParser, 'write') as write_mock:
+
+                self.joe.yell('test')
+                self.joe.yell('test2')
+                self.joe.yell('test3')
+                self.joe.yellhandler.join(2)
+
+                self.assertTrue(write_mock.called)
+                write_mock.assert_was_called_with(('admin.yell', '[pm] test', self.yell_duration, 'player', 'joe'))
+                write_mock.assert_was_called_with(('admin.yell', '[pm] test2', self.yell_duration, 'player', 'joe'))
+                write_mock.assert_was_called_with(('admin.yell', '[pm] test3', self.yell_duration, 'player', 'joe'))
+
+
+
+
+class Test_saybig(AbstractParser_TestCase):
+    def setUp(self):
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.parser = AbstractParser(self.conf)
+        self.yell_duration = self.parser._settings['yell_duration'] = '3.1'
+
+    def tearDown(self):
+        self.parser.working = False
+
+    def test_saybig(self):
+        with patch.object(time, 'sleep'):
+            with patch.object(AbstractParser, 'write') as write_mock:
+                self.parser.saybig('test')
+                self.parser.saybig('test2')
+
+                self.parser.start_yellqueue_worker()
+                self.parser.yellqueuelistener.join(.1)
+
+                self.assertTrue(write_mock.called)
+                write_mock.assert_was_called_with(('admin.yell', 'test', self.yell_duration))
+                write_mock.assert_was_called_with(('admin.yell', 'test2', self.yell_duration))
+
+
+
+
+class Test_say(AbstractParser_TestCase):
+    def setUp(self):
+        log = logging.getLogger('output')
+        log.setLevel(logging.NOTSET)
+
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.parser = AbstractParser(self.conf)
+
+    def tearDown(self):
+        self.parser.working = False
+
+    def test_say(self):
+        with patch.object(time, 'sleep'):
+            with patch.object(AbstractParser, 'write') as write_mock:
+
+                self.parser.say('test')
+                self.parser.say('test2')
+
+                self.parser.start_sayqueue_worker()
+                self.parser.sayqueuelistener.join(.1)
+
+                self.assertTrue(write_mock.called)
+                write_mock.assert_was_called_with(('admin.say', 'test', 'all'))
+                write_mock.assert_was_called_with(('admin.say', 'test2', 'all'))
+
+

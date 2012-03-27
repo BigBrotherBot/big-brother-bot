@@ -20,13 +20,15 @@
 # CHANGELOG
 # 0.1
 #  functionnal parser but BF3 admin protocol is not fully implemented on the BF3 side. See TODOs
+# 1.0
+#  update parser for BF3 R20
 #
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 import b3
 import b3.events
 __author__  = 'Courgette'
-__version__ = '0.1'
+__version__ = '1.0'
 
 
 SAY_LINE_MAX_LENGTH = 128
@@ -45,7 +47,10 @@ SQUAD_NEUTRAL = 24
 GAME_MODES_NAMES = {
     "ConquestLarge0": "Conquest64",
     "ConquestSmall0": "Conquest",
-    "ConquestSmall1": "Conquest Assault",
+    "ConquestSmall1": "Conquest Assault", # will be deprecated after BF3 server R20
+    "ConquestAssaultLarge0": "Conquest Assault64",
+    "ConquestAssaultSmall0": "Conquest Assault",
+    "ConquestAssaultSmall1": "Conquest Assault alt.2",
     "RushLarge0": "Rush",
     "SquadRush0": "Squad Rush",
     "SquadDeathMatch0": "Squad Deathmatch",
@@ -106,7 +111,7 @@ class Bf3Parser(AbstractParser):
         self.load_config_message_delay()
 
         self.verbose('GameType: %s, Map: %s' %(self.game.gameType, self.game.mapName))
-        
+
 
     def pluginsStarted(self):
         self.info('connecting all players...')
@@ -164,32 +169,6 @@ class Bf3Parser(AbstractParser):
     #    B3 Parser interface implementation
     #    
     ###############################################################################################
-
-    def saybig(self, msg):
-        """\
-        broadcast a message to all players in a way that will catch their attention.
-        """
-        return self.say(msg)
-
-    def message(self, client, text):
-        try:
-            if client is None:
-                self.say(text)
-            elif client.cid is None:
-                pass
-            else:
-                #self.write(self.getCommand('message', message=text, cid=client.cid)) # TODO: uncomment this once private chat is working
-                if client.teamId is not None and client.squad is not None:
-                # until private chat works, we try to send the message to the squad only
-                    self.write(self.getCommand('saySquad', message=text, teamId=client.teamId, squadId=client.squad))
-                elif client.teamId:
-                    # or the team only
-                    self.write(self.getCommand('sayTeam', message=text, teamId=client.teamId))
-                else:
-                    # or fallback on all players
-                    self.say(text)
-        except Exception, err:
-            self.warning(err)
         
     def getPlayerPings(self):
         """Ask the server for a given client's pings

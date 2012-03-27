@@ -43,3 +43,27 @@ class B3TestCase(unittest.TestCase):
         def myError(msg, *args, **kwargs):
             print(("ERROR: %s" % msg) % args)
         b3.console.error = myError
+
+
+
+def extends_mock():
+    # extend the Mock class
+    def assert_was_called_with(self, *args, **kwargs):
+        """
+        assert that the mock was called with the specified arguments at least once.
+
+        Raises an AssertionError if the args and keyword args passed in are
+        different from all calls to the mock.
+        """
+        if self.call_args is None:
+            raise AssertionError('Expected: %s\nNot called' % ((args, kwargs),))
+        found = False
+        for call_args in self.call_args_list:
+            if call_args == (args, kwargs):
+                found = True
+                break
+        if not found:
+            raise AssertionError(
+                'Expected: %s\nbut was called with: %s' % ((args, kwargs), self.call_args_list)
+            )
+    Mock.assert_was_called_with = assert_was_called_with
