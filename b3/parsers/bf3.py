@@ -83,6 +83,7 @@ class Bf3Parser(AbstractParser):
         'playerRespawnTime',
         'ranked',
         'regenerateHealth',
+        'roundLockdownCountdown',
         'roundRestartPlayerCount',
         'roundStartPlayerCount',
         'roundsPerMap',
@@ -98,7 +99,7 @@ class Bf3Parser(AbstractParser):
         'unlockMode',
         'vehicleSpawnAllowed',
         'vehicleSpawnDelay',
-    )
+        )
 
 
     def startup(self):
@@ -384,6 +385,7 @@ class Bf3Parser(AbstractParser):
         self.game['playerRespawnTime'] = getCvarInt('playerRespawnTime')
         self.game['ranked'] = getCvarBool('ranked')
         self.game['regenerateHealth'] = getCvarBool('regenerateHealth')
+        self.game['roundLockdownCountdown'] = getCvarInt('roundLockdownCountdown')
         self.game['roundRestartPlayerCount'] = getCvarInt('roundRestartPlayerCount')
         self.game['roundStartPlayerCount'] = getCvarInt('roundStartPlayerCount')
         self.game['roundsPerMap'] = getCvarInt('roundsPerMap')
