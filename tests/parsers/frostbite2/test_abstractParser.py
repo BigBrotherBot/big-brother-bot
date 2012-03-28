@@ -20,12 +20,11 @@ import logging
 
 from mock import Mock, patch
 import time
-from tests import B3TestCase, extends_mock
+from tests import B3TestCase
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 
-extends_mock()
 
 class AbstractParser_TestCase(B3TestCase):
     """
@@ -368,9 +367,9 @@ class Test_patch_b3_client_yell(AbstractParser_TestCase):
                 self.joe.yellhandler.join(2)
 
                 self.assertTrue(write_mock.called)
-                write_mock.assert_was_called_with(('admin.yell', '[pm] test', self.yell_duration, 'player', 'joe'))
-                write_mock.assert_was_called_with(('admin.yell', '[pm] test2', self.yell_duration, 'player', 'joe'))
-                write_mock.assert_was_called_with(('admin.yell', '[pm] test3', self.yell_duration, 'player', 'joe'))
+                write_mock.assert_any_call(('admin.yell', '[pm] test', self.yell_duration, 'player', 'joe'))
+                write_mock.assert_any_call(('admin.yell', '[pm] test2', self.yell_duration, 'player', 'joe'))
+                write_mock.assert_any_call(('admin.yell', '[pm] test3', self.yell_duration, 'player', 'joe'))
 
 
 
@@ -398,8 +397,8 @@ class Test_saybig(AbstractParser_TestCase):
                 self.parser.yellqueuelistener.join(.1)
 
                 self.assertTrue(write_mock.called)
-                write_mock.assert_was_called_with(('admin.yell', 'test', self.yell_duration))
-                write_mock.assert_was_called_with(('admin.yell', 'test2', self.yell_duration))
+                write_mock.assert_any_call(('admin.yell', 'test', self.yell_duration))
+                write_mock.assert_any_call(('admin.yell', 'test2', self.yell_duration))
 
 
 
@@ -430,7 +429,7 @@ class Test_say(AbstractParser_TestCase):
                 self.parser.sayqueuelistener.join(.1)
 
                 self.assertTrue(write_mock.called)
-                write_mock.assert_was_called_with(('admin.say', 'test', 'all'))
-                write_mock.assert_was_called_with(('admin.say', 'test2', 'all'))
+                write_mock.assert_any_call(('admin.say', 'test', 'all'))
+                write_mock.assert_any_call(('admin.say', 'test2', 'all'))
 
 
