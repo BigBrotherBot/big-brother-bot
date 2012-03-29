@@ -14,6 +14,10 @@
 		<set name="max_say_line_length">128</set>
 		<!-- message_delay : the delay (in second) to wait between two messages -->
         <set name="message_delay">0.8</set>
+        <!-- big_b3_private_responses - if on, then all private message sent by B3 will be displayed as a large on-screen message
+            * Accepted values : on / off
+        -->
+        <set name="big_b3_private_responses">on</set>
 	</settings>
 	<settings name="server">
 		<set name="public_ip">11.22.33.44</set>

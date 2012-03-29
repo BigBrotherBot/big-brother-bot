@@ -23,9 +23,11 @@
 #  add event EVT_GAMESERVER_CONNECT which is triggered every time B3 connects to the game server
 # 1.1.1
 #  fix and refactor admin.yell
+# 1.2
+#  introduce new setting 'big_b3_private_responses'
 #
 __author__  = 'Courgette'
-__version__ = '1.1.1'
+__version__ = '1.2'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -66,6 +68,7 @@ class AbstractParser(b3.parser.Parser):
         'min_wrap_length': 128,
         'message_delay': .8,
         'yell_duration': 3,
+        'big_b3_private_responses': False,
         }
 
     _gameServerVars = () # list available cvar
@@ -369,6 +372,17 @@ class AbstractParser(b3.parser.Parser):
                     self.error("unexpected value '%s' for ban_agent" % ban_agent)
         self.info("ban agent 'server' : %s" % ('activated' if self.ban_with_server else 'deactivated'))
         self.info("ban agent 'punkbuster' : %s" % ('activated' if self.PunkBuster else 'deactivated'))
+
+        # setting up B3 responses size
+        if self.config.has_option('bf3', 'big_b3_private_responses'):
+            try:
+                self._settings['big_b3_private_responses'] = self.config.getboolean('bf3', 'big_b3_private_responses')
+                self.info("value for setting bf3/big_b3_private_responses is " + ('ON' if self._settings['big_b3_private_responses'] else 'OFF'))
+            except ValueError, err:
+                self._settings['big_b3_private_responses'] = False
+                self.warning("invalid value for setting bf3/big_b3_private_responses. Expecting one of 'on', 'off', 'true', 'false', 1, 0. Using default value: off", err)
+        else:
+            self._settings['big_b3_private_responses'] = False
 
         self.start_sayqueue_worker()
 
@@ -885,7 +899,8 @@ class AbstractParser(b3.parser.Parser):
             elif client.cid is None:
                 pass
             else:
-                self.write(self.getCommand('message', message=text, cid=client.cid))
+                cmd_name = 'bigmessage' if self._settings['big_b3_private_responses'] else 'message'
+                self.write(self.getCommand(cmd_name, message=text, cid=client.cid, yell_duration=int(float(self._settings['yell_duration']))))
         except Exception, err:
             self.warning(err)
 
