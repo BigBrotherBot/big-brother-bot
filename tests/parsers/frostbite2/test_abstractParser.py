@@ -20,6 +20,7 @@ import logging
 
 from mock import Mock, patch
 import time
+import mock
 from tests import B3TestCase
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
@@ -350,7 +351,7 @@ class Test_patch_b3_client_yell(AbstractParser_TestCase):
                 </configuration>
             """)
         self.parser = AbstractParser(self.conf)
-        self.yell_duration = self.parser._settings['yell_duration'] = '3.1'
+        self.parser._settings['yell_duration'] = '3.1'
         # setup context
         self.joe = self.parser.clients.newClient(cid='joe', name='joe', guid="bbbbbbbb5555555")
 
@@ -364,12 +365,11 @@ class Test_patch_b3_client_yell(AbstractParser_TestCase):
                 self.joe.yell('test')
                 self.joe.yell('test2')
                 self.joe.yell('test3')
-                self.joe.yellhandler.join(2)
 
                 self.assertTrue(write_mock.called)
-                write_mock.assert_any_call(('admin.yell', '[pm] test', self.yell_duration, 'player', 'joe'))
-                write_mock.assert_any_call(('admin.yell', '[pm] test2', self.yell_duration, 'player', 'joe'))
-                write_mock.assert_any_call(('admin.yell', '[pm] test3', self.yell_duration, 'player', 'joe'))
+                write_mock.assert_any_call(('admin.yell', '[pm] test', '3', 'player', 'joe'))
+                write_mock.assert_any_call(('admin.yell', '[pm] test2', '3', 'player', 'joe'))
+                write_mock.assert_any_call(('admin.yell', '[pm] test3', '3', 'player', 'joe'))
 
 
 
@@ -382,7 +382,7 @@ class Test_saybig(AbstractParser_TestCase):
                 </configuration>
             """)
         self.parser = AbstractParser(self.conf)
-        self.yell_duration = self.parser._settings['yell_duration'] = '3.1'
+        self.parser._settings['yell_duration'] = '3.1'
 
     def tearDown(self):
         self.parser.working = False
@@ -393,12 +393,9 @@ class Test_saybig(AbstractParser_TestCase):
                 self.parser.saybig('test')
                 self.parser.saybig('test2')
 
-                self.parser.start_yellqueue_worker()
-                self.parser.yellqueuelistener.join(.1)
-
                 self.assertTrue(write_mock.called)
-                write_mock.assert_any_call(('admin.yell', 'test', self.yell_duration))
-                write_mock.assert_any_call(('admin.yell', 'test2', self.yell_duration))
+                write_mock.assert_any_call(('admin.yell', 'test', '3'))
+                write_mock.assert_any_call(('admin.yell', 'test2', '3'))
 
 
 
