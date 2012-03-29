@@ -19,8 +19,11 @@
 # CHANGELOG
 # 1.0
 #  update parser for BF3 R20
+# 1.1
+#  add event EVT_GAMESERVER_CONNECT which is triggered every time B3 connects to the game server
+#
 __author__  = 'Courgette'
-__version__ = '1.0'
+__version__ = '1.1'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -252,6 +255,8 @@ class AbstractParser(b3.parser.Parser):
         # setup Rcon
         self.output.set_frostbite_server(self._serverConnection)
 
+        self.queueEvent(b3.events.Event(b3.events.EVT_GAMESERVER_CONNECT, None))
+
         self.checkVersion()
         self.say('%s ^2[ONLINE]' % b3.version)
         self.getServerInfo()
@@ -325,6 +330,7 @@ class AbstractParser(b3.parser.Parser):
     def startup(self):
        
         # add specific events
+        self.Events.createEvent('EVT_GAMESERVER_CONNECT', 'connected to game server')
         self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
         self.Events.createEvent('EVT_CLIENT_SPAWN', 'Client Spawn')
         self.Events.createEvent('EVT_GAME_ROUND_PLAYER_SCORES', 'round player scores')

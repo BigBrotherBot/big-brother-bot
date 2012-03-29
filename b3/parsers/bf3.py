@@ -22,13 +22,14 @@
 #  functionnal parser but BF3 admin protocol is not fully implemented on the BF3 side. See TODOs
 # 1.0
 #  update parser for BF3 R20
-#
+# 1.0.1
+#  version change to reflect changes of AbstractParser
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 import b3
 import b3.events
 __author__  = 'Courgette'
-__version__ = '1.0'
+__version__ = '1.0.1'
 
 
 SAY_LINE_MAX_LENGTH = 128
