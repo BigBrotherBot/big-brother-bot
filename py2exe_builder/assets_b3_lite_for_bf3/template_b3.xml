@@ -11,6 +11,10 @@
 	</settings>
 	<settings name="bf3">
 		<set name="max_say_line_length">100</set>
+        <!-- big_b3_private_responses - if on, then all private message sent by B3 will be displayed as a large on-screen message
+            * Accepted values : on / off
+        -->
+        <set name="big_b3_private_responses">on</set>
 	</settings>
 	<settings name="server">
 		<set name="public_ip">{public_ip}</set>

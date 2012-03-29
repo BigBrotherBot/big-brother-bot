@@ -26,6 +26,7 @@
         <set name="roundrestart-rrestart">40</set>
         <set name="kill">40</set>
         <set name="idle">40</set>
+        <set name="nuke">40</set>
 
         <set name="changeteam">20</set>
         <set name="swap">20</set>
@@ -39,6 +40,11 @@
         <set name="autobalance">20</set>
 
         <set name="vehicles">20</set>
+
+        <set name="yell-y">20</set>
+        <set name="yellteam-yt">20</set>
+        <set name="yellsquad-ys">20</set>
+        <set name="yellplayer-yp">20</set>
     </settings>
 
     <settings name="messages">
@@ -49,22 +55,29 @@
         <set name="operation_denied_level">Operation denied because %(name)s is in the %(group)s group</set>
     </settings>
 
-	<settings name="preferences">
+    <settings name="preferences">
         <!-- config_path : the path to the preset bf3 server config files to be used by the !loadconfig command. -->
 		<set name="config_path">serverconfigs</set>
+
         <!-- no_level_check_level : a level at which a player can swap anyone without any level restriction.
             For example, if no_level_check_level is 40 (admin), then admins can !swap players of level above them.
             While a moderator will only be able to swap players of level moderator or below.
             This applies to commands !swap and !changeteam
          -->
         <set name="no_level_check_level">60</set>
+
+        <!-- yell_duration : for how long do yell messages stay visible on the player screen (in second)
+            Default value : 3
+        -->
+        <set name="yell_duration">3</set>
+
         <!-- no_autoassign_level : Players this level and above will not be auto assigned-->
         <set name="no_autoassign_level">20</set>
         <set name="autoassign">On</set>
         <set name="autobalance">On</set>
         <set name="autobalance_timer">120</set>
         <set name="team_swap_threshold">3</set>
-	</settings>
+    </settings>
 
     <settings name="scrambler">
         <!-- mode can be one of : off, round, map

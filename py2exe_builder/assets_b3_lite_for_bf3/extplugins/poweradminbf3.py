@@ -45,8 +45,12 @@
 # 0.16.3 - Only start autobalancing when teams are out of balance by team_swap_threshold or more
 # 0.17  - add command !idle (Mario)
 # 0.18  - add command !serverreboot and improve command !endround (Ozon)
-
-__version__ = '0.18'
+# 0.18.1 - Correct autobalance not restarting after 0.16.3 change
+# 0.19 - add commands !yell !yellplayer !yellteam !yellsquad (requires B3 1.8.1+)
+# 0.20 - add command !nuke
+# 1.0 - fixes !yell
+#
+__version__ = '1.0'
 __author__  = 'Courgette, 82ndab-Bravo17, ozon, Mario'
 
 import re
@@ -163,6 +167,7 @@ class Poweradminbf3Plugin(Plugin):
         self._autoscramble_maps = False
         self._scrambler = Scrambler(self)
         self._last_idleTimeout = 300
+        self._yell_duration = 10
         Plugin.__init__(self, console, config)
 
 
@@ -185,6 +190,7 @@ class Poweradminbf3Plugin(Plugin):
         self._load_scrambler()
         self._load_configmanager_config_path()
         self._load_configmanager()
+        self._load_yell_duration()
 
     def startup(self):
         """\
@@ -216,10 +222,7 @@ class Poweradminbf3Plugin(Plugin):
             self._scrambler.onRoundOverTeamScores(event.data)
 
         elif event.type == b3.events.EVT_GAME_ROUND_START:
-            if self._autobalance:
-                (min, sec) = self.autobalance_time()
-                self._cronTab_autobalance = b3.cron.OneTimeCronTab(self.run_autobalance, second=sec, minute=min)
-                self.console.cron + self._cronTab_autobalance
+            self.start_autobalance_cron()
             self.debug('manual scramble planned : '.rjust(30) + str(self._scrambling_planned))
             self.debug('auto scramble rounds : '.rjust(30) + str(self._autoscramble_rounds))
             self.debug('auto scramble maps : '.rjust(30) + str(self._autoscramble_maps))
@@ -800,9 +803,7 @@ class Poweradminbf3Plugin(Plugin):
                 else:
                     self._autobalance = True
                     if self._one_round_over:
-                        (min, sec) = self.autobalance_time()
-                        self._cronTab_autobalance = b3.cron.OneTimeCronTab(self.run_autobalance, second=sec, minute=min)
-                        self.console.cron + self._cronTab_autobalance
+                        self.start_autobalance_cron()
                         client.message('Autobalance now enabled')
                     else:
                         client.message('Autobalance will be enabled on next round start')
@@ -814,6 +815,101 @@ class Poweradminbf3Plugin(Plugin):
                 self.run_autobalance()
             else:
                 client.message("invalid data. Expecting on, off or now")
+
+
+
+    def cmd_yell(self, data, client, cmd=None):
+        """\
+        <msg>- Yell message to all players
+        """
+        if client :
+            if not data:
+                client.message('missing parameter, try !help yell')
+            else:
+                self.console.write(self.console.getCommand('yell', message=data, yell_duration=self._yell_duration))
+
+    def cmd_yellteam(self, data, client, cmd=None):
+        """\
+        <msg> Yell message to all players of your team
+        """
+        if not data:
+            client.message('missing parameter, try !help yellteam')
+        else:
+            self.console.write(self.console.getCommand('yellTeam', message=data, teamId=client.teamId, yell_duration=self._yell_duration))
+
+    def cmd_yellsquad(self, data, client, cmd=None):
+        """\
+        <msg> Yell message to all players of your squad
+        """
+        if not data:
+            client.message('missing parameter, try !help yellsquad')
+        else:
+            self.console.write(self.console.getCommand('yellSquad', message=data, teamId=client.teamId, squadId=client.squad, yell_duration=self._yell_duration))
+
+    def cmd_yellplayer(self, data, client, cmd=None):
+        """\
+        <player> <msg> - Yell message to a player
+        """
+        m = self._adminPlugin.parseUserCmd(data)
+        if not m:
+            client.message('invalid parameters, try !help yellplayer')
+            return
+        cid, message = m
+        sclient = self._adminPlugin.findClientPrompt(cid, client)
+        if sclient:
+            self.console.write(self.console.getCommand('bigmessage', message=message, cid=sclient.cid, yell_duration=self._yell_duration))
+
+
+    def cmd_nuke(self, data, client, cmd=None):
+        """\
+        <all|ru|us> [reason] - Kill all players (or players from a given team) without scoring effects
+        """
+        m = self._adminPlugin.parseUserCmd(data)
+        if not m:
+            client.message('missing parameter, try !help nuke')
+            return
+        team_name, reason = m
+        clean_team_name = team_name.lower()
+        if not clean_team_name or clean_team_name not in ('all', 'ru', 'us'):
+            client.message("invalid parameter. expecting all, ru or us")
+        else:
+            self.console.saybig("Incoming nuke warning")
+
+            if clean_team_name == 'all':
+                self.console.say("Killing all players")
+            elif clean_team_name == 'ru':
+                self.console.say("Killing Russian team")
+            elif clean_team_name == 'us':
+                self.console.say("Killing USA team")
+
+            time.sleep(2.5)
+
+            if reason:
+                self.console.say("Nuke reason : %s" % reason)
+
+            def kill(sclient, reason="Nuked by admin"):
+                try:
+                    self.console.write(('admin.killPlayer', sclient.cid))
+                    if reason:
+                        sclient.message("Nuke reason: %s" % reason)
+                    else:
+                        sclient.message("Nuked by admin")
+                except CommandFailedError, err:
+                    if err.message[0] == "SoldierNotAlive":
+                        client.message("%s is already dead" % sclient.name)
+                    else:
+                        client.message('Error: %s' % err.message)
+
+            players = self.console.clients.getList()
+            if clean_team_name == 'all':
+                for player in players:
+                    kill(player, reason)
+            elif clean_team_name == 'us':
+                for player in [x for x in players if x.teamId == 1]:
+                    kill(player, reason)
+            elif clean_team_name == 'ru':
+                for player in [x for x in players if x.teamId == 2]:
+                    kill(player, reason)
 
 
 
@@ -958,10 +1054,10 @@ class Poweradminbf3Plugin(Plugin):
         try:
             self._team_swap_threshold = self.config.getint('preferences', 'team_swap_threshold')
         except NoOptionError:
-            self.info('No config option \"preferences\\team_swap_threshold\" found. Using default value : %s' % self._team_swap_threshold)
+            self.info(r'No config option "preferences\team_swap_threshold" found. Using default value : %s' % self._team_swap_threshold)
         except ValueError, err:
             self.debug(err)
-            self.warning('Could not read level value from config option \"preferences\\team_swap_threshold\". Using default value \"%s\" instead. (%s)' % (self._team_swap_threshold, err))
+            self.warning(r'Could not read level value from config option "preferences\team_swap_threshold". Using default value "%s" instead. (%s)' % (self._team_swap_threshold, err))
         except Exception, err:
             self.error(err)
         if self._team_swap_threshold < 2:
@@ -972,9 +1068,26 @@ class Poweradminbf3Plugin(Plugin):
         try:
             self._configmanager = self.config.getboolean('configmanager', 'status')
             self.debug('Configmanager: %s' % self._configmanager)
-        except:
-            self.debug('Unable to load configmanager status from config file, disabling it')
+        except Exception, err:
+            self.debug('Unable to load configmanager status from config file, disabling it', err)
             self._configmanager = False
+
+    def _load_yell_duration(self):
+        try:
+            duration = self.config.getint('preferences', 'yell_duration')
+            if duration < 1:
+                raise ValueError("cannot be lower than a second")
+            self._yell_duration = duration
+            self.debug('yell_duration: %s' % self._yell_duration)
+        except NoOptionError:
+            self.info(r'No config option "preferences\yell_duration" found. Using default value : %s' % self._yell_duration)
+        except ValueError, err:
+            self.debug(err)
+            self.warning(r'Could not read value from config option "preferences\yell_duration". Using default value "%s" instead. (%s)' % (self._yell_duration, err))
+        except Exception, err:
+            self.error(err)
+
+
 
     def _getCmd(self, cmd):
         cmd = 'cmd_%s' % cmd
@@ -1247,6 +1360,7 @@ class Poweradminbf3Plugin(Plugin):
         team2more = team2 - team1
         self.debug('Team1 %s vs Team2 %s' % (team1, team2))
         if team1more < self._team_swap_threshold and team2more < self._team_swap_threshold:
+            self.start_autobalance_cron()
             return
         self._run_autobalancer = True
         self.console.say('Auto balancing teams in %s seconds' % (self._autobalance_message_interval*2))
@@ -1304,11 +1418,7 @@ class Poweradminbf3Plugin(Plugin):
         if players > 0:
             self.console.say('Not enough players to move')
         self._run_autobalancer = False
-        if self._autobalance:
-            (min, sec) = self.autobalance_time()
-            self._cronTab_autobalance = b3.cron.OneTimeCronTab(self.run_autobalance, second=sec, minute=min)
-            self.console.cron + self._cronTab_autobalance
-
+        self.start_autobalance_cron()
     def autobalance_time(self):
         sec = self._autobalance_timer
         min = int(time.strftime('%M'))
@@ -1321,7 +1431,18 @@ class Poweradminbf3Plugin(Plugin):
             min -= 60
 
         return min, sec
-
+    def start_autobalance_cron(self):
+        if self._cronTab_autobalance:
+            # remove existing crontab
+            self.debug('Removing autobalance timer')
+            self.console.cron - self._cronTab_autobalance
+        if self._autobalance:
+            self.debug('Restarting autobalance timer')
+            #self.console.say('Restarting autobalance timer')
+            (min, sec) = self.autobalance_time()
+            self._cronTab_autobalance = b3.cron.OneTimeCronTab(self.run_autobalance, second=sec, minute=min)
+            self.console.cron + self._cronTab_autobalance
+        
     def count_teams(self, clients):
         """
         Return the number of players in each team
