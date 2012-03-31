@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2011/11/15 - 1.11.4 - Courgette
+#   * fix bug where command &rules was acting like !rules
 #   2011/11/15 - 1.11.3 - Courgette
 #   * fix bug xlr8or/big-brother-bot#54 - Plugin Admin: parseUserCommand issue
 #   2011/11/15 - 1.11.2 - Courgette
@@ -92,7 +94,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.11.3'
+__version__ = '1.11.4'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import re, time, threading, sys, traceback, thread, random
@@ -1849,15 +1851,15 @@ class AdminPlugin(b3.plugin.Plugin):
             else:
                 client.message('^7Stop trying to spam other players')
                 return
-        elif cmd.loud:
-            thread.start_new_thread(self._sendRules, (None,))
+        elif cmd.loud or cmd.big:
+            thread.start_new_thread(self._sendRules, (), {'sclient':None, 'big':cmd.big})
             return
         else:
             sclient = client
 
-        thread.start_new_thread(self._sendRules, (sclient,))
+        thread.start_new_thread(self._sendRules, (), {'sclient': sclient})
 
-    def _sendRules(self, sclient):
+    def _sendRules(self, sclient, big=False):
         rules = []
 
         for i in range(1, 20):
@@ -1866,15 +1868,20 @@ class AdminPlugin(b3.plugin.Plugin):
                 rules.append(rule)
             except:
                 break
-
-        if sclient:
-            for rule in rules:
-                sclient.message(rule)
-                time.sleep(1)
-        else:
-            for rule in rules:
-                self.console.say(rule)
-                time.sleep(1)
+        try:
+            if sclient:
+                for rule in rules:
+                    sclient.message(rule)
+                    time.sleep(1)
+            else:
+                for rule in rules:
+                    if big:
+                        self.console.saybig(rule)
+                    else:
+                        self.console.say(rule)
+                    time.sleep(1)
+        except Exception, err:
+            self.error(err)
 
     def cmd_spams(self, data, client=None, cmd=None):
         """\
