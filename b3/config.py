@@ -30,10 +30,11 @@
 # Fix bug in resolving @b3 which was failing for the win32 standalone release
 # 03/12/2011 - 1.3.2 - Courgette
 # Fixes xlr8or/big-brother-bot#18 : @conf in XML only works when b3_run.py config parameter contains path component
-
+# 31/03/2012 - 1.3.3 -Courgette
+# Change behavior of XmlConfigParser methods getboolean, getint, getfloat when config value is an empty string
 
 __author__  = 'ThorN'
-__version__ = '1.3.2'
+__version__ = '1.3.3'
 
 import sys, time
 import b3
@@ -42,13 +43,14 @@ from xml.parsers.expat import ExpatError
 try:
     from b3.lib.elementtree import ElementTree
 except ImportError, err:
-    from xml.etree import ElementTree
-except ImportError, err:
-    sys.stderr.write("""FATAL ERROR : Cannot load elementtree
-  Check that you have installed ElementTree.
-  On Linux Debian : apt-get install python-elementtree
-  """)
-    sys.exit(1)
+    try:
+        from xml.etree import ElementTree
+    except ImportError, err:
+        sys.stderr.write("""FATAL ERROR : Cannot load elementtree
+      Check that you have installed ElementTree.
+      On Linux Debian : apt-get install python-elementtree
+      """)
+        sys.exit(1)
 
 import ConfigParser
 import os
@@ -121,20 +123,27 @@ class XmlConfigParser:
         return b3.functions.time2minutes(value)
 
     def getint(self, section, setting):
+        value = self.get(section, setting)
+        if value is None:
+            raise ValueError("%s.%s : '' is not an integer" % (section, setting))
         return int(self.get(section, setting))
 
     def getfloat(self, section, setting):
+        value = self.get(section, setting)
+        if value is None:
+            raise ValueError("%s.%s : '' is not a number" % (section, setting))
         return float(self.get(section, setting))
 
     def getboolean(self, section, setting):
-        value = self.get(section, setting).lower()
+        value_raw = self.get(section, setting)
+        value = value_raw.lower() if value_raw else ''
 
         if value in ('yes', '1', 'on', 'true'):
             return True
         elif value in ('no', '0', 'off', 'false'):
             return False
         else:
-            raise ValueError('[%s].%s = %s is not a boolean value' % (section, setting, value))
+            raise ValueError("%s.%s : '%s' is not a boolean value" % (section, setting, value))
 
     def sections(self):
         return self._settings.keys()
@@ -284,11 +293,3 @@ class ConfigFileNotValid(Exception):
         self.value = value
     def __str__(self):
         return repr(self.value)
-
-        
-if __name__ == '__main__':
-    c = load(r'c:\temp\cod.xml')
-    print c.get('server', 'punkbuster')
-
-    if not c.has_option('server', 'punkbuster') or c.getboolean('server', 'punkbuster'):
-        print 'Use PB'
