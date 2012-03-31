@@ -1,8 +1,8 @@
-project files/versions signature: dfc2f00cb61d02da3f72849197b825ae
-project files content signature: 5b856bdb197ffdf6e3060e18d12e20a6
+project files/versions signature: 70cda5a0b57f107eade87f2a599f19d3
+project files content signature: 1f8e49d06b166d2bbb8e2e939837a0e6
 b3\__init__.py 8416982f9c472c25cf8addafc9d3852c 1.1.2
 b3\clients.py a6308e1e3b8767b240e442b59dc2d194 1.4.0
-b3\config.py 98b86f5a61a629e586ae535c95e0bdb1 1.3.2
+b3\config.py b1a53f2d45f55f8864d44f6d5a8bd668 1.3.3
 b3\cron.py e35b2854d6a47ed921c624ba9f9c0ff4 1.4.1
 b3\cvar.py 39c0d99ceaeab3170936b6f540337368 1.0.1
 b3\events.py 2cecb24baf2fcaed2c911e6f73e969c1 1.2
@@ -87,7 +87,7 @@ b3\output.py eef6a3c9fffd02fd1bf0d878cdc420f4 1.6.2
 b3\parser.py 7a7c5f4718c3c78c1dd6581653cb6e20 1.27
 b3\parsers\__init__.py dc27db9710c1c207a8bd46935163efc1 None
 b3\parsers\altitude.py ca43bb0e9d96e3e0531868ccfbb9c98a 1.2
-b3\parsers\bf3.py 87b0d263446b5e77a46b0c4da7be1a2b 1.0.3
+b3\parsers\bf3.py 87897efc761d176936a7117497f854b0 1.1.1
 b3\parsers\bfbc2.py 563bcbfaa469e0a30f2a3a3cb17f7b65 2.3
 b3\parsers\cod.py a2fad34c0d5d463d7bf3945bef2f713e 1.4.27
 b3\parsers\cod2.py c31bb26436cf0cc4a4d6da072a9ec544 1.3.0
@@ -102,7 +102,7 @@ b3\parsers\frontline\__init__.py 1a401495ac8c2a072dd981f9114c8cfc 0.4
 b3\parsers\frontline\protocol.py 0e6246ff2d6c3852efb3f209e126c6c2 1.1
 b3\parsers\frontline\rcon.py fa6e2d35f56231978891741537c755a6 1.0
 b3\parsers\frostbite2\__init__.py d41d8cd98f00b204e9800998ecf8427e None
-b3\parsers\frostbite2\abstractParser.py 7e879f7800a32b7c6ef79d3f2c333dce 1.2
+b3\parsers\frostbite2\abstractParser.py 6662a55f627756913d05bdeb8d7384a8 1.4
 b3\parsers\frostbite2\protocol.py bbdec4905f63411c3fdd824ae413dc96 1.0.1
 b3\parsers\frostbite2\punkbuster.py d1fb5c5b64bba99fcb605074cc410440 1.2
 b3\parsers\frostbite2\rcon.py c620a9e4edb702f41af782f6470da192 1.0
@@ -134,7 +134,7 @@ b3\parsers\wop15.py bb19dac6b7465c8b70a6260c28d855be 1.2.3
 b3\pkg_handler.py 6830d1447fed9b2fc71db48d53bb1ad0 1.2.1
 b3\plugin.py fbe052285bd6ee1b6376600a22d688e0 1.4.1
 b3\plugins\__init__.py 01abfc750a0c942167651c40d088531d None
-b3\plugins\admin.py b133c31628d46d1c0868dce4c85b6e05 1.11.3
+b3\plugins\admin.py bbd2e98a970f2a1e0cd399f81009f38e 1.11.4
 b3\plugins\adv.py 66b1aa6a1b182e32fab0d8412ff4eb5b 1.3.2
 b3\plugins\censor.py 78dc7b22a8b2c2e807dce798f390dfb4 3.0
 b3\plugins\cod7http.py 6288b99f6c73e1ec0403a74a2ab214f7 1.0.16
