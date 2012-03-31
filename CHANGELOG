@@ -1,3 +1,16 @@
+1.8.0 -> 1.8.1
+----
+A list of changed files is available after release here:
+github.com/BigBrotherBot/big-brother-bot/compare/v1.8.0...v1.8.1
+----
+Game updates
+- Now supports BF3 server release R20 (supports private messaging and bigscreen text)
+Improvements
+- ctime plugin is now a subplugin of XLRstats (disable your seperate ctime plugin!)
+- xlrstats .sql code now part of the b3.sql distribtution and updates
+  (no more need to install/update the tables seperately)
+- status plugin can store data in a database and/or status.xml file
+
 1.7.1 -> 1.8.0
 ----
 A list of changed files is available after release here:
