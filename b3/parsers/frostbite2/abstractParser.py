@@ -28,9 +28,12 @@
 # 1.3
 #  introduce new setting 'big_msg_duration'
 #  refactor the code that reads the config file
+# 1.4
+#  commands can now start with just the '/' character if the user wants to hide the command from other players instead
+#  of having to type '/!'
 #
 __author__  = 'Courgette'
-__version__ = '1.3'
+__version__ = '1.4'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -476,7 +479,18 @@ class AbstractParser(b3.parser.Parser):
         if client.cid == 'Server':
             # ignore chat events for Server
             return
-        return b3.events.Event(b3.events.EVT_CLIENT_SAY, data[1].lstrip('/'), client)
+        text = data[1]
+
+        # handles text starting with '/' not showing the text in global chat zone
+        cmdPrefix = '!'
+        cmd_prefixes = (cmdPrefix, '@', '&')
+        admin_plugin = self.getPlugin('admin')
+        if admin_plugin:
+            cmdPrefix = admin_plugin.cmdPrefix
+            cmd_prefixes = (cmdPrefix, admin_plugin.cmdPrefixLoud, admin_plugin.cmdPrefixBig)
+        if len(text) > 2 and text[0] == '/' and text[1] not in cmd_prefixes:
+            text = cmdPrefix + text[1:]
+        return b3.events.Event(b3.events.EVT_CLIENT_SAY, text.lstrip('/'), client)
         
 
     def OnPlayerLeave(self, action, data):
