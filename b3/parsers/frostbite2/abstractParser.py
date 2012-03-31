@@ -25,9 +25,12 @@
 #  fix and refactor admin.yell
 # 1.2
 #  introduce new setting 'big_b3_private_responses'
+# 1.3
+#  introduce new setting 'big_msg_duration'
+#  refactor the code that reads the config file
 #
 __author__  = 'Courgette'
-__version__ = '1.2'
+__version__ = '1.3'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -39,7 +42,6 @@ import b3.events
 import b3.cvar
 from b3.functions import soundex, levenshteinDistance
 
-SAY_LINE_MAX_LENGTH = 100
 
 # how long should the bot try to connect to the Frostbite server before giving out (in second)
 GAMESERVER_CONNECTION_WAIT_TIMEOUT = 600
@@ -50,6 +52,9 @@ class AbstractParser(b3.parser.Parser):
     """
 
     gameName = None
+
+    # hard limit for rcon command admin.say
+    SAY_LINE_MAX_LENGTH = 128
 
     OutputClass = FrostbiteRcon
     _serverConnection = None
@@ -67,7 +72,7 @@ class AbstractParser(b3.parser.Parser):
         'line_length': 128,
         'min_wrap_length': 128,
         'message_delay': .8,
-        'yell_duration': 3,
+        'big_msg_duration': 4,
         'big_b3_private_responses': False,
         }
 
@@ -78,10 +83,10 @@ class AbstractParser(b3.parser.Parser):
         'saySquad': ('admin.say', '%(message)s', 'squad', '%(teamId)s', '%(squadId)s'),
         'sayTeam': ('admin.say', '%(message)s', 'team', '%(teamId)s'),
         'say': ('admin.say', '%(message)s', 'all'),
-        'bigmessage': ('admin.yell', '%(message)s', '%(yell_duration)i', 'player', '%(cid)s'),
-        'yellSquad': ('admin.yell', '%(message)s', '%(yell_duration)i', 'squad', '%(teamId)s', '%(squadId)s'),
-        'yellTeam': ('admin.yell', '%(message)s', '%(yell_duration)i', 'team', '%(teamId)s'),
-        'yell': ('admin.yell', '%(message)s', '%(yell_duration)i'),
+        'bigmessage': ('admin.yell', '%(message)s', '%(big_msg_duration)i', 'player', '%(cid)s'),
+        'yellSquad': ('admin.yell', '%(message)s', '%(big_msg_duration)i', 'squad', '%(teamId)s', '%(squadId)s'),
+        'yellTeam': ('admin.yell', '%(message)s', '%(big_msg_duration)i', 'team', '%(teamId)s'),
+        'yell': ('admin.yell', '%(message)s', '%(big_msg_duration)i'),
         'kick': ('admin.kickPlayer', '%(cid)s', '%(reason)s'),
         'ban': ('banList.add', 'guid', '%(guid)s', 'perm', '%(reason)s'),
         'banByIp': ('banList.add', 'ip', '%(ip)s', 'perm', '%(reason)s'),
@@ -346,43 +351,11 @@ class AbstractParser(b3.parser.Parser):
         self.Events.createEvent('EVT_PUNKBUSTER_UCON', 'PunkBuster UCON')
         self.Events.createEvent('EVT_PUNKBUSTER_SCREENSHOT_RECEIVED', 'PunkBuster Screenshot received')
 
-        # setting up ban agent
-        self.PunkBuster = None
-        self.ban_with_server = True
-        if self.config.has_option('server', 'ban_agent'):
-            ban_agent = self.config.get('server', 'ban_agent')
-            if ban_agent.lower() not in ('server', 'punkbuster', 'both'):
-                self.warning("unexpected value '%s' for ban_agent config option. Expecting one of 'server', 'punkbuster', 'both'." % ban_agent)
-            else:
-                if ban_agent.lower() == 'server':
-                    self.PunkBuster = None
-                    self.ban_with_server = True
-                    self.info("ban_agent is 'server' -> B3 will ban using the game server banlist")
-                elif ban_agent.lower() == 'punkbuster':
-                    from b3.parsers.frostbite2.punkbuster import PunkBuster
-                    self.PunkBuster = PunkBuster(console=self)
-                    self.ban_with_server = False
-                    self.info("ban_agent is 'punkbuster' -> B3 will ban using the punkbuster banlist")
-                elif ban_agent.lower() == 'both':
-                    from b3.parsers.frostbite2.punkbuster import PunkBuster
-                    self.PunkBuster = PunkBuster(console=self)
-                    self.ban_with_server = True
-                    self.info("ban_agent is 'both' -> B3 will ban using both the game server banlist and punkbuster")
-                else:
-                    self.error("unexpected value '%s' for ban_agent" % ban_agent)
-        self.info("ban agent 'server' : %s" % ('activated' if self.ban_with_server else 'deactivated'))
-        self.info("ban agent 'punkbuster' : %s" % ('activated' if self.PunkBuster else 'deactivated'))
-
-        # setting up B3 responses size
-        if self.config.has_option('bf3', 'big_b3_private_responses'):
-            try:
-                self._settings['big_b3_private_responses'] = self.config.getboolean('bf3', 'big_b3_private_responses')
-                self.info("value for setting bf3/big_b3_private_responses is " + ('ON' if self._settings['big_b3_private_responses'] else 'OFF'))
-            except ValueError, err:
-                self._settings['big_b3_private_responses'] = False
-                self.warning("invalid value for setting bf3/big_b3_private_responses. Expecting one of 'on', 'off', 'true', 'false', 1, 0. Using default value: off", err)
-        else:
-            self._settings['big_b3_private_responses'] = False
+        self.load_conf_max_say_line_length()
+        self.load_config_message_delay()
+        self.load_conf_ban_agent()
+        self.load_conf_big_b3_private_responses()
+        self.load_conf_big_msg_duration()
 
         self.start_sayqueue_worker()
 
@@ -440,19 +413,22 @@ class AbstractParser(b3.parser.Parser):
             # Then we got a command
             if self.replay:
                 self.bot('Sent rcon message: %s' % msg)
-            elif self.output == None:
+            elif self.output is None:
                 pass
             else:
                 res = self.output.write(msg, maxRetries=maxRetries, needConfirmation=needConfirmation)
                 self.output.flush()
                 return res
             
-    def getWrap(self, text, length=SAY_LINE_MAX_LENGTH, minWrapLen=SAY_LINE_MAX_LENGTH):
+    def getWrap(self, text, length=None, minWrapLen=None):
         """Returns a sequence of lines for text that fits within the limits
         """
         if not text:
             return []
-    
+
+        if length is None:
+            length = self._settings['line_length']
+
         maxLength = int(length)
         
         if len(text) <= maxLength:
@@ -867,7 +843,7 @@ class AbstractParser(b3.parser.Parser):
         if msg and len(msg.strip())>0:
             text = self.stripColors(self.msgPrefix + msg)
             for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
-                self.write(self.getCommand('yell', message=line, yell_duration=int(float(self._settings['yell_duration']))))
+                self.write(self.getCommand('yell', message=line, big_msg_duration=int(float(self._settings['big_msg_duration']))))
 
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -900,7 +876,7 @@ class AbstractParser(b3.parser.Parser):
                 pass
             else:
                 cmd_name = 'bigmessage' if self._settings['big_b3_private_responses'] else 'message'
-                self.write(self.getCommand(cmd_name, message=text, cid=client.cid, yell_duration=int(float(self._settings['yell_duration']))))
+                self.write(self.getCommand(cmd_name, message=text, cid=client.cid, big_msg_duration=int(float(self._settings['big_msg_duration']))))
         except Exception, err:
             self.warning(err)
 
@@ -1182,7 +1158,7 @@ class AbstractParser(b3.parser.Parser):
             elif client.cid is None:
                 pass
             else:
-                self.write(self.getCommand('bigmessage', message=text, cid=client.cid, yell_duration=int(float(self._settings['yell_duration']))))
+                self.write(self.getCommand('bigmessage', message=text, cid=client.cid, big_msg_duration=int(float(self._settings['big_msg_duration']))))
         except Exception, err:
             self.warning(err)
 
@@ -1359,6 +1335,98 @@ class AbstractParser(b3.parser.Parser):
         return match
 
 
+    def load_conf_ban_agent(self):
+        """setting up ban agent"""
+        self.PunkBuster = None
+        self.ban_with_server = True
+        if self.config.has_option('server', 'ban_agent'):
+            ban_agent = self.config.get('server', 'ban_agent')
+            if ban_agent is None or ban_agent.lower() not in ('server', 'punkbuster', 'both'):
+                self.warning("unexpected value '%s' for ban_agent config option. Expecting one of 'server', 'punkbuster', 'both'." % ban_agent)
+            else:
+                if ban_agent.lower() == 'server':
+                    self.PunkBuster = None
+                    self.ban_with_server = True
+                    self.info("ban_agent is 'server' -> B3 will ban using the game server banlist")
+                elif ban_agent.lower() == 'punkbuster':
+                    from b3.parsers.frostbite2.punkbuster import PunkBuster
+                    self.PunkBuster = PunkBuster(console=self)
+                    self.ban_with_server = False
+                    self.info("ban_agent is 'punkbuster' -> B3 will ban using the punkbuster banlist")
+                elif ban_agent.lower() == 'both':
+                    from b3.parsers.frostbite2.punkbuster import PunkBuster
+                    self.PunkBuster = PunkBuster(console=self)
+                    self.ban_with_server = True
+                    self.info("ban_agent is 'both' -> B3 will ban using both the game server banlist and punkbuster")
+                else:
+                    self.error("unexpected value '%s' for ban_agent" % ban_agent)
+        self.info("ban agent 'server' : %s" % ('activated' if self.ban_with_server else 'deactivated'))
+        self.info("ban agent 'punkbuster' : %s" % ('activated' if self.PunkBuster else 'deactivated'))
+
+
+    def load_conf_big_b3_private_responses(self):
+        """load setting big_b3_private_responses from config"""
+        default_value = False
+        if self.config.has_option(self.gameName, 'big_b3_private_responses'):
+            try:
+                self._settings['big_b3_private_responses'] = self.config.getboolean(self.gameName, 'big_b3_private_responses')
+                self.info("value for setting %s.big_b3_private_responses is " % self.gameName + (
+                    'ON' if self._settings['big_b3_private_responses'] else 'OFF'))
+            except ValueError, err:
+                self._settings['big_b3_private_responses'] = default_value
+                self.warning("Invalid value. %s. Using default value '%s'" % (err, default_value))
+        else:
+            self._settings['big_b3_private_responses'] = default_value
+
+
+    def load_conf_big_msg_duration(self):
+        """load setting big_msg_duration from config"""
+        default_value = 4
+        if self.config.has_option(self.gameName, 'big_msg_duration'):
+            try:
+                self._settings['big_msg_duration'] = self.config.getint(self.gameName, 'big_msg_duration')
+                self.info("value for setting %s.big_msg_duration is %s" % (self.gameName, self._settings['big_msg_duration']))
+            except ValueError, err:
+                self._settings['big_msg_duration'] = default_value
+                self.warning("Invalid value. %s. Using default value '%s'" % (err, default_value))
+        else:
+            self._settings['big_msg_duration'] = default_value
+
+
+    def load_config_message_delay(self):
+        if self.config.has_option(self.gameName, 'message_delay'):
+            try:
+                delay_sec = self.config.getfloat(self.gameName, 'message_delay')
+                if delay_sec > 3:
+                    self.warning('message_delay cannot be greater than 3')
+                    delay_sec = 3
+                if delay_sec < .5:
+                    self.warning('message_delay cannot be less than 0.5 second.')
+                    delay_sec = .5
+                self._settings['message_delay'] = delay_sec
+            except Exception, err:
+                self.error(
+                    'failed to read message_delay setting "%s" : %s' % (self.config.get(self.gameName, 'message_delay'), err))
+        self.debug('message_delay: %s' % self._settings['message_delay'])
+
+
+    def load_conf_max_say_line_length(self):
+        if self.config.has_option(self.gameName, 'max_say_line_length'):
+            try:
+                maxlength = self.config.getint(self.gameName, 'max_say_line_length')
+                if maxlength > self.SAY_LINE_MAX_LENGTH:
+                    self.warning('max_say_line_length cannot be greater than %s' % self.SAY_LINE_MAX_LENGTH)
+                    maxlength = self.SAY_LINE_MAX_LENGTH
+                if maxlength < 20:
+                    self.warning('max_say_line_length is way too short. using minimum value 20')
+                    maxlength = 20
+                self._settings['line_length'] = maxlength
+                self._settings['min_wrap_length'] = maxlength
+            except Exception, err:
+                self.error('failed to read max_say_line_length setting "%s" : %s' % (
+                    self.config.get(self.gameName, 'max_say_line_length'), err))
+        self.debug('line_length: %s' % self._settings['line_length'])
+
 
 #############################################################
 # Below is the code that change a bit the b3.clients.Client
@@ -1409,6 +1477,6 @@ def frostbiteClientYellMethod(self, msg):
     if msg and len(msg.strip())>0:
         text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
         for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
-            self.console.write(self.console.getCommand('bigmessage', message=line, cid=self.cid, yell_duration=int(float(self.console._settings['yell_duration']))))
+            self.console.write(self.console.getCommand('bigmessage', message=line, cid=self.cid, big_msg_duration=int(float(self.console._settings['big_msg_duration']))))
 b3.clients.Client.yell = frostbiteClientYellMethod
 

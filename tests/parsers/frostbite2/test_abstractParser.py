@@ -20,11 +20,14 @@ import logging
 
 from mock import Mock, patch
 import time
-import mock
 from tests import B3TestCase
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.abstractParser import AbstractParser
+
+
+class ConcretegameParser(AbstractParser):
+    gameName = 'thegame'
 
 
 class AbstractParser_TestCase(B3TestCase):
@@ -34,7 +37,6 @@ class AbstractParser_TestCase(B3TestCase):
 
     @classmethod
     def setUpClass(cls):
-        from b3.parsers.frostbite2.abstractParser import AbstractParser
         from b3.fake import FakeConsole
 
         AbstractParser.__bases__ = (FakeConsole,)
@@ -74,7 +76,7 @@ class Write_controlled_TestCase(AbstractParser_TestCase):
                 <configuration>
                 </configuration>
             """)
-        self.parser = AbstractParser(self.conf)
+        self.parser = ConcretegameParser(self.conf)
         self.parser.startup()
 
         # simulate responses we can expect from the rcon command mapList.list
@@ -228,7 +230,7 @@ class Test_getFullBanList(Write_controlled_TestCase):
                 <configuration>
                 </configuration>
             """)
-        self.parser = AbstractParser(self.conf)
+        self.parser = ConcretegameParser(self.conf)
         self.parser.startup()
 
         # simulate responses we can expect from the rcon command mapList.list
@@ -312,7 +314,7 @@ class Test_patch_b3_clients_getByMagic(AbstractParser_TestCase):
                 <configuration>
                 </configuration>
             """)
-        self.parser = AbstractParser(self.conf)
+        self.parser = ConcretegameParser(self.conf)
         # setup context
         self.foobar = self.parser.clients.newClient(cid='Foobar', name='Foobar', guid="aaaaaaa5555555")
         self.joe = self.parser.clients.newClient(cid='joe', name='joe', guid="bbbbbbbb5555555")
@@ -350,8 +352,8 @@ class Test_patch_b3_client_yell(AbstractParser_TestCase):
                 <configuration>
                 </configuration>
             """)
-        self.parser = AbstractParser(self.conf)
-        self.parser._settings['yell_duration'] = '3.1'
+        self.parser = ConcretegameParser(self.conf)
+        self.parser._settings['big_msg_duration'] = '3.1'
         # setup context
         self.joe = self.parser.clients.newClient(cid='joe', name='joe', guid="bbbbbbbb5555555")
 
@@ -381,8 +383,8 @@ class Test_saybig(AbstractParser_TestCase):
                 <configuration>
                 </configuration>
             """)
-        self.parser = AbstractParser(self.conf)
-        self.parser._settings['yell_duration'] = '3.1'
+        self.parser = ConcretegameParser(self.conf)
+        self.parser._settings['big_msg_duration'] = '3.1'
 
     def tearDown(self):
         self.parser.working = False
@@ -410,7 +412,7 @@ class Test_say(AbstractParser_TestCase):
                 <configuration>
                 </configuration>
             """)
-        self.parser = AbstractParser(self.conf)
+        self.parser = ConcretegameParser(self.conf)
 
     def tearDown(self):
         self.parser.working = False
@@ -418,6 +420,8 @@ class Test_say(AbstractParser_TestCase):
     def test_say(self):
         with patch.object(time, 'sleep'):
             with patch.object(AbstractParser, 'write') as write_mock:
+
+                self.parser._settings['big_b3_private_responses'] = False
 
                 self.parser.say('test')
                 self.parser.say('test2')
@@ -428,5 +432,254 @@ class Test_say(AbstractParser_TestCase):
                 self.assertTrue(write_mock.called)
                 write_mock.assert_any_call(('admin.say', 'test', 'all'))
                 write_mock.assert_any_call(('admin.say', 'test2', 'all'))
+
+
+
+class Test_config(AbstractParser_TestCase):
+    def setUp(self):
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""<configuration/>""")
+        self.parser = ConcretegameParser(self.conf)
+        log = logging.getLogger('output')
+        log.setLevel(logging.DEBUG)
+
+    def tearDown(self):
+        self.parser.working = False
+
+
+    def assert_big_b3_private_responses(self, expected, config):
+        self.parser._settings['big_b3_private_responses'] = None
+        self.conf.loadFromString(config)
+        self.parser.load_conf_big_b3_private_responses()
+        self.assertEqual(expected, self.parser._settings['big_b3_private_responses'])
+
+    def test_big_b3_private_responses_on(self):
+        self.assert_big_b3_private_responses(True, """<configuration>
+                    <settings name="thegame">
+                        <set name="big_b3_private_responses">on</set>
+                    </settings>
+                </configuration>""")
+
+        self.assert_big_b3_private_responses(False, """<configuration>
+                    <settings name="thegame">
+                        <set name="big_b3_private_responses">off</set>
+                    </settings>
+                </configuration>""")
+
+        self.assert_big_b3_private_responses(False, """<configuration>
+                    <settings name="thegame">
+                        <set name="big_b3_private_responses">off</set>
+                    </settings>
+                </configuration>""")
+
+        self.assert_big_b3_private_responses(False, """<configuration>
+                    <settings name="thegame">
+                        <set name="big_b3_private_responses">f00</set>
+                    </settings>
+                </configuration>""")
+
+        self.assert_big_b3_private_responses(False, """<configuration>
+                    <settings name="thegame">
+                        <set name="big_b3_private_responses"></set>
+                    </settings>
+                </configuration>""")
+
+
+    def assert_big_msg_duration(self, expected, config):
+        self.parser._settings['big_msg_duration'] = None
+        self.conf.loadFromString(config)
+        self.parser.load_conf_big_msg_duration()
+        self.assertEqual(expected, self.parser._settings['big_msg_duration'])
+
+    def test_big_msg_duration(self):
+        default_value = 4
+        self.assert_big_msg_duration(0, """<configuration>
+                    <settings name="thegame">
+                        <set name="big_msg_duration">0</set>
+                    </settings>
+                </configuration>""")
+
+        self.assert_big_msg_duration(5, """<configuration>
+                    <settings name="thegame">
+                        <set name="big_msg_duration">5</set>
+                    </settings>
+                </configuration>""")
+
+        self.assert_big_msg_duration(default_value, """<configuration>
+                    <settings name="thegame">
+                        <set name="big_msg_duration">5.6</set>
+                    </settings>
+                </configuration>""")
+
+        self.assert_big_msg_duration(30, """<configuration>
+                    <settings name="thegame">
+                        <set name="big_msg_duration">30</set>
+                    </settings>
+                </configuration>""")
+
+        self.assert_big_msg_duration(default_value, """<configuration>
+                    <settings name="thegame">
+                        <set name="big_msg_duration">f00</set>
+                    </settings>
+                </configuration>""")
+
+        self.assert_big_msg_duration(default_value, """<configuration>
+                    <settings name="thegame">
+                        <set name="big_msg_duration"></set>
+                    </settings>
+                </configuration>""")
+
+
+
+
+class Test_config_ban_agent(AbstractParser_TestCase):
+
+    def setUp(self):
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""<configuration/>""")
+        self.parser = AbstractParser(self.conf)
+        log = logging.getLogger('output')
+        log.setLevel(logging.DEBUG)
+
+    def tearDown(self):
+        self.parser.working = False
+
+    def assert_both(self, config):
+        self.conf.loadFromString(config)
+        self.parser.load_conf_ban_agent()
+        self.assertNotEqual(None, self.parser.PunkBuster)
+        self.assertTrue(self.parser.ban_with_server)
+
+    def assert_punkbuster(self, config):
+        self.conf.loadFromString(config)
+        self.parser.load_conf_ban_agent()
+        self.assertNotEqual(None, self.parser.PunkBuster)
+        self.assertFalse(self.parser.ban_with_server)
+
+    def assert_frostbite(self, config):
+        self.conf.loadFromString(config)
+        self.parser.load_conf_ban_agent()
+        self.assertEqual(None, self.parser.PunkBuster)
+        self.assertTrue(self.parser.ban_with_server)
+
+    def test_both(self):
+        self.assert_both("""<configuration><settings name="server"><set name="ban_agent">both</set></settings></configuration>""")
+        self.assert_both("""<configuration><settings name="server"><set name="ban_agent">BOTH</set></settings></configuration>""")
+
+    def test_punkbuster(self):
+        self.assert_punkbuster("""<configuration><settings name="server"><set name="ban_agent">punkbuster</set></settings></configuration>""")
+        self.assert_punkbuster("""<configuration><settings name="server"><set name="ban_agent">PUNKBUSTER</set></settings></configuration>""")
+
+    def test_frostbite(self):
+        self.assert_frostbite("""<configuration><settings name="server"><set name="ban_agent">server</set></settings></configuration>""")
+        self.assert_frostbite("""<configuration><settings name="server"><set name="ban_agent">SERVER</set></settings></configuration>""")
+
+    def test_default(self):
+        self.assert_frostbite("""<configuration/>""")
+        self.assert_frostbite("""<configuration><settings name="server"><set name="ban_agent"></set></settings></configuration>""")
+        self.assert_frostbite("""<configuration><settings name="server"><set name="ban_agent"/></settings></configuration>""")
+
+
+
+
+class Test_conf_max_say_line_length(AbstractParser_TestCase):
+
+    def setUp(self):
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""<configuration/>""")
+        self.parser = ConcretegameParser(self.conf)
+
+        self.MAX_SAY_LINE_LENGTH__MIN = 20
+        self.MAX_SAY_LINE_LENGTH__MAX = self.parser.SAY_LINE_MAX_LENGTH
+        self.MAX_SAY_LINE_LENGTH__DEFAULT = self.parser._settings['line_length']
+
+        log = logging.getLogger('output')
+        log.setLevel(logging.DEBUG)
+
+    def _assert(self, conf_data=None, expected=None):
+        self.conf.loadFromString("""
+            <configuration>
+                <settings name="thegame">%s</settings>
+            </configuration>
+            """ % (('<set name="max_say_line_length">%s</set>' % conf_data) if conf_data is not None else ''))
+        self.parser.load_conf_max_say_line_length()
+        if expected:
+            self.assertEqual(expected, self.parser._settings['line_length'])
+
+
+    def test_max_say_line_length__None(self):
+        self._assert(conf_data=None, expected=self.MAX_SAY_LINE_LENGTH__DEFAULT)
+
+    def test_max_say_line_length__empty(self):
+        self._assert(conf_data='', expected=self.MAX_SAY_LINE_LENGTH__DEFAULT)
+
+    def test_max_say_line_length__nan(self):
+        self._assert(conf_data='foo', expected=self.MAX_SAY_LINE_LENGTH__DEFAULT)
+
+    def test_max_say_line_length__too_low(self):
+        self._assert(conf_data=self.MAX_SAY_LINE_LENGTH__MIN - 1, expected=self.MAX_SAY_LINE_LENGTH__MIN)
+
+    def test_max_say_line_length__lowest(self):
+        self._assert(conf_data=self.MAX_SAY_LINE_LENGTH__MIN, expected=self.MAX_SAY_LINE_LENGTH__MIN)
+
+    def test_max_say_line_length__25(self):
+        self._assert(conf_data='25', expected=25)
+
+    def test_max_say_line_length__highest(self):
+        self._assert(conf_data=self.MAX_SAY_LINE_LENGTH__MAX, expected=self.MAX_SAY_LINE_LENGTH__MAX)
+
+    def test_max_say_line_length__too_high(self):
+        self._assert(conf_data=self.MAX_SAY_LINE_LENGTH__MAX+1, expected=self.MAX_SAY_LINE_LENGTH__MAX)
+
+
+class Test_bf3_config_message_delay(AbstractParser_TestCase):
+
+    def setUp(self):
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""<configuration/>""")
+        self.parser = ConcretegameParser(self.conf)
+
+        self.MESSAGE_DELAY__DEFAULT = self.parser._settings['message_delay']
+        self.MESSAGE_DELAY__MIN = .5
+        self.MESSAGE_DELAY__MAX = 3
+
+        log = logging.getLogger('output')
+        log.setLevel(logging.DEBUG)
+
+    def _test_message_delay(self, conf_data=None, expected=None):
+        self.conf.loadFromString("""
+            <configuration>
+                <settings name="thegame">%s</settings>
+            </configuration>
+            """ % (('<set name="message_delay">%s</set>' % conf_data) if conf_data is not None else ''))
+        self.parser.load_config_message_delay()
+        if expected:
+            self.assertEqual(expected, self.parser._settings['message_delay'])
+
+
+    def test_message_delay__None(self):
+        self._test_message_delay(conf_data=None, expected=self.MESSAGE_DELAY__DEFAULT)
+
+    def test_message_delay__empty(self):
+        self._test_message_delay(conf_data='', expected=self.MESSAGE_DELAY__DEFAULT)
+
+    def test_message_delay__nan(self):
+        self._test_message_delay(conf_data='foo', expected=self.MESSAGE_DELAY__DEFAULT)
+
+    def test_message_delay__too_low(self):
+        self._test_message_delay(conf_data=self.MESSAGE_DELAY__MIN-.1, expected=self.MESSAGE_DELAY__MIN)
+
+    def test_message_delay__minimum(self):
+        self._test_message_delay(conf_data=self.MESSAGE_DELAY__MIN, expected=self.MESSAGE_DELAY__MIN)
+
+    def test_message_delay__2(self):
+        self._test_message_delay(conf_data='2', expected=2)
+
+    def test_message_delay__maximum(self):
+        self._test_message_delay(conf_data=self.MESSAGE_DELAY__MAX, expected=self.MESSAGE_DELAY__MAX)
+
+    def test_message_delay__too_high(self):
+        self._test_message_delay(conf_data=self.MESSAGE_DELAY__MAX+1, expected=self.MESSAGE_DELAY__MAX)
+
 
 

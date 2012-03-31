@@ -18,6 +18,8 @@
             * Accepted values : on / off
         -->
         <set name="big_b3_private_responses">on</set>
+        <!-- big_msg_duration : for how many seconds big messages are displayed -->
+        <set name="big_msg_duration">6</set>
 	</settings>
 	<settings name="server">
 		<set name="public_ip">11.22.33.44</set>
