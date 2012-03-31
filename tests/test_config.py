@@ -16,6 +16,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+import ConfigParser
+import logging
 import unittest
 import sys
 from b3.config import XmlConfigParser
@@ -43,6 +45,105 @@ class Test_XmlConfigParser_windows(B3TestCase):
     def test_issue_xlr8or_18(self):
         b3.console.config.fileName = r"b3.xml"
         self.assertEqual(r"status.xml", self.conf.getpath('settings', 'output_file'))
+
+
+class Test_XmlConfigParser(B3TestCase):
+    def setUp(self):
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""<configuration/>""")
+        log = logging.getLogger('output')
+        log.setLevel(logging.DEBUG)
+
+    def _assert_func(self, func, expected, conf_value):
+        self.conf.loadFromString("""<configuration><settings name="section_foo"><set name="foo">%s</set></settings></configuration>""" % conf_value)
+        try:
+            self.assertEqual(expected, func('section_foo', 'foo'))
+        except (ConfigParser.Error, ValueError), err:
+            self.fail("expecting %s, but got %r" % (expected, err))
+
+    def _assert_func_raises(self, func, expected_error, section, name, conf):
+        try:
+            self.conf.loadFromString(conf)
+            func(section, name)
+        except expected_error:
+            pass
+        except Exception, err:
+            self.fail("expecting %s, but got %r" % (expected_error, err))
+        else:
+            self.fail("expecting %s" % expected_error)
+
+    def assert_get(self, expected, conf_value):
+        self._assert_func(self.conf.get, expected, conf_value)
+
+    def assert_get_raises(self, expected_error, section, name, conf):
+        self._assert_func_raises(self.conf.get, expected_error, section, name, conf)
+
+    def assert_getint(self, expected, conf_value):
+        self._assert_func(self.conf.getint, expected, conf_value)
+
+    def assert_getint_raises(self, expected_error, section, name, conf):
+        self._assert_func_raises(self.conf.getint, expected_error, section, name, conf)
+
+    def assert_getfloat(self, expected, conf_value):
+        self._assert_func(self.conf.getfloat, expected, conf_value)
+
+    def assert_getfloat_raises(self, expected_error, section, name, conf):
+        self._assert_func_raises(self.conf.getfloat, expected_error, section, name, conf)
+
+    def assert_getboolean(self, expected, conf_value):
+        self._assert_func(self.conf.getboolean, expected, conf_value)
+
+    def assert_getboolean_raises(self, expected_error, section, name, conf):
+        self._assert_func_raises(self.conf.getboolean, expected_error, section, name, conf)
+
+
+    def test_get(self):
+        self.assert_get('bar', 'bar')
+        self.assert_get(None, '')
+        self.assert_get_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
+        self.assert_get_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
+
+    def test_getint(self):
+        self.assert_getint(-54, '-54')
+        self.assert_getint(0, '0')
+        self.assert_getint(64, '64')
+        self.assert_getint_raises(ValueError, 'section_foo', 'foo', """<configuration><settings name="section_foo"><set name="foo">bar</set></settings></configuration>""")
+        self.assert_getint_raises(ValueError, 'section_foo', 'foo', """<configuration><settings name="section_foo"><set name="foo">64.5</set></settings></configuration>""")
+        self.assert_getint_raises(ValueError, 'section_foo', 'foo', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
+        self.assert_getint_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
+        self.assert_getint_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
+
+    def test_getfloat(self):
+        self.assert_getfloat(-54.0, '-54')
+        self.assert_getfloat(-54.6, '-54.6')
+        self.assert_getfloat(0.0, '0')
+        self.assert_getfloat(0.0, '0.0')
+        self.assert_getfloat(64.0, '64')
+        self.assert_getfloat(64.45, '64.45')
+        self.assert_getfloat_raises(ValueError, 'section_foo', 'foo', """<configuration><settings name="section_foo"><set name="foo">bar</set></settings></configuration>""")
+        self.assert_getfloat_raises(ValueError, 'section_foo', 'foo', """<configuration><settings name="section_foo"><set name="foo">64,5</set></settings></configuration>""")
+        self.assert_getfloat_raises(ValueError, 'section_foo', 'foo', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
+        self.assert_getfloat_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
+        self.assert_getfloat_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
+
+    def test_getboolean(self):
+        self.assert_getboolean(False, 'false')
+        self.assert_getboolean(False, '0')
+        self.assert_getboolean(False, 'off')
+        self.assert_getboolean(False, 'OFF')
+        self.assert_getboolean(False, 'no')
+        self.assert_getboolean(False, 'NO')
+        self.assert_getboolean(True, 'true')
+        self.assert_getboolean(True, '1')
+        self.assert_getboolean(True, 'on')
+        self.assert_getboolean(True, 'ON')
+        self.assert_getboolean(True, 'yes')
+        self.assert_getboolean(True, 'YES')
+        self.assert_getboolean_raises(ValueError, 'section_foo', 'foo', """<configuration><settings name="section_foo"><set name="foo">bar</set></settings></configuration>""")
+        self.assert_getboolean_raises(ValueError, 'section_foo', 'foo', """<configuration><settings name="section_foo"><set name="foo">64,5</set></settings></configuration>""")
+        self.assert_getboolean_raises(ValueError, 'section_foo', 'foo', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
+        self.assert_getboolean_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
+        self.assert_getboolean_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
 
 
 if __name__ == '__main__':
