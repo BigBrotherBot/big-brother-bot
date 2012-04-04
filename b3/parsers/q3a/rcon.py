@@ -35,9 +35,11 @@
 # * now sent data is encoded as UTF-8
 # 2011/10/30 - 1.5 - xlr8or, 82ndab-Bravo17
 # * Add encoding to QSERVER and RCON snd methods
+# 2012/04/04 - 1.5.1 - courgette
+# * remove 2 confusing debug msg
 
 __author__ = 'ThorN'
-__version__ = '1.5'
+__version__ = '1.5.1'
 
 import socket
 import sys
@@ -102,9 +104,6 @@ class Rcon:
         try:
             if isinstance(data, str):
                 data=unicode(data, errors='ignore')
-                self.console.debug('Data was a string')
-            else:
-                self.console.debug('Data was a unicode')
             data=data.encode(self.console.encoding, 'replace')
         except Exception, msg:
             self.console.warning('%s: ERROR encoding data: %r', source, msg)
