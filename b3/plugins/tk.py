@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    04/04/2012 - 1.2.8 - 82ndab-Bravo17
+#    * Remove logfile errors
 #    01/29/2012 - 1.2.7 - 82ndab-Bravo17
 #    * Check for ROUND_END event to halve TK points for BF3
 #    * Add configurable TK point 'half-life' to halve TK points at intervals in long rounds
@@ -46,7 +48,7 @@
 #    7/23/2005 - 1.0.2 - ThorN
 #    * Changed temp ban duration to be based on ban_length times the number of victims
 
-__version__ = '1.2.7'
+__version__ = '1.2.8'
 __author__  = 'ThorN'
 
 import b3, string, re, threading
@@ -293,6 +295,7 @@ class TkPlugin(b3.plugin.Plugin):
                 # remove existing crontab
                 self.console.cron - self._cronTab_tkhalflife
             self.halveTKPoints('Map End: cutting all tk points in half')
+            return
             
         elif event.type == b3.events.EVT_GAME_ROUND_START:
             if self._tkpointsHalflife > 0:
@@ -302,7 +305,7 @@ class TkPlugin(b3.plugin.Plugin):
                 (min, sec) = self.crontab_time()
                 self._cronTab_tkhalflife = b3.cron.OneTimeCronTab(self.halveTKPoints, second=sec, minute=min)
                 self.console.cron + self._cronTab_tkhalflife
-                client.message('TK Crontab started')
+                self.debug('TK Crontab started')
 
             return
         else:
