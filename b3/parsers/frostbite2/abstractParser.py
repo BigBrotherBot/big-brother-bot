@@ -31,9 +31,11 @@
 # 1.4
 #  commands can now start with just the '/' character if the user wants to hide the command from other players instead
 #  of having to type '/!'
+# 1.4.1
+#  add a space between the bot name and the message in saybig()
 #
 __author__  = 'Courgette'
-__version__ = '1.4'
+__version__ = '1.4.1'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -855,7 +857,7 @@ class AbstractParser(b3.parser.Parser):
         broadcast a message to all players in a way that will catch their attention.
         """
         if msg and len(msg.strip())>0:
-            text = self.stripColors(self.msgPrefix + msg)
+            text = self.stripColors(self.msgPrefix + ' ' + msg)
             for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
                 self.write(self.getCommand('yell', message=line, big_msg_duration=int(float(self._settings['big_msg_duration']))))
 
