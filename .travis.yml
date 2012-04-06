@@ -1,3 +1,4 @@
+# TravisCI config file. See http://travis-ci.org
 language: python
 python:
   - 2.6

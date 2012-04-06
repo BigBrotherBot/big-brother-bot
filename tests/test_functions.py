@@ -144,7 +144,7 @@ class Test_misc(unittest.TestCase):
             60: '1 hour',
             90: '1.5 hour',
             120: '2 hours',
-            123: '2 hours',
+            122: '2 hours',
             1266: '21.1 hours',
             1440: '1 day',
             3600: '2.5 days',
