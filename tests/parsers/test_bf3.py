@@ -16,7 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-import unittest
+import unittest2 as unittest
 from mock import Mock
 from b3.parsers.bf3 import Bf3Parser
 from b3.config import XmlConfigParser

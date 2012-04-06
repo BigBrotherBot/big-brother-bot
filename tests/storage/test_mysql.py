@@ -21,7 +21,7 @@ from tests import B3TestCase
 from tests.storage.common import StorageAPITest
 import b3
 import nose
-import unittest
+import unittest2 as unittest
 
 """
     NOTE: to work properly you must be running a MySQL database on localhost

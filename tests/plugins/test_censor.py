@@ -19,7 +19,7 @@
 import os
 from mock import Mock, patch
 from tests import B3TestCase
-import unittest
+import unittest2 as unittest
 
 import b3
 from b3.plugins.censor import CensorPlugin

@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 
-import unittest
+import unittest2 as unittest
 from b3.parsers.frostbite2.util import BanlistContent, BanlistContentError, PlayerInfoBlock, TeamScoresBlock, MapListBlock, MapListBlockError
 
 

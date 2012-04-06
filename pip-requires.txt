@@ -1,7 +1,8 @@
 MySQL-python
 pysqlite
+unittest2
 nose
 nosexcover
 nose-exclude
-mock
+mock>=0.8
 pylint

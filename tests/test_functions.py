@@ -19,7 +19,7 @@
 import time
 import sys
 from b3 import functions
-import unittest
+import unittest2 as unittest
     
 class TestSplitDSN(unittest.TestCase):
     def assertDsnEqual(self, url, expected):

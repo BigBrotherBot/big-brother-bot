@@ -18,7 +18,7 @@
 #
 import ConfigParser
 import logging
-import unittest
+import unittest2 as unittest
 import sys
 from b3.config import XmlConfigParser
 from tests import B3TestCase

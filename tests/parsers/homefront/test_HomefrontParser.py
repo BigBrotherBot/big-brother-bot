@@ -19,7 +19,7 @@
 from b3.parsers.homefront import HomefrontParser
 from mock import Mock, sentinel
 import b3
-import unittest
+import unittest2 as unittest
 
  
 class Test_HomefrontParser(unittest.TestCase):

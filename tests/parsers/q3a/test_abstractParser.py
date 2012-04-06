@@ -18,7 +18,7 @@
 #
 from b3.parsers.q3a.abstractParser import AbstractParser
 from mock import Mock
-import unittest
+import unittest2 as unittest
 
 class Test(unittest.TestCase):
 

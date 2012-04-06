@@ -25,7 +25,7 @@ from mock import Mock
 import b3
 import b3.events # needed due to the fact that all B3 events (even natives) are created at module load time
 import time
-import unittest
+import unittest2 as unittest
 
 class B3TestCase(unittest.TestCase):
     '''

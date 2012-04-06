@@ -18,7 +18,7 @@
 #
 import os
 from mock import Mock, patch, sentinel
-import unittest
+import unittest2 as unittest
 
 import b3
 from b3.plugins.tk import TkPlugin, TkInfo

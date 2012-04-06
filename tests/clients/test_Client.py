@@ -19,7 +19,7 @@
 from b3.clients import Client
 from mock import Mock
 import b3
-import unittest
+import unittest2 as unittest
 from tests import B3TestCase
  
 class Test_Client(B3TestCase):

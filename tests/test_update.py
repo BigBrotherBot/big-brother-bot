@@ -20,7 +20,7 @@
 import time
 from b3 import update
 import urllib2
-import unittest
+import unittest2 as unittest
 from mock import patch
 from b3.update import B3version
 

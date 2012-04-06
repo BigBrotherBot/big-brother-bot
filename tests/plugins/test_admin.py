@@ -18,7 +18,7 @@
 #
 from mock import Mock
 from tests import B3TestCase
-import unittest
+import unittest2 as unittest
 
 import b3
 from b3.plugin import Plugin
