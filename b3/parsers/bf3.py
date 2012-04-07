@@ -19,7 +19,7 @@
 #
 # CHANGELOG
 # 0.1
-#  functionnal parser but BF3 admin protocol is not fully implemented on the BF3 side. See TODOs
+#  functional parser but BF3 admin protocol is not fully implemented on the BF3 side. See TODOs
 # 1.0
 #  update parser for BF3 R20
 # 1.0.1 -> 1.0.3 / 1.1.1 -> 1.1.3
