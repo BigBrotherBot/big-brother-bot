@@ -33,9 +33,11 @@
 #  of having to type '/!'
 # 1.4.1
 #  add a space between the bot name and the message in saybig()
+# 1.4.2
+#  fixes bug regarding round count on round change events
 #
 __author__  = 'Courgette'
-__version__ = '1.4.1'
+__version__ = '1.4.2'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -630,7 +632,9 @@ class AbstractParser(b3.parser.Parser):
             # hence we need to deduct one to compensate?
             # we'll still leave the call here since it provides us self.game.roundTime()
             # next function call will increase roundcount by one, this is not wanted
+            correct_rounds_value = self.game.rounds
             self.game.startRound()
+            self.game.rounds = correct_rounds_value
             self.queueEvent(b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game))
 
         
