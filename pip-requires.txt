@@ -1,6 +1,7 @@
 MySQL-python
 pysqlite
 unittest2
+mockito
 nose
 nosexcover
 nose-exclude

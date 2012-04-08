@@ -91,7 +91,7 @@
 #    * fix bug getting client by name when UrT slot 0 bug 
 #    * requires clients.py 1.2.8+
 # v1.7.4 - 02/01/2010 - Courgette
-#    * improve Urt slot bug woraround as it appears it can occur with slot num different than 0
+#    * improve Urt slot bug workaround as it appears it can occur with slot num different than 0
 # v1.7.5 - 05/01/2010 - Courgette
 #    * fix minor bug in saytell
 # v1.7.6 - 16/01/2010 - xlr8or
@@ -129,32 +129,36 @@
 #     * fix Damage points
 #     * when game log provides hit info, Kill event will use last damage points instead of 100
 # v1.9.0 - 2011-06-04 - Courgette
-# makes use of the new pluginsStarted parser hook
+#     * makes use of the new pluginsStarted parser hook
 # v1.10.0 - 2011-06-05 - Courgette
-# * change data format for EVT_CLIENT_BAN events
+#     * change data format for EVT_CLIENT_BAN events
 # 14/06/2011 - 1.11.0 - Courgette
-# * cvar code moved to q3a AbstractParser
+#     * cvar code moved to q3a AbstractParser
 # 12/09/2011 - 1.11.1 - Courgette
-# * EVT_CLIENT_JOIN event is now triggered when player actually join a team
-# * the call to self.clients.sync() that was made each round is now made on game init and in its own thread  
+#     * EVT_CLIENT_JOIN event is now triggered when player actually join a team
+#     * the call to self.clients.sync() that was made each round is now made on game init and in its own thread
 # 29/09/2011 - 1.11.2 - Courgette
-# * fix MOD_TELEFRAG attacker on kill event to prevent people from being considered
-#   as tkers in such cases.
+#     * fix MOD_TELEFRAG attacker on kill event to prevent people from being considered
+#       as tkers in such cases.
 # 15/10/2011 - 1.11.3 - Courgette
-# * better team recognition of existing players at B3 start
+#     * better team recognition of existing players at B3 start
 # 15/11/2011 - 1.11.4 - Courgette
-# * players's team get refreshed after unpausing the bot (useful when used with FTP and B3 lose the connection for a while)
+#     * players's team get refreshed after unpausing the bot (useful when used with FTP and B3 lose the connection for a while)
 # 03/03/2012 - 1.11.5 - SGT
-# Create Survivor Winner Event
-# Create Unban event
-# fix issue with OnSay when something like this come and the match could'nt find the name group
-# say: 7 -crespino-:
-
+#     * Create Survivor Winner Event
+#     * Create Unban event
+#     * fix issue with OnSay when something like this come and the match couldn't find the name group, say: 7 -crespino-:
+# 08/04/2012 - 1.12 - Courgette
+#     * fixes rotatemap() - thanks to Beber888
+#     * refactor unban()
+#     * changeMap() can now provide suggestions
+#
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.11.5'
+__version__ = '1.12'
 
+import re, string, time, os, thread
 from b3.parsers.q3a.abstractParser import AbstractParser
-import re, string, threading, time, os, thread
+from b3.functions import soundex, levenshteinDistance
 import b3
 import b3.events
 
@@ -428,7 +432,7 @@ class Iourt41Parser(AbstractParser):
                 tries += 1
                 player_teams = self.getPlayerTeams()
                 break
-            except Exception, err:
+            except Exception as err:
                 if tries < 3:
                     self.warning(err)
                 else:
@@ -546,14 +550,6 @@ class Iourt41Parser(AbstractParser):
         if len(lines):
             self.writelines(lines)
 
-    def saybig(self, msg):
-        lines = []
-        for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
-            lines.append(self.getCommand('saybig', prefix=self.msgPrefix, message=line))
-
-        if len(lines):
-            self.writelines(lines)
-
     def inflictCustomPenalty(self, type, client, reason=None, duration=None, admin=None, data=None):
         if type == 'slap' and client:
             cmd = self.getCommand('slap', cid=client.cid)
@@ -591,7 +587,11 @@ class Iourt41Parser(AbstractParser):
 
 
 
-#----------------------------------------------------------------------------------
+    ###############################################################################################
+    #
+    #    Events handlers
+    #
+    ###############################################################################################
 
     # Connect/Join
     def OnClientconnect(self, action, data, match=None):
@@ -1128,6 +1128,20 @@ class Iourt41Parser(AbstractParser):
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
 
 
+    ###############################################################################################
+    #
+    #    B3 Parser interface implementation
+    #
+    ###############################################################################################
+
+    def saybig(self, msg):
+        lines = []
+        for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+            lines.append(self.getCommand('saybig', prefix=self.msgPrefix, message=line))
+
+        if len(lines):
+            self.writelines(lines)
+
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
         self.debug('BAN : client: %s, reason: %s', client, reason)
         if isinstance(client, b3.clients.Client) and not client.guid:
@@ -1166,22 +1180,12 @@ class Iourt41Parser(AbstractParser):
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
         self.debug('EFFECTIVE UNBAN : %s',self.getCommand('unbanByIp', ip=client.ip, reason=reason))
-        self.write(self.getCommand('unbanByIp', ip=client.ip, reason=reason))
+        cmd = self.getCommand('unbanByIp', ip=client.ip, reason=reason)
+        # UrT adds multiple instances to banlist.txt Make sure we remove up to 5 duplicates in a separate thread
+        self.writelines([cmd, cmd, cmd, cmd, cmd])
         if admin:
             admin.message('^3Unbanned^7: ^1%s^7 (^2@%s^7). His last ip (^1%s^7) has been removed from banlist. Trying to remove duplicates...' % (client.exactName, client.id, client.ip))
-        t1 = threading.Timer(1, self._unbanmultiple, (client, admin))
-        t1.start()
         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_UNBAN, admin, client))
-
-    def _unbanmultiple(self, client, admin=None):
-        # UrT adds multiple instances to banlist.txt Make sure we remove up to 4 remaining duplicates in a separate thread
-        c = 0
-        while c < 4:
-            self.write(self.getCommand('unbanByIp', ip=client.ip))
-            time.sleep(2)
-            c+=1
-        if admin:
-            admin.message('^3Unbanned^7: ^1%s^7. Up to 4 possible duplicate entries removed from banlist' % client.exactName )
 
     def getPlayerPings(self):
         data = self.write('status')
@@ -1235,6 +1239,21 @@ class Iourt41Parser(AbstractParser):
 
         return mlist
 
+    def rotateMap(self):
+        self.say('^7Changing to next map')
+        time.sleep(1)
+        self.write('cyclemap')
+
+    def changeMap(self, map):
+        match = self.getMapsSoundingLike(map)
+        if len(match) == 1:
+            map = match[0]
+        else:
+            return match
+        self.say('^7Changing map to %s' % map)
+        time.sleep(1)
+        self.write('map %s' % map)
+
     def getMaps(self):
         if self._maplist is not None:
             return self._maplist
@@ -1252,6 +1271,13 @@ class Iourt41Parser(AbstractParser):
                     maps.append(m.group('map'))
 
         return maps
+
+
+    ###############################################################################################
+    #
+    #    Other methods
+    #
+    ###############################################################################################
 
     def getNextMap(self):
         # let's first check if a vote passed for the next map
@@ -1336,6 +1362,40 @@ class Iourt41Parser(AbstractParser):
         except IndexError:
             return firstmap
 
+
+    def getMapsSoundingLike(self, mapname):
+        maplist = self.getMaps()
+        data = mapname.strip()
+
+        soundex1 = soundex(string.replace(string.replace(data, 'ut4_',''), 'ut_',''))
+        #self.debug('soundex %s : %s' % (data, soundex1))
+
+        match = []
+        if data in maplist:
+            match = [data]
+        else:
+            for m in maplist:
+                s = soundex(string.replace(string.replace(m, 'ut4_',''), 'ut_',''))
+                #self.debug('soundex %s : %s' % (m, s))
+                if s == soundex1:
+                    #self.debug('probable map : %s', m)
+                    match.append(m)
+
+        if not len(match):
+            # suggest closest spellings
+            shortmaplist = []
+            for m in maplist:
+                if m.find(data) != -1:
+                    shortmaplist.append(m)
+            if len(shortmaplist) > 0:
+                shortmaplist.sort(key=lambda map: levenshteinDistance(data, string.replace(string.replace(map.strip(), 'ut4_',''), 'ut_','')))
+                self.debug("shortmaplist sorted by distance : %s" % shortmaplist)
+                match = shortmaplist[:3]
+            else:
+                maplist.sort(key=lambda map: levenshteinDistance(data, string.replace(string.replace(map.strip(), 'ut4_',''), 'ut_','')))
+                self.debug("maplist sorted by distance : %s" % maplist)
+                match = maplist[:3]
+        return match
 
     def getTeamScores(self):
         data = self.write('players')
