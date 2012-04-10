@@ -20,7 +20,7 @@ import ConfigParser
 import logging
 import unittest2 as unittest
 import sys
-from b3.config import XmlConfigParser
+from b3.config import XmlConfigParser, CfgConfigParser
 from tests import B3TestCase
 import b3
 
@@ -47,15 +47,10 @@ class Test_XmlConfigParser_windows(B3TestCase):
         self.assertEqual(r"status.xml", self.conf.getpath('settings', 'output_file'))
 
 
-class Test_XmlConfigParser(B3TestCase):
-    def setUp(self):
-        self.conf = XmlConfigParser()
-        self.conf.loadFromString("""<configuration/>""")
-        log = logging.getLogger('output')
-        log.setLevel(logging.DEBUG)
+class CommonTestMethodsMixin:
 
     def _assert_func(self, func, expected, conf_value):
-        self.conf.loadFromString("""<configuration><settings name="section_foo"><set name="foo">%s</set></settings></configuration>""" % conf_value)
+        self.conf.loadFromString(self.__class__.assert_func_template % conf_value)
         try:
             self.assertEqual(expected, func('section_foo', 'foo'))
         except (ConfigParser.Error, ValueError), err:
@@ -96,22 +91,21 @@ class Test_XmlConfigParser(B3TestCase):
     def assert_getboolean_raises(self, expected_error, section, name, conf):
         self._assert_func_raises(self.conf.getboolean, expected_error, section, name, conf)
 
-
     def test_get(self):
         self.assert_get('bar', 'bar')
-        self.assert_get(None, '')
-        self.assert_get_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
-        self.assert_get_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
+        self.assert_get('', '')
+        self.assert_get_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', self.assert_func_template % "")
+        self.assert_get_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', self.assert_func_template % "")
 
     def test_getint(self):
         self.assert_getint(-54, '-54')
         self.assert_getint(0, '0')
         self.assert_getint(64, '64')
-        self.assert_getint_raises(ValueError, 'section_foo', 'foo', """<configuration><settings name="section_foo"><set name="foo">bar</set></settings></configuration>""")
-        self.assert_getint_raises(ValueError, 'section_foo', 'foo', """<configuration><settings name="section_foo"><set name="foo">64.5</set></settings></configuration>""")
-        self.assert_getint_raises(ValueError, 'section_foo', 'foo', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
-        self.assert_getint_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
-        self.assert_getint_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
+        self.assert_getint_raises(ValueError, 'section_foo', 'foo', self.assert_func_template % "bar")
+        self.assert_getint_raises(ValueError, 'section_foo', 'foo', self.assert_func_template % "64.5")
+        self.assert_getint_raises(ValueError, 'section_foo', 'foo', self.assert_func_template % "")
+        self.assert_getint_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', self.assert_func_template % "")
+        self.assert_getint_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', self.assert_func_template % "")
 
     def test_getfloat(self):
         self.assert_getfloat(-54.0, '-54')
@@ -120,11 +114,11 @@ class Test_XmlConfigParser(B3TestCase):
         self.assert_getfloat(0.0, '0.0')
         self.assert_getfloat(64.0, '64')
         self.assert_getfloat(64.45, '64.45')
-        self.assert_getfloat_raises(ValueError, 'section_foo', 'foo', """<configuration><settings name="section_foo"><set name="foo">bar</set></settings></configuration>""")
-        self.assert_getfloat_raises(ValueError, 'section_foo', 'foo', """<configuration><settings name="section_foo"><set name="foo">64,5</set></settings></configuration>""")
-        self.assert_getfloat_raises(ValueError, 'section_foo', 'foo', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
-        self.assert_getfloat_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
-        self.assert_getfloat_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
+        self.assert_getfloat_raises(ValueError, 'section_foo', 'foo', self.assert_func_template % "bar")
+        self.assert_getfloat_raises(ValueError, 'section_foo', 'foo', self.assert_func_template % "64,5")
+        self.assert_getfloat_raises(ValueError, 'section_foo', 'foo', self.assert_func_template % "")
+        self.assert_getfloat_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', self.assert_func_template % "")
+        self.assert_getfloat_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', self.assert_func_template % "")
 
     def test_getboolean(self):
         self.assert_getboolean(False, 'false')
@@ -139,11 +133,45 @@ class Test_XmlConfigParser(B3TestCase):
         self.assert_getboolean(True, 'ON')
         self.assert_getboolean(True, 'yes')
         self.assert_getboolean(True, 'YES')
-        self.assert_getboolean_raises(ValueError, 'section_foo', 'foo', """<configuration><settings name="section_foo"><set name="foo">bar</set></settings></configuration>""")
-        self.assert_getboolean_raises(ValueError, 'section_foo', 'foo', """<configuration><settings name="section_foo"><set name="foo">64,5</set></settings></configuration>""")
-        self.assert_getboolean_raises(ValueError, 'section_foo', 'foo', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
-        self.assert_getboolean_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
-        self.assert_getboolean_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
+        self.assert_getboolean_raises(ValueError, 'section_foo', 'foo', self.assert_func_template % "bar")
+        self.assert_getboolean_raises(ValueError, 'section_foo', 'foo', self.assert_func_template % "64,5")
+        self.assert_getboolean_raises(ValueError, 'section_foo', 'foo', self.assert_func_template % "")
+        self.assert_getboolean_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', self.assert_func_template % "")
+        self.assert_getboolean_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', self.assert_func_template % "")
+
+
+class Test_XmlConfigParser(CommonTestMethodsMixin, B3TestCase):
+
+    assert_func_template = """
+        <configuration>
+            <settings name="section_foo">
+                <set name="foo">%s</set>
+            </settings>
+        </configuration>"""
+
+    def setUp(self):
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""<configuration/>""")
+        log = logging.getLogger('output')
+        log.setLevel(logging.DEBUG)
+
+    def test_get_missing(self):
+        self.assert_get_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
+        self.assert_get_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
+
+
+class Test_CfgConfigParser(CommonTestMethodsMixin, B3TestCase):
+
+    assert_func_template = """
+[section_foo]
+foo = %s
+"""
+
+    def setUp(self):
+        self.conf = CfgConfigParser()
+        self.conf.loadFromString("[foo]")
+        log = logging.getLogger('output')
+        log.setLevel(logging.DEBUG)
 
 
 if __name__ == '__main__':
