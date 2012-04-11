@@ -20,6 +20,8 @@ import logging
 
 from mock import Mock, patch
 import time
+from b3.clients import Client
+from b3.plugins.admin import AdminPlugin
 from tests import B3TestCase
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
@@ -418,20 +420,70 @@ class Test_say(AbstractParser_TestCase):
         self.parser.working = False
 
     def test_say(self):
-        with patch.object(time, 'sleep'):
-            with patch.object(AbstractParser, 'write') as write_mock:
+        with patch.object(time, 'sleep'), patch.object(AbstractParser, 'write') as write_mock:
 
-                self.parser._settings['big_b3_private_responses'] = False
+            self.parser._settings['big_b3_private_responses'] = False
 
-                self.parser.say('test')
-                self.parser.say('test2')
+            self.parser.say('test')
+            self.parser.say('test2')
 
-                self.parser.start_sayqueue_worker()
-                self.parser.sayqueuelistener.join(.1)
+            self.parser.start_sayqueue_worker()
+            self.parser.sayqueuelistener.join(.1)
 
-                self.assertTrue(write_mock.called)
-                write_mock.assert_any_call(('admin.say', 'test', 'all'))
-                write_mock.assert_any_call(('admin.say', 'test2', 'all'))
+            self.assertTrue(write_mock.called)
+            write_mock.assert_any_call(('admin.say', 'test', 'all'))
+            write_mock.assert_any_call(('admin.say', 'test2', 'all'))
+
+
+
+class Test_OnPlayerChat(AbstractParser_TestCase):
+    def setUp(self):
+        log = logging.getLogger('output')
+        log.setLevel(logging.NOTSET)
+
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.parser = ConcretegameParser(self.conf)
+
+        self.admin_plugin_mock = Mock(spec=AdminPlugin)
+        self.admin_plugin_mock._commands = {}
+        self.admin_plugin_mock.cmdPrefix = '!'
+        self.admin_plugin_mock.cmdPrefixLoud = '@'
+        self.admin_plugin_mock.cmdPrefixBig = '&'
+        self.parser.getPlugin = Mock(return_value=self.admin_plugin_mock)
+
+        self.joe = Mock(spec=Client)
+        self.parser.getClient = Mock(return_value=self.joe)
+
+    def test_normal_text(self):
+        self.assertEqual('foo', self.parser.OnPlayerChat(action=None, data=('joe', 'foo')).data)
+        self.assertEqual('  foo', self.parser.OnPlayerChat(action=None, data=('joe', '  foo')).data)
+        self.assertEqual('foo', self.parser.OnPlayerChat(action=None, data=('joe', '/foo')).data)
+
+    def test_command(self):
+        self.assertEqual('!foo', self.parser.OnPlayerChat(action=None, data=('joe', '!foo')).data)
+        self.assertEqual('!!foo', self.parser.OnPlayerChat(action=None, data=('joe', '!!foo')).data)
+        self.assertEqual('@foo', self.parser.OnPlayerChat(action=None, data=('joe', '@foo')).data)
+        self.assertEqual('@@foo', self.parser.OnPlayerChat(action=None, data=('joe', '@@foo')).data)
+        self.assertEqual('&foo', self.parser.OnPlayerChat(action=None, data=('joe', '&foo')).data)
+        self.assertEqual('&&foo', self.parser.OnPlayerChat(action=None, data=('joe', '&&foo')).data)
+
+    def test_slash_prefix(self):
+        self.assertEqual('!foo', self.parser.OnPlayerChat(action=None, data=('joe', '/!foo')).data)
+        self.assertEqual('@foo', self.parser.OnPlayerChat(action=None, data=('joe', '/@foo')).data)
+        self.assertEqual('&foo', self.parser.OnPlayerChat(action=None, data=('joe', '/&foo')).data)
+
+    def test_slash_no_prefix_no_command(self):
+        self.assertNotIn('non_existing_command', self.admin_plugin_mock._commands)
+        self.assertEqual('non_existing_command', self.parser.OnPlayerChat(action=None, data=('joe', '/non_existing_command')).data)
+
+    def test_slash_no_prefix_command(self):
+        self.admin_plugin_mock._commands['exiting_command'] = Mock()
+        self.assertIn('exiting_command', self.admin_plugin_mock._commands)
+        self.assertEqual('!exiting_command', self.parser.OnPlayerChat(action=None, data=('joe', '/exiting_command')).data)
 
 
 

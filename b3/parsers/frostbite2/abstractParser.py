@@ -35,9 +35,11 @@
 #  add a space between the bot name and the message in saybig()
 # 1.4.2
 #  fixes bug regarding round count on round change events
+# 1.4.3
+#  improves handling of commands prefixed only with '/' instead of usual command prefixes
 #
 __author__  = 'Courgette'
-__version__ = '1.4.2'
+__version__ = '1.4.3'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -485,14 +487,16 @@ class AbstractParser(b3.parser.Parser):
             return
         text = data[1]
 
-        # handles text starting with '/' not showing the text in global chat zone
+        # existing commands can be prefixed with on '/' instead of usual prefixes
         cmdPrefix = '!'
         cmd_prefixes = (cmdPrefix, '@', '&')
         admin_plugin = self.getPlugin('admin')
         if admin_plugin:
             cmdPrefix = admin_plugin.cmdPrefix
             cmd_prefixes = (cmdPrefix, admin_plugin.cmdPrefixLoud, admin_plugin.cmdPrefixBig)
-        if len(text) > 2 and text[0] == '/' and text[1] not in cmd_prefixes:
+        cmd_name = text[1:].split(' ', 1)[0].lower()
+        if len(text) > 2 and text[0] == '/' and text[1] not in cmd_prefixes \
+            and cmd_name in admin_plugin._commands:
             text = cmdPrefix + text[1:]
         return b3.events.Event(b3.events.EVT_CLIENT_SAY, text.lstrip('/'), client)
         
