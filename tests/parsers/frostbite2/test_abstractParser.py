@@ -420,19 +420,19 @@ class Test_say(AbstractParser_TestCase):
         self.parser.working = False
 
     def test_say(self):
-        with patch.object(time, 'sleep'), patch.object(AbstractParser, 'write') as write_mock:
+        with patch.object(time, 'sleep'):
+            with patch.object(AbstractParser, 'write') as write_mock:
+                self.parser._settings['big_b3_private_responses'] = False
 
-            self.parser._settings['big_b3_private_responses'] = False
+                self.parser.say('test')
+                self.parser.say('test2')
 
-            self.parser.say('test')
-            self.parser.say('test2')
+                self.parser.start_sayqueue_worker()
+                self.parser.sayqueuelistener.join(.1)
 
-            self.parser.start_sayqueue_worker()
-            self.parser.sayqueuelistener.join(.1)
-
-            self.assertTrue(write_mock.called)
-            write_mock.assert_any_call(('admin.say', 'test', 'all'))
-            write_mock.assert_any_call(('admin.say', 'test2', 'all'))
+                self.assertTrue(write_mock.called)
+                write_mock.assert_any_call(('admin.say', 'test', 'all'))
+                write_mock.assert_any_call(('admin.say', 'test2', 'all'))
 
 
 
