@@ -461,29 +461,29 @@ class Test_OnPlayerChat(AbstractParser_TestCase):
     def test_normal_text(self):
         self.assertEqual('foo', self.parser.OnPlayerChat(action=None, data=('joe', 'foo')).data)
         self.assertEqual('  foo', self.parser.OnPlayerChat(action=None, data=('joe', '  foo')).data)
-        self.assertEqual('foo', self.parser.OnPlayerChat(action=None, data=('joe', '/foo')).data)
 
     def test_command(self):
         self.assertEqual('!foo', self.parser.OnPlayerChat(action=None, data=('joe', '!foo')).data)
         self.assertEqual('!!foo', self.parser.OnPlayerChat(action=None, data=('joe', '!!foo')).data)
         self.assertEqual('@foo', self.parser.OnPlayerChat(action=None, data=('joe', '@foo')).data)
         self.assertEqual('@@foo', self.parser.OnPlayerChat(action=None, data=('joe', '@@foo')).data)
-        self.assertEqual('&foo', self.parser.OnPlayerChat(action=None, data=('joe', '&foo')).data)
-        self.assertEqual('&&foo', self.parser.OnPlayerChat(action=None, data=('joe', '&&foo')).data)
+        self.assertEqual(r'&foo', self.parser.OnPlayerChat(action=None, data=('joe', r'&foo')).data)
+        self.assertEqual(r'&&foo', self.parser.OnPlayerChat(action=None, data=('joe', r'&&foo')).data)
 
     def test_slash_prefix(self):
         self.assertEqual('!foo', self.parser.OnPlayerChat(action=None, data=('joe', '/!foo')).data)
         self.assertEqual('@foo', self.parser.OnPlayerChat(action=None, data=('joe', '/@foo')).data)
-        self.assertEqual('&foo', self.parser.OnPlayerChat(action=None, data=('joe', '/&foo')).data)
+        self.assertEqual(r'&foo', self.parser.OnPlayerChat(action=None, data=('joe', r'/&foo')).data)
 
     def test_slash_no_prefix_no_command(self):
         self.assertNotIn('non_existing_command', self.admin_plugin_mock._commands)
-        self.assertEqual('non_existing_command', self.parser.OnPlayerChat(action=None, data=('joe', '/non_existing_command')).data)
+        self.assertEqual('/non_existing_command', self.parser.OnPlayerChat(action=None, data=('joe', '/non_existing_command')).data)
 
     def test_slash_no_prefix_command(self):
         self.admin_plugin_mock._commands['exiting_command'] = Mock()
         self.assertIn('exiting_command', self.admin_plugin_mock._commands)
         self.assertEqual('!exiting_command', self.parser.OnPlayerChat(action=None, data=('joe', '/exiting_command')).data)
+        self.assertEqual('!exiting_command', self.parser.OnPlayerChat(action=None, data=('joe', '!exiting_command')).data)
 
 
 

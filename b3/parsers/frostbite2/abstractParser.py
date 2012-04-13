@@ -35,11 +35,12 @@
 #  add a space between the bot name and the message in saybig()
 # 1.4.2
 #  fixes bug regarding round count on round change events
-# 1.4.3
-#  improves handling of commands prefixed only with '/' instead of usual command prefixes
+# 1.4.3 - 1.4.4
+#  improves handling of commands prefixed only with '/' instead of usual command prefixes. Leading '/' is removed if
+#  followed by an existing command name or if followed by a command prefix.
 #
 __author__  = 'Courgette'
-__version__ = '1.4.3'
+__version__ = '1.4.4'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -487,7 +488,7 @@ class AbstractParser(b3.parser.Parser):
             return
         text = data[1]
 
-        # existing commands can be prefixed with on '/' instead of usual prefixes
+        # existing commands can be prefixed with a '/' instead of usual prefixes
         cmdPrefix = '!'
         cmd_prefixes = (cmdPrefix, '@', '&')
         admin_plugin = self.getPlugin('admin')
@@ -495,10 +496,12 @@ class AbstractParser(b3.parser.Parser):
             cmdPrefix = admin_plugin.cmdPrefix
             cmd_prefixes = (cmdPrefix, admin_plugin.cmdPrefixLoud, admin_plugin.cmdPrefixBig)
         cmd_name = text[1:].split(' ', 1)[0].lower()
-        if len(text) > 2 and text[0] == '/' and text[1] not in cmd_prefixes \
-            and cmd_name in admin_plugin._commands:
-            text = cmdPrefix + text[1:]
-        return b3.events.Event(b3.events.EVT_CLIENT_SAY, text.lstrip('/'), client)
+        if len(text) > 2 and text[0] == '/':
+            if text[1] in cmd_prefixes:
+                text = text[1:]
+            elif cmd_name in admin_plugin._commands:
+                text = cmdPrefix + text[1:]
+        return b3.events.Event(b3.events.EVT_CLIENT_SAY, text, client)
         
 
     def OnPlayerLeave(self, action, data):
