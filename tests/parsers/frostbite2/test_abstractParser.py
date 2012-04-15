@@ -463,6 +463,7 @@ class Test_OnPlayerChat(AbstractParser_TestCase):
         self.assertEqual('  foo', self.parser.OnPlayerChat(action=None, data=('joe', '  foo')).data)
 
     def test_command(self):
+        self.assertEqual('!1', self.parser.OnPlayerChat(action=None, data=('joe', '!1')).data)
         self.assertEqual('!foo', self.parser.OnPlayerChat(action=None, data=('joe', '!foo')).data)
         self.assertEqual('!!foo', self.parser.OnPlayerChat(action=None, data=('joe', '!!foo')).data)
         self.assertEqual('@foo', self.parser.OnPlayerChat(action=None, data=('joe', '@foo')).data)
@@ -471,6 +472,7 @@ class Test_OnPlayerChat(AbstractParser_TestCase):
         self.assertEqual(r'&&foo', self.parser.OnPlayerChat(action=None, data=('joe', r'&&foo')).data)
 
     def test_slash_prefix(self):
+        self.assertEqual('!1', self.parser.OnPlayerChat(action=None, data=('joe', '/!1')).data)
         self.assertEqual('!foo', self.parser.OnPlayerChat(action=None, data=('joe', '/!foo')).data)
         self.assertEqual('@foo', self.parser.OnPlayerChat(action=None, data=('joe', '/@foo')).data)
         self.assertEqual(r'&foo', self.parser.OnPlayerChat(action=None, data=('joe', r'/&foo')).data)
@@ -484,6 +486,10 @@ class Test_OnPlayerChat(AbstractParser_TestCase):
         self.assertIn('exiting_command', self.admin_plugin_mock._commands)
         self.assertEqual('!exiting_command', self.parser.OnPlayerChat(action=None, data=('joe', '/exiting_command')).data)
         self.assertEqual('!exiting_command', self.parser.OnPlayerChat(action=None, data=('joe', '!exiting_command')).data)
+        self.admin_plugin_mock._commands['a'] = Mock()
+        self.assertIn('a', self.admin_plugin_mock._commands)
+        self.assertEqual('!a', self.parser.OnPlayerChat(action=None, data=('joe', '/a')).data)
+        self.assertEqual('!a', self.parser.OnPlayerChat(action=None, data=('joe', '!a')).data)
 
 
 

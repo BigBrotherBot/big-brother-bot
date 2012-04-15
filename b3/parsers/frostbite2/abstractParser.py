@@ -35,12 +35,12 @@
 #  add a space between the bot name and the message in saybig()
 # 1.4.2
 #  fixes bug regarding round count on round change events
-# 1.4.3 - 1.4.4
+# 1.4.3 - 1.4.5
 #  improves handling of commands prefixed only with '/' instead of usual command prefixes. Leading '/' is removed if
 #  followed by an existing command name or if followed by a command prefix.
 #
 __author__  = 'Courgette'
-__version__ = '1.4.4'
+__version__ = '1.4.5'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -496,7 +496,7 @@ class AbstractParser(b3.parser.Parser):
             cmdPrefix = admin_plugin.cmdPrefix
             cmd_prefixes = (cmdPrefix, admin_plugin.cmdPrefixLoud, admin_plugin.cmdPrefixBig)
         cmd_name = text[1:].split(' ', 1)[0].lower()
-        if len(text) > 2 and text[0] == '/':
+        if len(text) >= 2 and text[0] == '/':
             if text[1] in cmd_prefixes:
                 text = text[1:]
             elif cmd_name in admin_plugin._commands:
