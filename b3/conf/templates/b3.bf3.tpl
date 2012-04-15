@@ -3,7 +3,8 @@
 		<set name="parser">bf3</set>
 		<set name="database">mysql://myuser:mypass@mydbhost/mydbname</set>
 		<set name="bot_name">b3</set>
-		<set name="bot_prefix">(b3):</set>
+        <!-- prefix for all messages sent by B3. Not very useful on BF3 as such messages already are prefixed with [admin]-->
+		<set name="bot_prefix"></set>
 		<set name="time_format">%I:%M%p %Z %m/%d/%y</set>
 		<set name="time_zone">CEST</set>
 		<set name="log_level">9</set>
