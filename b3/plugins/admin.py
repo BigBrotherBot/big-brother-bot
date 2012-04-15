@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2012/04/15 - 1.12 - Courgette
+#   * removes magic command shortcut that would transform the command '!1 blah' into '!say blah'
 #   2011/11/15 - 1.11.4 - Courgette
 #   * fix bug where command &rules was acting like !rules
 #   2011/11/15 - 1.11.3 - Courgette
@@ -94,7 +96,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.11.4'
+__version__ = '1.12'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import re, time, threading, sys, traceback, thread, random
@@ -314,7 +316,7 @@ class AdminPlugin(b3.plugin.Plugin):
             else:
                 self.debug('Handle command %s' % event.data)
 
-            if event.data[1:2] == self.cmdPrefix or event.data[1:2] == self.cmdPrefixLoud or event.data[1:2] == self.cmdPrefixBig or event.data[1:2] == '1':
+            if event.data[1:2] == self.cmdPrefix or event.data[1:2] == self.cmdPrefixLoud or event.data[1:2] == self.cmdPrefixBig:
                 # self.is the alias for say
                 cmd = 'say'
                 data = event.data[2:]
