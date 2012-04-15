@@ -95,7 +95,9 @@ if __name__ == '__main__':
 # * FakeConsole now uses the logging module
 # 1.10 - 2011/12/29
 # * fix issue with plugins' registered events when importing fakeConsole in different TestSuites
-__version__ = '1.10'
+# 1.11 - 2012/04/15
+# * fix issue with message_history of FakeClient which was shared between instances
+__version__ = '1.11'
 
 
 from b3.cvar import Cvar
@@ -297,10 +299,10 @@ class FakeConsole(b3.parser.Parser):
 
 class FakeClient(b3.clients.Client):
     console = None
-    message_history = [] # this allows unittests to check if a message was sent to the client
-    
+
     def __init__(self, console, **kwargs):
         self.console = console
+        self.message_history = [] # this allows unittests to check if a message was sent to the client
         b3.clients.Client.__init__(self, **kwargs)
                 
     def clearMessageHistory(self):
