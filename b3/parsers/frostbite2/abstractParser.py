@@ -38,9 +38,11 @@
 # 1.4.3 - 1.4.5
 #  improves handling of commands prefixed only with '/' instead of usual command prefixes. Leading '/' is removed if
 #  followed by an existing command name or if followed by a command prefix.
+# 1.5
+#  parser can now create EVT_CLIENT_TEAM_SAY events (requires BF3 server R21)
 #
 __author__  = 'Courgette'
-__version__ = '1.4.5'
+__version__ = '1.5'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -471,10 +473,10 @@ class AbstractParser(b3.parser.Parser):
     
     def OnPlayerChat(self, action, data):
         """
-        player.onChat <source soldier name: string> <text: string>
+        player.onChat <source soldier name: string> <text: string> <target players: player subset>
         
         Effect: Player with name <source soldier name> (or the server, or the 
-            server admin) has sent chat message <text> to some people
+            server admin) has sent chat message <text> to <target players>
         
         Comment: If <source soldier name> is "Server", then the message was sent 
             from the server rather than from an actual player
@@ -501,7 +503,12 @@ class AbstractParser(b3.parser.Parser):
                 text = text[1:]
             elif cmd_name in admin_plugin._commands:
                 text = cmdPrefix + text[1:]
-        return b3.events.Event(b3.events.EVT_CLIENT_SAY, text, client)
+
+        if data[2] in ('team', 'squad'):
+            event_type = b3.events.EVT_CLIENT_TEAM_SAY
+        else:
+            event_type = b3.events.EVT_CLIENT_SAY
+        return b3.events.Event(event_type, text, client)
         
 
     def OnPlayerLeave(self, action, data):

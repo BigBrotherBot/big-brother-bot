@@ -18,6 +18,7 @@
 #
 import unittest2 as unittest
 from mock import Mock
+from b3.clients import Client
 from b3.parsers.bf3 import Bf3Parser
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.util import MapListBlock
@@ -392,6 +393,9 @@ class Test_bf3_events(BF3TestCase):
             """)
         self.parser = Bf3Parser(self.conf)
         self.parser.startup()
+        # mock parser queueEvent method so we can make assertions on it later on
+        self.parser.queueEvent = Mock(name="queueEvent method")
+        self.joe = Mock(name="Joe", spec=Client)
 
     def test_cmd_rotateMap_generates_EVT_GAME_ROUND_END(self):
         # prepare fake BF3 server responses
@@ -403,15 +407,46 @@ class Test_bf3_events(BF3TestCase):
         self.parser.write = Mock(side_effect=fake_write)
         self.parser.getFullMapRotationList = Mock(return_value=MapListBlock(['4', '3', 'MP_007', 'RushLarge0', '4', 'MP_011', 'RushLarge0', '4', 'MP_012',
                                                                              'SquadRush0', '4', 'MP_013', 'SquadRush0', '4']))
-
-        # mock parser queueEvent method so we can make assertions on it later on
-        self.parser.queueEvent = Mock(name="queueEvent method")
-
         self.parser.rotateMap()
         self.assertEqual(1, self.parser.queueEvent.call_count)
         self.assertEqual(self.parser.getEventID("EVT_GAME_ROUND_END"), self.parser.queueEvent.call_args[0][0].type)
         self.assertIsNone(self.parser.queueEvent.call_args[0][0].data)
 
+
+    def test_player_onChat_event_all(self):
+        self.parser.getClient = Mock(return_value=self.joe)
+
+        self.parser.routeFrostbitePacket(['player.onChat', 'Cucurbitaceae', 'test all', 'all'])
+        self.assertEqual(1, self.parser.queueEvent.call_count)
+
+        event = self.parser.queueEvent.call_args[0][0]
+        self.assertEqual("Say", self.parser.getEventName(event.type))
+        self.assertEquals('test all', event.data)
+        self.assertEqual(self.joe, event.client)
+
+
+    def test_player_onChat_event_team(self):
+        self.parser.getClient = Mock(return_value=self.joe)
+
+        self.parser.routeFrostbitePacket(['player.onChat', 'Cucurbitaceae', 'test team', 'team', '1'])
+        self.assertEqual(1, self.parser.queueEvent.call_count)
+
+        event = self.parser.queueEvent.call_args[0][0]
+        self.assertEqual("Team Say", self.parser.getEventName(event.type))
+        self.assertEquals('test team', event.data)
+        self.assertEqual(self.joe, event.client)
+
+
+    def test_player_onChat_event_squad(self):
+        self.parser.getClient = Mock(return_value=self.joe)
+
+        self.parser.routeFrostbitePacket(['player.onChat', 'Cucurbitaceae', 'test squad', 'squad', '1', '1'])
+        self.assertEqual(1, self.parser.queueEvent.call_count)
+
+        event = self.parser.queueEvent.call_args[0][0]
+        self.assertEqual("Team Say", self.parser.getEventName(event.type))
+        self.assertEquals('test squad', event.data)
+        self.assertEqual(self.joe, event.client)
 
 
 class Test_punkbuster_events(BF3TestCase):

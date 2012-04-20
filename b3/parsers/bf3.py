@@ -25,13 +25,16 @@
 # 1.0.1 -> 1.0.3 / 1.1.1 -> 1.1.6
 #  version change to reflect changes of AbstractParser
 # 1.1
-#  reflect changes in AbstractParser and refactor the class by moving some of the code to AbstractParser
+#  reflects changes in AbstractParser and refactor the class by moving some of the code to AbstractParser
+# 1.2
+#  reflects changes in AbstractParser due to BF3 server R21 release
+#
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 import b3
 import b3.events
 __author__  = 'Courgette'
-__version__ = '1.1.6'
+__version__ = '1.2'
 
 
 SQUAD_NOSQUAD = 0
