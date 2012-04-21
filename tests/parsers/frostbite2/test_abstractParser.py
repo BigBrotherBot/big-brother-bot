@@ -45,6 +45,10 @@ class AbstractParser_TestCase(B3TestCase):
         # Now parser inheritance hierarchy is :
         # AbstractParser -> FakeConsole -> Parser
 
+    def tearDown(self):
+        if hasattr(self, "parser"):
+            self.parser.working = False # this tells some parser threads to end
+
 
 ########################################################################################################################
 #
@@ -61,8 +65,6 @@ class Test_saybig(AbstractParser_TestCase):
         self.parser = ConcretegameParser(self.conf)
         self.parser._settings['big_msg_duration'] = '3.1'
 
-    def tearDown(self):
-        self.parser.working = False
 
     def test_saybig(self):
         with patch.object(time, 'sleep'):
@@ -87,8 +89,6 @@ class Test_say(AbstractParser_TestCase):
             """)
         self.parser = ConcretegameParser(self.conf)
 
-    def tearDown(self):
-        self.parser.working = False
 
     def test_say(self):
         with patch.object(time, 'sleep'):
@@ -134,6 +134,8 @@ class Test_OnPlayerChat(AbstractParser_TestCase):
         self.joe = Mock(spec=Client)
         self.parser.getClient = Mock(return_value=self.joe)
 
+
+
     def test_normal_text(self):
         self.assertEqual('foo', self.parser.OnPlayerChat(action=None, data=('joe', 'foo', 'all')).data)
         self.assertEqual('  foo', self.parser.OnPlayerChat(action=None, data=('joe', '  foo', 'all')).data)
@@ -171,6 +173,15 @@ class Test_OnPlayerChat(AbstractParser_TestCase):
 
 ########################################################################################################################
 #
+#  T E S T    P U N K B U S T E R    E V E N TS
+#
+########################################################################################################################
+
+
+
+
+########################################################################################################################
+#
 #  T E S T    C O N F I G
 #
 ########################################################################################################################
@@ -182,8 +193,6 @@ class Test_config(AbstractParser_TestCase):
         log = logging.getLogger('output')
         log.setLevel(logging.DEBUG)
 
-    def tearDown(self):
-        self.parser.working = False
 
 
     def assert_big_b3_private_responses(self, expected, config):
@@ -278,8 +287,6 @@ class Test_config_ban_agent(AbstractParser_TestCase):
         log = logging.getLogger('output')
         log.setLevel(logging.DEBUG)
 
-    def tearDown(self):
-        self.parser.working = False
 
     def assert_both(self, config):
         self.conf.loadFromString(config)
@@ -381,6 +388,7 @@ class Test_bf3_config_message_delay(AbstractParser_TestCase):
         log = logging.getLogger('output')
         log.setLevel(logging.DEBUG)
 
+
     def _test_message_delay(self, conf_data=None, expected=None):
         self.conf.loadFromString("""
             <configuration>
@@ -480,8 +488,6 @@ class Map_related_TestCase(AbstractParser_TestCase):
         self.parser.getEasyName = Mock(side_effect=lambda x: x)
         self.parser.getGameMode = Mock(side_effect=lambda x: x)
 
-    def tearDown(self):
-        self.parser.working = False
 
 
 class Test_getNextMap(Map_related_TestCase):
@@ -630,8 +636,6 @@ class Test_getFullBanList(AbstractParser_TestCase):
         self.parser.write = Mock(side_effect=write)
 
 
-    def tearDown(self):
-        self.parser.working = False
 
 
     def test_empty(self):
@@ -705,8 +709,6 @@ class Test_patch_b3_clients_getByMagic(AbstractParser_TestCase):
         self.jacky = self.parser.clients.newClient(cid='jacky', name='jacky', guid="ddddddddd5555555")
         self.p123456 = self.parser.clients.newClient(cid='123456', name='123456', guid="eeeeeee5555555")
 
-    def tearDown(self):
-        self.parser.working = False
 
     def test_exact_name(self):
         self.assertEqual([self.foobar], self.parser.clients.getByMagic('Foobar'))
@@ -740,8 +742,6 @@ class Test_patch_b3_client_yell(AbstractParser_TestCase):
         # setup context
         self.joe = self.parser.clients.newClient(cid='joe', name='joe', guid="bbbbbbbb5555555")
 
-    def tearDown(self):
-        self.parser.working = False
 
     def test_client_yell(self):
         with patch.object(time, 'sleep'):
