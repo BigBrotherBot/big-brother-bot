@@ -40,9 +40,11 @@
 #  followed by an existing command name or if followed by a command prefix.
 # 1.5
 #  parser can now create EVT_CLIENT_TEAM_SAY events (requires BF3 server R21)
+# 1.5.1
+#  fixes issue with BF3 failing to provide EA_GUID https://github.com/courgette/big-brother-bot/issues/69
 #
 __author__  = 'Courgette'
-__version__ = '1.5'
+__version__ = '1.5.1'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -692,6 +694,7 @@ class AbstractParser(b3.parser.Parser):
         """
         #self.debug("PB> %s" % data)
         if data and data[0]:
+            match = funcName = None
             for regexp, funcName in self._punkbusterMessageFormats:
                 match = re.match(regexp, str(data[0]).strip())
                 if match:
@@ -785,8 +788,9 @@ class AbstractParser(b3.parser.Parser):
                 # a bug in the BF3 server can make admin.listPlayers response reply with players having an
                 # empty string as guid. What we can do here is to try to get the guid from the pbid in the
                 # B3 database.
+                self.debug("Frostbite2 bug : we have no guid for %s. Trying to find client in B3 storage by pbid" % name)
                 try:
-                    matching_clients = self.console.storage.getClientsMatching({'pbid': pbid})
+                    matching_clients = self.storage.getClientsMatching({'pbid': pbid})
                     if len(matching_clients) == 0:
                         self.debug("no client found by pbid")
                     elif len(matching_clients) > 1:
@@ -796,7 +800,10 @@ class AbstractParser(b3.parser.Parser):
                         client.auth()
                 except Exception, err:
                     self.warning("failed to try to auth %s by pbid. %r" % (name, err))
-            client.save()
+            if not client.guid:
+                self.error("Game server failed to provide a EA_guid for player %s. Cannot auth player." % name)
+            else:
+                client.save()
 
     def OnPBPlistItem(self, match, data):
         """we received one of the line containing details about one player"""

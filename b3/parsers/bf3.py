@@ -17,13 +17,17 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 #
+# versions that only reflect changes to AbstractParser :
+# 1.0.1 -> 1.0.3
+# 1.1.1 -> 1.1.6
+# 1.2.1
+#
 # CHANGELOG
+#
 # 0.1
 #  functional parser but BF3 admin protocol is not fully implemented on the BF3 side. See TODOs
 # 1.0
 #  update parser for BF3 R20
-# 1.0.1 -> 1.0.3 / 1.1.1 -> 1.1.6
-#  version change to reflect changes of AbstractParser
 # 1.1
 #  reflects changes in AbstractParser and refactor the class by moving some of the code to AbstractParser
 # 1.2
@@ -34,7 +38,7 @@ from b3.parsers.frostbite2.util import PlayerInfoBlock
 import b3
 import b3.events
 __author__  = 'Courgette'
-__version__ = '1.2'
+__version__ = '1.2.1'
 
 
 SQUAD_NOSQUAD = 0

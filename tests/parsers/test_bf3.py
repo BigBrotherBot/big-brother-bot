@@ -16,8 +16,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+import re
+import time
 import unittest2 as unittest
-from mock import Mock
+from mock import Mock, DEFAULT, patch
 from b3.clients import Client
 from b3.parsers.bf3 import Bf3Parser
 from b3.config import XmlConfigParser
@@ -36,6 +38,10 @@ class BF3TestCase(B3TestCase):
         AbstractParser.__bases__ = (FakeConsole,)
         # Now parser inheritance hierarchy is :
         # BF3Parser -> AbstractParser -> FakeConsole -> Parser
+
+    def tearDown(self):
+        if hasattr(self, "parser"):
+            self.parser.working = False
 
 
 
@@ -510,3 +516,81 @@ class Test_punkbuster_events(BF3TestCase):
         self.assert_pb_misc_evt("PunkBuster Server: Matched: Cucurbitaceae (slot #1)")
         self.assert_pb_misc_evt("PunkBuster Server: Received Master Security Information")
         self.assert_pb_misc_evt("PunkBuster Server: Auto Screenshot 000714 Requested from 25 Goldbat")
+
+
+class Test_bf3_sends_no_guid(BF3TestCase):
+    """
+    See bug https://github.com/courgette/big-brother-bot/issues/69
+    """
+    def setUp(self):
+        BF3TestCase.setUp(self)
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("<configuration/>")
+        self.parser = Bf3Parser(self.conf)
+        self.parser.startup()
+
+        self.authorizeClients_patcher = patch.object(self.parser.clients, "authorizeClients")
+        self.authorizeClients_patcher.start()
+
+        self.write_patcher = patch.object(self.parser, "write")
+        self.write_mock = self.write_patcher.start()
+
+        self.event_raw_data = 'PunkBuster Server: 14 300000aaaaaabbbbbbccccc111223300(-) 11.122.103.24:3659 OK   1 3.0 0 (W) "Snoopy"'
+        self.regex_for_OnPBPlistItem = [x for (x, y) in self.parser._punkbusterMessageFormats if y == 'OnPBPlistItem'][0]
+
+
+    def tearDown(self):
+        BF3TestCase.tearDown(self)
+        self.authorizeClients_patcher.stop()
+        self.write_mock = self.write_patcher.stop()
+
+
+    def test_auth_client_without_guid_but_with_known_pbid(self):
+        # GIVEN
+
+        # known superadmin named Snoopy
+        superadmin = Client(console=self.parser, name='Snoopy', guid='EA_AAAAAAAABBBBBBBBBBBBBB00000000000012222', pbid='300000aaaaaabbbbbbccccc111223300', group_bits=128, connections=21)
+        superadmin.save()
+
+        # bf3 server failing to provide guid
+        def write(data):
+            if data == ('admin.listPlayers', 'player', 'Snoopy'):
+                return ['7', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', '1', 'Snoopy', '', '2', '8', '0', '0', '0']
+            else:
+                return DEFAULT
+        self.write_mock.side_effect = write
+
+        # WHEN
+        self.assertFalse('Snoopy' in self.parser.clients)
+        self.parser.OnPBPlayerGuid(match=re.match(self.regex_for_OnPBPlistItem, self.event_raw_data), data=self.event_raw_data)
+
+        # THEN
+        # B3 should have authed Snoopy
+        self.assertTrue('Snoopy' in self.parser.clients)
+        snoopy = self.parser.clients['Snoopy']
+        self.assertTrue(snoopy.authed)
+        for attb in ('name', 'pbid', 'guid', 'groupBits'):
+            self.assertEqual(getattr(superadmin, attb), getattr(snoopy, attb))
+
+
+
+    def test_does_not_auth_client_without_guid_and_unknown_pbid(self):
+        # GIVEN
+        # bf3 server failing to provide guid
+        def write(data):
+            if data == ('admin.listPlayers', 'player', 'Snoopy'):
+                return ['7', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', '1', 'Snoopy', '', '2', '8', '0', '0', '0']
+            else:
+                return DEFAULT
+        self.write_mock.side_effect = write
+
+        # WHEN
+        self.assertFalse('Snoopy' in self.parser.clients)
+        self.parser.OnPBPlayerGuid(match=re.match(self.regex_for_OnPBPlistItem, self.event_raw_data), data=self.event_raw_data)
+
+        # THEN
+        # B3 should have authed Snoopy
+        self.assertTrue('Snoopy' in self.parser.clients)
+        snoopy = self.parser.clients['Snoopy']
+        self.assertFalse(snoopy.authed)
+

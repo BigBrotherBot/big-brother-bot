@@ -17,6 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 import logging
+import re
 
 from mock import Mock, patch
 import time
@@ -173,9 +174,77 @@ class Test_OnPlayerChat(AbstractParser_TestCase):
 
 ########################################################################################################################
 #
-#  T E S T    P U N K B U S T E R    E V E N TS
+#  T E S T    P U N K B U S T E R    E V E N T S
 #
 ########################################################################################################################
+class Test_OnPBPlayerGuid(AbstractParser_TestCase):
+    def setUp(self):
+        log = logging.getLogger('output')
+        log.setLevel(logging.NOTSET)
+
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.parser = ConcretegameParser(self.conf)
+
+        self.event_raw_data = ["punkBuster.onMessage", 'PunkBuster Server: 14 300000aaaaaabbbbbbccccc111223300(-) 11.122.103.24:3659 OK   1 3.0 0 (W) "Snoopy"']
+        regex_for_OnPBPlistItem = [x for (x, y) in self.parser._punkbusterMessageFormats if y == 'OnPBPlistItem'][0]
+        self.event_match = Mock(wraps=re.match(regex_for_OnPBPlistItem, self.event_raw_data[1]))
+        self.event_match.__eq__ = Test_OnPBPlayerGuid.SREMatch_equals
+
+    @staticmethod
+    def SREMatch_equals(m1, m2):
+        """
+        @return True if m1 and m2 could be re.match responses for the same regex and data to match
+        """
+        if m2 is None:
+            return False
+        else:
+            return m1.groups() == m2.groups()
+
+
+    def test_OnPBPlistItem_is_called(self):
+        with patch.object(self.parser, "OnPBPlistItem") as OnPBPlistItem_mock:
+            # WHEN
+            self.parser.routeFrostbitePacket(self.event_raw_data)
+            # THEN
+            OnPBPlistItem_mock.assert_called_once_with(self.event_match, self.event_raw_data[1])
+
+    def test_OnPBPlayerGuid_is_called(self):
+        with patch.object(self.parser, "OnPBPlayerGuid") as OnPBPlayerGuid_mock:
+            # WHEN
+            self.parser.routeFrostbitePacket(self.event_raw_data)
+            # THEN
+            OnPBPlayerGuid_mock.assert_called_once_with(self.event_match, self.event_raw_data[1])
+
+    def test_OnPBPlayerGuid_saves_client_with_guid(self):
+        with patch.object(self.parser, "getClient") as getClient_mock:
+            # GIVEN
+            snoopy = Mock()
+            snoopy.guid = 'EA_AAAAAAAABBBBBBBBBBBBBB00000000000012222'
+            getClient_mock.return_value = snoopy
+            # WHEN
+            self.parser.routeFrostbitePacket(self.event_raw_data)
+            # THEN
+            getClient_mock.assert_called_once_with("Snoopy")
+            snoopy.save.assert_called_once_with()
+
+    def test_OnPBPlayerGuid_does_not_save_client_without_guid(self):
+        with patch.object(self.parser, "getClient") as getClient_mock:
+            # GIVEN
+            snoopy = Mock()
+            snoopy.guid = ''
+            getClient_mock.return_value = snoopy
+            # WHEN
+            self.parser.routeFrostbitePacket(self.event_raw_data)
+            # THEN
+            getClient_mock.assert_called_once_with("Snoopy")
+            self.assertFalse(snoopy.save.called)
+
+
+
 
 
 
