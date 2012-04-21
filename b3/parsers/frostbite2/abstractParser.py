@@ -42,9 +42,11 @@
 #  parser can now create EVT_CLIENT_TEAM_SAY events (requires BF3 server R21)
 # 1.5.1
 #  fixes issue with BF3 failing to provide EA_GUID https://github.com/courgette/big-brother-bot/issues/69
+# 1.5.2
+#  fixes issue that made B3 fail to ban/tempban a client with empty guid
 #
 __author__  = 'Courgette'
-__version__ = '1.5.1'
+__version__ = '1.5.2'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -103,11 +105,13 @@ class AbstractParser(b3.parser.Parser):
         'yell': ('admin.yell', '%(message)s', '%(big_msg_duration)i'),
         'kick': ('admin.kickPlayer', '%(cid)s', '%(reason)s'),
         'ban': ('banList.add', 'guid', '%(guid)s', 'perm', '%(reason)s'),
+        'banByName': ('banList.add', 'name', '%(name)s', 'perm', '%(reason)s'),
         'banByIp': ('banList.add', 'ip', '%(ip)s', 'perm', '%(reason)s'),
         'unban': ('banList.remove', 'guid', '%(guid)s'),
         'unbanByIp': ('banList.remove', 'ip', '%(ip)s'),
         'tempban': ('banList.add', 'guid', '%(guid)s', 'seconds', '%(duration)d', '%(reason)s'),
-    }
+        'tempbanByName': ('banList.add', 'name', '%(name)s', 'seconds', '%(duration)d', '%(reason)s'),
+        }
 
     _eventMap = {
     }
@@ -925,9 +929,9 @@ class AbstractParser(b3.parser.Parser):
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
         """Permanent ban"""
         self.debug('BAN : client: %s, reason: %s', client, reason)
-        if isinstance(client, str):
+        if isinstance(client, basestring):
             traceback.print_stack() # TODO: remove this stack trace when we figured out when tempban is called with a str as client
-            self.write(self.getCommand('ban', guid=client, reason=reason[:80]))
+            self.write(self.getCommand('banByName', name=client, reason=reason[:80]))
             return
 
         if admin:
@@ -940,12 +944,22 @@ class AbstractParser(b3.parser.Parser):
         if self.ban_with_server:
             if client.cid is None:
                 # ban by ip, this happens when we !permban @xx a player that is not connected
-                self.debug('EFFECTIVE BAN : %s',self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
+                self.debug('EFFECTIVE BAN : %s',self.getCommand('ban', guid=client.guid, reason=reason[:80]))
                 try:
-                    self.write(self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
+                    self.write(self.getCommand('ban', guid=client.guid, reason=reason[:80]))
                     self.write(('banList.save',))
                     if admin:
-                        admin.message('banned: %s (@%s). His last ip (%s) has been added to banlist'%(client.exactName, client.id, client.ip))
+                        admin.message('banned: %s (@%s) has been added to banlist' % (client.exactName, client.id))
+                except CommandFailedError, err:
+                    self.error(err)
+            elif not client.guid:
+                # ban by name
+                self.debug('EFFECTIVE BAN : %s',self.getCommand('banByName', name=client.name, reason=reason[:80]))
+                try:
+                    self.write(self.getCommand('banByName', name=client.name, reason=reason[:80]))
+                    self.write(('banList.save',))
+                    if admin:
+                        admin.message('banned: %s (@%s) has been added to banlist' % (client.exactName, client.id))
                 except CommandFailedError, err:
                     self.error(err)
             else:
@@ -955,7 +969,7 @@ class AbstractParser(b3.parser.Parser):
                     self.write(self.getCommand('ban', guid=client.guid, reason=reason[:80]))
                     self.write(('banList.save',))
                     if admin:
-                        admin.message('banned: %s (@%s) has been added to banlist'%(client.exactName, client.id))
+                        admin.message('banned: %s (@%s) has been added to banlist' % (client.exactName, client.id))
                 except CommandFailedError, err:
                     self.error(err)
 
@@ -999,7 +1013,7 @@ class AbstractParser(b3.parser.Parser):
             #self.verbose(response)
             self.verbose('UNBAN: Removed guid (%s) from banlist' %client.guid)
             if admin:
-                admin.message('Unbanned: Removed %s guid from banlist' % (client.exactName))
+                admin.message('Unbanned: Removed %s guid from banlist' % client.exactName)
         except CommandFailedError, err:
             if "NotInList" in err.message:
                 pass
@@ -1013,9 +1027,9 @@ class AbstractParser(b3.parser.Parser):
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
         duration = b3.functions.time2minutes(duration)
 
-        if isinstance(client, str):
+        if isinstance(client, basestring):
             traceback.print_stack() # TODO: remove this stack trace when we figured out when tempban is called with a str as client
-            self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
+            self.write(self.getCommand('tempbanByName', name=client, duration=duration*60, reason=reason[:80]))
             return
         
         if admin:
@@ -1037,14 +1051,34 @@ class AbstractParser(b3.parser.Parser):
                 self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
 
         if self.ban_with_server:
-            try:
-                self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
-                self.write(('banList.save',))
-            except CommandFailedError, err:
-                if admin:
-                    admin.message("server replied with error %s" % err.message[0])
-                else:
-                    self.error(err)
+            if client.cid is None:
+                # ban by ip, this happens when we !tempban @xx a player that is not connected
+                try:
+                    self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
+                    self.write(('banList.save',))
+                except CommandFailedError, err:
+                    if admin:
+                        admin.message("server replied with error %s" % err.message[0])
+                    else:
+                        self.error(err)
+            elif not client.guid:
+                try:
+                    self.write(self.getCommand('tempbanByName', name=client.name, duration=duration*60, reason=reason[:80]))
+                    self.write(('banList.save',))
+                except CommandFailedError, err:
+                    if admin:
+                        admin.message("server replied with error %s" % err.message[0])
+                    else:
+                        self.error(err)
+            else:
+                try:
+                    self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
+                    self.write(('banList.save',))
+                except CommandFailedError, err:
+                    if admin:
+                        admin.message("server replied with error %s" % err.message[0])
+                    else:
+                        self.error(err)
 
         if not silent and fullreason != '':
             self.say(fullreason)

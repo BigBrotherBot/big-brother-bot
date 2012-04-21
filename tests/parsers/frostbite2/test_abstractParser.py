@@ -19,7 +19,7 @@
 import logging
 import re
 
-from mock import Mock, patch
+from mock import Mock, patch, call
 import time
 from b3.clients import Client
 from b3.plugins.admin import AdminPlugin
@@ -108,9 +108,156 @@ class Test_say(AbstractParser_TestCase):
 
 
 
+class Test_tempban(AbstractParser_TestCase):
+    def setUp(self):
+        AbstractParser_TestCase.setUp(self)
+        log = logging.getLogger('output')
+        log.setLevel(logging.NOTSET)
+
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("<configuration/>")
+        self.parser = ConcretegameParser(self.conf)
+        self.parser.PunkBuster = None
+        self.parser.ban_with_server = True
+
+        self.getMessage_patcher = patch.object(self.parser, "getMessage")
+        getMessage_mock = self.getMessage_patcher.start()
+        getMessage_mock.return_value = ""
+
+        self.foo = Mock(spec=Client)
+        self.foo.cid = 'f00'
+        self.foo.guid = 'EA_AAABBBBCCCCDDDDEEEEFFFF00000'
+        self.foo.name = 'f00'
+
+    def tearDown(self):
+        AbstractParser_TestCase.tearDown(self)
+        self.getMessage_patcher.stop()
+
+
+    def test_kick_having_cid_and_guid(self):
+        with patch.object(time, 'sleep'):
+            with patch.object(AbstractParser, 'write') as write_mock:
+                # GIVEN
+                self.assertTrue(self.foo.cid)
+                self.assertTrue(self.foo.guid)
+
+                # WHEN
+                self.parser.tempban(self.foo)
+
+                # THEN
+                self.assertTrue(write_mock.called)
+                write_mock.assert_has_calls([call(('banList.add', 'guid', self.foo.guid, 'seconds', '120', ''))])
+
+
+    def test_kick_having_cid_and_empty_guid(self):
+        with patch.object(time, 'sleep'):
+            with patch.object(AbstractParser, 'write') as write_mock:
+                # GIVEN
+                self.foo.guid = ''
+                self.assertTrue(self.foo.cid)
+                self.assertFalse(self.foo.guid)
+
+                # WHEN
+                self.parser.tempban(self.foo)
+
+                # THEN
+                self.assertTrue(write_mock.called)
+                write_mock.assert_has_calls([call(('banList.add', 'name', self.foo.name, 'seconds', '120', ''))])
+
+
+    def test_kick_having_no_cid(self):
+        with patch.object(time, 'sleep'):
+            with patch.object(AbstractParser, 'write') as write_mock:
+                # GIVEN
+                self.foo.cid = None
+                self.assertFalse(self.foo.cid)
+
+                # WHEN
+                self.parser.tempban(self.foo)
+
+                # THEN
+                self.assertTrue(write_mock.called)
+                write_mock.assert_has_calls([call(('banList.add', 'guid', self.foo.guid, 'seconds', '120', ''))])
+
+
+
+class Test_ban(AbstractParser_TestCase):
+    def setUp(self):
+        AbstractParser_TestCase.setUp(self)
+        log = logging.getLogger('output')
+        log.setLevel(logging.NOTSET)
+
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("<configuration/>")
+        self.parser = ConcretegameParser(self.conf)
+        self.parser.PunkBuster = None
+        self.parser.ban_with_server = True
+
+        self.getMessage_patcher = patch.object(self.parser, "getMessage")
+        getMessage_mock = self.getMessage_patcher.start()
+        getMessage_mock.return_value = ""
+
+        self.foo = Mock(spec=Client)
+        self.foo.cid = 'f00'
+        self.foo.guid = 'EA_AAABBBBCCCCDDDDEEEEFFFF00000'
+        self.foo.name = 'f00'
+        self.foo.ip = '11.22.33.44'
+
+    def tearDown(self):
+        AbstractParser_TestCase.tearDown(self)
+        self.getMessage_patcher.stop()
+
+
+    def test_kick_having_cid_and_guid(self):
+        with patch.object(time, 'sleep'):
+            with patch.object(AbstractParser, 'write') as write_mock:
+                # GIVEN
+                self.assertTrue(self.foo.cid)
+                self.assertTrue(self.foo.guid)
+
+                # WHEN
+                self.parser.ban(self.foo)
+
+                # THEN
+                self.assertTrue(write_mock.called)
+                write_mock.assert_has_calls([call(('banList.add', 'guid', self.foo.guid, 'perm', ''))])
+
+
+    def test_kick_having_cid_and_empty_guid(self):
+        with patch.object(time, 'sleep'):
+            with patch.object(AbstractParser, 'write') as write_mock:
+                # GIVEN
+                self.foo.guid = ''
+                self.assertTrue(self.foo.cid)
+                self.assertFalse(self.foo.guid)
+
+                # WHEN
+                self.parser.ban(self.foo)
+
+                # THEN
+                self.assertTrue(write_mock.called)
+                write_mock.assert_has_calls([call(('banList.add', 'name', self.foo.name, 'perm', ''))])
+
+
+    def test_kick_having_no_cid(self):
+        with patch.object(time, 'sleep'):
+            with patch.object(AbstractParser, 'write') as write_mock:
+                # GIVEN
+                self.foo.cid = None
+                self.assertFalse(self.foo.cid)
+
+                # WHEN
+                self.parser.ban(self.foo)
+
+                # THEN
+                self.assertTrue(write_mock.called)
+                write_mock.assert_has_calls([call(('banList.add', 'guid', self.foo.guid, 'perm', ''))])
+
+
+
 ########################################################################################################################
 #
-#  T E S T    G A M E    E V E N TS
+#  T E S T    G A M E    E V E N T S
 #
 ########################################################################################################################
 class Test_OnPlayerChat(AbstractParser_TestCase):
