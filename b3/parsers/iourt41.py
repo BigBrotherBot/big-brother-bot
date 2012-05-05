@@ -152,9 +152,11 @@
 #     * fixes rotatemap() - thanks to Beber888
 #     * refactor unban()
 #     * changeMap() can now provide suggestions
+# 05/05/2012 - 1.13 - Courgette
+#     * fixes issue xlr8or/big-brother-bot#87 - hacker missing ip crashes the bot
 #
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.12'
+__version__ = '1.13'
 
 import re, string, time, os, thread
 from b3.parsers.q3a.abstractParser import AbstractParser
@@ -664,11 +666,24 @@ class Iourt41Parser(AbstractParser):
                 if not bclient.has_key('name'):
                     bclient['name'] = self._empty_name_default
 
-                if not bclient.has_key('ip') and guid == 'unknown':
-                    # happens when a client is (temp)banned and got kicked so client was destroyed, but
-                    # infoline was still waiting to be parsed.
-                    self.debug('Client disconnected. Ignoring.')
-                    return None
+                if not bclient.has_key('ip'):
+                    if guid == 'unknown':
+                        # happens when a client is (temp)banned and got kicked so client was destroyed, but
+                        # infoline was still waiting to be parsed.
+                        self.debug('Client disconnected. Ignoring.')
+                        return None
+                    else:
+                        # see issue xlr8or/big-brother-bot#87 - hack that hides ip from 'dumpuser' and 'players' commands
+                        try:
+                            self.debug("missing IP (hack?), trying to get ip with 'status'")
+                            plist = self.getPlayerList()
+                            client_data = plist[bclient['cid']]
+                            bclient['ip'] = client_data['ip']
+                        except Exception, err:
+                            bclient['ip'] = ''
+                            self.warning("Failed to get client %s ip address." % bclient['cid'], err)
+
+
 
                 nguid = ''
                 # overide the guid... use ip's only if self.console.IpsOnly is set True.

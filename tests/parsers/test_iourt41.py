@@ -17,8 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 import logging
-from mockito import mock, when, any, verify, spy
-from mock import Mock, patch
+from mockito import mock, when, any, verify
+from mock import Mock, patch, ANY
 import unittest2 as unittest
 from b3.clients import Client
 from b3.config import XmlConfigParser
@@ -329,3 +329,72 @@ num score ping name            lastmsg  address              qport rate
         result = self.console.inflictCustomPenalty('mute', superman, duration="15s")
         verify(self.output_mock).write('mute 11 15.0')
         self.assertTrue(result)
+
+
+
+class Test_OnClientuserinfo(Iourt41TestCase):
+
+    def setUp(self):
+        super(Test_OnClientuserinfo, self).setUp()
+        self.console.PunkBuster = None
+
+    def test_ioclient(self):
+        infoline = r"2 \ip\145.99.135.227:27960\challenge\-232198920\qport\2781\protocol\68\battleye\1\name\[SNT]^1XLR^78or\rate\8000\cg_predictitems\0\snaps\20\model\sarge\headmodel\sarge\team_model\james\team_headmodel\*james\color1\4\color2\5\handicap\100\sex\male\cl_anonymous\0\teamtask\0\cl_guid\58D4069246865BB5A85F20FB60ED6F65"
+        self.assertFalse('2' in self.console.clients)
+        self.console.OnClientuserinfo(action=None, data=infoline)
+        self.assertTrue('2' in self.console.clients)
+        client = self.console.clients['2']
+        self.assertEqual('145.99.135.227', client.ip)
+        self.assertEqual('[SNT]^1XLR^78or^7', client.exactName)
+        self.assertEqual('[SNT]XLR8or', client.name)
+        self.assertEqual('58D4069246865BB5A85F20FB60ED6F65', client.guid)
+
+    def test_bot(self):
+        infoline = r"0 \gear\GMIORAA\team\blue\skill\5.000000\characterfile\bots/ut_chicken_c.c\color\4\sex\male\race\2\snaps\20\rate\25000\name\InviteYourFriends!"
+        self.assertFalse('0' in self.console.clients)
+        self.console.OnClientuserinfo(action=None, data=infoline)
+        self.assertTrue('0' in self.console.clients)
+        client = self.console.clients['0']
+        self.assertEqual('0.0.0.0', client.ip)
+        self.assertEqual('InviteYourFriends!^7', client.exactName)
+        self.assertEqual('InviteYourFriends!', client.name)
+        self.assertEqual('BOT0', client.guid)
+
+
+    def test_quake3_client(self):
+        infoline = r"2 \ip\145.99.135.227:27960\challenge\-232198920\qport\2781\protocol\68\battleye\1\name\[SNT]^1XLR^78or\rate\8000\cg_predictitems\0\snaps\20\model\sarge\headmodel\sarge\team_model\james\team_headmodel\*james\color1\4\color2\5\handicap\100\sex\male\cl_anonymous\0\teamtask\0"
+        self.assertFalse('2' in self.console.clients)
+        self.console.OnClientuserinfo(action=None, data=infoline)
+        self.assertTrue('2' in self.console.clients)
+        client = self.console.clients['2']
+        self.assertEqual('145.99.135.227', client.ip)
+        self.assertEqual('[SNT]^1XLR^78or^7', client.exactName)
+        self.assertEqual('[SNT]XLR8or', client.name)
+        self.assertEqual('145.99.135.227', client.guid)
+
+
+
+
+class Test_pluginsStarted(Iourt41TestCase):
+
+    def test_hacker_with_no_ip(self):
+        """ see http://forum.bigbrotherbot.net/general-usage-support/iourt41-py-1-11-5-error/msg34328/ """
+        when(self.console).write("status", maxRetries=ANY).thenReturn(r"""\
+map: ut4_uberjumps_beta3
+num score ping name            lastmsg address               qport rate
+--- ----- ---- --------------- ------- --------------------- ----- -----
+10    -2   53 [PoliSh TeAm] Haxxer^7      0 80.54.100.100:27960      31734 25000""")
+
+        when(self.console).write('dumpuser 10').thenReturn('userinfo\n--------\ngear                FLAATWA\ncl_packetdup        2\nrate                25000\nname                [PoliSh TeAm] Haxxer\nracered             2\nraceblue            2\nut_timenudge        0\ncg_rgb              255 255 0\nfunred              patch,ninja,phat\nfunblue             Diablo\ncg_predictitems     0\ncg_physics          1\ncl_anonymous        0\nsex                 male\nhandicap            100\ncolor2              5\ncolor1              4\nteam_headmodel      *james\nteam_model          james\nheadmodel           sarge\nmodel               sarge\nsnaps               20\nteamtask            0\ncl_guid             4128583FD6F924B081D7E10F39712FBB\nweapmodes           00000110220000020002')
+
+        logging.getLogger('output').setLevel(logging.NOTSET)
+        self.console.pluginsStarted()
+
+        verify(self.console, atleast=1).write('status', maxRetries=ANY)
+        verify(self.console).write('dumpuser 10')
+        self.assertIn('10', self.console.clients)
+        client = self.console.clients['10']
+        self.assertEqual('[PoliShTeAm]Haxxer', client.name)
+        self.assertEqual('[PoliShTeAm]Haxxer^7', client.exactName)
+        self.assertEqual('4128583FD6F924B081D7E10F39712FBB', client.guid)
+        self.assertEqual('80.54.100.100', client.ip)
