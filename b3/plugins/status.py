@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 05/05/2012 - 1.4.10 - Courgette
+# * fixes reading config options 'svar_table' and 'client_table'
 # 19/07/2011 - 1.4.9 - Freelander
 # * fix errors during map change
 # 25/04/2011 - 1.4.8 - Courgette
@@ -57,7 +59,7 @@
 # Converted to use new event handlers
 
 __author__    = 'ThorN'
-__version__ = '1.4.9'
+__version__ = '1.4.10'
 
 import b3
 import time
@@ -102,12 +104,12 @@ class StatusPlugin(b3.plugin.Plugin):
             self._enableDBclientSaving = False
 
         try:
-            self._svarTable = self.config.getboolean('settings', 'svar_table')
+            self._svarTable = self.config.get('settings', 'svar_table')
             self.debug('Using custom table for saving server svars: %s' % self._svarTable)
         except:
             self.debug('Using default table for saving server svars: %s' % self._svarTable)
         try:
-            self._clientTable = self.config.getboolean('settings', 'client_table')
+            self._clientTable = self.config.get('settings', 'client_table')
             self.debug('Using custom table for saving current clients: %s' % self._clientTable)
         except:
             self.debug('Using default table for saving current clients: %s' % self._clientTable)
