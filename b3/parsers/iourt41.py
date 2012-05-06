@@ -153,7 +153,7 @@
 #     * refactor unban()
 #     * changeMap() can now provide suggestions
 # 05/05/2012 - 1.13 - Courgette
-#     * fixes issue xlr8or/big-brother-bot#87 - hacker missing ip crashes the bot
+#     * fixes issue xlr8or/big-brother-bot#87 - missing ip when trying to auth a client crashes the bot
 #
 __author__  = 'xlr8or, Courgette'
 __version__ = '1.13'
@@ -673,9 +673,9 @@ class Iourt41Parser(AbstractParser):
                         self.debug('Client disconnected. Ignoring.')
                         return None
                     else:
-                        # see issue xlr8or/big-brother-bot#87 - hack that hides ip from 'dumpuser' and 'players' commands
+                        # see issue xlr8or/big-brother-bot#87 - ip can be missing
                         try:
-                            self.debug("missing IP (hack?), trying to get ip with 'status'")
+                            self.debug("missing IP, trying to get ip with 'status'")
                             plist = self.getPlayerList()
                             client_data = plist[bclient['cid']]
                             bclient['ip'] = client_data['ip']
