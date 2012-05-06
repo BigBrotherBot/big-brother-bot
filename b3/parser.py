@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2012/05/06 - 1.27.1 - courgette
+#   * increases default b3 event queue size to 50
 #   2011/06/05 - 1.27 - xlr8or
 #   * implementation of game server encoding/decoding
 #   2011/09/12 - 1.26.2 - Courgette
@@ -135,7 +137,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.27'
+__version__ = '1.27.1'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket, threading
@@ -450,10 +452,10 @@ class Parser(object):
         try:
             queuesize = self.config.getint('b3', 'event_queue_size')
         except NoOptionError:
-            queuesize = 15
+            queuesize = 50
         except Exception, err:
             self.warning(err)
-            queuesize = 15
+            queuesize = 50
         self.debug("creating the event queue with size %s", queuesize)
         self.queue = Queue.Queue(queuesize)    # event queue
 
