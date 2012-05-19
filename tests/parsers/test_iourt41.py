@@ -20,8 +20,10 @@ import logging
 from mockito import mock, when, any, verify
 from mock import Mock, patch, ANY
 import unittest2 as unittest
+import b3
 from b3.clients import Client
 from b3.config import XmlConfigParser
+from b3.fake import FakeClient
 from b3.parsers.iourt41 import Iourt41Parser
 
 log = logging.getLogger("test")
@@ -398,3 +400,36 @@ num score ping name            lastmsg address               qport rate
         self.assertEqual('[PoliShTeAm]Haxxer^7', client.exactName)
         self.assertEqual('4128583FD6F924B081D7E10F39712FBB', client.guid)
         self.assertEqual('80.54.100.100', client.ip)
+
+
+
+class Test_OnKill(Iourt41TestCase):
+
+    def setUp(self):
+        Iourt41TestCase.setUp(self)
+        self.console.startup()
+
+    def test_nuke(self):
+        logline = '5:19 Kill: 2 2 34: ^4[FR]^7Beber^1888 killed ^4[FR]^7Beber^1888 by UT_MOD_NUKED'
+        beber = FakeClient(self.console, name="Beber", guid="aaaaaaaaaaaaaaaaa")
+        beber.connects(cid='2')
+
+        events = []
+        def queueEvent(event):
+            events.append(event)
+
+        with patch.object(self.console, "queueEvent", wraps=queueEvent) as queueEvent_mock:
+            self.console.parseLine(logline)
+            self.assertTrue(queueEvent_mock.called)
+            event = events[0]
+
+        self.assertEqual(self.console.clients['-1'], event.client) # world
+        self.assertEqual(beber, event.target)
+        self.assertEqual(b3.events.EVT_CLIENT_KILL, event.type)
+        damage, weapon, hitloc, damage_type = event.data
+        self.assertEqual(100, damage)
+        self.assertEqual(self.console.UT_MOD_NUKED, weapon)
+        self.assertEqual('body', hitloc)
+        self.assertEqual('UT_MOD_NUKED', damage_type)
+
+

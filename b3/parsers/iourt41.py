@@ -154,9 +154,11 @@
 #     * changeMap() can now provide suggestions
 # 05/05/2012 - 1.13 - Courgette
 #     * fixes issue xlr8or/big-brother-bot#87 - missing ip when trying to auth a client crashes the bot
+# 19/05/2012 - 1.13.1 - Courgette
+#     * fixes issue with kill events when killed by UT_MOD_SLAPPED, UT_MOD_NUKED, MOD_TELEFRAG
 #
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.13'
+__version__ = '1.13.1'
 
 import re, string, time, os, thread
 from b3.parsers.q3a.abstractParser import AbstractParser
@@ -828,7 +830,7 @@ class Iourt41Parser(AbstractParser):
         ## Fix attacker
         if match.group('aweap') in (self.UT_MOD_SLAPPED, self.UT_MOD_NUKED, self.MOD_TELEFRAG):
             self.debug('OnKill: slap/nuke => attacker should be None')
-            attacker = self.clients.getByCID(-1) # make the attacker 'World'
+            attacker = self.clients.getByCID('-1') # make the attacker 'World'
         elif match.group('aweap') in (self.MOD_WATER,self.MOD_LAVA,self.MOD_FALLING,self.MOD_TRIGGER_HURT,self.UT_MOD_BOMBED,self.UT_MOD_FLAG):
             # those kills should be considered suicides
             self.debug('OnKill: water/lava/falling/trigger_hurt/bombed/flag should be suicides')
