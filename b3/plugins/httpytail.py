@@ -25,8 +25,10 @@
 #     Auto assign of unique local games_mp log file
 # 2011-05-26 - 0.2.2 - 82ndab-Bravo17
 #   *  Append to local log implemented
+# 22/05/2012 - 0.2.3 - Courgette
+#   * local_game_log config option can now use the @conf and @b3 shortcuts
 
-__version__ = '0.2.2'
+__version__ = '0.2.3'
 __author__ = 'GrosBedo'
  
 import b3, threading
@@ -67,7 +69,7 @@ class HttpytailPlugin(b3.plugin.Plugin):
             self._httpdelay = self.console.config.getfloat('server', 'delay')
         
         if self.console.config.has_option('server', 'local_game_log'):
-            self.lgame_log = self.console.config.get('server', 'local_game_log')
+            self.lgame_log = self.console.config.getpath('server', 'local_game_log')
         else:
             # setup ip addresses
             self._publicIp = self.console.config.get('server', 'public_ip')
