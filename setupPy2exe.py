@@ -76,6 +76,7 @@ setup(
                 "dbhash", # to make anydbm imports work with py2exe
                 "uuid", # metabans, ggcstream and telnet plugins
                 "SocketServer", # telnet plugin
+                "paramiko", # sftpytail plugin
             ],
         }
     },
