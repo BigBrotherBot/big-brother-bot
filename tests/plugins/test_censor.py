@@ -18,6 +18,7 @@
 #
 import os
 from mock import Mock, patch
+from b3.fake import FakeClient, FakeConsole
 from tests import B3TestCase
 import unittest2 as unittest
 
@@ -168,58 +169,6 @@ class Test_Censor_badname(CensorTestCase):
         self.assert_name_is_penalized('ass')
         self.assert_name_is_penalized('dumb ass!')
         self.assert_name_is_penalized('what an ass')
-
-
-@patch("threading.Timer") # to prevent the plugin from scheduling tasks
-class Censor_functional_test(B3TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        from b3.fake import fakeConsole
-        cls.conf = XmlConfigParser()
-        cls.conf.setXml(r"""
-            <configuration plugin="censor">
-                <settings name="settings">
-                    <set name="max_level">40</set>
-                    <!-- ignore bad words that have equal or less characters: -->
-                    <set name="ignore_length">3</set>
-                </settings>
-                <badwords>
-                    <penalty type="warning" reasonkeyword="default_reason"/>
-                    <badword name="foo" lang="en">
-                        <regexp>\bf[o0]{2}\b</regexp>
-                    </badword>
-                </badwords>
-                <badnames>
-                    <penalty type="warning" reasonkeyword="badname"/>
-                    <badname name="cunt">
-                        <word>cunt</word>
-                    </badname>
-                </badnames>
-            </configuration>
-        """)
-        cls.p = CensorPlugin(fakeConsole, cls.conf)
-        cls.p.onLoadConfig()
-        cls.p.onStartup()
-
-
-    def test_conf(self, timer_patch):
-        self.assertEqual(1, len(Censor_functional_test.p._badWords))
-
-
-    def test_joe_says_badword(self, timer_patch):
-        from b3.fake import joe
-        joe.warn = Mock()
-        joe.connects(0)
-        joe.says("qsfdl f0o!")
-        self.assertEqual(1, joe.warn.call_count)
-
-    def test_cunt_connects(self, timer_patch):
-        from b3.fake import joe
-        joe.name = joe.exactName = "cunt"
-        joe.warn = Mock()
-        joe.connects(0)
-        self.assertEqual(1, joe.warn.call_count)
 
 
 default_plugin_file = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../b3/conf/plugin_censor.xml"))
@@ -732,6 +681,161 @@ class Test_Censor_badname_default_config(CensorTestCase):
         self.assert_name_is_penalized("puta")
         self.assert_name_is_penalized("put@")
 
+
+
+@patch("threading.Timer") # to prevent the plugin from scheduling tasks
+class Censor_functional_tests(unittest.TestCase):
+
+    def setUp(self):
+        # create a FakeConsole parser
+        self.parser_conf = XmlConfigParser()
+        self.parser_conf.loadFromString(r"""<configuration/>""")
+        self.console = FakeConsole(self.parser_conf)
+        self.console.startup()
+
+        self.joe = FakeClient(self.console, name="Joe", exactName="Joe", guid="zaerezarezar", groupBits=1, team=b3.TEAM_UNKNOWN)
+
+    def init_plugin(self, config_content):
+        self.conf = XmlConfigParser()
+        self.conf.setXml(config_content)
+        self.p = CensorPlugin(self.console, self.conf)
+        self.p.onLoadConfig()
+        self.p.onStartup()
+
+
+    def test_conf(self, timer_patch):
+        self.init_plugin(r"""
+            <configuration plugin="censor">
+                <settings name="settings">
+                    <set name="max_level">40</set>
+                    <!-- ignore bad words that have equal or less characters: -->
+                    <set name="ignore_length">3</set>
+                </settings>
+                <badwords>
+                    <penalty type="warning" reasonkeyword="default_reason"/>
+                    <badword name="foo" lang="en">
+                        <regexp>\bf[o0]{2}\b</regexp>
+                    </badword>
+                </badwords>
+                <badnames>
+                    <penalty type="warning" reasonkeyword="badname"/>
+                    <badname name="cunt">
+                        <word>cunt</word>
+                    </badname>
+                </badnames>
+            </configuration>
+        """)
+        self.assertEqual(1, len(self.p._badWords))
+
+
+    def test_joe_says_badword(self, timer_patch):
+        self.init_plugin(r"""
+            <configuration plugin="censor">
+                <settings name="settings">
+                    <set name="max_level">40</set>
+                    <!-- ignore bad words that have equal or less characters: -->
+                    <set name="ignore_length">3</set>
+                </settings>
+                <badwords>
+                    <penalty type="warning" reasonkeyword="default_reason"/>
+                    <badword name="foo" lang="en">
+                        <regexp>\bf[o0]{2}\b</regexp>
+                    </badword>
+                </badwords>
+                <badnames>
+                    <penalty type="warning" reasonkeyword="badname"/>
+                    <badname name="cunt">
+                        <word>cunt</word>
+                    </badname>
+                </badnames>
+            </configuration>
+        """)
+        self.joe.warn = Mock()
+        self.joe.connects(0)
+        self.joe.says("qsfdl f0o!")
+        self.assertEqual(1, self.joe.warn.call_count)
+
+
+    def test_cunt_connects(self, timer_patch):
+        self.init_plugin(r"""
+            <configuration plugin="censor">
+                <settings name="settings">
+                    <set name="max_level">40</set>
+                    <!-- ignore bad words that have equal or less characters: -->
+                    <set name="ignore_length">3</set>
+                </settings>
+                <badwords>
+                    <penalty type="warning" reasonkeyword="default_reason"/>
+                    <badword name="foo" lang="en">
+                        <regexp>\bf[o0]{2}\b</regexp>
+                    </badword>
+                </badwords>
+                <badnames>
+                    <penalty type="warning" reasonkeyword="badname"/>
+                    <badname name="cunt">
+                        <word>cunt</word>
+                    </badname>
+                </badnames>
+            </configuration>
+        """)
+        self.joe.name = self.joe.exactName = "cunt"
+        self.joe.warn = Mock()
+        self.joe.connects(0)
+        self.assertEqual(1, self.joe.warn.call_count)
+
+
+    def test_2_letters_badword_when_ignore_length_is_2(self, timer_patch):
+        self.init_plugin(r"""
+            <configuration plugin="censor">
+                <settings name="settings">
+                    <set name="max_level">40</set>
+                    <!-- ignore bad words that have equal or less characters: -->
+                    <set name="ignore_length">2</set>
+                </settings>
+                <badwords>
+                    <penalty type="warning" reasonkeyword="default_reason"/>
+                    <badword name="TG" lang="fr">
+                        <regexp>\bTG\b</regexp>
+                    </badword>
+                </badwords>
+                <badnames>
+                    <penalty type="warning" reasonkeyword="badname"/>
+                </badnames>
+            </configuration>
+        """)
+
+        self.joe.warn = Mock()
+        self.joe.warn.reset_mock()
+        self.joe.connects(0)
+        self.joe.says("tg")
+        self.assertEqual(0, self.joe.warn.call_count)
+
+
+    def test_2_letters_badword_when_ignore_length_is_1(self, timer_patch):
+        self.init_plugin(r"""
+            <configuration plugin="censor">
+                <settings name="settings">
+                    <set name="max_level">40</set>
+                    <!-- ignore bad words that have equal or less characters: -->
+                    <set name="ignore_length">1</set>
+                </settings>
+                <badwords>
+                    <penalty type="warning" reasonkeyword="default_reason"/>
+                    <badword name="TG" lang="fr">
+                        <regexp>\bTG\b</regexp>
+                    </badword>
+                </badwords>
+                <badnames>
+                    <penalty type="warning" reasonkeyword="badname"/>
+                </badnames>
+            </configuration>
+        """)
+
+        self.joe.warn = Mock()
+        self.joe.warn.reset_mock()
+        self.joe.connects(0)
+        self.joe.says("tg")
+        self.assertEqual(1, self.joe.warn.call_count)
 
 if __name__ == '__main__':
     unittest.main()
