@@ -1323,7 +1323,7 @@ class Iourt41Parser(AbstractParser):
                 self.warning("Could not query server for fs_basepath")
         mapfile = self.game.fs_basepath + '/' + self.game.fs_game + '/' + mapcycle
         if not os.path.isfile(mapfile):
-            self.debug('coud not read mapcycle file at %s' % mapfile)
+            self.debug('could not read mapcycle file at %s' % mapfile)
             if self.game.fs_homepath is None:
                 try:
                     self.game.fs_homepath = self.getCvar('fs_homepath').getString().rstrip('/')
@@ -1332,7 +1332,7 @@ class Iourt41Parser(AbstractParser):
                     self.warning("Could not query server for fs_homepath")
             mapfile = self.game.fs_homepath + '/' + self.game.fs_game + '/' + mapcycle
         if not os.path.isfile(mapfile):
-            self.debug('coud not read mapcycle file at %s' % mapfile)
+            self.debug('could not read mapcycle file at %s' % mapfile)
             self.error("Unable to find mapcycle file %s" % mapcycle)
             return None
 
