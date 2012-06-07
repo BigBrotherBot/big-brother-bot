@@ -17,7 +17,6 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 import re
-import time
 import unittest2 as unittest
 from mock import Mock, DEFAULT, patch
 from b3.clients import Client
@@ -594,3 +593,55 @@ class Test_bf3_sends_no_guid(BF3TestCase):
         snoopy = self.parser.clients['Snoopy']
         self.assertFalse(snoopy.authed)
 
+
+
+class Test_bf3_maps(BF3TestCase):
+
+    def setUp(self):
+        BF3TestCase.setUp(self)
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.parser = Bf3Parser(self.conf)
+
+    def test_getEasyName(self):
+        self.assertEqual('Grand Bazaar', self.parser.getEasyName('MP_001'))
+        self.assertEqual('Tehran Highway', self.parser.getEasyName('MP_003'))
+        self.assertEqual('Caspian Border', self.parser.getEasyName('MP_007'))
+        self.assertEqual('Seine Crossing', self.parser.getEasyName('MP_011'))
+        self.assertEqual('Operation Firestorm', self.parser.getEasyName('MP_012'))
+        self.assertEqual('Damavand Peak', self.parser.getEasyName('MP_013'))
+        self.assertEqual('Noshahar Canals', self.parser.getEasyName('MP_017'))
+        self.assertEqual('Kharg Island', self.parser.getEasyName('MP_018'))
+        self.assertEqual('Operation Metro', self.parser.getEasyName('MP_Subway'))
+        self.assertEqual('Strike At Karkand', self.parser.getEasyName('XP1_001'))
+        self.assertEqual('Gulf of Oman', self.parser.getEasyName('XP1_002'))
+        self.assertEqual('Sharqi Peninsula', self.parser.getEasyName('XP1_003'))
+        self.assertEqual('Wake Island', self.parser.getEasyName('XP1_004'))
+        self.assertEqual('Scrapmetal', self.parser.getEasyName('XP2_Factory'))
+        self.assertEqual('Operation 925', self.parser.getEasyName('XP2_Office'))
+        self.assertEqual('Donya Fortress', self.parser.getEasyName('XP2_Palace'))
+        self.assertEqual('Ziba Tower', self.parser.getEasyName('XP2_Skybar'))
+        self.assertEqual('f00', self.parser.getEasyName('f00'))
+
+    def test_getHardName(self):
+        self.assertEqual('MP_001', self.parser.getHardName('Grand Bazaar'))
+        self.assertEqual('MP_003', self.parser.getHardName('Tehran Highway'))
+        self.assertEqual('MP_007', self.parser.getHardName('Caspian Border'))
+        self.assertEqual('MP_011', self.parser.getHardName('Seine Crossing'))
+        self.assertEqual('MP_012', self.parser.getHardName('Operation Firestorm'))
+        self.assertEqual('MP_013', self.parser.getHardName('Damavand Peak'))
+        self.assertEqual('MP_017', self.parser.getHardName('Noshahar Canals'))
+        self.assertEqual('MP_018', self.parser.getHardName('Kharg Island'))
+        self.assertEqual('MP_Subway', self.parser.getHardName('Operation Metro'))
+        self.assertEqual('XP1_001', self.parser.getHardName('Strike At Karkand'))
+        self.assertEqual('XP1_002', self.parser.getHardName('Gulf of Oman'))
+        self.assertEqual('XP1_003', self.parser.getHardName('Sharqi Peninsula'))
+        self.assertEqual('XP1_004', self.parser.getHardName('Wake Island'))
+        self.assertEqual('XP2_Factory', self.parser.getHardName('Scrapmetal'))
+        self.assertEqual('XP2_Office', self.parser.getHardName('Operation 925'))
+        self.assertEqual('XP2_Palace', self.parser.getHardName('Donya Fortress'))
+        self.assertEqual('XP2_Skybar', self.parser.getHardName('Ziba Tower'))
+        self.assertEqual('f00', self.parser.getHardName('f00'))

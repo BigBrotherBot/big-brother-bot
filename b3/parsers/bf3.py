@@ -32,13 +32,15 @@
 #  reflects changes in AbstractParser and refactor the class by moving some of the code to AbstractParser
 # 1.2
 #  reflects changes in AbstractParser due to BF3 server R21 release
+# 1.3
+#  BF3 server R24 changes
 #
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 import b3
 import b3.events
 __author__  = 'Courgette'
-__version__ = '1.2.2'
+__version__ = '1.3'
 
 
 SQUAD_NOSQUAD = 0
@@ -50,7 +52,30 @@ SQUAD_ECHO = 5
 SQUAD_FOXTROT = 6
 SQUAD_GOLF = 7
 SQUAD_HOTEL = 8
-SQUAD_NEUTRAL = 24
+SQUAD_9 = 9
+SQUAD_10 = 10
+SQUAD_11 = 11
+SQUAD_12 = 12
+SQUAD_13 = 13
+SQUAD_14 = 14
+SQUAD_15 = 15
+SQUAD_16 = 16
+SQUAD_17 = 17
+SQUAD_18 = 18
+SQUAD_19 = 19
+SQUAD_20 = 20
+SQUAD_21 = 21
+SQUAD_22 = 22
+SQUAD_23 = 23
+SQUAD_24 = 24
+SQUAD_25 = 25
+SQUAD_26 = 26
+SQUAD_27 = 27
+SQUAD_28 = 28
+SQUAD_29 = 29
+SQUAD_30 = 30
+SQUAD_31 = 31
+SQUAD_32 = 32
 
 GAME_MODES_NAMES = {
     "ConquestLarge0": "Conquest64",
@@ -63,7 +88,35 @@ GAME_MODES_NAMES = {
     "SquadRush0": "Squad Rush",
     "SquadDeathMatch0": "Squad Deathmatch",
     "TeamDeathMatch0": "Team Deathmatch",
+    "Domination0": "Conquest Domination",
+    "GunMaster0": "Gun master",
+    "TeamDeathMatchC0": "TDM Close Quarters",
     }
+
+MAP_NAME_BY_ID = {
+    'MP_001': 'Grand Bazaar',
+    'MP_003': 'Tehran Highway',
+    'MP_007': 'Caspian Border',
+    'MP_011': 'Seine Crossing',
+    'MP_012': 'Operation Firestorm',
+    'MP_013': 'Damavand Peak',
+    'MP_017': 'Noshahar Canals',
+    'MP_018': 'Kharg Island',
+    'MP_Subway': 'Operation Metro',
+    'XP1_001': 'Strike At Karkand',
+    'XP1_002': 'Gulf of Oman',
+    'XP1_003': 'Sharqi Peninsula',
+    'XP1_004': 'Wake Island',
+    "XP2_Factory": "Scrapmetal",
+    "XP2_Office": "Operation 925",
+    "XP2_Palace": "Donya Fortress",
+    "XP2_Skybar": "Ziba Tower",
+    }
+
+MAP_ID_BY_NAME = dict()
+for _id, name in MAP_NAME_BY_ID.items():
+    MAP_ID_BY_NAME[name.lower()] = _id
+
 
 class Bf3Parser(AbstractParser):
     gameName = 'bf3'
@@ -107,6 +160,7 @@ class Bf3Parser(AbstractParser):
         'unlockMode',
         'vehicleSpawnAllowed',
         'vehicleSpawnDelay',
+        'premiumStatus',
         )
 
 
@@ -230,70 +284,25 @@ class Bf3Parser(AbstractParser):
                     self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
         return client
 
+
     def getHardName(self, mapname):
         """ Change real name to level name """
         mapname = mapname.lower()
-        if mapname == 'grand bazaar':
-            return 'MP_001'
-        elif mapname == 'tehran highway':
-            return 'MP_003'
-        elif mapname == 'caspian border':
-            return 'MP_007'
-        elif mapname == 'seine crossing':
-            return 'MP_011'
-        elif mapname == 'operation firestorm':
-            return 'MP_012'
-        elif mapname == 'damavand peak':
-            return 'MP_013'
-        elif mapname == 'noshahar canals':
-            return 'MP_017'
-        elif mapname == 'kharg island':
-            return 'MP_018'
-        elif mapname == 'operation metro':
-            return 'MP_Subway'
-        elif mapname == 'strike at karkand':
-            return 'XP1_001'
-        elif mapname == 'gulf of oman':
-            return 'XP1_002'
-        elif mapname == 'sharqi peninsula':
-            return 'XP1_003'
-        elif mapname == 'wake island':
-            return 'XP1_004'
-        else:
+        try:
+            return MAP_ID_BY_NAME[mapname]
+        except KeyError:
             self.warning('unknown level name \'%s\'. Please make sure you have entered a valid mapname' % mapname)
             return mapname
 
+
     def getEasyName(self, mapname):
         """ Change levelname to real name """
-        if mapname == 'MP_001':
-            return 'Grand Bazaar'
-        elif mapname == 'MP_003':
-            return 'Tehran Highway'
-        elif mapname == 'MP_007':
-            return 'Caspian Border'
-        elif mapname == 'MP_011':
-            return 'Seine Crossing'
-        elif mapname == 'MP_012':
-            return 'Operation Firestorm'
-        elif mapname == 'MP_013':
-            return 'Damavand Peak'
-        elif mapname == 'MP_017':
-            return 'Noshahar Canals'
-        elif mapname == 'MP_018':
-            return 'Kharg Island'
-        elif mapname == 'MP_Subway':
-            return 'Operation Metro'
-        elif mapname == 'XP1_001':
-            return 'Strike At Karkand'
-        elif mapname == 'XP1_002':
-            return 'Gulf of Oman'
-        elif mapname == 'XP1_003':
-            return 'Sharqi Peninsula'
-        elif mapname == 'XP1_004':
-            return 'Wake Island'
-        else:
+        try:
+            return MAP_NAME_BY_ID[mapname]
+        except KeyError:
             self.warning('unknown level name \'%s\'. Please report this on B3 forums' % mapname)
             return mapname
+
 
     def getGameMode(self, gamemode_id):
         """ Get game mode in real name """
@@ -369,6 +378,7 @@ class Bf3Parser(AbstractParser):
         self.game['unlockMode'] = getCvar('unlockMode')
         self.game['vehicleSpawnAllowed'] = getCvarBool('vehicleSpawnAllowed')
         self.game['vehicleSpawnDelay'] = getCvarInt('vehicleSpawnDelay')
+        self.game['premiumStatus'] = getCvarBool('premiumStatus')
         self.game.timeLimit = self.game.gameModeCounter
         self.game.fragLimit = self.game.gameModeCounter
         self.game.captureLimit = self.game.gameModeCounter
