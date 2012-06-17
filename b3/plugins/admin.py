@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2012/06/17 - 1.12.1 - Courgette
+#   * syntax
 #   2012/04/15 - 1.12 - Courgette
 #   * removes magic command shortcut that would transform the command '!1 blah' into '!say blah'
 #   2011/11/15 - 1.11.4 - Courgette
@@ -96,7 +98,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.12'
+__version__ = '1.12.1'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import re, time, threading, sys, traceback, thread, random
@@ -816,7 +818,7 @@ class AdminPlugin(b3.plugin.Plugin):
         if re.match(r'^[0-9]+$', data):
             mlevel = int(data)
             for cmd in self._commands.values():
-                if cmd.level != None and cmd.level[0] == mlevel and cmd.canUse(client):
+                if cmd.level is not None and cmd.level[0] == mlevel and cmd.canUse(client):
                     if cmd.command not in commands:
                         commands.append(cmd.command)
         elif data[:1] == '*':
@@ -830,7 +832,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 cmd = self._commands[data]
                 if cmd.canUse(client):
                     cmd.sayLoudOrPM(client, self.getMessage('help_command', self.cmdPrefix, cmd.command, cmd.help))
-            except:
+            except KeyError:
                 client.message(self.getMessage('help_no_command', data))
             return
         else:
@@ -839,7 +841,7 @@ class AdminPlugin(b3.plugin.Plugin):
                     if cmd.command not in commands:
                         commands.append(cmd.command)
 
-        if len(commands) == 0:
+        if not len(commands):
             cmd.sayLoudOrPM(client, self.getMessage('help_none'))
         else:
             # remove the !register command if already registered
@@ -2017,12 +2019,10 @@ class Command:
         #commandstxt.flush()
 
     def canUse(self, client):
-        if self.level == None:
+        if self.level is None:
             return False
-        elif int(client.maxLevel) >= self.level[0] and int(client.maxLevel) <= self.level[1]:
-            return True
         else:
-            return False
+            return self.level[0] <= int(client.maxLevel) <= self.level[1]
 
     def execute(self, data, client):
         self.func(data, client, copy.copy(self))

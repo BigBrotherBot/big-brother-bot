@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2012/06/17 - 1.27.2 - courgette
+#   * syntax and code cleanup
 #   2012/05/06 - 1.27.1 - courgette
 #   * increases default b3 event queue size to 50
 #   2011/06/05 - 1.27 - xlr8or
@@ -137,10 +139,10 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.27.1'
+__version__ = '1.27.2'
 
 # system modules
-import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket, threading
+import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
 
 import b3
 import b3.storage
@@ -151,10 +153,9 @@ import b3.game
 import b3.cron
 import b3.parsers.q3a.rcon
 import b3.clients
-import b3.functions
 import b3.timezones
 from ConfigParser import NoOptionError
-from b3.functions import main_is_frozen, getModule, executeSql
+from b3.functions import getModule
 
 
 class Parser(object):
@@ -196,10 +197,11 @@ class Parser(object):
     # Default outputclass set to the q3a rcon class
     OutputClass = b3.parsers.q3a.rcon.Rcon
 
-    _settings = {}
-    _settings['line_length'] = 65
-    _settings['min_wrap_length'] = 100
-    _settings['message_delay'] = 0
+    _settings = {
+        'line_length': 65,
+        'min_wrap_length': 100,
+        'message_delay': 0
+    }
 
     _reColor = re.compile(r'\^[0-9a-z]')
     _cron = None
@@ -591,7 +593,7 @@ class Parser(object):
         self.screen.write('Loading Plugins  : ')
         self.screen.flush()
         
-        extplugins_dir = self.config.getpath('plugins', 'external_dir');
+        extplugins_dir = self.config.getpath('plugins', 'external_dir')
         self.bot('Loading Plugins (external plugin directory: %s)' % extplugins_dir)
         
         plugins = {}
@@ -601,12 +603,12 @@ class Parser(object):
         for p in self.config.get('plugins/plugin'):
             name = p.get('name')
             conf = p.get('config')
-            if conf == None:
+            if conf is None:
                 conf = '@b3/conf/plugin_%s.xml' % name
             disabledconf = p.get('disabled')
-            plugins[priority] = {'name': name, \
-                                 'conf': self.getAbsolutePath(conf), \
-                                 'path': p.get('path'), \
+            plugins[priority] = {'name': name,
+                                 'conf': self.getAbsolutePath(conf),
+                                 'path': p.get('path'),
                                  'disabled': disabledconf is not None and disabledconf.lower() in ('yes', '1', 'on', 'true')}
             pluginSort.append(priority)
             priority += 1
@@ -812,7 +814,7 @@ class Parser(object):
                 for attr in vars(obj):
                     pattern = re.compile('[\W_]+')
                     cleanattr = pattern.sub('', attr) # trim any underscore or any non alphanumeric character
-                    variables[cleanattr] = getattr(obj,attr)
+                    variables[cleanattr] = getattr(obj, attr)
         for key, obj in kwargs.iteritems():
             #self.debug('Type of kwarg %s: %s' % (key, type(obj).__name__))
             if obj is None:
@@ -827,7 +829,7 @@ class Parser(object):
                     pattern = re.compile('[\W_]+')
                     cleanattr = pattern.sub('', attr) # trim any underscore or any non alphanumeric character
                     currkey = ''.join([key,cleanattr])
-                    variables[currkey] = getattr(obj,attr)
+                    variables[currkey] = getattr(obj, attr)
         ''' For debug purposes, uncomment to see in the log a list of the available fields
         allkeys = variables.keys()
         allkeys.sort()
@@ -861,7 +863,7 @@ class Parser(object):
                 self.error("Unknown timezone name [%s]. Valid timezone codes can be found on http://wiki.bigbrotherbot.net/doku.php/usage:available_timezones" % tzName)
                 tzName = 'UTC'
                 tzOffset = 0
-        return (tzOffset, tzName)
+        return tzOffset, tzName
 
     def formatTime(self, gmttime, tzName=None):
         """Return a time string formated to local time in the b3 config time_format"""
@@ -891,7 +893,7 @@ class Parser(object):
         logTimeLast = 0
         while self.working:
             if self._paused:
-                if self._pauseNotice == False:
+                if not self._pauseNotice:
                     self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
                     self._pauseNotice = True
             else:
@@ -916,7 +918,7 @@ class Parser(object):
                                     logTimeStart = logTimeCurrent
 
                                 # Remove starting offset, we want the first line to be at 0 seconds
-                                logTimeCurrent = logTimeCurrent - logTimeStart
+                                logTimeCurrent -= logTimeStart
                                 self.logTime += logTimeCurrent - logTimeLast
                                 logTimeLast = logTimeCurrent
 
@@ -1025,7 +1027,7 @@ class Parser(object):
         """Write a message to Rcon/Console"""
         if self.replay:
             self.bot('Sent rcon message: %s' % msg)
-        elif self.output == None:
+        elif self.output is None:
             pass
         else:
             res = self.output.write(msg, maxRetries=maxRetries)
@@ -1036,7 +1038,7 @@ class Parser(object):
         """Write a sequence of messages to Rcon/Console. Optimized for speed"""
         if self.replay:
             self.bot('Sent rcon message: %s' % msg)
-        elif self.output == None:
+        elif self.output is None:
             pass
         else:
             res = self.output.writelines(msg)
