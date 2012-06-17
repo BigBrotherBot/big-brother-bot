@@ -17,31 +17,30 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 import logging
+from b3.config import XmlConfigParser
+from b3.fake import FakeConsole
 import b3.output # do not remove, needed because the module alters some defaults of the logging module
 log = logging.getLogger('output')
 log.setLevel(logging.WARNING)
 
 from mock import Mock
-import b3
-import b3.events # needed due to the fact that all B3 events (even natives) are created at module load time
 import time
 import unittest2 as unittest
 
 class B3TestCase(unittest.TestCase):
-    '''
-    setup different mocks that are useful to lots of B3 test :
-        * b3.console
-    '''
 
     def setUp(self):
-        b3.console = Mock()
-        b3.console.screen = Mock()
-        b3.console.stripColors.side_effect = lambda x:x
-        b3.console.time = time.time
-        b3.console.upTime = Mock(return_value=3)
+        # create a FakeConsole parser
+        self.parser_conf = XmlConfigParser()
+        self.parser_conf.loadFromString(r"""<configuration/>""")
+        self.console = FakeConsole(self.parser_conf)
+
+        self.console.screen = Mock()
+        self.console.time = time.time
+        self.console.upTime = Mock(return_value=3)
         
         def myError(msg, *args, **kwargs):
             print(("ERROR: %s" % msg) % args)
-        b3.console.error = myError
+        self.console.error = myError
 
 

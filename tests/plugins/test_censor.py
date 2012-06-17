@@ -48,7 +48,7 @@ class CensorTestCase(B3TestCase):
                 </badnames>
             </configuration>
         """)
-        self.p = CensorPlugin(b3.console, self.conf)
+        self.p = CensorPlugin(self.console, self.conf)
         self.p.onLoadConfig()
 
     def tearDown(self):

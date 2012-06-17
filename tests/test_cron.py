@@ -21,7 +21,6 @@ import unittest2 as unittest
 from mock import sentinel, Mock
 from b3.cron import CronTab, OneTimeCronTab, PluginCronTab, Cron
 from tests import B3TestCase
-import b3
 
 class Test_Crontab(unittest.TestCase):
 
@@ -205,8 +204,8 @@ class Test_Cron(B3TestCase):
 
     def setUp(self):
         B3TestCase.setUp(self)
-        self.cron = Cron(b3.console)
-        #b3.console.verbose = lambda *args: sys.stdout.write(str(args) + "\n")
+        self.cron = Cron(self.console)
+        #self.console.verbose = lambda *args: sys.stdout.write(str(args) + "\n")
 
     def test_add(self):
         mock_tab = Mock(spec=CronTab)

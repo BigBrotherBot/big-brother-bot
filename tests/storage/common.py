@@ -16,9 +16,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-from b3.clients import Client, Alias, IpAlias, Penalty, ClientKick, Group
+from b3.clients import Client, Alias, IpAlias, Penalty, Group
 from mock import Mock
-import b3
 
 class StorageAPITest(object):
     storage = None
@@ -282,13 +281,13 @@ class StorageAPITest(object):
         c1.id = 15
         c2 = Mock()
         c2.id = 18
-        Penalty(clientId=c1.id, adminId=0, inactive=1, type='Ban', timeExpire=-1, data='pA').save(b3.console)
-        Penalty(clientId=c1.id, adminId=0, inactive=0, type='Ban', timeExpire=b3.console.time()+10, data='pB').save(b3.console)
-        Penalty(clientId=c1.id, adminId=0, inactive=0, type='Warning', timeExpire=b3.console.time()+10, data='pC').save(b3.console)
-        Penalty(clientId=c1.id, adminId=0, inactive=0, type='Kick', timeExpire=b3.console.time()-10, data='pD').save(b3.console)
-        Penalty(clientId=c1.id, adminId=0, inactive=0, type='Ban', timeExpire=b3.console.time()-10, data='pE').save(b3.console)
-        Penalty(clientId=c2.id, adminId=0, inactive=0, type='Warning', timeExpire=-1, data='pF').save(b3.console)
-        Penalty(clientId=c2.id, adminId=0, inactive=0, type='TempBan', timeExpire=-1, data='pG').save(b3.console)
+        Penalty(clientId=c1.id, adminId=0, inactive=1, type='Ban', timeExpire=-1, data='pA').save(self.console)
+        Penalty(clientId=c1.id, adminId=0, inactive=0, type='Ban', timeExpire=self.console.time()+10, data='pB').save(self.console)
+        Penalty(clientId=c1.id, adminId=0, inactive=0, type='Warning', timeExpire=self.console.time()+10, data='pC').save(self.console)
+        Penalty(clientId=c1.id, adminId=0, inactive=0, type='Kick', timeExpire=self.console.time()-10, data='pD').save(self.console)
+        Penalty(clientId=c1.id, adminId=0, inactive=0, type='Ban', timeExpire=self.console.time()-10, data='pE').save(self.console)
+        Penalty(clientId=c2.id, adminId=0, inactive=0, type='Warning', timeExpire=-1, data='pF').save(self.console)
+        Penalty(clientId=c2.id, adminId=0, inactive=0, type='TempBan', timeExpire=-1, data='pG').save(self.console)
 
         def assertPenalties(client, types, penalties_in=[], penalties_notin=[]):
             penalties = self.storage.getClientPenalties(client=client, type=types)
@@ -358,13 +357,13 @@ class StorageAPITest(object):
         c1.id = 15
         c2 = Mock()
         c2.id = 18
-        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='Ban', inactive=1, data='pA').save(b3.console)
-        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='Ban', inactive=0, data='pB').save(b3.console)
-        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='Warning', inactive=0, data='pC').save(b3.console)
-        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='Kick', inactive=0, data='pD').save(b3.console)
-        Penalty(clientId=c2.id, adminId=0, timeExpire=-1, type='Notice', inactive=0, data='pE').save(b3.console)
-        Penalty(clientId=c2.id, adminId=0, timeExpire=-1, type='Warning', inactive=0, data='pF').save(b3.console)
-        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='TempBan', inactive=0, data='pG').save(b3.console)
+        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='Ban', inactive=1, data='pA').save(self.console)
+        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='Ban', inactive=0, data='pB').save(self.console)
+        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='Warning', inactive=0, data='pC').save(self.console)
+        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='Kick', inactive=0, data='pD').save(self.console)
+        Penalty(clientId=c2.id, adminId=0, timeExpire=-1, type='Notice', inactive=0, data='pE').save(self.console)
+        Penalty(clientId=c2.id, adminId=0, timeExpire=-1, type='Warning', inactive=0, data='pF').save(self.console)
+        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='TempBan', inactive=0, data='pG').save(self.console)
 
         def assertPenalties(client, types='Ban', penalties_in=[], penalties_notin=[]):
             penalties = self.storage.getClientPenalties(client=client, type=types)
@@ -401,13 +400,13 @@ class StorageAPITest(object):
         c1.id = 15
         c2 = Mock()
         c2.id = 18
-        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='Ban', inactive=1, data='pA').save(b3.console)
-        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='Ban', inactive=0, data='pB').save(b3.console)
-        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='Warning', inactive=0, data='pC').save(b3.console)
-        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='Kick', inactive=0, data='pD').save(b3.console)
-        Penalty(clientId=c2.id, adminId=0, timeExpire=-1, type='Notice', inactive=0, data='pE').save(b3.console)
-        Penalty(clientId=c2.id, adminId=0, timeExpire=-1, type='Warning', inactive=0, data='pF').save(b3.console)
-        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='TempBan', inactive=0, data='pG').save(b3.console)
+        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='Ban', inactive=1, data='pA').save(self.console)
+        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='Ban', inactive=0, data='pB').save(self.console)
+        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='Warning', inactive=0, data='pC').save(self.console)
+        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='Kick', inactive=0, data='pD').save(self.console)
+        Penalty(clientId=c2.id, adminId=0, timeExpire=-1, type='Notice', inactive=0, data='pE').save(self.console)
+        Penalty(clientId=c2.id, adminId=0, timeExpire=-1, type='Warning', inactive=0, data='pF').save(self.console)
+        Penalty(clientId=c1.id, adminId=0, timeExpire=-1, type='TempBan', inactive=0, data='pG').save(self.console)
         self.assertEqual(1, self.storage.numPenalties(client=c1))
         self.assertEqual(4, self.storage.numPenalties(client=c1, type=('Ban', 'TempBan', 'Kick', 'Warning', 'Notice')))
         self.assertEqual(0, self.storage.numPenalties(client=c2))
@@ -440,13 +439,13 @@ class StorageAPITest(object):
         self.assertEqual({'Kicks': 0, 'TempBans': 0, 'clients': 1, 'Bans': 0, 'Warnings': 0}, self.storage.getCounts())
         self.storage.setClient(Client(guid="bbbbbbbbbb"))
         self.assertEqual({'Kicks': 0, 'TempBans': 0, 'clients': 2, 'Bans': 0, 'Warnings': 0}, self.storage.getCounts())
-        Penalty(clientId=c1.id, adminId=0, type='Ban').save(b3.console)
+        Penalty(clientId=c1.id, adminId=0, type='Ban').save(self.console)
         self.assertEqual({'Kicks': 0, 'TempBans': 0, 'clients': 2, 'Bans': 1, 'Warnings': 0}, self.storage.getCounts())
-        Penalty(clientId=c1.id, adminId=0, type='Ban').save(b3.console)
+        Penalty(clientId=c1.id, adminId=0, type='Ban').save(self.console)
         self.assertEqual({'Kicks': 0, 'TempBans': 0, 'clients': 2, 'Bans': 2, 'Warnings': 0}, self.storage.getCounts())
-        Penalty(clientId=c1.id, adminId=0, type='TempBan').save(b3.console)
+        Penalty(clientId=c1.id, adminId=0, type='TempBan').save(self.console)
         self.assertEqual({'Kicks': 0, 'TempBans': 1, 'clients': 2, 'Bans': 2, 'Warnings': 0}, self.storage.getCounts())
-        Penalty(clientId=c1.id, adminId=0, type='Kick').save(b3.console)
+        Penalty(clientId=c1.id, adminId=0, type='Kick').save(self.console)
         self.assertEqual({'Kicks': 1, 'TempBans': 1, 'clients': 2, 'Bans': 2, 'Warnings': 0}, self.storage.getCounts())
-        Penalty(clientId=c1.id, adminId=0, type='Warning').save(b3.console)
+        Penalty(clientId=c1.id, adminId=0, type='Warning').save(self.console)
         self.assertEqual({'Kicks': 1, 'TempBans': 1, 'clients': 2, 'Bans': 2, 'Warnings': 1}, self.storage.getCounts())

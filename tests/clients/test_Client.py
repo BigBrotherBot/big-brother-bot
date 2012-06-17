@@ -18,7 +18,9 @@
 #
 from b3.clients import Client
 from mock import Mock
-import b3
+from b3 import TEAM_UNKNOWN
+from b3.clients import Alias, IpAlias
+from b3.events import EVT_CLIENT_NAME_CHANGE, EVT_CLIENT_TEAM_CHANGE
 import unittest2 as unittest
 from tests import B3TestCase
  
@@ -26,14 +28,14 @@ class Test_Client(B3TestCase):
     
     def setUp(self):
         B3TestCase.setUp(self)
-        self.client = Client(console=b3.console)
+        self.client = Client(console=self.console)
     
     def test_construct(self):
         c = Client(name="Courgette", guid="1234567890")
         self.assertEqual(c.name, "Courgette")
         self.assertEqual(c.exactName, "Courgette^7")
         self.assertEqual(c.guid, "1234567890")
-        self.assertEqual(c.team, b3.TEAM_UNKNOWN)
+        self.assertEqual(c.team, TEAM_UNKNOWN)
         self.assertTrue(c.connected)
         self.assertFalse(c.hide)
         self.assertEqual(c.ip, '')
@@ -46,44 +48,46 @@ class Test_Client(B3TestCase):
         self.assertEqual(self.client.team, m)
         
     def test_team_change(self):
+        self.console.queueEvent = Mock()
         self.client.team = 24
         self.assertEqual(self.client.team, 24)
-        b3.console.queueEvent.assert_called()
-        args = b3.console.queueEvent.call_args
+        self.console.queueEvent.assert_called()
+        args = self.console.queueEvent.call_args
         eventraised = args[0][0]
-        self.assertEquals(eventraised.type, b3.events.EVT_CLIENT_TEAM_CHANGE)
+        self.assertEquals(eventraised.type, EVT_CLIENT_TEAM_CHANGE)
         self.assertEquals(eventraised.data, 24)
 
     def test_name_change(self):
+        self.console.queueEvent = Mock()
         self.client.authed = True
         self.client.name = "cucurb"
         self.assertEqual(self.client.name, "cucurb")
-        b3.console.queueEvent.assert_called()
-        args = b3.console.queueEvent.call_args
+        self.console.queueEvent.assert_called()
+        args = self.console.queueEvent.call_args
         eventraised = args[0][0]
-        self.assertEquals(eventraised.type, b3.events.EVT_CLIENT_NAME_CHANGE)
+        self.assertEquals(eventraised.type, EVT_CLIENT_NAME_CHANGE)
         self.assertEquals(eventraised.data, 'cucurb')
 
     def test_makeAlias_new(self):
         self.client.id = 123
-        b3.console.storage.getClientAlias.side_effect = KeyError()
+        self.console.storage.getClientAlias = Mock(side_effect = KeyError())
         self.client.makeAlias("bar")
-        self.assertEquals(b3.console.storage.getClientAlias.call_count, 1)
-        alias = b3.console.storage.getClientAlias.call_args[0][0]
-        self.assertIsInstance(alias, b3.clients.Alias)
+        self.assertEquals(self.console.storage.getClientAlias.call_count, 1)
+        alias = self.console.storage.getClientAlias.call_args[0][0]
+        self.assertIsInstance(alias, Alias)
         self.assertEqual(alias.alias, "bar")
         self.assertEqual(alias.numUsed, 1)
 
     def test_makeAlias_existing(self):
         self.client.id = 123
-        aliasFoo = b3.clients.Alias()
+        aliasFoo = Alias()
         aliasFoo.alias = "foo"
         aliasFoo.clientId = self.client.id
         aliasFoo.numUsed = 48
-        b3.console.storage.getClientAlias.side_effect = lambda x: aliasFoo
+        self.console.storage.getClientAlias = Mock(side_effect = lambda x: aliasFoo)
         self.client.makeAlias("whatever")
-        self.assertEquals(b3.console.storage.getClientAlias.call_count, 1)
-        self.assertIsInstance(aliasFoo, b3.clients.Alias)
+        self.assertEquals(self.console.storage.getClientAlias.call_count, 1)
+        self.assertIsInstance(aliasFoo, Alias)
         self.assertEqual(aliasFoo.alias, "foo")
         self.assertEqual(aliasFoo.numUsed, 49)
 
@@ -107,24 +111,24 @@ class Test_Client(B3TestCase):
         
     def test_makeIpAlias_new(self):
         self.client.id = 123
-        b3.console.storage.getClientIpAddress.side_effect = KeyError()
+        self.console.storage.getClientIpAddress = Mock(side_effect = KeyError())
         self.client.makeIpAlias("1.4.7.8")
-        self.assertEquals(b3.console.storage.getClientIpAddress.call_count, 1)
-        alias = b3.console.storage.getClientIpAddress.call_args[0][0]
-        self.assertIsInstance(alias, b3.clients.IpAlias)
+        self.assertEquals(self.console.storage.getClientIpAddress.call_count, 1)
+        alias = self.console.storage.getClientIpAddress.call_args[0][0]
+        self.assertIsInstance(alias, IpAlias)
         self.assertEqual(alias.ip, "1.4.7.8")
         self.assertEqual(alias.numUsed, 1)
 
     def test_makeIpAlias_existing(self):
         self.client.id = 123
-        aliasFoo = b3.clients.IpAlias()
+        aliasFoo = IpAlias()
         aliasFoo.ip = "9.5.4.4"
         aliasFoo.clientId = self.client.id
         aliasFoo.numUsed = 8
-        b3.console.storage.getClientIpAddress.side_effect = lambda x: aliasFoo
+        self.console.storage.getClientIpAddress = Mock(side_effect = lambda x: aliasFoo)
         self.client.makeIpAlias("whatever")
-        self.assertEquals(b3.console.storage.getClientIpAddress.call_count, 1)
-        self.assertIsInstance(aliasFoo, b3.clients.IpAlias)
+        self.assertEquals(self.console.storage.getClientIpAddress.call_count, 1)
+        self.assertIsInstance(aliasFoo, IpAlias)
         self.assertEqual(aliasFoo.ip, "9.5.4.4")
         self.assertEqual(aliasFoo.numUsed, 9)
 

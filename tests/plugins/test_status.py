@@ -16,11 +16,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-import logging
-from mock import Mock, patch
+from mock import patch
 from tests import B3TestCase
 
-import b3
 from b3.plugins.status import StatusPlugin
 from b3.config import XmlConfigParser
 
@@ -36,7 +34,7 @@ class Test_config(B3TestCase):
                 <set name="output_file">~/status.xml</set>
             </settings>
         </configuration>""")
-        self.p = StatusPlugin(b3.console, conf)
+        self.p = StatusPlugin(self.console, conf)
         self.p.onLoadConfig()
         self.assertEqual("current_svars", self.p._svarTable)
 
@@ -51,7 +49,7 @@ class Test_config(B3TestCase):
                 <set name="svar_table">alternate_svar_table</set>
             </settings>
         </configuration>""")
-        self.p = StatusPlugin(b3.console, conf)
+        self.p = StatusPlugin(self.console, conf)
         self.p.onLoadConfig()
         self.assertEqual("alternate_svar_table", self.p._svarTable)
 
@@ -65,7 +63,7 @@ class Test_config(B3TestCase):
                 <set name="output_file">~/status.xml</set>
             </settings>
         </configuration>""")
-        self.p = StatusPlugin(b3.console, conf)
+        self.p = StatusPlugin(self.console, conf)
         self.p.onLoadConfig()
         self.assertEqual("current_clients", self.p._clientTable)
 
@@ -80,6 +78,6 @@ class Test_config(B3TestCase):
                 <set name="client_table">alternate_client_table</set>
             </settings>
         </configuration>""")
-        self.p = StatusPlugin(b3.console, conf)
+        self.p = StatusPlugin(self.console, conf)
         self.p.onLoadConfig()
         self.assertEqual("alternate_client_table", self.p._clientTable)
