@@ -20,7 +20,7 @@ import re
 import unittest2 as unittest
 from mock import Mock, DEFAULT, patch
 from b3.clients import Client
-from b3.parsers.bf3 import Bf3Parser
+from b3.parsers.bf3 import Bf3Parser, MAP_NAME_BY_ID, GAME_MODES_BY_MAP_ID, GAME_MODES_NAMES
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.util import MapListBlock
 from tests import B3TestCase
@@ -606,6 +606,21 @@ class Test_bf3_maps(BF3TestCase):
             """)
         self.parser = Bf3Parser(self.conf)
 
+
+    def test_each_map_has_at_least_one_gamemode(self):
+        for map_id in MAP_NAME_BY_ID:
+            self.assertIn(map_id, GAME_MODES_BY_MAP_ID)
+            self.assertGreater(len(GAME_MODES_BY_MAP_ID[map_id]), 0)
+
+
+    def test_each_gamemode_is_valid(self):
+        game_modes_found = set()
+        map(game_modes_found.update, GAME_MODES_BY_MAP_ID.values())
+        self.assertSetEqual(set(GAME_MODES_NAMES.keys()), game_modes_found)
+        for game_mode in game_modes_found:
+            self.assertIn(game_mode, GAME_MODES_NAMES)
+
+
     def test_getEasyName(self):
         self.assertEqual('Grand Bazaar', self.parser.getEasyName('MP_001'))
         self.assertEqual('Tehran Highway', self.parser.getEasyName('MP_003'))
@@ -626,6 +641,7 @@ class Test_bf3_maps(BF3TestCase):
         self.assertEqual('Ziba Tower', self.parser.getEasyName('XP2_Skybar'))
         self.assertEqual('f00', self.parser.getEasyName('f00'))
 
+
     def test_getHardName(self):
         self.assertEqual('MP_001', self.parser.getHardName('Grand Bazaar'))
         self.assertEqual('MP_003', self.parser.getHardName('Tehran Highway'))
@@ -645,3 +661,22 @@ class Test_bf3_maps(BF3TestCase):
         self.assertEqual('XP2_Palace', self.parser.getHardName('Donya Fortress'))
         self.assertEqual('XP2_Skybar', self.parser.getHardName('Ziba Tower'))
         self.assertEqual('f00', self.parser.getHardName('f00'))
+
+
+    def test_getMapsSoundingLike(self):
+        self.assertEqual(['caspian border', 'damavand peak', 'grand bazaar'], self.parser.getMapsSoundingLike(''), '')
+        self.assertEqual('MP_Subway', self.parser.getMapsSoundingLike('Operation Metro'), 'Operation Metro')
+        self.assertEqual('MP_001', self.parser.getMapsSoundingLike('grand'))
+        self.assertEqual(['operation metro', 'operation 925', 'operation firestorm'], self.parser.getMapsSoundingLike('operation'))
+
+
+    def test_getGamemodeSoundingLike(self):
+        self.assertEqual('ConquestSmall0', self.parser.getGamemodeSoundingLike('MP_011', 'ConquestSmall0'), 'ConquestSmall0')
+        self.assertEqual('ConquestSmall0', self.parser.getGamemodeSoundingLike('MP_011', 'Conquest'), 'Conquest')
+        self.assertListEqual(['Squad Deathmatch', 'Team Deathmatch'], self.parser.getGamemodeSoundingLike('MP_011', 'Deathmatch'), 'Deathmatch')
+        self.assertListEqual(['Rush', 'Conquest', 'Conquest64'], self.parser.getGamemodeSoundingLike('MP_011', 'foo'))
+        self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'tdm'), 'tdm')
+        self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'tdm'), 'teamdeathmatch')
+        self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'tdm'), 'team death match')
+        self.assertEqual('ConquestLarge0', self.parser.getGamemodeSoundingLike('MP_011', 'CQ64'), 'CQ64')
+

@@ -44,19 +44,24 @@
 #  fixes issue with BF3 failing to provide EA_GUID https://github.com/courgette/big-brother-bot/issues/69
 # 1.5.2
 #  fixes issue that made B3 fail to ban/tempban a client with empty guid
+# 1.6
+#  replace admin plugin !map command with a Frostbite2 specific implementation. Now can call !map <map>, <gamemode>
+#  refactor getMapsSoundingLike
+#  add getGamemodeSoundingLike
 #
+
 __author__  = 'Courgette'
-__version__ = '1.5.2'
+__version__ = '1.6'
 
 
-import sys, re, traceback, time, string, Queue, threading
+import sys, re, traceback, time, string, Queue, threading, new
 import b3.parser
 from b3.parsers.frostbite2.rcon import Rcon as FrostbiteRcon
 from b3.parsers.frostbite2.protocol import FrostbiteServer, CommandFailedError, CommandError, NetworkError
 from b3.parsers.frostbite2.util import PlayerInfoBlock, MapListBlock, BanlistContent
 import b3.events
 import b3.cvar
-from b3.functions import soundex, levenshteinDistance
+from b3.functions import getStuffSoundingLike
 
 
 # how long should the bot try to connect to the Frostbite server before giving out (in second)
@@ -176,6 +181,54 @@ class AbstractParser(b3.parser.Parser):
             else:
                 return self.getClientsByName(id)
         b3.clients.Clients.getByMagic = new_clients_getByMagic
+
+
+    def patch_b3_admin_plugin(self):
+        """
+        The cmd_map method of the loaded AdminPlugin instance to accept an optional 2nd parameter which is the game mode
+        """
+        def new_cmd_map(self, data, client, cmd=None):
+            """\
+            <map> [, gamemode] - switch current map. Optionnaly specify a gamemode by separating it from the map name with a comma
+            """
+            if not data:
+                client.message('You must supply a map to change to')
+                return
+
+            if ',' in data:
+                map_data, gamemode_data = [x.strip() for x in data.split(',')]
+            else:
+                map_data = data.strip()
+                gamemode_data = self.console.game.gameType
+
+            map_id = self.console.getMapIdByName(map_data)
+            if type(map_id) is list:
+                client.message('do you mean : %s ?' % ', '.join(map_id))
+                return
+
+            gamemode_id = self.console.getGamemodeSoundingLike(map_id, gamemode_data)
+            if type(gamemode_id) is list:
+                client.message('do you mean : %s ?' % ', '.join(gamemode_id))
+                return
+
+            try:
+                suggestions = self.console.changeMap(map_id, gamemode_id)
+            except CommandFailedError, err:
+                if err.message == ['InvalidGameModeOnMap']:
+                    client.message("The %s cannot be played with the current game mode. Retry the command giving the wanted game mode" % self.console.getEasyName(map_id))
+                    client.message("available gamemodes are : " + ', '.join([self.console.getGameMode(mode_id) for mode_id in self.console.getSupportedGameModesByMapId(map_id)]))
+                    return
+                else:
+                    raise
+            else:
+                if type(suggestions) == list:
+                    client.message('do you mean : %s ?' % ', '.join(map_id))
+                    return
+        adminPlugin = self.getPlugin('admin')
+        cmd = adminPlugin._commands['map']
+        cmd.func = new.instancemethod(new_cmd_map, adminPlugin)
+        cmd.help = new_cmd_map.__doc__.strip()
+
 
 
     def run(self):
@@ -380,6 +433,9 @@ class AbstractParser(b3.parser.Parser):
         # start crontab to trigger playerlist events
         self.cron + b3.cron.CronTab(self.clients.sync, minute='*/5')
 
+
+    def pluginsStarted(self):
+        self.patch_b3_admin_plugin()
 
     def sayqueuelistener_worker(self):
         self.info("sayqueuelistener job started")
@@ -1129,7 +1185,7 @@ class AbstractParser(b3.parser.Parser):
         self.queueEvent(b3.events.Event(b3.events.EVT_GAME_ROUND_END, data=None))
 
 
-    def changeMap(self, map):
+    def changeMap(self, map_name, gamemode_id=None):
         """\
         load a given map/level
         return a list of suggested map names in cases it fails to recognize the map that was provided
@@ -1148,47 +1204,41 @@ class AbstractParser(b3.parser.Parser):
         2) if we got a level name
             if the level is not in the current rotation list, then add it to 
             the map list and load it
-        """        
-        supportedMaps = self.getSupportedMapIds()
-        if map not in supportedMaps:
-            match = self.getMapsSoundingLike(map)
-            if len(match) == 1:
-                map = match[0]
-            else:
-                return match
-            
-        if map in supportedMaps:
-            mapList = self.getFullMapRotationList()
+        """
+        map_id = self.getMapIdByName(map_name)
+        mapList = self.getFullMapRotationList()
+        target_gamemode_id = gamemode_id if gamemode_id else self.game.gameType
 
-            # we want to find the next index to set for mapList
-            nextMapListIndex = None
+        # we want to find the next index to set for mapList
+        nextMapListIndex = None
 
-            # simple case : mapList is empty. Then just add our map at index 0 and load it
-            if not len(mapList):
-                nextMapListIndex = 0
-                self.write(('mapList.add', map, self.game.gameType, 2, nextMapListIndex))
-            else:
-                # the wanted map could already be in the rotation list (for the current gamemode)
-                maps_for_current_gamemode = mapList.getByNameAndGamemode(map, self.game.gameType)
+        # simple case : mapList is empty. Then just add our map at index 0 and load it
+        if not len(mapList):
+            nextMapListIndex = 0
+            self.write(('mapList.add', map_id, target_gamemode_id, 2, nextMapListIndex))
+        else:
+            # the wanted map could already be in the rotation list (if gamemode specified)
+            if gamemode_id is not None:
+                maps_for_current_gamemode = mapList.getByNameAndGamemode(map_id, gamemode_id)
                 if len(maps_for_current_gamemode):
                     nextMapListIndex = maps_for_current_gamemode.keys()[0]
 
-                # or it could be in map rotation list for another gamemode
-                if nextMapListIndex is None:
-                    filtered_mapList = mapList.getByName(map)
-                    if len(filtered_mapList):
-                        nextMapListIndex = filtered_mapList.keys()[0]
+            # or it could be in map rotation list for another gamemode
+            if nextMapListIndex is None:
+                filtered_mapList = mapList.getByName(map_id)
+                if len(filtered_mapList):
+                    nextMapListIndex = filtered_mapList.keys()[0]
 
-                # or map is not found in mapList and we need to insert it after the index of the current map
-                current_index = self.write(('mapList.getMapIndices',))[0]
-                nextMapListIndex = int(current_index) + 1
-                self.write(('mapList.add', map, self.game.gameType, 2, nextMapListIndex))
+            # or map is not found in mapList and we need to insert it after the index of the current map
+            current_index = self.write(('mapList.getMapIndices',))[0]
+            nextMapListIndex = int(current_index) + 1
+            self.write(('mapList.add', map_id, target_gamemode_id, 2, nextMapListIndex))
 
-            # now we have a nextMapListIndex correctly set to the wanted map
-            self.write(('mapList.setNextMapIndex', nextMapListIndex))
-            self.say('Changing map to %s (%s)' % (self.getEasyName(map), self.getGameMode(self.game.gameType)))
-            time.sleep(1)
-            self.write(('mapList.runNextRound',))
+        # now we have a nextMapListIndex correctly set to the wanted map
+        self.write(('mapList.setNextMapIndex', nextMapListIndex))
+        self.say('Changing map to %s (%s)' % (self.getEasyName(map_id), self.getGameMode(target_gamemode_id)))
+        time.sleep(1)
+        self.write(('mapList.runNextRound',))
 
         
     def getPlayerPings(self):
@@ -1223,6 +1273,15 @@ class AbstractParser(b3.parser.Parser):
     #    Other methods
     #    
     ###############################################################################################
+
+    def getMapIdByName(self, map_name):
+        """accepts partial name and tries its best to get the one map id. If confusion, return
+        suggestions as a list"""
+        supportedMaps = self.getSupportedMapIds()
+        if map_name not in supportedMaps:
+            return self.getMapsSoundingLike(map_name)
+        else:
+            return map_name
 
 
     def yell(self, client, text):
@@ -1274,8 +1333,12 @@ class AbstractParser(b3.parser.Parser):
         raise NotImplementedError('getEasyName must be implemented in concrete classes')
 
     def getGameMode(self, gamemode):
-        """ Get game mode in real name """
+        """ Get gamemode name by id"""
         raise NotImplementedError('getGameMode must be implemented in concrete classes')
+
+    def getGameModeId(self, gamemode_name):
+        """ Get gamemode id by name """
+        raise NotImplementedError('getGameModeId must be implemented in concrete classes')
 
     def getCvar(self, cvarName):
         """Read a server var"""
@@ -1335,7 +1398,7 @@ class AbstractParser(b3.parser.Parser):
     def getNextMap(self):
         """Return the name of the next map and gamemode"""
         maps = self.getFullMapRotationList()
-        if len(maps) == 0:
+        if not len(maps):
             next_map_name = self.game.mapName
             next_map_gamemode = self.game.gameType
         else:
@@ -1346,68 +1409,71 @@ class AbstractParser(b3.parser.Parser):
         return '%s (%s)' % (self.getEasyName(next_map_name), self.getGameMode(next_map_gamemode))
 
     def getSupportedMapIds(self):
-        """return a list of supported levels for the current game mod"""
+        """return a list of supported levels"""
         # TODO : test this once the command work in BF3
         # TODO : to test this latter, remove getSupportedMapIds from bf3.py
         return self.write(('mapList.availableMaps',))
 
+    def getSupportedGameModesByMapId(self, map_id):
+        """return a list of supported game modes for the given map id"""
+        raise NotImplementedError('getServerInfo must be implemented in concrete classes')
+
     def getMapsSoundingLike(self, mapname):
         """found matching level names for the given mapname (which can either
         be a level name or map name)
-        If no exact match is found, then return close candidates using soundex
-        and then LevenshteinDistance algorithms
+        If no exact match is found, then return close candidates
         """
         supportedMaps = self.getSupportedMapIds()
+        clean_map_name = mapname.strip().lower()
+
         supportedEasyNames = {}
         for m in supportedMaps:
             supportedEasyNames[self.getEasyName(m).lower()] = m
-            
-        clean_map_name = mapname.strip().lower()
-        soundex1 = soundex(mapname)
-        #self.debug('soundex %s : %s' % (data, soundex1))
 
-        match = []
-        # given mapname could be the exact map id
-        if clean_map_name in supportedMaps:
-            match = [clean_map_name]
+        if clean_map_name in supportedEasyNames:
+            return self.getHardName(clean_map_name)
+
+        matches = getStuffSoundingLike(mapname, supportedEasyNames.keys())
+        if len(matches) == 1:
+            # one match, get the map id
+            return supportedEasyNames[matches[0]]
         else:
-            # or we assume it is not a map id but a map name
-            if clean_map_name in supportedEasyNames:
-                # we are lucky to have an exact match
-                match = [supportedEasyNames[clean_map_name]]
-            else:
-                # compute a list of map id for which we can find clean_map_name in their map name
-                maps_matching_subset = [(map_id, map_name) for map_name, map_id in supportedEasyNames.items() if map_name.lower().find(clean_map_name) >= 0]
-                if len(maps_matching_subset) == 1:
-                    match = [maps_matching_subset[0][0]]
-                elif len(maps_matching_subset) > 1:
-                    match = [map_name for map_id, map_name in maps_matching_subset]
-                else:
-                    # no luck with subset lookup, fallback on soundex magic
-                    for m in supportedEasyNames:
-                        s = soundex(m)
-                        #self.debug('soundex %s : %s' % (m, s))
-                        if s == soundex1:
-                            #self.debug('probable map : %s', m)
-                            match.append(supportedEasyNames[m])
+            # multiple matches, provide human friendly suggestions
+            return matches[:3]
 
 
-        if not len(match):
-            # suggest closest spellings
-            shortmaplist = []
-            for m in supportedEasyNames:
-                if m.find(clean_map_name) != -1:
-                    shortmaplist.append(m)
-            if len(shortmaplist) > 0:
-                shortmaplist.sort(key=lambda _map: levenshteinDistance(clean_map_name, string.replace(_map.strip())))
-                self.debug("shortmaplist sorted by distance : %s" % shortmaplist)
-                match = shortmaplist[:3]
-            else:
-                easyNames = supportedEasyNames.keys()
-                easyNames.sort(key=lambda _map: levenshteinDistance(clean_map_name, _map.strip()))
-                self.debug("maplist sorted by distance : %s" % easyNames)
-                match = easyNames[:3]
-        return match
+    def getGamemodeSoundingLike(self,  map_id, gamemode_name):
+        """found the gamemode id for the given gamemode name (which can either
+        be a gamemode id or name)
+        If no exact match is found, then return close candidates gamemode names
+        """
+        supported_gamemode_ids = self.getSupportedGameModesByMapId(map_id)
+        clean_gamemode_name = gamemode_name.strip().lower()
+
+        # try to find exact matches
+        for _id in supported_gamemode_ids:
+            if clean_gamemode_name == _id.lower():
+                return _id
+            elif clean_gamemode_name == self.getGameMode(_id).lower():
+                return _id
+
+        supported_gamemode_names = map(self.getGameMode, supported_gamemode_ids)
+
+        shortnames = {
+            'cq': 'conquest',
+            'cq64': 'conquest64',
+            'tdm': 'team deathmatch',
+            'sqdm': 'squad deathmatch',
+        }
+        clean_gamemode_name = shortnames.get(clean_gamemode_name, clean_gamemode_name)
+
+        matches = getStuffSoundingLike(clean_gamemode_name, supported_gamemode_names)
+        if len(matches) == 1:
+            # one match, get the gamemode id
+            return self.getGameModeId(matches[0])
+        else:
+            # multiple matches, provide human friendly suggestions
+            return matches[:3]
 
 
     def load_conf_ban_agent(self):

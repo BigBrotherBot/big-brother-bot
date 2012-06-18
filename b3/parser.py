@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2012/06/17 - 1.27.3 - courgette
+#   * more explicit error message when failing to load a plugin from a specified path
 #   2012/06/17 - 1.27.2 - courgette
 #   * syntax and code cleanup
 #   2012/05/06 - 1.27.1 - courgette
@@ -139,7 +141,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.27.2'
+__version__ = '1.27.3'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -721,8 +723,8 @@ class Parser(object):
                 finally:
                     if fp:
                         fp.close()
-            except ImportError:
-                pass
+            except ImportError, err:
+                self.error(err)
         try:
             module = 'b3.plugins.%s' % name
             mod = __import__(module)

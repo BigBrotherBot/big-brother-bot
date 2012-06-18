@@ -183,3 +183,26 @@ class Test_misc(unittest.TestCase):
             result = functions.meanstdv(test_data)
             if expected != result:
                 self.fail("%r, expecting '%s' but got '%s'" % (test_data, expected, result))
+
+
+class Test_getStuffSoundingLike(unittest.TestCase):
+
+    def test_empty_expected_stuff(self):
+        self.assertListEqual([], functions.getStuffSoundingLike('foO', []))
+
+    def test_exact_match(self):
+        self.assertListEqual(['foO'], functions.getStuffSoundingLike('foO', ['foO']))
+        self.assertListEqual(['foO'], functions.getStuffSoundingLike('foO', ['bar', 'foO', 'joe', 'jack', 'averell', 'william']))
+
+    def test_substring_match(self):
+        self.assertListEqual(['averell'], functions.getStuffSoundingLike('ere', ['bar', 'foO', 'joe', 'jack', 'averell', 'william']))
+        self.assertListEqual(['joe', 'jack'], functions.getStuffSoundingLike('j', ['bar', 'foO', 'joe', 'jack', 'averell', 'william']))
+        self.assertListEqual(['xxxfoOx1', 'xxxfoOx2', 'xxxfoOx3', 'xxxfoOx4', 'xxxfoOx5', 'xxxfoOx6'],
+            functions.getStuffSoundingLike('foO', ['xxxfoOx1', 'xxxfoOx2', 'xxxfoOx3', 'xxxfoOx4', 'xxxfoOx5', 'xxxfoOx6', 'bar']))
+
+    def test_soundex_match(self):
+        self.assertListEqual(['jack'], functions.getStuffSoundingLike('jak', ['bar', 'foO', 'joe', 'jack', 'averell', 'william']))
+
+    def test_fallback(self):
+        self.assertListEqual(['bar', 'foO', 'joe', 'jack', 'averell', 'william'], functions.getStuffSoundingLike('xxx', ['bar', 'foO', 'joe', 'jack', 'averell', 'william']))
+

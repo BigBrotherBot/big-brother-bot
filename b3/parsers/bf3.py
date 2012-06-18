@@ -34,14 +34,19 @@
 #  reflects changes in AbstractParser due to BF3 server R21 release
 # 1.3
 #  BF3 server R24 changes
+# 1.4
+#  add available gamemodes by map
+#  check minimum required BF3 server version on startup
+#  fix issue from 1.3 that made impossible to use commands related to Close Quarter maps
 #
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 import b3
 import b3.events
 __author__  = 'Courgette'
-__version__ = '1.3.1'
+__version__ = '1.4'
 
+BF3_REQUIRED_VERSION = 964189
 
 SQUAD_NOSQUAD = 0
 SQUAD_ALPHA = 1
@@ -77,44 +82,44 @@ SQUAD_REDFORD = 30
 SQUAD_FAITH = 31
 SQUAD_CELESTE  = 32
 
-SQUAD_NAMES = dict()
-SQUAD_NAMES[SQUAD_ALPHA] = "Alpha"
-SQUAD_NAMES[SQUAD_BRAVO] = "Bravo"
-SQUAD_NAMES[SQUAD_CHARLIE] = "Charlie"
-SQUAD_NAMES[SQUAD_DELTA] = "Delta"
-SQUAD_NAMES[SQUAD_ECHO] = "Echo"
-SQUAD_NAMES[SQUAD_FOXTROT] = "Foxtrot"
-SQUAD_NAMES[SQUAD_GOLF] = "Golf"
-SQUAD_NAMES[SQUAD_HOTEL] = "Hotel"
-SQUAD_NAMES[SQUAD_INDIA] = "India"
-SQUAD_NAMES[SQUAD_JULIET] = "Juliet"
-SQUAD_NAMES[SQUAD_KILO] = "Kilo"
-SQUAD_NAMES[SQUAD_LIMA] = "Lima"
-SQUAD_NAMES[SQUAD_MIKE] = "Mike"
-SQUAD_NAMES[SQUAD_NOVEMBER] = "November"
-SQUAD_NAMES[SQUAD_OSCAR] = "Oscar"
-SQUAD_NAMES[SQUAD_PAPA] = "Papa"
-SQUAD_NAMES[SQUAD_QUEBEC] = "Quebec"
-SQUAD_NAMES[SQUAD_ROMEO] = "Romeo"
-SQUAD_NAMES[SQUAD_SIERRA] = "Sierra"
-SQUAD_NAMES[SQUAD_TANGO] = "Tango"
-SQUAD_NAMES[SQUAD_UNIFORM] = "Uniform"
-SQUAD_NAMES[SQUAD_VICTOR] = "Victor"
-SQUAD_NAMES[SQUAD_WHISKEY] = "Whiskey"
-SQUAD_NAMES[SQUAD_XRAY] = "Xray"
-SQUAD_NAMES[SQUAD_YANKEE] = "Yankee"
-SQUAD_NAMES[SQUAD_ZULU] = "Zulu"
-SQUAD_NAMES[SQUAD_HAGGARD] = "Haggard"
-SQUAD_NAMES[SQUAD_SWEETWATER] = "Sweetwater"
-SQUAD_NAMES[SQUAD_PRESTON] = "Preston"
-SQUAD_NAMES[SQUAD_REDFORD] = "Redford"
-SQUAD_NAMES[SQUAD_FAITH] = "Faith"
-SQUAD_NAMES[SQUAD_CELESTE] = "Celeste"
+SQUAD_NAMES = {
+    SQUAD_ALPHA: "Alpha",
+    SQUAD_BRAVO: "Bravo",
+    SQUAD_CHARLIE: "Charlie",
+    SQUAD_DELTA: "Delta",
+    SQUAD_ECHO: "Echo",
+    SQUAD_FOXTROT: "Foxtrot",
+    SQUAD_GOLF: "Golf",
+    SQUAD_HOTEL: "Hotel",
+    SQUAD_INDIA: "India",
+    SQUAD_JULIET: "Juliet",
+    SQUAD_KILO: "Kilo",
+    SQUAD_LIMA: "Lima",
+    SQUAD_MIKE: "Mike",
+    SQUAD_NOVEMBER: "November",
+    SQUAD_OSCAR: "Oscar",
+    SQUAD_PAPA: "Papa",
+    SQUAD_QUEBEC: "Quebec",
+    SQUAD_ROMEO: "Romeo",
+    SQUAD_SIERRA: "Sierra",
+    SQUAD_TANGO: "Tango",
+    SQUAD_UNIFORM: "Uniform",
+    SQUAD_VICTOR: "Victor",
+    SQUAD_WHISKEY: "Whiskey",
+    SQUAD_XRAY: "Xray",
+    SQUAD_YANKEE: "Yankee",
+    SQUAD_ZULU: "Zulu",
+    SQUAD_HAGGARD: "Haggard",
+    SQUAD_SWEETWATER: "Sweetwater",
+    SQUAD_PRESTON: "Preston",
+    SQUAD_REDFORD: "Redford",
+    SQUAD_FAITH: "Faith",
+    SQUAD_CELESTE: "Celeste"
+}
 
 GAME_MODES_NAMES = {
     "ConquestLarge0": "Conquest64",
     "ConquestSmall0": "Conquest",
-    "ConquestSmall1": "Conquest Assault", # will be deprecated after BF3 server R20
     "ConquestAssaultLarge0": "Conquest Assault64",
     "ConquestAssaultSmall0": "Conquest Assault",
     "ConquestAssaultSmall1": "Conquest Assault alt.2",
@@ -126,6 +131,10 @@ GAME_MODES_NAMES = {
     "GunMaster0": "Gun master",
     "TeamDeathMatchC0": "TDM Close Quarters",
     }
+
+GAMEMODES_IDS_BY_NAME = dict()
+for _id, name in GAME_MODES_NAMES.items():
+    GAMEMODES_IDS_BY_NAME[name.lower()] = _id
 
 MAP_NAME_BY_ID = {
     'MP_001': 'Grand Bazaar',
@@ -150,6 +159,26 @@ MAP_NAME_BY_ID = {
 MAP_ID_BY_NAME = dict()
 for _id, name in MAP_NAME_BY_ID.items():
     MAP_ID_BY_NAME[name.lower()] = _id
+
+GAME_MODES_BY_MAP_ID = {
+    "MP_001": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "MP_003": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "MP_007": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "MP_011": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "MP_012": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "MP_013": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "MP_017": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "MP_018": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "MP_Subway": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "XP1_001": ("ConquestAssaultLarge0", "ConquestAssaultSmall0", "ConquestAssaultSmall1", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "XP1_002": ("ConquestLarge0", "ConquestSmall0", "ConquestAssaultSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "XP1_003": ("ConquestAssaultLarge0", "ConquestAssaultSmall0", "ConquestAssaultSmall1", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "XP1_004": ("ConquestAssaultLarge0", "ConquestAssaultSmall0", "ConquestAssaultSmall1", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "XP2_Factory": ("TeamDeathMatchC0", "GunMaster0", "Domination0", "SquadDeathMatch0"),
+    "XP2_Office": ("TeamDeathMatchC0", "GunMaster0", "Domination0", "SquadDeathMatch0"),
+    "XP2_Palace": ("TeamDeathMatchC0", "GunMaster0", "Domination0", "SquadDeathMatch0"),
+    "XP2_Skybar": ("TeamDeathMatchC0", "GunMaster0", "Domination0", "SquadDeathMatch0"),
+}
 
 
 class Bf3Parser(AbstractParser):
@@ -208,6 +237,7 @@ class Bf3Parser(AbstractParser):
 
 
     def pluginsStarted(self):
+        AbstractParser.pluginsStarted(self)
         self.info('connecting all players...')
         plist = self.getPlayerList()
         for cid, p in plist.iteritems():
@@ -280,7 +310,10 @@ class Bf3Parser(AbstractParser):
         version = self.output.write('version')
         self.info('server version : %s' % version)
         if version[0] != 'BF3':
-            raise Exception("the bf3 parser can only work with Battlefield 3")
+            raise Exception("the BF3 parser can only work with Battlefield 3")
+        if int(version[1]) < BF3_REQUIRED_VERSION:
+            raise Exception("the BF3 parser can only work with Battlefield 3 server version %s and above. You are tr"
+                            "ying to connect to %s v%s" % (BF3_REQUIRED_VERSION, version[0], version[1]))
 
     def getClient(self, cid, guid=None):
         """Get a connected client from storage or create it
@@ -339,7 +372,7 @@ class Bf3Parser(AbstractParser):
 
 
     def getGameMode(self, gamemode_id):
-        """ Get game mode in real name """
+        """ Convert game mode ID into human friendly name """
         if gamemode_id in GAME_MODES_NAMES:
             return GAME_MODES_NAMES[gamemode_id]
         else:
@@ -347,10 +380,25 @@ class Bf3Parser(AbstractParser):
             # fallback by sending gamemode id
             return gamemode_id
 
+
+    def getGameModeId(self, gamemode_name):
+        """ Get gamemode id by name """
+        name = gamemode_name.lower()
+        if name in GAMEMODES_IDS_BY_NAME:
+            return GAMEMODES_IDS_BY_NAME[name]
+        else:
+            self.warning("unknown gamemode name \"%s\"" % gamemode_name)
+            # fallback by sending gamemode id
+            return gamemode_name
+
     def getSupportedMapIds(self):
         """return a list of supported levels for the current game mod"""
         # TODO : remove this method once the method on from AbstractParser is working
-        return ["MP_001", "MP_003", "MP_007", "MP_011", "MP_012", "MP_013", "MP_017", "MP_018", "MP_Subway", "XP1_001", "XP1_002", "XP1_003", "XP1_004"]
+        return MAP_NAME_BY_ID.keys()
+
+    def getSupportedGameModesByMapId(self, map_id):
+        """return a list of supported game modes for the given map id"""
+        return GAME_MODES_BY_MAP_ID[map_id]
 
     def getServerVars(self):
         """Update the game property from server fresh data"""
