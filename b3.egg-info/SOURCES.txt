@@ -236,6 +236,7 @@ tests/clients/test_Client.py
 tests/clients/test_Clients.py
 tests/parsers/__init__.py
 tests/parsers/test_bf3.py
+tests/parsers/test_iourt41.py
 tests/parsers/frostbite2/__init__.py
 tests/parsers/frostbite2/test_abstractParser.py
 tests/parsers/frostbite2/test_util.py
@@ -247,6 +248,7 @@ tests/plugins/__init__.py
 tests/plugins/test_admin.py
 tests/plugins/test_admin_functional.py
 tests/plugins/test_censor.py
+tests/plugins/test_status.py
 tests/plugins/test_tk.py
 tests/plugins/test_tk_functional.py
 tests/setup_/__init__.py
@@ -256,4 +258,5 @@ tests/storage/common.py
 tests/storage/test_DatabaseStorage.py
 tests/storage/test_Storage.py
 tests/storage/test_mysql.py
+tests/storage/test_postgresql.py
 tests/storage/test_sqlite.py
