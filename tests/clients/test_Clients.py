@@ -30,7 +30,7 @@ class TestClients(B3TestCase):
     def setUp(self):
         B3TestCase.setUp(self)
         Clients.authorizeClients = Mock()
-        self.clients = Clients(b3.console)
+        self.clients = Clients(self.console)
         self.clients.newClient(1, name='joe')
         self.clients.newClient(2, name=' H a    x\t0r')
 

@@ -176,7 +176,7 @@ class PlayerInfoBlock:
     
 if __name__ == '__main__':
         
-    import unittest
+    import unittest2 as unittest
     class TestBanlistContent(unittest.TestCase):
         def test_bad(self):
             self.assertRaises(TypeError, BanlistContent, None)

@@ -37,11 +37,12 @@
 #    * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
 # 22/1/2012 - 1.3.5 -92ndab-Bravo17
 #    * Add JT method for some COD4 mods
-
+# 7/3/2012 - 1.3.6 - 82ndab-Bravo17
+#    * Change Client Auth method so it updates empty pbids
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.3.5'
+__version__ = '1.3.6'
 
 import b3.parsers.cod2
 import b3.functions
@@ -196,3 +197,72 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
                     sp.guid = p.get('guid', sp.guid)
                 sp.data = p
                 sp.auth()
+
+
+#############################################################
+# Below is the code that change a bit the b3.clients.Client
+# class at runtime. What the point of coding in python if we
+# cannot play with its dynamic nature ;)
+#
+# why ?
+# because doing so make sure we're not broking any other 
+# working and long tested parser. The changes we make here
+# are only applied when the frostbite parser is loaded.
+#############################################################
+  
+
+def cod4ClientAuthMethod(self):
+    if not self.authed and self.guid and not self.authorizing:
+        self.authorizing = True
+
+        name = self.name
+        ip = self.ip
+        pbid = self.pbid
+        try:
+            inStorage = self.console.storage.getClient(self)
+        except KeyError, msg:
+            self.console.debug('User not found %s: %s', self.guid, msg)
+            inStorage = False
+        except Exception, e:
+            self.console.error('auth self.console.storage.getClient(client) - %s\n%s', e, traceback.extract_tb(sys.exc_info()[2]))
+            self.authorizing = False
+            return False
+
+        #lastVisit = None
+        if inStorage:
+            self.console.bot('Client found in storage %s, welcome back %s', str(self.id), self.name)
+            self.lastVisit = self.timeEdit
+            if self.pbid == '':
+                self.pbid = pbid
+        else:
+            self.console.bot('Client not found in the storage %s, create new', str(self.guid))
+
+        self.connections = int(self.connections) + 1
+        self.name = name
+        self.ip = ip
+        self.save()
+        self.authed = True
+
+        self.console.debug('Client Authorized: [%s] %s - %s', self.cid, self.name, self.guid)
+
+        # check for bans
+        if self.numBans > 0:
+            ban = self.lastBan
+            if ban:
+                self.reBan(ban)
+                self.authorizing = False
+                return False
+
+        self.refreshLevel()
+
+        self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_AUTH,
+            self,
+            self))
+
+        self.authorizing = False
+
+        return self.authed
+    else:
+        return False
+            
+b3.clients.Client.auth = cod4ClientAuthMethod

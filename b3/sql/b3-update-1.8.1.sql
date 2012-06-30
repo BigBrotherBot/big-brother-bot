@@ -264,4 +264,4 @@ CREATE TABLE IF NOT EXISTS `ctime` (
   `gone` varchar(11) default NULL,
   `nick` varchar(32) NOT NULL,
   PRIMARY KEY  (`id`)
-) TYPE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;

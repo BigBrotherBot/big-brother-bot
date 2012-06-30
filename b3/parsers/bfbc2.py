@@ -668,7 +668,7 @@ def frostbiteClientMessageBigQueueWorker(self):
         msg = self.messagebigqueue.get()
         if msg:
             self.console.messagebig(self, msg)
-            time.sleep(int(self.console._settings['message_delay']))
+            time.sleep(float(self.console._settings['message_delay']))
 b3.clients.Client.messagebigqueueworker = frostbiteClientMessageBigQueueWorker
 
 ## add the Client.messagebig() method at runtime

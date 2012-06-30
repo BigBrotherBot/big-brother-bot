@@ -30,10 +30,13 @@
 # Fix bug in resolving @b3 which was failing for the win32 standalone release
 # 03/12/2011 - 1.3.2 - Courgette
 # Fixes xlr8or/big-brother-bot#18 : @conf in XML only works when b3_run.py config parameter contains path component
-
-
+# 31/03/2012 - 1.3.3 -Courgette
+# Change behavior of XmlConfigParser methods getboolean, getint, getfloat when config value is an empty string
+# 11/04/2012 - 1.4 - Courgette
+# CfgConfigParser now implements methods getDuration, getboolean, getpath, loadFromString
+#
 __author__  = 'ThorN'
-__version__ = '1.3.2'
+__version__ = '1.4'
 
 import sys, time
 import b3
@@ -42,19 +45,58 @@ from xml.parsers.expat import ExpatError
 try:
     from b3.lib.elementtree import ElementTree
 except ImportError, err:
-    from xml.etree import ElementTree
-except ImportError, err:
-    sys.stderr.write("""FATAL ERROR : Cannot load elementtree
-  Check that you have installed ElementTree.
-  On Linux Debian : apt-get install python-elementtree
-  """)
-    sys.exit(1)
+    try:
+        from xml.etree import ElementTree
+    except ImportError, err:
+        sys.stderr.write("""FATAL ERROR : Cannot load elementtree
+      Check that you have installed ElementTree.
+      On Linux Debian : apt-get install python-elementtree
+      """)
+        sys.exit(1)
 
 import ConfigParser
 import os
 import b3.functions
 
-class XmlConfigParser:
+
+class B3ConfigParserMixin:
+    """ mixin implementing ConfigParser methods more useful for B3 business """
+
+    def getTextTemplate(self, section, setting=None, **kwargs):
+        value = b3.functions.vars2printf(self.get(section, setting, True)).strip()
+        if len(kwargs):
+            return value % kwargs
+        else:
+            return value
+
+    def getDuration(self, section, setting=None):
+        value = self.get(section, setting).strip()
+        return b3.functions.time2minutes(value)
+
+    def getboolean(self, section, setting):
+        value_raw = self.get(section, setting)
+        value = value_raw.lower() if value_raw else ''
+
+        if value in ('yes', '1', 'on', 'true'):
+            return True
+        elif value in ('no', '0', 'off', 'false'):
+            return False
+        else:
+            raise ValueError("%s.%s : '%s' is not a boolean value" % (section, setting, value))
+
+    def getpath(self, section, setting):
+        """Return an absolute path name and expand the user prefix (~)"""
+        path = self.get(section, setting)
+
+        if path[0:3] == '@b3':
+            path = "%s/%s" % (b3.getB3Path(), path[3:])
+        elif path[0:6] == '@conf/' or path[0:6] == '@conf\\':
+            path = os.path.join(b3.getConfPath(), path[6:])
+
+        return os.path.normpath(os.path.expanduser(path))
+
+
+class XmlConfigParser(B3ConfigParserMixin):
     """\
     A config parser class that mimics the ConfigParser settings but reads
     from an XML format
@@ -100,41 +142,30 @@ class XmlConfigParser:
 
 
     def get(self, section, setting=None, dummy=False):
-        if setting == None:
+        if setting is None:
             # parse as xpath
             return self._xml.findall(section)
         else:
             try:
-                return self._settings[section][setting]
+                data = self._settings[section][setting]
+                if data is None:
+                    return ''
+                else:
+                    return data
             except KeyError:
                 raise ConfigParser.NoOptionError(setting, section)
 
-    def getTextTemplate(self, section, setting=None, **kwargs):
-        value = b3.functions.vars2printf(self.get(section, setting, True)).strip()
-        if len(kwargs):        
-            return value % kwargs
-        else:
-            return value
-
-    def getDuration(self, section, setting=None):
-        value = self.get(section, setting).strip()
-        return b3.functions.time2minutes(value)
-
     def getint(self, section, setting):
+        value = self.get(section, setting)
+        if value is None:
+            raise ValueError("%s.%s : '' is not an integer" % (section, setting))
         return int(self.get(section, setting))
 
     def getfloat(self, section, setting):
+        value = self.get(section, setting)
+        if value is None:
+            raise ValueError("%s.%s : '' is not a number" % (section, setting))
         return float(self.get(section, setting))
-
-    def getboolean(self, section, setting):
-        value = self.get(section, setting).lower()
-
-        if value in ('yes', '1', 'on', 'true'):
-            return True
-        elif value in ('no', '0', 'off', 'false'):
-            return False
-        else:
-            raise ValueError('[%s].%s = %s is not a boolean value' % (section, setting, value))
 
     def sections(self):
         return self._settings.keys()
@@ -160,17 +191,6 @@ class XmlConfigParser:
 
     def items(self, section):
         return self._settings[section].items()
-
-    def getpath(self, section, setting):
-        """Return an absolute path name and expand the user prefix (~)"""
-        path = self.get(section, setting)
-
-        if path[0:3] == '@b3':
-            path = "%s/%s" % (b3.getB3Path(), path[3:])
-        elif path[0:6] == '@conf/' or path[0:6] == '@conf\\':
-            path = os.path.join(b3.getConfPath(), path[6:])
-
-        return os.path.normpath(os.path.expanduser(path))
 
     def load(self, fileName):
 
@@ -211,7 +231,7 @@ class XmlConfigParser:
         pass
         
 
-class CfgConfigParser(ConfigParser.ConfigParser):
+class CfgConfigParser(B3ConfigParserMixin, ConfigParser.ConfigParser):
     """\
     A config parser class that mimics the ConfigParser, reads the cfg format
     """
@@ -219,18 +239,12 @@ class CfgConfigParser(ConfigParser.ConfigParser):
     fileName = ''
     fileMtime = 0
 
-    ## @todo Use actual module path
-    def getpath(self, section, setting):
-        """Return an absolute path name and expand the user prefix (~)"""
-        path = self.get(section, setting)
-
-        if path[0:3] == '@b3':
-            # relative path to the b3 module directory
-            path = path[1:]
-        elif path[0:6] == '@conf/' or path[0:6] == '@conf\\':
-            path = "%s/%s" % (b3.getConfPath(), path[5:])
-
-        return os.path.normpath(os.path.expanduser(path))
+    def get(self, section, option, *args, **kwargs):
+        try:
+            return ConfigParser.ConfigParser.get(self, section, option, *args, **kwargs)
+        except ConfigParser.NoSectionError:
+            # plugins are used to only catch NoOptionError
+            raise ConfigParser.NoOptionError(option, section)
 
     def load(self, fileName):
         f = file(fileName, 'r')
@@ -242,6 +256,16 @@ class CfgConfigParser(ConfigParser.ConfigParser):
 
         return True
 
+    def loadFromString(self, cfg_string):
+        """ Read the cfg config from a string """
+        import StringIO
+        fp = StringIO.StringIO(cfg_string)
+        self.readfp(fp)
+        fp.close()
+        self.fileName  = None
+        self.fileMtime = time.time()
+        return True
+
     def save(self):
         f = file(self.fileName, 'w')
         self.write(f)
@@ -249,12 +273,6 @@ class CfgConfigParser(ConfigParser.ConfigParser):
 
         return True
 
-    def getTextTemplate(self, section, setting=None, **kwargs):
-        value = b3.functions.vars2printf(self.get(section, setting, True)).strip()
-        if len(kwargs):        
-            return value % kwargs
-        else:
-            return value
 
 
 def load(fileName):
@@ -274,21 +292,16 @@ def load(fileName):
     else:
         return None
 
+
 class ConfigFileNotFound(Exception):
     def __init__(self, value):
-        self.value = value
+        Exception.__init__(self, value)
     def __str__(self):
         return repr(self.value)
+
+
 class ConfigFileNotValid(Exception):
     def __init__(self, value):
-        self.value = value
+        Exception.__init__(self, value)
     def __str__(self):
         return repr(self.value)
-
-        
-if __name__ == '__main__':
-    c = load(r'c:\temp\cod.xml')
-    print c.get('server', 'punkbuster')
-
-    if not c.has_option('server', 'punkbuster') or c.getboolean('server', 'punkbuster'):
-        print 'Use PB'

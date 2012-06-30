@@ -24,7 +24,7 @@ python module defined as a folder. (example the metabans plugin)
 import os
 import shutil
 from b3.setup import Setup
-import unittest
+import unittest2 as unittest
 from mock import Mock, patch # http://www.voidspace.org.uk/python/mock/
 
 import urllib2

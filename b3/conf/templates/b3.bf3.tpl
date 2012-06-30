@@ -3,7 +3,8 @@
 		<set name="parser">bf3</set>
 		<set name="database">mysql://myuser:mypass@mydbhost/mydbname</set>
 		<set name="bot_name">b3</set>
-		<set name="bot_prefix">(b3):</set>
+        <!-- prefix for all messages sent by B3. Not very useful on BF3 as such messages already are prefixed with [admin]-->
+		<set name="bot_prefix"></set>
 		<set name="time_format">%I:%M%p %Z %m/%d/%y</set>
 		<set name="time_zone">CEST</set>
 		<set name="log_level">9</set>
@@ -14,6 +15,12 @@
 		<set name="max_say_line_length">128</set>
 		<!-- message_delay : the delay (in second) to wait between two messages -->
         <set name="message_delay">0.8</set>
+        <!-- big_b3_private_responses - if on, then all private message sent by B3 will be displayed as a large on-screen message
+            * Accepted values : on / off
+        -->
+        <set name="big_b3_private_responses">on</set>
+        <!-- big_msg_duration : for how many seconds big messages are displayed -->
+        <set name="big_msg_duration">6</set>
 	</settings>
 	<settings name="server">
 		<set name="public_ip">11.22.33.44</set>

@@ -26,6 +26,7 @@
         <set name="roundrestart-rrestart">40</set>
         <set name="kill">40</set>
         <set name="idle">40</set>
+        <set name="nuke">40</set>
 
         <set name="changeteam">20</set>
         <set name="swap">20</set>
@@ -39,6 +40,11 @@
         <set name="autobalance">20</set>
 
         <set name="vehicles">20</set>
+
+        <set name="yell-y">20</set>
+        <set name="yellteam-yt">20</set>
+        <set name="yellsquad-ys">20</set>
+        <set name="yellplayer-yp">20</set>
     </settings>
 
     <settings name="messages">
@@ -52,18 +58,31 @@
 	<settings name="preferences">
         <!-- config_path : the path to the preset bf3 server config files to be used by the !loadconfig command. -->
 		<set name="config_path">serverconfigs</set>
+
         <!-- no_level_check_level : a level at which a player can swap anyone without any level restriction.
             For example, if no_level_check_level is 40 (admin), then admins can !swap players of level above them.
             While a moderator will only be able to swap players of level moderator or below.
             This applies to commands !swap and !changeteam
          -->
         <set name="no_level_check_level">60</set>
+
+        <!-- yell_duration : for how long do yell messages stay visible on the player screen (in second)
+            You can use float values, i.e.: for 2 and half seconds : 2.5
+            Default value : 10
+        -->
+        <set name="yell_duration">10</set>
+
         <!-- no_autoassign_level : Players this level and above will not be auto assigned-->
         <set name="no_autoassign_level">20</set>
+
         <set name="autoassign">On</set>
         <set name="autobalance">On</set>
         <set name="autobalance_timer">120</set>
         <set name="team_swap_threshold">3</set>
+        <!-- If this is set to True then the number of players that teams are allowed to be unbalanced by goes up
+         by 1 at 20 players and by a further 1 at 40 players which will cut down on too many team swaps back and forth
+        -->
+		<set name="team_swap_threshold_prop">False</set>
 	</settings>
 
     <settings name="scrambler">
@@ -77,6 +96,21 @@
             When 'score', players will be scrambled based on players' score to try to even team skills
         -->
         <set name="strategy">random</set>
+        <!-- Gamemode backlist : define here a comma separated list of gamemodes for which the autoscrambler
+             won't ever run.
+             Refer to BF3 administration guide from DICE to get the exact gamemode identifiers.
+             As of BF3 Server R20 gamemodes are :
+                ConquestLarge0          Conquest64
+                ConquestSmall0          Conquest
+                ConquestAssaultLarge0   Conquest Assault64
+                ConquestAssaultSmall0   Conquest Assault
+                ConquestAssaultSmall1   Conquest Assault alt.2
+                RushLarge0              Rush
+                SquadRush0              Squad Rush
+                SquadDeathMatch0        Squad Deathmatch
+                TeamDeathMatch0         Team Deathmatch
+        -->
+        <set name="gamemodes_blacklist">SquadRush0,SquadDeathMatch0</set>
 	</settings>
 	<settings name="configmanager">
 		<!-- Configmanager setting enables you to load different server config files from 'configmanager' folder

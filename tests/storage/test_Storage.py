@@ -21,7 +21,7 @@ from b3.storage.database import DatabaseStorage
 from mock import Mock
 from tests import B3TestCase
 import b3.storage
-import unittest
+import unittest2 as unittest
 
 class Test_Storage(B3TestCase):
     storage = None

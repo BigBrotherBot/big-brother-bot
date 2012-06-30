@@ -16,28 +16,33 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-from mock import Mock
+from mock import Mock, patch
 from tests import B3TestCase
-import unittest
+import unittest2 as unittest
+import os
 
-import b3
+from b3 import __file__ as b3_module__file__
 from b3.plugin import Plugin
 from b3.plugins.admin import AdminPlugin, Command
 from b3.config import XmlConfigParser
 from b3.clients import Client, Group, ClientVar
 
- 
-class Test_parseUserCmd(B3TestCase):
+
+ADMIN_CONFIG_FILE = os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.xml")
+
+@unittest.skipUnless(os.path.isfile(ADMIN_CONFIG_FILE), "%s is not a file" % ADMIN_CONFIG_FILE)
+class Admin_TestCase(B3TestCase):
 
     def setUp(self):
         B3TestCase.setUp(self)
         self.conf = XmlConfigParser()
-        self.conf.setXml("""
-            <configuration plugin="admin">
-            </configuration>
-        """)
-        self.p = AdminPlugin(b3.console, self.conf)
+        self.conf.load(ADMIN_CONFIG_FILE)
+        self.p = AdminPlugin(self.console, self.conf)
+        self.p.onLoadConfig()
+        self.p.onStartup()
 
+
+class Test_parseUserCmd(Admin_TestCase):
 
     @unittest.expectedFailure
     def test_clientinfo_bad_arg(self):
@@ -65,17 +70,7 @@ class Test_parseUserCmd(B3TestCase):
         self.assertEqual(('45', 'some param'), self.p.parseUserCmd("'45' some param"))
 
 
-class Test_getGroupLevel(B3TestCase):
-
-    def setUp(self):
-        from b3.fake import fakeConsole
-        B3TestCase.setUp(self)
-        self.conf = XmlConfigParser()
-        self.conf.setXml("""
-                <configuration plugin="admin">
-                </configuration>
-            """)
-        self.p = AdminPlugin(fakeConsole, self.conf)
+class Test_getGroupLevel(Admin_TestCase):
 
     def test_nominal(self):
         for test_data, expected in {
@@ -106,59 +101,57 @@ class Test_getGroupLevel(B3TestCase):
 
 
 
-class Test_misc_cmd(B3TestCase):
+class Test_misc_cmd(Admin_TestCase):
 
     def setUp(self):
-        B3TestCase.setUp(self)
-        self.conf = XmlConfigParser()
-        self.conf.setXml("""
-            <configuration plugin="admin">
-            </configuration>
-        """)
-        self.p = AdminPlugin(b3.console, self.conf)
-
+        Admin_TestCase.setUp(self)
+        self.p.console.say = Mock()
 
     def test_die(self):
+        self.console.die = Mock()
         self.p.cmd_die(None, None, Mock())
-        assert b3.console.die.called
+        assert self.console.die.called
 
     def test_restart(self):
+        self.console.restart = Mock()
         self.p.cmd_restart(None, None, Mock())
-        assert b3.console.restart.called
+        assert self.console.restart.called
 
     def test_reconfig(self):
+        self.console.reloadConfigs = Mock()
         self.p.cmd_reconfig(None, None, Mock())
-        assert b3.console.reloadConfigs.called
+        assert self.console.reloadConfigs.called
 
     def test_map(self):
         mock_client = Mock(spec=Client, name="client")
+        self.console.changeMap = Mock()
 
         # no data
         self.p.cmd_map(data=None, client=mock_client, cmd=Mock(spec=Command))
         mock_client.message.assert_called_once_with('^7You must supply a map to change to.')
-        assert not b3.console.changeMap.called
+        assert not self.console.changeMap.called
 
         # correct data
         mock_client.reset_mock()
-        b3.console.reset_mock()
-        b3.console.changeMap = Mock(return_value='foo')
+        self.console.changeMap = Mock(return_value='foo')
         self.p.cmd_map(data='bar', client=mock_client, cmd=Mock(spec=Command))
-        b3.console.changeMap.assert_called_once_with('bar')
+        self.console.changeMap.assert_called_once_with('bar')
         assert not mock_client.message.called
 
         # incorrect data
         mock_client.reset_mock()
-        b3.console.reset_mock()
-        b3.console.changeMap = Mock(return_value=['foo1', 'foo2', 'foo3'])
+        self.console.changeMap = Mock(return_value=['foo1', 'foo2', 'foo3'])
         self.p.cmd_map(data='bar', client=mock_client, cmd=Mock(spec=Command))
-        b3.console.changeMap.assert_called_once_with('bar')
+        self.console.changeMap.assert_called_once_with('bar')
         assert mock_client.message.called
 
     def test_maprotate(self):
+        self.console.rotateMap = Mock()
         self.p.cmd_maprotate(None, None, Mock(spec=Command))
-        assert b3.console.rotateMap.called
+        assert self.console.rotateMap.called
 
     def test_b3(self):
+        self.console.say = Mock()
         self.p.config = Mock(name="config")
         self.p.config.getint = Mock(return_value=10)
 
@@ -171,7 +164,6 @@ class Test_misc_cmd(B3TestCase):
 
         mock_client.maxLevel = 20
         mock_client.reset_mock()
-        b3.console.reset_mock()
         self.p.cmd_b3(data='', client=mock_client, cmd=mock_command)
         assert mock_command.sayLoudOrPM.called
 
@@ -179,10 +171,9 @@ class Test_misc_cmd(B3TestCase):
                       'throw', 'furniture', 'indeed', 'flog', 'sexor', 'hate', 'smoke', 'maul', 'procreate',
                       'shoot'):
             mock_client.reset_mock()
-            b3.console.reset_mock()
             self.p.cmd_b3(data=param, client=mock_client, cmd=mock_command)
-            if not b3.console.say.called:
-                self.fail("b3.console.say was not called for %r" % param)
+            if not self.console.say.called:
+                self.fail("self.console.say was not called for %r" % param)
 
 
     def test_enable(self):
@@ -255,32 +246,34 @@ class Test_misc_cmd(B3TestCase):
         mock_client = Mock(spec=Client, name="client")
         mock_client.maxLevel = 0
         mock_command = Mock(spec=Command, name='cmd')
+        self.p.console.clients.sync = Mock()
 
         assert not self.p.console.clients.sync.called
         self.p.cmd_rebuild(data='', client=mock_client, cmd=mock_command)
         assert self.p.console.clients.sync.called
 
 
-class CommandTestCase(B3TestCase):
+class CommandTestCase(Admin_TestCase):
     def setUp(self):
-        B3TestCase.setUp(self)
-        self.conf = XmlConfigParser()
-        self.conf.setXml("""
-            <configuration plugin="admin">
-                <settings name="warn">
-                    <set name="warn_delay">5</set>
-                </settings>
-            </configuration>
-        """)
-        self.p = AdminPlugin(b3.console, self.conf)
+        Admin_TestCase.setUp(self)
         self.mock_client = Mock(spec=Client, name="client")
         self.mock_client.maxLevel = 0
         self.mock_client.exactName = "MockClient"
         self.mock_command = Mock(spec=Command, name='cmd')
 
+        self.p.getMessage = Mock(return_value='')
 
 
 class Test_cmd_iamgod(CommandTestCase):
+
+    def setUp(self):
+        CommandTestCase.setUp(self)
+        self._commands_patcher = patch.object(self.p, '_commands')
+        self._commands_patcher.start()
+
+    def tearDown(self):
+        CommandTestCase.tearDown(self)
+        self._commands_patcher.stop()
 
     def iamgod(self, data=''):
         return self.p.cmd_iamgod(data=data, client=self.mock_client, cmd=self.mock_command)
@@ -328,7 +321,6 @@ class Test_cmd_warn(CommandTestCase):
     def setUp(self):
         CommandTestCase.setUp(self)
         self.p.warnClient = Mock()
-        self.p.getMessage = Mock()
 
     def warn(self, data=''):
         return self.p.cmd_warn(data=data, client=self.mock_client, cmd=self.mock_command)
@@ -368,11 +360,11 @@ class Test_cmd_warn(CommandTestCase):
         self.mock_client.maxLevel = 20
         self.p.findClientPrompt = Mock(return_value=foo_player)
         self.warn('foo')
-        self.mock_client.message.assert_called_once_with('^7Only one warning per 5 seconds can be issued')
+        self.mock_client.message.assert_called_once_with('^7Only one warning per 15 seconds can be issued')
         assert not self.p.warnClient.called
 
     def test_nominal_no_keyword(self):
-        self.p.console.time = Mock(return_value=8)
+        self.p.console.time = Mock(return_value=16)
         foo_player = Mock(spec=Client, name="foo")
         foo_player.maxLevel = 0
         foo_player.var = Mock(return_value=ClientVar(None))
@@ -382,7 +374,7 @@ class Test_cmd_warn(CommandTestCase):
         self.p.warnClient.assert_called_once_with(foo_player, None, self.mock_client)
 
     def test_nominal_with_keyword(self):
-        self.p.console.time = Mock(return_value=8)
+        self.p.console.time = Mock(return_value=16)
         foo_player = Mock(spec=Client, name="foo")
         foo_player.maxLevel = 0
         foo_player.var = Mock(return_value=ClientVar(None))
@@ -397,7 +389,6 @@ class Test_cmd_kick(CommandTestCase):
 
     def setUp(self):
         CommandTestCase.setUp(self)
-        self.p.getMessage = Mock()
 
         def my_getint(section, option):
             if section == "settings" and option == "noreason_level":
@@ -488,7 +479,6 @@ class Test_cmd_spank(CommandTestCase):
 
     def setUp(self):
         CommandTestCase.setUp(self)
-        self.p.getMessage = Mock()
 
         def my_getint(section, option):
             if section == "settings" and option == "noreason_level":
@@ -580,7 +570,6 @@ class Test_cmd_permban(CommandTestCase):
 
     def setUp(self):
         CommandTestCase.setUp(self)
-        self.p.getMessage = Mock()
 
         def my_getint(section, option):
             if section == "settings" and option == "noreason_level":
@@ -671,7 +660,6 @@ class Test_cmd_tempban(CommandTestCase):
 
     def setUp(self):
         CommandTestCase.setUp(self)
-        self.p.getMessage = Mock()
 
         original_getint = self.p.config.getint
         def my_getint(section, option):

@@ -22,8 +22,8 @@ import b3
 class Test_getConfPath(B3TestCase):
 
     def test_getConfPath(self):
-        b3.console.config.fileName = "/some/where/conf/b3.xml"
+        self.console.config.fileName = "/some/where/conf/b3.xml"
         self.assertEqual('/some/where/conf', b3.getConfPath())
 
-        b3.console.config.fileName = "./b3.xml"
+        self.console.config.fileName = "./b3.xml"
         self.assertEqual('.', b3.getConfPath())

@@ -19,7 +19,7 @@
 from b3.clients import Client
 from b3.storage.database import DatabaseStorage
 from mock import Mock, patch, sentinel
-import unittest
+import unittest2 as unittest
 
 class Test_DatabaseStorage(unittest.TestCase):
 

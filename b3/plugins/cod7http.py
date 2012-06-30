@@ -67,13 +67,15 @@
 #   * Do not fail if http response is not gzipped
 # 27.04.2011 - 1.0.16 - 82ndab-Bravo17
 #   * Auto assign of unique local games_mp log file
+# 22/05/2012 - 1.0.17 - Courgette
+#   * local_game_log config option can now use the @conf and @b3 shortcuts
 #
 
 ## @file
 #  This plugin downloads and maintains CoD7 game log file
 
 __author__  = 'Freelander, Bravo17, Just a baka'
-__version__ = '1.0.16'
+__version__ = '1.0.17'
 
 import b3, threading
 from b3 import functions
@@ -124,7 +126,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             self.console.die()
 
         if self.console.config.has_option('server', 'local_game_log'):
-            self.locallog = self.console.config.get('server', 'local_game_log')
+            self.locallog = self.console.config.getpath('server', 'local_game_log')
         else:
             # setup ip addresses
             self._publicIp = self.console.config.get('server', 'public_ip')

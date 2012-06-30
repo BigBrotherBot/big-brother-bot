@@ -4,6 +4,9 @@
 		<!-- ignore bad words that have equal or less characters: -->
 		<set name="ignore_length">3</set>
 	</settings>
+    <!-- penalty types can be :
+        kick, warning, tempban, ban
+    -->
 	<badwords>
 		<penalty type="warning" reasonkeyword="cuss"/>
 		<!--

@@ -35,9 +35,14 @@
 # * now sent data is encoded as UTF-8
 # 2011/10/30 - 1.5 - xlr8or, 82ndab-Bravo17
 # * Add encoding to QSERVER and RCON snd methods
+# 2012/04/04 - 1.5.1 - courgette
+# * remove 2 confusing debug msg
+# 2012/06/17 - 1.6 - courgette
+# * rewrite method writelines so it does not lock until all lines have been sent. This allows other commands made by another
+#   thread to be sent in between commands sent via writelines (and B3 won't appear to be unresponsive)
 
 __author__ = 'ThorN'
-__version__ = '1.5'
+__version__ = '1.6'
 
 import socket
 import sys
@@ -102,9 +107,6 @@ class Rcon:
         try:
             if isinstance(data, str):
                 data=unicode(data, errors='ignore')
-                self.console.debug('Data was a string')
-            else:
-                self.console.debug('Data was a unicode')
             data=data.encode(self.console.encoding, 'replace')
         except Exception, msg:
             self.console.warning('%s: ERROR encoding data: %r', source, msg)
@@ -214,6 +216,52 @@ class Rcon:
         self.console.debug('RCON: Did not send any data')
         return ''
 
+    def sendRconNoRead(self, data, maxRetries=None, socketTimeout=None):
+        """sends a rcon command and does not care for the eventual result"""
+        if socketTimeout is None:
+            socketTimeout = self.socket_timeout
+        if maxRetries is None:
+            maxRetries = 2
+
+        data = data.strip()
+        # encode the data
+        if self.console.encoding:
+            data = self.encode_data(data, 'RCON')
+
+        self.console.verbose('RCON sending (%s:%s) %r', self.host[0], self.host[1], data)
+        startTime = time.time()
+
+        retries = 0
+        while time.time() - startTime < 5:
+            readables, writeables, errors = select.select([], [self.socket], [self.socket], socketTimeout)
+
+            if len(errors) > 0:
+                self.console.warning('RCON: %s', str(errors))
+            elif len(writeables) > 0:
+                try:
+                    writeables[0].send(self.rconsendstring % (self.password, data))
+                except Exception, msg:
+                    self.console.warning('RCON: ERROR sending: %r', msg)
+
+                if re.match(r'^quit|map(_rotate)?.*', data):
+                    # do not retry quits and map changes since they prevent the server from responding
+                    self.console.verbose2('RCON: no retry for %r', data)
+                    return ''
+
+            else:
+                self.console.verbose('RCON: no writeable socket')
+
+            time.sleep(0.05)
+
+            retries += 1
+
+            if retries >= maxRetries:
+                self.console.error('RCON: too much tries. Abording (%r)', data.strip())
+                break
+            self.console.verbose('RCON: retry sending %r (%s/%s)...', data.strip(), retries, maxRetries)
+
+        self.console.debug('RCON: Did not send any data')
+        return ''
 
     def stop(self):
         """Stop the rcon writelines queue"""
@@ -222,27 +270,12 @@ class Rcon:
     def _writelines(self):
         while not self._stopEvent.isSet():
             lines = self.queue.get(True)
-
-            self.lock.acquire()
-            try:
-                data = ''
-
-                i = 0
-                for cmd in lines:
-                    if i > 0:
-                        # pause and give time for last send to finish
-                        time.sleep(1)
-
-                    if not cmd:
-                        continue
-
-                    d = self.sendRcon(cmd)
-                    if d:
-                        data += d
-
-                    i += 1
-            finally:
-                self.lock.release()
+            for cmd in lines:
+                if not cmd:
+                    continue
+                with self.lock:
+                    self.sendRconNoRead(cmd, maxRetries=1)
+                    time.sleep(self.socket_timeout)
 
     def writelines(self, lines):
         self.queue.put(lines)

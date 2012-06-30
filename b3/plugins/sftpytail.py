@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
+# 22/05/2012 - 1.0.3 - Courgette
+#   * local_game_log config option can now use the @conf and @b3 shortcuts
 # 26/05/2011 - 1.0.2 - 82ndab-Bravo17
 #   *  Append to local log implemented
 # 27/04/2011 - 1.0.1 - 82ndab-Bravo17
@@ -30,7 +32,7 @@
 # * first attempt. Briefly tested. Seems to work
 
 
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 __author__ = 'Courgette'
  
 import b3, threading
@@ -70,7 +72,7 @@ class SftpytailPlugin(b3.plugin.Plugin):
             self._sftpdelay = self.console.config.getfloat('server', 'delay')
         
         if self.console.config.has_option('server', 'local_game_log'):
-            self.lgame_log = self.console.config.get('server', 'local_game_log')
+            self.lgame_log = self.console.config.getpath('server', 'local_game_log')
         else:
             # setup ip addresses
             self._publicIp = self.console.config.get('server', 'public_ip')

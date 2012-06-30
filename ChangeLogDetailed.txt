@@ -1,3 +1,101 @@
+2012-03-30  Courgette <courgette@bigbrotherbot.net>
+
+	*
+	py2exe_builder/assets_b3_lite_for_bf3/conf/plugin_poweradminbf3.xml
+	,
+	py2exe_builder/assets_b3_lite_for_bf3/extplugins/poweradminbf3.py,
+	py2exe_builder/assets_b3_lite_for_bf3/template_b3.xml,
+	py2exe_builder/b3-installer-project.iss,
+	py2exe_builder/b3_lite_for_bf3-installer-project.iss: prepare
+	release 1.8.1b2
+
+2012-03-30  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO, b3/conf/templates/b3.bf3.tpl,
+	b3/parsers/bf3.py, b3/parsers/frostbite2/abstractParser.py,
+	setup.py: BF3: adds new setting 'big_b3_private_responses' to b3.xml
+
+2012-03-29  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/bf3.py, b3/parsers/frostbite2/abstractParser.py,
+	tests/parsers/frostbite2/test_abstractParser.py: BF3: adds new event
+	EVT_GAMESERVER_CONNECT which is triggered when B3 connects to the
+	game server. This event means plugins can start interacting with the
+	game server. Fixes Courgette/big-brother-bot#66
+
+2012-03-29  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/bf3.py, b3/parsers/frostbite2/abstractParser.py: BF3:
+	adds new event EVT_GAMESERVER_CONNECT which is triggered when B3
+	connects to the game server. This event means plugins can start
+	interacting with the game server. Fixes Courgette/big-brother-bot#66
+
+2012-03-29  Courgette <courgette@bigbrotherbot.net>
+
+	* tests/__init__.py,
+	tests/parsers/frostbite2/test_abstractParser.py: TESTS: update tests
+	to profit from mock 0.8 features
+
+2012-03-29  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/bf3.py: BF3: add vars.roundLockdownCountdown (R20 BF3
+	server patch)
+
+2012-03-28  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/bf3.py, b3/parsers/frostbite2/abstractParser.py,
+	tests/__init__.py, tests/parsers/frostbite2/test_abstractParser.py: 
+	BF3: update parser for BF3 Server R20
+
+2012-03-28  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/bfbc2.py, b3/parsers/frostbite/abstractParser.py: 
+	BFBC2: minor fix when message_delay whas not a value parsable as a
+	integer
+
+2012-03-10  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/parsers/cod.py, b3/parsers/cod4.py: merge 846dce9 Update pbid
+	if missing from db entry on Cod4. Closes pull request
+	Courgette/big-brother-bot#65
+
+2012-03-11  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/conf/templates/b3.ro2.tpl: ro2 template updates
+
+2012-03-03  Mark Weirath <xlr8or@xlr8or.com>
+
+	* : Merge pull request #85 from dahool/master iourt41: add new events and fix minor issue
+
+2012-03-03  Mark Weirath <xlr8or@xlr8or.com>
+
+	* : Merge pull request #84 from dahool/master add missing weapon in kill dict
+
+2012-03-03  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/conf/xlrstats.xml, b3/extplugins/xlrstats.py: 
+	xlrstats: added silence mode and some minor rewrites
+
+2012-03-02  dahool <gabriel.sgt@gmail.com>
+
+	* b3/parsers/iourt41.py: add weapon code he
+
+2012-02-24  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/conf/templates/b3.ro2.tpl: added ro2 template
+
+2012-02-23  xlr8or <xlr8or@xlr8or.com>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO,
+	py2exe_builder/b3-installer-project.iss,
+	py2exe_builder/b3_lite_for_bf3-installer-project.iss, setup.py: 
+	versioning next version 1.8.1b
+
+2012-02-23  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit a0f9ede161738f46962838e6c42e07dbf9430962 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sun Feb 19 19:12:07 2012 +0100
+
 2012-02-19  Courgette <courgette@bigbrotherbot.net>
 
 	* py2exe_builder/assets_b3_lite_for_bf3/conf/plugin_makeroom.xml,
@@ -16,6 +114,50 @@
 	b3/PKG-INFO, py2exe_builder/b3-installer-project.iss,
 	py2exe_builder/b3_lite_for_bf3-installer-project.iss, setup.py,
 	versions.txt: versioning 1.8.0 - preparing for release
+
+2012-02-19  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 517bd90a78d5af2ea6f18d0d79a32de33382e39a Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sat Feb 11 18:43:06 2012 +0100
+
+2012-02-11  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/conf/plugin_status.xml, b3/plugins/status.py: improvements to
+	status.py for storing of svars and clients in DB
+
+2012-02-10  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: update
+
+2012-02-04  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: keep_time on/off and multitable support
+	for ctime.
+
+2012-02-04  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/PKG-INFO, b3/conf/templates/b3.bf3.tpl,
+	b3/conf/templates/b3.bfbc2.tpl, b3/conf/templates/b3.cod.tpl,
+	b3/conf/templates/b3.cod2.tpl, b3/conf/templates/b3.cod4.tpl,
+	b3/conf/templates/b3.cod5.tpl, b3/conf/templates/b3.cod6.tpl,
+	b3/conf/templates/b3.cod7.tpl, b3/conf/templates/b3.frontline.tpl,
+	b3/conf/templates/b3.homefront.tpl,
+	b3/conf/templates/b3.iourt41.tpl, b3/conf/templates/b3.moh.tpl: 
+	templates updated
+
+2012-01-31  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py, b3/setup.py,
+	b3/sql/b3-update-1.8.1.sql, b3/sql/b3.sql,
+	b3/sql/obsolete/xlrstats-update-2.0.0.sql,
+	b3/sql/obsolete/xlrstats-update-2.4.0.sql,
+	b3/sql/obsolete/xlrstats-update-2.6.1.sql,
+	b3/sql/obsolete/xlrstats.sql, b3/sql/recreate-xlrstats.sql,
+	b3/sql/xlrstats-update-2.0.0.sql, b3/sql/xlrstats-update-2.4.0.sql,
+	b3/sql/xlrstats-update-2.6.1.sql, b3/sql/xlrstats.sql: integration
+	of ctime plugin into xlrstats plugin as a subplugin.  integration of
+	xlrstats .sql code into main .sql so it becomes available in the
+	database by default.  first draft
 
 2012-02-19  Courgette <courgette@bigbrotherbot.net>
 
@@ -1328,6 +1470,12 @@
 	* b3/parsers/bf3.py: BF3 : first stone layed for BF3 parser Not functionnal. Blockers are :  - when using the admin.say command, game server does not ack with
 	 the usual OK response making B3 wait for a response that will never
 	 come
+
+2011-10-19  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/extplugins/xlrstats.py: xlrstats: moved polling for webfront
+	variables to a separate thread, to avoid startup delay when website
+	is offline
 
 2011-10-18  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
 

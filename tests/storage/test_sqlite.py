@@ -19,7 +19,6 @@
 from b3.storage.database import DatabaseStorage
 from tests import B3TestCase
 from tests.storage.common import StorageAPITest
-import b3
 import nose
 
 SQLITE_DB = ":memory:"
@@ -35,7 +34,7 @@ class Test_sqlite(B3TestCase, StorageAPITest):
     def setUp(self):
         """this method is called before each test"""
         B3TestCase.setUp(self)
-        self.storage = b3.console.storage = DatabaseStorage('sqlite://'+SQLITE_DB, b3.console)
+        self.storage = self.console.storage = DatabaseStorage('sqlite://'+SQLITE_DB, self.console)
         self.storage.executeSql("@b3/sql/sqlite/b3.sql")
 
     def tearDown(self):

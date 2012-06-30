@@ -25,9 +25,10 @@
 # 17/04/2011 - 1.3.3 - Courgette - make sanitizeMe unicode compliant
 # 06/06/2011 - 1.4.0 - Courgette - add meanstdv()
 # 07/06/2011 - 1.4.1 - Courgette - fix meanstdv()
+# 17/06/2012 - 1.5   - Courgette - add getStuffSoundingLike()
 
 __author__    = 'ThorN, xlr8or'
-__version__   = '1.4.1'
+__version__   = '1.5'
 
 import b3
 import re
@@ -221,7 +222,7 @@ def soundex(str):
                 str2 = str2 + x
         prev = x
     # pad with zeros
-    str2 = str2+"0000"
+    str2 += "0000"
     return str2[:4]
 
 
@@ -299,3 +300,34 @@ def executeSql(db, file):
     return 'success'
 #--------------------------------------------------------------------------------------------------
 
+
+def getStuffSoundingLike(stuff, expected_stuff):
+    """found matching stuff for the given expected_stuff list.
+    If no exact match is found, then return close candidates using by substring match.
+    If no subtring matches, then use soundex and then LevenshteinDistance algorithms
+    """
+    clean_stuff = stuff.strip().lower()
+    soundex1 = soundex(stuff)
+
+    match = []
+    # given stuff could be the exact match
+    if stuff in expected_stuff:
+        match = [stuff]
+    else:
+        # stuff could be a substring of one of the expected value
+        matching_subset = filter(lambda x: x.lower().find(clean_stuff) >= 0, expected_stuff)
+        if len(matching_subset) == 1:
+            match = [matching_subset[0]]
+        elif len(matching_subset) > 1:
+            match = matching_subset
+        else:
+            # no luck with subset lookup, fallback on soundex magic
+            for m in expected_stuff:
+                s = soundex(m)
+                if s == soundex1:
+                    match.append(m)
+
+    if not len(match):
+        match = expected_stuff
+        match.sort(key=lambda _map: levenshteinDistance(clean_stuff, _map.strip()))
+    return match

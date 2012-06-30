@@ -16,20 +16,53 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+# CHANGELOG
+# 1.0
+#  update parser for BF3 R20
+# 1.1
+#  add event EVT_GAMESERVER_CONNECT which is triggered every time B3 connects to the game server
+# 1.1.1
+#  fix and refactor admin.yell
+# 1.2
+#  introduce new setting 'big_b3_private_responses'
+# 1.3
+#  introduce new setting 'big_msg_duration'
+#  refactor the code that reads the config file
+# 1.4
+#  commands can now start with just the '/' character if the user wants to hide the command from other players instead
+#  of having to type '/!'
+# 1.4.1
+#  add a space between the bot name and the message in saybig()
+# 1.4.2
+#  fixes bug regarding round count on round change events
+# 1.4.3 - 1.4.5
+#  improves handling of commands prefixed only with '/' instead of usual command prefixes. Leading '/' is removed if
+#  followed by an existing command name or if followed by a command prefix.
+# 1.5
+#  parser can now create EVT_CLIENT_TEAM_SAY events (requires BF3 server R21)
+# 1.5.1
+#  fixes issue with BF3 failing to provide EA_GUID https://github.com/courgette/big-brother-bot/issues/69
+# 1.5.2
+#  fixes issue that made B3 fail to ban/tempban a client with empty guid
+# 1.6
+#  replace admin plugin !map command with a Frostbite2 specific implementation. Now can call !map <map>, <gamemode>
+#  refactor getMapsSoundingLike
+#  add getGamemodeSoundingLike
+#
+
 __author__  = 'Courgette'
-__version__ = '0.5'
+__version__ = '1.6'
 
 
-import sys, re, traceback, time, string, Queue, threading
+import sys, re, traceback, time, string, Queue, threading, new
 import b3.parser
 from b3.parsers.frostbite2.rcon import Rcon as FrostbiteRcon
 from b3.parsers.frostbite2.protocol import FrostbiteServer, CommandFailedError, CommandError, NetworkError
 from b3.parsers.frostbite2.util import PlayerInfoBlock, MapListBlock, BanlistContent
 import b3.events
 import b3.cvar
-from b3.functions import soundex, levenshteinDistance
+from b3.functions import getStuffSoundingLike
 
-SAY_LINE_MAX_LENGTH = 100
 
 # how long should the bot try to connect to the Frostbite server before giving out (in second)
 GAMESERVER_CONNECTION_WAIT_TIMEOUT = 600
@@ -40,6 +73,9 @@ class AbstractParser(b3.parser.Parser):
     """
 
     gameName = None
+
+    # hard limit for rcon command admin.say
+    SAY_LINE_MAX_LENGTH = 128
 
     OutputClass = FrostbiteRcon
     _serverConnection = None
@@ -57,22 +93,30 @@ class AbstractParser(b3.parser.Parser):
         'line_length': 128,
         'min_wrap_length': 128,
         'message_delay': .8,
+        'big_msg_duration': 4,
+        'big_b3_private_responses': False,
         }
 
     _gameServerVars = () # list available cvar
 
     _commands = {
-        'message': ('admin.say', '%(message)s', 'all', '%(cid)s'), # TODO : send private messages when available
+        'message': ('admin.say', '%(message)s', 'player', '%(cid)s'),
         'saySquad': ('admin.say', '%(message)s', 'squad', '%(teamId)s', '%(squadId)s'),
         'sayTeam': ('admin.say', '%(message)s', 'team', '%(teamId)s'),
         'say': ('admin.say', '%(message)s', 'all'),
+        'bigmessage': ('admin.yell', '%(message)s', '%(big_msg_duration)i', 'player', '%(cid)s'),
+        'yellSquad': ('admin.yell', '%(message)s', '%(big_msg_duration)i', 'squad', '%(teamId)s', '%(squadId)s'),
+        'yellTeam': ('admin.yell', '%(message)s', '%(big_msg_duration)i', 'team', '%(teamId)s'),
+        'yell': ('admin.yell', '%(message)s', '%(big_msg_duration)i'),
         'kick': ('admin.kickPlayer', '%(cid)s', '%(reason)s'),
         'ban': ('banList.add', 'guid', '%(guid)s', 'perm', '%(reason)s'),
+        'banByName': ('banList.add', 'name', '%(name)s', 'perm', '%(reason)s'),
         'banByIp': ('banList.add', 'ip', '%(ip)s', 'perm', '%(reason)s'),
         'unban': ('banList.remove', 'guid', '%(guid)s'),
         'unbanByIp': ('banList.remove', 'ip', '%(ip)s'),
         'tempban': ('banList.add', 'guid', '%(guid)s', 'seconds', '%(duration)d', '%(reason)s'),
-    }
+        'tempbanByName': ('banList.add', 'name', '%(name)s', 'seconds', '%(duration)d', '%(reason)s'),
+        }
 
     _eventMap = {
     }
@@ -137,6 +181,54 @@ class AbstractParser(b3.parser.Parser):
             else:
                 return self.getClientsByName(id)
         b3.clients.Clients.getByMagic = new_clients_getByMagic
+
+
+    def patch_b3_admin_plugin(self):
+        """
+        The cmd_map method of the loaded AdminPlugin instance to accept an optional 2nd parameter which is the game mode
+        """
+        def new_cmd_map(self, data, client, cmd=None):
+            """\
+            <map> [, gamemode] - switch current map. Optionnaly specify a gamemode by separating it from the map name with a comma
+            """
+            if not data:
+                client.message('You must supply a map to change to')
+                return
+
+            if ',' in data:
+                map_data, gamemode_data = [x.strip() for x in data.split(',')]
+            else:
+                map_data = data.strip()
+                gamemode_data = self.console.game.gameType
+
+            map_id = self.console.getMapIdByName(map_data)
+            if type(map_id) is list:
+                client.message('do you mean : %s ?' % ', '.join(map_id))
+                return
+
+            gamemode_id = self.console.getGamemodeSoundingLike(map_id, gamemode_data)
+            if type(gamemode_id) is list:
+                client.message('do you mean : %s ?' % ', '.join(gamemode_id))
+                return
+
+            try:
+                suggestions = self.console.changeMap(map_id, gamemode_id)
+            except CommandFailedError, err:
+                if err.message == ['InvalidGameModeOnMap']:
+                    client.message("The %s cannot be played with the current game mode. Retry the command giving the wanted game mode" % self.console.getEasyName(map_id))
+                    client.message("available gamemodes are : " + ', '.join([self.console.getGameMode(mode_id) for mode_id in self.console.getSupportedGameModesByMapId(map_id)]))
+                    return
+                else:
+                    raise
+            else:
+                if type(suggestions) == list:
+                    client.message('do you mean : %s ?' % ', '.join(map_id))
+                    return
+        adminPlugin = self.getPlugin('admin')
+        cmd = adminPlugin._commands['map']
+        cmd.func = new.instancemethod(new_cmd_map, adminPlugin)
+        cmd.help = new_cmd_map.__doc__.strip()
+
 
 
     def run(self):
@@ -242,6 +334,8 @@ class AbstractParser(b3.parser.Parser):
         # setup Rcon
         self.output.set_frostbite_server(self._serverConnection)
 
+        self.queueEvent(b3.events.Event(b3.events.EVT_GAMESERVER_CONNECT, None))
+
         self.checkVersion()
         self.say('%s ^2[ONLINE]' % b3.version)
         self.getServerInfo()
@@ -315,6 +409,7 @@ class AbstractParser(b3.parser.Parser):
     def startup(self):
        
         # add specific events
+        self.Events.createEvent('EVT_GAMESERVER_CONNECT', 'connected to game server')
         self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
         self.Events.createEvent('EVT_CLIENT_SPAWN', 'Client Spawn')
         self.Events.createEvent('EVT_GAME_ROUND_PLAYER_SCORES', 'round player scores')
@@ -327,41 +422,22 @@ class AbstractParser(b3.parser.Parser):
         self.Events.createEvent('EVT_PUNKBUSTER_UCON', 'PunkBuster UCON')
         self.Events.createEvent('EVT_PUNKBUSTER_SCREENSHOT_RECEIVED', 'PunkBuster Screenshot received')
 
-        # setting up ban agent
-        self.PunkBuster = None
-        self.ban_with_server = True
-        if self.config.has_option('server', 'ban_agent'):
-            ban_agent = self.config.get('server', 'ban_agent')
-            if ban_agent.lower() not in ('server', 'punkbuster', 'both'):
-                self.warning("unexpected value '%s' for ban_agent config option. Expecting one of 'server', 'punkbuster', 'both'." % ban_agent)
-            else:
-                if ban_agent.lower() == 'server':
-                    self.PunkBuster = None
-                    self.ban_with_server = True
-                    self.info("ban_agent is 'server' -> B3 will ban using the game server banlist")
-                elif ban_agent.lower() == 'punkbuster':
-                    from b3.parsers.frostbite2.punkbuster import PunkBuster
-                    self.PunkBuster = PunkBuster(console=self)
-                    self.ban_with_server = False
-                    self.info("ban_agent is 'punkbuster' -> B3 will ban using the punkbuster banlist")
-                elif ban_agent.lower() == 'both':
-                    from b3.parsers.frostbite2.punkbuster import PunkBuster
-                    self.PunkBuster = PunkBuster(console=self)
-                    self.ban_with_server = True
-                    self.info("ban_agent is 'both' -> B3 will ban using both the game server banlist and punkbuster")
-                else:
-                    self.error("unexpected value '%s' for ban_agent" % ban_agent)
-        self.info("ban agent 'server' : %s" % ('activated' if self.ban_with_server else 'deactivated'))
-        self.info("ban agent 'punkbuster' : %s" % ('activated' if self.PunkBuster else 'deactivated'))
-        
-        self.sayqueuelistener = threading.Thread(target=self.sayqueuelistener)
-        self.sayqueuelistener.setDaemon(True)
-        self.sayqueuelistener.start()
+        self.load_conf_max_say_line_length()
+        self.load_config_message_delay()
+        self.load_conf_ban_agent()
+        self.load_conf_big_b3_private_responses()
+        self.load_conf_big_msg_duration()
+
+        self.start_sayqueue_worker()
 
         # start crontab to trigger playerlist events
         self.cron + b3.cron.CronTab(self.clients.sync, minute='*/5')
-    
-    def sayqueuelistener(self):
+
+
+    def pluginsStarted(self):
+        self.patch_b3_admin_plugin()
+
+    def sayqueuelistener_worker(self):
         self.info("sayqueuelistener job started")
         while self.working:
             try:
@@ -374,6 +450,12 @@ class AbstractParser(b3.parser.Parser):
             except Exception, err:
                 self.error(err)
         self.info("sayqueuelistener job ended")
+
+    def start_sayqueue_worker(self):
+        self.sayqueuelistener = threading.Thread(target=self.sayqueuelistener_worker)
+        self.sayqueuelistener.setDaemon(True)
+        self.sayqueuelistener.start()
+
 
     def getCommand(self, cmd, **kwargs):
         """Return a reference to a loaded command"""
@@ -405,19 +487,22 @@ class AbstractParser(b3.parser.Parser):
             # Then we got a command
             if self.replay:
                 self.bot('Sent rcon message: %s' % msg)
-            elif self.output == None:
+            elif self.output is None:
                 pass
             else:
                 res = self.output.write(msg, maxRetries=maxRetries, needConfirmation=needConfirmation)
                 self.output.flush()
                 return res
             
-    def getWrap(self, text, length=SAY_LINE_MAX_LENGTH, minWrapLen=SAY_LINE_MAX_LENGTH):
+    def getWrap(self, text, length=None, minWrapLen=None):
         """Returns a sequence of lines for text that fits within the limits
         """
         if not text:
             return []
-    
+
+        if length is None:
+            length = self._settings['line_length']
+
         maxLength = int(length)
         
         if len(text) <= maxLength:
@@ -450,10 +535,10 @@ class AbstractParser(b3.parser.Parser):
     
     def OnPlayerChat(self, action, data):
         """
-        player.onChat <source soldier name: string> <text: string>
+        player.onChat <source soldier name: string> <text: string> <target players: player subset>
         
         Effect: Player with name <source soldier name> (or the server, or the 
-            server admin) has sent chat message <text> to some people
+            server admin) has sent chat message <text> to <target players>
         
         Comment: If <source soldier name> is "Server", then the message was sent 
             from the server rather than from an actual player
@@ -465,7 +550,27 @@ class AbstractParser(b3.parser.Parser):
         if client.cid == 'Server':
             # ignore chat events for Server
             return
-        return b3.events.Event(b3.events.EVT_CLIENT_SAY, data[1].lstrip('/'), client)
+        text = data[1]
+
+        # existing commands can be prefixed with a '/' instead of usual prefixes
+        cmdPrefix = '!'
+        cmd_prefixes = (cmdPrefix, '@', '&')
+        admin_plugin = self.getPlugin('admin')
+        if admin_plugin:
+            cmdPrefix = admin_plugin.cmdPrefix
+            cmd_prefixes = (cmdPrefix, admin_plugin.cmdPrefixLoud, admin_plugin.cmdPrefixBig)
+        cmd_name = text[1:].split(' ', 1)[0].lower()
+        if len(text) >= 2 and text[0] == '/':
+            if text[1] in cmd_prefixes:
+                text = text[1:]
+            elif cmd_name in admin_plugin._commands:
+                text = cmdPrefix + text[1:]
+
+        if data[2] in ('team', 'squad'):
+            event_type = b3.events.EVT_CLIENT_TEAM_SAY
+        else:
+            event_type = b3.events.EVT_CLIENT_SAY
+        return b3.events.Event(event_type, text, client)
         
 
     def OnPlayerLeave(self, action, data):
@@ -603,7 +708,9 @@ class AbstractParser(b3.parser.Parser):
             # hence we need to deduct one to compensate?
             # we'll still leave the call here since it provides us self.game.roundTime()
             # next function call will increase roundcount by one, this is not wanted
+            correct_rounds_value = self.game.rounds
             self.game.startRound()
+            self.game.rounds = correct_rounds_value
             self.queueEvent(b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game))
 
         
@@ -647,6 +754,7 @@ class AbstractParser(b3.parser.Parser):
         """
         #self.debug("PB> %s" % data)
         if data and data[0]:
+            match = funcName = None
             for regexp, funcName in self._punkbusterMessageFormats:
                 match = re.match(regexp, str(data[0]).strip())
                 if match:
@@ -740,8 +848,9 @@ class AbstractParser(b3.parser.Parser):
                 # a bug in the BF3 server can make admin.listPlayers response reply with players having an
                 # empty string as guid. What we can do here is to try to get the guid from the pbid in the
                 # B3 database.
+                self.debug("Frostbite2 bug : we have no guid for %s. Trying to find client in B3 storage by pbid" % name)
                 try:
-                    matching_clients = self.console.storage.getClientsMatching({'pbid': pbid})
+                    matching_clients = self.storage.getClientsMatching({'pbid': pbid})
                     if len(matching_clients) == 0:
                         self.debug("no client found by pbid")
                     elif len(matching_clients) > 1:
@@ -751,7 +860,10 @@ class AbstractParser(b3.parser.Parser):
                         client.auth()
                 except Exception, err:
                     self.warning("failed to try to auth %s by pbid. %r" % (name, err))
-            client.save()
+            if not client.guid:
+                self.error("Game server failed to provide a EA_guid for player %s. Cannot auth player." % name)
+            else:
+                client.save()
 
     def OnPBPlistItem(self, match, data):
         """we received one of the line containing details about one player"""
@@ -829,7 +941,10 @@ class AbstractParser(b3.parser.Parser):
         """\
         broadcast a message to all players in a way that will catch their attention.
         """
-        raise NotImplementedError
+        if msg and len(msg.strip())>0:
+            text = self.stripColors(self.msgPrefix + ' ' + msg)
+            for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
+                self.write(self.getCommand('yell', message=line, big_msg_duration=int(float(self._settings['big_msg_duration']))))
 
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -856,22 +971,23 @@ class AbstractParser(b3.parser.Parser):
 
     def message(self, client, text):
         try:
-            if client == None:
+            if client is None:
                 self.say(text)
-            elif client.cid == None:
+            elif client.cid is None:
                 pass
             else:
-                self.write(self.getCommand('message', message=text, cid=client.cid))
-        except:
-            pass
+                cmd_name = 'bigmessage' if self._settings['big_b3_private_responses'] else 'message'
+                self.write(self.getCommand(cmd_name, message=text, cid=client.cid, big_msg_duration=int(float(self._settings['big_msg_duration']))))
+        except Exception, err:
+            self.warning(err)
 
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
         """Permanent ban"""
         self.debug('BAN : client: %s, reason: %s', client, reason)
-        if isinstance(client, str):
+        if isinstance(client, basestring):
             traceback.print_stack() # TODO: remove this stack trace when we figured out when tempban is called with a str as client
-            self.write(self.getCommand('ban', guid=client, reason=reason[:80]))
+            self.write(self.getCommand('banByName', name=client, reason=reason[:80]))
             return
 
         if admin:
@@ -884,12 +1000,22 @@ class AbstractParser(b3.parser.Parser):
         if self.ban_with_server:
             if client.cid is None:
                 # ban by ip, this happens when we !permban @xx a player that is not connected
-                self.debug('EFFECTIVE BAN : %s',self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
+                self.debug('EFFECTIVE BAN : %s',self.getCommand('ban', guid=client.guid, reason=reason[:80]))
                 try:
-                    self.write(self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
+                    self.write(self.getCommand('ban', guid=client.guid, reason=reason[:80]))
                     self.write(('banList.save',))
                     if admin:
-                        admin.message('banned: %s (@%s). His last ip (%s) has been added to banlist'%(client.exactName, client.id, client.ip))
+                        admin.message('banned: %s (@%s) has been added to banlist' % (client.exactName, client.id))
+                except CommandFailedError, err:
+                    self.error(err)
+            elif not client.guid:
+                # ban by name
+                self.debug('EFFECTIVE BAN : %s',self.getCommand('banByName', name=client.name, reason=reason[:80]))
+                try:
+                    self.write(self.getCommand('banByName', name=client.name, reason=reason[:80]))
+                    self.write(('banList.save',))
+                    if admin:
+                        admin.message('banned: %s (@%s) has been added to banlist' % (client.exactName, client.id))
                 except CommandFailedError, err:
                     self.error(err)
             else:
@@ -899,7 +1025,7 @@ class AbstractParser(b3.parser.Parser):
                     self.write(self.getCommand('ban', guid=client.guid, reason=reason[:80]))
                     self.write(('banList.save',))
                     if admin:
-                        admin.message('banned: %s (@%s) has been added to banlist'%(client.exactName, client.id))
+                        admin.message('banned: %s (@%s) has been added to banlist' % (client.exactName, client.id))
                 except CommandFailedError, err:
                     self.error(err)
 
@@ -943,7 +1069,7 @@ class AbstractParser(b3.parser.Parser):
             #self.verbose(response)
             self.verbose('UNBAN: Removed guid (%s) from banlist' %client.guid)
             if admin:
-                admin.message('Unbanned: Removed %s guid from banlist' % (client.exactName))
+                admin.message('Unbanned: Removed %s guid from banlist' % client.exactName)
         except CommandFailedError, err:
             if "NotInList" in err.message:
                 pass
@@ -957,9 +1083,9 @@ class AbstractParser(b3.parser.Parser):
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
         duration = b3.functions.time2minutes(duration)
 
-        if isinstance(client, str):
+        if isinstance(client, basestring):
             traceback.print_stack() # TODO: remove this stack trace when we figured out when tempban is called with a str as client
-            self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
+            self.write(self.getCommand('tempbanByName', name=client, duration=duration*60, reason=reason[:80]))
             return
         
         if admin:
@@ -981,14 +1107,34 @@ class AbstractParser(b3.parser.Parser):
                 self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
 
         if self.ban_with_server:
-            try:
-                self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
-                self.write(('banList.save',))
-            except CommandFailedError, err:
-                if admin:
-                    admin.message("server replied with error %s" % err.message[0])
-                else:
-                    self.error(err)
+            if client.cid is None:
+                # ban by ip, this happens when we !tempban @xx a player that is not connected
+                try:
+                    self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
+                    self.write(('banList.save',))
+                except CommandFailedError, err:
+                    if admin:
+                        admin.message("server replied with error %s" % err.message[0])
+                    else:
+                        self.error(err)
+            elif not client.guid:
+                try:
+                    self.write(self.getCommand('tempbanByName', name=client.name, duration=duration*60, reason=reason[:80]))
+                    self.write(('banList.save',))
+                except CommandFailedError, err:
+                    if admin:
+                        admin.message("server replied with error %s" % err.message[0])
+                    else:
+                        self.error(err)
+            else:
+                try:
+                    self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
+                    self.write(('banList.save',))
+                except CommandFailedError, err:
+                    if admin:
+                        admin.message("server replied with error %s" % err.message[0])
+                    else:
+                        self.error(err)
 
         if not silent and fullreason != '':
             self.say(fullreason)
@@ -1039,7 +1185,7 @@ class AbstractParser(b3.parser.Parser):
         self.queueEvent(b3.events.Event(b3.events.EVT_GAME_ROUND_END, data=None))
 
 
-    def changeMap(self, map):
+    def changeMap(self, map_name, gamemode_id=None):
         """\
         load a given map/level
         return a list of suggested map names in cases it fails to recognize the map that was provided
@@ -1058,47 +1204,41 @@ class AbstractParser(b3.parser.Parser):
         2) if we got a level name
             if the level is not in the current rotation list, then add it to 
             the map list and load it
-        """        
-        supportedMaps = self.getSupportedMapIds()
-        if map not in supportedMaps:
-            match = self.getMapsSoundingLike(map)
-            if len(match) == 1:
-                map = match[0]
-            else:
-                return match
-            
-        if map in supportedMaps:
-            mapList = self.getFullMapRotationList()
+        """
+        map_id = self.getMapIdByName(map_name)
+        mapList = self.getFullMapRotationList()
+        target_gamemode_id = gamemode_id if gamemode_id else self.game.gameType
 
-            # we want to find the next index to set for mapList
-            nextMapListIndex = None
+        # we want to find the next index to set for mapList
+        nextMapListIndex = None
 
-            # simple case : mapList is empty. Then just add our map at index 0 and load it
-            if not len(mapList):
-                nextMapListIndex = 0
-                self.write(('mapList.add', map, self.game.gameType, 2, nextMapListIndex))
-            else:
-                # the wanted map could already be in the rotation list (for the current gamemode)
-                maps_for_current_gamemode = mapList.getByNameAndGamemode(map, self.game.gameType)
+        # simple case : mapList is empty. Then just add our map at index 0 and load it
+        if not len(mapList):
+            nextMapListIndex = 0
+            self.write(('mapList.add', map_id, target_gamemode_id, 2, nextMapListIndex))
+        else:
+            # the wanted map could already be in the rotation list (if gamemode specified)
+            if gamemode_id is not None:
+                maps_for_current_gamemode = mapList.getByNameAndGamemode(map_id, gamemode_id)
                 if len(maps_for_current_gamemode):
                     nextMapListIndex = maps_for_current_gamemode.keys()[0]
 
-                # or it could be in map rotation list for another gamemode
-                if nextMapListIndex is None:
-                    filtered_mapList = mapList.getByName(map)
-                    if len(filtered_mapList):
-                        nextMapListIndex = filtered_mapList.keys()[0]
+            # or it could be in map rotation list for another gamemode
+            if nextMapListIndex is None:
+                filtered_mapList = mapList.getByName(map_id)
+                if len(filtered_mapList):
+                    nextMapListIndex = filtered_mapList.keys()[0]
 
-                # or map is not found in mapList and we need to insert it after the index of the current map
-                current_index = self.write(('mapList.getMapIndices',))[0]
-                nextMapListIndex = int(current_index) + 1
-                self.write(('mapList.add', map, self.game.gameType, 2, nextMapListIndex))
+            # or map is not found in mapList and we need to insert it after the index of the current map
+            current_index = self.write(('mapList.getMapIndices',))[0]
+            nextMapListIndex = int(current_index) + 1
+            self.write(('mapList.add', map_id, target_gamemode_id, 2, nextMapListIndex))
 
-            # now we have a nextMapListIndex correctly set to the wanted map
-            self.write(('mapList.setNextMapIndex', nextMapListIndex))
-            self.say('Changing map to %s (%s)' % (self.getEasyName(map), self.getGameMode(self.game.gameType)))
-            time.sleep(1)
-            self.write(('mapList.runNextRound',))
+        # now we have a nextMapListIndex correctly set to the wanted map
+        self.write(('mapList.setNextMapIndex', nextMapListIndex))
+        self.say('Changing map to %s (%s)' % (self.getEasyName(map_id), self.getGameMode(target_gamemode_id)))
+        time.sleep(1)
+        self.write(('mapList.runNextRound',))
 
         
     def getPlayerPings(self):
@@ -1133,6 +1273,28 @@ class AbstractParser(b3.parser.Parser):
     #    Other methods
     #    
     ###############################################################################################
+
+    def getMapIdByName(self, map_name):
+        """accepts partial name and tries its best to get the one map id. If confusion, return
+        suggestions as a list"""
+        supportedMaps = self.getSupportedMapIds()
+        if map_name not in supportedMaps:
+            return self.getMapsSoundingLike(map_name)
+        else:
+            return map_name
+
+
+    def yell(self, client, text):
+        """yell text to a given client"""
+        try:
+            if client is None:
+                self.saybig(text)
+            elif client.cid is None:
+                pass
+            else:
+                self.write(self.getCommand('bigmessage', message=text, cid=client.cid, big_msg_duration=int(float(self._settings['big_msg_duration']))))
+        except Exception, err:
+            self.warning(err)
 
     def getFullMapRotationList(self):
         """query the Frostbite2 game server and return a MapListBlock containing all maps of the current
@@ -1171,8 +1333,12 @@ class AbstractParser(b3.parser.Parser):
         raise NotImplementedError('getEasyName must be implemented in concrete classes')
 
     def getGameMode(self, gamemode):
-        """ Get game mode in real name """
+        """ Get gamemode name by id"""
         raise NotImplementedError('getGameMode must be implemented in concrete classes')
+
+    def getGameModeId(self, gamemode_name):
+        """ Get gamemode id by name """
+        raise NotImplementedError('getGameModeId must be implemented in concrete classes')
 
     def getCvar(self, cvarName):
         """Read a server var"""
@@ -1232,7 +1398,7 @@ class AbstractParser(b3.parser.Parser):
     def getNextMap(self):
         """Return the name of the next map and gamemode"""
         maps = self.getFullMapRotationList()
-        if len(maps) == 0:
+        if not len(maps):
             next_map_name = self.game.mapName
             next_map_gamemode = self.game.gameType
         else:
@@ -1243,69 +1409,164 @@ class AbstractParser(b3.parser.Parser):
         return '%s (%s)' % (self.getEasyName(next_map_name), self.getGameMode(next_map_gamemode))
 
     def getSupportedMapIds(self):
-        """return a list of supported levels for the current game mod"""
+        """return a list of supported levels"""
         # TODO : test this once the command work in BF3
         # TODO : to test this latter, remove getSupportedMapIds from bf3.py
         return self.write(('mapList.availableMaps',))
 
+    def getSupportedGameModesByMapId(self, map_id):
+        """return a list of supported game modes for the given map id"""
+        raise NotImplementedError('getServerInfo must be implemented in concrete classes')
+
     def getMapsSoundingLike(self, mapname):
         """found matching level names for the given mapname (which can either
         be a level name or map name)
-        If no exact match is found, then return close candidates using soundex
-        and then LevenshteinDistance algorithms
+        If no exact match is found, then return close candidates
         """
         supportedMaps = self.getSupportedMapIds()
+        clean_map_name = mapname.strip().lower()
+
         supportedEasyNames = {}
         for m in supportedMaps:
             supportedEasyNames[self.getEasyName(m).lower()] = m
-            
-        clean_map_name = mapname.strip().lower()
-        soundex1 = soundex(mapname)
-        #self.debug('soundex %s : %s' % (data, soundex1))
 
-        match = []
-        # given mapname could be the exact map id
-        if clean_map_name in supportedMaps:
-            match = [clean_map_name]
+        if clean_map_name in supportedEasyNames:
+            return self.getHardName(clean_map_name)
+
+        matches = getStuffSoundingLike(mapname, supportedEasyNames.keys())
+        if len(matches) == 1:
+            # one match, get the map id
+            return supportedEasyNames[matches[0]]
         else:
-            # or we assume it is not a map id but a map name
-            if clean_map_name in supportedEasyNames:
-                # we are lucky to have an exact match
-                match = [supportedEasyNames[clean_map_name]]
+            # multiple matches, provide human friendly suggestions
+            return matches[:3]
+
+
+    def getGamemodeSoundingLike(self,  map_id, gamemode_name):
+        """found the gamemode id for the given gamemode name (which can either
+        be a gamemode id or name)
+        If no exact match is found, then return close candidates gamemode names
+        """
+        supported_gamemode_ids = self.getSupportedGameModesByMapId(map_id)
+        clean_gamemode_name = gamemode_name.strip().lower()
+
+        # try to find exact matches
+        for _id in supported_gamemode_ids:
+            if clean_gamemode_name == _id.lower():
+                return _id
+            elif clean_gamemode_name == self.getGameMode(_id).lower():
+                return _id
+
+        supported_gamemode_names = map(self.getGameMode, supported_gamemode_ids)
+
+        shortnames = {
+            'cq': 'conquest',
+            'cq64': 'conquest64',
+            'tdm': 'team deathmatch',
+            'sqdm': 'squad deathmatch',
+        }
+        clean_gamemode_name = shortnames.get(clean_gamemode_name, clean_gamemode_name)
+
+        matches = getStuffSoundingLike(clean_gamemode_name, supported_gamemode_names)
+        if len(matches) == 1:
+            # one match, get the gamemode id
+            return self.getGameModeId(matches[0])
+        else:
+            # multiple matches, provide human friendly suggestions
+            return matches[:3]
+
+
+    def load_conf_ban_agent(self):
+        """setting up ban agent"""
+        self.PunkBuster = None
+        self.ban_with_server = True
+        if self.config.has_option('server', 'ban_agent'):
+            ban_agent = self.config.get('server', 'ban_agent')
+            if ban_agent is None or ban_agent.lower() not in ('server', 'punkbuster', 'both'):
+                self.warning("unexpected value '%s' for ban_agent config option. Expecting one of 'server', 'punkbuster', 'both'." % ban_agent)
             else:
-                # compute a list of map id for which we can find clean_map_name in their map name
-                maps_matching_subset = [(map_id, map_name) for map_name, map_id in supportedEasyNames.items() if map_name.lower().find(clean_map_name) >= 0]
-                if len(maps_matching_subset) == 1:
-                    match = [maps_matching_subset[0][0]]
-                elif len(maps_matching_subset) > 1:
-                    match = [map_name for map_id, map_name in maps_matching_subset]
+                if ban_agent.lower() == 'server':
+                    self.PunkBuster = None
+                    self.ban_with_server = True
+                    self.info("ban_agent is 'server' -> B3 will ban using the game server banlist")
+                elif ban_agent.lower() == 'punkbuster':
+                    from b3.parsers.frostbite2.punkbuster import PunkBuster
+                    self.PunkBuster = PunkBuster(console=self)
+                    self.ban_with_server = False
+                    self.info("ban_agent is 'punkbuster' -> B3 will ban using the punkbuster banlist")
+                elif ban_agent.lower() == 'both':
+                    from b3.parsers.frostbite2.punkbuster import PunkBuster
+                    self.PunkBuster = PunkBuster(console=self)
+                    self.ban_with_server = True
+                    self.info("ban_agent is 'both' -> B3 will ban using both the game server banlist and punkbuster")
                 else:
-                    # no luck with subset lookup, fallback on soundex magic
-                    for m in supportedEasyNames:
-                        s = soundex(m)
-                        #self.debug('soundex %s : %s' % (m, s))
-                        if s == soundex1:
-                            #self.debug('probable map : %s', m)
-                            match.append(supportedEasyNames[m])
+                    self.error("unexpected value '%s' for ban_agent" % ban_agent)
+        self.info("ban agent 'server' : %s" % ('activated' if self.ban_with_server else 'deactivated'))
+        self.info("ban agent 'punkbuster' : %s" % ('activated' if self.PunkBuster else 'deactivated'))
 
 
-        if not len(match):
-            # suggest closest spellings
-            shortmaplist = []
-            for m in supportedEasyNames:
-                if m.find(clean_map_name) != -1:
-                    shortmaplist.append(m)
-            if len(shortmaplist) > 0:
-                shortmaplist.sort(key=lambda _map: levenshteinDistance(clean_map_name, string.replace(_map.strip())))
-                self.debug("shortmaplist sorted by distance : %s" % shortmaplist)
-                match = shortmaplist[:3]
-            else:
-                easyNames = supportedEasyNames.keys()
-                easyNames.sort(key=lambda _map: levenshteinDistance(clean_map_name, _map.strip()))
-                self.debug("maplist sorted by distance : %s" % easyNames)
-                match = easyNames[:3]
-        return match
+    def load_conf_big_b3_private_responses(self):
+        """load setting big_b3_private_responses from config"""
+        default_value = False
+        if self.config.has_option(self.gameName, 'big_b3_private_responses'):
+            try:
+                self._settings['big_b3_private_responses'] = self.config.getboolean(self.gameName, 'big_b3_private_responses')
+                self.info("value for setting %s.big_b3_private_responses is " % self.gameName + (
+                    'ON' if self._settings['big_b3_private_responses'] else 'OFF'))
+            except ValueError, err:
+                self._settings['big_b3_private_responses'] = default_value
+                self.warning("Invalid value. %s. Using default value '%s'" % (err, default_value))
+        else:
+            self._settings['big_b3_private_responses'] = default_value
 
+
+    def load_conf_big_msg_duration(self):
+        """load setting big_msg_duration from config"""
+        default_value = 4
+        if self.config.has_option(self.gameName, 'big_msg_duration'):
+            try:
+                self._settings['big_msg_duration'] = self.config.getint(self.gameName, 'big_msg_duration')
+                self.info("value for setting %s.big_msg_duration is %s" % (self.gameName, self._settings['big_msg_duration']))
+            except ValueError, err:
+                self._settings['big_msg_duration'] = default_value
+                self.warning("Invalid value. %s. Using default value '%s'" % (err, default_value))
+        else:
+            self._settings['big_msg_duration'] = default_value
+
+
+    def load_config_message_delay(self):
+        if self.config.has_option(self.gameName, 'message_delay'):
+            try:
+                delay_sec = self.config.getfloat(self.gameName, 'message_delay')
+                if delay_sec > 3:
+                    self.warning('message_delay cannot be greater than 3')
+                    delay_sec = 3
+                if delay_sec < .5:
+                    self.warning('message_delay cannot be less than 0.5 second.')
+                    delay_sec = .5
+                self._settings['message_delay'] = delay_sec
+            except Exception, err:
+                self.error(
+                    'failed to read message_delay setting "%s" : %s' % (self.config.get(self.gameName, 'message_delay'), err))
+        self.debug('message_delay: %s' % self._settings['message_delay'])
+
+
+    def load_conf_max_say_line_length(self):
+        if self.config.has_option(self.gameName, 'max_say_line_length'):
+            try:
+                maxlength = self.config.getint(self.gameName, 'max_say_line_length')
+                if maxlength > self.SAY_LINE_MAX_LENGTH:
+                    self.warning('max_say_line_length cannot be greater than %s' % self.SAY_LINE_MAX_LENGTH)
+                    maxlength = self.SAY_LINE_MAX_LENGTH
+                if maxlength < 20:
+                    self.warning('max_say_line_length is way too short. using minimum value 20')
+                    maxlength = 20
+                self._settings['line_length'] = maxlength
+                self._settings['min_wrap_length'] = maxlength
+            except Exception, err:
+                self.error('failed to read max_say_line_length setting "%s" : %s' % (
+                    self.config.get(self.gameName, 'max_say_line_length'), err))
+        self.debug('line_length: %s' % self._settings['line_length'])
 
 
 #############################################################
@@ -1329,7 +1590,7 @@ def frostbiteClientMessageQueueWorker(self):
         msg = self.messagequeue.get()
         if msg:
             self.console.message(self, msg)
-            time.sleep(int(self.console._settings['message_delay']))
+            time.sleep(float(self.console._settings['message_delay']))
 b3.clients.Client.messagequeueworker = frostbiteClientMessageQueueWorker
 
 ## override the Client.message() method at runtime
@@ -1350,3 +1611,13 @@ def frostbiteClientMessageMethod(self, msg):
         else:
             self.console.verbose('messagehandler for %s isAlive' %self.name)
 b3.clients.Client.message = frostbiteClientMessageMethod
+
+
+## override the Client.yell() method at runtime
+def frostbiteClientYellMethod(self, msg):
+    if msg and len(msg.strip())>0:
+        text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
+        for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
+            self.console.write(self.console.getCommand('bigmessage', message=line, cid=self.cid, big_msg_duration=int(float(self.console._settings['big_msg_duration']))))
+b3.clients.Client.yell = frostbiteClientYellMethod
+

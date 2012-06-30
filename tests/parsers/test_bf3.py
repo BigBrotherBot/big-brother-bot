@@ -16,11 +16,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-from copy import copy
-import unittest
-from mock import Mock
-from b3.parsers import bf3
-from b3.parsers.bf3 import Bf3Parser
+import re
+import unittest2 as unittest
+from mock import Mock, DEFAULT, patch
+from b3.clients import Client
+from b3.parsers.bf3 import Bf3Parser, MAP_NAME_BY_ID, GAME_MODES_BY_MAP_ID, GAME_MODES_NAMES
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.util import MapListBlock
 from tests import B3TestCase
@@ -38,101 +38,9 @@ class BF3TestCase(B3TestCase):
         # Now parser inheritance hierarchy is :
         # BF3Parser -> AbstractParser -> FakeConsole -> Parser
 
-
-class Test_bf3_config_max_say_line_length(unittest.TestCase):
-
-    MAX_SAY_LINE_LENGTH__DEFAULT = bf3.SAY_LINE_MAX_LENGTH
-    MAX_SAY_LINE_LENGTH__MIN = 20
-    MAX_SAY_LINE_LENGTH__MAX = bf3.SAY_LINE_MAX_LENGTH
-
-    def setUp(self):
-        self.parser = Mock(spec=Bf3Parser)
-        self.parser._settings = copy(Bf3Parser._settings)
-
-    def _assert(self, conf_data=None, expected=None):
-        self.parser.config = XmlConfigParser()
-        self.parser.config.loadFromString("""
-            <configuration>
-                <settings name="bf3">%s</settings>
-            </configuration>
-            """ % (('<set name="max_say_line_length">%s</set>' % conf_data) if conf_data is not None else ''))
-        Bf3Parser.load_conf_max_say_line_length(self.parser)
-        if expected:
-            self.assertEqual(expected, self.parser._settings['line_length'])
-
-
-    def test_max_say_line_length__None(self):
-        self._assert(conf_data=None, expected=self.MAX_SAY_LINE_LENGTH__DEFAULT)
-
-    def test_max_say_line_length__empty(self):
-        self._assert(conf_data='', expected=self.MAX_SAY_LINE_LENGTH__DEFAULT)
-
-    def test_max_say_line_length__nan(self):
-        self._assert(conf_data='foo', expected=self.MAX_SAY_LINE_LENGTH__DEFAULT)
-
-    def test_max_say_line_length__too_low(self):
-        self._assert(conf_data=self.MAX_SAY_LINE_LENGTH__MIN - 1, expected=self.MAX_SAY_LINE_LENGTH__MIN)
-
-    def test_max_say_line_length__lowest(self):
-        self._assert(conf_data=self.MAX_SAY_LINE_LENGTH__MIN, expected=self.MAX_SAY_LINE_LENGTH__MIN)
-
-    def test_max_say_line_length__25(self):
-        self._assert(conf_data='25', expected=25)
-
-    def test_max_say_line_length__highest(self):
-        self._assert(conf_data=self.MAX_SAY_LINE_LENGTH__MAX, expected=self.MAX_SAY_LINE_LENGTH__MAX)
-
-    def test_max_say_line_length__too_high(self):
-        self._assert(conf_data=self.MAX_SAY_LINE_LENGTH__MAX+1, expected=self.MAX_SAY_LINE_LENGTH__MAX)
-
-
-class Test_bf3_config_message_delay(unittest.TestCase):
-    MESSAGE_DELAY__DEFAULT = .8
-    MESSAGE_DELAY__MIN = .5
-    MESSAGE_DELAY__MAX = 3
-
-    def setUp(self):
-        self.parser = Mock(spec=Bf3Parser)
-        self.parser._settings = copy(Bf3Parser._settings)
-
-    def _test_message_delay(self, conf_data=None, expected=None):
-        self.parser.config = XmlConfigParser()
-        self.parser.config.loadFromString("""
-            <configuration>
-                <settings name="bf3">%s</settings>
-            </configuration>
-            """ % (('<set name="message_delay">%s</set>' % conf_data) if conf_data is not None else ''))
-        Bf3Parser.load_config_message_delay(self.parser)
-        if expected:
-            self.assertEqual(expected, self.parser._settings['message_delay'])
-
-
-    def test_message_delay__None(self):
-        self._test_message_delay(conf_data=None, expected=self.MESSAGE_DELAY__DEFAULT)
-
-    def test_message_delay__empty(self):
-        self._test_message_delay(conf_data='', expected=self.MESSAGE_DELAY__DEFAULT)
-
-    def test_message_delay__nan(self):
-        self._test_message_delay(conf_data='foo', expected=self.MESSAGE_DELAY__DEFAULT)
-
-    def test_message_delay__too_low(self):
-        self._test_message_delay(conf_data=self.MESSAGE_DELAY__MIN-.1, expected=self.MESSAGE_DELAY__MIN)
-
-    def test_message_delay__minimum(self):
-        self._test_message_delay(conf_data=self.MESSAGE_DELAY__MIN, expected=self.MESSAGE_DELAY__MIN)
-
-    def test_message_delay__2(self):
-        self._test_message_delay(conf_data='2', expected=2)
-
-    def test_message_delay__maximum(self):
-        self._test_message_delay(conf_data=self.MESSAGE_DELAY__MAX, expected=self.MESSAGE_DELAY__MAX)
-
-    def test_message_delay__too_high(self):
-        self._test_message_delay(conf_data=self.MESSAGE_DELAY__MAX+1, expected=self.MESSAGE_DELAY__MAX)
-
-
-
+    def tearDown(self):
+        if hasattr(self, "parser"):
+            self.parser.working = False
 
 
 
@@ -490,6 +398,9 @@ class Test_bf3_events(BF3TestCase):
             """)
         self.parser = Bf3Parser(self.conf)
         self.parser.startup()
+        # mock parser queueEvent method so we can make assertions on it later on
+        self.parser.queueEvent = Mock(name="queueEvent method")
+        self.joe = Mock(name="Joe", spec=Client)
 
     def test_cmd_rotateMap_generates_EVT_GAME_ROUND_END(self):
         # prepare fake BF3 server responses
@@ -501,15 +412,46 @@ class Test_bf3_events(BF3TestCase):
         self.parser.write = Mock(side_effect=fake_write)
         self.parser.getFullMapRotationList = Mock(return_value=MapListBlock(['4', '3', 'MP_007', 'RushLarge0', '4', 'MP_011', 'RushLarge0', '4', 'MP_012',
                                                                              'SquadRush0', '4', 'MP_013', 'SquadRush0', '4']))
-
-        # mock parser queueEvent method so we can make assertions on it later on
-        self.parser.queueEvent = Mock(name="queueEvent method")
-
         self.parser.rotateMap()
         self.assertEqual(1, self.parser.queueEvent.call_count)
         self.assertEqual(self.parser.getEventID("EVT_GAME_ROUND_END"), self.parser.queueEvent.call_args[0][0].type)
         self.assertIsNone(self.parser.queueEvent.call_args[0][0].data)
 
+
+    def test_player_onChat_event_all(self):
+        self.parser.getClient = Mock(return_value=self.joe)
+
+        self.parser.routeFrostbitePacket(['player.onChat', 'Cucurbitaceae', 'test all', 'all'])
+        self.assertEqual(1, self.parser.queueEvent.call_count)
+
+        event = self.parser.queueEvent.call_args[0][0]
+        self.assertEqual("Say", self.parser.getEventName(event.type))
+        self.assertEquals('test all', event.data)
+        self.assertEqual(self.joe, event.client)
+
+
+    def test_player_onChat_event_team(self):
+        self.parser.getClient = Mock(return_value=self.joe)
+
+        self.parser.routeFrostbitePacket(['player.onChat', 'Cucurbitaceae', 'test team', 'team', '1'])
+        self.assertEqual(1, self.parser.queueEvent.call_count)
+
+        event = self.parser.queueEvent.call_args[0][0]
+        self.assertEqual("Team Say", self.parser.getEventName(event.type))
+        self.assertEquals('test team', event.data)
+        self.assertEqual(self.joe, event.client)
+
+
+    def test_player_onChat_event_squad(self):
+        self.parser.getClient = Mock(return_value=self.joe)
+
+        self.parser.routeFrostbitePacket(['player.onChat', 'Cucurbitaceae', 'test squad', 'squad', '1', '1'])
+        self.assertEqual(1, self.parser.queueEvent.call_count)
+
+        event = self.parser.queueEvent.call_args[0][0]
+        self.assertEqual("Team Say", self.parser.getEventName(event.type))
+        self.assertEquals('test squad', event.data)
+        self.assertEqual(self.joe, event.client)
 
 
 class Test_punkbuster_events(BF3TestCase):
@@ -573,3 +515,168 @@ class Test_punkbuster_events(BF3TestCase):
         self.assert_pb_misc_evt("PunkBuster Server: Matched: Cucurbitaceae (slot #1)")
         self.assert_pb_misc_evt("PunkBuster Server: Received Master Security Information")
         self.assert_pb_misc_evt("PunkBuster Server: Auto Screenshot 000714 Requested from 25 Goldbat")
+
+
+class Test_bf3_sends_no_guid(BF3TestCase):
+    """
+    See bug https://github.com/courgette/big-brother-bot/issues/69
+    """
+    def setUp(self):
+        BF3TestCase.setUp(self)
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("<configuration/>")
+        self.parser = Bf3Parser(self.conf)
+        self.parser.startup()
+
+        self.authorizeClients_patcher = patch.object(self.parser.clients, "authorizeClients")
+        self.authorizeClients_patcher.start()
+
+        self.write_patcher = patch.object(self.parser, "write")
+        self.write_mock = self.write_patcher.start()
+
+        self.event_raw_data = 'PunkBuster Server: 14 300000aaaaaabbbbbbccccc111223300(-) 11.122.103.24:3659 OK   1 3.0 0 (W) "Snoopy"'
+        self.regex_for_OnPBPlistItem = [x for (x, y) in self.parser._punkbusterMessageFormats if y == 'OnPBPlistItem'][0]
+
+
+    def tearDown(self):
+        BF3TestCase.tearDown(self)
+        self.authorizeClients_patcher.stop()
+        self.write_mock = self.write_patcher.stop()
+
+
+    def test_auth_client_without_guid_but_with_known_pbid(self):
+        # GIVEN
+
+        # known superadmin named Snoopy
+        superadmin = Client(console=self.parser, name='Snoopy', guid='EA_AAAAAAAABBBBBBBBBBBBBB00000000000012222', pbid='300000aaaaaabbbbbbccccc111223300', group_bits=128, connections=21)
+        superadmin.save()
+
+        # bf3 server failing to provide guid
+        def write(data):
+            if data == ('admin.listPlayers', 'player', 'Snoopy'):
+                return ['7', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', '1', 'Snoopy', '', '2', '8', '0', '0', '0']
+            else:
+                return DEFAULT
+        self.write_mock.side_effect = write
+
+        # WHEN
+        self.assertFalse('Snoopy' in self.parser.clients)
+        self.parser.OnPBPlayerGuid(match=re.match(self.regex_for_OnPBPlistItem, self.event_raw_data), data=self.event_raw_data)
+
+        # THEN
+        # B3 should have authed Snoopy
+        self.assertTrue('Snoopy' in self.parser.clients)
+        snoopy = self.parser.clients['Snoopy']
+        self.assertTrue(snoopy.authed)
+        for attb in ('name', 'pbid', 'guid', 'groupBits'):
+            self.assertEqual(getattr(superadmin, attb), getattr(snoopy, attb))
+
+
+
+    def test_does_not_auth_client_without_guid_and_unknown_pbid(self):
+        # GIVEN
+        # bf3 server failing to provide guid
+        def write(data):
+            if data == ('admin.listPlayers', 'player', 'Snoopy'):
+                return ['7', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', '1', 'Snoopy', '', '2', '8', '0', '0', '0']
+            else:
+                return DEFAULT
+        self.write_mock.side_effect = write
+
+        # WHEN
+        self.assertFalse('Snoopy' in self.parser.clients)
+        self.parser.OnPBPlayerGuid(match=re.match(self.regex_for_OnPBPlistItem, self.event_raw_data), data=self.event_raw_data)
+
+        # THEN
+        # B3 should have authed Snoopy
+        self.assertTrue('Snoopy' in self.parser.clients)
+        snoopy = self.parser.clients['Snoopy']
+        self.assertFalse(snoopy.authed)
+
+
+
+class Test_bf3_maps(BF3TestCase):
+
+    def setUp(self):
+        BF3TestCase.setUp(self)
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.parser = Bf3Parser(self.conf)
+
+
+    def test_each_map_has_at_least_one_gamemode(self):
+        for map_id in MAP_NAME_BY_ID:
+            self.assertIn(map_id, GAME_MODES_BY_MAP_ID)
+            self.assertGreater(len(GAME_MODES_BY_MAP_ID[map_id]), 0)
+
+
+    def test_each_gamemode_is_valid(self):
+        game_modes_found = set()
+        map(game_modes_found.update, GAME_MODES_BY_MAP_ID.values())
+        self.assertSetEqual(set(GAME_MODES_NAMES.keys()), game_modes_found)
+        for game_mode in game_modes_found:
+            self.assertIn(game_mode, GAME_MODES_NAMES)
+
+
+    def test_getEasyName(self):
+        self.assertEqual('Grand Bazaar', self.parser.getEasyName('MP_001'))
+        self.assertEqual('Tehran Highway', self.parser.getEasyName('MP_003'))
+        self.assertEqual('Caspian Border', self.parser.getEasyName('MP_007'))
+        self.assertEqual('Seine Crossing', self.parser.getEasyName('MP_011'))
+        self.assertEqual('Operation Firestorm', self.parser.getEasyName('MP_012'))
+        self.assertEqual('Damavand Peak', self.parser.getEasyName('MP_013'))
+        self.assertEqual('Noshahar Canals', self.parser.getEasyName('MP_017'))
+        self.assertEqual('Kharg Island', self.parser.getEasyName('MP_018'))
+        self.assertEqual('Operation Metro', self.parser.getEasyName('MP_Subway'))
+        self.assertEqual('Strike At Karkand', self.parser.getEasyName('XP1_001'))
+        self.assertEqual('Gulf of Oman', self.parser.getEasyName('XP1_002'))
+        self.assertEqual('Sharqi Peninsula', self.parser.getEasyName('XP1_003'))
+        self.assertEqual('Wake Island', self.parser.getEasyName('XP1_004'))
+        self.assertEqual('Scrapmetal', self.parser.getEasyName('XP2_Factory'))
+        self.assertEqual('Operation 925', self.parser.getEasyName('XP2_Office'))
+        self.assertEqual('Donya Fortress', self.parser.getEasyName('XP2_Palace'))
+        self.assertEqual('Ziba Tower', self.parser.getEasyName('XP2_Skybar'))
+        self.assertEqual('f00', self.parser.getEasyName('f00'))
+
+
+    def test_getHardName(self):
+        self.assertEqual('MP_001', self.parser.getHardName('Grand Bazaar'))
+        self.assertEqual('MP_003', self.parser.getHardName('Tehran Highway'))
+        self.assertEqual('MP_007', self.parser.getHardName('Caspian Border'))
+        self.assertEqual('MP_011', self.parser.getHardName('Seine Crossing'))
+        self.assertEqual('MP_012', self.parser.getHardName('Operation Firestorm'))
+        self.assertEqual('MP_013', self.parser.getHardName('Damavand Peak'))
+        self.assertEqual('MP_017', self.parser.getHardName('Noshahar Canals'))
+        self.assertEqual('MP_018', self.parser.getHardName('Kharg Island'))
+        self.assertEqual('MP_Subway', self.parser.getHardName('Operation Metro'))
+        self.assertEqual('XP1_001', self.parser.getHardName('Strike At Karkand'))
+        self.assertEqual('XP1_002', self.parser.getHardName('Gulf of Oman'))
+        self.assertEqual('XP1_003', self.parser.getHardName('Sharqi Peninsula'))
+        self.assertEqual('XP1_004', self.parser.getHardName('Wake Island'))
+        self.assertEqual('XP2_Factory', self.parser.getHardName('Scrapmetal'))
+        self.assertEqual('XP2_Office', self.parser.getHardName('Operation 925'))
+        self.assertEqual('XP2_Palace', self.parser.getHardName('Donya Fortress'))
+        self.assertEqual('XP2_Skybar', self.parser.getHardName('Ziba Tower'))
+        self.assertEqual('f00', self.parser.getHardName('f00'))
+
+
+    def test_getMapsSoundingLike(self):
+        self.assertEqual(['caspian border', 'damavand peak', 'grand bazaar'], self.parser.getMapsSoundingLike(''), '')
+        self.assertEqual('MP_Subway', self.parser.getMapsSoundingLike('Operation Metro'), 'Operation Metro')
+        self.assertEqual('MP_001', self.parser.getMapsSoundingLike('grand'))
+        self.assertEqual(['operation metro', 'operation 925', 'operation firestorm'], self.parser.getMapsSoundingLike('operation'))
+
+
+    def test_getGamemodeSoundingLike(self):
+        self.assertEqual('ConquestSmall0', self.parser.getGamemodeSoundingLike('MP_011', 'ConquestSmall0'), 'ConquestSmall0')
+        self.assertEqual('ConquestSmall0', self.parser.getGamemodeSoundingLike('MP_011', 'Conquest'), 'Conquest')
+        self.assertListEqual(['Squad Deathmatch', 'Team Deathmatch'], self.parser.getGamemodeSoundingLike('MP_011', 'Deathmatch'), 'Deathmatch')
+        self.assertListEqual(['Rush', 'Conquest', 'Conquest64'], self.parser.getGamemodeSoundingLike('MP_011', 'foo'))
+        self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'tdm'), 'tdm')
+        self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'tdm'), 'teamdeathmatch')
+        self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'tdm'), 'team death match')
+        self.assertEqual('ConquestLarge0', self.parser.getGamemodeSoundingLike('MP_011', 'CQ64'), 'CQ64')
+

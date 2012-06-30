@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
+# 22/05/2012 - 1.5.8 - Courgette
+#   * local_game_log config option can now use the @conf and @b3 shortcuts
 # 11/05/2011 - 1.5.7 - 82ndab-Bravo17
 #   *  Append to local log implemented
 # 27/04/2011 - 1.5.6 - 82ndab-Bravo17
@@ -59,7 +61,7 @@
 # 17/06/2009 - 1.0 - Bakes
 #     Initial Plugin, basic functionality.
  
-__version__ = '1.5.7'
+__version__ = '1.5.8'
 __author__ = 'Bakes, Courgette'
  
 import b3, threading
@@ -103,7 +105,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
             self._gamelog_read_delay = self.console.config.getfloat('server', 'delay')
         
         if self.console.config.has_option('server', 'local_game_log'):
-            self.lgame_log = self.console.config.get('server', 'local_game_log')
+            self.lgame_log = self.console.config.getpath('server', 'local_game_log')
         else:
             # setup ip addresses
             self._publicIp = self.console.config.get('server', 'public_ip')

@@ -23,14 +23,14 @@ import nose
 import unittest2 as unittest
 
 """
-    NOTE: to work properly you must be running a MySQL database on localhost
+    NOTE: to work properly you must be running a PostgreSQL database on localhost
     which must have a user named 'b3test' with password 'test' which has 
     all privileges over a table (already created or not) named 'b3_test'
 """
-MYSQL_DB = 'mysql://b3test:test@localhost/b3_test'
-MYSQL_HOST = 'localhost'
-MYSQL_USER = 'b3test'
-MYSQL_PASSWORD = 'test'
+POSTGRESQL_DB = 'postgresql://b3test:test@localhost/b3_test'
+POSTGRESQL_HOST = 'localhost'
+POSTGRESQL_USER = 'b3test'
+POSTGRESQL_PASSWORD = 'test'
 
 #===============================================================================
 # 
@@ -38,23 +38,23 @@ MYSQL_PASSWORD = 'test'
 #
 #===============================================================================
 
-is_mysql_ready = True
-no_mysql_reason = ''
+is_postgresql_ready = True
+no_postgresql_reason = ''
 
 try:
-    import MySQLdb
+    import psycopg2
 except ImportError:
-    is_mysql_ready = False
-    no_mysql_reason = "no MySQLdb module available"
+    is_postgresql_ready = False
+    no_postgresql_reason = "no psycopg2 module available"
 
 try:
-    MySQLdb.connect(host=MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASSWORD)
-except MySQLdb.Error, err:
-    is_mysql_ready = False
-    no_mysql_reason = "%s" % err[1]
+    psycopg2.connect(host=POSTGRESQL_HOST, user=POSTGRESQL_USER, password=POSTGRESQL_PASSWORD, database='postgres')
+except psycopg2.Error, err:
+    is_postgresql_ready = False
+    no_postgresql_reason = "%r" % err
 except Exception, err:
-    is_mysql_ready = False
-    no_mysql_reason = "%s" % err
+    is_postgresql_ready = False
+    no_postgresql_reason = "%r" % err
 
 
 #===============================================================================
@@ -62,20 +62,23 @@ except Exception, err:
 # Load the tests
 # 
 #===============================================================================
-@unittest.skipIf(not is_mysql_ready, no_mysql_reason)
-class Test_MySQL(B3TestCase, StorageAPITest):
+@unittest.skip('work in progress')
+@unittest.skipIf(not is_postgresql_ready, no_postgresql_reason)
+class Test_PostgreSQL(B3TestCase, StorageAPITest):
 
     def setUp(self):
         """this method is called before each test"""
         B3TestCase.setUp(self)
         try:
-            db = MySQLdb.connect(host='localhost', user='b3test', passwd='test')
-        except MySQLdb.OperationalError, message:
+            conn = psycopg2.connect(host='localhost', user='b3test', password='test', database='postgres')
+        except psycopg2.OperationalError, message:
             self.fail("Error %d:\n%s" % (message[0], message[1]))
-        db.query("DROP DATABASE IF EXISTS b3_test")
-        db.query("CREATE DATABASE b3_test CHARACTER SET utf8;")
-        self.storage = self.console.storage = DatabaseStorage(MYSQL_DB, self.console)
-        self.storage.executeSql("@b3/sql/b3.sql")
+        conn.set_isolation_level(0)
+        cursor = conn.cursor()
+        cursor.execute("DROP DATABASE IF EXISTS b3_test;")
+        cursor.execute("CREATE DATABASE b3_test WITH OWNER = b3test ENCODING = 'UTF8';")
+        self.storage = self.console.storage = DatabaseStorage(POSTGRESQL_DB, self.console)
+        self.storage.executeSql("@b3/sql/postgresql/b3.sql")
 
     def tearDown(self):
         """this method is called after each test"""

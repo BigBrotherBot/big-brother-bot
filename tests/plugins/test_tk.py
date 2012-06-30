@@ -18,9 +18,8 @@
 #
 import os
 from mock import Mock, patch, sentinel
-import unittest
+import unittest2 as unittest
 
-import b3
 from b3.plugins.tk import TkPlugin, TkInfo
 from b3.config import XmlConfigParser
 
@@ -34,9 +33,9 @@ class Test_Tk_plugin(B3TestCase):
 
     def setUp(self):
         super(Test_Tk_plugin, self).setUp()
-        b3.console.gameName = 'f00'
+        self.console.gameName = 'f00'
         self.conf = XmlConfigParser()
-        self.p = TkPlugin(b3.console, self.conf)
+        self.p = TkPlugin(self.console, self.conf)
 
 
     def test_onLoadConfig_minimal(self, timer_patcher):
@@ -55,7 +54,7 @@ class Test_Tk_plugin(B3TestCase):
             </settings>
         </configuration>
         """)
-        self.p = TkPlugin(b3.console, self.conf)
+        self.p = TkPlugin(self.console, self.conf)
         self.p.onLoadConfig()
         self.assertEqual(400, self.p._maxPoints)
         self.assertEqual(0, self.p._maxLevel)
@@ -91,7 +90,7 @@ class Test_Tk_plugin(B3TestCase):
             </settings>
         </configuration>
         """)
-        self.p = TkPlugin(b3.console, self.conf)
+        self.p = TkPlugin(self.console, self.conf)
         self.p.onLoadConfig()
         self.assertEqual(350, self.p._maxPoints)
         self.assertEqual(2, self.p._maxLevel)
@@ -108,10 +107,10 @@ class Test_Tk_default_config(B3TestCase):
 
     def setUp(self):
         super(Test_Tk_default_config, self).setUp()
-        b3.console.gameName = 'f00'
+        self.console.gameName = 'f00'
         self.conf = XmlConfigParser()
         self.conf.load(default_plugin_file)
-        self.p = TkPlugin(b3.console, self.conf)
+        self.p = TkPlugin(self.console, self.conf)
         self.p.onLoadConfig()
 
 
