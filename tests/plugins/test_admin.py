@@ -765,6 +765,35 @@ class Test_cmd_tempban(CommandTestCase):
         foo_player.tempban.assert_called_once_with('aReason', 'theKeyword', 3*60, self.mock_client)
 
 
+class Test_cmd_mask(CommandTestCase):
+
+    def setUp(self):
+        CommandTestCase.setUp(self)
+        self.player = Client(console=self.console, name="joe", _maxLevel=0)
+        self.player.message = Mock()
+        self.assertEqual(0, self.player.maskedLevel)
+        self.assertIsNone(self.player.maskedGroup)
+
+    def mask(self, data=''):
+        return self.p.cmd_mask(data=data, client=self.player, cmd=self.mock_command)
+
+    def test_no_parameter(self):
+        self.mask()
+        self.player.message.assert_called_once_with('^7Invalid parameters')
+        self.assertEqual(0, self.player.maskedLevel)
+        self.assertIsNone(self.player.maskedGroup)
+
+    def test_invalid_group(self):
+        self.mask('foo')
+        self.player.message.assert_called_once_with('^7Group foo does not exist')
+        self.assertEqual(0, self.player.maskedLevel)
+        self.assertIsNone(self.player.maskedGroup)
+
+    def test_valid_group(self):
+        self.mask('senioradmin')
+        self.player.message.assert_called_once_with('^7Masked as Senior Admin')
+        self.assertEqual(80, self.player.maskedLevel)
+        self.assertIsNotNone(self.player.maskedGroup)
 
 if __name__ == '__main__':
     unittest.main()

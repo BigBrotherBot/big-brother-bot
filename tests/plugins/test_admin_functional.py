@@ -18,6 +18,7 @@
 #
 
 from mock import Mock
+import sys
 import unittest2 as unittest
 
 import os
@@ -122,5 +123,33 @@ class Cmd_help(Admin_functional_test):
         self.joe.message.assert_called_with('^7Available commands: ban, banall, baninfo, permban, tempban, unban')
 
 
-if __name__ == '__main__':
-    unittest.main()
+class Cmd_mask(Admin_functional_test):
+    def test_nominal(self):
+        self.joe.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
+        self.joe.connects(0)
+        # only superadmin joe is connected
+        self.joe.says('!admins')
+        self.joe.message.assert_called_with('^7Admins online: Joe^7^7 [^3100^7]')
+        # introducing mike (senioradmin)
+        self.mike.connects(1)
+        self.joe.says('!putgroup mike senioradmin')
+        # we know have 2 admins connected
+        self.joe.says('!admins')
+        self.joe.message.assert_called_with('^7Admins online: Joe^7^7 [^3100^7], Mike^7^7 [^380^7]')
+        # joe masks himself as a user
+        self.joe.says('!mask user')
+        self.joe.says('!admins')
+        self.joe.message.assert_called_with('^7Admins online: Mike^7^7 [^380^7]')
+        # joe unmasks himself
+        self.joe.says('!unmask')
+        self.joe.says('!admins')
+        self.joe.message.assert_called_with('^7Admins online: Joe^7^7 [^3100^7], Mike^7^7 [^380^7]')
+        # joe masks mike as a user
+        self.joe.says('!mask user mike')
+        self.joe.says('!admins')
+        self.joe.message.assert_called_with('^7Admins online: Joe^7^7 [^3100^7]')
+        # joe unmasks mike
+        self.joe.says('!unmask mike')
+        self.joe.says('!admins')
+        self.joe.message.assert_called_with('^7Admins online: Joe^7^7 [^3100^7], Mike^7^7 [^380^7]')
+

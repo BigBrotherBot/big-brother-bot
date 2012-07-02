@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2012/07/02 - 1.12.2 - Courgette
+#   * fix bug un cmd_mask when no player name was given
 #   2012/06/17 - 1.12.1 - Courgette
 #   * syntax
 #   2012/04/15 - 1.12 - Courgette
@@ -98,7 +100,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.12.1'
+__version__ = '1.12.2'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import re, time, threading, sys, traceback, thread, random
@@ -590,7 +592,7 @@ class AdminPlugin(b3.plugin.Plugin):
         if not m:
             client.message('^7Invalid parameters')
             return False
-        elif m[1] == '':
+        elif m[1] is None:
             groupName = m[0]
             sclient = client
         else:
