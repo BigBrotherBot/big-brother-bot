@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    2012/07/03 - 3.0.1 - Courgette
+#       Gives meaningful log messages when loading the config file
 #    2011/12/26 - 3.0 - Courgette
 #       Refactor and make the checks on raw text before checks on cleaned text. Add tests
 #    2/12/2011 - 2.2.2 - Bravo17
@@ -33,12 +35,13 @@
 #       Added data column to penalties table
 #       Put censored message/name in the warning data
 
-__author__  = 'ThorN'
-__version__ = '3.0'
+__author__  = 'ThorN, xlr8or, Bravo17, Courgette'
+__version__ = '3.0.1'
 
 import b3, re, traceback, sys, threading
 import b3.events
 import b3.plugin
+from b3.config import XmlConfigParser
 from b3 import functions
 
 class PenaltyData:
@@ -51,6 +54,13 @@ class PenaltyData:
     keyword = None
     duration = 0
 
+    def __repr__(self):
+        return """Penalty(type=%r, reason=%r, keyword=%r, duration=%r)""" % (self.type, self.reason, self.keyword, self.duration)
+
+    def __str__(self):
+        data = {"type": self.type, "reason": self.reason, "reasonkeyword": self.keyword, "duration": self.duration}
+        return "<penalty " + ' '.join(['%s="%s"' % (k, v) for k, v in data.items() if v]) + " />"
+
 class CensorData:
     def __init__(self, **kwargs):
         for k, v in kwargs.iteritems():
@@ -60,12 +70,15 @@ class CensorData:
     penalty = None
     regexp = None
 
+    def __repr__(self):
+        return """CensorData(name=%r, penalty=%r, regexp=%r)""" % (self.name, self.penalty, self.regexp)
+
 #--------------------------------------------------------------------------------------------------
 class CensorPlugin(b3.plugin.Plugin):
     _adminPlugin = None
     _reClean = re.compile(r'[^0-9a-z ]+', re.I)
-    _defaultBadWordPenalty = None
-    _defaultBadNamePenalty = None
+    _defaultBadWordPenalty = PenaltyData(type="warning", keyword="cuss")
+    _defaultBadNamePenalty = PenaltyData(type="warning", keyword="badname")
     _maxLevel = 0
     _ignoreLength = 3
 
@@ -81,28 +94,39 @@ class CensorPlugin(b3.plugin.Plugin):
 
 
     def onLoadConfig(self):
+        assert isinstance(self.config, XmlConfigParser)
         try:
             self._maxLevel = self.config.getint('settings', 'max_level')
-        except:
+        except Exception, err:
             self._maxLevel = 0
+            self.warning(err)
+            self.warning("using default value %s for settings:max_level" % self._maxLevel)
         try:
             self._ignoreLength = self.config.getint('settings', 'ignore_length')
-        except:
+        except Exception, err:
             self._ignoreLength = 3
+            self.warning(err)
+            self.warning("using default value %s for settings:ignore_length" % self._ignoreLength)
 
-        penalty = self.config.get('badwords/penalty')[0]
+        default_badwords_penalty_nodes = self.config.get('badwords/penalty')
+        if len(default_badwords_penalty_nodes):
+            penalty = default_badwords_penalty_nodes[0]
+            self._defaultBadWordPenalty = PenaltyData(type = penalty.get('type'),
+                                reason = penalty.get('reason'),
+                                keyword = penalty.get('reasonkeyword'),
+                                duration = functions.time2minutes(penalty.get('duration')))
+        else:
+            self.warning("""no default badwords penalty found in config. Using default : %s""" % self._defaultBadNamePenalty)
 
-        self._defaultBadWordPenalty = PenaltyData(type = penalty.get('type'),
+        default_badnames_penalty_nodes = self.config.get('badnames/penalty')
+        if len(default_badnames_penalty_nodes):
+            penalty = default_badnames_penalty_nodes[0]
+            self._defaultBadNamePenalty = PenaltyData(type = penalty.get('type'),
                             reason = penalty.get('reason'),
                             keyword = penalty.get('reasonkeyword'),
                             duration = functions.time2minutes(penalty.get('duration')))
-
-        penalty = self.config.get('badnames/penalty')[0]
-
-        self._defaultBadNamePenalty = PenaltyData(type = penalty.get('type'),
-                            reason = penalty.get('reason'),
-                            keyword = penalty.get('reasonkeyword'),
-                            duration = functions.time2minutes(penalty.get('duration')))
+        else:
+            self.warning("""no default badnames penalty found in config. Using default : %s""" % self._defaultBadNamePenalty)
 
         # load bad words into memory
         self._badWords = []
