@@ -138,7 +138,7 @@ class Test_Censor_badword(Detection_TestCase):
         #self.p.info = my_info
 
         self.p._badNames = []
-        self.assert_name_is_not_penalized('Joe')
+        self.assert_chat_is_not_penalized('Joe')
 
         self.p._badNames = []
         self.p._add_bad_word(rulename='ass', word='ass')
@@ -155,7 +155,7 @@ class Test_Censor_badword(Detection_TestCase):
         #self.p.info = my_info
 
         self.p._badWords = []
-        self.assert_name_is_not_penalized('Joe')
+        self.assert_chat_is_not_penalized('Joe')
 
         self.p._badWords = []
         self.p._add_bad_word(rulename='ass', regexp=r'\b[a@][s$]{2}\b')
@@ -164,6 +164,20 @@ class Test_Censor_badword(Detection_TestCase):
         self.assert_chat_is_penalized('in your a$s! noob')
         self.assert_chat_is_penalized('kI$$ my a$s n00b')
         self.assert_chat_is_penalized('right in the ass')
+
+        self.p._badWords = []
+        self.p._add_bad_word(rulename='ass', regexp=r'f[u\*]+ck')
+        self.assert_chat_is_penalized('fuck')
+        self.assert_chat_is_penalized(' fuck ')
+        self.assert_chat_is_penalized(' fuck !')
+        self.assert_chat_is_penalized('fuck!')
+        self.assert_chat_is_penalized('fuck#*!')
+        self.assert_chat_is_penalized('you fat fuck')
+        self.assert_chat_is_penalized('f*ck u')
+        self.assert_chat_is_penalized('f*****ck')
+        self.assert_chat_is_penalized('f*uu**ck')
+
+
 
 
 class Test_Censor_badname(Detection_TestCase):
@@ -266,6 +280,8 @@ class Test_Censor_badword_default_config(Detection_TestCase):
         self.assert_chat_is_penalized('sh1t')
         self.assert_chat_is_penalized('$h1t')
         self.assert_chat_is_penalized('$hit')
+        self.assert_chat_is_penalized('$hiiiiit')
+        self.assert_chat_is_penalized('$hiiii*t')
         self.assert_chat_is_penalized('$h!t')
         self.assert_chat_is_penalized('xc $h!t. x ')
 
@@ -292,6 +308,7 @@ class Test_Censor_badword_default_config(Detection_TestCase):
         self.assert_chat_is_penalized('focking')
         self.assert_chat_is_penalized('f*cking')
         self.assert_chat_is_penalized('f0cking')
+        self.assert_chat_is_penalized('fu0ouuuck')
 
     def test_fuc(self):
         self.assert_chat_is_penalized('fuc')
@@ -316,6 +333,10 @@ class Test_Censor_badword_default_config(Detection_TestCase):
 
     def test_dick(self):
         self.assert_chat_is_penalized('dick')
+        self.assert_chat_is_not_penalized('dickhead')
+        self.assert_chat_is_penalized('d1ck')
+        self.assert_chat_is_penalized('d!ck')
+        self.assert_chat_is_penalized('d*ck')
         self.assert_chat_is_penalized('x dick x')
 
     def test_bitch(self):
@@ -620,6 +641,8 @@ class Test_Censor_badname_default_config(Detection_TestCase):
         self.assert_name_is_penalized('fUck')
         self.assert_name_is_penalized('f*ck')
         self.assert_name_is_penalized('f.ck')
+        self.assert_name_is_penalized('f.uck')
+        self.assert_name_is_penalized('fuuuuck')
         self.assert_name_is_penalized('fuckkkkk')
         self.assert_name_is_penalized('watdafuck?')
 

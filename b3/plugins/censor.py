@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    2012/07/03 - 3.1 - Courgette
+#       Fixes a bug wich prevented regular expression "\sd[i!1*]ck\s" to match for word "d!ck"
 #    2012/07/03 - 3.0.1 - Courgette
 #       Gives meaningful log messages when loading the config file
 #    2011/12/26 - 3.0 - Courgette
@@ -36,7 +38,7 @@
 #       Put censored message/name in the warning data
 
 __author__  = 'ThorN, xlr8or, Bravo17, Courgette'
-__version__ = '3.0.1'
+__version__ = '3.1'
 
 import b3, re, traceback, sys, threading
 import b3.events
@@ -271,6 +273,7 @@ class CensorPlugin(b3.plugin.Plugin):
 
     def checkBadWord(self, text, client):
         cleaned = ' ' + self.clean(text) + ' '
+        text = ' ' + text + ' '
         self.debug("cleaned text: [%s]" % cleaned)
         for w in self._badWords:
             if w.regexp.search(text):
