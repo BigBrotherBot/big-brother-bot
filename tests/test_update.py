@@ -139,7 +139,7 @@ class TestCheckUpdateUrl(unittest.TestCase):
         # make sure to restore update url between tests
         update.URL_B3_LATEST_VERSION = self.__class__.original_url
         ms = ((time.time() - self._time_start)*1000)
-        self.assertTrue(ms < 4000, "Test exceeded timeout")
+        self.assertTrue(ms < 4100, "Test exceeded timeout : %s ms" % ms)
 
     def test_official_url(self):
         result = update.checkUpdate('1.2', singleLine=False, showErrormsg=True)
