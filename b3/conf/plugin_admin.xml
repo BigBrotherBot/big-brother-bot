@@ -134,7 +134,7 @@
 		<set name="pm_global">0</set>
 		<!-- alert_kick_num : if a player reach this number of active warnings he will be notified by with message then tempbanned -->
 		<set name="alert_kick_num">3</set>
-		<!-- alert_kick_num : if a player reach this number of active warnings he will be tempbanned right away -->
+		<!-- instant_kick_num : if a player reach this number of active warnings he will be tempbanned right away -->
 		<set name="instant_kick_num">5</set>
 		<!-- tempban_num : when the number of warnings goes over this limit, the player is tempban for tempban_duration -->
 		<set name="tempban_num">6</set>
