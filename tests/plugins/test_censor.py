@@ -36,7 +36,7 @@ class CensorTestCase(B3TestCase):
         self.timer_patcher = patch('threading.Timer')
         self.timer_patcher.start()
 
-        super(CensorTestCase, self).setUp()
+        B3TestCase.setUp(self)
         self.conf = XmlConfigParser()
         self.conf.setXml(r"""
             <configuration plugin="censor">
@@ -52,6 +52,7 @@ class CensorTestCase(B3TestCase):
         self.p.onLoadConfig()
 
     def tearDown(self):
+        B3TestCase.tearDown(self)
         self.timer_patcher.stop()
 
     def assert_name_penalized_count(self, name, count):

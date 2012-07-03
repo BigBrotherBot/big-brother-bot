@@ -149,6 +149,7 @@ class Test_XmlConfigParser(CommonTestMethodsMixin, B3TestCase):
         </configuration>"""
 
     def setUp(self):
+        B3TestCase.setUp(self)
         self.conf = XmlConfigParser()
         self.conf.loadFromString("""<configuration/>""")
         log = logging.getLogger('output')
@@ -167,6 +168,7 @@ foo = %s
 """
 
     def setUp(self):
+        B3TestCase.setUp(self)
         self.conf = CfgConfigParser()
         self.conf.loadFromString("[foo]")
         log = logging.getLogger('output')

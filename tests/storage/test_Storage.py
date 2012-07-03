@@ -27,6 +27,7 @@ class Test_Storage(B3TestCase):
     storage = None
 
     def setUp(self):
+        B3TestCase.setUp(self)
         self.storage = b3.storage.Storage()
 
     def test_getCounts(self):
