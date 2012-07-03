@@ -18,7 +18,7 @@
 #
 import logging
 import re
-import unittest
+import unittest2 as unittest
 
 from mock import Mock, patch, call
 import time
