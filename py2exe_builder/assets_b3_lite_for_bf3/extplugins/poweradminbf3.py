@@ -52,8 +52,9 @@
 # 1.1 - fixes !yell after B3 1.8.0 changes
 # 1.2 - add config option scramber\gamemodes_blacklist to have the auto scrambler ignoring some gamemodes. requires B3 1.8.2dev1+
 # 1.3 - Refactor autobalance logic flow, and add setting option team_swap_threshold_prop
+# 1.3.1 - Fixes issue with command !setnextmap since B3 1.8.2
 #
-__version__ = '1.3'
+__version__ = '1.3.1'
 __author__  = 'Courgette, 82ndab-Bravo17, ozon, Mario'
 
 import re
@@ -512,24 +513,15 @@ class Poweradminbf3Plugin(Plugin):
             client.message('Invalid or missing data, try !help setnextmap')
         else:
             match = self.console.getMapsSoundingLike(data)
-            if len(match) > 1:
+            if not isinstance(match, basestring):
                 client.message('do you mean : %s ?' % ', '.join(match))
                 return
-            if len(match) == 1:
-                map_id = match[0]
-
+            else:
+                map_id = match
                 maplist = MapListBlock(self.console.write(('mapList.list',)))
-                if not len(maplist):
-                    # maplist is empty, fix this situation by loading save mapList from disk
-                    try:
-                        self.console.write(('mapList.load',))
-                    except Exception, err:
-                        self.warning(err)
-                    maplist = MapListBlock(self.console.write(('mapList.list',)))
-
                 current_max_rounds = self.console.write(('mapList.getRounds',))[1]
                 if not len(maplist):
-                    # maplist is still empty, nextmap will be inserted at index 0
+                    # maplist is empty, nextmap will be inserted at index 0
                     self.console.write(('mapList.add', map_id, self.console.game.gameType, current_max_rounds, 0))
                     self.console.write(('mapList.setNextMapIndex', 0))
                 else:
