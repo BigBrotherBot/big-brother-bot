@@ -279,16 +279,16 @@ class Test_config(Admin_functional_test):
     def test_no_generic_or_default_warn_readon(self):
 
         # load the default plugin_admin.xml file after having remove the 'generic' setting from section 'warn_reasons'
-        from xml.etree import ElementTree as ET
+        from b3.lib.elementtree import ElementTree as ET
         root = ET.parse(ADMIN_CONFIG_FILE).getroot()
-        warn_reasons_node = root.find('settings[@name="warn_reasons"]')
-        if warn_reasons_node is not None:
-            generic_node = warn_reasons_node.find('set[@name="generic"]')
-            if generic_node is not None:
-                warn_reasons_node.remove(generic_node)
-            default_node = warn_reasons_node.find('set[@name="default"]')
-            if default_node is not None:
-                warn_reasons_node.remove(default_node)
+        warn_reasons_nodes = [x for x in root.findall('settings') if x.get('name') == 'warn_reasons' ][0]
+        if len(warn_reasons_nodes):
+            generic_nodes = [x for x in warn_reasons_nodes[0].findall('set') if x.get('name') == "generic"]
+            if len(generic_nodes):
+                warn_reasons_nodes[0].remove(generic_nodes[0])
+            default_nodes = [x for x in warn_reasons_nodes[0].findall('set') if x.get('name') == "default"]
+            if len(default_nodes):
+                warn_reasons_nodes[0].remove(default_nodes[0])
         self.init(ET.tostring(root))
 
         self.joe.message = Mock(lambda x: sys.stdout.write("message to Joe: " + x + "\n"))
