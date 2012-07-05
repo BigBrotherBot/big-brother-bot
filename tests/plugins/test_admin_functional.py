@@ -16,12 +16,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+import logging
 
-from mock import Mock
-import sys
+from mock import Mock, call, patch
+import sys, os, thread
+import time
 import unittest2 as unittest
-
-import os
 
 from b3 import __file__ as b3_module__file__, TEAM_BLUE, TEAM_RED
 
@@ -32,14 +32,23 @@ from b3.plugins.admin import AdminPlugin
 
 ADMIN_CONFIG_FILE = os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.xml")
 
-@unittest.skipUnless(os.path.isfile(ADMIN_CONFIG_FILE), "%s is not a file" % ADMIN_CONFIG_FILE)
 class Admin_functional_test(B3TestCase):
-
+    """ tests from a class inherithing from Admin_functional_test must call self.init() """
     def setUp(self):
         B3TestCase.setUp(self)
         self.conf = XmlConfigParser()
-        self.conf.load(ADMIN_CONFIG_FILE)
         self.p = AdminPlugin(self.console, self.conf)
+
+    def init(self, config_content=None):
+        """ optionally specify a config for the plugin. If called with no parameter, then the default config is loaded """
+        if config_content is None:
+            if not os.path.isfile(ADMIN_CONFIG_FILE):
+                B3TestCase.tearDown(self) # we are skipping the test at a late stage after setUp was called
+                raise unittest.SkipTest("%s is not a file" % ADMIN_CONFIG_FILE)
+            else:
+                self.conf.load(ADMIN_CONFIG_FILE)
+        else:
+            self.conf.loadFromString(config_content)
         self.p.onLoadConfig()
         self.p.onStartup()
 
@@ -48,6 +57,11 @@ class Admin_functional_test(B3TestCase):
 
 
 class Cmd_tempban(Admin_functional_test):
+
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init()
+
     def test_no_duration(self):
         self.joe.message = Mock()
         self.joe.connects(0)
@@ -88,6 +102,10 @@ class Cmd_tempban(Admin_functional_test):
 
 
 class Cmd_help(Admin_functional_test):
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init()
+
     def test_non_existing_cmd(self):
         self.joe.message = Mock()
         self.joe.connects(0)
@@ -124,6 +142,10 @@ class Cmd_help(Admin_functional_test):
 
 
 class Cmd_mask(Admin_functional_test):
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init()
+
     def test_nominal(self):
         self.joe.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
         self.joe.connects(0)
@@ -153,3 +175,209 @@ class Cmd_mask(Admin_functional_test):
         self.joe.says('!admins')
         self.joe.message.assert_called_with('^7Admins online: Joe^7^7 [^3100^7], Mike^7^7 [^380^7]')
 
+
+def _start_new_thread(callable, args_list, kwargs_dict):
+    """ used to patch thread.start_new_thread so it won't create a new thread but call the callable synchronously """
+    callable(*args_list, **kwargs_dict)
+
+@patch.object(time, "sleep")
+@patch.object(thread, "start_new_thread", wraps=_start_new_thread)
+class Cmd_rules(Admin_functional_test):
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init()
+
+    def test_nominal(self, start_new_thread_mock, sleep_mock):
+        self.joe.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
+        self.joe.connects(0)
+        self.joe.says('!rules')
+        self.joe.message.assert_has_calls([call('^3Rule #1: No racism of any kind'),
+                                           call('^3Rule #2: No clan stacking, members must split evenly between the teams'),
+                                           call('^3Rule #3: No arguing with admins (listen and learn or leave)'),
+                                           call('^3Rule #4: No abusive language or behavior towards admins or other players'),
+                                           call('^3Rule #5: No offensive or potentially offensive names, annoying names, or in-game (double caret (^)) color in names'),
+                                           call('^3Rule #6: No recruiting for your clan, your server, or anything else'),
+                                           call('^3Rule #7: No advertising or spamming of websites or servers'),
+                                           call('^3Rule #8: No profanity or offensive language (in any language)'),
+                                           call('^3Rule #9: Do ^1NOT ^3fire at teammates or within 10 seconds of spawning'),
+                                           call('^3Rule #10: Offense players must play for the objective and support their team')])
+
+    def test_nominal_loud(self, start_new_thread_mock, sleep_mock):
+        self.console.say = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
+        self.joe.connects(0)
+        self.joe.says('@rules')
+        self.console.say.assert_has_calls([call('^3Rule #1: No racism of any kind'),
+                                           call('^3Rule #2: No clan stacking, members must split evenly between the teams'),
+                                           call('^3Rule #3: No arguing with admins (listen and learn or leave)'),
+                                           call('^3Rule #4: No abusive language or behavior towards admins or other players'),
+                                           call('^3Rule #5: No offensive or potentially offensive names, annoying names, or in-game (double caret (^)) color in names'),
+                                           call('^3Rule #6: No recruiting for your clan, your server, or anything else'),
+                                           call('^3Rule #7: No advertising or spamming of websites or servers'),
+                                           call('^3Rule #8: No profanity or offensive language (in any language)'),
+                                           call('^3Rule #9: Do ^1NOT ^3fire at teammates or within 10 seconds of spawning'),
+                                           call('^3Rule #10: Offense players must play for the objective and support their team')])
+
+    def test_nominal_bigtext(self, start_new_thread_mock, sleep_mock):
+        self.console.saybig = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
+        self.joe.connects(0)
+        self.joe.says('&rules')
+        self.console.saybig.assert_has_calls([call('^3Rule #1: No racism of any kind'),
+                                           call('^3Rule #2: No clan stacking, members must split evenly between the teams'),
+                                           call('^3Rule #3: No arguing with admins (listen and learn or leave)'),
+                                           call('^3Rule #4: No abusive language or behavior towards admins or other players'),
+                                           call('^3Rule #5: No offensive or potentially offensive names, annoying names, or in-game (double caret (^)) color in names'),
+                                           call('^3Rule #6: No recruiting for your clan, your server, or anything else'),
+                                           call('^3Rule #7: No advertising or spamming of websites or servers'),
+                                           call('^3Rule #8: No profanity or offensive language (in any language)'),
+                                           call('^3Rule #9: Do ^1NOT ^3fire at teammates or within 10 seconds of spawning'),
+                                           call('^3Rule #10: Offense players must play for the objective and support their team')])
+
+    def test_nominal_to_player(self, start_new_thread_mock, sleep_mock):
+        self.joe.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
+        self.joe.connects(0)
+        self.mike.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
+        self.mike.connects(1)
+        self.joe.says('!rules mike')
+        self.mike.message.assert_has_calls([call('^3Rule #1: No racism of any kind'),
+                                           call('^3Rule #2: No clan stacking, members must split evenly between the teams'),
+                                           call('^3Rule #3: No arguing with admins (listen and learn or leave)'),
+                                           call('^3Rule #4: No abusive language or behavior towards admins or other players'),
+                                           call('^3Rule #5: No offensive or potentially offensive names, annoying names, or in-game (double caret (^)) color in names'),
+                                           call('^3Rule #6: No recruiting for your clan, your server, or anything else'),
+                                           call('^3Rule #7: No advertising or spamming of websites or servers'),
+                                           call('^3Rule #8: No profanity or offensive language (in any language)'),
+                                           call('^3Rule #9: Do ^1NOT ^3fire at teammates or within 10 seconds of spawning'),
+                                           call('^3Rule #10: Offense players must play for the objective and support their team')])
+
+    def test_unknown_player(self, start_new_thread_mock, sleep_mock):
+        self.joe.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
+        self.joe.connects(0)
+        self.joe.says('!rules fOO')
+        self.joe.message.assert_has_calls([call('^7No players found matching fOO')])
+
+
+class Cmd_warns(Admin_functional_test):
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init()
+
+    def test_nominal(self):
+        self.joe.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
+        self.joe.connects(0)
+        self.joe.says('!warns')
+        self.joe.message.assert_called_once_with('^7Warnings: adv, afk, argue, badname, camp, ci, color, cuss, fakecmd,'
+        ' jerk, lang, language, name, nocmd, obj, profanity, racism, recruit, rule1, rule10, rule2, rule3, rule4, rule5'
+        ', rule6, rule7, rule8, rule9, sfire, spam, spawnfire, spec, spectator, stack, tk')
+
+
+@unittest.skipUnless(os.path.isfile(ADMIN_CONFIG_FILE), "%s is not a file" % ADMIN_CONFIG_FILE)
+class Test_config(Admin_functional_test):
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        logging.getLogger('output').setLevel(logging.INFO)
+
+    def test_no_generic_or_default_warn_readon(self):
+
+        # load the default plugin_admin.xml file after having remove the 'generic' setting from section 'warn_reasons'
+        from xml.etree import ElementTree as ET
+        root = ET.parse(ADMIN_CONFIG_FILE).getroot()
+        warn_reasons_node = root.find('settings[@name="warn_reasons"]')
+        if warn_reasons_node is not None:
+            generic_node = warn_reasons_node.find('set[@name="generic"]')
+            if generic_node is not None:
+                warn_reasons_node.remove(generic_node)
+            default_node = warn_reasons_node.find('set[@name="default"]')
+            if default_node is not None:
+                warn_reasons_node.remove(default_node)
+        self.init(ET.tostring(root))
+
+        self.joe.message = Mock(lambda x: sys.stdout.write("message to Joe: " + x + "\n"))
+        self.joe.connects(0)
+        self.joe.says('!warntest')
+        self.joe.message.assert_called_once_with('^2TEST: ^1WARNING^7 [^31^7]: ^7behave yourself')
+        self.joe.message.reset_mock()
+        self.joe.says('!warntest argue')
+        self.joe.message.assert_called_once_with('^2TEST: ^1WARNING^7 [^31^7]: ^3Rule #3: No arguing with admins (listen and learn or leave)')
+
+
+    def test_bad_format_for_generic_and_default(self):
+        self.init("""<configuration>
+                        <settings name="warn_reasons">
+                            <set name="generic">1h</set>
+                            <set name="default">/</set>
+                        </settings>
+                    </configuration>""")
+        self.assertEqual((60, "^7"), self.p.warn_reasons['generic'])
+        self.assertEqual((60, "^7behave yourself"), self.p.warn_reasons['default'])
+
+    def test_bad_format_1(self):
+        self.init("""<configuration>
+                        <settings name="warn_reasons">
+                            <set name="foo">foo</set>
+                            <set name="bar">5d</set>
+                        </settings>
+                    </configuration>""")
+        self.assertNotIn('foo', self.p.warn_reasons)
+
+    def test_bad_format_2(self):
+        self.init("""<configuration>
+                        <settings name="warn_reasons">
+                            <set name="foo">/foo bar</set>
+                        </settings>
+                    </configuration>""")
+        self.assertNotIn('foo', self.p.warn_reasons)
+
+    def test_bad_format_3(self):
+        self.init("""<configuration>
+                        <settings name="warn_reasons">
+                            <set name="foo">/spam#</set>
+                            <set name="bar">/spam# qsdf sq</set>
+                        </settings>
+                    </configuration>""")
+        self.assertNotIn('foo', self.p.warn_reasons)
+
+    def test_reference_to_warn_reason(self):
+        self.init("""<configuration>
+                        <settings name="warn_reasons">
+                            <set name="foo">2h, foo</set>
+                            <set name="bar">/foo</set>
+                        </settings>
+                    </configuration>""")
+        self.assertIn('foo', self.p.warn_reasons)
+        self.assertEqual((120, 'foo'), self.p.warn_reasons['foo'])
+        self.assertIn('bar', self.p.warn_reasons)
+        self.assertEqual((120, 'foo'), self.p.warn_reasons['bar'])
+
+
+    def test_invalid_reference_to_warn_reason(self):
+        self.init("""<configuration>
+                        <settings name="warn_reasons">
+                            <set name="foo">2h, foo</set>
+                            <set name="bar">/nonexisting</set>
+                        </settings>
+                    </configuration>""")
+        self.assertIn('foo', self.p.warn_reasons)
+        self.assertEqual((120, 'foo'), self.p.warn_reasons['foo'])
+        self.assertNotIn('bar', self.p.warn_reasons)
+
+
+    def test_reference_to_spamage(self):
+        self.init("""<configuration>
+                        <settings name="spamages">
+                            <set name="foo">fOO fOO</set>
+                        </settings>
+                        <settings name="warn_reasons">
+                            <set name="bar">4h, /spam#foo</set>
+                        </settings>
+                    </configuration>""")
+        self.assertIn('bar', self.p.warn_reasons)
+        self.assertEqual((240, 'fOO fOO'), self.p.warn_reasons['bar'])
+
+
+    def test_invalid_reference_to_spamage(self):
+        self.init("""<configuration>
+                        <settings name="warn_reasons">
+                            <set name="bar">4h, /spam#foo</set>
+                        </settings>
+                    </configuration>""")
+        self.assertNotIn('bar', self.p.warn_reasons)
