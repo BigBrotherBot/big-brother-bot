@@ -20,6 +20,8 @@
 # $Id: q3a/abstractParser.py 103 2010-11-01 10:10:10Z xlr8or $
 #
 # CHANGELOG
+#    2012/07/07 - 1.13.2 - Courgette
+#    * ensures the config file has option 'game_log' in section 'server'
 #    2012/06/17 - 1.7.2 - Courgette
 #    * syntax
 #    18/10/2011 - 1.7.1 - 82ndab-Bravo17
@@ -80,7 +82,7 @@
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.7.2'
+__version__ = '1.7.3'
 
 import re, string, time
 import b3
@@ -162,6 +164,10 @@ class AbstractParser(b3.parser.Parser):
     PunkBuster = None
 
     def startup(self):
+        if not self.config.has_option('server','game_log'):
+            self.critical("your main config file is missing the 'game_log' setting in section 'server'")
+            raise SystemExit(220)
+
         # add the world client
         client = self.clients.newClient('1022', guid='WORLD', name='World', hide=True, pbid='WORLD')
 

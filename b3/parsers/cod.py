@@ -54,9 +54,10 @@
 # 10/30/2011 - 1.4.25 - xlr8or - Add decoding to data in say, sayTeam and Tell methods
 # 01/28/2012 - 1.4.26 - 82ndab.Bravo17 - Add special case COD7 suicide regex where attacker team and name appear to be swapped in the console output
 # 10/03/2012 - 1.4.27 - 82ndab.Bravo17 - pbid now empty string instead of None if pb disabled
+# 07/07/2012 - 1.4.28 - Courgette - ensures the config file has option 'game_log' in section 'server'
 
 __author__ = 'ThorN, xlr8or'
-__version__ = '1.4.27'
+__version__ = '1.4.28'
 
 import re, string, threading
 import b3
@@ -151,6 +152,10 @@ class CodParser(AbstractParser):
     PunkBuster = None
 
     def startup(self):
+        if not self.config.has_option('server','game_log'):
+            self.critical("your main config file is missing the 'game_log' setting in section 'server'")
+            raise SystemExit(220)
+
         if self.IpsOnly:
             self.debug('Authentication Method: Using Ip\'s instead of GUID\'s!')
             # add the world client
