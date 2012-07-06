@@ -46,10 +46,11 @@ class Iourt41TestCase(unittest.TestCase):
 
     def setUp(self):
         self.parser_conf = XmlConfigParser()
-        self.parser_conf.loadFromString("""
-                    <configuration>
-                    </configuration>
-                """)
+        self.parser_conf.loadFromString("""<configuration>
+                <settings name="server">
+                    <set name="game_log"/>
+                </settings>
+            </configuration>""")
         self.console = Iourt41Parser(self.parser_conf)
         self.console.PunkBuster = None # no Punkbuster support in that game
 
