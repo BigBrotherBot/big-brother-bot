@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2012/07/07 - 1.14 - Courgette
+#   * better error log messages when registering a command with incorrect level or group keyword
 #   2012/07/05 - 1.13 - Courgette
 #   * provides default values for warn_reason keywords 'default' and 'generic' if missing from config file
 #   * refactors the loading and parsing of warn_reasons from the config file to provide meaningful messages when
@@ -104,7 +106,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.13'
+__version__ = '1.14'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import re, time, threading, sys, traceback, thread, random
@@ -222,13 +224,18 @@ class AdminPlugin(b3.plugin.Plugin):
             # override default level with level in config
             level = plugin.config.get('commands', command)
     
-        level = self.getGroupLevel(level)
+        clean_level = self.getGroupLevel(level)
+        if clean_level is False:
+            groups = self.console.storage.getGroups()
+            self.error("Cannot register command '%s'. Bad level/group : '%s'. Expecting a level (%s) or group keyword (%s)"
+                % (command, level, ', '.join([str(x.level) for x in groups]), ', '.join([x.keyword for x in groups])))
+            return
             
         if secretLevel is None:
             secretLevel = self.config.getint('settings', 'hidecmd_level')
 
         try:
-            self._commands[command] = Command(plugin, command, level, handler, handler.__doc__, alias, secretLevel)
+            self._commands[command] = Command(plugin, command, clean_level, handler, handler.__doc__, alias, secretLevel)
 
             if self._commands[command].alias:
                 self._commands[self._commands[command].alias] = self._commands[command]
