@@ -83,6 +83,7 @@ class AbstractParser(b3.parser.Parser):
 
     frostbite_event_queue = Queue.Queue(400)
     sayqueue = Queue.Queue(100)
+    sayqueue_get_timeout = 2
     sayqueuelistener = None
 
     # frostbite2 engine does not support color code, so we need this property
@@ -281,6 +282,7 @@ class AbstractParser(b3.parser.Parser):
             except Exception, e:
                 self.error("unexpected error, please report this on the B3 forums")
                 self.error(e)
+                self.error('%s: %s', e, traceback.extract_tb(sys.exc_info()[2]))
                 # unexpected exception, better close the frostbite connection
                 self.close_frostbite_connection()
 
@@ -297,6 +299,9 @@ class AbstractParser(b3.parser.Parser):
             # The Frostbite connection is running its own thread to communicate with the game server. We need to tell
             # this thread to stop.
             self.close_frostbite_connection()
+
+            # wait for threads to finish
+            self.wait_for_threads()
 
             # If !die was called, exitcode have been set to 222
             # If !restart was called, exitcode have been set to 221
@@ -441,21 +446,26 @@ class AbstractParser(b3.parser.Parser):
         self.info("sayqueuelistener job started")
         while self.working:
             try:
-                msg = self.sayqueue.get(timeout=40)
+                msg = self.sayqueue.get(timeout=self.sayqueue_get_timeout)
                 for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
                     self.write(self.getCommand('say', message=line))
-                    time.sleep(self._settings['message_delay'])
+                    if self.working:
+                        time.sleep(self._settings['message_delay'])
             except Queue.Empty:
-                self.verbose2("sayqueuelistener: had nothing to do in the last 40 sec")
+                #self.verbose2("sayqueuelistener: had nothing to do in the last %s sec" % self.sayqueue_get_timeout)
+                pass
             except Exception, err:
                 self.error(err)
         self.info("sayqueuelistener job ended")
 
     def start_sayqueue_worker(self):
-        self.sayqueuelistener = threading.Thread(target=self.sayqueuelistener_worker)
+        self.sayqueuelistener = threading.Thread(target=self.sayqueuelistener_worker, name="sayqueuelistener")
         self.sayqueuelistener.setDaemon(True)
         self.sayqueuelistener.start()
 
+    def wait_for_threads(self):
+        if hasattr(self, 'sayqueuelistener') and self.sayqueuelistener:
+            self.sayqueuelistener.join()
 
     def getCommand(self, cmd, **kwargs):
         """Return a reference to a loaded command"""
@@ -1421,7 +1431,7 @@ class AbstractParser(b3.parser.Parser):
     def getMapsSoundingLike(self, mapname):
         """found matching level names for the given mapname (which can either
         be a level name or map name)
-        If no exact match is found, then return close candidates
+        If no exact match is found, then return close candidates as a list
         """
         supportedMaps = self.getSupportedMapIds()
         clean_map_name = mapname.strip().lower()
@@ -1586,11 +1596,14 @@ def frostbiteClientMessageQueueWorker(self):
     This take a line off the queue and displays it
     then pause for 'message_delay' seconds
     """
-    while not self.messagequeue.empty():
+    while self.messagequeue and not self.messagequeue.empty():
+        if not self.connected:
+            break
         msg = self.messagequeue.get()
         if msg:
             self.console.message(self, msg)
-            time.sleep(float(self.console._settings['message_delay']))
+            if self.connected:
+                time.sleep(float(self.console._settings['message_delay']))
 b3.clients.Client.messagequeueworker = frostbiteClientMessageQueueWorker
 
 ## override the Client.message() method at runtime
@@ -1605,13 +1618,24 @@ def frostbiteClientMessageMethod(self, msg):
             self.messagequeue.put(line)
         # create a thread that executes the worker and pushes out the queue
         if not hasattr(self, 'messagehandler') or not self.messagehandler.isAlive():
-            self.messagehandler = threading.Thread(target=self.messagequeueworker)
+            self.messagehandler = threading.Thread(target=self.messagequeueworker, name="%s_messagehandler" % self)
             self.messagehandler.setDaemon(True)
             self.messagehandler.start()
         else:
             self.console.verbose('messagehandler for %s isAlive' %self.name)
 b3.clients.Client.message = frostbiteClientMessageMethod
 
+original_client_disconnect_method = b3.clients.Client.disconnect
+def frostbiteClientDisconnect(self):
+    original_client_disconnect_method(self)
+    if hasattr(self, 'messagequeue'):
+        self.messagequeue = None
+    if hasattr(self, 'messagehandler') and self.messagehandler:
+        self.console.debug("waiting for %s.messageQueueWorker thread to finish" % self)
+        self.messagehandler.join()
+        self.console.debug("%s.messageQueueWorker thread finished" % self)
+
+b3.clients.Client.disconnect = frostbiteClientDisconnect
 
 ## override the Client.yell() method at runtime
 def frostbiteClientYellMethod(self, msg):
