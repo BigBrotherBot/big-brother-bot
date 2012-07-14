@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2012/07/14 - 1.14.1 - Courgette
+#   * log more detail when failing to register a command
 #   2012/07/07 - 1.14 - Courgette
 #   * better error log messages when registering a command with incorrect level or group keyword
 #   2012/07/05 - 1.13 - Courgette
@@ -106,7 +108,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.14'
+__version__ = '1.14.1'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import re, time, threading, sys, traceback, thread, random
@@ -246,7 +248,8 @@ class AdminPlugin(b3.plugin.Plugin):
             self.debug('Command "%s (%s)" registered with %s for level %s' % (command, alias, self._commands[command].func.__name__, self._commands[command].level))
             return True
         except Exception, msg:
-            self.error('Command "%s" registration failed %s' % (command, msg))
+            self.error('Command "%s" registration failed. %s' % (command, msg))
+            self.exception(msg)
             return False
 
     def handle(self, event):
