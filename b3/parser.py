@@ -20,6 +20,7 @@
 # CHANGELOG
 #   2012/06/17 - 1.27.4 - courgette
 #   * log traceback when an exception occurs while loading a plugin
+#   * detect missing 'name' attribute in plugin element from the plugins section of the config file
 #   2012/06/17 - 1.27.3 - courgette
 #   * more explicit error message when failing to load a plugin from a specified path
 #   2012/06/17 - 1.27.2 - courgette
@@ -160,7 +161,7 @@ import b3.clients
 import b3.timezones
 from ConfigParser import NoOptionError
 from b3.functions import getModule
-
+from b3.lib.elementtree import ElementTree
 
 class Parser(object):
     _lineFormat = re.compile('^([a-z ]+): (.*?)', re.IGNORECASE)
@@ -606,6 +607,9 @@ class Parser(object):
         priority = 1
         for p in self.config.get('plugins/plugin'):
             name = p.get('name')
+            if not name:
+                self.critical("Config Error in the plugins section. No plugin name found in [%s]" % ElementTree.tostring(p).strip())
+                raise SystemExit(220)
             conf = p.get('config')
             if conf is None:
                 conf = '@b3/conf/plugin_%s.xml' % name
