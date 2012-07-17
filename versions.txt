@@ -1,15 +1,15 @@
-project files/versions signature: 70cda5a0b57f107eade87f2a599f19d3
-project files content signature: 1f8e49d06b166d2bbb8e2e939837a0e6
+project files/versions signature: 168db0d900e803be9fb9fcc8b12f8129
+project files content signature: b9aa2d2e46b41865105e363d3cfb7e53
 b3\__init__.py 8416982f9c472c25cf8addafc9d3852c 1.1.2
 b3\clients.py a6308e1e3b8767b240e442b59dc2d194 1.4.0
-b3\config.py b1a53f2d45f55f8864d44f6d5a8bd668 1.3.3
+b3\config.py afdbb9875db10240cab7c2e56884626e 1.4
 b3\cron.py e35b2854d6a47ed921c624ba9f9c0ff4 1.4.1
 b3\cvar.py 39c0d99ceaeab3170936b6f540337368 1.0.1
 b3\events.py 2cecb24baf2fcaed2c911e6f73e969c1 1.2
 b3\extplugins\__init__.py 01abfc750a0c942167651c40d088531d None
 b3\extplugins\xlrstats.py fefd0a891034b0026e9763a15d8c79e3 2.7.1
-b3\fake.py e860ed6912b60c222b9c5e482a82b48b 1.10
-b3\functions.py b5049f0d9cc79037a32bf818d23c0364 1.4.1
+b3\fake.py 53c76d69c1756af4f6b294cbfa9f3f95 1.11
+b3\functions.py d72a7a18a695662b87d90b6671e2bf0b 1.5
 b3\game.py 8fa574559dbcbd1af2d2785de7f08ce0 1.3.1
 b3\lib\PurePythonGeoIP.py 959d727e5fd89339c7464ea8ea9db54f None
 b3\lib\__init__.py 01abfc750a0c942167651c40d088531d None
@@ -84,10 +84,10 @@ b3\lib\yaml\scanner.py b5c7fbb502536bd06bd52f838c430370 None
 b3\lib\yaml\serializer.py c75e5461f4d4a763a17ac5bdc12a6301 None
 b3\lib\yaml\tokens.py 33423c7f46708cc3884a32b8ed937ac6 None
 b3\output.py eef6a3c9fffd02fd1bf0d878cdc420f4 1.6.2
-b3\parser.py 7a7c5f4718c3c78c1dd6581653cb6e20 1.27
+b3\parser.py 308d3a8ccecf366418304249a4c2a977 1.27.3
 b3\parsers\__init__.py dc27db9710c1c207a8bd46935163efc1 None
 b3\parsers\altitude.py ca43bb0e9d96e3e0531868ccfbb9c98a 1.2
-b3\parsers\bf3.py 87897efc761d176936a7117497f854b0 1.1.1
+b3\parsers\bf3.py 5e74a7030e6d92fbb1b82b71a27d9f69 1.4
 b3\parsers\bfbc2.py 563bcbfaa469e0a30f2a3a3cb17f7b65 2.3
 b3\parsers\cod.py a2fad34c0d5d463d7bf3945bef2f713e 1.4.27
 b3\parsers\cod2.py c31bb26436cf0cc4a4d6da072a9ec544 1.3.0
@@ -102,7 +102,7 @@ b3\parsers\frontline\__init__.py 1a401495ac8c2a072dd981f9114c8cfc 0.4
 b3\parsers\frontline\protocol.py 0e6246ff2d6c3852efb3f209e126c6c2 1.1
 b3\parsers\frontline\rcon.py fa6e2d35f56231978891741537c755a6 1.0
 b3\parsers\frostbite2\__init__.py d41d8cd98f00b204e9800998ecf8427e None
-b3\parsers\frostbite2\abstractParser.py 6662a55f627756913d05bdeb8d7384a8 1.4
+b3\parsers\frostbite2\abstractParser.py eca6ef816a9c8091a7675367991569ea 1.6
 b3\parsers\frostbite2\protocol.py bbdec4905f63411c3fdd824ae413dc96 1.0.1
 b3\parsers\frostbite2\punkbuster.py d1fb5c5b64bba99fcb605074cc410440 1.2
 b3\parsers\frostbite2\rcon.py c620a9e4edb702f41af782f6470da192 1.0
@@ -113,17 +113,17 @@ b3\parsers\frostbite\connection.py 9f1bee6bb3d7bdc5fae777164389b0d6 2.0
 b3\parsers\frostbite\protocol.py 1c7755c8b3eae89a659118147a53d972 1.0.1
 b3\parsers\frostbite\punkbuster.py 3a4153415be31cf25d3a1588c1790301 1.1
 b3\parsers\frostbite\rcon.py 77598a0b767cc78bf39bf3b23ff19428 2.0
-b3\parsers\frostbite\util.py 1c8f30602d7bbccbf2500b2407199ae0 1.1
+b3\parsers\frostbite\util.py 16651989f7cf36761e4dcac8b7ef20fd 1.1
 b3\parsers\homefront\__init__.py 74f229489f939174af5771ff3cd4614b 1.1.4
 b3\parsers\homefront\protocol.py 6eef48f40731b5578c503fa08ddcedf2 0.3
 b3\parsers\homefront\rcon.py 087cbe58a0fa2b7367e89328842ba6ed 1.0
-b3\parsers\iourt41.py 516bf547ca222ad87f994a9417a042fc 1.11.5
+b3\parsers\iourt41.py a490a682631412f9065498c2c98a1a4b 1.13.1
 b3\parsers\moh.py 6491c9ab5b03b25e8b440621cf552fba 1.4.0
 b3\parsers\oa081.py c49d2c1a99794d9f094bcc9af4eec51a 0.11.0
 b3\parsers\punkbuster.py aa123f41e0b5e6ab284c573bb1f4ce16 1.0.3
 b3\parsers\q3a\__init__.py d41d8cd98f00b204e9800998ecf8427e None
-b3\parsers\q3a\abstractParser.py a50d6053ffaa280b6adac1d38983e071 1.7.1
-b3\parsers\q3a\rcon.py c4f18b8faa46fda66d9faf6c247997a3 1.5
+b3\parsers\q3a\abstractParser.py d9d1e4ea081c03d9bf41c1f8bad9cf19 1.7.2
+b3\parsers\q3a\rcon.py 5682ca809a8a01c1782b7f78e03a69e2 1.6
 b3\parsers\ro2\__init__.py 035b105255bab8cf1e6599c30f38011f 1.4
 b3\parsers\smg.py 73ad99221464f4e8dcc5cf177d40f40f 0.1.4
 b3\parsers\smg11.py 123b2cde7ea6e6a81a1f12be10db2247 0.9.1
@@ -134,22 +134,22 @@ b3\parsers\wop15.py bb19dac6b7465c8b70a6260c28d855be 1.2.3
 b3\pkg_handler.py 6830d1447fed9b2fc71db48d53bb1ad0 1.2.1
 b3\plugin.py fbe052285bd6ee1b6376600a22d688e0 1.4.1
 b3\plugins\__init__.py 01abfc750a0c942167651c40d088531d None
-b3\plugins\admin.py bbd2e98a970f2a1e0cd399f81009f38e 1.11.4
+b3\plugins\admin.py e9e03a893aa6fcef206e89760f48a752 1.12.1
 b3\plugins\adv.py 66b1aa6a1b182e32fab0d8412ff4eb5b 1.3.2
 b3\plugins\censor.py 78dc7b22a8b2c2e807dce798f390dfb4 3.0
-b3\plugins\cod7http.py 6288b99f6c73e1ec0403a74a2ab214f7 1.0.16
+b3\plugins\cod7http.py ad90e9d4df675bdc24f19840ff266b25 1.0.17
 b3\plugins\codam.py 3f9eb16ba53188a81f001bc935199d6a 0.0.1
-b3\plugins\ftpytail.py c725f0cf5944512647b240420b7a67db 1.5.7
-b3\plugins\httpytail.py 328809b05e192e771683e7a99d28d38a 0.2.2
+b3\plugins\ftpytail.py fd68da529774b0972839db773ca7a266 1.5.8
+b3\plugins\httpytail.py 992e79bf48c8f2803cd12f82588b8c1b 0.2.3
 b3\plugins\login.py 281ddba7701105bb90053696eedcf31f 1.0.3
 b3\plugins\pingwatch.py 5d354a372d38d53a15a08b5320355b87 1.2.2
 b3\plugins\publist.py 0ab42e86cc0768ab9d35b74c0f6e8443 1.10.1
 b3\plugins\punkbuster.py f475b349585b1b0fb818a7262179076c 1.1.0
-b3\plugins\sftpytail.py 05ed30f7f1440acacd2836f62003ae6b 1.0.2
+b3\plugins\sftpytail.py d0e810b84b24b93ac55df9bd4519f64c 1.0.3
 b3\plugins\spamcontrol.py fca33f29845b1f918058fa8f4dc8fc77 1.1.2
 b3\plugins\stats.py 80a2a6df1d53d360237af2a4e78e90c6 1.3.7
-b3\plugins\status.py 9fce81b53307b54f163ec5eaa7dd32fe 1.4.9
-b3\plugins\tk.py b528777350f9b203f89101a595f290b1 1.2.7
+b3\plugins\status.py 9da0c6e84dc80445f19111f6a99d219c 1.4.10
+b3\plugins\tk.py 1a9303f95f0a0a93bc58ef5909d3116c 1.2.8
 b3\plugins\welcome.py 8d21d96e1a8842b4f37ed0d11cf4771b 1.1
 b3\querybuilder.py 4a96e1fb59c64a227c05e3fad6b4ac98 1.1.0
 b3\run.py 008fb0bdb9f5cce6bfa5ccccb24eae59 1.4.1

@@ -1,3 +1,319 @@
+2012-06-18  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/functions.py, b3/parser.py, b3/parsers/bf3.py,
+	b3/parsers/frostbite2/abstractParser.py, tests/parsers/test_bf3.py,
+	tests/test_functions.py: BF3: can now use the !map command with
+	Close Quarter DLC maps. Also the !map command now accepts a 2nd
+	argument to specify the gamemode. i.e.: "!map scrap, gun" to load
+	Scrapmetal in Gun Master gamemode.
+
+2012-06-17  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/q3a/rcon.py: Q3 based parsers: !help command does not
+	make B3 unresponsive anymore
+
+2012-06-17  Courgette <courgette@bigbrotherbot.net>
+
+	* tests/__init__.py, tests/clients/test_Client.py,
+	tests/clients/test_Clients.py, tests/plugins/test_admin.py,
+	tests/plugins/test_admin_functional.py,
+	tests/plugins/test_censor.py, tests/plugins/test_status.py,
+	tests/plugins/test_tk.py, tests/storage/common.py,
+	tests/storage/test_mysql.py, tests/storage/test_postgresql.py,
+	tests/storage/test_sqlite.py, tests/test_b3.py,
+	tests/test_config.py, tests/test_cron.py: TESTS: refactor B3TestCase
+
+2012-06-17  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parser.py, b3/parsers/q3a/abstractParser.py,
+	b3/plugins/admin.py: syntax and code cleanup
+
+2012-06-08  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/bf3.py: BF3: add squad names for all squads
+
+2012-06-07  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO,
+	py2exe_builder/b3-installer-project.iss,
+	py2exe_builder/b3_lite_for_bf3-installer-project.iss, setup.py: 
+	Prepare release 1.8.2dev5
+
+2012-06-07  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/bf3.py, tests/parsers/test_bf3.py: BF3: R24 changes
+
+2012-06-03  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/iourt41.py: IOURT41: english
+
+2012-05-30  Courgette <courgette@bigbrotherbot.net>
+
+	* tests/plugins/test_censor.py: TESTS: update Censor plugin tests
+
+2012-05-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/plugins/cod7http.py, b3/plugins/ftpytail.py,
+	b3/plugins/httpytail.py, b3/plugins/sftpytail.py: cod7http,
+	ftpytail, sftpytail, httpytail: allows to use @conf and @b3
+	shortcuts in setting option server/local_game_log
+
+2012-05-22  Courgette <courgette@bigbrotherbot.net>
+
+	* setupPy2exe.py: WIN32 build: make sftpytail plugin work from win32
+	builds
+
+2012-05-19  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/iourt41.py, tests/parsers/test_iourt41.py: IOURT41:
+	fixes bug with kill event when killed by nuke, telefrag, or slap
+
+2012-05-19  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/conf/plugin_censor.xml: CONF: add documentation on
+	plugin_censor.xml
+
+2012-05-06  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parser.py: CORE: increases default B3 event queue size to 50
+
+2012-05-06  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/iourt41.py: IOURT41: documentation regarding issue
+	xlr8or/big-brother-bot#87
+
+2012-05-05  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/plugins/status.py, tests/plugins/test_status.py: STATUS: fixes
+	xlr8or/big-brother-bot#86 - cannot read config options 'svar_table'
+	and 'client_table'
+
+2012-05-05  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/iourt41.py, tests/parsers/test_iourt41.py: IOURT41:
+	fixes issue xlr8or/big-brother-bot#87 - hacker missing ip crashes
+	the bot
+
+2012-04-21  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO,
+	py2exe_builder/assets_b3_lite_for_bf3/conf/plugin_poweradminbf3.xml
+	,
+	py2exe_builder/assets_b3_lite_for_bf3/extplugins/poweradminbf3.py,
+	py2exe_builder/b3-installer-project.iss,
+	py2exe_builder/b3_lite_for_bf3-installer-project.iss, setup.py: 
+	prepare release 1.8.2dev4
+
+2012-04-21  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/bf3.py, b3/parsers/frostbite2/abstractParser.py,
+	tests/parsers/frostbite2/test_abstractParser.py: BF3: fixes
+	ban/tempban of players with unknown guid. Closes
+	Courgette/big-brother-bot#70
+
+2012-04-21  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/bf3.py, b3/parsers/frostbite2/abstractParser.py,
+	tests/parsers/frostbite2/test_abstractParser.py,
+	tests/parsers/test_bf3.py: BF3: fixes issue
+	Courgette/big-brother-bot#69 : B3 failing to auth a known player for
+	whom BF3 fails to provide a EA_GUID
+
+2012-04-21  Courgette <courgette@bigbrotherbot.net>
+
+	* tests/parsers/frostbite2/test_abstractParser.py: TEST: clean test
+	for Frosbite2 abstract parser (again)
+
+2012-04-21  Courgette <courgette@bigbrotherbot.net>
+
+	* tests/parsers/frostbite2/test_abstractParser.py: TEST: clean test
+	for Frosbite2 abstract parser
+
+2012-04-20  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO,
+	py2exe_builder/b3-installer-project.iss,
+	py2exe_builder/b3_lite_for_bf3-installer-project.iss, setup.py: 
+	prepare release 1.8.2dev3
+
+2012-04-20  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/bf3.py, b3/parsers/frostbite2/abstractParser.py,
+	tests/parsers/frostbite2/test_abstractParser.py,
+	tests/parsers/test_bf3.py: BF3: update due to BF3 server R21
+	release. Now parser can send EVT_CLIENT_TEAM_SAY events to plugins
+
+2012-04-15  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO, b3/conf/templates/b3.bf3.tpl,
+	py2exe_builder/b3-installer-project.iss,
+	py2exe_builder/b3_lite_for_bf3-installer-project.iss, setup.py: BF3:
+	fixes handling of commands prefixed with '/' and that name are
+	composed of a single character
+
+2012-04-15  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/bf3.py, b3/parsers/frostbite2/abstractParser.py,
+	tests/parsers/frostbite2/test_abstractParser.py: BF3: fixes handling
+	of commands prefixed with '/' and that name are composed of a single
+	character
+
+2012-04-15  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/plugins/admin.py: ADMIN: removes magic command shortcut that
+	would transform the command '!1 blah' into '!say blah'
+
+2012-04-15  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/fake.py: FAKE: fixes an issue with message_history of
+	FakeClient which was shared between instances
+
+2012-04-14  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/bf3.py, b3/parsers/frostbite2/abstractParser.py,
+	tests/parsers/frostbite2/test_abstractParser.py: BF3: improves
+	handling of commands prefixed only with '/'. In chat messages,
+	leading '/' is removed if  followed by an existing command name or
+	if followed by a command prefix.
+
+2012-04-11  Courgette <courgette@bigbrotherbot.net>
+
+	* tests/parsers/frostbite2/test_abstractParser.py: TEST: python 2.6
+	compatibility
+
+2012-04-11  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/bf3.py, b3/parsers/frostbite2/abstractParser.py,
+	tests/parsers/frostbite2/test_abstractParser.py: BF3: improves
+	handling of commands prefixed only with '/' instead of usual command
+	prefixes
+
+2012-04-11  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/config.py, tests/test_config.py: CORE: CfgConfigParser
+	implements all missing methods to match XmlConfigParser class
+	signature
+
+2012-04-08  Courgette <courgette@bigbrotherbot.net>
+
+	* .travis.yml, b3/parsers/iourt41.py, pip-requires.txt,
+	tests/parsers/test_iourt41.py: IOURT41:  - fixes rotatemap() -
+	  thanks to Beber888 - refactor unban()   - changeMap() can now provide suggestions
+
+2012-04-07  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO,
+	py2exe_builder/b3-installer-project.iss,
+	py2exe_builder/b3_lite_for_bf3-installer-project.iss, setup.py: 
+	prepare release 1.8.2dev1
+
+2012-04-07  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/bf3.py: english
+
+2012-04-07  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/bf3.py, b3/parsers/frostbite2/abstractParser.py: BF3:
+	fixes issue with game round counter
+
+2012-04-07  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO, b3/parsers/frostbite/util.py,
+	py2exe_builder/b3-installer-project.iss,
+	py2exe_builder/b3_lite_for_bf3-installer-project.iss, setup.py: 
+	prepare release 1.8.2dev0
+
+2012-04-06  Courgette <courgette@bigbrotherbot.net>
+
+	* .travis.yml, tests/test_functions.py: TESTS: update a test so it
+	passes on both python 2.7 and 2.6
+
+2012-04-06  Courgette <courgette@bigbrotherbot.net>
+
+	* .travis.yml, pip-requires.txt, tests/__init__.py,
+	tests/clients/test_Client.py,
+	tests/parsers/frostbite2/test_util.py,
+	tests/parsers/homefront/test_HomefrontParser.py,
+	tests/parsers/q3a/test_abstractParser.py,
+	tests/parsers/test_bf3.py, tests/plugins/test_admin.py,
+	tests/plugins/test_admin_functional.py,
+	tests/plugins/test_censor.py, tests/plugins/test_tk.py,
+	tests/plugins/test_tk_functional.py, tests/setup_/test_download.py,
+	tests/storage/test_DatabaseStorage.py,
+	tests/storage/test_Storage.py, tests/storage/test_mysql.py,
+	tests/test_config.py, tests/test_cron.py, tests/test_functions.py,
+	tests/test_update.py: TESTS: make tests use module unittest2 instead
+	of native unittest for python 2.6 compatibility
+
+2012-04-06  Courgette <courgette@bigbrotherbot.net>
+
+	* .travis.yml: TravisCI config file changes
+
+2012-04-06  Courgette <courgette@bigbrotherbot.net>
+
+	* .travis.yml: add TravisCI config file. See http://travis-ci.org/
+
+2012-04-04  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/sql/b3-update-1.8.1.sql, b3/sql/recreate-xlrstats.sql: SQL :
+	change 'TYPE' to 'ENGINE'
+
+2012-04-04  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/q3a/rcon.py: Q3A RCON: remove 2 confusing debug msg
+
+2012-04-04  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/bf3.py, b3/parsers/frostbite2/abstractParser.py: BF3:
+	add a space between the bot name and the message in saybig()
+
+2012-04-04  Thomas LÉVEIL <courgette@bigbrotherbot.net>
+
+	* : Merge pull request #67 from 82ndab-Bravo17/master Remove 2 logfile errors from TK Plugin
+
+2012-03-31  xlr8or <xlr8or@xlr8or.com>
+
+	* versions.txt: versions.txt updated
+
+2012-03-31  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit dbccca2365be678718efa0d2a5f6a358141678cc Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sat Mar 31 16:19:11 2012 +0200
+
+2012-03-31  Courgette <courgette@bigbrotherbot.net>
+
+	* : commit a660bbc8d8c89140bcc8b11d3f5c72e0218d0d42 Author:
+	Courgette <courgette@bigbrotherbot.net> Date:   Sat Mar 31 15:58:50
+	2012 +0200
+
+2012-03-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/bf3.py, b3/parsers/frostbite2/abstractParser.py: BF3:
+	commands can now start with just the '/' character
+
+2012-03-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/conf/templates/b3.bf3.tpl, b3/parsers/bf3.py,
+	b3/parsers/frostbite2/abstractParser.py,
+	tests/parsers/frostbite2/test_abstractParser.py,
+	tests/parsers/test_bf3.py: BF3: introduce new setting
+	'big_msg_duration' + refactoring
+
+2012-03-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/plugins/admin.py: ADMIN: fixes a bug where command &rules was
+	acting like !rules
+
+2012-03-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/config.py, tests/test_config.py: CORE: Change behavior of
+	XmlConfigParser methods getboolean, getint, getfloat when config
+	value is an empty string
+
+2012-03-31  xlr8or <xlr8or@xlr8or.com>
+
+	* CHANGELOG, ChangeLogDetailed.txt: Updates to changelogs
+
 2012-03-30  Courgette <courgette@bigbrotherbot.net>
 
 	*

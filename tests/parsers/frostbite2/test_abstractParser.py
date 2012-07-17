@@ -18,12 +18,12 @@
 #
 import logging
 import re
+import unittest2 as unittest
 
 from mock import Mock, patch, call
 import time
 from b3.clients import Client
 from b3.plugins.admin import AdminPlugin
-from tests import B3TestCase
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.abstractParser import AbstractParser
@@ -33,7 +33,7 @@ class ConcretegameParser(AbstractParser):
     gameName = 'thegame'
 
 
-class AbstractParser_TestCase(B3TestCase):
+class AbstractParser_TestCase(unittest.TestCase):
     """
     Test case that is suitable for testing AbstractParser parser specific features
     """

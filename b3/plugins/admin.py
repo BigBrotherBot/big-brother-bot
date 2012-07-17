@@ -17,6 +17,16 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2012/07/14 - 1.14.1 - Courgette
+#   * log more detail when failing to register a command
+#   2012/07/07 - 1.14 - Courgette
+#   * better error log messages when registering a command with incorrect level or group keyword
+#   2012/07/05 - 1.13 - Courgette
+#   * provides default values for warn_reason keywords 'default' and 'generic' if missing from config file
+#   * refactors the loading and parsing of warn_reasons from the config file to provide meaningful messages when
+#   * errors are detected
+#   2012/07/02 - 1.12.2 - Courgette
+#   * fix bug un cmd_mask when no player name was given
 #   2012/06/17 - 1.12.1 - Courgette
 #   * syntax
 #   2012/04/15 - 1.12 - Courgette
@@ -98,7 +108,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.12.1'
+__version__ = '1.14.1'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import re, time, threading, sys, traceback, thread, random
@@ -126,7 +136,13 @@ class AdminPlugin(b3.plugin.Plugin):
     PENALTY_WARNING = 'warning'
     PENALTY_BAN = 'ban'
 
-    def startup(self):
+    warn_reasons = {} # dict<warning keyword, tuple(warning duration in minute, warning reason)>
+
+    def onLoadConfig(self):
+        self.load_config_warn_reasons()
+
+
+    def onStartup(self):
         self.registerEvent(self.console.getEventID('EVT_CLIENT_SAY'))
         self.registerEvent(self.console.getEventID('EVT_CLIENT_PRIVATE_SAY'))
         self.createEvent('EVT_ADMIN_COMMAND', 'Admin Command')
@@ -210,13 +226,18 @@ class AdminPlugin(b3.plugin.Plugin):
             # override default level with level in config
             level = plugin.config.get('commands', command)
     
-        level = self.getGroupLevel(level)
+        clean_level = self.getGroupLevel(level)
+        if clean_level is False:
+            groups = self.console.storage.getGroups()
+            self.error("Cannot register command '%s'. Bad level/group : '%s'. Expecting a level (%s) or group keyword (%s)"
+                % (command, level, ', '.join([str(x.level) for x in groups]), ', '.join([x.keyword for x in groups])))
+            return
             
         if secretLevel is None:
             secretLevel = self.config.getint('settings', 'hidecmd_level')
 
         try:
-            self._commands[command] = Command(plugin, command, level, handler, handler.__doc__, alias, secretLevel)
+            self._commands[command] = Command(plugin, command, clean_level, handler, handler.__doc__, alias, secretLevel)
 
             if self._commands[command].alias:
                 self._commands[self._commands[command].alias] = self._commands[command]
@@ -227,7 +248,8 @@ class AdminPlugin(b3.plugin.Plugin):
             self.debug('Command "%s (%s)" registered with %s for level %s' % (command, alias, self._commands[command].func.__name__, self._commands[command].level))
             return True
         except Exception, msg:
-            self.error('Command "%s" registration failed %s' % (command, msg))
+            self.error('Command "%s" registration failed. %s' % (command, msg))
+            self.exception(msg)
             return False
 
     def handle(self, event):
@@ -527,28 +549,7 @@ class AdminPlugin(b3.plugin.Plugin):
     def getWarning(self, warning):
         if not warning:
             warning = 'default'
-
-        try:
-            w = self.config.getTextTemplate('warn_reasons', warning)
-
-            if w[:1] == '/':
-                w = self.config.getTextTemplate('warn_reasons', w[1:])
-                if w[:1] == '/':
-                    self.error('getWarning: Possible warning recursion %s, %s', warning, w)
-                    return None
-
-            expire, warning = w.split(',', 1)
-            warning = warning.strip()
-
-            if warning[:6] == '/spam#':
-                warning = self.getSpam(warning[6:])
-
-            return (functions.time2minutes(expire.strip()), warning)
-        except ConfigParser.NoOptionError:
-            return None
-        except Exception, msg:
-            self.error('getWarning: Could not get warning "%s": %s\n%s', warning, msg, traceback.extract_tb(sys.exc_info()[2]))
-            return None
+        return self.warn_reasons.get(warning)
 
     def assert_commandData(self, data, client, cmd, *formatArgs):
         data = cmd.parseData(data, *formatArgs)
@@ -590,7 +591,7 @@ class AdminPlugin(b3.plugin.Plugin):
         if not m:
             client.message('^7Invalid parameters')
             return False
-        elif m[1] == '':
+        elif m[1] is None:
             groupName = m[0]
             sclient = client
         else:
@@ -1501,14 +1502,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """\
         - list warnings
         """
-        ws = []
-        for w in self.config.options('warn_reasons'):
-            if w != 'default' and w != 'generic':
-                ws.append(w)
-
-        client.message('^7Warnings: %s' % ', '.join(ws))
-
-
+        client.message('^7Warnings: %s' % ', '.join(sorted([ x for x in self.warn_reasons.keys() if x not in ('default', 'generic')])))
 
     def cmd_notice(self, data, client=None, cmd=None):
         """\
@@ -1870,8 +1864,10 @@ class AdminPlugin(b3.plugin.Plugin):
             try:
                 rule = self.config.getTextTemplate('spamages', 'rule%s' % i)
                 rules.append(rule)
-            except:
+            except ConfigParser.NoOptionError:
                 break
+            except Exception, err:
+                self.error(err)
         try:
             if sclient:
                 for rule in rules:
@@ -1971,6 +1967,93 @@ class AdminPlugin(b3.plugin.Plugin):
             sclient = self.findClientPrompt(m[0], client)
             if sclient:
                 self.console.say('^7%s %s^7!' % (random.choice(('Wake up', '*poke*', 'Attention', 'Get up', 'Go', 'Move out')), sclient.exactName))
+
+
+    def load_config_warn_reasons(self):
+        """ load section 'warn_reasons' from config """
+
+        re_valid_warn_reason_value_from_config = re.compile(r"""
+                ^
+                (?:
+                    \s*
+                    \d+[smhdw]?         # a duration with one of the optional allowed time suffixes
+                    ,\s*                # followed by a comma
+
+                    (?:                 # followed by either
+                        (?=/spam\#)/spam\#[^/\s]+   # '/spam#' followed by a keyword
+                    |                               # or
+                        (?!/spam\#)[^\s].*          # not '/spam#' and anything
+                    )
+                |
+
+                   /                    # anything that starts with '/'
+                   (?!spam\#)           # but is not followed by 'spam#'
+                   [^/\s]+              # followed by at least a non blank and non '/' character
+                )
+                $
+                """, re.VERBOSE)
+
+        def load_warn_reason(keyword, reason_from_config):
+                if re.match(re_valid_warn_reason_value_from_config, reason_from_config) is None:
+                    self.warning("""warn_reason '%s': invalid value "%s". Expected format is : "<duration>, <reason or /spam# """
+                    """followed by a reference to a spamage keyword>" or '/' followed by a reference to another warn_reason"""
+                    % (keyword, reason_from_config))
+                    return
+
+                if reason_from_config[:1] == '/':
+                    try:
+                        reason = self.config.getTextTemplate('warn_reasons', reason_from_config[1:])
+                    except ConfigParser.NoOptionError:
+                        self.warning("warn_reason '%s' refers to '/%s' but warn_reason '%s' cannot be found" % (keyword, reason_from_config[1:], reason_from_config[1:]))
+                        return
+                    except Exception, err:
+                        self.error("warn_reason '%s' refers to '/%s' but '%s' could not be read : %s" % (keyword, reason_from_config[1:], reason_from_config[1:], err), err)
+                        return
+
+                    if reason[:1] == '/':
+                        self.warning("warn_reason '%s': Possible recursion %s, %s" % (keyword, reason, reason_from_config[1:]))
+                        return
+                else:
+                    reason = reason_from_config
+
+                expire, reason = reason.split(',', 1)
+                reason = reason.strip()
+
+                if reason[:6] == '/spam#':
+                    spam_reason = self.getSpam(reason[6:])
+                    if spam_reason is None:
+                        self.warning("warn_reason '%s' refers to '/spam#%s' but spamage '%s' cannot be found" % (keyword, reason[6:], reason[6:]))
+                        return
+                    else:
+                        reason = spam_reason
+
+                return functions.time2minutes(expire.strip()), reason
+
+
+
+        def load_mandatory_warn_reason(keyword, default_duration, default_reason):
+            if self.config.has_option('warn_reasons', keyword):
+                self.warn_reasons[keyword] = load_warn_reason(keyword, self.config.getTextTemplate('warn_reasons', keyword))
+            if not keyword in self.warn_reasons or self.warn_reasons[keyword] is None:
+                self.warning("No valid option '%s' in section 'warn_reasons'. Falling back on default value" % keyword)
+                self.warn_reasons[keyword] = functions.time2minutes(default_duration), default_reason
+            self.info("warn reason '%s' : %s" % (keyword, self.warn_reasons[keyword]))
+
+        self.info("------ loading warn_reasons from config file ------")
+        self.warn_reasons = {}
+        load_mandatory_warn_reason('default', "1h", "^7behave yourself")
+        load_mandatory_warn_reason('generic', "1h", "^7")
+        if self.config.has_section('warn_reasons'):
+            for keyword, value in self.config.items('warn_reasons'):
+                rv = load_warn_reason(keyword, value)
+                if rv is not None:
+                    self.warn_reasons[keyword] = rv
+        for keyword, (duration, reason) in self.warn_reasons.items():
+            self.info("""{0:<10s} {1:<10s}\t"{2}" """.format(keyword, functions.minutesStr(duration), reason))
+        self.info("-------------- warn_reasons loaded ----------------")
+
+
+
 
 #--------------------------------------------------------------------------------------------------
 #commandstxt = file('commands.txt', 'w')

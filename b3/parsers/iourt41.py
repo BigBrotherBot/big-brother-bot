@@ -156,9 +156,11 @@
 #     * fixes issue xlr8or/big-brother-bot#87 - missing ip when trying to auth a client crashes the bot
 # 19/05/2012 - 1.13.1 - Courgette
 #     * fixes issue with kill events when killed by UT_MOD_SLAPPED, UT_MOD_NUKED, MOD_TELEFRAG
+# 07/07/2012 - 1.13.2 - Courgette
+#     * ensures the config file has option 'game_log' in section 'server'
 #
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.13.1'
+__version__ = '1.13.2'
 
 import re, string, time, os, thread
 from b3.parsers.q3a.abstractParser import AbstractParser
@@ -379,6 +381,9 @@ class Iourt41Parser(AbstractParser):
      }
 
     def startup(self):
+        if not self.config.has_option('server','game_log'):
+            self.critical("your main config file is missing the 'game_log' setting in section 'server'")
+            raise SystemExit(220)
 
         # add UrT specific events
         self.Events.createEvent('EVT_GAME_FLAG_RETURNED', 'Flag returned')

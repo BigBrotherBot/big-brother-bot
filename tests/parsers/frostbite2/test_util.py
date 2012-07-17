@@ -291,7 +291,7 @@ class Test_MapListBlock_append(unittest.TestCase):
         try:
             mlb1.append(data2)
         except MapListBlockError, err:
-            self.assertIn('cannot append data', err.message, "expecting error message to contain 'cannot append data' but got %r instead" % err)
+            self.assertIn('cannot append data', str(err), "expecting error message to contain 'cannot append data' but got %r instead" % err)
         except Exception, err:
             self.fail("expecting MapListBlockError but got %r instead" % err)
         else:

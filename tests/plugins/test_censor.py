@@ -1,7 +1,7 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2011 Courgette
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -11,14 +11,16 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+import logging
 import os
 from mock import Mock, patch
-from b3.fake import FakeClient, FakeConsole
+import sys
+from b3.fake import FakeClient
 from tests import B3TestCase
 import unittest2 as unittest
 
@@ -27,8 +29,11 @@ from b3.plugins.censor import CensorPlugin
 from b3.config import XmlConfigParser
 
 
+default_plugin_file = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../b3/conf/plugin_censor.xml"))
+
+
 class CensorTestCase(B3TestCase):
-    """base class for TestCase to apply to the Censor plugin"""
+    """ Ease testcases that need an working B3 console and need to control the censor plugin config """
 
     def setUp(self):
         # Timer needs to be patched or the Censor plugin would schedule a 2nd check one minute after
@@ -36,9 +41,39 @@ class CensorTestCase(B3TestCase):
         self.timer_patcher = patch('threading.Timer')
         self.timer_patcher.start()
 
-        super(CensorTestCase, self).setUp()
+        self.log = logging.getLogger('output')
+        self.log.propagate = False
+
+        B3TestCase.setUp(self)
+        self.console.startup()
+        self.log.propagate = True
+
+        self.joe = FakeClient(self.console, name="Joe", exactName="Joe", guid="zaerezarezar", groupBits=1, team=b3.TEAM_UNKNOWN)
+
+    def tearDown(self):
+        B3TestCase.tearDown(self)
+        self.timer_patcher.stop()
+
+
+
+    def init_plugin(self, config_content):
         self.conf = XmlConfigParser()
-        self.conf.setXml(r"""
+        self.conf.setXml(config_content)
+        self.p = CensorPlugin(self.console, self.conf)
+
+        self.log.setLevel(logging.DEBUG)
+        self.log.info("============================= Censor plugin: loading config ============================")
+        self.p.onLoadConfig()
+        self.log.info("============================= Censor plugin: starting  =================================")
+        self.p.onStartup()
+
+
+class Detection_TestCase(CensorTestCase):
+    """base class for TestCase that verify bad words and bad names are correctly detected """
+
+    def setUp(self):
+        CensorTestCase.setUp(self)
+        self.init_plugin(r"""
             <configuration plugin="censor">
                 <badwords>
                     <penalty type="warning" reasonkeyword="racist"/>
@@ -48,11 +83,6 @@ class CensorTestCase(B3TestCase):
                 </badnames>
             </configuration>
         """)
-        self.p = CensorPlugin(self.console, self.conf)
-        self.p.onLoadConfig()
-
-    def tearDown(self):
-        self.timer_patcher.stop()
 
     def assert_name_penalized_count(self, name, count):
         self.p.penalizeClientBadname = Mock()
@@ -98,8 +128,8 @@ class CensorTestCase(B3TestCase):
             self.assertEquals(0, self.p.penalizeClient.call_count, "text [%s] should not have been penalized" % text)
 
 
-
-class Test_Censor_badword(CensorTestCase):
+class Test_Censor_badword(Detection_TestCase):
+    """ test that bad words are detected """
 
     def test_word(self):
 
@@ -108,7 +138,7 @@ class Test_Censor_badword(CensorTestCase):
         #self.p.info = my_info
 
         self.p._badNames = []
-        self.assert_name_is_not_penalized('Joe')
+        self.assert_chat_is_not_penalized('Joe')
 
         self.p._badNames = []
         self.p._add_bad_word(rulename='ass', word='ass')
@@ -125,7 +155,7 @@ class Test_Censor_badword(CensorTestCase):
         #self.p.info = my_info
 
         self.p._badWords = []
-        self.assert_name_is_not_penalized('Joe')
+        self.assert_chat_is_not_penalized('Joe')
 
         self.p._badWords = []
         self.p._add_bad_word(rulename='ass', regexp=r'\b[a@][s$]{2}\b')
@@ -135,8 +165,24 @@ class Test_Censor_badword(CensorTestCase):
         self.assert_chat_is_penalized('kI$$ my a$s n00b')
         self.assert_chat_is_penalized('right in the ass')
 
+        self.p._badWords = []
+        self.p._add_bad_word(rulename='ass', regexp=r'f[u\*]+ck')
+        self.assert_chat_is_penalized('fuck')
+        self.assert_chat_is_penalized(' fuck ')
+        self.assert_chat_is_penalized(' fuck !')
+        self.assert_chat_is_penalized('fuck!')
+        self.assert_chat_is_penalized('fuck#*!')
+        self.assert_chat_is_penalized('you fat fuck')
+        self.assert_chat_is_penalized('f*ck u')
+        self.assert_chat_is_penalized('f*****ck')
+        self.assert_chat_is_penalized('f*uu**ck')
 
-class Test_Censor_badname(CensorTestCase):
+
+
+
+class Test_Censor_badname(Detection_TestCase):
+    """ test that bad names are detected """
+
     def test_regexp(self):
 
         def my_info(text):
@@ -171,10 +217,10 @@ class Test_Censor_badname(CensorTestCase):
         self.assert_name_is_penalized('what an ass')
 
 
-default_plugin_file = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../b3/conf/plugin_censor.xml"))
 
 @unittest.skipUnless(os.path.exists(default_plugin_file), reason="cannot get default plugin_censor.xml config file at %s" % default_plugin_file)
-class Test_Censor_badword_default_config(CensorTestCase):
+class Test_Censor_badword_default_config(Detection_TestCase):
+    """ test that bad words from the default config are detected """
 
     def setUp(self):
         super(Test_Censor_badword_default_config, self).setUp()
@@ -234,6 +280,8 @@ class Test_Censor_badword_default_config(CensorTestCase):
         self.assert_chat_is_penalized('sh1t')
         self.assert_chat_is_penalized('$h1t')
         self.assert_chat_is_penalized('$hit')
+        self.assert_chat_is_penalized('$hiiiiit')
+        self.assert_chat_is_penalized('$hiiii*t')
         self.assert_chat_is_penalized('$h!t')
         self.assert_chat_is_penalized('xc $h!t. x ')
 
@@ -260,6 +308,7 @@ class Test_Censor_badword_default_config(CensorTestCase):
         self.assert_chat_is_penalized('focking')
         self.assert_chat_is_penalized('f*cking')
         self.assert_chat_is_penalized('f0cking')
+        self.assert_chat_is_penalized('fu0ouuuck')
 
     def test_fuc(self):
         self.assert_chat_is_penalized('fuc')
@@ -284,6 +333,10 @@ class Test_Censor_badword_default_config(CensorTestCase):
 
     def test_dick(self):
         self.assert_chat_is_penalized('dick')
+        self.assert_chat_is_not_penalized('dickhead')
+        self.assert_chat_is_penalized('d1ck')
+        self.assert_chat_is_penalized('d!ck')
+        self.assert_chat_is_penalized('d*ck')
         self.assert_chat_is_penalized('x dick x')
 
     def test_bitch(self):
@@ -531,7 +584,8 @@ class Test_Censor_badword_default_config(CensorTestCase):
 
 
 @unittest.skipUnless(os.path.exists(default_plugin_file), reason="cannot get default plugin_censor.xml config file at %s" % default_plugin_file)
-class Test_Censor_badname_default_config(CensorTestCase):
+class Test_Censor_badname_default_config(Detection_TestCase):
+    """ test that bad names from the default config are detected """
 
     def setUp(self):
         super(Test_Censor_badname_default_config, self).setUp()
@@ -587,6 +641,8 @@ class Test_Censor_badname_default_config(CensorTestCase):
         self.assert_name_is_penalized('fUck')
         self.assert_name_is_penalized('f*ck')
         self.assert_name_is_penalized('f.ck')
+        self.assert_name_is_penalized('f.uck')
+        self.assert_name_is_penalized('fuuuuck')
         self.assert_name_is_penalized('fuckkkkk')
         self.assert_name_is_penalized('watdafuck?')
 
@@ -683,52 +739,111 @@ class Test_Censor_badname_default_config(CensorTestCase):
 
 
 
-@patch("threading.Timer") # to prevent the plugin from scheduling tasks
-class Censor_functional_tests(unittest.TestCase):
 
-    def setUp(self):
-        # create a FakeConsole parser
-        self.parser_conf = XmlConfigParser()
-        self.parser_conf.loadFromString(r"""<configuration/>""")
-        self.console = FakeConsole(self.parser_conf)
-        self.console.startup()
+class Test_config(CensorTestCase):
+    """ test different config are correctly loaded """
 
-        self.joe = FakeClient(self.console, name="Joe", exactName="Joe", guid="zaerezarezar", groupBits=1, team=b3.TEAM_UNKNOWN)
+    def assert_default_badwords_penalty(self):
+        self.assertEqual("warning", self.p._defaultBadWordPenalty.type)
+        self.assertEqual(0, self.p._defaultBadWordPenalty.duration)
+        self.assertEqual("cuss", self.p._defaultBadWordPenalty.keyword)
+        self.assertIsNone(self.p._defaultBadWordPenalty.reason)
 
-    def init_plugin(self, config_content):
-        self.conf = XmlConfigParser()
-        self.conf.setXml(config_content)
-        self.p = CensorPlugin(self.console, self.conf)
-        self.p.onLoadConfig()
-        self.p.onStartup()
+    def assert_default_badnames_penalty(self):
+        self.assertEqual("warning", self.p._defaultBadNamePenalty.type)
+        self.assertEqual(0, self.p._defaultBadNamePenalty.duration)
+        self.assertEqual("badname", self.p._defaultBadNamePenalty.keyword)
+        self.assertIsNone(self.p._defaultBadNamePenalty.reason)
 
 
-    def test_conf(self, timer_patch):
+
+    @unittest.skipUnless(os.path.exists(default_plugin_file), reason="cannot get default plugin_censor.xml config file at %s" % default_plugin_file)
+    def test_default_conf(self):
+        with open(default_plugin_file) as default_conf:
+            self.init_plugin(default_conf.read())
+        self.assertEqual(40, self.p._maxLevel)
+        self.assertEqual(3, self.p._ignoreLength)
+        self.assertEqual(68, len(self.p._badWords))
+        self.assertEqual(17, len(self.p._badNames))
+        self.assert_default_badwords_penalty()
+        self.assert_default_badnames_penalty()
+
+    def test_broken_conf__emtpy_conf(self):
+        self.init_plugin(r"""
+            <configuration plugin="censor">
+            </configuration>
+        """)
+        self.assertEqual(0, self.p._maxLevel)
+        self.assertEqual(3, self.p._ignoreLength)
+        self.assertEqual(0, len(self.p._badWords))
+        self.assertEqual(0, len(self.p._badNames))
+        self.assert_default_badwords_penalty()
+        self.assert_default_badnames_penalty()
+
+    def test_broken_conf__max_level_missing(self):
         self.init_plugin(r"""
             <configuration plugin="censor">
                 <settings name="settings">
-                    <set name="max_level">40</set>
-                    <!-- ignore bad words that have equal or less characters: -->
-                    <set name="ignore_length">3</set>
                 </settings>
-                <badwords>
-                    <penalty type="warning" reasonkeyword="default_reason"/>
-                    <badword name="foo" lang="en">
-                        <regexp>\bf[o0]{2}\b</regexp>
-                    </badword>
-                </badwords>
-                <badnames>
-                    <penalty type="warning" reasonkeyword="badname"/>
-                    <badname name="cunt">
-                        <word>cunt</word>
-                    </badname>
-                </badnames>
             </configuration>
         """)
-        self.assertEqual(1, len(self.p._badWords))
+        self.assertEqual(0, self.p._maxLevel)
+
+    def test_broken_conf__max_level_empty(self):
+        self.init_plugin(r"""
+            <configuration plugin="censor">
+                <settings name="settings">
+		            <set name="max_level"></set>
+                </settings>
+            </configuration>
+        """)
+        self.assertEqual(0, self.p._maxLevel)
+
+    def test_broken_conf__max_level_NaN(self):
+        self.init_plugin(r"""
+            <configuration plugin="censor">
+                <settings name="settings">
+		            <set name="max_level">fo0</set>
+                </settings>
+            </configuration>
+        """)
+        self.assertEqual(0, self.p._maxLevel)
 
 
-    def test_joe_says_badword(self, timer_patch):
+    def test_broken_conf__ignore_length_missing(self):
+        self.init_plugin(r"""
+            <configuration plugin="censor">
+                <settings name="settings">
+                </settings>
+            </configuration>
+        """)
+        self.assertEqual(3, self.p._ignoreLength)
+
+    def test_broken_conf__ignore_length_empty(self):
+        self.init_plugin(r"""
+            <configuration plugin="censor">
+                <settings name="settings">
+                    <set name="ignore_length"></set>
+                </settings>
+            </configuration>
+        """)
+        self.assertEqual(3, self.p._ignoreLength)
+
+    def test_broken_conf__ignore_length_NaN(self):
+        self.init_plugin(r"""
+            <configuration plugin="censor">
+                <settings name="settings">
+                    <set name="ignore_length">fo0</set>
+                </settings>
+            </configuration>
+        """)
+        self.assertEqual(3, self.p._ignoreLength)
+
+
+class Test_functional(CensorTestCase):
+    """ test simulated in-game scenarios """
+
+    def test_joe_says_badword(self):
         self.init_plugin(r"""
             <configuration plugin="censor">
                 <settings name="settings">
@@ -756,7 +871,7 @@ class Censor_functional_tests(unittest.TestCase):
         self.assertEqual(1, self.joe.warn.call_count)
 
 
-    def test_cunt_connects(self, timer_patch):
+    def test_cunt_connects(self):
         self.init_plugin(r"""
             <configuration plugin="censor">
                 <settings name="settings">
@@ -784,7 +899,7 @@ class Censor_functional_tests(unittest.TestCase):
         self.assertEqual(1, self.joe.warn.call_count)
 
 
-    def test_2_letters_badword_when_ignore_length_is_2(self, timer_patch):
+    def test_2_letters_badword_when_ignore_length_is_2(self):
         self.init_plugin(r"""
             <configuration plugin="censor">
                 <settings name="settings">
@@ -811,7 +926,7 @@ class Censor_functional_tests(unittest.TestCase):
         self.assertEqual(0, self.joe.warn.call_count)
 
 
-    def test_2_letters_badword_when_ignore_length_is_1(self, timer_patch):
+    def test_2_letters_badword_when_ignore_length_is_1(self):
         self.init_plugin(r"""
             <configuration plugin="censor">
                 <settings name="settings">
@@ -836,6 +951,36 @@ class Censor_functional_tests(unittest.TestCase):
         self.joe.connects(0)
         self.joe.says("tg")
         self.assertEqual(1, self.joe.warn.call_count)
+
+
+    def test_tempban_penalty_is_applied(self):
+        self.init_plugin(r"""
+            <configuration plugin="censor">
+                <settings name="settings">
+                    <set name="max_level">40</set>
+                    <!-- ignore bad words that have equal or less characters: -->
+                    <set name="ignore_length">3</set>
+                </settings>
+                <badwords>
+                    <penalty type="warning" reasonkeyword="default_reason"/>
+                    <badword name="anani" lang="en">
+                        <penalty type="tempban" reasonkeyword="cuss" duration="7d" />
+                        <regexp>\s[a@]n[a@]n[iy!1]</regexp>
+                    </badword>
+                </badwords>
+                <badnames>
+                    <penalty type="warning" reasonkeyword="badname"/>
+                </badnames>
+            </configuration>
+        """)
+        self.joe.warn = Mock(wraps=lambda *args: sys.stdout.write("warning joe %s" % repr(args)))
+        self.joe.tempban = Mock(wraps=lambda *args: sys.stdout.write("tempbanning joe %s" % repr(args)))
+        self.joe.warn.reset_mock()
+        self.joe.tempban.reset_mock()
+        self.joe.connects(0)
+        self.joe.says("anani")
+        self.assertEqual(0, self.joe.warn.call_count)
+        self.assertEqual(1, self.joe.tempban.call_count)
 
 if __name__ == '__main__':
     unittest.main()

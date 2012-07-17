@@ -18,6 +18,9 @@
 #
 #
 # CHANGELOG
+#   2012/06/17 - 1.27.4 - courgette
+#   * log traceback when an exception occurs while loading a plugin
+#   * detect missing 'name' attribute in plugin element from the plugins section of the config file
 #   2012/06/17 - 1.27.3 - courgette
 #   * more explicit error message when failing to load a plugin from a specified path
 #   2012/06/17 - 1.27.2 - courgette
@@ -141,7 +144,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.27.3'
+__version__ = '1.27.4'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -158,7 +161,7 @@ import b3.clients
 import b3.timezones
 from ConfigParser import NoOptionError
 from b3.functions import getModule
-
+from b3.lib.elementtree import ElementTree
 
 class Parser(object):
     _lineFormat = re.compile('^([a-z ]+): (.*?)', re.IGNORECASE)
@@ -604,6 +607,9 @@ class Parser(object):
         priority = 1
         for p in self.config.get('plugins/plugin'):
             name = p.get('name')
+            if not name:
+                self.critical("Config Error in the plugins section. No plugin name found in [%s]" % ElementTree.tostring(p).strip())
+                raise SystemExit(220)
             conf = p.get('config')
             if conf is None:
                 conf = '@b3/conf/plugin_%s.xml' % name
@@ -619,93 +625,66 @@ class Parser(object):
 
         self._pluginOrder = []
         for s in pluginSort:
-
-            self._pluginOrder.append(plugins[s]['name'])
-            self.bot('Loading Plugin #%s %s [%s]', s, plugins[s]['name'], plugins[s]['conf'])
-
+            plugin_name = plugins[s]['name']
+            plugin_conf = plugins[s]['conf']
+            self._pluginOrder.append(plugin_name)
+            self.bot('Loading Plugin #%s %s [%s]', s, plugin_name, plugin_conf)
             try:
-                pluginModule = self.pluginImport(plugins[s]['name'], plugins[s]['path'])
-                self._plugins[plugins[s]['name']] = getattr(pluginModule, '%sPlugin' % plugins[s]['name'].title())(self, plugins[s]['conf'])
+                pluginModule = self.pluginImport(plugin_name, plugins[s]['path'])
+                self._plugins[plugin_name] = getattr(pluginModule, '%sPlugin' % plugin_name.title())(self, plugin_conf)
                 if plugins[s]['disabled']:
-                    self.info("disabling plugin %s" % plugins[s]['name'])
-                    self._plugins[plugins[s]['name']].disable()
-            except Exception, msg:
-                # critical will exit
-                self.critical('Error loading plugin: %s', msg)
-    
-            version = getattr(pluginModule, '__version__', 'Unknown Version')
-            author  = getattr(pluginModule, '__author__', 'Unknown Author')
-            
-            self.bot('Plugin %s (%s - %s) loaded', plugins[s]['name'], version, author)
-            self.screen.write('.')
-            self.screen.flush()
+                    self.info("disabling plugin %s" % plugin_name)
+                    self._plugins[plugin_name].disable()
+            except Exception, err:
+                self.error('Error loading plugin %s' % plugin_name, exc_info=err)
+            else:
+                version = getattr(pluginModule, '__version__', 'Unknown Version')
+                author  = getattr(pluginModule, '__author__', 'Unknown Author')
+                self.bot('Plugin %s (%s - %s) loaded', plugin_name, version, author)
+                self.screen.write('.')
+                self.screen.flush()
 
     def loadArbPlugins(self):
         """Load must have plugins and check for admin plugin"""
 
+        def loadPlugin(parser, plugin_id):
+            parser.bot('Loading Plugin %s', plugin_id)
+            pluginModule = parser.pluginImport(plugin_id)
+            parser._plugins[plugin_id] = getattr(pluginModule, '%sPlugin' % plugin_id.title()) (parser)
+            parser._pluginOrder.append(plugin_id)
+            version = getattr(pluginModule, '__version__', 'Unknown Version')
+            author  = getattr(pluginModule, '__author__', 'Unknown Author')
+            parser.bot('Plugin %s (%s - %s) loaded', plugin_id, version, author)
+            parser.screen.write('.')
+            parser.screen.flush()
+
         if 'publist' not in self._pluginOrder:
             #self.debug('publist not found!')
-            p = 'publist'
-            self.bot('Loading Plugin %s', p)
             try:
-                pluginModule = self.pluginImport(p)
-                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title())(self)
-                self._pluginOrder.append(p)
-                version = getattr(pluginModule, '__version__', 'Unknown Version')
-                author  = getattr(pluginModule, '__author__', 'Unknown Author')
-                self.bot('Plugin %s (%s - %s) loaded', p, version, author)
-                self.screen.write('.')
-                self.screen.flush()
-            except Exception, msg:
-                self.verbose('Error loading plugin: %s', msg)
+                loadPlugin(self, 'publist')
+            except Exception, err:
+                self.verbose('Error loading plugin publist', exc_info=err)
         if self.config.has_option('server','game_log') \
             and self.config.get('server','game_log')[0:6] == 'ftp://' :
-            p = 'ftpytail'
-            self.bot('Loading %s', p)
             try:
-                pluginModule = self.pluginImport(p)
-                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title()) (self)
-                self._pluginOrder.append(p)
-                version = getattr(pluginModule, '__version__', 'Unknown Version')
-                author  = getattr(pluginModule, '__author__', 'Unknown Author')
-                self.bot('Plugin %s (%s - %s) loaded', p, version, author)
-                self.screen.write('.')
-                self.screen.flush()
-            except Exception, msg:
-                self.critical('Error loading plugin: %s', msg)
-                raise SystemExit('error while loading %s' % p)
+                loadPlugin(self, 'ftpytail')
+            except Exception, err:
+                self.critical('Error loading plugin ftpytail', exc_info=err)
+                raise SystemExit('error while loading ftpytail')
         if self.config.has_option('server','game_log') \
             and self.config.get('server','game_log')[0:7] == 'sftp://' :
-            p = 'sftpytail'
-            self.bot('Loading %s', p)
             try:
-                pluginModule = self.pluginImport(p)
-                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title()) (self)
-                self._pluginOrder.append(p)
-                version = getattr(pluginModule, '__version__', 'Unknown Version')
-                author  = getattr(pluginModule, '__author__', 'Unknown Author')
-                self.bot('Plugin %s (%s - %s) loaded', p, version, author)
-                self.screen.write('.')
-                self.screen.flush()
-            except Exception, msg:
-                self.critical('Error loading plugin: %s', msg)
-                raise SystemExit('error while loading %s' % p)
+                loadPlugin(self, 'sftpytail')
+            except Exception, err:
+                self.critical('Error loading plugin sftpytail', exc_info=err)
+                raise SystemExit('error while loading sftpytail')
         if self.config.has_option('server','game_log') \
             and self.config.get('server','game_log')[0:7] == 'http://' :
-            p = 'httpytail'
-            self.bot('Loading %s', p)
             try:
-                pluginModule = self.pluginImport(p)
-                self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title()) (self)
-                self._pluginOrder.append(p)
-                version = getattr(pluginModule, '__version__', 'Unknown Version')
-                author  = getattr(pluginModule, '__author__', 'Unknown Author')
-                self.bot('Plugin %s (%s - %s) loaded', p, version, author)
-                self.screen.write('.')
-                self.screen.flush()
-            except Exception, msg:
-                self.critical('Error loading plugin: %s', msg)
-                raise SystemExit('error while loading %s' % p)
+                loadPlugin(self, 'httpytail')
+            except Exception, err:
+                self.critical('Error loading plugin httpytail', exc_info=err)
+                raise SystemExit('error while loading httpytail')
         if 'admin' not in self._pluginOrder:
             # critical will exit, admin plugin must be loaded!
             self.critical('AdminPlugin is essential and MUST be loaded! Cannot continue without admin plugin.')
@@ -747,7 +726,6 @@ class Parser(object):
         self.screen.write('Starting Plugins : ')
         self.screen.flush()
 
-        _plugins = self._pluginOrder
         def start_plugin(plugin_name):
             p = self._plugins[plugin_name]
             self.bot('Starting Plugin %s', plugin_name)
@@ -757,16 +735,22 @@ class Parser(object):
             self.screen.write('.')
             self.screen.flush()
 
-        # handle admin plugin first as many plugins relie on it
-        if 'admin' in _plugins:
+        # handle admin plugin first as many plugins rely on it
+        if 'admin' in self._pluginOrder:
             start_plugin('admin')
-            _plugins.remove('admin')
+            self._pluginOrder.remove('admin')
 
         # start other plugins
-        for plugin_name in _plugins:
-            start_plugin(plugin_name)
+        for plugin_name in self._pluginOrder:
+            if plugin_name not in self._plugins:
+                self.warning("Not starting plugin %s as it was not loaded" % plugin_name)
+            else:
+                try:
+                    start_plugin(plugin_name)
+                except Exception, err:
+                    self.error("Could not start plugin %s" % plugin_name, exc_info=err)
 
-        self.screen.write(' (%s)\n' % (len(_plugins)+1))
+        self.screen.write(' (%s)\n' % (len(self._pluginOrder)+1))
 
     def disablePlugins(self):
         """Disable all plugins except for publist, ftpytail and admin"""

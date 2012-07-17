@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 import logging
+import threading
+import sys
 from b3.config import XmlConfigParser
 from b3.fake import FakeConsole
 import b3.output # do not remove, needed because the module alters some defaults of the logging module
@@ -27,9 +29,20 @@ from mock import Mock
 import time
 import unittest2 as unittest
 
+
+testcase_lock = threading.Lock() # together with flush_console_streams, helps getting logging output related to the correct
+# test in test runners such as the one in PyCharm IDE.
+
+def flush_console_streams():
+    sys.stderr.flush()
+    sys.stdout.flush()
+
 class B3TestCase(unittest.TestCase):
 
     def setUp(self):
+        testcase_lock.acquire()
+        flush_console_streams()
+
         # create a FakeConsole parser
         self.parser_conf = XmlConfigParser()
         self.parser_conf.loadFromString(r"""<configuration/>""")
@@ -43,4 +56,6 @@ class B3TestCase(unittest.TestCase):
             print(("ERROR: %s" % msg) % args)
         self.console.error = myError
 
-
+    def tearDown(self):
+        flush_console_streams()
+        testcase_lock.release()

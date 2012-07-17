@@ -1,3 +1,12 @@
+1.8.1 -> 1.8.2
+----
+A list of changed files is available after release here:
+github.com/BigBrotherBot/big-brother-bot/compare/v1.8.1...v1.8.2
+----
+- BF3: added Close Quarter DLC maps specifics
+- BF3: implementation of update R24
+- Many bugfixes, core improvements and scaling enhancements (larger eventqueue)
+
 1.8.0 -> 1.8.1
 ----
 A list of changed files is available after release here:

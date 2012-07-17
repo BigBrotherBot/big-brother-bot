@@ -16,7 +16,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-from mock import Mock, patch
+from mock import Mock, patch, call
+import time
+import sys
 from tests import B3TestCase
 import unittest2 as unittest
 import os
@@ -30,19 +32,32 @@ from b3.clients import Client, Group, ClientVar
 
 ADMIN_CONFIG_FILE = os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.xml")
 
-@unittest.skipUnless(os.path.isfile(ADMIN_CONFIG_FILE), "%s is not a file" % ADMIN_CONFIG_FILE)
 class Admin_TestCase(B3TestCase):
-
+    """ tests from a class inherithing from Admin_TestCase must call self.init() """
     def setUp(self):
         B3TestCase.setUp(self)
         self.conf = XmlConfigParser()
-        self.conf.load(ADMIN_CONFIG_FILE)
         self.p = AdminPlugin(self.console, self.conf)
+
+    def init(self, config_content=None):
+        """ optionally specify a config for the plugin. If called with no parameter, then the default config is loaded """
+        if config_content is None:
+            if not os.path.isfile(ADMIN_CONFIG_FILE):
+                B3TestCase.tearDown(self) # we are skipping the test at a late stage after setUp was called
+                raise unittest.SkipTest("%s is not a file" % ADMIN_CONFIG_FILE)
+            else:
+                self.conf.load(ADMIN_CONFIG_FILE)
+        else:
+            self.conf.loadFromString(config_content)
         self.p.onLoadConfig()
         self.p.onStartup()
 
 
 class Test_parseUserCmd(Admin_TestCase):
+
+    def setUp(self):
+        Admin_TestCase.setUp(self)
+        self.init()
 
     @unittest.expectedFailure
     def test_clientinfo_bad_arg(self):
@@ -71,6 +86,10 @@ class Test_parseUserCmd(Admin_TestCase):
 
 
 class Test_getGroupLevel(Admin_TestCase):
+
+    def setUp(self):
+        Admin_TestCase.setUp(self)
+        self.init()
 
     def test_nominal(self):
         for test_data, expected in {
@@ -105,6 +124,7 @@ class Test_misc_cmd(Admin_TestCase):
 
     def setUp(self):
         Admin_TestCase.setUp(self)
+        self.init()
         self.p.console.say = Mock()
 
     def test_die(self):
@@ -254,6 +274,7 @@ class Test_misc_cmd(Admin_TestCase):
 
 
 class CommandTestCase(Admin_TestCase):
+    """ tests from a class inherithing from CommandTestCase must call self.init() """
     def setUp(self):
         Admin_TestCase.setUp(self)
         self.mock_client = Mock(spec=Client, name="client")
@@ -268,6 +289,7 @@ class Test_cmd_iamgod(CommandTestCase):
 
     def setUp(self):
         CommandTestCase.setUp(self)
+        self.init()
         self._commands_patcher = patch.object(self.p, '_commands')
         self._commands_patcher.start()
 
@@ -320,6 +342,7 @@ class Test_cmd_warn(CommandTestCase):
 
     def setUp(self):
         CommandTestCase.setUp(self)
+        self.init()
         self.p.warnClient = Mock()
 
     def warn(self, data=''):
@@ -389,6 +412,7 @@ class Test_cmd_kick(CommandTestCase):
 
     def setUp(self):
         CommandTestCase.setUp(self)
+        self.init()
 
         def my_getint(section, option):
             if section == "settings" and option == "noreason_level":
@@ -479,6 +503,7 @@ class Test_cmd_spank(CommandTestCase):
 
     def setUp(self):
         CommandTestCase.setUp(self)
+        self.init()
 
         def my_getint(section, option):
             if section == "settings" and option == "noreason_level":
@@ -570,6 +595,7 @@ class Test_cmd_permban(CommandTestCase):
 
     def setUp(self):
         CommandTestCase.setUp(self)
+        self.init()
 
         def my_getint(section, option):
             if section == "settings" and option == "noreason_level":
@@ -660,6 +686,7 @@ class Test_cmd_tempban(CommandTestCase):
 
     def setUp(self):
         CommandTestCase.setUp(self)
+        self.init()
 
         original_getint = self.p.config.getint
         def my_getint(section, option):
@@ -764,6 +791,91 @@ class Test_cmd_tempban(CommandTestCase):
         self.tempban('foo 3h theKeyword')
         foo_player.tempban.assert_called_once_with('aReason', 'theKeyword', 3*60, self.mock_client)
 
+
+class Test_cmd_mask(CommandTestCase):
+
+    def setUp(self):
+        CommandTestCase.setUp(self)
+        self.init()
+        self.player = Client(console=self.console, name="joe", _maxLevel=0)
+        self.player.message = Mock()
+        self.assertEqual(0, self.player.maskedLevel)
+        self.assertIsNone(self.player.maskedGroup)
+
+    def mask(self, data=''):
+        return self.p.cmd_mask(data=data, client=self.player, cmd=self.mock_command)
+
+    def test_no_parameter(self):
+        self.mask()
+        self.player.message.assert_called_once_with('^7Invalid parameters')
+        self.assertEqual(0, self.player.maskedLevel)
+        self.assertIsNone(self.player.maskedGroup)
+
+    def test_invalid_group(self):
+        self.mask('foo')
+        self.player.message.assert_called_once_with('^7Group foo does not exist')
+        self.assertEqual(0, self.player.maskedLevel)
+        self.assertIsNone(self.player.maskedGroup)
+
+    def test_valid_group(self):
+        self.mask('senioradmin')
+        self.player.message.assert_called_once_with('^7Masked as Senior Admin')
+        self.assertEqual(80, self.player.maskedLevel)
+        self.assertIsNotNone(self.player.maskedGroup)
+
+
+@patch.object(time, "sleep")
+class Test_sendRules(Admin_TestCase):
+
+    def test_nominal(self, sleep_mock):
+        self.init(r"""<configuration><settings name="spamages">
+                        <set name="foo">foo</set>
+                        <set name="rule1">this is rule #1</set>
+                        <set name="rule2">this is rule #2</set>
+                        <set name="bar">bar</set>
+                    </settings></configuration>""")
+        self.console.say = Mock(wraps=lambda *args: sys.stdout.write("\t\tSAY: " + str(args) + "\n"))
+        self.p._sendRules(None)
+        self.console.say.assert_has_calls([call('this is rule #1'), call('this is rule #2')])
+
+    def test_no_rule_1(self, sleep_mock):
+        self.init(r"""<configuration><settings name="spamages">
+                        <set name="rule5">this is rule #5</set>
+                        <set name="rule2">this is rule #2</set>
+                    </settings></configuration>""")
+        self.console.say = Mock(wraps=lambda *args: sys.stdout.write("\t\tSAY: " + str(args) + "\n"))
+        self.p._sendRules(None)
+        self.assertFalse(self.console.say.called)
+
+
+    def test_gap_in_rules(self, sleep_mock):
+        self.init(r"""<configuration><settings name="spamages">
+                        <set name="rule1">this is rule #1</set>
+                        <set name="rule2">this is rule #2</set>
+                        <set name="rule4">this is rule #4</set>
+                    </settings></configuration>""")
+        self.console.say = Mock(wraps=lambda *args: sys.stdout.write("\t\tSAY: " + str(args) + "\n"))
+        self.p._sendRules(None)
+        self.console.say.assert_has_calls([call('this is rule #1'), call('this is rule #2')])
+
+
+    def test_no_rule_in_config(self, sleep_mock):
+        self.init(r"""<configuration><settings name="spamages">
+                        <set name="foo">foo</set>
+                        <set name="bar">bar</set>
+                    </settings></configuration>""")
+        self.console.say = Mock(wraps=lambda *args: sys.stdout.write("\t\tSAY: " + str(args) + "\n"))
+        self.p._sendRules(None)
+        self.assertFalse(self.console.say.called)
+
+
+    def test_too_many_rules(self, sleep_mock):
+        self.init(r"""<configuration><settings name="spamages">""" +
+            "\n".join(["""<set name="rule%s">this is rule #%s</set>""" % (x, x) for x in range(1, 23)]) +
+            """</settings></configuration>""")
+        self.console.say = Mock(wraps=lambda *args: sys.stdout.write("\t\tSAY: " + str(args) + "\n"))
+        self.p._sendRules(None)
+        self.console.say.assert_has_calls([call('this is rule #%s' % x) for x in range(1, 20)])
 
 
 if __name__ == '__main__':

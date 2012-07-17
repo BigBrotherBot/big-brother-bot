@@ -1,7 +1,8 @@
 <configuration plugin="censor">
 	<settings name="settings">
+        <!-- max_level: Users with a greater level will not be checked for bad words/names. -->
 		<set name="max_level">40</set>
-		<!-- ignore bad words that have equal or less characters: -->
+        <!-- ignore_length: Only words having a length exceeding ignore_length will be checked -->
 		<set name="ignore_length">3</set>
 	</settings>
     <!-- penalty types can be :
@@ -14,7 +15,7 @@
 		-->
 		<badword name="shit" lang="en">
 			<penalty type="warning" reason="^7Please don't use profanity" duration="1d"/>
-			<regexp>[s$]h[i!1\*]t\b</regexp>
+			<regexp>[s$]h[i!1\*]+t\b</regexp>
 		</badword>
 		<badword name="ass" lang="en">
 			<word>ass</word>
@@ -24,7 +25,7 @@
 		</badword>
 		<badword name="fuck" lang="en">
 			<penalty type="tempban" reasonkeyword="cuss" duration="2m"/>
-			<regexp>f[uo0\*]ck</regexp>
+			<regexp>f[uo0\*]+ck</regexp>
 		</badword>
 		<badword name="fuc" lang="en">
 			<penalty type="tempban" reasonkeyword="cuss" duration="2m"/>
@@ -49,13 +50,14 @@
 			<regexp>\sf[a@]g\s</regexp>
 		</badword>
 		<badword name="nigger" lang="en">
+            <penalty type="ban" reasonkeyword="racism" />
 			<regexp>n[i!1]gger</regexp>
 		</badword>
 		<badword name="pussy" lang="en">
 			<regexp>pu[s$]{2}y</regexp>
 		</badword>
 		<badword name="lul" lang="nl">
-			<regexp>lul$</regexp>
+			<regexp>lul\s</regexp>
 		</badword>
 		<badword name="flikker" lang="nl">
 			<regexp>\sfl[i!1]kker\s</regexp>
@@ -233,20 +235,20 @@
 			<regexp>\b[a@][s$]{2}\b</regexp>
 		</badname>
 		<badname name="fuck">
-			<regexp>f[u*.]ck</regexp>
+			<regexp>f[u*.]+ck</regexp>
 		</badname>
 		<badname name="shit">
-			<regexp>sh[i1!.]t</regexp>
+			<regexp>sh[i1!.]+t</regexp>
 		</badname>
 		<badname name="bitch">
-			<regexp>b[i1!*.]tch</regexp>
+			<regexp>b[i1!*.]+tch</regexp>
 		</badname>
 		<badname name="pussy">
-			<regexp>pu[s$][s$]y</regexp>
+			<regexp>pu[s$][s$]+y</regexp>
 		</badname>
 		<badname name="nigger">
             <penalty type="ban" reasonkeyword="racism" />
-			<regexp>n[1i!.]gger</regexp>
+			<regexp>n[1i!.]+gger</regexp>
 		</badname>
 		<badname name="cunt">
 			<word>cunt</word>
