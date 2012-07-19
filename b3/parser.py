@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2012/07/20 - 1.27.5 - courgette
+#   * better error message when expected self.input attribute is missing
 #   2012/06/17 - 1.27.4 - courgette
 #   * log traceback when an exception occurs while loading a plugin
 #   * detect missing 'name' attribute in plugin element from the plugins section of the config file
@@ -144,7 +146,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.27.4'
+__version__ = '1.27.5'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -1033,6 +1035,9 @@ class Parser(object):
 
     def read(self):
         """read from game server log file"""
+        if not hasattr(self, 'input'):
+            self.critical("cannot read game log file. Check that you have a correct value for the 'game_log' setting in your main config file.")
+            raise SystemExit(220)
         # Getting the stats of the game log (we are looking for the size)
         filestats = os.fstat(self.input.fileno())
         # Compare the current cursor position against the current file size,
