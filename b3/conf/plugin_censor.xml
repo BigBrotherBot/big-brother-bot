@@ -272,7 +272,7 @@
 			<regexp>kut</regexp>
 		</badname>
 		<badname name="hoer">
-			<regexp>h[o0]er[^a]</regexp>a
+			<regexp>h[o0]er[^a]</regexp>
 		</badname>
 		<badname name="huora">
 			<regexp>hu[o0]r[a@]</regexp>
