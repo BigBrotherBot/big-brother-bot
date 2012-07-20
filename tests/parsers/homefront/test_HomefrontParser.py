@@ -1,6 +1,6 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2011 Courgette
+# Copyright (C) 2011 self.courgette
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,97 +24,95 @@ import unittest2 as unittest
  
 class Test_HomefrontParser(unittest.TestCase):
 
-    def test_onServerKill(self):
+    def setUp(self):
         # prepare mocks
-        mock_parser = Mock(spec=HomefrontParser)
-        mock_parser._reSteamId64 = HomefrontParser._reSteamId64
-        mock_parser.onServerKill = HomefrontParser.onServerKill
-        
-        courgette = Mock(spec=b3.clients.Client, name="courgette")
-        freelander = Mock(spec=b3.clients.Client, name="freelander")
+        self.mock_parser = Mock(spec=HomefrontParser)
+        self.mock_parser._reSteamId64 = HomefrontParser._reSteamId64
+        self.mock_parser.onServerKill = HomefrontParser.onServerKill
+
+        self.courgette = Mock(spec=b3.clients.Client, name="courgette")
+        self.freelander = Mock(spec=b3.clients.Client, name="freelander")
         
         def getClient(name):
-            if name == 'courgette': return courgette
-            elif name == 'Freelander': return freelander
+            if name == 'courgette': return self.courgette
+            elif name == 'Freelander': return self.freelander
             else: return Mock(spec=b3.clients.Client)
-        mock_parser.getClient = getClient
+        self.mock_parser.getClient = getClient
 
         def getByGUID(guid):
-            if guid == '12311111111111111': return courgette
-            elif guid == '12300000000000000': return freelander
+            if guid == '12311111111111111': return self.courgette
+            elif guid == '12300000000000000': return self.freelander
             else: return Mock(spec=b3.clients.Client)
-        mock_parser.clients.getByGUID = getByGUID
+        self.mock_parser.clients.getByGUID = getByGUID
 
 
-        # test unmeaningful data
-        self.assertIsNone(mock_parser.onServerKill(mock_parser, "qsdf"))
-        
-        
-        # test teamkill with names
-        mock_parser.reset_mock()
-        courgette.team = freelander.team = sentinel.DEFAULT
-        mock_parser.onServerKill(mock_parser, "courgette EXP_Frag Freelander")
-        del courgette.team, freelander.team
-        self.assertTrue(mock_parser.getEvent.called)
-        getEvent_args = mock_parser.getEvent.call_args[0]
+    def test_unmeaningful_data(self):
+        self.assertIsNone(self.mock_parser.onServerKill(self.mock_parser, "qsdf"))
+
+
+    def test_teamkill_with_names(self):
+        self.mock_parser.reset_mock()
+        self.courgette.team = self.freelander.team = sentinel.DEFAULT
+        self.mock_parser.onServerKill(self.mock_parser, "courgette EXP_Frag Freelander")
+        self.assertTrue(self.mock_parser.getEvent.called)
+        getEvent_args = self.mock_parser.getEvent.call_args[0]
         self.assertEqual('EVT_CLIENT_KILL_TEAM', getEvent_args[0])
         self.assertEqual('EXP_Frag', getEvent_args[1][1])
-        self.assertEqual(courgette, getEvent_args[2])
-        self.assertEqual(freelander, getEvent_args[3])
-        
-        # test teamkill with steamid
-        mock_parser.reset_mock()
-        courgette.team = freelander.team = sentinel.DEFAULT
-        mock_parser.onServerKill(mock_parser, "12311111111111111 EXP_Frag 12300000000000000")
-        del courgette.team, freelander.team
-        self.assertTrue(mock_parser.getEvent.called)
-        getEvent_args = mock_parser.getEvent.call_args[0]
+        self.assertEqual(self.courgette, getEvent_args[2])
+        self.assertEqual(self.freelander, getEvent_args[3])
+
+    def test_teamkill_with_steamid(self):
+        self.mock_parser.reset_mock()
+        self.courgette.team = self.freelander.team = sentinel.DEFAULT
+        self.mock_parser.onServerKill(self.mock_parser, "12311111111111111 EXP_Frag 12300000000000000")
+        self.assertTrue(self.mock_parser.getEvent.called)
+        getEvent_args = self.mock_parser.getEvent.call_args[0]
         self.assertEqual('EVT_CLIENT_KILL_TEAM', getEvent_args[0])
         self.assertEqual('EXP_Frag', getEvent_args[1][1])
-        self.assertEqual(courgette, getEvent_args[2])
-        self.assertEqual(freelander, getEvent_args[3])
-        
-        
-        # test kill with names
-        mock_parser.reset_mock()
-        mock_parser.onServerKill(mock_parser, "courgette EXP_Frag Freelander")
-        self.assertTrue(mock_parser.getEvent.called)
-        getEvent_args = mock_parser.getEvent.call_args[0]
+        self.assertEqual(self.courgette, getEvent_args[2])
+        self.assertEqual(self.freelander, getEvent_args[3])
+
+
+    def test_kill_with_names(self):
+        self.mock_parser.reset_mock()
+        self.mock_parser.onServerKill(self.mock_parser, "courgette EXP_Frag Freelander")
+        self.assertTrue(self.mock_parser.getEvent.called)
+        getEvent_args = self.mock_parser.getEvent.call_args[0]
         self.assertEqual('EVT_CLIENT_KILL', getEvent_args[0])
         self.assertEqual('EXP_Frag', getEvent_args[1][1])
-        self.assertEqual(courgette, getEvent_args[2])
-        self.assertEqual(freelander, getEvent_args[3])
-        
-        # test kill with steamid
-        mock_parser.reset_mock()
-        mock_parser.onServerKill(mock_parser, "12311111111111111 EXP_Frag 12300000000000000")
-        self.assertTrue(mock_parser.getEvent.called)
-        getEvent_args = mock_parser.getEvent.call_args[0]
+        self.assertEqual(self.courgette, getEvent_args[2])
+        self.assertEqual(self.freelander, getEvent_args[3])
+
+    def test_kill_with_steamid(self):
+        self.mock_parser.reset_mock()
+        self.mock_parser.onServerKill(self.mock_parser, "12311111111111111 EXP_Frag 12300000000000000")
+        self.assertTrue(self.mock_parser.getEvent.called)
+        getEvent_args = self.mock_parser.getEvent.call_args[0]
         self.assertEqual('EVT_CLIENT_KILL', getEvent_args[0])
         self.assertEqual('EXP_Frag', getEvent_args[1][1])
-        self.assertEqual(courgette, getEvent_args[2])
-        self.assertEqual(freelander, getEvent_args[3])
-        
-        
-        # test suicide with names
-        mock_parser.reset_mock()
-        mock_parser.onServerKill(mock_parser, "courgette EXP_Frag courgette")
-        self.assertTrue(mock_parser.getEvent.called)
-        getEvent_args = mock_parser.getEvent.call_args[0]
+        self.assertEqual(self.courgette, getEvent_args[2])
+        self.assertEqual(self.freelander, getEvent_args[3])
+
+
+    def test_suicide_with_names(self):
+        self.mock_parser.reset_mock()
+        self.mock_parser.onServerKill(self.mock_parser, "courgette EXP_Frag courgette")
+        self.assertTrue(self.mock_parser.getEvent.called)
+        getEvent_args = self.mock_parser.getEvent.call_args[0]
         self.assertEqual('EVT_CLIENT_SUICIDE', getEvent_args[0])
         self.assertEqual('EXP_Frag', getEvent_args[1][1])
-        self.assertEqual(courgette, getEvent_args[2])
-        self.assertEqual(courgette, getEvent_args[3])
-        
-        # test suicide with steamid
-        mock_parser.reset_mock()
-        mock_parser.onServerKill(mock_parser, "12311111111111111 EXP_Frag 12311111111111111")
-        self.assertTrue(mock_parser.getEvent.called)
-        getEvent_args = mock_parser.getEvent.call_args[0]
+        self.assertEqual(self.courgette, getEvent_args[2])
+        self.assertEqual(self.courgette, getEvent_args[3])
+
+    def test_suicide_with_steamid(self):
+        self.mock_parser.reset_mock()
+        self.mock_parser.onServerKill(self.mock_parser, "12311111111111111 EXP_Frag 12311111111111111")
+        self.assertTrue(self.mock_parser.getEvent.called)
+        getEvent_args = self.mock_parser.getEvent.call_args[0]
         self.assertEqual('EVT_CLIENT_SUICIDE', getEvent_args[0])
         self.assertEqual('EXP_Frag', getEvent_args[1][1])
-        self.assertEqual(courgette, getEvent_args[2])
-        self.assertEqual(courgette, getEvent_args[3])
+        self.assertEqual(self.courgette, getEvent_args[2])
+        self.assertEqual(self.courgette, getEvent_args[3])
         
         
 
