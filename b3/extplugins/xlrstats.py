@@ -302,6 +302,11 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         p = XlrstatscontrollerPlugin(self.console, self.minPlayers, self.silent)
         p.startup()
 
+        #get the map we're in, in case this is a new map and we need to create a db record for it.
+        map = self.get_MapStats(self.console.game.mapName)
+        if map:
+            self.verbose('Map %s ready' % map.name)
+
         msg = 'XLRstats v. %s by %s started.' % (__version__, __author__)
         self.console.say(msg)
         #end startup sequence
@@ -735,6 +740,15 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             return s
 
     def get_PlayerMaps(self, playerid, mapid):
+        if not map_id:
+            self.error('Map not recognized, trying to initialise map...')
+            map = self.get_MapStats(self.console.game.mapName)
+            if map:
+                self.verbose('Map %s successfully initialised.' % map.name)
+                mapid = map.id
+            else:
+                return None
+
         s = PlayerMaps()
         q = 'SELECT * from %s WHERE map_id = %s AND player_id = %s LIMIT 1' % (self.playermaps_table, mapid, playerid)
         cursor = self.query(q)
