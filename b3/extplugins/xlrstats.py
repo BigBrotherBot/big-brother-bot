@@ -740,7 +740,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             return s
 
     def get_PlayerMaps(self, playerid, mapid):
-        if not map_id:
+        if not mapid:
             self.error('Map not recognized, trying to initialise map...')
             map = self.get_MapStats(self.console.game.mapName)
             if map:
