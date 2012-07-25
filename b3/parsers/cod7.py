@@ -43,13 +43,15 @@
 #   * kick commands now sends reason
 # 30.12.2011 - 1.2 - Bravo17
 #   * New client will now join Auth queue if slot shows as 'Disconnected' in Auth queue
+# 25.07.2012 - 1.2.1 - Courgette
+#   * Make sure the cod7http plugin is loaded
 #
 
 ## @file
 #  CoD7 Parser
 
 __author__  = 'Freelander, Courgette, Just a baka, Bravo17'
-__version__ = '1.2'
+__version__ = '1.2.1'
 
 import re
 import string
@@ -105,6 +107,9 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
         client = self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
 
         self._cod7httpplugin = self.getPlugin('cod7http')
+        if self._cod7httpplugin is None:
+            self.critical("cannot found cod7http plugin")
+            raise SystemExit(220)
 
         # get map from the status rcon command
         map = self.getMap()
