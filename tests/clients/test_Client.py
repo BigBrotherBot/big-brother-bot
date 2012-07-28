@@ -16,7 +16,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-from b3.clients import Client
+import operator
+from b3.clients import Client, Group
 from mock import Mock
 from b3 import TEAM_UNKNOWN
 from b3.clients import Alias, IpAlias
@@ -131,6 +132,80 @@ class Test_Client(B3TestCase):
         self.assertIsInstance(aliasFoo, IpAlias)
         self.assertEqual(aliasFoo.ip, "9.5.4.4")
         self.assertEqual(aliasFoo.numUsed, 9)
+
+
+
+class Test_Client_groups(B3TestCase):
+
+    def setUp(self):
+        B3TestCase.setUp(self)
+        self.client = Client(console=self.console)
+        self.group_guest = self.console.storage.getGroup(Group(keyword="guest"))
+        self.group_user = self.console.storage.getGroup(Group(keyword="user"))
+        self.group_reg = self.console.storage.getGroup(Group(keyword="reg"))
+        self.group_mod = self.console.storage.getGroup(Group(keyword="mod"))
+        self.group_admin = self.console.storage.getGroup(Group(keyword="admin"))
+        self.group_fulladmin = self.console.storage.getGroup(Group(keyword="fulladmin"))
+        self.group_senioradmin = self.console.storage.getGroup(Group(keyword="senioradmin"))
+        self.group_superadmin = self.console.storage.getGroup(Group(keyword="superadmin"))
+
+    def assertGroups(self, groups):
+        keywords = map(operator.attrgetter('keyword'), groups)
+        self.assertListEqual(keywords, map(operator.attrgetter('keyword'), self.client.groups))
+        self.assertListEqual(keywords, map(operator.attrgetter('keyword'), self.client.getGroups()))
+
+    def test_addGroup(self):
+        # GIVEN
+        self.client.addGroup(self.group_mod)
+        self.assertGroups([self.group_mod])
+        # WHEN
+        self.client.addGroup(self.group_superadmin)
+        # THEN
+        self.assertGroups([self.group_mod, self.group_superadmin])
+
+    def test_rmGroup(self):
+        # GIVEN
+        self.client.addGroup(self.group_mod)
+        self.assertGroups([self.group_mod])
+        self.client.addGroup(self.group_superadmin)
+        # WHEN
+        self.client.remGroup(self.group_mod)
+        # THEN
+        self.assertGroups([self.group_superadmin])
+
+    def test_guest_group_is_the_default_group_when_none(self):
+        self.assertGroups([self.group_guest])
+
+        self.client.remGroup(self.group_guest)
+        self.assertGroups([self.group_guest])
+
+        self.client.addGroup(self.group_admin)
+        self.assertGroups([self.group_admin])
+
+    def test_inGroup(self):
+        self.assertFalse(self.client.inGroup(self.group_guest))
+        self.assertFalse(self.client.inGroup(self.group_user))
+        self.assertFalse(self.client.inGroup(self.group_reg))
+        self.assertFalse(self.client.inGroup(self.group_mod))
+        self.assertFalse(self.client.inGroup(self.group_admin))
+        self.assertFalse(self.client.inGroup(self.group_fulladmin))
+        self.assertFalse(self.client.inGroup(self.group_senioradmin))
+        self.assertFalse(self.client.inGroup(self.group_superadmin))
+
+        self.client.addGroup(self.group_user)
+        self.assertTrue(self.client.inGroup(self.group_user))
+        self.client.addGroup(self.group_reg)
+        self.assertTrue(self.client.inGroup(self.group_reg))
+        self.client.addGroup(self.group_mod)
+        self.assertTrue(self.client.inGroup(self.group_mod))
+        self.client.addGroup(self.group_admin)
+        self.assertTrue(self.client.inGroup(self.group_admin))
+        self.client.addGroup(self.group_fulladmin)
+        self.assertTrue(self.client.inGroup(self.group_fulladmin))
+        self.client.addGroup(self.group_senioradmin)
+        self.assertTrue(self.client.inGroup(self.group_senioradmin))
+        self.client.addGroup(self.group_superadmin)
+        self.assertTrue(self.client.inGroup(self.group_superadmin))
 
 
 if __name__ == '__main__':

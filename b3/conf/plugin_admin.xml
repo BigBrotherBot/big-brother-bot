@@ -22,6 +22,7 @@
 		<set name="clear-kiss">80</set>
 		<set name="lookup-l">80</set>
 		<set name="makereg-mr">80</set>
+		<set name="unreg-ur">80</set>
 		<set name="spankall-sall">80</set>
 		<set name="banall-ball">80</set>
 		<set name="kickall-kall">80</set>

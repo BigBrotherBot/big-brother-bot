@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2012/07/28 - 1.15 - Courgette
+#   * add command !unreg (danger89's idea)
 #   2012/07/14 - 1.14.1 - Courgette
 #   * log more detail when failing to register a command
 #   2012/07/07 - 1.14 - Courgette
@@ -108,7 +110,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.14.1'
+__version__ = '1.15'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import re, time, threading, sys, traceback, thread, random
@@ -934,7 +936,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
     def cmd_makereg(self, data, client, cmd=None):
         """\
-        <name> <group> - make a name a regular
+        <name> - make a name a regular
         """
 
         m = self.parseUserCmd(data)
@@ -963,7 +965,43 @@ class AdminPlugin(b3.plugin.Plugin):
 
                 cmd.sayLoudOrPM(client, self.getMessage('groups_put', sclient.exactName, group.name))
                 return True
-        
+
+    def cmd_unreg(self, data, client, cmd=None):
+        """\
+        <name> - remove a player from the 'regular' group
+        """
+
+        m = self.parseUserCmd(data)
+        if not m:
+            client.message('^7Invalid parameters')
+            return False
+
+        cid = m[0]
+
+        try:
+            group_reg = self.console.storage.getGroup(clients.Group(keyword='reg'))
+        except Exception, err:
+            self.debug(err)
+            client.message("^7Group 'regular' does not exist")
+            return
+
+        try:
+            group_user = self.console.storage.getGroup(clients.Group(keyword='user'))
+        except Exception, err:
+            self.debug(err)
+            client.message("^7Group 'user' does not exist")
+            return
+
+        sclient = self.findClientPrompt(cid, client)
+        if sclient:
+            if sclient.inGroup(group_reg):
+                sclient.remGroup(group_reg)
+                sclient.setGroup(group_user)
+                sclient.save()
+                cmd.sayLoudOrPM(client, '^7%s^7 removed from group %s' % (sclient.exactName, group_reg.name))
+            else:
+                client.message('^7%s^7 is not in group %s' % (sclient.exactName, group_reg.name))
+
     def cmd_putgroup(self, data, client, cmd=None):
         """\
         <client> <group> - add a client to a group

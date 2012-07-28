@@ -24,6 +24,7 @@ import time
 import unittest2 as unittest
 
 from b3 import __file__ as b3_module__file__, TEAM_BLUE, TEAM_RED
+from b3.clients import Group
 
 from tests import B3TestCase
 from b3.fake import FakeClient
@@ -127,7 +128,7 @@ class Cmd_help(Admin_functional_test):
                                             ', leveltest, list, lookup, makereg, map, maprotate, maps, mask, nextmap, no'
                                             'tice, pause, permban, poke, putgroup, rebuild, reconfig, regtest, restart, '
                                             'rules, runas, say, scream, seen, spam, spams, spank, spankall, status, temp'
-                                            'ban, time, unban, ungroup, unmask, warn, warnclear, warninfo, warnremove, w'
+                                            'ban, time, unban, ungroup, unmask, unreg, warn, warnclear, warninfo, warnremove, w'
                                             'arns, warntest')
         self.mike.message = Mock()
         self.mike.connects(0)
@@ -174,6 +175,87 @@ class Cmd_mask(Admin_functional_test):
         self.joe.says('!unmask mike')
         self.joe.says('!admins')
         self.joe.message.assert_called_with('^7Admins online: Joe^7^7 [^3100^7], Mike^7^7 [^380^7]')
+
+
+class Cmd_makereg_unreg(Admin_functional_test):
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init()
+        self.group_user = self.console.storage.getGroup(Group(keyword='user'))
+        self.group_reg = self.console.storage.getGroup(Group(keyword='reg'))
+        self.joe.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
+        self.joe.connects(0)
+        self.mike.connects(1)
+
+    def test_nominal(self):
+        # GIVEN
+        self.assertTrue(self.mike.inGroup(self.group_user))
+        self.assertFalse(self.mike.inGroup(self.group_reg))
+        # WHEN
+        self.joe.says("!makereg mike")
+        # THEN
+        self.assertFalse(self.mike.inGroup(self.group_user))
+        self.assertTrue(self.mike.inGroup(self.group_reg))
+        self.joe.message.assert_called_with('^7Mike^7 ^7put in group Regular')
+        # WHEN
+        self.joe.says("!unreg mike")
+        # THEN
+        self.assertTrue(self.mike.inGroup(self.group_user))
+        self.assertFalse(self.mike.inGroup(self.group_reg))
+        self.joe.message.assert_called_with('^7Mike^7^7 removed from group Regular')
+
+
+    def test_unreg_when_not_regular(self):
+        # GIVEN
+        self.assertTrue(self.mike.inGroup(self.group_user))
+        self.assertFalse(self.mike.inGroup(self.group_reg))
+        # WHEN
+        self.joe.says("!unreg mike")
+        # THEN
+        self.assertTrue(self.mike.inGroup(self.group_user))
+        self.assertFalse(self.mike.inGroup(self.group_reg))
+        self.joe.message.assert_called_with('^7Mike^7^7 is not in group Regular')
+
+
+    def test_makereg_when_already_regular(self):
+        # GIVEN
+        self.mike.addGroup(self.group_reg)
+        self.mike.remGroup(self.group_user)
+        self.assertTrue(self.mike.inGroup(self.group_reg))
+        # WHEN
+        self.joe.says("!makereg mike")
+        # THEN
+        self.assertFalse(self.mike.inGroup(self.group_user))
+        self.assertTrue(self.mike.inGroup(self.group_reg))
+        self.joe.message.assert_called_with('^7Mike^7^7 is already in group Regular')
+
+
+    def test_makereg_no_parameter(self):
+        # WHEN
+        self.joe.says("!makereg")
+        # THEN
+        self.joe.message.assert_called_with('^7Invalid parameters')
+
+
+    def test_unreg_no_parameter(self):
+        # WHEN
+        self.joe.says("!unreg")
+        # THEN
+        self.joe.message.assert_called_with('^7Invalid parameters')
+
+
+    def test_makereg_unknown_player(self):
+        # WHEN
+        self.joe.says("!makereg foo")
+        # THEN
+        self.joe.message.assert_called_with('^7No players found matching foo')
+
+
+    def test_unreg_unknown_player(self):
+        # WHEN
+        self.joe.says("!unreg foo")
+        # THEN
+        self.joe.message.assert_called_with('^7No players found matching foo')
 
 
 def _start_new_thread(callable, args_list, kwargs_dict):

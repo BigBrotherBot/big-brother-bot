@@ -893,6 +893,9 @@ class Group(Struct):
             self.timeAdd = console.time()
         return console.storage.setGroup(self)
 
+    def __repr__(self):
+        return "Group(%r)" % self.__dict__
+
 #-----------------------------------------------------------------------------------------------------------------------
 class Clients(dict):
     _nameIndex    = None
