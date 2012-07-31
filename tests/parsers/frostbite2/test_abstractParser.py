@@ -711,27 +711,28 @@ class Test_getNextMap(Map_related_TestCase):
         # setup context
         Map_related_TestCase.maps = tuple()
         Map_related_TestCase.map_indices = [0, 0]
+        self.parser.game.serverinfo = {'roundsTotal': 2}
         self.parser.game.mapName = 'map_foo'
         self.parser.game.gameType = 'gametype_foo'
         # verify
-        self.assertEqual('%s (%s)' % (self.parser.game.mapName, self.parser.game.gameType), self.parser.getNextMap())
+        self.assertEqual('map_foo (gametype_foo) 2 rounds', self.parser.getNextMap())
 
     def test_one_map(self):
         # setup context
-        Map_related_TestCase.maps = (('MP_001', 'ConquestLarge0', '2'),)
+        Map_related_TestCase.maps = (('MP_001', 'ConquestLarge0', '3'),)
         Map_related_TestCase.map_indices = [0, 0]
         # verify
-        self.assertEqual('MP_001 (ConquestLarge0)', self.parser.getNextMap())
+        self.assertEqual('MP_001 (ConquestLarge0) 3 rounds', self.parser.getNextMap())
 
     def test_two_maps_0(self):
         # setup context
         Map_related_TestCase.maps = (
-            ('MP_001', 'ConquestLarge0', '2'),
+            ('MP_001', 'ConquestLarge0', '1'),
             ('MP_002', 'Rush0', '1'),
             )
         Map_related_TestCase.map_indices = [0, 0]
         # verify
-        self.assertEqual('MP_001 (ConquestLarge0)', self.parser.getNextMap())
+        self.assertEqual('MP_001 (ConquestLarge0) 1 round', self.parser.getNextMap())
 
     def test_two_maps_1(self):
         # setup context
@@ -741,7 +742,7 @@ class Test_getNextMap(Map_related_TestCase):
             )
         Map_related_TestCase.map_indices = [0, 1]
         # verify
-        self.assertEqual('MP_002 (Rush0)', self.parser.getNextMap())
+        self.assertEqual('MP_002 (Rush0) 1 round', self.parser.getNextMap())
 
 
 class Test_getFullMapRotationList(Map_related_TestCase):
