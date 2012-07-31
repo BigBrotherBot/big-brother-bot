@@ -1,3 +1,19 @@
+1.8.2 -> 1.8.3
+----
+A list of changed files is available after release here:
+http://github.com/BigBrotherBot/big-brother-bot/compare/v1.8.2...v1.8.3
+----
+- The !help command does not make B3 unresponsive anymore on Quake3 based games
+- BF3: updated with Close Quarter DLC maps info
+- BF3: command !map can optionally specify the wanted gamemode and number or rounds : !map firestorm, conquest64, 2
+- Q3A RCON: fixes the 'RCON: too much tries' error message that appeared with v1.8.2
+- Xlrstats plugin: fixes issue with command !xlrstats command silently failing on a 1st time seen map https://github.com/xlr8or/big-brother-bot/issues/88
+- Admin plugin: new command !unreg <player> to remove a player from the 'regular' group. Work together with the existing !makereg <player> command
+
+[TODO]
+
+- Many minor bugfixes and improvements to B3 core and native plugins
+
 1.8.1 -> 1.8.2
 ----
 A list of changed files is available after release here:

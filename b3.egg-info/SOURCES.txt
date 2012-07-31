@@ -155,6 +155,7 @@ b3/parsers/cod7_rcon.py
 b3/parsers/et.py
 b3/parsers/etpro.py
 b3/parsers/iourt41.py
+b3/parsers/iourt41callvote.py
 b3/parsers/moh.py
 b3/parsers/oa081.py
 b3/parsers/punkbuster.py
@@ -176,6 +177,7 @@ b3/parsers/frostbite/rcon.py
 b3/parsers/frostbite/util.py
 b3/parsers/frostbite2/__init__.py
 b3/parsers/frostbite2/abstractParser.py
+b3/parsers/frostbite2/bf3string.py
 b3/parsers/frostbite2/protocol.py
 b3/parsers/frostbite2/punkbuster.py
 b3/parsers/frostbite2/rcon.py
@@ -203,6 +205,7 @@ b3/plugins/sftpytail.py
 b3/plugins/spamcontrol.py
 b3/plugins/stats.py
 b3/plugins/status.py
+b3/plugins/test.py
 b3/plugins/tk.py
 b3/plugins/welcome.py
 b3/sql/b3-db.sql
@@ -237,6 +240,8 @@ tests/clients/test_Clients.py
 tests/parsers/__init__.py
 tests/parsers/test_bf3.py
 tests/parsers/test_iourt41.py
+tests/parsers/frostbite/__init__.py
+tests/parsers/frostbite/test_abstractParser.py
 tests/parsers/frostbite2/__init__.py
 tests/parsers/frostbite2/test_abstractParser.py
 tests/parsers/frostbite2/test_util.py

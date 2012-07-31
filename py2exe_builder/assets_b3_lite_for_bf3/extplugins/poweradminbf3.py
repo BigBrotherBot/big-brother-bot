@@ -53,8 +53,10 @@
 # 1.2 - add config option scramber\gamemodes_blacklist to have the auto scrambler ignoring some gamemodes. requires B3 1.8.2dev1+
 # 1.3 - Refactor autobalance logic flow, and add setting option team_swap_threshold_prop
 # 1.3.1 - Fixes issue with command !setnextmap since B3 1.8.2
+# 1.4 - Adds commands !viplist, !vips, !vipadd, !vipremove, !vipclear, !vipload, !vipsave
+# 1.5 - Command !setnextmap now accepts new optional parameters : <map> [, <gamemode> [, <rounds>]]
 #
-__version__ = '1.3.1'
+__version__ = '1.5'
 __author__  = 'Courgette, 82ndab-Bravo17, ozon, Mario'
 
 import re
@@ -70,7 +72,8 @@ from b3.plugin import Plugin
 from ConfigParser import NoOptionError
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import MapListBlock, PlayerInfoBlock
-from b3.parsers.bf3 import GAME_MODES_NAMES
+from b3.parsers.bf3 import GAME_MODES_NAMES, __version__ as bf3_version
+from b3.update import B3version
 import b3.cron
 
 
@@ -85,7 +88,7 @@ class Scrambler:
 
     def scrambleTeams(self):
         clients = self._getClients_method()
-        if len(clients)==0:
+        if not len(clients):
             return
         elif len(clients)<3:
             self.debug("Too few players to scramble")
@@ -146,9 +149,192 @@ class Scrambler:
         self._plugin.debug('scramber:\t %s' % msg)
 
 
+class vip_commands_mixin:
+    def cmd_viplist(self, data, client, cmd=None):
+        """\
+        [filter] - display all VIPs or VIP matched by the given filter
+        """
+        vips = self.getFullreservedSlotsList()
+        if not len(vips):
+            client.message("VIP list is empty")
+        else:
+
+            if data:
+                filter_txt = data.lower()
+                filtered_vips = filter(lambda x: filter_txt in x.lower(), vips)
+                if not len(filtered_vips):
+                    client.message("no VIP matching '%s' found over the %s existing VIPs" % (filter_txt, len(vips)))
+                    return
+                else:
+                    vips = filtered_vips
+
+            connected_players = [x.cid for x in self.console.clients.getList()]
+            connected_vips = []
+            other_vips = []
+            for x in vips:
+                if x in connected_players:
+                    connected_vips.append(x)
+                else:
+                    other_vips.append(x)
+            msg = ''
+            if len(connected_vips):
+                client.message("Connected VIPs: " + ', '.join(connected_vips))
+                msg = 'other '
+            msg += "VIPs: " + ', '.join(other_vips[:15])
+            if len(other_vips) > 15:
+                msg += ' and %s more...' % (len(other_vips) - 15)
+            if len(other_vips) > 0:
+                client.message(msg)
 
 
-class Poweradminbf3Plugin(Plugin):
+    def cmd_vips(self, data, client, cmd=None):
+        """\
+        display all online VIPs
+        """
+        vips = self.getFullreservedSlotsList()
+        if not len(vips):
+            client.message("No VIP connected")
+        else:
+            from operator import attrgetter
+            connected_players = map(attrgetter('cid'), self.console.clients.getList())
+            connected_vips = [x for x in vips if x in connected_players]
+            if not len(connected_vips):
+                client.message("No VIP connected")
+            else:
+                client.message("Connected VIPs: " + ', '.join(connected_vips))
+
+
+    def cmd_vipadd(self, data, client, cmd=None):
+        """\
+        <player> - makes a player a VIP
+        """
+        if not data:
+            client.message("Usage: !vipadd <player>")
+        else:
+            rv = self.findClientSilent(data)
+            if rv is None:
+                # a player matching the name was not found online or by its B3 id
+                # assume data is the exact player name to be added in the VIP list
+                name = data
+            elif type(rv) is list:
+                # multiple players matches data
+                client.message(self.getMessage('players_matched', data, ', '.join(rv)))
+                return
+            else:
+                # we got a match
+                name = rv
+
+            try:
+                self.console.write(('reservedSlotsList.add', name))
+            except CommandFailedError, err:
+                client.message('Error: %s' % err.message)
+            else:
+                client.message('%s is now a VIP' % name)
+
+
+
+    def cmd_vipremove(self, data, client, cmd=None):
+        """\
+        <player> - remove VIP privileges to a player
+        """
+        if not data:
+            client.message("Usage: !vipremove <player>")
+        else:
+            rv = self.findClientSilent(data)
+            if rv is None:
+                # a player matching the name was not found online or by its B3 id
+                # assume the player may be in the VIP list
+                if data.lower() in [x.lower() for x in self.getFullreservedSlotsList()]:
+                    name = data
+                else:
+                    client.message("No VIP named '%s' found" % data)
+                    return
+            elif type(rv) is list:
+                client.message(self.getMessage('players_matched', data, ', '.join(rv)))
+                return
+            else:
+                # we got a match
+                name = rv
+
+            # try to identify the player to remove
+            clients = self.lookupClientByExactName(name)
+            if len(clients) == 1:
+                sclient = clients[0]
+                name = sclient.name
+                if sclient.id != client.id and sclient.maxLevel > client.maxLevel:
+                    if sclient.maxGroup:
+                        client.message(self.getMessage('operation_denied_level', {'name': sclient.name, 'group': sclient.maxGroup.name}))
+                    else:
+                        client.message(self.getMessage('operation_denied'))
+                    return
+            try:
+                self.console.write(('reservedSlotsList.remove', name))
+            except CommandFailedError, err:
+                if err.message[0] == 'PlayerNotInList':
+                    client.message("There is no VIP named '%s'" % name)
+                else:
+                    client.message('Error: %s' % err.message[0])
+            else:
+                client.message('VIP privileges removed for %s' % name)
+
+
+    def cmd_vipclear(self, data, client, cmd=None):
+        """\
+        clears the VIP list
+        """
+        try:
+            self.console.write(('reservedSlotsList.clear',))
+        except CommandFailedError, err:
+            client.message('Error: %s' % err.message[0])
+        else:
+            client.message('VIP list is now empty')
+
+    def cmd_vipload(self, data, client, cmd=None):
+        """\
+        loads the VIP list from disk
+        """
+        try:
+            self.console.write(('reservedSlotsList.load',))
+            vips = self.getFullreservedSlotsList()
+        except CommandFailedError, err:
+            client.message('Error: %s' % err.message[0])
+        else:
+            client.message('VIP list loaded from disk (%s name%s loaded)' % (len(vips), 's' if len(vips) else ''))
+
+    def cmd_vipsave(self, data, client, cmd=None):
+        """\
+        saves the VIP list to disk
+        """
+        try:
+            vips = self.getFullreservedSlotsList()
+            self.console.write(('reservedSlotsList.save',))
+        except CommandFailedError, err:
+            client.message('Error: %s' % err.message[0])
+        else:
+            client.message('VIP list saved to disk (%s name%s written)' % (len(vips), 's' if len(vips) else ''))
+
+
+    def getFullreservedSlotsList(self):
+        """query the Frostbite2 game server and return a list containing all vip player names of the current
+         reserved slots list.
+        """
+        names = list()
+        offset = 0
+        tmp = self.console.write(('reservedSlotsList.list', offset))
+        tmp_num_values = len(tmp)
+        while tmp_num_values:
+            names.extend(tmp)
+            tmp = self.console.write(('reservedSlotsList.list', len(names)))
+            tmp_num_values = len(tmp)
+            # remove duplicates
+        seen = set()
+        seen_add = seen.add
+        return [ x for x in names if x not in seen and not seen_add(x)]
+
+
+MIN_BF3_PARSER_VERSION = "1.4.1"
+
+class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
 
     def __init__(self, console, config=None):
         self._adminPlugin = None
@@ -203,6 +389,10 @@ class Poweradminbf3Plugin(Plugin):
         """\
         Initialize plugin settings
         """
+        if B3version(bf3_version) < B3version(MIN_BF3_PARSER_VERSION):
+            self.critical("The poweradminbf3 plugin requires B3 BF3 parser v%s+" % MIN_BF3_PARSER_VERSION)
+            raise SystemExit(220)
+
         # get the admin plugin so we can register commands
         self._adminPlugin = self.console.getPlugin('admin')
         if not self._adminPlugin:
@@ -507,46 +697,47 @@ class Poweradminbf3Plugin(Plugin):
 
     def cmd_setnextmap(self, data, client=None, cmd=None):
         """\
-        <mapname> - Set the nextmap (partial map name works)
+        <map> [, gamemode [, num of rounds]] - Set the nextmap (partial map name works)
         """
         if not data:
             client.message('Invalid or missing data, try !help setnextmap')
+            return
+
+        parsed_data = self._adminPlugin.parse_map_parameters(data, client)
+        if not parsed_data:
+            return
+
+        map_id, gamemode_id, num_rounds = parsed_data
+
+        maplist = MapListBlock(self.console.write(('mapList.list',)))
+        if not len(maplist):
+            # maplist is empty, nextmap will be inserted at index 0
+            self.console.write(('mapList.add', map_id, gamemode_id, num_rounds, 0))
+            self.console.write(('mapList.setNextMapIndex', 0))
         else:
-            match = self.console.getMapsSoundingLike(data)
-            if not isinstance(match, basestring):
-                client.message('do you mean : %s ?' % ', '.join(match))
-                return
+            current_map_index = int(self.console.write(('mapList.getMapIndices', ))[0])
+            matching_maps = maplist.getByNameGamemodeAndRounds(map_id, gamemode_id, num_rounds)
+            if not len(matching_maps):
+                # then insert wanted map in rotation list
+                next_map_index = current_map_index + 1
+                self.console.write(('mapList.add', map_id, gamemode_id, num_rounds, next_map_index))
+                self.console.write(('mapList.setNextMapIndex', next_map_index))
+            elif len(matching_maps) == 1:
+                # easy case, just set the nextLevelIndex to the index found
+                self.console.write(('mapList.setNextMapIndex', matching_maps.keys()[0]))
             else:
-                map_id = match
-                maplist = MapListBlock(self.console.write(('mapList.list',)))
-                current_max_rounds = self.console.write(('mapList.getRounds',))[1]
-                if not len(maplist):
-                    # maplist is empty, nextmap will be inserted at index 0
-                    self.console.write(('mapList.add', map_id, self.console.game.gameType, current_max_rounds, 0))
-                    self.console.write(('mapList.setNextMapIndex', 0))
+                # multiple matches :s
+                matching_indices = matching_maps.keys()
+                # try to find the next indice after the index of the current map
+                indices_after_current = [x for x in matching_indices if x > current_map_index]
+                if len(indices_after_current):
+                    next_map_index = indices_after_current[0]
                 else:
-                    current_map_index = int(self.console.write(('mapList.getMapIndices', ))[0])
-                    matching_maps = maplist.getByName(map_id)
-                    if not len(matching_maps):
-                        # then insert wanted map in rotation list
-                        next_map_index = current_map_index + 1
-                        self.console.write(('mapList.add', map_id, self.console.game.gameType, current_max_rounds, next_map_index))
-                        self.console.write(('mapList.setNextMapIndex', next_map_index))
-                    elif len(matching_maps) == 1:
-                        # easy case, just set the nextLevelIndex to the index found
-                        self.console.write(('mapList.setNextMapIndex', matching_maps.keys()[0]))
-                    else:
-                        # multiple matches :s
-                        matching_indices = matching_maps.keys()
-                        # try to find the next indice after the index of the current map
-                        indices_after_current = [x for x in matching_indices if x > current_map_index]
-                        if len(indices_after_current):
-                            next_map_index = indices_after_current[0]
-                        else:
-                            next_map_index = matching_indices[0]
-                        self.console.write(('mapList.setNextMapIndex', next_map_index))
-                if client:
-                    cmd.sayLoudOrPM(client, 'next map set to %s' % self.console.getEasyName(map_id))
+                    next_map_index = matching_indices[0]
+                self.console.write(('mapList.setNextMapIndex', next_map_index))
+        if client:
+            map_info = '%s (%s) %s round%s' % (self.console.getEasyName(map_id), self.console.getGameMode(gamemode_id), num_rounds, 's' if num_rounds>1 else '')
+            cmd.sayLoudOrPM(client, 'next map set to %s' % map_info)
 
     def cmd_loadconfig(self, data, client=None, cmd=None):
         """\
@@ -1540,3 +1731,33 @@ class Poweradminbf3Plugin(Plugin):
             scoretable['4'] = float(self.console.game.serverinfo['team4score'])
 
         return max(scoretable, key=scoretable.get)
+
+
+
+    def findClientSilent(self, client_id):
+        matches = self.console.clients.getByMagic(client_id)
+        if matches:
+            if len(matches) > 1:
+                return [x.name for x in matches]
+            else:
+                return matches[0].name
+        else:
+            return None
+
+
+    def lookupClientByExactName(self, name):
+        try:
+            sclient = self.console.storage.getClientsMatching({ 'name' : name })
+            if not sclient:
+                return []
+            else:
+                clients = []
+                for c in sclient:
+                    c.clients = self.console.clients
+                    c.console = self.console
+                    c.exactName = c.name
+                    clients.append(c)
+                return clients
+        except Exception, err:
+            self.error(err)
+            return []
