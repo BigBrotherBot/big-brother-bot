@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2012/07/31 - 1.15.1 - Courgette
+#   * fix command !maps when map rotation list is empty
 #   2012/07/28 - 1.15 - Courgette
 #   * add command !unreg (danger89's idea)
 #   2012/07/14 - 1.14.1 - Courgette
@@ -110,7 +112,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.15'
+__version__ = '1.15.1'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import re, time, threading, sys, traceback, thread, random
@@ -1812,10 +1814,12 @@ class AdminPlugin(b3.plugin.Plugin):
             return
 
         maps = self.console.getMaps()
-        if maps:
+        if maps is None:
+            client.message('^7Error: could not get map list')
+        elif len(maps):
             cmd.sayLoudOrPM(client, '^7Map Rotation: ^2%s' % '^7, ^2'.join(maps))
         else:
-            client.message('^7Error: could not get map list')
+            cmd.sayLoudOrPM(client, '^7Map Rotation list is empty')
 
     def cmd_nextmap(self, data, client=None, cmd=None):
         """\

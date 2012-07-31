@@ -165,6 +165,32 @@ class Test_misc_cmd(Admin_TestCase):
         self.console.changeMap.assert_called_once_with('bar')
         assert mock_client.message.called
 
+    def test_maps(self):
+        mock_client = Mock(spec=Client, name="client")
+        mock_cmd = Mock(spec=Command)
+
+        # None
+        self.console.getMaps = Mock(return_value=None)
+        self.p.cmd_maps(data=None, client=mock_client, cmd=mock_cmd)
+        mock_client.message.assert_called_once_with('^7Error: could not get map list')
+
+        # no map
+        self.console.getMaps = Mock(return_value=[])
+        self.p.cmd_maps(data=None, client=mock_client, cmd=mock_cmd)
+        mock_cmd.sayLoudOrPM.assert_called_once_with(mock_client, '^7Map Rotation list is empty')
+
+        # one map
+        mock_cmd.reset_mock()
+        self.console.getMaps = Mock(return_value=['foo'])
+        self.p.cmd_maps(data=None, client=mock_client, cmd=mock_cmd)
+        mock_cmd.sayLoudOrPM.assert_called_once_with(mock_client, '^7Map Rotation: ^2foo')
+
+        # many maps
+        mock_cmd.reset_mock()
+        self.console.getMaps = Mock(return_value=['foo1', 'foo2', 'foo3'])
+        self.p.cmd_maps(data=None, client=mock_client, cmd=mock_cmd)
+        mock_cmd.sayLoudOrPM.assert_called_once_with(mock_client, '^7Map Rotation: ^2foo1^7, ^2foo2^7, ^2foo3')
+
     def test_maprotate(self):
         self.console.rotateMap = Mock()
         self.p.cmd_maprotate(None, None, Mock(spec=Command))
