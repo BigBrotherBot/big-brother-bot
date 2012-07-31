@@ -68,7 +68,7 @@
 		<!-- <plugin name="punkbuster" config="@conf/plugin_punkbuster.xml"/> -->
 	</plugins>
     <extplugins>
-        <plugin name="poweradminbf3" config="external_dir/conf/plugin_poweradminbf3.xml"
+        <plugin name="poweradminbf3" config="external_dir/conf/plugin_poweradminbf3.ini"
                 dlocation="http://forum.bigbrotherbot.net/index.php?action=downloads;sa=downfile&amp;id=172"/>
         <plugin name="chatlogger" config="external_dir/conf/plugin_chatlogger.xml"
                 dlocation="http://github.com/courgette/b3-plugin-chatlogger/zipball/v1.0" sql="chatlogger.sql"/>
