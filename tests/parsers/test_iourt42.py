@@ -55,7 +55,11 @@ class Iourt42TestCase(unittest.TestCase):
 
         self.output_mock = mock()
         # simulate game server actions
-        self.console.output = self.output_mock
+        def write(*args, **kwargs):
+            pretty_args = map(repr, args) + ["%s=%s" % (k, v) for k, v in kwargs.iteritems()]
+            log.info("write(%s)" % ', '.join(pretty_args))
+            return self.output_mock.write(*args, **kwargs)
+        self.console.write = Mock(wraps=write)
 
     def tearDown(self):
         self.console.working = False
@@ -76,16 +80,19 @@ class Test_parser_API_implementation(Iourt42TestCase):
         superman = mock()
         superman.cid="11"
         # slap
+        self.console.write.reset_mock()
         result = self.console.inflictCustomPenalty('slap', superman)
-        verify(self.output_mock).write('slap 11')
+        self.console.write.assert_has_calls([call('slap 11')])
         self.assertTrue(result)
         # nuke
+        self.console.write.reset_mock()
         result = self.console.inflictCustomPenalty('nuke', superman)
-        verify(self.output_mock).write('nuke 11')
+        self.console.write.assert_has_calls([call('nuke 11')])
         self.assertTrue(result)
         # mute
+        self.console.write.reset_mock()
         result = self.console.inflictCustomPenalty('mute', superman, duration="15s")
-        verify(self.output_mock).write('mute 11 15.0')
+        self.console.write.assert_has_calls([call('mute 11 15.0')])
         self.assertTrue(result)
 
 
