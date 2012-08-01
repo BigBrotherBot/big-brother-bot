@@ -50,7 +50,7 @@ class Iourt42Parser(Iourt41Parser):
         'slap': 'slap %(cid)s',
         'nuke': 'nuke %(cid)s',
         'mute': 'mute %(cid)s %(seconds)s',
-
+        'kill': 'smite %(cid)s',
     }
 
     _eventMap = {
@@ -228,6 +228,13 @@ class Iourt42Parser(Iourt41Parser):
             self.write(cmd)
             # then mute
             cmd = self.getCommand('mute', cid=client.cid, seconds=seconds)
+            self.write(cmd)
+            if reason:
+                client.message("%s" % reason)
+            return True
+
+        elif type == 'kill' and client:
+            cmd = self.getCommand('kill', cid=client.cid)
             self.write(cmd)
             if reason:
                 client.message("%s" % reason)

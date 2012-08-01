@@ -65,34 +65,41 @@ class Iourt42TestCase(unittest.TestCase):
         self.console.working = False
 
 
-class Test_parser_API_implementation(Iourt42TestCase):
-    """Test case that is responsible for testing all methods of the b3.parser.Parser class API that
-    have to override because they have to talk to their targeted game server in their specific way"""
+class Test_inflictCustomPenalty(Iourt42TestCase):
+    """
+    Called if b3.admin.penalizeClient() does not know a given penalty type.
+    Overwrite this to add customized penalties for your game like 'slap', 'nuke',
+    'mute', 'kill' or anything you want.
+    /!\ This method must return True if the penalty was inflicted.
+    """
 
+    def setUp(self):
+        Iourt42TestCase.setUp(self)
+        self.superman = mock()
+        self.superman.cid = "11"
 
-    def test_inflictCustomPenalty(self):
-        """
-        Called if b3.admin.penalizeClient() does not know a given penalty type.
-        Overwrite this to add customized penalties for your game like 'slap', 'nuke',
-        'mute', 'kill' or anything you want.
-        /!\ This method must return True if the penalty was inflicted.
-        """
-        superman = mock()
-        superman.cid="11"
-        # slap
+    def test_slap(self):
         self.console.write.reset_mock()
-        result = self.console.inflictCustomPenalty('slap', superman)
+        result = self.console.inflictCustomPenalty('slap', self.superman)
         self.console.write.assert_has_calls([call('slap 11')])
         self.assertTrue(result)
-        # nuke
+
+    def test_nuke(self):
         self.console.write.reset_mock()
-        result = self.console.inflictCustomPenalty('nuke', superman)
+        result = self.console.inflictCustomPenalty('nuke', self.superman)
         self.console.write.assert_has_calls([call('nuke 11')])
         self.assertTrue(result)
-        # mute
+
+    def test_mute(self):
         self.console.write.reset_mock()
-        result = self.console.inflictCustomPenalty('mute', superman, duration="15s")
+        result = self.console.inflictCustomPenalty('mute', self.superman, duration="15s")
         self.console.write.assert_has_calls([call('mute 11 15.0')])
+        self.assertTrue(result)
+
+    def test_kill(self):
+        self.console.write.reset_mock()
+        result = self.console.inflictCustomPenalty('kill', self.superman)
+        self.console.write.assert_has_calls([call('smite 11')])
         self.assertTrue(result)
 
 
