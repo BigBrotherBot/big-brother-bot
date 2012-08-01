@@ -235,8 +235,8 @@ class Iourt42Parser(Iourt41Parser):
 
         if gameTypeInt == '0':
             _gameType = 'ffa'
-        elif gameTypeInt == '1':   # Dunno what this one is
-            _gameType = 'dm'
+        elif gameTypeInt == '1': # Last Man Standing
+            _gameType = 'lms'
         elif gameTypeInt == '2':   # Dunno either
             _gameType = 'dm'
         elif gameTypeInt == '3':
