@@ -54,7 +54,7 @@ class Iourt42Parser(Iourt41Parser):
     }
 
     _eventMap = {
-        #'warmup' : b3.events.EVT_GAME_WARMUP,
+        #'warmup' : b3.events.EVT_GAME_HOTPOTATO,
         #'shutdowngame' : b3.events.EVT_GAME_ROUND_END
     }
 
@@ -138,6 +138,8 @@ class Iourt42Parser(Iourt41Parser):
 
         # add UrT 4.2 specific events
         self.Events.createEvent('EVT_CLIENT_RADIO', 'Event client radio')
+        self.Events.createEvent('EVT_GAME_HOTPOTATO', 'Event game hotpotato')
+        self._eventMap['hotpotato'] = self.getEventID('EVT_GAME_HOTPOTATO')
 
 
 
