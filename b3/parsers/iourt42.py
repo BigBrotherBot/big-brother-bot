@@ -21,6 +21,8 @@
 # 2012/07/24 - 0.0 - Courgette
 #     * parser created
 #
+from b3.events import Event
+
 __author__  = 'Courgette'
 __version__ = '0.0'
 
@@ -61,6 +63,9 @@ class Iourt42Parser(Iourt41Parser):
     #0:00 ClientUserinfo: 0:
 
     _lineFormats = (
+        #Radio: 0 - 7 - 2 - "New Alley" - "I'm going for the flag"
+        re.compile(r'''^(?P<action>Radio): (?P<data>(?P<cid>[0-9]+) - (?P<msg_group>[0-9]+) - (?P<msg_id>[0-9]+) - "(?P<location>.+)" - "(?P<text>.*)")$'''),
+
         #Generated with ioUrbanTerror v4.1:
         #Hit: 12 7 1 19: BSTHanzo[FR] hit ercan in the Helmet
         #Hit: 13 10 0 8: Grover hit jacobdk92 in the Head
@@ -129,46 +134,10 @@ class Iourt42Parser(Iourt41Parser):
 
 
     def startup(self):
-        if not self.config.has_option('server','game_log'):
-            self.critical("your main config file is missing the 'game_log' setting in section 'server'")
-            raise SystemExit(220)
+        Iourt41Parser.startup(self)
 
-        # add UrT specific events
-        self.Events.createEvent('EVT_GAME_FLAG_RETURNED', 'Flag returned')
-        self.Events.createEvent('EVT_CLIENT_GEAR_CHANGE', 'Client gear change')
-        self.Events.createEvent('EVT_SURVIVOR_WIN', 'Survivor Winner')
-        
-        # add the world client
-        self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
-
-        # get map from the status rcon command
-        map_name = self.getMap()
-        if map_name:
-            self.game.mapName = map_name
-            self.info('map is: %s'%self.game.mapName)
-
-        # get gamepaths/vars
-        try:
-            self.game.fs_game = self.getCvar('fs_game').getString()
-        except Exception:
-            self.game.fs_game = None
-            self.warning("Could not query server for fs_game")
-
-        try:
-            self.game.fs_basepath = self.getCvar('fs_basepath').getString().rstrip('/')
-            self.debug('fs_basepath: %s' % self.game.fs_basepath)
-        except Exception:
-            self.game.fs_basepath = None
-            self.warning("Could not query server for fs_basepath")
-
-        try:
-            self.game.fs_homepath = self.getCvar('fs_homepath').getString().rstrip('/')
-            self.debug('fs_homepath: %s' % self.game.fs_homepath)
-        except Exception:
-            self.game.fs_homepath = None
-            self.warning("Could not query server for fs_homepath")
-
-        self._maplist = self.getMaps()
+        # add UrT 4.2 specific events
+        self.Events.createEvent('EVT_CLIENT_RADIO', 'Event client radio')
 
 
 
@@ -178,6 +147,23 @@ class Iourt42Parser(Iourt41Parser):
     #    Events handlers
     #
     ###############################################################################################
+
+    def OnRadio(self, action, data, match=None):
+        cid = match.group('cid')
+        msg_group = match.group('msg_group')
+        msg_id = match.group('msg_id')
+        location = match.group('location')
+        text = match.group('text')
+        client = self.clients.getByCID(cid)
+        if not client:
+            self.debug('No client found')
+            return None
+        return Event(self.getEventID('EVT_CLIENT_RADIO'), client=client, data={
+            'msg_group': msg_group,
+            'msg_id': msg_id,
+            'location': location,
+            'text': text
+        })
 
 
 
