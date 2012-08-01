@@ -69,6 +69,9 @@ class Iourt42Parser(Iourt41Parser):
         #Callvote: 1 - "map dressingroom"
         re.compile(r'''^(?P<action>Callvote): (?P<data>(?P<cid>[0-9]+) - "(?P<vote_string>.*)")$'''),
 
+        #Vote: 0 - 2
+        re.compile(r'''^(?P<action>Vote): (?P<data>(?P<cid>[0-9]+) - (?P<value>.*))$'''),
+
         #Generated with ioUrbanTerror v4.1:
         #Hit: 12 7 1 19: BSTHanzo[FR] hit ercan in the Helmet
         #Hit: 13 10 0 8: Grover hit jacobdk92 in the Head
@@ -144,6 +147,7 @@ class Iourt42Parser(Iourt41Parser):
         self.Events.createEvent('EVT_GAME_HOTPOTATO', 'Event game hotpotato')
         self._eventMap['hotpotato'] = self.getEventID('EVT_GAME_HOTPOTATO')
         self.Events.createEvent('EVT_CLIENT_CALLVOTE', 'Event client call vote')
+        self.Events.createEvent('EVT_CLIENT_VOTE', 'Event client vote')
 
 
 
@@ -179,6 +183,15 @@ class Iourt42Parser(Iourt41Parser):
             self.debug('No client found')
             return None
         return Event(self.getEventID('EVT_CLIENT_CALLVOTE'), client=client, data=vote_string)
+
+    def OnVote(self, action, data, match=None):
+        cid = match.group('cid')
+        value = match.group('value')
+        client = self.clients.getByCID(cid)
+        if not client:
+            self.debug('No client found')
+            return None
+        return Event(self.getEventID('EVT_CLIENT_VOTE'), client=client, data=value)
 
 
 

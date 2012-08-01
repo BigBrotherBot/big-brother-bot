@@ -143,6 +143,13 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_client=self.joe,
             event_data="map dressingroom")
 
+    def test_Vote(self):
+        self.joe.connects('0')
+        self.assertEvent(r'''Vote: 0 - 2''',
+            event_type='EVT_CLIENT_VOTE',
+            event_client=self.joe,
+            event_data="2")
+
 
 
 @unittest.skip("need to validate rcon responses from real 4.2 gameserver")
