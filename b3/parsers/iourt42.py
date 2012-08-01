@@ -66,6 +66,9 @@ class Iourt42Parser(Iourt41Parser):
         #Radio: 0 - 7 - 2 - "New Alley" - "I'm going for the flag"
         re.compile(r'''^(?P<action>Radio): (?P<data>(?P<cid>[0-9]+) - (?P<msg_group>[0-9]+) - (?P<msg_id>[0-9]+) - "(?P<location>.+)" - "(?P<text>.*)")$'''),
 
+        #Callvote: 1 - "map dressingroom"
+        re.compile(r'''^(?P<action>Callvote): (?P<data>(?P<cid>[0-9]+) - "(?P<vote_string>.*)")$'''),
+
         #Generated with ioUrbanTerror v4.1:
         #Hit: 12 7 1 19: BSTHanzo[FR] hit ercan in the Helmet
         #Hit: 13 10 0 8: Grover hit jacobdk92 in the Head
@@ -140,6 +143,7 @@ class Iourt42Parser(Iourt41Parser):
         self.Events.createEvent('EVT_CLIENT_RADIO', 'Event client radio')
         self.Events.createEvent('EVT_GAME_HOTPOTATO', 'Event game hotpotato')
         self._eventMap['hotpotato'] = self.getEventID('EVT_GAME_HOTPOTATO')
+        self.Events.createEvent('EVT_CLIENT_CALLVOTE', 'Event client call vote')
 
 
 
@@ -166,6 +170,15 @@ class Iourt42Parser(Iourt41Parser):
             'location': location,
             'text': text
         })
+
+    def OnCallvote(self, action, data, match=None):
+        cid = match.group('cid')
+        vote_string = match.group('vote_string')
+        client = self.clients.getByCID(cid)
+        if not client:
+            self.debug('No client found')
+            return None
+        return Event(self.getEventID('EVT_CLIENT_CALLVOTE'), client=client, data=vote_string)
 
 
 
