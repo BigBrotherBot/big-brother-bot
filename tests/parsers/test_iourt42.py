@@ -141,7 +141,7 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_data={'msg_group': '7', 'msg_id': '2', 'location': 'New Alley', 'text': "I'm going for the flag" })
 
     def test_Hotpotato(self):
-        self.assertEvent(r'''Hotpotato:''', event_type='EVT_GAME_HOTPOTATO')
+        self.assertEvent(r'''Hotpotato:''', event_type='EVT_GAME_FLAG_HOTPOTATO')
 
     def test_Callvote(self):
         self.joe.connects('1')
