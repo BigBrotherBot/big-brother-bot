@@ -9,6 +9,7 @@ http://github.com/BigBrotherBot/big-brother-bot/compare/v1.8.2...v1.8.3
 - Q3A RCON: fixes the 'RCON: too much tries' error message that appeared with v1.8.2
 - Xlrstats plugin: fixes issue with command !xlrstats command silently failing on a 1st time seen map https://github.com/xlr8or/big-brother-bot/issues/88
 - Admin plugin: new command !unreg <player> to remove a player from the 'regular' group. Work together with the existing !makereg <player> command
+- Red Orchestra 2 now working with the B3 win32 packages
 
 [TODO]
 
