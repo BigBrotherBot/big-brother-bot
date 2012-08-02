@@ -152,7 +152,7 @@ class Setup:
         self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
         xml.start("settings", name="b3")
         self.add_set("parser", "",
-                     "Define your game: altitude/bf3/bfbc2/cod/cod2/cod4/cod5/cod6/cod7/cod8/etpro/homefront/iourt41/iourt42/moh/oa081/smg/sof2/wop/wop15/ro2/csgo/ravaged")
+                     "Define your game: altitude/bf3/bfbc2/cod/cod2/cod4/cod5/cod6/cod7/cod8/etpro/homefront/iourt41/iourt42/moh/oa081/smg/sof2/wop/wop15/ro2/csgo/ravaged/arma2")
 
         # set a template xml file to read existing settings from
         _result = False
@@ -258,6 +258,17 @@ class Setup:
                          "The IP of your gameserver B3 will connect to in order to send RCON commands. Usually the same as the public_ip")
             self.add_set("rcon_port", self.read_element('server', 'rcon_port', ''),
                          "The port of your gameserver that B3 will connect to in order to send RCON commands. NOT the same as the normal port.")
+            self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
+                         "The RCON password of your gameserver.")
+
+        # Arma2 specific
+        elif self._set_parser == 'arma2':
+            self.add_set("public_ip", self.read_element('server', 'public_ip', ''),
+                         "The IP address of your gameserver")
+            self.add_set("port", self.read_element('server', 'port', ''),
+                         "The ArmA2 game network communication port")
+            self.add_set("rcon_ip", self.read_element('server', 'rcon_ip', ''),
+                         "The IP of your gameserver B3 will connect to in order to send RCON commands. Usually the same as the public_ip")
             self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
                          "The RCON password of your gameserver.")
 
