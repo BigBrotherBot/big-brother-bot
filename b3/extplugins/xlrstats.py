@@ -872,7 +872,10 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
                 #calculate the win probability for the assister and victim
                 assist_prob = self.win_prob(assiststats.skill, victimstats.skill)
-                victim_prob = self.win_prob(victimstats.skill, assiststats.skill)
+                #performance patch provided by IzNoGod: ELO states that assist_prob + victim_prob = 1
+                #victim_prob = self.win_prob(victimstats.skill, assiststats.skill)
+                victim_prob = 1 - assist_prob
+
                 self.verbose('----> XLRstats: win probability for %s: %s' % (assister.name, assist_prob))
                 self.verbose('----> XLRstats: win probability for %s: %s' % (target.name, victim_prob))
 
@@ -989,7 +992,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         #calculate winning probabilities for both players
         killer_prob = self.win_prob(killerstats.skill, victimstats.skill)
-        victim_prob = self.win_prob(victimstats.skill, killerstats.skill)
+        #performance patch provided by IzNoGod: ELO states that killer_prob + victim_prob = 1
+        #victim_prob = self.win_prob(victimstats.skill, killerstats.skill)
+        victim_prob = 1 - killer_prob
 
         #get applicable weapon replacement
         actualweapon = data[1]
