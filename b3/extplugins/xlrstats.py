@@ -597,6 +597,10 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             s.id = r['id']
             s.client_id = r['client_id']
             s.kills = r['kills']
+            if s.kills > self.Kswitch_kills:
+                s.Kfactor = self.Kfactor_low
+            else:
+                s.Kfactor = self.Kfactor_high
             s.deaths = r['deaths']
             s.teamkills = r['teamkills']
             s.teamdeaths = r['teamdeaths']
@@ -895,15 +899,10 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
                 #calculate new skill for the assister
                 if anonymous != ASSISTER:
-                    if assiststats.kills > self.Kswitch_kills:
-                        Kfactor = self.Kfactor_low
-                    else:
-                        Kfactor = self.Kfactor_high
-
                     oldskill = assiststats.skill
                     if ( target.team == assister.team ) and not ( self.console.game.gameType in self._ffa ):
                         #assister is a teammate and needs skill and assists reduced
-                        _assistbonus = self.assist_bonus * Kfactor * weapon_factor * (0 - assist_prob)
+                        _assistbonus = self.assist_bonus * assiststats.Kfactor * weapon_factor * (0 - assist_prob)
                         assiststats.skill = float(assiststats.skill) + _assistbonus
                         assiststats.assistskill = float(assiststats.assistskill) + _assistbonus
                         assiststats.assists -= 1 #negative assist
@@ -917,7 +916,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                                 target.name, assiststats.skill - oldskill, assiststats.skill))
                     else:
                         #this is a real assist
-                        _assistbonus = self.assist_bonus * Kfactor * weapon_factor * (1 - assist_prob)
+                        _assistbonus = self.assist_bonus * assiststats.Kfactor * weapon_factor * (1 - assist_prob)
                         assiststats.skill = float(assiststats.skill) + _assistbonus
                         assiststats.assistskill = float(assiststats.assistskill) + _assistbonus
                         assiststats.assists += 1
@@ -931,19 +930,13 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                     self.save_Stat(assiststats)
 
                 #calculate new skill for the victim
-                if anonymous != VICTIM:
-                    if victimstats.kills > self.Kswitch_kills:
-                        Kfactor = self.Kfactor_low
-                    else:
-                        Kfactor = self.Kfactor_high
-
                     oldskill = victimstats.skill
                     if ( target.team == assister.team ) and not ( self.console.game.gameType in self._ffa ):
                         #assister was a teammate, this should not affect victims skill.
                         pass
                     else:
                         #this is a real assist
-                        _assistdeduction = self.assist_bonus * Kfactor * weapon_factor * (0 - victim_prob)
+                        _assistdeduction = self.assist_bonus * victimstats.Kfactor * weapon_factor * (0 - victim_prob)
                         victimstats.skill = float(victimstats.skill) + _assistdeduction
                         self.verbose('----> XLRstats: Assist skilldeduction for %s: %s (oldsk: %.3f - newsk: %.3f)' % (
                             target.name, victimstats.skill - oldskill, oldskill, victimstats.skill))
@@ -1012,14 +1005,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         #calculate new stats for the killer
         if anonymous != KILLER:
-            if killerstats.kills > self.Kswitch_kills:
-                Kfactor = self.Kfactor_low
-            else:
-                Kfactor = self.Kfactor_high
-
             oldskill = killerstats.skill
             #pure skilladdition for a 100% kill
-            _skilladdition = self.kill_bonus * Kfactor * weapon_factor * (1 - killer_prob)
+            _skilladdition = self.kill_bonus * killerstats.Kfactor * weapon_factor * (1 - killer_prob)
             #deduct the assists from the killers skill, but no more than 50%
             if _assists_sum == 0:
                 pass
@@ -1058,15 +1046,10 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         #calculate new stats for the victim
         if anonymous != VICTIM:
-            if victimstats.kills > self.Kswitch_kills:
-                Kfactor = self.Kfactor_low
-            else:
-                Kfactor = self.Kfactor_high
-
             oldskill = victimstats.skill
 
             #pure skilldeduction for a 100% kill
-            _skilldeduction = Kfactor * weapon_factor * (0 - victim_prob)
+            _skilldeduction = victimstats.Kfactor * weapon_factor * (0 - victim_prob)
             #deduct the assists from the victims skill deduction, but no more than 50%
             if _victim_sum == 0:
                 pass
