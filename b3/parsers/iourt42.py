@@ -20,17 +20,141 @@
 # CHANGELOG
 # 2012/07/24 - 0.0 - Courgette
 #     * parser created
+# 2012/07/24 - 1.0 - Courgette
+#     * new authentication system using the Frozen Sand Account if available
 #
-from b3.events import Event
-
 __author__  = 'Courgette'
-__version__ = '0.0'
+__version__ = '1.0'
 
 import re
 from b3.parsers.iourt41 import Iourt41Parser
 import b3
+from b3.clients import Client
+from b3.events import Event
 
-#----------------------------------------------------------------------------------------------------------------------------------------------
+
+class Iourt42Client(Client):
+
+    def auth_by_guid(self):
+        try:
+            return self.console.storage.getClient(self)
+        except KeyError, msg:
+            self.console.debug('User not found %s: %s', self.guid, msg)
+            return False
+
+    def auth_by_pbid(self):
+        clients_matching_pbid = self.console.storage.getClientsMatching({ 'pbid' : self.pbid })
+        if len(clients_matching_pbid) > 1:
+            self.console.error("DATA ERROR: found %s client having Frozen Sand Account '%s'" % (len(clients_matching_pbid), self.pbid))
+            return self.auth_by_pbid_and_guid()
+        elif len(clients_matching_pbid) == 1:
+            for k,v in clients_matching_pbid[0].__dict__.iteritems():
+                setattr(self, k, v)
+            return True
+        else:
+            self.console.debug('Frozen Sand Account [%s] unknown in database', self.pbid)
+            return False
+
+    def auth_by_pbid_and_guid(self):
+        clients_matching_pbid = self.console.storage.getClientsMatching({ 'pbid': self.pbid, 'guid': self.guid })
+        if len(clients_matching_pbid):
+            for k,v in clients_matching_pbid[0].__dict__.iteritems():
+                setattr(self, k, v)
+            return True
+        else:
+            self.console.debug("Frozen Sand Account [%s] with guid '%s' unknown in database" % (self.pbid, self.guid))
+            return False
+
+    """
+    The b3.clients.Client.auth method needs to be changed to fit the UrT4.2 authentication scheme.
+    In UrT4.2 :
+     * all connected players have a cl_guid
+     * some have a Frozen Sand Account (FSA)
+
+    The FSA is a worldwide identifier while the cl_guid only identify a player on a given game server.
+
+    See http://forum.bigbrotherbot.net/urban-terror-4-2/urt-4-2-discussion/
+    """
+    def auth(self):
+        if not self.authed and self.guid and not self.authorizing:
+            self.authorizing = True
+
+            name = self.name
+            ip = self.ip
+            guid = self.guid
+            pbid = self.pbid
+
+            # Frozen Sand Account related info
+            if not hasattr(self, 'notoriety'):
+                self.notoriety = None
+
+            # FSA will be found in pbid
+            if not self.pbid:
+                # auth with cl_guid only
+                try:
+                    inStorage = self.auth_by_guid()
+                except Exception, e:
+                    self.console.error("auth by guid failed", exc_info=e)
+                    self.authorizing = False
+                    return False
+            else:
+                # auth with FSA
+                try:
+                    inStorage = self.auth_by_pbid()
+                except Exception, e:
+                    self.console.error("auth by FSA failed", exc_info=e)
+                    self.authorizing = False
+                    return False
+
+                if not inStorage:
+                    # fallback on auth with cl_guid only
+                    try:
+                        inStorage = self.auth_by_guid()
+                    except Exception, e:
+                        self.console.error("auth by guid failed (when no known FSA)", exc_info=e)
+                        self.authorizing = False
+                        return False
+
+            #lastVisit = None
+            if inStorage:
+                self.console.bot('Client found in storage @%s, welcome back %s (FSA: %s)', str(self.id), self.name, self.pbid)
+                self.lastVisit = self.timeEdit
+            else:
+                self.console.bot('Client not found in the storage %s (FSA: %s), create new', str(self.guid), self.pbid)
+
+            self.connections = int(self.connections) + 1
+            self.name = name
+            self.ip = ip
+            if pbid:
+                self.pbid = pbid
+            self.guid = guid
+            self.save()
+            self.authed = True
+
+            self.console.debug('Client Authorized: @%s "%s" [%s] (FSA: %s)', self.cid, self.name, self.guid, self.pbid)
+
+            # check for bans
+            if self.numBans > 0:
+                ban = self.lastBan
+                if ban:
+                    self.reBan(ban)
+                    self.authorizing = False
+                    return False
+
+            self.refreshLevel()
+
+            self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_AUTH,
+                self,
+                self))
+
+            self.authorizing = False
+
+            return self.authed
+        else:
+            return False
+
+
+
 class Iourt42Parser(Iourt41Parser):
     gameName = 'iourt42'
 
@@ -63,6 +187,9 @@ class Iourt42Parser(Iourt41Parser):
     #0:00 ClientUserinfo: 0:
 
     _lineFormats = (
+        #Radio: 0 - 7 - 2 - "New Alley" - "I'm going for the flag"
+        re.compile(r'''^(?P<action>Radio): (?P<data>(?P<cid>[0-9]+) - (?P<msg_group>[0-9]+) - (?P<msg_id>[0-9]+) - "(?P<location>.+)" - "(?P<text>.*)")$'''),
+
         #Radio: 0 - 7 - 2 - "New Alley" - "I'm going for the flag"
         re.compile(r'''^(?P<action>Radio): (?P<data>(?P<cid>[0-9]+) - (?P<msg_group>[0-9]+) - (?P<msg_id>[0-9]+) - "(?P<location>.+)" - "(?P<text>.*)")$'''),
 
@@ -137,6 +264,14 @@ class Iourt42Parser(Iourt41Parser):
     # 4: yene RED k:16 d:8 ping:50 92.104.110.192:63496
     _reTeamScores = re.compile(r'^Scores:\s+R:(?P<RedScore>.+)\s+B:(?P<BlueScore>.+)$', re.I)
     _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): (?P<name>.*) (?P<team>RED|BLUE|SPECTATOR|FREE) k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) ping:(?P<ping>[0-9]+|CNCT|ZMBI)( (?P<ip>[0-9.]+):(?P<port>[0-9-]+))?$', re.I) # NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
+
+    _re_authwhois_noaccount = re.compile(r"""^\^6\[rcon\] \^5\[auth\] \^7(?P<name>.+)(\^4)+ - no account""")
+    _re_authwhois_account = re.compile(r"""^\^6\[rcon\] \^5\[auth\] \^7(?P<name>.+)(?:\^4)+ - (?P<notoriety>.+) account: \^7\^3\^7(?P<account>.+)$""")
+
+
+    def __new__(cls, *args, **kwargs):
+        Iourt42Parser.patch_Clients()
+        return Iourt41Parser.__new__(cls)
 
 
     def startup(self):
@@ -247,6 +382,133 @@ class Iourt42Parser(Iourt41Parser):
     #
     ###############################################################################################
 
+    def queryClientFrozenSandAccount(self, cid):
+        """
+        : auth-whois 5
+        Client 5 is not active.
+
+        : auth-whois 0
+        ^6[rcon] ^5[auth] ^7laCourge^4 - no account
+
+        : auth-whois 0
+        ^6[rcon] ^5[auth] ^7laCourge^4^4 - well known account: ^7^3^7Courgette
+
+        """
+        data = self.write('auth-whois %s' % cid)
+        self.verbose(repr(data))
+        if not data:
+            return None
+
+        if data == "Client %s is not active." % cid:
+            return None
+
+        if self._re_authwhois_noaccount.match(data):
+            return None
+
+        m = self._re_authwhois_account.match(data)
+        if m:
+            return m.group('account'), m.group('notoriety')
+        else:
+            return None
+
+
+    # Parse Userinfo
+    def OnClientuserinfo(self, action, data, match=None):
+        #2 \ip\145.99.135.227:27960\challenge\-232198920\qport\2781\protocol\68\battleye\1\name\[SNT]^1XLR^78or\rate\8000\cg_predictitems\0\snaps\20\model\sarge\headmodel\sarge\team_model\james\team_headmodel\*james\color1\4\color2\5\handicap\100\sex\male\cl_anonymous\0\teamtask\0\cl_guid\58D4069246865BB5A85F20FB60ED6F65
+        #conecting bot:
+        #0 \gear\GMIORAA\team\blue\skill\5.000000\characterfile\bots/ut_chicken_c.c\color\4\sex\male\race\2\snaps\20\rate\25000\name\InviteYourFriends!
+        bclient = self.parseUserInfo(data)
+
+        if not bclient.has_key('cl_guid') and bclient.has_key('skill'):
+            # must be a bot connecting
+            self.bot('Bot Connecting!')
+            bclient['ip'] = '0.0.0.0'
+            bclient['cl_guid'] = 'BOT' + str(bclient['cid'])
+
+        if bclient.has_key('name'):
+            # remove spaces from name
+            bclient['name'] = bclient['name'].replace(' ','')
+
+
+        # split port from ip field
+        if bclient.has_key('ip'):
+            ipPortData = bclient['ip'].split(':', 1)
+            bclient['ip'] = ipPortData[0]
+            if len(ipPortData) > 1:
+                bclient['port'] = ipPortData[1]
+
+        if bclient.has_key('team'):
+            bclient['team'] = self.getTeam(bclient['team'])
+
+        self.verbose('Parsed user info %s' % bclient)
+
+        if bclient:
+            client = self.clients.getByCID(bclient['cid'])
+
+            if client:
+                # update existing client
+                for k, v in bclient.iteritems():
+                    if hasattr(client, 'gear') and k == 'gear' and client.gear != v:
+                        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_GEAR_CHANGE, v, client))
+                    setattr(client, k, v)
+            else:
+                #make a new client
+                # use cl_guid
+                if bclient.has_key('cl_guid'):
+                    guid = bclient['cl_guid']
+                else:
+                    guid = 'unknown'
+
+                # query FrozenSand Account
+                fsa = notoriety = None
+                auth_info = self.queryClientFrozenSandAccount(bclient['cid'])
+                if auth_info:
+                    fsa, notoriety = auth_info
+
+                # v1.0.17 - mindriot - 02-Nov-2008
+                if not bclient.has_key('name'):
+                    bclient['name'] = self._empty_name_default
+
+                if not bclient.has_key('ip'):
+                    if guid == 'unknown':
+                        # happens when a client is (temp)banned and got kicked so client was destroyed, but
+                        # infoline was still waiting to be parsed.
+                        self.debug('Client disconnected. Ignoring.')
+                        return None
+                    else:
+                        # see issue xlr8or/big-brother-bot#87 - ip can be missing
+                        try:
+                            self.debug("missing IP, trying to get ip with 'status'")
+                            plist = self.getPlayerList()
+                            client_data = plist[bclient['cid']]
+                            bclient['ip'] = client_data['ip']
+                        except Exception, err:
+                            bclient['ip'] = ''
+                            self.warning("Failed to get client %s ip address." % bclient['cid'], err)
+
+
+
+                nguid = ''
+                # overide the guid... use ip's only if self.console.IpsOnly is set True.
+                if self.IpsOnly:
+                    nguid = bclient['ip']
+                # replace last part of the guid with two segments of the ip
+                elif self.IpCombi:
+                    i = bclient['ip'].split('.')
+                    d = len(i[0])+len(i[1])
+                    nguid = guid[:-d]+i[0]+i[1]
+                # Quake clients don't have a cl_guid, we'll use ip instead
+                elif guid == 'unknown':
+                    nguid = bclient['ip']
+
+                if nguid != '':
+                    guid = nguid
+
+                self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE,
+                    guid=guid, pbid=fsa, notoriety=notoriety, data={ 'guid' : guid })
+
+        return None
+
 
     # Translate the gameType to a readable format (also for teamkill plugin!)
     def defineGameType(self, gameTypeInt):
@@ -275,3 +537,24 @@ class Iourt42Parser(Iourt41Parser):
 
         #self.debug('_gameType: %s' % _gameType)
         return _gameType
+
+
+    @staticmethod
+    def patch_Clients():
+        def newClient(self, cid, **kwargs):
+            client = Iourt42Client(console=self.console, cid=cid, timeAdd=self.console.time(), **kwargs)
+            self[client.cid] = client
+            self.resetIndex()
+
+            self.console.debug('Urt42 Client Connected: [%s] %s - %s (%s)', self[client.cid].cid, self[client.cid].name, self[client.cid].guid, self[client.cid].data)
+
+            self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_CONNECT,
+                client,
+                client))
+
+            if client.guid:
+                client.auth()
+            elif not client.authed:
+                self.authorizeClients()
+            return client
+        b3.clients.Clients.newClient = newClient
