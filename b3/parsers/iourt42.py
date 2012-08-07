@@ -19,12 +19,15 @@
 #
 # CHANGELOG
 # 2012/07/24 - 0.0 - Courgette
-#     * parser created
-# 2012/07/24 - 1.0 - Courgette
-#     * new authentication system using the Frozen Sand Account if available
+#  * parser created
+# 2012/08/08 - 1.0 - Courgette
+#  * new authentication system using the Frozen Sand Account if available
+# 2012/08/08 - 1.1 - Courgette
+#  * fix error when computing Hit damage. Until we got real value, the default value : 15 is returned for all
+#    weapons and all hit locations.
 #
 __author__  = 'Courgette'
-__version__ = '1.0'
+__version__ = '1.1'
 
 import re
 from b3.parsers.iourt41 import Iourt41Parser
@@ -202,7 +205,7 @@ class Iourt42Parser(Iourt41Parser):
         #Generated with ioUrbanTerror v4.1:
         #Hit: 12 7 1 19: BSTHanzo[FR] hit ercan in the Helmet
         #Hit: 13 10 0 8: Grover hit jacobdk92 in the Head
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<hitloc>[0-9]+)\s(?P<aweap>[0-9]+):\s+(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>Hit):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<hitloc>[0-9]+)\s(?P<aweap>[0-9]+):\s+(?P<text>.*))$', re.IGNORECASE),
         #re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<hitloc>[0-9]+)\s(?P<aweap>[0-9]+):\s+(?P<text>(?P<aname>[^:])\shit\s(?P<name>[^:])\sin\sthe(?P<locname>.*)))$', re.IGNORECASE),
 
         #6:37 Kill: 0 1 16: XLR8or killed =lvl1=Cheetah by UT_MOD_SPAS
@@ -265,6 +268,7 @@ class Iourt42Parser(Iourt41Parser):
     _reTeamScores = re.compile(r'^Scores:\s+R:(?P<RedScore>.+)\s+B:(?P<BlueScore>.+)$', re.I)
     _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): (?P<name>.*) (?P<team>RED|BLUE|SPECTATOR|FREE) k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) ping:(?P<ping>[0-9]+|CNCT|ZMBI)( (?P<ip>[0-9.]+):(?P<port>[0-9-]+))?$', re.I) # NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
 
+    # /rcon auth-whois replies patterns
     _re_authwhois_noaccount = re.compile(r"""^\^6\[rcon\] \^5\[auth\] \^7(?P<name>.+)(\^4)+ - no account""")
     _re_authwhois_account = re.compile(r"""^\^6\[rcon\] \^5\[auth\] \^7(?P<name>.+)(?:\^4)+ - (?P<notoriety>.+) account: \^7\^3\^7(?P<account>.+)$""")
 
@@ -537,6 +541,23 @@ class Iourt42Parser(Iourt41Parser):
 
         #self.debug('_gameType: %s' % _gameType)
         return _gameType
+
+
+    def _getDamagePoints(self, weapon, hitloc):
+        """
+        provide the estimated number of damage points inflicted by a hit of a given weapon to a given body location.
+        """
+        '''
+        try:
+            points = self.damage[weapon][int(hitloc)]
+            self.debug("_getDamagePoints(%s, %s) -> %s" % (weapon, hitloc, points))
+            return points
+        except KeyError, err:
+            self.warning("_getDamagePoints(%s, %s) cannot find value : %s" % (weapon, hitloc, err))
+            return 15
+        '''
+        # until we got real values, we return the default value
+        return 15
 
 
     @staticmethod

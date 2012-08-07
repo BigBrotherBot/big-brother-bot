@@ -157,6 +157,28 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_client=self.joe,
             event_data="2")
 
+    def test_Hit_1(self):
+        fatmatic = FakeClient(self.console, name="Fat'Matic", guid="11111111111111")
+        d4dou = FakeClient(self.console, name="[FR]d4dou", guid="11111111111111")
+        fatmatic.connects('3')
+        d4dou.connects('6')
+        self.assertEvent(r'''Hit: 6 3 5 8: Fat'Matic hit [FR]d4dou in the Torso''',
+            event_type='EVT_CLIENT_DAMAGE',
+            event_client=fatmatic,
+            event_target=d4dou,
+            event_data=(15, '19', '5'))
+
+    def test_Hit_2(self):
+        fatmatic = FakeClient(self.console, name="Fat'Matic", guid="11111111111111")
+        d4dou = FakeClient(self.console, name="[FR]d4dou", guid="11111111111111")
+        fatmatic.connects('3')
+        d4dou.connects('6')
+        self.assertEvent(r'''Hit: 3 6 9 17: [FR]d4dou hit Fat'Matic in the Legs''',
+            event_type='EVT_CLIENT_DAMAGE',
+            event_client=d4dou,
+            event_target=fatmatic,
+            event_data=(15, '35', '9'))
+
 
 
 @unittest.skip("need to validate rcon responses from real 4.2 gameserver")
