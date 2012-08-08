@@ -25,9 +25,11 @@
 # 2012/08/08 - 1.1 - Courgette
 #  * fix error when computing Hit damage. Until we got real value, the default value : 15 is returned for all
 #    weapons and all hit locations.
+# 2012/08/09 - 1.2 - Courgette
+#  * make sure the game is UrT 4.2 or fail to start
 #
 __author__  = 'Courgette'
-__version__ = '1.1'
+__version__ = '1.2'
 
 import re
 from b3.parsers.iourt41 import Iourt41Parser
@@ -279,6 +281,14 @@ class Iourt42Parser(Iourt41Parser):
 
 
     def startup(self):
+        try:
+            gamename = self.getCvar('gamename').getString()
+            if gamename != 'q3urt42':
+                self.error("the iourt42 B3 parser cannot be used with a game server other than Urban Terror 4.2")
+                raise SystemExit(220)
+        except Exception, e:
+            self.warning("Could not query server for gamename.", exc_info=e)
+
         Iourt41Parser.startup(self)
 
         # add UrT 4.2 specific events
