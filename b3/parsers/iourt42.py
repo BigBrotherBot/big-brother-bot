@@ -27,9 +27,11 @@
 #    weapons and all hit locations.
 # 2012/08/09 - 1.2 - Courgette
 #  * make sure the game is UrT 4.2 or fail to start
+# 2012/08/09 - 1.2.1 - Courgette
+#  * disabling authentication using the /rcon auth-whois command response
 #
 __author__  = 'Courgette'
-__version__ = '1.2'
+__version__ = '1.2.1'
 
 import re
 from b3.parsers.iourt41 import Iourt41Parser
@@ -272,7 +274,7 @@ class Iourt42Parser(Iourt41Parser):
 
     # /rcon auth-whois replies patterns
     _re_authwhois_noaccount = re.compile(r"""^\^6\[rcon\] \^5\[auth\] \^7(?P<name>.+)(\^4)+ - no account""")
-    _re_authwhois_account = re.compile(r"""^\^6\[rcon\] \^5\[auth\] \^7(?P<name>.+)(?:\^4)+ - (?P<notoriety>.+) account: \^7\^3\^7(?P<account>.+)$""")
+    _re_authwhois_account = re.compile(r"""^\^6\[rcon\] \^5\[auth\] \^7(?P<name>.+)(?:\^4)+ - (?P<notoriety>.+) account: \^7\^3(?P<account>.+)$""")
 
 
     def __new__(cls, *args, **kwargs):
@@ -475,7 +477,8 @@ class Iourt42Parser(Iourt41Parser):
 
                 # query FrozenSand Account
                 fsa = notoriety = None
-                auth_info = self.queryClientFrozenSandAccount(bclient['cid'])
+                #auth_info = self.queryClientFrozenSandAccount(bclient['cid'])
+                auth_info = None # disabling until the auth-whois rcon command returns the FSA login info
                 if auth_info:
                     fsa, notoriety = auth_info
 
