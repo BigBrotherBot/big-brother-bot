@@ -846,7 +846,7 @@ class DatabaseStorage(Storage):
             if not g:
                 raise KeyError, 'No group matching level %s' % group.level
         else:
-            raise ValueError("cannot find Group is no keyword/level provided")
+            raise ValueError("cannot find Group as no keyword/level provided")
 
         group.id = int(g['id'])
         group.name    = g['name']
