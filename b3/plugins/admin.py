@@ -2283,3 +2283,6 @@ class Command:
             params.append(buf)
 
         return params
+
+    def __repr__(self):
+        return "Command<" + self.command + ">"
