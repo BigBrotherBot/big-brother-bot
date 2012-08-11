@@ -439,13 +439,7 @@ class Test_cmd_kick(CommandTestCase):
     def setUp(self):
         CommandTestCase.setUp(self)
         self.init()
-
-        def my_getint(section, option):
-            if section == "settings" and option == "noreason_level":
-                return 2
-            else:
-                return self.p.config.getint(section, option)
-        self.p.config.getint = Mock(side_effect=my_getint)
+        self.p._noreason_level = 2
 
     def kick(self, data=''):
         return self.p.cmd_kick(data=data, client=self.mock_client, cmd=self.mock_command)
@@ -457,8 +451,8 @@ class Test_cmd_kick(CommandTestCase):
 
     def test_no_reason(self):
         self.p.config.getint = Mock(return_value=4)
-        self.mock_client.maxLevel = 3
-        assert self.mock_client.maxLevel < self.p.config.getint('whatever')
+        self.mock_client.maxLevel = 1
+        assert self.mock_client.maxLevel < self.p._noreason_level
         self.kick('foo')
         self.mock_client.message.assert_called_once_with('^1ERROR: ^7You must supply a reason')
         assert not self.mock_client.kick.called
@@ -530,13 +524,7 @@ class Test_cmd_spank(CommandTestCase):
     def setUp(self):
         CommandTestCase.setUp(self)
         self.init()
-
-        def my_getint(section, option):
-            if section == "settings" and option == "noreason_level":
-                return 2
-            else:
-                return self.p.config.getint(section, option)
-        self.p.config.getint = Mock(side_effect=my_getint)
+        self.p._noreason_level = 2
 
     def spank(self, data=''):
         return self.p.cmd_spank(data=data, client=self.mock_client, cmd=self.mock_command)
@@ -548,8 +536,8 @@ class Test_cmd_spank(CommandTestCase):
 
     def test_no_reason(self):
         self.p.config.getint = Mock(return_value=4)
-        self.mock_client.maxLevel = 3
-        assert self.mock_client.maxLevel < self.p.config.getint('whatever')
+        self.mock_client.maxLevel = 1
+        assert self.mock_client.maxLevel < self.p._noreason_level
         self.spank('foo')
         self.mock_client.message.assert_called_once_with('^1ERROR: ^7You must supply a reason')
         assert not self.mock_client.kick.called
@@ -622,13 +610,7 @@ class Test_cmd_permban(CommandTestCase):
     def setUp(self):
         CommandTestCase.setUp(self)
         self.init()
-
-        def my_getint(section, option):
-            if section == "settings" and option == "noreason_level":
-                return 2
-            else:
-                return self.p.config.getint(section, option)
-        self.p.config.getint = Mock(side_effect=my_getint)
+        self.p._noreason_level = 2
 
     def permban(self, data=''):
         return self.p.cmd_permban(data=data, client=self.mock_client, cmd=self.mock_command)
@@ -640,8 +622,8 @@ class Test_cmd_permban(CommandTestCase):
 
     def test_no_reason(self):
         self.p.config.getint = Mock(return_value=4)
-        self.mock_client.maxLevel = 3
-        assert self.mock_client.maxLevel < self.p.config.getint('whatever')
+        self.mock_client.maxLevel = 1
+        assert self.mock_client.maxLevel < self.p._noreason_level
         self.permban('foo')
         self.mock_client.message.assert_called_once_with('^1ERROR: ^7You must supply a reason')
         assert not self.mock_client.ban.called
@@ -713,16 +695,8 @@ class Test_cmd_tempban(CommandTestCase):
     def setUp(self):
         CommandTestCase.setUp(self)
         self.init()
-
-        original_getint = self.p.config.getint
-        def my_getint(section, option):
-            if section == "settings" and option == "noreason_level":
-                return 2
-            elif section == "settings" and option == "long_tempban_level":
-                return 2
-            else:
-                return original_getint(section, option)
-        self.p.config.getint = my_getint
+        self.p._noreason_level = 2
+        self.p._long_tempban_level = 2
 
     def tempban(self, data=''):
         return self.p.cmd_tempban(data=data, client=self.mock_client, cmd=self.mock_command)
@@ -750,8 +724,8 @@ class Test_cmd_tempban(CommandTestCase):
 
     def test_no_reason(self):
         self.p.config.getint = Mock(return_value=4)
-        self.mock_client.maxLevel = 3
-        assert self.mock_client.maxLevel < self.p.config.getint('whatever')
+        self.mock_client.maxLevel = 1
+        assert self.mock_client.maxLevel < self.p._noreason_level
         self.tempban('foo 3h')
         self.mock_client.message.assert_called_once_with('^1ERROR: ^7You must supply a reason')
         assert not self.mock_client.tempban.called
