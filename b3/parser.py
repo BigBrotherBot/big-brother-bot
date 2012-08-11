@@ -166,6 +166,7 @@ from b3.clients import Clients, Group
 import b3.timezones
 from ConfigParser import NoOptionError
 from b3.functions import getModule
+from b3.decorators import memoize
 from b3.lib.elementtree import ElementTree
 
 class Parser(object):
@@ -838,6 +839,7 @@ class Parser(object):
 
         return cmd % kwargs
 
+    @memoize
     def getGroup(self, data):
         """
         Return a valid Group from storage.
