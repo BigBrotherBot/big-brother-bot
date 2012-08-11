@@ -11,6 +11,7 @@ http://github.com/BigBrotherBot/big-brother-bot/compare/v1.8.2...v1.8.3
 - Admin plugin: new command !unreg <player> to remove a player from the 'regular' group. Work together with the existing !makereg <player> command
 - Red Orchestra 2 now working with the B3 win32 packages
 - In plugin config files, you can use group keywords (user, reg, mod, admin, fulladmin, senioradmin, superadmin) instead of group levels when defining commands' required level
+- Spamcontrol plugin : you can define the minimum group required to use the !spamins command. Also you can now define an alias for the spamins command.
 
 [TODO]
 
@@ -19,7 +20,7 @@ http://github.com/BigBrotherBot/big-brother-bot/compare/v1.8.2...v1.8.3
 Upgrading note:
 
 * Now B3 ensures group levels do exists when used in plugin config files. The plugin_admin.xml config files was using bad group level prior to B3 1.8.3. Make sure to correct them by comparing your own plugin_admin.xml with the new one.
-
+* SpamControl plugin : The config file plugin_spamcontrol.xml has a new section regarding the !spamins command. Make sure to update your config file.
 
 1.8.1 -> 1.8.2
 ----
