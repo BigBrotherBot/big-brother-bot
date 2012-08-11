@@ -117,7 +117,7 @@ import traceback
 import sys
 
 class FakeConsole(b3.parser.Parser):
-    Events = b3.events.eventManager
+    Events = b3.events.eventManager = b3.events.Events()
     screen = stdout
     noVerbose = False
     input = None
