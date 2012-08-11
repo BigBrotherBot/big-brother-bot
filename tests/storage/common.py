@@ -444,23 +444,29 @@ class StorageAPITest(object):
     def test_getGroup_none(self):
         try:
             self.storage.getGroup(None)
-            self.fail("expecting ValueError")
-        except ValueError:
+            self.fail("expecting KeyError")
+        except KeyError:
             pass
+        except Exception:
+            self.fail("expecting KeyError")
 
     def test_getGroup_junk(self):
         try:
             self.storage.getGroup(5)
-            self.fail("expecting ValueError")
-        except ValueError:
+            self.fail("expecting KeyError")
+        except KeyError:
             pass
+        except Exception:
+            self.fail("expecting KeyError")
 
     def test_getGroup_bad_group(self):
         try:
             self.storage.getGroup(Group())
-            self.fail("expecting ValueError")
-        except ValueError:
+            self.fail("expecting KeyError")
+        except KeyError:
             pass
+        except Exception:
+            self.fail("expecting KeyError")
 
 
     def test_getCounts(self):

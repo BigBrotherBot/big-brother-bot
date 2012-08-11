@@ -843,7 +843,6 @@ class Parser(object):
         Return a valid Group from storage.
         <data> can be either a group keyword or a group level.
         Raises KeyError if group is not found.
-        Raises ValueError if <data> does not contains sufficient info to find a group.
         """
         if type(data) is int or isinstance(data, basestring) and data.isdigit():
             g = Group(level=data)
@@ -856,7 +855,6 @@ class Parser(object):
         Return a valid Group level.
         <data> can be either a group keyword or a group level.
         Raises KeyError if group is not found.
-        Raises ValueError if <data> does not contains sufficient info to find a group.
         """
         group = self.getGroup(data)
         return group.level

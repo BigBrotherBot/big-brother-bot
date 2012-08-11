@@ -82,7 +82,6 @@ class Storage(object):
         """
         Get a Group from storage.
         Raises KeyError if group cannot be found in storage.
-        Raises ValueError if group does not hold sufficient info to identify a group
         """
         raise NotImplementedError
         
