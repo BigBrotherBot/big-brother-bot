@@ -18,6 +18,9 @@
 #
 #
 # CHANGELOG
+#   2012/08/11 - 1.28 - courgette
+#   * add two methods : getGroup and getGroupLevel meant to ease the reading of a valid group or group level from
+#     a config file. Conveniently raises KeyError if level or group keyword provided does not match any existing group.
 #   2012/07/20 - 1.27.5 - courgette
 #   * better error message when expected self.input attribute is missing
 #   2012/06/17 - 1.27.4 - courgette
@@ -146,7 +149,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.27.5'
+__version__ = '1.28'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -159,7 +162,7 @@ import b3.output
 import b3.game
 import b3.cron
 import b3.parsers.q3a.rcon
-import b3.clients
+from b3.clients import Clients, Group
 import b3.timezones
 from ConfigParser import NoOptionError
 from b3.functions import getModule
@@ -452,7 +455,7 @@ class Parser(object):
 
         self.loadEvents()
         self.screen.write('Loading Events   : %s events loaded\n' % len(self._events))
-        self.clients  = b3.clients.Clients(self)
+        self.clients  = Clients(self)
         self.loadPlugins()
         self.loadArbPlugins()
 
@@ -834,7 +837,31 @@ class Parser(object):
             return None
 
         return cmd % kwargs
-        
+
+    def getGroup(self, data):
+        """
+        Return a valid Group from storage.
+        <data> can be either a group keyword or a group level.
+        Raises KeyError if group is not found.
+        Raises ValueError if <data> does not contains sufficient info to find a group.
+        """
+        if type(data) is int or isinstance(data, basestring) and data.isdigit():
+            g = Group(level=data)
+        else:
+            g = Group(keyword=data)
+        return self.storage.getGroup(g)
+
+    def getGroupLevel(self, data):
+        """
+        Return a valid Group level.
+        <data> can be either a group keyword or a group level.
+        Raises KeyError if group is not found.
+        Raises ValueError if <data> does not contains sufficient info to find a group.
+        """
+        group = self.getGroup(data)
+        return group.level
+
+
     def getTzOffsetFromName(self, tzName):
         try:
             tzOffset = b3.timezones.timezones[tzName] * 3600
