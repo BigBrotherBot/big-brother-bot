@@ -13,8 +13,13 @@ http://github.com/BigBrotherBot/big-brother-bot/compare/v1.8.2...v1.8.3
 - In plugin config files, you can use group keywords (user, reg, mod, admin, fulladmin, senioradmin, superadmin) instead of group levels when defining commands' required level
 - Spamcontrol plugin : you can define the minimum group required to use the !spamins command. Also you can now define an alias for the spamins command.
 
-[TODO]
 
+New game supported: Urban Terror 4.2
+- new penalty available : kill
+- the Spamcontrol plugin reacts to radio message spamming
+- fires game specific events for plugins : EVT_CLIENT_RADIO, EVT_CLIENT_CALLVOTE, EVT_CLIENT_VOTE, EVT_GAME_FLAG_HOTPOTATO
+
+[TODO]
 - Many minor bugfixes and improvements to B3 core and native plugins
 
 New games supported :

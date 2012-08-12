@@ -29,13 +29,14 @@
 #  * make sure the game is UrT 4.2 or fail to start
 # 2012/08/09 - 1.2.1 - Courgette
 #  * disabling authentication using the /rcon auth-whois command response
+# 2012/08/12 - 1.3 - Courgette
+#  * patches the Spamcontrol plugin to make it aware of radio spam
 #
-import new
 
 __author__  = 'Courgette'
-__version__ = '1.2.1'
+__version__ = '1.3'
 
-import re
+import re, new
 from b3.parsers.iourt41 import Iourt41Parser
 import b3
 from b3.clients import Client
