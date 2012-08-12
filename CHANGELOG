@@ -12,7 +12,7 @@ http://github.com/BigBrotherBot/big-brother-bot/compare/v1.8.2...v1.8.3
 - Red Orchestra 2 now working with the B3 win32 packages
 - In plugin config files, you can use group keywords (user, reg, mod, admin, fulladmin, senioradmin, superadmin) instead of group levels when defining commands' required level
 - Spamcontrol plugin : you can define the minimum group required to use the !spamins command. Also you can now define an alias for the spamins command.
-
+- Urban Terror : fix !nextmap bug when the mapcycle file contains empty lines
 
 New game supported: Urban Terror 4.2
 - new penalty available : kill
