@@ -352,6 +352,70 @@ class Cmd_warns(Admin_functional_test):
         ', rule6, rule7, rule8, rule9, sfire, spam, spawnfire, spec, spectator, stack, tk')
 
 
+class Test_reason_keywords(Admin_functional_test):
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init()
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.adv_text = "^3Rule #7: No advertising or spamming of websites or servers"
+
+
+    def test_warn_with_keyword(self):
+        with patch.object(self.console, "say") as say_mock:
+            self.joe.says('!warn mike adv')
+            say_mock.assert_has_calls([call('^1WARNING^7 [^31^7]: Mike^7^7, %s' % self.adv_text)])
+
+    def test_warn_with_unknown_keyword(self):
+        with patch.object(self.console, "say") as say_mock:
+            self.joe.says('!warn mike f00')
+            say_mock.assert_has_calls([call('^1WARNING^7 [^31^7]: Mike^7^7, ^7 f00')])
+
+
+    def test_notice_with_keyword(self):
+        with patch.object(self.mike, "notice") as notice_mock:
+            self.joe.says('!notice mike adv')
+            notice_mock.assert_has_calls([call('adv', None, self.joe)])
+
+    def test_notice_with_unknown_keyword(self):
+        with patch.object(self.mike, "notice") as notice_mock:
+            self.joe.says('!notice mike f00')
+            notice_mock.assert_has_calls([call('f00', None, self.joe)])
+
+
+    def test_kick_with_keyword(self):
+        with patch.object(self.console, "kick") as kick_mock:
+            self.joe.says('!kick mike adv')
+            kick_mock.assert_has_calls([call(self.mike, self.adv_text, self.joe, False)])
+
+    def test_kick_with_unknown_keyword(self):
+        with patch.object(self.console, "kick") as kick_mock:
+            self.joe.says('!kick mike f00')
+            kick_mock.assert_has_calls([call(self.mike, 'f00', self.joe, False)])
+
+
+    def test_ban_with_keyword(self):
+        with patch.object(self.mike, "tempban") as tempban_mock:
+            self.joe.says('!ban mike adv')
+            tempban_mock.assert_has_calls([call(self.adv_text, 'adv', 20160.0, self.joe)])
+
+    def test_ban_with_unknown_keyword(self):
+        with patch.object(self.mike, "tempban") as tempban_mock:
+            self.joe.says('!ban mike f00')
+            tempban_mock.assert_has_calls([call('f00', 'f00', 20160.0, self.joe)])
+
+
+    def test_permban_with_keyword(self):
+        with patch.object(self.mike, "ban") as permban_mock:
+            self.joe.says('!permban mike adv')
+            permban_mock.assert_has_calls([call(self.adv_text, 'adv', self.joe)])
+
+    def test_permban_with_unknown_keyword(self):
+        with patch.object(self.mike, "ban") as permban_mock:
+            self.joe.says('!permban mike f00')
+            permban_mock.assert_has_calls([call('f00', 'f00', self.joe)])
+
+
 @unittest.skipUnless(os.path.isfile(ADMIN_CONFIG_FILE), "%s is not a file" % ADMIN_CONFIG_FILE)
 class Test_config(Admin_functional_test):
     def setUp(self):
