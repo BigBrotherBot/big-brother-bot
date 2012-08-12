@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2012/08/12 - 1.29 - courgette
+#   * gracefully fallback on default message templates if missing from main config file
 #   2012/08/11 - 1.28 - courgette
 #   * add two methods : getGroup and getGroupLevel meant to ease the reading of a valid group or group level from
 #     a config file. Conveniently raises KeyError if level or group keyword provided does not match any existing group.
@@ -149,7 +151,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.28'
+__version__ = '1.29'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -180,7 +182,20 @@ class Parser(object):
     _events = {}
     _eventNames = {}
     _commands = {}
-    _messages = {}
+
+    _messages = {} # message template cache
+    # default messages in case one is missing from config file
+    _messages_default = {
+        "kicked_by": "$clientname^7 was kicked by $adminname^7 $reason",
+        "kicked": "$clientname^7 was kicked $reason",
+        "banned_by": "$clientname^7 was banned by $adminname^7 $reason",
+        "banned": "$clientname^7 was banned $reason",
+        "temp_banned_by": "$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason",
+        "temp_banned": "$clientname^7 was temp banned for $banduration^7 $reason",
+        "unbanned_by": "$clientname^7 was un-banned by $adminname^7 $reason",
+        "unbanned": "$clientname^7 was un-banned $reason",
+    }
+
     _timeStart = None
 
     encoding = 'latin-1'
@@ -780,10 +795,10 @@ class Parser(object):
             msg = self._messages[msg]
         except KeyError:
             try:
-                self._messages[msg] = self.config.getTextTemplate('messages', msg)
-                msg = self._messages[msg]
-            except KeyError:
-                msg = ''
+                msg = self._messages[msg] = self.config.getTextTemplate('messages', msg)
+            except Exception, err:
+                self.warning("Falling back on default message for '%s'. %s" % (msg, err))
+                msg = self._messages_default.get(msg, '')
 
         if len(args):
             if type(args[0]) == dict:
