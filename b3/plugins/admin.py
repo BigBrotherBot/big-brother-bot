@@ -1711,7 +1711,7 @@ class AdminPlugin(b3.plugin.Plugin):
         duration = self.warnKickDuration(sclient)
 
         if duration > 0:
-            if duration >= 300 and duration <= 600:
+            if 300 <= duration <= 600:
                 msg = '^3peeing ^7in the gene pool'
 
             sclient.tempban(self.config.getTextTemplate('warn', 'reason', reason=msg), keyword, duration, client, False, data)
