@@ -71,8 +71,10 @@
 # * add default_encoding to sent info 
 # 22/06/2011 - 1.10.1 - courgette
 # * fix error on B3 shutdown/restart
+# 12/08/2012 - 1.10.2 - courgette
+# * do not crash when failing to read a plugin version
 #
-__version__ = '1.10.1'
+__version__ = '1.10.2'
 __author__  = 'ThorN, Courgette'
 
 import sys
@@ -179,7 +181,13 @@ class PublistPlugin(b3.plugin.Plugin):
         
         plugins = []
         for pname in self.console._pluginOrder:
-            plugins.append("%s/%s" % (pname, getattr(getModule(self.console.getPlugin(pname).__module__), '__version__', 'Unknown Version')))
+            try:
+                p = self.console.getPlugin(pname)
+                p_module = getModule(p.__module__)
+                p_version = getattr(p_module, '__version__', 'Unknown Version')
+                plugins.append("%s/%s" % (pname, p_version))
+            except Exception, e:
+                self.warning("Could not get version for plugin named '%s'" % pname, exc_info=e)
           
         try:
             database = functions.splitDSN(self.console.storage.dsn)['protocol']
