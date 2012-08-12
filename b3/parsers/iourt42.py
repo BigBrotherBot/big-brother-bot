@@ -30,6 +30,8 @@
 # 2012/08/09 - 1.2.1 - Courgette
 #  * disabling authentication using the /rcon auth-whois command response
 #
+import new
+
 __author__  = 'Courgette'
 __version__ = '1.2.1'
 
@@ -38,6 +40,7 @@ from b3.parsers.iourt41 import Iourt41Parser
 import b3
 from b3.clients import Client
 from b3.events import Event
+from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 
 class Iourt42Client(Client):
@@ -294,12 +297,18 @@ class Iourt42Parser(Iourt41Parser):
         Iourt41Parser.startup(self)
 
         # add UrT 4.2 specific events
-        self.Events.createEvent('EVT_CLIENT_RADIO', 'Event client radio')
-        self.Events.createEvent('EVT_GAME_FLAG_HOTPOTATO', 'Event game hotpotato')
-        self._eventMap['hotpotato'] = self.getEventID('EVT_GAME_FLAG_HOTPOTATO')
-        self.Events.createEvent('EVT_CLIENT_CALLVOTE', 'Event client call vote')
-        self.Events.createEvent('EVT_CLIENT_VOTE', 'Event client vote')
+        self.EVT_CLIENT_RADIO = self.Events.createEvent('EVT_CLIENT_RADIO', 'Event client radio')
+        self.EVT_GAME_FLAG_HOTPOTATO = self.Events.createEvent('EVT_GAME_FLAG_HOTPOTATO', 'Event game hotpotato')
+        self._eventMap['hotpotato'] = self.EVT_GAME_FLAG_HOTPOTATO
+        self.EVT_CLIENT_CALLVOTE = self.Events.createEvent('EVT_CLIENT_CALLVOTE', 'Event client call vote')
+        self.EVT_CLIENT_VOTE = self.Events.createEvent('EVT_CLIENT_VOTE', 'Event client vote')
 
+
+    def pluginsStarted(self):
+        """ called when all plugins are started """
+        self.spamcontrolPlugin = self.getPlugin("spamcontrol")
+        if self.spamcontrolPlugin:
+            self.patch_spamcontrolPlugin()
 
 
 
@@ -319,7 +328,7 @@ class Iourt42Parser(Iourt41Parser):
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.getEventID('EVT_CLIENT_RADIO'), client=client, data={
+        return Event(self.EVT_CLIENT_RADIO, client=client, data={
             'msg_group': msg_group,
             'msg_id': msg_id,
             'location': location,
@@ -333,7 +342,7 @@ class Iourt42Parser(Iourt41Parser):
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.getEventID('EVT_CLIENT_CALLVOTE'), client=client, data=vote_string)
+        return Event(self.EVT_CLIENT_CALLVOTE, client=client, data=vote_string)
 
     def OnVote(self, action, data, match=None):
         cid = match.group('cid')
@@ -342,7 +351,7 @@ class Iourt42Parser(Iourt41Parser):
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.getEventID('EVT_CLIENT_VOTE'), client=client, data=value)
+        return Event(self.EVT_CLIENT_VOTE, client=client, data=value)
 
 
 
@@ -571,6 +580,19 @@ class Iourt42Parser(Iourt41Parser):
         '''
         # until we got real values, we return the default value
         return 15
+
+
+    def patch_spamcontrolPlugin(self):
+        """ This method alters the Spamcontrol plugin after it started to make it aware of RADIO spam """
+        self.info("Patching Spamcontrol plugin")
+        # teach the Spamcontrol plugin how to react on such events
+        def onRadio(this, event):
+            new_event = Event(type=event.type, client=event.client, target=event.target, data=repr(event.data))
+            this.onChat(new_event)
+        self.spamcontrolPlugin.onRadio = new.instancemethod(onRadio, self.spamcontrolPlugin, SpamcontrolPlugin)
+        self.spamcontrolPlugin.eventHanlders[self.EVT_CLIENT_RADIO] = self.spamcontrolPlugin.onRadio
+        self.spamcontrolPlugin.registerEvent(self.EVT_CLIENT_RADIO)
+
 
 
     @staticmethod

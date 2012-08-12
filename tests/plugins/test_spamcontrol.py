@@ -205,11 +205,11 @@ class Test_plugin(SpamcontrolTestCase):
 
         cmd_mock = Mock()
         self.p.cmd_spamins(data="joe", client=self.joe, cmd=cmd_mock)
-        cmd_mock.sayLoudOrPM.assert_has_calls([call(self.joe, 'Joe^7 ^7currently has 9 spamins, peak was 9')]) # 10s
+        cmd_mock.sayLoudOrPM.assert_has_calls([call(self.joe, 'Joe^7 ^7currently has 9 spamins, peak was 9')]) # 4s
 
         cmd_mock = Mock()
         self.p.cmd_spamins(data="joe", client=self.joe, cmd=cmd_mock)
-        cmd_mock.sayLoudOrPM.assert_has_calls([call(self.joe, 'Joe^7 ^7currently has 0 spamins, peak was 9')]) # 10s
+        cmd_mock.sayLoudOrPM.assert_has_calls([call(self.joe, 'Joe^7 ^7currently has 0 spamins, peak was 9')]) # 500s
 
 
     def test_cmd_spamins_lowercase(self):
@@ -265,13 +265,18 @@ class Test_plugin(SpamcontrolTestCase):
 
 
     def test_joe_gets_warned(self):
+        # GIVEN
         when(self.p).getTime().thenReturn(0)
         self.joe.warn = Mock()
+
+        # WHEN
         self.joe.says("doh 1")
         self.joe.says("doh 2")
         self.joe.says("doh 3")
         self.joe.says("doh 4")
         self.joe.says("doh 5")
+
+        # THEN
         self.assertEqual(1, self.joe.warn.call_count)
 
 
