@@ -352,6 +352,72 @@ class Cmd_warns(Admin_functional_test):
         ', rule6, rule7, rule8, rule9, sfire, spam, spawnfire, spec, spectator, stack, tk')
 
 
+class Test_warn_reasons_default_config(Admin_functional_test):
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init()
+        self.joe.connects(0)
+        self.mike.connects(1)
+
+    def test_no_reason(self):
+        with patch.object(self.mike, "warn") as mock:
+            self.joe.says('!warn mike')
+            mock.assert_has_calls([call(60.0, '^7behave yourself', None, self.joe, '')])
+
+    def test_reason_is_not_a_keyword(self):
+        with patch.object(self.mike, "warn") as mock:
+            self.joe.says('!warn mike f00')
+            mock.assert_has_calls([call(60.0, '^7 f00', 'f00', self.joe, '')])
+
+    def test_reason_is_a_keyword(self):
+        with patch.object(self.mike, "warn") as warn_mock:
+            def assertWarn(keyword, duration, text):
+                # GIVEN
+                warn_mock.reset_mock()
+                self.mike.delvar(self.p, 'warnTime')
+                # WHEN
+                self.joe.says('!warn mike %s' % keyword)
+                # THEN
+                warn_mock.assert_has_calls([call(float(duration), text, keyword, self.joe, '')])
+
+            assertWarn("rule1", 14400, '^3Rule #1: No racism of any kind')
+            assertWarn("rule2", 1440, '^3Rule #2: No clan stacking, members must split evenly between the teams')
+            assertWarn("rule3", 1440, '^3Rule #3: No arguing with admins (listen and learn or leave)')
+            assertWarn("rule4", 1440, '^3Rule #4: No abusive language or behavior towards admins or other players')
+            assertWarn("rule5", 60, '^3Rule #5: No offensive or potentially offensive names, annoying names, or in-game (double caret (^)) color in names')
+            assertWarn("rule6", 1440, '^3Rule #6: No recruiting for your clan, your server, or anything else')
+            assertWarn("rule7", 1440, '^3Rule #7: No advertising or spamming of websites or servers')
+            assertWarn("rule8", 4320, '^3Rule #8: No profanity or offensive language (in any language)')
+            assertWarn("rule9", 180, '^3Rule #9: Do ^1NOT ^3fire at teammates or within 10 seconds of spawning')
+            assertWarn("rule10", 4320, '^3Rule #10: Offense players must play for the objective and support their team')
+            assertWarn("stack", 1440, '^3Rule #2: No clan stacking, members must split evenly between the teams')
+            assertWarn("lang", 4320, '^3Rule #8: No profanity or offensive language (in any language)')
+            assertWarn("language", 4320, '^3Rule #8: No profanity or offensive language (in any language)')
+            assertWarn("cuss", 4320, '^3Rule #8: No profanity or offensive language (in any language)')
+            assertWarn("profanity", 4320, '^3Rule #8: No profanity or offensive language (in any language)')
+            assertWarn("name", 60, '^3Rule #5: No offensive or potentially offensive names, annoying names, or in-game (double caret (^)) color in names')
+            assertWarn("color", 60, '^7No in-game (double caret (^)) color in names')
+            assertWarn("badname", 60, '^7No offensive, potentially offensive, or annoying names')
+            assertWarn("spec", 5, '^7spectator too long on full server')
+            assertWarn("adv", 1440, '^3Rule #7: No advertising or spamming of websites or servers')
+            assertWarn("racism", 14400, '^3Rule #1: No racism of any kind')
+            assertWarn("stack", 1440, '^3Rule #2: No clan stacking, members must split evenly between the teams')
+            assertWarn("recruit", 1440, '^3Rule #6: No recruiting for your clan, your server, or anything else')
+            assertWarn("argue", 1440, '^3Rule #3: No arguing with admins (listen and learn or leave)')
+            assertWarn("sfire", 180, '^3Rule #9: Do ^1NOT ^3fire at teammates or within 10 seconds of spawning')
+            assertWarn("spawnfire", 180, '^3Rule #9: Do ^1NOT ^3fire at teammates or within 10 seconds of spawning')
+            assertWarn("jerk", 1440, '^3Rule #4: No abusive language or behavior towards admins or other players')
+            assertWarn("afk", 5, '^7you appear to be away from your keyboard')
+            assertWarn("tk", 1440, '^7stop team killing!')
+            assertWarn("obj", 60, '^7go for the objective!')
+            assertWarn("camp", 60, '^7stop camping or you will be kicked!')
+            assertWarn("fakecmd", 60, '^7do not use fake commands')
+            assertWarn("nocmd", 60, '^7do not use commands that you do not have access to, try using !help')
+            assertWarn("ci", 5, '^7connection interupted, reconnect')
+            assertWarn("spectator", 5, '^7spectator too long on full server')
+            assertWarn("spam", 60, '^7do not spam, shut-up!')
+
+
 class Test_reason_keywords(Admin_functional_test):
     def setUp(self):
         Admin_functional_test.setUp(self)
