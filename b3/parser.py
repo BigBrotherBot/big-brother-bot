@@ -18,6 +18,9 @@
 #
 #
 # CHANGELOG
+#   2012/08/27 - 1.30 - courgette
+#   * better feedback when an error occurs while setting up Rcon
+#   * add getEventKey method
 #   2012/08/12 - 1.29 - courgette
 #   * gracefully fallback on default message templates if missing from main config file
 #   2012/08/11 - 1.28 - courgette
@@ -151,7 +154,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.29'
+__version__ = '1.30'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -444,7 +447,12 @@ class Parser(object):
                 raise SystemExit('Error reading file %s\n' % f)
 
         # setup rcon
-        self.output = self.OutputClass(self, (self._rconIp, self._rconPort), self._rconPassword)
+        try:
+            self.output = self.OutputClass(self, (self._rconIp, self._rconPort), self._rconPassword)
+        except Exception, err:
+            self.screen.write(">>> Cannot setup RCON. %s" % err)
+            self.screen.flush()
+            self.critical("Cannot setup RCON. %s" % err, exc_info=err)
         
         if self.config.has_option('server','rcon_timeout'):
             custom_socket_timeout = self.config.getfloat('server','rcon_timeout')
@@ -584,16 +592,20 @@ class Parser(object):
         return self._events[key]
 
     def getEventID(self, key):
-        """Get the numeric ID of an event name"""
+        """Get the numeric ID of an event key"""
         return self.Events.getId(key)
 
-    def getEvent(self, key, data, client=None, target=None):
+    def getEvent(self, key, data=None, client=None, target=None):
         """Return a new Event object for an event name"""
         return b3.events.Event(self.Events.getId(key), data, client, target)
 
-    def getEventName(self, id):
-        """Get the name of an event by numeric ID"""
-        return self.Events.getName(id)
+    def getEventName(self, key):
+        """Get the name of an event by its key"""
+        return self.Events.getName(key)
+
+    def getEventKey(self, event_id):
+        """Get the key of a given event ID"""
+        return self.Events.getKey(event_id)
 
     def getPlugin(self, plugin):
         """Get a reference to a loaded plugin"""
