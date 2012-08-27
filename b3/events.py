@@ -25,14 +25,18 @@
 #    * add EventsStats class
 # 26/03/2011 - 1.2 - Courgette
 #    * add event EVT_GAME_MAP_CHANGE
+# 27/08/2012 - 1.3 - Courgette
+#    * add getKey(event_id) method
 #
+
 __author__  = 'ThorN/xlr8or'
-__version__ = '1.2'
+__version__ = '1.3'
 
 import re
 from collections import deque
 import b3
 from b3.functions import meanstdv
+from b3.decorators import memoize
 
 class Events:
     def __init__(self):
@@ -107,6 +111,15 @@ class Events:
             except:
                 return None
 
+    @memoize
+    def getKey(self, event_id):
+        """Get the key of a given event ID"""
+        matching_keys = [k for k, v in self._events.iteritems() if v == event_id]
+        if not len(matching_keys):
+            raise KeyError, "could not find any B3 event with ID %s" % event_id
+        assert len(matching_keys) == 1, "expecting only one event key per event ID. %r" % matching_keys
+        return matching_keys[0]
+
     def loadEvents(self, events):
         for k,n in events:
             self.createEvent(k, n)
@@ -116,7 +129,7 @@ class Events:
 
     events = property(_get_events)
 
-class Event:
+class Event(object):
     def __init__(self, type, data, client=None, target=None):
         self.time = b3.console.time()
         self.type = type
@@ -124,7 +137,7 @@ class Event:
         self.client = client
         self.target = target
     def __str__(self):
-        return "Event<%s>(%r, %s, %s)" % (eventManager.getName(self.type), self.data, self.client, self.target)
+        return "Event<%s>(%r, %s, %s)" % (eventManager.getKey(self.type), self.data, self.client, self.target)
 
 
 class EventsStats(object):
