@@ -1329,7 +1329,7 @@ class Parser(object):
         """
         raise NotImplementedError
         
-    def changeMap(self, map):
+    def changeMap(self, map_name):
         """\
         load a given map/level
         return a list of suggested map names in cases it fails to recognize the map that was provided
