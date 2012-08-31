@@ -7,22 +7,20 @@
 		<set name="time_format">%I:%M%p %Z %m/%d/%y</set>
 		<set name="time_zone">CST</set>
 		<set name="log_level">9</set>
-		<set name="logfile">b3.log</set>
+		<set name="logfile">@conf/b3.log</set>
 	</settings>
 	<settings name="server">
 		<set name="rcon_password"></set>
 		<set name="port">27960</set>
-		<set name="game_log">games_mp.log</set>
-		<set name="public_ip">127.0.0.1</set>
+		<set name="game_log">/home/.q3a/games_mp.log</set>
+		<set name="public_ip"></set>
 		<set name="rcon_ip">127.0.0.1</set>
 		<set name="punkbuster">on</set>
-		<set name="delay">0.33</set>
-		<set name="lines_per_second">50</set>
 	</settings>
 	<settings name="autodoc">
 		<set name="type">html</set>
 		<set name="maxlevel">100</set>
-		<set name="destination">b3_doc.htm</set>
+		<set name="destination">@conf/b3_doc.htm</set>
 	</settings>
     <settings name="update">
         <!-- B3 checks if a new version is available at startup. Choose here what channel you want to check against.
