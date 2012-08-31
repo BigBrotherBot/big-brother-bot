@@ -96,7 +96,7 @@ class Setup:
     _buffer = ''
     _equaLength = 15
     ## @todo bfbc2 and moh need to be added later when parsers correctly implemented pb.
-    _PBSupportedParsers = ['cod', 'cod2', 'cod4', 'cod5', 'cod6', 'cod7']
+    _PBSupportedParsers = ['cod', 'cod2', 'cod4', 'cod5', 'cod6', 'cod7', 'cod8']
     _frostBite = ['bfbc2', 'moh', 'bf3']
 
     def __init__(self, config=None):
@@ -148,7 +148,7 @@ class Setup:
         self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
         xml.start("settings", name="b3")
         self.add_set("parser", "",
-                     "Define your game: altitude/bf3/bfbc2/cod/cod2/cod4/cod5/cod6/cod7/etpro/homefront/iourt41/moh/oa081/smg/sof2/wop/wop15/ro2")
+                     "Define your game: altitude/bf3/bfbc2/cod/cod2/cod4/cod5/cod6/cod7/cod8/etpro/homefront/iourt41/moh/oa081/smg/sof2/wop/wop15/ro2")
 
         # set a template xml file to read existing settings from
         _result = False

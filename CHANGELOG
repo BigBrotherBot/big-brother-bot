@@ -17,10 +17,14 @@ http://github.com/BigBrotherBot/big-brother-bot/compare/v1.8.2...v1.8.3
 
 - Many minor bugfixes and improvements to B3 core and native plugins
 
+New games supported :
+- B3 now supports CoD8 from 4D1. See http://forum.bigbrotherbot.net/call-of-duty-8-%28modern-warfare-3%29/
+
 Upgrading note:
 
 * Now B3 ensures group levels do exists when used in plugin config files. The plugin_admin.xml config files was using bad group level prior to B3 1.8.3. Make sure to correct them by comparing your own plugin_admin.xml with the new one.
 * SpamControl plugin : The config file plugin_spamcontrol.xml has a new section regarding the !spamins command. Make sure to update your config file.
+
 
 1.8.1 -> 1.8.2
 ----
