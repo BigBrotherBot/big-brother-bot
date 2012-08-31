@@ -16,6 +16,7 @@ b3/clients.py
 b3/config.py
 b3/cron.py
 b3/cvar.py
+b3/decorators.py
 b3/events.py
 b3/fake.py
 b3/functions.py
@@ -152,6 +153,7 @@ b3/parsers/cod5.py
 b3/parsers/cod6.py
 b3/parsers/cod7.py
 b3/parsers/cod7_rcon.py
+b3/parsers/cod8.py
 b3/parsers/et.py
 b3/parsers/etpro.py
 b3/parsers/iourt41.py
@@ -206,7 +208,7 @@ b3/plugins/sftpytail.py
 b3/plugins/spamcontrol.py
 b3/plugins/stats.py
 b3/plugins/status.py
-b3/plugins/test.py
+b3/plugins/testevents.py
 b3/plugins/tk.py
 b3/plugins/welcome.py
 b3/sql/b3-db.sql
@@ -254,7 +256,9 @@ tests/parsers/q3a/test_abstractParser.py
 tests/plugins/__init__.py
 tests/plugins/test_admin.py
 tests/plugins/test_admin_functional.py
+tests/plugins/test_adv.py
 tests/plugins/test_censor.py
+tests/plugins/test_spamcontrol.py
 tests/plugins/test_status.py
 tests/plugins/test_tk.py
 tests/plugins/test_tk_functional.py
