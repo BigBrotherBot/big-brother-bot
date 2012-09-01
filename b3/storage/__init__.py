@@ -79,6 +79,10 @@ class Storage(object):
         raise NotImplementedError
 
     def getGroup(self, group):
+        """
+        Get a Group from storage.
+        Raises KeyError if group cannot be found in storage.
+        """
         raise NotImplementedError
         
         

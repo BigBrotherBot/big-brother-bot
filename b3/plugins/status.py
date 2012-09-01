@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 12/08/2012 - 1.4.11 - Courgette
+# * will provide more debugging info about errors while generating the XML document
 # 05/05/2012 - 1.4.10 - Courgette
 # * fixes reading config options 'svar_table' and 'client_table'
 # 19/07/2011 - 1.4.9 - Freelander
@@ -59,7 +61,7 @@
 # Converted to use new event handlers
 
 __author__    = 'ThorN'
-__version__ = '1.4.10'
+__version__ = '1.4.11'
 
 import b3
 import time
@@ -298,7 +300,7 @@ class StatusPlugin(b3.plugin.Plugin):
                                     pass
                                 
             except Exception, err:
-                self.debug('XML Failed: %r' % err)
+                self.error('XML Failed: %r' % err, exc_info=err)
                 pass
 
         # --- End Clients section

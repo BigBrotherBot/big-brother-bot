@@ -158,9 +158,11 @@
 #     * fixes issue with kill events when killed by UT_MOD_SLAPPED, UT_MOD_NUKED, MOD_TELEFRAG
 # 07/07/2012 - 1.13.2 - Courgette
 #     * ensures the config file has option 'game_log' in section 'server'
+# 12/08/2012 - 1.13.3 - Courgette
+#     * fix !nextmap bug when the mapcycle file contains empty lines
 #
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.13.2'
+__version__ = '1.13.3'
 
 import re, string, time, os, thread
 from b3.parsers.q3a.abstractParser import AbstractParser
@@ -1342,9 +1344,11 @@ class Iourt41Parser(AbstractParser):
             return None
 
         cyclemapfile = open(mapfile, 'r')
-        lines = cyclemapfile.readlines()
+
+        re_comment_line = re.compile(r"""^\s*(//.*)?$""")
+        lines = filter(lambda x: not re_comment_line.match(x), cyclemapfile.readlines())
         #self.debug(lines)
-        if len(lines) == 0:
+        if not len(lines):
             return None
 
         # get maps

@@ -18,6 +18,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    27/08/2012 - 1.4.1 - courgette
+#    * fix bug in getByMagic when parameter is a cid which is not in use. was returning [None] instead of []
 #    28/10/2012 - 1.4.0 - courgette
 #    * Client.save() now raises a EVT_CLIENT_UPDATE event
 #    16/07/2011 - 1.3.6 - xlr8or
@@ -78,7 +80,7 @@ import time
 import traceback
 
 __author__  = 'ThorN'
-__version__ = '1.4.0'
+__version__ = '1.4.1'
 
 
 class ClientVar(object):
@@ -1028,7 +1030,11 @@ class Clients(dict):
 
         if re.match(r'^[0-9]+$', id):
             # seems to be a client id
-            return [self.getByCID(id)]
+            client = self.getByCID(id)
+            if client:
+                return [client]
+            else:
+                return []
         elif re.match(r'^@([0-9]+)$', id):
             return self.getByDB(id)
         elif id[:1] == '\\':

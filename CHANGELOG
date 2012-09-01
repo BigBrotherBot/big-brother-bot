@@ -1,4 +1,4 @@
-1.8.2 -> 1.8.3
+1.8.2 -> 1.9.0dev1
 ----
 A list of changed files is available after release here:
 http://github.com/BigBrotherBot/big-brother-bot/compare/v1.8.2...v1.8.3
@@ -10,10 +10,30 @@ http://github.com/BigBrotherBot/big-brother-bot/compare/v1.8.2...v1.8.3
 - Xlrstats plugin: fixes issue with command !xlrstats command silently failing on a 1st time seen map https://github.com/xlr8or/big-brother-bot/issues/88
 - Admin plugin: new command !unreg <player> to remove a player from the 'regular' group. Work together with the existing !makereg <player> command
 - Red Orchestra 2 now working with the B3 win32 packages
-
-[TODO]
-
+- In plugin config files, you can use group keywords (user, reg, mod, admin, fulladmin, senioradmin, superadmin) instead of group levels when defining commands' required level
+- Spamcontrol plugin : you can define the minimum group required to use the !spamins command. Also you can now define an alias for the spamins command.
+- Urban Terror : fix !nextmap bug when the mapcycle file contains empty lines
 - Many minor bugfixes and improvements to B3 core and native plugins
+
+
+# New games supported:
+
+Urban Terror 4.2
+ - The recently released Urban Terror 4.2 is provided as alpha status as UrT 4.2.001 servers aren't providing Frozen Sand authentication info correctly.
+ - New penalty available : kill. You can use it in the censor plugin configuration for instance.
+ - The Spamcontrol plugin reacts to radio message spamming
+ - Fires game specific events for plugins : EVT_CLIENT_RADIO, EVT_CLIENT_CALLVOTE, EVT_CLIENT_VOTE, EVT_GAME_FLAG_HOTPOTATO for other plugins to act on.
+
+CoD8 / 4D1
+ - B3 now supports CoD8 from 4D1. See http://forum.bigbrotherbot.net/call-of-duty-8-%28modern-warfare-3%29/
+
+
+# Upgrading note:
+
+* Now B3 ensures group levels do exists when used in plugin config files. The plugin_admin.xml config files was using bad group level prior to B3 1.9.
+  Make sure to correct them by comparing your own plugin_admin.xml with the new one.
+* SpamControl plugin : The config file plugin_spamcontrol.xml has a new section regarding the !spamins command. Make sure to update your config file.
+
 
 1.8.1 -> 1.8.2
 ----

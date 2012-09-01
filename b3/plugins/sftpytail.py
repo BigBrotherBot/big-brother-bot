@@ -40,8 +40,6 @@ from b3 import functions
 import b3.plugin
 import os.path
 import time
-import re
-import sys
 try:
     import paramiko
 except ImportError, e:
@@ -119,9 +117,9 @@ class SftpytailPlugin(b3.plugin.Plugin):
     
     def update(self):
         def handleDownload(block):
-            self.debug('received %s bytes' % len(block))
+            self.verbose('received %s bytes' % len(block))
             self._remoteFileOffset += len(block)
-            if self.buffer == None:
+            if self.buffer is None:
                 self.buffer = block
             else:
                 self.buffer = self.buffer + block
@@ -138,7 +136,7 @@ class SftpytailPlugin(b3.plugin.Plugin):
                     rfile = None
                     self._nbConsecutiveConnFailure = 0
                 try:
-                    #self.debug("Getting remote file size for %s" % self.sftpconfig['path'])
+                    #self.verbose("Getting remote file size for %s" % self.sftpconfig['path'])
                     remoteSize = sftp.stat(self.sftpconfig['path']).st_size
                     #self.verbose("Remote file size is %s" % remoteSize)
                 except IOError, e:
@@ -151,8 +149,8 @@ class SftpytailPlugin(b3.plugin.Plugin):
                     self._remoteFileOffset = 0
                 if remoteSize > self._remoteFileOffset:
                     if  (remoteSize - self._remoteFileOffset) > self._maxGap:
-                        self.debug('gap between local and remote file too large (%s bytes)', (remoteSize - self._remoteFileOffset))
-                        self.debug('downloading only the last %s bytes' % self._maxGap)
+                        self.verbose('gap between local and remote file too large (%s bytes)', (remoteSize - self._remoteFileOffset))
+                        self.verbose('downloading only the last %s bytes' % self._maxGap)
                         self._remoteFileOffset = remoteSize - self._maxGap
                     #self.debug('RETR from remote offset %s. (expecting to read at least %s bytes)' % (self._remoteFileOffset, remoteSize - self._remoteFileOffset))
                     if not rfile:
@@ -168,7 +166,7 @@ class SftpytailPlugin(b3.plugin.Plugin):
                     if self.console._paused:
                         self.console.unpause()
                         self.debug('Unpausing')
-            except (paramiko.SSHException), e:
+            except paramiko.SSHException, e:
                 self.debug(str(e))
                 self._nbConsecutiveConnFailure += 1
                 self.verbose('Lost connection to server, pausing until updated properly')
@@ -235,7 +233,7 @@ class SftpytailPlugin(b3.plugin.Plugin):
             hostkeytype = host_keys[hostname].keys()[0]
             hostkey = host_keys[hostname][hostkeytype]
             self.info('Using host key of type %s' % hostkeytype)
-        self.verbose('Connecting to %s ...', self.sftpconfig["host"])
+        self.info('Connecting to %s ...', self.sftpconfig["host"])
         
         # now, connect and use paramiko Transport to negotiate SSH2 across the connection
         t = paramiko.Transport((hostname, port))
@@ -244,8 +242,8 @@ class SftpytailPlugin(b3.plugin.Plugin):
         channel = sftp.get_channel()
         channel.settimeout(self._connectionTimeout)
         self.console.clients.sync()
-        self.verbose("Connection successful")
-        return (t, sftp)
+        self.info("Connection successful")
+        return t, sftp
     
     
 if __name__ == '__main__':

@@ -18,6 +18,14 @@
 #
 #
 # CHANGELOG
+#   2012/08/27 - 1.30 - courgette
+#   * better feedback when an error occurs while setting up Rcon
+#   * add getEventKey method
+#   2012/08/12 - 1.29 - courgette
+#   * gracefully fallback on default message templates if missing from main config file
+#   2012/08/11 - 1.28 - courgette
+#   * add two methods : getGroup and getGroupLevel meant to ease the reading of a valid group or group level from
+#     a config file. Conveniently raises KeyError if level or group keyword provided does not match any existing group.
 #   2012/07/20 - 1.27.5 - courgette
 #   * better error message when expected self.input attribute is missing
 #   2012/06/17 - 1.27.4 - courgette
@@ -146,7 +154,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.27.5'
+__version__ = '1.30'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -159,10 +167,11 @@ import b3.output
 import b3.game
 import b3.cron
 import b3.parsers.q3a.rcon
-import b3.clients
+from b3.clients import Clients, Group
 import b3.timezones
 from ConfigParser import NoOptionError
 from b3.functions import getModule
+from b3.decorators import memoize
 from b3.lib.elementtree import ElementTree
 
 class Parser(object):
@@ -176,7 +185,20 @@ class Parser(object):
     _events = {}
     _eventNames = {}
     _commands = {}
-    _messages = {}
+
+    _messages = {} # message template cache
+    # default messages in case one is missing from config file
+    _messages_default = {
+        "kicked_by": "$clientname^7 was kicked by $adminname^7 $reason",
+        "kicked": "$clientname^7 was kicked $reason",
+        "banned_by": "$clientname^7 was banned by $adminname^7 $reason",
+        "banned": "$clientname^7 was banned $reason",
+        "temp_banned_by": "$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason",
+        "temp_banned": "$clientname^7 was temp banned for $banduration^7 $reason",
+        "unbanned_by": "$clientname^7 was un-banned by $adminname^7 $reason",
+        "unbanned": "$clientname^7 was un-banned $reason",
+    }
+
     _timeStart = None
 
     encoding = 'latin-1'
@@ -425,7 +447,12 @@ class Parser(object):
                 raise SystemExit('Error reading file %s\n' % f)
 
         # setup rcon
-        self.output = self.OutputClass(self, (self._rconIp, self._rconPort), self._rconPassword)
+        try:
+            self.output = self.OutputClass(self, (self._rconIp, self._rconPort), self._rconPassword)
+        except Exception, err:
+            self.screen.write(">>> Cannot setup RCON. %s" % err)
+            self.screen.flush()
+            self.critical("Cannot setup RCON. %s" % err, exc_info=err)
         
         if self.config.has_option('server','rcon_timeout'):
             custom_socket_timeout = self.config.getfloat('server','rcon_timeout')
@@ -452,7 +479,7 @@ class Parser(object):
 
         self.loadEvents()
         self.screen.write('Loading Events   : %s events loaded\n' % len(self._events))
-        self.clients  = b3.clients.Clients(self)
+        self.clients  = Clients(self)
         self.loadPlugins()
         self.loadArbPlugins()
 
@@ -565,16 +592,20 @@ class Parser(object):
         return self._events[key]
 
     def getEventID(self, key):
-        """Get the numeric ID of an event name"""
+        """Get the numeric ID of an event key"""
         return self.Events.getId(key)
 
-    def getEvent(self, key, data, client=None, target=None):
+    def getEvent(self, key, data=None, client=None, target=None):
         """Return a new Event object for an event name"""
         return b3.events.Event(self.Events.getId(key), data, client, target)
 
-    def getEventName(self, id):
-        """Get the name of an event by numeric ID"""
-        return self.Events.getName(id)
+    def getEventName(self, key):
+        """Get the name of an event by its key"""
+        return self.Events.getName(key)
+
+    def getEventKey(self, event_id):
+        """Get the key of a given event ID"""
+        return self.Events.getKey(event_id)
 
     def getPlugin(self, plugin):
         """Get a reference to a loaded plugin"""
@@ -776,10 +807,10 @@ class Parser(object):
             msg = self._messages[msg]
         except KeyError:
             try:
-                self._messages[msg] = self.config.getTextTemplate('messages', msg)
-                msg = self._messages[msg]
-            except KeyError:
-                msg = ''
+                msg = self._messages[msg] = self.config.getTextTemplate('messages', msg)
+            except Exception, err:
+                self.warning("Falling back on default message for '%s'. %s" % (msg, err))
+                msg = self._messages_default.get(msg, '')
 
         if len(args):
             if type(args[0]) == dict:
@@ -834,7 +865,30 @@ class Parser(object):
             return None
 
         return cmd % kwargs
-        
+
+    @memoize
+    def getGroup(self, data):
+        """
+        Return a valid Group from storage.
+        <data> can be either a group keyword or a group level.
+        Raises KeyError if group is not found.
+        """
+        if type(data) is int or isinstance(data, basestring) and data.isdigit():
+            g = Group(level=data)
+        else:
+            g = Group(keyword=data)
+        return self.storage.getGroup(g)
+
+    def getGroupLevel(self, data):
+        """
+        Return a valid Group level.
+        <data> can be either a group keyword or a group level.
+        Raises KeyError if group is not found.
+        """
+        group = self.getGroup(data)
+        return group.level
+
+
     def getTzOffsetFromName(self, tzName):
         try:
             tzOffset = b3.timezones.timezones[tzName] * 3600
@@ -1275,7 +1329,7 @@ class Parser(object):
         """
         raise NotImplementedError
         
-    def changeMap(self, map):
+    def changeMap(self, map_name):
         """\
         load a given map/level
         return a list of suggested map names in cases it fails to recognize the map that was provided
