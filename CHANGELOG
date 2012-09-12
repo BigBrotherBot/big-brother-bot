@@ -1,7 +1,7 @@
-1.8.2 -> 1.9.0dev2
+1.8.2 -> 1.9.0dev3
 ----
 A list of changed files is available after release here:
-http://github.com/BigBrotherBot/big-brother-bot/compare/v1.8.2...v1.8.3
+http://github.com/BigBrotherBot/big-brother-bot/compare/v1.8.2...v1.9.0
 ----
 - The !help command does not make B3 unresponsive anymore on Quake3 based games
 - BF3: updated with Close Quarter DLC maps info
