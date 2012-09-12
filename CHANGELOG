@@ -1,4 +1,4 @@
-1.8.2 -> 1.9.0dev1
+1.8.2 -> 1.9.0dev2
 ----
 A list of changed files is available after release here:
 http://github.com/BigBrotherBot/big-brother-bot/compare/v1.8.2...v1.8.3
@@ -29,6 +29,9 @@ Urban Terror 4.2
 
 CoD8 / 4D1
  - B3 now supports CoD8 from 4D1. See http://forum.bigbrotherbot.net/call-of-duty-8-%28modern-warfare-3%29/
+
+Counter-Strike: Global Offensive
+- beta support for CS:GO (B3 parser code: csgo, requires SourceMod on the game server, and '-condebug' parameter on the game server command line)
 
 
 # Upgrading note:

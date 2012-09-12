@@ -1,4 +1,3 @@
-
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
@@ -32,20 +31,20 @@
 # TODO:  according to spec, packets may be bzip2 compressed.
 # TODO:: not implemented yet because I couldn't find a server that does this.
 
-import socket, struct, time
-# see http://stackoverflow.com/questions/3423601/python-2-7-exec-what-is-wrong
-# from io import StringIO
-from StringIO import StringIO
+import socket, struct, sys, time
+import StringIO
 
 PACKETSIZE=1400
 
 WHOLE=-1
 SPLIT=-2
 
+# REMOVED.  DEPRECATED QUERY!
+
 # A2A_PING
-A2A_PING = ord('i')
-A2A_PING_REPLY = ord('j')
-A2A_PING_REPLY_STRING = '00000000000000'
+# A2A_PING = ord('i')
+# A2A_PING_REPLY = ord('j')
+# A2A_PING_REPLY_STRING = '00000000000000'
 
 # A2S_INFO
 A2S_INFO = ord('T')
@@ -64,7 +63,7 @@ A2S_RULES_REPLY = ord('E')
 CHALLENGE = -1
 S2C_CHALLENGE = ord('A')
 
-class SourceQueryPacket(StringIO):
+class SourceQueryPacket(StringIO.StringIO):
     # putting and getting values
     def putByte(self, val):
         self.write(struct.pack('<B', val))
@@ -151,7 +150,7 @@ class SourceQuery(object):
             total = packet.getByte()
             num = packet.getByte()
             splitsize = packet.getShort()
-            result = [0 for x in range(total)]
+            result = [0 for x in xrange(total)]
 
             result[num] = packet.read()
 
@@ -195,11 +194,17 @@ class SourceQuery(object):
             return challenge
 
     def ping(self):
+        """Deprecated. Use info()['ping'] instead."""
+        return self.info()['ping']
+
+    def info(self):
+        """Return a dict with server info and ping."""
         self.connect()
 
         packet = SourceQueryPacket()
         packet.putLong(WHOLE)
-        packet.putByte(A2A_PING)
+        packet.putByte(A2S_INFO)
+        packet.putString(A2S_INFO_STRING)
 
         before = time.time()
 
@@ -208,25 +213,12 @@ class SourceQuery(object):
 
         after = time.time()
 
-        if packet.getByte() == A2A_PING_REPLY \
-                and packet.getString() == A2A_PING_REPLY_STRING:
-            return after - before
-
-    def info(self):
-        self.connect()
-
-        packet = SourceQueryPacket()
-        packet.putLong(WHOLE)
-        packet.putByte(A2S_INFO)
-        packet.putString(A2S_INFO_STRING)
-
-        self.udp.send(packet.getvalue())
-        packet = self.receive()
-
         if packet.getByte() == A2S_INFO_REPLY:
             result = {}
 
-            result['version'] = packet.getByte()
+            result['ping'] = after - before
+
+            result['network_version'] = packet.getByte()
             result['hostname'] = packet.getString()
             result['map'] = packet.getString()
             result['gamedir'] = packet.getString()
@@ -244,24 +236,24 @@ class SourceQuery(object):
             # edf may or may not be present
             # contents undefined (see wiki page)
             # this protocol is horrible
-        try:
-            edf = packet.getByte()
-            result['edf'] = edf
+            try:
+                edf = packet.getByte()
+                result['edf'] = edf
 
-            if edf & 0x80:
-                result['port'] = packet.getShort()
-            if edf & 0x10:
-                result['steamid'] = packet.getLongLong()
-            if edf & 0x40:
-                result['specport'] = packet.getShort()
-                result['specname'] = packet.getString()
-            if edf & 0x20:
-                result['tag'] = packet.getString()
-        except:
-            # let's just ignore all errors...
-            pass
+                if edf & 0x80:
+                    result['port'] = packet.getShort()
+                if edf & 0x10:
+                    result['steamid'] = packet.getLongLong()
+                if edf & 0x40:
+                    result['specport'] = packet.getShort()
+                    result['specname'] = packet.getString()
+                if edf & 0x20:
+                    result['tag'] = packet.getString()
+            except:
+                # let's just ignore all errors...
+                pass
 
-        return result
+            return result
 
     def player(self):
         challenge = self.connect(True)
@@ -270,8 +262,6 @@ class SourceQuery(object):
         packet = SourceQueryPacket()
         packet.putLong(WHOLE)
         packet.putByte(A2S_PLAYER)
-        if not challenge:
-            challenge = CHALLENGE
         packet.putLong(challenge)
 
         self.udp.send(packet.getvalue())
@@ -285,7 +275,7 @@ class SourceQuery(object):
 
             # TF2 32player servers may send an incomplete reply
             try:
-                for x in range(numplayers):
+                for x in xrange(numplayers):
                     player = {}
                     player['index'] = packet.getByte()
                     player['name'] = packet.getString()
@@ -305,8 +295,6 @@ class SourceQuery(object):
         packet = SourceQueryPacket()
         packet.putLong(WHOLE)
         packet.putByte(A2S_RULES)
-        if not challenge:
-            challenge = CHALLENGE
         packet.putLong(challenge)
 
         self.udp.send(packet.getvalue())
