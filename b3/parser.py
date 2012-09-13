@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2012/09/14 - 1.30.1 - courgette
+#   * fix variable substitution in default message templates
 #   2012/08/27 - 1.30 - courgette
 #   * better feedback when an error occurs while setting up Rcon
 #   * add getEventKey method
@@ -154,7 +156,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.30'
+__version__ = '1.30.1'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -170,7 +172,7 @@ import b3.parsers.q3a.rcon
 from b3.clients import Clients, Group
 import b3.timezones
 from ConfigParser import NoOptionError
-from b3.functions import getModule
+from b3.functions import getModule, vars2printf
 from b3.decorators import memoize
 from b3.lib.elementtree import ElementTree
 
@@ -810,7 +812,7 @@ class Parser(object):
                 msg = self._messages[msg] = self.config.getTextTemplate('messages', msg)
             except Exception, err:
                 self.warning("Falling back on default message for '%s'. %s" % (msg, err))
-                msg = self._messages_default.get(msg, '')
+                msg = vars2printf(self._messages_default.get(msg, '')).strip()
 
         if len(args):
             if type(args[0]) == dict:
