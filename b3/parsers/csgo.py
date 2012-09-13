@@ -36,12 +36,15 @@
 #     if the SourceMod SuperLogs plugin is active and provides kill locations.
 #   * fire EVT_CLIENT_ACTION events for game events Got_The_Bomb, Dropped_The_Bomb, Planted_The_Bomb,
 #     Begin_Bomb_Defuse_Without_Kit, Defused_The_Bomb, headshot, round_mvp
-# 2012-08-11 - 0.7 Courgette
+# 2012-09-11 - 0.7 Courgette
 #   * tweak say lines max length
-# 2012-08-11 - 0.8 Courgette
+# 2012-09-11 - 0.8 Courgette
 #   * full unicode support
-# 2012-08-13 - 1.0 Courgette
+# 2012-09-13 - 1.0 Courgette
 #   * split long messages into lines and add B3 prefixes to them
+# 2012-09-13 - 1.1 Courgette
+#   * add support for SourceMod plugin "B3 Say"
+#
 import re
 import time
 from b3.clients import Client, Clients
@@ -52,7 +55,7 @@ from b3.game_event_router import gameEvent, getHandler
 from b3.parsers.source.rcon import Rcon
 
 __author__  = 'Courgette'
-__version__ = '1.0'
+__version__ = '1.1'
 
 
 """
@@ -67,6 +70,15 @@ You must have SourceMod installed on the game server. See http://www.sourcemod.n
 Make sure to avoid conflict with in-game commands between B3 and SourceMod by choosing different command prefixes.
 See PublicChatTrigger and SilentChatTrigger in addons/sourcemod/configs/core.cfg
 
+
+SourceMod recommended plugins
+-----------------------------
+
+### B3 Say
+If you have the SourceMod plugin B3 Say installed (http://forum.bigbrotherbot.net/counter-strike-global-offensive/sourcemod-plugins-for-b3/)
+then the messages sent by B3 will better displayed on screen.
+
+### SuperLogs:CS:S
 If you have the SourceMod plugin SuperLogs:CS:S installed (http://forums.alliedmods.net/showthread.php?p=897271) then
 kill stats will be more accurate.
 
@@ -138,6 +150,9 @@ class CsgoParser(Parser):
 
         self.game.cvar = {}
         self.queryServerInfo()
+
+        # load SM plugins list
+        self.sm_plugins = self.get_loaded_sm_plugins()
 
         # keeps the last properties from a killlocation game event
         self.last_killlocation_properties = None
@@ -486,8 +501,13 @@ class CsgoParser(Parser):
         broadcast a message to all players
         """
         if msg and len(msg.strip()):
-            for line in self.getWrap(self.msgPrefix + ' ' + msg, self._settings['line_length'], self._settings['min_wrap_length']):
-                self.output.write('sm_say %s' % line)
+            template = 'sm_say %s'
+            if "B3 Say" in self.sm_plugins:
+                template = 'b3_say %s'
+            else:
+                msg = self.msgPrefix + ' ' + msg
+            for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+                self.output.write(template % line)
 
 
     def saybig(self, msg):
@@ -495,8 +515,13 @@ class CsgoParser(Parser):
         broadcast a message to all players in a way that will catch their attention.
         """
         if msg and len(msg.strip()):
-            for line in self.getWrap(self.msgPrefix + ' ' + msg, self._settings['line_length'], self._settings['min_wrap_length']):
-                self.output.write('sm_hsay %s' % line)
+            template = 'sm_hsay %s'
+            if "B3 Say" in self.sm_plugins:
+                template = 'b3_hsay %s'
+            else:
+                msg = self.msgPrefix + ' ' + msg
+            for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+                self.output.write(template % line)
 
 
     def message(self, client, msg):
@@ -505,8 +530,13 @@ class CsgoParser(Parser):
         """
         if not client.hide: # do not talk to bots
             if msg and len(msg.strip()):
-                for line in self.getWrap(self.msgPrefix + ' ' + msg, self._settings['line_length'], self._settings['min_wrap_length']):
-                    self.output.write('sm_psay #%(guid)s "%(msg)s"' % {'guid': client.guid, 'msg': line})
+                template = 'sm_psay #%(guid)s "%(msg)s"'
+                if "B3 Say" in self.sm_plugins:
+                    template = 'b3_psay #%(guid)s "%(msg)s"'
+                else:
+                    msg = self.msgPrefix + ' ' + msg
+                for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+                    self.output.write(template % {'guid': client.guid, 'msg': line})
 
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -911,3 +941,17 @@ class CsgoParser(Parser):
     def do_unban_by_ip(self, client):
         # sm_unban <steamid|ip>
         self.output.write('sm_unban %s' % client.ip)
+
+
+    def get_loaded_sm_plugins(self):
+        """
+        return a dict with SourceMod plugins' name as keys and value is a tuple (index, version, author)
+        """
+        re_sm_plugin = re.compile(r'''^(?P<index>.+) "(?P<name>.+)" \((?P<version>.+)\) by (?P<author>.+)$''', re.MULTILINE)
+        response = {}
+        data = self.output.write("sm plugins list")
+        if data:
+            for m in re.finditer(re_sm_plugin, data):
+                response[m.group('name')] = (m.group('index'), m.group('version'), m.group('author'))
+        return response
+

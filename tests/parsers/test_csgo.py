@@ -897,3 +897,51 @@ L 09/10/2012 - 15:21:28: rcon from "109.70.148.17:3552": command "status"'''.dec
         self.assertIn("26", rv)
 
 
+    def test_loaded_sm_plugins(self):
+        # GIVEN
+        when(self.parser.output).write("sm plugins list").thenReturn('''\
+[SM] Listing 19 plugins:
+01 "Basic Ban Commands" (1.5.0-dev+3635) by AlliedModders LLC
+02 "B3 Say" (1.0.0.0) by Spoon
+03 "Basic Commands" (1.5.0-dev+3635) by AlliedModders LLC
+04 "Fun Commands" (1.5.0-dev+3635) by AlliedModders LLC
+05 "Basic Chat" (1.5.0-dev+3635) by AlliedModders LLC
+06 "Admin Help" (1.5.0-dev+3635) by AlliedModders LLC
+07 "Reserved Slots" (1.5.0-dev+3635) by AlliedModders LLC
+08 "Sound Commands" (1.5.0-dev+3635) by AlliedModders LLC
+09 "Player Commands" (1.5.0-dev+3635) by AlliedModders LLC
+10 "Admin Menu" (1.5.0-dev+3635) by AlliedModders LLC
+11 "Basic Votes" (1.5.0-dev+3635) by AlliedModders LLC
+12 "Client Preferences" (1.5.0-dev+3635) by AlliedModders LLC
+13 "Nextmap" (1.5.0-dev+3635) by AlliedModders LLC
+14 "SuperLogs: CSS" (1.2.4) by psychonic
+15 "Admin File Reader" (1.5.0-dev+3635) by AlliedModders LLC
+16 "Basic Comm Control" (1.5.0-dev+3635) by AlliedModders LLC
+17 "Basic Info Triggers" (1.5.0-dev+3635) by AlliedModders LLC
+18 "Anti-Flood" (1.5.0-dev+3635) by AlliedModders LLC
+19 "Fun Votes" (1.5.0-dev+3635) by AlliedModders LLC
+L 09/13/2012 - 09:06:45: rcon from "78.207.134.100:2212": command "sm plugins list"''')
+        # WHEN
+        rv = self.parser.get_loaded_sm_plugins()
+        # THEN
+        self.assertDictEqual({
+            "Basic Ban Commands": ("01", "1.5.0-dev+3635", "AlliedModders LLC"),
+            "B3 Say": ("02", "1.0.0.0", "Spoon"),
+            "Basic Commands": ("03", "1.5.0-dev+3635", "AlliedModders LLC"),
+            "Fun Commands": ("04", "1.5.0-dev+3635", "AlliedModders LLC"),
+            "Basic Chat": ("05", "1.5.0-dev+3635", "AlliedModders LLC"),
+            "Admin Help": ("06", "1.5.0-dev+3635", "AlliedModders LLC"),
+            "Reserved Slots": ("07", "1.5.0-dev+3635", "AlliedModders LLC"),
+            "Sound Commands": ("08", "1.5.0-dev+3635", "AlliedModders LLC"),
+            "Player Commands": ("09", "1.5.0-dev+3635", "AlliedModders LLC"),
+            "Admin Menu": ("10", "1.5.0-dev+3635", "AlliedModders LLC"),
+            "Basic Votes": ("11", "1.5.0-dev+3635", "AlliedModders LLC"),
+            "Client Preferences": ("12", "1.5.0-dev+3635", "AlliedModders LLC"),
+            "Nextmap": ("13", "1.5.0-dev+3635", "AlliedModders LLC"),
+            "SuperLogs: CSS": ("14", "1.2.4", "psychonic"),
+            "Admin File Reader": ("15", "1.5.0-dev+3635", "AlliedModders LLC"),
+            "Basic Comm Control": ("16", "1.5.0-dev+3635", "AlliedModders LLC"),
+            "Basic Info Triggers": ("17", "1.5.0-dev+3635", "AlliedModders LLC"),
+            "Anti-Flood": ("18", "1.5.0-dev+3635", "AlliedModders LLC"),
+            "Fun Votes": ("19", "1.5.0-dev+3635", "AlliedModders LLC"),
+        }, rv)
