@@ -699,7 +699,7 @@ class Test_parser_API(CsgoTestCase):
 
 
     def test_kick(self):
-        player = Client(console=self.parser, cid="4", guid="theGuid")
+        player = Client(console=self.parser, cid="4", guid="theGuid", name="theName")
         with patch.object(self.parser.output, 'write') as write_mock:
             player.kick(reason="f00")
             write_mock.assert_has_calls([call('sm_kick #4 f00')])
