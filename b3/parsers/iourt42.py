@@ -31,10 +31,12 @@
 #  * disabling authentication using the /rcon auth-whois command response
 # 2012/08/12 - 1.3 - Courgette
 #  * patches the Spamcontrol plugin to make it aware of radio spam
+# 2012/09/14 - 1.4 - Courgette
+#  * change kick and tempban commands so them give the reason
 #
 
 __author__  = 'Courgette'
-__version__ = '1.3'
+__version__ = '1.4'
 
 import re, new
 from b3.parsers.iourt41 import Iourt41Parser
@@ -177,9 +179,9 @@ class Iourt42Parser(Iourt41Parser):
         'say': 'say %(prefix)s %(message)s',
         'saybig': 'bigtext "%(prefix)s %(message)s"',
         'set': 'set %(name)s "%(value)s"',
-        'kick': 'clientkick %(cid)s',
+        'kick': 'kick %(cid)s %(reason)s',
         'ban': 'addip %(cid)s',
-        'tempban': 'clientkick %(cid)s',
+        'tempban': 'kick %(cid)s %(reason)s',
         'banByIp': 'addip %(ip)s',
         'unbanByIp': 'removeip %(ip)s',
         'slap': 'slap %(cid)s',

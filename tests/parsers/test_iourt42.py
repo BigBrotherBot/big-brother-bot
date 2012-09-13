@@ -18,7 +18,7 @@
 #
 import logging
 from mock import Mock, call, patch
-from mockito import mock, verify
+from mockito import mock, when, any as anything
 import unittest2 as unittest
 from b3.config import XmlConfigParser
 from b3.events import Event
@@ -61,46 +61,12 @@ class Iourt42TestCase(unittest.TestCase):
             return self.output_mock.write(*args, **kwargs)
         self.console.write = Mock(wraps=write)
 
+        self.player = self.console.clients.newClient(cid="4", guid="theGuid", name="theName", ip="11.22.33.44")
+
     def tearDown(self):
         self.console.working = False
 
 
-class Test_inflictCustomPenalty(Iourt42TestCase):
-    """
-    Called if b3.admin.penalizeClient() does not know a given penalty type.
-    Overwrite this to add customized penalties for your game like 'slap', 'nuke',
-    'mute', 'kill' or anything you want.
-    /!\ This method must return True if the penalty was inflicted.
-    """
-
-    def setUp(self):
-        Iourt42TestCase.setUp(self)
-        self.superman = mock()
-        self.superman.cid = "11"
-
-    def test_slap(self):
-        self.console.write.reset_mock()
-        result = self.console.inflictCustomPenalty('slap', self.superman)
-        self.console.write.assert_has_calls([call('slap 11')])
-        self.assertTrue(result)
-
-    def test_nuke(self):
-        self.console.write.reset_mock()
-        result = self.console.inflictCustomPenalty('nuke', self.superman)
-        self.console.write.assert_has_calls([call('nuke 11')])
-        self.assertTrue(result)
-
-    def test_mute(self):
-        self.console.write.reset_mock()
-        result = self.console.inflictCustomPenalty('mute', self.superman, duration="15s")
-        self.console.write.assert_has_calls([call('mute 11 15.0')])
-        self.assertTrue(result)
-
-    def test_kill(self):
-        self.console.write.reset_mock()
-        result = self.console.inflictCustomPenalty('kill', self.superman)
-        self.console.write.assert_has_calls([call('smite 11')])
-        self.assertTrue(result)
 
 
 
@@ -127,6 +93,7 @@ class Test_log_lines_parsing(Iourt42TestCase):
         self.assertEquals(self.console.getEventName(eventraised.type), event_type_name)
         self.assertEquals(eventraised.data, event_data)
         self.assertEquals(eventraised.target, event_target)
+        self.assertEquals(eventraised.client, event_client)
 
     def setUp(self):
         Iourt42TestCase.setUp(self)
@@ -224,3 +191,176 @@ class Test_OnClientuserinfo(Iourt42TestCase):
 
 
 
+class Test_parser_API(Iourt42TestCase):
+
+    def test_getPlayerList(self):
+        # GIVEN
+        when(self.console).write('status', maxRetries=anything()).thenReturn('''\
+map: ut4_casa
+num score ping name            lastmsg address               qport rate
+--- ----- ---- --------------- ------- --------------------- ----- -----
+  4     0  141 theName^7              0 11.22.33.44:27961     38410  8000
+  5     0   48 theName2^7             0 11.22.33.45:27961     38410  8000
+''')
+        # WHEN
+        rv = self.console.getPlayerList()
+        # THEN
+        self.assertDictContainsSubset({
+            '5': {'slot': '5', 'last': '0', 'name': 'theName2^7', 'ip': '11.22.33.45', 'ping': '48', 'pbid': None, 'qport': '38410', 'rate': '8000', 'score': '0', 'port': '27961'},
+            '4': {'slot': '4', 'last': '0', 'name': 'theName^7', 'ip': '11.22.33.44', 'ping': '141', 'pbid': None, 'qport': '38410', 'rate': '8000', 'score': '0', 'port': '27961'}
+        }, rv)
+
+
+    @unittest.skip("TODO")
+    def test_authorizeClients(self):
+        pass
+
+
+    @unittest.skip("TODO")
+    def test_sync(self):
+        pass
+
+
+    def test_say(self):
+        self.console.say("f00")
+        self.console.write.assert_has_calls([call('say  f00')])
+
+
+    def test_saybig(self):
+        self.console.saybig("f00")
+        self.console.write.assert_has_calls([call('bigtext " f00"')])
+
+
+    def test_message(self):
+        self.console.message(self.player, "f00")
+        self.console.write.assert_has_calls(call('tell 4  ^3[pm]^7 f00'))
+
+
+    def test_kick(self):
+        self.console.kick(self.player, reason="f00")
+        self.console.write.assert_has_calls([call('kick 4 f00'), call('say  theName^7 was kicked f00')])
+
+
+    def test_ban(self):
+        self.console.ban(self.player, reason="f00")
+        self.console.write.assert_has_calls([call('addip 4'), call('say  theName^7 was banned f00')])
+
+
+    def test_unban(self):
+        self.console.unban(self.player, reason='f00')
+        self.console.write.assert_has_calls([call('removeip 11.22.33.44'),
+                                          call('removeip 11.22.33.44'),
+                                          call('removeip 11.22.33.44'),
+                                          call('removeip 11.22.33.44'),
+                                          call('removeip 11.22.33.44')])
+
+
+    def test_tempban(self):
+        self.console.tempban(self.player, reason="f00", duration="1h")
+        self.console.write.assert_has_calls([call('kick 4 f00'), call('say  theName^7 was temp banned for 1 hour^7 f00')])
+
+
+    def test_getMap(self):
+        # GIVEN
+        when(self.console).write('status').thenReturn('''\
+map: ut4_casa
+num score ping name            lastmsg address               qport rate
+--- ----- ---- --------------- ------- --------------------- ----- -----
+''')
+        # WHEN
+        rv = self.console.getMap()
+        # THEN
+        self.assertEqual('ut4_casa', rv)
+
+
+    def test_getMaps(self):
+        # GIVEN
+        when(self.console).write('fdir *.bsp').thenReturn('''\
+---------------
+maps/ut4_abbey.bsp
+maps/ut4_algiers.bsp
+maps/ut4_ambush.bsp
+3 files listed
+''')
+        # WHEN
+        rv = self.console.getMaps()
+        # THEN
+        self.assertListEqual(['ut4_abbey', 'ut4_algiers', 'ut4_ambush'], rv)
+
+
+    @patch('time.sleep')
+    def test_rotateMap(self, sleep_mock):
+        self.console.rotateMap()
+        self.console.write.assert_has_calls([call('say  ^7Changing to next map'), call('cyclemap')])
+        sleep_mock.assert_called_once_with(1)
+
+
+    @patch('time.sleep')
+    def test_changeMap(self, sleep_mock):
+        # GIVEN
+        when(self.console).getMapsSoundingLike('ut4_f00').thenReturn(['ut4_foo'])
+        # WHEN
+        self.console.changeMap('ut4_f00')
+        # THEN
+        self.console.write.assert_has_calls([call('map ut4_foo')])
+        sleep_mock.assert_called_once_with(1)
+
+
+    def test_getPlayerPings(self):
+        # GIVEN
+        when(self.console).write('status').thenReturn('''\
+map: ut4_casa
+num score ping name            lastmsg address               qport rate
+--- ----- ---- --------------- ------- --------------------- ----- -----
+  4     0  141 theName^7              0 11.22.33.44:27961     38410  8000
+  5     0   48 theName2^7             0 11.22.33.45:27961     38410  8000
+''')
+        # WHEN
+        rv = self.console.getPlayerPings()
+        # THEN
+        self.assertDictEqual({"4": 141, "5": 48}, rv)
+
+
+    def test_getPlayerScores(self):
+        # GIVEN
+        when(self.console).write('status').thenReturn('''\
+map: ut4_casa
+num score ping name            lastmsg address               qport rate
+--- ----- ---- --------------- ------- --------------------- ----- -----
+  4    11  141 theName^7              0 11.22.33.44:27961     38410  8000
+  5    25   48 theName2^7             0 11.22.33.45:27961     38410  8000
+''')
+        # WHEN
+        rv = self.console.getPlayerScores()
+        # THEN
+        self.assertDictEqual({"4": 11, "5": 25}, rv)
+
+
+
+class Test_inflictCustomPenalty(Iourt42TestCase):
+    """
+    Called if b3.admin.penalizeClient() does not know a given penalty type.
+    Overwrite this to add customized penalties for your game like 'slap', 'nuke',
+    'mute', 'kill' or anything you want.
+    /!\ This method must return True if the penalty was inflicted.
+    """
+
+    def test_slap(self):
+        result = self.console.inflictCustomPenalty('slap', self.player)
+        self.console.write.assert_has_calls([call('slap 4')])
+        self.assertTrue(result)
+
+    def test_nuke(self):
+        result = self.console.inflictCustomPenalty('nuke', self.player)
+        self.console.write.assert_has_calls([call('nuke 4')])
+        self.assertTrue(result)
+
+    def test_mute(self):
+        result = self.console.inflictCustomPenalty('mute', self.player, duration="15s")
+        self.console.write.assert_has_calls([call('mute 4 15.0')])
+        self.assertTrue(result)
+
+    def test_kill(self):
+        result = self.console.inflictCustomPenalty('kill', self.player)
+        self.console.write.assert_has_calls([call('smite 4')])
+        self.assertTrue(result)
