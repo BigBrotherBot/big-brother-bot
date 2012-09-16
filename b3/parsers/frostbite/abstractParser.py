@@ -1021,7 +1021,7 @@ def frostbiteClientMessageQueueWorker(self):
         msg = self.messagequeue.get()
         if msg:
             self.console.message(self, msg)
-            time.sleep(float(self.console._settings['message_delay']))
+            time.sleep(float(self.console._settings.get('message_delay', 1)))
 b3.clients.Client.messagequeueworker = frostbiteClientMessageQueueWorker
 
 ## override the Client.message() method at runtime
