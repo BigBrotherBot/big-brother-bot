@@ -808,15 +808,38 @@ L 08/28/2012 - 01:16:28: rcon from "11.222.111.222:4107": command "listmaps"
                               ], maps)
 
 
-    @unittest.skip("TODO")
-    def test_rotateMap(self):
-        pass
+    @patch('time.sleep')
+    def test_rotateMap(self, sleep_mock):
+        # GIVEN
+        when(self.parser).getNextMap().thenReturn('the_next_map')
+        # WHEN
+        with patch.object(self.parser.output, 'write') as write_mock:
+            self.parser.rotateMap()
+        # THEN
+        write_mock.assert_has_calls([call('sm_hsay Changing to next map : the_next_map'),
+                                     call('map the_next_map')])
+        sleep_mock.assert_was_called_once_with(1)
 
 
     def test_changeMap(self):
+        # GIVEN
+        when(self.parser).getMapsSoundingLike("de_f00").thenReturn("de_f00")
+        # WHEN
         with patch.object(self.parser.output, 'write') as write_mock:
-            self.parser.changeMap("f00")
-            write_mock.assert_has_calls([call('sm_map f00')])
+            self.parser.changeMap("de_f00")
+        # THEN
+        write_mock.assert_has_calls([call('sm_map de_f00')])
+
+
+    def test_changeMap__suggestions(self):
+        # GIVEN
+        when(self.parser).getMapsSoundingLike("f00").thenReturn(["de_f001", "de_f002"])
+        # WHEN
+        with patch.object(self.parser.output, 'write') as write_mock:
+            rv = self.parser.changeMap("f00")
+        # THEN
+        self.assertSetEqual(set(["de_f001", "de_f002"]), set(rv))
+        self.assertEqual(0, write_mock.call_count)
 
 
     def test_getPlayerPings(self):
@@ -857,14 +880,13 @@ class Test_parser_other(CsgoTestCase):
 
 
     def test_getNextMap(self):
-        when(self.parser.output).write("nextmap").thenReturn("""\
-[SM] Next Map: de_inferno
-L 08/28/2012 - 01:05:46: rcon from "11.222.111.222:4026": command "nextmap"
-""")
+        when(self.parser.output).write("sm_nextmap").thenReturn('''\
+"sm_nextmap" = "de_dust" ( def. "" ) notify
+L 09/18/2012 - 00:10:00: rcon from "78.207.134.100:4652": command "sm_nextmap"
+''')
         nextmap = self.parser.getNextMap()
-        verify(self.parser.output).write("nextmap")
-        self.assertEqual('de_inferno', nextmap)
-
+        verify(self.parser.output).write("sm_nextmap")
+        self.assertEqual('de_dust', nextmap)
 
 
     def test_getAvailableMaps(self):
@@ -879,6 +901,28 @@ PENDING:   (fs) training1.bsp""")
         maps = self.parser.getAvailableMaps()
         verify(self.parser.output).write("maps *")
         self.assertListEqual(["ar_baggage", "ar_shoots", "cs_italy", "cs_italy_se", "cs_office", "training1"], maps)
+
+
+    def test_getMapsSoundingLike(self):
+        # GIVEN
+        available_maps = ["ar_baggage", "ar_shoots", "cs_italy", "cs_italy_se", "de_bank", "de_dust"]
+        when(self.parser).getAvailableMaps().thenReturn(available_maps)
+        # THEN searching for a map by its exact name should return that map
+        for available_map in available_maps:
+            self.assertEqual(available_map, self.parser.getMapsSoundingLike(available_map))
+        # THEN searching for a map by a close name should return the correct name
+        self.assertEqual("ar_baggage", self.parser.getMapsSoundingLike("baggage"))
+        self.assertEqual("ar_baggage", self.parser.getMapsSoundingLike("bagg"))
+        self.assertEqual("ar_baggage", self.parser.getMapsSoundingLike("bag"))
+        self.assertEqual("ar_shoots", self.parser.getMapsSoundingLike("shoots"))
+        self.assertEqual("ar_shoots", self.parser.getMapsSoundingLike("shoot"))
+        self.assertEqual("de_bank", self.parser.getMapsSoundingLike("bank"))
+        self.assertEqual("de_dust", self.parser.getMapsSoundingLike("dust"))
+        # THEN searching for a map by a unknown name should return suggestions
+        self.assertSetEqual(set(["ar_baggage", "ar_shoots"]) , set(self.parser.getMapsSoundingLike("ar")))
+        self.assertSetEqual(set(["cs_italy", "cs_italy_se"]) , set(self.parser.getMapsSoundingLike("cs")))
+        self.assertSetEqual(set(["de_bank", "de_dust"]) , set(self.parser.getMapsSoundingLike("de")))
+        self.assertSetEqual(set(["cs_italy", "cs_italy_se"]) , set(self.parser.getMapsSoundingLike("italy")))
 
 
     def test_queryServerInfo(self):

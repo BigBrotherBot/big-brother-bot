@@ -49,11 +49,13 @@
 #   * fix ban/tempban/unban
 #   * add event EVT_SERVER_REQUIRES_RESTART which is triggered when the server requires a restart. This can be useful
 #     for a plugin could act upon such event by send an email to admin, restarting the server, ...
+#   * implement rotateMap() => the admin plugin !mapcycle command now works
+#   * the admin plugin !map command is now able to provide suggestions if map name is incorrect
 #
 import re
 import time
 from b3.clients import Client, Clients
-from b3.functions import minutesStr, time2minutes
+from b3.functions import minutesStr, time2minutes, getStuffSoundingLike
 from b3.parser import Parser
 from b3 import TEAM_UNKNOWN, TEAM_BLUE, TEAM_SPEC, TEAM_RED
 from b3.game_event_router import gameEvent, getHandler
@@ -116,6 +118,10 @@ RE_HL_LOG_LINE = r'''^L [01]\d/[0-3]\d/\d+ - [0-2]\d:[0-5]\d:[0-5]\d:\s*(?P<data
 # Regular expression able to extract properties from HalfLife game engine log line as described at
 # https://developer.valvesoftware.com/wiki/HL_Log_Standard#Notes
 RE_HL_LOG_PROPERTY = re.compile('''\((?P<key>[^\s\(\)]+)(?P<data>| "(?P<value>[^"]*)")\)''')
+
+# Regular expression to parse cvar queries responses
+RE_CVAR = re.compile(r'''^"(?P<cvar>\S+?)" = "(?P<value>.*?)" \( def. "(?P<default>.*?)".*$''', re.MULTILINE)
+
 
 class CsgoParser(Parser):
     """
@@ -691,7 +697,12 @@ class CsgoParser(Parser):
         """\
         load the next map/level
         """
-        raise NotImplementedError # TODO implement rotateMap (should we play with the cvar setting the remaining time on the current map ?)
+        next_map = self.getNextMap()
+        if next_map:
+            self.saybig('Changing to next map : %s' % next_map)
+            time.sleep(1)
+            self.output.write('map %s' % next_map)
+
 
 
     def changeMap(self, map_name):
@@ -699,7 +710,11 @@ class CsgoParser(Parser):
         load a given map/level
         return a list of suggested map names in cases it fails to recognize the map that was provided
         """
-        self.output.write('sm_map %s' % map_name)
+        rv = self.getMapsSoundingLike(map_name)
+        if isinstance(rv, basestring):
+            self.output.write('sm_map %s' % map_name)
+        else:
+            return rv
 
 
     def getPlayerPings(self):
@@ -736,13 +751,8 @@ class CsgoParser(Parser):
         """
         return the next map in the map rotation list
         """
-        re_response = re.compile(r'''^\[SM\] Next Map: (?P<next_map>\S+)$''')
-        rv = self.output.write("nextmap")
-        if rv:
-            for line in rv.split('\n'):
-                m = re.match(re_response, line.strip())
-                if m:
-                    return m.group('next_map')
+        next_map = self.getCvar("sm_nextmap")
+        return next_map
 
 
     ###############################################################################################
@@ -911,6 +921,16 @@ class CsgoParser(Parser):
         return response
 
 
+    def getCvar(self, cvar_name):
+        if not cvar_name:
+            self.warning('trying to query empty cvar %r' % cvar_name)
+            return None
+        rv = self.output.write(cvar_name)
+        m = re.search(RE_CVAR, rv)
+        if m:
+            return m.group('value')
+
+
     def setCvar(self, cvarName, value):
         """
         set a cvar on the game server
@@ -972,3 +992,20 @@ class CsgoParser(Parser):
                 response[m.group('name')] = (m.group('index'), m.group('version'), m.group('author'))
         return response
 
+
+    def getMapsSoundingLike(self, mapname):
+        """ return a valid mapname.
+        If no exact match is found, then return close candidates as a list
+        """
+        supportedMaps = [m.lower() for m in self.getAvailableMaps()]
+        wanted_map = mapname.lower()
+        if wanted_map in supportedMaps:
+            return wanted_map
+
+        matches = getStuffSoundingLike(wanted_map, supportedMaps)
+        if len(matches) == 1:
+            # one match, get the map id
+            return matches[0]
+        else:
+            # multiple matches, provide suggestions
+            return matches
