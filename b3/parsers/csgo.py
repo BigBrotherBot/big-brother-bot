@@ -44,6 +44,8 @@
 #   * split long messages into lines and add B3 prefixes to them
 # 2012-09-13 - 1.1 Courgette
 #   * add support for SourceMod plugin "B3 Say"
+# 2012-09-17 - 1.1.1 Courgette
+#   * fix say event when player has no team
 #
 import re
 import time
@@ -55,7 +57,7 @@ from b3.game_event_router import gameEvent, getHandler
 from b3.parsers.source.rcon import Rcon
 
 __author__  = 'Courgette'
-__version__ = '1.1'
+__version__ = '1.1.1'
 
 
 """
@@ -378,9 +380,10 @@ class CsgoParser(Parser):
         pass # TODO should we do anything with that info ?
 
 
-    @gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>\S+)>" say "(?P<text>.*)"$''')
+    @gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>\S*)>" say "(?P<text>.*)"$''')
     def on_client_say(self, name, cid, guid, team, text):
         # L 08/26/2012 - 05:09:55: "courgette<2><STEAM_1:0:1487018><CT>" say "!iamgod"
+        # L 09/16/2012 - 04:55:17: "Spoon<2><STEAM_1:0:11111111><>" say "!h"
         client = self.getClientOrCreate(cid, guid, name, team)
         return self.getEvent("EVT_CLIENT_SAY", client=client, data=text)
 

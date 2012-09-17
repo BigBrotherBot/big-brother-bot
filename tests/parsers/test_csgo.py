@@ -501,6 +501,17 @@ class Test_gamelog_parsing(CsgoTestCase):
         self.assert_has_event("EVT_CLIENT_SAY", "!iamgod", player)
 
 
+    def test_client_say__no_team(self):
+        # GIVEN
+        player = FakeClient(self.parser, name="Spoon", guid="STEAM_1:0:10000000", team=TEAM_UNKNOWN)
+        player.connects("2")
+        # WHEN
+        self.clear_events()
+        self.parser.parseLine('''L 09/16/2012 - 04:55:17: "Spoon<2><STEAM_1:0:10000000><>" say "!h"''')
+        # THEN
+        self.assert_has_event("EVT_CLIENT_SAY", "!h", player)
+
+
     def test_client_teamsay(self):
         # GIVEN
         player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_BLUE)
