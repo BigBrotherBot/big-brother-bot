@@ -19,12 +19,16 @@
 #
 from mock import Mock, call, patch
 from mockito import when, verify
+import sys
 import unittest2 as unittest
 from b3 import TEAM_BLUE, TEAM_RED, TEAM_UNKNOWN
 from b3.clients import Client
 from b3.config import XmlConfigParser
 from b3.fake import FakeClient
 from b3.parsers.csgo import CsgoParser
+
+
+WAS_FROSTBITE_LOADED = 'b3.parsers.frostbite' in sys.modules.keys() or 'b3.parsers.frostbite2' in sys.modules.keys()
 
 
 STATUS_RESPONSE = '''\
@@ -700,13 +704,13 @@ class Test_parser_API(CsgoTestCase):
             self.parser.saybig("f00")
             write_mock.assert_has_calls([call('sm_hsay [Pre] f00')])
 
-    @unittest.skip("there is some kind of conflict with another test in another module :s")
+    @unittest.skipIf(WAS_FROSTBITE_LOADED, "Frostbite(1|2) parsers monkey patch the Client class and make this test fail")
     def test_message(self):
         self.parser.msgPrefix = "[Pre]"
         player = Client(console=self.parser, guid="theGuid")
         with patch.object(self.parser.output, 'write') as write_mock:
             player.message("f00")
-            write_mock.assert_has_calls([call('sm_psay #theGuid [Pre] f00')])
+            write_mock.assert_has_calls([call('sm_psay #theGuid "[Pre] f00"')])
 
 
     def test_kick(self):
@@ -716,19 +720,54 @@ class Test_parser_API(CsgoTestCase):
             write_mock.assert_has_calls([call('sm_kick #4 f00')])
 
 
-    @unittest.skip("TODO")
     def test_ban(self):
-        pass
+        # GIVEN
+        player = Client(console=self.parser, cid="2", name="courgette", guid="STEAM_1:0:1111111")
+        # WHEN
+        self.clear_events()
+        with patch.object(self.parser.output, 'write') as write_mock:
+            self.parser.ban(player, reason="test")
+        # THEN
+        write_mock.assert_has_calls([call('sm_addban 0 "STEAM_1:0:1111111" test'),
+                                     call('sm_kick #2 test'),
+                                     call('sm_say courgette was banned test')])
 
 
-    @unittest.skip("TODO")
+    def test_ban__not_connected(self):
+        # GIVEN
+        player = Client(console=self.parser, cid=None, name="courgette", guid="STEAM_1:0:1111111")
+        # WHEN
+        self.clear_events()
+        with patch.object(self.parser.output, 'write') as write_mock:
+            self.parser.ban(player, reason="test")
+        # THEN
+        write_mock.assert_has_calls([call('sm_addban 0 "STEAM_1:0:1111111" test'),
+                                     call('sm_say courgette was banned test')])
+
+
     def test_unban(self):
-        pass
+        # GIVEN
+        player = Client(console=self.parser, cid=None, name="courgette", guid="STEAM_1:0:1111111")
+        # WHEN
+        self.clear_events()
+        with patch.object(self.parser.output, 'write') as write_mock:
+            self.parser.unban(player)
+        # THEN
+        write_mock.assert_has_calls([call('sm_unban "STEAM_1:0:1111111"')])
 
 
-    @unittest.skip("TODO")
+
     def test_tempban(self):
-        pass
+        # GIVEN
+        player = Client(console=self.parser, cid="2", name="courgette", guid="STEAM_1:0:1111111")
+        # WHEN
+        self.clear_events()
+        with patch.object(self.parser.output, 'write') as write_mock:
+            self.parser.tempban(player, reason="test", duration="45m")
+        # THEN
+        write_mock.assert_has_calls([call('sm_addban 45 "STEAM_1:0:1111111" test'),
+                                     call('sm_kick #2 test'),
+                                     call('sm_say courgette was temp banned for 45 minutes test')])
 
 
     def test_getMap(self):
@@ -956,3 +995,21 @@ L 09/13/2012 - 09:06:45: rcon from "78.207.134.100:2212": command "sm plugins li
             "Anti-Flood": ("18", "1.5.0-dev+3635", "AlliedModders LLC"),
             "Fun Votes": ("19", "1.5.0-dev+3635", "AlliedModders LLC"),
         }, rv)
+
+
+
+class Test_functional(CsgoTestCase):
+
+    def test_banned_player_reconnects(self):
+        # GIVEN
+        player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111")
+        player.connects("2")
+        self.assertEqual(0, player.numBans)
+        player.ban(reason="test")
+        self.assertEqual(1, player.numBans)
+        player.disconnects()
+        # WHEN
+        with patch.object(player, "ban") as ban_mock:
+            player.connects("3")
+        # THEN
+        ban_mock.assert_was_called_once()

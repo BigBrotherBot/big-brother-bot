@@ -46,11 +46,12 @@
 #   * add support for SourceMod plugin "B3 Say"
 # 2012-09-17 - 1.1.1 Courgette
 #   * fix say event when player has no team
+#   * fix ban/tempban/unban
 #
 import re
 import time
 from b3.clients import Client, Clients
-from b3.functions import minutesStr
+from b3.functions import minutesStr, time2minutes
 from b3.parser import Parser
 from b3 import TEAM_UNKNOWN, TEAM_BLUE, TEAM_SPEC, TEAM_RED
 from b3.game_event_router import gameEvent, getHandler
@@ -574,7 +575,7 @@ class CsgoParser(Parser):
         fire the event ('EVT_CLIENT_BAN', data={'reason': reason,
         'admin': admin}, client=target)
         """
-        if not client.hide: # exclude bots
+        if client.hide: # exclude bots
             return
 
         self.debug('BAN : client: %s, reason: %s', client, reason)
@@ -606,7 +607,7 @@ class CsgoParser(Parser):
         """\
         unban a given player on the game server
         """
-        if not client.hide: # exclude bots
+        if client.hide: # exclude bots
             return
 
         self.debug('UNBAN: Name: %s, Ip: %s, Guid: %s' % (client.name, client.ip, client.guid))
@@ -634,7 +635,7 @@ class CsgoParser(Parser):
         fire the event ('EVT_CLIENT_BAN_TEMP', data={'reason': reason,
         'duration': duration, 'admin': admin}, client=target)
         """
-        if not client.hide: # exclude bots
+        if client.hide: # exclude bots
             return
 
         self.debug('TEMPBAN : client: %s, duration: %s, reason: %s', client, duration, reason)
@@ -913,10 +914,13 @@ class CsgoParser(Parser):
 
 
     def do_kick(self, client, reason=None):
-        if reason:
-            self.output.write('sm_kick #%s %s' % (client.cid, reason))
+        if not client.cid:
+            self.warning("Trying to kick %s which has no slot id" % client)
         else:
-            self.output.write("sm_kick #%s" % client.cid)
+            if reason:
+                self.output.write('sm_kick #%s %s' % (client.cid, reason))
+            else:
+                self.output.write("sm_kick #%s" % client.cid)
 
 
     def do_ban(self, client, reason=None):
@@ -931,15 +935,16 @@ class CsgoParser(Parser):
     def do_tempban(self, client, duration=2, reason=None):
         # sm_addban <time> <steamid> [reason]
         if reason:
-            self.output.write('sm_addban %s "%s" %s' % (duration * 60, client.guid, reason))
+            self.output.write('sm_addban %s "%s" %s' % (int(time2minutes(duration)), client.guid, reason))
         else:
-            self.output.write('sm_addban %s "%s"' % (duration * 60, client.guid))
+            self.output.write('sm_addban %s "%s"' % (int(time2minutes(duration)), client.guid))
         self.do_kick(client, reason)
 
 
     def do_unban_by_steamid(self, client):
         # sm_unban <steamid|ip>
         self.output.write('sm_unban "%s"' % client.guid)
+
 
     def do_unban_by_ip(self, client):
         # sm_unban <steamid|ip>
