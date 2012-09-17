@@ -44,9 +44,11 @@
 #   * split long messages into lines and add B3 prefixes to them
 # 2012-09-13 - 1.1 Courgette
 #   * add support for SourceMod plugin "B3 Say"
-# 2012-09-17 - 1.1.1 Courgette
+# 2012-09-17 - 1.2 Courgette
 #   * fix say event when player has no team
 #   * fix ban/tempban/unban
+#   * add event EVT_SERVER_REQUIRES_RESTART which is triggered when the server requires a restart. This can be useful
+#     for a plugin could act upon such event by send an email to admin, restarting the server, ...
 #
 import re
 import time
@@ -58,7 +60,7 @@ from b3.game_event_router import gameEvent, getHandler
 from b3.parsers.source.rcon import Rcon
 
 __author__  = 'Courgette'
-__version__ = '1.1.1'
+__version__ = '1.2'
 
 
 """
@@ -147,6 +149,7 @@ class CsgoParser(Parser):
         # add game specific events
         self.createEvent("EVT_SUPERLOGS_WEAPONSTATS", "SourceMod SuperLogs weaponstats")
         self.createEvent("EVT_SUPERLOGS_WEAPONSTATS2", "SourceMod SuperLogs weaponstats2")
+        self.createEvent("EVT_SERVER_REQUIRES_RESTART", "Source server requires restart")
 
         # create the 'Server' client
         # todo self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
@@ -447,7 +450,13 @@ class CsgoParser(Parser):
         pass
 
 
+    @gameEvent(r'''^(?P<data>Your server needs to be restarted.*)$''')
+    def on_server_restart_request(self, data):
+        # L 09/17/2012 - 23:26:45: Your server needs to be restarted in order to receive the latest update.
+        return self.getEvent('EVT_SERVER_REQUIRES_RESTART', data)
 
+
+    # -------------- /!\  this one must be the last /!\ --------------
     @gameEvent(r'''^(?P<data>.+)$''')
     def on_unknown_line(self, data):
         """
