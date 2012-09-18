@@ -21,7 +21,7 @@ from mock import Mock, call, patch
 from mockito import when, verify
 import sys
 import unittest2 as unittest
-from b3 import TEAM_BLUE, TEAM_RED, TEAM_UNKNOWN
+from b3 import TEAM_BLUE, TEAM_RED, TEAM_UNKNOWN, TEAM_SPEC
 from b3.clients import Client
 from b3.config import XmlConfigParser
 from b3.fake import FakeClient
@@ -1048,6 +1048,118 @@ L 09/13/2012 - 09:06:45: rcon from "78.207.134.100:2212": command "sm plugins li
 
 
 
+class Test_getClientOrCreate(CsgoTestCase):
+
+    def test_new_client_with_cid_guid_name_team(self):
+        # GIVEN
+        self.assertEqual(1, len(self.parser.clients))
+        self.assertDictContainsSubset({'clients': 1}, self.parser.storage.getCounts())
+        # WHEN
+        client = self.parser.getClientOrCreate(cid="2", guid="AAAAAAAAAAAA000000000000000", name="theName", team="CT")
+        # THEN
+        self.assertIsInstance(client, Client)
+        self.assertEqual("2", client.cid)
+        self.assertEqual("AAAAAAAAAAAA000000000000000", client.guid)
+        self.assertEqual("theName", client.name)
+        self.assertEqual(TEAM_RED, client.team)
+        self.assertTrue(client.authed)
+        self.assertEqual(2, len(self.parser.clients))
+        self.assertDictContainsSubset({'clients': 2}, self.parser.storage.getCounts())
+
+
+    def test_new_client_with_cid_guid_name(self):
+        # GIVEN
+        self.assertEqual(1, len(self.parser.clients))
+        self.assertDictContainsSubset({'clients': 1}, self.parser.storage.getCounts())
+        # WHEN
+        client = self.parser.getClientOrCreate(cid="2", guid="AAAAAAAAAAAA000000000000000", name="theName")
+        # THEN
+        self.assertIsInstance(client, Client)
+        self.assertEqual("2", client.cid)
+        self.assertEqual("AAAAAAAAAAAA000000000000000", client.guid)
+        self.assertEqual("theName", client.name)
+        self.assertEqual(TEAM_UNKNOWN, client.team)
+        self.assertTrue(client.authed)
+        self.assertEqual(2, len(self.parser.clients))
+        self.assertDictContainsSubset({'clients': 2}, self.parser.storage.getCounts())
+
+
+    def test_connected_client_by_cid(self):
+        # GIVEN
+        self.parser.clients.newClient(cid="2", guid="AAAAAAAAAAAA000000000000000", name="theName", team=TEAM_BLUE)
+        self.assertEqual(2, len(self.parser.clients))
+        self.assertDictContainsSubset({'clients': 2}, self.parser.storage.getCounts())
+        # WHEN
+        client = self.parser.getClientOrCreate(cid="2", guid=None, name=None)
+        # THEN
+        self.assertIsInstance(client, Client)
+        self.assertEqual("2", client.cid)
+        self.assertEqual("AAAAAAAAAAAA000000000000000", client.guid)
+        self.assertEqual("theName", client.name)
+        self.assertEqual(TEAM_BLUE, client.team)
+        self.assertTrue(client.authed)
+        self.assertEqual(2, len(self.parser.clients))
+        self.assertDictContainsSubset({'clients': 2}, self.parser.storage.getCounts())
+
+
+    def test_connected_client_by_cid_different_name(self):
+        # GIVEN
+        self.parser.clients.newClient(cid="2", guid="AAAAAAAAAAAA000000000000000", name="theName", team=TEAM_BLUE)
+        self.assertEqual(2, len(self.parser.clients))
+        self.assertDictContainsSubset({'clients': 2}, self.parser.storage.getCounts())
+        # WHEN
+        client = self.parser.getClientOrCreate(cid="2", guid=None, name="newName")
+        # THEN
+        self.assertIsInstance(client, Client)
+        self.assertEqual("2", client.cid)
+        self.assertEqual("AAAAAAAAAAAA000000000000000", client.guid)
+        self.assertEqual("newName", client.name)
+        self.assertEqual(TEAM_BLUE, client.team)
+        self.assertTrue(client.authed)
+        self.assertEqual(2, len(self.parser.clients))
+        self.assertDictContainsSubset({'clients': 2}, self.parser.storage.getCounts())
+
+
+    def test_known_client_by_cid(self):
+        # GIVEN
+        known_client = Client(console=self.parser, guid="AAAAAAAAAAAA000000000000000", name="theName")
+        known_client.save()
+        self.assertEqual(1, len(self.parser.clients))
+        self.assertDictContainsSubset({'clients': 2}, self.parser.storage.getCounts())
+        # WHEN
+        client = self.parser.getClientOrCreate(cid="2", guid="AAAAAAAAAAAA000000000000000", name="newName", team="CT")
+        # THEN
+        self.assertIsInstance(client, Client)
+        self.assertEqual(known_client.id, client.id)
+        self.assertEqual("2", client.cid)
+        self.assertEqual("AAAAAAAAAAAA000000000000000", client.guid)
+        self.assertEqual("newName", client.name)
+        self.assertEqual(TEAM_RED, client.team)
+        self.assertTrue(client.authed)
+        self.assertEqual(2, len(self.parser.clients))
+        self.assertDictContainsSubset({'clients': 2}, self.parser.storage.getCounts())
+
+
+    def test_changing_team(self):
+        # GIVEN
+        client = self.parser.getClientOrCreate(cid="2", guid="AAAAAAAAAAAA000000000000000", name="theName", team="CT")
+        self.assertEqual(TEAM_RED, client.team)
+
+        def assertTeam(execpted_team, new_team):
+            # WHEN
+            self.parser.getClientOrCreate(cid="2", guid="AAAAAAAAAAAA000000000000000", name="theName", team=new_team)
+            # THEN
+            self.assertEqual(execpted_team, client.team)
+
+        assertTeam(TEAM_RED, "CT")
+        assertTeam(TEAM_RED, None)
+        assertTeam(TEAM_RED, "")
+        assertTeam(TEAM_RED, "f00")
+        assertTeam(TEAM_RED, "Unassigned")
+        assertTeam(TEAM_BLUE, "TERRORIST")
+
+
+
 class Test_functional(CsgoTestCase):
 
     def test_banned_player_reconnects(self):
@@ -1063,3 +1175,39 @@ class Test_functional(CsgoTestCase):
             player.connects("3")
         # THEN
         ban_mock.assert_was_called_once()
+
+
+    def test_clantag_and_say_with_weird_line(self):
+        """
+        Sometimes (is it from CS:GO patch http://store.steampowered.com/news/8855/ released on 9/14/2012 ?) we got the following line :
+
+        L 09/18/2012 - 18:26:21: "Spoon<3><STEAM_1:0:11111111><EHD Gaming>" triggered "clantag" (value "EHD")
+        where we find the Clan name in place of the player team and the Clan tag in the 'value' property.
+
+        It would have been better to have something like
+        L 09/18/2012 - 18:26:21: "Spoon<3><STEAM_1:0:11111111><CT>" triggered "clantag" (value "EHD") (clanname "EHD Gaming")
+
+        Also, after that, 'say' lines get affected in the same way :
+        L 09/18/2012 - 18:26:35: "Spoon<3><STEAM_1:0:11111111><EHD Gaming>" say "!lt"
+        In such case we need to make sure we are not loosing the correct team value
+        """
+        # GIVEN
+        self.parser.parseLine('''L 08/26/2012 - 03:22:36: "courgette<2><STEAM_1:0:1111111><>" connected, address "11.222.111.222:27005"''')
+        player = self.parser.getClient("2")
+        self.assertEqual("STEAM_1:0:1111111", player.guid)
+        self.assertFalse(hasattr(player, "clantag"))
+        self.parser.parseLine('''L 08/26/2012 - 03:22:36: "courgette<2><STEAM_1:0:1111111><Unassigned>" joined team "CT"''')
+        self.assertEqual(TEAM_RED, player.team)
+
+        # WHEN
+        self.parser.parseLine('''L 08/26/2012 - 05:43:31: "courgette<2><STEAM_1:0:1111111><The Clan Name>" triggered "clantag" (value "TCN")''')
+        # THEN
+        self.assertEqual("TCN", getattr(player, "clantag", None))
+        self.assertEqual(TEAM_RED, player.team) # make sure we do not break existing correct team value
+
+        # WHEN
+        self.clear_events()
+        self.parser.parseLine('''L 08/26/2012 - 05:09:55: "courgette<2><STEAM_1:0:1111111><The Clan Name>" say "blah blah blah"''')
+        # THEN
+        self.assert_has_event("EVT_CLIENT_SAY", "blah blah blah", player)
+        self.assertEqual(TEAM_RED, player.team) # make sure we do not break existing correct team value

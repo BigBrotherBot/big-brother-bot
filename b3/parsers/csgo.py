@@ -51,6 +51,9 @@
 #     for a plugin could act upon such event by send an email to admin, restarting the server, ...
 #   * implement rotateMap() => the admin plugin !mapcycle command now works
 #   * the admin plugin !map command is now able to provide suggestions if map name is incorrect
+# 2012-09-19 - 1.3 Courgette
+#   * fix issue #88 (https://github.com/courgette/big-brother-bot/issues/88) regarding clan name appearing in some of
+#     the game log lines in place of the player team.
 #
 import re
 import time
@@ -62,7 +65,7 @@ from b3.game_event_router import gameEvent, getHandler
 from b3.parsers.source.rcon import Rcon
 
 __author__  = 'Courgette'
-__version__ = '1.2'
+__version__ = '1.3'
 
 
 """
@@ -358,6 +361,7 @@ class CsgoParser(Parser):
 
         elif event_name == "clantag":
             # L 08/26/2012 - 05:43:31: "Ein 1337er M!L[H<106><STEAM_1:0:5280197><Unassigned>" triggered "clantag" (value "")
+            # L 09/18/2012 - 18:26:21: "Spoon<3><STEAM_1:0:11111111><EHD Gaming>" triggered "clantag" (value "EHD")
             client.clantag = props.get("value", "")
 
         elif event_name == "weaponstats":
@@ -390,7 +394,7 @@ class CsgoParser(Parser):
         pass # TODO should we do anything with that info ?
 
 
-    @gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>\S*)>" say "(?P<text>.*)"$''')
+    @gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*?)>" say "(?P<text>.*)"$''')
     def on_client_say(self, name, cid, guid, team, text):
         # L 08/26/2012 - 05:09:55: "courgette<2><STEAM_1:0:1487018><CT>" say "!iamgod"
         # L 09/16/2012 - 04:55:17: "Spoon<2><STEAM_1:0:11111111><>" say "!h"
@@ -398,7 +402,7 @@ class CsgoParser(Parser):
         return self.getEvent("EVT_CLIENT_SAY", client=client, data=text)
 
 
-    @gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>\S+)>" say_team "(?P<text>.*)"$''')
+    @gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*?)>" say_team "(?P<text>.*)"$''')
     def on_client_teamsay(self, name, cid, guid, team, text):
         # L 08/26/2012 - 05:04:44: "courgette<2><STEAM_1:0:1487018><CT>" say_team "team say"
         client = self.getClientOrCreate(cid, guid, name, team)
@@ -857,8 +861,13 @@ class CsgoParser(Parser):
             client.last_update_time = time.time()
             if guid.startswith("BOT_"):
                 client.hide = True
+        else:
+            if name:
+                client.name = name
         if team:
-            client.team = self.getTeam(team)
+            parsed_team = self.getTeam(team)
+            if parsed_team and parsed_team != TEAM_UNKNOWN:
+                client.team = parsed_team
         return client
 
 
