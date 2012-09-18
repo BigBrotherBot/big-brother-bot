@@ -100,7 +100,7 @@ class Test_say(AbstractParser_TestCase):
                 self.parser.say('test2')
 
                 self.parser.start_sayqueue_worker()
-                self.parser.sayqueuelistener.join(.3)
+                self.parser.sayqueuelistener.join(2)
 
                 self.assertTrue(write_mock.called)
                 write_mock.assert_any_call(('admin.say', 'test', 'all'))
