@@ -126,14 +126,14 @@ class Cmd_help(Admin_functional_test):
         self.joe.message.assert_called_with('^7Available commands: admins, admintest, aliases, b3, ban, banall, baninfo,'
                                             ' clear, clientinfo, die, disable, enable, find, help, iamgod, kick, kickall'
                                             ', leveltest, list, lookup, makereg, map, maprotate, maps, mask, nextmap, no'
-                                            'tice, pause, permban, poke, putgroup, rebuild, reconfig, regtest, restart, '
+                                            'tice, pause, permban, poke, putgroup, rebuild, reconfig, regtest, regulars, restart, '
                                             'rules, runas, say, scream, seen, spam, spams, spank, spankall, status, temp'
                                             'ban, time, unban, ungroup, unmask, unreg, warn, warnclear, warninfo, warnremove, w'
                                             'arns, warntest')
         self.mike.message = Mock()
         self.mike.connects(0)
         self.mike.says('!help')
-        self.mike.message.assert_called_with('^7Available commands: help, iamgod, regtest, rules, time')
+        self.mike.message.assert_called_with('^7Available commands: help, iamgod, regtest, regulars, rules, time')
 
     def test_joker(self):
         self.joe.message = Mock()
