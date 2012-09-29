@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2012/09/29 - 1.17 - Courgette
+#   * add command !regulars
 #   2012/08/11 - 1.16 - Courgette
 #   * config file can refer to group levels by their group keyword
 #   2012/07/31 - 1.15.1 - Courgette
@@ -114,7 +116,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.16'
+__version__ = '1.17'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import re, time, threading, sys, traceback, thread, random
@@ -893,6 +895,21 @@ class AdminPlugin(b3.plugin.Plugin):
 
         cmd.sayLoudOrPM(client, ', '.join(names))
         return True
+
+
+    def cmd_regulars(self, data, client, cmd=None):
+        """\
+        - lists all the online regular players
+        """
+        clist = self.console.clients.getClientsByLevel(min=2, max=2)
+
+        if len(clist) > 0:
+            nlist = []
+            for c in clist:
+                nlist.append(c.exactName)
+            cmd.sayLoudOrPM(client, self.getMessage('regulars', ', '.join([c.exactName for c in clist])))
+        else:
+            cmd.sayLoudOrPM(client, self.getMessage('no_regulars'))
 
 
     def cmd_admins(self, data, client, cmd=None):

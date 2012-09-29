@@ -75,6 +75,7 @@
 		<set name="maps">reg</set>
 		<set name="nextmap">reg</set>
 
+        <set name="regulars-regs">user</set>
 		<set name="regtest">user</set>
 		<set name="time">user</set>
 
@@ -135,6 +136,8 @@
 		<set name="help_none">^7You have no available commands</set>
 		<set name="spanked">%s ^7was ^1SPANKED^7 by %s</set>
 		<set name="admins">^7Admins online: %s</set>
+		<set name="regulars">^7Regular players online: %s</set>
+		<set name="no_regulars">^7There are no regular players online</set>
 		<set name="time">At the sound of the beep it will be ^3%s^7...(beeeep)</set>
 		<set name="unknown_command">^7Unrecognized command %s</set>
 		<set name="leveltest">^7%s ^7[^3@%s^7] is a ^3%s ^7[^2%s^7] since %s</set>

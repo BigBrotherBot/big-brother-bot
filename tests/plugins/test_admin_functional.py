@@ -593,3 +593,56 @@ class Test_config(Admin_functional_test):
                         </settings>
                     </configuration>""")
         self.assertNotIn('bar', self.p.warn_reasons)
+
+
+class Cmd_admins(Admin_functional_test):
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init()
+
+    def test_nominal(self):
+        self.joe.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
+        self.joe.connects(0)
+        # only superadmin joe is connected
+        self.joe.says('!admins')
+        self.joe.message.assert_called_with('^7Admins online: Joe^7^7 [^3100^7]')
+        # introducing mike (senioradmin)
+        self.mike.connects(1)
+        self.joe.says('!putgroup mike senioradmin')
+        # we know have 2 admins connected
+        self.joe.says('!admins')
+        self.joe.message.assert_called_with('^7Admins online: Joe^7^7 [^3100^7], Mike^7^7 [^380^7]')
+
+
+class Cmd_regulars(Admin_functional_test):
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init()
+        self.joe.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
+        self.joe.connects(0)
+
+    def test_no_regular(self):
+        # only superadmin joe is connected
+        self.joe.says('!regulars')
+        self.joe.message.assert_called_with('^7There are no regular players online')
+
+    def test_one_regular(self):
+        # GIVEN
+        self.mike.connects(1)
+        self.joe.says('!makereg mike')
+        # WHEN
+        self.joe.says('!regs')
+        # THEN
+        self.joe.message.assert_called_with('^7Regular players online: Mike^7')
+
+    def test_two_regulars(self):
+        # GIVEN
+        self.mike.connects(1)
+        self.joe.says('!makereg mike')
+        self.jack = FakeClient(self.console, name="Jack", guid="jackguid", groupBits=1)
+        self.jack.connects(2)
+        self.joe.says('!makereg jack')
+        # WHEN
+        self.joe.says('!regs')
+        # THEN
+        self.joe.message.assert_called_with('^7Regular players online: Mike^7, Jack^7')
