@@ -21,6 +21,7 @@ import os
 from mock import patch, call, Mock
 from mockito import when, any as mockito_any
 from b3.fake import FakeClient
+from b3.plugins.admin import AdminPlugin
 from tests import B3TestCase
 import unittest2 as unittest
 
@@ -29,6 +30,9 @@ from b3.config import XmlConfigParser
 
 
 default_plugin_file = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../b3/conf/plugin_adv.xml"))
+
+from b3 import __file__ as b3_module__file__
+ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.xml"))
 
 
 class AdvTestCase(B3TestCase):
@@ -42,6 +46,12 @@ class AdvTestCase(B3TestCase):
         self.log.propagate = False
 
         B3TestCase.setUp(self)
+
+        self.adminPlugin = AdminPlugin(self.console, ADMIN_CONFIG_FILE)
+        when(self.console).getPlugin("admin").thenReturn(self.adminPlugin)
+        self.adminPlugin.onLoadConfig()
+        self.adminPlugin.onStartup()
+
         self.console.startup()
         self.log.propagate = True
 
@@ -343,12 +353,26 @@ class Test_keywords(AdvTestCase):
         self.init_plugin()
 
     def test_admins(self):
+        # GIVEN
         when(self.p._msg).getnext().thenReturn("@admins")
         joe = FakeClient(self.console, name="Joe", guid="joeguid", groupBits=128)
         when(self.p._adminPlugin).getAdmins().thenReturn([joe])
         with patch.object(self.console, "say") as say_mock:
+            # WHEN
             self.p.adv()
-            say_mock.assert_has_calls([call('^7Admins online: Joe^7^7 [^3100^7]')])
+        # THEN
+        say_mock.assert_has_calls([call('^7Admins online: Joe^7^7 [^3100^7]')])
+
+    def test_regulars(self):
+        # GIVEN
+        when(self.p._msg).getnext().thenReturn("@regulars")
+        joe = FakeClient(self.console, name="Joe", guid="joeguid", groupBits=2)
+        when(self.p._adminPlugin).getRegulars().thenReturn([joe])
+        with patch.object(self.console, "say") as say_mock:
+            # WHEN
+            self.p.adv()
+        # THEN
+        say_mock.assert_has_calls([call('^7Regular players online: Joe^7')])
 
     def test_topstats(self):
         when(self.p._msg).getnext().thenReturn("@topstats")

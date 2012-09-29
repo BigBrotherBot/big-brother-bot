@@ -467,6 +467,9 @@ class AdminPlugin(b3.plugin.Plugin):
     def getAdmins(self):
         return self.console.clients.getClientsByLevel(self._admins_level)
 
+    def getRegulars(self):
+        return self.console.clients.getClientsByLevel(min=2, max=2)
+
     def findClientPrompt(self, client_id, client=None):
         matches = self.console.clients.getByMagic(client_id)
         if matches:
@@ -901,7 +904,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """\
         - lists all the online regular players
         """
-        clist = self.console.clients.getClientsByLevel(min=2, max=2)
+        clist = self.getRegulars()
 
         if len(clist) > 0:
             nlist = []
