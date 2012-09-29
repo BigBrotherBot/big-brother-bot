@@ -56,18 +56,6 @@ class AbstractParser_TestCase(unittest.TestCase):
 #
 ########################################################################################################################
 
-class Test_say(AbstractParser_TestCase):
-    def setUp(self):
-        log = logging.getLogger('output')
-        log.setLevel(logging.NOTSET)
-
-        self.conf = XmlConfigParser()
-        self.conf.loadFromString("""
-                <configuration>
-                </configuration>
-            """)
-        self.parser = ConcretegameParser(self.conf)
-
 
 class Test_tempban(AbstractParser_TestCase):
     def setUp(self):

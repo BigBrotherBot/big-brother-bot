@@ -90,21 +90,22 @@ class Test_say(AbstractParser_TestCase):
             """)
         self.parser = ConcretegameParser(self.conf)
 
+    @patch("time.sleep")
+    def test_say(self, sleep_mock):
+        with patch.object(AbstractParser, 'write') as write_mock:
+            self.parser._settings['big_b3_private_responses'] = False
 
-    def test_say(self):
-        with patch.object(time, 'sleep'):
-            with patch.object(AbstractParser, 'write') as write_mock:
-                self.parser._settings['big_b3_private_responses'] = False
+            self.parser.say('test')
+            self.parser.say('test2')
 
-                self.parser.say('test')
-                self.parser.say('test2')
+            self.parser.start_sayqueue_worker()
+            self.parser.sayqueue.join()
+            self.parser.working = False # will make the sayqueue_worker stop
+            self.parser.sayqueuelistener.join(2) # wait for sayqueue_worker to end
 
-                self.parser.start_sayqueue_worker()
-                self.parser.sayqueuelistener.join(2)
-
-                self.assertTrue(write_mock.called)
-                write_mock.assert_any_call(('admin.say', 'test', 'all'))
-                write_mock.assert_any_call(('admin.say', 'test2', 'all'))
+            self.assertTrue(write_mock.called)
+            write_mock.assert_any_call(('admin.say', 'test', 'all'))
+            write_mock.assert_any_call(('admin.say', 'test2', 'all'))
 
 
 

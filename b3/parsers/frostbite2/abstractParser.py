@@ -517,6 +517,7 @@ class AbstractParser(b3.parser.Parser):
                     self.write(self.getCommand('say', message=line))
                     if self.working:
                         time.sleep(self._settings['message_delay'])
+                self.sayqueue.task_done()
             except Queue.Empty:
                 #self.verbose2("sayqueuelistener: had nothing to do in the last %s sec" % self.sayqueue_get_timeout)
                 pass
