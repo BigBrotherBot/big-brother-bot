@@ -115,9 +115,9 @@ class Test_commands(AdvTestCase):
             </configuration>
         """)
         self.joe.clearMessageHistory()
-        self.joe.says("!advlist")
+        self.p.cmd_advlist(data=None, client=self.joe)
         self.assertEqual([], self.p._msg.items)
-        self.assertEqual([], self.joe.message_history)
+        self.assertEqual(['Adv: No ads loaded'], self.joe.message_history)
 
     def test_advlist_one_item(self):
         self.init_plugin("""
