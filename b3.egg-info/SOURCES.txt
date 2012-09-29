@@ -234,6 +234,7 @@ b3/tools/documentationBuilder.py
 b3/tools/functionprofiler.py
 b3/tools/logdiagnostic.py
 b3/tools/memoryprofiler.py
+tests/Ravaged_brute_force.py
 tests/__init__.py
 tests/run.py
 tests/test_b3.py
