@@ -2,8 +2,11 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 ;#define Debug
-#define B3_VERSION_NUMBER "1.9.0"
-#define B3_VERSION_SUFFIX "dev6"
+
+; NOTE: either uncomment the two constants below or call the InnoSetup PreProcessor with the /d<name>=<value> command
+;       line parameter. I.E.: ISCC.exe b3-installer-project.iss /Q /O../dist /dB3_VERSION_NUMBER=1.9.0 /dB3_VERSION_SUFFIX=dev6-20120930
+;#define public B3_VERSION_NUMBER "x.y.z"
+;#define public B3_VERSION_SUFFIX "xxx"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
