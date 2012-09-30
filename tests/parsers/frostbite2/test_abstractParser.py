@@ -78,36 +78,6 @@ class Test_saybig(AbstractParser_TestCase):
                 write_mock.assert_any_call(('admin.yell', 'test2', '3'))
 
 
-class Test_say(AbstractParser_TestCase):
-    def setUp(self):
-        log = logging.getLogger('output')
-        log.setLevel(logging.NOTSET)
-
-        self.conf = XmlConfigParser()
-        self.conf.loadFromString("""
-                <configuration>
-                </configuration>
-            """)
-        self.parser = ConcretegameParser(self.conf)
-
-    @patch("time.sleep")
-    def test_say(self, sleep_mock):
-        with patch.object(AbstractParser, 'write') as write_mock:
-            self.parser._settings['big_b3_private_responses'] = False
-
-            self.parser.say('test')
-            self.parser.say('test2')
-
-            self.parser.start_sayqueue_worker()
-            self.parser.sayqueue.join()
-            self.parser.working = False # will make the sayqueue_worker stop
-            self.parser.sayqueuelistener.join(2) # wait for sayqueue_worker to end
-
-            self.assertTrue(write_mock.called)
-            write_mock.assert_any_call(('admin.say', 'test', 'all'))
-            write_mock.assert_any_call(('admin.say', 'test2', 'all'))
-
-
 
 class Test_tempban(AbstractParser_TestCase):
     def setUp(self):
