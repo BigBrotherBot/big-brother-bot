@@ -31,11 +31,39 @@ __author__  = 'ThorN, xlr8or'
 __version__ = '2.0.1'
 
 
+import os, glob
 import ez_setup, shutil, sys
 ez_setup.use_setuptools()
 from setuptools import setup, find_packages
+from distutils import dir_util
+import py2exe
 
-b3version = "1.9.0dev6"
+b3version = "1.9.0"
+
+# delete py2exe build destination directory
+dir_util.remove_tree(os.path.join(os.path.abspath(os.path.dirname(__file__)), "py2exe_builder/dist_py2exe"))
+
+def listdirectory(path):
+    def istocopy(path):
+        return (
+            os.path.isfile(path)
+            and not path.endswith('.pyc')
+            and not path.endswith('.pyo')
+            )
+    return map(os.path.normpath, filter(istocopy, glob.glob(path + os.sep + '*')))
+
+dataFiles = [
+    ('', ['README.md']),
+    ('', ['b3/PKG-INFO']),
+    ('docs', listdirectory('b3/docs/')),
+    ('sql', listdirectory('b3/sql/')),
+    ('sql/sqlite', listdirectory('b3/sql/sqlite')),
+    ('conf', listdirectory('b3/conf/')),
+    ('conf/templates', listdirectory('b3/conf/templates/')),
+    ('extplugins', ['b3/extplugins/xlrstats.py']),
+    ('extplugins/conf', listdirectory('b3/extplugins/conf/')),
+    ]
+
 
 _setupinfo = {
     'name' : "b3",
@@ -44,7 +72,7 @@ _setupinfo = {
     'packages' : find_packages(),
     'extras_require' : { 'mysql' : 'MySQL-python' },
     'package_data' : {
-        '': ['conf/*.xml', 'conf/templates/*.tpl', 'extplugins/conf/*.xml','sql/*.*', 'sql/sqlite/*', 'docs/*', 'README.md']
+        '': ['README.md']
     },
     'zip_safe' : False,
     'author' : 'Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Leveil (Courgette)',
@@ -75,7 +103,37 @@ Plugins provide much of the functionality for B3. These plugins can easily be co
         'Programming Language :: Python',
         'Topic :: System :: Logging',
         'Topic :: Utilities'
-    ]
+    ],
+    'console': [
+        {
+            "script" : "b3_run.py",
+            "icon_resources": [(0, "py2exe_builder/assets_common/b3.ico")]
+        }
+    ],
+    'zipfile': "b3.lib",
+    'data_files': dataFiles,
+    'options': {
+        "py2exe": {
+            "dist_dir": "py2exe_builder/dist_py2exe",
+            "bundle_files": 1,
+            "optimize": 1,
+            "includes": [
+                "b3.lib.*",
+                "b3.plugins.*",
+                "b3.parsers.*",
+                "b3.parsers.homefront",
+                "b3.parsers.frostbite.*",
+                "b3.extplugins.__init__",
+                ### additional modules for popular/useful 3rd party plugins ###
+                "smtplib", "email.*", "calendar", "email.mime.*", # contact plugin
+                "telnetlib", # teamspeak* plugins
+                "dbhash", # to make anydbm imports work with py2exe
+                "uuid", # metabans, ggcstream and telnet plugins
+                "SocketServer", # telnet plugin
+                "paramiko", # sftpytail plugin
+            ],
+        }
+    },
 }
 
 

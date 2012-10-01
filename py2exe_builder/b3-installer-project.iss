@@ -110,9 +110,9 @@ Source: dist_py2exe\b3_run.exe; DestDir: {app}
 Source: dist_py2exe\b3.lib; DestDir: {app}
 Source: dist_py2exe\PKG-INFO; DestDir: {app}
 ;Source: dist_py2exe\README; DestDir: {app}; DestName: README.txt
-Source: dist_py2exe\license.txt; DestDir: {app}; 
-Source: dist_py2exe\readme.txt; DestDir: {app}; 
-Source: dist_py2exe\README.md; DestDir: {app}; 
+Source: assets_common\gpl-2.0.txt; DestDir: {app}; DestName: license.txt; 
+Source: assets_common\readme-windows.txt; DestDir: {app}; DestName: readme.txt;
+Source: dist_py2exe\README.md; DestDir: {app};
 Source: dist_py2exe\docs\*; DestDir: {app}\docs; Flags: recursesubdirs
 Source: dist_py2exe\sql\*; DestDir: {app}\sql; Flags: recursesubdirs
 Source: dist_py2exe\extplugins\*; DestDir: {app}\extplugins; Flags: recursesubdirs

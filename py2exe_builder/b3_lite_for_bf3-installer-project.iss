@@ -108,6 +108,7 @@ Name: {group}\web\other tools\{cm:Xlrstats,XLRstats}; Filename: http://www.xlrst
 [Files]
 Source: "{app}\conf\*"; DestDir: "{app}\conf\backup"; Flags: external skipifsourcedoesntexist uninsneveruninstall
 Source: "assets_common\readme-windows.txt"; DestDir: "{app}"
+Source: assets_common\gpl-2.0.txt; DestDir: {app}; DestName: license.txt;
 Source: "dist_py2exe\b3_run.exe"; DestDir: "{app}"
 Source: "dist_py2exe\b3.lib"; DestDir: "{app}"
 Source: "dist_py2exe\PKG-INFO"; DestDir: "{app}"

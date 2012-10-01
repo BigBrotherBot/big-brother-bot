@@ -1,5 +1,4 @@
 import os
-import mmap
 import re
 import sys
 import subprocess
@@ -86,7 +85,7 @@ innosetup_scripts:
 iscc:  C:\Program Files (x86)\Inno Setup 5\ISCC.exe
 
 # where to generate the distribution files
-output_dir: dist
+output_dir: ../releases
 """)
 
 
@@ -132,29 +131,10 @@ def build_zip_distribution(source_folder):
     return os.path.join(dist_dir, zip_filename), 'OK'
 
 
-def py2exe():
-    import shutil
-    dist_py2exe_dir = os.path.abspath(os.path.join(script_dir, 'dist_py2exe'))
-    print "cleaning directory %s" % dist_py2exe_dir
-    if os.path.isdir(dist_py2exe_dir):
-        shutil.rmtree(dist_py2exe_dir)
-    os.makedirs(dist_py2exe_dir)
-    print "py2exe"
-    process = subprocess.Popen([sys.executable, os.path.abspath(os.path.join(script_dir, '../setupPy2exe.py')), 'py2exe'], stderr=subprocess.PIPE, cwd=os.path.join(script_dir, '..'))
-    exit_code = process.communicate()
-    shutil.copy(os.path.join(script_dir, 'assets_common/readme-windows.txt'), os.path.join(dist_py2exe_dir, 'readme.txt'))
-    shutil.copy(os.path.join(script_dir, 'assets_common/gpl-2.0.txt'), os.path.join(dist_py2exe_dir, 'license.txt'))
-    try:
-        os.remove(os.path.abspath(os.path.join(dist_py2exe_dir, 'README')))
-    except WindowsError, err:
-        print "WARNING: %s" % err
-
-
 def main():
     load_config()
     print "{0:>50} :  {1}".format('current B3 version', current_b3_version)
     build_results = list()
-    py2exe()
     build_results += build_innosetup_scripts(config['innosetup_scripts'])
     build_results.append(build_zip_distribution(os.path.join(script_dir, "dist_py2exe")))
 
