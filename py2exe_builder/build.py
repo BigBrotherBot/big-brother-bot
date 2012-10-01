@@ -34,8 +34,8 @@ current_b3_version_part2 = "%s%s" % (m.group("pre_release"), m.group("suffix"))
 config = None
 def load_config():
     global config
-    config_file_path = os.path.isfile(os.path.join(script_dir, CONFIG_FILE))
-    if not config_file_path:
+    config_file_path = os.path.normpath(os.path.join(script_dir, CONFIG_FILE))
+    if not os.path.isfile(config_file_path):
         print "Could not find config file '%s'" % config_file_path
         choice = raw_input("\nDo you want to create a stub ? [yN] : " % current_b3_version)
         if choice.lower() == 'y':
