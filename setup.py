@@ -41,7 +41,9 @@ import py2exe
 b3version = "1.9.0"
 
 # delete py2exe build destination directory
-dir_util.remove_tree(os.path.join(os.path.abspath(os.path.dirname(__file__)), "py2exe_builder/dist_py2exe"))
+dist_py2exe_path = os.path.normpath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "py2exe_builder/dist_py2exe"))
+if os.path.isdir(dist_py2exe_path):
+    dir_util.remove_tree(dist_py2exe_path)
 
 def listdirectory(path):
     def istocopy(path):
