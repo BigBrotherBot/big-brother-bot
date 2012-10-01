@@ -38,7 +38,7 @@ from setuptools import setup, find_packages
 from distutils import dir_util
 import py2exe
 
-b3version = "1.9.0"
+b3version = "1.9.0dev6"
 
 # delete py2exe build destination directory
 dist_py2exe_path = os.path.normpath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "py2exe_builder/dist_py2exe"))
