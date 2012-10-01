@@ -34,9 +34,9 @@ current_b3_version_part2 = "%s%s" % (m.group("pre_release"), m.group("suffix"))
 config = None
 def load_config():
     global config
-
-    if not os.path.isfile(os.path.join(script_dir, CONFIG_FILE)):
-        print "Could not find config file '%s'" % os.path.abspath(os.path.join(script_dir, CONFIG_FILE))
+    config_file_path = os.path.isfile(os.path.join(script_dir, CONFIG_FILE))
+    if not config_file_path:
+        print "Could not find config file '%s'" % config_file_path
         choice = raw_input("\nDo you want to create a stub ? [yN] : " % current_b3_version)
         if choice.lower() == 'y':
             create_config_file_stub()
@@ -46,7 +46,7 @@ def load_config():
             sys.exit(0)
 
     from b3.lib import yaml
-    with open(CONFIG_FILE, 'r') as f:
+    with open(config_file_path, 'r') as f:
         config = yaml.load(f)
 
     if not 'innosetup_scripts' in config:
