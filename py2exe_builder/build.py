@@ -28,7 +28,7 @@ if not m:
     sys.exit(1)
 current_b3_version = m.group("version")
 current_b3_version_part1 = m.group("numbers")
-current_b3_version_part2 = m.group("pre_release") + m.group("suffix")
+current_b3_version_part2 = "%s%s" % (m.group("pre_release"), m.group("suffix"))
 
 
 config = None
