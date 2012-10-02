@@ -47,7 +47,8 @@
 		<set name="spank-sp">fulladmin</set>
 
 		<set name="tempban-tb">admin</set>
-		<set name="baninfo-bi">admin</set>
+        <set name="baninfo-bi">admin</set>
+        <set name="lastbans-lbans">admin</set>
 		<set name="kick-k">admin</set>
 		<set name="admintest">admin</set>
 		<set name="scream">admin</set>
