@@ -23,7 +23,7 @@ import unittest2 as unittest
 from b3.config import XmlConfigParser
 from b3.events import Event
 from b3.fake import FakeClient
-from b3.parsers.iourt42 import Iourt42Parser
+from b3.parsers.iourt42 import Iourt42Parser, Iourt42Client
 
 log = logging.getLogger("test")
 log.setLevel(logging.INFO)
@@ -148,7 +148,6 @@ class Test_log_lines_parsing(Iourt42TestCase):
 
 
 
-@unittest.skip("need to validate rcon responses from real 4.2 gameserver")
 class Test_OnClientuserinfo(Iourt42TestCase):
 
     def setUp(self):
@@ -156,16 +155,17 @@ class Test_OnClientuserinfo(Iourt42TestCase):
         self.console.PunkBuster = None
 
     def test_ioclient(self):
-        infoline = r"2 \ip\145.99.135.227:27960\challenge\-232198920\qport\2781\protocol\68\battleye\1\name\[SNT]^1XLR^78or\rate\8000\cg_predictitems\0\snaps\20\model\sarge\headmodel\sarge\team_model\james\team_headmodel\*james\color1\4\color2\5\handicap\100\sex\male\cl_anonymous\0\teamtask\0\cl_guid\58D4069246865BB5A85F20FB60ED6F65"
+        infoline = r'''2 \ip\11.22.33.44:27961\challenge\-284496317\qport\13492\protocol\68\name\laCourge\racered\2\raceblue\2\rate\16000\ut_timenudge\0\cg_rgb\128 128 128\cg_predictitems\0\cg_physics\1\cl_anonymous\0\sex\male\handicap\100\color2\5\color1\4\team_headmodel\*james\team_model\james\headmodel\sarge\model\sarge\snaps\20\cg_autoPickup\-1\gear\GLAORWA\authc\0\teamtask\0\cl_guid\00000000011111111122222223333333\weapmodes\00000110220000020002'''
         self.assertFalse('2' in self.console.clients)
         self.console.OnClientuserinfo(action=None, data=infoline)
         self.assertTrue('2' in self.console.clients)
         client = self.console.clients['2']
-        self.assertEqual('145.99.135.227', client.ip)
-        self.assertEqual('[SNT]^1XLR^78or^7', client.exactName)
-        self.assertEqual('[SNT]XLR8or', client.name)
-        self.assertEqual('58D4069246865BB5A85F20FB60ED6F65', client.guid)
+        self.assertEqual('11.22.33.44', client.ip)
+        self.assertEqual('laCourge^7', client.exactName)
+        self.assertEqual('laCourge', client.name)
+        self.assertEqual('00000000011111111122222223333333', client.guid)
 
+    @unittest.skip("need to validate rcon responses from real 4.2 gameserver")
     def test_bot(self):
         infoline = r"0 \gear\GMIORAA\team\blue\skill\5.000000\characterfile\bots/ut_chicken_c.c\color\4\sex\male\race\2\snaps\20\rate\25000\name\InviteYourFriends!"
         self.assertFalse('0' in self.console.clients)
@@ -191,6 +191,48 @@ class Test_OnClientuserinfo(Iourt42TestCase):
 
 
 
+class Test_auth(Iourt42TestCase):
+
+    def test_queryClientFrozenSandAccount_authed(self):
+        # GIVEN
+        when(self.console).write('auth-whois 0').thenReturn(r'''auth: id: 0 - name: ^7laCourge - login: courgette - notoriety: serious - level: -1''')
+        # WHEN
+        data = self.console.queryClientFrozenSandAccount('0')
+        # THEN
+        self.assertDictEqual({'cid': '0', 'name': 'laCourge', 'login': 'courgette', 'notoriety': 'serious', 'level': '-1', 'extra': None}, data)
+
+    def test_queryClientFrozenSandAccount_not_active(self):
+        # GIVEN
+        when(self.console).write('auth-whois 3').thenReturn(r'''Client 3 is not active.''')
+        # WHEN
+        data = self.console.queryClientFrozenSandAccount('3')
+        # THEN
+        self.assertDictEqual({}, data)
+
+    def test_queryClientFrozenSandAccount_no_account(self):
+        # GIVEN
+        when(self.console).write('auth-whois 3').thenReturn(r'''auth: id: 3 - name: ^7laCourge - login:  - notoriety: 0 - level: 0  - ^7no account''')
+        # WHEN
+        data = self.console.queryClientFrozenSandAccount('3')
+        # THEN
+        self.assertDictEqual({'cid': '3', 'name': 'laCourge', 'login': '', 'notoriety': '0', 'level': '0', 'extra': '^7no account'}, data)
+
+    def test_queryAllFrozenSandAccount(self):
+        # GIVEN
+        when(self.console).write('auth-whois all', maxRetries=anything()).thenReturn(r'''No player found for "all".
+auth: id: 0 - name: ^7laCourge - login: courgette - notoriety: serious - level: -1
+auth: id: 1 - name: ^7f00 - login:  - notoriety: 0 - level: 0  - ^7no account
+auth: id: 2 - name: ^7Qant - login: qant - notoriety: basic - level: -1
+''')
+        # WHEN
+        data = self.console.queryAllFrozenSandAccount()
+        # THEN
+        self.assertDictEqual({'0': {'cid': '0', 'extra': None, 'level': '-1', 'login': 'courgette', 'name': 'laCourge', 'notoriety': 'serious'},
+                              '1': {'cid': '1', 'extra': "^7no account", 'level': '0', 'login': '', 'name': 'f00', 'notoriety': '0'},
+                              '2': {'cid': '2', 'extra': None, 'level': '-1', 'login': 'qant', 'name': 'Qant', 'notoriety': 'basic'}
+                            }, data)
+
+
 class Test_parser_API(Iourt42TestCase):
 
     def test_getPlayerList(self):
@@ -211,14 +253,34 @@ num score ping name            lastmsg address               qport rate
         }, rv)
 
 
-    @unittest.skip("TODO")
-    def test_authorizeClients(self):
-        pass
 
-
-    @unittest.skip("TODO")
     def test_sync(self):
-        pass
+        # GIVEN
+        when(self.console).write('status', maxRetries=anything()).thenReturn('''\
+map: ut4_casa
+num score ping name            lastmsg address               qport rate
+--- ----- ---- --------------- ------- --------------------- ----- -----
+  0     0   48 laCourge^7              0 11.22.33.44:27961  13492 16000
+''')
+        when(self.console).write('dumpuser 0').thenReturn('''\
+userinfo
+--------
+ip                  11.22.33.44:27961
+name                laCourge
+cl_guid             00000000000000014111111111111111
+''')
+        when(self.console).write('auth-whois 0').thenReturn('''\
+auth: id: 0 - name: ^7laCourge - login: courgette - notoriety: serious - level: -1
+''')
+        # WHEN
+        mlist = self.console.sync()
+        # THEN
+        self.assertIn("0", mlist)
+        player = mlist.get("0", None)
+        self.assertIsNotNone(player)
+        self.assertEqual('00000000000000014111111111111111', player.guid)
+        self.assertEqual('courgette', player.pbid)
+        self.assertTrue(player.authed)
 
 
     def test_say(self):
