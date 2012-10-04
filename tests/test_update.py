@@ -99,7 +99,7 @@ class TestB3Version(unittest.TestCase):
         self.assertLess(B3version('2.5.1a2'), B3version('2.5.2'))
         self.assertLess(B3version('2.5.1b'), B3version('2.5.2'))
         self.assertLess(B3version('2.5.1b4'), B3version('2.5.2'))
-        self.assertGreater(B3version("1.9.0dev7.daily5-20120904"), B3version("1.9dev7.daily19-20121001"))
+        self.assertLess(B3version("1.9.0dev7.daily5-20120904"), B3version("1.9dev7.daily19-20121001"))
 
 
 class TestGetDefaultChannel(unittest.TestCase):
