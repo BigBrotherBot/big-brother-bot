@@ -35,15 +35,31 @@ import os, glob
 import ez_setup, shutil, sys
 ez_setup.use_setuptools()
 from setuptools import setup, find_packages
+from setuptools.command.egg_info import egg_info
 from distutils import dir_util
 import py2exe
 
-b3version = "1.9.0dev6"
+b3version = "1.9.0dev7"
 
-# delete py2exe build destination directory
-dist_py2exe_path = os.path.normpath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "py2exe_builder/dist_py2exe"))
-if os.path.isdir(dist_py2exe_path):
-    dir_util.remove_tree(dist_py2exe_path)
+# override egg_info command to copy the b3.egg-info/PKG-INFO file into the b3 directory
+class my_egg_info(egg_info):
+    def run(self):
+        egg_info.run(self)
+        shutil.copy ('b3.egg-info/PKG-INFO', 'b3/PKG-INFO')
+
+# override egg_info command so it deletes py2exe build destination directory first
+class my_py2exe(py2exe.build_exe.py2exe):
+    def run(self):
+        dist_py2exe_path = os.path.normpath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "py2exe_builder/dist_py2exe"))
+        if os.path.isdir(dist_py2exe_path):
+            dir_util.remove_tree(dist_py2exe_path)
+        py2exe.build_exe.py2exe.run(self)
+
+cmdclass = {
+    'egg_info': my_egg_info,
+    'py2exe': my_py2exe,
+}
+
 
 def listdirectory(path):
     def istocopy(path):
@@ -67,34 +83,34 @@ dataFiles = [
     ]
 
 
-_setupinfo = {
-    'name' : "b3",
-    'version' : b3version,
-    'setup_requires': ['nose>=1.0', 'nose-exclude', 'mockito', 'pysqlite'],
-    'packages' : find_packages(),
-    'extras_require' : { 'mysql' : 'MySQL-python' },
-    'package_data' : {
+setup(cmdclass=cmdclass,
+    name="b3",
+    version=b3version,
+    setup_requires=['nose>=1.0', 'nose-exclude', 'mockito', 'pysqlite'],
+    packages=find_packages(),
+    extras_require={ 'mysql' : 'MySQL-python' },
+    package_data={
         '': ['README.md']
     },
-    'zip_safe' : False,
-    'author' : 'Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Leveil (Courgette)',
-    'author_email' : "info@bigbrotherbot.net",
-    'description' : "BigBrotherBot (B3) is a cross-platform, cross-game game administration bot. Features in-game administration of game servers, multiple user access levels, and database storage. Currently include parsers for Call of Duty 1 to 7, Urban Terror (ioUrT), World of Padman, ETpro, Smokin' Guns, BFBC2, MOH, HomeFront, Open Arena, Altitude etc.",
-    'long_description': """\
+    zip_safe=False,
+    author='Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Leveil (Courgette)',
+    author_email="info@bigbrotherbot.net",
+    description="BigBrotherBot (B3) is a cross-platform, cross-game game administration bot. Features in-game administration of game servers, multiple user access levels, and database storage. Currently include parsers for Call of Duty 1 to 7, Urban Terror (ioUrT), World of Padman, ETpro, Smokin' Guns, BFBC2, MOH, HomeFront, Open Arena, Altitude etc.",
+    long_description="""\
 Big Brother Bot B3 is a complete and total server administration package for online games. B3 is designed primarily to keep your server free from the derelicts of online gaming, but offers more, much more. With the stock configuration files, B3 will will keep your server free from offensive language, and team killers alike. A completely automated and customizable warning system will warn the offending players that this type of behavior is not allowed on your server, and ultimately kick, and or ban them for a predetermined time limit.
 
 B3 was designed to be easily ported to other online games. Currently, B3 is in production for the Call of Duty series, Urban Terror (ioUrT), etpro, World of Padman and Smokin' Guns since these games are based on the Quake III Arena engine, conversion to any game using the engine should be easy.
 
 Plugins provide much of the functionality for B3. These plugins can easily be configured. An SDK will be provided to make your own plugins.
 """,
-    'license' : "GPL",
-    'url' : "http://www.bigbrotherbot.net",
-    'entry_points' : {
+    license="GPL",
+    url="http://www.bigbrotherbot.net",
+    entry_points={
         'console_scripts': [
             'b3_run = b3.run:main',
         ]
     },
-    'classifiers' : [
+    classifiers=[
         'Development Status :: 4 - Beta',
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
@@ -106,15 +122,15 @@ Plugins provide much of the functionality for B3. These plugins can easily be co
         'Topic :: System :: Logging',
         'Topic :: Utilities'
     ],
-    'console': [
+    console=[
         {
             "script" : "b3_run.py",
             "icon_resources": [(0, "py2exe_builder/assets_common/b3.ico")]
         }
     ],
-    'zipfile': "b3.lib",
-    'data_files': dataFiles,
-    'options': {
+    zipfile="b3.lib",
+    data_files=dataFiles,
+    options={
         "py2exe": {
             "dist_dir": "py2exe_builder/dist_py2exe",
             "bundle_files": 1,
@@ -135,16 +151,5 @@ Plugins provide much of the functionality for B3. These plugins can easily be co
                 "paramiko", # sftpytail plugin
             ],
         }
-    },
-}
-
-
-# use 'register upload' to upload to pypi
-if len(sys.argv) == 1 or sys.argv[1] == 'release':
-    sys.argv = ['setup.py', 'prepare']
-    setup(**_setupinfo)
-    shutil.copy ('b3.egg-info/PKG-INFO', 'b3/PKG-INFO')
-    sys.argv = ['setup.py', 'release']
-    setup(**_setupinfo)
-else:
-    setup(**_setupinfo)
+    }
+)
