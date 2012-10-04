@@ -1,15 +1,13 @@
 CHANGELOG
 ChangeLogDetailed.txt
 MANIFEST.in
+README.md
 b3_debug.py
 b3_run.py
 ez_setup.py
-listversions.py
 pip-requires.txt
 setup.cfg
 setup.py
-setupPy2exe.py
-versions.txt
 b3/PKG-INFO
 b3/__init__.py
 b3/clients.py
@@ -253,6 +251,7 @@ tests/parsers/test_iourt41.py
 tests/parsers/test_iourt42.py
 tests/parsers/frostbite/__init__.py
 tests/parsers/frostbite/test_abstractParser.py
+tests/parsers/frostbite/test_util.py
 tests/parsers/frostbite2/__init__.py
 tests/parsers/frostbite2/test_abstractParser.py
 tests/parsers/frostbite2/test_util.py

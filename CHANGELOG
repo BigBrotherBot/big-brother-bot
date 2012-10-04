@@ -26,7 +26,7 @@ http://github.com/BigBrotherBot/big-brother-bot/compare/v1.8.2...v1.9.0
 # New games supported:
 
 Urban Terror 4.2
- - The recently released Urban Terror 4.2 is provided as alpha status as UrT 4.2.001 servers aren't providing Frozen Sand authentication info correctly.
+ - UrT 4.2.002 has now its own B3 parser : iourt42
  - New penalty available : kill. You can use it in the censor plugin configuration for instance.
  - The Spamcontrol plugin reacts to radio message spamming
  - Fires game specific events for plugins : EVT_CLIENT_RADIO, EVT_CLIENT_CALLVOTE, EVT_CLIENT_VOTE, EVT_GAME_FLAG_HOTPOTATO for other plugins to act on.
