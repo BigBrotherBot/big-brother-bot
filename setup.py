@@ -37,7 +37,11 @@ ez_setup.use_setuptools()
 from setuptools import setup, find_packages
 from setuptools.command.egg_info import egg_info
 from distutils import dir_util
-import py2exe
+try:
+    import py2exe
+    has_py2exe = True
+except:
+    has_py2exe = False
 
 b3version = "1.9.0dev7"
 
@@ -47,18 +51,19 @@ class my_egg_info(egg_info):
         egg_info.run(self)
         shutil.copy ('b3.egg-info/PKG-INFO', 'b3/PKG-INFO')
 
-# override egg_info command so it deletes py2exe build destination directory first
-class my_py2exe(py2exe.build_exe.py2exe):
-    def run(self):
-        dist_py2exe_path = os.path.normpath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "py2exe_builder/dist_py2exe"))
-        if os.path.isdir(dist_py2exe_path):
-            dir_util.remove_tree(dist_py2exe_path)
-        py2exe.build_exe.py2exe.run(self)
-
 cmdclass = {
     'egg_info': my_egg_info,
-    'py2exe': my_py2exe,
 }
+
+if has_py2exe:
+    # override egg_info command so it deletes py2exe build destination directory first
+    class my_py2exe(py2exe.build_exe.py2exe):
+        def run(self):
+            dist_py2exe_path = os.path.normpath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "py2exe_builder/dist_py2exe"))
+            if os.path.isdir(dist_py2exe_path):
+                dir_util.remove_tree(dist_py2exe_path)
+            py2exe.build_exe.py2exe.run(self)
+    cmdclass['py2exe'] = my_py2exe
 
 
 def listdirectory(path):
