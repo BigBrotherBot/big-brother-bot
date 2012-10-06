@@ -35,10 +35,12 @@
 #  * change kick and tempban commands so them give the reason
 # 2012/10/04 - 1.5 - Courgette
 #  * update for UrT 4.2.002 new auth system with Frozen Sand Account and auth-key
+# 2012/10/04 - 1.5.1 - Courgette
+#  * fix kick and tempban when used with a reason
 #
 
 __author__  = 'Courgette'
-__version__ = '1.5'
+__version__ = '1.5.1'
 
 import re, new
 from b3.parsers.iourt41 import Iourt41Parser
@@ -185,9 +187,9 @@ class Iourt42Parser(Iourt41Parser):
         'say': 'say %(prefix)s %(message)s',
         'saybig': 'bigtext "%(prefix)s %(message)s"',
         'set': 'set %(name)s "%(value)s"',
-        'kick': 'kick %(cid)s %(reason)s',
+        'kick': 'kick %(cid)s "%(reason)s"',
         'ban': 'addip %(cid)s',
-        'tempban': 'kick %(cid)s %(reason)s',
+        'tempban': 'kick %(cid)s "%(reason)s"',
         'banByIp': 'addip %(ip)s',
         'unbanByIp': 'removeip %(ip)s',
         'slap': 'slap %(cid)s',
@@ -332,7 +334,7 @@ class Iourt42Parser(Iourt41Parser):
         msg_id = match.group('msg_id')
         location = match.group('location')
         text = match.group('text')
-        client = self.clients.getByCID(cid)
+        client = self.getByCidOrJoinPlayer(cid)
         if not client:
             self.debug('No client found')
             return None
@@ -346,7 +348,7 @@ class Iourt42Parser(Iourt41Parser):
     def OnCallvote(self, action, data, match=None):
         cid = match.group('cid')
         vote_string = match.group('vote_string')
-        client = self.clients.getByCID(cid)
+        client = self.getByCidOrJoinPlayer(cid)
         if not client:
             self.debug('No client found')
             return None
@@ -355,7 +357,7 @@ class Iourt42Parser(Iourt41Parser):
     def OnVote(self, action, data, match=None):
         cid = match.group('cid')
         value = match.group('value')
-        client = self.clients.getByCID(cid)
+        client = self.getByCidOrJoinPlayer(cid)
         if not client:
             self.debug('No client found')
             return None

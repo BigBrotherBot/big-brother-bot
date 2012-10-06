@@ -20,13 +20,21 @@ import logging
 from mock import Mock, call, patch
 from mockito import mock, when, any as anything
 import unittest2 as unittest
+from b3.clients import Clients
 from b3.config import XmlConfigParser
 from b3.events import Event
 from b3.fake import FakeClient
-from b3.parsers.iourt42 import Iourt42Parser, Iourt42Client
+from b3.parsers.iourt42 import Iourt42Parser
 
 log = logging.getLogger("test")
 log.setLevel(logging.INFO)
+
+
+# make sure to unpatch the Clients.newClient method
+original_newClient = Clients.newClient
+def tearDownModule():
+    Clients.newClient = original_newClient
+
 
 class Iourt42TestCase(unittest.TestCase):
     """
@@ -63,10 +71,11 @@ class Iourt42TestCase(unittest.TestCase):
 
         self.player = self.console.clients.newClient(cid="4", guid="theGuid", name="theName", ip="11.22.33.44")
 
+
     def tearDown(self):
-        self.console.working = False
-
-
+        if hasattr(self, "parser"):
+            del self.parser.clients
+            self.parser.working = False
 
 
 
@@ -300,7 +309,7 @@ auth: id: 0 - name: ^7laCourge - login: courgette - notoriety: serious - level: 
 
     def test_kick(self):
         self.console.kick(self.player, reason="f00")
-        self.console.write.assert_has_calls([call('kick 4 f00'), call('say  theName^7 was kicked f00')])
+        self.console.write.assert_has_calls([call('kick 4 "f00"'), call('say  theName^7 was kicked f00')])
 
 
     def test_ban(self):
@@ -319,7 +328,7 @@ auth: id: 0 - name: ^7laCourge - login: courgette - notoriety: serious - level: 
 
     def test_tempban(self):
         self.console.tempban(self.player, reason="f00", duration="1h")
-        self.console.write.assert_has_calls([call('kick 4 f00'), call('say  theName^7 was temp banned for 1 hour^7 f00')])
+        self.console.write.assert_has_calls([call('kick 4 "f00"'), call('say  theName^7 was temp banned for 1 hour^7 f00')])
 
 
     def test_getMap(self):
