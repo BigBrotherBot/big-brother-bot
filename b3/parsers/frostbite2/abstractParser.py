@@ -51,10 +51,12 @@
 # 1.7
 #  replace admin plugin !map command with a Frostbite2 specific implementation. Now can call !map <map>[, <gamemode>[, <num of rounds>]]
 #  when returning map info, provide : map name (gamemode) # rounds
+# 1.8
+#  isolate the patching code in a module function
 #
 
 __author__  = 'Courgette'
-__version__ = '1.7'
+__version__ = '1.8'
 
 
 import sys, re, traceback, time, string, Queue, threading, new
@@ -162,6 +164,7 @@ class AbstractParser(b3.parser.Parser):
 
     def __new__(cls, *args, **kwargs):
         AbstractParser.patch_b3_Clients_getByMagic()
+        patch_b3_clients()
         return b3.parser.Parser.__new__(cls)
 
     @staticmethod
@@ -1652,69 +1655,70 @@ class AbstractParser(b3.parser.Parser):
         self.debug('line_length: %s' % self._settings['line_length'])
 
 
-#############################################################
-# Below is the code that change a bit the b3.clients.Client
-# class at runtime. What the point of coding in python if we
-# cannot play with its dynamic nature ;)
-#
-# why ?
-# because doing so make sure we're not broking any other 
-# working and long tested parser. The changes we make here
-# are only applied when the frostbite parser is loaded.
-#############################################################
-  
-## add a new method to the Client class
-def frostbiteClientMessageQueueWorker(self):
-    """
-    This take a line off the queue and displays it
-    then pause for 'message_delay' seconds
-    """
-    while self.messagequeue and not self.messagequeue.empty():
-        if not self.connected:
-            break
-        msg = self.messagequeue.get()
-        if msg:
-            self.console.message(self, msg)
-            if self.connected:
-                time.sleep(float(self.console._settings.get('message_delay', 1)))
-b3.clients.Client.messagequeueworker = frostbiteClientMessageQueueWorker
+def patch_b3_clients():
+    #############################################################
+    # Below is the code that change a bit the b3.clients.Client
+    # class at runtime. What the point of coding in python if we
+    # cannot play with its dynamic nature ;)
+    #
+    # why ?
+    # because doing so make sure we're not broking any other
+    # working and long tested parser. The changes we make here
+    # are only applied when the frostbite parser is loaded.
+    #############################################################
 
-## override the Client.message() method at runtime
-def frostbiteClientMessageMethod(self, msg):
-    if msg and len(msg.strip())>0:
-        # do we have a queue?
-        if not hasattr(self, 'messagequeue'):
-            self.messagequeue = Queue.Queue()
-        # fill the queue
-        text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
-        for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
-            self.messagequeue.put(line)
-        # create a thread that executes the worker and pushes out the queue
-        if not hasattr(self, 'messagehandler') or not self.messagehandler.isAlive():
-            self.messagehandler = threading.Thread(target=self.messagequeueworker, name="%s_messagehandler" % self)
-            self.messagehandler.setDaemon(True)
-            self.messagehandler.start()
-        else:
-            self.console.verbose('messagehandler for %s isAlive' %self.name)
-b3.clients.Client.message = frostbiteClientMessageMethod
+    ## add a new method to the Client class
+    def frostbiteClientMessageQueueWorker(self):
+        """
+        This take a line off the queue and displays it
+        then pause for 'message_delay' seconds
+        """
+        while self.working and self.messagequeue and not self.messagequeue.empty():
+            if not self.connected:
+                break
+            msg = self.messagequeue.get()
+            if msg:
+                self.console.message(self, msg)
+                if self.connected:
+                    time.sleep(float(self.console._settings.get('message_delay', 1)))
+    b3.clients.Client.messagequeueworker = frostbiteClientMessageQueueWorker
 
-original_client_disconnect_method = b3.clients.Client.disconnect
-def frostbiteClientDisconnect(self):
-    original_client_disconnect_method(self)
-    if hasattr(self, 'messagequeue'):
-        self.messagequeue = None
-    if hasattr(self, 'messagehandler') and self.messagehandler:
-        self.console.debug("waiting for %s.messageQueueWorker thread to finish" % self)
-        self.messagehandler.join()
-        self.console.debug("%s.messageQueueWorker thread finished" % self)
+    ## override the Client.message() method at runtime
+    def frostbiteClientMessageMethod(self, msg):
+        if msg and len(msg.strip())>0:
+            # do we have a queue?
+            if not hasattr(self, 'messagequeue'):
+                self.messagequeue = Queue.Queue()
+            # fill the queue
+            text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
+            for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
+                self.messagequeue.put(line)
+            # create a thread that executes the worker and pushes out the queue
+            if not hasattr(self, 'messagehandler') or not self.messagehandler.isAlive():
+                self.messagehandler = threading.Thread(target=self.messagequeueworker, name="%s_messagehandler" % self)
+                self.messagehandler.setDaemon(True)
+                self.messagehandler.start()
+            else:
+                self.console.verbose('messagehandler for %s isAlive' %self.name)
+    b3.clients.Client.message = frostbiteClientMessageMethod
 
-b3.clients.Client.disconnect = frostbiteClientDisconnect
+    original_client_disconnect_method = b3.clients.Client.disconnect
+    def frostbiteClientDisconnect(self):
+        original_client_disconnect_method(self)
+        if hasattr(self, 'messagequeue'):
+            self.messagequeue = None
+        if hasattr(self, 'messagehandler') and self.messagehandler:
+            self.console.debug("waiting for %s.messageQueueWorker thread to finish" % self)
+            self.messagehandler.join()
+            self.console.debug("%s.messageQueueWorker thread finished" % self)
 
-## override the Client.yell() method at runtime
-def frostbiteClientYellMethod(self, msg):
-    if msg and len(msg.strip())>0:
-        text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
-        for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
-            self.console.write(self.console.getCommand('bigmessage', message=line, cid=self.cid, big_msg_duration=int(float(self.console._settings['big_msg_duration']))))
-b3.clients.Client.yell = frostbiteClientYellMethod
+    b3.clients.Client.disconnect = frostbiteClientDisconnect
+
+    ## override the Client.yell() method at runtime
+    def frostbiteClientYellMethod(self, msg):
+        if msg and len(msg.strip())>0:
+            text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
+            for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
+                self.console.write(self.console.getCommand('bigmessage', message=line, cid=self.cid, big_msg_duration=int(float(self.console._settings['big_msg_duration']))))
+    b3.clients.Client.yell = frostbiteClientYellMethod
 

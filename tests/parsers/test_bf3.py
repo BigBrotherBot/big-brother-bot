@@ -19,10 +19,31 @@
 import re
 import unittest2 as unittest
 from mock import Mock, DEFAULT, patch
-from b3.clients import Client
+from b3.clients import Client, Clients
 from b3.parsers.bf3 import Bf3Parser, MAP_NAME_BY_ID, GAME_MODES_BY_MAP_ID, GAME_MODES_NAMES
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.util import MapListBlock
+
+
+sleep_patcher = None
+def setUpModule():
+    sleep_patcher = patch("time.sleep")
+    sleep_patcher.start()
+
+
+# make sure to unpatch core B3 stuf
+original_getByMagic = Clients.getByMagic
+original_message = Client.message
+original_disconnect = Clients.disconnect
+def tearDownModule():
+    Clients.getByMagic = original_getByMagic
+    Client.message = original_message
+    Clients.disconnect = original_disconnect
+    if hasattr(Client, "messagequeueworker"):
+        del Client.messagequeueworker
+    if sleep_patcher:
+        sleep_patcher.stop()
+
 
 class BF3TestCase(unittest.TestCase):
     """

@@ -21,7 +21,7 @@
 # 1.0.1 -> 1.0.3
 # 1.1.1 -> 1.1.6
 # 1.2.1 -> 1.2.1
-# 1.4.1
+# 1.4.1, 1.6
 #
 # CHANGELOG
 #
@@ -47,7 +47,7 @@ from b3.parsers.frostbite2.util import PlayerInfoBlock
 import b3
 import b3.events
 __author__  = 'Courgette'
-__version__ = '1.5'
+__version__ = '1.6'
 
 BF3_REQUIRED_VERSION = 964189
 
