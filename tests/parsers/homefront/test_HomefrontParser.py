@@ -46,6 +46,12 @@ class Test_HomefrontParser(unittest.TestCase):
         self.mock_parser.clients.getByGUID = getByGUID
 
 
+    def tearDown(self):
+        if hasattr(self, "parser"):
+            del self.parser.clients
+            self.parser.working = False
+
+
     def test_unmeaningful_data(self):
         self.assertIsNone(self.mock_parser.onServerKill(self.mock_parser, "qsdf"))
 

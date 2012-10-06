@@ -63,6 +63,12 @@ class Iourt41TestCase(unittest.TestCase):
         self.console.write = write
 
 
+    def tearDown(self):
+        if hasattr(self, "parser"):
+            del self.parser.clients
+            self.parser.working = False
+
+
 class Test_parser_API_implementation(Iourt41TestCase):
     """Test case that is responsible for testing all methods of the b3.parser.Parser class API that
     have to override because they have to talk to their targeted game server in their specific way"""

@@ -102,6 +102,7 @@ class CsgoTestCase(unittest.TestCase):
     def tearDown(self):
         self.queueEvent_patcher.stop()
         if hasattr(self, "parser"):
+            del self.parser.clients
             self.parser.working = False
 
 
@@ -710,7 +711,7 @@ class Test_parser_API(CsgoTestCase):
             self.parser.saybig("f00")
             write_mock.assert_has_calls([call('sm_hsay [Pre] f00')])
 
-    @unittest.skipIf(WAS_FROSTBITE_LOADED, "Frostbite(1|2) parsers monkey patch the Client class and make this test fail")
+#    @unittest.skipIf(WAS_FROSTBITE_LOADED, "Frostbite(1|2) parsers monkey patch the Client class and make this test fail")
     def test_message(self):
         self.parser.msgPrefix = "[Pre]"
         player = Client(console=self.parser, guid="theGuid")

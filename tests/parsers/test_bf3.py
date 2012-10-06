@@ -39,6 +39,7 @@ class BF3TestCase(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, "parser"):
+            del self.parser.clients
             self.parser.working = False
 
 
