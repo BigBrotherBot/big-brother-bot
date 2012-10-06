@@ -21,6 +21,7 @@ import os
 from mock import patch, call, Mock
 from mockito import when, any as mockito_any
 from b3.fake import FakeClient
+from b3.lib import feedparser
 from b3.plugins.admin import AdminPlugin
 from tests import B3TestCase
 import unittest2 as unittest
@@ -28,26 +29,49 @@ import unittest2 as unittest
 from b3.plugins.adv import AdvPlugin, MessageLoop
 from b3.config import XmlConfigParser
 
-
-default_plugin_file = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../b3/conf/plugin_adv.xml"))
-
 from b3 import __file__ as b3_module__file__
 ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.xml"))
+ADMIN_CONFIG = None
+
+default_plugin_file = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../b3/conf/plugin_adv.xml"))
+default_plugin_content = None
+
+timer_patcher = None
+feedparser_patcher = None
+
+def setUpModule():
+    global default_plugin_content, default_plugin_file, ADMIN_CONFIG, ADMIN_CONFIG_FILE, timer_patcher, feedparser_patcher
+    if os.path.exists(default_plugin_file):
+        with open(default_plugin_file, 'r') as f:
+            default_plugin_content = f.read()
+
+    ADMIN_CONFIG = XmlConfigParser()
+    ADMIN_CONFIG.load(ADMIN_CONFIG_FILE)
+
+    timer_patcher = patch('threading.Timer')
+    timer_patcher.start()
+
+    feedparser_patcher = patch.object(feedparser, 'parse')
+    feedparser_patcher.start()
+
+
+def tearDownModule():
+    global timer_patcher, feedparser_patcher
+    timer_patcher.stop()
+    feedparser_patcher.stop()
+
 
 
 class AdvTestCase(B3TestCase):
     """ Ease testcases that need an working B3 console and need to control the ADV plugin config """
 
     def setUp(self):
-        self.timer_patcher = patch('threading.Timer')
-        self.timer_patcher.start()
-
         self.log = logging.getLogger('output')
         self.log.propagate = False
 
         B3TestCase.setUp(self)
 
-        self.adminPlugin = AdminPlugin(self.console, ADMIN_CONFIG_FILE)
+        self.adminPlugin = AdminPlugin(self.console, ADMIN_CONFIG)
         when(self.console).getPlugin("admin").thenReturn(self.adminPlugin)
         self.adminPlugin.onLoadConfig()
         self.adminPlugin.onStartup()
@@ -57,21 +81,20 @@ class AdvTestCase(B3TestCase):
 
     def tearDown(self):
         B3TestCase.tearDown(self)
-        self.timer_patcher.stop()
-
-
 
     def init_plugin(self, config_content=None):
         conf = None
         if config_content:
             conf = XmlConfigParser()
             conf.setXml(config_content)
-        elif os.path.exists(default_plugin_file):
-            conf = default_plugin_file
+        elif default_plugin_content:
+            conf = XmlConfigParser()
+            conf.setXml(default_plugin_content)
         else:
             unittest.skip("cannot get default plugin config file at %s" % default_plugin_file)
 
         self.p = AdvPlugin(self.console, conf)
+        self.p.save = Mock()
         self.conf = self.p.config
         self.log.setLevel(logging.DEBUG)
         self.log.info("============================= Adv plugin: loading config ============================")
@@ -101,6 +124,10 @@ class Test_commands(AdvTestCase):
     def setUp(self):
         AdvTestCase.setUp(self)
         self.joe = FakeClient(self.console, name="Joe", guid="joeguid", groupBits=128)
+
+    def tearDown(self):
+        AdvTestCase.tearDown(self)
+
 
     #################### advlist ####################
 
