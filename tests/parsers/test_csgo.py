@@ -667,6 +667,13 @@ class Test_gamelog_parsing(CsgoTestCase):
         # THEN
         self.assert_has_event("EVT_SERVER_REQUIRES_RESTART", data="Your server needs to be restarted in order to receive the latest update.")
 
+    def test_server_need_restart_2(self):
+        # WHEN
+        self.clear_events()
+        self.parser.parseLine('''L 09/17/2012 - 23:41:44: Your server is out of date.  Please update and restart.''')
+        # THEN
+        self.assert_has_event("EVT_SERVER_REQUIRES_RESTART", data="Your server is out of date.  Please update and restart.")
+
 
 
 

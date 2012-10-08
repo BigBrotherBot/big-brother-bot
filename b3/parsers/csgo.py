@@ -54,6 +54,8 @@
 # 2012-09-19 - 1.3 Courgette
 #   * fix issue #88 (https://github.com/courgette/big-brother-bot/issues/88) regarding clan name appearing in some of
 #     the game log lines in place of the player team.
+# 2012-10-08 - 1.4 Courgette
+#   *
 #
 import re
 import time
@@ -65,7 +67,7 @@ from b3.game_event_router import gameEvent, getHandler
 from b3.parsers.source.rcon import Rcon
 
 __author__  = 'Courgette'
-__version__ = '1.3'
+__version__ = '1.4'
 
 
 """
@@ -460,9 +462,13 @@ class CsgoParser(Parser):
         pass
 
 
-    @gameEvent(r'''^(?P<data>Your server needs to be restarted.*)$''')
+    @gameEvent(
+        r'''^(?P<data>Your server needs to be restarted.*)$''',
+        r'''^(?P<data>Your server is out of date.*)$'''
+    )
     def on_server_restart_request(self, data):
         # L 09/17/2012 - 23:26:45: Your server needs to be restarted in order to receive the latest update.
+        # L 09/17/2012 - 23:26:45: Your server is out of date.  Please update and restart.
         return self.getEvent('EVT_SERVER_REQUIRES_RESTART', data)
 
 
