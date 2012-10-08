@@ -57,6 +57,7 @@
 # 2012-10-08 - 1.4 Courgette
 #   * better detection of EVT_SERVER_REQUIRES_RESTART
 #   * now detect client action Begin_Bomb_Defuse_With_Kit
+#   * fix #90 - check that SourceMod is installed at startup
 #
 import re
 import time
@@ -157,6 +158,10 @@ class CsgoParser(Parser):
     ###############################################################################################
 
     def startup(self):
+
+        if not self.is_sourcemod_installed():
+            self.critical("You need to have SourceMod installed on your game server")
+            raise SystemExit(220)
 
         # add game specific events
         self.createEvent("EVT_SUPERLOGS_WEAPONSTATS", "SourceMod SuperLogs weaponstats")
@@ -995,6 +1000,21 @@ class CsgoParser(Parser):
     def do_unban_by_ip(self, client):
         # sm_unban <steamid|ip>
         self.output.write('sm_unban %s' % client.ip)
+
+
+    def is_sourcemod_installed(self):
+        """
+        return a True if Source Mod is installed on the game server
+        """
+        data = self.output.write("sm version")
+        if data:
+            if data.startswith("Unknown command"):
+                return False
+            for m in data.splitlines():
+                self.info(m.strip())
+            return True
+        else:
+            return False
 
 
     def get_loaded_sm_plugins(self):

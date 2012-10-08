@@ -89,6 +89,7 @@ class CsgoTestCase(unittest.TestCase):
         self.parser = CsgoParser(self.conf)
         self.parser.output = Mock()
         self.parser.output.write = Mock(wraps=self.output_write)
+        when(self.parser).is_sourcemod_installed().thenReturn(True)
 
         self.evt_queue = []
         def queue_event(evt):
@@ -686,6 +687,7 @@ class Test_parser_API(CsgoTestCase):
         self.parser = CsgoParser(self.conf)
         self.parser.output = Mock()
         when(self.parser.output).write("status").thenReturn(STATUS_RESPONSE)
+        when(self.parser).is_sourcemod_installed().thenReturn(True)
         self.parser.startup()
 
     def tearDown(self):
