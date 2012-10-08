@@ -456,6 +456,7 @@ class Test_gamelog_parsing(CsgoTestCase):
         assertEvent("Got_The_Bomb")
         assertEvent("Dropped_The_Bomb")
         assertEvent("Begin_Bomb_Defuse_Without_Kit")
+        assertEvent("Begin_Bomb_Defuse_With_Kit")
         assertEvent("Planted_The_Bomb")
         assertEvent("headshot")
 

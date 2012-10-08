@@ -55,7 +55,8 @@
 #   * fix issue #88 (https://github.com/courgette/big-brother-bot/issues/88) regarding clan name appearing in some of
 #     the game log lines in place of the player team.
 # 2012-10-08 - 1.4 Courgette
-#   *
+#   * better detection of EVT_SERVER_REQUIRES_RESTART
+#   * now detect client action Begin_Bomb_Defuse_With_Kit
 #
 import re
 import time
@@ -352,10 +353,11 @@ class CsgoParser(Parser):
         client = self.getClientOrCreate(cid, guid, name, team)
         props = self.parseProperties(properties)
         if event_name in ("Got_The_Bomb", "Dropped_The_Bomb", "Planted_The_Bomb", "Begin_Bomb_Defuse_Without_Kit",
-                          "Defused_The_Bomb", "headshot", "round_mvp"):
+                          "Begin_Bomb_Defuse_With_Kit", "Defused_The_Bomb", "headshot", "round_mvp"):
             # L 08/26/2012 - 03:22:37: "Pheonix<11><BOT><TERRORIST>" triggered "Got_The_Bomb"
             # L 08/26/2012 - 03:46:46: "Pheonix<22><BOT><TERRORIST>" triggered "Dropped_The_Bomb"
             # L 08/26/2012 - 03:51:41: "Gunner<29><BOT><CT>" triggered "Begin_Bomb_Defuse_Without_Kit"
+            # L 09/25/2012 - 22:14:09: "Grant<24><BOT><CT>" triggered "Begin_Bomb_Defuse_With_Kit"
             # L 08/26/2012 - 05:04:55: "Steel<80><BOT><TERRORIST>" triggered "Planted_The_Bomb"
             # L 08/29/2012 - 22:27:01: "Zach<5><BOT><CT>" triggered "headshot"
             # L 08/29/2012 - 22:31:50: "Pheonix<4><BOT><TERRORIST>" triggered "round_mvp"
