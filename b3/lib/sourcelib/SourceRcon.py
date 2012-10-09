@@ -189,8 +189,8 @@ class SourceRcon(object):
         if '\n' in command:
             commands = command.split('\n')
             def f(x): y = x.strip(); return len(y) and not y.startswith("//")
-            commands = list(filter(f, commands))
-            results = list(map(self.rcon, commands))
+            commands = filter(f, commands)
+            results = map(self.rcon, commands)
             return "".join(results)
 
         # send a single command. connect and auth if necessary.

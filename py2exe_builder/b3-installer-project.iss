@@ -2,8 +2,11 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 ;#define Debug
-#define B3_VERSION_NUMBER "1.9.0"
-#define B3_VERSION_SUFFIX "dev1"
+
+; NOTE: either uncomment the two constants below or call the InnoSetup PreProcessor with the /d<name>=<value> command
+;       line parameter. I.E.: ISCC.exe b3-installer-project.iss /Q /O../dist /dB3_VERSION_NUMBER=1.9.0 /dB3_VERSION_SUFFIX=dev6-20120930
+;#define public B3_VERSION_NUMBER "x.y.z"
+;#define public B3_VERSION_SUFFIX "xxx"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -107,9 +110,9 @@ Source: dist_py2exe\b3_run.exe; DestDir: {app}
 Source: dist_py2exe\b3.lib; DestDir: {app}
 Source: dist_py2exe\PKG-INFO; DestDir: {app}
 ;Source: dist_py2exe\README; DestDir: {app}; DestName: README.txt
-Source: dist_py2exe\license.txt; DestDir: {app}; 
-Source: dist_py2exe\readme.txt; DestDir: {app}; 
-Source: dist_py2exe\README.md; DestDir: {app}; 
+Source: assets_common\gpl-2.0.txt; DestDir: {app}; DestName: license.txt; 
+Source: assets_common\readme-windows.txt; DestDir: {app}; DestName: readme.txt;
+Source: dist_py2exe\README.md; DestDir: {app};
 Source: dist_py2exe\docs\*; DestDir: {app}\docs; Flags: recursesubdirs
 Source: dist_py2exe\sql\*; DestDir: {app}\sql; Flags: recursesubdirs
 Source: dist_py2exe\extplugins\*; DestDir: {app}\extplugins; Flags: recursesubdirs

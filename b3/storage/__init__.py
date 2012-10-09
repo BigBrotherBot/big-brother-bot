@@ -54,6 +54,9 @@ class Storage(object):
     def getClientIpAddresses(self, client):
         raise NotImplementedError
     
+    def getLastPenalties(self, types='Ban', num=5):
+        raise NotImplementedError
+
     def setClientPenalty(self, penalty):
         raise NotImplementedError
     

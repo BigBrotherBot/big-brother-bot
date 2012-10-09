@@ -63,9 +63,11 @@
 # makes use of the new pluginsStarted parser hook
 # 2011-06-05 - 1.4.0 - Courgette
 # * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
+# 2012-10-60 - 1.5 - Courgette
+# reflect changes in abstract parser 1.6
 #
 __author__  = 'Bakes, Courgette'
-__version__ = '1.4.0'
+__version__ = '1.5'
 
 import time
 import b3.events

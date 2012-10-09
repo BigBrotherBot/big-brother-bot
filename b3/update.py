@@ -43,17 +43,29 @@ class B3version(version.StrictVersion):
         Compared to version.StrictVersion this class allows version numbers such as :
             1.0dev
             1.0dev2
+            1.0d3
             1.0a
             1.0a
             1.0a34
             1.0b
             1.0b1
             1.0b3
+            1.9.0dev7.daily21-20121004
         And make sure that any 'dev' prerelease is inferior to any 'alpha' prerelease
         """
 
-        version_re = re.compile(r'^(\d+) \. (\d+) (\. (\d+))? (([ab]|dev)(\d+)?)?$',
-                                re.VERBOSE)
+        version_re = re.compile(r'''^
+(?P<major>\d+)\.(?P<minor>\d+)   # 1.2
+(?:\. (?P<patch>\d+))?           # 1.2.45
+(?P<prerelease>                  # 1.2.45b2
+  (?P<tag>a|b|dev)
+  (?P<tag_num>\d+)?
+)?
+(?P<daily>                       # 1.2.45b2.daily4-20120901
+    \.daily(?P<build_num>\d+?)
+    (?:-20\d\d\d\d\d\d)?
+)?
+$''', re.VERBOSE)
         prerelease_order = {'dev': 0, 'a': 1, 'b': 2}
 
 
@@ -62,18 +74,28 @@ class B3version(version.StrictVersion):
             if not match:
                 raise ValueError, "invalid version number '%s'" % vstring
 
-            (major, minor, patch, prerelease, prerelease_num) = \
-                match.group(1, 2, 4, 6, 7)
+            major = match.group('major')
+            minor = match.group('minor')
 
+            patch = match.group('patch')
             if patch:
                 self.version = tuple(map(string.atoi, [major, minor, patch]))
             else:
                 self.version = tuple(map(string.atoi, [major, minor]) + [0])
 
+            prerelease = match.group('tag')
+            prerelease_num = match.group('tag_num')
             if prerelease:
                 self.prerelease = (prerelease, string.atoi(prerelease_num if prerelease_num else '0'))
             else:
                 self.prerelease = None
+
+            daily_num = match.group('build_num')
+            if daily_num:
+                self.build_num = string.atoi(daily_num if daily_num else '0')
+            else:
+                self.build_num = None
+
 
 
         def __cmp__ (self, other):
@@ -81,25 +103,47 @@ class B3version(version.StrictVersion):
                 other = B3version(other)
 
             compare = cmp(self.version, other.version)
-            if compare == 0:              # have to compare prerelease
+            if compare != 0:
+                return compare
 
-                # case 1: neither has prerelease; they're equal
-                # case 2: self has prerelease, other doesn't; other is greater
-                # case 3: self doesn't have prerelease, other does: self is greater
-                # case 4: both have prerelease: must compare them!
+            # we have to compare prerelease
+            compare = self.__cmp_prerelease(other)
+            if compare != 0:
+                return compare
 
-                if not self.prerelease and not other.prerelease:
-                    return 0
-                elif self.prerelease and not other.prerelease:
-                    return -1
-                elif not self.prerelease and other.prerelease:
-                    return 1
-                elif self.prerelease and other.prerelease:
-                    return cmp((self.prerelease_order[self.prerelease[0]], self.prerelease[1]),
-                        (self.prerelease_order[other.prerelease[0]], other.prerelease[1]))
+            # we have to compare build num
+            return self.__cmp_build(other)
 
-            else:                           # numeric versions don't match --
-                return compare              # prerelease stuff doesn't matter
+
+        def __cmp_prerelease(self, other):
+            # case 1: neither has prerelease; they're equal
+            # case 2: self has prerelease, other doesn't; other is greater
+            # case 3: self doesn't have prerelease, other does: self is greater
+            # case 4: both have prerelease: must compare them!
+            if not self.prerelease and not other.prerelease:
+                return 0
+            elif self.prerelease and not other.prerelease:
+                return -1
+            elif not self.prerelease and other.prerelease:
+                return 1
+            elif self.prerelease and other.prerelease:
+                return cmp((self.prerelease_order[self.prerelease[0]], self.prerelease[1]),
+                    (self.prerelease_order[other.prerelease[0]], other.prerelease[1]))
+
+        def __cmp_build(self, other):
+            # case 1: neither has build_num; they're equal
+            # case 2: self has build_num, other doesn't; other is greater
+            # case 3: self doesn't have build_num, other does: self is greater
+            # case 4: both have build_num: must compare them!
+            if not self.build_num and not other.build_num:
+                return 0
+            elif self.build_num and not other.build_num:
+                return -1
+            elif not self.build_num and other.build_num:
+                return 1
+            elif self.build_num and other.build_num:
+                return cmp(self.build_num, other.build_num)
+
 
 def getDefaultChannel(currentVersion):
     if currentVersion is None:

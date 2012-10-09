@@ -24,15 +24,16 @@
 #   - Can define an alias for the !spamins command
 #   - fix bug where the !spamins command would not accept uppercase argument
 #   - refactor the plugin to allow game specific behavior to be injected at runtime
-
-__author__  = 'ThorN, Courgette'
-__version__ = '1.2'
-
+# 2012/08/11 - 1.3 - Courgette
+#   - improve behavior when a spamer received a warning but continues to spam
+#
 from ConfigParser import NoOptionError
 import b3, re
 import b3.events
 import b3.plugin
 
+__author__  = 'ThorN, Courgette'
+__version__ = '1.3'
 
 
 class SpamcontrolPlugin(b3.plugin.Plugin):
@@ -155,6 +156,10 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
 
     def add_spam_points(self, client, points, text):
         now = self.getTime()
+        if client.var(self, 'ignore_till', now).value > now:
+            #ignore the user
+            raise b3.events.VetoEvent
+
         last_message_time = client.var(self, 'last_message_time', now).value
         gap = now - last_message_time
 
@@ -176,12 +181,9 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
 
         # should we warn ?
         if spamins >= self._maxSpamins:
-            client.setvar(self, 'ignore_till', now + 30)
+            client.setvar(self, 'ignore_till', now + 2)
             self._adminPlugin.warnClient(client, 'spam')
             spamins = int(spamins / 1.5)
             client.setvar(self, 'spamins', spamins)
-            raise b3.events.VetoEvent
-        elif client.var(self, 'ignore_till').value > now:
-            #ignore the user
             raise b3.events.VetoEvent
 

@@ -8,4 +8,4 @@ innosetup_scripts:
 iscc:  C:\Program Files (x86)\Inno Setup 5\ISCC.exe
 
 # where to generate the distribution files
-output_dir: ../dist
+output_dir: ../releases

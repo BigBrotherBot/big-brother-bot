@@ -21,6 +21,7 @@ import logging
 from mock import Mock, call, patch
 import sys, os, thread
 import time
+from mockito import when
 import unittest2 as unittest
 
 from b3 import __file__ as b3_module__file__, TEAM_BLUE, TEAM_RED
@@ -62,84 +63,94 @@ class Cmd_tempban(Admin_functional_test):
     def setUp(self):
         Admin_functional_test.setUp(self)
         self.init()
-
-    def test_no_duration(self):
         self.joe.message = Mock()
         self.joe.connects(0)
-        self.mike.connects(1)
 
+    def test_no_duration(self):
+        self.mike.connects(1)
         self.joe.says('!tempban mike')
         self.joe.message.assert_called_with('^7Invalid parameters')
 
-
     def test_bad_duration(self):
-        self.joe.message = Mock()
-        self.joe.connects(0)
         self.mike.connects(1)
         self.mike.tempban = Mock()
-
         self.joe.says('!tempban mike 5hour')
         self.joe.message.assert_called_with('^7Invalid parameters')
         assert not self.mike.tempban.called
 
-
     def test_non_existing_player(self):
-        self.joe.message = Mock()
-        self.joe.connects(0)
         self.mike.connects(1)
-
         self.joe.says('!tempban foo 5h')
         self.joe.message.assert_called_with('^7No players found matching foo')
 
-
     def test_no_reason(self):
-        self.joe.message = Mock()
-        self.joe.connects(0)
         self.mike.connects(1)
         self.mike.tempban = Mock()
-
         self.joe.says('!tempban mike 5h')
         self.mike.tempban.assert_called_with('', None, 5*60, self.joe)
+
+
+class Cmd_lastbans(Admin_functional_test):
+
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init()
+        self.joe.message = Mock()
+        self.joe.connects(0)
+
+    def test_no_ban(self):
+        self.joe.says('!lastbans')
+        self.joe.message.assert_called_with('^7There are no active bans')
+
+    @patch('time.time', return_value=0)
+    def test_one_tempban(self, mock_time):
+        # GIVEN
+        self.mike.connects(1)
+        # WHEN
+        self.joe.says('!tempban mike 5h test reason')
+        self.joe.says('!lastbans')
+        # THEN
+        self.joe.message.assert_called_with(u'^2@2^7 Mike^7^7 (5 hours remaining) test reason')
+        # WHEN
+        self.joe.says('!unban @2')
+        self.joe.says('!lastbans')
+        # THEN
+        self.joe.message.assert_called_with('^7There are no active bans')
+
 
 
 class Cmd_help(Admin_functional_test):
     def setUp(self):
         Admin_functional_test.setUp(self)
         self.init()
-
-    def test_non_existing_cmd(self):
         self.joe.message = Mock()
         self.joe.connects(0)
+
+    def test_non_existing_cmd(self):
         self.joe.says('!help fo0')
         self.joe.message.assert_called_with('^7Command not found fo0')
 
     def test_existing_cmd(self):
-        self.joe.message = Mock()
-        self.joe.connects(0)
         self.joe.says('!help help')
         self.joe.message.assert_called_with('^2!help ^7%s' % self.p.cmd_help.__doc__.strip())
 
     def test_no_arg(self):
-        self.joe.message = Mock()
-        self.joe.connects(0)
         self.joe.says('!help')
         self.joe.message.assert_called_with('^7Available commands: admins, admintest, aliases, b3, ban, banall, baninfo,'
-                                            ' clear, clientinfo, die, disable, enable, find, help, iamgod, kick, kickall'
+                                            ' clear, clientinfo, die, disable, enable, find, help, iamgod, kick, kickall, lastbans'
                                             ', leveltest, list, lookup, makereg, map, maprotate, maps, mask, nextmap, no'
-                                            'tice, pause, permban, poke, putgroup, rebuild, reconfig, regtest, restart, '
+                                            'tice, pause, permban, poke, putgroup, rebuild, reconfig, regtest, regulars, restart, '
                                             'rules, runas, say, scream, seen, spam, spams, spank, spankall, status, temp'
                                             'ban, time, unban, ungroup, unmask, unreg, warn, warnclear, warninfo, warnremove, w'
                                             'arns, warntest')
         self.mike.message = Mock()
         self.mike.connects(0)
         self.mike.says('!help')
-        self.mike.message.assert_called_with('^7Available commands: help, iamgod, regtest, rules, time')
+        self.mike.message.assert_called_with('^7Available commands: help, iamgod, regtest, regulars, rules, time')
 
     def test_joker(self):
-        self.joe.message = Mock()
-        self.joe.connects(0)
         self.joe.says('!help *ban')
-        self.joe.message.assert_called_with('^7Available commands: ban, banall, baninfo, permban, tempban, unban')
+        self.joe.message.assert_called_with('^7Available commands: ban, banall, baninfo, lastbans, permban, tempban, unban')
 
 
 class Cmd_mask(Admin_functional_test):
@@ -593,3 +604,56 @@ class Test_config(Admin_functional_test):
                         </settings>
                     </configuration>""")
         self.assertNotIn('bar', self.p.warn_reasons)
+
+
+class Cmd_admins(Admin_functional_test):
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init()
+
+    def test_nominal(self):
+        self.joe.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
+        self.joe.connects(0)
+        # only superadmin joe is connected
+        self.joe.says('!admins')
+        self.joe.message.assert_called_with('^7Admins online: Joe^7^7 [^3100^7]')
+        # introducing mike (senioradmin)
+        self.mike.connects(1)
+        self.joe.says('!putgroup mike senioradmin')
+        # we know have 2 admins connected
+        self.joe.says('!admins')
+        self.joe.message.assert_called_with('^7Admins online: Joe^7^7 [^3100^7], Mike^7^7 [^380^7]')
+
+
+class Cmd_regulars(Admin_functional_test):
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init()
+        self.joe.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
+        self.joe.connects(0)
+
+    def test_no_regular(self):
+        # only superadmin joe is connected
+        self.joe.says('!regulars')
+        self.joe.message.assert_called_with('^7There are no regular players online')
+
+    def test_one_regular(self):
+        # GIVEN
+        self.mike.connects(1)
+        self.joe.says('!makereg mike')
+        # WHEN
+        self.joe.says('!regs')
+        # THEN
+        self.joe.message.assert_called_with('^7Regular players online: Mike^7')
+
+    def test_two_regulars(self):
+        # GIVEN
+        self.mike.connects(1)
+        self.joe.says('!makereg mike')
+        self.jack = FakeClient(self.console, name="Jack", guid="jackguid", groupBits=1)
+        self.jack.connects(2)
+        self.joe.says('!makereg jack')
+        # WHEN
+        self.joe.says('!regs')
+        # THEN
+        self.joe.message.assert_called_with('^7Regular players online: Mike^7, Jack^7')

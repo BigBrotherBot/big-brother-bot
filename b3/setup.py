@@ -148,7 +148,7 @@ class Setup:
         self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
         xml.start("settings", name="b3")
         self.add_set("parser", "",
-                     "Define your game: altitude/bf3/bfbc2/cod/cod2/cod4/cod5/cod6/cod7/cod8/etpro/homefront/iourt41/iourt42/moh/oa081/smg/sof2/wop/wop15/ro2")
+                     "Define your game: altitude/bf3/bfbc2/cod/cod2/cod4/cod5/cod6/cod7/cod8/etpro/homefront/iourt41/iourt42/moh/oa081/smg/sof2/wop/wop15/ro2/csgo")
 
         # set a template xml file to read existing settings from
         _result = False

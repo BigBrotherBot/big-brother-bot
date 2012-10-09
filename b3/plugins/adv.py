@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
+# 29/09/2012 - 1.4 - Courgette
+#    new message keyword @regulars will run the Admin plugin !regulars command
 # 19/08/2012 - 1.3.3 - Courgette
 #    give user feedback on command misuse
 # 07/17/2011 - 1.3.2 - Freelander
@@ -46,12 +48,11 @@
 #    Converted to use XML config
 
 __author__ = 'ThorN'
-__version__ = '1.3.3'
+__version__ = '1.4'
 
 import b3
 import os
 import time
-import string
 import b3.lib.feedparser as feedparser
 import b3.plugin
 import b3.cron
@@ -260,22 +261,32 @@ class AdvPlugin(b3.plugin.Plugin):
                     self.error('XLRstats not installed! Cannot use @topstats in adv plugin!')
                     ad = '@topstats not available, XLRstats is not installed!'
             elif ad == "@admins":
-                admins = self._adminPlugin.getAdmins()
-                nlist = []
-                for c in admins:
-                    if c.maskGroup:
-                        nlist.append('%s^7 [^3%s^7]' % (c.exactName, c.maskGroup.level))
-                    else:
-                        nlist.append('%s^7 [^3%s^7]' % (c.exactName, c.maxLevel))
-                if len(nlist)>0:
-                    ad = self._adminPlugin.getMessage('admins', string.join(nlist, ', '))
-                else:
+                try:
+                    command = self._adminPlugin._commands['admins']
+                    command.executeLoud(data=None, client=None)
+                    ad = None
+                except Exception, err:
+                    self.error("could not send adv message @admins", exc_info=err)
                     if firstTry:
                         # try another ad
                         self.adv(firstTry=False)
                         return
                     else:
                         ad = None
+            elif ad == "@regulars":
+                try:
+                    command = self._adminPlugin._commands['regulars']
+                    command.executeLoud(data=None, client=None)
+                    ad = None
+                except Exception, err:
+                    self.error("could not send adv message @regulars", exc_info=err)
+                    if firstTry:
+                        # try another ad
+                        self.adv(firstTry=False)
+                        return
+                    else:
+                        ad = None
+
             if ad:
                 self.console.say(ad)
             self._replay = 0

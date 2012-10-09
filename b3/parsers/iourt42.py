@@ -31,10 +31,16 @@
 #  * disabling authentication using the /rcon auth-whois command response
 # 2012/08/12 - 1.3 - Courgette
 #  * patches the Spamcontrol plugin to make it aware of radio spam
+# 2012/09/14 - 1.4 - Courgette
+#  * change kick and tempban commands so them give the reason
+# 2012/10/04 - 1.5 - Courgette
+#  * update for UrT 4.2.002 new auth system with Frozen Sand Account and auth-key
+# 2012/10/04 - 1.5.1 - Courgette
+#  * fix kick and tempban when used with a reason
 #
 
 __author__  = 'Courgette'
-__version__ = '1.3'
+__version__ = '1.5.1'
 
 import re, new
 from b3.parsers.iourt41 import Iourt41Parser
@@ -94,6 +100,10 @@ class Iourt42Client(Client):
             ip = self.ip
             guid = self.guid
             pbid = self.pbid
+
+            if not pbid and self.cid:
+                fsa_info = self.console.queryClientFrozenSandAccount(self.cid)
+                pbid = fsa_info.get('login', None)
 
             # Frozen Sand Account related info
             if not hasattr(self, 'notoriety'):
@@ -177,9 +187,9 @@ class Iourt42Parser(Iourt41Parser):
         'say': 'say %(prefix)s %(message)s',
         'saybig': 'bigtext "%(prefix)s %(message)s"',
         'set': 'set %(name)s "%(value)s"',
-        'kick': 'clientkick %(cid)s',
+        'kick': 'kick %(cid)s "%(reason)s"',
         'ban': 'addip %(cid)s',
-        'tempban': 'clientkick %(cid)s',
+        'tempban': 'kick %(cid)s "%(reason)s"',
         'banByIp': 'addip %(ip)s',
         'unbanByIp': 'removeip %(ip)s',
         'slap': 'slap %(cid)s',
@@ -277,8 +287,7 @@ class Iourt42Parser(Iourt41Parser):
     _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): (?P<name>.*) (?P<team>RED|BLUE|SPECTATOR|FREE) k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) ping:(?P<ping>[0-9]+|CNCT|ZMBI)( (?P<ip>[0-9.]+):(?P<port>[0-9-]+))?$', re.I) # NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
 
     # /rcon auth-whois replies patterns
-    _re_authwhois_noaccount = re.compile(r"""^\^6\[rcon\] \^5\[auth\] \^7(?P<name>.+)(\^4)+ - no account""")
-    _re_authwhois_account = re.compile(r"""^\^6\[rcon\] \^5\[auth\] \^7(?P<name>.+)(?:\^4)+ - (?P<notoriety>.+) account: \^7\^3(?P<account>.+)$""")
+    _re_authwhois = re.compile(r"""^auth: id: (?P<cid>\d+) - name: \^7(?P<name>.+?) - login: (?P<login>.*?) - notoriety: (?P<notoriety>.+?) - level: (?P<level>-?\d+?)(?:\s+- (?P<extra>.*))?$""", re.MULTILINE)
 
 
     def __new__(cls, *args, **kwargs):
@@ -325,7 +334,7 @@ class Iourt42Parser(Iourt41Parser):
         msg_id = match.group('msg_id')
         location = match.group('location')
         text = match.group('text')
-        client = self.clients.getByCID(cid)
+        client = self.getByCidOrJoinPlayer(cid)
         if not client:
             self.debug('No client found')
             return None
@@ -339,7 +348,7 @@ class Iourt42Parser(Iourt41Parser):
     def OnCallvote(self, action, data, match=None):
         cid = match.group('cid')
         vote_string = match.group('vote_string')
-        client = self.clients.getByCID(cid)
+        client = self.getByCidOrJoinPlayer(cid)
         if not client:
             self.debug('No client found')
             return None
@@ -348,7 +357,7 @@ class Iourt42Parser(Iourt41Parser):
     def OnVote(self, action, data, match=None):
         cid = match.group('cid')
         value = match.group('value')
-        client = self.clients.getByCID(cid)
+        client = self.getByCidOrJoinPlayer(cid)
         if not client:
             self.debug('No client found')
             return None
@@ -362,6 +371,8 @@ class Iourt42Parser(Iourt41Parser):
     #
     ###############################################################################################
 
+    def authorizeClients(self):
+        pass
 
     def inflictCustomPenalty(self, type, client, reason=None, duration=None, admin=None, data=None):
         if type == 'slap' and client:
@@ -410,32 +421,37 @@ class Iourt42Parser(Iourt41Parser):
 
     def queryClientFrozenSandAccount(self, cid):
         """
-        : auth-whois 5
-        Client 5 is not active.
+        : auth-whois 0
+        auth: id: 0 - name: ^7laCourge - login:  - notoriety: 0 - level: 0  - ^7no account
 
         : auth-whois 0
-        ^6[rcon] ^5[auth] ^7laCourge^4 - no account
+        auth: id: 0 - name: ^7laCourge - login: courgette - notoriety: serious - level: -1
 
-        : auth-whois 0
-        ^6[rcon] ^5[auth] ^7laCourge^4^4 - well known account: ^7^3^7Courgette
-
+        : auth-whois 3
+        Client 3 is not active.
         """
         data = self.write('auth-whois %s' % cid)
-        self.verbose(repr(data))
         if not data:
-            return None
+            return {}
 
         if data == "Client %s is not active." % cid:
-            return None
+            return {}
 
-        if self._re_authwhois_noaccount.match(data):
-            return None
-
-        m = self._re_authwhois_account.match(data)
+        m = self._re_authwhois.match(data)
         if m:
-            return m.group('account'), m.group('notoriety')
+            return m.groupdict()
         else:
-            return None
+            return {}
+
+
+    def queryAllFrozenSandAccount(self, maxRetries=None):
+        data = self.write('auth-whois all', maxRetries=maxRetries)
+        if not data:
+            return {}
+        players = {}
+        for m in re.finditer(self._re_authwhois, data):
+            players[m.group('cid')] = m.groupdict()
+        return players
 
 
     # Parse Userinfo
@@ -486,11 +502,8 @@ class Iourt42Parser(Iourt41Parser):
                     guid = 'unknown'
 
                 # query FrozenSand Account
-                fsa = notoriety = None
-                #auth_info = self.queryClientFrozenSandAccount(bclient['cid'])
-                auth_info = None # disabling until the auth-whois rcon command returns the FSA login info
-                if auth_info:
-                    fsa, notoriety = auth_info
+                auth_info = self.queryClientFrozenSandAccount(bclient['cid'])
+                fsa = auth_info.get('login', None)
 
                 # v1.0.17 - mindriot - 02-Nov-2008
                 if not bclient.has_key('name'):
@@ -532,7 +545,7 @@ class Iourt42Parser(Iourt41Parser):
                     guid = nguid
 
                 self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE,
-                    guid=guid, pbid=fsa, notoriety=notoriety, data={ 'guid' : guid })
+                    guid=guid, pbid=fsa, data=auth_info)
 
         return None
 

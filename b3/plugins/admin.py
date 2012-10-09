@@ -17,6 +17,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2012/10/03 - 1.18 - Courgette
+#   * add command !lastbans
+#   2012/09/29 - 1.17 - Courgette
+#   * add command !regulars
 #   2012/08/11 - 1.16 - Courgette
 #   * config file can refer to group levels by their group keyword
 #   2012/07/31 - 1.15.1 - Courgette
@@ -114,14 +118,15 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.16'
+__version__ = '1.18'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import re, time, threading, sys, traceback, thread, random
 from ConfigParser import NoOptionError
 
 from b3 import functions
-from b3 import clients
+from b3.clients import Client, Group
+from b3.functions import minutesStr
 import b3.plugin
 import copy
 
@@ -465,6 +470,9 @@ class AdminPlugin(b3.plugin.Plugin):
     def getAdmins(self):
         return self.console.clients.getClientsByLevel(self._admins_level)
 
+    def getRegulars(self):
+        return self.console.clients.getClientsByLevel(min=2, max=2)
+
     def findClientPrompt(self, client_id, client=None):
         matches = self.console.clients.getByMagic(client_id)
         if matches:
@@ -630,7 +638,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 return False
 
         try:
-            group = clients.Group(keyword=groupName)
+            group = Group(keyword=groupName)
             group = self.console.storage.getGroup(group)
         except:
             client.message('^7Group %s does not exist' % groupName)
@@ -686,7 +694,7 @@ class AdminPlugin(b3.plugin.Plugin):
         for w in sclient.warnings:
             admin = None
             try:
-                admin = self.console.storage.getClient(clients.Client(id=w.adminId))
+                admin = self.console.storage.getClient(Client(id=w.adminId))
                 # client object needs console to get groups
                 admin.console = self.console
             except:
@@ -824,7 +832,7 @@ class AdminPlugin(b3.plugin.Plugin):
         - register youself as a basic user
         """
         try:
-            group = clients.Group(keyword='user')
+            group = Group(keyword='user')
             group = self.console.storage.getGroup(group)
         except:
             return False
@@ -893,6 +901,21 @@ class AdminPlugin(b3.plugin.Plugin):
 
         cmd.sayLoudOrPM(client, ', '.join(names))
         return True
+
+
+    def cmd_regulars(self, data, client, cmd=None):
+        """\
+        - lists all the online regular players
+        """
+        clist = self.getRegulars()
+
+        if len(clist) > 0:
+            nlist = []
+            for c in clist:
+                nlist.append(c.exactName)
+            cmd.sayLoudOrPM(client, self.getMessage('regulars', ', '.join([c.exactName for c in clist])))
+        else:
+            cmd.sayLoudOrPM(client, self.getMessage('no_regulars'))
 
 
     def cmd_admins(self, data, client, cmd=None):
@@ -974,7 +997,7 @@ class AdminPlugin(b3.plugin.Plugin):
         cid = m[0]
 
         try:
-            group = clients.Group(keyword='reg')
+            group = Group(keyword='reg')
             group = self.console.storage.getGroup(group)
         except:
             client.message('^7Group reg does not exist')
@@ -1006,14 +1029,14 @@ class AdminPlugin(b3.plugin.Plugin):
         cid = m[0]
 
         try:
-            group_reg = self.console.storage.getGroup(clients.Group(keyword='reg'))
+            group_reg = self.console.storage.getGroup(Group(keyword='reg'))
         except Exception, err:
             self.debug(err)
             client.message("^7Group 'regular' does not exist")
             return
 
         try:
-            group_user = self.console.storage.getGroup(clients.Group(keyword='user'))
+            group_user = self.console.storage.getGroup(Group(keyword='user'))
         except Exception, err:
             self.debug(err)
             client.message("^7Group 'user' does not exist")
@@ -1041,7 +1064,7 @@ class AdminPlugin(b3.plugin.Plugin):
         cid, keyword = m.groups()
 
         try:
-            group = clients.Group(keyword=keyword)
+            group = Group(keyword=keyword)
             group = self.console.storage.getGroup(group)
         except:
             client.message('^7Group %s does not exist' % keyword)
@@ -1081,7 +1104,7 @@ class AdminPlugin(b3.plugin.Plugin):
         cid, keyword = m.groups()
 
         try:
-            group = clients.Group(keyword=keyword)
+            group = Group(keyword=keyword)
             group = self.console.storage.getGroup(group)
         except KeyError:
             client.message('^7Group %s does not exist' % keyword)
@@ -1112,7 +1135,7 @@ class AdminPlugin(b3.plugin.Plugin):
             return
 
         try:
-            group = clients.Group(keyword='superadmin')
+            group = Group(keyword='superadmin')
             group = self.console.storage.getGroup(group)
         except Exception, e:
             self.error('^7Could not get superadmin group: %s', e)
@@ -1477,6 +1500,30 @@ class AdminPlugin(b3.plugin.Plugin):
             else:
                 sclient.tempban(reason, keyword, duration, client)
 
+    def cmd_lastbans(self, data, client=None, cmd=None):
+        """\
+        list the 5 last bans
+        """
+        def format_ban(penalty):
+            c = self.console.storage.getClient(Client(_id=penalty.clientId))
+            txt = "^2@%s^7 %s^7" % (penalty.clientId, c.exactName)
+            if penalty.type == 'Ban':
+                txt += ' (Perm)'
+            elif penalty.type == 'TempBan':
+                txt += ' (%s remaining)' % minutesStr((penalty.timeExpire - self.console.time()) / 60.0)
+            else:
+                raise AssertionError("unexpected penalty type : %r" % penalty.type)
+            if penalty.reason:
+                txt += ' %s' % penalty.reason
+            return txt
+
+        bans = self.console.storage.getLastPenalties(types=('Ban', 'TempBan'), num=5)
+        if len(bans):
+            for line in map(format_ban, bans):
+                cmd.sayLoudOrPM(client, line)
+        else:
+            cmd.sayLoudOrPM(client, '^7There are no active bans')
+
     def cmd_baninfo(self, data, client=None, cmd=None):
         """\
         <name> - display how many bans a user has
@@ -1526,7 +1573,7 @@ class AdminPlugin(b3.plugin.Plugin):
             for w in sclient.bans:
                 if w.adminId:
                     try:
-                        admin = self.console.storage.getClient(clients.Client(id=w.adminId))
+                        admin = self.console.storage.getClient(Client(id=w.adminId))
                         if admin.maxLevel > client.maxLevel:
                             client.message('^7You can not clear a ban from ' % admin.exactName)
                             return
@@ -1750,7 +1797,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
             if w.adminId:
                 try:
-                    admin = self.console.storage.getClient(clients.Client(id=w.adminId))
+                    admin = self.console.storage.getClient(Client(id=w.adminId))
                     if admin.maxLevel > client.maxLevel:
                         client.message('^7You can not clear a warning from %s' % admin.exactName)
                     return
@@ -1782,7 +1829,7 @@ class AdminPlugin(b3.plugin.Plugin):
             for w in sclient.warnings:
                 if w.adminId:
                     try:
-                        admin = self.console.storage.getClient(clients.Client(id=w.adminId))
+                        admin = self.console.storage.getClient(Client(id=w.adminId))
                         if admin.maxLevel > client.maxLevel:
                             failed += 1
                         break

@@ -51,6 +51,8 @@ class B3TestCase(unittest.TestCase):
         self.console.screen = Mock()
         self.console.time = time.time
         self.console.upTime = Mock(return_value=3)
+
+        self.console.cron.stop()
         
         def myError(msg, *args, **kwargs):
             print(("ERROR: %s" % msg) % args)

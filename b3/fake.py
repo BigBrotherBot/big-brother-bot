@@ -330,7 +330,7 @@ class FakeClient(b3.clients.Client):
         if self.guid:
             self.auth()
         elif not self.authed:
-            clients.authorizeClients()
+            clients._authorizeClients()
          
     def disconnects(self):
         print "\n%s disconnects from slot #%s" % (self.name, self.cid)

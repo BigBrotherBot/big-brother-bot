@@ -647,6 +647,22 @@ class DatabaseStorage(Storage):
 
         return aliases
 
+    def getLastPenalties(self, types='Ban', num=5):
+        where = QueryBuilder(self.db).WhereClause( { 'type' : types, 'inactive' : 0 } )
+        where += ' and (time_expire = -1 or time_expire > %s)' % int(time.time())
+
+        cursor = self.query(QueryBuilder(self.db).SelectQuery(fields='*', table='penalties', where=where, orderby='time_add DESC, id DESC', limit=num))
+        if not cursor:
+            return []
+
+        penalties = []
+        while not cursor.EOF and len(penalties) < num:
+            penalties.append(self._createPenaltyFromRow(cursor.getRow()))
+            cursor.moveNext()
+        cursor.close()
+
+        return penalties
+
     def setClientPenalty(self, penalty):
         """
         id  int(10)  UNSIGNED No    auto_increment              

@@ -19,10 +19,31 @@
 import re
 import unittest2 as unittest
 from mock import Mock, DEFAULT, patch
-from b3.clients import Client
+from b3.clients import Client, Clients
 from b3.parsers.bf3 import Bf3Parser, MAP_NAME_BY_ID, GAME_MODES_BY_MAP_ID, GAME_MODES_NAMES
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.util import MapListBlock
+
+
+sleep_patcher = None
+def setUpModule():
+    sleep_patcher = patch("time.sleep")
+    sleep_patcher.start()
+
+
+# make sure to unpatch core B3 stuf
+original_getByMagic = Clients.getByMagic
+original_message = Client.message
+original_disconnect = Clients.disconnect
+def tearDownModule():
+    Clients.getByMagic = original_getByMagic
+    Client.message = original_message
+    Clients.disconnect = original_disconnect
+    if hasattr(Client, "messagequeueworker"):
+        del Client.messagequeueworker
+    if sleep_patcher:
+        sleep_patcher.stop()
+
 
 class BF3TestCase(unittest.TestCase):
     """
@@ -39,6 +60,7 @@ class BF3TestCase(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, "parser"):
+            del self.parser.clients
             self.parser.working = False
 
 
@@ -638,6 +660,10 @@ class Test_bf3_maps(BF3TestCase):
         self.assertEqual('Operation 925', self.parser.getEasyName('XP2_Office'))
         self.assertEqual('Donya Fortress', self.parser.getEasyName('XP2_Palace'))
         self.assertEqual('Ziba Tower', self.parser.getEasyName('XP2_Skybar'))
+        self.assertEqual('Bandar Desert', self.parser.getEasyName('XP3_Desert'))
+        self.assertEqual('Alborz Mountains', self.parser.getEasyName('XP3_Alborz'))
+        self.assertEqual('Armored Shield', self.parser.getEasyName('XP3_Shield'))
+        self.assertEqual('Death Valley', self.parser.getEasyName('XP3_Valley'))
         self.assertEqual('f00', self.parser.getEasyName('f00'))
 
 
@@ -659,14 +685,27 @@ class Test_bf3_maps(BF3TestCase):
         self.assertEqual('XP2_Office', self.parser.getHardName('Operation 925'))
         self.assertEqual('XP2_Palace', self.parser.getHardName('Donya Fortress'))
         self.assertEqual('XP2_Skybar', self.parser.getHardName('Ziba Tower'))
+        self.assertEqual('XP3_Desert', self.parser.getHardName('Bandar Desert'))
+        self.assertEqual('XP3_Alborz', self.parser.getHardName('Alborz Mountains'))
+        self.assertEqual('XP3_Shield', self.parser.getHardName('Armored Shield'))
+        self.assertEqual('XP3_Valley', self.parser.getHardName('Death Valley'))
         self.assertEqual('f00', self.parser.getHardName('f00'))
 
 
     def test_getMapsSoundingLike(self):
-        self.assertEqual(['caspian border', 'damavand peak', 'grand bazaar'], self.parser.getMapsSoundingLike(''), '')
+        self.assertEqual(['scrapmetal', 'caspian border', 'grand bazaar'], self.parser.getMapsSoundingLike(''), '')
         self.assertEqual('MP_Subway', self.parser.getMapsSoundingLike('Operation Metro'), 'Operation Metro')
         self.assertEqual('MP_001', self.parser.getMapsSoundingLike('grand'))
-        self.assertEqual(['operation metro', 'operation 925', 'operation firestorm'], self.parser.getMapsSoundingLike('operation'))
+        self.assertEqual(['operation firestorm', 'operation metro', 'operation 925'], self.parser.getMapsSoundingLike('operation'))
+        self.assertEqual('XP3_Desert', self.parser.getMapsSoundingLike('bandar'))
+        self.assertEqual('XP3_Desert', self.parser.getMapsSoundingLike('desert'))
+        self.assertEqual('XP3_Alborz', self.parser.getMapsSoundingLike('alborz'))
+        self.assertEqual('XP3_Alborz', self.parser.getMapsSoundingLike('mountains'))
+        self.assertEqual('XP3_Alborz', self.parser.getMapsSoundingLike('mount'))
+        self.assertEqual('XP3_Shield', self.parser.getMapsSoundingLike('armored'))
+        self.assertEqual('XP3_Shield', self.parser.getMapsSoundingLike('shield'))
+        self.assertEqual('XP3_Valley', self.parser.getMapsSoundingLike('Death'))
+        self.assertEqual('XP3_Valley', self.parser.getMapsSoundingLike('valley'))
 
 
     def test_getGamemodeSoundingLike(self):
@@ -675,7 +714,11 @@ class Test_bf3_maps(BF3TestCase):
         self.assertListEqual(['Squad Deathmatch', 'Team Deathmatch'], self.parser.getGamemodeSoundingLike('MP_011', 'Deathmatch'), 'Deathmatch')
         self.assertListEqual(['Rush', 'Conquest', 'Conquest64'], self.parser.getGamemodeSoundingLike('MP_011', 'foo'))
         self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'tdm'), 'tdm')
-        self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'tdm'), 'teamdeathmatch')
-        self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'tdm'), 'team death match')
+        self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'teamdeathmatch'), 'teamdeathmatch')
+        self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'team death match'), 'team death match')
         self.assertEqual('ConquestLarge0', self.parser.getGamemodeSoundingLike('MP_011', 'CQ64'), 'CQ64')
+        self.assertEqual('TankSuperiority0', self.parser.getGamemodeSoundingLike('XP3_Valley', 'tank superiority'), 'tank superiority')
+        self.assertEqual('TankSuperiority0', self.parser.getGamemodeSoundingLike('XP3_Valley', 'tanksuperiority'), 'tanksuperiority')
+        self.assertEqual('TankSuperiority0', self.parser.getGamemodeSoundingLike('XP3_Valley', 'tanksup'), 'tanksup')
+        self.assertEqual('TankSuperiority0', self.parser.getGamemodeSoundingLike('XP3_Valley', 'tank'), 'tank')
 

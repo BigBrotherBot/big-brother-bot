@@ -1,5 +1,7 @@
 This folder holds the tools and scripts to build a .exe release of B3
 and an installer.
+This script will take the B3 version found in the b3.egg-info folder, so you need to have run the
+setup.py tool before.
 
 REQUIREMENTS:
     Environment :
