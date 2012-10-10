@@ -58,9 +58,12 @@ b3/conf/templates/b3.cod4.tpl
 b3/conf/templates/b3.cod5.tpl
 b3/conf/templates/b3.cod6.tpl
 b3/conf/templates/b3.cod7.tpl
+b3/conf/templates/b3.cod8.tpl
+b3/conf/templates/b3.csgo.tpl
 b3/conf/templates/b3.frontline.tpl
 b3/conf/templates/b3.homefront.tpl
 b3/conf/templates/b3.iourt41.tpl
+b3/conf/templates/b3.iourt42.tpl
 b3/conf/templates/b3.moh.tpl
 b3/conf/templates/b3.ro2.tpl
 b3/docs/LICENSE.txt
@@ -157,7 +160,6 @@ b3/parsers/csgo.py
 b3/parsers/et.py
 b3/parsers/etpro.py
 b3/parsers/iourt41.py
-b3/parsers/iourt41callvote.py
 b3/parsers/iourt42.py
 b3/parsers/moh.py
 b3/parsers/oa081.py
@@ -181,7 +183,6 @@ b3/parsers/frostbite/rcon.py
 b3/parsers/frostbite/util.py
 b3/parsers/frostbite2/__init__.py
 b3/parsers/frostbite2/abstractParser.py
-b3/parsers/frostbite2/bf3string.py
 b3/parsers/frostbite2/protocol.py
 b3/parsers/frostbite2/punkbuster.py
 b3/parsers/frostbite2/rcon.py
@@ -210,7 +211,6 @@ b3/plugins/sftpytail.py
 b3/plugins/spamcontrol.py
 b3/plugins/stats.py
 b3/plugins/status.py
-b3/plugins/testevents.py
 b3/plugins/tk.py
 b3/plugins/welcome.py
 b3/sql/b3-db.sql
