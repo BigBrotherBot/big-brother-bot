@@ -1673,7 +1673,7 @@ def patch_b3_clients():
         This take a line off the queue and displays it
         then pause for 'message_delay' seconds
         """
-        while self.working and self.messagequeue and not self.messagequeue.empty():
+        while self.messagequeue and not self.messagequeue.empty():
             if not self.connected:
                 break
             msg = self.messagequeue.get()
