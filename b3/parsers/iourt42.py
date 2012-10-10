@@ -37,11 +37,10 @@
 #  * update for UrT 4.2.002 new auth system with Frozen Sand Account and auth-key
 # 2012/10/04 - 1.5.1 - Courgette
 #  * fix kick and tempban when used with a reason
+# 2012/10/10 - 1.5.2 - Courgette
+#  * support names with blank characters
 #
-
-__author__  = 'Courgette'
-__version__ = '1.5.1'
-
+#
 import re, new
 from b3.parsers.iourt41 import Iourt41Parser
 import b3
@@ -49,6 +48,8 @@ from b3.clients import Client
 from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
+__author__  = 'Courgette'
+__version__ = '1.5.2'
 
 class Iourt42Client(Client):
 
@@ -234,7 +235,7 @@ class Iourt42Parser(Iourt41Parser):
         #Processing chats and tell events...
         #5:39 saytell: 15 16 repelSteeltje: nno
         #5:39 saytell: 15 15 repelSteeltje: nno
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<name>[^ ]+):\s+(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<name>.+?):\s+(?P<text>.*))$', re.IGNORECASE),
 
         # We're not using tell in this form so this one is disabled
         #5:39 tell: repelSteeltje to B!K!n1: nno
@@ -247,7 +248,8 @@ class Iourt42Parser(Iourt41Parser):
         #re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<name>[^ ]+):\s+(?P<text>.*))$', re.IGNORECASE),
         # SGT: fix issue with OnSay when something like this come and the match could'nt find the name group
         # say: 7 -crespino-:
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<name>[^ ]+):\s*(?P<text>.*))$', re.IGNORECASE),
+        # say: 6 ^5Marcel ^2[^6CZARMY^2]: !help
+        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<name>.+?):\s*(?P<text>.*))$', re.IGNORECASE),
 
         #15:42 Flag Return: RED
         #15:42 Flag Return: BLUE

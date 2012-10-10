@@ -156,6 +156,15 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_data=(15, '35', '9'))
 
 
+    def test_say(self):
+        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel.connects('6')
+        self.assertEvent(r'''say: 6 ^5Marcel ^2[^6CZARMY^2]: !help''',
+            event_type='EVT_CLIENT_SAY',
+            event_client=marcel,
+            event_data="!help")
+
+
 
 class Test_OnClientuserinfo(Iourt42TestCase):
 
