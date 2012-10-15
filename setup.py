@@ -28,7 +28,7 @@
 # The setuptools package creator for pypi.python.org
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '2.0.1'
+__version__ = '2.1'
 
 
 import os, glob
@@ -36,7 +36,7 @@ import ez_setup, shutil, sys
 ez_setup.use_setuptools()
 from setuptools import setup, find_packages
 from setuptools.command.egg_info import egg_info
-from distutils import dir_util
+from distutils import dir_util, file_util
 try:
     import py2exe
     has_py2exe = True
@@ -55,16 +55,6 @@ cmdclass = {
     'egg_info': my_egg_info,
 }
 
-if has_py2exe:
-    # override egg_info command so it deletes py2exe build destination directory first
-    class my_py2exe(py2exe.build_exe.py2exe):
-        def run(self):
-            dist_py2exe_path = os.path.normpath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "py2exe_builder/dist_py2exe"))
-            if os.path.isdir(dist_py2exe_path):
-                dir_util.remove_tree(dist_py2exe_path)
-            py2exe.build_exe.py2exe.run(self)
-    cmdclass['py2exe'] = my_py2exe
-
 
 def listdirectory(path):
     def istocopy(path):
@@ -75,7 +65,7 @@ def listdirectory(path):
             )
     return map(os.path.normpath, filter(istocopy, glob.glob(path + os.sep + '*')))
 
-dataFiles = [
+py2exe_dataFiles = [
     ('', ['README.md']),
     ('', ['b3/PKG-INFO']),
     ('docs', listdirectory('b3/docs/')),
@@ -88,6 +78,32 @@ dataFiles = [
     ]
 
 
+if has_py2exe:
+    # override egg_info command so it deletes py2exe build destination directory first
+    class my_py2exe(py2exe.build_exe.py2exe):
+        def run(self):
+            dist_py2exe_path = os.path.normpath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "py2exe_builder/dist_py2exe"))
+
+            # clean destination directory
+            if os.path.isdir(dist_py2exe_path):
+                dir_util.remove_tree(dist_py2exe_path)
+
+            # build with py2exe
+            py2exe.build_exe.py2exe.run(self)
+
+            # copy data files
+            src_base = os.path.dirname(__file__)
+            for dst, src_files in py2exe_dataFiles:
+                dst_abs = os.path.normpath(os.path.join(dist_py2exe_path, dst))
+                for src in src_files:
+                    try:
+                        dir_util.create_tree(dst_abs, src_files)
+                        file_util.copy_file(os.path.normpath(os.path.join(src_base, src)), dst_abs, dry_run=self.dry_run)
+                    except Exception, e:
+                        sys.stderr.write("%s\n" % e)
+    cmdclass['py2exe'] = my_py2exe
+
+
 setup(cmdclass=cmdclass,
     name="b3",
     version=b3version,
@@ -95,7 +111,7 @@ setup(cmdclass=cmdclass,
     packages=find_packages(),
     extras_require={ 'mysql' : 'MySQL-python' },
     package_data={
-        '': ['README.md']
+        '': ['conf/*.xml', 'conf/templates/*.tpl', 'extplugins/xlrstats.py', 'extplugins/conf/*.xml', 'sql/*.*', 'sql/sqlite/*', 'docs/*', 'README.md']
     },
     zip_safe=False,
     author='Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Leveil (Courgette)',
@@ -134,7 +150,6 @@ Plugins provide much of the functionality for B3. These plugins can easily be co
         }
     ],
     zipfile="b3.lib",
-    data_files=dataFiles,
     options={
         "py2exe": {
             "dist_dir": "py2exe_builder/dist_py2exe",
