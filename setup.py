@@ -28,7 +28,7 @@
 # The setuptools package creator for pypi.python.org
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '2.1'
+__version__ = '2.2'
 
 
 import os, glob
@@ -97,8 +97,9 @@ if has_py2exe:
                 dst_abs = os.path.normpath(os.path.join(dist_py2exe_path, dst))
                 for src in src_files:
                     try:
-                        dir_util.create_tree(dst_abs, src_files)
-                        file_util.copy_file(os.path.normpath(os.path.join(src_base, src)), dst_abs, dry_run=self.dry_run)
+                        src_abs = os.path.normpath(os.path.join(src_base, src))
+                        dir_util.create_tree(dst_abs, src_abs)
+                        file_util.copy_file(src_abs, dst_abs, dry_run=self.dry_run)
                     except Exception, e:
                         sys.stderr.write("%s\n" % e)
     cmdclass['py2exe'] = my_py2exe
