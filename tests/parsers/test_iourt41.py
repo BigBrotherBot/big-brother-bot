@@ -262,7 +262,8 @@ maps/ut4_casa.bsp
         verify(self.output_mock).write('cyclemap')
 
 
-    def test_changeMap(self):
+    @patch("time.sleep")
+    def test_changeMap(self, sleep_mock):
         """\
         load a given map/level
         return a list of suggested map names in cases it fails to recognize the map that was provided
@@ -276,15 +277,104 @@ maps/ut4_algiers.bsp
 maps/ut4_austria.bsp
 maps/ut4_casa.bsp
 """)
-        with patch("time.sleep"):
-            suggestions = self.console.changeMap('algier')
-        verify(self.output_mock).write('map ut4_algiers')
+        suggestions = self.console.changeMap('algier')
         self.assertIsNone(suggestions)
+        verify(self.output_mock).write('map ut4_algiers')
 
-        with patch("time.sleep"):
-            suggestions = self.console.changeMap('bey')
+        suggestions = self.console.changeMap('bey')
         self.assertIsNotNone(suggestions)
         self.assertSetEqual(set(['ut4_abbey', 'ut4_abbeyctf']), set(suggestions))
+
+
+
+    @patch("time.sleep")
+    def test_changeMap_2(self, sleep_mock):
+        """\
+        see http://forum.bigbrotherbot.net/urt/!map-x-bug/msg37759/#msg37759
+        """
+        when(self.output_mock).write('fdir *.bsp').thenReturn("""\
+---------------
+maps/ut4_abbey.bsp
+maps/ut4_abbeyctf.bsp
+maps/ut4_algiers.bsp
+maps/ut4_ambush.bsp
+maps/ut4_area3_b4.bsp
+maps/ut4_asylum_b1.bsp
+maps/ut4_austria.bsp
+maps/ut4_aztek_b2.bsp
+maps/ut4_baeza.bsp
+maps/ut4_beijing_b3.bsp
+maps/ut4_blackhawk.bsp
+maps/ut4_blitzkrieg.bsp
+maps/ut4_boxtrot_x6.bsp
+maps/ut4_cambridge_b1.bsp
+maps/ut4_cambridge_fixed.bsp
+maps/ut4_casa.bsp
+maps/ut4_commune.bsp
+maps/ut4_company.bsp
+maps/ut4_crossing.bsp
+maps/ut4_deception_v2.bsp
+maps/ut4_desolate_rc1.bsp
+maps/ut4_docks.bsp
+maps/ut4_dressingroom.bsp
+maps/ut4_druglord2.bsp
+maps/ut4_dust2_v2.bsp
+maps/ut4_dust2_v3b.bsp
+maps/ut4_eagle.bsp
+maps/ut4_eezabad.bsp
+maps/ut4_elgin.bsp
+maps/ut4_exhibition_a24.bsp
+maps/ut4_facade_b5.bsp
+maps/ut4_ferguson_b12.bsp
+maps/ut4_firingrange.bsp
+maps/ut4_granja.bsp
+maps/ut4_guerrilla.bsp
+maps/ut4_harbortown.bsp
+maps/ut4_heroic_beta1.bsp
+maps/ut4_herring.bsp
+maps/ut4_horror.bsp
+maps/ut4_kingdom.bsp
+maps/ut4_kingdom_rc6.bsp
+maps/ut4_kingpin.bsp
+maps/ut4_mandolin.bsp
+maps/ut4_maximus_v1.bsp
+maps/ut4_maya.bsp
+maps/ut4_metropolis_b2.bsp
+maps/ut4_oildepot.bsp
+maps/ut4_orbital_sl.bsp
+maps/ut4_pandora_b7.bsp
+maps/ut4_paradise.bsp
+maps/ut4_paris_v2.bsp
+maps/ut4_poland_b11.bsp
+maps/ut4_prague.bsp
+maps/ut4_ramelle.bsp
+maps/ut4_ricochet.bsp
+maps/ut4_riyadh.bsp
+maps/ut4_roma_beta2b.bsp
+maps/ut4_sanc.bsp
+maps/ut4_shahideen.bsp
+maps/ut4_snoppis.bsp
+maps/ut4_subterra.bsp
+maps/ut4_suburbs.bsp
+maps/ut4_subway.bsp
+maps/ut4_swim.bsp
+maps/ut4_terrorism7.bsp
+maps/ut4_thingley.bsp
+maps/ut4_tohunga_b8.bsp
+maps/ut4_tombs.bsp
+maps/ut4_toxic.bsp
+maps/ut4_train_dl1.bsp
+maps/ut4_tunis.bsp
+maps/ut4_turnpike.bsp
+maps/ut4_uptown.bsp
+maps/ut4_venice_b7.bsp
+maps/ut4_village.bsp
+75 files listed
+""")
+        suggestions = self.console.changeMap('tohunga')
+        self.assertIsNone(suggestions)
+        verify(self.output_mock).write('map ut4_tohunga_b8')
+
 
 
     def test_getPlayerPings(self):
@@ -439,4 +529,47 @@ class Test_OnKill(Iourt41TestCase):
         self.assertEqual('body', hitloc)
         self.assertEqual('UT_MOD_NUKED', damage_type)
 
+
+class Test_getMapsSoundingLike(Iourt41TestCase):
+
+    def setUp(self):
+        Iourt41TestCase.setUp(self)
+        self.console.startup()
+
+
+    def test_no_map(self):
+        # GIVEN
+        when(self.console).getMaps().thenReturn([])
+        rv = self.console.getMapsSoundingLike('tohunga')
+        # THEN
+        self.assertEqual([], rv)
+
+
+    def test_one_map(self):
+        # GIVEN
+        when(self.console).getMaps().thenReturn(["ut4_baeza"])
+        rv = self.console.getMapsSoundingLike('tohunga')
+        # THEN
+        self.assertEqual('ut4_baeza', rv)
+
+
+    def test_lots_of_maps(self):
+        # GIVEN
+        when(self.console).getMaps().thenReturn(["ut4_abbey", "ut4_abbeyctf", "ut4_algiers", "ut4_ambush", "ut4_area3_b4",
+             "ut4_asylum_b1", "ut4_austria", "ut4_aztek_b2", "ut4_baeza", "ut4_beijing_b3", "ut4_blackhawk", "ut4_blitzkrieg",
+             "ut4_boxtrot_x6", "ut4_cambridge_b1", "ut4_cambridge_fixed", "ut4_casa", "ut4_commune", "ut4_company",
+             "ut4_crossing", "ut4_deception_v2", "ut4_desolate_rc1", "ut4_docks", "ut4_dressingroom", "ut4_druglord2",
+             "ut4_dust2_v2", "ut4_dust2_v3b", "ut4_eagle", "ut4_eezabad", "ut4_elgin", "ut4_exhibition_a24", "ut4_facade_b5",
+             "ut4_ferguson_b12", "ut4_firingrange", "ut4_granja", "ut4_guerrilla", "ut4_harbortown", "ut4_heroic_beta1",
+             "ut4_herring", "ut4_horror", "ut4_kingdom", "ut4_kingdom_rc6", "ut4_kingpin", "ut4_mandolin",
+             "ut4_maximus_v1", "ut4_maya", "ut4_metropolis_b2", "ut4_oildepot", "ut4_orbital_sl", "ut4_pandora_b7",
+             "ut4_paradise", "ut4_paris_v2", "ut4_poland_b11", "ut4_prague", "ut4_ramelle", "ut4_ricochet", "ut4_riyadh",
+             "ut4_roma_beta2b", "ut4_sanc", "ut4_shahideen", "ut4_snoppis", "ut4_subterra", "ut4_suburbs", "ut4_subway",
+             "ut4_swim", "ut4_terrorism7", "ut4_thingley", "ut4_tohunga_b8", "ut4_tombs", "ut4_toxic", "ut4_train_dl1",
+             "ut4_tunis", "ut4_turnpike", "ut4_uptown", "ut4_venice_b7", "ut4_village"])
+        # THEN
+        self.assertEqual('ut4_tohunga_b8', self.console.getMapsSoundingLike('ut4_tohunga_b8'))
+        self.assertEqual('ut4_tohunga_b8', self.console.getMapsSoundingLike('tohunga_b8'))
+        self.assertEqual('ut4_tohunga_b8', self.console.getMapsSoundingLike('tohunga'))
+        self.assertEqual('ut4_tohunga_b8', self.console.getMapsSoundingLike('tohung'))
 

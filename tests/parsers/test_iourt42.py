@@ -378,10 +378,15 @@ maps/ut4_ambush.bsp
     @patch('time.sleep')
     def test_changeMap(self, sleep_mock):
         # GIVEN
-        when(self.console).getMapsSoundingLike('ut4_f00').thenReturn(['ut4_foo'])
+        when(self.output_mock).write('fdir *.bsp').thenReturn("""\
+---------------
+maps/ut4_foo.bsp
+1 files listed
+""")
         # WHEN
-        self.console.changeMap('ut4_f00')
+        suggestions = self.console.changeMap('ut4_f00')
         # THEN
+        self.assertIsNone(suggestions)
         self.console.write.assert_has_calls([call('map ut4_foo')])
         sleep_mock.assert_called_once_with(1)
 
