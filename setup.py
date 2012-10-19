@@ -161,6 +161,7 @@ Plugins provide much of the functionality for B3. These plugins can easily be co
                 "b3.plugins.*",
                 "b3.parsers.*",
                 "b3.parsers.homefront",
+                "b3.parsers.ravaged",
                 "b3.parsers.frostbite.*",
                 "b3.extplugins.__init__",
                 ### additional modules for popular/useful 3rd party plugins ###
