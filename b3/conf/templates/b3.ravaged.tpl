@@ -11,8 +11,9 @@
 	</settings>
 	<settings name="server">
 		<set name="public_ip"></set>
-		<set name="port">13550</set>
-		<set name="rcon_ip"></set>
+		<set name="port">8000</set>
+		<set name="rcon_ip">127.0.0.1</set>
+		<set name="rcon_port">13550</set>
 		<set name="rcon_password">ravaged!</set>
 	</settings>
 	<settings name="autodoc">
@@ -49,6 +50,7 @@
 		<plugin name="admin" config="@conf/plugin_admin.xml" />
 		<plugin name="tk" config="@conf/plugin_tk.xml" />
 		<plugin name="stats" config="@conf/plugin_stats.xml" />
+        <plugin name="pingwatch" config="@conf/plugin_pingwatch.xml" />
 		<plugin name="adv" config="@conf/plugin_adv.xml" />
 		<plugin name="status" config="@conf/plugin_status.xml" />
 		<plugin name="welcome" config="@conf/plugin_welcome.xml" />

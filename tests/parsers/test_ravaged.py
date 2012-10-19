@@ -158,9 +158,40 @@ class Test_parser_API(RavagedTestCase):
                  call(u"say <FONT COLOR='#FC00E2'> \u203a occaecati cupiditate non provident, similique sunt in culpa")])
 
 
+    def test_getMap(self):
+        # GIVEN
+        when(self.parser.output).write("getmaplist false").thenReturn("""0 CTR_Canyon
+1 CTR_Derelict
+2 CTR_IceBreaker
+3 CTR_Liberty
+""")
+        # WHEN
+        rv = self.parser.getMap()
+        # THEN
+        self.assertEqual('CTR_Canyon', rv)
+
+
+    def test_getPlayerPings(self):
+        # GIVEN
+        when(self.parser.output).write("getplayerlist").thenReturn("""1 players:
+courgette 21 pts 4:8 38ms steamid: 12312312312312312
+""")
+        # WHEN
+        rv = self.parser.getPlayerPings()
+        # THEN
+        self.assertDictEqual({'12312312312312312': 38}, rv)
 
 
 
+    def test_getPlayerScores(self):
+        # GIVEN
+        when(self.parser.output).write("getplayerlist").thenReturn("""1 players:
+courgette 21 pts 4:8 38ms steamid: 12312312312312312
+""")
+        # WHEN
+        rv = self.parser.getPlayerScores()
+        # THEN
+        self.assertDictEqual({'12312312312312312': 21}, rv)
 
 
 
@@ -430,3 +461,52 @@ class Test_other(RavagedTestCase):
         self.assertEqual(TEAM_UNKNOWN, self.parser.getTeam("-1"))
 
 
+    def test_getmaplist(self):
+        # GIVEN
+        when(self.parser.output).write("getmaplist false").thenReturn("""0 CTR_Canyon
+1 CTR_Derelict
+2 CTR_IceBreaker
+3 CTR_Liberty
+4 CTR_Rooftop
+5 Thrust_Bridge
+6 Thrust_Canyon
+7 Thrust_Chasm
+8 Thrust_IceBreaker
+9 Thrust_Liberty
+10 Thrust_Oilrig
+11 Thrust_Rooftop
+12 CTR_Bridge
+""")
+        # WHEN
+        rv = self.parser.getmaplist()
+        # THEN
+        self.assertListEqual(['CTR_Canyon',
+                              'CTR_Derelict',
+                              'CTR_IceBreaker',
+                              'CTR_Liberty',
+                              'CTR_Rooftop',
+                              'Thrust_Bridge',
+                              'Thrust_Canyon',
+                              'Thrust_Chasm',
+                              'Thrust_IceBreaker',
+                              'Thrust_Liberty',
+                              'Thrust_Oilrig',
+                              'Thrust_Rooftop',
+                              'CTR_Bridge'], rv)
+
+
+    def test_getplayerlist(self):
+        # GIVEN
+        courgette = Client(console=self.parser, cid="12312312312312312", guid="12312312312312312", name="courgette")
+        self.parser.clients["12312312312312312"] = courgette
+        when(self.parser.output).write("getplayerlist").thenReturn("""1 players:
+courgette 21 pts 4:8 38ms steamid: 12312312312312312
+""")
+        # WHEN
+        rv = self.parser.getplayerlist()
+        # THEN
+        self.assertDictEqual({'12312312312312312': courgette}, rv)
+        self.assertEqual(21, courgette.score)
+        self.assertEqual(4, courgette.kills)
+        self.assertEqual(8, courgette.deaths)
+        self.assertEqual(38, courgette.ping)

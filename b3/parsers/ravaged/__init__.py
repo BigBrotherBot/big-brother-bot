@@ -18,8 +18,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
-#
-#
+# 1.0 - 2012-10-19
+#   * feature complete - need live testing with real gameplay
 #
 from Queue import Queue, Full, Empty
 import logging
@@ -28,6 +28,8 @@ import sys
 import time
 import traceback
 from b3 import version as b3_version, TEAM_UNKNOWN, TEAM_BLUE, TEAM_RED
+from b3.clients import Clients
+from b3.functions import time2minutes, getStuffSoundingLike, minutesStr
 from b3.game_event_router import gameEvent, getHandler
 from b3.parser import Parser
 from b3.parsers.ravaged.ravaged_rcon import RavagedServerCommandError, RavagedServer, RavagedServerNetworkError, RavagedServerCommandTimeout, RavagedServerError
@@ -35,7 +37,7 @@ from b3.parsers.ravaged.rcon import Rcon as RavagedRcon
 
 
 __author__  = 'Courgette'
-__version__ = '0.1'
+__version__ = '1.0'
 
 
 # how long should the bot try to connect to the Frostbite server before giving out (in second)
@@ -84,6 +86,11 @@ class RavagedParser(Parser):
     _reColor = re.compile(r'(\^[0-9])')
 
 
+    # monkey patch some of B3 stuff when using this parser
+    def __new__(cls, *args, **kwargs):
+        patch_b3()
+        return Parser.__new__(cls)
+
     ###############################################################################################
     #
     #    B3 parser initialisation steps
@@ -93,10 +100,10 @@ class RavagedParser(Parser):
     def startup(self):
         pass
         # add game specific events
-#        self.createEvent("EVT_SUPERLOGS_WEAPONSTATS", "SourceMod SuperLogs weaponstats") TODO
+#        self.createEvent("EVT_SUPERLOGS_WEAPONSTATS", "SourceMod SuperLogs weaponstats") TODO check if have game specific events
 
-        # create the 'Server' client
-        # todo self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
+        # todo create the 'Server' client
+        # self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
 
 #        self.queryServerInfo()
 
@@ -240,9 +247,10 @@ class RavagedParser(Parser):
     def getPlayerList(self):
         """\
         Query the game server for connected players.
-        return a dict having players' id for keys and players' data as another dict for values
+        return a dict having players' id for keys and Client objects as values
         """
-        raise NotImplementedError
+        return self.getplayerlist()
+
 
     def authorizeClients(self):
         """\
@@ -250,7 +258,8 @@ class RavagedParser(Parser):
         the user in the database (usualy guid, or punkbuster id, ip) and call the
         Client.auth() method
         """
-        raise NotImplementedError
+        pass # no need as all game log lines have the client guid
+
 
     def sync(self):
         """\
@@ -262,7 +271,13 @@ class RavagedParser(Parser):
         occupy. On map change, a player A on slot 1 can leave making room for player B who
         connects on slot 1.
         """
-        raise NotImplementedError
+        plist = self.getPlayerList()
+        mlist = {}
+        for cid, client in plist.iteritems():
+            if client:
+                mlist[cid] = client
+        return mlist
+
 
     def say(self, msg):
         """\
@@ -273,6 +288,7 @@ class RavagedParser(Parser):
             for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
                 self.output.write("say <FONT COLOR='#%s'> %s" % (self._settings.get('say_color', 'F2C880'), line))
 
+
     def saybig(self, msg):
         """\
         broadcast a message to all players in a way that will catch their attention.
@@ -281,6 +297,7 @@ class RavagedParser(Parser):
             msg = "%s <FONT COLOR='#%s'> %s" % (self.msgPrefix, self._settings.get('saybig_color', 'FC00E2'), msg)
             for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
                 self.output.write("say <FONT COLOR='#%s'> %s" % (self._settings.get('saybig_color', 'FC00E2'), line))
+
 
     def message(self, client, msg):
         """\
@@ -291,11 +308,31 @@ class RavagedParser(Parser):
             for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
                 self.output.write("playersay %s <FONT COLOR='#%s'> %s" % (client.cid, self._settings.get('private_message_color', '00FC48'), line))
 
+
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
         kick a given player
         """
-        raise NotImplementedError
+        self.debug('kick reason: [%s]' % reason)
+        if isinstance(client, basestring):
+            clients = self.clients.getByMagic(client)
+            if len(clients) != 1:
+                return
+            else:
+                client = client[0]
+
+        if admin:
+            fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+        else:
+            fullreason = self.getMessage('kicked', self.getMessageVariables(client=client, reason=reason))
+        fullreason = self.stripColors(fullreason)
+        reason = self.stripColors(reason)
+
+        self.do_kick(client, reason)
+
+        if not silent and fullreason != '':
+            self.say(fullreason)
+
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
@@ -303,13 +340,46 @@ class RavagedParser(Parser):
         fire the event ('EVT_CLIENT_BAN', data={'reason': reason,
         'admin': admin}, client=target)
         """
-        raise NotImplementedError
+        if client.hide: # exclude bots
+            return
+
+        self.debug('BAN : client: %s, reason: %s', client, reason)
+        if isinstance(client, basestring):
+            clients = self.clients.getByMagic(client)
+            if len(clients) != 1:
+                return
+            else:
+                client = client[0]
+
+        if admin:
+            fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+        else:
+            fullreason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
+        fullreason = self.stripColors(fullreason)
+        reason = self.stripColors(reason)
+
+        self.do_ban(client, reason)
+        if admin:
+            admin.message('banned: %s (@%s) has been added to banlist' % (client.exactName, client.id))
+
+        if not silent and fullreason != '':
+            self.say(fullreason)
+
+        self.queueEvent(self.getEvent("EVT_CLIENT_BAN", {'reason': reason, 'admin': admin}, client))
+
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
         unban a given player on the game server
         """
-        raise NotImplementedError
+        if client.hide: # exclude bots
+            return
+        self.debug('UNBAN: Name: %s, Ip: %s, Guid: %s' % (client.name, client.ip, client.guid))
+        self.do_unban(client)
+        self.verbose('UNBAN: Removed guid (%s) from banlist' %client.guid)
+        if admin:
+            admin.message('Unbanned: Removed %s guid from banlist' % client.exactName)
+
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
         """\
@@ -317,44 +387,97 @@ class RavagedParser(Parser):
         fire the event ('EVT_CLIENT_BAN_TEMP', data={'reason': reason,
         'duration': duration, 'admin': admin}, client=target)
         """
-        raise NotImplementedError
+        if client.hide: # exclude bots
+            return
+
+        self.debug('TEMPBAN : client: %s, duration: %s, reason: %s', client, duration, reason)
+        if isinstance(client, basestring):
+            clients = self.clients.getByMagic(client)
+            if len(clients) != 1:
+                return
+            else:
+                client = client[0]
+
+        if admin:
+            fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=minutesStr(duration)))
+        else:
+            fullreason = self.getMessage('temp_banned', self.getMessageVariables(client=client, reason=reason, banduration=minutesStr(duration)))
+        fullreason = self.stripColors(fullreason)
+        reason = self.stripColors(reason)
+
+        self.do_tempban(client, duration, reason)
+
+        if not silent and fullreason != '':
+            self.say(fullreason)
+
+        self.queueEvent(self.getEvent("EVT_CLIENT_BAN_TEMP", {'reason': reason, 'duration': duration, 'admin': admin}, client))
+
 
     def getMap(self):
         """\
         return the current map/level name
         """
-        raise NotImplementedError
+        re_current_map = re.compile(r"^0 (?P<map_name>\S+)$", re.MULTILINE)
+        m = re.search(re_current_map, self.output.write("getmaplist false"))
+        if m:
+            current_map = m.group('map_name')
+            self.game.mapName = current_map
+            return current_map
+        else:
+            return
+
 
     def getMaps(self):
         """\
         return the available maps/levels name
         """
-        raise NotImplementedError
+        # TODO should call getavailablemaps but does not seem to work
+        return self.getmaplist()
+
 
     def rotateMap(self):
         """\
         load the next map/level
         """
-        raise NotImplementedError
+        self.output.write("nextmap")
+
 
     def changeMap(self, map_name):
         """\
         load a given map/level
         return a list of suggested map names in cases it fails to recognize the map that was provided
         """
-        raise NotImplementedError
+        rv = self.getMapsSoundingLike(map_name)
+        if isinstance(rv, basestring):
+            self.output.write("addmap %s 1" % map_name)
+            self.output.write("nextmap")
+        else:
+            return rv
+
 
     def getPlayerPings(self):
         """\
         returns a dict having players' id for keys and players' ping for values
         """
-        raise NotImplementedError
+        rv = {}
+        for cid, client in self.getplayerlist().items():
+            data = getattr(client, 'ping', None)
+            if data:
+                rv[cid] = data
+        return rv
+
 
     def getPlayerScores(self):
         """\
         returns a dict having players' id for keys and players' scores for values
         """
-        raise NotImplementedError
+        rv = {}
+        for cid, client in self.getplayerlist().items():
+            data = getattr(client, 'score', None)
+            if data:
+                rv[cid] = data
+        return rv
+
 
     def inflictCustomPenalty(self, type, client, reason=None, duration=None, admin=None, data=None):
         """
@@ -363,7 +486,7 @@ class RavagedParser(Parser):
         'mute', 'kill' or anything you want.
         /!\ This method must return True if the penalty was inflicted.
         """
-        pass
+        pass # TODO see if inflictCustomPenalty is applicable
 
 
     ###############################################################################################
@@ -417,6 +540,10 @@ class RavagedParser(Parser):
         if client is None:
             client = self.clients.newClient(guid, guid=guid, team=TEAM_UNKNOWN)
             client.last_update_time = time.time()
+            client.ping = None
+            client.score = None
+            client.kills = None
+            client.deaths = None
         if name:
             client.name = name
         if team:
@@ -438,6 +565,86 @@ class RavagedParser(Parser):
             self.debug("unexpected team id : %s" % team)
             return TEAM_UNKNOWN
 
+
+    def do_kick(self, client, reason=None):
+        if not client.cid:
+            self.warning("Trying to kick %s which has no cid" % client)
+        else:
+            if reason:
+                self.output.write('kick %s %s' % (client.cid, reason))
+            else:
+                self.output.write("kick %s" % client.cid)
+
+
+    def do_ban(self, client, reason=None):
+        # kickban <steamid> reason <days>
+        self.do_tempban(client, duration="365d", reason=reason)
+
+
+    def do_tempban(self, client, duration=2, reason=None):
+        # kickban <steamid> reason <days>
+        days = float(time2minutes(duration)) / 1440.0
+        if reason:
+            self.output.write('kickban %s "%s" %s' % (client.guid, reason, days))
+        else:
+            self.output.write('kickban %s %s' % (client.guid, days))
+
+
+    def do_unban(self, client):
+        # unban <steamid>
+        self.output.write('unban %s' % client.guid)
+
+
+    def getmaplist(self):
+        """
+        return the available maps on the server, even if not in the map rotation list
+        """
+        re_maps = re.compile(r"^(?P<index>\d+) (?P<map_name>\S+)$")
+        response = []
+        for line in self.output.write("getmaplist false").split('\n'):
+            m = re.match(re_maps, line)
+            if m:
+                response.append(m.group('map_name'))
+        return response
+
+
+    def getMapsSoundingLike(self, mapname):
+        """ return a valid mapname.
+        If no exact match is found, then return close candidates as a list
+        """
+        supportedMaps = [m.lower() for m in self.getmaplist()]
+        wanted_map = mapname.lower()
+        if wanted_map in supportedMaps:
+            return wanted_map
+
+        matches = getStuffSoundingLike(wanted_map, supportedMaps)
+        if len(matches) == 1:
+            # one match, get the map id
+            return matches[0]
+        else:
+            # multiple matches, provide suggestions
+            return matches
+
+
+    def getplayerlist(self):
+        """
+        - query the server for connected players' info
+        - create Client objects for never seen before players
+        - update Client objects info
+        - return a dict<cid, Client>
+        """
+        rv = self.output.write("getplayerlist")
+        clients = {}
+        if rv:
+            re_player = re.compile(r'''^(?P<name>.+?) (?P<score>-?\d+) pts (?P<kills>-?\d+):(?P<deaths>-?\d+) (?P<ping>-?\d+)ms steamid: (?P<guid>\d+)$''', re.MULTILINE)
+            for m in re.finditer(re_player, rv):
+                client = self.getClientOrCreate(m.group('guid'), m.group('name'))
+                client.score = int(m.group('score'))
+                client.kills = int(m.group('kills'))
+                client.deaths = int(m.group('deaths'))
+                client.ping = int(m.group('ping'))
+                clients[client.cid] = client
+        return clients
 
 
 
@@ -485,12 +692,12 @@ class RavagedParser(Parser):
                     break
 
             try:
-                added, expire, packet = self.game_event_queue.get(timeout=30)
+                added, expire, packet = self.game_event_queue.get(timeout=300)
                 if packet is self.game_event_queue_stop_token:
                     break
                 self.route_game_event(packet)
             except Empty:
-                self.verbose2("no game server event to treat in the last 30s")
+                self.verbose2("no game server event to treat in the last 5min")
             except RavagedServerCommandError, err:
                 # it does not matter from the parser perspective if Frostbite command failed
                 # (timeout or bad reply)
@@ -578,7 +785,7 @@ class RavagedParser(Parser):
         self.say('%s ^2[ONLINE]' % b3_version)
 #        self.query_serverInfo()
 #        self.query_serverVars()
-#        self.clients.sync()
+        self.clients.sync()
 
 
     def close_game_connection(self):
@@ -611,3 +818,10 @@ class RavagedParser(Parser):
     def shutdown(self):
         self.game_event_queue.put((None, None, self.game_event_queue_stop_token))
         Parser.shutdown(self)
+
+
+#########################################################################################
+
+def patch_b3():
+    # disable the authorizing timer that come by default with the b3.clients.Clients class
+    Clients.authorizeClients = lambda *args, **kwargs: None
