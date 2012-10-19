@@ -19,7 +19,7 @@
 #
 from mock import Mock, call, patch
 import unittest2 as unittest
-from mockito import when
+from mockito import when, verify
 from b3 import TEAM_UNKNOWN
 from b3.clients import Client
 from b3.config import XmlConfigParser
@@ -169,6 +169,43 @@ class Test_parser_API(RavagedTestCase):
         rv = self.parser.getMap()
         # THEN
         self.assertEqual('CTR_Canyon', rv)
+
+
+
+    def test_getNextMap(self):
+        # GIVEN
+        when(self.parser.output).write("getmaplist false").thenReturn("""0 CTR_Canyon
+1 CTR_Derelict
+2 CTR_IceBreaker
+3 CTR_Liberty
+""")
+        # WHEN
+        rv = self.parser.getNextMap()
+        # THEN
+        self.assertEqual('CTR_Derelict', rv)
+
+
+    def test_changeMap(self):
+        # GIVEN
+        when(self.parser.output).write("getmaplist false").thenReturn("""0 CTR_Bridge
+1 CTR_Canyon
+2 CTR_Derelict
+3 CTR_IceBreaker
+4 CTR_Liberty
+5 CTR_Rooftop
+6 Thrust_Bridge
+7 Thrust_Canyon
+8 Thrust_Chasm
+9 Thrust_IceBreaker
+10 Thrust_Liberty
+11 Thrust_Oilrig
+12 Thrust_Rooftop
+""")
+        # WHEN
+        with patch.object(self.parser.output, 'write', wraps=self.parser.output.write) as write_mock:
+            rv = self.parser.changeMap('oil')
+        # THEN
+        write_mock.assert_has_calls([call("addmap Thrust_Oilrig 1"), call("nextmap")])
 
 
     def test_getPlayerPings(self):
@@ -336,6 +373,16 @@ class Test_gamelog_parsing(RavagedTestCase):
         self.parser.route_game_event('''"Name1<11111111111111><0>" killed "Name2<2222222222222><0>" with "the_weapon"''')
         # THEN
         self.assert_has_event('EVT_CLIENT_KILL_TEAM', data=(100, "the_weapon", 'body'), client=p1, target=p2)
+
+
+    def test_killed(self):
+        # GIVEN
+        p = Client(cid="11111111111111", guid="11111111111111", name="Name1")
+        self.queueEvent_mock.reset_mock()
+        # WHEN
+        self.parser.route_game_event('''"Name1<11111111111111><0>" killed  with UTDmgType_VehicleCollision''')
+        # THEN
+        self.assert_has_event('EVT_CLIENT_SUICIDE', data=(100, "UTDmgType_VehicleCollision", 'body'), client=p, target=p)
 
 
     def test_connected_remotely(self):
@@ -510,3 +557,69 @@ courgette 21 pts 4:8 38ms steamid: 12312312312312312
         self.assertEqual(4, courgette.kills)
         self.assertEqual(8, courgette.deaths)
         self.assertEqual(38, courgette.ping)
+
+
+    def test_getMapsSoundingLike_matching(self):
+        # GIVEN
+        when(self.parser.output).write("getmaplist false").thenReturn("""0 CTR_Bridge
+1 CTR_Canyon
+2 CTR_Derelict
+3 CTR_IceBreaker
+4 CTR_Liberty
+5 CTR_Rooftop
+6 Thrust_Bridge
+7 Thrust_Canyon
+8 Thrust_Chasm
+9 Thrust_IceBreaker
+10 Thrust_Liberty
+11 Thrust_Oilrig
+12 Thrust_Rooftop
+""")
+        # WHEN
+        rv = self.parser.getMapsSoundingLike('oil')
+        # THEN
+        self.assertEqual('Thrust_Oilrig', rv)
+
+
+    def test_getMapsSoundingLike_no_match(self):
+        # GIVEN
+        when(self.parser.output).write("getmaplist false").thenReturn("""0 CTR_Bridge
+1 CTR_Canyon
+2 CTR_Derelict
+3 CTR_IceBreaker
+4 CTR_Liberty
+5 CTR_Rooftop
+6 Thrust_Bridge
+7 Thrust_Canyon
+8 Thrust_Chasm
+9 Thrust_IceBreaker
+10 Thrust_Liberty
+11 Thrust_Oilrig
+12 Thrust_Rooftop
+""")
+        # WHEN
+        rv = self.parser.getMapsSoundingLike('Canyon')
+        # THEN
+        self.assertSetEqual(set(['Thrust_Canyon', 'CTR_Canyon']), set(rv))
+
+
+    def test_getMapsSoundingLike_3(self):
+        # GIVEN
+        when(self.parser.output).write("getmaplist false").thenReturn("""0 CTR_Bridge
+1 CTR_Canyon
+2 CTR_Derelict
+3 CTR_IceBreaker
+4 CTR_Liberty
+5 CTR_Rooftop
+6 Thrust_Bridge
+7 Thrust_Canyon
+8 Thrust_Chasm
+9 Thrust_IceBreaker
+10 Thrust_Liberty
+11 Thrust_Oilrig
+12 Thrust_Rooftop
+""")
+        # WHEN
+        rv = self.parser.getMapsSoundingLike('CTR canyon')
+        # THEN
+        self.assertEqual('CTR_Canyon', rv)

@@ -20,6 +20,11 @@
 # CHANGELOG
 # 1.0 - 2012-10-19
 #   * feature complete - need live testing with real gameplay
+# 1.1 - 2012-10-19
+#   * recognize a new type of game event when a player dies by crashing a vehicule
+#   * add getNextMap()
+#   * fix changeMap()
+#   * improve getMapsSoundingLike()
 #
 from Queue import Queue, Full, Empty
 import logging
@@ -37,7 +42,7 @@ from b3.parsers.ravaged.rcon import Rcon as RavagedRcon
 
 
 __author__  = 'Courgette'
-__version__ = '1.0'
+__version__ = '1.1'
 
 
 ger = Game_event_router()
@@ -201,7 +206,10 @@ class RavagedParser(Parser):
         return self.getEvent('EVT_CLIENT_TEAM_SAY', data=text, client=self.getClientOrCreate(guid, name, team))
 
 
-    @ger.gameEvent(r'''^"(?P<name>.+?)<(?P<guid>\d+)><(?P<team>.*)>" committed suicide with "(?P<weapon>\S+)"$''')
+    @ger.gameEvent(
+        r'''^"(?P<name>.+?)<(?P<guid>\d+)><(?P<team>.*)>" committed suicide with "(?P<weapon>\S+)"$''',
+        r'''^"(?P<name>.+?)<(?P<guid>\d+)><(?P<team>.*)>" killed  with (?P<weapon>\S+)$'''
+    )
     def on_committed_suicide(self, name, guid, team, weapon):
         # "courgette<12312312312312312><1>" committed suicide with "R_DmgType_M26Grenade"
         player = self.getClientOrCreate(guid, name, team)
@@ -209,7 +217,7 @@ class RavagedParser(Parser):
 
 
     @ger.gameEvent(r'''^"(?P<name_a>.+?)<(?P<guid_a>\d+)><(?P<team_a>.*)>" killed "(?P<name_b>.+?)<(?P<guid_b>\d+)><(?P<team_b>.*)>" with "(?P<weapon>\S+)"$''')
-    def on_kill(self, name_a, guid_a, team_a, name_b, guid_b, team_b, weapon):
+    def on_killed(self, name_a, guid_a, team_a, name_b, guid_b, team_b, weapon):
         # "Name1<11111111111111><0>" killed "Name2<2222222222222><1>" with "the_weapon"
         attacker = self.getClientOrCreate(guid_a, name_a, team_a)
         victim = self.getClientOrCreate(guid_b, name_b, team_b)
@@ -431,6 +439,16 @@ class RavagedParser(Parser):
             return
 
 
+    def getNextMap(self):
+        """
+        return the next map in the map rotation list
+        """
+        re_next_map = re.compile(r"^1 (?P<map_name>\S+)$", re.MULTILINE)
+        m = re.search(re_next_map, self.output.write("getmaplist false"))
+        if m:
+            return m.group('map_name')
+
+
     def getMaps(self):
         """\
         return the available maps/levels name
@@ -453,7 +471,7 @@ class RavagedParser(Parser):
         """
         rv = self.getMapsSoundingLike(map_name)
         if isinstance(rv, basestring):
-            self.output.write("addmap %s 1" % map_name)
+            self.output.write("addmap %s 1" % rv)
             self.output.write("nextmap")
         else:
             return rv
@@ -575,7 +593,7 @@ class RavagedParser(Parser):
             self.warning("Trying to kick %s which has no cid" % client)
         else:
             if reason:
-                self.output.write('kick %s %s' % (client.cid, reason))
+                self.output.write('kick %s "%s"' % (client.cid, reason))
             else:
                 self.output.write("kick %s" % client.cid)
 
@@ -591,7 +609,7 @@ class RavagedParser(Parser):
         if reason:
             self.output.write('kickban %s "%s" %s' % (client.guid, reason, days))
         else:
-            self.output.write('kickban %s %s' % (client.guid, days))
+            self.output.write('kickban %s "%s"' % (client.guid, days))
 
 
     def do_unban(self, client):
@@ -603,11 +621,11 @@ class RavagedParser(Parser):
         """
         return the available maps on the server, even if not in the map rotation list
         """
-        re_maps = re.compile(r"^(?P<index>\d+) (?P<map_name>\S+)$")
+        re_maps = re.compile(r"^(?P<index>\d+) (?P<map_name>\S+)$", re.MULTILINE)
         response = []
-        for line in self.output.write("getmaplist false").split('\n'):
-            m = re.match(re_maps, line)
-            if m:
+        raw_maps = self.output.write("getmaplist false")
+        if raw_maps:
+            for m in re.finditer(re_maps, raw_maps):
                 response.append(m.group('map_name'))
         return response
 
@@ -616,9 +634,9 @@ class RavagedParser(Parser):
         """ return a valid mapname.
         If no exact match is found, then return close candidates as a list
         """
-        supportedMaps = [m.lower() for m in self.getmaplist()]
+        supportedMaps = self.getmaplist()
         wanted_map = mapname.lower()
-        if wanted_map in supportedMaps:
+        if wanted_map in [m.lower() for m in supportedMaps]:
             return wanted_map
 
         matches = getStuffSoundingLike(wanted_map, supportedMaps)
