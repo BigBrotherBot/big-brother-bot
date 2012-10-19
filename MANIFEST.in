@@ -1,3 +1,8 @@
-include *.txt *.py *.xml *.tpl *.sql CHANGELOG README.md b3/PKG-INFO
+include *.py
+include b3_run.py
+include b3/sql/*.sql
+include CHANGELOG README.md b3/PKG-INFO *.txt
+include b3/conf/*.xml b3/conf/*.ini
+include b3/conf/templates/*.tpl
 exclude py2exe_builder/*
 exclude .idea/*
