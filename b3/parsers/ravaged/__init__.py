@@ -30,7 +30,7 @@ import traceback
 from b3 import version as b3_version, TEAM_UNKNOWN, TEAM_BLUE, TEAM_RED
 from b3.clients import Clients
 from b3.functions import time2minutes, getStuffSoundingLike, minutesStr
-from b3.game_event_router import gameEvent, getHandler
+from b3.game_event_router import Game_event_router
 from b3.parser import Parser
 from b3.parsers.ravaged.ravaged_rcon import RavagedServerCommandError, RavagedServer, RavagedServerNetworkError, RavagedServerCommandTimeout, RavagedServerError
 from b3.parsers.ravaged.rcon import Rcon as RavagedRcon
@@ -38,6 +38,10 @@ from b3.parsers.ravaged.rcon import Rcon as RavagedRcon
 
 __author__  = 'Courgette'
 __version__ = '1.0'
+
+
+ger = Game_event_router()
+
 
 
 # how long should the bot try to connect to the Frostbite server before giving out (in second)
@@ -126,7 +130,7 @@ class RavagedParser(Parser):
     #
     ###############################################################################################
 
-    @gameEvent(r'''^"(?P<name>.*?)<(?P<guid>\d+)><(?P<team>.*)>" connected, address "(?P<ip>\S+)"$''')
+    @ger.gameEvent(r'''^"(?P<name>.*?)<(?P<guid>\d+)><(?P<team>.*)>" connected, address "(?P<ip>\S+)"$''')
     def on_connected(self, name, guid, team, ip):
         # "<12312312312312312><>" connected, address "192.168.0.1"
         player = self.getClientOrCreate(guid, name=None)
@@ -135,76 +139,76 @@ class RavagedParser(Parser):
             # self.getClientOrCreate will send the EVT_CLIENT_CONNECT event
 
 
-    @gameEvent(r'''^"(?P<name>.+?)<(?P<guid>\d+)><(?P<team>.*)>" entered the game$''')
+    @ger.gameEvent(r'''^"(?P<name>.+?)<(?P<guid>\d+)><(?P<team>.*)>" entered the game$''')
     def on_entered_the_game(self, name, guid, team):
         # "courgette<12312312312312312><0>" entered the game
         return self.getEvent('EVT_CLIENT_JOIN', client=self.getClientOrCreate(guid, name, team))
 
 
-    @gameEvent(r'''^"(?P<name>.+?)<(?P<guid>\d+)><(?:.*)>" joined team "(?P<new_team>.+)"$''')
+    @ger.gameEvent(r'''^"(?P<name>.+?)<(?P<guid>\d+)><(?:.*)>" joined team "(?P<new_team>.+)"$''')
     def on_joined_team(self, name, guid, new_team):
         # "courgette<12312312312312312><1>" joined team "1"
         self.getClientOrCreate(guid, name, new_team)
 
 
-    @gameEvent(r'''^"(?P<name>.+?)<(?P<guid>\d+)><(?P<team>.*)>"\s*disconnected$''')
+    @ger.gameEvent(r'''^"(?P<name>.+?)<(?P<guid>\d+)><(?P<team>.*)>"\s*disconnected$''')
     def on_disconnected(self, name, guid, team):
         # "courgette<12312312312312312><0>"disconnected
         player = self.getClientOrCreate(guid, name, team)
         player.disconnect()
 
 
-    @gameEvent(r'''^Server say "(?P<data>.*)"$''')
+    @ger.gameEvent(r'''^Server say "(?P<data>.*)"$''')
     def on_server_say(self, data):
         # Server say "Admin: B\xb3: www.bigbrotherbot.net (b3) v1.10dev [nt] [Coco] [ONLINE]"
         pass
 
 
-    @gameEvent(r'''^Server say_team "(?P<text>.*)" to team "(?P<team>.*)"$''')
+    @ger.gameEvent(r'''^Server say_team "(?P<text>.*)" to team "(?P<team>.*)"$''')
     def on_server_say(self, text, team):
         # Server say_team "f00" to team "1"
         pass
 
 
-    @gameEvent(r'''^Loading map "(?P<map_name>\S+)"$''')
+    @ger.gameEvent(r'''^Loading map "(?P<map_name>\S+)"$''')
     def on_loading_map(self, map_name):
         # Loading map "CTR_Derelict"
         self.game.mapName = map_name
 
 
-    @gameEvent(r'''^Round started$''')
+    @ger.gameEvent(r'''^Round started$''')
     def on_round_started(self):
         # Round started
         self.game.startRound()
         return self.getEvent('EVT_GAME_ROUND_START', data=self.game)
 
 
-    @gameEvent(r'''^Round finished, winning team is "(?P<team>.*)"$''')
+    @ger.gameEvent(r'''^Round finished, winning team is "(?P<team>.*)"$''')
     def on_round_finished(self, team):
         # Round finished, winning team is "0"
         return self.getEvent('EVT_GAME_ROUND_END', data=self.getTeam(team))
 
 
-    @gameEvent(r'''^"(?P<name>.+?)<(?P<guid>\d+)><(?P<team>.*)>" say "(?:<FONT COLOR='#[A-F0-9]+'> )?(?P<text>.+)"$''')
+    @ger.gameEvent(r'''^"(?P<name>.+?)<(?P<guid>\d+)><(?P<team>.*)>" say "(?:<FONT COLOR='#[A-F0-9]+'> )?(?P<text>.+)"$''')
     def on_say(self, name, guid, team, text):
         # "courgette<12312312312312312><1>" say "<FONT COLOR='#FF0000'> hi"
         return self.getEvent('EVT_CLIENT_SAY', data=text, client=self.getClientOrCreate(guid, name, team))
 
 
-    @gameEvent(r'''^"(?P<name>.+?)<(?P<guid>\d+)><(?P<team>.*)>" say_team "\(Team\) (?:<FONT COLOR='#[A-F0-9]+'> )?(?P<text>.+)"$''')
+    @ger.gameEvent(r'''^"(?P<name>.+?)<(?P<guid>\d+)><(?P<team>.*)>" say_team "\(Team\) (?:<FONT COLOR='#[A-F0-9]+'> )?(?P<text>.+)"$''')
     def on_say_team(self, name, guid, team, text):
         # "courgette<12312312312312312><1>" say_team "(Team) <FONT COLOR='#66CCFF'> hi team"
         return self.getEvent('EVT_CLIENT_TEAM_SAY', data=text, client=self.getClientOrCreate(guid, name, team))
 
 
-    @gameEvent(r'''^"(?P<name>.+?)<(?P<guid>\d+)><(?P<team>.*)>" committed suicide with "(?P<weapon>\S+)"$''')
+    @ger.gameEvent(r'''^"(?P<name>.+?)<(?P<guid>\d+)><(?P<team>.*)>" committed suicide with "(?P<weapon>\S+)"$''')
     def on_committed_suicide(self, name, guid, team, weapon):
         # "courgette<12312312312312312><1>" committed suicide with "R_DmgType_M26Grenade"
         player = self.getClientOrCreate(guid, name, team)
         return self.getEvent('EVT_CLIENT_SUICIDE', data=(100, weapon, 'body'), client=player, target=player)
 
 
-    @gameEvent(r'''^"(?P<name_a>.+?)<(?P<guid_a>\d+)><(?P<team_a>.*)>" killed "(?P<name_b>.+?)<(?P<guid_b>\d+)><(?P<team_b>.*)>" with "(?P<weapon>\S+)"$''')
+    @ger.gameEvent(r'''^"(?P<name_a>.+?)<(?P<guid_a>\d+)><(?P<team_a>.*)>" killed "(?P<name_b>.+?)<(?P<guid_b>\d+)><(?P<team_b>.*)>" with "(?P<weapon>\S+)"$''')
     def on_kill(self, name_a, guid_a, team_a, name_b, guid_b, team_b, weapon):
         # "Name1<11111111111111><0>" killed "Name2<2222222222222><1>" with "the_weapon"
         attacker = self.getClientOrCreate(guid_a, name_a, team_a)
@@ -215,13 +219,13 @@ class RavagedParser(Parser):
         return self.getEvent(event_type, data=(100, weapon, 'body'), client=attacker, target=victim)
 
 
-    @gameEvent(r'''^\((?P<ip>.+):(?P<port>\d+) has connected remotely\)$''')
+    @ger.gameEvent(r'''^\((?P<ip>.+):(?P<port>\d+) has connected remotely\)$''')
     def on_connected_remotely(self, ip, port):
         # (127.0.0.1:3508 has connected remotely)
         pass
 
 
-    @gameEvent(r'''^RCon:\((?P<login>\S+)(?P<ip>.+):(?P<port>\d+) has disconnected from RCon\)$''')
+    @ger.gameEvent(r'''^RCon:\((?P<login>\S+)(?P<ip>.+):(?P<port>\d+) has disconnected from RCon\)$''')
     def on_disconnected_from_rcon(self, login, ip, port):
         # RCon:(Admin127.0.0.1:3508 has disconnected from RCon)
         pass
@@ -230,7 +234,7 @@ class RavagedParser(Parser):
 
 
     # -------------- /!\  this one must be the last /!\ --------------
-    @gameEvent(r'''^(?P<data>.+)$''')
+    @ger.gameEvent(r'''^(?P<data>.+)$''')
     def on_unknown_line(self, data):
         """
         catch all lines that were not handled
@@ -808,7 +812,7 @@ class RavagedParser(Parser):
 
 
     def route_game_event(self, game_event):
-        hfunc, param_dict = getHandler(game_event)
+        hfunc, param_dict = ger.getHandler(game_event)
         if hfunc:
             self.verbose2("calling %s%r" % (hfunc.func_name, param_dict))
             event = hfunc(self, **param_dict)
