@@ -693,10 +693,10 @@ class Test_bf3_maps(BF3TestCase):
 
 
     def test_getMapsSoundingLike(self):
-        self.assertEqual(['scrapmetal', 'caspian border', 'grand bazaar'], self.parser.getMapsSoundingLike(''), '')
+        self.assertEqual(['grand bazaar', 'noshahar canals', 'kharg island'], self.parser.getMapsSoundingLike(''), '')
         self.assertEqual('MP_Subway', self.parser.getMapsSoundingLike('Operation Metro'), 'Operation Metro')
         self.assertEqual('MP_001', self.parser.getMapsSoundingLike('grand'))
-        self.assertEqual(['operation firestorm', 'operation metro', 'operation 925'], self.parser.getMapsSoundingLike('operation'))
+        self.assertEqual(['operation metro', 'operation firestorm', 'operation 925'], self.parser.getMapsSoundingLike('operation'))
         self.assertEqual('XP3_Desert', self.parser.getMapsSoundingLike('bandar'))
         self.assertEqual('XP3_Desert', self.parser.getMapsSoundingLike('desert'))
         self.assertEqual('XP3_Alborz', self.parser.getMapsSoundingLike('alborz'))
@@ -711,7 +711,7 @@ class Test_bf3_maps(BF3TestCase):
     def test_getGamemodeSoundingLike(self):
         self.assertEqual('ConquestSmall0', self.parser.getGamemodeSoundingLike('MP_011', 'ConquestSmall0'), 'ConquestSmall0')
         self.assertEqual('ConquestSmall0', self.parser.getGamemodeSoundingLike('MP_011', 'Conquest'), 'Conquest')
-        self.assertListEqual(['Squad Deathmatch', 'Team Deathmatch'], self.parser.getGamemodeSoundingLike('MP_011', 'Deathmatch'), 'Deathmatch')
+        self.assertListEqual(['Team Deathmatch', 'Squad Deathmatch'], self.parser.getGamemodeSoundingLike('MP_011', 'Deathmatch'), 'Deathmatch')
         self.assertListEqual(['Rush', 'Conquest', 'Conquest64'], self.parser.getGamemodeSoundingLike('MP_011', 'foo'))
         self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'tdm'), 'tdm')
         self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'teamdeathmatch'), 'teamdeathmatch')

@@ -26,9 +26,10 @@
 # 06/06/2011 - 1.4.0 - Courgette - add meanstdv()
 # 07/06/2011 - 1.4.1 - Courgette - fix meanstdv()
 # 17/06/2012 - 1.5   - Courgette - add getStuffSoundingLike()
-
+# 19/10/2012 - 1.6   - Courgette - improve getStuffSoundingLike() so it discards non letter/digit characters
+#
 __author__    = 'ThorN, xlr8or'
-__version__   = '1.5'
+__version__   = '1.6'
 
 import b3
 import re
@@ -306,26 +307,35 @@ def getStuffSoundingLike(stuff, expected_stuff):
     If no exact match is found, then return close candidates using by substring match.
     If no subtring matches, then use soundex and then LevenshteinDistance algorithms
     """
-    clean_stuff = stuff.strip().lower()
+    re_not_text = re.compile("[^a-z0-9]", re.IGNORECASE)
+    def clean(txt):
+        return re.sub(re_not_text, '', txt.lower())
+    clean_stuff = clean(stuff)
     soundex1 = soundex(stuff)
+
+    clean_expected_stuff = dict()
+    for i in expected_stuff:
+        clean_expected_stuff[clean(i)] = i
 
     match = []
     # given stuff could be the exact match
     if stuff in expected_stuff:
         match = [stuff]
+    elif clean_stuff in clean_expected_stuff:
+        match = [clean_expected_stuff[clean_stuff]]
     else:
         # stuff could be a substring of one of the expected value
-        matching_subset = filter(lambda x: x.lower().find(clean_stuff) >= 0, expected_stuff)
+        matching_subset = filter(lambda x: x.lower().find(clean_stuff) >= 0, clean_expected_stuff.keys())
         if len(matching_subset) == 1:
-            match = [matching_subset[0]]
+            match = [clean_expected_stuff[matching_subset[0]]]
         elif len(matching_subset) > 1:
-            match = matching_subset
+            match = [clean_expected_stuff[i] for i in matching_subset]
         else:
             # no luck with subset lookup, fallback on soundex magic
-            for m in expected_stuff:
+            for m in clean_expected_stuff.keys():
                 s = soundex(m)
                 if s == soundex1:
-                    match.append(m)
+                    match.append(clean_expected_stuff[m])
 
     if not len(match):
         match = expected_stuff
