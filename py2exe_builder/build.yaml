@@ -1,7 +1,6 @@
 # list of InnoSetup script to compile
 innosetup_scripts:
  - b3-installer-project.iss
- - b3_lite_for_bf3-installer-project.iss
 
 # where to find the InnoSetup compiler
 # Courgettes location:
