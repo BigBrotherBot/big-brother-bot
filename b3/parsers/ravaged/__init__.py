@@ -692,12 +692,12 @@ class RavagedParser(Parser):
                     break
 
             try:
-                added, expire, packet = self.game_event_queue.get(timeout=300)
+                added, expire, packet = self.game_event_queue.get(timeout=5)
                 if packet is self.game_event_queue_stop_token:
                     break
                 self.route_game_event(packet)
             except Empty:
-                self.verbose2("no game server event to treat in the last 5min")
+                pass
             except RavagedServerCommandError, err:
                 # it does not matter from the parser perspective if Frostbite command failed
                 # (timeout or bad reply)
@@ -743,12 +743,13 @@ class RavagedParser(Parser):
             self._serverConnection = RavagedServer(self._rconIp, self._rconPort, self._rconPassword)
         except RavagedServerNetworkError, err:
             self.error(err)
+            time.sleep(10)
 
         timeout = GAMESERVER_CONNECTION_WAIT_TIMEOUT + time.time()
-        while time.time() < timeout and not self._serverConnection:
-            self.info("retrying to connect to game server...")
-            time.sleep(2)
+        while time.time() < timeout and (not self._serverConnection or not self._serverConnection.connected):
             self.close_game_connection()
+            time.sleep(10)
+            self.info("retrying to connect to game server...")
             try:
                 self._serverConnection = RavagedServer(self._rconIp, self._rconPort, self._rconPassword)
             except RavagedServerNetworkError, err:
