@@ -126,7 +126,7 @@ class Setup:
     def runSetup(self):
         """ The main function that handles the setup steps """
         global xml
-        xml = XMLWriter(self._outputTempFile)
+        xml = XMLWriter(self._outputTempFile, "UTF-8")
 
         # write appropriate header
         xml.declaration()
@@ -235,6 +235,19 @@ class Setup:
 
         # Homefront specific
         elif self._set_parser == 'homefront':
+            self.add_set("public_ip", self.read_element('server', 'public_ip', ''),
+                         "The IP address of your gameserver")
+            self.add_set("port", self.read_element('server', 'port', ''),
+                         "The port people use to connect to your gameserver (see GamePort in your Ravaged server config file)")
+            self.add_set("rcon_ip", self.read_element('server', 'rcon_ip', ''),
+                         "The IP of your gameserver B3 will connect to in order to send RCON commands. Usually the same as the public_ip")
+            self.add_set("rcon_port", self.read_element('server', 'rcon_port', ''),
+                         "The port of your gameserver that B3 will connect to in order to send RCON commands. (see RConPort in your Ravaged server config file)")
+            self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
+                         "The RCON password of your gameserver. (see AdminPassword in your Ravaged server config file)")
+
+        # Ravaged specific
+        elif self._set_parser == 'ravaged':
             self.add_set("public_ip", self.read_element('server', 'public_ip', ''),
                          "The IP address of your gameserver")
             self.add_set("port", self.read_element('server', 'port', ''),
@@ -550,7 +563,7 @@ class Setup:
 
     def equaLize(self, _string):
         """ Make the setup questions same length for prettier formatting """
-        return (self._equaLength - len(str(_string))) * " "
+        return (self._equaLength - len(unicode(_string))) * " "
 
     def add_set(self, sname, sdflt, explanation="", silent=False):
         """
@@ -568,9 +581,9 @@ class Setup:
             _value = sdflt
         xml.element("set", _value, name=sname)
         #store values into a variable for later use ie. enabling the punkbuster plugin.
-        exec("self._set_" + str(sname) + " = \"" + str(_value) + "\"")
+        exec("self._set_" + str(sname) + " = \"" + unicode(_value) + "\"")
         if not silent:
-            self.add_buffer(str(sname) + self.equaLize(sname) + ": " + str(_value) + "\n")
+            self.add_buffer(str(sname) + self.equaLize(sname) + ": " + unicode(_value) + "\n")
 
     def add_plugin(self, sname, sconfig=None, explanation=None, default="yes", downlURL=None, sql=None, prompt=True):
         """
