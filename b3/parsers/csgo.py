@@ -58,6 +58,9 @@
 #   * better detection of EVT_SERVER_REQUIRES_RESTART
 #   * now detect client action Begin_Bomb_Defuse_With_Kit
 #   * fix #90 - check that SourceMod is installed at startup
+# 2012-10-19 - 1.4.1 Courgette
+#   * fix ban that was queuing a EVT_CLIENT_BAN_TEMP event instead of EVT_CLIENT_BAN
+#
 #
 import re
 import time
@@ -69,7 +72,7 @@ from b3.game_event_router import gameEvent, getHandler
 from b3.parsers.source.rcon import Rcon
 
 __author__  = 'Courgette'
-__version__ = '1.4'
+__version__ = '1.4.1'
 
 
 """
@@ -632,7 +635,7 @@ class CsgoParser(Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(self.getEvent("EVT_CLIENT_BAN_TEMP", {'reason': reason, 'admin': admin}, client))
+        self.queueEvent(self.getEvent("EVT_CLIENT_BAN", {'reason': reason, 'admin': admin}, client))
 
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
