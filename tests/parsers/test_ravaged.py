@@ -134,9 +134,9 @@ class Test_parser_API(RavagedTestCase):
                             "laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in "
                             "voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat "
                             "cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.")
-            write_mock.assert_has_calls([call("say <FONT COLOR='#F2C880'> [Pre] <FONT COLOR='#F2C880'> Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud"),
-                                         call(u"say <FONT COLOR='#F2C880'> \u203a exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat"),
-                                         call(u"say <FONT COLOR='#F2C880'> \u203a cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.")])
+            write_mock.assert_has_calls([call("say <FONT COLOR='#F2C880'> [Pre] <FONT COLOR='#F2C880'> Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,"),
+                                         call(u"say <FONT COLOR='#F2C880'> quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla"),
+                                         call(u"say <FONT COLOR='#F2C880'> pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.")])
 
 
     def test_saybig(self):
@@ -147,9 +147,9 @@ class Test_parser_API(RavagedTestCase):
                                "architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas "
                                "sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione "
                                "voluptatem sequi nesciunt.")
-            write_mock.assert_has_calls([call("say <FONT COLOR='#FC00E2'> [Pre] <FONT COLOR='#FC00E2'> Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi"),
-                                         call(u"say <FONT COLOR='#FC00E2'> \u203a architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi"),
-                                         call(u"say <FONT COLOR='#FC00E2'> \u203a nesciunt.")])
+            write_mock.assert_has_calls([call("say <FONT COLOR='#FC00E2'> [Pre] <FONT COLOR='#FC00E2'> Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore"),
+                                         call(u"say <FONT COLOR='#FC00E2'> veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores"),
+                                         call(u"say <FONT COLOR='#FC00E2'> eos qui ratione voluptatem sequi nesciunt.")])
 
 
     def test_message(self):
@@ -158,11 +158,8 @@ class Test_parser_API(RavagedTestCase):
             self.parser.saybig("At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium "
                                "voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint "
                                "occaecati cupiditate non provident, similique sunt in culpa")
-            write_mock.assert_has_calls([
-                call("say <FONT COLOR='#FC00E2'> [Pre] <FONT COLOR='#FC00E2'> At vero eos et accusamus et iusto odio "
-                     "dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores "
-                     "et quas molestias excepturi sint"),
-                 call(u"say <FONT COLOR='#FC00E2'> \u203a occaecati cupiditate non provident, similique sunt in culpa")])
+            write_mock.assert_has_calls([call("say <FONT COLOR='#FC00E2'> [Pre] <FONT COLOR='#FC00E2'> At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas"),
+                                         call(u"say <FONT COLOR='#FC00E2'> molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa")])
 
 
     def test_getMap(self):
