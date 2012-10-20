@@ -27,9 +27,10 @@
 # 07/06/2011 - 1.4.1 - Courgette - fix meanstdv()
 # 17/06/2012 - 1.5   - Courgette - add getStuffSoundingLike()
 # 19/10/2012 - 1.6   - Courgette - improve getStuffSoundingLike() so it discards non letter/digit characters
+# 20/10/2012 - 1.7   - Courgette - fix soundex() error when input string is unicode
 #
 __author__    = 'ThorN, xlr8or'
-__version__   = '1.6'
+__version__   = '1.7'
 
 import b3
 import re
@@ -205,7 +206,7 @@ def levenshteinDistance(a,b):
 
 def soundex(str):
     """Return the soundex value to a string argument."""
-    
+
     IGNORE = "~!@#$%^&*()_+=-`[]\|;:'/?.,<>\" \t\f\v"
     TABLE  = string.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ',
                           '01230120022455012623010202')
@@ -214,7 +215,7 @@ def soundex(str):
     if not str:
         return "Z000"
     str2 = str[0]
-    str = string.translate(str, TABLE, IGNORE)
+    str = string.translate(str.encode('ascii', 'ignore'), TABLE, IGNORE)
     if not str:
         return "Z000"
     prev = str[0]
