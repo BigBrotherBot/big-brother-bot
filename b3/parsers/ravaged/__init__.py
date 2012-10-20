@@ -25,6 +25,8 @@
 #   * add getNextMap()
 #   * fix changeMap()
 #   * improve getMapsSoundingLike()
+# 1.2 - 2012-10-20
+#   * fix: wasn't saving player names to database
 #
 from Queue import Queue, Full, Empty
 import logging
@@ -42,7 +44,7 @@ from b3.parsers.ravaged.rcon import Rcon as RavagedRcon
 
 
 __author__  = 'Courgette'
-__version__ = '1.1'
+__version__ = '1.2'
 
 
 ger = Game_event_router()
@@ -141,6 +143,7 @@ class RavagedParser(Parser):
         player = self.getClientOrCreate(guid, name=None)
         if ip:
             player.ip = ip
+            player.save()
             # self.getClientOrCreate will send the EVT_CLIENT_CONNECT event
 
 
@@ -567,7 +570,10 @@ class RavagedParser(Parser):
             client.kills = None
             client.deaths = None
         if name:
+            old_name = client.name
             client.name = name
+            if old_name != name:
+                client.save()
         if team:
             client.team = self.getTeam(team)
         return client
