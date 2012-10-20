@@ -17,13 +17,20 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+import os
 from mock import Mock, call, patch
 import unittest2 as unittest
-from mockito import when, verify
+from mockito import when
 from b3 import TEAM_UNKNOWN
 from b3.clients import Client
 from b3.config import XmlConfigParser
+from b3.fake import FakeClient
 from b3.parsers.ravaged import RavagedParser, TEAM_SCAVENGERS, TEAM_RESISTANCE
+from b3.plugins.admin import AdminPlugin
+
+from b3 import __file__ as b3_module__file__
+ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.xml"))
+ADMIN_CONFIG = None
 
 
 def client_equal(client_a, client_b):
@@ -623,3 +630,64 @@ courgette 21 pts 4:8 38ms steamid: 12312312312312312
         rv = self.parser.getMapsSoundingLike('CTR canyon')
         # THEN
         self.assertEqual('CTR_Canyon', rv)
+
+
+
+
+class test_functional(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        from b3.fake import FakeConsole
+        RavagedParser.__bases__ = (FakeConsole,)
+        # Now parser inheritance hierarchy is :
+        # RavagedParser -> FakeConsole -> Parser
+
+
+    def setUp(self):
+        self.status_response = None # defaults to STATUS_RESPONSE module attribute
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""<configuration></configuration>""")
+        self.parser = RavagedParser(self.conf)
+        self.parser.output = Mock()
+        self.parser.output.write = Mock()
+
+        ADMIN_CONFIG = XmlConfigParser()
+        ADMIN_CONFIG.load(ADMIN_CONFIG_FILE)
+        self.adminPlugin = AdminPlugin(self.parser, ADMIN_CONFIG)
+        when(self.parser).getPlugin("admin").thenReturn(self.adminPlugin)
+        self.adminPlugin.onLoadConfig()
+        self.adminPlugin.onStartup()
+
+        self.parser.startup()
+
+    def tearDown(self):
+        if hasattr(self, "parser"):
+            del self.parser.clients
+            self.parser.working = False
+
+
+
+    def test_map(self):
+        # GIVEN
+        when(self.parser.output).write("getmaplist false").thenReturn(u"""0 CTR_Bridge
+1 CTR_Canyon
+2 CTR_Derelict
+3 CTR_IceBreaker
+4 CTR_Liberty
+5 CTR_Rooftop
+6 Thrust_Bridge
+7 Thrust_Canyon
+8 Thrust_Chasm
+9 Thrust_IceBreaker
+10 Thrust_Liberty
+11 Thrust_Oilrig
+12 Thrust_Rooftop
+""".encode('UTF-8'))
+        admin = FakeClient(console=self.parser, name="admin", guid="guid_admin", groupBits=128)
+        admin.connects("guid_admin")
+        # WHEN
+        with patch.object(self.parser.output, 'write', wraps=self.parser.output.write) as write_mock:
+            admin.says("!map chasm")
+        # THEN
+        write_mock.assert_has_calls([call("addmap Thrust_Chasm 1"), call("nextmap")])

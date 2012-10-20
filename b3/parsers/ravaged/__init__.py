@@ -27,6 +27,7 @@
 #   * improve getMapsSoundingLike()
 # 1.2 - 2012-10-20
 #   * fix: wasn't saving player names to database
+#   * change: reduce maximum line length in chat (or it would be truncated by the server)
 #
 from Queue import Queue, Full, Empty
 import logging
@@ -78,8 +79,8 @@ class RavagedParser(Parser):
     PunkBuster = None
 
     _settings = {
-        'line_length': 200,
-        'min_wrap_length': 200,
+        'line_length': 180,
+        'min_wrap_length': 180,
         'private_message_color': '00FC48',
         'say_color': 'F2C880',
         'saybig_color': 'FC00E2',
@@ -542,14 +543,14 @@ class RavagedParser(Parser):
                 line = '%s %s' % (line, t)
             else:
                 if len(lines) > 0:
-                    lines.append(u'› %s' % line)
+                    lines.append(u'%s' % line)
                 else:
                     lines.append(line)
                 line = t
 
         if len(line):
             if len(lines) > 0:
-                lines.append(u'› %s' % line)
+                lines.append(u'%s' % line)
             else:
                 lines.append(line)
 
