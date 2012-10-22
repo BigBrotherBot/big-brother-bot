@@ -28,6 +28,9 @@
 # 1.2 - 2012-10-20
 #   * fix: wasn't saving player names to database
 #   * change: reduce maximum line length in chat (or it would be truncated by the server)
+# 1.3 - 2012-10-22
+#   * fix: kill events so stats and xlrstats plugin can do their job
+#   * change: make getMap() crash proof
 #
 from Queue import Queue, Full, Empty
 import logging
@@ -45,7 +48,7 @@ from b3.parsers.ravaged.rcon import Rcon as RavagedRcon
 
 
 __author__  = 'Courgette'
-__version__ = '1.2'
+__version__ = '1.3'
 
 
 ger = Game_event_router()
@@ -110,14 +113,11 @@ class RavagedParser(Parser):
     ###############################################################################################
 
     def startup(self):
-        pass
+        self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=TEAM_UNKNOWN)
+
         # add game specific events
-#        self.createEvent("EVT_SUPERLOGS_WEAPONSTATS", "SourceMod SuperLogs weaponstats") TODO check if have game specific events
+        # self.createEvent("EVT_SUPERLOGS_WEAPONSTATS", "SourceMod SuperLogs weaponstats") TODO check if have game specific events
 
-        # todo create the 'Server' client
-        # self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
-
-#        self.queryServerInfo()
 
 
 
@@ -220,7 +220,7 @@ class RavagedParser(Parser):
         return self.getEvent('EVT_CLIENT_SUICIDE', data=(100, weapon, 'body'), client=player, target=player)
 
 
-    @ger.gameEvent(r'''^"(?P<name_a>.+?)<(?P<guid_a>\d+)><(?P<team_a>.*)>" killed "(?P<name_b>.+?)<(?P<guid_b>\d+)><(?P<team_b>.*)>" with "(?P<weapon>\S+)"$''')
+    @ger.gameEvent(r'''^"(?P<name_a>.+?)<(?P<guid_a>\d+)><(?P<team_a>.*)>" killed "(?P<name_b>.+?)<(?P<guid_b>\d+)><(?P<team_b>.*)>" with "?(?P<weapon>\S+?)"?$''')
     def on_killed(self, name_a, guid_a, team_a, name_b, guid_b, team_b, weapon):
         # "Name1<11111111111111><0>" killed "Name2<2222222222222><1>" with "the_weapon"
         attacker = self.getClientOrCreate(guid_a, name_a, team_a)
@@ -434,13 +434,13 @@ class RavagedParser(Parser):
         return the current map/level name
         """
         re_current_map = re.compile(r"^0 (?P<map_name>\S+)$", re.MULTILINE)
-        m = re.search(re_current_map, self.output.write("getmaplist false"))
-        if m:
-            current_map = m.group('map_name')
-            self.game.mapName = current_map
-            return current_map
-        else:
-            return
+        rv = self.output.write("getmaplist false")
+        if rv:
+            m = re.search(re_current_map, rv)
+            if m:
+                current_map = m.group('map_name')
+                self.game.mapName = current_map
+                return current_map
 
 
     def getNextMap(self):
@@ -566,6 +566,7 @@ class RavagedParser(Parser):
         if client is None:
             client = self.clients.newClient(guid, guid=guid, team=TEAM_UNKNOWN)
             client.last_update_time = time.time()
+            client.save()
             client.ping = None
             client.score = None
             client.kills = None
@@ -808,13 +809,9 @@ class RavagedParser(Parser):
 
         # setup Rcon
         self.output.set_server_connection(self._serverConnection)
-
         self.queueEvent(self.getEvent('EVT_GAMESERVER_CONNECT'))
-
-#        self.check_version()
         self.say('%s ^2[ONLINE]' % b3_version)
-#        self.query_serverInfo()
-#        self.query_serverVars()
+        self.getMap()
         self.clients.sync()
 
 

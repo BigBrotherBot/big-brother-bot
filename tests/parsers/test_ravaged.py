@@ -359,20 +359,39 @@ class Test_gamelog_parsing(RavagedTestCase):
 
     def test_kill_enemy(self):
         # GIVEN
-        p1 = Client(cid="11111111111111", guid="11111111111111", name="Name1")
-        p2 = Client(cid="2222222222222", guid="2222222222222", name="Name2")
+        p1 = FakeClient(self.parser, guid="11111111111111")
+        p1.connects("11111111111111")
+        p2 = FakeClient(self.parser, guid="2222222222222")
+        p2.connects("2222222222222")
         self.queueEvent_mock.reset_mock()
+        self.clear_events()
         # WHEN
         self.parser.route_game_event('''"Name1<11111111111111><0>" killed "Name2<2222222222222><1>" with "the_weapon"''')
         # THEN
         self.assert_has_event('EVT_CLIENT_KILL', data=(100, "the_weapon", 'body'), client=p1, target=p2)
 
+    def test_kill_enemy_2(self):
+        # GIVEN
+        p1 = FakeClient(self.parser, guid="76561000000000000")
+        p1.connects("76561000000000000")
+        p2 = FakeClient(self.parser, guid="70000000000000005")
+        p2.connects("70000000000000005")
+        self.queueEvent_mock.reset_mock()
+        self.clear_events()
+        # WHEN
+        self.parser.route_game_event('''"txsniper<76561000000000000><1>" killed "Killer Badger<70000000000000005><0>" with R_DmgType_SniperPrimary''')
+        # THEN
+        self.assert_has_event('EVT_CLIENT_KILL', data=(100, "R_DmgType_SniperPrimary", 'body'), client=p1, target=p2)
+
 
     def test_kill_teammate(self):
         # GIVEN
-        p1 = Client(cid="11111111111111", guid="11111111111111", name="Name1")
-        p2 = Client(cid="2222222222222", guid="2222222222222", name="Name2")
+        p1 = FakeClient(self.parser, guid="11111111111111")
+        p1.connects("11111111111111")
+        p2 = FakeClient(self.parser, guid="2222222222222")
+        p2.connects("2222222222222")
         self.queueEvent_mock.reset_mock()
+        self.clear_events()
         # WHEN
         self.parser.route_game_event('''"Name1<11111111111111><0>" killed "Name2<2222222222222><0>" with "the_weapon"''')
         # THEN
@@ -381,12 +400,14 @@ class Test_gamelog_parsing(RavagedTestCase):
 
     def test_killed(self):
         # GIVEN
-        p = Client(cid="11111111111111", guid="11111111111111", name="Name1")
+        p1 = FakeClient(self.parser, guid="11111111111111")
+        p1.connects("11111111111111")
         self.queueEvent_mock.reset_mock()
+        self.clear_events()
         # WHEN
         self.parser.route_game_event('''"Name1<11111111111111><0>" killed  with UTDmgType_VehicleCollision''')
         # THEN
-        self.assert_has_event('EVT_CLIENT_SUICIDE', data=(100, "UTDmgType_VehicleCollision", 'body'), client=p, target=p)
+        self.assert_has_event('EVT_CLIENT_SUICIDE', data=(100, "UTDmgType_VehicleCollision", 'body'), client=p1, target=p1)
 
 
     def test_connected_remotely(self):
