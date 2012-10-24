@@ -11,7 +11,8 @@
 	</settings>
 	<settings name="server">
 		<set name="public_ip"></set>
-		<set name="port">8000</set>
+        <!-- port: Ravaged Query port -->
+		<set name="port">27015</set>
 		<set name="rcon_ip">127.0.0.1</set>
 		<set name="rcon_port">13550</set>
 		<set name="rcon_password">ravaged!</set>

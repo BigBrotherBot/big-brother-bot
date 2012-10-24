@@ -235,21 +235,21 @@ class Setup:
             self.add_set("timeout", self.read_element('server', 'timeout', '3'),
                          "RCON timeout", silent=True)
 
-        # Homefront specific
-        elif self._set_parser == 'homefront':
+        # Ravaged specific
+        elif self._set_parser == 'ravaged':
             self.add_set("public_ip", self.read_element('server', 'public_ip', ''),
                          "The IP address of your gameserver")
-            self.add_set("port", self.read_element('server', 'port', ''),
-                         "The port people use to connect to your gameserver (see GamePort in your Ravaged server config file)")
+            self.add_set("port", self.read_element('server', 'port', '27015'),
+                         "The query port of your gameserver (see SteamQueryPort in your Ravaged server config file)")
             self.add_set("rcon_ip", self.read_element('server', 'rcon_ip', ''),
                          "The IP of your gameserver B3 will connect to in order to send RCON commands. Usually the same as the public_ip")
-            self.add_set("rcon_port", self.read_element('server', 'rcon_port', ''),
+            self.add_set("rcon_port", self.read_element('server', 'rcon_port', '13550'),
                          "The port of your gameserver that B3 will connect to in order to send RCON commands. (see RConPort in your Ravaged server config file)")
             self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
                          "The RCON password of your gameserver. (see AdminPassword in your Ravaged server config file)")
 
-        # Ravaged specific
-        elif self._set_parser == 'ravaged':
+        # Homefront specific
+        elif self._set_parser == 'homefront':
             self.add_set("public_ip", self.read_element('server', 'public_ip', ''),
                          "The IP address of your gameserver")
             self.add_set("port", self.read_element('server', 'port', ''),
