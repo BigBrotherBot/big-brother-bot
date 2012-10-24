@@ -54,8 +54,10 @@
 # 2012/01/08 - 1.2 - xlr8or
 #    * Added: xlrstats-update-2.6.1.sql
 #    * Fixed bug that would not update the xlrstats tables
-# 2012/01/08 - 1.3 - courgette
+# 2012/10/19 - 1.3 - courgette
 #    * Added: Ravaged game
+# 2012/10/24 - 1.4 - courgette
+#   * Added: iourt42 custom settings
 #
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -63,7 +65,7 @@
 # The setup procedure, to create a new configuration file (b3.xml)
 
 __author__ = 'xlr8or'
-__version__ = '1.3'
+__version__ = '1.4'
 
 import platform
 import urllib2
@@ -258,6 +260,23 @@ class Setup:
                          "The port of your gameserver that B3 will connect to in order to send RCON commands. NOT the same as the normal port.")
             self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
                          "The RCON password of your gameserver.")
+
+        # Urban Terror specific
+        elif self._set_parser == 'iourt42':
+            self.add_set("game_log", self.read_element('server', 'game_log', ''),
+                "The gameserver generates a logfile, put the path and name here")
+            self.add_set("public_ip", self.read_element('server', 'public_ip', ''),
+                "The public IP your gameserver is residing on")
+            self.add_set("port", self.read_element('server', 'port', ''),
+                "The port the server is running on")
+            self.add_set("rcon_ip", self.read_element('server', 'rcon_ip', ''),
+                "The IP the bot can use to send RCON commands to (127.0.0.1 when on the same box)")
+            self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
+                "The RCON pass of your gameserver")
+            self.add_set("permban_with_frozensand", self.read_element('server', 'permban_with_frozensand', 'no'),
+                         "Permban with Frozen Sand auth system")
+            self.add_set("tempban_with_frozensand", self.read_element('server', 'tempban_with_frozensand', 'no'),
+                         "Tempban with Frozen Sand auth system")
 
         # Q3A specific
         else:

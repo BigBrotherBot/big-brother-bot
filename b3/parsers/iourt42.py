@@ -39,9 +39,12 @@
 #  * fix kick and tempban when used with a reason
 # 2012/10/10 - 1.5.2 - Courgette
 #  * support names with blank characters
-#
+# 2012/10/24 - 1.6 - Courgette
+#  * new: settings to ban with the Frozen Sand auth system
 #
 import re, new
+import time
+from b3.functions import time2minutes
 from b3.parsers.iourt41 import Iourt41Parser
 import b3
 from b3.clients import Client
@@ -49,7 +52,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.5.2'
+__version__ = '1.6'
 
 class Iourt42Client(Client):
 
@@ -193,6 +196,8 @@ class Iourt42Parser(Iourt41Parser):
         'tempban': 'kick %(cid)s "%(reason)s"',
         'banByIp': 'addip %(ip)s',
         'unbanByIp': 'removeip %(ip)s',
+        'auth-permban': 'auth-ban %(cid)s 0 0 0',
+        'auth-tempban': 'auth-ban %(cid)s %(days)s %(hours)s %(minutes)s',
         'slap': 'slap %(cid)s',
         'nuke': 'nuke %(cid)s',
         'mute': 'mute %(cid)s %(seconds)s',
@@ -292,6 +297,10 @@ class Iourt42Parser(Iourt41Parser):
     _re_authwhois = re.compile(r"""^auth: id: (?P<cid>\d+) - name: \^7(?P<name>.+?) - login: (?P<login>.*?) - notoriety: (?P<notoriety>.+?) - level: (?P<level>-?\d+?)(?:\s+- (?P<extra>.*))?$""", re.MULTILINE)
 
 
+    _permban_with_frozensand = False
+    _tempban_with_frozensand = False
+
+
     def __new__(cls, *args, **kwargs):
         Iourt42Parser.patch_Clients()
         return Iourt41Parser.__new__(cls)
@@ -315,12 +324,65 @@ class Iourt42Parser(Iourt41Parser):
         self.EVT_CLIENT_CALLVOTE = self.Events.createEvent('EVT_CLIENT_CALLVOTE', 'Event client call vote')
         self.EVT_CLIENT_VOTE = self.Events.createEvent('EVT_CLIENT_VOTE', 'Event client vote')
 
+        self.load_conf_frozensand_ban_settings()
+
 
     def pluginsStarted(self):
         """ called when all plugins are started """
         self.spamcontrolPlugin = self.getPlugin("spamcontrol")
         if self.spamcontrolPlugin:
             self.patch_spamcontrolPlugin()
+
+
+
+    ###############################################################################################
+    #
+    #    Config loaders
+    #
+    ###############################################################################################
+
+    def load_conf_frozensand_ban_settings(self):
+        try:
+            frozensand_auth_available = self.getCvar('auth').getBoolean()
+        except Exception, e:
+            self.warning("Could not query server for cvar auth.", exc_info=e)
+            frozensand_auth_available = False
+        self.info("Frozen Sand auth system enabled : %s" % ('yes' if frozensand_auth_available else 'no'))
+
+        try:
+            frozensand_auth_owners = self.getCvar('auth_owners').getString()
+        except Exception, e:
+            self.warning("Could not query server for cvar auth_owners.", exc_info=e)
+            frozensand_auth_owners = ""
+        self.info("Frozen Sand auth_owners set : %s" % (('yes - %s' % frozensand_auth_available) if frozensand_auth_owners else 'no'))
+
+        if frozensand_auth_available and frozensand_auth_owners:
+            self.load_conf_permban_with_frozensand()
+            self.load_conf_tempban_with_frozensand()
+            if self._permban_with_frozensand or self._tempban_with_frozensand:
+                self.info("NOTE: when banning with the Frozen Sand auth system, B3 cannot remove the bans on the urbanterror.info website. To unban a player you will have to first unban him on B3 and then also unban him on the official Frozen Sand website : http://www.urbanterror.info/groups/list/all/?search=%s" % frozensand_auth_owners)
+
+        else:
+            self.info("ignoring settings about banning with Frozen Sand auth system as the auth system is not enabled or auth_owners not set")
+
+
+
+    def load_conf_permban_with_frozensand(self):
+        self._permban_with_frozensand = False
+        try:
+            self._permban_with_frozensand = self.config.getboolean('server', 'permban_with_frozensand')
+        except Exception, err:
+            self.warning(err)
+        self.info("Send permbans to Frozen Sand : %s" % ('yes' if self._permban_with_frozensand else 'no'))
+
+
+    def load_conf_tempban_with_frozensand(self):
+        self._tempban_with_frozensand = False
+        try:
+            self._tempban_with_frozensand = self.config.getboolean('server', 'tempban_with_frozensand')
+        except Exception, err:
+            self.warning(err)
+        self.info("Send temporary bans to Frozen Sand : %s" % ('yes' if self._tempban_with_frozensand else 'no'))
 
 
 
@@ -376,6 +438,120 @@ class Iourt42Parser(Iourt41Parser):
     def authorizeClients(self):
         pass
 
+
+    def ban(self, client, reason='', admin=None, silent=False, *kwargs):
+        self.debug('BAN : client: %s, reason: %s', client, reason)
+        if isinstance(client, Client) and not client.guid:
+            # client has no guid, kick instead
+            return self.kick(client, reason, admin, silent)
+        elif isinstance(client, str) and re.match('^[0-9]+$', client):
+            self.write(self.getCommand('ban', cid=client, reason=reason))
+            return
+        elif not client.id:
+            # no client id, database must be down, do tempban
+            self.error('Q3AParser.ban(): no client id, database must be down, doing tempban')
+            return self.tempban(client, reason, '1d', admin, silent)
+
+        if admin:
+            fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+        else:
+            fullreason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
+
+        if client.cid is None:
+            # ban by ip, this happens when we !permban @xx a player that is not connected
+            self.debug('EFFECTIVE BAN : %s',self.getCommand('banByIp', ip=client.ip, reason=reason))
+            self.write(self.getCommand('banByIp', ip=client.ip, reason=reason))
+        else:
+            # ban by cid
+            self.debug('EFFECTIVE BAN : %s',self.getCommand('ban', cid=client.cid, reason=reason))
+
+            if self._permban_with_frozensand:
+                cmd = self.getCommand('auth-permban', cid=client.cid)
+                self.info('sending ban to Frozen Sand : %s' % cmd)
+                rv = self.write(cmd)
+                if rv:
+                    if rv == "Auth services disabled" or rv.startswith("auth: not banlist available."):
+                        self.warning(rv)
+                    elif rv.startswith("auth: sending ban"):
+                        self.info(rv)
+                        time.sleep(.250)
+                    else:
+                        self.warning(rv)
+                        time.sleep(.250)
+
+            if client.connected:
+                cmd = self.getCommand('ban', cid=client.cid, reason=reason)
+                self.info('sending ban to server : %s' % cmd)
+                rv = self.write(cmd)
+                if rv:
+                    self.info(rv)
+
+        if not silent and fullreason != '':
+            self.say(fullreason)
+
+        if admin:
+            admin.message('^3banned^7: ^1%s^7 (^2@%s^7). His last ip (^1%s^7) has been added to banlist'%(client.exactName, client.id, client.ip))
+
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
+        client.disconnect()
+
+
+
+    def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
+        duration = time2minutes(duration)
+
+        if isinstance(client, Client) and not client.guid:
+            # client has no guid, kick instead
+            return self.kick(client, reason, admin, silent)
+        elif isinstance(client, str) and re.match('^[0-9]+$', client):
+            self.write(self.getCommand('tempban', cid=client, reason=reason))
+            return
+        elif admin:
+            fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=b3.functions.minutesStr(duration)))
+        else:
+            fullreason = self.getMessage('temp_banned', self.getMessageVariables(client=client, reason=reason, banduration=b3.functions.minutesStr(duration)))
+
+        if self._tempban_with_frozensand:
+            minutes = duration
+            days = hours = 0
+            while minutes >= 60:
+                hours += 1
+                minutes -= 60
+            while hours >= 24:
+                days += 1
+                hours -= 24
+
+            cmd = self.getCommand('auth-tempban', cid=client.cid, days=days, hours=hours, minutes=int(minutes))
+            self.info('sending ban to Frozen Sand : %s' % cmd)
+            rv = self.write(cmd)
+            if rv:
+                if rv == "Auth services disabled" or rv.startswith("auth: not banlist available."):
+                    self.warning(rv)
+                elif rv.startswith("auth: sending ban"):
+                    self.info(rv)
+                    time.sleep(.250)
+                else:
+                    self.warning(rv)
+                    time.sleep(.250)
+
+        if client.connected:
+            cmd = self.getCommand('tempban', cid=client.cid, reason=reason)
+            self.info('sending ban to server : %s' % cmd)
+            rv = self.write(cmd)
+            if rv:
+                self.info(rv)
+
+        if not silent and fullreason != '':
+            self.say(fullreason)
+
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, {'reason': reason,
+                                                                        'duration': duration,
+                                                                        'admin': admin}
+            , client))
+        client.disconnect()
+
+
+
     def inflictCustomPenalty(self, type, client, reason=None, duration=None, admin=None, data=None):
         if type == 'slap' and client:
             cmd = self.getCommand('slap', cid=client.cid)
@@ -395,7 +571,7 @@ class Iourt42Parser(Iourt41Parser):
             if duration is None:
                 seconds = 60
             else:
-                seconds = round(float(b3.functions.time2minutes(duration) * 60), 0)
+                seconds = round(float(time2minutes(duration) * 60), 0)
 
             # make sure to unmute first
             cmd = self.getCommand('mute', cid=client.cid, seconds=0)

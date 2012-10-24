@@ -10,12 +10,21 @@
 		<set name="logfile">@conf/b3.log</set>
 	</settings>
 	<settings name="server">
-		<set name="rcon_password"></set>
-		<set name="port">27960</set>
 		<set name="game_log">/home/.q3a/games_mp.log</set>
 		<set name="public_ip"></set>
+		<set name="port">27960</set>
 		<set name="rcon_ip">127.0.0.1</set>
-		<set name="punkbuster">on</set>
+		<set name="rcon_password"></set>
+        <!--
+        Ban with Frozen Sand auth system
+        Set below if you want to send bans to the urbanterror.info website.
+        Accepted values are yes/no.
+
+        NOTE: you need to have auth_enable set to 1 in your game server config file and you also need to have the
+        auth_owners cvar set correctly.
+        -->
+        <set name="permban_with_frozensand">no</set>
+        <set name="tempban_with_frozensand">no</set>
 	</settings>
 	<settings name="autodoc">
 		<set name="type">html</set>
