@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 26/10/2012 - 1.4.12 - Courgette
+# * makes sure 'Client' tags have a 'score' attribute
 # 12/08/2012 - 1.4.11 - Courgette
 # * will provide more debugging info about errors while generating the XML document
 # 05/05/2012 - 1.4.10 - Courgette
@@ -61,7 +63,7 @@
 # Converted to use new event handlers
 
 __author__    = 'ThorN'
-__version__ = '1.4.11'
+__version__ = '1.4.12'
 
 import b3
 import time
@@ -257,6 +259,8 @@ class StatusPlugin(b3.plugin.Plugin):
                 client.setAttribute("Updated", str(time.ctime(c.timeEdit)))
                 if scoreList and c.cid in scoreList:
                     client.setAttribute("Score", str(scoreList[c.cid]))
+                else:
+                    client.setAttribute("Score", "")
                 client.setAttribute("State", str(c.state))
                 if self._enableDBclientSaving:
                     qryBuilderKey = ""
