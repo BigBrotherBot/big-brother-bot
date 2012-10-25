@@ -31,6 +31,8 @@
 # 1.3 - 2012-10-22
 #   * fix: kill events so stats and xlrstats plugin can do their job
 #   * change: make getMap() crash proof
+# 1.4 - 2012-10-26
+#   * new: recognize game type from map names
 #
 from Queue import Queue, Full, Empty
 import logging
@@ -48,7 +50,7 @@ from b3.parsers.ravaged.rcon import Rcon as RavagedRcon
 
 
 __author__  = 'Courgette'
-__version__ = '1.3'
+__version__ = '1.4'
 
 
 ger = Game_event_router()
@@ -182,7 +184,7 @@ class RavagedParser(Parser):
     @ger.gameEvent(r'''^Loading map "(?P<map_name>\S+)"$''')
     def on_loading_map(self, map_name):
         # Loading map "CTR_Derelict"
-        self.game.mapName = map_name
+        self.set_map(map_name)
 
 
     @ger.gameEvent(r'''^Round started$''')
@@ -439,7 +441,7 @@ class RavagedParser(Parser):
             m = re.search(re_current_map, rv)
             if m:
                 current_map = m.group('map_name')
-                self.game.mapName = current_map
+                self.set_map(current_map)
                 return current_map
 
 
@@ -677,6 +679,16 @@ class RavagedParser(Parser):
         return clients
 
 
+    def set_map(self, new_map):
+        """
+        update self.game with mapName and gameType
+        :param new_map: new map name
+        :return: None
+        """
+        self.game.mapName = new_map
+        parts = new_map.split('_', 1)
+        if len(parts) == 2:
+            self.game.gameType = parts[0]
 
 
     ###############################################################################################
