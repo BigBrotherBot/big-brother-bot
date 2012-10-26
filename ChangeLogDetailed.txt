@@ -1,3 +1,22 @@
+2012-10-10  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/iourt42.py, tests/parsers/test_iourt42.py: URT42: fix
+	bug with players having blank characters in their name
+
+2012-10-10  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parsers/frostbite/abstractParser.py,
+	b3/parsers/frostbite2/abstractParser.py: frostbite and frostbite2
+	abstractparser: self.working throws an error because the Client
+	object does not have the 'working' attribute. This method patches
+	the client class...
+
+2012-10-10  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt, b3.egg-info/PKG-INFO,
+	b3.egg-info/SOURCES.txt, b3.egg-info/requires.txt, b3/PKG-INFO,
+	b3/__init__.py, setup.py: v1.9.0b1 relese preparations
+
 2012-10-09  xlr8or <xlr8or@xlr8or.com>
 
 	* : commit f1b5e8ef75748b4185c2309490e6f683a4101c30 Author:

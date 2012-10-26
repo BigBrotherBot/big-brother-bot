@@ -273,8 +273,10 @@ def fuzzyGuidMatch(a, b):
 
 #--------------------------------------------------------------------------------------------------
 def sanitizeMe(s):
-    sanitized = re.sub(r'[\x00-\x1F]|[\x7F-\xff]', '?', s)
-    return sanitized
+    if s:
+        return re.sub(r'[\x00-\x1F]|[\x7F-\xff]', '?', s)
+    else:
+        return ''
 
 #--------------------------------------------------------------------------------------------------
 ## @todo see if functions.executeSQL() and storage.DatabaseStorage.queryFromFile() can be combined.
