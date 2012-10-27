@@ -251,6 +251,9 @@ auth: id: 2 - name: ^7Qant - login: qant - notoriety: basic - level: -1
                             }, data)
 
 
+
+
+
 class Test_parser_API(Iourt42TestCase):
 
     def test_getPlayerList(self):
@@ -378,10 +381,15 @@ maps/ut4_ambush.bsp
     @patch('time.sleep')
     def test_changeMap(self, sleep_mock):
         # GIVEN
-        when(self.console).getMapsSoundingLike('ut4_f00').thenReturn(['ut4_foo'])
+        when(self.output_mock).write('fdir *.bsp').thenReturn("""\
+---------------
+maps/ut4_foo.bsp
+1 files listed
+""")
         # WHEN
-        self.console.changeMap('ut4_f00')
+        suggestions = self.console.changeMap('ut4_f00')
         # THEN
+        self.assertIsNone(suggestions)
         self.console.write.assert_has_calls([call('map ut4_foo')])
         sleep_mock.assert_called_once_with(1)
 
@@ -417,6 +425,7 @@ num score ping name            lastmsg address               qport rate
 
 
 
+
 class Test_inflictCustomPenalty(Iourt42TestCase):
     """
     Called if b3.admin.penalizeClient() does not know a given penalty type.
@@ -444,3 +453,373 @@ class Test_inflictCustomPenalty(Iourt42TestCase):
         result = self.console.inflictCustomPenalty('kill', self.player)
         self.console.write.assert_has_calls([call('smite 4')])
         self.assertTrue(result)
+
+
+
+
+class Test_load_conf_frozensand_ban_settings(Iourt42TestCase):
+
+    def setUp(self):
+        Iourt42TestCase.setUp(self)
+        self.console.load_conf_permban_with_frozensand = Mock()
+        self.console.load_conf_tempban_with_frozensand = Mock()
+
+
+    def test_nominal(self):
+        # GIVEN
+        when(self.console).write("auth").thenReturn('"auth" is:"1^7"')
+        when(self.console).write("auth_owners").thenReturn('"auth_owners" is:"452^7" default:"^7"')
+        # WHEN
+        self.console.load_conf_frozensand_ban_settings()
+        # THEN
+        self.assertEqual(1, self.console.load_conf_permban_with_frozensand.call_count)
+        self.assertEqual(1, self.console.load_conf_tempban_with_frozensand.call_count)
+
+
+    def test_no_authl(self):
+        # GIVEN
+        when(self.console).write("auth").thenReturn('"auth" is:"0^7"')
+        when(self.console).write("auth_owners").thenReturn('"auth_owners" is:"452^7" default:"^7"')
+        # WHEN
+        self.console.load_conf_frozensand_ban_settings()
+        # THEN
+        self.assertEqual(0, self.console.load_conf_permban_with_frozensand.call_count)
+        self.assertEqual(0, self.console.load_conf_tempban_with_frozensand.call_count)
+
+
+    def test_no_authowners(self):
+        # GIVEN
+        when(self.console).write("auth").thenReturn('"auth" is:"1^7"')
+        when(self.console).write("auth_owners").thenReturn('"auth_owners" is:"^7" default:"^7"')
+        # WHEN
+        self.console.load_conf_frozensand_ban_settings()
+        # THEN
+        self.assertEqual(0, self.console.load_conf_permban_with_frozensand.call_count)
+        self.assertEqual(0, self.console.load_conf_tempban_with_frozensand.call_count)
+
+
+
+
+
+
+@patch("time.sleep")
+class Test_ban_with_FrozenSand_auth(Iourt42TestCase):
+
+    def setUp(self):
+        Iourt42TestCase.setUp(self)
+        self.player.pbid = "thePlayerAccount"
+
+
+    #-------------------------------------------------------------------------------------------------------------------
+    @staticmethod
+    def mock_authban(client, response="auth: sending ban for slot %(cid)s : %(pbid)s", disconnect=True):
+        def write(cmd):
+            if cmd.startswith("auth-ban %s " % client.cid):
+                if disconnect:
+                    client.disconnect()
+                return response % {'cid': client.cid, 'pbid': client.pbid}
+        return write
+
+    @staticmethod
+    def mock_authban_no_auth(client):
+        return Test_ban_with_FrozenSand_auth.mock_authban(client, response="Auth services disabled", disconnect=False)
+
+    @staticmethod
+    def mock_authban_no_authowner(client):
+        return Test_ban_with_FrozenSand_auth.mock_authban(client, response="auth: not banlist available. Please set correctly auth_owners.", disconnect=False)
+    #-------------------------------------------------------------------------------------------------------------------
+
+    def test_ban_with_frozensand(self, mock_sleep):
+        # GIVEN
+        self.console._permban_with_frozensand = True
+        with patch.object(self.console, "write", wraps=Test_ban_with_FrozenSand_auth.mock_authban(self.player)) as write_mock:
+            # WHEN
+            self.console.ban(self.player, reason="f00")
+        # THEN
+        write_mock.assert_has_calls([call('auth-ban 4 0 0 0'),
+                                     call('say  theName^7 was banned f00')])
+
+
+    def test_ban_with_frozensand_no_auth(self, mock_sleep):
+        # GIVEN
+        self.console._permban_with_frozensand = True
+        with patch.object(self.console, "write", wraps=Test_ban_with_FrozenSand_auth.mock_authban_no_auth(self.player)) as write_mock:
+            # WHEN
+            self.console.ban(self.player, reason="f00")
+        # THEN
+        write_mock.assert_has_calls([call('auth-ban 4 0 0 0'),
+                                     call('addip 4'),
+                                     call('say  theName^7 was banned f00')])
+
+
+
+    def test_ban_with_frozensand_no_authowners(self, mock_sleep):
+        # GIVEN
+        self.console._permban_with_frozensand = True
+        with patch.object(self.console, "write", wraps=Test_ban_with_FrozenSand_auth.mock_authban_no_authowner(self.player)) as write_mock:
+            # WHEN
+            self.console.ban(self.player, reason="f00")
+        # THEN
+        write_mock.assert_has_calls([call('auth-ban 4 0 0 0'),
+                                     call('addip 4'),
+                                     call('say  theName^7 was banned f00')])
+
+
+    def test_tempban_with_frozensand_1minute(self, mock_sleep):
+        # GIVEN
+        self.console._tempban_with_frozensand = True
+        with patch.object(self.console, "write", wraps=Test_ban_with_FrozenSand_auth.mock_authban(self.player)) as write_mock:
+            # WHEN
+            self.console.tempban(self.player, duration="1m", reason="f00")
+        # THEN
+        write_mock.assert_has_calls([call('auth-ban 4 0 0 1'),
+                                     call('say  theName^7 was temp banned for 1 minute^7 f00')])
+
+
+    def test_tempban_with_frozensand_90min(self, mock_sleep):
+        # GIVEN
+        self.console._tempban_with_frozensand = True
+        with patch.object(self.console, "write", wraps=Test_ban_with_FrozenSand_auth.mock_authban(self.player)) as write_mock:
+            # WHEN
+            self.console.tempban(self.player, duration="90m", reason="f00")
+        # THEN
+        write_mock.assert_has_calls([call('auth-ban 4 0 1 30'),
+                                     call('say  theName^7 was temp banned for 1.5 hour^7 f00')])
+
+
+    def test_tempban_with_frozensand_40days(self, mock_sleep):
+        # GIVEN
+        self.console._tempban_with_frozensand = True
+        with patch.object(self.console, "write", wraps=Test_ban_with_FrozenSand_auth.mock_authban(self.player)) as write_mock:
+            # WHEN
+            self.console.tempban(self.player, duration="40d", reason="f00")
+        # THEN
+        write_mock.assert_has_calls([call('auth-ban 4 40 0 0'),
+                                     call('say  theName^7 was temp banned for 5.7 weeks^7 f00')])
+
+
+
+    def test_tempban_with_frozensand_no_auth(self, mock_sleep):
+        # GIVEN
+        self.console._tempban_with_frozensand = True
+        with patch.object(self.console, "write", wraps=Test_ban_with_FrozenSand_auth.mock_authban_no_auth(self.player)) as write_mock:
+            # WHEN
+            self.console.tempban(self.player, duration="1m", reason="f00")
+        # THEN
+        write_mock.assert_has_calls([call('auth-ban 4 0 0 1'),
+                                     call('kick 4 "f00"'),
+                                     call('say  theName^7 was temp banned for 1 minute^7 f00')])
+
+
+
+    def test_tempban_with_frozensand_no_authowners(self, mock_sleep):
+        # GIVEN
+        self.console._tempban_with_frozensand = True
+        with patch.object(self.console, "write", wraps=Test_ban_with_FrozenSand_auth.mock_authban_no_authowner(self.player)) as write_mock:
+            # WHEN
+            self.console.tempban(self.player, duration="1m", reason="f00")
+        # THEN
+        write_mock.assert_has_calls([call('auth-ban 4 0 0 1'),
+                                     call('kick 4 "f00"'),
+                                     call('say  theName^7 was temp banned for 1 minute^7 f00')])
+
+
+
+
+
+class Test_config(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        from b3.parsers.q3a.abstractParser import AbstractParser
+        from b3.fake import FakeConsole
+        AbstractParser.__bases__ = (FakeConsole,)
+        # Now parser inheritance hierarchy is :
+        # Iourt42TestCase -> AbstractParser -> FakeConsole -> Parser
+        logging.getLogger('output').setLevel(logging.ERROR)
+
+
+    def setUp(self):
+        self.parser_conf = XmlConfigParser()
+        self.parser_conf.loadFromString("""<configuration>
+                <settings name="server">
+                    <set name="game_log"/>
+                </settings>
+            </configuration>""")
+        self.console = Iourt42Parser(self.parser_conf)
+        self.console.PunkBuster = None # no Punkbuster support in that game
+
+
+    def tearDown(self):
+        if hasattr(self, "parser"):
+            del self.parser.clients
+            self.parser.working = False
+
+
+
+
+class Test_load_conf_permban_with_frozensand(Test_config):
+
+    def test_yes(self):
+        # GIVEN
+        self.parser_conf.loadFromString("""<configuration>
+                <settings name="server">
+                    <set name="game_log"/>
+                    <set name="permban_with_frozensand">yes</set>
+                </settings>
+            </configuration>""")
+        self.console.loadConfig(self.parser_conf)
+        self.assertTrue(self.parser_conf.has_option("server", "permban_with_frozensand"))
+        # WHEN
+        self.console.load_conf_permban_with_frozensand()
+        # THEN
+        self.assertTrue(self.console._permban_with_frozensand)
+
+
+    def test_missing(self):
+        # GIVEN
+        self.parser_conf.loadFromString("""<configuration>
+                <settings name="server">
+                    <set name="game_log"/>
+                </settings>
+            </configuration>""")
+        self.console.loadConfig(self.parser_conf)
+        self.assertFalse(self.parser_conf.has_option("server", "permban_with_frozensand"))
+        # WHEN
+        self.console.load_conf_permban_with_frozensand()
+        # THEN
+        self.assertFalse(self.console._permban_with_frozensand)
+
+
+    def test_empty(self):
+        # GIVEN
+        self.parser_conf.loadFromString("""<configuration>
+                <settings name="server">
+                    <set name="game_log"/>
+                    <set name="permban_with_frozensand"/>
+                </settings>
+            </configuration>""")
+        self.console.loadConfig(self.parser_conf)
+        self.assertTrue(self.parser_conf.has_option("server", "permban_with_frozensand"))
+        # WHEN
+        self.console.load_conf_permban_with_frozensand()
+        # THEN
+        self.assertFalse(self.console._permban_with_frozensand)
+
+
+    def test_no(self):
+        # GIVEN
+        self.parser_conf.loadFromString("""<configuration>
+                <settings name="server">
+                    <set name="game_log"/>
+                    <set name="permban_with_frozensand">no</set>
+                </settings>
+            </configuration>""")
+        self.console.loadConfig(self.parser_conf)
+        self.assertTrue(self.parser_conf.has_option("server", "permban_with_frozensand"))
+        # WHEN
+        self.console.load_conf_permban_with_frozensand()
+        # THEN
+        self.assertFalse(self.console._permban_with_frozensand)
+
+
+    def test_foo(self):
+        # GIVEN
+        self.parser_conf.loadFromString("""<configuration>
+                <settings name="server">
+                    <set name="game_log"/>
+                    <set name="permban_with_frozensand">foo</set>
+                </settings>
+            </configuration>""")
+        self.console.loadConfig(self.parser_conf)
+        self.assertTrue(self.parser_conf.has_option("server", "permban_with_frozensand"))
+        # WHEN
+        self.console.load_conf_permban_with_frozensand()
+        # THEN
+        self.assertFalse(self.console._permban_with_frozensand)
+
+
+
+
+
+class Test_load_conf_tempban_with_frozensand(Test_config):
+
+    def test_yes(self):
+        # GIVEN
+        self.parser_conf.loadFromString("""<configuration>
+                <settings name="server">
+                    <set name="game_log"/>
+                    <set name="tempban_with_frozensand">yes</set>
+                </settings>
+            </configuration>""")
+        self.console.loadConfig(self.parser_conf)
+        self.assertTrue(self.parser_conf.has_option("server", "tempban_with_frozensand"))
+        # WHEN
+        self.console.load_conf_tempban_with_frozensand()
+        # THEN
+        self.assertTrue(self.console._tempban_with_frozensand)
+
+
+    def test_missing(self):
+        # GIVEN
+        self.parser_conf.loadFromString("""<configuration>
+                <settings name="server">
+                    <set name="game_log"/>
+                </settings>
+            </configuration>""")
+        self.console.loadConfig(self.parser_conf)
+        self.assertFalse(self.parser_conf.has_option("server", "tempban_with_frozensand"))
+        # WHEN
+        self.console.load_conf_tempban_with_frozensand()
+        # THEN
+        self.assertFalse(self.console._tempban_with_frozensand)
+
+
+    def test_empty(self):
+        # GIVEN
+        self.parser_conf.loadFromString("""<configuration>
+                <settings name="server">
+                    <set name="game_log"/>
+                    <set name="tempban_with_frozensand"/>
+                </settings>
+            </configuration>""")
+        self.console.loadConfig(self.parser_conf)
+        self.assertTrue(self.parser_conf.has_option("server", "tempban_with_frozensand"))
+        # WHEN
+        self.console.load_conf_tempban_with_frozensand()
+        # THEN
+        self.assertFalse(self.console._tempban_with_frozensand)
+
+
+    def test_no(self):
+        # GIVEN
+        self.parser_conf.loadFromString("""<configuration>
+                <settings name="server">
+                    <set name="game_log"/>
+                    <set name="tempban_with_frozensand">no</set>
+                </settings>
+            </configuration>""")
+        self.console.loadConfig(self.parser_conf)
+        self.assertTrue(self.parser_conf.has_option("server", "tempban_with_frozensand"))
+        # WHEN
+        self.console.load_conf_tempban_with_frozensand()
+        # THEN
+        self.assertFalse(self.console._tempban_with_frozensand)
+
+
+    def test_foo(self):
+        # GIVEN
+        self.parser_conf.loadFromString("""<configuration>
+                <settings name="server">
+                    <set name="game_log"/>
+                    <set name="tempban_with_frozensand">foo</set>
+                </settings>
+            </configuration>""")
+        self.console.loadConfig(self.parser_conf)
+        self.assertTrue(self.parser_conf.has_option("server", "tempban_with_frozensand"))
+        # WHEN
+        self.console.load_conf_tempban_with_frozensand()
+        # THEN
+        self.assertFalse(self.console._tempban_with_frozensand)
+
+

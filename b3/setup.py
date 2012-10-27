@@ -54,6 +54,10 @@
 # 2012/01/08 - 1.2 - xlr8or
 #    * Added: xlrstats-update-2.6.1.sql
 #    * Fixed bug that would not update the xlrstats tables
+# 2012/10/19 - 1.3 - courgette
+#    * Added: Ravaged game
+# 2012/10/24 - 1.4 - courgette
+#   * Added: iourt42 custom settings
 #
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -61,7 +65,7 @@
 # The setup procedure, to create a new configuration file (b3.xml)
 
 __author__ = 'xlr8or'
-__version__ = '1.2'
+__version__ = '1.4'
 
 import platform
 import urllib2
@@ -124,7 +128,7 @@ class Setup:
     def runSetup(self):
         """ The main function that handles the setup steps """
         global xml
-        xml = XMLWriter(self._outputTempFile)
+        xml = XMLWriter(self._outputTempFile, "UTF-8")
 
         # write appropriate header
         xml.declaration()
@@ -148,7 +152,7 @@ class Setup:
         self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
         xml.start("settings", name="b3")
         self.add_set("parser", "",
-                     "Define your game: altitude/bf3/bfbc2/cod/cod2/cod4/cod5/cod6/cod7/cod8/etpro/homefront/iourt41/iourt42/moh/oa081/smg/sof2/wop/wop15/ro2/csgo")
+                     "Define your game: altitude/bf3/bfbc2/cod/cod2/cod4/cod5/cod6/cod7/cod8/etpro/homefront/iourt41/iourt42/moh/oa081/smg/sof2/wop/wop15/ro2/csgo/ravaged")
 
         # set a template xml file to read existing settings from
         _result = False
@@ -231,6 +235,19 @@ class Setup:
             self.add_set("timeout", self.read_element('server', 'timeout', '3'),
                          "RCON timeout", silent=True)
 
+        # Ravaged specific
+        elif self._set_parser == 'ravaged':
+            self.add_set("public_ip", self.read_element('server', 'public_ip', ''),
+                         "The IP address of your gameserver")
+            self.add_set("port", self.read_element('server', 'port', '27015'),
+                         "The query port of your gameserver (see SteamQueryPort in your Ravaged server config file)")
+            self.add_set("rcon_ip", self.read_element('server', 'rcon_ip', ''),
+                         "The IP of your gameserver B3 will connect to in order to send RCON commands. Usually the same as the public_ip")
+            self.add_set("rcon_port", self.read_element('server', 'rcon_port', '13550'),
+                         "The port of your gameserver that B3 will connect to in order to send RCON commands. (see RConPort in your Ravaged server config file)")
+            self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
+                         "The RCON password of your gameserver. (see AdminPassword in your Ravaged server config file)")
+
         # Homefront specific
         elif self._set_parser == 'homefront':
             self.add_set("public_ip", self.read_element('server', 'public_ip', ''),
@@ -243,6 +260,23 @@ class Setup:
                          "The port of your gameserver that B3 will connect to in order to send RCON commands. NOT the same as the normal port.")
             self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
                          "The RCON password of your gameserver.")
+
+        # Urban Terror specific
+        elif self._set_parser == 'iourt42':
+            self.add_set("game_log", self.read_element('server', 'game_log', ''),
+                "The gameserver generates a logfile, put the path and name here")
+            self.add_set("public_ip", self.read_element('server', 'public_ip', ''),
+                "The public IP your gameserver is residing on")
+            self.add_set("port", self.read_element('server', 'port', ''),
+                "The port the server is running on")
+            self.add_set("rcon_ip", self.read_element('server', 'rcon_ip', ''),
+                "The IP the bot can use to send RCON commands to (127.0.0.1 when on the same box)")
+            self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
+                "The RCON pass of your gameserver")
+            self.add_set("permban_with_frozensand", self.read_element('server', 'permban_with_frozensand', 'no'),
+                         "Permban with Frozen Sand auth system")
+            self.add_set("tempban_with_frozensand", self.read_element('server', 'tempban_with_frozensand', 'no'),
+                         "Tempban with Frozen Sand auth system")
 
         # Q3A specific
         else:
@@ -548,7 +582,7 @@ class Setup:
 
     def equaLize(self, _string):
         """ Make the setup questions same length for prettier formatting """
-        return (self._equaLength - len(str(_string))) * " "
+        return (self._equaLength - len(unicode(_string))) * " "
 
     def add_set(self, sname, sdflt, explanation="", silent=False):
         """
@@ -566,9 +600,9 @@ class Setup:
             _value = sdflt
         xml.element("set", _value, name=sname)
         #store values into a variable for later use ie. enabling the punkbuster plugin.
-        exec("self._set_" + str(sname) + " = \"" + str(_value) + "\"")
+        exec("self._set_" + str(sname) + " = \"" + unicode(_value) + "\"")
         if not silent:
-            self.add_buffer(str(sname) + self.equaLize(sname) + ": " + str(_value) + "\n")
+            self.add_buffer(str(sname) + self.equaLize(sname) + ": " + unicode(_value) + "\n")
 
     def add_plugin(self, sname, sconfig=None, explanation=None, default="yes", downlURL=None, sql=None, prompt=True):
         """

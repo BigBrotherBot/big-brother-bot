@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2012/10/19 - 1.31 - courgette
+#   * add method getNextMap() to the list of method all B3 parsers should implement
 #   2012/09/14 - 1.30.1 - courgette
 #   * fix variable substitution in default message templates
 #   2012/08/27 - 1.30 - courgette
@@ -1316,6 +1318,12 @@ class Parser(object):
     def getMap(self):
         """\
         return the current map/level name
+        """
+        raise NotImplementedError
+
+    def getNextMap(self):
+        """\
+        return the next map/level name to be played
         """
         raise NotImplementedError
 

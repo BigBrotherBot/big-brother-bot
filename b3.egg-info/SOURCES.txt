@@ -65,6 +65,7 @@ b3/conf/templates/b3.homefront.tpl
 b3/conf/templates/b3.iourt41.tpl
 b3/conf/templates/b3.iourt42.tpl
 b3/conf/templates/b3.moh.tpl
+b3/conf/templates/b3.ravaged.tpl
 b3/conf/templates/b3.ro2.tpl
 b3/docs/LICENSE.txt
 b3/docs/README.txt
@@ -160,6 +161,7 @@ b3/parsers/csgo.py
 b3/parsers/et.py
 b3/parsers/etpro.py
 b3/parsers/iourt41.py
+b3/parsers/iourt41callvote.py
 b3/parsers/iourt42.py
 b3/parsers/moh.py
 b3/parsers/oa081.py
@@ -183,6 +185,7 @@ b3/parsers/frostbite/rcon.py
 b3/parsers/frostbite/util.py
 b3/parsers/frostbite2/__init__.py
 b3/parsers/frostbite2/abstractParser.py
+b3/parsers/frostbite2/bf3string.py
 b3/parsers/frostbite2/protocol.py
 b3/parsers/frostbite2/punkbuster.py
 b3/parsers/frostbite2/rcon.py
@@ -193,6 +196,9 @@ b3/parsers/homefront/rcon.py
 b3/parsers/q3a/__init__.py
 b3/parsers/q3a/abstractParser.py
 b3/parsers/q3a/rcon.py
+b3/parsers/ravaged/__init__.py
+b3/parsers/ravaged/ravaged_rcon.py
+b3/parsers/ravaged/rcon.py
 b3/parsers/source/__init__.py
 b3/parsers/source/rcon.py
 b3/plugins/__init__.py
@@ -211,6 +217,7 @@ b3/plugins/sftpytail.py
 b3/plugins/spamcontrol.py
 b3/plugins/stats.py
 b3/plugins/status.py
+b3/plugins/testevents.py
 b3/plugins/tk.py
 b3/plugins/welcome.py
 b3/sql/b3-db.sql
@@ -232,7 +239,6 @@ b3/tools/documentationBuilder.py
 b3/tools/functionprofiler.py
 b3/tools/logdiagnostic.py
 b3/tools/memoryprofiler.py
-tests/Ravaged_brute_force.py
 tests/__init__.py
 tests/run.py
 tests/test_b3.py
@@ -249,6 +255,7 @@ tests/parsers/test_bf3.py
 tests/parsers/test_csgo.py
 tests/parsers/test_iourt41.py
 tests/parsers/test_iourt42.py
+tests/parsers/test_ravaged.py
 tests/parsers/frostbite/__init__.py
 tests/parsers/frostbite/test_abstractParser.py
 tests/parsers/frostbite/test_util.py

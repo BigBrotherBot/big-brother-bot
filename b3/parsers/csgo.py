@@ -58,6 +58,9 @@
 #   * better detection of EVT_SERVER_REQUIRES_RESTART
 #   * now detect client action Begin_Bomb_Defuse_With_Kit
 #   * fix #90 - check that SourceMod is installed at startup
+# 2012-10-19 - 1.4.1 Courgette
+#   * fix ban that was queuing a EVT_CLIENT_BAN_TEMP event instead of EVT_CLIENT_BAN
+#
 #
 import re
 import time
@@ -65,11 +68,11 @@ from b3.clients import Client, Clients
 from b3.functions import minutesStr, time2minutes, getStuffSoundingLike
 from b3.parser import Parser
 from b3 import TEAM_UNKNOWN, TEAM_BLUE, TEAM_SPEC, TEAM_RED
-from b3.game_event_router import gameEvent, getHandler
+from b3.game_event_router import Game_event_router
 from b3.parsers.source.rcon import Rcon
 
 __author__  = 'Courgette'
-__version__ = '1.4'
+__version__ = '1.4.1'
 
 
 """
@@ -129,6 +132,8 @@ RE_HL_LOG_PROPERTY = re.compile('''\((?P<key>[^\s\(\)]+)(?P<data>| "(?P<value>[^
 # Regular expression to parse cvar queries responses
 RE_CVAR = re.compile(r'''^"(?P<cvar>\S+?)" = "(?P<value>.*?)" \( def. "(?P<default>.*?)".*$''', re.MULTILINE)
 
+
+ger = Game_event_router()
 
 class CsgoParser(Parser):
     """
@@ -198,7 +203,7 @@ class CsgoParser(Parser):
     #
     ###############################################################################################
 
-    @gameEvent(
+    @ger.gameEvent(
         r'''^//''', # comment log line
         r'''^server cvars start''',
         r'''^server cvars end''',
@@ -217,7 +222,7 @@ class CsgoParser(Parser):
         pass
 
 
-    @gameEvent(r'''"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" killed "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>" with "(?P<weapon>\S*)"(?P<properties>.*)$''')
+    @ger.gameEvent(r'''"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" killed "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>" with "(?P<weapon>\S*)"(?P<properties>.*)$''')
     def on_kill(self, a_name, a_cid, a_guid, a_team, v_name, v_cid, v_guid, v_team, weapon, properties):
         # L 08/26/2012 - 03:46:44: "Pheonix<22><BOT><TERRORIST>" killed "Ringo<17><BOT><CT>" with "glock" (headshot)
         # L 08/26/2012 - 03:46:46: "Shark<19><BOT><CT>" killed "Pheonix<22><BOT><TERRORIST>" with "hkp2000"
@@ -248,7 +253,7 @@ class CsgoParser(Parser):
         return self.getEvent(event_type, client=attacker, target=victim, data=tuple(data))
 
 
-    @gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" committed suicide with "(?P<weapon>\S*)"$''')
+    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" committed suicide with "(?P<weapon>\S*)"$''')
     def on_suicide(self, name, cid, guid, team, weapon):
         # L 08/26/2012 - 03:38:04: "Pheonix<22><BOT><TERRORIST>" committed suicide with "world"
         client = self.getClientOrCreate(cid, guid, name, team)
@@ -258,7 +263,7 @@ class CsgoParser(Parser):
         return self.getEvent("EVT_CLIENT_SUICIDE", client=client, target=client, data=(damage_pct, weapon, "body", damage_type))
 
 
-    @gameEvent(
+    @ger.gameEvent(
         r'''^"(?P<cvar_name>\S+)" = "(?P<cvar_value>\S*)"$''',
         r'''^server_cvar: "(?P<cvar_name>\S+)" "(?P<cvar_value>\S*)"$'''
     )
@@ -269,19 +274,19 @@ class CsgoParser(Parser):
         self.game.cvar[cvar_name] = cvar_value
 
 
-    @gameEvent(r'''^-------- Mapchange to (?P<new_map>\S+) --------$''')
+    @ger.gameEvent(r'''^-------- Mapchange to (?P<new_map>\S+) --------$''')
     def on_map_change(self, new_map):
         # L 08/27/2012 - 23:57:14: -------- Mapchange to de_dust --------
         self.game.mapName = new_map
 
 
-    @gameEvent(r'''^Loading map "(?P<new_map>\S+)"$''')
+    @ger.gameEvent(r'''^Loading map "(?P<new_map>\S+)"$''')
     def on_started_map(self, new_map):
         # L 08/26/2012 - 03:49:56: Loading map "de_nuke"
         self.game.mapName = new_map
 
 
-    @gameEvent(r'''^Started map "(?P<new_map>\S+)" \(CRC "-?\d+"\)$''')
+    @ger.gameEvent(r'''^Started map "(?P<new_map>\S+)" \(CRC "-?\d+"\)$''')
     def on_started_map(self, new_map):
         # L 08/26/2012 - 03:22:35: Started map "de_dust" (CRC "1592693790")
         # L 08/26/2012 - 03:49:58: Started map "de_nuke" (CRC "-568155013")
@@ -289,13 +294,13 @@ class CsgoParser(Parser):
         self.game.startMap()
 
 
-    @gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>\S*)><(?P<team>\S*)>" STEAM USERID validated$''')
+    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>\S*)><(?P<team>\S*)>" STEAM USERID validated$''')
     def on_userid_validated(self, name, cid, guid, team):
         # L 08/26/2012 - 03:22:36: "courgette<2><STEAM_1:0:1111111><>" STEAM USERID validated
         self.getClientOrCreate(cid, guid, name, team)
 
 
-    @gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" connected, address "(?P<ip>.+)"$''')
+    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" connected, address "(?P<ip>.+)"$''')
     def on_client_connected(self, name, cid, guid, team, ip):
         # L 08/26/2012 - 03:22:36: "courgette<2><STEAM_1:0:1111111><>" connected, address "11.222.111.222:27005"
         # L 08/26/2012 - 03:22:36: "Moe<3><BOT><>" connected, address "none"
@@ -303,7 +308,7 @@ class CsgoParser(Parser):
         client.ip = ip if ip != "none" else ""
 
 
-    @gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" disconnected \(reason "(?P<reason>.*)"\)$''')
+    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" disconnected \(reason "(?P<reason>.*)"\)$''')
     def on_client_disconnected(self, name, cid, guid, team, reason):
         # L 08/26/2012 - 04:45:04: "Kyle<63><BOT><CT>" disconnected (reason "Kicked by Console")
         client = self.getClient(cid)
@@ -316,7 +321,7 @@ class CsgoParser(Parser):
             return event
 
 
-    @gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" entered the game$''')
+    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" entered the game$''')
     def on_client_entered(self, name, cid, guid, team):
         # L 08/26/2012 - 05:29:48: "Rip<93><BOT><>" entered the game
         # L 08/26/2012 - 05:38:36: "GrUmPY<105><STEAM_1:0:22222222><>" entered the game
@@ -325,7 +330,7 @@ class CsgoParser(Parser):
         return self.getEvent("EVT_CLIENT_JOIN", client=client)
 
 
-    @gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<old_team>\S+)>" joined team "(?P<new_team>\S+)"$''')
+    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<old_team>\S+)>" joined team "(?P<new_team>\S+)"$''')
     def on_client_join_team(self, name, cid, guid, old_team, new_team):
         # L 08/26/2012 - 03:22:36: "Pheonix<11><BOT><Unassigned>" joined team "TERRORIST"
         # L 08/26/2012 - 03:22:36: "Wolf<12><BOT><Unassigned>" joined team "CT"
@@ -333,7 +338,7 @@ class CsgoParser(Parser):
         client.team = self.getTeam(new_team)
 
 
-    @gameEvent(r'''^World triggered "(?P<event_name>\S*)"(?P<properties>.*)$''')
+    @ger.gameEvent(r'''^World triggered "(?P<event_name>\S*)"(?P<properties>.*)$''')
     def on_world_action(self, event_name, properties):
         # L 08/26/2012 - 03:22:36: World triggered "Round_Start"
         # L 08/26/2012 - 03:22:36: World triggered "Game_Commencing"
@@ -353,7 +358,7 @@ class CsgoParser(Parser):
             self.warning("unexpected world event : '%s'. Please report this on the B3 forums" % event_name)
 
 
-    @gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" triggered "(?P<event_name>\S+)"(?P<properties>.*)$''')
+    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" triggered "(?P<event_name>\S+)"(?P<properties>.*)$''')
     def on_player_action(self, name, cid, guid, team, event_name, properties):
         client = self.getClientOrCreate(cid, guid, name, team)
         props = self.parseProperties(properties)
@@ -385,7 +390,7 @@ class CsgoParser(Parser):
             self.warning("unknown client event : '%s'. Please report this on the B3 forums" % event_name)
 
 
-    @gameEvent(r'''^Team "(?P<team>\S+)" triggered "(?P<event_name>[^"]+)"(?P<properties>.*)$''')
+    @ger.gameEvent(r'''^Team "(?P<team>\S+)" triggered "(?P<event_name>[^"]+)"(?P<properties>.*)$''')
     def on_team_action(self, team, event_name, properties):
         # L 08/26/2012 - 03:48:09: Team "CT" triggered "SFUI_Notice_Target_Saved" (CT "3") (T "5")
         # L 08/26/2012 - 03:51:50: Team "TERRORIST" triggered "SFUI_Notice_Target_Bombed" (CT "1") (T "1")
@@ -396,14 +401,14 @@ class CsgoParser(Parser):
             self.warning("unexpected team event : '%s'. Please report this on the B3 forums" % event_name)
 
 
-    @gameEvent(r'''^Team "(?P<team>\S+)" scored "(?P<points>\d+)" with "(?P<num_players>\d+)" players$''')
+    @ger.gameEvent(r'''^Team "(?P<team>\S+)" scored "(?P<points>\d+)" with "(?P<num_players>\d+)" players$''')
     def on_team_score(self, team, points, num_players):
         # L 08/26/2012 - 03:48:09: Team "CT" scored "3" with "5" players
         # L 08/26/2012 - 03:48:09: Team "TERRORIST" scored "5" with "5" players
         pass # TODO should we do anything with that info ?
 
 
-    @gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*?)>" say "(?P<text>.*)"$''')
+    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*?)>" say "(?P<text>.*)"$''')
     def on_client_say(self, name, cid, guid, team, text):
         # L 08/26/2012 - 05:09:55: "courgette<2><STEAM_1:0:1487018><CT>" say "!iamgod"
         # L 09/16/2012 - 04:55:17: "Spoon<2><STEAM_1:0:11111111><>" say "!h"
@@ -411,32 +416,32 @@ class CsgoParser(Parser):
         return self.getEvent("EVT_CLIENT_SAY", client=client, data=text)
 
 
-    @gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*?)>" say_team "(?P<text>.*)"$''')
+    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*?)>" say_team "(?P<text>.*)"$''')
     def on_client_teamsay(self, name, cid, guid, team, text):
         # L 08/26/2012 - 05:04:44: "courgette<2><STEAM_1:0:1487018><CT>" say_team "team say"
         client = self.getClientOrCreate(cid, guid, name, team)
         return self.getEvent("EVT_CLIENT_TEAM_SAY", client=client, data=text)
 
 
-    @gameEvent(r'''^rcon from "(?P<ip>.+):(?P<port>\d+)":\sBad Password$''')
+    @ger.gameEvent(r'''^rcon from "(?P<ip>.+):(?P<port>\d+)":\sBad Password$''')
     def on_bad_rcon_password(self, ip, port):
         # L 08/26/2012 - 05:21:23: rcon from "78.207.134.100:15073": Bad Password
         self.error("Bad RCON password, check your b3.xml file")
 
 
-    @gameEvent(r'''^Molotov projectile spawned at (?P<coord>-?[\d.]+ -?[\d.]+ -?[\d.]+), velocity (?P<velocity>-?[\d.]+ -?[\d.]+ -?[\d.]+)$''')
+    @ger.gameEvent(r'''^Molotov projectile spawned at (?P<coord>-?[\d.]+ -?[\d.]+ -?[\d.]+), velocity (?P<velocity>-?[\d.]+ -?[\d.]+ -?[\d.]+)$''')
     def on_molotov_spawed(self, coord, velocity):
         # L 08/26/2012 - 05:21:24: Molotov projectile spawned at 132.012238 -2071.752197 -347.858246, velocity 487.665253 106.295044 121.257591
         pass # Do we care ?
 
 
-    @gameEvent(r'''^rcon from "(?P<ip>.+):(?P<port>\d+)": command "(?P<cmd>.*)"$''')
+    @ger.gameEvent(r'''^rcon from "(?P<ip>.+):(?P<port>\d+)": command "(?P<cmd>.*)"$''')
     def on_rcon(self, ip, port, cmd):
         # L 08/26/2012 - 05:37:56: rcon from "11.222.111.122:15349": command "say test"
         pass
 
 
-    @gameEvent(r'''^Banid: "(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" was banned "for (?P<duration>.+)" by "(?P<admin>.*)"$''')
+    @ger.gameEvent(r'''^Banid: "(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" was banned "for (?P<duration>.+)" by "(?P<admin>.*)"$''')
     def on_banid(self, name, cid, guid, team, duration, admin):
         # L 08/28/2012 - 00:03:01: Banid: "courgette<91><STEAM_1:0:1111111><>" was banned "for 1.00 minutes" by "Console"
         client = self.storage.getClient(Client(guid=guid))
@@ -444,7 +449,7 @@ class CsgoParser(Parser):
             return self.getEvent("EVT_CLIENT_BAN_TEMP", {"duration": duration, "admin": admin, 'reason': None}, client)
 
 
-    @gameEvent(r'''^\[basecommands.smx\] ".+<\d+><.+><.*>" kicked "(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>"(?P<properties>.*)$''')
+    @ger.gameEvent(r'''^\[basecommands.smx\] ".+<\d+><.+><.*>" kicked "(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>"(?P<properties>.*)$''')
     def on_kicked(self, name, cid, guid, team, properties):
         # L 08/28/2012 - 00:12:07: [basecommands.smx] "Console<0><Console><Console>" kicked "courgette<91><STEAM_1:0:1111111><>" (reason "f00")
         client = self.storage.getClient(Client(guid=guid))
@@ -453,7 +458,7 @@ class CsgoParser(Parser):
             return self.getEvent("EVT_CLIENT_KICK", p.get('reason', ''), client)
 
 
-    @gameEvent(r'''^server_message: "(?P<msg>.*)"(?P<properties>.*)$''')
+    @ger.gameEvent(r'''^server_message: "(?P<msg>.*)"(?P<properties>.*)$''')
     def on_server_message(self, msg, properties):
         # L 08/30/2012 - 00:43:10: server_message: "quit"
         # L 08/30/2012 - 00:43:10: server_message: "restart"
@@ -463,13 +468,13 @@ class CsgoParser(Parser):
             self.warning("unexpected server_message : '%s'. Please report this on the B3 forums" % msg)
 
 
-    @gameEvent(r'''^Log file started (?P<properties>.*)$''')
+    @ger.gameEvent(r'''^Log file started (?P<properties>.*)$''')
     def on_server_message(self, properties):
         # Log file started (file "logs/L000_000_000_000_0_201208300045_000.log") (game "/home/steam/steamcmd/cs_go/csgo") (version "5038")
         pass
 
 
-    @gameEvent(
+    @ger.gameEvent(
         r'''^(?P<data>Your server needs to be restarted.*)$''',
         r'''^(?P<data>Your server is out of date.*)$'''
     )
@@ -480,7 +485,7 @@ class CsgoParser(Parser):
 
 
     # -------------- /!\  this one must be the last /!\ --------------
-    @gameEvent(r'''^(?P<data>.+)$''')
+    @ger.gameEvent(r'''^(?P<data>.+)$''')
     def on_unknown_line(self, data):
         """
         catch all lines that were not handled
@@ -632,7 +637,7 @@ class CsgoParser(Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(self.getEvent("EVT_CLIENT_BAN_TEMP", {'reason': reason, 'admin': admin}, client))
+        self.queueEvent(self.getEvent("EVT_CLIENT_BAN", {'reason': reason, 'admin': admin}, client))
 
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -823,7 +828,7 @@ class CsgoParser(Parser):
         if m:
             data = m.group('data')
             if data:
-                hfunc, param_dict = getHandler(data)
+                hfunc, param_dict = ger.getHandler(data)
                 if hfunc:
                     self.verbose2("calling %s%r" % (hfunc.func_name, param_dict))
                     event = hfunc(self, **param_dict)

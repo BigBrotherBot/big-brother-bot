@@ -17,7 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
-# 26/10/2012 - 1.4.12 - xlr8or
+# 26/10/2012 - 1.4.12 - Courgette, xlr8or
+# * makes sure 'Client' tags have a 'score' attribute
 # * Better sync of DB and XML saving for XLRstats v3 webfront
 # 12/08/2012 - 1.4.11 - Courgette
 # * will provide more debugging info about errors while generating the XML document
@@ -269,6 +270,8 @@ class StatusPlugin(b3.plugin.Plugin):
                 client.setAttribute("Updated", str(time.ctime(c.timeEdit)))
                 if scoreList and c.cid in scoreList:
                     client.setAttribute("Score", str(scoreList[c.cid]))
+                else:
+                    client.setAttribute("Score", "")
                 client.setAttribute("State", str(c.state))
                 if self._enableDBclientSaving:
                     qryBuilderKey = ""

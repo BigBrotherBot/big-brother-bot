@@ -160,13 +160,15 @@
 #     * ensures the config file has option 'game_log' in section 'server'
 # 12/08/2012 - 1.13.3 - Courgette
 #     * fix !nextmap bug when the mapcycle file contains empty lines
+# 19/10/2012 - 1.14 - Courgette
+#     * improve finding the exact map in getMapsSoundingLike. Also improves changeMap() behavior as a consequence
 #
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.13.3'
+__version__ = '1.14'
 
 import re, string, time, os, thread
 from b3.parsers.q3a.abstractParser import AbstractParser
-from b3.functions import soundex, levenshteinDistance
+from b3.functions import soundex, levenshteinDistance, getStuffSoundingLike
 import b3
 import b3.events
 
@@ -1268,15 +1270,18 @@ class Iourt41Parser(AbstractParser):
         time.sleep(1)
         self.write('cyclemap')
 
-    def changeMap(self, map):
-        match = self.getMapsSoundingLike(map)
-        if len(match) == 1:
-            map = match[0]
+    def changeMap(self, map_name):
+        """\
+        load a given map/level
+        return a list of suggested map names in cases it fails to recognize the map that was provided
+        """
+        rv = self.getMapsSoundingLike(map_name)
+        if isinstance(rv, basestring):
+            self.say('^7Changing map to %s' % rv)
+            time.sleep(1)
+            self.write('map %s' % rv)
         else:
-            return match
-        self.say('^7Changing map to %s' % map)
-        time.sleep(1)
-        self.write('map %s' % map)
+            return rv
 
     def getMaps(self):
         if self._maplist is not None:
@@ -1388,40 +1393,32 @@ class Iourt41Parser(AbstractParser):
         except IndexError:
             return firstmap
 
-
     def getMapsSoundingLike(self, mapname):
-        maplist = self.getMaps()
-        data = mapname.strip()
+        """ return a valid mapname.
+        If no exact match is found, then return close candidates as a list
+        """
+        wanted_map = mapname.lower()
+        supportedMaps = self.getMaps()
+        if wanted_map in supportedMaps:
+            return wanted_map
 
-        soundex1 = soundex(string.replace(string.replace(data, 'ut4_',''), 'ut_',''))
-        #self.debug('soundex %s : %s' % (data, soundex1))
+        cleaned_supportedMaps = {}
+        for map_name in supportedMaps:
+            cleaned_supportedMaps[re.sub("^ut4?_", '', map_name, count=1)] = map_name
 
-        match = []
-        if data in maplist:
-            match = [data]
+        if wanted_map in cleaned_supportedMaps:
+            return cleaned_supportedMaps[wanted_map]
+
+        cleaned_wanted_map = re.sub("^ut4?_", '', wanted_map, count=1)
+
+        matches = [cleaned_supportedMaps[match] for match in getStuffSoundingLike(cleaned_wanted_map, cleaned_supportedMaps.keys())]
+        if len(matches) == 1:
+            # one match, get the map id
+            return matches[0]
         else:
-            for m in maplist:
-                s = soundex(string.replace(string.replace(m, 'ut4_',''), 'ut_',''))
-                #self.debug('soundex %s : %s' % (m, s))
-                if s == soundex1:
-                    #self.debug('probable map : %s', m)
-                    match.append(m)
+            # multiple matches, provide suggestions
+            return matches
 
-        if not len(match):
-            # suggest closest spellings
-            shortmaplist = []
-            for m in maplist:
-                if m.find(data) != -1:
-                    shortmaplist.append(m)
-            if len(shortmaplist) > 0:
-                shortmaplist.sort(key=lambda map: levenshteinDistance(data, string.replace(string.replace(map.strip(), 'ut4_',''), 'ut_','')))
-                self.debug("shortmaplist sorted by distance : %s" % shortmaplist)
-                match = shortmaplist[:3]
-            else:
-                maplist.sort(key=lambda map: levenshteinDistance(data, string.replace(string.replace(map.strip(), 'ut4_',''), 'ut_','')))
-                self.debug("maplist sorted by distance : %s" % maplist)
-                match = maplist[:3]
-        return match
 
     def getTeamScores(self):
         data = self.write('players')
