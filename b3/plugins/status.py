@@ -169,7 +169,7 @@ class StatusPlugin(b3.plugin.Plugin):
             gamename = c.gameName
         if c.gameType:
             gametype = c.gameType
-        if c.mapName or c._mapName:
+        if c.mapName:
             mapname = c.mapName
         if c.timeLimit:
             timelimit = c.timeLimit
@@ -199,8 +199,8 @@ class StatusPlugin(b3.plugin.Plugin):
         game.setAttribute("OnlinePlayers", str(len(clients)))
         b3status.appendChild(game)
         # For DB:
-        self.storeServerinfo('Ip', str(self.console._publicIp))
-        self.storeServerinfo('Port', str(self.console._port))
+        self.storeServerinfo("Ip", str(self.console._publicIp))
+        self.storeServerinfo("Port", str(self.console._port))
         self.storeServerinfo("Name", str(gamename))
         self.storeServerinfo("Type", str(gametype))
         self.storeServerinfo("Map", str(mapname))
