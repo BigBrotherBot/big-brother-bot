@@ -657,3 +657,31 @@ class Cmd_regulars(Admin_functional_test):
         self.joe.says('!regs')
         # THEN
         self.joe.message.assert_called_with('^7Regular players online: Mike^7, Jack^7')
+
+
+
+class Cmd_map(Admin_functional_test):
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init()
+
+    def test_missing_param(self):
+        self.joe.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
+        self.joe.connects(0)
+        self.joe.says('!map')
+        self.joe.message.assert_called_once_with('^7You must supply a map to change to.')
+
+    def test_suggestions(self):
+        self.joe.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
+        self.joe.connects(0)
+        when(self.console).changeMap('f00').thenReturn(["bar1", "bar2", "bar3", "bar4", "bar5", "bar6", "bar7", "bar8", "bar9", "bar10", "bar11", "bar"])
+        self.joe.says('!map f00')
+        self.joe.message.assert_called_once_with('do you mean : bar1, bar2, bar3, bar4, bar5 ?')
+
+    def test_nominal(self):
+        self.joe.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
+        self.joe.connects(0)
+        when(self.console).changeMap('f00').thenReturn(None)
+        self.joe.says('!map f00')
+        self.assertEqual(0, self.joe.message.call_count)
+

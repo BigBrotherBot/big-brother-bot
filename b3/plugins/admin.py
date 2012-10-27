@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2012/10/27 - 1.19 - Courgette
+#   * change: !map command will give at most 5 suggestions
 #   2012/10/03 - 1.18 - Courgette
 #   * add command !lastbans
 #   2012/09/29 - 1.17 - Courgette
@@ -118,7 +120,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.18'
+__version__ = '1.19'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import re, time, threading, sys, traceback, thread, random
@@ -720,7 +722,7 @@ class AdminPlugin(b3.plugin.Plugin):
             return
         suggestions = self.console.changeMap(data)
         if type(suggestions) == list:
-            client.message('do you mean : %s ?' % ', '.join(suggestions))
+            client.message('do you mean : %s ?' % ', '.join(suggestions[:5]))
 
     def cmd_maprotate(self, data, client, cmd=None):
         """\
