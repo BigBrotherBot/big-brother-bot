@@ -80,6 +80,7 @@ class RavagedParser(Parser):
     Ravaged B3 parser
     """
     gameName = 'ravaged'
+    privateMsg = True
     OutputClass = RavagedRcon
     PunkBuster = None
 

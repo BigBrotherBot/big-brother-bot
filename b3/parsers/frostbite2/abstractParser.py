@@ -78,6 +78,7 @@ class AbstractParser(b3.parser.Parser):
     """
 
     gameName = None
+    privateMsg = True
 
     # hard limit for rcon command admin.say
     SAY_LINE_MAX_LENGTH = 128

@@ -64,6 +64,7 @@ class AbstractParser(b3.parser.Parser):
     An abstract base class to help with developing frostbite parsers 
     '''
     gameName = None
+    privateMsg = True
     OutputClass = rcon.Rcon
     _serverConnection = None
     _nbConsecutiveConnFailure = 0

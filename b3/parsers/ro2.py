@@ -79,6 +79,7 @@ class Ro2Parser(b3.parser.Parser):
     The Ref Orchestra 2 B3 parser class
     """
     gameName = "redorchestra2"
+    privateMsg = True
     PunkBuster = None 
     # RO2 engine does not support color code, so we need this property
     # in order to get stripColors working

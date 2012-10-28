@@ -223,6 +223,7 @@ class Parser(object):
     remoteLog = False
     screen = None
     rconTest = False
+    privateMsg = False
 
     # Time in seconds of epoch of game log
     logTime = 0
