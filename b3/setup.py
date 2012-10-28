@@ -814,7 +814,7 @@ class Setup:
         req = urllib2.Request(url)
         try:
             r = urllib2.urlopen(req)
-            self.add_buffer('  ... downloading ...\n')
+            self.add_buffer('  ... downloading %s ...\n' % url)
         except Exception, msg:
             self.add_buffer('  ... download failed: %s\n' % msg)
             return None
