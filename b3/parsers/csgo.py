@@ -140,6 +140,7 @@ class CsgoParser(Parser):
     The 'Counter-Strike: Global Offensive' B3 parser class
     """
     gameName = "csgo"
+    privateMsg = True
     OutputClass = Rcon
     PunkBuster = None
 

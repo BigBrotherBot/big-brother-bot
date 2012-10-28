@@ -62,6 +62,7 @@ class FrontlineParser(b3.parser.Parser):
     The Frontline B3 parser class
     '''
     gameName = "frontline"
+    privateMsg = True
     OutputClass = rcon.Rcon
     PunkBuster = None 
     _serverConnection = None
