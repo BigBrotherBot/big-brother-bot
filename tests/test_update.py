@@ -48,6 +48,7 @@ class TestB3Version(unittest.TestCase):
         B3version("1.8.2b")
         B3version("1.8.2b0")
         B3version("1.8.2b78")
+        B3version("1.9.0dev7.daily21-20121004")
 
     def test_exception(self):
         for version in ("1", "0", "24", '1.x', '1.5.2.1', '1.4alpha', '1.5.4beta', '1.6d'):
@@ -67,6 +68,7 @@ class TestB3Version(unittest.TestCase):
         self.assertEqual(B3version("1.1b"), B3version('1.1b'))
         self.assertEqual(B3version("1.1.0b"), B3version('1.1.0b0'))
         self.assertEqual(B3version("1.1.0b"), B3version('1.1b0'))
+        self.assertEqual(B3version("1.9.0dev7.daily21-20121004"), B3version("1.9dev7.daily21"))
 
     def test_greater(self):
         self.assertGreater(B3version('1.0'), B3version('1.0dev'))
@@ -81,6 +83,7 @@ class TestB3Version(unittest.TestCase):
         self.assertGreater(B3version('1.0'), B3version('0.5dev'))
         self.assertGreater(B3version('1.0'), B3version('0.5a'))
         self.assertGreater(B3version('1.0'), B3version('0.5b'))
+        self.assertGreater(B3version("1.9.0dev7.daily21-20121004"), B3version("1.9dev7.daily19-20121001"))
 
     def test_less(self):
         self.assertLess(B3version('1.0'), B3version('1.0.1'))
@@ -96,6 +99,7 @@ class TestB3Version(unittest.TestCase):
         self.assertLess(B3version('2.5.1a2'), B3version('2.5.2'))
         self.assertLess(B3version('2.5.1b'), B3version('2.5.2'))
         self.assertLess(B3version('2.5.1b4'), B3version('2.5.2'))
+        self.assertLess(B3version("1.9.0dev7.daily5-20120904"), B3version("1.9dev7.daily19-20121001"))
 
 
 class TestGetDefaultChannel(unittest.TestCase):

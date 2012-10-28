@@ -224,6 +224,33 @@ class StorageAPITest(object):
         client.id = 15
         self.assertEquals((), self.storage.getClientIpAddresses(client))
 
+    def test_getLastPenalties(self):
+        c1 = Mock()
+        c1.id = 15
+        c2 = Mock()
+        c2.id = 18
+        Penalty(clientId=c1.id, adminId=0, inactive=1, type='Ban', timeExpire=-1, data=u'pA').save(self.console)
+        Penalty(clientId=c1.id, adminId=0, inactive=0, type='Ban', timeExpire=self.console.time()+10, data=u'pB').save(self.console)
+        Penalty(clientId=c1.id, adminId=0, inactive=0, type='Warning', timeExpire=self.console.time()+10, data=u'pC').save(self.console)
+        Penalty(clientId=c1.id, adminId=0, inactive=0, type='Kick', timeExpire=self.console.time()-10, data=u'pD').save(self.console)
+        Penalty(clientId=c1.id, adminId=0, inactive=0, type='Ban', timeExpire=self.console.time()-10, data=u'pE').save(self.console)
+        Penalty(clientId=c2.id, adminId=0, inactive=0, type='Warning', timeExpire=-1, data=u'pF').save(self.console)
+        Penalty(clientId=c2.id, adminId=0, inactive=0, type='TempBan', timeExpire=-1, data=u'pG').save(self.console)
+        Penalty(clientId=c2.id, adminId=0, inactive=0, type='Ban', timeExpire=-1, data=u'pH').save(self.console)
+
+        def getLastPenalties(types, num):
+            p_datas = []
+            for p in self.storage.getLastPenalties(types=types, num=num):
+                p_datas.append(p.data)
+                self.assertTrue(p.inactive == 0)
+                self.assertTrue(p.timeExpire == -1 or p.timeExpire > self.console.time())
+            self.assertGreaterEqual(num, len(p_datas))
+            return p_datas
+
+        self.assertListEqual([u'pH', u'pG', u'pF', u'pC', u'pB'], getLastPenalties(types=('Ban', 'TempBan', 'Kick', 'Warning', 'Notice'), num=5))
+        self.assertListEqual([u'pH', u'pG', u'pF', u'pC'], getLastPenalties(types=('Ban', 'TempBan', 'Kick', 'Warning', 'Notice'), num=4))
+        self.assertListEqual([u'pH', u'pG', u'pB'], getLastPenalties(types=('Ban', 'TempBan'), num=5))
+
     def test_setClientPenalty(self):
         id1 = self.storage.setClientPenalty(Penalty(type='Ban', clientId=1, adminId=0))
         self.assertIsNotNone(id1)
@@ -426,10 +453,47 @@ class StorageAPITest(object):
         self.storage.query = Mock(return_value=None)
         self.assertEqual([], self.storage.getGroups())
 
-    def test_getGroup(self):
+
+    def test_getGroup_by_keyword(self):
         g = self.storage.getGroup(Group(keyword='superadmin'))
         self.assertIsInstance(g, Group)
+        self.assertEquals('superadmin', g.keyword)
+        self.assertEquals(100, g.level)
         self.assertRaises(KeyError, self.storage.getGroup, Group(keyword='foo'))
+
+    def test_getGroup_by_level(self):
+        g = self.storage.getGroup(Group(level='20'))
+        self.assertIsInstance(g, Group)
+        self.assertEquals('mod', g.keyword)
+        self.assertEquals(20, g.level)
+        self.assertRaises(KeyError, self.storage.getGroup, Group(level='500'))
+
+    def test_getGroup_none(self):
+        try:
+            self.storage.getGroup(None)
+            self.fail("expecting KeyError")
+        except KeyError:
+            pass
+        except Exception:
+            self.fail("expecting KeyError")
+
+    def test_getGroup_junk(self):
+        try:
+            self.storage.getGroup(5)
+            self.fail("expecting KeyError")
+        except KeyError:
+            pass
+        except Exception:
+            self.fail("expecting KeyError")
+
+    def test_getGroup_bad_group(self):
+        try:
+            self.storage.getGroup(Group())
+            self.fail("expecting KeyError")
+        except KeyError:
+            pass
+        except Exception:
+            self.fail("expecting KeyError")
 
 
     def test_getCounts(self):

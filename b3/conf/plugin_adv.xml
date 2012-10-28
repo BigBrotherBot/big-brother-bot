@@ -40,6 +40,7 @@
       @nextmap - the next map in your game server rotation list (if available)
       @topstats - the top stats from XLRstats (if the plugin is enabled)
       @admins - connected admins' names. You can change the message format in your admin plugin config
+      @regulars - connected players from the regular grout. You can change the message format in your admin plugin config
     -->
 		<ad>^2Big Brother Bot is watching you... www.BigBrotherBot.net</ad>
 		<ad>@feed</ad>

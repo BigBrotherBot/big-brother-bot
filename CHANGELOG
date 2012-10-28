@@ -1,3 +1,52 @@
+1.8.2 -> 1.9.0
+----
+A list of changed files is available after release here:
+http://github.com/BigBrotherBot/big-brother-bot/compare/v1.8.2...v1.9.0
+----
+
+# Game related changes:
+- BF3: updated with DLC "Close Quarter" and "Armored kill" maps and gamemode info
+- BF3: command !map can optionally specify the wanted gamemode and number or rounds : !map firestorm, conquest64, 2
+- Red Orchestra 2 now working with the B3 win32 packages
+- Urban Terror : fix !nextmap bug when the mapcycle file contains empty lines
+- Urban Terror : improves !map <map name> capabilities to find out the correct map name when given name is an approximate
+- Quake3 based games: fixes the 'RCON: too much tries' error message that appeared with v1.8.2
+
+# Plugin related changes:
+- The !help command does not make B3 unresponsive anymore on Quake3 based games
+- Xlrstats plugin: fixes issue with command !xlrstats command silently failing on a 1st time seen map https://github.com/xlr8or/big-brother-bot/issues/88
+- Admin plugin: new command !unreg <player> which removes a player from the 'regular' group. Work together with the existing !makereg <player> command
+- Admin plugin: new command !lastbans which lists the 5 last active bans/tempbans
+- Admin plugin: new command !regulars which lists online players from the 'Regular' group
+- Adv plugin: add new message keyword '@regulars' that will run the Admin plugin command !regulars
+- Spamcontrol plugin : you can define the minimum group required to use the !spamins command. Also you can now define an alias for the spamins command.
+- In plugin config files, you can use group keywords (user, reg, mod, admin, fulladmin, senioradmin, superadmin) instead of group levels when defining commands' required level
+
+- Many minor bugfixes and improvements to B3 core and native plugins
+
+# New games supported:
+
+Urban Terror 4.2
+ - UrT 4.2 has now its own B3 parser : iourt42
+ - New penalty available : kill. You can use it in the censor plugin configuration for instance.
+ - The Spamcontrol plugin reacts to radio message spamming
+ - Fires game specific events for plugins : EVT_CLIENT_RADIO, EVT_CLIENT_CALLVOTE, EVT_CLIENT_VOTE, EVT_GAME_FLAG_HOTPOTATO for other plugins to act on.
+ - There are new settings in the b3.xml config file to let you choose if you want to ban using the Frozen Sand auth system (with the rcon 'auth-ban' command)
+
+CoD8 / 4D1
+ - B3 now supports CoD8 from 4D1. See http://forum.bigbrotherbot.net/call-of-duty-8-%28modern-warfare-3%29/
+
+Counter-Strike: Global Offensive
+- beta support for CS:GO (B3 parser code: csgo, requires SourceMod on the game server, and '-condebug' parameter on the game server command line)
+
+
+# Upgrading note:
+
+* Now B3 ensures group levels do exists when used in plugin config files. The plugin_admin.xml config files was using bad group level prior to B3 1.9.
+  Make sure to correct them by comparing your own plugin_admin.xml with the new one.
+* SpamControl plugin : The config file plugin_spamcontrol.xml has a new section regarding the !spamins command. Make sure to update your config file.
+
+
 1.8.1 -> 1.8.2
 ----
 A list of changed files is available after release here:

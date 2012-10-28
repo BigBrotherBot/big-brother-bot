@@ -117,7 +117,7 @@ import traceback
 import sys
 
 class FakeConsole(b3.parser.Parser):
-    Events = b3.events.eventManager
+    Events = b3.events.eventManager = b3.events.Events()
     screen = stdout
     noVerbose = False
     input = None
@@ -246,7 +246,8 @@ class FakeConsole(b3.parser.Parser):
     
     def tempban(self, client, reason, duration, admin, silent):
         """tempban a client"""
-        print '>>>tempbanning %s for %s (%s)' % (client.name, reason, duration)
+        from functions import minutesStr
+        print '>>>tempbanning %s for %s (%s)' % (client.name, reason, minutesStr(duration))
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason, 
                                                               'duration': duration, 
                                                               'admin': admin}
@@ -257,31 +258,16 @@ class FakeConsole(b3.parser.Parser):
         """unban a client"""
         print '>>>unbanning %s (%s)' % (client.name, reason)
         self.queueEvent(self.getEvent('EVT_CLIENT_UNBAN', reason, client))
-    
+
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
-        if isinstance(client, str) and re.match('^[0-9]+$', client):
-            self.write(self.getCommand('kick', cid=client, reason=reason))
-            return
-        elif admin:
-            reason = self.getMessage('kicked_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
-        else:
-            reason = self.getMessage('kicked', self.getMessageVariables(client=client, reason=reason))
-
-        if self.PunkBuster:
-            self.PunkBuster.kick(client, 0.5, reason)
-        else:
-            self.write(self.getCommand('kick', cid=client.cid, reason=reason))
-
-        if not silent:
-            self.say(reason)
-
+        print '>>>kick %s for %s' % (client.name, reason)
         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_KICK, reason, client))
         client.disconnect()
     
     def message(self, client, text):
-        if client == None:
+        if client is None:
             self.say(text)
-        elif client.cid == None:
+        elif client.cid is None:
             pass
         else:
             print "sending msg to %s: %s" % (client.name, re.sub(re.compile('\^[0-9]'), '', text).strip())
@@ -344,7 +330,7 @@ class FakeClient(b3.clients.Client):
         if self.guid:
             self.auth()
         elif not self.authed:
-            clients.authorizeClients()
+            clients._authorizeClients()
          
     def disconnects(self):
         print "\n%s disconnects from slot #%s" % (self.name, self.cid)

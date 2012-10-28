@@ -2,3 +2,4 @@ To run test, you need python modules installed :
 
 mock: http://www.voidspace.org.uk/python/mock/
 nose: http://pypi.python.org/pypi/nose
+mockito: http://pypi.python.org/pypi/mockito

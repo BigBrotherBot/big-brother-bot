@@ -16,27 +16,42 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+import os
 
 from mock import Mock, patch
 import unittest2 as unittest
+from mockito import when
 
 import b3
+from b3.plugins.admin import AdminPlugin
 from b3.plugins.tk import TkPlugin
 from b3.config import XmlConfigParser
-from b3.fake import fakeConsole, FakeClient
+from b3.fake import FakeClient
 
 from tests import B3TestCase
 
+from b3 import __file__ as b3_module__file__
 
+
+ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.xml"))
+
+@unittest.skipUnless(os.path.exists(ADMIN_CONFIG_FILE), reason="cannot get default plugin config file at %s" % ADMIN_CONFIG_FILE)
 @patch("threading.Timer")
 class Tk_functional_test(B3TestCase):
 
-    @classmethod
-    def setUpClass(cls):
 
-        fakeConsole.gameName = 'f00'
-        cls.conf = XmlConfigParser()
-        cls.conf.setXml(r"""
+    def setUp(self):
+        B3TestCase.setUp(self)
+
+        self.console.gameName = 'f00'
+
+        self.adminPlugin = AdminPlugin(self.console, ADMIN_CONFIG_FILE)
+        when(self.console).getPlugin("admin").thenReturn(self.adminPlugin)
+        self.adminPlugin.onLoadConfig()
+        self.adminPlugin.onStartup()
+
+        self.conf = XmlConfigParser()
+        self.conf.setXml(r"""
         <configuration plugin="tk">
             <settings name="settings">
                 <set name="max_points">400</set>
@@ -86,267 +101,224 @@ class Tk_functional_test(B3TestCase):
             </settings>
         </configuration>
         """)
-        cls.p = TkPlugin(fakeConsole, cls.conf)
-        cls.p.onLoadConfig()
-        cls.p.onStartup()
+        self.p = TkPlugin(self.console, self.conf)
+        self.p.onLoadConfig()
+        self.p.onStartup()
+
+        self.joe = FakeClient(self.console, name="Joe", guid="joeguid", groupBits=1, team=b3.TEAM_RED)
+        self.mike = FakeClient(self.console, name="Mike", guid="mikeguid", groupBits=1, team=b3.TEAM_RED)
+        self.bill = FakeClient(self.console, name="Bill", guid="billguid", groupBits=1, team=b3.TEAM_RED)
+        self.superadmin = FakeClient(self.console, name="superadmin",guid="superadminguid", groupBits=128, team=b3.TEAM_RED)
 
 
     def test_dammage_different_teams(self, timer_patch):
-        joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="joeguid", groupBits=1, team=b3.TEAM_RED)
-        mike = FakeClient(fakeConsole, name="Mike", exactName="Mike", guid="mikeguid", groupBits=1, team=b3.TEAM_BLUE)
-
-        joe.warn = Mock()
-        joe.connects(0)
-        mike.connects(1)
-
-        joe.damages(mike)
-        self.assertEqual(0, joe.warn.call_count)
+        self.joe.warn = Mock()
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.mike.team = b3.TEAM_BLUE
+        self.joe.damages(self.mike)
+        self.assertEqual(0, self.joe.warn.call_count)
 
 
     def test_kill_different_teams(self, timer_patch):
-        joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="joeguid", groupBits=1, team=b3.TEAM_RED)
-        mike = FakeClient(fakeConsole, name="Mike", exactName="Mike", guid="mikeguid", groupBits=1, team=b3.TEAM_BLUE)
-
-        joe.warn = Mock()
-        joe.connects(0)
-        mike.connects(1)
-
-        joe.kills(mike)
-        self.assertEqual(0, joe.warn.call_count)
+        self.joe.warn = Mock()
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.mike.team = b3.TEAM_BLUE
+        self.joe.kills(self.mike)
+        self.assertEqual(0, self.joe.warn.call_count)
 
 
     def test_kill_within_10s(self, timer_patch):
-        Tk_functional_test.p._round_grace = 10
-        joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="joeguid", groupBits=1, team=b3.TEAM_RED)
-        mike = FakeClient(fakeConsole, name="Mike", exactName="Mike", guid="mikeguid", groupBits=1, team=b3.TEAM_RED)
+        self.p._round_grace = 10
 
-        joe.warn = Mock()
-        joe.connects(0)
-        mike.connects(1)
+        self.joe.warn = Mock()
+        self.joe.connects(0)
+        self.mike.connects(1)
 
-        joe.kills(mike)
-        self.assertEqual(1, joe.warn.call_count)
+        self.joe.kills(self.mike)
+        self.assertEqual(1, self.joe.warn.call_count)
 
     def test_dammage(self, timer_patch):
-        Tk_functional_test.p._round_grace = 0
-        joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="joeguid", groupBits=1, team=b3.TEAM_RED)
-        mike = FakeClient(fakeConsole, name="Mike", exactName="Mike", guid="mikeguid", groupBits=1, team=b3.TEAM_RED)
+        self.p._round_grace = 0
 
-        joe.warn = Mock()
-        joe.connects(0)
-        mike.connects(1)
+        self.joe.warn = Mock()
+        self.joe.connects(0)
+        self.mike.connects(1)
 
-        joe.damages(mike)
-        joe.damages(mike)
-        joe.damages(mike)
-        joe.damages(mike)
-        joe.damages(mike)
-        self.assertEqual(0, joe.warn.call_count)
+        self.joe.damages(self.mike)
+        self.joe.damages(self.mike)
+        self.joe.damages(self.mike)
+        self.joe.damages(self.mike)
+        self.joe.damages(self.mike)
+        self.assertEqual(0, self.joe.warn.call_count)
 
 
     def test_kill(self, timer_patch):
-        Tk_functional_test.p._round_grace = 0
-        joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="joeguid", groupBits=1, team=b3.TEAM_RED)
-        mike = FakeClient(fakeConsole, name="Mike", exactName="Mike", guid="mikeguid", groupBits=1, team=b3.TEAM_RED)
+        self.p._round_grace = 0
 
-        joe.warn = Mock()
-        joe.connects(0)
-        mike.connects(1)
+        self.joe.warn = Mock()
+        self.joe.connects(0)
+        self.mike.connects(1)
 
-        joe.kills(mike)
-        self.assertEqual(1, joe.warn.call_count)
-        self.assertIsNotNone(mike.getMessageHistoryLike("^7type ^3!fp ^7 to forgive"))
+        self.joe.kills(self.mike)
+        self.assertEqual(1, self.joe.warn.call_count)
+        self.assertIsNotNone(self.mike.getMessageHistoryLike("^7type ^3!fp ^7 to forgive"))
 
 
     def test_multikill(self, timer_patch):
-        Tk_functional_test.p._round_grace = 0
-        joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="joeguid", groupBits=1, team=b3.TEAM_RED)
-        mike = FakeClient(fakeConsole, name="Mike", exactName="Mike", guid="mikeguid", groupBits=1, team=b3.TEAM_RED)
+        self.p._round_grace = 0
 
-        with patch.object(fakeConsole, "say") as patched_say:
-            joe.warn = Mock()
-            joe.tempban = Mock()
-            joe.connects(0)
-            mike.connects(1)
+        with patch.object(self.console, "say") as patched_say:
+            self.joe.warn = Mock()
+            self.joe.tempban = Mock()
+            self.joe.connects(0)
+            self.mike.connects(1)
 
-            mike.clearMessageHistory()
-            joe.kills(mike)
-            self.assertEqual(1, joe.warn.call_count)
-            self.assertEquals(1, len(mike.getAllMessageHistoryLike("^7type ^3!fp ^7 to forgive")))
+            self.mike.clearMessageHistory()
+            self.joe.kills(self.mike)
+            self.assertEqual(1, self.joe.warn.call_count)
+            self.assertEquals(1, len(self.mike.getAllMessageHistoryLike("^7type ^3!fp ^7 to forgive")))
 
-            joe.kills(mike)
+            self.joe.kills(self.mike)
             self.assertEqual(1, len([call_args[0][0] for call_args in patched_say.call_args_list if "auto-kick if not forgiven" in call_args[0][0]]))
 
-            joe.kills(mike)
-            self.assertEqual(1, joe.tempban.call_count)
+            self.joe.kills(self.mike)
+            self.assertEqual(1, self.joe.tempban.call_count)
 
 
     def test_forgiveinfo(self, timer_patch):
-        from b3.fake import superadmin
-        superadmin.connects(99)
+        self.superadmin.connects(99)
 
-        Tk_functional_test.p._round_grace = 0
-        joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="joeguid", groupBits=1, team=b3.TEAM_RED)
-        mike = FakeClient(fakeConsole, name="Mike", exactName="Mike", guid="mikeguid", groupBits=1, team=b3.TEAM_RED)
-        bill = FakeClient(fakeConsole, name="Bill", exactName="Bill", guid="billguid", groupBits=1, team=b3.TEAM_RED)
+        self.p._round_grace = 0
 
-        joe.warn = Mock()
-        joe.connects(0)
-        mike.connects(1)
-        bill.connects(2)
+        self.joe.warn = Mock()
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.bill.connects(2)
 
-        joe.kills(mike)
+        self.joe.kills(self.mike)
 
-        superadmin.message_history = []
-        superadmin.says("!forgiveinfo joe")
-        self.assertIn("Joe has 200 TK points", superadmin.message_history[0])
-        self.assertIn("Attacked: Mike (200)", superadmin.message_history[0])
-        self.assertNotIn("Attacked By:", superadmin.message_history[0])
+        self.superadmin.clearMessageHistory()
+        self.superadmin.says("!forgiveinfo joe")
+        self.assertEqual(['Joe has 200 TK points, Attacked: Mike (200)'], self.superadmin.message_history)
 
-        joe.damages(bill, points=6)
+        self.joe.damages(self.bill, points=6)
 
-        superadmin.message_history = []
-        superadmin.says("!forgiveinfo joe")
-        self.assertIn("Joe has 206 TK points", superadmin.message_history[0])
-        self.assertIn("Attacked: Mike (200), Bill (6)", superadmin.message_history[0])
-        self.assertNotIn("Attacked By:", superadmin.message_history[0])
+        self.superadmin.clearMessageHistory()
+        self.superadmin.says("!forgiveinfo joe")
+        self.assertEqual(['Joe has 206 TK points, Attacked: Mike (200), Bill (6)'], self.superadmin.message_history)
 
+        self.mike.damages(self.joe, points=27)
 
-        mike.damages(joe, points=27)
-
-        superadmin.message_history = []
-        superadmin.says("!forgiveinfo joe")
-        self.assertIn("Joe has 206 TK points", superadmin.message_history[0])
-        self.assertIn("Attacked: Mike (200), Bill (6)", superadmin.message_history[0])
-        self.assertIn("Attacked By: Mike [27]", superadmin.message_history[0])
+        self.superadmin.clearMessageHistory()
+        self.superadmin.says("!forgiveinfo joe")
+        self.assertEqual(['Joe has 206 TK points, Attacked: Mike (200), Bill (6), Attacked By: Mike [27]'], self.superadmin.message_history)
 
 
     def test_forgive(self, timer_patch):
-        from b3.fake import superadmin
-        superadmin.connects(99)
+        self.superadmin.connects(99)
+        self.p._round_grace = 0
 
-        Tk_functional_test.p._round_grace = 0
-        joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="joeguid", groupBits=1, team=b3.TEAM_RED)
-        mike = FakeClient(fakeConsole, name="Mike", exactName="Mike", guid="mikeguid", groupBits=1, team=b3.TEAM_RED)
+        self.joe.warn = Mock()
+        self.joe.connects(0)
+        self.mike.connects(1)
 
-        joe.warn = Mock()
-        joe.connects(0)
-        mike.connects(1)
+        self.joe.kills(self.mike)
 
-        joe.kills(mike)
+        self.superadmin.clearMessageHistory()
+        self.superadmin.says("!forgiveinfo joe")
+        self.assertEqual(['Joe has 200 TK points, Attacked: Mike (200)'], self.superadmin.message_history)
 
-        superadmin.message_history = []
-        superadmin.says("!forgiveinfo joe")
-        self.assertIn("Joe has 200 TK points", superadmin.message_history[0])
+        self.mike.says("!forgive")
 
-        mike.says("!forgive")
-
-        superadmin.message_history = []
-        superadmin.says("!forgiveinfo joe")
-        self.assertIn("Joe has 0 TK points", superadmin.message_history[0])
+        self.superadmin.clearMessageHistory()
+        self.superadmin.says("!forgiveinfo joe")
+        self.assertEqual(["Joe has 0 TK points"], self.superadmin.message_history)
 
 
     def test_forgiveclear(self, timer_patch):
-        from b3.fake import superadmin
-        superadmin.connects(99)
+        self.superadmin.connects(99)
 
-        Tk_functional_test.p._round_grace = 0
-        joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="joeguid", groupBits=1, team=b3.TEAM_RED)
-        mike = FakeClient(fakeConsole, name="Mike", exactName="Mike", guid="mikeguid", groupBits=1, team=b3.TEAM_RED)
+        self.p._round_grace = 0
 
-        joe.warn = Mock()
-        joe.connects(0)
-        mike.connects(1)
+        self.joe.warn = Mock()
+        self.joe.connects(0)
+        self.mike.connects(1)
 
-        joe.kills(mike)
+        self.joe.kills(self.mike)
 
-        superadmin.message_history = []
-        superadmin.says("!forgiveinfo joe")
-        self.assertIn("Joe has 200 TK points", superadmin.message_history[0])
+        self.superadmin.clearMessageHistory()
+        self.superadmin.says("!forgiveinfo joe")
+        self.assertEqual(['Joe has 200 TK points, Attacked: Mike (200)'], self.superadmin.message_history)
 
-        superadmin.says("!forgiveclear joe")
+        self.superadmin.says("!forgiveclear joe")
 
-        superadmin.message_history = []
-        superadmin.says("!forgiveinfo joe")
-        self.assertIn("Joe has 0 TK points", superadmin.message_history[0])
+        self.superadmin.clearMessageHistory()
+        self.superadmin.says("!forgiveinfo joe")
+        self.assertEqual(["Joe has 0 TK points"], self.superadmin.message_history)
 
 
     def test_forgivelist(self, timer_patcher):
-        Tk_functional_test.p._round_grace = 0
-        joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="joeguid", groupBits=1, team=b3.TEAM_RED)
-        mike = FakeClient(fakeConsole, name="Mike", exactName="Mike", guid="mikeguid", groupBits=1, team=b3.TEAM_RED)
-        bill = FakeClient(fakeConsole, name="Bill", exactName="Bill", guid="billguid", groupBits=1, team=b3.TEAM_RED)
+        self.p._round_grace = 0
 
-        joe.connects(0)
-        mike.connects(1)
-        bill.connects(2)
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.bill.connects(2)
 
-        joe.message_history = []
-        joe.says("!forgivelist")
-        self.assertEqual("no one to forgive", joe.message_history[0])
+        self.joe.clearMessageHistory()
+        self.joe.says("!forgivelist")
+        self.assertEqual(["no one to forgive"], self.joe.message_history)
 
-        mike.damages(joe, points=14)
-        joe.message_history = []
-        joe.says("!forgivelist")
-        self.assertIn("Mike [14]", joe.message_history[0])
+        self.mike.damages(self.joe, points=14)
+        self.joe.clearMessageHistory()
+        self.joe.says("!forgivelist")
+        self.assertEqual(['Forgive who? [1] Mike [14]'], self.joe.message_history)
 
 
-        bill.damages(joe, points=84)
-        joe.message_history = []
-        joe.says("!forgivelist")
-        self.assertIn("Mike [14]", joe.message_history[0])
-        self.assertIn("Bill [84]", joe.message_history[0])
+        self.bill.damages(self.joe, points=84)
+        self.joe.clearMessageHistory()
+        self.joe.says("!forgivelist")
+        self.assertEqual(['Forgive who? [1] Mike [14], [2] Bill [84]'], self.joe.message_history)
 
 
     def test_forgiveall(self, timer_patcher):
-        Tk_functional_test.p._round_grace = 0
-        joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="joeguid", groupBits=1, team=b3.TEAM_RED)
-        mike = FakeClient(fakeConsole, name="Mike", exactName="Mike", guid="mikeguid", groupBits=1, team=b3.TEAM_RED)
-        bill = FakeClient(fakeConsole, name="Bill", exactName="Bill", guid="billguid", groupBits=1, team=b3.TEAM_RED)
+        self.p._round_grace = 0
 
-        joe.connects(0)
-        mike.connects(1)
-        bill.connects(2)
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.bill.connects(2)
 
-        mike.damages(joe, points=14)
-        bill.damages(joe, points=84)
+        self.mike.damages(self.joe, points=14)
+        self.bill.damages(self.joe, points=84)
 
-        joe.message_history = []
-        joe.says("!forgivelist")
-        self.assertIn("Mike [14]", joe.message_history[0])
-        self.assertIn("Bill [84]", joe.message_history[0])
+        self.joe.clearMessageHistory()
+        self.joe.says("!forgivelist")
+        self.assertEqual(['Forgive who? [1] Mike [14], [2] Bill [84]'], self.joe.message_history)
 
-        joe.says("!forgiveall")
-        joe.message_history = []
-        joe.says("!forgivelist")
-        self.assertNotIn("Mike", joe.message_history[0])
-        self.assertNotIn("Bill", joe.message_history[0])
+        self.joe.says("!forgiveall")
+        self.joe.clearMessageHistory()
+        self.joe.says("!forgivelist")
+        self.assertNotIn("Mike", self.joe.message_history[0])
+        self.assertNotIn("Bill", self.joe.message_history[0])
 
 
     def test_forgiveprev(self, timer_patcher):
-        Tk_functional_test.p._round_grace = 0
-        joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="joeguid", groupBits=1, team=b3.TEAM_RED)
-        mike = FakeClient(fakeConsole, name="Mike", exactName="Mike", guid="mikeguid", groupBits=1, team=b3.TEAM_RED)
-        bill = FakeClient(fakeConsole, name="Bill", exactName="Bill", guid="billguid", groupBits=1, team=b3.TEAM_RED)
+        self.p._round_grace = 0
 
-        joe.connects(0)
-        mike.connects(1)
-        bill.connects(2)
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.bill.connects(2)
 
-        mike.damages(joe, points=14)
-        bill.damages(joe, points=84)
+        self.mike.damages(self.joe, points=14)
+        self.bill.damages(self.joe, points=84)
 
-        joe.message_history = []
-        joe.says("!forgivelist")
-        self.assertIn("Mike [14]", joe.message_history[0])
-        self.assertIn("Bill [84]", joe.message_history[0])
+        self.joe.clearMessageHistory()
+        self.joe.says("!forgivelist")
+        self.assertEqual(['Forgive who? [1] Mike [14], [2] Bill [84]'], self.joe.message_history)
 
-        joe.says("!forgiveprev")
-        joe.message_history = []
-        joe.says("!forgivelist")
-        self.assertIn("Mike", joe.message_history[0])
-        self.assertNotIn("Bill", joe.message_history[0])
+        self.joe.says("!forgiveprev")
+        self.joe.clearMessageHistory()
+        self.joe.says("!forgivelist")
+        self.assertEqual(['Forgive who? [1] Mike [14]'], self.joe.message_history)
 
-
-if __name__ == '__main__':
-    unittest.main()

@@ -1,5 +1,4 @@
 import os
-import mmap
 import re
 import sys
 import subprocess
@@ -18,19 +17,30 @@ except ImportError:
     print "Could not import b3"
     raise
 
-current_b3_version = B3version(b3_version)
 egg_pkginfo_file = os.path.abspath(os.path.join(script_dir, '../b3.egg-info/PKG-INFO'))
+
+# read version from the b3/PKG-INFO file
+re_pkginfo_version = re.compile(r'^\s*Version:\s*(?P<version>(?P<numbers>\d+\.\d+(?:\.\d+)?)(?P<pre_release>(?:a|b|dev|d)\d*)?(?P<suffix>.*?))\s*$', re.MULTILINE)
+with open(egg_pkginfo_file, 'r') as f:
+    m = re_pkginfo_version.search(f.read())
+if not m:
+    print "could not find version from %s" % egg_pkginfo_file
+    sys.exit(1)
+current_b3_version = m.group("version")
+current_b3_version_part1 = m.group("numbers")
+current_b3_version_part2 = ""
+if m.group("pre_release"):
+    current_b3_version_part2 += m.group("pre_release")
+if m.group("suffix"):
+    current_b3_version_part2 += m.group("suffix")
+
+
 config = None
-
-re_iss_b3_version_number = re.compile('^(?P<part1>#define B3_VERSION_NUMBER ")(?P<number>(\d+(\.\d+)+)?)(?P<part2>"\s*)$', re.MULTILINE)
-re_iss_b3_version_suffix = re.compile('^(?P<part1>#define B3_VERSION_SUFFIX ")(?P<suffix>((a|b|dev)\d+)?)(?P<part2>"\s*)$', re.MULTILINE)
-
-
 def load_config():
     global config
-
-    if not os.path.isfile(os.path.join(script_dir, CONFIG_FILE)):
-        print "Could not find config file '%s'" % os.path.abspath(os.path.join(script_dir, CONFIG_FILE))
+    config_file_path = os.path.normpath(os.path.join(script_dir, CONFIG_FILE))
+    if not os.path.isfile(config_file_path):
+        print "Could not find config file '%s'" % config_file_path
         choice = raw_input("\nDo you want to create a stub ? [yN] : " % current_b3_version)
         if choice.lower() == 'y':
             create_config_file_stub()
@@ -40,7 +50,7 @@ def load_config():
             sys.exit(0)
 
     from b3.lib import yaml
-    with open(CONFIG_FILE, 'r') as f:
+    with open(config_file_path, 'r') as f:
         config = yaml.load(f)
 
     if not 'innosetup_scripts' in config:
@@ -79,58 +89,8 @@ innosetup_scripts:
 iscc:  C:\Program Files (x86)\Inno Setup 5\ISCC.exe
 
 # where to generate the distribution files
-output_dir: dist
+output_dir: ../releases
 """)
-
-
-def get_innosetup_script_version(innosetup_scripts):
-    """\
-    For all given file names, extract the B3version found in the file content.
-    Returns result as a dict where file names are the keys and B3version the values.
-    """
-    innosetup_scripts_versions = dict()
-    for file_name in innosetup_scripts:
-        with open(os.path.join(script_dir, file_name), 'r') as f:
-            version_number = version_suffix = ''
-            map = mmap.mmap(f.fileno(), length=0, access=mmap.ACCESS_READ)
-            m_number = re_iss_b3_version_number.search(map)
-            if m_number:
-                version_number = m_number.group('number')
-            m_suffix = re_iss_b3_version_suffix.search(map)
-            if m_suffix:
-                version_suffix = m_suffix.group('suffix')
-            map.close()
-            innosetup_scripts_versions[file_name]  = B3version(version_number + version_suffix)
-    return innosetup_scripts_versions
-
-
-def update_innosetup_scripts(innosetup_scripts, current_b3_version):
-    """\
-    for all scripts of innosetup_scripts, update the version to current_b3_version if necessary
-    """
-    def extract_full_version_from_innosetup_script(str_content):
-        """Return the full version string found in given string as expected in a InnoSetup script"""
-        version_number = version_suffix = ''
-        m_number = re_iss_b3_version_number.search(str_content)
-        if m_number:
-            version_number = m_number.group('number')
-        m_suffix = re_iss_b3_version_suffix.search(str_content)
-        if m_suffix:
-            version_suffix = m_suffix.group('suffix')
-        return version_number + version_suffix
-    
-    current_b3_version_number = current_b3_version.version
-    current_b3_version_suffix = current_b3_version.prerelease
-    for file_name in innosetup_scripts:
-        data = ''
-        with open(os.path.join(script_dir, file_name), 'r') as f:
-            data = f.read()
-        script_version = B3version(extract_full_version_from_innosetup_script(data))
-        if script_version != current_b3_version:
-            data = re_iss_b3_version_number.sub("\g<part1>%s\g<part2>" % '.'.join(map(str, current_b3_version_number)), data)
-            data = re_iss_b3_version_suffix.sub("\g<part1>%s\g<part2>" % ''.join(map(str, current_b3_version_suffix)), data)
-            with open(os.path.join(script_dir, file_name), 'w') as f:
-                f.write(data)
 
 
 def build_innosetup_scripts(innosetup_scripts):
@@ -145,6 +105,9 @@ def build_innosetup_scripts(innosetup_scripts):
         try:
             cmd = [compiler, script_file, '/Q']
             cmd.append('/O%s' % os.path.join(script_dir, config['output_dir']))
+            cmd.append('/dB3_VERSION_NUMBER=' + current_b3_version_part1)
+            cmd.append('/dB3_VERSION_SUFFIX=' + current_b3_version_part2)
+            print " ".join(cmd)
             exit_code = subprocess.call(cmd)
             if exit_code == 0:
                 results[file_name] = 'OK'
@@ -172,55 +135,10 @@ def build_zip_distribution(source_folder):
     return os.path.join(dist_dir, zip_filename), 'OK'
 
 
-def py2exe():
-    import shutil
-    dist_py2exe_dir = os.path.abspath(os.path.join(script_dir, 'dist_py2exe'))
-    print "cleaning directory %s" % dist_py2exe_dir
-    if os.path.isdir(dist_py2exe_dir):
-        shutil.rmtree(dist_py2exe_dir)
-    os.makedirs(dist_py2exe_dir)
-    print "py2exe"
-    process = subprocess.Popen([sys.executable, os.path.abspath(os.path.join(script_dir, '../setupPy2exe.py')), 'py2exe'], stderr=subprocess.PIPE, cwd=os.path.join(script_dir, '..'))
-    exit_code = process.communicate()
-    if exit_code != 0:
-        choice = raw_input("Do you want to continue ? [Yn] : ")
-        if choice.lower() == 'n':
-            sys.exit(1)
-    shutil.copy(os.path.join(script_dir, 'assets_common/readme-windows.txt'), os.path.join(dist_py2exe_dir, 'readme.txt'))
-    shutil.copy(os.path.join(script_dir, 'assets_common/gpl-2.0.txt'), os.path.join(dist_py2exe_dir, 'license.txt'))
-    try:
-        os.remove(os.path.abspath(os.path.join(dist_py2exe_dir, 'README')))
-    except WindowsError, err:
-        print "WARNING: %s" % err
-
-
 def main():
-
     load_config()
-
-    print "{0:>50} :  {1}".format('detected current B3 version', current_b3_version)
-    choice = raw_input("\nDo you want to continue ? [Yn] : " % current_b3_version)
-    if choice.lower() not in ('y', 'Y', ''):
-        sys.exit(0)
-
-    innosetup_scripts_versions = get_innosetup_script_version(config['innosetup_scripts'])
-
-    need_updates = False
-    for file_name, version in innosetup_scripts_versions.items():
-        need_updates = need_updates or (current_b3_version != version)
-        print "{0:>50} :  {1:<10} {2}".format(os.path.relpath(file_name), version, 'need update' if current_b3_version != version else '')
-
-    if not need_updates:
-        print "\nall files have the right version number"
-    else:
-        choice = raw_input("\nDo you want to update the files with the current version \"%s\" ? [Yn] : " % current_b3_version)
-        if choice.lower() != 'n':
-            update_innosetup_scripts(config['innosetup_scripts'], current_b3_version)
-        else:
-            print "not updating scripts"
-
+    print "{0:>50} :  {1}".format('current B3 version', current_b3_version)
     build_results = list()
-    py2exe()
     build_results += build_innosetup_scripts(config['innosetup_scripts'])
     build_results.append(build_zip_distribution(os.path.join(script_dir, "dist_py2exe")))
 

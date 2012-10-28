@@ -17,6 +17,18 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2012/10/27 - 1.19 - Courgette
+#   * change: !map command will give at most 5 suggestions
+#   2012/10/03 - 1.18 - Courgette
+#   * add command !lastbans
+#   2012/09/29 - 1.17 - Courgette
+#   * add command !regulars
+#   2012/08/11 - 1.16 - Courgette
+#   * config file can refer to group levels by their group keyword
+#   2012/07/31 - 1.15.1 - Courgette
+#   * fix command !maps when map rotation list is empty
+#   2012/07/28 - 1.15 - Courgette
+#   * add command !unreg (danger89's idea)
 #   2012/07/14 - 1.14.1 - Courgette
 #   * log more detail when failing to register a command
 #   2012/07/07 - 1.14 - Courgette
@@ -108,14 +120,15 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.14.1'
+__version__ = '1.19'
 __author__  = 'ThorN, xlr8or, Courgette'
 
 import re, time, threading, sys, traceback, thread, random
-import ConfigParser
+from ConfigParser import NoOptionError
 
 from b3 import functions
-from b3 import clients
+from b3.clients import Client, Group
+from b3.functions import minutesStr
 import b3.plugin
 import copy
 
@@ -138,8 +151,33 @@ class AdminPlugin(b3.plugin.Plugin):
 
     warn_reasons = {} # dict<warning keyword, tuple(warning duration in minute, warning reason)>
 
+    _noreason_level = 80
+    _long_tempban_level = 80
+    _hidecmd_level = 80
+    _admins_level = 20
+
     def onLoadConfig(self):
         self.load_config_warn_reasons()
+
+        try:
+            self._noreason_level = self.console.getGroupLevel(self.config.get('settings', 'noreason_level'))
+        except (NoOptionError, KeyError), err:
+            self.warning("Using default value %s for 'noreason_level'. %s" % (self._noreason_level, err))
+
+        try:
+            self._long_tempban_level = self.console.getGroupLevel(self.config.get('settings', 'long_tempban_level'))
+        except (NoOptionError, KeyError), err:
+            self.warning("Using default value %s for 'long_tempban_level'. %s" % (self._long_tempban_level, err))
+
+        try:
+            self._hidecmd_level = self.console.getGroupLevel(self.config.get('settings', 'hidecmd_level'))
+        except (NoOptionError, KeyError), err:
+            self.warning("Using default value %s for 'hidecmd_level'. %s" % (self._hidecmd_level, err))
+
+        try:
+            self._admins_level = self.console.getGroupLevel(self.config.get('settings', 'admins_level'))
+        except (NoOptionError, KeyError), err:
+            self.warning("Using default value %s for 'admins_level'. %s" % (self._admins_level, err))
 
 
     def onStartup(self):
@@ -171,7 +209,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
         try:
             self._warn_command_abusers = self.config.getboolean('warn', 'warn_command_abusers')
-        except ConfigParser.NoOptionError:
+        except NoOptionError:
             self.warning('conf warn\warn_command_abusers not found, using default : yes')
             self._warn_command_abusers = True
         except ValueError:
@@ -234,7 +272,8 @@ class AdminPlugin(b3.plugin.Plugin):
             return
             
         if secretLevel is None:
-            secretLevel = self.config.getint('settings', 'hidecmd_level')
+
+            secretLevel = self._hidecmd_level
 
         try:
             self._commands[command] = Command(plugin, command, clean_level, handler, handler.__doc__, alias, secretLevel)
@@ -356,7 +395,7 @@ class AdminPlugin(b3.plugin.Plugin):
             try:
                 command = self._commands[cmd.lower()]
             except KeyError:
-                if self._warn_command_abusers and event.client.authed and event.client.maxLevel < self.config.getint('settings', 'admins_level'):
+                if self._warn_command_abusers and event.client.authed and event.client.maxLevel < self._admins_level:
                     if event.client.var(self, 'fakeCommand').value:
                         event.client.var(self, 'fakeCommand').value += 1
                     else:
@@ -366,9 +405,9 @@ class AdminPlugin(b3.plugin.Plugin):
                         event.client.setvar(self, 'fakeCommand', 0)
                         self.warnClient(event.client, 'fakecmd', None, False)
                         return
-                if not self._warn_command_abusers and event.client.maxLevel < self.config.getint('settings', 'admins_level'):
+                if not self._warn_command_abusers and event.client.maxLevel < self._admins_level:
                     event.client.message(self.getMessage('unknown_command', cmd))
-                elif event.client.maxLevel > self.config.getint('settings', 'admins_level'):
+                elif event.client.maxLevel > self._admins_level:
                     event.client.message(self.getMessage('unknown_command', cmd))
                 return
 
@@ -377,7 +416,7 @@ class AdminPlugin(b3.plugin.Plugin):
             if not command.plugin.isEnabled():
                 try:
                     event.client.message(self.getMessage('cmd_plugin_disabled'))
-                except ConfigParser.NoOptionError:
+                except NoOptionError:
                     event.client.message("plugin disabled. Cannot execute command %s" % cmd)
                 return
 
@@ -406,7 +445,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 else:
                     self.console.queueEvent(self.console.getEvent('EVT_ADMIN_COMMAND', (command, data, results), event.client))
             else:
-                if self._warn_command_abusers and event.client.maxLevel < self.config.getint('settings', 'admins_level'):
+                if self._warn_command_abusers and event.client.maxLevel < self._admins_level:
                     if event.client.var(self, 'noCommand').value:
                         event.client.var(self, 'noCommand').value += 1
                     else:
@@ -431,7 +470,10 @@ class AdminPlugin(b3.plugin.Plugin):
         return None
 
     def getAdmins(self):
-        return self.console.clients.getClientsByLevel(self.config.getint('settings', 'admins_level'))
+        return self.console.clients.getClientsByLevel(self._admins_level)
+
+    def getRegulars(self):
+        return self.console.clients.getClientsByLevel(min=2, max=2)
 
     def findClientPrompt(self, client_id, client=None):
         matches = self.console.clients.getByMagic(client_id)
@@ -489,29 +531,26 @@ class AdminPlugin(b3.plugin.Plugin):
                 levelmin = int(levelmin)
             except ValueError:
                 try:
-                    group = self.console.storage.getGroup(clients.Group(keyword=levelmin))
-                    levelmin = group.level
-                except:
+                    levelmin = self.console.getGroupLevel(levelmin)
+                except KeyError:
                     self.error('unknown group %s' % levelmin)
                     return False
             try:
                 levelmax = int(levelmax)
             except ValueError:
                 try:
-                    group = self.console.storage.getGroup(clients.Group(keyword=levelmax))
-                    levelmax = group.level
-                except:
+                    levelmax = self.console.getGroupLevel(levelmax)
+                except KeyError:
                     self.error('unknown group %s' % levelmax)
                     return False
-            level = '%s-%s' % (levelmin, levelmax)    
+            level = '%s-%s' % (levelmin, levelmax)
         else:
             try:
                 level = int(level)
             except ValueError:
                 try:
-                    group = self.console.storage.getGroup(clients.Group(keyword=level))
-                    level = group.level
-                except:
+                    level = self.console.getGroupLevel(level)
+                except KeyError:
                     self.error('unknown group %s' % level)
                     return False
         return level
@@ -540,7 +579,7 @@ class AdminPlugin(b3.plugin.Plugin):
                     return None
             
             return s
-        except ConfigParser.NoOptionError:
+        except NoOptionError:
             return None
         except Exception, msg:
             self.error('getSpam: Could not get spam "%s": %s\n%s', spam, msg, traceback.extract_tb(sys.exc_info()[2]))
@@ -601,7 +640,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 return False
 
         try:
-            group = clients.Group(keyword=groupName)
+            group = Group(keyword=groupName)
             group = self.console.storage.getGroup(group)
         except:
             client.message('^7Group %s does not exist' % groupName)
@@ -657,7 +696,7 @@ class AdminPlugin(b3.plugin.Plugin):
         for w in sclient.warnings:
             admin = None
             try:
-                admin = self.console.storage.getClient(clients.Client(id=w.adminId))
+                admin = self.console.storage.getClient(Client(id=w.adminId))
                 # client object needs console to get groups
                 admin.console = self.console
             except:
@@ -683,7 +722,7 @@ class AdminPlugin(b3.plugin.Plugin):
             return
         suggestions = self.console.changeMap(data)
         if type(suggestions) == list:
-            client.message('do you mean : %s ?' % ', '.join(suggestions))
+            client.message('do you mean : %s ?' % ', '.join(suggestions[:5]))
 
     def cmd_maprotate(self, data, client, cmd=None):
         """\
@@ -696,7 +735,7 @@ class AdminPlugin(b3.plugin.Plugin):
         - say b3's version info
         """
 
-        if len(data) > 0 and client.maxLevel >= self.config.getint('settings', 'admins_level'):
+        if len(data) > 0 and client.maxLevel >= self._admins_level:
             data = data.lower().strip()
 
             if data == 'poke':
@@ -795,7 +834,7 @@ class AdminPlugin(b3.plugin.Plugin):
         - register youself as a basic user
         """
         try:
-            group = clients.Group(keyword='user')
+            group = Group(keyword='user')
             group = self.console.storage.getGroup(group)
         except:
             return False
@@ -866,6 +905,21 @@ class AdminPlugin(b3.plugin.Plugin):
         return True
 
 
+    def cmd_regulars(self, data, client, cmd=None):
+        """\
+        - lists all the online regular players
+        """
+        clist = self.getRegulars()
+
+        if len(clist) > 0:
+            nlist = []
+            for c in clist:
+                nlist.append(c.exactName)
+            cmd.sayLoudOrPM(client, self.getMessage('regulars', ', '.join([c.exactName for c in clist])))
+        else:
+            cmd.sayLoudOrPM(client, self.getMessage('no_regulars'))
+
+
     def cmd_admins(self, data, client, cmd=None):
         """\
         - lists all the online admins
@@ -934,7 +988,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
     def cmd_makereg(self, data, client, cmd=None):
         """\
-        <name> <group> - make a name a regular
+        <name> - make a name a regular
         """
 
         m = self.parseUserCmd(data)
@@ -945,7 +999,7 @@ class AdminPlugin(b3.plugin.Plugin):
         cid = m[0]
 
         try:
-            group = clients.Group(keyword='reg')
+            group = Group(keyword='reg')
             group = self.console.storage.getGroup(group)
         except:
             client.message('^7Group reg does not exist')
@@ -963,7 +1017,43 @@ class AdminPlugin(b3.plugin.Plugin):
 
                 cmd.sayLoudOrPM(client, self.getMessage('groups_put', sclient.exactName, group.name))
                 return True
-        
+
+    def cmd_unreg(self, data, client, cmd=None):
+        """\
+        <name> - remove a player from the 'regular' group
+        """
+
+        m = self.parseUserCmd(data)
+        if not m:
+            client.message('^7Invalid parameters')
+            return False
+
+        cid = m[0]
+
+        try:
+            group_reg = self.console.storage.getGroup(Group(keyword='reg'))
+        except Exception, err:
+            self.debug(err)
+            client.message("^7Group 'regular' does not exist")
+            return
+
+        try:
+            group_user = self.console.storage.getGroup(Group(keyword='user'))
+        except Exception, err:
+            self.debug(err)
+            client.message("^7Group 'user' does not exist")
+            return
+
+        sclient = self.findClientPrompt(cid, client)
+        if sclient:
+            if sclient.inGroup(group_reg):
+                sclient.remGroup(group_reg)
+                sclient.setGroup(group_user)
+                sclient.save()
+                cmd.sayLoudOrPM(client, '^7%s^7 removed from group %s' % (sclient.exactName, group_reg.name))
+            else:
+                client.message('^7%s^7 is not in group %s' % (sclient.exactName, group_reg.name))
+
     def cmd_putgroup(self, data, client, cmd=None):
         """\
         <client> <group> - add a client to a group
@@ -976,7 +1066,7 @@ class AdminPlugin(b3.plugin.Plugin):
         cid, keyword = m.groups()
 
         try:
-            group = clients.Group(keyword=keyword)
+            group = Group(keyword=keyword)
             group = self.console.storage.getGroup(group)
         except:
             client.message('^7Group %s does not exist' % keyword)
@@ -1016,7 +1106,7 @@ class AdminPlugin(b3.plugin.Plugin):
         cid, keyword = m.groups()
 
         try:
-            group = clients.Group(keyword=keyword)
+            group = Group(keyword=keyword)
             group = self.console.storage.getGroup(group)
         except KeyError:
             client.message('^7Group %s does not exist' % keyword)
@@ -1047,7 +1137,7 @@ class AdminPlugin(b3.plugin.Plugin):
             return
 
         try:
-            group = clients.Group(keyword='superadmin')
+            group = Group(keyword='superadmin')
             group = self.console.storage.getGroup(group)
         except Exception, e:
             self.error('^7Could not get superadmin group: %s', e)
@@ -1196,7 +1286,7 @@ class AdminPlugin(b3.plugin.Plugin):
         cid, keyword = m
         reason = self.getReason(keyword)
 
-        if not reason and client.maxLevel < self.config.getint('settings', 'noreason_level'):
+        if not reason and client.maxLevel < self._noreason_level:
             client.message('^1ERROR: ^7You must supply a reason')
             return False
 
@@ -1230,7 +1320,7 @@ class AdminPlugin(b3.plugin.Plugin):
         cid, keyword = m
         reason = self.getReason(keyword)
 
-        if not reason and client.maxLevel < self.config.getint('settings', 'noreason_level'):
+        if not reason and client.maxLevel < self._noreason_level:
             client.message('^1ERROR: ^7You must supply a reason')
             return False
 
@@ -1255,7 +1345,7 @@ class AdminPlugin(b3.plugin.Plugin):
         cid, keyword = m
         reason = self.getReason(keyword)
 
-        if not reason and client.maxLevel < self.config.getint('settings', 'noreason_level'):
+        if not reason and client.maxLevel < self._noreason_level:
             client.message('^1ERROR: ^7You must supply a reason')
             return False
 
@@ -1293,7 +1383,7 @@ class AdminPlugin(b3.plugin.Plugin):
         cid, keyword = m
         reason = self.getReason(keyword)
 
-        if not reason and client.maxLevel < self.config.getint('settings', 'noreason_level'):
+        if not reason and client.maxLevel < self._noreason_level:
             client.message('^1ERROR: ^7You must supply a reason')
             return False
 
@@ -1322,7 +1412,7 @@ class AdminPlugin(b3.plugin.Plugin):
         cid, keyword = m
         reason = self.getReason(keyword)
 
-        if not reason and client.maxLevel < self.config.getint('settings', 'noreason_level'):
+        if not reason and client.maxLevel < self._noreason_level:
             client.message('^1ERROR: ^7You must supply a reason')
             return False
 
@@ -1359,7 +1449,7 @@ class AdminPlugin(b3.plugin.Plugin):
         cid, keyword = m
         reason = self.getReason(keyword)
 
-        if not reason and client.maxLevel < self.config.getint('settings', 'noreason_level'):
+        if not reason and client.maxLevel < self._noreason_level:
             client.message('^1ERROR: ^7You must supply a reason')
             return False
 
@@ -1398,7 +1488,7 @@ class AdminPlugin(b3.plugin.Plugin):
         cid, keyword = m
         reason = self.getReason(keyword)
 
-        if not reason and client.maxLevel < self.config.getint('settings', 'noreason_level'):
+        if not reason and client.maxLevel < self._noreason_level:
             client.message('^1ERROR: ^7You must supply a reason')
             return False
 
@@ -1411,6 +1501,30 @@ class AdminPlugin(b3.plugin.Plugin):
                 continue
             else:
                 sclient.tempban(reason, keyword, duration, client)
+
+    def cmd_lastbans(self, data, client=None, cmd=None):
+        """\
+        list the 5 last bans
+        """
+        def format_ban(penalty):
+            c = self.console.storage.getClient(Client(_id=penalty.clientId))
+            txt = "^2@%s^7 %s^7" % (penalty.clientId, c.exactName)
+            if penalty.type == 'Ban':
+                txt += ' (Perm)'
+            elif penalty.type == 'TempBan':
+                txt += ' (%s remaining)' % minutesStr((penalty.timeExpire - self.console.time()) / 60.0)
+            else:
+                raise AssertionError("unexpected penalty type : %r" % penalty.type)
+            if penalty.reason:
+                txt += ' %s' % penalty.reason
+            return txt
+
+        bans = self.console.storage.getLastPenalties(types=('Ban', 'TempBan'), num=5)
+        if len(bans):
+            for line in map(format_ban, bans):
+                cmd.sayLoudOrPM(client, line)
+        else:
+            cmd.sayLoudOrPM(client, '^7There are no active bans')
 
     def cmd_baninfo(self, data, client=None, cmd=None):
         """\
@@ -1461,7 +1575,7 @@ class AdminPlugin(b3.plugin.Plugin):
             for w in sclient.bans:
                 if w.adminId:
                     try:
-                        admin = self.console.storage.getClient(clients.Client(id=w.adminId))
+                        admin = self.console.storage.getClient(Client(id=w.adminId))
                         if admin.maxLevel > client.maxLevel:
                             client.message('^7You can not clear a ban from ' % admin.exactName)
                             return
@@ -1582,7 +1696,7 @@ class AdminPlugin(b3.plugin.Plugin):
         warnings = sclient.numWarnings
         try:
             pmglobal = self.config.get('warn', 'pm_global')
-        except ConfigParser.NoOptionError:
+        except NoOptionError:
             pmglobal = '0'
         if pmglobal == '1':
             msg = self.config.getTextTemplate('warn', 'message', warnings=warnings, reason=warning)
@@ -1646,7 +1760,7 @@ class AdminPlugin(b3.plugin.Plugin):
         duration = self.warnKickDuration(sclient)
 
         if duration > 0:
-            if duration >= 300 and duration <= 600:
+            if 300 <= duration <= 600:
                 msg = '^3peeing ^7in the gene pool'
 
             sclient.tempban(self.config.getTextTemplate('warn', 'reason', reason=msg), keyword, duration, client, False, data)
@@ -1685,7 +1799,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
             if w.adminId:
                 try:
-                    admin = self.console.storage.getClient(clients.Client(id=w.adminId))
+                    admin = self.console.storage.getClient(Client(id=w.adminId))
                     if admin.maxLevel > client.maxLevel:
                         client.message('^7You can not clear a warning from %s' % admin.exactName)
                     return
@@ -1717,7 +1831,7 @@ class AdminPlugin(b3.plugin.Plugin):
             for w in sclient.warnings:
                 if w.adminId:
                     try:
-                        admin = self.console.storage.getClient(clients.Client(id=w.adminId))
+                        admin = self.console.storage.getClient(Client(id=w.adminId))
                         if admin.maxLevel > client.maxLevel:
                             failed += 1
                         break
@@ -1774,10 +1888,12 @@ class AdminPlugin(b3.plugin.Plugin):
             return
 
         maps = self.console.getMaps()
-        if maps:
+        if maps is None:
+            client.message('^7Error: could not get map list')
+        elif len(maps):
             cmd.sayLoudOrPM(client, '^7Map Rotation: ^2%s' % '^7, ^2'.join(maps))
         else:
-            client.message('^7Error: could not get map list')
+            cmd.sayLoudOrPM(client, '^7Map Rotation list is empty')
 
     def cmd_nextmap(self, data, client=None, cmd=None):
         """\
@@ -1836,7 +1952,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
         m = self.parseUserCmd(data)
         if m:
-            if client.maxLevel >= self.config.getint('settings', 'admins_level'):
+            if client.maxLevel >= self._admins_level:
                 sclient = self.findClientPrompt(m[0], client)
                 if not sclient:
                     return
@@ -1864,7 +1980,7 @@ class AdminPlugin(b3.plugin.Plugin):
             try:
                 rule = self.config.getTextTemplate('spamages', 'rule%s' % i)
                 rules.append(rule)
-            except ConfigParser.NoOptionError:
+            except NoOptionError:
                 break
             except Exception, err:
                 self.error(err)
@@ -1915,18 +2031,18 @@ class AdminPlugin(b3.plugin.Plugin):
         #      * Removed hard code of 1 day for long_tempban_level - now controlled with new setting 'long_tempban_max_duration'
         try:
             long_tempban_max_duration = self.config.getDuration('settings', 'long_tempban_max_duration')
-        except ConfigParser.NoOptionError:
+        except NoOptionError:
             long_tempban_max_duration = self._long_tempban_max_duration
             self.debug('Using default value (%s) for long_tempban_max_duration', self._long_tempban_max_duration)
 
-        if client.maxLevel < self.config.getint('settings', 'long_tempban_level') and duration > long_tempban_max_duration:
+        if client.maxLevel < self._long_tempban_level and duration > long_tempban_max_duration:
             # temp ban for maximum specified in settings
             duration = long_tempban_max_duration
 
         
         reason = self.getReason(keyword)
 
-        if not reason and client.maxLevel < self.config.getint('settings', 'noreason_level'):
+        if not reason and client.maxLevel < self._noreason_level:
             client.message('^1ERROR: ^7You must supply a reason')
             return False
         elif not duration:
@@ -2003,7 +2119,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 if reason_from_config[:1] == '/':
                     try:
                         reason = self.config.getTextTemplate('warn_reasons', reason_from_config[1:])
-                    except ConfigParser.NoOptionError:
+                    except NoOptionError:
                         self.warning("warn_reason '%s' refers to '/%s' but warn_reason '%s' cannot be found" % (keyword, reason_from_config[1:], reason_from_config[1:]))
                         return
                     except Exception, err:
@@ -2241,3 +2357,6 @@ class Command:
             params.append(buf)
 
         return params
+
+    def __repr__(self):
+        return "Command<" + self.command + ">"

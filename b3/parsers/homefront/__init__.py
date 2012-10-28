@@ -95,6 +95,7 @@ class HomefrontParser(b3.parser.Parser):
     The HomeFront B3 parser class
     '''
     gameName = "homefront"
+    privateMsg = True
     OutputClass = rcon.Rcon
     PunkBuster = None 
     _serverConnection = None

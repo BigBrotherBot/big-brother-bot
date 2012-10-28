@@ -19,10 +19,31 @@
 import re
 import unittest2 as unittest
 from mock import Mock, DEFAULT, patch
-from b3.clients import Client
+from b3.clients import Client, Clients
 from b3.parsers.bf3 import Bf3Parser, MAP_NAME_BY_ID, GAME_MODES_BY_MAP_ID, GAME_MODES_NAMES
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.util import MapListBlock
+
+
+sleep_patcher = None
+def setUpModule():
+    sleep_patcher = patch("time.sleep")
+    sleep_patcher.start()
+
+
+# make sure to unpatch core B3 stuf
+original_getByMagic = Clients.getByMagic
+original_message = Client.message
+original_disconnect = Clients.disconnect
+def tearDownModule():
+    Clients.getByMagic = original_getByMagic
+    Client.message = original_message
+    Clients.disconnect = original_disconnect
+    if hasattr(Client, "messagequeueworker"):
+        del Client.messagequeueworker
+    if sleep_patcher:
+        sleep_patcher.stop()
+
 
 class BF3TestCase(unittest.TestCase):
     """
@@ -39,6 +60,7 @@ class BF3TestCase(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, "parser"):
+            del self.parser.clients
             self.parser.working = False
 
 
@@ -468,14 +490,14 @@ class Test_punkbuster_events(BF3TestCase):
         return self.parser.OnPunkbusterMessage(action=None, data=[msg])
 
     def assert_pb_misc_evt(self, msg):
-        assert str(self.pb(msg)).startswith('Event<PunkBuster misc>')
+        assert str(self.pb(msg)).startswith('Event<EVT_PUNKBUSTER_MISC>')
 
     def test_PB_SV_BanList(self):
         self.assert_pb_misc_evt('PunkBuster Server: 1   b59ffffffffffffffffffffffffffc7d {13/15} "Cucurbitaceae" "87.45.14.2:3659" retest" ""')
         self.assert_pb_misc_evt('PunkBuster Server: 1   b59ffffffffffffffffffffffffffc7d {0/1440} "Cucurbitaceae" "87.45.14.2:3659" mlkjsqfd" ""')
 
         self.assertEquals(
-            '''Event<PunkBuster unknown>(['PunkBuster Server: 1   (UnBanned) b59ffffffffffffffffffffffffffc7d {15/15} "Cucurbitaceae" "87.45.14.2:3659" retest" ""'], None, None)''',
+            '''Event<EVT_PUNKBUSTER_UNKNOWN>(['PunkBuster Server: 1   (UnBanned) b59ffffffffffffffffffffffffffc7d {15/15} "Cucurbitaceae" "87.45.14.2:3659" retest" ""'], None, None)''',
             str(self.pb('PunkBuster Server: 1   (UnBanned) b59ffffffffffffffffffffffffffc7d {15/15} "Cucurbitaceae" "87.45.14.2:3659" retest" ""')))
 
         self.assert_pb_misc_evt('PunkBuster Server: Guid=b59ffffffffffffffffffffffffffc7d" Not Found in the Ban List')
@@ -483,11 +505,11 @@ class Test_punkbuster_events(BF3TestCase):
 
     def test_PB_UCON_message(self):
         result = self.pb('PunkBuster Server: PB UCON "ggc_85.214.107.154"@85.214.107.154:14516 [admin.say "GGC-Stream.com - Welcome Cucurbitaceae with the GUID 31077c7d to our server." all]\n')
-        self.assertEqual('Event<PunkBuster UCON>({\'ip\': \'85.214.107.154\', \'cmd\': \'admin.say "GGC-Stream.com - Welcome Cucurbitaceae with the GUID 31077c7d to our server." all\', \'from\': \'ggc_85.214.107.154\', \'port\': \'14516\'}, None, None)', str(result))
+        self.assertEqual('Event<EVT_PUNKBUSTER_UCON>({\'ip\': \'85.214.107.154\', \'cmd\': \'admin.say "GGC-Stream.com - Welcome Cucurbitaceae with the GUID 31077c7d to our server." all\', \'from\': \'ggc_85.214.107.154\', \'port\': \'14516\'}, None, None)', str(result))
 
     def test_PB_Screenshot_received_message(self):
         result = self.pb('PunkBuster Server: Screenshot C:\\games\\bf3\\173_199_73_213_25200\\862147\\bf3\\pb\\svss\\pb000709.png successfully received (MD5=4576546546546546546546546543E1E1) from 19 Jaffar [da876546546546546546546546547673(-) 111.22.33.111:3659]\n')
-        self.assertEqual(r"Event<PunkBuster Screenshot received>({'slot': '19', 'name': 'Jaffar', 'ip': '111.22.33.111', 'pbid': 'da876546546546546546546546547673', 'imgpath': 'C:\\games\\bf3\\173_199_73_213_25200\\862147\\bf3\\pb\\svss\\pb000709.png', 'port': '3659', 'md5': '4576546546546546546546546543E1E1'}, None, None)", str(result))
+        self.assertEqual(r"Event<EVT_PUNKBUSTER_SCREENSHOT_RECEIVED>({'slot': '19', 'name': 'Jaffar', 'ip': '111.22.33.111', 'pbid': 'da876546546546546546546546547673', 'imgpath': 'C:\\games\\bf3\\173_199_73_213_25200\\862147\\bf3\\pb\\svss\\pb000709.png', 'port': '3659', 'md5': '4576546546546546546546546543E1E1'}, None, None)", str(result))
 
     def test_PB_SV_PList(self):
         self.assert_pb_misc_evt("PunkBuster Server: Player List: [Slot #] [GUID] [Address] [Status] [Power] [Auth Rate] [Recent SS] [O/S] [Name]")
@@ -507,7 +529,7 @@ class Test_punkbuster_events(BF3TestCase):
         self.assert_pb_misc_evt("PunkBuster Server: 0 Ban Records Updated in d:\\localuser\\g119142\\pb\\pbbans.dat")
 
     def test_misc(self):
-        self.assertEqual("Event<PunkBuster client connection lost>({'slot': '1', 'ip': 'x.x.x.x', 'port': '3659', 'name': 'joe', 'pbuid': '0837c128293d42aaaaaaaaaaaaaaaaa'}, None, None)",
+        self.assertEqual("Event<EVT_PUNKBUSTER_LOST_PLAYER>({'slot': '1', 'ip': 'x.x.x.x', 'port': '3659', 'name': 'joe', 'pbuid': '0837c128293d42aaaaaaaaaaaaaaaaa'}, None, None)",
             str(self.pb("PunkBuster Server: Lost Connection (slot #1) x.x.x.x:3659 0837c128293d42aaaaaaaaaaaaaaaaa(-) joe")))
 
         self.assert_pb_misc_evt("PunkBuster Server: Invalid Player Specified: None")
@@ -638,6 +660,10 @@ class Test_bf3_maps(BF3TestCase):
         self.assertEqual('Operation 925', self.parser.getEasyName('XP2_Office'))
         self.assertEqual('Donya Fortress', self.parser.getEasyName('XP2_Palace'))
         self.assertEqual('Ziba Tower', self.parser.getEasyName('XP2_Skybar'))
+        self.assertEqual('Bandar Desert', self.parser.getEasyName('XP3_Desert'))
+        self.assertEqual('Alborz Mountains', self.parser.getEasyName('XP3_Alborz'))
+        self.assertEqual('Armored Shield', self.parser.getEasyName('XP3_Shield'))
+        self.assertEqual('Death Valley', self.parser.getEasyName('XP3_Valley'))
         self.assertEqual('f00', self.parser.getEasyName('f00'))
 
 
@@ -659,23 +685,40 @@ class Test_bf3_maps(BF3TestCase):
         self.assertEqual('XP2_Office', self.parser.getHardName('Operation 925'))
         self.assertEqual('XP2_Palace', self.parser.getHardName('Donya Fortress'))
         self.assertEqual('XP2_Skybar', self.parser.getHardName('Ziba Tower'))
+        self.assertEqual('XP3_Desert', self.parser.getHardName('Bandar Desert'))
+        self.assertEqual('XP3_Alborz', self.parser.getHardName('Alborz Mountains'))
+        self.assertEqual('XP3_Shield', self.parser.getHardName('Armored Shield'))
+        self.assertEqual('XP3_Valley', self.parser.getHardName('Death Valley'))
         self.assertEqual('f00', self.parser.getHardName('f00'))
 
 
     def test_getMapsSoundingLike(self):
-        self.assertEqual(['caspian border', 'damavand peak', 'grand bazaar'], self.parser.getMapsSoundingLike(''), '')
+        self.assertEqual(['grand bazaar', 'noshahar canals', 'kharg island'], self.parser.getMapsSoundingLike(''), '')
         self.assertEqual('MP_Subway', self.parser.getMapsSoundingLike('Operation Metro'), 'Operation Metro')
         self.assertEqual('MP_001', self.parser.getMapsSoundingLike('grand'))
-        self.assertEqual(['operation metro', 'operation 925', 'operation firestorm'], self.parser.getMapsSoundingLike('operation'))
+        self.assertEqual(['operation metro', 'operation firestorm', 'operation 925'], self.parser.getMapsSoundingLike('operation'))
+        self.assertEqual('XP3_Desert', self.parser.getMapsSoundingLike('bandar'))
+        self.assertEqual('XP3_Desert', self.parser.getMapsSoundingLike('desert'))
+        self.assertEqual('XP3_Alborz', self.parser.getMapsSoundingLike('alborz'))
+        self.assertEqual('XP3_Alborz', self.parser.getMapsSoundingLike('mountains'))
+        self.assertEqual('XP3_Alborz', self.parser.getMapsSoundingLike('mount'))
+        self.assertEqual('XP3_Shield', self.parser.getMapsSoundingLike('armored'))
+        self.assertEqual('XP3_Shield', self.parser.getMapsSoundingLike('shield'))
+        self.assertEqual('XP3_Valley', self.parser.getMapsSoundingLike('Death'))
+        self.assertEqual('XP3_Valley', self.parser.getMapsSoundingLike('valley'))
 
 
     def test_getGamemodeSoundingLike(self):
         self.assertEqual('ConquestSmall0', self.parser.getGamemodeSoundingLike('MP_011', 'ConquestSmall0'), 'ConquestSmall0')
         self.assertEqual('ConquestSmall0', self.parser.getGamemodeSoundingLike('MP_011', 'Conquest'), 'Conquest')
-        self.assertListEqual(['Squad Deathmatch', 'Team Deathmatch'], self.parser.getGamemodeSoundingLike('MP_011', 'Deathmatch'), 'Deathmatch')
+        self.assertListEqual(['Team Deathmatch', 'Squad Deathmatch'], self.parser.getGamemodeSoundingLike('MP_011', 'Deathmatch'), 'Deathmatch')
         self.assertListEqual(['Rush', 'Conquest', 'Conquest64'], self.parser.getGamemodeSoundingLike('MP_011', 'foo'))
         self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'tdm'), 'tdm')
-        self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'tdm'), 'teamdeathmatch')
-        self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'tdm'), 'team death match')
+        self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'teamdeathmatch'), 'teamdeathmatch')
+        self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'team death match'), 'team death match')
         self.assertEqual('ConquestLarge0', self.parser.getGamemodeSoundingLike('MP_011', 'CQ64'), 'CQ64')
+        self.assertEqual('TankSuperiority0', self.parser.getGamemodeSoundingLike('XP3_Valley', 'tank superiority'), 'tank superiority')
+        self.assertEqual('TankSuperiority0', self.parser.getGamemodeSoundingLike('XP3_Valley', 'tanksuperiority'), 'tanksuperiority')
+        self.assertEqual('TankSuperiority0', self.parser.getGamemodeSoundingLike('XP3_Valley', 'tanksup'), 'tanksup')
+        self.assertEqual('TankSuperiority0', self.parser.getGamemodeSoundingLike('XP3_Valley', 'tank'), 'tank')
 

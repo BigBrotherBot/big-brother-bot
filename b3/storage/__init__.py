@@ -54,6 +54,9 @@ class Storage(object):
     def getClientIpAddresses(self, client):
         raise NotImplementedError
     
+    def getLastPenalties(self, types='Ban', num=5):
+        raise NotImplementedError
+
     def setClientPenalty(self, penalty):
         raise NotImplementedError
     
@@ -79,6 +82,10 @@ class Storage(object):
         raise NotImplementedError
 
     def getGroup(self, group):
+        """
+        Get a Group from storage.
+        Raises KeyError if group cannot be found in storage.
+        """
         raise NotImplementedError
         
         

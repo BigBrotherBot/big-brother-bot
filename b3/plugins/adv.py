@@ -17,6 +17,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
+# 29/09/2012 - 1.4 - Courgette
+#    new message keyword @regulars will run the Admin plugin !regulars command
+# 19/08/2012 - 1.3.3 - Courgette
+#    give user feedback on command misuse
 # 07/17/2011 - 1.3.2 - Freelander
 #    prevent error if next map is not returned
 # 04/18/2011 - 1.3.1 - Courgette
@@ -44,12 +48,11 @@
 #    Converted to use XML config
 
 __author__ = 'ThorN'
-__version__ = '1.3.2'
+__version__ = '1.4'
 
 import b3
 import os
 import time
-import string
 import b3.lib.feedparser as feedparser
 import b3.plugin
 import b3.cron
@@ -258,22 +261,32 @@ class AdvPlugin(b3.plugin.Plugin):
                     self.error('XLRstats not installed! Cannot use @topstats in adv plugin!')
                     ad = '@topstats not available, XLRstats is not installed!'
             elif ad == "@admins":
-                admins = self._adminPlugin.getAdmins()
-                nlist = []
-                for c in admins:
-                    if c.maskGroup:
-                        nlist.append('%s^7 [^3%s^7]' % (c.exactName, c.maskGroup.level))
-                    else:
-                        nlist.append('%s^7 [^3%s^7]' % (c.exactName, c.maxLevel))
-                if len(nlist)>0:
-                    ad = self._adminPlugin.getMessage('admins', string.join(nlist, ', '))
-                else:
+                try:
+                    command = self._adminPlugin._commands['admins']
+                    command.executeLoud(data=None, client=None)
+                    ad = None
+                except Exception, err:
+                    self.error("could not send adv message @admins", exc_info=err)
                     if firstTry:
                         # try another ad
                         self.adv(firstTry=False)
                         return
                     else:
                         ad = None
+            elif ad == "@regulars":
+                try:
+                    command = self._adminPlugin._commands['regulars']
+                    command.executeLoud(data=None, client=None)
+                    ad = None
+                except Exception, err:
+                    self.error("could not send adv message @regulars", exc_info=err)
+                    if firstTry:
+                        # try another ad
+                        self.adv(firstTry=False)
+                        return
+                    else:
+                        ad = None
+
             if ad:
                 self.console.say(ad)
             self._replay = 0
@@ -302,6 +315,9 @@ class AdvPlugin(b3.plugin.Plugin):
             return None
 
     def cmd_advadd(self, data, client=None, cmd=None):
+        if not data:
+            client.message('Invalid data, specify the message to add')
+            return
         self._msg.put(data)
         client.message('^3Adv: ^7"%s^7" added' % data)
         if self._fileName:
@@ -319,17 +335,38 @@ class AdvPlugin(b3.plugin.Plugin):
         client.message('^3Adv: ^7Loaded %s messages' % len(self._msg.items))    
 
     def cmd_advrate(self, data, client=None, cmd=None):
-        self._rate = data
-        (min, sec) = self._getRateMinSec()
-        self._cronTab.minute = min
-        self._cronTab.second = sec
-        if self._rate[-1] == 's':
-            client.message('^3Adv: ^7Rate set to %s seconds' % self._rate[:-1])    
+        if not data:
+            if self._rate[-1] == 's':
+                client.message('Current rate is every %s seconds' % self._rate[:-1])
+            else:
+                client.message('Current rate is every %s minutes' % self._rate)
         else:
-            client.message('^3Adv: ^7Rate set to %s minutes' % self._rate)    
+            self._rate = data
+            (min, sec) = self._getRateMinSec()
+            self._cronTab.minute = min
+            self._cronTab.second = sec
+            if self._rate[-1] == 's':
+                client.message('^3Adv: ^7Rate set to %s seconds' % self._rate[:-1])
+            else:
+                client.message('^3Adv: ^7Rate set to %s minutes' % self._rate)
 
     def cmd_advrem(self, data, client=None, cmd=None):
-        item = self._msg.getitem(int(data) - 1)
+
+        if not data:
+            client.message("Invalid data, use the !advlist command to list valid items numbers")
+            return
+
+        try:
+            item_index = int(data) - 1
+        except ValueError:
+            client.message("Invalid data, use the !advlist command to list valid items numbers")
+            return
+
+        if not 0 <= item_index < len(self._msg.items):
+            client.message("Invalid data, use the !advlist command to list valid items numbers")
+            return
+
+        item = self._msg.getitem(item_index)
 
         if item:
             self._msg.remove(int(data) - 1)
@@ -364,101 +401,4 @@ class AdvPlugin(b3.plugin.Plugin):
             min = '*/%s' % self._rate
         self.debug('%s -> (%s,%s)' % (self._rate, min, sec))
         return (min, sec)
-    
-if __name__ == '__main__':
-    from b3.fake import fakeConsole
-    from b3.fake import joe, moderator, superadmin
-    from b3.config import XmlConfigParser
-    
-    def test1():
-        conf = XmlConfigParser()
-        conf.setXml("""
-    <configuration plugin="adv">
-        <!--
-            Note: within ads, you can use the following variables : @nextmap @time
-            or rules as defined in the admin plugin config file. ie: /spam#rule1
-        -->
-        <settings name="settings">
-            <!-- rate in minutes-->
-            <set name="rate">5</set>
-            <!--
-                you can either set here a text file that will contain one ad per line
-                or fill the <ads> section below
-            -->
-            <!-- <set name="ads">c:/somewhere/my_ads.txt</set> -->
-        </settings>
-      <settings name="newsfeed">
-            <!--
-                you can include newsitems in your adds by setting the section below
-                you can add feeditems in the adds like this:
-                @feed   (will pick the next newsitem each time it is included in the rotation,
-                   rotating until 'items' is reached and then start over.)
-                @feed 0 (will pick the latest newsitem available from the feed and add it in the rotation)
-                @feed 1 (will pick the second latest item in line)
-                etc.
-            -->
-            <set name="url">http://forum.bigbrotherbot.net/news-2/?type=rss;action=.xml</set>
-            <set name="url.bak"></set>
-            <set name="items">5</set>
-            <set name="pretext">News: </set>
-        </settings>
-        <ads>
-            <ad>^2Big Brother Bot is watching you... www.BigBrotherBot.net</ad>
-            <ad>@topstats</ad>
-            <ad>@feed</ad>
-            <ad>/spam#rule1</ad>
-            <ad>@time</ad>
-            <ad>@feed</ad>
-            <ad>^2Do you like B3? Consider donating to the project at www.BigBrotherBot.net</ad>
-            <ad>@nextmap</ad>
-        </ads>
-    </configuration>
-        """)
-        p = AdvPlugin(fakeConsole, conf)
-        p.onStartup()
-        
-        p.adv()
-        print "-----------------------------"
-        time.sleep(2)
-        
-        joe.connects(1)
-        joe._maxLevel = 100
-        joe.says('!advlist')
-        time.sleep(2)
-        joe.says('!advrem 0')
-        time.sleep(2)
-        joe.says('!advrate 5s')
-        time.sleep(5)
-        
-        time.sleep(60)
-        
-    def testAdmins():
-        conf = XmlConfigParser()
-        conf.setXml("""
-      <configuration plugin="adv">
-        <settings name="settings">
-            <set name="rate">1s</set>
-        </settings>
-        <ads>
-            <ad>^2Do you like B3? Consider donating to the project at www.BigBrotherBot.net</ad>
-            <ad>@admins</ad>
-        </ads>
-    </configuration>
-        """)
-        p = AdvPlugin(fakeConsole, conf)
-        p.onStartup()
-        
-        p.adv()
-        print "-----------------------------"
-        time.sleep(4)
-        joe.connects(1)
-        time.sleep(4)
-        moderator.connects(2)
-        time.sleep(4)
-        superadmin.connects(3)
-        
-        time.sleep(60)
 
-
-    #test1()
-    testAdmins()

@@ -1,80 +1,97 @@
 <configuration plugin="admin">
 	<settings name="commands">
-		<set name="enable">100</set>
-		<set name="disable">100</set>
-		<set name="die">100</set>
-		<set name="reconfig">100</set>
-		<set name="restart">100</set>
-		<set name="mask">100</set>
-		<set name="unmask">100</set>
-		<set name="runas-su">100</set>
+        <!--
+        Define here what minimum group users must be in to use commands.
 
-		<set name="pause">90</set>
-		<set name="rebuild">90</set>
-		<set name="clientinfo">90</set>
-		<set name="putgroup">90</set>
-		<set name="ungroup">90</set>
+        Groups are (keyword / level : description)
+        ==============================================
+        superadmin / 100 : Super admin (server owner)
+        senioradmin / 80 : Senior admins
+        fulladmin / 60   : Full admins
+        admin / 40       : Admins
+        mod / 20         : Moderators
+        reg / 2          : Regular players (VIP)
+        user / 1         : Registered players (those who typed !register)
+        guest / 0        : Unregistered players
+        -->
+		<set name="enable">superadmin</set>
+		<set name="disable">superadmin</set>
+		<set name="die">superadmin</set>
+		<set name="reconfig">superadmin</set>
+		<set name="restart">superadmin</set>
+		<set name="mask">superadmin</set>
+		<set name="unmask">superadmin</set>
+		<set name="runas-su">superadmin</set>
 
-		<set name="permban-pb">80</set>
-		<set name="map">80</set>
-		<set name="maprotate">80</set>
-		<set name="warnclear-wc">80</set>
-		<set name="clear-kiss">80</set>
-		<set name="lookup-l">80</set>
-		<set name="makereg-mr">80</set>
-		<set name="spankall-sall">80</set>
-		<set name="banall-ball">80</set>
-		<set name="kickall-kall">80</set>
-		<set name="pbss">80</set>
+		<set name="pause">senioradmin</set>
+		<set name="rebuild">senioradmin</set>
+		<set name="clientinfo">senioradmin</set>
+		<set name="putgroup">senioradmin</set>
+		<set name="ungroup">senioradmin</set>
 
-		<set name="ban-b">60</set>
-		<set name="unban">60</set>
-		<set name="spank-sp">60</set>
+		<set name="permban-pb">senioradmin</set>
+		<set name="map">senioradmin</set>
+		<set name="maprotate">senioradmin</set>
+		<set name="warnclear-wc">senioradmin</set>
+		<set name="clear-kiss">senioradmin</set>
+		<set name="lookup-l">senioradmin</set>
+		<set name="makereg-mr">senioradmin</set>
+		<set name="unreg-ur">senioradmin</set>
+		<set name="spankall-sall">senioradmin</set>
+		<set name="banall-ball">senioradmin</set>
+		<set name="kickall-kall">senioradmin</set>
+		<set name="pbss">senioradmin</set>
 
-		<set name="tempban-tb">40</set>
-		<set name="baninfo-bi">40</set>
-		<set name="kick-k">40</set>
-		<set name="admintest">40</set>
-		<set name="scream">40</set>
-		<set name="notice">40</set>
+		<set name="ban-b">fulladmin</set>
+		<set name="unban">fulladmin</set>
+		<set name="spank-sp">fulladmin</set>
 
-		<set name="find">20</set>
-		<set name="aliases-alias">20</set>
-		<set name="warns">20</set>
-		<set name="warninfo-wi">20</set>
-		<set name="warnremove-wr">20</set>
-		<set name="warn-w">20</set>
-		<set name="warntest-wt">20</set>
-		<set name="spams">20</set>
-		<set name="spam-s">20</set>
-		<set name="list">20</set>
-		<set name="admins">20</set>
-		<set name="say">20</set>
-		<set name="status">20</set>
-		<set name="leveltest-lt">20</set>
-		<set name="poke">20</set>
+		<set name="tempban-tb">admin</set>
+        <set name="baninfo-bi">admin</set>
+        <set name="lastbans-lbans">admin</set>
+		<set name="kick-k">admin</set>
+		<set name="admintest">admin</set>
+		<set name="scream">admin</set>
+		<set name="notice">admin</set>
 
-		<set name="b3">9</set>
+		<set name="find">mod</set>
+		<set name="aliases-alias">mod</set>
+		<set name="warns">mod</set>
+		<set name="warninfo-wi">mod</set>
+		<set name="warnremove-wr">mod</set>
+		<set name="warn-w">mod</set>
+		<set name="warntest-wt">mod</set>
+		<set name="spams">mod</set>
+		<set name="spam-s">mod</set>
+		<set name="list">mod</set>
+		<set name="admins">mod</set>
+		<set name="say">mod</set>
+		<set name="status">mod</set>
+		<set name="leveltest-lt">mod</set>
+		<set name="poke">mod</set>
 
-		<set name="seen">2</set>
-		<set name="maps">2</set>
-		<set name="nextmap">2</set>
+		<set name="b3">mod</set>
 
-		<set name="regtest">1</set>
-		<set name="time">1</set>
+		<set name="seen">reg</set>
+		<set name="maps">reg</set>
+		<set name="nextmap">reg</set>
 
-		<set name="help-h">0</set>
-		<set name="register">0</set>
-		<set name="rules-r">0</set>
+        <set name="regulars-regs">user</set>
+		<set name="regtest">user</set>
+		<set name="time">user</set>
+
+		<set name="help-h">guest</set>
+		<set name="register">guest</set>
+		<set name="rules-r">guest</set>
 	</settings>
 	<settings name="settings">
     <!-- noreason_level : admin from this level are not required to specify a reason when giving penalties to players -->
-		<set name="noreason_level">100</set>
+		<set name="noreason_level">superadmin</set>
 		<!-- hidecmd_level : level required to be able to use hidden commands. On quake3 based games, a hidden command can be issued by 
 		telling to command to oneself -->
-		<set name="hidecmd_level">60</set>
+		<set name="hidecmd_level">senioradmin</set>
 		<!-- long_tempban_level : admin level required to be able to issue bans longer than long_tempban_max_duration -->
-		<set name="long_tempban_level">80</set>
+		<set name="long_tempban_level">senioradmin</set>
 		<!-- long_tempban_max_duration : maximum ban duration that can be inflicted by admin of level below long_tempban_level -->
 		<set name="long_tempban_max_duration">3h</set>
 		<!-- command_prefix : the prefix that should be put before b3 commands -->
@@ -86,7 +103,7 @@
 		To have such a behavior, use this command prefix instead -->
 		<set name="command_prefix_big"><![CDATA[&]]></set>
 		<!-- admins_level : minimum level for groups to consider as admins -->
-		<set name="admins_level">20</set>
+		<set name="admins_level">mod</set>
 		<!-- ban_duration : tempban duration to apply to the !ban and !banall commands -->
 		<set name="ban_duration">14d</set>
 	</settings>
@@ -120,6 +137,8 @@
 		<set name="help_none">^7You have no available commands</set>
 		<set name="spanked">%s ^7was ^1SPANKED^7 by %s</set>
 		<set name="admins">^7Admins online: %s</set>
+		<set name="regulars">^7Regular players online: %s</set>
+		<set name="no_regulars">^7There are no regular players online</set>
 		<set name="time">At the sound of the beep it will be ^3%s^7...(beeeep)</set>
 		<set name="unknown_command">^7Unrecognized command %s</set>
 		<set name="leveltest">^7%s ^7[^3@%s^7] is a ^3%s ^7[^2%s^7] since %s</set>

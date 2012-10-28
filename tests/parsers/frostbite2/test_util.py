@@ -275,6 +275,7 @@ class Test_MapListBlock(unittest.TestCase):
         self.assertIn(0, bloc.getByNameAndGamemode('map1', 'mode1'))
         self.assertIn(1, bloc.getByNameAndGamemode('map2', 'mode2'))
         self.assertIn(2, bloc.getByNameAndGamemode('map1', 'mode2'))
+        self.assertIn(2, bloc.getByNameGamemodeAndRounds('map1', 'mode2', '2'))
 
 
 class Test_MapListBlock_append(unittest.TestCase):

@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   11/08/2012 - 1.12 - Courgette
+#    getGroup can find group by level if keyword is not provided
 #   29/10/2011 - 1.11.1 - 82ndab-Bravo17
 #    Decode Reason in penalty from system encodig and recode to UTF-8 to ensure Name is correctly encoded
 #   31/05/2011 - 1.11.0 - Courgette
@@ -60,7 +62,7 @@
 #   Added data column to penalties table
 
 __author__  = 'ThorN'
-__version__ = '1.11.1'
+__version__ = '1.12'
 
 
 from b3 import functions
@@ -645,6 +647,22 @@ class DatabaseStorage(Storage):
 
         return aliases
 
+    def getLastPenalties(self, types='Ban', num=5):
+        where = QueryBuilder(self.db).WhereClause( { 'type' : types, 'inactive' : 0 } )
+        where += ' and (time_expire = -1 or time_expire > %s)' % int(time.time())
+
+        cursor = self.query(QueryBuilder(self.db).SelectQuery(fields='*', table='penalties', where=where, orderby='time_add DESC, id DESC', limit=num))
+        if not cursor:
+            return []
+
+        penalties = []
+        while not cursor.EOF and len(penalties) < num:
+            penalties.append(self._createPenaltyFromRow(cursor.getRow()))
+            cursor.moveNext()
+        cursor.close()
+
+        return penalties
+
     def setClientPenalty(self, penalty):
         """
         id  int(10)  UNSIGNED No    auto_increment              
@@ -829,12 +847,22 @@ class DatabaseStorage(Storage):
         return self._groups
 
     def getGroup(self, group):
-        q = QueryBuilder(self.db).SelectQuery('*', 'groups', { 'keyword' : group.keyword }, None, 1)
-        self.console.debug(q)
-        cursor = self.query(q)
-        g = cursor.getOneRow()
-        if not g:
-            raise KeyError, 'No group matching keyword %s' % group.keyword
+        if hasattr(group, 'keyword') and group.keyword:
+            q = QueryBuilder(self.db).SelectQuery('*', 'groups', { 'keyword' : group.keyword }, None, 1)
+            self.console.verbose2(q)
+            cursor = self.query(q)
+            g = cursor.getOneRow()
+            if not g:
+                raise KeyError, 'No group matching keyword %s' % group.keyword
+        elif hasattr(group, 'level') and group.level:
+            q = QueryBuilder(self.db).SelectQuery('*', 'groups', { 'level' : group.level }, None, 1)
+            self.console.verbose2(q)
+            cursor = self.query(q)
+            g = cursor.getOneRow()
+            if not g:
+                raise KeyError, 'No group matching level %s' % group.level
+        else:
+            raise KeyError("cannot find Group as no keyword/level provided")
 
         group.id = int(g['id'])
         group.name    = g['name']

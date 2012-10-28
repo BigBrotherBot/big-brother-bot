@@ -19,6 +19,7 @@
 from mock import Mock, patch, call
 import time
 import sys
+from mockito import when, any as whatever
 from tests import B3TestCase
 import unittest2 as unittest
 import os
@@ -27,7 +28,7 @@ from b3 import __file__ as b3_module__file__
 from b3.plugin import Plugin
 from b3.plugins.admin import AdminPlugin, Command
 from b3.config import XmlConfigParser
-from b3.clients import Client, Group, ClientVar
+from b3.clients import Client, Group, ClientVar, Penalty, ClientBan, ClientTempBan
 
 
 ADMIN_CONFIG_FILE = os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.xml")
@@ -164,6 +165,32 @@ class Test_misc_cmd(Admin_TestCase):
         self.p.cmd_map(data='bar', client=mock_client, cmd=Mock(spec=Command))
         self.console.changeMap.assert_called_once_with('bar')
         assert mock_client.message.called
+
+    def test_maps(self):
+        mock_client = Mock(spec=Client, name="client")
+        mock_cmd = Mock(spec=Command)
+
+        # None
+        self.console.getMaps = Mock(return_value=None)
+        self.p.cmd_maps(data=None, client=mock_client, cmd=mock_cmd)
+        mock_client.message.assert_called_once_with('^7Error: could not get map list')
+
+        # no map
+        self.console.getMaps = Mock(return_value=[])
+        self.p.cmd_maps(data=None, client=mock_client, cmd=mock_cmd)
+        mock_cmd.sayLoudOrPM.assert_called_once_with(mock_client, '^7Map Rotation list is empty')
+
+        # one map
+        mock_cmd.reset_mock()
+        self.console.getMaps = Mock(return_value=['foo'])
+        self.p.cmd_maps(data=None, client=mock_client, cmd=mock_cmd)
+        mock_cmd.sayLoudOrPM.assert_called_once_with(mock_client, '^7Map Rotation: ^2foo')
+
+        # many maps
+        mock_cmd.reset_mock()
+        self.console.getMaps = Mock(return_value=['foo1', 'foo2', 'foo3'])
+        self.p.cmd_maps(data=None, client=mock_client, cmd=mock_cmd)
+        mock_cmd.sayLoudOrPM.assert_called_once_with(mock_client, '^7Map Rotation: ^2foo1^7, ^2foo2^7, ^2foo3')
 
     def test_maprotate(self):
         self.console.rotateMap = Mock()
@@ -413,13 +440,7 @@ class Test_cmd_kick(CommandTestCase):
     def setUp(self):
         CommandTestCase.setUp(self)
         self.init()
-
-        def my_getint(section, option):
-            if section == "settings" and option == "noreason_level":
-                return 2
-            else:
-                return self.p.config.getint(section, option)
-        self.p.config.getint = Mock(side_effect=my_getint)
+        self.p._noreason_level = 2
 
     def kick(self, data=''):
         return self.p.cmd_kick(data=data, client=self.mock_client, cmd=self.mock_command)
@@ -431,8 +452,8 @@ class Test_cmd_kick(CommandTestCase):
 
     def test_no_reason(self):
         self.p.config.getint = Mock(return_value=4)
-        self.mock_client.maxLevel = 3
-        assert self.mock_client.maxLevel < self.p.config.getint('whatever')
+        self.mock_client.maxLevel = 1
+        assert self.mock_client.maxLevel < self.p._noreason_level
         self.kick('foo')
         self.mock_client.message.assert_called_once_with('^1ERROR: ^7You must supply a reason')
         assert not self.mock_client.kick.called
@@ -504,13 +525,7 @@ class Test_cmd_spank(CommandTestCase):
     def setUp(self):
         CommandTestCase.setUp(self)
         self.init()
-
-        def my_getint(section, option):
-            if section == "settings" and option == "noreason_level":
-                return 2
-            else:
-                return self.p.config.getint(section, option)
-        self.p.config.getint = Mock(side_effect=my_getint)
+        self.p._noreason_level = 2
 
     def spank(self, data=''):
         return self.p.cmd_spank(data=data, client=self.mock_client, cmd=self.mock_command)
@@ -522,8 +537,8 @@ class Test_cmd_spank(CommandTestCase):
 
     def test_no_reason(self):
         self.p.config.getint = Mock(return_value=4)
-        self.mock_client.maxLevel = 3
-        assert self.mock_client.maxLevel < self.p.config.getint('whatever')
+        self.mock_client.maxLevel = 1
+        assert self.mock_client.maxLevel < self.p._noreason_level
         self.spank('foo')
         self.mock_client.message.assert_called_once_with('^1ERROR: ^7You must supply a reason')
         assert not self.mock_client.kick.called
@@ -596,13 +611,7 @@ class Test_cmd_permban(CommandTestCase):
     def setUp(self):
         CommandTestCase.setUp(self)
         self.init()
-
-        def my_getint(section, option):
-            if section == "settings" and option == "noreason_level":
-                return 2
-            else:
-                return self.p.config.getint(section, option)
-        self.p.config.getint = Mock(side_effect=my_getint)
+        self.p._noreason_level = 2
 
     def permban(self, data=''):
         return self.p.cmd_permban(data=data, client=self.mock_client, cmd=self.mock_command)
@@ -614,8 +623,8 @@ class Test_cmd_permban(CommandTestCase):
 
     def test_no_reason(self):
         self.p.config.getint = Mock(return_value=4)
-        self.mock_client.maxLevel = 3
-        assert self.mock_client.maxLevel < self.p.config.getint('whatever')
+        self.mock_client.maxLevel = 1
+        assert self.mock_client.maxLevel < self.p._noreason_level
         self.permban('foo')
         self.mock_client.message.assert_called_once_with('^1ERROR: ^7You must supply a reason')
         assert not self.mock_client.ban.called
@@ -687,16 +696,8 @@ class Test_cmd_tempban(CommandTestCase):
     def setUp(self):
         CommandTestCase.setUp(self)
         self.init()
-
-        original_getint = self.p.config.getint
-        def my_getint(section, option):
-            if section == "settings" and option == "noreason_level":
-                return 2
-            elif section == "settings" and option == "long_tempban_level":
-                return 2
-            else:
-                return original_getint(section, option)
-        self.p.config.getint = my_getint
+        self.p._noreason_level = 2
+        self.p._long_tempban_level = 2
 
     def tempban(self, data=''):
         return self.p.cmd_tempban(data=data, client=self.mock_client, cmd=self.mock_command)
@@ -724,8 +725,8 @@ class Test_cmd_tempban(CommandTestCase):
 
     def test_no_reason(self):
         self.p.config.getint = Mock(return_value=4)
-        self.mock_client.maxLevel = 3
-        assert self.mock_client.maxLevel < self.p.config.getint('whatever')
+        self.mock_client.maxLevel = 1
+        assert self.mock_client.maxLevel < self.p._noreason_level
         self.tempban('foo 3h')
         self.mock_client.message.assert_called_once_with('^1ERROR: ^7You must supply a reason')
         assert not self.mock_client.tempban.called
@@ -876,6 +877,66 @@ class Test_sendRules(Admin_TestCase):
         self.console.say = Mock(wraps=lambda *args: sys.stdout.write("\t\tSAY: " + str(args) + "\n"))
         self.p._sendRules(None)
         self.console.say.assert_has_calls([call('this is rule #%s' % x) for x in range(1, 20)])
+
+
+class Test_cmd_lastbans(CommandTestCase):
+
+    def setUp(self):
+        CommandTestCase.setUp(self)
+        self.init()
+        self.player = Client(console=self.console, name="joe", _maxLevel=0)
+        self.player.message = Mock()
+
+    def lastbans(self):
+        self.p.cmd_lastbans(data='', client=self.player, cmd=self.mock_command)
+
+    def test_no_ban(self):
+        self.lastbans()
+        self.mock_command.sayLoudOrPM.assert_called_once_with(self.player, '^7There are no active bans')
+
+    def test_one_ban(self):
+        # GIVEN
+        player1 = Client(console=self.console, guid='BillGUID', name="Bill")
+        player1.save()
+        penalty1 = ClientBan(clientId=player1.id, timeExpire=-1, adminId=0)
+        when(self.console.storage).getLastPenalties(types=whatever(), num=whatever()).thenReturn([penalty1])
+        # WHEN
+        self.lastbans()
+        # THEN
+        self.mock_command.sayLoudOrPM.assert_called_once_with(self.player, u'^2@1^7 Bill^7^7 (Perm)')
+
+    def test_one_ban_with_reason(self):
+        # GIVEN
+        player1 = Client(console=self.console, guid='BillGUID', name="Bill")
+        player1.save()
+        penalty1 = ClientBan(clientId=player1.id, timeExpire=-1, adminId=0, reason="test reason")
+        when(self.console.storage).getLastPenalties(types=whatever(), num=whatever()).thenReturn([penalty1])
+        # WHEN
+        self.lastbans()
+        # THEN
+        self.mock_command.sayLoudOrPM.assert_called_once_with(self.player, u'^2@1^7 Bill^7^7 (Perm) test reason')
+
+    def test_two_bans_with_reason(self):
+        # GIVEN
+        when(self.console).time().thenReturn(0)
+        player1 = Client(console=self.console, guid='player1GUID', name="P1")
+        player1.save()
+        penalty1 = ClientBan(clientId=player1.id, timeExpire=-1, adminId=0, reason="test reason")
+
+        player2 = Client(console=self.console, guid='player2GUID', name="P2")
+        player2.save()
+        penalty2 = ClientTempBan(clientId=player2.id, timeExpire=self.console.time() + 60*2, adminId=0, reason="test reason f00")
+
+        when(self.console.storage).getLastPenalties(types=whatever(), num=whatever()).thenReturn([penalty1, penalty2])
+        # WHEN
+        self.lastbans()
+        # THEN
+        self.mock_command.sayLoudOrPM.assert_has_calls([
+            call(self.player, u'^2@1^7 P1^7^7 (Perm) test reason'),
+            call(self.player, u'^2@2^7 P2^7^7 (2 minutes remaining) test reason f00'),
+        ])
+
+
 
 
 if __name__ == '__main__':

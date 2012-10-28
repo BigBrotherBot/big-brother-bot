@@ -48,10 +48,15 @@
 #  replace admin plugin !map command with a Frostbite2 specific implementation. Now can call !map <map>, <gamemode>
 #  refactor getMapsSoundingLike
 #  add getGamemodeSoundingLike
+# 1.7
+#  replace admin plugin !map command with a Frostbite2 specific implementation. Now can call !map <map>[, <gamemode>[, <num of rounds>]]
+#  when returning map info, provide : map name (gamemode) # rounds
+# 1.8
+#  isolate the patching code in a module function
 #
 
 __author__  = 'Courgette'
-__version__ = '1.6'
+__version__ = '1.8'
 
 
 import sys, re, traceback, time, string, Queue, threading, new
@@ -73,6 +78,7 @@ class AbstractParser(b3.parser.Parser):
     """
 
     gameName = None
+    privateMsg = True
 
     # hard limit for rcon command admin.say
     SAY_LINE_MAX_LENGTH = 128
@@ -159,6 +165,7 @@ class AbstractParser(b3.parser.Parser):
 
     def __new__(cls, *args, **kwargs):
         AbstractParser.patch_b3_Clients_getByMagic()
+        patch_b3_clients()
         return b3.parser.Parser.__new__(cls)
 
     @staticmethod
@@ -186,21 +193,54 @@ class AbstractParser(b3.parser.Parser):
 
     def patch_b3_admin_plugin(self):
         """
-        The cmd_map method of the loaded AdminPlugin instance to accept an optional 2nd parameter which is the game mode
+        Monkey patches the admin plugin
         """
-        def new_cmd_map(self, data, client, cmd=None):
-            """\
-            <map> [, gamemode] - switch current map. Optionnaly specify a gamemode by separating it from the map name with a comma
+
+        def parse_map_parameters(self, data, client):
             """
-            if not data:
-                client.message('You must supply a map to change to')
-                return
+            Method that parses a command parameters of extract map, gamemode and number of rounds.
+            Expecting one, two or three parameters separated by a comma.
+            <map> [, gamemode [, num of rounds]]
+            """
+            gamemode_data = num_rounds = None
 
             if ',' in data:
-                map_data, gamemode_data = [x.strip() for x in data.split(',')]
+                parts = [x.strip() for x in data.split(',')]
+                if len(parts) > 3:
+                    client.message("Invalid parameters. At max 3 parameters are expected")
+                    return
+                elif len(parts) == 3:
+                    gamemode_data = parts[1]
+                    num_rounds = parts[2]
+                elif len(parts) == 2:
+                    if re.match('\d+', parts[1]):
+                        # 2nd param is the number of rounds
+                        num_rounds = parts[1]
+                    else:
+                        gamemode_data = parts[1]
+                map_data = parts[0]
             else:
                 map_data = data.strip()
+
+            if gamemode_data is None:
                 gamemode_data = self.console.game.gameType
+
+            if num_rounds is None:
+                # get the number of round from the current map
+                try:
+                    num_rounds = int(self.console.game.serverinfo['roundsTotal'])
+                except Exception, err:
+                    self.warning("could not get current number of rounds", exc_info=err)
+                    client.message("please specify the number of rounds you want")
+                    return
+            else:
+                # validate given number of rounds
+                try:
+                    num_rounds = int(num_rounds)
+                except Exception, err:
+                    self.warning("could not read the number of rounds of '%s'" % num_rounds, exc_info=err)
+                    client.message("could not read the number of rounds of '%s'" % num_rounds)
+                    return
 
             map_id = self.console.getMapIdByName(map_data)
             if type(map_id) is list:
@@ -212,12 +252,38 @@ class AbstractParser(b3.parser.Parser):
                 client.message('do you mean : %s ?' % ', '.join(gamemode_id))
                 return
 
+            return map_id, gamemode_id, num_rounds
+
+
+        """
+        Monkey path the cmd_map method of the loaded AdminPlugin instance to accept optional 2nd and 3rd parameters
+        which are the game mode and number of rounds
+        """
+        def new_cmd_map(self, data, client, cmd=None):
+            """\
+            <map> [, gamemode [, num of rounds]] - switch current map. Optionally specify a gamemode and # of rounds by separating them from the map name with a commas
+            """
+            if not data:
+                client.message('Invalid parameters, type !help map')
+                return
+
+            parsed_data = self.parse_map_parameters(data, client)
+            if not parsed_data:
+                return
+
+            map_id, gamemode_id, num_rounds = parsed_data
             try:
-                suggestions = self.console.changeMap(map_id, gamemode_id)
+                suggestions = self.console.changeMap(map_id, gamemode_id=gamemode_id, number_of_rounds=num_rounds)
             except CommandFailedError, err:
                 if err.message == ['InvalidGameModeOnMap']:
-                    client.message("The %s cannot be played with the current game mode. Retry the command giving the wanted game mode" % self.console.getEasyName(map_id))
-                    client.message("available gamemodes are : " + ', '.join([self.console.getGameMode(mode_id) for mode_id in self.console.getSupportedGameModesByMapId(map_id)]))
+                    client.message("%s cannot be played with gamemode %s" % self.console.getEasyName(map_id), self.console.getGameMode(gamemode_id))
+                    client.message("supported gamemodes are : " + ', '.join([self.console.getGameMode(mode_id) for mode_id in self.console.getSupportedGameModesByMapId(map_id)]))
+                    return
+                elif err.message == ['InvalidRoundsPerMap']:
+                    client.message("number of rounds must be 1 or greater")
+                    return
+                elif err.message == ['Full']:
+                    client.message("Map list maximum size has been reached")
                     return
                 else:
                     raise
@@ -225,7 +291,11 @@ class AbstractParser(b3.parser.Parser):
                 if type(suggestions) == list:
                     client.message('do you mean : %s ?' % ', '.join(map_id))
                     return
+
         adminPlugin = self.getPlugin('admin')
+
+        adminPlugin.parse_map_parameters = new.instancemethod(parse_map_parameters, adminPlugin)
+
         cmd = adminPlugin._commands['map']
         cmd.func = new.instancemethod(new_cmd_map, adminPlugin)
         cmd.help = new_cmd_map.__doc__.strip()
@@ -451,6 +521,7 @@ class AbstractParser(b3.parser.Parser):
                     self.write(self.getCommand('say', message=line))
                     if self.working:
                         time.sleep(self._settings['message_delay'])
+                self.sayqueue.task_done()
             except Queue.Empty:
                 #self.verbose2("sayqueuelistener: had nothing to do in the last %s sec" % self.sayqueue_get_timeout)
                 pass
@@ -1167,7 +1238,11 @@ class AbstractParser(b3.parser.Parser):
         """
         response = []
         for map_list in self.getFullMapRotationList():
-            response.append('%s (%s)' % (self.getEasyName(map_list['name']), self.getGameMode(map_list['gamemode'])))
+            map_id = map_list['name']
+            gamemode_id = map_list['gamemode']
+            number_of_rounds = map_list['num_of_rounds']
+            data = '%s (%s) %s round%s' % (self.getEasyName(map_id), self.getGameMode(gamemode_id), number_of_rounds, 's' if number_of_rounds>1 else '')
+            response.append(data)
         return response
 
 
@@ -1195,7 +1270,7 @@ class AbstractParser(b3.parser.Parser):
         self.queueEvent(b3.events.Event(b3.events.EVT_GAME_ROUND_END, data=None))
 
 
-    def changeMap(self, map_name, gamemode_id=None):
+    def changeMap(self, map_name, gamemode_id=None, number_of_rounds=2):
         """\
         load a given map/level
         return a list of suggested map names in cases it fails to recognize the map that was provided
@@ -1225,7 +1300,7 @@ class AbstractParser(b3.parser.Parser):
         # simple case : mapList is empty. Then just add our map at index 0 and load it
         if not len(mapList):
             nextMapListIndex = 0
-            self.write(('mapList.add', map_id, target_gamemode_id, 2, nextMapListIndex))
+            self.write(('mapList.add', map_id, target_gamemode_id, number_of_rounds, nextMapListIndex))
         else:
             # the wanted map could already be in the rotation list (if gamemode specified)
             if gamemode_id is not None:
@@ -1242,11 +1317,11 @@ class AbstractParser(b3.parser.Parser):
             # or map is not found in mapList and we need to insert it after the index of the current map
             current_index = self.write(('mapList.getMapIndices',))[0]
             nextMapListIndex = int(current_index) + 1
-            self.write(('mapList.add', map_id, target_gamemode_id, 2, nextMapListIndex))
+            self.write(('mapList.add', map_id, target_gamemode_id, number_of_rounds, nextMapListIndex))
 
         # now we have a nextMapListIndex correctly set to the wanted map
         self.write(('mapList.setNextMapIndex', nextMapListIndex))
-        self.say('Changing map to %s (%s)' % (self.getEasyName(map_id), self.getGameMode(target_gamemode_id)))
+        self.say('Changing map to %s (%s) %s round%s' % (self.getEasyName(map_id), self.getGameMode(target_gamemode_id), number_of_rounds, 's' if number_of_rounds>1 else ''))
         time.sleep(1)
         self.write(('mapList.runNextRound',))
 
@@ -1411,12 +1486,14 @@ class AbstractParser(b3.parser.Parser):
         if not len(maps):
             next_map_name = self.game.mapName
             next_map_gamemode = self.game.gameType
+            number_of_rounds = int(self.game.serverinfo['roundsTotal'])
         else:
             mapIndices = self.write(('mapList.getMapIndices', ))
             next_map_info = maps[int(mapIndices[1])]
             next_map_name = next_map_info['name']
             next_map_gamemode = next_map_info['gamemode']
-        return '%s (%s)' % (self.getEasyName(next_map_name), self.getGameMode(next_map_gamemode))
+            number_of_rounds = next_map_info['num_of_rounds']
+        return '%s (%s) %s round%s' % (self.getEasyName(next_map_name), self.getGameMode(next_map_gamemode), number_of_rounds, 's' if number_of_rounds>1 else '')
 
     def getSupportedMapIds(self):
         """return a list of supported levels"""
@@ -1579,69 +1656,70 @@ class AbstractParser(b3.parser.Parser):
         self.debug('line_length: %s' % self._settings['line_length'])
 
 
-#############################################################
-# Below is the code that change a bit the b3.clients.Client
-# class at runtime. What the point of coding in python if we
-# cannot play with its dynamic nature ;)
-#
-# why ?
-# because doing so make sure we're not broking any other 
-# working and long tested parser. The changes we make here
-# are only applied when the frostbite parser is loaded.
-#############################################################
-  
-## add a new method to the Client class
-def frostbiteClientMessageQueueWorker(self):
-    """
-    This take a line off the queue and displays it
-    then pause for 'message_delay' seconds
-    """
-    while self.messagequeue and not self.messagequeue.empty():
-        if not self.connected:
-            break
-        msg = self.messagequeue.get()
-        if msg:
-            self.console.message(self, msg)
-            if self.connected:
-                time.sleep(float(self.console._settings['message_delay']))
-b3.clients.Client.messagequeueworker = frostbiteClientMessageQueueWorker
+def patch_b3_clients():
+    #############################################################
+    # Below is the code that change a bit the b3.clients.Client
+    # class at runtime. What the point of coding in python if we
+    # cannot play with its dynamic nature ;)
+    #
+    # why ?
+    # because doing so make sure we're not broking any other
+    # working and long tested parser. The changes we make here
+    # are only applied when the frostbite parser is loaded.
+    #############################################################
 
-## override the Client.message() method at runtime
-def frostbiteClientMessageMethod(self, msg):
-    if msg and len(msg.strip())>0:
-        # do we have a queue?
-        if not hasattr(self, 'messagequeue'):
-            self.messagequeue = Queue.Queue()
-        # fill the queue
-        text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
-        for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
-            self.messagequeue.put(line)
-        # create a thread that executes the worker and pushes out the queue
-        if not hasattr(self, 'messagehandler') or not self.messagehandler.isAlive():
-            self.messagehandler = threading.Thread(target=self.messagequeueworker, name="%s_messagehandler" % self)
-            self.messagehandler.setDaemon(True)
-            self.messagehandler.start()
-        else:
-            self.console.verbose('messagehandler for %s isAlive' %self.name)
-b3.clients.Client.message = frostbiteClientMessageMethod
+    ## add a new method to the Client class
+    def frostbiteClientMessageQueueWorker(self):
+        """
+        This take a line off the queue and displays it
+        then pause for 'message_delay' seconds
+        """
+        while self.messagequeue and not self.messagequeue.empty():
+            if not self.connected:
+                break
+            msg = self.messagequeue.get()
+            if msg:
+                self.console.message(self, msg)
+                if self.connected:
+                    time.sleep(float(self.console._settings.get('message_delay', 1)))
+    b3.clients.Client.messagequeueworker = frostbiteClientMessageQueueWorker
 
-original_client_disconnect_method = b3.clients.Client.disconnect
-def frostbiteClientDisconnect(self):
-    original_client_disconnect_method(self)
-    if hasattr(self, 'messagequeue'):
-        self.messagequeue = None
-    if hasattr(self, 'messagehandler') and self.messagehandler:
-        self.console.debug("waiting for %s.messageQueueWorker thread to finish" % self)
-        self.messagehandler.join()
-        self.console.debug("%s.messageQueueWorker thread finished" % self)
+    ## override the Client.message() method at runtime
+    def frostbiteClientMessageMethod(self, msg):
+        if msg and len(msg.strip())>0:
+            # do we have a queue?
+            if not hasattr(self, 'messagequeue'):
+                self.messagequeue = Queue.Queue()
+            # fill the queue
+            text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
+            for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
+                self.messagequeue.put(line)
+            # create a thread that executes the worker and pushes out the queue
+            if not hasattr(self, 'messagehandler') or not self.messagehandler.isAlive():
+                self.messagehandler = threading.Thread(target=self.messagequeueworker, name="%s_messagehandler" % self)
+                self.messagehandler.setDaemon(True)
+                self.messagehandler.start()
+            else:
+                self.console.verbose('messagehandler for %s isAlive' %self.name)
+    b3.clients.Client.message = frostbiteClientMessageMethod
 
-b3.clients.Client.disconnect = frostbiteClientDisconnect
+    original_client_disconnect_method = b3.clients.Client.disconnect
+    def frostbiteClientDisconnect(self):
+        original_client_disconnect_method(self)
+        if hasattr(self, 'messagequeue'):
+            self.messagequeue = None
+        if hasattr(self, 'messagehandler') and self.messagehandler:
+            self.console.debug("waiting for %s.messageQueueWorker thread to finish" % self)
+            self.messagehandler.join()
+            self.console.debug("%s.messageQueueWorker thread finished" % self)
 
-## override the Client.yell() method at runtime
-def frostbiteClientYellMethod(self, msg):
-    if msg and len(msg.strip())>0:
-        text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
-        for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
-            self.console.write(self.console.getCommand('bigmessage', message=line, cid=self.cid, big_msg_duration=int(float(self.console._settings['big_msg_duration']))))
-b3.clients.Client.yell = frostbiteClientYellMethod
+    b3.clients.Client.disconnect = frostbiteClientDisconnect
+
+    ## override the Client.yell() method at runtime
+    def frostbiteClientYellMethod(self, msg):
+        if msg and len(msg.strip())>0:
+            text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
+            for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
+                self.console.write(self.console.getCommand('bigmessage', message=line, cid=self.cid, big_msg_duration=int(float(self.console._settings['big_msg_duration']))))
+    b3.clients.Client.yell = frostbiteClientYellMethod
 

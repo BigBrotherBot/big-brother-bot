@@ -21,6 +21,7 @@
 # 1.0.1 -> 1.0.3
 # 1.1.1 -> 1.1.6
 # 1.2.1 -> 1.2.1
+# 1.4.1, 1.6
 #
 # CHANGELOG
 #
@@ -38,13 +39,15 @@
 #  add available gamemodes by map
 #  check minimum required BF3 server version on startup
 #  fix issue from 1.3 that made impossible to use commands related to Close Quarter maps
+# 1.5
+#  add new maps and gamemode from DLC "Armored Kill"
 #
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 import b3
 import b3.events
 __author__  = 'Courgette'
-__version__ = '1.4'
+__version__ = '1.6'
 
 BF3_REQUIRED_VERSION = 964189
 
@@ -130,6 +133,7 @@ GAME_MODES_NAMES = {
     "Domination0": "Conquest Domination",
     "GunMaster0": "Gun master",
     "TeamDeathMatchC0": "TDM Close Quarters",
+    "TankSuperiority0": "Tank Superiority",
     }
 
 GAMEMODES_IDS_BY_NAME = dict()
@@ -154,6 +158,10 @@ MAP_NAME_BY_ID = {
     "XP2_Office": "Operation 925",
     "XP2_Palace": "Donya Fortress",
     "XP2_Skybar": "Ziba Tower",
+    "XP3_Desert": "Bandar Desert",
+    "XP3_Alborz": "Alborz Mountains",
+    "XP3_Shield": "Armored Shield",
+    "XP3_Valley": "Death Valley",
     }
 
 MAP_ID_BY_NAME = dict()
@@ -178,6 +186,10 @@ GAME_MODES_BY_MAP_ID = {
     "XP2_Office": ("TeamDeathMatchC0", "GunMaster0", "Domination0", "SquadDeathMatch0"),
     "XP2_Palace": ("TeamDeathMatchC0", "GunMaster0", "Domination0", "SquadDeathMatch0"),
     "XP2_Skybar": ("TeamDeathMatchC0", "GunMaster0", "Domination0", "SquadDeathMatch0"),
+    "XP3_Desert": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0", "TankSuperiority0"),
+    "XP3_Alborz": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0", "TankSuperiority0"),
+    "XP3_Shield": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0", "TankSuperiority0"),
+    "XP3_Valley": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0", "TankSuperiority0"),
 }
 
 

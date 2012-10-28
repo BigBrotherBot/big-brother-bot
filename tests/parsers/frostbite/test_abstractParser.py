@@ -21,11 +21,21 @@ import re
 import unittest2 as unittest
 
 from mock import Mock, patch, call
-import time
 from b3.clients import Client
 from b3.plugins.admin import AdminPlugin
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite.abstractParser import AbstractParser
+
+
+sleep_patcher = None
+def setUpModule():
+    sleep_patcher = patch("time.sleep")
+    sleep_patcher.start()
+
+def tearDownModule():
+    if sleep_patcher:
+        sleep_patcher.stop()
+
 
 
 class ConcretegameParser(AbstractParser):
@@ -56,18 +66,6 @@ class AbstractParser_TestCase(unittest.TestCase):
 #
 ########################################################################################################################
 
-class Test_say(AbstractParser_TestCase):
-    def setUp(self):
-        log = logging.getLogger('output')
-        log.setLevel(logging.NOTSET)
-
-        self.conf = XmlConfigParser()
-        self.conf.loadFromString("""
-                <configuration>
-                </configuration>
-            """)
-        self.parser = ConcretegameParser(self.conf)
-
 
 class Test_tempban(AbstractParser_TestCase):
     def setUp(self):
@@ -96,33 +94,31 @@ class Test_tempban(AbstractParser_TestCase):
 
 
     def test_kick_having_cid_and_guid(self):
-        with patch.object(time, 'sleep'):
-            with patch.object(AbstractParser, 'write') as write_mock:
-                # GIVEN
-                self.assertTrue(self.foo.cid)
-                self.assertTrue(self.foo.guid)
+        with patch.object(AbstractParser, 'write') as write_mock:
+            # GIVEN
+            self.assertTrue(self.foo.cid)
+            self.assertTrue(self.foo.guid)
 
-                # WHEN
-                self.parser.tempban(self.foo)
+            # WHEN
+            self.parser.tempban(self.foo)
 
-                # THEN
-                self.assertTrue(write_mock.called)
-                write_mock.assert_has_calls([call(('banList.add', 'guid', self.foo.guid, 'seconds', '120', ''))])
+            # THEN
+            self.assertTrue(write_mock.called)
+            write_mock.assert_has_calls([call(('banList.add', 'guid', self.foo.guid, 'seconds', '120', ''))])
 
 
     def test_kick_having_no_cid(self):
-        with patch.object(time, 'sleep'):
-            with patch.object(AbstractParser, 'write') as write_mock:
-                # GIVEN
-                self.foo.cid = None
-                self.assertFalse(self.foo.cid)
+        with patch.object(AbstractParser, 'write') as write_mock:
+            # GIVEN
+            self.foo.cid = None
+            self.assertFalse(self.foo.cid)
 
-                # WHEN
-                self.parser.tempban(self.foo)
+            # WHEN
+            self.parser.tempban(self.foo)
 
-                # THEN
-                self.assertTrue(write_mock.called)
-                write_mock.assert_has_calls([call(('banList.add', 'guid', self.foo.guid, 'seconds', '120', ''))])
+            # THEN
+            self.assertTrue(write_mock.called)
+            write_mock.assert_has_calls([call(('banList.add', 'guid', self.foo.guid, 'seconds', '120', ''))])
 
 
 
@@ -154,33 +150,31 @@ class Test_ban(AbstractParser_TestCase):
 
 
     def test_kick_having_cid_and_guid(self):
-        with patch.object(time, 'sleep'):
-            with patch.object(AbstractParser, 'write') as write_mock:
-                # GIVEN
-                self.assertTrue(self.foo.cid)
-                self.assertTrue(self.foo.guid)
+        with patch.object(AbstractParser, 'write') as write_mock:
+            # GIVEN
+            self.assertTrue(self.foo.cid)
+            self.assertTrue(self.foo.guid)
 
-                # WHEN
-                self.parser.ban(self.foo)
+            # WHEN
+            self.parser.ban(self.foo)
 
-                # THEN
-                self.assertTrue(write_mock.called)
-                write_mock.assert_has_calls([call(('banList.add', 'guid', self.foo.guid, 'perm', ''))])
+            # THEN
+            self.assertTrue(write_mock.called)
+            write_mock.assert_has_calls([call(('banList.add', 'guid', self.foo.guid, 'perm', ''))])
 
 
     def test_kick_having_no_cid(self):
-        with patch.object(time, 'sleep'):
-            with patch.object(AbstractParser, 'write') as write_mock:
-                # GIVEN
-                self.foo.cid = None
-                self.assertFalse(self.foo.cid)
+        with patch.object(AbstractParser, 'write') as write_mock:
+            # GIVEN
+            self.foo.cid = None
+            self.assertFalse(self.foo.cid)
 
-                # WHEN
-                self.parser.ban(self.foo)
+            # WHEN
+            self.parser.ban(self.foo)
 
-                # THEN
-                self.assertTrue(write_mock.called)
-                write_mock.assert_has_calls([call(('banList.add', 'guid', self.foo.guid, 'perm', ''))])
+            # THEN
+            self.assertTrue(write_mock.called)
+            write_mock.assert_has_calls([call(('banList.add', 'guid', self.foo.guid, 'perm', ''))])
 
 
 

@@ -17,6 +17,11 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 26/10/2012 - 1.4.12 - Courgette, xlr8or
+# * makes sure 'Client' tags have a 'score' attribute
+# * Better sync of DB and XML saving for XLRstats v3 webfront
+# 12/08/2012 - 1.4.11 - Courgette
+# * will provide more debugging info about errors while generating the XML document
 # 05/05/2012 - 1.4.10 - Courgette
 # * fixes reading config options 'svar_table' and 'client_table'
 # 19/07/2011 - 1.4.9 - Freelander
@@ -59,7 +64,7 @@
 # Converted to use new event handlers
 
 __author__    = 'ThorN'
-__version__ = '1.4.10'
+__version__ = '1.4.12'
 
 import b3
 import time
@@ -178,7 +183,10 @@ class StatusPlugin(b3.plugin.Plugin):
             roundTime = c.roundTime()
         if c.mapTime():
             mapTime = c.mapTime()
+        # For XML:
         game = xml.createElement("Game")
+        game.setAttribute("Ip", str(self.console._publicIp))
+        game.setAttribute("Port", str(self.console._port))
         game.setAttribute("Name", str(gamename))
         game.setAttribute("Type", str(gametype))
         game.setAttribute("Map", str(mapname))
@@ -188,22 +196,29 @@ class StatusPlugin(b3.plugin.Plugin):
         game.setAttribute("Rounds", str(rounds))
         game.setAttribute("RoundTime", str(roundTime))
         game.setAttribute("MapTime", str(mapTime))
+        game.setAttribute("OnlinePlayers", str(len(clients)))
         b3status.appendChild(game)
+        # For DB:
+        self.storeServerinfo("Ip", str(self.console._publicIp))
+        self.storeServerinfo("Port", str(self.console._port))
+        self.storeServerinfo("Name", str(gamename))
+        self.storeServerinfo("Type", str(gametype))
+        self.storeServerinfo("Map", str(mapname))
+        self.storeServerinfo("TimeLimit", str(timelimit))
+        self.storeServerinfo("FragLimit", str(fraglimit))
+        self.storeServerinfo("CaptureLimit",str(capturelimit) )
+        self.storeServerinfo("Rounds", str(rounds))
+        self.storeServerinfo("RoundTime", str(roundTime))
+        self.storeServerinfo("MapTime", str(mapTime))
+        self.storeServerinfo("OnlinePlayers", str(len(clients)))
 
         for k,v in self.console.game.__dict__.items():
             data = xml.createElement("Data")
             data.setAttribute("Name", str(k))
             data.setAttribute("Value", str(v))
             game.appendChild(data)
-            if self._enableDBsvarSaving:
-                #remove forbidden sql characters
-                _k = re.sub("'", "", str(k))
-                _v = re.sub("'", "", str(v))[:255] # length of the database varchar field
-                sql = "INSERT INTO %s (name, value) VALUES ('%s','%s') ON DUPLICATE KEY UPDATE value = VALUES(value);" % (self._svarTable, _k, _v)
-                try:
-                    self.console.storage.query(sql)
-                except:
-                    self.error('Error: inserting svars. sqlqry=%s' % (sql))
+            self.storeServerinfo(k, v)
+
         if self._enableDBsvarSaving:
             sql = "INSERT INTO %s (name, value) VALUES ('lastupdate',UNIX_TIMESTAMP()) ON DUPLICATE KEY UPDATE value = VALUES(value);" % (self._svarTable)
             try:
@@ -255,6 +270,8 @@ class StatusPlugin(b3.plugin.Plugin):
                 client.setAttribute("Updated", str(time.ctime(c.timeEdit)))
                 if scoreList and c.cid in scoreList:
                     client.setAttribute("Score", str(scoreList[c.cid]))
+                else:
+                    client.setAttribute("Score", "")
                 client.setAttribute("State", str(c.state))
                 if self._enableDBclientSaving:
                     qryBuilderKey = ""
@@ -298,12 +315,23 @@ class StatusPlugin(b3.plugin.Plugin):
                                     pass
                                 
             except Exception, err:
-                self.debug('XML Failed: %r' % err)
+                self.error('XML Failed: %r' % err, exc_info=err)
                 pass
 
         # --- End Clients section
 
         self.writeXML(xml.toprettyxml(encoding="UTF-8", indent="        "))
+
+    def storeServerinfo(self, k, v):
+        if self._enableDBsvarSaving:
+            #remove forbidden sql characters
+            _k = re.sub("'", "", str(k))
+            _v = re.sub("'", "", str(v))[:255] # length of the database varchar field
+            sql = "INSERT INTO %s (name, value) VALUES ('%s','%s') ON DUPLICATE KEY UPDATE value = VALUES(value);" % (self._svarTable, _k, _v)
+            try:
+                self.console.storage.query(sql)
+            except:
+                self.error('Error: inserting svars. sqlqry=%s' % (sql))
 
     def writeXML(self, xml):
         if self._ftpstatus == True:

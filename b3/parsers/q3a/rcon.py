@@ -40,9 +40,11 @@
 # 2012/06/17 - 1.6 - courgette
 # * rewrite method writelines so it does not lock until all lines have been sent. This allows other commands made by another
 #   thread to be sent in between commands sent via writelines (and B3 won't appear to be unresponsive)
-
+# 2012/07/18 - 1.6.1 - courgette
+# * fix the 'RCON: too much tries' error message when using commands sending multiple lines of text
+#
 __author__ = 'ThorN'
-__version__ = '1.6'
+__version__ = '1.6.1'
 
 import socket
 import sys
@@ -239,14 +241,12 @@ class Rcon:
                 self.console.warning('RCON: %s', str(errors))
             elif len(writeables) > 0:
                 try:
-                    writeables[0].send(self.rconsendstring % (self.password, data))
+                    rv = writeables[0].sendall(self.rconsendstring % (self.password, data))
+                    if rv is None:
+                        # success
+                        return
                 except Exception, msg:
                     self.console.warning('RCON: ERROR sending: %r', msg)
-
-                if re.match(r'^quit|map(_rotate)?.*', data):
-                    # do not retry quits and map changes since they prevent the server from responding
-                    self.console.verbose2('RCON: no retry for %r', data)
-                    return ''
 
             else:
                 self.console.verbose('RCON: no writeable socket')

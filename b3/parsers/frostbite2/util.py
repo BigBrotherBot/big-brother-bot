@@ -25,6 +25,8 @@
 #    * add automated tests
 # 1.2 - 2012/01/21 - Courgette
 #    * add a append() method to BanlistContent and MapListBlock classes
+# 1.3 - 2012/01/21 - Courgette
+#    * add method getByNameGamemodeAndRounds() to class MapListBlock
 #
 
 """\
@@ -32,7 +34,7 @@ This module provides different utilities specific to the Frostbite engine
 """
 
 __author__  = 'Courgette'
-__version__ = '1.2'
+__version__ = '1.3'
 
 
 class BanlistContentError(Exception):
@@ -362,6 +364,17 @@ class MapListBlock:
         while i < self._num_maps:
             map_info = self[i]
             if map_info['name'] == map_name and map_info['gamemode'] == gamemode:
+                response[i] = map_info
+            i += 1
+        return response
+
+    def getByNameGamemodeAndRounds(self, map_name, gamemode, num_of_rounds):
+        """Returns a dict with map indexes as keys and map info as values for all maps of given name, gamemode and number of rounds"""
+        response = {}
+        i = 0
+        while i < self._num_maps:
+            map_info = self[i]
+            if map_info['name'] == map_name and map_info['gamemode'] == gamemode and str(map_info['num_of_rounds']) == str(num_of_rounds):
                 response[i] = map_info
             i += 1
         return response

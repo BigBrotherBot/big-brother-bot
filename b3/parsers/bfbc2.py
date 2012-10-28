@@ -165,6 +165,8 @@
 # makes use of the new pluginsStarted parser hook
 # 2011-12-15 - 2.3 - Courgette
 # makes sure EVT_CLIENT_TEAM_CHANGE gets fired after updating the squad info
+# 2012-10-60 - 2.4 - Courgette
+# reflect changes in abstract parser 1.6
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -199,7 +201,7 @@
 #
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '2.3'
+__version__ = '2.4'
 
 import time, threading, Queue
 import b3.events
