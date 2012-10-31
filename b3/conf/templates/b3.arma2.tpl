@@ -3,7 +3,7 @@
 		<set name="parser">arma2</set>
 		<set name="database">mysql://b3:password@localhost/b3</set>
 		<set name="bot_name">b3</set>
-		<set name="bot_prefix">^0(^2b3^0)^7:</set>
+		<set name="bot_prefix">(B3):</set>
 		<set name="time_format">%I:%M%p %Z %m/%d/%y</set>
 		<set name="time_zone">CST</set>
 		<set name="log_level">9</set>
@@ -31,14 +31,14 @@
         <set name="channel">stable</set>
     </settings>
 	<settings name="messages">
-		<set name="kicked_by">$clientname^7 was kicked by $adminname^7 $reason</set>
-		<set name="kicked">$clientname^7 was kicked $reason</set>
-		<set name="banned_by">$clientname^7 was banned by $adminname^7 $reason</set>
-		<set name="banned">$clientname^7 was banned $reason</set>
-		<set name="temp_banned_by">$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason</set>
-		<set name="temp_banned">$clientname^7 was temp banned for $banduration^7 $reason</set>
-		<set name="unbanned_by">$clientname^7 was un-banned by $adminname^7 $reason</set>
-		<set name="unbanned">$clientname^7 was un-banned $reason</set>
+		<set name="kicked_by">$clientname was kicked by $adminname $reason</set>
+		<set name="kicked">$clientname was kicked $reason</set>
+		<set name="banned_by">$clientname was banned by $adminname $reason</set>
+		<set name="banned">$clientname was banned $reason</set>
+		<set name="temp_banned_by">$clientname was temp banned by $adminname for $banduration $reason</set>
+		<set name="temp_banned">$clientname was temp banned for $banduration $reason</set>
+		<set name="unbanned_by">$clientname was un-banned by $adminname $reason</set>
+		<set name="unbanned">$clientname was un-banned $reason</set>
 	</settings>
 	<settings name="plugins">
 		<set name="external_dir">@b3/extplugins</set>
