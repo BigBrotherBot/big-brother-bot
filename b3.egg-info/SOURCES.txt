@@ -50,6 +50,7 @@ b3/conf/plugin_status.xml
 b3/conf/plugin_tk.xml
 b3/conf/plugin_welcome.xml
 b3/conf/templates/b3.altitude.tpl
+b3/conf/templates/b3.arma2.tpl
 b3/conf/templates/b3.bf3.tpl
 b3/conf/templates/b3.bfbc2.tpl
 b3/conf/templates/b3.cod.tpl
@@ -147,6 +148,7 @@ b3/lib/yaml/serializer.py
 b3/lib/yaml/tokens.py
 b3/parsers/__init__.py
 b3/parsers/altitude.py
+b3/parsers/arma2.py
 b3/parsers/bf3.py
 b3/parsers/bfbc2.py
 b3/parsers/cod.py
@@ -173,6 +175,10 @@ b3/parsers/sof2.py
 b3/parsers/sof2pm.py
 b3/parsers/wop.py
 b3/parsers/wop15.py
+b3/parsers/battleye/__init__.py
+b3/parsers/battleye/abstractParser.py
+b3/parsers/battleye/protocol.py
+b3/parsers/battleye/rcon.py
 b3/parsers/frontline/__init__.py
 b3/parsers/frontline/protocol.py
 b3/parsers/frontline/rcon.py
@@ -225,7 +231,9 @@ b3/sql/b3-update-1.3.0.sql
 b3/sql/b3-update-1.6.0.sql
 b3/sql/b3-update-1.7.0.sql
 b3/sql/b3-update-1.8.1.sql
+b3/sql/b3-update-1.9.0.sql
 b3/sql/b3.sql
+b3/sql/chatlogger.sql
 b3/sql/recreate-xlrstats.sql
 b3/sql/obsolete/xlrstats-update-2.0.0.sql
 b3/sql/obsolete/xlrstats-update-2.4.0.sql
@@ -251,6 +259,7 @@ tests/clients/__init__.py
 tests/clients/test_Client.py
 tests/clients/test_Clients.py
 tests/parsers/__init__.py
+tests/parsers/test_arma2.py
 tests/parsers/test_bf3.py
 tests/parsers/test_csgo.py
 tests/parsers/test_iourt41.py
