@@ -58,6 +58,8 @@
 #    * Added: Ravaged game
 # 2012/10/24 - 1.4 - courgette
 #   * Added: iourt42 custom settings
+# 2012/10/31 - 1.5 - courgette
+#   * Added: arma2 support
 #
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -65,7 +67,7 @@
 # The setup procedure, to create a new configuration file (b3.xml)
 
 __author__ = 'xlr8or'
-__version__ = '1.4'
+__version__ = '1.5'
 
 import platform
 import urllib2
@@ -152,7 +154,12 @@ class Setup:
         self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
         xml.start("settings", name="b3")
         self.add_set("parser", "",
-                     "Define your game: altitude/bf3/bfbc2/cod/cod2/cod4/cod5/cod6/cod7/cod8/etpro/homefront/iourt41/iourt42/moh/oa081/smg/sof2/wop/wop15/ro2/csgo/ravaged/arma2")
+                     """\
+Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
+                  iourt41/iourt42
+                  bfbc2/bf3/moh
+                  etpro/altitude/oa081/smg/sof2/wop/wop15
+                  homefront/ro2/csgo/ravaged/arma2""")
 
         # set a template xml file to read existing settings from
         _result = False
