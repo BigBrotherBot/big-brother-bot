@@ -46,15 +46,15 @@ try:
 except ImportError:
     is_postgresql_ready = False
     no_postgresql_reason = "no psycopg2 module available"
-
-try:
-    psycopg2.connect(host=POSTGRESQL_HOST, user=POSTGRESQL_USER, password=POSTGRESQL_PASSWORD, database='postgres')
-except psycopg2.Error, err:
-    is_postgresql_ready = False
-    no_postgresql_reason = "%r" % err
-except Exception, err:
-    is_postgresql_ready = False
-    no_postgresql_reason = "%r" % err
+else:
+    try:
+        psycopg2.connect(host=POSTGRESQL_HOST, user=POSTGRESQL_USER, password=POSTGRESQL_PASSWORD, database='postgres')
+    except psycopg2.Error, err:
+        is_postgresql_ready = False
+        no_postgresql_reason = "%r" % err
+    except Exception, err:
+        is_postgresql_ready = False
+        no_postgresql_reason = "%r" % err
 
 
 #===============================================================================
