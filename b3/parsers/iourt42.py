@@ -41,6 +41,8 @@
 #  * support names with blank characters
 # 2012/10/24 - 1.6 - Courgette
 #  * new: settings to ban with the Frozen Sand auth system
+# 2012/11/09 - 1.7 - Courgette
+#  * new: support new jump game type with code 9
 #
 import re, new
 import time
@@ -52,7 +54,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.6'
+__version__ = '1.7'
 
 class Iourt42Client(Client):
 
@@ -752,6 +754,8 @@ class Iourt42Parser(Iourt41Parser):
             _gameType = 'ctf'
         elif gameTypeInt == '8':
             _gameType = 'bm'
+        elif gameTypeInt == '9':
+            _gameType = 'jump'
 
         #self.debug('_gameType: %s' % _gameType)
         return _gameType
