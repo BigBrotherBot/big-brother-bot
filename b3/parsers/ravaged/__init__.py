@@ -33,6 +33,8 @@
 #   * change: make getMap() crash proof
 # 1.4 - 2012-10-26
 #   * new: recognize game type from map names
+# 1.5 - 2012-11-14
+#   * new: get the game server hostname by querying the game server on its Source Query port
 #
 from Queue import Queue, Full, Empty
 import logging
@@ -47,10 +49,11 @@ from b3.game_event_router import Game_event_router
 from b3.parser import Parser
 from b3.parsers.ravaged.ravaged_rcon import RavagedServerCommandError, RavagedServer, RavagedServerNetworkError, RavagedServerCommandTimeout, RavagedServerError
 from b3.parsers.ravaged.rcon import Rcon as RavagedRcon
+from b3.lib.sourcelib import SourceQuery
 
 
 __author__  = 'Courgette'
-__version__ = '1.4'
+__version__ = '1.5'
 
 
 ger = Game_event_router()
@@ -121,7 +124,25 @@ class RavagedParser(Parser):
         # add game specific events
         # self.createEvent("EVT_SUPERLOGS_WEAPONSTATS", "SourceMod SuperLogs weaponstats") TODO check if have game specific events
 
-
+        if not self._publicIp:
+            self.warning("server/public_ip not set in the main config file. Cannot query the game server for info")
+        else:
+            ## read game server info and store as much of it in self.game which is an instance of the b3.game.Game class
+            self.info("Querying game server Source Query at %s:%s" % (self._publicIp, self._port))
+            try:
+                sq = SourceQuery.SourceQuery(self._publicIp, self._port, timeout=10)
+                serverinfo = sq.info()
+                self.debug("server info : %r", serverinfo)
+                if 'map' in serverinfo:
+                    self.game.mapName = serverinfo['map'].lower()
+                if 'steamid' in serverinfo:
+                    self.game.steamid = serverinfo['steamid']
+                if 'hostname' in serverinfo:
+                    self.game.sv_hostname = serverinfo['hostname']
+                if 'maxplayers' in serverinfo:
+                    self.game.sv_maxclients = serverinfo['maxplayers']
+            except Exception, err:
+                self.error("could not retrieve server info using Source Query protocol", exc_info=err)
 
 
     def pluginsStarted(self):
