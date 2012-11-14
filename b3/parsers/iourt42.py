@@ -43,6 +43,8 @@
 #  * new: settings to ban with the Frozen Sand auth system
 # 2012/11/09 - 1.7 - Courgette
 #  * new: support new jump game type with code 9
+# 2012/11/15 - 1.7.1 - Courgette
+#  * fix: banning with the Frozen Sand auth system now works with servers set to auth private or notoriety mode
 #
 import re, new
 import time
@@ -54,7 +56,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.7'
+__version__ = '1.7.1'
 
 class Iourt42Client(Client):
 
@@ -345,7 +347,7 @@ class Iourt42Parser(Iourt41Parser):
 
     def load_conf_frozensand_ban_settings(self):
         try:
-            frozensand_auth_available = self.getCvar('auth').getBoolean()
+            frozensand_auth_available = self.is_frozensand_auth_available()
         except Exception, e:
             self.warning("Could not query server for cvar auth.", exc_info=e)
             frozensand_auth_available = False
@@ -632,6 +634,11 @@ class Iourt42Parser(Iourt41Parser):
         for m in re.finditer(self._re_authwhois, data):
             players[m.group('cid')] = m.groupdict()
         return players
+
+
+    def is_frozensand_auth_available(self):
+        auth = self.getCvar('auth').getInt()
+        return auth != 0
 
 
     # Parse Userinfo

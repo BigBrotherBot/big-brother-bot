@@ -465,7 +465,7 @@ class Test_load_conf_frozensand_ban_settings(Iourt42TestCase):
         self.console.load_conf_tempban_with_frozensand = Mock()
 
 
-    def test_nominal(self):
+    def test_auth_public(self):
         # GIVEN
         when(self.console).write("auth").thenReturn('"auth" is:"1^7"')
         when(self.console).write("auth_owners").thenReturn('"auth_owners" is:"452^7" default:"^7"')
@@ -476,7 +476,29 @@ class Test_load_conf_frozensand_ban_settings(Iourt42TestCase):
         self.assertEqual(1, self.console.load_conf_tempban_with_frozensand.call_count)
 
 
-    def test_no_authl(self):
+    def test_auth_notoriety(self):
+        # GIVEN
+        when(self.console).write("auth").thenReturn('"auth" is:"-1^7"')
+        when(self.console).write("auth_owners").thenReturn('"auth_owners" is:"452^7" default:"^7"')
+        # WHEN
+        self.console.load_conf_frozensand_ban_settings()
+        # THEN
+        self.assertEqual(1, self.console.load_conf_permban_with_frozensand.call_count)
+        self.assertEqual(1, self.console.load_conf_tempban_with_frozensand.call_count)
+
+
+    def test_auth_private(self):
+        # GIVEN
+        when(self.console).write("auth").thenReturn('"auth" is:"-2^7"')
+        when(self.console).write("auth_owners").thenReturn('"auth_owners" is:"452^7" default:"^7"')
+        # WHEN
+        self.console.load_conf_frozensand_ban_settings()
+        # THEN
+        self.assertEqual(1, self.console.load_conf_permban_with_frozensand.call_count)
+        self.assertEqual(1, self.console.load_conf_tempban_with_frozensand.call_count)
+
+
+    def test_auth_off(self):
         # GIVEN
         when(self.console).write("auth").thenReturn('"auth" is:"0^7"')
         when(self.console).write("auth_owners").thenReturn('"auth_owners" is:"452^7" default:"^7"')
