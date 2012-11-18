@@ -70,6 +70,8 @@ b3/conf/templates/b3.ravaged.tpl
 b3/conf/templates/b3.ro2.tpl
 b3/docs/LICENSE.txt
 b3/docs/README.txt
+b3/docs/cheatsheet.odg
+b3/docs/cheatsheet.pdf
 b3/docs/commands.txt
 b3/extplugins/__init__.py
 b3/extplugins/xlrstats.py
@@ -257,6 +259,7 @@ tests/clients/test_Clients.py
 tests/parsers/__init__.py
 tests/parsers/test_arma2.py
 tests/parsers/test_bf3.py
+tests/parsers/test_cod4.py
 tests/parsers/test_csgo.py
 tests/parsers/test_iourt41.py
 tests/parsers/test_iourt42.py
