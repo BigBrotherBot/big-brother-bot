@@ -49,13 +49,14 @@
 		<set name="xlrstats">1</set>
 		<set name="xlrtopstats">2</set>
 		<set name="xlrhide">60</set>
+		<set name="xlrid">0</set>
 	</settings>
 	<settings name="weapons">
 		<!-- Insert your weapon multipliers here, as they appear in the gamelog. See example below -->
 		<set name="bar_mp">1.00</set> 
 	</settings>
 	<settings name="actions">
-		<!-- Insert your action bonus here, as they appear in the gamelog. See example below. default is no (0) bonus -->
+		<!-- Insert your action bonus here, as they appear in the gamelog. See example below. default is no (3) bonus -->
 		<set name="hq_defend">0.0</set> 
 	</settings>
 	<settings name="replacements">

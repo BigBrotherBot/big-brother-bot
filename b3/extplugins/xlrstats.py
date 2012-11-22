@@ -565,7 +565,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         try:
             f = urllib2.urlopen(_request)
             _result = f.readline().split(',')
-            # Our webfront will present us 3 values
+            # Our webfront will present us 3 values ie.: 200,20,30
             if len(_result) == 3:
                 # Force the collected strings to their final type. If an error occurs they will fail the try statement.
                 self._minKills = int(_result[0])
@@ -1575,6 +1575,25 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         player = self.get_PlayerStats(sclient)
         if player:
             player.hide = int(hide)
+            self.save_Stat(player)
+
+        return
+
+    def cmd_xlrid(self, data, client, cmd=None):
+        """\
+        <player ID Token> - Identify yourself to the XLRstats website, get your token in your profile on the xlrstats website (v3)
+        """
+        input = self._adminPlugin.parseUserCmd(data)
+        if input:
+            # input[0] is the token
+            token = input[0]
+        else:
+            client.message('^7Invalid/missing data, try !help xlrid')
+            return False
+
+        player = self.get_PlayerStats(client)
+        if player:
+            player.id_token = token
             self.save_Stat(player)
 
         return
