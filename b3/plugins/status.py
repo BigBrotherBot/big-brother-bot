@@ -123,7 +123,7 @@ class StatusPlugin(b3.plugin.Plugin):
             sql = "CREATE TABLE IF NOT EXISTS `%s` (`id` int(11) NOT NULL auto_increment,`name` varchar(255) NOT NULL,`value` varchar(255) NOT NULL, PRIMARY KEY  (`id`), UNIQUE KEY `name` (`name`)) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;" % (self._svarTable)
             self.console.storage.query(sql)
         if self._enableDBclientSaving:
-            sql = "CREATE TABLE IF NOT EXISTS `%s` (`id` INT(3) NOT NULL AUTO_INCREMENT,`Updated` VARCHAR( 255 ) NOT NULL ,`Name` VARCHAR( 255 ) NOT NULL ,`Level` VARCHAR( 255 ) NOT NULL ,`DBID` VARCHAR( 255 ) NOT NULL ,`CID` VARCHAR( 255 ) NOT NULL ,`Joined` VARCHAR( 255 ) NOT NULL ,`Connections` VARCHAR( 255 ) NOT NULL ,`State` VARCHAR( 255 ) NOT NULL ,`Score` VARCHAR( 255 ) NOT NULL ,`IP` VARCHAR( 255 ) NOT NULL ,`GUID` VARCHAR( 255 ) NOT NULL ,`PBID` VARCHAR( 255 ) NOT NULL ,`Team` VARCHAR( 255 ) NOT NULL ,`ColorName` VARCHAR( 255 ) NOT NULL, PRIMARY KEY (`id`)) ENGINE = MYISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;" % (self._clientTable)
+            sql = "CREATE TABLE IF NOT EXISTS `%s` (`id` INT(3) NOT NULL AUTO_INCREMENT,`Updated` INT(10) NOT NULL ,`Name` VARCHAR(32) NOT NULL ,`Level` INT(10) NOT NULL ,`DBID` INT(10) NOT NULL ,`CID` INT(3) NOT NULL ,`Joined` VARCHAR(25) NOT NULL ,`Connections` INT(11) NOT NULL ,`State` INT(1) NOT NULL ,`Score` INT(10) NOT NULL ,`IP` VARCHAR(16) NOT NULL ,`GUID` VARCHAR(36) NOT NULL ,`PBID` VARCHAR(32) NOT NULL ,`Team` INT(1) NOT NULL ,`ColorName` VARCHAR(32) NOT NULL, PRIMARY KEY (`id`)) ENGINE = MYISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;" % (self._clientTable)
             self.console.storage.query(sql)
 
         if self._cronTab:

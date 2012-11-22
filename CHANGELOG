@@ -37,7 +37,10 @@ CoD8 / 4D1
  - B3 now supports CoD8 from 4D1. See http://forum.bigbrotherbot.net/call-of-duty-8-%28modern-warfare-3%29/
 
 Counter-Strike: Global Offensive
-- beta support for CS:GO (B3 parser code: csgo, requires SourceMod on the game server, and '-condebug' parameter on the game server command line)
+ - beta support for CS:GO (B3 parser code: csgo, requires SourceMod on the game server, and '-condebug' parameter on the game server command line)
+
+ArmA II
+ - ArmA II and DayZ are now supported. Use the B3 parser 'arma2' for both of them.
 
 
 # Upgrading note:

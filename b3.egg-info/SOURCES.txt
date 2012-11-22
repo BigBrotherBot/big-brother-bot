@@ -50,6 +50,7 @@ b3/conf/plugin_status.xml
 b3/conf/plugin_tk.xml
 b3/conf/plugin_welcome.xml
 b3/conf/templates/b3.altitude.tpl
+b3/conf/templates/b3.arma2.tpl
 b3/conf/templates/b3.bf3.tpl
 b3/conf/templates/b3.bfbc2.tpl
 b3/conf/templates/b3.cod.tpl
@@ -69,6 +70,8 @@ b3/conf/templates/b3.ravaged.tpl
 b3/conf/templates/b3.ro2.tpl
 b3/docs/LICENSE.txt
 b3/docs/README.txt
+b3/docs/cheatsheet.odg
+b3/docs/cheatsheet.pdf
 b3/docs/commands.txt
 b3/extplugins/__init__.py
 b3/extplugins/xlrstats.py
@@ -147,6 +150,7 @@ b3/lib/yaml/serializer.py
 b3/lib/yaml/tokens.py
 b3/parsers/__init__.py
 b3/parsers/altitude.py
+b3/parsers/arma2.py
 b3/parsers/bf3.py
 b3/parsers/bfbc2.py
 b3/parsers/cod.py
@@ -161,7 +165,6 @@ b3/parsers/csgo.py
 b3/parsers/et.py
 b3/parsers/etpro.py
 b3/parsers/iourt41.py
-b3/parsers/iourt41callvote.py
 b3/parsers/iourt42.py
 b3/parsers/moh.py
 b3/parsers/oa081.py
@@ -173,6 +176,10 @@ b3/parsers/sof2.py
 b3/parsers/sof2pm.py
 b3/parsers/wop.py
 b3/parsers/wop15.py
+b3/parsers/battleye/__init__.py
+b3/parsers/battleye/abstractParser.py
+b3/parsers/battleye/protocol.py
+b3/parsers/battleye/rcon.py
 b3/parsers/frontline/__init__.py
 b3/parsers/frontline/protocol.py
 b3/parsers/frontline/rcon.py
@@ -185,7 +192,6 @@ b3/parsers/frostbite/rcon.py
 b3/parsers/frostbite/util.py
 b3/parsers/frostbite2/__init__.py
 b3/parsers/frostbite2/abstractParser.py
-b3/parsers/frostbite2/bf3string.py
 b3/parsers/frostbite2/protocol.py
 b3/parsers/frostbite2/punkbuster.py
 b3/parsers/frostbite2/rcon.py
@@ -217,7 +223,6 @@ b3/plugins/sftpytail.py
 b3/plugins/spamcontrol.py
 b3/plugins/stats.py
 b3/plugins/status.py
-b3/plugins/testevents.py
 b3/plugins/tk.py
 b3/plugins/welcome.py
 b3/sql/b3-db.sql
@@ -225,6 +230,7 @@ b3/sql/b3-update-1.3.0.sql
 b3/sql/b3-update-1.6.0.sql
 b3/sql/b3-update-1.7.0.sql
 b3/sql/b3-update-1.8.1.sql
+b3/sql/b3-update-1.9.0.sql
 b3/sql/b3.sql
 b3/sql/recreate-xlrstats.sql
 b3/sql/obsolete/xlrstats-update-2.0.0.sql
@@ -251,7 +257,9 @@ tests/clients/__init__.py
 tests/clients/test_Client.py
 tests/clients/test_Clients.py
 tests/parsers/__init__.py
+tests/parsers/test_arma2.py
 tests/parsers/test_bf3.py
+tests/parsers/test_cod4.py
 tests/parsers/test_csgo.py
 tests/parsers/test_iourt41.py
 tests/parsers/test_iourt42.py

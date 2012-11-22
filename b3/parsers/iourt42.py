@@ -41,6 +41,10 @@
 #  * support names with blank characters
 # 2012/10/24 - 1.6 - Courgette
 #  * new: settings to ban with the Frozen Sand auth system
+# 2012/11/09 - 1.7 - Courgette
+#  * new: support new jump game type with code 9
+# 2012/11/15 - 1.7.1 - Courgette
+#  * fix: banning with the Frozen Sand auth system now works with servers set to auth private or notoriety mode
 #
 import re, new
 import time
@@ -52,7 +56,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.6'
+__version__ = '1.7.1'
 
 class Iourt42Client(Client):
 
@@ -343,7 +347,7 @@ class Iourt42Parser(Iourt41Parser):
 
     def load_conf_frozensand_ban_settings(self):
         try:
-            frozensand_auth_available = self.getCvar('auth').getBoolean()
+            frozensand_auth_available = self.is_frozensand_auth_available()
         except Exception, e:
             self.warning("Could not query server for cvar auth.", exc_info=e)
             frozensand_auth_available = False
@@ -632,6 +636,11 @@ class Iourt42Parser(Iourt41Parser):
         return players
 
 
+    def is_frozensand_auth_available(self):
+        auth = self.getCvar('auth').getInt()
+        return auth != 0
+
+
     # Parse Userinfo
     def OnClientuserinfo(self, action, data, match=None):
         #2 \ip\145.99.135.227:27960\challenge\-232198920\qport\2781\protocol\68\battleye\1\name\[SNT]^1XLR^78or\rate\8000\cg_predictitems\0\snaps\20\model\sarge\headmodel\sarge\team_model\james\team_headmodel\*james\color1\4\color2\5\handicap\100\sex\male\cl_anonymous\0\teamtask\0\cl_guid\58D4069246865BB5A85F20FB60ED6F65
@@ -752,6 +761,8 @@ class Iourt42Parser(Iourt41Parser):
             _gameType = 'ctf'
         elif gameTypeInt == '8':
             _gameType = 'bm'
+        elif gameTypeInt == '9':
+            _gameType = 'jump'
 
         #self.debug('_gameType: %s' % _gameType)
         return _gameType

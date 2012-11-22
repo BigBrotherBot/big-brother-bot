@@ -65,8 +65,11 @@ def load_config():
     if not os.path.isfile(os.path.abspath(os.path.join(script_dir, config['iscc']))):
         print "Invalid config file. '%s' is not a file." % config['iscc']
         sys.exit(1)
+    # location of the InnoSetup Compiler program taken from environment variable ISCC_EXE if exists, else from
+    # the yaml config file.
+    config['iscc'] = os.environ.get('ISCC_EXE', config['iscc'])
     if not config['iscc'].lower().endswith('iscc.exe'):
-        print "Invalid config file. '%s' is not a iscc.exe." % config['iscc']
+        print "Invalid location for the ISCC.exe program. '%s' is not a iscc.exe." % config['iscc']
         sys.exit(1)
     if not 'output_dir' in config:
         print "Invalid config file. output_dir not set."
@@ -83,9 +86,9 @@ def create_config_file_stub():
 # list of InnoSetup script to compile
 innosetup_scripts:
  - b3-installer-project.iss
- - b3_lite_for_bf3-installer-project.iss
 
 # where to find the InnoSetup compiler
+# you can override this value setting the environment variable ISCC_EXE
 iscc:  C:\Program Files (x86)\Inno Setup 5\ISCC.exe
 
 # where to generate the distribution files
