@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS clients (
   time_add int(11) unsigned NOT NULL default '0',
   time_edit int(11) unsigned NOT NULL default '0',
   password varchar(32) default NULL,
-  login varchar(16) default NULL,
+  login varchar(255) default NULL,
   PRIMARY KEY  (id),
   UNIQUE KEY guid (guid),
   KEY group_bits (group_bits),
