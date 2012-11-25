@@ -124,6 +124,8 @@ class Client(object):
     autoLogin = 1
     maskLevel = 0
     groupBits = 0
+    login = None
+    password = None
 
     # fields on object
     console = None
