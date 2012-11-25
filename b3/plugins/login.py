@@ -24,9 +24,11 @@
 #     * minor update
 # 1.0.3 - 17/04/2010 - Bakes
 #     * use hashlib if available instead of the deprecated md5
-
+# 1.1 - 25/11/2012 - Courgette
+#     * always read password from database to prevent security issues arising from bugged b3 game parsers
+#
 __author__    = 'Tim ter Laak'
-__version__ = '1.0.3'
+__version__ = '1.1'
 
 # Version = major.minor.patches
 
@@ -78,14 +80,16 @@ class LoginPlugin(b3.plugin.Plugin):
     def onEvent(self, event):
         if (event.type == b3.events.EVT_CLIENT_AUTH):
             self.onAuth(event.client)
-        else:             
+        else:
             self.debug('login.dumpEvent -- Type %s, Client %s, Target %s, Data %s', event.type, event.client, event.target, event.data)
 
     def onAuth(self, client):
         if client.maxLevel > self.threshold and not client.isvar(self, 'loggedin'):
 
+            client_from_db = self._get_client_from_db(client.id)
+
             #save original groupbits
-            client.setvar(self, 'login_groupbits', client.groupBits)
+            client.setvar(self, 'login_groupbits', client_from_db.groupBits)
 
             #set new groupBits
             try:
@@ -94,8 +98,8 @@ class LoginPlugin(b3.plugin.Plugin):
             except:
                 client.groupBits = 2
 
-            if not client.password:
-                client.message('You need a password to use all your privileges, but I have none on file. Ask the administrator to set a password for you.')
+            if not client_from_db.password:
+                client.message('You need a password to use all your privileges. Ask the administrator to set a password for you.')
                 return
             else:
                 message = 'Login via console: %s %s !login yourpassword' %(self._pmcomm, client.cid)
@@ -109,14 +113,15 @@ class LoginPlugin(b3.plugin.Plugin):
         if client.isvar(self, 'loggedin'):
             client.message('You are already logged in.')
             return
-        
+
         if not client.isvar(self, 'login_groupbits'):
             client.message('You do not need to log in.')
-            return            
-        
+            return
+
         if data:
             digest = newmd5(data).hexdigest()
-            if digest == client.password:
+            client_from_db = self._get_client_from_db(client.id)
+            if digest == client_from_db.password:
                 client.setvar(self, 'loggedin', 1)
                 client.groupBits = client.var(self, 'login_groupbits').value
                 client.message('You are successfully logged in.')
@@ -133,6 +138,10 @@ class LoginPlugin(b3.plugin.Plugin):
         """\
         <password> [<name>] - set a password for a client
         """
+        if not data:
+            client.message('usage: %s%s <new password> [name]' % (cmd.prefix, cmd.command))
+            return
+
         data = string.split(data)
         if len(data) > 1:
             sclient = self._adminPlugin.findClientPrompt(data[1], client)
@@ -143,7 +152,24 @@ class LoginPlugin(b3.plugin.Plugin):
         else:
             sclient = client
 
-        sclient.password = newmd5(data[0]).hexdigest()
-        self.console.storage.query(QueryBuilder(self.console.storage.db).UpdateQuery( { 'password' : sclient.password }, 'clients', { 'id' : sclient.id } ))
-        return
-    
+        self._save_client_password(sclient, data[0])
+        if client == sclient:
+            client.message("your new password is saved")
+        else:
+            client.message("new password for %s saved" % sclient.name)
+
+
+    def _get_client_from_db(self, client_id):
+        try:
+            matches = self.console.storage.getClientsMatching({'id': client_id})
+        except Exception, err:
+            self.error(err)
+            matches = []
+        if not matches or not len(matches) == 1:
+            return None
+        else:
+            return matches[0]
+
+    def _save_client_password(self, client, new_password):
+        client.password = newmd5(new_password).hexdigest()
+        self.console.storage.query(QueryBuilder(self.console.storage.db).UpdateQuery(data={'password': client.password}, table='clients', where={'id': client.id}))
