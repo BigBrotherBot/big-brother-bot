@@ -279,6 +279,7 @@ tests/plugins/test_admin.py
 tests/plugins/test_admin_functional.py
 tests/plugins/test_adv.py
 tests/plugins/test_censor.py
+tests/plugins/test_login.py
 tests/plugins/test_spamcontrol.py
 tests/plugins/test_status.py
 tests/plugins/test_tk.py
