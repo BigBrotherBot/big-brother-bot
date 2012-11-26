@@ -207,6 +207,29 @@ class Test_OnClientuserinfo(Iourt42TestCase):
         self.assertEqual('[SNT]XLR8or', client.name)
         self.assertEqual('145.99.135.227', client.guid)
 
+    def test_client_with_password_gamepassword(self):
+        """
+        Case where a player saved the password to join the game in its UrT config. As a result, we find a 'password'
+        field in the clientuserinfo line.
+        This value must not overwrite the 'password' property of the Client object.
+        """
+        # GIVEN a known client
+        c = FakeClient(console=self.console, name="Zesco", guid="58D4069246865BB5A85F20FB60ED6F65", login="login_in_database", password="password_in_database")
+        c.save()
+        c.connects('15')
+        self.assertEqual('password_in_database', c.password)
+        # WHEN
+        infoline = r"15 \ip\1.2.3.4:27960\name\Zesco\password\some_password_here\racered\2\raceblue\3\rate\8000\ut_timenudge\0\cg_rgb\128 128 128\cg_predictitems\0\cg_physics\1\snaps\20\model\sarge\headmodel\sarge\team_model\james\team_headmodel\*james\color1\4\color2\5\handicap\100\sex\male\cl_anonymous\0\gear\GMIORAA\teamtask\0\cl_guid\58D4069246865BB5A85F20FB60ED6F65\weapmodes\00000110120000020002"
+        self.assertTrue('15' in self.console.clients)
+        self.console.OnClientuserinfo(action=None, data=infoline)
+        # THEN
+        client = self.console.clients['15']
+        self.assertEqual('1.2.3.4', client.ip)
+        self.assertEqual('Zesco^7', client.exactName)
+        self.assertEqual('Zesco', client.name)
+        self.assertEqual('58D4069246865BB5A85F20FB60ED6F65', client.guid)
+        self.assertEqual('password_in_database', client.password)
+
 
 
 class Test_auth(Iourt42TestCase):

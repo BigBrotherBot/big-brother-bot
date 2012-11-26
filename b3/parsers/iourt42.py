@@ -45,6 +45,8 @@
 #  * new: support new jump game type with code 9
 # 2012/11/15 - 1.7.1 - Courgette
 #  * fix: banning with the Frozen Sand auth system now works with servers set to auth private or notoriety mode
+# 26/11/2012 - 1.8 - Courgette
+#     * protect some of the Client object property
 #
 import re, new
 import time
@@ -56,7 +58,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.7.1'
+__version__ = '1.8'
 
 class Iourt42Client(Client):
 
@@ -679,7 +681,8 @@ class Iourt42Parser(Iourt41Parser):
                 for k, v in bclient.iteritems():
                     if hasattr(client, 'gear') and k == 'gear' and client.gear != v:
                         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_GEAR_CHANGE, v, client))
-                    setattr(client, k, v)
+                    if not k.startswith('_') and k not in ('login', 'password', 'groupBits', 'maskLevel', 'autoLogin', 'greeting'):
+                        setattr(client, k, v)
             else:
                 #make a new client
                 # use cl_guid
