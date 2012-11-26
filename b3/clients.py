@@ -18,6 +18,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    26/11/2012 - 1.5 - courgette
+#    * add database columns 'login' and 'password' to the Client model
 #    27/08/2012 - 1.4.1 - courgette
 #    * fix bug in getByMagic when parameter is a cid which is not in use. was returning [None] instead of []
 #    28/10/2012 - 1.4.0 - courgette
@@ -80,7 +82,7 @@ import time
 import traceback
 
 __author__  = 'ThorN'
-__version__ = '1.4.1'
+__version__ = '1.5'
 
 
 class ClientVar(object):
@@ -124,8 +126,8 @@ class Client(object):
     autoLogin = 1
     maskLevel = 0
     groupBits = 0
-    login = None
-    password = None
+    login = ''
+    password = ''
 
     # fields on object
     console = None

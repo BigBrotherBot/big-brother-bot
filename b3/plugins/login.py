@@ -27,22 +27,15 @@
 # 1.1 - 25/11/2012 - Courgette
 #     * always read password from database to prevent security issues arising from bugged b3 game parsers
 #
+import string
+from b3.clients import Client
+import b3.events
+import b3.plugin
+from b3.functions import hash_password
+
 __author__    = 'Tim ter Laak'
 __version__ = '1.1'
 
-# Version = major.minor.patches
-
-import string
-try:
-    from hashlib import md5 as newmd5
-except ImportError:
-    # for Python versions < 2.5
-    from md5 import new as newmd5
-
-import b3
-import b3.events
-import b3.plugin
-from b3.querybuilder import QueryBuilder
 
 class LoginPlugin(b3.plugin.Plugin):
 
@@ -78,7 +71,7 @@ class LoginPlugin(b3.plugin.Plugin):
 
 
     def onEvent(self, event):
-        if (event.type == b3.events.EVT_CLIENT_AUTH):
+        if event.type == b3.events.EVT_CLIENT_AUTH:
             self.onAuth(event.client)
         else:
             self.debug('login.dumpEvent -- Type %s, Client %s, Target %s, Data %s', event.type, event.client, event.target, event.data)
@@ -119,7 +112,7 @@ class LoginPlugin(b3.plugin.Plugin):
             return
 
         if data:
-            digest = newmd5(data).hexdigest()
+            digest = hash_password(data)
             client_from_db = self._get_client_from_db(client.id)
             if digest == client_from_db.password:
                 client.setvar(self, 'loggedin', 1)
@@ -152,7 +145,8 @@ class LoginPlugin(b3.plugin.Plugin):
         else:
             sclient = client
 
-        self._save_client_password(sclient, data[0])
+        sclient.password = hash_password(data[0])
+        sclient.save()
         if client == sclient:
             client.message("your new password is saved")
         else:
@@ -160,16 +154,4 @@ class LoginPlugin(b3.plugin.Plugin):
 
 
     def _get_client_from_db(self, client_id):
-        try:
-            matches = self.console.storage.getClientsMatching({'id': client_id})
-        except Exception, err:
-            self.error(err)
-            matches = []
-        if not matches or not len(matches) == 1:
-            return None
-        else:
-            return matches[0]
-
-    def _save_client_password(self, client, new_password):
-        client.password = newmd5(new_password).hexdigest()
-        self.console.storage.query(QueryBuilder(self.console.storage.db).UpdateQuery(data={'password': client.password}, table='clients', where={'id': client.id}))
+        return self.console.storage.getClient(Client(id=client_id))

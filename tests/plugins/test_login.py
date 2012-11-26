@@ -142,25 +142,25 @@ class Test_cmd_setpassword(LoginTestCase):
         # GIVEN
         self.joe.connects("0")
         self.joe._groupBits = 128 # force superadmin
-        self.assertIsNone(self.joe.password)
+        self.assertEqual('', self.joe.password)
         joe_db = self.p._get_client_from_db(self.joe.id)
-        self.assertIsNone(joe_db.password)
+        self.assertEqual('', joe_db.password)
         # WHEN
         self.joe.clearMessageHistory()
         self.joe.says("!setpassword")
         # THEN
         self.assertEqual(['usage: !setpassword <new password> [name]'], self.joe.message_history)
-        self.assertIsNone(self.joe.password)
+        self.assertEqual('', self.joe.password)
         joe_db = self.p._get_client_from_db(self.joe.id)
-        self.assertIsNone(joe_db.password)
+        self.assertEqual('', joe_db.password)
 
     def test_nominal(self):
         # GIVEN
         self.joe.connects("0")
         self.joe._groupBits = 128 # force superadmin
-        self.assertIsNone(self.joe.password)
+        self.assertEqual('', self.joe.password)
         joe_db = self.p._get_client_from_db(self.joe.id)
-        self.assertIsNone(joe_db.password)
+        self.assertEqual('', joe_db.password)
         # WHEN
         self.joe.clearMessageHistory()
         self.joe.says("!setpassword f00")
@@ -178,9 +178,9 @@ class Test_cmd_setpassword(LoginTestCase):
 
         jack = FakeClient(self.console, name="Jack", guid="jackguid")
         jack.connects("1")
-        self.assertIsNone(jack.password)
+        self.assertEqual('', jack.password)
         jack_db = self.p._get_client_from_db(jack.id)
-        self.assertIsNone(jack_db.password)
+        self.assertEqual('', jack_db.password)
 
         # WHEN
         self.joe.clearMessageHistory()
@@ -237,9 +237,8 @@ class Test_auth(LoginTestCase):
 
     def test_high_level_having_password(self):
         # GIVEN
-        joe = FakeClient(self.console, name="Joe", guid="joeguid", groupBits=128)
+        joe = FakeClient(self.console, name="Joe", guid="joeguid", groupBits=128, password=F00_MD5)
         joe.save()
-        self.p._save_client_password(joe, "f00")
         # WHEN
         joe.clearMessageHistory()
         joe.connects("0")
@@ -255,9 +254,8 @@ class Test_cmd_login(LoginTestCase):
         LoginTestCase.setUp(self)
         self.init_plugin()
         # create a client which needs to log in and has a password saved in database
-        self.jack = FakeClient(self.console, name="Jack", guid="jackguid", groupBits=128)
+        self.jack = FakeClient(self.console, name="Jack", guid="jackguid", groupBits=128, password=F00_MD5)
         self.jack.save()
-        self.p._save_client_password(self.jack, 'f00')
 
     def test_already_logged_in(self):
         # GIVEN
