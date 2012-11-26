@@ -19,6 +19,7 @@
 # CHANGELOG:
 # 27/11/2012 - 1.6 - Courgette
 #   * remove the first '/' from the url-path to respect RFC 1738
+#   * fix issue when public_ip and rcon_ip are different in b3.xml
 # 22/05/2012 - 1.5.8 - Courgette
 #   * local_game_log config option can now use the @conf and @b3 shortcuts
 # 11/05/2011 - 1.5.7 - 82ndab-Bravo17
@@ -68,7 +69,6 @@ __author__ = 'Bakes, Courgette'
  
 import b3, threading
 from b3 import functions
-import b3.events
 import b3.plugin
 import os.path
 from ftplib import FTP
@@ -109,19 +109,8 @@ class FtpytailPlugin(b3.plugin.Plugin):
         if self.console.config.has_option('server', 'local_game_log'):
             self.lgame_log = self.console.config.getpath('server', 'local_game_log')
         else:
-            # setup ip addresses
-            self._publicIp = self.console.config.get('server', 'public_ip')
-            self._port = self.console.config.getint('server', 'port')
-
-            if self._publicIp[0:1] == '~' or self._publicIp[0:1] == '/':
-                # load ip from a file
-                f = file(self.console.getAbsolutePath(self._publicIp))
-                self._publicIp = f.read().strip()
-                f.close()
-
-            logext = str(self._publicIp.replace('.', '_'))
-            logext = 'games_mp_' + logext + '_' + str(self._port) + '.log'
-            self.lgame_log = os.path.normpath(os.path.expanduser(logext))
+            # get B3 actual locally opened game log
+            self.lgame_log = os.path.normpath(os.path.expanduser(self.console.input.name))
             self.debug('Local Game Log is %s' % self.lgame_log)
 
         if self.console.config.get('server','game_log')[0:6] == 'ftp://' :
