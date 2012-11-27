@@ -42,9 +42,11 @@
 #   thread to be sent in between commands sent via writelines (and B3 won't appear to be unresponsive)
 # 2012/07/18 - 1.6.1 - courgette
 # * fix the 'RCON: too much tries' error message when using commands sending multiple lines of text
+# 2012/11/27 - 1.7 - courgette
+# * rollback changes made in 1.6 as it does not solve much (at least with UrT) and break some rcon commands with at least cod6
 #
 __author__ = 'ThorN'
-__version__ = '1.6.1'
+__version__ = '1.7'
 
 import socket
 import sys
@@ -218,51 +220,6 @@ class Rcon:
         self.console.debug('RCON: Did not send any data')
         return ''
 
-    def sendRconNoRead(self, data, maxRetries=None, socketTimeout=None):
-        """sends a rcon command and does not care for the eventual result"""
-        if socketTimeout is None:
-            socketTimeout = self.socket_timeout
-        if maxRetries is None:
-            maxRetries = 2
-
-        data = data.strip()
-        # encode the data
-        if self.console.encoding:
-            data = self.encode_data(data, 'RCON')
-
-        self.console.verbose('RCON sending (%s:%s) %r', self.host[0], self.host[1], data)
-        startTime = time.time()
-
-        retries = 0
-        while time.time() - startTime < 5:
-            readables, writeables, errors = select.select([], [self.socket], [self.socket], socketTimeout)
-
-            if len(errors) > 0:
-                self.console.warning('RCON: %s', str(errors))
-            elif len(writeables) > 0:
-                try:
-                    rv = writeables[0].sendall(self.rconsendstring % (self.password, data))
-                    if rv is None:
-                        # success
-                        return
-                except Exception, msg:
-                    self.console.warning('RCON: ERROR sending: %r', msg)
-
-            else:
-                self.console.verbose('RCON: no writeable socket')
-
-            time.sleep(0.05)
-
-            retries += 1
-
-            if retries >= maxRetries:
-                self.console.error('RCON: too much tries. Abording (%r)', data.strip())
-                break
-            self.console.verbose('RCON: retry sending %r (%s/%s)...', data.strip(), retries, maxRetries)
-
-        self.console.debug('RCON: Did not send any data')
-        return ''
-
     def stop(self):
         """Stop the rcon writelines queue"""
         self._stopEvent.set()
@@ -274,8 +231,7 @@ class Rcon:
                 if not cmd:
                     continue
                 with self.lock:
-                    self.sendRconNoRead(cmd, maxRetries=1)
-                    time.sleep(self.socket_timeout)
+                    self.sendRcon(cmd, maxRetries=1)
 
     def writelines(self, lines):
         self.queue.put(lines)
@@ -287,23 +243,16 @@ class Rcon:
             data = status_cache.get(key='status', createfunc=self._requestStatusCached)
             return data
 
-        self.lock.acquire()
-        try:
-            data = self.sendRcon(cmd, maxRetries=maxRetries, socketTimeout=socketTimeout)
-        finally:
-            self.lock.release()
-
+        with self.lock:
+            data = self.sendRcon(cmd, maxRetries=maxRetries)
         if data:
             return data
         else:
             return ''
 
     def _requestStatusCached(self):
-        self.lock.acquire()
-        try:
+        with self.lock:
             data = self.sendRcon('status', maxRetries=5)
-        finally:
-            self.lock.release()
         if data:
             return data
         else:
@@ -343,7 +292,8 @@ class Rcon:
         readables, writeables, errors = select.select([sock], [], [sock], socketTimeout)
 
         if not len(readables):
-            raise Exception('No readable socket')
+            self.console.verbose('No readable socket')
+            return ''
 
         while len(readables):
             d = str(sock.recv(size))
