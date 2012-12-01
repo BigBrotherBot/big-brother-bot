@@ -51,6 +51,8 @@
 #   Allow Q3 Color Codes in names, since game doesn't filter them out
 #   2012-01-27 : 1.4
 #   Track team changes for eg teamspeak plugin
+#   2012-12-01 : 1.41
+#   Incorporate chat changes for server/game v 1.1.0.8
 #
 #
 from b3 import functions
@@ -71,7 +73,7 @@ import hashlib
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.4'
+__version__ = '1.41'
 
 
 class Ro2Parser(b3.parser.Parser):
@@ -389,6 +391,10 @@ class Ro2Parser(b3.parser.Parser):
             #Ignore new format for server messages 
             if chat_decoded['username'] == '' and chat_decoded['noticesymbol'] == '***':
                 return
+                
+            if chat_decoded['message'].find('#G'):
+                chat_decoded['message'] = chat_decoded['message'].rpartition('#G')[0]
+                
             self._read_queue.append(chat_decoded)
         
     def onChat_typeChatnotice(self,data):
