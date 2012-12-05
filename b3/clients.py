@@ -752,7 +752,7 @@ class Client(object):
             return False
 
     def __str__(self):
-        return "Client<%s>" % self.cid
+        return "Client<@%s:%s|%s:\"%s\":%s>" % (self.id, self.guid, self.pbid, self.name, self.cid)
 
 #-----------------------------------------------------------------------------------------------------------------------
 class Struct(object):

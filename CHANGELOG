@@ -5,7 +5,7 @@ http://github.com/BigBrotherBot/big-brother-bot/compare/v1.8.2...v1.9.0
 ----
 
 # Game related changes:
-- BF3: updated with DLC "Close Quarter" and "Armored kill" maps and gamemode info
+- BF3: updated with DLC "Close Quarter", "Armored kill" and "Aftermath" maps and gamemode info
 - BF3: command !map can optionally specify the wanted gamemode and number or rounds : !map firestorm, conquest64, 2
 - Red Orchestra 2 now working with the B3 win32 packages
 - Urban Terror : fix !nextmap bug when the mapcycle file contains empty lines

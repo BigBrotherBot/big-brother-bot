@@ -47,6 +47,8 @@
 #  * fix: banning with the Frozen Sand auth system now works with servers set to auth private or notoriety mode
 # 26/11/2012 - 1.8 - Courgette
 #     * protect some of the Client object property
+# 26/11/2012 - 1.9 - Courgette
+#     * fix authentication for connecting player Frosen Sand Account is uniquely known in the B3 database
 #
 import re, new
 import time
@@ -58,7 +60,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.8'
+__version__ = '1.9'
 
 class Iourt42Client(Client):
 
@@ -75,9 +77,16 @@ class Iourt42Client(Client):
             self.console.error("DATA ERROR: found %s client having Frozen Sand Account '%s'" % (len(clients_matching_pbid), self.pbid))
             return self.auth_by_pbid_and_guid()
         elif len(clients_matching_pbid) == 1:
-            for k,v in clients_matching_pbid[0].__dict__.iteritems():
-                setattr(self, k, v)
-            return True
+            self.id = clients_matching_pbid[0].id
+            # we may have a second client entry in database with current guid. We want to update our current
+            # client guid only if it is not the case.
+            try:
+                client_by_guid = self.console.storage.getClient(Client(guid=self.guid))
+            except KeyError:
+                client_by_guid = None
+            if client_by_guid and client_by_guid.id != self.id:
+                self._guid = None # so storage.getClient is able to overwrite the value which will make it remain unchanged in database when .save() will be called later on
+            return self.console.storage.getClient(self)
         else:
             self.console.debug('Frozen Sand Account [%s] unknown in database', self.pbid)
             return False
@@ -85,9 +94,8 @@ class Iourt42Client(Client):
     def auth_by_pbid_and_guid(self):
         clients_matching_pbid = self.console.storage.getClientsMatching({ 'pbid': self.pbid, 'guid': self.guid })
         if len(clients_matching_pbid):
-            for k,v in clients_matching_pbid[0].__dict__.iteritems():
-                setattr(self, k, v)
-            return True
+            self.id = clients_matching_pbid[0].id
+            return self.console.storage.getClient(self)
         else:
             self.console.debug("Frozen Sand Account [%s] with guid '%s' unknown in database" % (self.pbid, self.guid))
             return False
@@ -108,12 +116,11 @@ class Iourt42Client(Client):
 
             name = self.name
             ip = self.ip
-            guid = self.guid
             pbid = self.pbid
 
             if not pbid and self.cid:
                 fsa_info = self.console.queryClientFrozenSandAccount(self.cid)
-                pbid = fsa_info.get('login', None)
+                self.pbid = pbid = fsa_info.get('login', None)
 
             # Frozen Sand Account related info
             if not hasattr(self, 'notoriety'):
@@ -158,7 +165,6 @@ class Iourt42Client(Client):
             self.ip = ip
             if pbid:
                 self.pbid = pbid
-            self.guid = guid
             self.save()
             self.authed = True
 
@@ -184,7 +190,8 @@ class Iourt42Client(Client):
         else:
             return False
 
-
+    def __str__(self):
+        return "Client42<@%s:%s|%s:\"%s\":%s>" % (self.id, self.guid, self.pbid, self.name, self.cid)
 
 class Iourt42Parser(Iourt41Parser):
     gameName = 'iourt42'

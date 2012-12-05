@@ -664,6 +664,10 @@ class Test_bf3_maps(BF3TestCase):
         self.assertEqual('Alborz Mountains', self.parser.getEasyName('XP3_Alborz'))
         self.assertEqual('Armored Shield', self.parser.getEasyName('XP3_Shield'))
         self.assertEqual('Death Valley', self.parser.getEasyName('XP3_Valley'))
+        self.assertEqual('Epicenter', self.parser.getEasyName('XP4_Quake'))
+        self.assertEqual('Markaz Monolith', self.parser.getEasyName('XP4_FD'))
+        self.assertEqual('Azadi Palace', self.parser.getEasyName('XP4_Parl'))
+        self.assertEqual('Talah market', self.parser.getEasyName('XP4_Rubble'))
         self.assertEqual('f00', self.parser.getEasyName('f00'))
 
 
@@ -689,11 +693,15 @@ class Test_bf3_maps(BF3TestCase):
         self.assertEqual('XP3_Alborz', self.parser.getHardName('Alborz Mountains'))
         self.assertEqual('XP3_Shield', self.parser.getHardName('Armored Shield'))
         self.assertEqual('XP3_Valley', self.parser.getHardName('Death Valley'))
+        self.assertEqual('XP4_Quake', self.parser.getHardName('Epicenter'))
+        self.assertEqual('XP4_FD', self.parser.getHardName('Markaz Monolith'))
+        self.assertEqual('XP4_Parl', self.parser.getHardName('Azadi Palace'))
+        self.assertEqual('XP4_Rubble', self.parser.getHardName('Talah market'))
         self.assertEqual('f00', self.parser.getHardName('f00'))
 
 
     def test_getMapsSoundingLike(self):
-        self.assertEqual(['grand bazaar', 'noshahar canals', 'kharg island'], self.parser.getMapsSoundingLike(''), '')
+        self.assertEqual(['operation metro', 'gulf of oman', 'seine crossing'], self.parser.getMapsSoundingLike(''), '')
         self.assertEqual('MP_Subway', self.parser.getMapsSoundingLike('Operation Metro'), 'Operation Metro')
         self.assertEqual('MP_001', self.parser.getMapsSoundingLike('grand'))
         self.assertEqual(['operation metro', 'operation firestorm', 'operation 925'], self.parser.getMapsSoundingLike('operation'))
@@ -706,6 +714,24 @@ class Test_bf3_maps(BF3TestCase):
         self.assertEqual('XP3_Shield', self.parser.getMapsSoundingLike('shield'))
         self.assertEqual('XP3_Valley', self.parser.getMapsSoundingLike('Death'))
         self.assertEqual('XP3_Valley', self.parser.getMapsSoundingLike('valley'))
+        self.assertEqual('XP4_Quake', self.parser.getMapsSoundingLike('Epicenter'))
+        self.assertEqual('XP4_Quake', self.parser.getMapsSoundingLike('Epicentre'))
+        self.assertEqual('XP4_Quake', self.parser.getMapsSoundingLike('epi'))
+        self.assertEqual('XP4_FD', self.parser.getMapsSoundingLike('markaz Monolith'))
+        self.assertEqual('XP4_FD', self.parser.getMapsSoundingLike('markazMonolith'))
+        self.assertEqual('XP4_FD', self.parser.getMapsSoundingLike('markaz Monolit'))
+        self.assertEqual('XP4_FD', self.parser.getMapsSoundingLike('markaz Mono'))
+        self.assertEqual('XP4_FD', self.parser.getMapsSoundingLike('markaz'))
+        self.assertEqual('XP4_FD', self.parser.getMapsSoundingLike('Monolith'))
+        self.assertEqual('XP4_Parl', self.parser.getMapsSoundingLike('Azadi Palace'))
+        self.assertEqual('XP4_Parl', self.parser.getMapsSoundingLike('AzadiPalace'))
+        self.assertEqual('XP4_Parl', self.parser.getMapsSoundingLike('Azadi'))
+        self.assertEqual('XP4_Parl', self.parser.getMapsSoundingLike('Palace'))
+        self.assertEqual('XP4_Parl', self.parser.getMapsSoundingLike('Azadi Place'))
+        self.assertEqual('XP4_Rubble', self.parser.getMapsSoundingLike('Talah market'))
+        self.assertEqual('XP4_Rubble', self.parser.getMapsSoundingLike('Talahmarket'))
+        self.assertEqual('XP4_Rubble', self.parser.getMapsSoundingLike('Talah'))
+        self.assertEqual('XP4_Rubble', self.parser.getMapsSoundingLike('market'))
 
 
     def test_getGamemodeSoundingLike(self):
@@ -721,4 +747,10 @@ class Test_bf3_maps(BF3TestCase):
         self.assertEqual('TankSuperiority0', self.parser.getGamemodeSoundingLike('XP3_Valley', 'tanksuperiority'), 'tanksuperiority')
         self.assertEqual('TankSuperiority0', self.parser.getGamemodeSoundingLike('XP3_Valley', 'tanksup'), 'tanksup')
         self.assertEqual('TankSuperiority0', self.parser.getGamemodeSoundingLike('XP3_Valley', 'tank'), 'tank')
+        self.assertEqual('SquadDeathMatch0', self.parser.getGamemodeSoundingLike('XP4_Quake', 'sqdm'), 'sqdm')
+        self.assertEqual('Scavenger0', self.parser.getGamemodeSoundingLike('XP4_Quake', 'scavenger'), 'scavenger')
+        self.assertEqual('Scavenger0', self.parser.getGamemodeSoundingLike('XP4_Quake', 'scav'), 'scav')
+        self.assertEqual('Scavenger0', self.parser.getGamemodeSoundingLike('XP4_FD', 'scav'), 'scav')
+        self.assertEqual('Scavenger0', self.parser.getGamemodeSoundingLike('XP4_Parl', 'scav'), 'scav')
+        self.assertEqual('Scavenger0', self.parser.getGamemodeSoundingLike('XP4_Rubble', 'scav'), 'scav')
 
