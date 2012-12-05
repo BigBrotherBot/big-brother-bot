@@ -392,7 +392,7 @@ class Ro2Parser(b3.parser.Parser):
             if chat_decoded['username'] == '' and chat_decoded['noticesymbol'] == '***':
                 return
                 
-            if chat_decoded['message'].find('#G'):
+            if chat_decoded['message'].find('#G') != -1:
                 chat_decoded['message'] = chat_decoded['message'].rpartition('#G')[0]
                 
             self._read_queue.append(chat_decoded)
