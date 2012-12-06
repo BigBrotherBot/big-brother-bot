@@ -11,6 +11,7 @@ http://github.com/BigBrotherBot/big-brother-bot/compare/v1.8.2...v1.9.0
 - Urban Terror : fix !nextmap bug when the mapcycle file contains empty lines
 - Urban Terror : improves !map <map name> capabilities to find out the correct map name when given name is an approximate
 - Quake3 based games: fixes the 'RCON: too much tries' error message that appeared with v1.8.2
+- Red Orchestra 2 : Update client/server 1.1.0.8+
 
 # Plugin related changes:
 - The !help command does not make B3 unresponsive anymore on Quake3 based games
