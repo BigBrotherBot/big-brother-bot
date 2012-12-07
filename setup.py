@@ -43,7 +43,7 @@ try:
 except:
     has_py2exe = False
 
-b3version = "1.9.0dev26"
+b3version = "1.9.0dev27"
 
 # override egg_info command to copy the b3.egg-info/PKG-INFO file into the b3 directory
 class my_egg_info(orig_egg_info):
