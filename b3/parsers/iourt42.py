@@ -50,7 +50,8 @@
 # 26/11/2012 - 1.9 - Courgette
 #     * fix authentication for connecting player Frosen Sand Account is uniquely known in the B3 database
 # 26/11/2012 - 1.10 - Courgette
-#     * add new events : EVT_CLIENT_JUMP_TIMER_START, EVT_CLIENT_JUMP_TIMER_STOP, EVT_CLIENT_POS_SAVE, EVT_CLIENT_POS_LOAD which can be used by plugins
+#     * add new events : EVT_CLIENT_JUMP_TIMER_START, EVT_CLIENT_JUMP_TIMER_STOP, EVT_CLIENT_POS_SAVE,
+#       EVT_CLIENT_POS_LOAD and EVT_CLIENT_SURVIVOR_WINNERwhich can be used by plugins
 #
 import re, new
 import time
@@ -351,6 +352,7 @@ class Iourt42Parser(Iourt41Parser):
         self.EVT_CLIENT_JUMP_TIMER_STOP = self.Events.createEvent('EVT_CLIENT_JUMP_TIMER_STOP', 'Event client jump timer stopped')
         self.EVT_CLIENT_POS_SAVE = self.Events.createEvent('EVT_CLIENT_POS_SAVE', 'Event client position saved')
         self.EVT_CLIENT_POS_LOAD = self.Events.createEvent('EVT_CLIENT_POS_LOAD', 'Event client position loaded')
+        self.EVT_CLIENT_SURVIVOR_WINNER = self.Events.createEvent('EVT_CLIENT_SURVIVOR_WINNER', 'Event client survivor winner')
 
         self.load_conf_frozensand_ban_settings()
 
@@ -495,6 +497,14 @@ class Iourt42Parser(Iourt41Parser):
             self.debug('No client found')
             return None
         return Event(self.EVT_CLIENT_POS_LOAD, client=client, data={'position': position, 'name': name})
+
+
+    def OnSurvivorwinner(self, action, data, match=None):
+        client = self.getByCidOrJoinPlayer(data)
+        if not client:
+            self.debug('No client found')
+            return None
+        return Event(self.EVT_CLIENT_SURVIVOR_WINNER, client=client, data=None)
 
 
 
