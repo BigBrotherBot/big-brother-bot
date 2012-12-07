@@ -49,9 +49,11 @@
 #     * protect some of the Client object property
 # 26/11/2012 - 1.9 - Courgette
 #     * fix authentication for connecting player Frosen Sand Account is uniquely known in the B3 database
-# 26/11/2012 - 1.10 - Courgette
+# 07/12/2012 - 1.10 - Courgette
 #     * add new events : EVT_CLIENT_JUMP_TIMER_START, EVT_CLIENT_JUMP_TIMER_STOP, EVT_CLIENT_POS_SAVE,
 #       EVT_CLIENT_POS_LOAD and EVT_CLIENT_SURVIVOR_WINNERwhich can be used by plugins
+# 08/12/2012 - 1.10.1 - Courgette
+#     * fix EVT_CLIENT_JUMP_TIMER_START and EVT_CLIENT_JUMP_TIMER_STOP events when no location name is provided
 #
 import re, new
 import time
@@ -63,7 +65,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.10'
+__version__ = '1.10.1'
 
 class Iourt42Client(Client):
 
@@ -243,9 +245,9 @@ class Iourt42Parser(Iourt41Parser):
         re.compile(r'''^(?P<action>Vote): (?P<data>(?P<cid>[0-9]+) - (?P<value>.*))$'''),
 
         #13:34 ClientJumpTimerStarted: 0 - way: 2 (Easy Way)
-        re.compile(r'^(?P<action>ClientJumpTimerStarted):\s(?P<cid>\d+)\s-\s(?P<data>way: (?P<way_id>\d+)\s\((?P<way_label>.+)\))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>ClientJumpTimerStarted):\s(?P<cid>\d+)\s-\s(?P<data>way: (?P<way_id>\d+)(?:\s\((?P<way_label>.+)\))?)$', re.IGNORECASE),
         #13:34 ClientJumpTimerStopped: 0 - 5 seconds - way: 1 (Hard Way)
-        re.compile(r'^(?P<action>ClientJumpTimerStopped):\s(?P<cid>\d+)\s-\s(?P<data>(?P<duration>.+)\s-\sway: (?P<way_id>\d+)\s\((?P<way_label>.+)\))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>ClientJumpTimerStopped):\s(?P<cid>\d+)\s-\s(?P<data>(?P<duration>.+)\s-\sway: (?P<way_id>\d+)(?:\s\((?P<way_label>.+)\))?)$', re.IGNORECASE),
 
         #13:34 ClientSavePosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"
         #13:34 ClientLoadPosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"

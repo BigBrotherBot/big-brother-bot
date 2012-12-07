@@ -188,6 +188,14 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_client=marcel,
             event_data={'way_id': '1', 'way_label': 'Hard Way'})
 
+    def test_ClientJumpTimerStarted_no_location(self):
+        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel.connects('0')
+        self.assertEvent(r'''ClientJumpTimerStarted: 0 - way: 0''',
+            event_type='EVT_CLIENT_JUMP_TIMER_START',
+            event_client=marcel,
+            event_data={'way_id': '0', 'way_label': None})
+
     def test_ClientJumpTimerStopped(self):
         marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
         marcel.connects('0')
@@ -195,6 +203,14 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_type='EVT_CLIENT_JUMP_TIMER_STOP',
             event_client=marcel,
             event_data={'way_id': '1', 'way_label': 'Hard Way', 'duration': '5 seconds'})
+
+    def test_ClientJumpTimerStopped_no_location(self):
+        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel.connects('0')
+        self.assertEvent(r'''ClientJumpTimerStopped: 0 - 4 seconds - way: 0''',
+            event_type='EVT_CLIENT_JUMP_TIMER_STOP',
+            event_client=marcel,
+            event_data={'way_id': '0', 'way_label': None, 'duration': '4 seconds'})
 
 
     def test_ClientSavePosition(self):
