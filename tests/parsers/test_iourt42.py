@@ -180,6 +180,40 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_data="!help")
 
 
+    def test_ClientJumpTimerStarted(self):
+        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel.connects('0')
+        self.assertEvent(r'''ClientJumpTimerStarted: 0 - way: 1 (Hard Way)''',
+            event_type='EVT_CLIENT_JUMP_TIMER_START',
+            event_client=marcel,
+            event_data={'way_id': '1', 'way_label': 'Hard Way'})
+
+    def test_ClientJumpTimerStopped(self):
+        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel.connects('0')
+        self.assertEvent(r'''ClientJumpTimerStopped: 0 - 5 seconds - way: 1 (Hard Way)''',
+            event_type='EVT_CLIENT_JUMP_TIMER_STOP',
+            event_client=marcel,
+            event_data={'way_id': '1', 'way_label': 'Hard Way', 'duration': '5 seconds'})
+
+
+    def test_ClientSavePosition(self):
+        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel.connects('0')
+        self.assertEvent(r'''ClientSavePosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"''',
+            event_type='EVT_CLIENT_POS_SAVE',
+            event_client=marcel,
+            event_data={'position': (335.384887, 67.469154, -23.875), 'name': 'unknown'})
+
+    def test_ClientLoadPosition(self):
+        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel.connects('0')
+        self.assertEvent(r'''ClientLoadPosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"''',
+            event_type='EVT_CLIENT_POS_LOAD',
+            event_client=marcel,
+            event_data={'position': (335.384887, 67.469154, -23.875), 'name': 'unknown'})
+
+
 
 class Test_OnClientuserinfo(Iourt42TestCase):
 
