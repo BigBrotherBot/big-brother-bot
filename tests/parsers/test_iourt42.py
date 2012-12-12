@@ -20,20 +20,37 @@ import logging
 from mock import Mock, call, patch
 from mockito import mock, when, any as anything
 import unittest2 as unittest
-from b3.clients import Clients
+from b3.clients import Clients, Client
 from b3.config import XmlConfigParser
 from b3.events import Event
-from b3.fake import FakeClient
-from b3.parsers.iourt42 import Iourt42Parser
+from b3.fake import FakeClient as original_FakeClient
+from b3.parsers.iourt42 import Iourt42Parser, Iourt42Client
 
 log = logging.getLogger("test")
 log.setLevel(logging.INFO)
 
 
-# make sure to unpatch the Clients.newClient method
+# make sure to unpatch the Clients.newClient method and FakeClient
 original_newClient = Clients.newClient
 def tearDownModule():
     Clients.newClient = original_newClient
+
+
+# We need our own FakeClient class to use the new auth() method from the Iourt42Client class
+class FakeClient(original_FakeClient, Iourt42Client):
+    # Python resolution rule for multiple inheritance will try to find the called methods in original_FakeClient class
+    # first ; second from the b3.clients.Client class (which is inherited from the original_FakeClient class) ; third
+    # from the Iourt42Client class ; and fourth from the b3.clients.Client class (which is inherited from the
+    # Iourt42Client class).
+    #
+    # We want to have the methods from the original FakeClient class called preferably over the ones from
+    # the Client Iourt42Client class, expected for the auth() method which has to be the one implemented in the
+    # Iourt42Client class.
+    #
+    # So we have to keep the Iourt42Client class in second position and we overwrite the auth() method here to
+    # control what code will be called in the end.
+    def auth(self):
+        return Iourt42Client.auth(self)
 
 
 class Iourt42TestCase(unittest.TestCase):
@@ -68,8 +85,6 @@ class Iourt42TestCase(unittest.TestCase):
             log.info("write(%s)" % ', '.join(pretty_args))
             return self.output_mock.write(*args, **kwargs)
         self.console.write = Mock(wraps=write)
-
-        self.player = self.console.clients.newClient(cid="4", guid="theGuid", name="theName", ip="11.22.33.44")
 
 
     def tearDown(self):
@@ -165,6 +180,62 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_data="!help")
 
 
+    def test_ClientJumpTimerStarted(self):
+        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel.connects('0')
+        self.assertEvent(r'''ClientJumpTimerStarted: 0 - way: 1 (Hard Way)''',
+            event_type='EVT_CLIENT_JUMP_TIMER_START',
+            event_client=marcel,
+            event_data={'way_id': '1', 'way_label': 'Hard Way'})
+
+    def test_ClientJumpTimerStarted_no_location(self):
+        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel.connects('0')
+        self.assertEvent(r'''ClientJumpTimerStarted: 0 - way: 0''',
+            event_type='EVT_CLIENT_JUMP_TIMER_START',
+            event_client=marcel,
+            event_data={'way_id': '0', 'way_label': None})
+
+    def test_ClientJumpTimerStopped(self):
+        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel.connects('0')
+        self.assertEvent(r'''ClientJumpTimerStopped: 0 - 5 seconds - way: 1 (Hard Way)''',
+            event_type='EVT_CLIENT_JUMP_TIMER_STOP',
+            event_client=marcel,
+            event_data={'way_id': '1', 'way_label': 'Hard Way', 'duration': '5 seconds'})
+
+    def test_ClientJumpTimerStopped_no_location(self):
+        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel.connects('0')
+        self.assertEvent(r'''ClientJumpTimerStopped: 0 - 4 seconds - way: 0''',
+            event_type='EVT_CLIENT_JUMP_TIMER_STOP',
+            event_client=marcel,
+            event_data={'way_id': '0', 'way_label': None, 'duration': '4 seconds'})
+
+
+    def test_ClientSavePosition(self):
+        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel.connects('0')
+        self.assertEvent(r'''ClientSavePosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"''',
+            event_type='EVT_CLIENT_POS_SAVE',
+            event_client=marcel,
+            event_data={'position': (335.384887, 67.469154, -23.875), 'name': 'unknown'})
+
+    def test_ClientLoadPosition(self):
+        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel.connects('0')
+        self.assertEvent(r'''ClientLoadPosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"''',
+            event_type='EVT_CLIENT_POS_LOAD',
+            event_client=marcel,
+            event_data={'position': (335.384887, 67.469154, -23.875), 'name': 'unknown'})
+
+
+    def test_SurvivorWinner(self):
+        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel.connects('0')
+        self.assertEvent(r'''SurvivorWinner: 0''', event_type='EVT_CLIENT_SURVIVOR_WINNER', event_client=marcel)
+
+
 
 class Test_OnClientuserinfo(Iourt42TestCase):
 
@@ -207,11 +278,34 @@ class Test_OnClientuserinfo(Iourt42TestCase):
         self.assertEqual('[SNT]XLR8or', client.name)
         self.assertEqual('145.99.135.227', client.guid)
 
+    def test_client_with_password_gamepassword(self):
+        """
+        Case where a player saved the password to join the game in its UrT config. As a result, we find a 'password'
+        field in the clientuserinfo line.
+        This value must not overwrite the 'password' property of the Client object.
+        """
+        # GIVEN a known client
+        c = FakeClient(console=self.console, name="Zesco", guid="58D4069246865BB5A85F20FB60ED6F65", login="login_in_database", password="password_in_database")
+        c.save()
+        c.connects('15')
+        self.assertEqual('password_in_database', c.password)
+        # WHEN
+        infoline = r"15 \ip\1.2.3.4:27960\name\Zesco\password\some_password_here\racered\2\raceblue\3\rate\8000\ut_timenudge\0\cg_rgb\128 128 128\cg_predictitems\0\cg_physics\1\snaps\20\model\sarge\headmodel\sarge\team_model\james\team_headmodel\*james\color1\4\color2\5\handicap\100\sex\male\cl_anonymous\0\gear\GMIORAA\teamtask\0\cl_guid\58D4069246865BB5A85F20FB60ED6F65\weapmodes\00000110120000020002"
+        self.assertTrue('15' in self.console.clients)
+        self.console.OnClientuserinfo(action=None, data=infoline)
+        # THEN
+        client = self.console.clients['15']
+        self.assertEqual('1.2.3.4', client.ip)
+        self.assertEqual('Zesco^7', client.exactName)
+        self.assertEqual('Zesco', client.name)
+        self.assertEqual('58D4069246865BB5A85F20FB60ED6F65', client.guid)
+        self.assertEqual('password_in_database', client.password)
 
 
-class Test_auth(Iourt42TestCase):
 
-    def test_queryClientFrozenSandAccount_authed(self):
+class Test_queryClientFrozenSandAccount(Iourt42TestCase):
+
+    def test_authed(self):
         # GIVEN
         when(self.console).write('auth-whois 0').thenReturn(r'''auth: id: 0 - name: ^7laCourge - login: courgette - notoriety: serious - level: -1''')
         # WHEN
@@ -219,7 +313,7 @@ class Test_auth(Iourt42TestCase):
         # THEN
         self.assertDictEqual({'cid': '0', 'name': 'laCourge', 'login': 'courgette', 'notoriety': 'serious', 'level': '-1', 'extra': None}, data)
 
-    def test_queryClientFrozenSandAccount_not_active(self):
+    def test_not_active(self):
         # GIVEN
         when(self.console).write('auth-whois 3').thenReturn(r'''Client 3 is not active.''')
         # WHEN
@@ -227,7 +321,7 @@ class Test_auth(Iourt42TestCase):
         # THEN
         self.assertDictEqual({}, data)
 
-    def test_queryClientFrozenSandAccount_no_account(self):
+    def test_no_account(self):
         # GIVEN
         when(self.console).write('auth-whois 3').thenReturn(r'''auth: id: 3 - name: ^7laCourge - login:  - notoriety: 0 - level: 0  - ^7no account''')
         # WHEN
@@ -235,7 +329,7 @@ class Test_auth(Iourt42TestCase):
         # THEN
         self.assertDictEqual({'cid': '3', 'name': 'laCourge', 'login': '', 'notoriety': '0', 'level': '0', 'extra': '^7no account'}, data)
 
-    def test_queryAllFrozenSandAccount(self):
+    def test_all(self):
         # GIVEN
         when(self.console).write('auth-whois all', maxRetries=anything()).thenReturn(r'''No player found for "all".
 auth: id: 0 - name: ^7laCourge - login: courgette - notoriety: serious - level: -1
@@ -251,10 +345,213 @@ auth: id: 2 - name: ^7Qant - login: qant - notoriety: basic - level: -1
                             }, data)
 
 
+class Test_auth_without_FSA(Iourt42TestCase):
+
+    def setUp(self):
+        Iourt42TestCase.setUp(self)
+        # GIVEN a player without FSA joe_fsa that will connect on slot 3
+        when(self.console).write('auth-whois 3').thenReturn(r'''auth: id: 3 - name: ^7Joe - login:  - notoriety: 0 - level: 0  - ^7no account''')
+
+    def test_unknown_cl_guid(self):
+        # GIVEN a player with a unknown cl_guid
+        player = FakeClient(console=self.console, name="Joe", guid="joe_cl_guid")
+        self.assertEqual(0, len(self.console.clients))
+        self.assertDictEqual({'Kicks': 0, 'TempBans': 0, 'clients': 0, 'Bans': 0, 'Warnings': 0}, self.console.storage.getCounts())
+        # WHEN player connects on slot 3
+        player.connects("3")
+        # THEN player is authenticated
+        self.assertEqual(1, len(self.console.clients))
+        self.assertTrue(player.authed)
+        # THEN a new player entry is created in database
+        self.assertDictEqual({'Kicks': 0, 'TempBans': 0, 'clients': 1, 'Bans': 0, 'Warnings': 0}, self.console.storage.getCounts())
+        self.assertNotEqual(0, player.id)
+        # THEN the new entry in database has the correct cl_guid and no FSA
+        player_from_db = self.console.storage.getClient(Client(id=player.id))
+        self.assertEqual("joe_cl_guid", player_from_db.guid)
+        self.assertEqual('', player_from_db.pbid)
+
+    def test_known_cl_guid(self):
+        # GIVEN a known player in database with cl_guid "joe_cl_guid"
+        known_player = FakeClient(console=self.console, name="Joe", guid="joe_cl_guid")
+        known_player.save()
+        self.assertNotEqual(0, known_player.id)
+        self.assertDictEqual({'Kicks': 0, 'TempBans': 0, 'clients': 1, 'Bans': 0, 'Warnings': 0}, self.console.storage.getCounts())
+        self.assertEqual(0, len(self.console.clients))
+        # WHEN a player connects on slot 3 with cl_guid "joe_cl_guid" and no FSA
+        player = FakeClient(console=self.console, name="Joe", guid="joe_cl_guid")
+        player.connects("3")
+        # THEN player is authenticated
+        self.assertEqual(1, len(self.console.clients))
+        self.assertTrue(player.authed)
+        # THEN no new entry is created in database
+        self.assertDictEqual({'Kicks': 0, 'TempBans': 0, 'clients': 1, 'Bans': 0, 'Warnings': 0}, self.console.storage.getCounts())
+        self.assertEqual(known_player.id, player.id)
+
+
+class Test_auth_with_unknown_FSA(Iourt42TestCase):
+
+    def setUp(self):
+        Iourt42TestCase.setUp(self)
+        # GIVEN a player with FSA joe_fsa that will connect on slot 3
+        when(self.console).write('auth-whois 3').thenReturn(r'''auth: id: 3 - name: ^7Joe - login: joe_fsa - notoriety: serious - level: -1''')
+
+    def test_unknown_cl_guid(self):
+        # GIVEN a player with cl_guid "joe_cl_guid" that does not exists in database
+        player = FakeClient(console=self.console, name="Joe", guid="joe_cl_guid")
+        self.assertEqual(0, len(self.console.clients))
+        self.assertDictEqual({'Kicks': 0, 'TempBans': 0, 'clients': 0, 'Bans': 0, 'Warnings': 0}, self.console.storage.getCounts())
+        # WHEN player connects
+        player.connects("3")
+        # THEN player is authenticated
+        self.assertEqual(1, len(self.console.clients))
+        self.assertTrue(player.authed)
+        # THEN a new player entry is created in database
+        self.assertDictEqual({'Kicks': 0, 'TempBans': 0, 'clients': 1, 'Bans': 0, 'Warnings': 0}, self.console.storage.getCounts())
+        self.assertNotEqual(0, player.id)
+        # THEN database entry has the new FSA value
+        player_from_db = self.console.storage.getClient(Client(id=player.id))
+        self.assertEqual('joe_fsa', player_from_db.pbid)
+
+    def test_known_cl_guid(self):
+        # GIVEN a known player in database with cl_guid "joe_cl_guid"
+        known_player = FakeClient(console=self.console, name="Joe", guid="joe_cl_guid")
+        known_player.save()
+        self.assertNotEqual(0, known_player.id)
+        self.assertDictEqual({'Kicks': 0, 'TempBans': 0, 'clients': 1, 'Bans': 0, 'Warnings': 0}, self.console.storage.getCounts())
+        self.assertEqual(0, len(self.console.clients))
+        # WHEN a player connects on slot 3 with cl_guid "joe_cl_guid" and no FSA
+        player = FakeClient(console=self.console, name="Joe", guid="joe_cl_guid")
+        player.connects("3")
+        # THEN player is authenticated
+        self.assertEqual(1, len(self.console.clients))
+        self.assertTrue(player.authed)
+        # THEN no new entry is created in DB
+        self.assertDictEqual({'Kicks': 0, 'TempBans': 0, 'clients': 1, 'Bans': 0, 'Warnings': 0}, self.console.storage.getCounts())
+        self.assertEqual(known_player.id, player.id)
+
+
+class Test_auth_with_uniquely_known_FSA(Iourt42TestCase):
+
+    def setUp(self):
+        Iourt42TestCase.setUp(self)
+        # GIVEN a known player with FSA joe_fsa, cl_guid "cl_guid_A" that will connect on slot 3
+        when(self.console).write('auth-whois 3').thenReturn(r'''auth: id: 3 - name: ^7Joe - login: joe_fsa - notoriety: serious - level: -1''')
+        player = FakeClient(console=self.console, name="Joe", guid="cl_guid_A", pbid="joe_fsa")
+        player.save()
+        self.known_player_db_id = player.id
+        # THEN we have 0 connected players and 1 player known in database
+        self.assertDictEqual({'Kicks': 0, 'TempBans': 0, 'clients': 1, 'Bans': 0, 'Warnings': 0}, self.console.storage.getCounts())
+        self.assertEqual(0, len(self.console.clients))
+
+    def test_unknown_cl_guid(self):
+        # GIVEN player with known FSA and unknown cl_guid
+        player = FakeClient(console=self.console, name="Joe", guid="cl_guid_B")
+        # WHEN player connects
+        player.connects("3")
+        # THEN player auth against the known database entry
+        self.assertEqual(1, len(self.console.clients))
+        self.assertTrue(player.authed)
+        self.assertEqual(self.known_player_db_id, player.id)
+        # THEN no new client entry must be created in database
+        self.assertDictEqual({'Kicks': 0, 'TempBans': 0, 'clients': 1, 'Bans': 0, 'Warnings': 0}, self.console.storage.getCounts())
+        # THEN the DB player entry cl_guid is replaced with the new value
+        player_from_db = self.console.storage.getClient(Client(id=player.id))
+        self.assertEqual("cl_guid_B", player_from_db.guid)
+
+    def test_known_cl_guid_for_that_fsa(self):
+        # GIVEN player with known FSA and known cl_guid for that FSA
+        player = FakeClient(console=self.console, name="Joe", guid="cl_guid_A")
+        # WHEN player connects
+        player.connects("3")
+        # THEN player auth against the known DB entry
+        self.assertEqual(1, len(self.console.clients))
+        self.assertTrue(player.authed)
+        self.assertEqual(self.known_player_db_id, player.id)
+        # THEN no new client entry must be created in database
+        self.assertDictEqual({'Kicks': 0, 'TempBans': 0, 'clients': 1, 'Bans': 0, 'Warnings': 0}, self.console.storage.getCounts())
+        # THEN the DB player entry cl_guid is still "cl_guid_A"
+        player_from_db = self.console.storage.getClient(Client(id=player.id))
+        self.assertEqual("cl_guid_A", player_from_db.guid)
+
+    def test_known_cl_guid_for_another_fsa(self):
+        # GIVEN another known player with FSA jack_fsa, cl_guid "cl_guid_X"
+        the_other_player = FakeClient(console=self.console, name="Jack", guid="cl_guid_X", pbid="jack_fsa")
+        the_other_player.save()
+        the_other_player_db_id = the_other_player.id
+        # THEN we have 0 connected players and 2 players known in database
+        self.assertDictEqual({'Kicks': 0, 'TempBans': 0, 'clients': 2, 'Bans': 0, 'Warnings': 0}, self.console.storage.getCounts())
+        self.assertEqual(0, len(self.console.clients))
+        # GIVEN player with known FSA and known cl_guid for another FSA
+        player = FakeClient(console=self.console, name="Joe", guid="cl_guid_X")
+        # WHEN player connects
+        player.connects("3")
+        # THEN player auth against the known DB entry that matches the FSA
+        self.assertEqual(1, len(self.console.clients))
+        self.assertTrue(player.authed)
+        self.assertEqual(self.known_player_db_id, player.id)
+        self.assertNotEqual(the_other_player_db_id, player.id)
+        # THEN no new client entry must be created in database
+        self.assertDictEqual({'Kicks': 0, 'TempBans': 0, 'clients': 2, 'Bans': 0, 'Warnings': 0}, self.console.storage.getCounts())
+        # THEN the DB player entry cl_guid remains unchanged
+        player_from_db = self.console.storage.getClient(Client(id=player.id))
+        self.assertEqual("cl_guid_A", player_from_db.guid)
+
+
+class Test_auth_with_non_uniquely_known_FSA(Iourt42TestCase):
+
+    def setUp(self):
+        Iourt42TestCase.setUp(self)
+        # GIVEN a known player with FSA joe_fsa, cl_guid "cl_guid_A" that will connect on slot 3
+        when(self.console).write('auth-whois 3').thenReturn(r'''auth: id: 3 - name: ^7Joe - login: joe_fsa - notoriety: serious - level: -1''')
+        player = FakeClient(console=self.console, name="Joe", guid="cl_guid_A", pbid="joe_fsa")
+        player.save()
+        self.known_player_db_id = player.id
+        # GIVEN another known player with FSA joe_fsa and cl_guid "cl_guid_B" that we do not expect to connect
+        the_other_player = FakeClient(console=self.console, name="Jack", guid="cl_guid_B", pbid="joe_fsa")
+        the_other_player.save()
+        # THEN we have 0 connected players and 2 players known in database
+        self.assertDictEqual({'Kicks': 0, 'TempBans': 0, 'clients': 2, 'Bans': 0, 'Warnings': 0}, self.console.storage.getCounts())
+        self.assertEqual(0, len(self.console.clients))
+
+    def test_unknown_cl_guid(self):
+        # GIVEN player with known FSA and unknown cl_guid
+        player = FakeClient(console=self.console, name="Joe", guid="cl_guid_f00")
+        # WHEN player connects
+        player.connects("3")
+        # THEN player is authenticated
+        self.assertEqual(1, len(self.console.clients))
+        self.assertTrue(player.authed)
+        # THEN a new client entry is be created in database
+        self.assertDictEqual({'Kicks': 0, 'TempBans': 0, 'clients': 3, 'Bans': 0, 'Warnings': 0}, self.console.storage.getCounts())
+        # THEN the new database player entry has the current values for cl_guid and FSA
+        player_from_db = self.console.storage.getClient(Client(id=player.id))
+        self.assertEqual("cl_guid_f00", player_from_db.guid)
+        self.assertEqual("joe_fsa", player_from_db.pbid)
+        # THEN we now have 3 database entries for FSA joe_fsa
+        self.assertEqual(3, len(self.console.storage.getClientsMatching({'pbid': "joe_fsa"})))
+
+    def test_known_cl_guid_for_that_fsa(self):
+        # GIVEN player with known FSA and known cl_guid for that FSA
+        player = FakeClient(console=self.console, name="Joe", guid="cl_guid_A")
+        # WHEN player connects
+        player.connects("3")
+        # THEN player auth against the known DB entry
+        self.assertEqual(1, len(self.console.clients))
+        self.assertTrue(player.authed)
+        self.assertEqual(self.known_player_db_id, player.id)
+        # THEN no new client entry must be created in database
+        self.assertDictEqual({'Kicks': 0, 'TempBans': 0, 'clients': 2, 'Bans': 0, 'Warnings': 0}, self.console.storage.getCounts())
+        # THEN the DB player entry cl_guid is still "cl_guid_A"
+        player_from_db = self.console.storage.getClient(Client(id=player.id))
+        self.assertEqual("cl_guid_A", player_from_db.guid)
 
 
 
 class Test_parser_API(Iourt42TestCase):
+
+    def setUp(self):
+        Iourt42TestCase.setUp(self)
+        self.player = self.console.clients.newClient(cid="4", guid="theGuid", name="theName", ip="11.22.33.44")
 
     def test_getPlayerList(self):
         # GIVEN
@@ -433,6 +730,9 @@ class Test_inflictCustomPenalty(Iourt42TestCase):
     'mute', 'kill' or anything you want.
     /!\ This method must return True if the penalty was inflicted.
     """
+    def setUp(self):
+        Iourt42TestCase.setUp(self)
+        self.player = self.console.clients.newClient(cid="4", guid="theGuid", name="theName", ip="11.22.33.44")
 
     def test_slap(self):
         result = self.console.inflictCustomPenalty('slap', self.player)
@@ -529,8 +829,8 @@ class Test_ban_with_FrozenSand_auth(Iourt42TestCase):
 
     def setUp(self):
         Iourt42TestCase.setUp(self)
+        self.player = self.console.clients.newClient(cid="4", guid="theGuid", name="theName", ip="11.22.33.44")
         self.player.pbid = "thePlayerAccount"
-
 
     #-------------------------------------------------------------------------------------------------------------------
     @staticmethod

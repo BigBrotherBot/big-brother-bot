@@ -45,6 +45,15 @@
 #  * new: support new jump game type with code 9
 # 2012/11/15 - 1.7.1 - Courgette
 #  * fix: banning with the Frozen Sand auth system now works with servers set to auth private or notoriety mode
+# 26/11/2012 - 1.8 - Courgette
+#     * protect some of the Client object property
+# 26/11/2012 - 1.9 - Courgette
+#     * fix authentication for connecting player Frosen Sand Account is uniquely known in the B3 database
+# 07/12/2012 - 1.10 - Courgette
+#     * add new events : EVT_CLIENT_JUMP_TIMER_START, EVT_CLIENT_JUMP_TIMER_STOP, EVT_CLIENT_POS_SAVE,
+#       EVT_CLIENT_POS_LOAD and EVT_CLIENT_SURVIVOR_WINNERwhich can be used by plugins
+# 08/12/2012 - 1.10.1 - Courgette
+#     * fix EVT_CLIENT_JUMP_TIMER_START and EVT_CLIENT_JUMP_TIMER_STOP events when no location name is provided
 #
 import re, new
 import time
@@ -56,7 +65,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.7.1'
+__version__ = '1.10.1'
 
 class Iourt42Client(Client):
 
@@ -73,9 +82,16 @@ class Iourt42Client(Client):
             self.console.error("DATA ERROR: found %s client having Frozen Sand Account '%s'" % (len(clients_matching_pbid), self.pbid))
             return self.auth_by_pbid_and_guid()
         elif len(clients_matching_pbid) == 1:
-            for k,v in clients_matching_pbid[0].__dict__.iteritems():
-                setattr(self, k, v)
-            return True
+            self.id = clients_matching_pbid[0].id
+            # we may have a second client entry in database with current guid. We want to update our current
+            # client guid only if it is not the case.
+            try:
+                client_by_guid = self.console.storage.getClient(Client(guid=self.guid))
+            except KeyError:
+                client_by_guid = None
+            if client_by_guid and client_by_guid.id != self.id:
+                self._guid = None # so storage.getClient is able to overwrite the value which will make it remain unchanged in database when .save() will be called later on
+            return self.console.storage.getClient(self)
         else:
             self.console.debug('Frozen Sand Account [%s] unknown in database', self.pbid)
             return False
@@ -83,9 +99,8 @@ class Iourt42Client(Client):
     def auth_by_pbid_and_guid(self):
         clients_matching_pbid = self.console.storage.getClientsMatching({ 'pbid': self.pbid, 'guid': self.guid })
         if len(clients_matching_pbid):
-            for k,v in clients_matching_pbid[0].__dict__.iteritems():
-                setattr(self, k, v)
-            return True
+            self.id = clients_matching_pbid[0].id
+            return self.console.storage.getClient(self)
         else:
             self.console.debug("Frozen Sand Account [%s] with guid '%s' unknown in database" % (self.pbid, self.guid))
             return False
@@ -106,12 +121,11 @@ class Iourt42Client(Client):
 
             name = self.name
             ip = self.ip
-            guid = self.guid
             pbid = self.pbid
 
             if not pbid and self.cid:
                 fsa_info = self.console.queryClientFrozenSandAccount(self.cid)
-                pbid = fsa_info.get('login', None)
+                self.pbid = pbid = fsa_info.get('login', None)
 
             # Frozen Sand Account related info
             if not hasattr(self, 'notoriety'):
@@ -156,7 +170,6 @@ class Iourt42Client(Client):
             self.ip = ip
             if pbid:
                 self.pbid = pbid
-            self.guid = guid
             self.save()
             self.authed = True
 
@@ -182,7 +195,8 @@ class Iourt42Client(Client):
         else:
             return False
 
-
+    def __str__(self):
+        return "Client42<@%s:%s|%s:\"%s\":%s>" % (self.id, self.guid, self.pbid, self.name, self.cid)
 
 class Iourt42Parser(Iourt41Parser):
     gameName = 'iourt42'
@@ -229,6 +243,15 @@ class Iourt42Parser(Iourt41Parser):
 
         #Vote: 0 - 2
         re.compile(r'''^(?P<action>Vote): (?P<data>(?P<cid>[0-9]+) - (?P<value>.*))$'''),
+
+        #13:34 ClientJumpTimerStarted: 0 - way: 2 (Easy Way)
+        re.compile(r'^(?P<action>ClientJumpTimerStarted):\s(?P<cid>\d+)\s-\s(?P<data>way: (?P<way_id>\d+)(?:\s\((?P<way_label>.+)\))?)$', re.IGNORECASE),
+        #13:34 ClientJumpTimerStopped: 0 - 5 seconds - way: 1 (Hard Way)
+        re.compile(r'^(?P<action>ClientJumpTimerStopped):\s(?P<cid>\d+)\s-\s(?P<data>(?P<duration>.+)\s-\sway: (?P<way_id>\d+)(?:\s\((?P<way_label>.+)\))?)$', re.IGNORECASE),
+
+        #13:34 ClientSavePosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"
+        #13:34 ClientLoadPosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"
+        re.compile(r'^(?P<action>Client(Save|Load)Position):\s(?P<cid>\d+)\s-\s(?P<data>(?P<x>-?\d+(?:\.\d+)?)\s-\s(?P<y>-?\d+(?:\.\d+)?)\s-\s(?P<z>-?\d+(?:\.\d+)?)\s-\s"(?P<name>.*)")$', re.IGNORECASE),
 
         #Generated with ioUrbanTerror v4.1:
         #Hit: 12 7 1 19: BSTHanzo[FR] hit ercan in the Helmet
@@ -327,6 +350,11 @@ class Iourt42Parser(Iourt41Parser):
         self._eventMap['hotpotato'] = self.EVT_GAME_FLAG_HOTPOTATO
         self.EVT_CLIENT_CALLVOTE = self.Events.createEvent('EVT_CLIENT_CALLVOTE', 'Event client call vote')
         self.EVT_CLIENT_VOTE = self.Events.createEvent('EVT_CLIENT_VOTE', 'Event client vote')
+        self.EVT_CLIENT_JUMP_TIMER_START = self.Events.createEvent('EVT_CLIENT_JUMP_TIMER_START', 'Event client jump timer started')
+        self.EVT_CLIENT_JUMP_TIMER_STOP = self.Events.createEvent('EVT_CLIENT_JUMP_TIMER_STOP', 'Event client jump timer stopped')
+        self.EVT_CLIENT_POS_SAVE = self.Events.createEvent('EVT_CLIENT_POS_SAVE', 'Event client position saved')
+        self.EVT_CLIENT_POS_LOAD = self.Events.createEvent('EVT_CLIENT_POS_LOAD', 'Event client position loaded')
+        self.EVT_CLIENT_SURVIVOR_WINNER = self.Events.createEvent('EVT_CLIENT_SURVIVOR_WINNER', 'Event client survivor winner')
 
         self.load_conf_frozensand_ban_settings()
 
@@ -430,6 +458,55 @@ class Iourt42Parser(Iourt41Parser):
             self.debug('No client found')
             return None
         return Event(self.EVT_CLIENT_VOTE, client=client, data=value)
+
+    def OnClientjumptimerstarted(self, action, data, match=None):
+        cid = match.group('cid')
+        way_id = match.group('way_id')
+        way_label = match.group('way_label')
+        client = self.getByCidOrJoinPlayer(cid)
+        if not client:
+            self.debug('No client found')
+            return None
+        return Event(self.EVT_CLIENT_JUMP_TIMER_START, client=client, data={'way_id': way_id, 'way_label': way_label})
+
+    def OnClientjumptimerstopped(self, action, data, match=None):
+        cid = match.group('cid')
+        way_id = match.group('way_id')
+        way_label = match.group('way_label')
+        duration = match.group('duration')
+        client = self.getByCidOrJoinPlayer(cid)
+        if not client:
+            self.debug('No client found')
+            return None
+        return Event(self.EVT_CLIENT_JUMP_TIMER_STOP, client=client, data={'way_id': way_id, 'way_label': way_label, 'duration': duration})
+
+    def OnClientsaveposition(self, action, data, match=None):
+        cid = match.group('cid')
+        position = float(match.group('x')), float(match.group('y')), float(match.group('z'))
+        name = match.group('name')
+        client = self.getByCidOrJoinPlayer(cid)
+        if not client:
+            self.debug('No client found')
+            return None
+        return Event(self.EVT_CLIENT_POS_SAVE, client=client, data={'position': position, 'name': name})
+
+    def OnClientloadposition(self, action, data, match=None):
+        cid = match.group('cid')
+        position = float(match.group('x')), float(match.group('y')), float(match.group('z'))
+        name = match.group('name')
+        client = self.getByCidOrJoinPlayer(cid)
+        if not client:
+            self.debug('No client found')
+            return None
+        return Event(self.EVT_CLIENT_POS_LOAD, client=client, data={'position': position, 'name': name})
+
+
+    def OnSurvivorwinner(self, action, data, match=None):
+        client = self.getByCidOrJoinPlayer(data)
+        if not client:
+            self.debug('No client found')
+            return None
+        return Event(self.EVT_CLIENT_SURVIVOR_WINNER, client=client, data=None)
 
 
 
@@ -679,7 +756,8 @@ class Iourt42Parser(Iourt41Parser):
                 for k, v in bclient.iteritems():
                     if hasattr(client, 'gear') and k == 'gear' and client.gear != v:
                         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_GEAR_CHANGE, v, client))
-                    setattr(client, k, v)
+                    if not k.startswith('_') and k not in ('login', 'password', 'groupBits', 'maskLevel', 'autoLogin', 'greeting'):
+                        setattr(client, k, v)
             else:
                 #make a new client
                 # use cl_guid

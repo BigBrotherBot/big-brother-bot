@@ -28,9 +28,10 @@
 # 17/06/2012 - 1.5   - Courgette - add getStuffSoundingLike()
 # 19/10/2012 - 1.6   - Courgette - improve getStuffSoundingLike() so it discards non letter/digit characters
 # 20/10/2012 - 1.7   - Courgette - fix soundex() error when input string is unicode
+# 26/11/2012 - 1.8   - Courgette - add hash_password()
 #
 __author__    = 'ThorN, xlr8or'
-__version__   = '1.7'
+__version__   = '1.8'
 
 import b3
 import re
@@ -39,8 +40,7 @@ import sys
 import imp
 import string
 import urllib2
-import json
-
+from hashlib import md5
 
 
 def getModule(name):
@@ -344,3 +344,7 @@ def getStuffSoundingLike(stuff, expected_stuff):
         match = expected_stuff
         match.sort(key=lambda _map: levenshteinDistance(clean_stuff, _map.strip()))
     return match
+
+
+def hash_password(password):
+    return md5(password).hexdigest()

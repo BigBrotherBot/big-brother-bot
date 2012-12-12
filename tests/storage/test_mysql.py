@@ -69,7 +69,7 @@ class Test_MySQL(B3TestCase, StorageAPITest):
         """this method is called before each test"""
         B3TestCase.setUp(self)
         try:
-            db = MySQLdb.connect(host='localhost', user='b3test', passwd='test')
+            db = MySQLdb.connect(host=MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASSWORD)
         except MySQLdb.OperationalError, message:
             self.fail("Error %d:\n%s" % (message[0], message[1]))
         db.query("DROP DATABASE IF EXISTS b3_test")
