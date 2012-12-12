@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # Example:
-# setup.py (for a release)
+# setup.py release (for a release)
 # setup.py beta (for a beta package)
 #
 
@@ -43,7 +43,7 @@ try:
 except:
     has_py2exe = False
 
-b3version = "1.9.0dev27"
+b3version = "1.9.0b2"
 
 # override egg_info command to copy the b3.egg-info/PKG-INFO file into the b3 directory
 class my_egg_info(orig_egg_info):
