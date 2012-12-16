@@ -32,7 +32,7 @@ Urban Terror 4.2
  - New penalty available : kill. You can use it in the censor plugin configuration for instance.
  - The Spamcontrol plugin reacts to radio message spamming
  - Fires game specific events for plugins : EVT_CLIENT_RADIO, EVT_CLIENT_CALLVOTE, EVT_CLIENT_VOTE, EVT_GAME_FLAG_HOTPOTATO for other plugins to act on.
- - There are new settings in the b3.xml config file to let you choose if you want to ban using the Frozen Sand auth system (with the rcon 'auth-ban' command)
+ - There are new settings in the b3.xml config file to let you choose if you want to ban using the Frozen Sand auth system (with the rcon 'auth-ban' command). Have a look at the b3.iourt42.tpl template config file
 
 CoD8 / 4D1
  - B3 now supports CoD8 from 4D1. See http://forum.bigbrotherbot.net/call-of-duty-8-%28modern-warfare-3%29/
