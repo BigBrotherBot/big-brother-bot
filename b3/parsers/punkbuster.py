@@ -18,17 +18,36 @@
 
 #   CHANGELOG
 #   18/10/2011 - 1.0.3 - Bravo17
-#   Check slot number go up in order in getplayerlist to weed out data errors
-
+#    Check slot number go up in order in getplayerlist to weed out data errors
+#   22/12/2012 - 1.1 - Courgette
+#    fix regex for parsing PB_SV_PList results for cases where a player has no power
+#
 __author__  = 'ThorN'
-__version__ = '1.0.3'
+__version__ = '1.1'
 
 import re
 
 #--------------------------------------------------------------------------------------------------
 class PunkBuster(object):
     console = None
-    regPlayer = re.compile(r'^.*?:\s+(?P<slot>[0-9]+)\s+(?P<pbid>[a-z0-9]+)\s?\([^>)]+\)\s(?P<ip>[0-9.:]+):(?P<port>[0-9-]+) (?P<status>[a-z]+)\s+(?P<power>[0-9]+)\s+(?P<auth>[0-9.]+)\s+(?P<ss>[0-9]+)(\{[^}]+\})?\s+\((?P<os>[^)]+)\)\s+"?(?P<name>[^"]+)"?$', re.I)
+
+#    : Player List: [Slot #] [GUID] [Address] [Status] [Power] [Auth Rate] [Recent SS] [O/S] [Name]
+#    : 4  27b26543216546163546513465135135(-) 111.11.1.11:28960 OK   1 3.0 0 (W) "ShyRat"
+#    : 5 387852749658574858598854913cdf11(-) 222.222.222.222:28960 OK   10.0 0 (W) "shatgun"
+#    : 6 9732d328485274156125252141252ba1(-) 33.133.3.133:-28960 OK   1 5.0 0 (W) "FATTYBMBLATY"
+    regPlayer = re.compile(r"""
+^.*?:\s+
+	(?P<slot>[0-9]+)\s+                     # slot
+	(?P<pbid>[a-z0-9]+)\s?\([^>)]+\)\s      # PB id
+	(?P<ip>[0-9.:]+):(?P<port>[0-9-]+)\s    # IP:port
+	(?P<status>[a-z]+)\s+                   # status
+	(?:(?P<power>[0-9]+)\s+)?               # power (may be missing)
+	(?P<auth>[0-9.]+)\s                     # auth rate
+	(?P<ss>[0-9]+)(\{[^}]+\})?\s+           # recent SS
+	\((?P<os>[^)]+)\)\s+                    # O/S
+	"?(?P<name>[^"]+)"?                     # name
+$
+""", re.IGNORECASE|re.VERBOSE)
 
 
     def __init__(self, console):
