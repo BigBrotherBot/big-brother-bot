@@ -54,6 +54,9 @@
 #       EVT_CLIENT_POS_LOAD and EVT_CLIENT_SURVIVOR_WINNERwhich can be used by plugins
 # 08/12/2012 - 1.10.1 - Courgette
 #     * fix EVT_CLIENT_JUMP_TIMER_START and EVT_CLIENT_JUMP_TIMER_STOP events when no location name is provided
+# 22/12/2012 - 1.11 - Courgette
+#     * update for UrT 4.2.009 release. adds UT_MOD_SMITED, UT_MOD_GLOCK and fix constants values for some of the
+#       UT_MOD_* constants.
 #
 import re, new
 import time
@@ -65,7 +68,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.10.1'
+__version__ = '1.11'
 
 class Iourt42Client(Client):
 
@@ -326,6 +329,62 @@ class Iourt42Parser(Iourt41Parser):
 
     _permban_with_frozensand = False
     _tempban_with_frozensand = False
+
+    ## kill modes
+    MOD_WATER='1'
+    MOD_LAVA='3'
+    MOD_TELEFRAG='5'
+    MOD_FALLING='6'
+    MOD_SUICIDE='7'
+    MOD_TRIGGER_HURT='9'
+    MOD_CHANGE_TEAM='10'
+    UT_MOD_KNIFE='12'
+    UT_MOD_KNIFE_THROWN='13'
+    UT_MOD_BERETTA='14'
+    UT_MOD_DEAGLE='15'
+    UT_MOD_SPAS='16'
+    UT_MOD_UMP45='17'
+    UT_MOD_MP5K='18'
+    UT_MOD_LR300='19'
+    UT_MOD_G36='20'
+    UT_MOD_PSG1='21'
+    UT_MOD_HK69='22'
+    UT_MOD_BLED='23'
+    UT_MOD_KICKED='24' # not exising in 4.2 ?
+    UT_MOD_HEGRENADE='25'
+    UT_MOD_SR8='27'
+    UT_MOD_AK103='29'
+    UT_MOD_SPLODED='30'
+    UT_MOD_SLAPPED='31'
+    UT_MOD_SMITED = '32'
+    UT_MOD_BOMBED='33'
+    UT_MOD_NUKED='34'
+    UT_MOD_NEGEV='35'
+    UT_MOD_HK69_HIT='36'
+    UT_MOD_M4='37'
+    UT_MOD_GLOCK='38'
+    UT_MOD_FLAG='39'
+    UT_MOD_GOOMBA='40'
+
+    ## weapons id on Hit: lines are different than the one
+    ## on the Kill: lines. Here the translation table
+    hitweapon2killweapon = {
+        1: UT_MOD_KNIFE,
+        2: UT_MOD_BERETTA,
+        3: UT_MOD_DEAGLE,
+        4: UT_MOD_SPAS,
+        5: UT_MOD_MP5K,
+        6: UT_MOD_UMP45,
+        8: UT_MOD_LR300,
+        9: UT_MOD_G36,
+        10: UT_MOD_PSG1,
+        14: UT_MOD_SR8,
+        15: UT_MOD_AK103,
+        17: UT_MOD_NEGEV,
+        19: UT_MOD_M4,
+        20: UT_MOD_GLOCK,
+        23: UT_MOD_KNIFE_THROWN,
+    }
 
 
     def __new__(cls, *args, **kwargs):

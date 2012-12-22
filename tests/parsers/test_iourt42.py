@@ -170,6 +170,16 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_target=fatmatic,
             event_data=(15, '35', '9'))
 
+    def test_Kill(self):
+        patate = FakeClient(self.console, name="Patate", guid="Patate_guid")
+        psyp = FakeClient(self.console, name="psyp", guid="psyp_guid")
+        patate.connects('0')
+        psyp.connects('1')
+        self.assertEvent(r'''Kill: 0 1 38: Patate killed psyp by UT_MOD_GLOCK''',
+            event_type='EVT_CLIENT_KILL',
+            event_client=patate,
+            event_target=psyp,
+            event_data=(100, '38', 'body', 'UT_MOD_GLOCK'))
 
     def test_say(self):
         marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
@@ -234,6 +244,98 @@ class Test_log_lines_parsing(Iourt42TestCase):
         marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
         marcel.connects('0')
         self.assertEvent(r'''SurvivorWinner: 0''', event_type='EVT_CLIENT_SURVIVOR_WINNER', event_client=marcel)
+
+
+
+class Test_kill_mods(Test_log_lines_parsing):
+    def setUp(self):
+        Test_log_lines_parsing.setUp(self)
+        self.joe = FakeClient(self.console, name="Joe", guid="000000000000000")
+        self.joe.connects('0')
+        self.bob = FakeClient(self.console, name="Bob", guid="111111111111111")
+        self.bob.connects('1')
+        self.world = self.console.clients['-1']
+
+    def test_mod_water(self):
+        self.assertEvent('0:56 Kill: 1022 0 1: <world> killed Joe by MOD_WATER',
+            event_type='EVT_CLIENT_SUICIDE',
+            event_client=self.joe,
+            event_target=self.joe,
+            event_data=(100, self.console.MOD_WATER, 'body', 'MOD_WATER')
+        )
+
+    def test_nuke(self):
+        self.assertEvent('5:19 Kill: 0 0 34: Joe killed Joe by UT_MOD_NUKED',
+            event_type='EVT_CLIENT_KILL',
+            event_client=self.world,
+            event_target=self.joe,
+            event_data=(100, self.console.UT_MOD_NUKED, 'body', 'UT_MOD_NUKED'))
+
+    def test_lava(self):
+        self.assertEvent('5:19 Kill: 1022 0 3: <world> killed Joe by MOD_LAVA',
+            event_type='EVT_CLIENT_SUICIDE',
+            event_client=self.joe,
+            event_target=self.joe,
+            event_data=(100, self.console.MOD_LAVA, 'body', 'MOD_LAVA'))
+
+    def test_falling(self):
+        self.assertEvent('0:32 Kill: 1022 0 6: <world> killed Joe by MOD_FALLING',
+            event_type='EVT_CLIENT_SUICIDE',
+            event_client=self.joe,
+            event_target=self.joe,
+            event_data=(100, self.console.MOD_FALLING, 'body', 'MOD_FALLING'))
+
+    def test_constants(self):
+        def assert_mod(kill_mod_number, kill_mod_name):
+            self.assertTrue(hasattr(self.console, kill_mod_name), "expecting parser to have a constant named %s = '%s'" % (kill_mod_name, kill_mod_number))
+            with patch.object(self.console, 'queueEvent') as queueEvent:
+                self.console.parseLine(r'''Kill: 0 1 %s: Joe killed Bob by %s''' % (kill_mod_number, kill_mod_name))
+                assert queueEvent.called, "No event was fired"
+                args = queueEvent.call_args
+            event_type_name = ('EVT_CLIENT_KILL', 'EVT_CLIENT_SUICIDE')
+            eventraised = args[0][0]
+            self.assertIsInstance(eventraised, Event)
+            self.assertIn(self.console.getEventKey(eventraised.type), event_type_name)
+            self.assertEquals(eventraised.data[0], 100)
+            self.assertEquals(eventraised.data[1], getattr(self.console, kill_mod_name))
+            self.assertEquals(eventraised.data[2], 'body')
+            self.assertEquals(eventraised.data[3], kill_mod_name)
+
+        assert_mod('1', 'MOD_WATER')
+        assert_mod('3', 'MOD_LAVA')
+        assert_mod('5', 'MOD_TELEFRAG')
+        assert_mod('6', 'MOD_FALLING')
+        assert_mod('7', 'MOD_SUICIDE')
+        assert_mod('9', 'MOD_TRIGGER_HURT')
+        assert_mod('10', 'MOD_CHANGE_TEAM')
+        assert_mod('12', 'UT_MOD_KNIFE')
+        assert_mod('13', 'UT_MOD_KNIFE_THROWN')
+        assert_mod('14', 'UT_MOD_BERETTA')
+        assert_mod('15', 'UT_MOD_DEAGLE')
+        assert_mod('16', 'UT_MOD_SPAS')
+        assert_mod('17', 'UT_MOD_UMP45')
+        assert_mod('18', 'UT_MOD_MP5K')
+        assert_mod('19', 'UT_MOD_LR300')
+        assert_mod('20', 'UT_MOD_G36')
+        assert_mod('21', 'UT_MOD_PSG1')
+        assert_mod('22', 'UT_MOD_HK69')
+        assert_mod('23', 'UT_MOD_BLED')
+        assert_mod('24', 'UT_MOD_KICKED') # not exising in 4.2 ?
+        assert_mod('25', 'UT_MOD_HEGRENADE')
+        assert_mod('27', 'UT_MOD_SR8')
+        assert_mod('29', 'UT_MOD_AK103')
+        assert_mod('30', 'UT_MOD_SPLODED')
+        assert_mod('31', 'UT_MOD_SLAPPED')
+        assert_mod('32', 'UT_MOD_SMITED')
+        assert_mod('33', 'UT_MOD_BOMBED')
+        assert_mod('34', 'UT_MOD_NUKED')
+        assert_mod('35', 'UT_MOD_NEGEV')
+        assert_mod('36', 'UT_MOD_HK69_HIT')
+        assert_mod('37', 'UT_MOD_M4')
+        assert_mod('38', 'UT_MOD_GLOCK')
+        assert_mod('39', 'UT_MOD_FLAG')
+        assert_mod('40', 'UT_MOD_GOOMBA')
+
 
 
 
