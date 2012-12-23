@@ -21,9 +21,13 @@
 #    Check slot number go up in order in getplayerlist to weed out data errors
 #   22/12/2012 - 1.1 - Courgette
 #    fix regex for parsing PB_SV_PList results for cases where a player has no power
+#   23/12/2012 - 1.2 - Courgette
+#    getPlayerList now only returns info cid, pbid, guid and ip for each connected player. PB is infamously known for
+#    missing a character randomly in its PB_SV_PList response, we should succeed if that missing char is in an unimportant
+#    part of the response.
 #
 __author__  = 'ThorN'
-__version__ = '1.1'
+__version__ = '1.2'
 
 import re
 
@@ -33,21 +37,17 @@ class PunkBuster(object):
 
 #    : Player List: [Slot #] [GUID] [Address] [Status] [Power] [Auth Rate] [Recent SS] [O/S] [Name]
 #    : 4  27b26543216546163546513465135135(-) 111.11.1.11:28960 OK   1 3.0 0 (W) "ShyRat"
-#    : 5 387852749658574858598854913cdf11(-) 222.222.222.222:28960 OK   10.0 0 (W) "shatgun"
+#    : 5 387852749658574858598854913cdf11(-) 222.222.222.222:28960 OK   1 10.0 0 (W) "shatgun"
 #    : 6 9732d328485274156125252141252ba1(-) 33.133.3.133:-28960 OK   1 5.0 0 (W) "FATTYBMBLATY"
     regPlayer = re.compile(r"""
-^.*?:\s+
-	(?P<slot>[0-9]+)\s+                     # slot
-	(?P<pbid>[a-z0-9]+)\s?\([^>)]+\)\s      # PB id
-	(?P<ip>[0-9.:]+):(?P<port>[0-9-]+)\s    # IP:port
-	(?P<status>[a-z]+)\s+                   # status
-	(?:(?P<power>[0-9]+)\s+)?               # power (may be missing)
-	(?P<auth>[0-9.]+)\s                     # auth rate
-	(?P<ss>[0-9]+)(\{[^}]+\})?\s+           # recent SS
-	\((?P<os>[^)]+)\)\s+                    # O/S
-	"?(?P<name>[^"]+)"?                     # name
-$
-""", re.IGNORECASE|re.VERBOSE)
+        ^.*?                                        # a new line start with junk
+          (?P<slot>[1-9][0-9]*)                     # slot number
+        \D.*?                                       # anything but a number and eventually some junk
+          (?P<pbid>[a-f0-9]{30,})                   # PB id (at least 30 char long)
+        [^a-f0-9].*?                                # anything but a pbid char and eventually some junk
+          (?P<ip>(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])) # a valid IP number
+        .*$                                         # whatever is remaing on the line
+        """, re.IGNORECASE|re.VERBOSE)
 
 
     def __init__(self, console):
@@ -152,6 +152,11 @@ $
         return False
 
     def getPlayerList(self):
+        """
+        Extract cid, pbid, ip for all connected players.
+        :return: a dict having slot numbers (minus 1) as keys and an other dict as values. This later dict has keys :
+        cid, pbid, guid and ip
+        """
         data = self.pList()
         if not data:
             return {}
@@ -169,7 +174,8 @@ $
                     
                 else:
                     self.console.debug('Duplicate or Incorrect PB slot number - client ignored %s lastslot %s' % (m.group('slot'), lastslot))
-
+            elif 'Player List:' not in line:
+                self.console.verbose2("PB player info cannot be extracted of %r" % line)
         return players
 
     def __setattr__(self, key, value):
