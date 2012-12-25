@@ -25,9 +25,11 @@
 #    getPlayerList now only returns info cid, pbid, guid and ip for each connected player. PB is infamously known for
 #    missing a character randomly in its PB_SV_PList response, we should succeed if that missing char is in an unimportant
 #    part of the response.
+#   25/12/2012 - 1.2.1 - Courgette
+#    improve reliability of the regular expression for parsing PB_SV_PList response
 #
 __author__  = 'ThorN'
-__version__ = '1.2'
+__version__ = '1.2.1'
 
 import re
 
@@ -40,11 +42,12 @@ class PunkBuster(object):
 #    : 5 387852749658574858598854913cdf11(-) 222.222.222.222:28960 OK   1 10.0 0 (W) "shatgun"
 #    : 6 9732d328485274156125252141252ba1(-) 33.133.3.133:-28960 OK   1 5.0 0 (W) "FATTYBMBLATY"
     regPlayer = re.compile(r"""
-        ^.*?                                        # a new line start with junk
-          (?P<slot>[1-9][0-9]*)                     # slot number
-        \D.*?                                       # anything but a number and eventually some junk
-          (?P<pbid>[a-f0-9]{30,})                   # PB id (at least 30 char long)
-        [^a-f0-9].*?                                # anything but a pbid char and eventually some junk
+        ^.*?                                        # a new line start with junk (ungreedy mode)
+        (?:Server:?|:)\s*                           # end of PB response prefix
+          (?P<slot>[1-9][0-9]??)                    # slot number between 1 and 99 (ungreedy mode)
+        (?:\s+|)                                    # blank character(s) or nothing
+          (?P<pbid>[a-f0-9]{30,32})                 # PB id (at least 30 char long, max 32)
+        [^a-f0-9].*?                                # anything but a pbid char and eventually some junk (ungreedy mode)
           (?P<ip>(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])) # a valid IP number
         .*$                                         # whatever is remaing on the line
         """, re.IGNORECASE|re.VERBOSE)
