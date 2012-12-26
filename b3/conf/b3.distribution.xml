@@ -16,7 +16,12 @@
 	<settings name="b3">
 		<!--
 			Next line: the parser defines the game:
-			cod/cod2/cod4/cod5/cod6/cod7/iourt41/etpro/wop/smg/smg11/oa081 (it should NOT be 'changeme')
+                cod/cod2/cod4/cod5/cod6/cod7/cod8
+                iourt41/iourt42
+                bfbc2/bf3/moh
+                etpro/altitude/oa081/smg/sof2/wop/wop15
+homefront/ro2/csgo/ravaged/arma2
+            (it should NOT be 'changeme')
 		-->
 		<set name="parser">changeme</set>
 		<!-- Your database info: [mysql]://[db-user]:[db-password]@[db-server[:port]]/[db-name] -->

@@ -44,9 +44,11 @@
 # * fix the 'RCON: too much tries' error message when using commands sending multiple lines of text
 # 2012/11/27 - 1.7 - courgette
 # * rollback changes made in 1.6 as it does not solve much (at least with UrT) and break some rcon commands with at least cod6
+# 2012/12/22 - 1.8 - courgette
+# * do not strip data in game server responses
 #
 __author__ = 'ThorN'
-__version__ = '1.7'
+__version__ = '1.8'
 
 import socket
 import sys
@@ -307,7 +309,7 @@ class Rcon:
             if len(readables):
                 self.console.verbose('RCON: More data to read in socket')
 
-        return data.strip()
+        return data
 
     def close(self):
         pass

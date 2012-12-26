@@ -24,6 +24,7 @@ from mock import Mock, call, patch
 import unittest2 as unittest
 from b3.events import Event
 from b3.fake import FakeClient
+from b3.plugins.admin import AdminPlugin
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 from tests import B3TestCase
 
@@ -31,6 +32,7 @@ from b3 import __file__ as b3_module__file__
 from b3.config import XmlConfigParser
 
 
+ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.xml"))
 SPAMCONTROM_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_spamcontrol.xml"))
 
 class SpamcontrolTestCase(B3TestCase):
@@ -165,13 +167,20 @@ class Test_plugin(SpamcontrolTestCase):
     def setUp(self):
         SpamcontrolTestCase.setUp(self)
 
+        self.adminPlugin = AdminPlugin(self.console, ADMIN_CONFIG_FILE)
+        when(self.console).getPlugin("admin").thenReturn(self.adminPlugin)
+        self.adminPlugin.onLoadConfig()
+        self.adminPlugin.onStartup()
+
         with open(SPAMCONTROM_CONFIG_FILE) as default_conf:
             self.init_plugin(default_conf.read())
 
-        self.joe = FakeClient(self.console, name="Joe", exactName="Joe", guid="zaerezarezar", groupBits=1)
+        self.joe = FakeClient(self.console, name="Joe", guid="zaerezarezar", groupBits=1)
         self.joe.connects("1")
 
-        self.original_admin_plugin = self.p._adminPlugin
+        self.superadmin = FakeClient(self.console, name="Superadmin", guid="superadmin_guid", groupBits=128)
+        self.superadmin.connects("2")
+
 
     def assertSpaminsPoints(self, client, points):
         actual = client.var(self.p, 'spamins', 0).value
@@ -197,71 +206,64 @@ class Test_plugin(SpamcontrolTestCase):
 
 
     def test_cmd_spamins(self):
-        when(self.p._adminPlugin).findClientPrompt("joe", self.joe).thenReturn(self.joe)
+        # GIVEN
         when(self.p).getTime().thenReturn(0).thenReturn(3).thenReturn(4).thenReturn(4).thenReturn(500)
         self.joe.says("doh") # 0s
         self.joe.says("doh") # 3s
         self.joe.says("doh") # 4s
-
-        cmd_mock = Mock()
-        self.p.cmd_spamins(data="joe", client=self.joe, cmd=cmd_mock)
-        cmd_mock.sayLoudOrPM.assert_has_calls([call(self.joe, 'Joe^7 ^7currently has 9 spamins, peak was 9')]) # 4s
-
-        cmd_mock = Mock()
-        self.p.cmd_spamins(data="joe", client=self.joe, cmd=cmd_mock)
-        cmd_mock.sayLoudOrPM.assert_has_calls([call(self.joe, 'Joe^7 ^7currently has 0 spamins, peak was 9')]) # 500s
+        # WHEN
+        self.superadmin.clearMessageHistory()
+        self.superadmin.says("!spamins joe")
+        # THEN
+        self.assertListEqual(['Joe currently has 9 spamins, peak was 9'], self.superadmin.message_history) # 4s
+        # WHEN
+        self.superadmin.clearMessageHistory()
+        self.superadmin.says("!spamins joe")
+        self.assertListEqual(['Joe currently has 0 spamins, peak was 9'], self.superadmin.message_history) # 500s
 
 
     def test_cmd_spamins_lowercase(self):
         # GIVEN
         mike = FakeClient(self.console, name="Mike")
         mike.connects("3")
-        cmd_mock = Mock()
-
         # WHEN
-        when(self.p._adminPlugin).findClientPrompt("mike", self.joe).thenReturn(mike)
-        self.p.cmd_spamins(data="mike", client=self.joe, cmd=cmd_mock)
-
+        self.superadmin.clearMessageHistory()
+        self.superadmin.says("!spamins mike")
         # THEN
-        cmd_mock.sayLoudOrPM.assert_has_calls([call(self.joe, 'Mike^7 ^7currently has 0 spamins, peak was 0')])
+        self.assertListEqual(['Mike currently has 0 spamins, peak was 0'], self.superadmin.message_history)
 
 
     def test_cmd_spamins_uppercase(self):
         # GIVEN
         mike = FakeClient(self.console, name="Mike")
         mike.connects("3")
-        cmd_mock = Mock()
-
         # WHEN
-        when(self.p._adminPlugin).findClientPrompt("MIKE", self.joe).thenReturn(mike)
-        self.p.cmd_spamins(data="MIKE", client=self.joe, cmd=cmd_mock)
-
+        self.superadmin.clearMessageHistory()
+        self.superadmin.says("!spamins MIKE")
         # THEN
-        cmd_mock.sayLoudOrPM.assert_has_calls([call(self.joe, 'Mike^7 ^7currently has 0 spamins, peak was 0')])
+        self.assertListEqual(['Mike currently has 0 spamins, peak was 0'], self.superadmin.message_history)
 
 
     def test_cmd_spamins_unknown_player(self):
-        # GIVEN
-        cmd_mock = Mock()
-
         # WHEN
-        when(self.p._adminPlugin).findClientPrompt("mike", self.joe).thenReturn(None)
-        self.p.cmd_spamins(data="mike", client=self.joe, cmd=cmd_mock)
-
+        self.superadmin.clearMessageHistory()
+        self.superadmin.says("!spamins nobody")
         # THEN
-        cmd_mock.sayLoudOrPM.assert_has_calls([])
+        self.assertListEqual(['No players found matching nobody'], self.superadmin.message_history)
 
 
     def test_cmd_spamins_no_argument(self):
-        # GIVEN
-        cmd_mock = Mock()
-
         # WHEN
-        self.p.cmd_spamins(data=None, client=self.joe, cmd=cmd_mock)
-
+        self.joe.clearMessageHistory()
+        self.joe.says("!spamins")
         # THEN
-        cmd_mock.sayLoudOrPM.assert_has_calls([call(self.joe, 'Joe^7 ^7currently has 0 spamins, peak was 0')])
-
+        self.assertListEqual(['You do not have sufficient access to use !spamins'], self.joe.message_history)
+        # WHEN
+        self.superadmin.says("!putgroup joe mod")
+        self.joe.clearMessageHistory()
+        self.joe.says("!spamins")
+        # THEN
+        self.assertListEqual(['Joe is too cool to spam'], self.joe.message_history)
 
 
     def test_joe_gets_warned(self):

@@ -18,17 +18,39 @@
 
 #   CHANGELOG
 #   18/10/2011 - 1.0.3 - Bravo17
-#   Check slot number go up in order in getplayerlist to weed out data errors
-
+#    Check slot number go up in order in getplayerlist to weed out data errors
+#   22/12/2012 - 1.1 - Courgette
+#    fix regex for parsing PB_SV_PList results for cases where a player has no power
+#   23/12/2012 - 1.2 - Courgette
+#    getPlayerList now only returns info cid, pbid, guid and ip for each connected player. PB is infamously known for
+#    missing a character randomly in its PB_SV_PList response, we should succeed if that missing char is in an unimportant
+#    part of the response.
+#   25/12/2012 - 1.2.1 - Courgette
+#    improve reliability of the regular expression for parsing PB_SV_PList response
+#
 __author__  = 'ThorN'
-__version__ = '1.0.3'
+__version__ = '1.2.1'
 
 import re
 
 #--------------------------------------------------------------------------------------------------
 class PunkBuster(object):
     console = None
-    regPlayer = re.compile(r'^.*?:\s+(?P<slot>[0-9]+)\s+(?P<pbid>[a-z0-9]+)\s?\([^>)]+\)\s(?P<ip>[0-9.:]+):(?P<port>[0-9-]+) (?P<status>[a-z]+)\s+(?P<power>[0-9]+)\s+(?P<auth>[0-9.]+)\s+(?P<ss>[0-9]+)(\{[^}]+\})?\s+\((?P<os>[^)]+)\)\s+"?(?P<name>[^"]+)"?$', re.I)
+
+#    : Player List: [Slot #] [GUID] [Address] [Status] [Power] [Auth Rate] [Recent SS] [O/S] [Name]
+#    : 4  27b26543216546163546513465135135(-) 111.11.1.11:28960 OK   1 3.0 0 (W) "ShyRat"
+#    : 5 387852749658574858598854913cdf11(-) 222.222.222.222:28960 OK   1 10.0 0 (W) "shatgun"
+#    : 6 9732d328485274156125252141252ba1(-) 33.133.3.133:-28960 OK   1 5.0 0 (W) "FATTYBMBLATY"
+    regPlayer = re.compile(r"""
+        ^.*?                                        # a new line start with junk (ungreedy mode)
+        (?:Server:?|:)\s*                           # end of PB response prefix
+          (?P<slot>[1-9][0-9]??)                    # slot number between 1 and 99 (ungreedy mode)
+        (?:\s+|)                                    # blank character(s) or nothing
+          (?P<pbid>[a-f0-9]{30,32})                 # PB id (at least 30 char long, max 32)
+        [^a-f0-9].*?                                # anything but a pbid char and eventually some junk (ungreedy mode)
+          (?P<ip>(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])) # a valid IP number
+        .*$                                         # whatever is remaing on the line
+        """, re.IGNORECASE|re.VERBOSE)
 
 
     def __init__(self, console):
@@ -133,6 +155,11 @@ class PunkBuster(object):
         return False
 
     def getPlayerList(self):
+        """
+        Extract cid, pbid, ip for all connected players.
+        :return: a dict having slot numbers (minus 1) as keys and an other dict as values. This later dict has keys :
+        cid, pbid, guid and ip
+        """
         data = self.pList()
         if not data:
             return {}
@@ -150,7 +177,8 @@ class PunkBuster(object):
                     
                 else:
                     self.console.debug('Duplicate or Incorrect PB slot number - client ignored %s lastslot %s' % (m.group('slot'), lastslot))
-
+            elif 'Player List:' not in line:
+                self.console.verbose2("PB player info cannot be extracted of %r" % line)
         return players
 
     def __setattr__(self, key, value):
