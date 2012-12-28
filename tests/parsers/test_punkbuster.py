@@ -182,3 +182,59 @@ class Test_Punkbuster(B3TestCase):
             )
 
 
+
+    def test_getPlayerList_cod5(self):
+        # GIVEN
+        when(self.console).write('PB_SV_PList').thenReturn('''\
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK 0 2.9 0 (W) "FATTYBMBLATY"
+''')
+        # WHEN
+        rv = self.pb.getPlayerList()
+        # THEN
+        self.assertDictContainsSubset({'slot': '19', 'pbid': 'c0356dc89ddb0000000d4f9509db46d1', 'guid': 'c0356dc89ddb0000000d4f9509db46d1', 'ip': '11.111.111.11'}, rv.get('18', {}))
+
+    def test_getPlayerList_cod5_missing_chars_randomly(self):
+        """ it was reported that PB responses miss a character in an inconsistent manner.
+        We do our best to extract the only info we need.
+        """
+        lines = '''\
+erer: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+rver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erve: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver:19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1() 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(- 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-)11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 K   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 O   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK    2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   02.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 29 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.90 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9  (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 () "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W)"FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY
+'''
+        for line in lines.split('\n'):
+            if not line: # avoid empty lines
+                continue
+                # GIVEN
+            when(self.console).write('PB_SV_PList').thenReturn(line)
+            # WHEN
+            rv = self.pb.getPlayerList()
+            # THEN
+            self.assertIn('18', rv, msg="for test line %r" % line)
+            self.assertDictContainsSubset(
+                {'slot': '19', 'pbid': 'c0356dc89ddb0000000d4f9509db46d1', 'guid': 'c0356dc89ddb0000000d4f9509db46d1', 'ip': '11.111.111.11'}, rv['18'],
+                msg="for test line %r" % line
+            )
