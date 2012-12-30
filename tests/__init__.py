@@ -69,6 +69,7 @@ class B3TestCase(unittest.TestCase):
         flush_console_streams()
 
         # create a FakeConsole parser
+        from b3.fake import FakeConsole
         self.parser_conf = XmlConfigParser()
         self.parser_conf.loadFromString(r"""<configuration/>""")
         with logging_disabled():
