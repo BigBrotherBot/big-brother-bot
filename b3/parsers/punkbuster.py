@@ -49,7 +49,10 @@ class PunkBuster(object):
           (?P<pbid>[a-f0-9]{30,32})                 # PB id (at least 30 char long, max 32)
         [^a-f0-9].*?                                # anything but a pbid char and eventually some junk (ungreedy mode)
           (?P<ip>(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])) # a valid IP number
-        .*$                                         # whatever is remaing on the line
+        .+?                                         # junk
+        (?:\)\s*"|\)\s*|\s+")                       # detect start of name
+          (?P<name>.*?)"?                           # name
+        \s*$                                        # end of line
         """, re.IGNORECASE|re.VERBOSE)
 
 
