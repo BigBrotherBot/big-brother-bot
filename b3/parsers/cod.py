@@ -55,9 +55,10 @@
 # 01/28/2012 - 1.4.26 - 82ndab.Bravo17 - Add special case COD7 suicide regex where attacker team and name appear to be swapped in the console output
 # 10/03/2012 - 1.4.27 - 82ndab.Bravo17 - pbid now empty string instead of None if pb disabled
 # 07/07/2012 - 1.4.28 - Courgette - ensures the config file has option 'game_log' in section 'server'
+# 12/31/2012 - 1.4.29 - Courgette - accepts rcon status responses having negative port numbers
 
 __author__ = 'ThorN, xlr8or'
-__version__ = '1.4.28'
+__version__ = '1.4.29'
 
 import re, string, threading
 import b3
