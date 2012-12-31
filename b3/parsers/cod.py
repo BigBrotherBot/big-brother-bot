@@ -146,7 +146,7 @@ class CodParser(AbstractParser):
     #--- ----- ---- ------ --------------- ------- --------------------- ----- -----
     #2     0   29 465030 <-{^4AS^7}-^3ThorN^7->^7       50 68.63.6.62:-32085      6597  5000
     _regPlayer = re.compile(
-        r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$'
+        r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>-?[0-9-]+)\s+(?P<qport>-?[0-9]+)\s+(?P<rate>[0-9]+)$'
         , re.I)
 
     PunkBuster = None
