@@ -84,6 +84,7 @@ num score ping guid   name            lastmsg address               qport rate
   2     0  157 81554346 hugobongenhielm^7      50 11.11.11.11:524    22481 25000
   3     0  156 86330555 Irish^7                 0 11.11.11.11:9162     14288 25000
   4     0  999 68003079 Ashhole^7             750 11.11.11.11:19978 19033 25000
+  5     5   53 318670 bigredtwit^7            011.11.11.11:28966     1259 25000
 ''')
         # WHEN
         rv = self.console.getPlayerList()
@@ -100,4 +101,7 @@ num score ping guid   name            lastmsg address               qport rate
         self.assertDictContainsSubset({
             'slot': '4', 'score': '0', 'ping': '999', 'guid': '68003079', 'name': 'Ashhole^7', 'last': '750', 'ip': '11.11.11.11', 'pbid': None
         }, rv.get('4', {}), rv)
+        self.assertDictContainsSubset({
+            'slot': '5', 'score': '5', 'ping': '53', 'guid': '318670', 'name': 'bigredtwit^7', 'last': '0', 'ip': '11.11.11.11', 'pbid': None
+        }, rv.get('5', {}), rv)
 
