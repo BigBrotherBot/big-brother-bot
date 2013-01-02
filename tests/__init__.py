@@ -20,7 +20,6 @@ import logging
 import threading
 import sys
 from b3.config import XmlConfigParser
-from b3.fake import FakeConsole
 import b3.output # do not remove, needed because the module alters some defaults of the logging module
 log = logging.getLogger('output')
 log.setLevel(logging.WARNING)
@@ -30,12 +29,14 @@ import time
 import unittest2 as unittest
 
 
-testcase_lock = threading.Lock() # together with flush_console_streams, helps getting logging output related to the correct
-# test in test runners such as the one in PyCharm IDE.
+testcase_lock = threading.Lock() # together with flush_console_streams, helps getting logging output related to the
+# correct test in test runners such as the one in PyCharm IDE.
+
 
 def flush_console_streams():
     sys.stderr.flush()
     sys.stdout.flush()
+
 
 class B3TestCase(unittest.TestCase):
 
@@ -46,6 +47,7 @@ class B3TestCase(unittest.TestCase):
         # create a FakeConsole parser
         self.parser_conf = XmlConfigParser()
         self.parser_conf.loadFromString(r"""<configuration/>""")
+        from b3.fake import FakeConsole
         self.console = FakeConsole(self.parser_conf)
 
         self.console.screen = Mock()
@@ -53,7 +55,7 @@ class B3TestCase(unittest.TestCase):
         self.console.upTime = Mock(return_value=3)
 
         self.console.cron.stop()
-        
+
         def myError(msg, *args, **kwargs):
             print(("ERROR: %s" % msg) % args)
         self.console.error = myError
