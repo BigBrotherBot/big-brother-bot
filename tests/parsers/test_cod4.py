@@ -17,13 +17,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 import logging
-from mock import Mock, call, patch
+from mock import Mock
 from mockito import mock, when, any as anything
 import unittest2 as unittest
-from b3.clients import Clients
 from b3.config import XmlConfigParser
-from b3.events import Event
-from b3.fake import FakeClient
 from b3.parsers.cod4 import Cod4Parser
 
 log = logging.getLogger("test")
@@ -43,7 +40,6 @@ class Cod4TestCase(unittest.TestCase):
         # Now parser inheritance hierarchy is :
         # Cod4Parser -> AbstractParser -> FakeConsole -> Parser
 
-        logging.getLogger('output').setLevel(logging.ERROR)
 
     def setUp(self):
         self.parser_conf = XmlConfigParser()
@@ -86,20 +82,20 @@ num score ping guid                             name            lastmsg address 
 --- ----- ---- -------------------------------- --------------- ------- --------------------- ----- -----
   0     0   14 1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaab player1^7               0 11.22.33.44:-6187 -1609 25000
   1     0   12 1ccccccccccccccccccccccccccccccc player2^7               0 22.33.44.55:-10803-23569 25000
-  3   486  185 ecc77e3400a38cc71b3849207e20e1b0 GO_NINJA^7              0 111.222.333.444:-15535-2655 25000
-  5    92  509 0123456789abcdef0123456789abcdef 7ajimaki^7            100 11.222.333.44:28960   -27329 25000
-  6     0  206 0123456789a654654646545789abcdef [NRNS]ArmedGuy^7        0 11.22.333.44:28960    -21813 25000
-  7    30  229 012343213211313213321313131bcdef Franco^7                0 111.22.333.444:23144  22922 25000
+  3   486  185 ecc77e3400a38cc71b3849207e20e1b0 GO_NINJA^7              0 111.222.111.111:-15535-2655 25000
+  5    92  509 0123456789abcdef0123456789abcdef 7ajimaki^7            100 11.222.111.44:28960   -27329 25000
+  6     0  206 0123456789a654654646545789abcdef [NRNS]ArmedGuy^7        0 11.22.111.44:28960    -21813 25000
+  7    30  229 012343213211313213321313131bcdef Franco^7                0 111.22.111.111:23144  22922 25000
+  8     0  110 a630006508000000000000000011d9a2 Badschga2002^7          0 11.11.11.6328960   -21738 25000
 ''')
         # WHEN
         rv = self.console.getPlayerList()
         # THEN
-        self.assertDictContainsSubset({
-            "0": {'slot': '0', 'score': '0', 'ping': '14', 'guid': '1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaab', 'name': 'player1^7', 'last': '0', 'ip': '11.22.33.44', 'port': '-6187', 'qport': '-1609', 'rate': '25000', 'pbid': None},
-            '1': {'slot': '1', 'score': '0', 'ping': '12', 'guid': '1ccccccccccccccccccccccccccccccc', 'name': 'player2^7', 'last': '0', 'ip': '22.33.44.55', 'port': '-10803', 'qport': '-23569', 'rate': '25000', 'pbid': None},
-            '3': {'slot': '3', 'score': '486', 'ping': '185', 'guid': 'ecc77e3400a38cc71b3849207e20e1b0', 'name': 'GO_NINJA^7', 'last': '0', 'ip': '111.222.333.444', 'port': '-15535', 'qport': '-2655', 'rate': '25000', 'pbid': None},
-            '5': {'slot': '5', 'score': '92', 'ping': '509', 'guid': '0123456789abcdef0123456789abcdef', 'name': '7ajimaki^7', 'last': '100', 'ip': '11.222.333.44', 'port': '28960', 'qport': '-27329', 'rate': '25000', 'pbid': None},
-            '6': {'slot': '6', 'score': '0', 'ping': '206', 'guid': '0123456789a654654646545789abcdef', 'name': '[NRNS]ArmedGuy^7', 'last': '0', 'ip': '11.22.333.44', 'port': '28960', 'qport': '-21813', 'rate': '25000', 'pbid': None},
-            '7': {'slot': '7', 'score': '30', 'ping': '229', 'guid': '012343213211313213321313131bcdef', 'name': 'Franco^7', 'last': '0', 'ip': '111.22.333.444', 'port': '23144', 'qport': '22922', 'rate': '25000', 'pbid': None}
-        }, rv)
+        self.assertDictEqual({'slot': '0', 'score': '0', 'ping': '14', 'guid': '1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaab', 'name': 'player1^7', 'last': '0', 'ip': '11.22.33.44', 'port': '-6187', 'qport': '-1609', 'rate': '25000', 'pbid': None}, rv.get("0", {}), rv)
+        self.assertDictEqual({'slot': '1', 'score': '0', 'ping': '12', 'guid': '1ccccccccccccccccccccccccccccccc', 'name': 'player2^7', 'last': '0', 'ip': '22.33.44.55', 'port': '-10803', 'qport': '-23569', 'rate': '25000', 'pbid': None}, rv.get("1", {}), rv)
+        self.assertDictEqual({'slot': '3', 'score': '486', 'ping': '185', 'guid': 'ecc77e3400a38cc71b3849207e20e1b0', 'name': 'GO_NINJA^7', 'last': '0', 'ip': '111.222.111.111', 'port': '-15535', 'qport': '-2655', 'rate': '25000', 'pbid': None}, rv.get("3", {}), rv)
+        self.assertDictEqual({'slot': '5', 'score': '92', 'ping': '509', 'guid': '0123456789abcdef0123456789abcdef', 'name': '7ajimaki^7', 'last': '100', 'ip': '11.222.111.44', 'port': '28960', 'qport': '-27329', 'rate': '25000', 'pbid': None}, rv.get("5", {}), rv)
+        self.assertDictEqual({'slot': '6', 'score': '0', 'ping': '206', 'guid': '0123456789a654654646545789abcdef', 'name': '[NRNS]ArmedGuy^7', 'last': '0', 'ip': '11.22.111.44', 'port': '28960', 'qport': '-21813', 'rate': '25000', 'pbid': None}, rv.get("6", {}), rv)
+        self.assertDictEqual({'slot': '7', 'score': '30', 'ping': '229', 'guid': '012343213211313213321313131bcdef', 'name': 'Franco^7', 'last': '0', 'ip': '111.22.111.111', 'port': '23144', 'qport': '22922', 'rate': '25000', 'pbid': None}, rv.get("7", {}), rv)
+        self.assertDictEqual({'slot': '8', 'score': '0', 'ping': '110', 'guid': 'a630006508000000000000000011d9a2', 'name': 'Badschga2002^7', 'last': '0', 'ip': '11.11.11.63', 'port': '28960', 'qport': '-21738', 'rate': '25000', 'pbid': None}, rv.get("8", {}), rv)
 

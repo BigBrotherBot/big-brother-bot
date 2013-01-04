@@ -57,8 +57,10 @@ import b3.lib.feedparser as feedparser
 import b3.plugin
 import b3.cron
 
+
 class MessageLoop:
     items = None
+
     def __init__(self):
         self.items = []
         self.index = 0
@@ -72,7 +74,7 @@ class MessageLoop:
         except:
             self.index = 0
             return None
-    
+
         self.index += 1
 
         if self.index >= len(self.items):
@@ -98,10 +100,11 @@ class MessageLoop:
             i += 1
 
         self.items = items
-            
+
     def clear(self):
         # empty the list
         self.items = []
+
 
 #--------------------------------------------------------------------------------------------------
 class AdvPlugin(b3.plugin.Plugin):
@@ -161,7 +164,7 @@ class AdvPlugin(b3.plugin.Plugin):
             pass
         #reduce feedmaxitems 1 point, since we're starting at item 0, this makes counting easier...
         self._feedmaxitems -= 1
-        self.verbose('self._feedmaxitems: %s' %self._feedmaxitems)
+        self.verbose('self._feedmaxitems: %s' % self._feedmaxitems)
 
         try:
             self._feedpre = self.config.get('newsfeed', 'pretext')
@@ -174,7 +177,7 @@ class AdvPlugin(b3.plugin.Plugin):
                 self._feed = None
             else:
                 f = feedparser.parse(self._feed)
-                
+
                 if not f or f['bozo'] == 1:
                     self._feed = None
                     self.warning('Error reading feed at %s' % self._feed)
@@ -189,10 +192,10 @@ class AdvPlugin(b3.plugin.Plugin):
         self.console.cron + self._cronTab
 
     def save(self):
-        if self._fileName:        
+        if self._fileName:
             f = file(self._fileName, 'w')
-            for msg in self._msg.items: 
-                if msg:         
+            for msg in self._msg.items:
+                if msg:
                     f.write(msg + "\n")
             f.close()
         else:
@@ -223,8 +226,8 @@ class AdvPlugin(b3.plugin.Plugin):
             if len(w) > 1:
                 if w[:6] == '/spam#':
                     w = self._adminPlugin.getSpam(w[6:])
-                self._msg.put(w)                
-        
+                self._msg.put(w)
+
     def adv(self, firstTry=True):
         ad = self._msg.getnext()
         if ad:
@@ -310,7 +313,7 @@ class AdvPlugin(b3.plugin.Plugin):
             self._feeditemnr += 1
             return self._feedpre + _item
         except:
-            self.debug('Feeditem %s out of range' %i)
+            self.debug('Feeditem %s out of range' % i)
             self._feeditemnr = 0
             return None
 
@@ -326,13 +329,13 @@ class AdvPlugin(b3.plugin.Plugin):
     def cmd_advsave(self, data, client=None, cmd=None):
         try:
             self.save()
-            client.message('^3Adv: ^7Saved %s messages' % len(self._msg.items)) 
+            client.message('^3Adv: ^7Saved %s messages' % len(self._msg.items))
         except Exception, e:
             client.message('^3Adv: ^7Error saving: %s' % e)
 
     def cmd_advload(self, data, client=None, cmd=None):
         self.onLoadConfig()
-        client.message('^3Adv: ^7Loaded %s messages' % len(self._msg.items))    
+        client.message('^3Adv: ^7Loaded %s messages' % len(self._msg.items))
 
     def cmd_advrate(self, data, client=None, cmd=None):
         if not data:
@@ -372,9 +375,9 @@ class AdvPlugin(b3.plugin.Plugin):
             self._msg.remove(int(data) - 1)
             if self._fileName:
                 self.save()
-            client.message('^3Adv: ^7Removed item: %s' % item)    
+            client.message('^3Adv: ^7Removed item: %s' % item)
         else:
-            client.message('^3Adv: ^7Item %s not found' % data) 
+            client.message('^3Adv: ^7Item %s not found' % data)
 
     def cmd_advlist(self, data, client=None, cmd=None):
         if len(self._msg.items) > 0:
@@ -400,5 +403,5 @@ class AdvPlugin(b3.plugin.Plugin):
         else:
             min = '*/%s' % self._rate
         self.debug('%s -> (%s,%s)' % (self._rate, min, sec))
-        return (min, sec)
+        return min, sec
 

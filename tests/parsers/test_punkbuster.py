@@ -26,11 +26,12 @@ from b3.output import VERBOSE2
 class Test_Punkbuster(B3TestCase):
 
     def setUp(self):
+        logger = logging.getLogger('output')
+        logger.propagate = False
         B3TestCase.setUp(self)
         self.pb = PunkBuster(self.console)
-        logger = logging.getLogger('output')
         logger.setLevel(VERBOSE2)
-
+        logger.propagate = True
 
     def test_getPlayerList_nominal(self):
         # GIVEN
@@ -45,11 +46,11 @@ class Test_Punkbuster(B3TestCase):
         # WHEN
         rv = self.pb.getPlayerList()
         # THEN
-        self.assertDictContainsSubset({'slot': '4', 'pbid': '27b26543216546163546513465135135', 'guid': '27b26543216546163546513465135135', 'ip': '111.11.1.11'}, rv.get('3', {}))
-        self.assertDictContainsSubset({'slot': '5', 'pbid': '387852749658574858598854913cdf11', 'guid': '387852749658574858598854913cdf11', 'ip': '222.222.222.222'}, rv.get('4', {}))
-        self.assertDictContainsSubset({'slot': '6', 'pbid': '9732d328485274156125252141252ba1', 'guid': '9732d328485274156125252141252ba1', 'ip': '33.133.3.133'}, rv.get('5', {}))
-        self.assertDictContainsSubset({'slot': '7', 'pbid': '290d4ad01d240000000026f304572ea', 'guid': '290d4ad01d240000000026f304572ea', 'ip': '11.43.50.163'}, rv.get('6', {}))
-        self.assertDictContainsSubset({'slot': '8', 'pbid': '290d4ad01d240000000026f304572eaf', 'guid': '290d4ad01d240000000026f304572eaf', 'ip': '11.43.50.163'}, rv.get('7', {}))
+        self.assertDictContainsSubset({'slot': '4', 'pbid': '27b26543216546163546513465135135', 'guid': '27b26543216546163546513465135135', 'ip': '111.11.1.11', 'name': 'ShyRat'}, rv.get('3', {}))
+        self.assertDictContainsSubset({'slot': '5', 'pbid': '387852749658574858598854913cdf11', 'guid': '387852749658574858598854913cdf11', 'ip': '222.222.222.222', 'name': 'shatgun'}, rv.get('4', {}))
+        self.assertDictContainsSubset({'slot': '6', 'pbid': '9732d328485274156125252141252ba1', 'guid': '9732d328485274156125252141252ba1', 'ip': '33.133.3.133', 'name': 'FATTYBMBLATY'}, rv.get('5', {}))
+        self.assertDictContainsSubset({'slot': '7', 'pbid': '290d4ad01d240000000026f304572ea', 'guid': '290d4ad01d240000000026f304572ea', 'ip': '11.43.50.163', 'name': 'RascalJr>XI<'}, rv.get('6', {}))
+        self.assertDictContainsSubset({'slot': '8', 'pbid': '290d4ad01d240000000026f304572eaf', 'guid': '290d4ad01d240000000026f304572eaf', 'ip': '11.43.50.163', 'name': 'RascalJr>XI<'}, rv.get('7', {}))
 
     def test_getPlayerList_with_color_prefix(self):
         # GIVEN
@@ -92,38 +93,38 @@ class Test_Punkbuster(B3TestCase):
         # WHEN
         rv = self.pb.getPlayerList()
         # THEN
-        self.assertDictContainsSubset({'slot': '1', 'pbid': '290d4ad01d240000000026f3045720ea', 'guid': '290d4ad01d240000000026f3045720ea', 'ip': '11.43.50.163'}, rv.get('0', {}))
-        self.assertDictContainsSubset({'slot': '2', 'pbid': 'a645e2a3a37200000000c5cebc1fc23f', 'guid': 'a645e2a3a37200000000c5cebc1fc23f', 'ip': '11.70.166.147'}, rv.get('1', {}))
-        self.assertDictContainsSubset({'slot': '3', 'pbid': 'a251eea4c887000000000645f5ddca23', 'guid': 'a251eea4c887000000000645f5ddca23', 'ip': '11.93.170.145'}, rv.get('2', {}))
-        self.assertDictContainsSubset({'slot': '4', 'pbid': '70b4914e81120000000020766dc48450', 'guid': '70b4914e81120000000020766dc48450', 'ip': '11.126.17.53'}, rv.get('3', {}))
-        self.assertDictContainsSubset({'slot': '5', 'pbid': '01f540988986000000000a0f7c7bf48f', 'guid': '01f540988986000000000a0f7c7bf48f', 'ip': '11.197.210.166'}, rv.get('4', {}))
-        self.assertDictContainsSubset({'slot': '6', 'pbid': '38e7b5ab9c6100000000cbe75d7ce9c2', 'guid': '38e7b5ab9c6100000000cbe75d7ce9c2', 'ip': '11.216.172.20'}, rv.get('5', {}))
-        self.assertDictContainsSubset({'slot': '7', 'pbid': 'f8dfea9a5e2300000000876c14403b94', 'guid': 'f8dfea9a5e2300000000876c14403b94', 'ip': '11.212.246.118'}, rv.get('6', {}))
-        self.assertDictContainsSubset({'slot': '8', 'pbid': 'e0fc8351d95c00000000f048e961eedc', 'guid': 'e0fc8351d95c00000000f048e961eedc', 'ip': '11.213.226.170'}, rv.get('7', {}))
-        self.assertDictContainsSubset({'slot': '9', 'pbid': 'a251eea4c887000000000645f5ddca23', 'guid': 'a251eea4c887000000000645f5ddca23', 'ip': '11.93.170.145'}, rv.get('8', {}))
-        self.assertDictContainsSubset({'slot': '10', 'pbid': '71305d46e6a000000000a71501d23a48', 'guid': '71305d46e6a000000000a71501d23a48', 'ip': '11.228.145.96'}, rv.get('9', {}))
-        self.assertDictContainsSubset({'slot': '11', 'pbid': '33f77d20d6d000000000b08807defb1', 'guid': '33f77d20d6d000000000b08807defb1', 'ip': '11.252.69.220'}, rv.get('10', {}))
-        self.assertDictContainsSubset({'slot': '12', 'pbid': 'adb91dcf5277000000004fff22df9930', 'guid': 'adb91dcf5277000000004fff22df9930', 'ip': '11.55.191.99'}, rv.get('11', {}))
-        self.assertDictContainsSubset({'slot': '13', 'pbid': 'bda238afe0a900000000a91512f3d8ed', 'guid': 'bda238afe0a900000000a91512f3d8ed', 'ip': '11.235.70.149'}, rv.get('12', {}))
-        self.assertDictContainsSubset({'slot': '14', 'pbid': 'fe64aacedc6c0000000061271334da91', 'guid': 'fe64aacedc6c0000000061271334da91', 'ip': '11.43.34.219'}, rv.get('13', {}))
-        self.assertDictContainsSubset({'slot': '15', 'pbid': '3c5c02546bd900000000bdcee588b243', 'guid': '3c5c02546bd900000000bdcee588b243', 'ip': '11.248.226.6'}, rv.get('14', {}))
-        self.assertDictContainsSubset({'slot': '16', 'pbid': 'd5f52bcc8ccb00000000453ea2c40266', 'guid': 'd5f52bcc8ccb00000000453ea2c40266', 'ip': '11.201.169.193'}, rv.get('15', {}))
-        self.assertDictContainsSubset({'slot': '17', 'pbid': '3634bef3586c00000000be14cfc6d6c0', 'guid': '3634bef3586c00000000be14cfc6d6c0', 'ip': '11.177.104.230'}, rv.get('16', {}))
-        self.assertDictContainsSubset({'slot': '18', 'pbid': '896f2a1b018500000000bd3d4719fa20', 'guid': '896f2a1b018500000000bd3d4719fa20', 'ip': '11.53.2.85'}, rv.get('17', {}))
-        self.assertDictContainsSubset({'slot': '19', 'pbid': 'ea6c0590d1700000000087dac8a4a4bd', 'guid': 'ea6c0590d1700000000087dac8a4a4bd', 'ip': '11.51.188.97'}, rv.get('18', {}))
-        self.assertDictContainsSubset({'slot': '20', 'pbid': '3a432901787e000000003ce5525dbfc3', 'guid': '3a432901787e000000003ce5525dbfc3', 'ip': '11.141.203.77'}, rv.get('19', {}))
-        self.assertDictContainsSubset({'slot': '21', 'pbid': 'a1f6548635d1000000004e623aa78271', 'guid': 'a1f6548635d1000000004e623aa78271', 'ip': '11.183.5.54'}, rv.get('20', {}))
-        self.assertDictContainsSubset({'slot': '22', 'pbid': '951d9c7e0ec400000000afccff20a5e7', 'guid': '951d9c7e0ec400000000afccff20a5e7', 'ip': '11.94.100.12'}, rv.get('21', {}))
-        self.assertDictContainsSubset({'slot': '23', 'pbid': 'ea8d4efaed70000000004cf39b04816c', 'guid': 'ea8d4efaed70000000004cf39b04816c', 'ip': '11.193.122.135'}, rv.get('22', {}))
-        self.assertDictContainsSubset({'slot': '24', 'pbid': '639d096de997000000001af19daef6ea', 'guid': '639d096de997000000001af19daef6ea', 'ip': '11.108.11.19'}, rv.get('23', {}))
-        self.assertDictContainsSubset({'slot': '25', 'pbid': 'b86f0bb06a0f00000000ee6fab2f33ef', 'guid': 'b86f0bb06a0f00000000ee6fab2f33ef', 'ip': '11.10.109.13'}, rv.get('24', {}))
-        self.assertDictContainsSubset({'slot': '26', 'pbid': '1c8500be8b0100000000b76a4e0c2b96', 'guid': '1c8500be8b0100000000b76a4e0c2b96', 'ip': '11.227.254.172'}, rv.get('25', {}))
-        self.assertDictContainsSubset({'slot': '27', 'pbid': 'f2b31d7bb120000000005a3913b0df1a', 'guid': 'f2b31d7bb120000000005a3913b0df1a', 'ip': '11.214.133.187'}, rv.get('26', {}))
-        self.assertDictContainsSubset({'slot': '28', 'pbid': '0e038f99dbf000000000980bc3c34567', 'guid': '0e038f99dbf000000000980bc3c34567', 'ip': '11.213.204.52'}, rv.get('27', {}))
-        self.assertDictContainsSubset({'slot': '30', 'pbid': '7a0b82d0396f000000003fa9a94f77b6', 'guid': '7a0b82d0396f000000003fa9a94f77b6', 'ip': '11.2.215.216'}, rv.get('29', {}))
-        self.assertDictContainsSubset({'slot': '31', 'pbid': '015dd0825cb100000000ee2500094db9', 'guid': '015dd0825cb100000000ee2500094db9', 'ip': '11.138.243.153'}, rv.get('30', {}))
-        self.assertDictContainsSubset({'slot': '32', 'pbid': '35731f786cc6000000003cefbf06ad53', 'guid': '35731f786cc6000000003cefbf06ad53', 'ip': '11.67.148.6'}, rv.get('31', {}))
-        self.assertDictContainsSubset({'slot': '33', 'pbid': 'cc2f13bed79a00000000c43d2261425e', 'guid': 'cc2f13bed79a00000000c43d2261425e', 'ip': '11.145.139.44'}, rv.get('32', {}))
+        self.assertDictContainsSubset({'slot': '1', 'pbid': '290d4ad01d240000000026f3045720ea', 'guid': '290d4ad01d240000000026f3045720ea', 'ip': '11.43.50.163', 'name': 'RascalJr>XI<'}, rv.get('0', {}))
+        self.assertDictContainsSubset({'slot': '2', 'pbid': 'a645e2a3a37200000000c5cebc1fc23f', 'guid': 'a645e2a3a37200000000c5cebc1fc23f', 'ip': '11.70.166.147', 'name': 'Szopen'}, rv.get('1', {}))
+        self.assertDictContainsSubset({'slot': '3', 'pbid': 'a251eea4c887000000000645f5ddca23', 'guid': 'a251eea4c887000000000645f5ddca23', 'ip': '11.93.170.145', 'name': 'Gatorgirl>XI<'}, rv.get('2', {}))
+        self.assertDictContainsSubset({'slot': '4', 'pbid': '70b4914e81120000000020766dc48450', 'guid': '70b4914e81120000000020766dc48450', 'ip': '11.126.17.53', 'name': 'chewmysaxJR>XI<'}, rv.get('3', {}))
+        self.assertDictContainsSubset({'slot': '5', 'pbid': '01f540988986000000000a0f7c7bf48f', 'guid': '01f540988986000000000a0f7c7bf48f', 'ip': '11.197.210.166', 'name': '|B|HELLSPAWN'}, rv.get('4', {}))
+        self.assertDictContainsSubset({'slot': '6', 'pbid': '38e7b5ab9c6100000000cbe75d7ce9c2', 'guid': '38e7b5ab9c6100000000cbe75d7ce9c2', 'ip': '11.216.172.20', 'name': 'Xp3rT>XI<'}, rv.get('5', {}))
+        self.assertDictContainsSubset({'slot': '7', 'pbid': 'f8dfea9a5e2300000000876c14403b94', 'guid': 'f8dfea9a5e2300000000876c14403b94', 'ip': '11.212.246.118', 'name': '[TO]Patriot'}, rv.get('6', {}))
+        self.assertDictContainsSubset({'slot': '8', 'pbid': 'e0fc8351d95c00000000f048e961eedc', 'guid': 'e0fc8351d95c00000000f048e961eedc', 'ip': '11.213.226.170', 'name': '^2|D2|^1Corp'}, rv.get('7', {}))
+        self.assertDictContainsSubset({'slot': '9', 'pbid': 'a251eea4c887000000000645f5ddca23', 'guid': 'a251eea4c887000000000645f5ddca23', 'ip': '11.93.170.145', 'name': 'Angus >XI<'}, rv.get('8', {}))
+        self.assertDictContainsSubset({'slot': '10', 'pbid': '71305d46e6a000000000a71501d23a48', 'guid': '71305d46e6a000000000a71501d23a48', 'ip': '11.228.145.96', 'name': ':.:RaDaR:.:'}, rv.get('9', {}))
+        self.assertDictContainsSubset({'slot': '11', 'pbid': '33f77d20d6d000000000b08807defb1', 'guid': '33f77d20d6d000000000b08807defb1', 'ip': '11.252.69.220', 'name': 'motodude>XI<'}, rv.get('10', {}))
+        self.assertDictContainsSubset({'slot': '12', 'pbid': 'adb91dcf5277000000004fff22df9930', 'guid': 'adb91dcf5277000000004fff22df9930', 'ip': '11.55.191.99', 'name': '<X> Art Intel'}, rv.get('11', {}))
+        self.assertDictContainsSubset({'slot': '13', 'pbid': 'bda238afe0a900000000a91512f3d8ed', 'guid': 'bda238afe0a900000000a91512f3d8ed', 'ip': '11.235.70.149', 'name': 'UnChileno>XI<AD'}, rv.get('12', {}))
+        self.assertDictContainsSubset({'slot': '14', 'pbid': 'fe64aacedc6c0000000061271334da91', 'guid': 'fe64aacedc6c0000000061271334da91', 'ip': '11.43.34.219', 'name': 'UnArmed>XI<'}, rv.get('13', {}))
+        self.assertDictContainsSubset({'slot': '15', 'pbid': '3c5c02546bd900000000bdcee588b243', 'guid': '3c5c02546bd900000000bdcee588b243', 'ip': '11.248.226.6', 'name': 'Kato'}, rv.get('14', {}))
+        self.assertDictContainsSubset({'slot': '16', 'pbid': 'd5f52bcc8ccb00000000453ea2c40266', 'guid': 'd5f52bcc8ccb00000000453ea2c40266', 'ip': '11.201.169.193', 'name': 'Xalandra'}, rv.get('15', {}))
+        self.assertDictContainsSubset({'slot': '17', 'pbid': '3634bef3586c00000000be14cfc6d6c0', 'guid': '3634bef3586c00000000be14cfc6d6c0', 'ip': '11.177.104.230', 'name': '=GEG=Devil'}, rv.get('16', {}))
+        self.assertDictContainsSubset({'slot': '18', 'pbid': '896f2a1b018500000000bd3d4719fa20', 'guid': '896f2a1b018500000000bd3d4719fa20', 'ip': '11.53.2.85', 'name': 'gi.Timmah!'}, rv.get('17', {}))
+        self.assertDictContainsSubset({'slot': '19', 'pbid': 'ea6c0590d1700000000087dac8a4a4bd', 'guid': 'ea6c0590d1700000000087dac8a4a4bd', 'ip': '11.51.188.97', 'name': 'chomama>XI<'}, rv.get('18', {}))
+        self.assertDictContainsSubset({'slot': '20', 'pbid': '3a432901787e000000003ce5525dbfc3', 'guid': '3a432901787e000000003ce5525dbfc3', 'ip': '11.141.203.77', 'name': 'Sheepdog45>XI<'}, rv.get('19', {}))
+        self.assertDictContainsSubset({'slot': '21', 'pbid': 'a1f6548635d1000000004e623aa78271', 'guid': 'a1f6548635d1000000004e623aa78271', 'ip': '11.183.5.54', 'name': 'KillerKitty>XI<'}, rv.get('20', {}))
+        self.assertDictContainsSubset({'slot': '22', 'pbid': '951d9c7e0ec400000000afccff20a5e7', 'guid': '951d9c7e0ec400000000afccff20a5e7', 'ip': '11.94.100.12', 'name': 'Bama>XI<ADM'}, rv.get('21', {}))
+        self.assertDictContainsSubset({'slot': '23', 'pbid': 'ea8d4efaed70000000004cf39b04816c', 'guid': 'ea8d4efaed70000000004cf39b04816c', 'ip': '11.193.122.135', 'name': '^6P!nk^0>XI<Adm'}, rv.get('22', {}))
+        self.assertDictContainsSubset({'slot': '24', 'pbid': '639d096de997000000001af19daef6ea', 'guid': '639d096de997000000001af19daef6ea', 'ip': '11.108.11.19', 'name': 'Iron Belly>XI<'}, rv.get('23', {}))
+        self.assertDictContainsSubset({'slot': '25', 'pbid': 'b86f0bb06a0f00000000ee6fab2f33ef', 'guid': 'b86f0bb06a0f00000000ee6fab2f33ef', 'ip': '11.10.109.13', 'name': 'criss59'}, rv.get('24', {}))
+        self.assertDictContainsSubset({'slot': '26', 'pbid': '1c8500be8b0100000000b76a4e0c2b96', 'guid': '1c8500be8b0100000000b76a4e0c2b96', 'ip': '11.227.254.172', 'name': 'snipeRover'}, rv.get('25', {}))
+        self.assertDictContainsSubset({'slot': '27', 'pbid': 'f2b31d7bb120000000005a3913b0df1a', 'guid': 'f2b31d7bb120000000005a3913b0df1a', 'ip': '11.214.133.187', 'name': '^4google>XI<'}, rv.get('26', {}))
+        self.assertDictContainsSubset({'slot': '28', 'pbid': '0e038f99dbf000000000980bc3c34567', 'guid': '0e038f99dbf000000000980bc3c34567', 'ip': '11.213.204.52', 'name': 'snaFU73 >XI<'}, rv.get('27', {}))
+        self.assertDictContainsSubset({'slot': '30', 'pbid': '7a0b82d0396f000000003fa9a94f77b6', 'guid': '7a0b82d0396f000000003fa9a94f77b6', 'ip': '11.2.215.216', 'name': 'drunksniper>XI<'}, rv.get('29', {}))
+        self.assertDictContainsSubset({'slot': '31', 'pbid': '015dd0825cb100000000ee2500094db9', 'guid': '015dd0825cb100000000ee2500094db9', 'ip': '11.138.243.153', 'name': 'RUSOKINGNOOB'}, rv.get('30', {}))
+        self.assertDictContainsSubset({'slot': '32', 'pbid': '35731f786cc6000000003cefbf06ad53', 'guid': '35731f786cc6000000003cefbf06ad53', 'ip': '11.67.148.6', 'name': 'Deckard>XI<'}, rv.get('31', {}))
+        self.assertDictContainsSubset({'slot': '33', 'pbid': 'cc2f13bed79a00000000c43d2261425e', 'guid': 'cc2f13bed79a00000000c43d2261425e', 'ip': '11.145.139.44', 'name': 'ZABluesilver'}, rv.get('32', {}))
 
 
     def test_getPlayerList_missing_chars_randomly(self):
@@ -163,7 +164,6 @@ class Test_Punkbuster(B3TestCase):
 ^3PunkBuster Server: 1 9732d328485274156125252141252ba1(-) 33.133.3.133:-28960 OK   1 5.0 0 (W "FATTYBMBLATY"
 ^3PunkBuster Server: 1 9732d328485274156125252141252ba1(-) 33.133.3.133:-28960 OK   1 5.0 0 (W)"FATTYBMBLATY"
 ^3PunkBuster Server: 1 9732d328485274156125252141252ba1(-) 33.133.3.133:-28960 OK   1 5.0 0 (W) FATTYBMBLATY"
-^3PunkBuster Server: 1 9732d328485274156125252141252ba1(-) 33.133.3.133:-28960 OK   1 5.0 0 (W) "ATTYBMBLATY"
 ^3PunkBuster Server: 1 9732d328485274156125252141252ba1(-) 33.133.3.133:-28960 OK   1 5.0 0 (W) "FATTYBMBLATY
 : 1 9732d328485274156125252141252ba1(-) 33.133.3.133:-28960 OK   1 5.0 0 (W) "FATTYBMBLATY"
 '''
@@ -177,8 +177,64 @@ class Test_Punkbuster(B3TestCase):
             # THEN
             self.assertIn('0', rv, repr(line))
             self.assertDictContainsSubset(
-                {'slot': '1', 'pbid': '9732d328485274156125252141252ba1', 'guid': '9732d328485274156125252141252ba1', 'ip': '33.133.3.133'}, rv['0'],
+                {'slot': '1', 'pbid': '9732d328485274156125252141252ba1', 'guid': '9732d328485274156125252141252ba1', 'ip': '33.133.3.133', 'name': 'FATTYBMBLATY'}, rv['0'],
                 msg=repr(line)
             )
 
 
+
+    def test_getPlayerList_cod5(self):
+        # GIVEN
+        when(self.console).write('PB_SV_PList').thenReturn('''\
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK 0 2.9 0 (W) "FATTYBMBLATY"
+''')
+        # WHEN
+        rv = self.pb.getPlayerList()
+        # THEN
+        self.assertDictContainsSubset({'slot': '19', 'pbid': 'c0356dc89ddb0000000d4f9509db46d1', 'guid': 'c0356dc89ddb0000000d4f9509db46d1', 'ip': '11.111.111.11', 'name': 'FATTYBMBLATY'}, rv.get('18', {}))
+
+    def test_getPlayerList_cod5_missing_chars_randomly(self):
+        """ it was reported that PB responses miss a character in an inconsistent manner.
+        We do our best to extract the only info we need.
+        """
+        lines = '''\
+erer: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+rver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erve: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver:19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1() 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(- 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-)11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960OK   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 K   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 O   0 2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK    2.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   02.9 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 29 0 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.90 (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9  (W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 W) "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 () "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W "FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W)"FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) FATTYBMBLATY"
+erver: 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0 (W) "FATTYBMBLATY
+'''
+        for line in lines.split('\n'):
+            if not line: # avoid empty lines
+                continue
+                # GIVEN
+            when(self.console).write('PB_SV_PList').thenReturn(line)
+            # WHEN
+            rv = self.pb.getPlayerList()
+            # THEN
+            self.assertIn('18', rv, msg="for test line %r" % line)
+            self.assertDictContainsSubset(
+                {'slot': '19', 'pbid': 'c0356dc89ddb0000000d4f9509db46d1', 'guid': 'c0356dc89ddb0000000d4f9509db46d1', 'ip': '11.111.111.11', 'name': 'FATTYBMBLATY'}, rv['18'],
+                msg="for test line %r" % line
+            )
