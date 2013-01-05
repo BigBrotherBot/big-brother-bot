@@ -16,6 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+import logging
 import os
 from b3.config import XmlConfigParser
 from b3.extplugins.xlrstats import XlrstatsPlugin, __file__ as xlrstats__file__
@@ -24,7 +25,7 @@ from tests import B3TestCase
 DEFAULT_XLRSTATS_CONFIG_FILE = os.path.join(os.path.dirname(xlrstats__file__), 'conf/xlrstats.xml')
 
 
-class Test_xlrstats(B3TestCase):
+class XlrstatsTestCase(B3TestCase):
 
     def setUp(self):
         """
@@ -40,6 +41,13 @@ class Test_xlrstats(B3TestCase):
 
         # Now we create an instance of the SUT (System Under Test) which is the XlrstatsPlugin
         self.p = XlrstatsPlugin(self.console, self.conf)
+
+        # Setup the logging level we'd like to be spammed with during the tests
+        logger = logging.getLogger('output')
+        logger.setLevel(logging.DEBUG)
+
+
+class Test_conf(XlrstatsTestCase):
 
     def test_empty_conf(self):
         """
@@ -133,4 +141,3 @@ class Test_xlrstats(B3TestCase):
         self.assertEqual('xlr_history_monthly', self.p.history_monthly_table)
         self.assertEqual('xlr_history_weekly', self.p.history_weekly_table)
         self.assertEqual('ctime', self.p.ctime_table)
-
