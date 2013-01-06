@@ -591,7 +591,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             id = client.id
         q = 'SELECT * from %s WHERE client_id = %s LIMIT 1' % (self.playerstats_table, id)
         cursor = self.query(q)
-        if cursor and (cursor.rowcount > 0):
+        if cursor and not cursor.EOF:
             r = cursor.getRow()
             s = PlayerStats()
             s.id = r['id']
@@ -627,7 +627,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         s = WeaponStats()
         q = 'SELECT * from %s WHERE name = "%s" LIMIT 1' % (self.weaponstats_table, name)
         cursor = self.query(q)
-        if cursor and (cursor.rowcount > 0):
+        if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
             s.name = r['name']
@@ -644,7 +644,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         s = Bodyparts()
         q = 'SELECT * from %s WHERE name = "%s" LIMIT 1' % (self.bodyparts_table, name)
         cursor = self.query(q)
-        if cursor and (cursor.rowcount > 0):
+        if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
             s.name = r['name']
@@ -661,7 +661,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         s = MapStats()
         q = 'SELECT * from %s WHERE name = "%s" LIMIT 1' % (self.mapstats_table, name)
         cursor = self.query(q)
-        if cursor and (cursor.rowcount > 0):
+        if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
             s.name = r['name']
@@ -681,7 +681,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         q = 'SELECT * from %s WHERE weapon_id = %s AND player_id = %s LIMIT 1' % (
             self.weaponusage_table, weaponid, playerid)
         cursor = self.query(q)
-        if cursor and (cursor.rowcount > 0):
+        if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
             s.player_id = r['player_id']
@@ -703,7 +703,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         q = 'SELECT * from %s WHERE killer_id = %s AND target_id = %s LIMIT 1' % (
             self.opponents_table, killerid, targetid)
         cursor = self.query(q)
-        if cursor and (cursor.rowcount > 0):
+        if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
             s.killer_id = r['killer_id']
@@ -722,7 +722,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         q = 'SELECT * from %s WHERE bodypart_id = %s AND player_id = %s LIMIT 1' % (
             self.playerbody_table, bodypartid, playerid)
         cursor = self.query(q)
-        if cursor and (cursor.rowcount > 0):
+        if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
             s.player_id = r['player_id']
@@ -752,7 +752,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         s = PlayerMaps()
         q = 'SELECT * from %s WHERE map_id = %s AND player_id = %s LIMIT 1' % (self.playermaps_table, mapid, playerid)
         cursor = self.query(q)
-        if cursor and (cursor.rowcount > 0):
+        if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
             s.player_id = r['player_id']
@@ -774,7 +774,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         s = ActionStats()
         q = 'SELECT * from %s WHERE name = "%s" LIMIT 1' % (self.actionstats_table, name)
         cursor = self.query(q)
-        if cursor and (cursor.rowcount > 0):
+        if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
             s.name = r['name']
@@ -790,7 +790,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         q = 'SELECT * from %s WHERE action_id = %s AND player_id = %s LIMIT 1' % (
             self.playeractions_table, actionid, playerid)
         cursor = self.query(q)
-        if cursor and (cursor.rowcount > 0):
+        if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
             s.player_id = r['player_id']
@@ -1536,7 +1536,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
            self.clients_table, self.playerstats_table, limit)
 
         cursor = self.query(q)
-        if cursor and (cursor.rowcount > 0):
+        if cursor and not cursor.EOF:
             message = '^3XLR Stats Top %s Players:' % limit
             if ext:
                 self.console.say(message)
@@ -1644,7 +1644,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         _tables = []
         q = 'SHOW TABLES'
         cursor = self.query(q)
-        if cursor and (cursor.rowcount > 0):
+        if cursor and not cursor.EOF:
             while not cursor.EOF:
                 r = cursor.getRow()
                 n = str(r.values()[0])
