@@ -100,3 +100,73 @@ class Test_get_PlayerAnon(XlrstatsTestCase):
         self.assertEqual(0, s.rounds)
         self.assertEqual(0, s.hide)
 
+
+class Test_get_PlayerStats(XlrstatsTestCase):
+
+    def setUp(self):
+        with logging_disabled():
+            XlrstatsTestCase.setUp(self)
+            self.conf.load(DEFAULT_XLRSTATS_CONFIG_FILE)
+            self.p.onLoadConfig()
+            self.p.onStartup()
+
+            self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID")
+            self.p1.connects("1")
+
+    def test_unregistered_player(self):
+        # WHEN
+        s = self.p.get_PlayerStats(client=self.p1)
+        # THEN
+        self.assertIsNone(s)
+
+    def test_newly_registered_player(self):
+        # GIVEN
+        self.p1.says("!register")
+        self.assertGreaterEqual(self.p1.maxLevel, self.p.minlevel)
+        # WHEN
+        s = self.p.get_PlayerStats(client=self.p1)
+        # THEN
+        self.assertIsNotNone(s)
+        self.assertEqual(self.p1.id, s.client_id)
+        self.assertEqual(0, s.kills)
+        self.assertEqual(0, s.deaths)
+        self.assertEqual(0, s.teamkills)
+        self.assertEqual(0, s.teamdeaths)
+        self.assertEqual(0, s.suicides)
+        self.assertEqual(0, s.ratio)
+        self.assertEqual(1000, s.skill)
+        self.assertEqual(0, s.assists)
+        self.assertEqual(0, s.assistskill)
+        self.assertEqual(0, s.curstreak)
+        self.assertEqual(0, s.winstreak)
+        self.assertEqual(0, s.losestreak)
+        self.assertEqual(0, s.rounds)
+        self.assertEqual(0, s.hide)
+
+    def test_player_having_existing_stats(self):
+        # GIVEN
+        self.p1.says("!register")
+        self.assertGreaterEqual(self.p1.maxLevel, self.p.minlevel)
+        s = self.p.get_PlayerStats(client=self.p1)
+        s.kills = 4
+        self.p.save_Stat(s)
+        # WHEN
+        s2 = self.p.get_PlayerStats(client=self.p1)
+        # THEN
+        self.assertIsNotNone(s2)
+        self.assertEqual(self.p1.id, s2.client_id)
+        self.assertEqual(4, s2.kills)
+        self.assertEqual(0, s2.deaths)
+        self.assertEqual(0, s2.teamkills)
+        self.assertEqual(0, s2.teamdeaths)
+        self.assertEqual(0, s2.suicides)
+        self.assertEqual(0, s2.ratio)
+        self.assertEqual(1000, s2.skill)
+        self.assertEqual(0, s2.assists)
+        self.assertEqual(0, s2.assistskill)
+        self.assertEqual(0, s2.curstreak)
+        self.assertEqual(0, s2.winstreak)
+        self.assertEqual(0, s2.losestreak)
+        self.assertEqual(0, s2.rounds)
+        self.assertEqual(0, s2.hide)
+
