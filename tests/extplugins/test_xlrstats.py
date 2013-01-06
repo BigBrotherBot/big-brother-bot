@@ -170,3 +170,64 @@ class Test_get_PlayerStats(XlrstatsTestCase):
         self.assertEqual(0, s2.rounds)
         self.assertEqual(0, s2.hide)
 
+
+class Test_cmd_xlrstats(XlrstatsTestCase):
+
+    def setUp(self):
+        with logging_disabled():
+            XlrstatsTestCase.setUp(self)
+            self.conf.load(DEFAULT_XLRSTATS_CONFIG_FILE)
+            self.p.onLoadConfig()
+            self.p.onStartup()
+
+            self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID")
+            self.p1.connects("1")
+
+            self.p2 = FakeClient(console=self.console, name="P2", guid="P2_GUID")
+            self.p2.connects("2")
+
+    def test_unregistered_player(self):
+        # GIVEN
+        self.p1.clearMessageHistory()
+        # WHEN
+        self.p1.says("!xlrstats")
+        # THEN
+        self.assertEqual(['You do not have sufficient access to use !xlrstats'], self.p1.message_history)
+
+    def test_registered_player(self):
+        # GIVEN
+        self.p1.says("!register")
+        self.p1.clearMessageHistory()
+        # WHEN
+        self.p1.says("!xlrstats")
+        # THEN
+        self.assertEqual(['XLR Stats: P1 : K 0 D 0 TK 0 Ratio 0.00 Skill 1000.00'], self.p1.message_history)
+
+    def test_for_unknown_player(self):
+        # GIVEN
+        self.p1.says("!register")
+        self.p1.clearMessageHistory()
+        # WHEN
+        self.p1.says("!xlrstats spiderman")
+        # THEN
+        self.assertEqual(['No players found matching spiderman'], self.p1.message_history)
+
+    def test_for_other_unregistered_player(self):
+        # GIVEN
+        self.p1.says("!register")
+        self.p1.clearMessageHistory()
+        # WHEN
+        self.p1.says("!xlrstats P2")
+        # THEN
+        self.assertEqual(['XLR Stats: Could not find stats for P2'], self.p1.message_history)
+
+    def test_for_other_registered_player(self):
+        # GIVEN
+        self.p1.says("!register")
+        self.p2.says("!register")
+        self.p1.clearMessageHistory()
+        # WHEN
+        self.p1.says("!xlrstats P2")
+        # THEN
+        self.assertEqual(['XLR Stats: P2 : K 0 D 0 TK 0 Ratio 0.00 Skill 1000.00'], self.p1.message_history)
+
