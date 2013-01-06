@@ -122,6 +122,7 @@ class Cmd_lastbans(Admin_functional_test):
 class Cmd_help(Admin_functional_test):
     def setUp(self):
         Admin_functional_test.setUp(self)
+        self.p._commands = {}  # make sure to empty the commands list as _commands is a wrongly a class property
         self.init()
         self.joe.message = Mock()
         self.joe.connects(0)
