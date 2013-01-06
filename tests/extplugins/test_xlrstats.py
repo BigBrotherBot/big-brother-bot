@@ -231,3 +231,64 @@ class Test_cmd_xlrstats(XlrstatsTestCase):
         # THEN
         self.assertEqual(['XLR Stats: P2 : K 0 D 0 TK 0 Ratio 0.00 Skill 1000.00'], self.p1.message_history)
 
+
+class Test_kill(XlrstatsTestCase):
+    """
+    Validates that the stats get updated as expected upon kill events
+    """
+
+    def setUp(self):
+        with logging_disabled():
+            XlrstatsTestCase.setUp(self)
+            self.conf.load(DEFAULT_XLRSTATS_CONFIG_FILE)
+            self.p.onLoadConfig()
+            self.p.onStartup()
+            # GIVEN two players P1 and P2 (P1 being a registered user)
+            self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID", team=TEAM_BLUE)
+            self.p1.connects("1")
+            self.p1.says("!register")
+            self.p2 = FakeClient(console=self.console, name="P2", guid="P2_GUID", team=TEAM_RED)
+            self.p2.connects("2")
+
+    def test_p1_kills_p2(self):
+        # GIVEN
+        self.p1.kills(self.p2)
+        s = self.p.get_PlayerStats(self.p1)
+        # WHEN
+        self.p1.clearMessageHistory()
+        self.p1.says("!xlrstats")
+        # THEN
+        self.assertEqual(['XLR Stats: P1 : K 1 D 0 TK 0 Ratio 0.00 Skill 1024.00'], self.p1.message_history)
+
+    def test_p1_teamkills_p2(self):
+        # GIVEN
+        self.p2.team = self.p1.team
+        self.p1.kills(self.p2)
+        s = self.p.get_PlayerStats(self.p1)
+        # WHEN
+        self.p1.clearMessageHistory()
+        self.p1.says("!xlrstats")
+        # THEN
+        self.assertEqual(['XLR Stats: P1 : K 0 D 0 TK 1 Ratio 0.00 Skill 999.00'], self.p1.message_history)
+
+    def test_p1_kills_p2_twice(self):
+        # GIVEN
+        self.p1.kills(self.p2)
+        self.p1.kills(self.p2)
+        s = self.p.get_PlayerStats(self.p1)
+        # WHEN
+        self.p1.clearMessageHistory()
+        self.p1.says("!xlrstats")
+        # THEN
+        self.assertEqual(['XLR Stats: P1 : K 2 D 0 TK 0 Ratio 0.00 Skill 1035.45'], self.p1.message_history)
+
+    def test_p1_kills_p2_then_p2_kills_p1(self):
+        # GIVEN
+        self.p1.kills(self.p2)
+        self.p2.kills(self.p1)
+        s = self.p.get_PlayerStats(self.p1)
+        # WHEN
+        self.p1.clearMessageHistory()
+        self.p1.says("!xlrstats")
+        # THEN
+        self.assertEqual(['XLR Stats: P1 : K 1 D 1 TK 0 Ratio 1.00 Skill 1015.63'], self.p1.message_history)
