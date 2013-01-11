@@ -57,6 +57,8 @@
 # 22/12/2012 - 1.11 - Courgette
 #     * update for UrT 4.2.009 release. adds UT_MOD_SMITED, UT_MOD_GLOCK and fix constants values for some of the
 #       UT_MOD_* constants.
+# 08/01/2013 - 1.11.1 - Courgette
+#     * fix EVT_SURVIVOR_WIN event
 #
 import re, new
 import time
@@ -68,7 +70,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.11'
+__version__ = '1.11.1'
 
 class Iourt42Client(Client):
 
@@ -559,13 +561,18 @@ class Iourt42Parser(Iourt41Parser):
             return None
         return Event(self.EVT_CLIENT_POS_LOAD, client=client, data={'position': position, 'name': name})
 
-
     def OnSurvivorwinner(self, action, data, match=None):
-        client = self.getByCidOrJoinPlayer(data)
-        if not client:
-            self.debug('No client found')
-            return None
-        return Event(self.EVT_CLIENT_SURVIVOR_WINNER, client=client, data=None)
+        #SurvivorWinner: Blue
+        #SurvivorWinner: Red
+        #SurvivorWinner: 0
+        if data in ('Blue', 'Red'):
+            return b3.events.Event(b3.events.EVT_SURVIVOR_WIN, data)
+        else:
+            client = self.getByCidOrJoinPlayer(data)
+            if not client:
+                self.debug('No client found')
+                return None
+            return Event(self.EVT_CLIENT_SURVIVOR_WINNER, client=client, data=None)
 
 
 

@@ -240,10 +240,15 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_data={'position': (335.384887, 67.469154, -23.875), 'name': 'unknown'})
 
 
-    def test_SurvivorWinner(self):
+    def test_SurvivorWinner_player(self):
         marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
         marcel.connects('0')
         self.assertEvent(r'''SurvivorWinner: 0''', event_type='EVT_CLIENT_SURVIVOR_WINNER', event_client=marcel)
+
+    def test_SurvivorWinner_team(self):
+        self.assertEvent(r'''SurvivorWinner: Red''', event_type='EVT_SURVIVOR_WIN', event_data="Red")
+        self.assertEvent(r'''SurvivorWinner: Blue''', event_type='EVT_SURVIVOR_WIN', event_data="Blue")
+
 
 
 
