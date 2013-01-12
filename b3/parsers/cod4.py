@@ -43,10 +43,12 @@
 #    * fix: player not authenticated (without punkbuster) when qport or port is a negative number
 # 2013/01/02 - 1.3.8 - Courgette
 #    * improve parsing rcon status status responses that are missing characters
+# 2013/01/12 - 1.3.9 - Courgette
+#    * fix bug when cod4ClientAuthMethod handles an unexpected error
 #
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.3.8'
+__version__ = '1.3.9'
 
 import b3.parsers.cod2
 import b3.functions
@@ -256,7 +258,7 @@ def cod4ClientAuthMethod(self):
             self.console.debug('User not found %s: %s', self.guid, msg)
             inStorage = False
         except Exception, e:
-            self.console.error('auth self.console.storage.getClient(client) - %s\n%s', e, traceback.extract_tb(sys.exc_info()[2]))
+            self.console.error('auth self.console.storage.getClient(client) - %s' % self, exc_info=e)
             self.authorizing = False
             return False
 
