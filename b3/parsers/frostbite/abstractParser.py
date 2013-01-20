@@ -41,10 +41,12 @@
 # 2011-11-05 - 1.5.1 - Courgette
 # * make sure to release the self.exiting lock
 # 2012-10-06 - 1.6 - Courgette
-#  isolate the patching code in a module function
+# * isolate the patching code in a module function
+# 2013-01-20 - 1.6.1 - Courgette
+# * improve punkbuster event parsing
 #
 __author__  = 'Courgette'
-__version__ = '1.6'
+__version__ = '1.6.1'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -98,12 +100,12 @@ class AbstractParser(b3.parser.Parser):
     }
     
     _punkbusterMessageFormats = (
-        (re.compile(r'^(?P<servername>.*): PunkBuster Server for BC2 \((?P<version>.+)\)\sEnabl.*$'), 'OnPBVersion'),
-        (re.compile(r'^(?P<servername>.*): Running PB Scheduled Task \(slot #(?P<slot>\d+)\)\s+(?P<task>.*)$'), 'OnPBScheduledTask'),
-        (re.compile(r'^(?P<servername>.*): Lost Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) (?P<pbuid>[^\s]+)\(-\)\s(?P<name>.+)$'), 'OnPBLostConnection'),
-        (re.compile(r'^(?P<servername>.*): Master Query Sent to \((?P<pbmaster>[^\s]+)\) (?P<ip>[^:]+)$'), 'OnPBMasterQuerySent'),
-        (re.compile(r'^(?P<servername>.*): Player GUID Computed (?P<pbid>[0-9a-fA-F]+)\(-\) \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+)\s(?P<name>.+)$'), 'OnPBPlayerGuid'),
-        (re.compile(r'^(?P<servername>.*): New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection')
+        (re.compile(r'^.*: PunkBuster Server for BC2 \((?P<version>.+)\)\sEnabl.*$'), 'OnPBVersion'),
+        (re.compile(r'^.*: Running PB Scheduled Task \(slot #(?P<slot>\d+)\)\s+(?P<task>.*)$'), 'OnPBScheduledTask'),
+        (re.compile(r'^.*: Lost Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) (?P<pbuid>[^\s]+)\(-\)\s(?P<name>.+)$'), 'OnPBLostConnection'),
+        (re.compile(r'^.*: Master Query Sent to \((?P<pbmaster>[^\s]+)\) (?P<ip>[^:]+)$'), 'OnPBMasterQuerySent'),
+        (re.compile(r'^.*: Player GUID Computed (?P<pbid>[0-9a-fA-F]+)\(-\) \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+)\s(?P<name>.+)$'), 'OnPBPlayerGuid'),
+        (re.compile(r'^.*: New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection')
      )
 
     PunkBuster = None
@@ -362,7 +364,7 @@ class AbstractParser(b3.parser.Parser):
         
     def getServerInfo(self):
         """query server info, update self.game and return query results
-        Response: OK <serverName: string> <current playercount: integer> <max playercount: integer> 
+        Response: OK <pb prefix: string> <current playercount: integer> <max playercount: integer>
         <current gamemode: string> <current map: string> <roundsPlayed: integer> 
         <roundsTotal: string> <scores: team scores> <onlineState: online state>
         """
@@ -728,7 +730,6 @@ class AbstractParser(b3.parser.Parser):
     def OnPBVersion(self, match,data):
         """PB notifies us of the version numbers
         version = match.group('version')"""
-        #self.debug('PunkBuster server named: %s' % match.group('servername') )
         #self.debug('PunkBuster Server version: %s' %( match.group('version') ) )
         pass
 

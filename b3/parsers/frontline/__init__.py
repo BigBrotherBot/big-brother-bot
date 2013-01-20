@@ -17,27 +17,25 @@
 #
 # CHANGELOG
 #
+# 2013-01-20 - 0.4.1 - Courgette
+# * improve punkbuster event parsing
 #
-from b3 import functions
 from b3.clients import Client
 from b3.lib.sourcelib import SourceQuery
 from b3.parser import Parser
 import asyncore
 import b3
 import b3.cron
-import ftplib
-import os
 import protocol
 import rcon
 import re
-import string
 import sys
 import time
 from ConfigParser import NoOptionError
 
 
 __author__  = 'Courgette'
-__version__ = '0.4'
+__version__ = '0.4.1'
 
 _gameevents_mapping = list()
 def gameEvent(*decorator_param):
@@ -185,7 +183,7 @@ class FrontlineParser(b3.parser.Parser):
                r'^DEBUG: DevNet: .*',
                r'^UnBan failed! Player ProfileID or Hash is not banned: .*',
                r'^Forced transition to next map$',
-               r'^\^5PunkBuster Server: Player List: [Slot #] [GUID] [Address] [Status] [Power] [Auth Rate] [Recent SS] [O/S] [Name]$',
+               r'^.*: Player List: [Slot #] [GUID] [Address] [Status] [Power] [Auth Rate] [Recent SS] [O/S] [Name]$',
                )
     def ignoreGameEvent(self, *args, **kwargs):
         """do nothing"""
@@ -261,7 +259,7 @@ ID    Name    Ping    Team    Squad    Score    Kills    Deaths    TK    CP    T
         else:
             self.warning("unknown Chat channel : %s", channel)
 
-    @gameEvent(r"""^\^5PunkBuster Server: Player GUID Computed (?P<pbid>[0-9a-f]+)\(-\) \(slot #(?P<cid>\d+)\) (?P<ip>[0-9.]+):(?P<port>\d+) (?P<name>.+)$""")
+    @gameEvent(r"""^.*: Player GUID Computed (?P<pbid>[0-9a-f]+)\(-\) \(slot #(?P<cid>\d+)\) (?P<ip>[0-9.]+):(?P<port>\d+) (?P<name>.+)$""")
     def onPunkbusterGUID(self, pbid, cid, ip, port, name):
         client = self.clients.getByCID(cid)
         if client:
@@ -270,7 +268,7 @@ ID    Name    Ping    Team    Squad    Score    Kills    Deaths    TK    CP    T
             client.save()
 
 
-    @gameEvent(r"""^\^5PunkBuster Server: (?P<cid>\d+)\s+(?P<pbid>[a-z0-9]+)?\(-\) (?P<ip>[0-9.]+):(?P<port>\d+) (\w+)\s+(\d+)\s+([\d.]+)\s+(\d+)\s+\((.)\) "(?P<name>.+)"$""")
+    @gameEvent(r"""^.*: (?P<cid>\d+)\s+(?P<pbid>[a-z0-9]+)?\(-\) (?P<ip>[0-9.]+):(?P<port>\d+) (\w+)\s+(\d+)\s+([\d.]+)\s+(\d+)\s+\((.)\) "(?P<name>.+)"$""")
     def onPunkbusterPlayerList(self, pbid, cid, ip, port, name):
         client = self.clients.getByCID(cid)
         if client:

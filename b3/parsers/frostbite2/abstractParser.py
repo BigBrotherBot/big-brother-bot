@@ -53,10 +53,12 @@
 #  when returning map info, provide : map name (gamemode) # rounds
 # 1.8
 #  isolate the patching code in a module function
+# 1.8.1
+#  improve punkbuster event parsing
 #
 
 __author__  = 'Courgette'
-__version__ = '1.8'
+__version__ = '1.8.1'
 
 
 import sys, re, traceback, time, string, Queue, threading, new
@@ -129,29 +131,29 @@ class AbstractParser(b3.parser.Parser):
     }
 
     _punkbusterMessageFormats = (
-        (re.compile(r'^(?P<servername>.*): PunkBuster Server for .+ \((?P<version>.+)\)\sEnabl.*$'), 'OnPBVersion'),
-        (re.compile(r'^(?P<servername>.*): Running PB Scheduled Task \(slot #(?P<slot>\d+)\)\s+(?P<task>.*)$'), 'OnPBScheduledTask'),
-        (re.compile(r'^(?P<servername>.*): Lost Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) (?P<pbuid>[^\s]+)\(-\)\s(?P<name>.+)$'), 'OnPBLostConnection'),
-        (re.compile(r'^(?P<servername>.*): Master Query Sent to \((?P<pbmaster>[^\s]+)\) (?P<ip>[^:]+)$'), 'OnPBMasterQuerySent'),
-        (re.compile(r'^(?P<servername>.*): Player GUID Computed (?P<pbid>[0-9a-fA-F]+)\(-\) \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+)\s(?P<name>.+)$'), 'OnPBPlayerGuid'),
-        (re.compile(r'^(?P<servername>.*): New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection'),
-        (re.compile(r'^(?P<servername>.*):\s+(?P<index>\d+)\s+(?P<pbid>[0-9a-fA-F]+) {(?P<min_elapsed>\d+)/(?P<duration>\d+)}\s+"(?P<name>[^"]+)"\s+"(?P<ip>[^:]+):(?P<port>\d+)"\s+"?(?P<reason>.*)"\s+"(?P<private_reason>.*)"$'), None), # banlist item
-        (re.compile(r'^(?P<servername>.*): Guid=(?P<search>.*) Not Found in the Ban List$'), None),
-        (re.compile(r'^(?P<servername>.*): End of Ban List \(\d+ of \d+ displayed\)$'), None),
-        (re.compile(r'^(?P<servername>.*): Guid (?P<pbid>[0-9a-fA-F]+) has been Unbanned$'), None),
-        (re.compile(r'^(?P<servername>.*): PB UCON "(?P<from>.+)"@(?P<ip>[\d.]+):(?P<port>\d+) \[(?P<cmd>.*)\]$'), 'OnPBUCON'),
-        (re.compile(r'^(?P<servername>.*): Player List: \[Slot #\] \[GUID\] \[Address\] \[Status\] \[Power\] \[Auth Rate\] \[Recent SS\] \[O/S\] \[Name\]$'), None),
-        (re.compile(r'^(?P<servername>.*): (?P<slot>\d+)\s+(?P<pbid>[0-9a-fA-F]+)\(-\) (?P<ip>[^:]+):(?P<port>\d+) (?P<status>.+)\s+(?P<power>\d+)\s+(?P<authrate>\d+\.\d+)\s+(?P<recentSS>\d+)\s+\((?P<os>.+)\)\s+"(?P<name>.+)".*$'), 'OnPBPlistItem'),
-        (re.compile(r'^(?P<servername>.*): End of Player List \(\d+ Players\)$'), None),
-        (re.compile(r'^(?P<servername>.*): Invalid Player Specified: (?P<data>.*)$'), None),
-        (re.compile(r'^(?P<servername>.*): Received Download File: (?P<file>.*)$'), None),
-        (re.compile(r'^(?P<servername>.*): Matched: (?P<name>.*) \(slot #(?P<slot>\d+)\)$'), None),
-        (re.compile(r'^(?P<servername>.*): (?P<num>\d+) Ban Records Updated in (?P<filename>.*)$'), None),
-        (re.compile(r'^(?P<servername>.*): Ban Added to Ban List$'), None),
-        (re.compile(r'^(?P<servername>.*): Ban Failed$'), None),
-        (re.compile(r'^(?P<servername>.*): Received Master Security Information$'), None),
-        (re.compile(r'^(?P<servername>.*): Auto Screenshot\s+(?P<ssid>\d+)\s+Requested from (?P<slot>\d+) (?P<name>.+)$'), None),
-        (re.compile(r'^(?P<servername>.*): Screenshot (?P<imgpath>.+)\s+successfully received \(MD5=(?P<md5>[0-9A-F]+)\) from (?P<slot>\d+) (?P<name>.+) \[(?P<pbid>[0-9a-fA-F]+)\(-\) (?P<ip>[^:]+):(?P<port>\d+)\]$'), 'OnPBScreenshotReceived'),
+        (re.compile(r'^.*: PunkBuster Server for .+ \((?P<version>.+)\)\sEnabl.*$'), 'OnPBVersion'),
+        (re.compile(r'^.*: Running PB Scheduled Task \(slot #(?P<slot>\d+)\)\s+(?P<task>.*)$'), 'OnPBScheduledTask'),
+        (re.compile(r'^.*: Lost Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) (?P<pbuid>[^\s]+)\(-\)\s(?P<name>.+)$'), 'OnPBLostConnection'),
+        (re.compile(r'^.*: Master Query Sent to \((?P<pbmaster>[^\s]+)\) (?P<ip>[^:]+)$'), 'OnPBMasterQuerySent'),
+        (re.compile(r'^.*: Player GUID Computed (?P<pbid>[0-9a-fA-F]+)\(-\) \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+)\s(?P<name>.+)$'), 'OnPBPlayerGuid'),
+        (re.compile(r'^.*: New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection'),
+        (re.compile(r'^.*:\s+(?P<index>\d+)\s+(?P<pbid>[0-9a-fA-F]+) {(?P<min_elapsed>\d+)/(?P<duration>\d+)}\s+"(?P<name>[^"]+)"\s+"(?P<ip>[^:]+):(?P<port>\d+)"\s+"?(?P<reason>.*)"\s+"(?P<private_reason>.*)"$'), None), # banlist item
+        (re.compile(r'^.*: Guid=(?P<search>.*) Not Found in the Ban List$'), None),
+        (re.compile(r'^.*: End of Ban List \(\d+ of \d+ displayed\)$'), None),
+        (re.compile(r'^.*: Guid (?P<pbid>[0-9a-fA-F]+) has been Unbanned$'), None),
+        (re.compile(r'^.*: PB UCON "(?P<from>.+)"@(?P<ip>[\d.]+):(?P<port>\d+) \[(?P<cmd>.*)\]$'), 'OnPBUCON'),
+        (re.compile(r'^.*: Player List: \[Slot #\] \[GUID\] \[Address\] \[Status\] \[Power\] \[Auth Rate\] \[Recent SS\] \[O/S\] \[Name\]$'), None),
+        (re.compile(r'^.*: (?P<slot>\d+)\s+(?P<pbid>[0-9a-fA-F]+)\(-\) (?P<ip>[^:]+):(?P<port>\d+) (?P<status>.+)\s+(?P<power>\d+)\s+(?P<authrate>\d+\.\d+)\s+(?P<recentSS>\d+)\s+\((?P<os>.+)\)\s+"(?P<name>.+)".*$'), 'OnPBPlistItem'),
+        (re.compile(r'^.*: End of Player List \(\d+ Players\)$'), None),
+        (re.compile(r'^.*: Invalid Player Specified: (?P<data>.*)$'), None),
+        (re.compile(r'^.*: Received Download File: (?P<file>.*)$'), None),
+        (re.compile(r'^.*: Matched: (?P<name>.*) \(slot #(?P<slot>\d+)\)$'), None),
+        (re.compile(r'^.*: (?P<num>\d+) Ban Records Updated in (?P<filename>.*)$'), None),
+        (re.compile(r'^.*: Ban Added to Ban List$'), None),
+        (re.compile(r'^.*: Ban Failed$'), None),
+        (re.compile(r'^.*: Received Master Security Information$'), None),
+        (re.compile(r'^.*: Auto Screenshot\s+(?P<ssid>\d+)\s+Requested from (?P<slot>\d+) (?P<name>.+)$'), None),
+        (re.compile(r'^.*: Screenshot (?P<imgpath>.+)\s+successfully received \(MD5=(?P<md5>[0-9A-F]+)\) from (?P<slot>\d+) (?P<name>.+) \[(?P<pbid>[0-9a-fA-F]+)\(-\) (?P<ip>[^:]+):(?P<port>\d+)\]$'), 'OnPBScreenshotReceived'),
     )
 
     # if Punkbuster is set, then it will be used to kick/ban/unban
