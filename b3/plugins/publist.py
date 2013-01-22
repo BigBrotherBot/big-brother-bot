@@ -213,7 +213,7 @@ class PublistPlugin(b3.plugin.Plugin):
             'default_encoding': sys.getdefaultencoding()
         }
         
-        if self.console.gameName in ('bfbc2', 'moh'):
+        if self.console.gameName in ('bfbc2', 'moh', 'bf3'):
             try:
                 cvarDescription = self.console.getCvar('serverDescription')
                 if cvarDescription is not None:
