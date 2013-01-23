@@ -760,7 +760,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         #self.verbose('*----> Contents: %s' %stat)
         if hasattr(stat, '_new'):
             q = stat._insertquery()
-            #self.debug('Inserting using: ', q)
+            self.debug('Inserting using: ', q)
             cursor = self.query(q)
             if cursor.rowcount > 0:
                 stat.id = cursor.lastrowid
@@ -1925,7 +1925,7 @@ class PlayerStats(StatObject):
     id_token = ""    # player identification token for webfront v3
 
     def _insertquery(self):
-        q = 'INSERT INTO %s ( client_id, kills, deaths, teamkills, teamdeaths, suicides, ratio, skill, assists, assistskill, curstreak, winstreak, losestreak, rounds, hide, fixed_name, id_token ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "%s", "%s")' % (
+        q = 'INSERT INTO %s ( client_id, kills, deaths, teamkills, teamdeaths, suicides, ratio, skill, assists, assistskill, curstreak, winstreak, losestreak, rounds, hide, fixed_name, id_token ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "%s", "%s")' % (
             self._table, self.client_id, self.kills, self.deaths, self.teamkills, self.teamdeaths, self.suicides, self.ratio,
             self.skill, self.assists, self.assistskill, self.curstreak, self.winstreak, self.losestreak, self.rounds,
             self.hide, self.fixed_name, self.id_token)

@@ -142,6 +142,8 @@ class Test_get_PlayerStats(XlrstatsTestCase):
         self.assertEqual(0, s.losestreak)
         self.assertEqual(0, s.rounds)
         self.assertEqual(0, s.hide)
+        self.assertEqual("", s.fixed_name)
+        self.assertEqual("", s.id_token)
 
     def test_player_having_existing_stats(self):
         # GIVEN
@@ -169,6 +171,8 @@ class Test_get_PlayerStats(XlrstatsTestCase):
         self.assertEqual(0, s2.losestreak)
         self.assertEqual(0, s2.rounds)
         self.assertEqual(0, s2.hide)
+        self.assertEqual("", s2.fixed_name)
+        self.assertEqual("", s2.id_token)
 
 
 class Test_cmd_xlrstats(XlrstatsTestCase):
