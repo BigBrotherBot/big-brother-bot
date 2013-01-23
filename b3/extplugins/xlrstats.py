@@ -1,4 +1,4 @@
-##################################################################
+                                                                                                                            ##################################################################
 #
 # XLRstats
 # statistics-generating plugin for B3 (www.bigbrotherbot.net)
@@ -1919,21 +1919,20 @@ class PlayerStats(StatObject):
 
     # the following fields are used only by the PHP presentation code
     fixed_name = ""
+    id_token = ""    # player identification token for webfront v3
 
     def _insertquery(self):
-        q = 'INSERT INTO %s ( client_id, kills, deaths, teamkills, teamdeaths, suicides, ratio, skill, assists, assistskill, curstreak, winstreak, losestreak, rounds, hide ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)' % (
-            self._table, self.client_id, self.kills, self.deaths, self.teamkills, self.teamdeaths, self.suicides,
-            self.ratio
-            , self.skill, self.assists, self.assistskill, self.curstreak, self.winstreak, self.losestreak, self.rounds,
-            self.hide)
+        q = 'INSERT INTO %s ( client_id, kills, deaths, teamkills, teamdeaths, suicides, ratio, skill, assists, assistskill, curstreak, winstreak, losestreak, rounds, hide, fixed_name, id_token ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)' % (
+            self._table, self.client_id, self.kills, self.deaths, self.teamkills, self.teamdeaths, self.suicides, self.ratio, 
+            self.skill, self.assists, self.assistskill, self.curstreak, self.winstreak, self.losestreak, self.rounds,
+            self.hide, self.fixed_name, self.id_token)
         return q
 
     def _updatequery(self):
-        q = 'UPDATE %s SET client_id=%s, kills=%s, deaths=%s, teamkills=%s, teamdeaths=%s, suicides=%s, ratio=%s, skill=%s, assists=%s, assistskill=%s, curstreak=%s, winstreak=%s, losestreak=%s, rounds=%s, hide=%s WHERE id=%s' % (
-            self._table, self.client_id, self.kills, self.deaths, self.teamkills, self.teamdeaths, self.suicides,
-            self.ratio
-            , self.skill, self.assists, self.assistskill, self.curstreak, self.winstreak, self.losestreak, self.rounds,
-            self.hide, self.id)
+        q = 'UPDATE %s SET client_id=%s, kills=%s, deaths=%s, teamkills=%s, teamdeaths=%s, suicides=%s, ratio=%s, skill=%s, assists=%s, assistskill=%s, curstreak=%s, winstreak=%s, losestreak=%s, rounds=%s, hide=%s, fixed_name=%s, id_token=%s WHERE id=%s' % (
+            self._table, self.client_id, self.kills, self.deaths, self.teamkills, self.teamdeaths, self.suicides, self.ratio, 
+            self.skill, self.assists, self.assistskill, self.curstreak, self.winstreak, self.losestreak, self.rounds,
+            self.hide, self.fixed_name, self.id_token, self.id)
         return q
 
 
