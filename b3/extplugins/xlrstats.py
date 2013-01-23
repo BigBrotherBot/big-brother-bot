@@ -1,9 +1,9 @@
-                                                                                                                            ##################################################################
+##################################################################
 #
 # XLRstats
 # statistics-generating plugin for B3 (www.bigbrotherbot.net)
 # (c) 2004, 2005 Tim ter Laak (ttlogic@xlr8or.com)
-# (c) 2005 - 2012 Mark Weirath (xlr8or@xlr8or.com)
+# (c) 2005 - 2013 Mark Weirath (xlr8or@xlr8or.com)
 #
 # This program is free software and licensed under the terms of
 # the GNU General Public License (GPL), version 2.
@@ -1551,6 +1551,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         player = self.get_PlayerStats(client)
         if player:
             player.id_token = token
+            self.verbose('Saving identification token %s' % token)
             self.save_Stat(player)
 
         return
