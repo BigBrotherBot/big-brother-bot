@@ -559,6 +559,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             s.losestreak = r['losestreak']
             s.rounds = r['rounds']
             s.hide = r['hide']
+            s.fixed_name = r['fixed_name']
+            s.id_token = r['id_token']
             return s
         elif (client is None) or (client.maxLevel >= self.minlevel):
             s = PlayerStats()
