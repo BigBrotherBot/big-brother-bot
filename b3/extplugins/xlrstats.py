@@ -760,14 +760,14 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         #self.verbose('*----> Contents: %s' %stat)
         if hasattr(stat, '_new'):
             q = stat._insertquery()
-            self.debug('Inserting using: %r', q)
+            #self.debug('Inserting using: %r', q)
             cursor = self.query(q)
             if cursor.rowcount > 0:
                 stat.id = cursor.lastrowid
                 delattr(stat, '_new')
         else:
             q = stat._updatequery()
-            #self.debug('Updating using: ', q)
+            #self.debug('Updating using: %r', q)
             self.query(q)
 
         #print 'save_Stat: q= ', q    
