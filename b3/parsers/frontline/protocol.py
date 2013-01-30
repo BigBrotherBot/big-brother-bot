@@ -21,7 +21,13 @@
 #
 #
 import asyncore
-import md5
+from sys import version_info
+if version_info >= (2,5):
+    from hashlib import md5
+else:
+    #Deprecated since version 2.5: Use the hashlib module instead.
+    import md5
+
 import re
 import socket
 import time
