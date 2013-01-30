@@ -203,6 +203,19 @@ GAME_MODES_BY_MAP_ID = {
     "XP4_Rubble": ("ConquestLarge0","ConquestSmall0","RushLarge0","SquadRush0","SquadDeathMatch0","TeamDeathMatch0","GunMaster0","Scavenger0"),
 }
 
+GUNMASTER_WEAPONS_PRESET_BY_INDEX = [
+    ["Standard Weapon list", ["MP443", "M93", "T44", "PP-19", "P90", "SPAS-12", "MK3A1 Flechette", "ACW-R", "MTAR", "AUG", "SCAR-L", "LSAT", "L86", "M417", "JNG-90", "M320 LVG", "Knife"]],
+    ["Standard Weapon list REVERSED", ["JNG-90", "M417", "L86", "LSAT", "SCAR-L", "AUG", "MTAR", "ACW-R", "MK3A1 Flechette", "SPAS-12", "P90", "PP-19", "T44", "M93", "MP443", "M320 LVG, Knife"]],
+    ["Light Weight", ["M9", "Glock17", "M93", "870", "Saiga12", "Spas-12", "Dao-12", "M1014", "PP2000", "M5K", "P90", "MP7", "ASVal", "PP-19", "UMP45", "M320 GL", "Knife"]],
+    ["Heavy Gear", ["MP412Rex", "T44", "SPAS-12 Slugs", "MK3A3 slugs", "AK47M", "F2000", "G3A3", "FAMAS", "SCAR-L", "SteyrAug", "M249", "M60", "QBB-95", "MG36", "LSAT, C4, Knife"]],
+    ["Pistol run!", ["M9", "MP443", "G17c", "M9 Suppressed", "G17 Suppressed", "M1911", "Glock18", "M93", "MP12rex", "Taurus44", "Knife"]],
+    ["Snipers Heaven", ["M9 Suppressor", "Glock17 Suppressor", "M1911 Suppressor", "SVD", "SKS", "MK11", "QBU-88", "M417", "M40A5", "SV98", "L96", "JNG90", "M98B", "Crossbow Bolt, Knife"]],
+    ["US arms race", ["M9", "M1911", "M870", "PDW-R", "M4A1", "M16", "M249", "M240", "MK11", "M40A5", "SMAW", "Knife"]],
+    ["RU arms race", ["MP443", ".412 rex", "Saiga 12k", "PP-2000", "PP-19", "AS Val", "AKS-74u", "AK74M", "RPK-74", "SVD", "RPG-7", "Knife"]],
+    ["EU arms race", ["G17", "M93R", "SPAS-12", "MP7", "UMP", "G36", "M416", "L85", "MG36", "M417", "M320 GL", "Knife"]],
+    ]
+
+GUNMASTER_WEAPONS_PRESET_BY_NAME = dict(GUNMASTER_WEAPONS_PRESET_BY_INDEX)
 
 class Bf3Parser(AbstractParser):
     gameName = 'bf3'
