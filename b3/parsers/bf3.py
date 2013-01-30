@@ -247,6 +247,7 @@ class Bf3Parser(AbstractParser):
         'vehicleSpawnAllowed',
         'vehicleSpawnDelay',
         'premiumStatus',
+        'gunMasterWeaponsPreset'
         )
 
 
@@ -484,6 +485,7 @@ class Bf3Parser(AbstractParser):
         self.game['vehicleSpawnAllowed'] = getCvarBool('vehicleSpawnAllowed')
         self.game['vehicleSpawnDelay'] = getCvarInt('vehicleSpawnDelay')
         self.game['premiumStatus'] = getCvarBool('premiumStatus')
+        self.game['gunMasterWeaponsPreset'] = getCvarInt('gunMasterWeaponsPreset')
         self.game.timeLimit = self.game.gameModeCounter
         self.game.fragLimit = self.game.gameModeCounter
         self.game.captureLimit = self.game.gameModeCounter
