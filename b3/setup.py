@@ -191,7 +191,7 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
 
         self.add_set("bot_name", self.read_element('b3', 'bot_name', 'b3'), "Name of the bot")
         self.add_set("bot_prefix", self.read_element('b3', 'bot_prefix', '^0(^2b3^0)^7:'),
-                     "Ingame messages are prefixed with this code, you can use colorcodes")
+                     "Ingame messages are prefixed with this code, you can use colorcodes", allow_blank=True)
         self.add_set("time_format", self.read_element('b3', 'time_format', '%I:%M%p %Z %m/%d/%y'))
         self.add_set("time_zone", self.read_element('b3', 'time_zone', 'CST'),
                      "The timezone your bot is in")
@@ -602,7 +602,7 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
         """ Make the setup questions same length for prettier formatting """
         return (self._equaLength - len(unicode(_string))) * " "
 
-    def add_set(self, sname, sdflt, explanation="", silent=False):
+    def add_set(self, sname, sdflt, explanation="", silent=False, allow_blank=None):
         """
         A routine to add a setting with a textnode to the config
         Usage: self.add_set(name, default value optional-explanation)
@@ -613,7 +613,7 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
             xml.comment(explanation)
             xml.data("\t\t")
         if not silent:
-            _value = self.raw_default(sname, sdflt)
+            _value = self.raw_default(sname, sdflt, allow_blank)
         else:
             _value = sdflt
         xml.element("set", _value, name=sname)
@@ -667,7 +667,7 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
             self.add_buffer("plugin: " + str(sname) + ", config: " + str(_config) + "\n")
         return True
 
-    def raw_default(self, prompt, dflt=None):
+    def raw_default(self, prompt, dflt=None, allow_blank=None):
         """ Prompt user for input and don't accept an empty value"""
         if dflt:
             prompt = "%s [%s]" % (prompt, dflt)
@@ -677,9 +677,15 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
         if not res and dflt:
             res = dflt
         if res == "":
-            print "ERROR: No value was entered! Give it another try!"
-            res = self.raw_default(prompt, dflt)
-        self.testExit(res)
+            if allow_blank:
+                #print "ERROR: No value was entered! Would you leave this value blank?"
+                _yntest = self.raw_default("No value was entered! Would you leave this value blank?", "no")
+                if _yntest != 'yes':
+                    res = self.raw_default(prompt, dflt, allow_blank=True)
+            else:
+                print "ERROR: No value was entered! Give it another try!"
+                res = self.raw_default(prompt, dflt)
+        if not allow_blank: self.testExit(res)
         return res
 
     def clearscreen(self):
