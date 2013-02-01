@@ -3082,9 +3082,13 @@ def dices(x,y):
     
     Usage:  dices(x,y)
     """
-    import sets
-    x = sets.Set(x)
-    y = sets.Set(y)
+    # sets is deprecated as of v2.6, replaced by the built-in set
+    try:
+        set
+    except NameError:
+        from sets import Set as set
+    x = set(x)
+    y = set(y)
     common = len(x.intersection(y))
     total = float(len(x) + len(y))
     return 2*common/total
