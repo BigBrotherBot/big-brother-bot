@@ -1227,13 +1227,17 @@ class Parser(object):
 
     def updateDocumentation(self):
         """Create a documentation for all available commands"""
-        try: 
-            from b3.tools.documentationBuilder import DocBuilder
-            docbuilder = DocBuilder(self)
-            docbuilder.save()
-        except Exception, err:
-            self.error("Failed to generate user documentation")
-            self.exception(err)
+        if self.config.has_section('autodoc'):
+            try:
+                from b3.tools.documentationBuilder import DocBuilder
+                docbuilder = DocBuilder(self)
+                docbuilder.save()
+            except Exception, err:
+                self.error("Failed to generate user documentation")
+                self.exception(err)
+
+        else:
+            self.info('No user documentation generated. To enable update your configuration file.')
 
 
     ###############################################################################
