@@ -21,7 +21,9 @@
 #
 #
 import asyncore
-import md5
+from sys import version_info
+from hashlib import md5
+
 import re
 import socket
 import time
