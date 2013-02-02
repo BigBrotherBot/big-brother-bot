@@ -33,7 +33,8 @@
 __version__ = '1.0'
 __author__ = 'GrosBedo'
 
-import b3, threading
+import b3
+import threading
 from b3 import functions
 import b3.events
 import b3.plugin
@@ -43,12 +44,13 @@ import re
 import sys
 import urllib2, urllib
 
-user_agent =  "B3 Httpytail plugin/%s" % __version__
-#--------------------------------------------------------------------------------------------------
+user_agent = "B3 Httpytail plugin/%s" % __version__
+
+
 class HttpytailPlugin(b3.plugin.Plugin):
     ### settings
-    _maxGap = 20480 # max gap in bytes between remote file and local file
-    _waitBeforeReconnect = 15 # time (in sec) to wait before reconnecting after loosing HTTP connection :
+    _maxGap = 20480  # max gap in bytes between remote file and local file
+    _waitBeforeReconnect = 15  # time (in sec) to wait before reconnecting after loosing HTTP connection :
     _connectionTimeout = 30
 
     requiresConfigFile = False
@@ -69,7 +71,9 @@ class HttpytailPlugin(b3.plugin.Plugin):
         versionsearch = re.search("^((?P<mainversion>[0-9]).(?P<lowerversion>[0-9]+)?)", sys.version)
         version = int(versionsearch.group(3))
         if version < 6:
-            self.error('Python Version %s, this is not supported and may lead to hangs. Please update Python to 2.6' % versionsearch.group(1))
+            self.error(
+                'Python Version %s, this is not supported and may lead to hangs. Please update Python to 2.6' %
+                versionsearch.group(1))
             self.console.die()
 
         if self.console.config.has_option('server', 'delay'):
@@ -93,8 +97,8 @@ class HttpytailPlugin(b3.plugin.Plugin):
             self.lgame_log = os.path.normpath(os.path.expanduser(logext))
             self.debug('Local Game Log is %s' % self.lgame_log)
 
-        if self.console.config.get('server','game_log')[0:7] == 'http://' :
-            self.initThread(self.console.config.get('server','game_log'))
+        if self.console.config.get('server', 'game_log')[0:7] == 'http://':
+            self.initThread(self.console.config.get('server', 'game_log'))
 
         if self.console.config.has_option('server', 'log_append'):
             self._logAppend = self.console.config.getboolean('server', 'log_append')
@@ -135,6 +139,7 @@ class HttpytailPlugin(b3.plugin.Plugin):
            partial file is being sent,
            which is ok in this case.  Do nothing with this error.
         """
+
         def http_error_206(self, url, fp, errcode, errmsg, headers, data=None):
             pass
 
@@ -158,23 +163,26 @@ class HttpytailPlugin(b3.plugin.Plugin):
                 self.file = open(self.lgame_log, 'ab')
                 # Crafting the HTTP request
                 # - user agent header
-                headers =  { 'User-Agent'  : user_agent  }
+                headers = {'User-Agent': user_agent}
 
                 # - file url
                 if self.httpconfig['port']:
-                    logurl = self.httpconfig['protocol']+'://'+self.httpconfig['host']+':'+self.httpconfig['port']+'/'+self.httpconfig['path']
+                    logurl = self.httpconfig['protocol'] + '://' + self.httpconfig['host'] + ':' + \
+                             self.httpconfig['port'] + '/' + self.httpconfig['path']
                 else:
-                    logurl = self.httpconfig['protocol']+'://'+self.httpconfig['host']+'/'+self.httpconfig['path']
+                    logurl = self.httpconfig['protocol'] + '://' + self.httpconfig['host'] + '/' + \
+                             self.httpconfig['path']
 
-                req =  urllib2.Request(logurl, None, headers)
+                req = urllib2.Request(logurl, None, headers)
 
                 # - htaccess authentication
-                # we login if the file is protected by a .htaccess and .htpasswd and the user specified a username and password in the b3 config (eg : http://user:password@host/path)
+                # we login if the file is protected by a .htaccess and .htpasswd and the user specified a username and
+                # password in the b3 config (eg : http://user:password@host/path)
                 if self.httpconfig['user']:
                     username = self.httpconfig['user']
                     if self.httpconfig['password']:
                         password = self.httpconfig['password']
-                    # create a password manager
+                        # create a password manager
                     password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
 
                     # Add the username and password.
@@ -192,18 +200,22 @@ class HttpytailPlugin(b3.plugin.Plugin):
 
 
                 # Opening the full file and detect its size
-                webFile =  opener.open(req)
+                webFile = opener.open(req)
                 urllib2.install_opener(opener)
                 filestats = webFile.info()
                 remoteSize = filestats.getheader('Content-Length')
-                webFile.close() # We close the remote connection as soon as possible to avoid spamming the server, and thus blacklisting us for an amount of time
+                webFile.close() # We close the remote connection as soon as possible to avoid spamming the server, and
+                # thus blacklisting us for an amount of time
 
                 # If we just started B3, we move the cursor to the current file size
                 if self._remoteFileOffset is None:
-                        self._remoteFileOffset = remoteSize
+                    self._remoteFileOffset = remoteSize
 
                 # debug line
-                #self.debug('Diff - current cursor: %s - remote file size: %s' % (str(self._remoteFileOffset), str(remoteSize)) ) # please leave this debug line, it can be very useful for users to catch some weird things happening without errors, like if the webserver redirects the request because of too many connections (b3/delay is too short)
+                #self.debug('Diff - current cursor: %s - remote file size: %s' % (str(self._remoteFileOffset), str(remoteSize)) )
+                # please leave this debug line, it can be very useful for users to catch some
+                # weird things happening without errors, like if the webserver redirects the request because of too
+                # many connections (b3/delay is too short)
 
                 # Detecting log rotation if remote file size is lower than our current cursor position
                 if remoteSize < self._remoteFileOffset:
@@ -212,7 +224,8 @@ class HttpytailPlugin(b3.plugin.Plugin):
 
                 # Fetching the diff of the remote file if our cursor is lower than the remote file size
                 if remoteSize > self._remoteFileOffset:
-                    # For that, we use a custom made opener so that we can download only the diff between what has been added since last cycle
+                    # For that, we use a custom made opener so that we can download only the diff between what has been
+                    # added since last cycle
                     DiffURLOpener = self.DiffURLOpener()
                     httpopener = urllib2.build_opener(DiffURLOpener)
 
@@ -221,10 +234,11 @@ class HttpytailPlugin(b3.plugin.Plugin):
                     if int(b2) - int(b1) > self._maxGap:
                         b1 = int(b2) - self._maxGap
 
-                    # We add the Range header here, this is the one permitting to fetch only a part of an http remote file
+                    # We add the Range header here, this is the one permitting to fetch only a part of an http remote
+                    # file
                     range_bytes = "bytes=%s-%s" % (b1, b2)
                     self.verbose("requesting range %s" % range_bytes)
-                    req.add_header("Range",range_bytes)
+                    req.add_header("Range", range_bytes)
                     # Opening the section we want from the remote file
                     webFileDiff = httpopener.open(req)
 
