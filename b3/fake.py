@@ -371,9 +371,9 @@ class FakeClient(b3.clients.Client):
         
     def suicides(self):
         print "\n%s kills himself" % self.name
-        self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_SUICIDE, 
+        self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_SUICIDE,
                                                        (100, 1, 1, 1), 
-                                                       self, victim))
+                                                       self, ''))
         
     def doAction(self, actiontype):
         self.console.queueEvent((b3.events.Event(b3.events.EVT_CLIENT_ACTION, actiontype, self)))
