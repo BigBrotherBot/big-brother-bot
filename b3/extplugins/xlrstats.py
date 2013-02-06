@@ -530,6 +530,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             s = PlayerStats()
             s._new = True
             s.skill = self.defaultskill
+            s.Kfactor = self.Kfactor_high
             s.client_id = id
             return s
         else:
