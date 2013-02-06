@@ -1413,7 +1413,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             AND ((`%s`.kills > %s) \
             OR (`%s`.rounds > %s)) \
             AND (`%s`.hide = 0) \
-            AND (%s - `%s`.time_edit  < %s*60*60*24) \
+            AND (%s - `%s`.time_edit  <= %s*60*60*24) \
             AND `%s`.id NOT IN \
                 ( SELECT distinct(target.id) FROM `%s` as penalties, `%s` as target \
                 WHERE (penalties.type = "Ban" \
