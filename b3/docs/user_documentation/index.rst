@@ -3,14 +3,28 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to BigBrotherBot's documentation!
-=========================================
+Welcome to BigBrotherBot's User Documentation!
+==============================================
+
+BigBrotherBot (B3 for short) is a complete and total server administration package for online games.
+It features :
+
+- In-game commands without authentication. B3 recognizes who is admin and who can run what rcon command.
+- Automated administration. B3 enforce your game server rules even when no admin is online.
+- Over 18 FPS games supported (CoD serie, BF3, CS:GO, ArmaII, BF:BC2, MoH, ...)
+- Extensible through plugins (11 officials and over 130 community contributed)
+- Highly customizable
+
+
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
+   install/index.rst
+   usage/index.rst
+   customization.rst
 
 
 Indices and tables
