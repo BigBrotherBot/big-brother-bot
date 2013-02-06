@@ -246,9 +246,9 @@ class Test_conf_settings_hide_bots(Conf_settings_test_case):
 
     def test_junk(self):
         # WHEN
-        self.init('<set name="silent">f00</set>')
+        self.init('<set name="hide_bots">f00</set>')
         # THEN
-        self.assertFalse(self.p.hide_bots)
+        self.assertTrue(self.p.hide_bots)
 
     def test_true(self):
         # WHEN
