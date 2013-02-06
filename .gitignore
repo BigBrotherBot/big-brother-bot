@@ -15,3 +15,4 @@ build/*
 py2exe_builder/dist_py2exe/
 py2exe_builder/Output/
 .idea/*
+b3/docs/user_documentation/_build/*
