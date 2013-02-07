@@ -847,7 +847,13 @@ class AdminPlugin(b3.plugin.Plugin):
             client.setGroup(group)
             client.save()
 
-            self.console.say(self.getMessage('regme_annouce', client.exactName, group.name))
+            client.message(self.getMessage('regme_confirmation', group.name))
+            try:
+                announce_registration = self.config.get('settings', 'announce_registration')
+            except NoOptionError:
+                announce_registration = 'yes'
+            if announce_registration == 'yes':
+                self.console.say(self.getMessage('regme_annouce', client.exactName, group.name))
             return True
 
     def cmd_help(self, data, client, cmd=None):
