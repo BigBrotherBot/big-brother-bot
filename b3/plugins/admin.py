@@ -141,6 +141,7 @@ class AdminPlugin(b3.plugin.Plugin):
     _parseUserCmdRE = re.compile(r"^(?P<cid>'[^']{2,}'|[0-9]+|[^\s]{2,}|@[0-9]+)(\s+(?P<parms>.*))?$")
     _long_tempban_max_duration = 1440 # 60m/h x 24h = 1440m = 1d
     _warn_command_abusers = None
+    _announce_registration = None
 
     cmdPrefix = '!'
     cmdPrefixLoud = '@'
@@ -217,6 +218,15 @@ class AdminPlugin(b3.plugin.Plugin):
         except ValueError:
             self.warning('invalid value for conf warn\warn_command_abusers, using default : yes')
             self._warn_command_abusers = True
+
+        try:
+            self._announce_registration = self.config.getboolean('settings', 'announce_registration')
+        except NoOptionError:
+            self.warning('conf settings\announce_registration not found, using default : yes')
+            self._announce_registration = True
+        except ValueError:
+            self.warning('invalid value for conf setting\announce_registration, using default : yes')
+            self._announce_registration = True
 
 
         if 'commands' in self.config.sections():
@@ -856,11 +866,7 @@ class AdminPlugin(b3.plugin.Plugin):
             client.save()
 
             client.message(self.getMessage('regme_confirmation', group.name))
-            try:
-                announce_registration = self.config.get('settings', 'announce_registration')
-            except NoOptionError:
-                announce_registration = 'yes'
-            if announce_registration == 'yes':
+            if self._announce_registration:
                 self.console.say(self.getMessage('regme_annouce', client.exactName, group.name))
             return True
 
