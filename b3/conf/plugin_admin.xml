@@ -106,7 +106,7 @@
 		<set name="admins_level">mod</set>
 		<!-- ban_duration : tempban duration to apply to the !ban and !banall commands -->
 		<set name="ban_duration">14d</set>
-        <!-- announce_registration: show message if a user registered self. Encourages other Users to sign too. - use yes or no -->
+        <!-- announce_registration: show a message to all users when a user registered himself. Encourages other Users to register too. - use yes or no -->
         <set name="announce_registration">yes</set>
 	</settings>
 	<settings name="messages">

@@ -716,3 +716,80 @@ class spell_checker(Admin_functional_test):
     def test_unrecognized_command_loud(self):
         self.joe.says('@qfsmlkjazemlrkjazemrlkj')
         self.assertEqual(['Unrecognized command qfsmlkjazemlrkjazemrlkj'], self.joe.message_history)
+
+
+class Cmd_register(Admin_functional_test):
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.p._commands = {}  # make sure to empty the commands list as _commands is a wrongly a class property
+        self.say_patcher = patch.object(self.console, "say")
+        self.say_mock = self.say_patcher.start()
+        self.player = FakeClient(self.console, name="TestPlayer", guid="player_guid", groupBits=0)
+        self.player.connects("0")
+
+    def tearDown(self):
+        Admin_functional_test.tearDown(self)
+        self.say_patcher.stop()
+
+    def test_nominal_with_defaults(self):
+        # GIVEN
+        self.init(r"""
+        <configuration plugin="admin">
+            <settings name="commands">
+                <set name="register">guest</set>
+            </settings>
+            <settings name="messages">
+                <set name="regme_annouce">%s put in group %s</set>
+            </settings>
+        </configuration>
+        """)
+        # WHEN
+        self.player.says('!register')
+        # THEN
+        self.assertListEqual(['Thanks for your registration. You are now a member of the group User'],
+                             self.player.message_history)
+        self.assertListEqual([call('TestPlayer^7 put in group User')], self.say_mock.mock_calls)
+
+    def test_custom_messages(self):
+        # GIVEN
+        self.init(r"""
+        <configuration plugin="admin">
+            <settings name="commands">
+                <set name="register">guest</set>
+            </settings>
+            <settings name="settings">
+                <set name="announce_registration">yes</set>
+            </settings>
+            <settings name="messages">
+                <set name="regme_confirmation">You are now a member of the group %s</set>
+                <set name="regme_annouce">%s is now a member of group %s</set>
+            </settings>
+        </configuration>
+        """)
+        # WHEN
+        self.player.says('!register')
+        # THEN
+        self.assertListEqual(['You are now a member of the group User'], self.player.message_history)
+        self.assertListEqual([call('TestPlayer^7 is now a member of group User')], self.say_mock.mock_calls)
+
+    def test_no_announce(self):
+        # GIVEN
+        self.init(r"""
+        <configuration plugin="admin">
+            <settings name="commands">
+                <set name="register">guest</set>
+            </settings>
+            <settings name="settings">
+                <set name="announce_registration">no</set>
+            </settings>
+            <settings name="messages">
+                <set name="regme_confirmation">You are now a member of the group %s</set>
+                <set name="regme_annouce">%s is now a member of group %s</set>
+            </settings>
+        </configuration>
+        """)
+        # WHEN
+        self.player.says('!register')
+        # THEN
+        self.assertListEqual(['You are now a member of the group User'], self.player.message_history)
+        self.assertListEqual([], self.say_mock.mock_calls)

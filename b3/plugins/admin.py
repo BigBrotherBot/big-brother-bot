@@ -17,6 +17,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2013/02/10 - 1.21 - Ozon
+#   * add announce_registration option to config to (de)activate public announcement of player using the !register
+# command
+#   * !register command feedback message is now configurable in config. See regme_confirmation
 #   2013/02/10 - 1.20 - Ozon
 #   * add spell corrector for commands
 #   2012/10/27 - 1.19 - Courgette
@@ -122,7 +126,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.20'
+__version__ = '1.21'
 __author__  = 'ThorN, xlr8or, Courgette, Ozon'
 
 import re, time, threading, sys, traceback, thread, random
@@ -141,7 +145,7 @@ class AdminPlugin(b3.plugin.Plugin):
     _parseUserCmdRE = re.compile(r"^(?P<cid>'[^']{2,}'|[0-9]+|[^\s]{2,}|@[0-9]+)(\s+(?P<parms>.*))?$")
     _long_tempban_max_duration = 1440 # 60m/h x 24h = 1440m = 1d
     _warn_command_abusers = None
-    _announce_registration = None
+    _announce_registration = True
 
     cmdPrefix = '!'
     cmdPrefixLoud = '@'
@@ -161,6 +165,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
     def onLoadConfig(self):
         self.load_config_warn_reasons()
+        self.load_config_messages()
 
         try:
             self._noreason_level = self.console.getGroupLevel(self.config.get('settings', 'noreason_level'))
@@ -181,6 +186,18 @@ class AdminPlugin(b3.plugin.Plugin):
             self._admins_level = self.console.getGroupLevel(self.config.get('settings', 'admins_level'))
         except (NoOptionError, KeyError), err:
             self.warning("Using default value %s for 'admins_level'. %s" % (self._admins_level, err))
+
+        try:
+            self._announce_registration = self.config.getboolean('settings', 'announce_registration')
+        except NoOptionError:
+            self.warning(r'conf settings\announce_registration not found, using default : %s' %
+                         'yes' if self._announce_registration else 'no')
+        except ValueError, err:
+            self.error(r'invalid value for conf setting\announce_registration, using default : %s. %s' %
+                       ('yes' if self._announce_registration else 'no', err))
+        except Exception, err:
+            self.error(r'unexpected error while reading value for conf setting\announce_registration, using default : '
+                       r'%s. %s' % ('yes' if self._announce_registration else 'no', err), exc_info=err)
 
 
     def onStartup(self):
@@ -218,15 +235,6 @@ class AdminPlugin(b3.plugin.Plugin):
         except ValueError:
             self.warning('invalid value for conf warn\warn_command_abusers, using default : yes')
             self._warn_command_abusers = True
-
-        try:
-            self._announce_registration = self.config.getboolean('settings', 'announce_registration')
-        except NoOptionError:
-            self.warning('conf settings\announce_registration not found, using default : yes')
-            self._announce_registration = True
-        except ValueError:
-            self.warning('invalid value for conf setting\announce_registration, using default : yes')
-            self._announce_registration = True
 
 
         if 'commands' in self.config.sections():
@@ -2103,6 +2111,26 @@ class AdminPlugin(b3.plugin.Plugin):
             sclient = self.findClientPrompt(m[0], client)
             if sclient:
                 self.console.say('^7%s %s^7!' % (random.choice(('Wake up', '*poke*', 'Attention', 'Get up', 'Go', 'Move out')), sclient.exactName))
+
+
+    def load_config_messages(self):
+        """
+        load section 'messages' from config and put the messages in local cache. Optionally apply validation rules
+        """
+        self._messages = dict()
+
+        # regme_confirmation
+        self._messages['regme_confirmation'] = "^7Thanks for your registration. You are now a member of the group %s"
+        try:
+            msg = self.config.getTextTemplate('messages', 'regme_confirmation')
+            if not '%s' in msg:
+                raise ValueError("message regme_confirmation must have a placeholder '%%s' for the group name")
+            self._messages['regme_confirmation'] = msg
+        except NoOptionError:
+            self.warning("missing message 'regme_confirmation' from config file. Using default %r"
+                         % self._messages['regme_confirmation'])
+        except ValueError, err:
+            self.error("message 'regme_confirmation' from config file is invalid: %s. Using default" % err)
 
 
     def load_config_warn_reasons(self):
