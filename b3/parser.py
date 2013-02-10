@@ -518,6 +518,8 @@ class Parser(object):
         self.say('%s ^2[ONLINE]' % b3.version)
         self.bot("Starting plugins")
         self.startPlugins()
+        self._eventsStats_cronTab = b3.cron.CronTab(self._dumpEventsStats)
+        self.cron + self._eventsStats_cronTab
         self.bot("all plugins started")
         self.pluginsStarted()
         self.bot("starting event dispatching thread")
