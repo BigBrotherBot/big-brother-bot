@@ -686,3 +686,33 @@ class Cmd_map(Admin_functional_test):
         self.joe.says('!map f00')
         self.assertEqual(0, self.joe.message.call_count)
 
+
+class spell_checker(Admin_functional_test):
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init()
+        self.joe.connects(0)
+
+    def test_existing_command(self):
+        self.joe.says('!map')
+        self.assertEqual(['You must supply a map to change to.'], self.joe.message_history)
+
+    def test_misspelled_command(self):
+        self.joe.says('!mip')
+        self.assertEqual(['Unrecognized command mip. Did you mean !map ?'], self.joe.message_history)
+
+    def test_unrecognized_command(self):
+        self.joe.says('!qfsmlkjazemlrkjazemrlkj')
+        self.assertEqual(['Unrecognized command qfsmlkjazemlrkjazemrlkj'], self.joe.message_history)
+
+    def test_existing_command_loud(self):
+        self.joe.says('@map')
+        self.assertEqual(['You must supply a map to change to.'], self.joe.message_history)
+
+    def test_misspelled_command_loud(self):
+        self.joe.says('@mip')
+        self.assertEqual(['Unrecognized command mip. Did you mean @map ?'], self.joe.message_history)
+
+    def test_unrecognized_command_loud(self):
+        self.joe.says('@qfsmlkjazemlrkjazemrlkj')
+        self.assertEqual(['Unrecognized command qfsmlkjazemlrkjazemrlkj'], self.joe.message_history)

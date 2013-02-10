@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2013/02/10 - 1.20 - Ozon
+#   * add spell corrector for commands
 #   2012/10/27 - 1.19 - Courgette
 #   * change: !map command will give at most 5 suggestions
 #   2012/10/03 - 1.18 - Courgette
@@ -120,8 +122,8 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.19'
-__author__  = 'ThorN, xlr8or, Courgette'
+__version__ = '1.20'
+__author__  = 'ThorN, xlr8or, Courgette, Ozon'
 
 import re, time, threading, sys, traceback, thread, random
 from ConfigParser import NoOptionError
@@ -408,12 +410,12 @@ class AdminPlugin(b3.plugin.Plugin):
                 if not self._warn_command_abusers and event.client.maxLevel < self._admins_level:
                     spellcheck = self.get_cmdSoundingLike(cmd, event.client)
                     if spellcheck:
-                        cmd += '. Did you mean %s ?' % spellcheck
+                        cmd += '. Did you mean %s%s ?' % (event.data[:1], spellcheck)
                     event.client.message(self.getMessage('unknown_command', cmd))
                 elif event.client.maxLevel > self._admins_level:
                     spellcheck = self.get_cmdSoundingLike(cmd, event.client)
                     if spellcheck:
-                        cmd += '. Did you mean %s ?' % spellcheck
+                        cmd += '. Did you mean %s%s ?' % (event.data[:1], spellcheck)
                     event.client.message(self.getMessage('unknown_command', cmd))
                 return
 
