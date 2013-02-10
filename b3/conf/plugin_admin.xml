@@ -106,6 +106,8 @@
 		<set name="admins_level">mod</set>
 		<!-- ban_duration : tempban duration to apply to the !ban and !banall commands -->
 		<set name="ban_duration">14d</set>
+        <!-- announce_registration: show message if a user registered self. Encourages other Users to sign too. - use yes or no -->
+        <set name="announce_registration">yes</set>
 	</settings>
 	<settings name="messages">
 		<set name="ban_denied">^7Hey %s^7, you're no Elvis, can't ban %s</set>
@@ -124,6 +126,7 @@
 		<set name="temp_ban_denied">^7Hey %s^7, you're no ^1Red ^7Elvis, can't temp ban %s</set>
 		<set name="players_matched">^7Players matching %s %s</set>
 		<set name="ban_self">^7%s ^7Can't ban yourself newb!</set>
+        <set name="regme_confirmation">^7Thanks for your registration. You are now a member of the group %s</set>
 		<set name="regme_annouce">^7%s ^7put in group %s</set>
 		<set name="kick_denied">^7%s^7 gets 1 point, %s^7 gets none, %s^7 wins, can't kick</set>
 		<set name="no_players">^7No players found matching %s</set>
