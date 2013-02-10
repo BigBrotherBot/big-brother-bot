@@ -406,8 +406,14 @@ class AdminPlugin(b3.plugin.Plugin):
                         self.warnClient(event.client, 'fakecmd', None, False)
                         return
                 if not self._warn_command_abusers and event.client.maxLevel < self._admins_level:
+                    spellcheck = self.get_cmdSoundingLike(cmd, event.client)
+                    if spellcheck:
+                        cmd += '. Did you mean %s ?' % spellcheck
                     event.client.message(self.getMessage('unknown_command', cmd))
                 elif event.client.maxLevel > self._admins_level:
+                    spellcheck = self.get_cmdSoundingLike(cmd, event.client)
+                    if spellcheck:
+                        cmd += '. Did you mean %s ?' % spellcheck
                     event.client.message(self.getMessage('unknown_command', cmd))
                 return
 
@@ -2168,7 +2174,14 @@ class AdminPlugin(b3.plugin.Plugin):
             self.info("""{0:<10s} {1:<10s}\t"{2}" """.format(keyword, functions.minutesStr(duration), reason))
         self.info("-------------- warn_reasons loaded ----------------")
 
-
+    def get_cmdSoundingLike(self, c_word, client):
+        c_list = []
+        for c, cmd in self._commands.iteritems():
+            if cmd.canUse(client):
+                if cmd.command not in c_list:
+                    c_list.append(cmd.command)
+        result = functions.corrent_spell(c_word, ' '.join(c_list))
+        return result
 
 
 #--------------------------------------------------------------------------------------------------
