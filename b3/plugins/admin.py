@@ -2031,11 +2031,11 @@ class AdminPlugin(b3.plugin.Plugin):
         """\
         - list spam messages
         """
-        ws = []
-        for w in self.config.options('spamages'):
-            ws.append(w)
-
-        client.message('^7Spamages: %s' % ', '.join(ws))
+        ws = sorted(self.config.options('spamages'))
+        if len(ws):
+            client.message('^7Spamages: %s' % ', '.join(ws))
+        else:
+            client.message('^7no spamage message defined')
 
     def cmd_tempban(self, data, client=None, cmd=None):
         """\

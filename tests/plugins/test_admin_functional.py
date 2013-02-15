@@ -51,6 +51,7 @@ class Admin_functional_test(B3TestCase):
                 self.conf.load(ADMIN_CONFIG_FILE)
         else:
             self.conf.loadFromString(config_content)
+        self.p._commands = {}
         self.p.onLoadConfig()
         self.p.onStartup()
 
@@ -793,3 +794,71 @@ class Cmd_register(Admin_functional_test):
         # THEN
         self.assertListEqual(['You are now a member of the group User'], self.player.message_history)
         self.assertListEqual([], self.say_mock.mock_calls)
+
+
+@patch("time.sleep")
+class Cmd_spams(Admin_functional_test):
+
+    def test_nominal(self, sleep_mock):
+        # GIVEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="spams">20</set>
+            </settings>
+            <settings name="spamages">
+                <set name="foo">foo</set>
+                <set name="rule1">this is rule #1</set>
+                <set name="rule2">this is rule #2</set>
+                <set name="bar">bar</set>
+            </settings>
+        </configuration>""")
+        self.joe.connects(0)
+        # WHEN
+        self.joe.says('!spams')
+        # THEN
+        self.assertListEqual(['Spamages: bar, foo, rule1, rule2'], self.joe.message_history)
+
+    def test_no_spamage(self, sleep_mock):
+        # GIVEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="spams">20</set>
+            </settings>
+            <settings name="spamages">
+            </settings>
+        </configuration>""")
+        self.joe.connects(0)
+        # WHEN
+        self.joe.says('!spams')
+        # THEN
+        self.assertListEqual(['no spamage message defined'], self.joe.message_history)
+
+    def test_reconfig_loads_new_spamages(self, sleep_mock):
+        # GIVEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="spams">20</set>
+            </settings>
+            <settings name="spamages">
+                <set name="foo">foo</set>
+                <set name="rule1">this is rule #1</set>
+            </settings>
+        </configuration>""")
+        self.joe.connects(0)
+        self.joe.says('!spams')
+        self.assertListEqual(['Spamages: foo, rule1'], self.joe.message_history)
+        # WHEN
+        self.conf.loadFromString(r"""<configuration>
+            <settings name="commands">
+                <set name="spams">20</set>
+            </settings>
+            <settings name="spamages">
+                <set name="bar">bar</set>
+                <set name="rule2">this is rule #2</set>
+            </settings>
+        </configuration>""")
+        self.joe.says('!reconfig')
+        self.joe.clearMessageHistory()
+        self.joe.says('!spams')
+        # THEN
+        self.assertListEqual(['Spamages: bar, rule2'], self.joe.message_history)
