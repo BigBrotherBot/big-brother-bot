@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2013/02/16 - 1.21.1 - Courgette
+#   * add default messages
 #   2013/02/10 - 1.21 - Ozon
 #   * add announce_registration option to config to (de)activate public announcement of player using the !register
 # command
@@ -126,7 +128,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.21'
+__version__ = '1.21.1'
 __author__  = 'ThorN, xlr8or, Courgette, Ozon'
 
 import re, time, threading, sys, traceback, thread, random
@@ -162,6 +164,47 @@ class AdminPlugin(b3.plugin.Plugin):
     _long_tempban_level = 80
     _hidecmd_level = 80
     _admins_level = 20
+
+    _default_messages = {
+        "ban_denied": "^7Hey %s^7, you're no Elvis, can't ban %s",
+        "help_available": "^7Available commands: %s",
+        "temp_ban_self": "^7%s ^7Can't ban yourself newb",
+        "groups_in": "^7%s^7 is in groups %s",
+        "say": "^7%s^7: %s",
+        "player_id": "^7%s [^2%s^7]",
+        "seen": "^7%s ^7was last seen on %s",
+        "help_no_command": "^7Command not found %s",
+        "lookup_found": "^7[^2@%s^7] %s^7 [^3%s^7]",
+        "kick_self": "^7%s ^7Can't kick yourself newb!",
+        "groups_welcome": "^7You are now a %s",
+        "warn_denied": "%s^7, %s^7 owns you, can't warn",
+        "groups_already_in": "^7%s^7 is already in group %s",
+        "temp_ban_denied": "^7Hey %s^7, you're no ^1Red ^7Elvis, can't temp ban %s",
+        "players_matched": "^7Players matching %s %s",
+        "ban_self": "^7%s ^7Can't ban yourself newb!",
+        "regme_confirmation": "^7Thanks for your registration. You are now a member of the group %s",
+        "regme_annouce": "^7%s ^7put in group %s",
+        "kick_denied": "^7%s^7 gets 1 point, %s^7 gets none, %s^7 wins, can't kick",
+        "no_players": "^7No players found matching %s",
+        "spanked_reason": "%s ^7was ^1SPANKED^7 by %s ^7for %s",
+        "groups_added": "^7%s ^7added to group %s",
+        "groups_put": "^7%s ^7put in group %s",
+        "groups_none": "^7%s^7 is not in any groups",
+        "help_command": "^2%s%s ^7%s",
+        "warn_self": "^7%s ^7Can't warn yourself newb!",
+        "regme_regged": "^7You are now a %s",
+        "help_none": "^7You have no available commands",
+        "spanked": "%s ^7was ^1SPANKED^7 by %s",
+        "admins": "^7Admins online: %s",
+        "regulars": "^7Regular players online: %s",
+        "no_regulars": "^7There are no regular players online",
+        "time": "At the sound of the beep it will be ^3%s^7...(beeeep)",
+        "unknown_command": "^7Unrecognized command %s",
+        "leveltest": "^7%s ^7[^3@%s^7] is a ^3%s ^7[^2%s^7] since %s",
+        "leveltest_nogroups": "^7%s ^7[^3@%s^7] is not in any groups",
+        "aliases": "^7%s^7 aliases: %s",
+        "cmd_plugin_disabled": "^7cannot execute command. Plugin disabled",
+    }
 
     def onLoadConfig(self):
         self.load_config_warn_reasons()
