@@ -498,7 +498,6 @@ class AbstractParser(b3.parser.Parser):
         self.Events.createEvent('EVT_PUNKBUSTER_NEW_CONNECTION', 'PunkBuster client received IP')
         self.Events.createEvent('EVT_PUNKBUSTER_UCON', 'PunkBuster UCON')
         self.Events.createEvent('EVT_PUNKBUSTER_SCREENSHOT_RECEIVED', 'PunkBuster Screenshot received')
-        self.Events.createEvent('EVT_CLIENT_SQUAD_SAY', 'Squad Say')
 
         self.load_conf_max_say_line_length()
         self.load_config_message_delay()

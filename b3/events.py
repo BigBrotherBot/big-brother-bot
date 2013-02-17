@@ -49,6 +49,7 @@ class Events:
             ('EVT_CUSTOM', 'Custom Event'),
             ('EVT_CLIENT_SAY', 'Say'),
             ('EVT_CLIENT_TEAM_SAY', 'Team Say'),
+            ('EVT_CLIENT_SQUAD_SAY', 'Squad Say'),
             ('EVT_CLIENT_PRIVATE_SAY', 'Private Message'),
             ('EVT_CLIENT_CONNECT', 'Client Connect'),
             ('EVT_CLIENT_AUTH', 'Client Authenticated'),
