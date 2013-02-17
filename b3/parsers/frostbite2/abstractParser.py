@@ -498,6 +498,7 @@ class AbstractParser(b3.parser.Parser):
         self.Events.createEvent('EVT_PUNKBUSTER_NEW_CONNECTION', 'PunkBuster client received IP')
         self.Events.createEvent('EVT_PUNKBUSTER_UCON', 'PunkBuster UCON')
         self.Events.createEvent('EVT_PUNKBUSTER_SCREENSHOT_RECEIVED', 'PunkBuster Screenshot received')
+        self.Events.createEvent('EVT_CLIENT_SQUAD_SAY', 'Squad Say')
 
         self.load_conf_max_say_line_length()
         self.load_config_message_delay()
@@ -649,8 +650,10 @@ class AbstractParser(b3.parser.Parser):
             elif cmd_name in admin_plugin._commands:
                 text = cmdPrefix + text[1:]
 
-        if data[2] in ('team', 'squad'):
+        if 'team' in data[2]:
             event_type = b3.events.EVT_CLIENT_TEAM_SAY
+        elif 'squad' in data[2]:
+            event_type = b3.events.EVT_CLIENT_SQUAD_SAY
         else:
             event_type = b3.events.EVT_CLIENT_SAY
         return b3.events.Event(event_type, text, client)
