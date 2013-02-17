@@ -21,6 +21,7 @@
 #   * warn_command_abusers default value is no False
 #   * suggest command spelling correction in aa many situations as we can
 #   * refactor code for detecting fakeCommands and unprivileged access to commands
+#   * recognize commands in all chat types (all, team, squad, private)
 #   2013/02/16 - 1.21.1 - Courgette
 #   * add default messages
 #   2013/02/10 - 1.21 - Ozon
@@ -256,6 +257,8 @@ class AdminPlugin(b3.plugin.Plugin):
 
     def onStartup(self):
         self.registerEvent(self.console.getEventID('EVT_CLIENT_SAY'))
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_SAY'))
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_SQUAD_SAY'))
         self.registerEvent(self.console.getEventID('EVT_CLIENT_PRIVATE_SAY'))
         self.createEvent('EVT_ADMIN_COMMAND', 'Admin Command')
 
@@ -368,7 +371,8 @@ class AdminPlugin(b3.plugin.Plugin):
             return False
 
     def handle(self, event):
-        if event.type == self.console.getEventID('EVT_CLIENT_SAY'):
+        if event.type in (self.console.getEventID('EVT_CLIENT_SAY'), self.console.getEventID('EVT_CLIENT_TEAM_SAY'),
+                          self.console.getEventID('EVT_CLIENT_SQUAD_SAY')):
             self.OnSay(event)
         elif event.type == self.console.getEventID(
                 'EVT_CLIENT_PRIVATE_SAY') and event.target and event.client.id == event.target.id:
@@ -448,9 +452,7 @@ class AdminPlugin(b3.plugin.Plugin):
                         self.debug('Error getting Tkinfo: %s', e)
                     self.debug('End of Tkinfo')
 
-        elif len(event.data) >= 2 and (
-                        event.data[:1] == self.cmdPrefix or event.data[:1] == self.cmdPrefixLoud or event.data[
-                                                                                                    :1] == self.cmdPrefixBig):
+        elif len(event.data) >= 2 and event.data[:1] in (self.cmdPrefix, self.cmdPrefixLoud, self.cmdPrefixBig):
             # catch the confirm command for identification of the B3 devs
             if event.data[1:] == 'confirm':
                 self.debug('checking confirmation...')
@@ -459,8 +461,7 @@ class AdminPlugin(b3.plugin.Plugin):
             else:
                 self.debug('Handle command %s' % event.data)
 
-            if event.data[1:2] == self.cmdPrefix or event.data[1:2] == self.cmdPrefixLoud or event.data[
-                                                                                             1:2] == self.cmdPrefixBig:
+            if event.data[1:2] in (self.cmdPrefix, self.cmdPrefixLoud, self.cmdPrefixBig):
                 # self.is the alias for say
                 cmd = 'say'
                 data = event.data[2:]

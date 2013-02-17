@@ -343,10 +343,18 @@ class FakeClient(b3.clients.Client):
     def says(self, msg):
         print "\n%s says \"%s\"" % (self.name, msg)
         self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_SAY, msg, self))
-        
+
     def says2team(self, msg):
         print "\n%s says to team \"%s\"" % (self.name, msg)
         self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, msg, self))
+
+    def says2squad(self, msg):
+        print "\n%s says to squad \"%s\"" % (self.name, msg)
+        self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_SQUAD_SAY, msg, self))
+
+    def says2private(self, msg):
+        print "\n%s says privately \"%s\"" % (self.name, msg)
+        self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, msg, self, self))
         
     def damages(self, victim, points=34.0):
         print "\n%s damages %s for %s points" % (self.name, victim.name, points)

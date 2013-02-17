@@ -1036,3 +1036,52 @@ class Test_warn_command_abusers(Admin_functional_test):
                               'Unrecognized command hzlp. Did you mean !help ?'], self.player.message_history)
         self.assertListEqual([call(120.0, 'do not use fake commands', 'fakecmd', ANY, ANY)],
                              self.player_warn_mock.mock_calls)
+
+
+@patch("time.sleep")
+class Test_command_parsing(Admin_functional_test):
+
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="help">0</set>
+            </settings>
+        </configuration>""")
+        self.joe.connects("0")
+
+    def test_normal_chat(self, sleep_mock):
+        # GIVEN
+        self.joe.says("f00")
+        self.assertListEqual([], self.joe.message_history)
+        # WHEN
+        self.joe.says("!help")
+        # THEN
+        self.assertListEqual(["Available commands: help, iamgod"], self.joe.message_history)
+
+    def test_team_chat(self, sleep_mock):
+        # GIVEN
+        self.joe.says("f00")
+        self.assertListEqual([], self.joe.message_history)
+        # WHEN
+        self.joe.says2team("!help")
+        # THEN
+        self.assertListEqual(["Available commands: help, iamgod"], self.joe.message_history)
+
+    def test_squad_chat(self, sleep_mock):
+        # GIVEN
+        self.joe.says("f00")
+        self.assertListEqual([], self.joe.message_history)
+        # WHEN
+        self.joe.says2squad("!help")
+        # THEN
+        self.assertListEqual(["Available commands: help, iamgod"], self.joe.message_history)
+
+    def test_private_chat(self, sleep_mock):
+        # GIVEN
+        self.joe.says("f00")
+        self.assertListEqual([], self.joe.message_history)
+        # WHEN
+        self.joe.says2private("!help")
+        # THEN
+        self.assertListEqual(["Available commands: help, iamgod"], self.joe.message_history)
