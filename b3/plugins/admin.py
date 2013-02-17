@@ -17,6 +17,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2013/02/17 - 1.22 - Courgette
+#   * warn_command_abusers default value is no False
+#   * suggest command spelling correction in aa many situations as we can
+#   * refactor code for detecting fakeCommands and unprivileged access to commands
 #   2013/02/16 - 1.21.1 - Courgette
 #   * add default messages
 #   2013/02/10 - 1.21 - Ozon
@@ -128,7 +132,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.21.1'
+__version__ = '1.22'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon'
 
 import re
@@ -279,11 +283,11 @@ class AdminPlugin(b3.plugin.Plugin):
         try:
             self._warn_command_abusers = self.config.getboolean('warn', 'warn_command_abusers')
         except NoOptionError:
-            self.warning('conf warn\warn_command_abusers not found, using default : yes')
-            self._warn_command_abusers = True
+            self.warning('conf warn\warn_command_abusers not found, using default : no')
+            self._warn_command_abusers = False
         except ValueError:
-            self.warning('invalid value for conf warn\warn_command_abusers, using default : yes')
-            self._warn_command_abusers = True
+            self.warning('invalid value for conf warn\warn_command_abusers, using default : no')
+            self._warn_command_abusers = False
 
         if 'commands' in self.config.sections():
             for cmd in self.config.options('commands'):
@@ -472,26 +476,16 @@ class AdminPlugin(b3.plugin.Plugin):
             try:
                 command = self._commands[cmd.lower()]
             except KeyError:
-                if self._warn_command_abusers and event.client.authed and event.client.maxLevel < self._admins_level:
-                    if event.client.var(self, 'fakeCommand').value:
-                        event.client.var(self, 'fakeCommand').value += 1
-                    else:
-                        event.client.setvar(self, 'fakeCommand', 1)
-
+                spell_check = self.get_cmdSoundingLike(cmd, event.client)
+                _msg = self.getMessage('unknown_command', cmd)
+                if spell_check:
+                    _msg += '. Did you mean %s%s ?' % (event.data[:1], spell_check)
+                event.client.message(_msg)
+                if event.client.maxLevel < self._admins_level and self._warn_command_abusers and event.client.authed:
+                    event.client.var(self, 'fakeCommand', 0).value += 1
                     if event.client.var(self, 'fakeCommand').toInt() >= 3:
                         event.client.setvar(self, 'fakeCommand', 0)
                         self.warnClient(event.client, 'fakecmd', None, False)
-                        return
-                if not self._warn_command_abusers and event.client.maxLevel < self._admins_level:
-                    spellcheck = self.get_cmdSoundingLike(cmd, event.client)
-                    if spellcheck:
-                        cmd += '. Did you mean %s%s ?' % (event.data[:1], spellcheck)
-                    event.client.message(self.getMessage('unknown_command', cmd))
-                elif event.client.maxLevel > self._admins_level:
-                    spellcheck = self.get_cmdSoundingLike(cmd, event.client)
-                    if spellcheck:
-                        cmd += '. Did you mean %s%s ?' % (event.data[:1], spellcheck)
-                    event.client.message(self.getMessage('unknown_command', cmd))
                 return
 
             cmd = cmd.lower()
@@ -530,11 +524,7 @@ class AdminPlugin(b3.plugin.Plugin):
                         self.console.getEvent('EVT_ADMIN_COMMAND', (command, data, results), event.client))
             else:
                 if self._warn_command_abusers and event.client.maxLevel < self._admins_level:
-                    if event.client.var(self, 'noCommand').value:
-                        event.client.var(self, 'noCommand').value += 1
-                    else:
-                        event.client.setvar(self, 'noCommand', 1)
-
+                    event.client.var(self, 'noCommand', 0).value += 1
                     if event.client.var(self, 'noCommand').toInt() >= 3:
                         event.client.setvar(self, 'noCommand', 0)
                         self.warnClient(event.client, 'nocmd', None, False)
@@ -542,8 +532,11 @@ class AdminPlugin(b3.plugin.Plugin):
 
                 if command.level == None:
                     event.client.message('^7%s%s command is disabled' % (self.cmdPrefix, cmd))
-                elif self._warn_command_abusers:
-                    event.client.message('^7You do not have sufficient access to use %s%s' % (self.cmdPrefix, cmd))
+                else:
+                    self.info("%s does not have sufficient rights to use %s%s. Required level: %s"
+                              % (event.client.name, self.cmdPrefix, cmd, command.level[0]))
+                    if self._warn_command_abusers:
+                        event.client.message('^7You do not have sufficient access to use %s%s' % (self.cmdPrefix, cmd))
 
     def getCmd(self, cmd):
         cmd = 'cmd_%s' % cmd

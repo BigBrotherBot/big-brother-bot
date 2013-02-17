@@ -18,7 +18,7 @@
 #
 import logging
 
-from mock import Mock, call, patch
+from mock import Mock, call, patch, ANY
 import sys, os, thread
 import time
 from mockito import when
@@ -862,3 +862,177 @@ class Cmd_spams(Admin_functional_test):
         self.joe.says('!spams')
         # THEN
         self.assertListEqual(['Spamages: bar, rule2'], self.joe.message_history)
+
+
+@patch("time.sleep")
+class Test_warn_command_abusers(Admin_functional_test):
+
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.player = FakeClient(self.console, name="ThePlayer", guid="theplayerguid", groupBits=0)
+        self.player_warn_patcher = patch.object(self.player, "warn")
+        self.player_warn_mock = self.player_warn_patcher.start()
+
+    def tearDown(self):
+        Admin_functional_test.tearDown(self)
+        self.player_warn_patcher.stop()
+
+    def test_conf_empty(self, sleep_mock):
+        # WHEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+            </settings>
+            <settings name="warn">
+            </settings>
+        </configuration>""")
+        # THEN
+        self.assertFalse(self.p._warn_command_abusers)
+        self.assertIsNone(self.p.getWarning("fakecmd"))
+        self.assertIsNone(self.p.getWarning("nocmd"))
+
+    def test_warn_reasons(self, sleep_mock):
+        # WHEN
+        self.init(r"""<configuration>
+            <settings name="warn_reasons">
+                <set name="fakecmd">1h, ^7do not use fake commands</set>
+                <set name="nocmd">1h, ^7do not use commands that you do not have access to, try using !help</set>
+            </settings>
+        </configuration>""")
+        # THEN
+        self.assertTupleEqual((60.0, '^7do not use commands that you do not have access to, try using !help'),
+                              self.p.getWarning("nocmd"))
+        self.assertTupleEqual((60.0, '^7do not use fake commands'), self.p.getWarning("fakecmd"))
+
+    def test_warn_no__no_sufficient_access(self, sleep_mock):
+        # WHEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="help">2</set>
+            </settings>
+            <settings name="warn">
+                <set name="warn_command_abusers">no</set>
+            </settings>
+        </configuration>""")
+        self.assertFalse(self.p._warn_command_abusers)
+        self.player.connects("0")
+        # WHEN
+        with patch.object(self.p, "info") as info_mock:
+            self.player.says("!help")
+        # THEN
+        self.assertListEqual([call('ThePlayer does not have sufficient rights to use !help. Required level: 2')],
+                             info_mock.mock_calls)
+        self.assertListEqual([], self.player.message_history)
+        self.assertFalse(self.player_warn_mock.called)
+
+    def test_warn_yes__no_sufficient_access(self, sleep_mock):
+        # GIVEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="help">2</set>
+            </settings>
+            <settings name="warn">
+                <set name="warn_command_abusers">yes</set>
+            </settings>
+        </configuration>""")
+        self.assertTrue(self.p._warn_command_abusers)
+        self.player.connects("0")
+        # WHEN
+        with patch.object(self.p, "info") as info_mock:
+            self.player.says("!help")
+        # THEN
+        self.assertListEqual([call('ThePlayer does not have sufficient rights to use !help. Required level: 2')],
+                             info_mock.mock_calls)
+        self.assertListEqual(['You do not have sufficient access to use !help'], self.player.message_history)
+        self.assertFalse(self.player_warn_mock.called)
+
+    def test_warn_yes__no_sufficient_access_abuser(self, sleep_mock):
+        # GIVEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="help">2</set>
+            </settings>
+            <settings name="warn">
+                <set name="warn_command_abusers">yes</set>
+            </settings>
+            <settings name="warn_reasons">
+                <set name="nocmd">90s, do not use commands you do not have access to, try using !help</set>
+            </settings>
+        </configuration>""")
+        self.player.connects("0")
+        # WHEN
+        with patch.object(self.p, "info") as info_mock:
+            self.player.says("!help")
+            self.player.says("!help")
+            self.player.says("!help")
+        # THEN
+        self.assertListEqual([call('ThePlayer does not have sufficient rights to use !help. Required level: 2'),
+                              call('ThePlayer does not have sufficient rights to use !help. Required level: 2')],
+                             info_mock.mock_calls)
+        self.assertListEqual(['You do not have sufficient access to use !help',
+                              'You do not have sufficient access to use !help'], self.player.message_history)
+        self.assertListEqual([call(1.5, 'do not use commands you do not have access to, try using !help',
+                                   'nocmd', ANY, ANY)], self.player_warn_mock.mock_calls)
+
+
+    def test_warn_no__unknown_cmd(self, sleep_mock):
+        # GIVEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="help">0</set>
+            </settings>
+            <settings name="warn">
+                <set name="warn_command_abusers">no</set>
+            </settings>
+        </configuration>""")
+        self.assertFalse(self.p._warn_command_abusers)
+        self.player.connects("0")
+        # WHEN
+        self.player.says("!hzlp")
+        # THEN
+        self.assertListEqual(['Unrecognized command hzlp. Did you mean !help ?'], self.player.message_history)
+        self.assertFalse(self.player_warn_mock.called)
+
+    def test_warn_yes__unknown_cmd(self, sleep_mock):
+        # GIVEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="help">0</set>
+            </settings>
+            <settings name="warn">
+                <set name="warn_command_abusers">yes</set>
+            </settings>
+        </configuration>""")
+        self.assertTrue(self.p._warn_command_abusers)
+        self.player.connects("0")
+        # WHEN
+        self.player.says("!hzlp")
+        # THEN
+        self.assertListEqual(['Unrecognized command hzlp. Did you mean !help ?'], self.player.message_history)
+        self.assertFalse(self.player_warn_mock.called)
+
+    def test_warn_yes__unknown_cmd_abuser(self, sleep_mock):
+        # GIVEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="help">0</set>
+            </settings>
+            <settings name="warn">
+                <set name="warn_command_abusers">yes</set>
+            </settings>
+            <settings name="warn_reasons">
+                <set name="fakecmd">2h, do not use fake commands</set>
+            </settings>
+        </configuration>""")
+        self.assertTrue(self.p._warn_command_abusers)
+        self.player.connects("0")
+        self.player.setvar(self.p, 'fakeCommand', 2)  # simulate already 2 use of the !help command
+        # WHEN
+        self.player.says("!hzlp")
+        self.player.says("!hzlp")
+        self.player.says("!hzlp")
+        # THEN
+        self.assertListEqual(['Unrecognized command hzlp. Did you mean !help ?',
+                              'Unrecognized command hzlp. Did you mean !help ?',
+                              'Unrecognized command hzlp. Did you mean !help ?'], self.player.message_history)
+        self.assertListEqual([call(120.0, 'do not use fake commands', 'fakecmd', ANY, ANY)],
+                             self.player_warn_mock.mock_calls)

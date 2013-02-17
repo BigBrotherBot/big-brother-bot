@@ -147,7 +147,7 @@
 		<set name="leveltest">^7%s ^7[^3@%s^7] is a ^3%s ^7[^2%s^7] since %s</set>
 		<set name="leveltest_nogroups">^7%s ^7[^3@%s^7] is not in any groups</set>
 		<set name="aliases">^7%s^7 aliases: %s</set>
-    <set name="cmd_plugin_disabled">^7cannot execute command. Plugin disabled</set>
+		<set name="cmd_plugin_disabled">^7cannot execute command. Plugin disabled</set>
 	</settings>
 	<settings name="warn">
 		<!-- pm_global determines whether the warning is sent to the the whole server, or just the player and admin, to reduce chatbox spam.
@@ -176,9 +176,9 @@
 		<!-- alert : when a player receives his last warning tolerated warning, this message is broadcasted so an admin can decide to clear it and
 		this teaches other players too -->
 		<set name="alert">^1ALERT^7: $name^7 auto-kick from warnings if not cleared [^3$warnings^7] $reason</set>
-    <!-- warn_command_abusers will make the bot warn players who try to use command they don't have suffisent rights to use or warn
-    players who try invalid commands  -->
-    <set name="warn_command_abusers">yes</set>
+		<!-- warn_command_abusers will make the bot warn players who try to use commands they don't have sufficient rights to use or warn
+		players who try invalid commands  -->
+		<set name="warn_command_abusers">no</set>
 	</settings>
 	<settings name="spamages">
     <!-- You can define shortcuts to messages that can be used with the !spam command. Note if the message shortcut is of 
