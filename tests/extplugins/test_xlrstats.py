@@ -19,11 +19,11 @@
 import logging
 import os
 from mock import patch
-from mockito import when
+from mockito import when, mock
 from b3 import __file__ as b3_module__file__, TEAM_RED, TEAM_BLUE
 from b3.config import XmlConfigParser
 from b3.extplugins.xlrstats import XlrstatsPlugin, __file__ as xlrstats__file__
-from b3.plugins.admin import AdminPlugin
+from b3.plugins.admin import AdminPlugin, Command
 from tests import B3TestCase, logging_disabled
 from b3.fake import FakeClient
 
@@ -296,3 +296,354 @@ class Test_kill(XlrstatsTestCase):
         self.p1.says("!xlrstats")
         # THEN
         self.assertEqual(['XLR Stats: P1 : K 1 D 1 TK 0 Ratio 1.00 Skill 1015.63'], self.p1.message_history)
+
+@patch('time.sleep')
+class Test_doTopList(XlrstatsTestCase):
+
+    def setUp(self):
+        with logging_disabled():
+            XlrstatsTestCase.setUp(self)
+            self.conf.load(DEFAULT_XLRSTATS_CONFIG_FILE)
+            self.p.onLoadConfig()
+            self.p.onStartup()
+            # GIVEN 5 players P1 .. P5
+            self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID", _team=TEAM_RED)
+            self.p1.connects("1")
+            self.p1.says("!register")
+            self.p2 = FakeClient(console=self.console, name="P2", guid="P2_GUID", _team=TEAM_BLUE)
+            self.p2.connects("2")
+            self.p2.says("!register")
+            self.p3 = FakeClient(console=self.console, name="P3", guid="P3_GUID", _team=TEAM_BLUE)
+            self.p3.connects("3")
+            self.p3.says("!register")
+            self.p4 = FakeClient(console=self.console, name="P4", guid="P4_GUID", _team=TEAM_RED)
+            self.p4.connects("4")
+            self.p4.says("!register")
+            self.p5 = FakeClient(console=self.console, name="P5", guid="P5_GUID", _team=TEAM_BLUE)
+            self.p5.connects("5")
+            self.p5.says("!register")
+
+    def test_no_kill(self, sleep_mock):
+        # GIVEN
+        self.p._minKills = 15
+        self.p._minRounds = 30
+        cmd = self.adminPlugin._commands["xlrtopstats"]
+        # WHEN
+        self.p1.clearMessageHistory()
+        self.p.doTopList(data="", client=self.p1, cmd=cmd)
+        # THEN
+        self.assertListEqual([
+             'Qualify for the toplist by making 15 kills, or playing 30 rounds!'
+        ], self.p1.message_history)
+
+    def test_one_kill(self, sleep_mock):
+        # GIVEN
+        cmd = self.adminPlugin._commands["xlrtopstats"]
+        self.p._minKills = 0
+        self.p._minRounds = 0
+        self.p._maxDays = 0
+        self.p1.kills(self.p2)
+        s = self.p.get_PlayerStats(self.p1)
+        self.assertIsNotNone(s)
+        self.assertEqual(1, s.kills)
+        # WHEN
+        self.p1.clearMessageHistory()
+        self.p.doTopList(data="", client=self.p1, cmd=cmd)
+        # THEN
+        self.assertListEqual([
+            'XLR Stats Top 3 Players:',
+            '# 1: P1 : Skill 1024.00 Ratio 0.00 Kills: 1'
+        ], self.p1.message_history)
+
+
+    def test_multiple_kills(self, sleep_mock):
+        # GIVEN
+        cmd = self.adminPlugin._commands["xlrtopstats"]
+        self.p._minKills = 0
+        self.p._minRounds = 0
+        self.p._maxDays = 0
+        self.p1.kills(self.p2)
+        self.p1.kills(self.p3)
+        self.p2.kills(self.p1)
+        self.p4.kills(self.p5)
+        self.p4.kills(self.p5)
+        self.p5.kills(self.p1)
+        # WHEN
+        self.p1.clearMessageHistory()
+        self.p.doTopList(data="", client=self.p1, cmd=cmd)
+        # THEN
+        self.assertListEqual([
+            'XLR Stats Top 3 Players:',
+            '# 1: P4 : Skill 1035.08 Ratio 0.00 Kills: 2',
+            '# 2: P1 : Skill 1017.89 Ratio 1.00 Kills: 2',
+            '# 3: P2 : Skill 997.18 Ratio 1.00 Kills: 1'
+        ], self.p1.message_history)
+
+
+class Test_storage(XlrstatsTestCase):
+
+    def setUp(self):
+        XlrstatsTestCase.setUp(self)
+        self.conf.load(DEFAULT_XLRSTATS_CONFIG_FILE)
+        self.p.onLoadConfig()
+        self.p.onStartup()
+
+    def test_PlayerStats(self):
+        # GIVEN
+        client = mock()
+        client.id = 43
+        
+        # getting empty stats
+        s = self.p.get_PlayerStats(client)
+        self.assertIsNotNone(s)
+        self.assertEqual(client.id, s.client_id)
+
+        # saving stats
+        s.kills = 56
+        s.deaths = 64
+        s.teamkills = 6
+        s.teamdeaths = 4
+        s.suicides = 5
+        s.ratio = .12
+        s.skill = 455
+        s.assists = 23
+        s.assistskill = 543
+        s.curstreak = 4
+        s.winstreak = 32
+        s.losestreak = 74
+        s.rounds = 874
+        s.hide = 1
+        s.fixed_name = 'the name'
+        s.id_token = 'the token'
+        self.p.save_Stat(s)
+
+        # checking modified stats
+        s2 = self.p.get_PlayerStats(client)
+        self.assertIsNotNone(s2)
+        self.assertEqual(client.id, s2.client_id)
+
+        self.assertEqual(56, s2.kills)
+        self.assertEqual(64, s2.deaths)
+        self.assertEqual(6, s2.teamkills)
+        self.assertEqual(4, s2.teamdeaths)
+        self.assertEqual(5, s2.suicides)
+        self.assertEqual(.12, s2.ratio)
+        self.assertEqual(455, s2.skill)
+        self.assertEqual(23, s2.assists)
+        self.assertEqual(543, s2.assistskill)
+        self.assertEqual(4, s2.curstreak)
+        self.assertEqual(32, s2.winstreak)
+        self.assertEqual(74, s2.losestreak)
+        self.assertEqual(874, s2.rounds)
+        self.assertEqual(1, s2.hide)
+        self.assertEqual('the name', s2.fixed_name)
+        self.assertEqual('the token', s2.id_token)
+
+    def test_WeaponStats(self):
+        # GIVEN
+        name = "the weapon"
+
+        # getting empty stats
+        s = self.p.get_WeaponStats(name)
+        self.assertIsNotNone(s)
+
+        # saving stats
+        s.kills = 64
+        s.suicides = 6
+        s.teamkills = 4
+        self.p.save_Stat(s)
+
+        # checking modified stats
+        s2 = self.p.get_WeaponStats(name)
+        self.assertIsNotNone(s2)
+
+        self.assertEqual(s.name, s2.name)
+        self.assertEqual(s.kills, s2.kills)
+        self.assertEqual(s.suicides, s2.suicides)
+        self.assertEqual(s.teamkills, s2.teamkills)
+
+
+    def test_Bodypart(self):
+        # GIVEN
+        name = "the body part"
+
+        # getting empty stats
+        s = self.p.get_Bodypart(name)
+        self.assertIsNotNone(s)
+
+        # saving stats
+        s.kills = 64
+        s.suicides = 6
+        s.teamkills = 4
+        self.p.save_Stat(s)
+
+        # checking modified stats
+        s2 = self.p.get_Bodypart(name)
+        self.assertIsNotNone(s2)
+
+        self.assertEqual(s.name, s2.name)
+        self.assertEqual(s.kills, s2.kills)
+        self.assertEqual(s.suicides, s2.suicides)
+        self.assertEqual(s.teamkills, s2.teamkills)
+
+    def test_MapStats(self):
+        # GIVEN
+        name = "the map"
+
+        # getting empty stats
+        s = self.p.get_MapStats(name)
+        self.assertIsNotNone(s)
+
+        # saving stats
+        s.kills = 64
+        s.suicides = 6
+        s.teamkills = 4
+        s.rounds = 84
+        self.p.save_Stat(s)
+
+        # checking modified stats
+        s2 = self.p.get_MapStats(name)
+        self.assertIsNotNone(s2)
+
+        self.assertEqual(s.name, s2.name)
+        self.assertEqual(s.kills, s2.kills)
+        self.assertEqual(s.suicides, s2.suicides)
+        self.assertEqual(s.teamkills, s2.teamkills)
+        self.assertEqual(s.rounds, s2.rounds)
+
+    def test_WeaponUsage(self):
+        # GIVEN
+        weapon_id = 841
+        client_id = 84556
+
+        # getting empty stats
+        s = self.p.get_WeaponUsage(weapon_id, client_id)
+        self.assertIsNotNone(s)
+
+        # saving stats
+        s.kills = 10
+        s.deaths = 11
+        s.suicides = 12
+        s.teamkills = 13
+        s.teamdeaths = 14
+        self.p.save_Stat(s)
+
+        # checking modified stats
+        s2 = self.p.get_WeaponUsage(weapon_id, client_id)
+        self.assertIsNotNone(s2)
+
+        self.assertEqual(s.kills, s2.kills)
+        self.assertEqual(s.deaths, s2.deaths)
+        self.assertEqual(s.suicides, s2.suicides)
+        self.assertEqual(s.teamkills, s2.teamkills)
+        self.assertEqual(s.teamdeaths, s2.teamdeaths)
+
+    def test_Opponent(self):
+        # GIVEN
+        killerid = 841
+        targetid = 84556
+
+        # getting empty stats
+        s = self.p.get_Opponent(killerid, targetid)
+        self.assertIsNotNone(s)
+
+        # saving stats
+        s.kills = 10
+        s.retals = 11
+        self.p.save_Stat(s)
+
+        # checking modified stats
+        s2 = self.p.get_Opponent(killerid, targetid)
+        self.assertIsNotNone(s2)
+
+        self.assertEqual(s.kills, s2.kills)
+        self.assertEqual(s.retals, s2.retals)
+
+    def test_PlayerBody(self):
+        # GIVEN
+        playerid = 841
+        bodypartid = 84556
+
+        # getting empty stats
+        s = self.p.get_PlayerBody(playerid, bodypartid)
+        self.assertIsNotNone(s)
+
+        # saving stats
+        s.kills = 10
+        s.deaths = 11
+        s.suicides = 12
+        s.teamkills = 13
+        s.teamdeaths = 14
+        self.p.save_Stat(s)
+
+        # checking modified stats
+        s2 = self.p.get_PlayerBody(playerid, bodypartid)
+        self.assertIsNotNone(s2)
+
+        self.assertEqual(s.kills, s2.kills)
+        self.assertEqual(s.deaths, s2.deaths)
+        self.assertEqual(s.suicides, s2.suicides)
+        self.assertEqual(s.teamkills, s2.teamkills)
+        self.assertEqual(s.teamdeaths, s2.teamdeaths)
+
+    def test_PlayerMaps(self):
+        # GIVEN
+        playerid = 841
+        mapid = 84556
+
+        # getting empty stats
+        s = self.p.get_PlayerMaps(playerid, mapid)
+        self.assertIsNotNone(s)
+
+        # saving stats
+        s.kills = 10
+        s.suicides = 12
+        s.teamkills = 13
+        s.rounds = 14
+        self.p.save_Stat(s)
+
+        # checking modified stats
+        s2 = self.p.get_PlayerMaps(playerid, mapid)
+        self.assertIsNotNone(s2)
+
+        self.assertEqual(s.kills, s2.kills)
+        self.assertEqual(s.suicides, s2.suicides)
+        self.assertEqual(s.teamkills, s2.teamkills)
+        self.assertEqual(s.rounds, s2.rounds)
+
+    def test_ActionStats(self):
+        # GIVEN
+        name = "the action name"
+
+        # getting empty stats
+        s = self.p.get_ActionStats(name)
+        self.assertIsNotNone(s)
+
+        # saving stats
+        s.count = 10
+        self.p.save_Stat(s)
+
+        # checking modified stats
+        s2 = self.p.get_ActionStats(name)
+        self.assertIsNotNone(s2)
+
+        self.assertEqual(s.count, s2.count)
+
+    def test_ActionStats(self):
+        # GIVEN
+        playerid = 74564
+        actionid = 74
+
+        # getting empty stats
+        s = self.p.get_PlayerActions(playerid, actionid)
+        self.assertIsNotNone(s)
+
+        # saving stats
+        s.count = 10
+        self.p.save_Stat(s)
+
+        # checking modified stats
+        s2 = self.p.get_PlayerActions(playerid, actionid)
+        self.assertIsNotNone(s2)
+
+        self.assertEqual(s.count, s2.count)

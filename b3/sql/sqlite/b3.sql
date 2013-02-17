@@ -194,6 +194,7 @@ CREATE TABLE IF NOT EXISTS `xlr_playerstats` (
   `rounds` smallint(5) NOT NULL default '0',
   `hide` tinyint(4) NOT NULL default '0',
   `fixed_name` varchar(32) NOT NULL default '',
+  `id_token` varchar(10) NOT NULL default '',
   FOREIGN KEY(`client_id`) REFERENCES clients(`id`)
 );
 
