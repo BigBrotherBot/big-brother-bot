@@ -80,7 +80,16 @@ import glob
 import pkg_handler
 import functions
 import tempfile
-from lib.elementtree.ElementTree import ElementTree
+
+# Import ElementTree
+try:
+    from xml.etree import cElementTree as ElementTree
+except ImportError:
+    try:
+        from xml.etree import ElementTree
+    except ImportError:
+        from b3.lib.elementtree import ElementTree
+
 from lib.elementtree.SimpleXMLWriter import XMLWriter
 from distutils import version
 from urlparse import urlsplit
