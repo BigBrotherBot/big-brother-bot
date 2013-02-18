@@ -58,6 +58,8 @@
 #    * Added: Ravaged game
 # 2012/10/24 - 1.4 - courgette
 #   * Added: iourt42 custom settings
+# 2012/10/31 - 1.5 - courgette
+#   * Added: arma2 support
 #
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -65,7 +67,7 @@
 # The setup procedure, to create a new configuration file (b3.xml)
 
 __author__ = 'xlr8or'
-__version__ = '1.4'
+__version__ = '1.5'
 
 import platform
 import urllib2
@@ -152,7 +154,12 @@ class Setup:
         self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
         xml.start("settings", name="b3")
         self.add_set("parser", "",
-                     "Define your game: altitude/bf3/bfbc2/cod/cod2/cod4/cod5/cod6/cod7/cod8/etpro/homefront/iourt41/iourt42/moh/oa081/smg/sof2/wop/wop15/ro2/csgo/ravaged")
+                     """\
+Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
+                  iourt41/iourt42
+                  bfbc2/bf3/moh
+                  etpro/altitude/oa081/smg/sof2/wop/wop15
+                  homefront/ro2/csgo/ravaged/arma2""")
 
         # set a template xml file to read existing settings from
         _result = False
@@ -184,7 +191,7 @@ class Setup:
 
         self.add_set("bot_name", self.read_element('b3', 'bot_name', 'b3'), "Name of the bot")
         self.add_set("bot_prefix", self.read_element('b3', 'bot_prefix', '^0(^2b3^0)^7:'),
-                     "Ingame messages are prefixed with this code, you can use colorcodes")
+                     "Ingame messages are prefixed with this code, you can use colorcodes", allow_blank=True)
         self.add_set("time_format", self.read_element('b3', 'time_format', '%I:%M%p %Z %m/%d/%y'))
         self.add_set("time_zone", self.read_element('b3', 'time_zone', 'CST'),
                      "The timezone your bot is in")
@@ -258,6 +265,17 @@ class Setup:
                          "The IP of your gameserver B3 will connect to in order to send RCON commands. Usually the same as the public_ip")
             self.add_set("rcon_port", self.read_element('server', 'rcon_port', ''),
                          "The port of your gameserver that B3 will connect to in order to send RCON commands. NOT the same as the normal port.")
+            self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
+                         "The RCON password of your gameserver.")
+
+        # Arma2 specific
+        elif self._set_parser == 'arma2':
+            self.add_set("public_ip", self.read_element('server', 'public_ip', ''),
+                         "The IP address of your gameserver")
+            self.add_set("port", self.read_element('server', 'port', ''),
+                         "The ArmA2 game network communication port")
+            self.add_set("rcon_ip", self.read_element('server', 'rcon_ip', ''),
+                         "The IP of your gameserver B3 will connect to in order to send RCON commands. Usually the same as the public_ip")
             self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
                          "The RCON password of your gameserver.")
 
@@ -584,7 +602,7 @@ class Setup:
         """ Make the setup questions same length for prettier formatting """
         return (self._equaLength - len(unicode(_string))) * " "
 
-    def add_set(self, sname, sdflt, explanation="", silent=False):
+    def add_set(self, sname, sdflt, explanation="", silent=False, allow_blank=None):
         """
         A routine to add a setting with a textnode to the config
         Usage: self.add_set(name, default value optional-explanation)
@@ -595,7 +613,7 @@ class Setup:
             xml.comment(explanation)
             xml.data("\t\t")
         if not silent:
-            _value = self.raw_default(sname, sdflt)
+            _value = self.raw_default(sname, sdflt, allow_blank)
         else:
             _value = sdflt
         xml.element("set", _value, name=sname)
@@ -649,7 +667,7 @@ class Setup:
             self.add_buffer("plugin: " + str(sname) + ", config: " + str(_config) + "\n")
         return True
 
-    def raw_default(self, prompt, dflt=None):
+    def raw_default(self, prompt, dflt=None, allow_blank=None):
         """ Prompt user for input and don't accept an empty value"""
         if dflt:
             prompt = "%s [%s]" % (prompt, dflt)
@@ -659,9 +677,15 @@ class Setup:
         if not res and dflt:
             res = dflt
         if res == "":
-            print "ERROR: No value was entered! Give it another try!"
-            res = self.raw_default(prompt, dflt)
-        self.testExit(res)
+            if allow_blank:
+                #print "ERROR: No value was entered! Would you leave this value blank?"
+                _yntest = self.raw_default("No value was entered! Would you leave this value blank?", "no")
+                if _yntest != 'yes':
+                    res = self.raw_default(prompt, dflt, allow_blank=True)
+            else:
+                print "ERROR: No value was entered! Give it another try!"
+                res = self.raw_default(prompt, dflt)
+        if not allow_blank: self.testExit(res)
         return res
 
     def clearscreen(self):
@@ -814,7 +838,7 @@ class Setup:
         req = urllib2.Request(url)
         try:
             r = urllib2.urlopen(req)
-            self.add_buffer('  ... downloading ...\n')
+            self.add_buffer('  ... downloading %s ...\n' % url)
         except Exception, msg:
             self.add_buffer('  ... download failed: %s\n' % msg)
             return None

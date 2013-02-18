@@ -1,3 +1,503 @@
+2012-12-12  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 25990e5e58c3324f5cb130ecebbd0f08a5e2be10 Author:
+	Courgette <courgette@bigbrotherbot.net> Date:   Sat Dec 8 00:57:57
+	2012 +0100
+
+2012-12-07  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO, setup.py: prepare release
+	1.9.0dev27
+
+2012-12-07  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/iourt42.py, tests/parsers/test_iourt42.py: URT42: add
+	new events : EVT_CLIENT_JUMP_TIMER_START,
+	EVT_CLIENT_JUMP_TIMER_STOP, EVT_CLIENT_POS_SAVE, EVT_CLIENT_POS_LOAD
+	which can be used by plugins
+
+2012-12-07  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO, setup.py: prepare release
+	1.9.0dev26
+
+2012-12-07  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/iourt42.py, tests/parsers/test_iourt42.py: URT42: add
+	new events : EVT_CLIENT_JUMP_TIMER_START,
+	EVT_CLIENT_JUMP_TIMER_STOP, EVT_CLIENT_POS_SAVE, EVT_CLIENT_POS_LOAD
+	which can be used by plugins
+
+2012-12-07  Courgette <courgette@bigbrotherbot.net>
+
+	* setup.py: DIST: fix an issue with setup.py when used from pip and
+	a github repository. i.e.: pip install
+	git+https://github.com/thomasleveil/big-brother-bot.git we would
+	have an error "AttributeError: class egg_info has no attribute
+	'iter_entry_points'"
+
+2012-12-06  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO, setup.py: prepare release
+	1.9.0dev25
+
+2012-12-06  Thomas LÉVEIL <thomasleveil@gmail.com>
+
+	* CHANGELOG: Update CHANGELOG
+
+2012-12-05  Thomas LÉVEIL <thomasleveil@gmail.com>
+
+	* : Merge pull request #94 from 82ndab-Bravo17/master RO2: Changes to RO2 parser for new chat format
+
+2012-12-04  Courgette <courgette@bigbrotherbot.net>
+
+	* CHANGELOG, b3.egg-info/PKG-INFO, b3/PKG-INFO, setup.py: prepare
+	release 1.9.0dev24
+
+2012-12-04  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/bf3.py, tests/parsers/test_bf3.py: BF3: add new maps
+	and gamemode from BF3 DLC "Aftermath"
+
+2012-12-01  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO, setup.py: prepare release
+	1.9.0dev23
+
+2012-12-01  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/iourt42.py, tests/parsers/test_iourt42.py: URT42: fix
+	authentication for connecting player Frosen Sand Account is uniquely
+	known in the B3 database
+
+2012-12-01  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/clients.py: CORE: minor change to the Client class to ease
+	debugging
+
+2012-12-01  unknown <Ien@.(none)>
+
+	* b3/parsers/ro2.py: Update RO2 parser for client/server 1.1.0.8
+	chat
+
+2012-11-27  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO, setup.py: prepare release
+	1.9.0dev22
+
+2012-11-27  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/q3a/rcon.py: Q3A RCON: get rid of sendRconNoRead which
+	does more harm than good (at least with CoD6)
+
+2012-11-27  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/plugins/ftpytail.py: FTP: fix issue that would prevent B3 from
+	reading the correct local game log when public_ip and rcon_ip were
+	different in b3.xml
+
+2012-11-27  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/plugins/ftpytail.py: FTP: remove the first '/' from the
+	url-path to respect RFC 1738. Some users might have to change their
+	game_log setting in b3.xml. Rule of thumb for ftp:// URI syntax is
+	if it works in Internet Explorer it must work in B3
+
+2012-11-26  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3.egg-info/SOURCES.txt, b3/PKG-INFO,
+	setup.py: prepare release 1.9.0dev21
+
+2012-11-26  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/iourt41.py, b3/parsers/iourt42.py,
+	tests/parsers/test_iourt41.py, tests/parsers/test_iourt42.py: URT:
+	fix issue that would allow to overwrite the password field of Client
+	objects
+
+2012-11-26  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/clients.py, b3/functions.py, b3/plugins/login.py,
+	b3/storage/database.py, tests/plugins/test_login.py,
+	tests/storage/common.py: CORE: add fields 'login' and 'password' to
+	the Client model
+
+2012-11-25  Courgette <courgette@bigbrotherbot.net>
+
+	* tests/storage/test_mysql.py: TESTS: fix mysql test module
+	configuration
+
+2012-11-25  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/clients.py: CORE: add missing fields to the Client class
+
+2012-11-25  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/plugins/login.py, tests/plugins/test_login.py: LOGIN PLUGIN :
+	fix issue that would not recognize the correct password with at
+	least Urban Terror 4.1 and 4.2
+
+2012-11-22  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit bafe11b500e4a6b34bd20545bf3d546bf70e5fb5 Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Thu Nov 22 09:51:11 2012 +0100
+
+2012-11-18  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3.egg-info/SOURCES.txt, b3/PKG-INFO,
+	setup.py: prepare release 1.9.0dev20
+
+2012-11-18  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/cod4.py, tests/parsers/test_cod4.py: COD4: fix player
+	not authenticated (without punkbuster) when qport or port is a
+	negative number See
+
+	http://forum.bigbrotherbot.net/general-discussion/%27bug%27-in-cod4parser/msg38165/
+
+2012-11-15  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO, setup.py: prepare release
+	1.9.0dev19
+
+2012-11-15  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/iourt42.py, tests/parsers/test_iourt42.py: URT42: fix
+	banning with the Frozen Sand auth system now works with servers set
+	to auth private or notoriety mode
+
+2012-11-14  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/ravaged/__init__.py: Ravaged: get the game server
+	hostname by querying the game server on its Source Query port
+
+2012-11-09  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3.egg-info/SOURCES.txt, b3/PKG-INFO,
+	setup.py: prepare release 1.9.0dev18
+
+2012-11-09  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/iourt42.py: URT42: add support for new jump gametype
+
+2012-11-03  Courgette <courgette@bigbrotherbot.net>
+
+	* py2exe_builder/b3-installer-project.iss, py2exe_builder/build.py,
+	py2exe_builder/build.yaml: DIST: update the InnoSetup script : - update the .iss script with the new languages files which are
+	provided when installing InnoSetup 5.5.2 - change the build.py tool to take the location of the InnoSetup
+	Compiler program of the environment variable ISCC_EXE if available
+
+2012-11-03  Courgette <courgette@bigbrotherbot.net>
+
+	* tests/README, tests/storage/test_Storage.py,
+	tests/storage/test_mysql.py, tests/storage/test_postgresql.py: 
+	TESTS: improve test for b3.storage : - better  skipping of tests when mysql or postgresql related modules
+	aren't available - better isolation of tests
+
+2012-10-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/conf/templates/b3.arma2.tpl: Arma2: remove quake3 color codes
+	from b3.xml template
+
+2012-10-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3.egg-info/SOURCES.txt, b3/PKG-INFO,
+	setup.py: prepare release 1.9.0dev17
+
+2012-10-31  Courgette <courgette@bigbrotherbot.net>
+
+	* : commit 801e883aada16f45eac9794776159f42a7db5a5d Author:
+	Courgette <courgette@bigbrotherbot.net> Date:   Wed Oct 31 22:19:53
+	2012 +0100
+
+2012-10-31  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/setup.py: SETUP WIZARD: breaks the supported games on multiple
+	lines change version to reflect Arma2 addittion
+
+2012-08-02  82ndab-Bravo17 <82ndab.bravo17@gmail.com>
+
+	* b3/conf/templates/b3.arma2.tpl, b3/parsers/arma2.py,
+	b3/parsers/battleye/__init__.py,
+	b3/parsers/battleye/abstractParser.py,
+	b3/parsers/battleye/protocol.py, b3/parsers/battleye/rcon.py,
+	b3/setup.py, tests/parsers/test_arma2.py: Arma2 support
+
+2012-10-29  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/conf/templates/b3.bf3.tpl, b3/conf/templates/b3.bfbc2.tpl,
+	b3/conf/templates/b3.cod.tpl, b3/conf/templates/b3.cod2.tpl,
+	b3/conf/templates/b3.cod4.tpl, b3/conf/templates/b3.cod5.tpl,
+	b3/conf/templates/b3.cod6.tpl, b3/conf/templates/b3.cod7.tpl,
+	b3/conf/templates/b3.cod8.tpl, b3/conf/templates/b3.csgo.tpl,
+	b3/conf/templates/b3.frontline.tpl,
+	b3/conf/templates/b3.homefront.tpl,
+	b3/conf/templates/b3.iourt41.tpl, b3/conf/templates/b3.iourt42.tpl,
+	b3/conf/templates/b3.moh.tpl, b3/conf/templates/b3.ravaged.tpl: 
+	SETUP WIZARD: fix external plugins download links for all b3.xml
+	templates
+
+2012-10-29  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/setup.py: SETUP WIZARD: minor change that shows the URL of the
+	external plugin being downloaded
+
+2012-10-28  Mark Weirath <xlr8or@bigbrotherbot.net>
+
+	* : Merge pull request #90 from tanka8/master Status Plugin SQL update
+
+2012-10-28  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/setup.py, b3/sql/b3-update-1.9.0.sql: Update table to 1.9.0
+
+2012-10-28  xlr8or <xlr8or@xlr8or.com>
+
+	* b3/parser.py, b3/parsers/csgo.py,
+	b3/parsers/frontline/__init__.py,
+	b3/parsers/frostbite/abstractParser.py,
+	b3/parsers/frostbite2/abstractParser.py,
+	b3/parsers/homefront/__init__.py, b3/parsers/ravaged/__init__.py,
+	b3/parsers/ro2.py: Fully implement the self.console.privateMsg
+	boolean from parser.py up to the several abstractparsers.
+
+2012-10-27  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO, setup.py: prepare release
+	1.9.0dev16
+
+2012-10-27  Courgette <courgette@bigbrotherbot.net>
+
+	* : commit 49b164d1b39ed7b218f7138e1cc466fa5a9e6251 Author:
+	Courgette <courgette@bigbrotherbot.net> Date:   Sat Oct 27 22:55:50
+	2012 +0200
+
+2012-10-27  xlr8or <xlr8or@xlr8or.com>
+
+	* : commit 66a04a0bb4fe3d9334f8c19e0b47ca4e097e27cf Author: xlr8or
+	<xlr8or@xlr8or.com> Date:   Sat Oct 27 20:43:05 2012 +0200
+
+2012-10-27  Courgette <courgette@bigbrotherbot.net>
+
+	* : merge xlr8or/master and harder functions.sanitizeMe()
+
+2012-10-26  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO, setup.py: prepare release
+	1.9.0dev15
+
+2012-10-26  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/ravaged/__init__.py: Ravaged: recognize game type from
+	map names
+
+2012-10-26  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/plugins/status.py: STATUS: makes sure 'Client' tags have a
+	'score' attribute
+
+2012-10-25  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO, setup.py: prepare release
+	1.9.0dev14
+
+2012-10-24  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/conf/templates/b3.ravaged.tpl, b3/setup.py: Ravaged: change the
+	meaning of 'port' in b3.xml to be the Ravaged game server Steam
+	QueryPort to allow correct game port display on the B3 master list
+
+2012-10-24  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO, setup.py: prepare release
+	1.9.0dev13
+
+2012-10-24  Courgette <courgette@bigbrotherbot.net>
+
+	* CHANGELOG, b3/conf/templates/b3.iourt42.tpl,
+	b3/parsers/iourt42.py, b3/setup.py, tests/parsers/test_iourt42.py: 
+	URT42: can now ban using the Frozen Sand auth system
+
+2012-10-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO, setup.py: prepare release
+	1.9.0dev12
+
+2012-10-22  Courgette <courgette@bigbrotherbot.net>
+
+	* tests/parsers/test_ravaged.py: TESTS: maintain tests for Ravaged
+
+2012-10-22  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/ravaged/__init__.py, tests/parsers/test_ravaged.py: 
+	RAVAGED: fix kill events so stats and xlrstats plugin can do their
+	job
+
+2012-10-20  Courgette <courgette@bigbrotherbot.net>
+
+	* tests/parsers/test_ravaged.py: TEST: update tests for ravaged due
+	to say lines max length change
+
+2012-10-20  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO, setup.py: prepare release
+	1.9.0dev11
+
+2012-10-20  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/ravaged/__init__.py, tests/parsers/test_ravaged.py: 
+	RAVAGED: reduce maximum line length in chat (or it would be
+	truncated by the server)
+
+2012-10-20  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/functions.py: CORE: fix soundex() error when input string is
+	unicode
+
+2012-10-20  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/ravaged/__init__.py: RAVAGED: fix bug that prevented
+	players' name to be saved to database
+
+2012-10-19  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/setup.py: RAVAGED: update setup wizard for Ravaged
+
+2012-10-19  Courgette <courgette@bigbrotherbot.net>
+
+	*
+	py2exe_builder/assets_b3_lite_for_bf3/conf/configmanager/b3_main.cf
+	g, py2exe_builder/assets_b3_lite_for_bf3/conf/plugin_makeroom.xml,
+	py2exe_builder/assets_b3_lite_for_bf3/conf/plugin_poweradminbf3.ini
+	,
+	py2exe_builder/assets_b3_lite_for_bf3/conf/plugin_teamspeakbf.xml,
+	py2exe_builder/assets_b3_lite_for_bf3/conf/serverconfigs/hardcore-t
+	dm.cfg,
+	py2exe_builder/assets_b3_lite_for_bf3/conf/serverconfigs/hardcore.c
+	fg,
+	py2exe_builder/assets_b3_lite_for_bf3/conf/serverconfigs/infantry.c
+	fg,
+	py2exe_builder/assets_b3_lite_for_bf3/conf/serverconfigs/normal.cfg
+	,
+	py2exe_builder/assets_b3_lite_for_bf3/conf/serverconfigs/nowait.cfg
+	,
+	py2exe_builder/assets_b3_lite_for_bf3/conf/serverconfigs/quickmatch
+	.cfg,
+	py2exe_builder/assets_b3_lite_for_bf3/conf/serverconfigs/training.c
+	fg, py2exe_builder/assets_b3_lite_for_bf3/extplugins/makeroom.py,
+	py2exe_builder/assets_b3_lite_for_bf3/extplugins/poweradminbf3.py,
+	py2exe_builder/assets_b3_lite_for_bf3/extplugins/teamspeakbf.py,
+	py2exe_builder/assets_b3_lite_for_bf3/frostbite_server_info.bat,
+	py2exe_builder/assets_b3_lite_for_bf3/makeB3DotXml.bat,
+	py2exe_builder/assets_b3_lite_for_bf3/template_b3.xml,
+	py2exe_builder/b3_lite_for_bf3-installer-project.iss,
+	py2exe_builder/bf3_sqlite/conf/plugin_makeroom.xml,
+	py2exe_builder/bf3_sqlite/conf/plugin_poweradminbf3.xml,
+	py2exe_builder/bf3_sqlite/conf/serverconfigs/hardcore-rush.cfg,
+	py2exe_builder/bf3_sqlite/conf/serverconfigs/hardcore-tdm.cfg,
+	py2exe_builder/bf3_sqlite/conf/serverconfigs/hardcore.cfg,
+	py2exe_builder/bf3_sqlite/conf/serverconfigs/infantry.cfg,
+	py2exe_builder/bf3_sqlite/conf/serverconfigs/normal.cfg,
+	py2exe_builder/bf3_sqlite/conf/serverconfigs/nowait.cfg,
+	py2exe_builder/bf3_sqlite/conf/serverconfigs/quickmatch.cfg,
+	py2exe_builder/bf3_sqlite/extplugins/makeroom.py,
+	py2exe_builder/bf3_sqlite/extplugins/poweradminbf3.py,
+	py2exe_builder/bf3_sqlite/frostbite_server_info.bat,
+	py2exe_builder/bf3_sqlite/makeB3DotXml.bat,
+	py2exe_builder/bf3_sqlite/template_b3.xml,
+	py2exe_builder/build.yaml: DIST: give up the B3 BF3 lite package as
+	not popular enougth
+
+2012-10-19  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/ravaged/__init__.py, tests/parsers/test_ravaged.py: 
+	RAVAGED:  * recognize a new type of game event when a player dies by crashing
+	 a vehicule * add getNextMap()  * fix changeMap()  * improve getMapsSoundingLike()
+
+2012-10-19  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/functions.py, tests/parsers/test_bf3.py: CORE: improve
+	getStuffSoundingLike() so it discards non letter/digit characters
+
+2012-10-19  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parser.py: CORE: add method getNextMap() to the list of method
+	all B3 parsers should implement
+
+2012-10-19  Courgette <courgette@bigbrotherbot.net>
+
+	* MANIFEST.in, b3.egg-info/PKG-INFO, b3.egg-info/SOURCES.txt,
+	b3/PKG-INFO, setup.py: prepare release 1.9.0dev10
+
+2012-10-19  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/game_event_router.py, b3/parsers/csgo.py,
+	b3/parsers/ravaged/__init__.py: CORE: refactor b3.game_event_router
+
+2012-10-19  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/ravaged/__init__.py: RAVAGED: better handling of lost
+	connection to the game server
+
+2012-10-19  Courgette <courgette@bigbrotherbot.net>
+
+	* setup.py: DIST: update setup.py so py2exe includes the
+	b3.parsers.ravaged module
+
+2012-10-19  Courgette <courgette@bigbrotherbot.net>
+
+	* tests/Ravaged_brute_force.py: cleaning
+
+2012-10-19  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/conf/templates/b3.ravaged.tpl, b3/parsers/ravaged/__init__.py,
+	tests/parsers/test_ravaged.py: RAVAGED: 1st working release - ready
+	for a first live test
+
+2012-10-19  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/csgo.py: CSGO: fix ban that was queuing a
+	EVT_CLIENT_BAN_TEMP event instead of EVT_CLIENT_BAN
+
+2012-10-19  Courgette <courgette@bigbrotherbot.net>
+
+	* : commit 476cd8bce7501cee2417f046efc1c0e69a0a816d Author:
+	Courgette <courgette@bigbrotherbot.net> Date:   Sat Sep 15 17:45:26
+	2012 +0200
+
+2012-10-19  Courgette <courgette@bigbrotherbot.net>
+
+	* CHANGELOG: update changelog
+
+2012-10-19  Courgette <courgette@bigbrotherbot.net>
+
+	* b3/parsers/iourt41.py, tests/parsers/test_iourt41.py,
+	tests/parsers/test_iourt42.py: URT: improve !map <map_name> behavior
+	when map_name is not the exact map name but a close match See bug report http://forum.bigbrotherbot.net/urt/!map-x-bug/
+
+2012-10-19  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3.egg-info/SOURCES.txt, b3/PKG-INFO,
+	setup.py: prepare release 1.9.0dev9
+
+2012-10-16  Courgette <courgette@bigbrotherbot.net>
+
+	* b3.egg-info/PKG-INFO, b3/PKG-INFO, setup.py: start B3 1.10 dev
+	branch
+
+2012-10-18  Courgette <courgette@bigbrotherbot.net>
+
+	* setup.py: DIST: fix setup.py issue when creating the data folders
+	for py2exe
+
+2012-10-16  Courgette <courgette@bigbrotherbot.net>
+
+	* setup.py: DIST: fix setup.py which was copying the data files to
+	the wrong folder when using 'python setup.py install'
+
+2012-10-10  xlr8or <xlr8or@xlr8or.com>
+
+	* ChangeLogDetailed.txt: detailed changelog for beta
+
 2012-10-10  Courgette <courgette@bigbrotherbot.net>
 
 	* b3/parsers/iourt42.py, tests/parsers/test_iourt42.py: URT42: fix
@@ -352,6 +852,12 @@
 
 	* b3/parsers/bf3.py, tests/parsers/test_bf3.py: BF3: add new maps
 	and gamemode from DLC "Armored Kill"
+
+2012-09-01  tanka8 <tanka8@gmail.com>
+
+	* b3/plugins/status.py: Update b3/plugins/status.py Update for the Clients table. Using INT were appropriate and
+	reducing length.  Main issue was to use use int so players could be
+	sorted by score.
 
 2012-09-01  xlr8or <xlr8or@xlr8or.com>
 

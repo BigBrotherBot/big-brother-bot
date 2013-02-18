@@ -5,12 +5,13 @@ http://github.com/BigBrotherBot/big-brother-bot/compare/v1.8.2...v1.9.0
 ----
 
 # Game related changes:
-- BF3: updated with DLC "Close Quarter" and "Armored kill" maps and gamemode info
+- BF3: updated with DLC "Close Quarter", "Armored kill" and "Aftermath" maps and gamemode info
 - BF3: command !map can optionally specify the wanted gamemode and number or rounds : !map firestorm, conquest64, 2
 - Red Orchestra 2 now working with the B3 win32 packages
 - Urban Terror : fix !nextmap bug when the mapcycle file contains empty lines
 - Urban Terror : improves !map <map name> capabilities to find out the correct map name when given name is an approximate
 - Quake3 based games: fixes the 'RCON: too much tries' error message that appeared with v1.8.2
+- Red Orchestra 2 : Update client/server 1.1.0.8+
 
 # Plugin related changes:
 - The !help command does not make B3 unresponsive anymore on Quake3 based games
@@ -31,14 +32,19 @@ Urban Terror 4.2
  - New penalty available : kill. You can use it in the censor plugin configuration for instance.
  - The Spamcontrol plugin reacts to radio message spamming
  - Fires game specific events for plugins : EVT_CLIENT_RADIO, EVT_CLIENT_CALLVOTE, EVT_CLIENT_VOTE, EVT_GAME_FLAG_HOTPOTATO for other plugins to act on.
- - There are new settings in the b3.xml config file to let you choose if you want to ban using the Frozen Sand auth system (with the rcon 'auth-ban' command)
+ - There are new settings in the b3.xml config file to let you choose if you want to ban using the Frozen Sand auth system (with the rcon 'auth-ban' command). Have a look at the b3.iourt42.tpl template config file
 
 CoD8 / 4D1
  - B3 now supports CoD8 from 4D1. See http://forum.bigbrotherbot.net/call-of-duty-8-%28modern-warfare-3%29/
 
 Counter-Strike: Global Offensive
-- beta support for CS:GO (B3 parser code: csgo, requires SourceMod on the game server, and '-condebug' parameter on the game server command line)
+ - beta support for CS:GO (B3 parser code: csgo, requires SourceMod on the game server, and '-condebug' parameter on the game server command line)
 
+ArmA II
+ - ArmA II and DayZ are now supported. Use the B3 parser 'arma2' for both of them.
+
+Ravaged
+ - Ravaged by 2Dawn is now supported.
 
 # Upgrading note:
 

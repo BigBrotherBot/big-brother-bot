@@ -16,11 +16,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-from b3.storage import Storage
+from b3.storage import Storage, getStorage
 from b3.storage.database import DatabaseStorage
-from mock import Mock
+from mock import Mock, patch
 from tests import B3TestCase
-import b3.storage
 import unittest2 as unittest
 
 class Test_Storage(B3TestCase):
@@ -28,7 +27,7 @@ class Test_Storage(B3TestCase):
 
     def setUp(self):
         B3TestCase.setUp(self)
-        self.storage = b3.storage.Storage()
+        self.storage = Storage()
 
     def test_getCounts(self):
         self.assertRaises(NotImplementedError, self.storage.getCounts)
@@ -89,13 +88,14 @@ class Test_Storage(B3TestCase):
 
 
 class Test_getStorage(unittest.TestCase):
-    def test_Database(self):
-        DatabaseStorage.__init__ = Mock(return_value=None)
-        storage = b3.storage.getStorage('database')
-        self.assertIsInstance(storage, DatabaseStorage)
 
-    def test_empty(self):
-        Storage.__init__ = Mock(return_value=None)
-        storage = b3.storage.getStorage('')
-        self.assertIsInstance(storage, Storage)
+    @patch("b3.storage.DatabaseStorage")
+    def test_Database(self, mock_DatabaseStorage):
+        getStorage('database')
+        mock_DatabaseStorage.assert_called_once()
+
+    @patch("b3.storage.Storage")
+    def test_empty(self, mock_Storage):
+        getStorage('')
+        mock_Storage.assert_called_once()
 

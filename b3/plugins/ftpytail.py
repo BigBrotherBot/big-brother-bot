@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
+# 27/11/2012 - 1.6 - Courgette
+#   * remove the first '/' from the url-path to respect RFC 1738
+#   * fix issue when public_ip and rcon_ip are different in b3.xml
 # 22/05/2012 - 1.5.8 - Courgette
 #   * local_game_log config option can now use the @conf and @b3 shortcuts
 # 11/05/2011 - 1.5.7 - 82ndab-Bravo17
@@ -61,12 +64,11 @@
 # 17/06/2009 - 1.0 - Bakes
 #     Initial Plugin, basic functionality.
  
-__version__ = '1.5.8'
+__version__ = '1.6'
 __author__ = 'Bakes, Courgette'
  
 import b3, threading
 from b3 import functions
-import b3.events
 import b3.plugin
 import os.path
 from ftplib import FTP
@@ -107,19 +109,8 @@ class FtpytailPlugin(b3.plugin.Plugin):
         if self.console.config.has_option('server', 'local_game_log'):
             self.lgame_log = self.console.config.getpath('server', 'local_game_log')
         else:
-            # setup ip addresses
-            self._publicIp = self.console.config.get('server', 'public_ip')
-            self._port = self.console.config.getint('server', 'port')
-
-            if self._publicIp[0:1] == '~' or self._publicIp[0:1] == '/':
-                # load ip from a file
-                f = file(self.console.getAbsolutePath(self._publicIp))
-                self._publicIp = f.read().strip()
-                f.close()
-
-            logext = str(self._publicIp.replace('.', '_'))
-            logext = 'games_mp_' + logext + '_' + str(self._port) + '.log'
-            self.lgame_log = os.path.normpath(os.path.expanduser(logext))
+            # get B3 actual locally opened game log
+            self.lgame_log = os.path.normpath(os.path.expanduser(self.console.input.name))
             self.debug('Local Game Log is %s' % self.lgame_log)
 
         if self.console.config.get('server','game_log')[0:6] == 'ftp://' :
@@ -168,6 +159,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
 
     def initThread(self, ftpfileDSN):
         self.ftpconfig = functions.splitDSN(ftpfileDSN)
+        self.url_path = self.ftpconfig['path'][1:] # the '/' is not part of the uri-path according to RFC 1738 3.1. Common Internet Scheme Syntax
         thread1 = threading.Thread(target=self.update)
         self.info("Starting ftpytail thread")
         thread1.start()
@@ -190,11 +182,11 @@ class FtpytailPlugin(b3.plugin.Plugin):
                 if not ftp:
                     ftp = self.ftpconnect()
                     self._nbConsecutiveConnFailure = 0
-                    remoteSize = ftp.size(os.path.basename(self.ftpconfig['path']))
+                    remoteSize = ftp.size(os.path.basename(self.url_path))
                     self.verbose("Connection successful. Remote file size is %s" % remoteSize)
                     if self._remoteFileOffset is None:
                         self._remoteFileOffset = remoteSize
-                remoteSize = ftp.size(os.path.basename(self.ftpconfig['path']))
+                remoteSize = ftp.size(os.path.basename(self.url_path))
                 if remoteSize < self._remoteFileOffset:
                     self.debug("remote file rotation detected")
                     self._remoteFileOffset = 0
@@ -204,7 +196,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
                         self.debug('downloading only the last %s bytes' % self._maxGap)
                         self._remoteFileOffset = remoteSize - self._maxGap
                     #self.debug('RETR from remote offset %s. (expecting to read at least %s bytes)' % (self._remoteFileOffset, remoteSize - self._remoteFileOffset))
-                    ftp.retrbinary('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload, rest=self._remoteFileOffset)          
+                    ftp.retrbinary('RETR ' + os.path.basename(self.url_path), handleDownload, rest=self._remoteFileOffset)          
                     if self.buffer:
                         self.file.write(self.buffer)
                         self.buffer = None
@@ -263,7 +255,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
         ftp.connect(self.ftpconfig['host'], self.ftpconfig['port'], self._connectionTimeout)
         ftp.login(self.ftpconfig['user'], self.ftpconfig['password'])
         ftp.voidcmd('TYPE I')
-        dir = os.path.dirname(self.ftpconfig['path'])
+        dir = os.path.dirname(self.url_path)
         self.debug('trying to cwd to [%s]' % dir)
         ftp.cwd(dir)
         self.console.clients.sync()

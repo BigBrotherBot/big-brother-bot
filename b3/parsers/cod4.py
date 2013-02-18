@@ -39,10 +39,16 @@
 #    * Add JT method for some COD4 mods
 # 7/3/2012 - 1.3.6 - 82ndab-Bravo17
 #    * Change Client Auth method so it updates empty pbids
-
+# 2012/11/18 - 1.3.7 - Courgette
+#    * fix: player not authenticated (without punkbuster) when qport or port is a negative number
+# 2013/01/02 - 1.3.8 - Courgette
+#    * improve parsing rcon status status responses that are missing characters
+# 2013/01/12 - 1.3.9 - Courgette
+#    * fix bug when cod4ClientAuthMethod handles an unexpected error
+#
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.3.6'
+__version__ = '1.3.9'
 
 import b3.parsers.cod2
 import b3.functions
@@ -56,8 +62,36 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
 
     #num score ping guid                             name            lastmsg address               qport rate
     #--- ----- ---- -------------------------------- --------------- ------- --------------------- ----- -----
+    #  0     0   14 1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaab player1^7               0 11.22.33.44:-6187 -1609 25000
+    #  1     0   12 1ccccccccccccccccccccccccccccccc player2^7               0 22.33.44.55:-10803-23569 25000
+    #  3   486  185 ecc77e3400a38cc71b3849207e20e1b0 GO_NINJA^7              0 111.222.111.111:-15535-2655 25000
     #  4     0   23 blablablabfa218d4be29e7168c637be ^1XLR^78^9or[^7^7               0 135.94.165.296:63564  25313 25000
-    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[a-z0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9-]+)\s+(?P<rate>[0-9]+)$', re.I)
+    #  5    92  509 0123456789abcdef0123456789abcdef 7ajimaki^7            100 11.222.111.44:28960   -27329 25000
+    #  6     0  206 0123456789a654654646545789abcdef [NRNS]ArmedGuy^7        0 11.22.111.44:28960    -21813 25000
+    #  7    30  229 012343213211313213321313131bcdef Franco^7                0 111.22.111.111:23144  22922 25000
+    _regPlayer = re.compile(r"""
+^\s*
+  (?P<slot>[0-9]+)
+\s+
+  (?P<score>[0-9-]+)
+\s+
+  (?P<ping>[0-9]+)
+\s+
+  (?P<guid>[0-9a-f]+)
+\s+
+  (?P<name>.*?)
+\s+
+  (?P<last>[0-9]+?)
+\s*
+  (?P<ip>(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]))
+:?
+  (?P<port>-?[0-9]{1,5})
+\s*
+  (?P<qport>-?[0-9]{1,5})
+\s+
+  (?P<rate>[0-9]+)
+$
+""", re.IGNORECASE | re.VERBOSE)
 
 
     # join team (Some mods eg OW use JT)
@@ -224,7 +258,7 @@ def cod4ClientAuthMethod(self):
             self.console.debug('User not found %s: %s', self.guid, msg)
             inStorage = False
         except Exception, e:
-            self.console.error('auth self.console.storage.getClient(client) - %s\n%s', e, traceback.extract_tb(sys.exc_info()[2]))
+            self.console.error('auth self.console.storage.getClient(client) - %s' % self, exc_info=e)
             self.authorizing = False
             return False
 

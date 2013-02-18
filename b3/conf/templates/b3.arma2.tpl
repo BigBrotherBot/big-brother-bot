@@ -1,30 +1,24 @@
 <configuration>
 	<settings name="b3">
-		<set name="parser">bfbc2</set>
-		<set name="database">mysql://myuser:mypass@mydbhost/mydbname</set>
+		<set name="parser">arma2</set>
+		<set name="database">mysql://b3:password@localhost/b3</set>
 		<set name="bot_name">b3</set>
-		<set name="bot_prefix">[b3]:</set>
+		<set name="bot_prefix">(B3):</set>
 		<set name="time_format">%I:%M%p %Z %m/%d/%y</set>
-		<set name="time_zone">CEST</set>
+		<set name="time_zone">CST</set>
 		<set name="log_level">9</set>
-		<set name="logfile">b3.log</set>
-	</settings>
-	<settings name="bfbc2">
-		<set name="max_say_line_length">100</set>
+		<set name="logfile">@conf\b3.log</set>
 	</settings>
 	<settings name="server">
-		<set name="public_ip">11.22.33.44</set>
-		<set name="port">19567</set>
-		<set name="rcon_ip">11.22.33.44</set>
-		<set name="rcon_port">48888</set>
-		<set name="rcon_password">myrconpassword</set>
-		<set name="timeout">3</set>
-		<set name="punkbuster">off</set>
+		<set name="public_ip"></set>
+		<set name="port">2302</set>
+		<set name="rcon_ip">127.0.0.1</set>
+		<set name="rcon_password"></set>
 	</settings>
 	<settings name="autodoc">
 		<set name="type">html</set>
 		<set name="maxlevel">100</set>
-        <set name="destination">b3_doc.htm</set>
+		<set name="destination">@conf\b3_doc.htm</set>
 	</settings>
     <settings name="update">
         <!-- B3 checks if a new version is available at startup. Choose here what channel you want to check against.
@@ -50,21 +44,21 @@
 		<set name="external_dir">@b3/extplugins</set>
 	</settings>
 	<plugins>
-		<plugin name="censor" config="@conf/plugin_censor.xml"/>
-		<plugin name="spamcontrol" config="@b3/conf/plugin_spamcontrol.xml"/>
-		<plugin name="admin" config="@conf/plugin_admin.xml"/>
-		<plugin name="pingwatch" config="@conf/plugin_pingwatch.xml"/>
-		<plugin name="adv" config="@conf/plugin_adv.xml"/>
-		<plugin name="status" config="@conf/plugin_status.xml"/>
-		<plugin name="welcome" config="@conf/plugin_welcome.xml"/>
+		<plugin name="censor" config="@conf/plugin_censor.xml" />
+		<plugin name="spamcontrol" config="@conf/plugin_spamcontrol.xml" />
+        <plugin name="admin" config="@conf/plugin_admin.xml" />
+		<plugin name="stats" config="@conf/plugin_stats.xml" />
+		<plugin name="adv" config="@conf/plugin_adv.xml" />
+		<plugin name="status" config="@conf/plugin_status.xml" />
+		<plugin name="welcome" config="@conf/plugin_welcome.xml" />
 	</plugins>
     <extplugins>
-        <plugin name="poweradminbfbc2" config="external_dir/conf/poweradminbfbc2.xml"
-                dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=58"/>
-        <plugin name="banlist" config="external_dir/conf/banlist.xml"
-                dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=6"/>
-        <plugin name="chatlogger" config="external_dir/conf/plugin_chatlogger.xml"
-                dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=7" sql="chatlogger.sql"/>
+        <plugin name="arma2admin" config="external_dir/conf/arma2admin.xml"
+                dlocation="https://github.com/82ndab-Bravo17/b3-arma2plugins/zipball/master"/>
+        <plugin name="arma2lobbykick" config="external_dir/conf/arma2lobbykick.xml"
+                dlocation="https://github.com/82ndab-Bravo17/b3-arma2plugins/zipball/master"/>
+        <plugin name="arma2restarts" config="external_dir/conf/arma2restarts.xml"
+                dlocation="https://github.com/82ndab-Bravo17/b3-arma2plugins/zipball/master"/>
         <plugin name="xlrstats" config="external_dir/conf/xlrstats.xml"/>
     </extplugins>
 </configuration>

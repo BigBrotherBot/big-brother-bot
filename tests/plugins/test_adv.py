@@ -16,10 +16,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+import StringIO
 import logging
 import os
 from mock import patch, call, Mock
-from mockito import when, any as mockito_any
+from mockito import when, any as mockito_any, unstub
 from b3.fake import FakeClient
 from b3.lib import feedparser
 from b3.plugins.admin import AdminPlugin
@@ -38,6 +39,7 @@ default_plugin_content = None
 
 timer_patcher = None
 feedparser_patcher = None
+
 
 def setUpModule():
     global default_plugin_content, default_plugin_file, ADMIN_CONFIG, ADMIN_CONFIG_FILE, timer_patcher, feedparser_patcher
@@ -61,9 +63,8 @@ def tearDownModule():
     feedparser_patcher.stop()
 
 
-
 class AdvTestCase(B3TestCase):
-    """ Ease testcases that need an working B3 console and need to control the ADV plugin config """
+    """ Ease test cases that need an working B3 console and need to control the ADV plugin config """
 
     def setUp(self):
         self.log = logging.getLogger('output')
@@ -81,6 +82,7 @@ class AdvTestCase(B3TestCase):
 
     def tearDown(self):
         B3TestCase.tearDown(self)
+        unstub()
 
     def init_plugin(self, config_content=None):
         conf = None
@@ -103,19 +105,77 @@ class AdvTestCase(B3TestCase):
         self.p.onStartup()
 
 
-
 class Test_default_config(AdvTestCase):
     """ test that bad words from the default config are detected """
 
-    def setUp(self):
-        super(Test_default_config, self).setUp()
+    def test_default_config(self):
         self.init_plugin()
-
-    def test_default_penalty(self):
         self.assertEqual('2', self.p._rate)
+        self.assertIsNone(self.p._fileName)
+        self.assertEqual(10, len(self.p._msg.items))
         self.assertEqual("http://forum.bigbrotherbot.net/news-2/?type=rss;action=.xml", self.p._feed)
         self.assertEqual("News: ", self.p._feedpre)
         self.assertEqual(4, self.p._feedmaxitems)
+        self.assertEqual('News: ', self.p._feedpre)
+        self.assertIsNotNone(self.p._cronTab)
+        self.assertTupleEqual((0, range(0, 59, 2), -1, -1, -1, -1),
+                              (self.p._cronTab.second, self.p._cronTab.minute, self.p._cronTab.hour,
+                               self.p._cronTab.day, self.p._cronTab.month, self.p._cronTab.dow))
+
+    def test_empty(self):
+        self.init_plugin("""<configuration plugin="adv" />""")
+        self.assertIsNone(self.p._rate)
+        self.assertIsNone(self.p._fileName)
+        self.assertEqual(0, len(self.p._msg.items))
+        self.assertEqual("http://forum.bigbrotherbot.net/news-2/?type=rss;action=.xml", self.p._feed)
+        self.assertEqual("News: ", self.p._feedpre)
+        self.assertEqual(5, self.p._feedmaxitems)
+        self.assertEqual('News: ', self.p._feedpre)
+        self.assertIsNone(self.p._cronTab)
+
+    def test_rate_nominal(self):
+        self.init_plugin("""\
+<configuration plugin="adv">
+    <settings name="settings">
+        <set name="rate">1</set>
+    </settings>
+</configuration>
+""")
+        self.assertEqual('1', self.p._rate)
+        self.assertIsNotNone(self.p._cronTab)
+        self.assertTupleEqual((0, range(60), -1, -1, -1, -1),
+                              (self.p._cronTab.second, self.p._cronTab.minute, self.p._cronTab.hour,
+                               self.p._cronTab.day, self.p._cronTab.month, self.p._cronTab.dow))
+
+    def test_rate_nominal_second(self):
+        self.init_plugin("""\
+<configuration plugin="adv">
+    <settings name="settings">
+        <set name="rate">40s</set>
+    </settings>
+</configuration>
+""")
+        self.assertEqual('40s', self.p._rate)
+        self.assertIsNotNone(self.p._cronTab)
+        self.assertTupleEqual(([0, 40], -1, -1, -1, -1, -1),
+                              (self.p._cronTab.second, self.p._cronTab.minute, self.p._cronTab.hour,
+                               self.p._cronTab.day, self.p._cronTab.month, self.p._cronTab.dow))
+
+    def test_rate_junk(self):
+        try:
+            self.init_plugin("""\
+<configuration plugin="adv">
+    <settings name="settings">
+        <set name="rate">f00</set>
+    </settings>
+</configuration>
+""")
+        except TypeError, err:
+            print err
+        except Exception:
+            raise
+        self.assertEqual('f00', self.p._rate)
+        self.assertIsNone(self.p._cronTab)
 
 
 
@@ -128,9 +188,7 @@ class Test_commands(AdvTestCase):
     def tearDown(self):
         AdvTestCase.tearDown(self)
 
-
     #################### advlist ####################
-
     def test_advlist_empty(self):
         self.init_plugin("""
             <configuration>
@@ -369,8 +427,6 @@ class Test_commands(AdvTestCase):
         self.p.cmd_advadd(data=None, client=self.joe)
         self.assertEqual(['f00'], self.p._msg.items)
         self.assertEqual(['Invalid data, specify the message to add'], self.joe.message_history)
-
-
 
 
 class Test_keywords(AdvTestCase):

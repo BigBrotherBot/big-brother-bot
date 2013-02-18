@@ -162,9 +162,11 @@
 #     * fix !nextmap bug when the mapcycle file contains empty lines
 # 19/10/2012 - 1.14 - Courgette
 #     * improve finding the exact map in getMapsSoundingLike. Also improves changeMap() behavior as a consequence
+# 26/11/2012 - 1.15 - Courgette
+#     * protect some of the Client object property
 #
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.14'
+__version__ = '1.15'
 
 import re, string, time, os, thread
 from b3.parsers.q3a.abstractParser import AbstractParser
@@ -660,7 +662,8 @@ class Iourt41Parser(AbstractParser):
                 for k, v in bclient.iteritems():
                     if hasattr(client, 'gear') and k == 'gear' and client.gear != v:
                         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_GEAR_CHANGE, v, client))
-                    setattr(client, k, v)
+                    if not k.startswith('_') and k not in ('login', 'password', 'groupBits', 'maskLevel', 'autoLogin', 'greeting'):
+                        setattr(client, k, v)
             else:
                 #make a new client
                 if self.PunkBuster:
@@ -1497,7 +1500,7 @@ class Iourt41Parser(AbstractParser):
         
         if data.split('\n')[0] != "userinfo":
             self.debug("dumpuser %s returned : %s" % (cid, data))
-            self.debug('client %s probably disconnected, but its character is still hanging in game...')
+            self.debug('client %s probably disconnected, but its character is still hanging in game...' % cid)
             return None
 
         datatransformed = "%s " % cid

@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   26/11/2012 - 1.13 - courgette
+#    add database columns 'login' and 'password' to the Client model
 #   11/08/2012 - 1.12 - Courgette
 #    getGroup can find group by level if keyword is not provided
 #   29/10/2011 - 1.11.1 - 82ndab-Bravo17
@@ -62,7 +64,7 @@
 #   Added data column to penalties table
 
 __author__  = 'ThorN'
-__version__ = '1.12'
+__version__ = '1.13'
 
 
 from b3 import functions
@@ -442,7 +444,9 @@ class DatabaseStorage(Storage):
             'time_add',
             'auto_login',
             'mask_level',
-            'group_bits'
+            'group_bits',
+            'login',
+            'password'
         )
     
         if client.id > 0:

@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # Example:
-# setup.py (for a release)
+# setup.py release (for a release)
 # setup.py beta (for a beta package)
 #
 
@@ -28,14 +28,14 @@
 # The setuptools package creator for pypi.python.org
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '2.2'
+__version__ = '2.3'
 
 
 import os, glob
 import ez_setup, shutil, sys
 ez_setup.use_setuptools()
 from setuptools import setup, find_packages
-from setuptools.command.egg_info import egg_info
+from setuptools.command.egg_info import egg_info as orig_egg_info
 from distutils import dir_util, file_util
 try:
     import py2exe
@@ -43,12 +43,12 @@ try:
 except:
     has_py2exe = False
 
-b3version = "1.9.0dev16"
+b3version = "1.9.0b2"
 
 # override egg_info command to copy the b3.egg-info/PKG-INFO file into the b3 directory
-class my_egg_info(egg_info):
+class my_egg_info(orig_egg_info):
     def run(self):
-        egg_info.run(self)
+        orig_egg_info.run(self)
         shutil.copy ('b3.egg-info/PKG-INFO', 'b3/PKG-INFO')
 
 cmdclass = {
