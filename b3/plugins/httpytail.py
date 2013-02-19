@@ -27,9 +27,11 @@
 #   *  Append to local log implemented
 # 22/05/2012 - 0.2.3 - Courgette
 #   * local_game_log config option can now use the @conf and @b3 shortcuts
+# 19/02/2013 - 1.0 - Courgette
+#   * fix issue when public_ip and rcon_ip are different in b3.xml or when a domain name is used in place of an IP
 
-__version__ = '0.2.3'
-__author__ = 'GrosBedo'
+__version__ = '1.0'
+__author__ = 'GrosBedo, 82ndab-Bravo17, Courgette'
  
 import b3, threading
 from b3 import functions
@@ -71,19 +73,7 @@ class HttpytailPlugin(b3.plugin.Plugin):
         if self.console.config.has_option('server', 'local_game_log'):
             self.lgame_log = self.console.config.getpath('server', 'local_game_log')
         else:
-            # setup ip addresses
-            self._publicIp = self.console.config.get('server', 'public_ip')
-            self._port = self.console.config.getint('server', 'port')
-
-            if self._publicIp[0:1] == '~' or self._publicIp[0:1] == '/':
-                # load ip from a file
-                f = file(self.console.getAbsolutePath(self._publicIp))
-                self._publicIp = f.read().strip()
-                f.close()
-
-            logext = str(self._publicIp.replace('.', '_'))
-            logext = 'games_mp_' + logext + '_' + str(self._port) + '.log'
-            self.lgame_log = os.path.normpath(os.path.expanduser(logext))
+            self.lgame_log = os.path.normpath(os.path.expanduser(self.console.input.name))
             self.debug('Local Game Log is %s' % self.lgame_log)
             
         if self.console.config.get('server','game_log')[0:7] == 'http://' :
