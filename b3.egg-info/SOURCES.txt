@@ -1,5 +1,4 @@
 CHANGELOG
-ChangeLogDetailed.txt
 MANIFEST.in
 README.md
 b3_debug.py
@@ -245,6 +244,7 @@ b3/tools/documentationBuilder.py
 b3/tools/functionprofiler.py
 b3/tools/logdiagnostic.py
 b3/tools/memoryprofiler.py
+tests/README.md
 tests/__init__.py
 tests/run.py
 tests/test_b3.py
@@ -259,10 +259,15 @@ tests/clients/test_Clients.py
 tests/parsers/__init__.py
 tests/parsers/test_arma2.py
 tests/parsers/test_bf3.py
+tests/parsers/test_cod.py
 tests/parsers/test_cod4.py
+tests/parsers/test_cod5.py
+tests/parsers/test_cod6.py
+tests/parsers/test_cod7.py
 tests/parsers/test_csgo.py
 tests/parsers/test_iourt41.py
 tests/parsers/test_iourt42.py
+tests/parsers/test_punkbuster.py
 tests/parsers/test_ravaged.py
 tests/parsers/frostbite/__init__.py
 tests/parsers/frostbite/test_abstractParser.py
