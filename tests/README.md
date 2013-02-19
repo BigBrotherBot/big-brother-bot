@@ -12,6 +12,7 @@ and all modules from the pip-requires.txt file
 # Running the test suite
 
 ```
+$ cd tests
 $ python run.py
 ```
 
