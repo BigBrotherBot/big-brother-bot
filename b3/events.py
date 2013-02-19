@@ -27,16 +27,20 @@
 #    * add event EVT_GAME_MAP_CHANGE
 # 27/08/2012 - 1.3 - Courgette
 #    * add getKey(event_id) method
-#
+# 19/02/2013 - 1.4 - Courgette
+#    * fix EventsStats.dumpStats which would fail if called before any event was seen
+#    * make EventsStats.dumpStats computations abort if B3 log level lower than required to display the results
 
-__author__  = 'ThorN/xlr8or'
-__version__ = '1.3'
+__author__  = 'ThorN, xlr8or, Courgette'
+__version__ = '1.4'
 
 import re
 from collections import deque
 import b3
 from b3.functions import meanstdv
 from b3.decorators import memoize
+from b3.output import VERBOSE
+from logging import DEBUG
 
 class Events:
     def __init__(self):
@@ -159,15 +163,20 @@ class EventsStats(object):
         self._queue_wait.append(milliseconds_wait)
         
     def dumpStats(self):
-        for plugin_name, plugin_timers in self._handling_timers.iteritems():
-            for event_name, event_timers in plugin_timers.iteritems():
-                mean, stdv = meanstdv(event_timers)
-                self.console.verbose("%s %s : (ms) min(%0.1f), max(%0.1f), mean(%0.1f), stddev(%0.1f)", 
-                          plugin_name, event_name,  min(event_timers), 
-                          max(event_timers), mean, stdv)
-        mean, stdv = meanstdv(self._queue_wait)
-        self.console.verbose("wait in queue stats : (ms) min(%0.1f), max(%0.1f), mean(%0.1f), stddev(%0.1f)",
-                             min(self._queue_wait), max(self._queue_wait), mean, stdv)
+        if self.console.log.isEnabledFor(VERBOSE):
+            for plugin_name, plugin_timers in self._handling_timers.iteritems():
+                for event_name, event_timers in plugin_timers.iteritems():
+                    mean, stdv = meanstdv(event_timers)
+                    if len(event_timers):
+                        self.console.verbose("%s %s : (ms) min(%0.1f), max(%0.1f), mean(%0.1f), stddev(%0.1f)",
+                              plugin_name, event_name,  min(event_timers),
+                              max(event_timers), mean, stdv)
+
+        if self.console.log.isEnabledFor(DEBUG):
+            mean, stdv = meanstdv(self._queue_wait)
+            if len(self._queue_wait):
+                self.console.debug("Events waiting in queue stats : (ms) min(%0.1f), max(%0.1f), mean(%0.1f), stddev(%0.1f)",
+                                 min(self._queue_wait), max(self._queue_wait), mean, stdv)
     
 #-----------------------------------------------------------------------------------------------------------------------
 # raise to cancel event processing
