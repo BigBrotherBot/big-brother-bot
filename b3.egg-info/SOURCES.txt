@@ -252,6 +252,7 @@ tests/test_config.py
 tests/test_cron.py
 tests/test_functions.py
 tests/test_parser.py
+tests/test_plugin.py
 tests/test_update.py
 tests/clients/__init__.py
 tests/clients/test_Client.py
