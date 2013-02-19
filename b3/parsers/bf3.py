@@ -43,13 +43,15 @@
 #  add new maps and gamemode from DLC "Armored Kill"
 # 1.7
 #  add new maps and gamemode from DLC "Aftermath"
+# 1.8
+#  add GUNMASTER_WEAPONS_PRESET_BY_INDEX and GUNMASTER_WEAPONS_PRESET_BY_NAME constants
 #
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 import b3
 import b3.events
 __author__  = 'Courgette'
-__version__ = '1.7'
+__version__ = '1.8'
 
 BF3_REQUIRED_VERSION = 964189
 
