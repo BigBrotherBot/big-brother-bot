@@ -18,7 +18,7 @@
 #
 import logging
 
-from mock import Mock, call, patch
+from mock import Mock, call, patch, ANY
 import sys, os, thread
 import time
 from mockito import when
@@ -51,6 +51,7 @@ class Admin_functional_test(B3TestCase):
                 self.conf.load(ADMIN_CONFIG_FILE)
         else:
             self.conf.loadFromString(config_content)
+        self.p._commands = {}
         self.p.onLoadConfig()
         self.p.onStartup()
 
@@ -686,3 +687,401 @@ class Cmd_map(Admin_functional_test):
         self.joe.says('!map f00')
         self.assertEqual(0, self.joe.message.call_count)
 
+
+class spell_checker(Admin_functional_test):
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init()
+        self.joe.connects(0)
+
+    def test_existing_command(self):
+        self.joe.says('!map')
+        self.assertEqual(['You must supply a map to change to.'], self.joe.message_history)
+
+    def test_misspelled_command(self):
+        self.joe.says('!mip')
+        self.assertEqual(['Unrecognized command mip. Did you mean !map ?'], self.joe.message_history)
+
+    def test_unrecognized_command(self):
+        self.joe.says('!qfsmlkjazemlrkjazemrlkj')
+        self.assertEqual(['Unrecognized command qfsmlkjazemlrkjazemrlkj'], self.joe.message_history)
+
+    def test_existing_command_loud(self):
+        self.joe.says('@map')
+        self.assertEqual(['You must supply a map to change to.'], self.joe.message_history)
+
+    def test_misspelled_command_loud(self):
+        self.joe.says('@mip')
+        self.assertEqual(['Unrecognized command mip. Did you mean @map ?'], self.joe.message_history)
+
+    def test_unrecognized_command_loud(self):
+        self.joe.says('@qfsmlkjazemlrkjazemrlkj')
+        self.assertEqual(['Unrecognized command qfsmlkjazemlrkjazemrlkj'], self.joe.message_history)
+
+
+class Cmd_register(Admin_functional_test):
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.p._commands = {}  # make sure to empty the commands list as _commands is a wrongly a class property
+        self.say_patcher = patch.object(self.console, "say")
+        self.say_mock = self.say_patcher.start()
+        self.player = FakeClient(self.console, name="TestPlayer", guid="player_guid", groupBits=0)
+        self.player.connects("0")
+
+    def tearDown(self):
+        Admin_functional_test.tearDown(self)
+        self.say_patcher.stop()
+
+    def test_nominal_with_defaults(self):
+        # GIVEN
+        self.init(r"""
+        <configuration plugin="admin">
+            <settings name="commands">
+                <set name="register">guest</set>
+            </settings>
+            <settings name="messages">
+                <set name="regme_annouce">%s put in group %s</set>
+            </settings>
+        </configuration>
+        """)
+        # WHEN
+        self.player.says('!register')
+        # THEN
+        self.assertListEqual(['Thanks for your registration. You are now a member of the group User'],
+                             self.player.message_history)
+        self.assertListEqual([call('TestPlayer^7 put in group User')], self.say_mock.mock_calls)
+
+    def test_custom_messages(self):
+        # GIVEN
+        self.init(r"""
+        <configuration plugin="admin">
+            <settings name="commands">
+                <set name="register">guest</set>
+            </settings>
+            <settings name="settings">
+                <set name="announce_registration">yes</set>
+            </settings>
+            <settings name="messages">
+                <set name="regme_confirmation">You are now a member of the group %s</set>
+                <set name="regme_annouce">%s is now a member of group %s</set>
+            </settings>
+        </configuration>
+        """)
+        # WHEN
+        self.player.says('!register')
+        # THEN
+        self.assertListEqual(['You are now a member of the group User'], self.player.message_history)
+        self.assertListEqual([call('TestPlayer^7 is now a member of group User')], self.say_mock.mock_calls)
+
+    def test_no_announce(self):
+        # GIVEN
+        self.init(r"""
+        <configuration plugin="admin">
+            <settings name="commands">
+                <set name="register">guest</set>
+            </settings>
+            <settings name="settings">
+                <set name="announce_registration">no</set>
+            </settings>
+            <settings name="messages">
+                <set name="regme_confirmation">You are now a member of the group %s</set>
+                <set name="regme_annouce">%s is now a member of group %s</set>
+            </settings>
+        </configuration>
+        """)
+        # WHEN
+        self.player.says('!register')
+        # THEN
+        self.assertListEqual(['You are now a member of the group User'], self.player.message_history)
+        self.assertListEqual([], self.say_mock.mock_calls)
+
+
+@patch("time.sleep")
+class Cmd_spams(Admin_functional_test):
+
+    def test_nominal(self, sleep_mock):
+        # GIVEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="spams">20</set>
+            </settings>
+            <settings name="spamages">
+                <set name="foo">foo</set>
+                <set name="rule1">this is rule #1</set>
+                <set name="rule2">this is rule #2</set>
+                <set name="bar">bar</set>
+            </settings>
+        </configuration>""")
+        self.joe.connects(0)
+        # WHEN
+        self.joe.says('!spams')
+        # THEN
+        self.assertListEqual(['Spamages: bar, foo, rule1, rule2'], self.joe.message_history)
+
+    def test_no_spamage(self, sleep_mock):
+        # GIVEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="spams">20</set>
+            </settings>
+            <settings name="spamages">
+            </settings>
+        </configuration>""")
+        self.joe.connects(0)
+        # WHEN
+        self.joe.says('!spams')
+        # THEN
+        self.assertListEqual(['no spamage message defined'], self.joe.message_history)
+
+    def test_reconfig_loads_new_spamages(self, sleep_mock):
+        # GIVEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="spams">20</set>
+            </settings>
+            <settings name="spamages">
+                <set name="foo">foo</set>
+                <set name="rule1">this is rule #1</set>
+            </settings>
+        </configuration>""")
+        self.joe.connects(0)
+        self.joe.says('!spams')
+        self.assertListEqual(['Spamages: foo, rule1'], self.joe.message_history)
+        # WHEN
+        self.conf.loadFromString(r"""<configuration>
+            <settings name="commands">
+                <set name="spams">20</set>
+            </settings>
+            <settings name="spamages">
+                <set name="bar">bar</set>
+                <set name="rule2">this is rule #2</set>
+            </settings>
+        </configuration>""")
+        self.joe.says('!reconfig')
+        self.joe.clearMessageHistory()
+        self.joe.says('!spams')
+        # THEN
+        self.assertListEqual(['Spamages: bar, rule2'], self.joe.message_history)
+
+
+@patch("time.sleep")
+class Test_warn_command_abusers(Admin_functional_test):
+
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.player = FakeClient(self.console, name="ThePlayer", guid="theplayerguid", groupBits=0)
+        self.player_warn_patcher = patch.object(self.player, "warn")
+        self.player_warn_mock = self.player_warn_patcher.start()
+
+    def tearDown(self):
+        Admin_functional_test.tearDown(self)
+        self.player_warn_patcher.stop()
+
+    def test_conf_empty(self, sleep_mock):
+        # WHEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+            </settings>
+            <settings name="warn">
+            </settings>
+        </configuration>""")
+        # THEN
+        self.assertFalse(self.p._warn_command_abusers)
+        self.assertIsNone(self.p.getWarning("fakecmd"))
+        self.assertIsNone(self.p.getWarning("nocmd"))
+
+    def test_warn_reasons(self, sleep_mock):
+        # WHEN
+        self.init(r"""<configuration>
+            <settings name="warn_reasons">
+                <set name="fakecmd">1h, ^7do not use fake commands</set>
+                <set name="nocmd">1h, ^7do not use commands that you do not have access to, try using !help</set>
+            </settings>
+        </configuration>""")
+        # THEN
+        self.assertTupleEqual((60.0, '^7do not use commands that you do not have access to, try using !help'),
+                              self.p.getWarning("nocmd"))
+        self.assertTupleEqual((60.0, '^7do not use fake commands'), self.p.getWarning("fakecmd"))
+
+    def test_warn_no__no_sufficient_access(self, sleep_mock):
+        # WHEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="help">2</set>
+            </settings>
+            <settings name="warn">
+                <set name="warn_command_abusers">no</set>
+            </settings>
+        </configuration>""")
+        self.assertFalse(self.p._warn_command_abusers)
+        self.player.connects("0")
+        # WHEN
+        with patch.object(self.p, "info") as info_mock:
+            self.player.says("!help")
+        # THEN
+        self.assertListEqual([call('ThePlayer does not have sufficient rights to use !help. Required level: 2')],
+                             info_mock.mock_calls)
+        self.assertListEqual([], self.player.message_history)
+        self.assertFalse(self.player_warn_mock.called)
+
+    def test_warn_yes__no_sufficient_access(self, sleep_mock):
+        # GIVEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="help">2</set>
+            </settings>
+            <settings name="warn">
+                <set name="warn_command_abusers">yes</set>
+            </settings>
+        </configuration>""")
+        self.assertTrue(self.p._warn_command_abusers)
+        self.player.connects("0")
+        # WHEN
+        with patch.object(self.p, "info") as info_mock:
+            self.player.says("!help")
+        # THEN
+        self.assertListEqual([call('ThePlayer does not have sufficient rights to use !help. Required level: 2')],
+                             info_mock.mock_calls)
+        self.assertListEqual(['You do not have sufficient access to use !help'], self.player.message_history)
+        self.assertFalse(self.player_warn_mock.called)
+
+    def test_warn_yes__no_sufficient_access_abuser(self, sleep_mock):
+        # GIVEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="help">2</set>
+            </settings>
+            <settings name="warn">
+                <set name="warn_command_abusers">yes</set>
+            </settings>
+            <settings name="warn_reasons">
+                <set name="nocmd">90s, do not use commands you do not have access to, try using !help</set>
+            </settings>
+        </configuration>""")
+        self.player.connects("0")
+        # WHEN
+        with patch.object(self.p, "info") as info_mock:
+            self.player.says("!help")
+            self.player.says("!help")
+            self.player.says("!help")
+        # THEN
+        self.assertListEqual([call('ThePlayer does not have sufficient rights to use !help. Required level: 2'),
+                              call('ThePlayer does not have sufficient rights to use !help. Required level: 2')],
+                             info_mock.mock_calls)
+        self.assertListEqual(['You do not have sufficient access to use !help',
+                              'You do not have sufficient access to use !help'], self.player.message_history)
+        self.assertListEqual([call(1.5, 'do not use commands you do not have access to, try using !help',
+                                   'nocmd', ANY, ANY)], self.player_warn_mock.mock_calls)
+
+
+    def test_warn_no__unknown_cmd(self, sleep_mock):
+        # GIVEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="help">0</set>
+            </settings>
+            <settings name="warn">
+                <set name="warn_command_abusers">no</set>
+            </settings>
+        </configuration>""")
+        self.assertFalse(self.p._warn_command_abusers)
+        self.player.connects("0")
+        # WHEN
+        self.player.says("!hzlp")
+        # THEN
+        self.assertListEqual(['Unrecognized command hzlp. Did you mean !help ?'], self.player.message_history)
+        self.assertFalse(self.player_warn_mock.called)
+
+    def test_warn_yes__unknown_cmd(self, sleep_mock):
+        # GIVEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="help">0</set>
+            </settings>
+            <settings name="warn">
+                <set name="warn_command_abusers">yes</set>
+            </settings>
+        </configuration>""")
+        self.assertTrue(self.p._warn_command_abusers)
+        self.player.connects("0")
+        # WHEN
+        self.player.says("!hzlp")
+        # THEN
+        self.assertListEqual(['Unrecognized command hzlp. Did you mean !help ?'], self.player.message_history)
+        self.assertFalse(self.player_warn_mock.called)
+
+    def test_warn_yes__unknown_cmd_abuser(self, sleep_mock):
+        # GIVEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="help">0</set>
+            </settings>
+            <settings name="warn">
+                <set name="warn_command_abusers">yes</set>
+            </settings>
+            <settings name="warn_reasons">
+                <set name="fakecmd">2h, do not use fake commands</set>
+            </settings>
+        </configuration>""")
+        self.assertTrue(self.p._warn_command_abusers)
+        self.player.connects("0")
+        self.player.setvar(self.p, 'fakeCommand', 2)  # simulate already 2 use of the !help command
+        # WHEN
+        self.player.says("!hzlp")
+        self.player.says("!hzlp")
+        self.player.says("!hzlp")
+        # THEN
+        self.assertListEqual(['Unrecognized command hzlp. Did you mean !help ?',
+                              'Unrecognized command hzlp. Did you mean !help ?',
+                              'Unrecognized command hzlp. Did you mean !help ?'], self.player.message_history)
+        self.assertListEqual([call(120.0, 'do not use fake commands', 'fakecmd', ANY, ANY)],
+                             self.player_warn_mock.mock_calls)
+
+
+@patch("time.sleep")
+class Test_command_parsing(Admin_functional_test):
+
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="help">0</set>
+            </settings>
+        </configuration>""")
+        self.joe.connects("0")
+
+    def test_normal_chat(self, sleep_mock):
+        # GIVEN
+        self.joe.says("f00")
+        self.assertListEqual([], self.joe.message_history)
+        # WHEN
+        self.joe.says("!help")
+        # THEN
+        self.assertListEqual(["Available commands: help, iamgod"], self.joe.message_history)
+
+    def test_team_chat(self, sleep_mock):
+        # GIVEN
+        self.joe.says("f00")
+        self.assertListEqual([], self.joe.message_history)
+        # WHEN
+        self.joe.says2team("!help")
+        # THEN
+        self.assertListEqual(["Available commands: help, iamgod"], self.joe.message_history)
+
+    def test_squad_chat(self, sleep_mock):
+        # GIVEN
+        self.joe.says("f00")
+        self.assertListEqual([], self.joe.message_history)
+        # WHEN
+        self.joe.says2squad("!help")
+        # THEN
+        self.assertListEqual(["Available commands: help, iamgod"], self.joe.message_history)
+
+    def test_private_chat(self, sleep_mock):
+        # GIVEN
+        self.joe.says("f00")
+        self.assertListEqual([], self.joe.message_history)
+        # WHEN
+        self.joe.says2private("!help")
+        # THEN
+        self.assertListEqual(["Available commands: help, iamgod"], self.joe.message_history)

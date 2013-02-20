@@ -864,7 +864,7 @@ class RavagedParser(Parser):
         try:
             self.game_event_queue.put((self.time(), self.time() + 10, ravaged_event), timeout=2)
         except Full:
-            self.error("Frostbite event queue full, dropping event %r" % ravaged_event)
+            self.error("Ravaged event queue full, dropping event %r" % ravaged_event)
 
 
     def route_game_event(self, game_event):

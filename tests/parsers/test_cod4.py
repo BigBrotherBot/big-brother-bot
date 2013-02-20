@@ -17,10 +17,11 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 import logging
-from mock import Mock
+from mock import Mock, patch, call, ANY
 from mockito import mock, when, any as anything
 import unittest2 as unittest
 from b3.config import XmlConfigParser
+from b3.fake import FakeClient
 from b3.parsers.cod4 import Cod4Parser
 
 log = logging.getLogger("test")
@@ -99,3 +100,17 @@ num score ping guid                             name            lastmsg address 
         self.assertDictEqual({'slot': '7', 'score': '30', 'ping': '229', 'guid': '012343213211313213321313131bcdef', 'name': 'Franco^7', 'last': '0', 'ip': '111.22.111.111', 'port': '23144', 'qport': '22922', 'rate': '25000', 'pbid': None}, rv.get("7", {}), rv)
         self.assertDictEqual({'slot': '8', 'score': '0', 'ping': '110', 'guid': 'a630006508000000000000000011d9a2', 'name': 'Badschga2002^7', 'last': '0', 'ip': '11.11.11.63', 'port': '28960', 'qport': '-21738', 'rate': '25000', 'pbid': None}, rv.get("8", {}), rv)
 
+
+
+class Test_cod4ClientAuthMethod(Cod4TestCase):
+
+    def test_unexpected_exception(self):
+        # GIVEN
+        when(self.console.storage).getClient(anything()).thenRaise(NotImplementedError())
+        joe = FakeClient(console=self.console, name="Joe", guid="joe_guid")
+        # WHEN
+        with patch.object(self.console, "error") as error_mock:
+            joe.auth()
+        # THEN
+        error_mock.assert_called_with('auth self.console.storage.getClient(client) - Client<@0:joe_guid|:"Joe":None>',
+                                   exc_info=ANY)

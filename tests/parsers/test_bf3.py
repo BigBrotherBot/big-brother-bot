@@ -470,7 +470,7 @@ class Test_bf3_events(BF3TestCase):
         self.assertEqual(1, self.parser.queueEvent.call_count)
 
         event = self.parser.queueEvent.call_args[0][0]
-        self.assertEqual("Team Say", self.parser.getEventName(event.type))
+        self.assertEqual("Squad Say", self.parser.getEventName(event.type))
         self.assertEquals('test squad', event.data)
         self.assertEqual(self.joe, event.client)
 

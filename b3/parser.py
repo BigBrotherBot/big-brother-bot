@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2013/02/15 - 1.31.1 - courgette
+#   * fix reloadConfigs() which would not reload the config for the admin plugin
 #   2012/10/19 - 1.31 - courgette
 #   * add method getNextMap() to the list of method all B3 parsers should implement
 #   2012/09/14 - 1.30.1 - courgette
@@ -158,7 +160,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.30.1'
+__version__ = '1.31.1'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -518,6 +520,8 @@ class Parser(object):
         self.say('%s ^2[ONLINE]' % b3.version)
         self.bot("Starting plugins")
         self.startPlugins()
+        self._eventsStats_cronTab = b3.cron.CronTab(self._dumpEventsStats)
+        self.cron + self._eventsStats_cronTab
         self.bot("all plugins started")
         self.pluginsStarted()
         self.bot("starting event dispatching thread")
@@ -624,11 +628,11 @@ class Parser(object):
         # reload main config
         self.config.load(self.config.fileName)
 
-        for k in self._pluginOrder:
+        for k in self._plugins:
             p = self._plugins[k]
             self.bot('Reload plugin config for %s', k)
             p.loadConfig()
-            
+
         self.updateDocumentation()
 
     def loadPlugins(self):
@@ -1227,13 +1231,17 @@ class Parser(object):
 
     def updateDocumentation(self):
         """Create a documentation for all available commands"""
-        try: 
-            from b3.tools.documentationBuilder import DocBuilder
-            docbuilder = DocBuilder(self)
-            docbuilder.save()
-        except Exception, err:
-            self.error("Failed to generate user documentation")
-            self.exception(err)
+        if self.config.has_section('autodoc'):
+            try:
+                from b3.tools.documentationBuilder import DocBuilder
+                docbuilder = DocBuilder(self)
+                docbuilder.save()
+            except Exception, err:
+                self.error("Failed to generate user documentation")
+                self.exception(err)
+
+        else:
+            self.info('No user documentation generated. To enable update your configuration file.')
 
 
     ###############################################################################

@@ -343,10 +343,18 @@ class FakeClient(b3.clients.Client):
     def says(self, msg):
         print "\n%s says \"%s\"" % (self.name, msg)
         self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_SAY, msg, self))
-        
+
     def says2team(self, msg):
         print "\n%s says to team \"%s\"" % (self.name, msg)
         self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, msg, self))
+
+    def says2squad(self, msg):
+        print "\n%s says to squad \"%s\"" % (self.name, msg)
+        self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_SQUAD_SAY, msg, self))
+
+    def says2private(self, msg):
+        print "\n%s says privately \"%s\"" % (self.name, msg)
+        self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, msg, self, self))
         
     def damages(self, victim, points=34.0):
         print "\n%s damages %s for %s points" % (self.name, victim.name, points)
@@ -358,7 +366,7 @@ class FakeClient(b3.clients.Client):
             e = b3.events.EVT_CLIENT_DAMAGE
         self.console.queueEvent( b3.events.Event(e, (points, 1, 1, 1), self, victim))
         
-    def kills(self, victim):
+    def kills(self, victim, weapon=1, hit_location=1):
         print "\n%s kills %s" % (self.name, victim.name)
         if self == victim:
             self.suicides()
@@ -367,13 +375,13 @@ class FakeClient(b3.clients.Client):
             e = b3.events.EVT_CLIENT_KILL_TEAM
         else:
             e = b3.events.EVT_CLIENT_KILL
-        self.console.queueEvent(b3.events.Event(e, (100, 1, 1, 1), self, victim))
+        self.console.queueEvent(b3.events.Event(e, (100, weapon, hit_location, 1), self, victim))
         
     def suicides(self):
         print "\n%s kills himself" % self.name
         self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_SUICIDE, 
-                                                       (100, 1, 1, 1), 
-                                                       self, victim))
+                                                       (100, 1, 1, 1),
+                                                       self, self))
         
     def doAction(self, actiontype):
         self.console.queueEvent((b3.events.Event(b3.events.EVT_CLIENT_ACTION, actiontype, self)))

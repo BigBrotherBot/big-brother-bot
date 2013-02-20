@@ -27,13 +27,17 @@
 #    29/11/2009 - 1.4.1 - Courgette
 #    the onLoadConfig callback is now always called after loadConfig() is called. This
 #    aims to make sure onLoadConfig is called after the user use the !reconfig command
-#
-__author__  = 'ThorN'
-__version__ = '1.4.1'
+#    16/02/2013 - 1.5 - Courgette
+#    * add plugin property _default_messages to store default plugin messages
+#    * add user friendly warning and error to the log when a messaged cannot be formatted
 
-import os
+__author__ = 'ThorN, Courgette'
+__version__ = '1.5'
+
 import b3.config
 import b3.events
+from ConfigParser import NoOptionError
+
 
 class Plugin:
     _enabled = True
@@ -41,9 +45,10 @@ class Plugin:
     events = []
     config = None
     working = True
-    requiresConfigFile = True
-
     _messages = {}
+
+    requiresConfigFile = True  # plugin developers : customize this
+    _default_messages = {}  # plugin developers : customize this
 
     def __init__(self, console, config=None):
         self.console = console
@@ -73,18 +78,31 @@ class Plugin:
 
     def getMessage(self, msg, *args):
         try:
-            msg = self._messages[msg]
+            _msg = self._messages[msg]
         except KeyError:
-            self._messages[msg] = self.config.getTextTemplate('messages', msg)
-            msg = self._messages[msg]
+            try:
+                self._messages[msg] = self.config.getTextTemplate('messages', msg)
+            except NoOptionError:
+                self.warning("config file is missing %r in section 'messages'" % msg)
+                if msg in self._default_messages:
+                    self._messages[msg] = self._default_messages[msg]
+                else:
+                    raise
+            _msg = self._messages[msg]
 
-        if len(args) == 1:
-            if type(args[0]) is dict:
-                return msg % args[0]
-            else:
-                return msg % args
+        if len(args) == 1 and type(args[0]) is dict:
+            try:
+                return _msg % args[0]
+            except KeyError, err:
+                self.error("failed to format message %r (%r) with parameters %r. Missing value for %s",
+                           msg, _msg, args, err)
+                raise
         else:
-            return msg % args
+            try:
+                return _msg % args
+            except TypeError, err:
+                self.error("failed to format message %r (%r) with parameters %r. %s", msg, _msg, args, err)
+                raise
 
     def loadConfig(self, fileName=None):
         if fileName:

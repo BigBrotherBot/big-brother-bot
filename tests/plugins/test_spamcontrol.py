@@ -253,6 +253,8 @@ class Test_plugin(SpamcontrolTestCase):
 
 
     def test_cmd_spamins_no_argument(self):
+        # GIVEN
+        self.console.getPlugin('admin')._warn_command_abusers = True
         # WHEN
         self.joe.clearMessageHistory()
         self.joe.says("!spamins")

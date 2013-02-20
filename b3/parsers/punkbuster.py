@@ -27,9 +27,11 @@
 #    part of the response.
 #   25/12/2012 - 1.2.1 - Courgette
 #    improve reliability of the regular expression for parsing PB_SV_PList response
+#   2013-01-20 - 1.2.3 - Courgette
+#    improve punkbuster event parsing by accepting whatever punkbuster prefix from the pb responses
 #
 __author__  = 'ThorN'
-__version__ = '1.2.2'
+__version__ = '1.2.3'
 
 import re
 
@@ -43,7 +45,7 @@ class PunkBuster(object):
 #    : 6 9732d328485274156125252141252ba1(-) 33.133.3.133:-28960 OK   1 5.0 0 (W) "FATTYBMBLATY"
     regPlayer = re.compile(r"""
         ^.*?                                        # a new line start with junk (ungreedy mode)
-        (?:(?:erver|Srver|Sever|Serer|Servr|Serve):?|:)\s*   # end of PB response prefix (potentially missing one char)
+        (.*?):?\s*                                  # end of PB response prefix (potentially missing one char)
           (?P<slot>[1-9][0-9]??)                    # slot number between 1 and 99 (ungreedy mode)
         (?:\s+|)                                    # blank character(s) or nothing
           (?P<pbid>[a-f0-9]{30,32})                 # PB id (at least 30 char long, max 32)

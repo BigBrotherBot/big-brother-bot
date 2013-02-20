@@ -937,6 +937,206 @@ class Test_cmd_lastbans(CommandTestCase):
         ])
 
 
+class Config_reading_TestCase(Admin_TestCase):
+    """
+    Test case base class that ease assertions against calls to self.p.warning and self.p.error methods.
+    """
+    MESSAGE_BEACON = None
+
+    def __init__(self, *args, **kwargs):
+        Admin_TestCase.__init__(self, *args, **kwargs)
+        if not self.__class__.MESSAGE_BEACON:
+            raise NotImplementedError("you are supposed to set MESSAGE_BEACON with a string to look for in warning "
+                                      "and error messages when inheriting from Config_reading_TestCase")
+
+    def setUp(self):
+        Admin_TestCase.setUp(self)
+        self.warning_patcher = patch.object(self.p, "warning", wraps=self.p.warning)
+        self.warning_mock = self.warning_patcher.start()
+        self.error_patcher = patch.object(self.p, "error", wraps=self.p.error)
+        self.error_mock = self.error_patcher.start()
+
+    def tearDown(self):
+        Admin_TestCase.tearDown(self)
+        self.warning_patcher.stop()
+        self.error_patcher.stop()
+
+    def assertNoWarningMessage(self):
+        """
+        assert that the word 'announce_registration' is not found in any message of the call to self.warning_mock
+        """
+        found_calls = []
+        for the_call in self.warning_mock.mock_calls:
+            try:
+                if self.MESSAGE_BEACON in the_call[1][0]:
+                    found_calls.append(the_call)
+            except IndexError:
+                pass
+        self.assertListEqual([], found_calls, "'%s' was found mentioned in some warning calls %r"
+                                              % (self.MESSAGE_BEACON, found_calls))
+
+    def assertNoErrorMessage(self):
+        """
+        assert that the word 'announce_registration' is not found in any message of the call to self.error_mock
+        """
+        found_calls = []
+        for the_call in self.error_mock.mock_calls:
+            try:
+                if self.MESSAGE_BEACON in the_call[1][0]:
+                    found_calls.append(the_call)
+            except IndexError:
+                pass
+        self.assertListEqual([], found_calls, "'%s' was found mentioned in some warning calls %r"
+                                              % (self.MESSAGE_BEACON, found_calls))
+
+
+class Test_conf_announce_registration(Config_reading_TestCase):
+    """
+    test the correct reading of admin config option 'announce_registration' from config section 'settings'
+    """
+    MESSAGE_BEACON = 'announce_registration'
+
+    def test_missing(self):
+        # GIVEN
+        self.conf.loadFromString(r"""<configuration>
+            <settings name="settings">
+            </settings></configuration>""")
+        # WHEN
+        self.p.onLoadConfig()
+        # THEN
+        self.assertTrue(self.p._announce_registration)
+        self.assertIn(call('conf settings\\announce_registration not found, using default : yes'),
+                      self.warning_mock.mock_calls)
+        self.assertNoErrorMessage()
+
+    def test_yes(self):
+        # GIVEN
+        self.conf.loadFromString(r"""<configuration>
+            <settings name="settings">
+                <set name="announce_registration">yes</set>
+            </settings></configuration>""")
+        # WHEN
+        self.p.onLoadConfig()
+        # THEN
+        self.assertTrue(self.p._announce_registration)
+        self.assertNoWarningMessage()
+        self.assertNoErrorMessage()
+
+    def test_no(self):
+        # GIVEN
+        self.conf.loadFromString(r"""<configuration>
+            <settings name="settings">
+                <set name="announce_registration">no</set>
+            </settings></configuration>""")
+        # WHEN
+        self.p.onLoadConfig()
+        # THEN
+        self.assertFalse(self.p._announce_registration)
+        self.assertNoWarningMessage()
+        self.assertNoErrorMessage()
+
+    def test_on(self):
+        # GIVEN
+        self.conf.loadFromString(r"""<configuration>
+            <settings name="settings">
+                <set name="announce_registration">on</set>
+            </settings></configuration>""")
+        # WHEN
+        self.p.onLoadConfig()
+        # THEN
+        self.assertTrue(self.p._announce_registration)
+        self.assertNoWarningMessage()
+        self.assertNoErrorMessage()
+
+    def test_off(self):
+        # GIVEN
+        self.conf.loadFromString(r"""<configuration>
+            <settings name="settings">
+                <set name="announce_registration">OFF</set>
+            </settings></configuration>""")
+        # WHEN
+        self.p.onLoadConfig()
+        # THEN
+        self.assertFalse(self.p._announce_registration)
+        self.assertNoWarningMessage()
+        self.assertNoErrorMessage()
+
+    def test_empty(self):
+        # GIVEN
+        self.conf.loadFromString(r"""<configuration>
+            <settings name="settings">
+                <set name="announce_registration"></set>
+            </settings></configuration>""")
+        # WHEN
+        self.p.onLoadConfig()
+        # THEN
+        self.assertTrue(self.p._announce_registration)
+        self.assertNoWarningMessage()
+        self.assertIn(call("invalid value for conf setting\\announce_registration, using default : yes. settings.announ"
+                           "ce_registration : '' is not a boolean value"), self.error_mock.mock_calls)
+
+    def test_junk(self):
+        # GIVEN
+        self.conf.loadFromString(r"""<configuration>
+            <settings name="settings">
+                <set name="announce_registration">xxxxxxxxx</set>
+            </settings></configuration>""")
+        # WHEN
+        self.p.onLoadConfig()
+        # THEN
+        self.assertTrue(self.p._announce_registration)
+        self.assertNoWarningMessage()
+        self.assertIn(call("invalid value for conf setting\\announce_registration, using default : yes. settings.announ"
+                           "ce_registration : 'xxxxxxxxx' is not a boolean value"), self.error_mock.mock_calls)
+
+
+class Test_conf_regme_confirmation(Config_reading_TestCase):
+    """
+    test the correct reading of admin config option 'regme_confirmation' from config section 'messages'
+    """
+    MESSAGE_BEACON = 'regme_confirmation'
+
+    def test_missing(self):
+        # GIVEN
+        self.conf.loadFromString(r"""<configuration>
+            <settings name="messages">
+            </settings></configuration>""")
+        # WHEN
+        self.p.onLoadConfig()
+        # THEN
+        self.assertEqual('^7Thanks for your registration. You are now a member of the group f00',
+                         self.p.getMessage('regme_confirmation', 'f00'))
+        self.assertIn(call("missing message 'regme_confirmation' from config file. Using default '^7Thanks for your "
+                           "registration. You are now a member of the group %s'"), self.warning_mock.mock_calls)
+        self.assertNoErrorMessage()
+
+    def test_nominal(self):
+        # GIVEN
+        self.conf.loadFromString(r"""<configuration>
+            <settings name="messages">
+                <set name="regme_confirmation">Nice, you are now a member of the group %s</set>
+            </settings></configuration>""")
+        # WHEN
+        self.p.onLoadConfig()
+        # THEN
+        self.assertEqual('Nice, you are now a member of the group f00', self.p.getMessage('regme_confirmation', 'f00'))
+        self.assertNoWarningMessage()
+        self.assertNoErrorMessage()
+
+    def test_no_place_holder(self):
+        # GIVEN
+        self.conf.loadFromString(r"""<configuration>
+            <settings name="messages">
+                <set name="regme_confirmation">^7Thanks for your registration</set>
+            </settings></configuration>""")
+        # WHEN
+        self.p.onLoadConfig()
+        # THEN
+        self.assertEqual('^7Thanks for your registration. You are now a member of the group f00',
+                         self.p.getMessage('regme_confirmation', 'f00'))
+        self.assertNoWarningMessage()
+        self.assertIn(call("message 'regme_confirmation' from config file is invalid: message regme_confirmation must "
+                           "have a placeholder '%%s' for the group name. Using default"), self.error_mock.mock_calls)
 
 
 if __name__ == '__main__':

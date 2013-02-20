@@ -1,7 +1,7 @@
-Metadata-Version: 1.0
+Metadata-Version: 1.1
 Name: b3
-Version: 1.9.0b2
-Summary: BigBrotherBot (B3) is a cross-platform, cross-game game administration bot. Features in-game administration of game servers, multiple user access levels, and database storage. Currently include parsers for Call of Duty 1 to 7, Urban Terror (ioUrT), World of Padman, ETpro, Smokin' Guns, BFBC2, MOH, HomeFront, Open Arena, Altitude etc.
+Version: 1.10.0dev
+Summary: BigBrotherBot (B3) is a cross-platform, cross-game game administration bot. Features in-game administration of game servers, multiple user access levels, and database storage. Currently include parsers for Call of Duty 1 to 8, Urban Terror (ioUrT 4.1 and 4.2), BF3, Arma II, CS:GO, Red Orchestra 2, BFBC2, MOH 2010, World of Padman, ETpro, Smokin' Guns, HomeFront, Open Arena, Altitude.
 Home-page: http://www.bigbrotherbot.net
 Author: Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Leveil (Courgette)
 Author-email: info@bigbrotherbot.net
