@@ -72,6 +72,11 @@ b3/docs/README.txt
 b3/docs/cheatsheet.odg
 b3/docs/cheatsheet.pdf
 b3/docs/commands.txt
+b3/docs/user_documentation/Makefile
+b3/docs/user_documentation/conf.py
+b3/docs/user_documentation/customization.rst
+b3/docs/user_documentation/index.rst
+b3/docs/user_documentation/make.bat
 b3/extplugins/__init__.py
 b3/extplugins/xlrstats.py
 b3/extplugins/conf/xlrstats.xml
