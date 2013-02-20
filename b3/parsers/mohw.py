@@ -1,6 +1,6 @@
 #
-# Battlefield 3 Parser for BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2010 Ozgur Uysal <freelander@bigbrotherbot.net>
+# Medal of Honor: Warfighter Parser for BigBrotherBot(B3) (www.bigbrotherbot.net)
+# Copyright (C) 2010 BigBrotherBot(B3)
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ import b3.events
 __author__  = 'Freelander'
 __version__ = '0.0'
 
-MOHW_REQUIRED_VERSION = 319968
+MOHW_REQUIRED_VERSION = 323174
 
 GAME_MODES_NAMES = {
     "Combat Mission": "CombatMission",
@@ -67,8 +67,24 @@ GAME_MODES_BY_MAP_ID = {
 class MohwParser(AbstractParser):
     gameName = 'mohw'
 
+    _commands = {
+        'message': ('admin.say', '%(message)s', 'team', '%(teamId)s'),
+        'sayTeam': ('admin.say', '%(message)s', 'team', '%(teamId)s'),
+        'say': ('admin.say', '%(message)s', 'all'),
+        'bigmessage': ('admin.yell', '%(message)s', 'team', '%(teamId)s'),
+        'yellTeam': ('admin.yell', '%(message)s', 'team', '%(teamId)s'),
+        'yell': ('admin.yell', '%(message)s', 'all'),
+        'kick': ('admin.kickPlayer', '%(cid)s', '%(reason)s'),
+        'ban': ('banList.add', 'guid', '%(guid)s', 'perm', '%(reason)s'),
+        'banByName': ('banList.add', 'name', '%(name)s', 'perm', '%(reason)s'),
+        'banByIp': ('banList.add', 'ip', '%(ip)s', 'perm', '%(reason)s'),
+        'unban': ('banList.remove', 'guid', '%(guid)s'),
+        'unbanByIp': ('banList.remove', 'ip', '%(ip)s'),
+        'tempban': ('banList.add', 'guid', '%(guid)s', 'seconds', '%(duration)d', '%(reason)s'),
+        'tempbanByName': ('banList.add', 'name', '%(name)s', 'seconds', '%(duration)d', '%(reason)s'),
+        }
+
     _gameServerVars = (
-        '3dSpotting',
         '3pCam',
         'autoBalance',
         'bannerUrl',
@@ -77,8 +93,9 @@ class MohwParser(AbstractParser):
         'friendlyFire',
         'gameModeCounter',
         'gamePassword',
-        'hud',
+        'hardcoreBulletDamageOverride',
         'hudBuddyInfo',
+        'hudClassAbility',
         'hudCrosshair',
         'hudEnemyTag',
         'hudExplosiveIcons',
@@ -92,18 +109,15 @@ class MohwParser(AbstractParser):
         'idleTimeout',
         'killCam',
         'maxPlayers',
-        'minimap',
-        'minimapSpotting',
-        'nameTag',
         'playerManDownTime',
         'playerRespawnTime',
+        'playlist',
         'ranked',
         'regenerateHealth',
         'roundRestartPlayerCount',
         'roundStartPlayerCount',
         'roundsPerMap',
         'serverDescription',
-        'serverMessage',
         'serverName',
         'soldierHealth',
         'teamKillCountForKick',
@@ -144,6 +158,41 @@ class MohwParser(AbstractParser):
     #    Frostbite2 events handlers
     #
     ###############################################################################################
+
+    def OnPlayerChat(self, action, data):
+        """
+        player.onChat <source soldier name: string> <text: string> <target players: player subset>
+
+        Effect: Player with name <source soldier name> (or the server, or the
+            server admin) has sent chat message <text> to <target players>
+
+        Comment: If <source soldier name> is "Server", then the message was sent
+            from the server rather than from an actual player
+        """
+        client = self.getClient(data[0])
+        if client is None:
+            self.warning("Could not get client :( %s" % traceback.extract_tb(sys.exc_info()[2]))
+            return
+        if client.cid == 'Server':
+            # ignore chat events for Server
+            return
+        text = data[1]
+
+        # existing commands can be prefixed with a '/' instead of usual prefixes
+        cmdPrefix = '!'
+        cmd_prefixes = (cmdPrefix, '@', '&')
+        admin_plugin = self.getPlugin('admin')
+        if admin_plugin:
+            cmdPrefix = admin_plugin.cmdPrefix
+            cmd_prefixes = (cmdPrefix, admin_plugin.cmdPrefixLoud, admin_plugin.cmdPrefixBig)
+        cmd_name = text[1:].split(' ', 1)[0].lower()
+        if len(text) >= 2 and text[0] == '/':
+            if text[1] in cmd_prefixes:
+                text = text[1:]
+            elif cmd_name in admin_plugin._commands:
+                text = cmdPrefix + text[1:]
+
+        return b3.events.Event(b3.events.EVT_CLIENT_SAY, text, client)
 
     def OnPlayerTeamchange(self, action, data):
         """
@@ -186,6 +235,27 @@ class MohwParser(AbstractParser):
         """
         # TODO: implements getPlayerPings when pings available on admin.listPlayers
         return {}
+
+    def saybig(self, msg):
+        """\
+        broadcast a message to all players in a way that will catch their attention.
+        """
+        if msg and len(msg.strip())>0:
+            text = self.stripColors(self.msgPrefix + ' ' + msg)
+            for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
+                self.write(self.getCommand('yell', message=line))
+
+    def message(self, client, text):
+        try:
+            if client is None:
+                self.say(text)
+            elif client.cid is None:
+                pass
+            else:
+                cmd_name = 'bigmessage' if self._settings['big_b3_private_responses'] else 'message'
+                self.write(self.getCommand(cmd_name, message=text, teamId=client.teamId))
+        except Exception, err:
+            self.warning(err)
 
     ###############################################################################################
     #
