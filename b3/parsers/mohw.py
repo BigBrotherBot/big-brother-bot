@@ -47,6 +47,8 @@ MAP_NAME_BY_ID = {
     'MP_16': 'Al Fara Cliffside',
     'MP_18': 'Shogore Valley',
     'MP_19': 'Tungunan Jungle',
+    'MP_20': 'Darra Gun Market',
+    'MP_21': 'Chitrail Compound'
     }
 
 MAP_ID_BY_NAME = dict()
@@ -62,6 +64,8 @@ GAME_MODES_BY_MAP_ID = {
     "MP_16": ("CombatMission", "Sport", "SectorControl", "TeamDeathMatch", "BombSquad"),
     "MP_18": ("CombatMission", "Sport", "SectorControl", "TeamDeathMatch", "BombSquad"),
     "MP_19": ("CombatMission", "Sport", "SectorControl", "TeamDeathMatch", "BombSquad"),
+    "MP_20": ("CombatMission", "Sport", "SectorControl", "TeamDeathMatch", "BombSquad"),
+    "MP_21": ("CombatMission", "Sport", "SectorControl", "TeamDeathMatch", "BombSquad")
     }
 
 class MohwParser(AbstractParser):
