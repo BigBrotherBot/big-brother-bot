@@ -517,6 +517,8 @@ class AdminPlugin(b3.plugin.Plugin):
                         results = command.executeBig(data, event.client)
                     else:
                         results = command.execute(data, event.client)
+                except (KeyboardInterrupt, SystemExit):
+                    pass
                 except:
                     event.client.message('^7There was an error processing your command')
                     raise
