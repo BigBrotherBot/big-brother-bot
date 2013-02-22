@@ -470,6 +470,37 @@ class Test_config(AbstractParser_TestCase):
                     </settings>
                 </configuration>""")
 
+    def assert_big_msg_repeat(self, expected, config):
+        self.parser._settings['big_msg_repeat'] = None
+        self.conf.loadFromString(config)
+        self.parser.load_conf_big_msg_repeat()
+        self.assertEqual(expected, self.parser._settings['big_msg_repeat'])
+
+    def test_big_msg_repeat(self):
+        default_value = 'pm'
+        self.assert_big_msg_repeat('all', """<configuration>
+                    <settings name="thegame">
+                        <set name="big_msg_repeat">all</set>
+                    </settings>
+                </configuration>""")
+
+        self.assert_big_msg_repeat('off', """<configuration>
+                    <settings name="thegame">
+                        <set name="big_msg_repeat">off</set>
+                    </settings>
+                </configuration>""")
+
+        self.assert_big_msg_repeat(default_value, """<configuration>
+                    <settings name="thegame">
+                        <set name="big_msg_repeat">pm</set>
+                    </settings>
+                </configuration>""")
+
+        self.assert_big_msg_repeat(default_value, """<configuration>
+                    <settings name="thegame">
+                        <set name="big_msg_repeat"></set>
+                    </settings>
+                </configuration>""")
 
 class Test_config_ban_agent(AbstractParser_TestCase):
 
