@@ -104,6 +104,7 @@ class AbstractParser(b3.parser.Parser):
         'message_delay': .8,
         'big_msg_duration': 4,
         'big_b3_private_responses': False,
+        'big_mgs_repeat': 'pm',
         }
 
     _gameServerVars = () # list available cvar
@@ -504,6 +505,7 @@ class AbstractParser(b3.parser.Parser):
         self.load_conf_ban_agent()
         self.load_conf_big_b3_private_responses()
         self.load_conf_big_msg_duration()
+        self.load_conf_big_msg_repeat()
 
         self.start_sayqueue_worker()
 
@@ -1031,6 +1033,9 @@ class AbstractParser(b3.parser.Parser):
             for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
                 self.write(self.getCommand('yell', message=line, big_msg_duration=int(float(self._settings['big_msg_duration']))))
 
+        if self._settings['big_msg_repeat'] in 'all':
+            self.write(self.getCommand('say', message=msg))
+
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         self.debug('kick reason: [%s]' % reason)
@@ -1063,6 +1068,8 @@ class AbstractParser(b3.parser.Parser):
             else:
                 cmd_name = 'bigmessage' if self._settings['big_b3_private_responses'] else 'message'
                 self.write(self.getCommand(cmd_name, message=text, cid=client.cid, big_msg_duration=int(float(self._settings['big_msg_duration']))))
+                if self._settings['big_msg_repeat'] in ('all', 'pm'):
+                    self.write(self.getCommand('message', message=text, cid=client.cid))
         except Exception, err:
             self.warning(err)
 
@@ -1658,6 +1665,22 @@ class AbstractParser(b3.parser.Parser):
                 self.error('failed to read max_say_line_length setting "%s" : %s' % (
                     self.config.get(self.gameName, 'max_say_line_length'), err))
         self.debug('line_length: %s' % self._settings['line_length'])
+
+    def load_conf_big_msg_repeat(self):
+        """Load setting big_msg_repeat from config"""
+        default_value = 'pm'
+        if self.config.has_option(self.gameName, 'big_msg_repeat'):
+            try:
+                config_value = self.config.get(self.gameName, 'big_msg_repeat').lower()
+                if config_value in ('all', 'pm', 'off'):
+                    self._settings['big_msg_repeat'] = config_value
+                else:
+                    raise ValueError(config_value)
+            except ValueError, err:
+                self._settings['big_msg_repeat'] = default_value
+                self.warning("Invalid value. %s. Using default value '%s'" % (err, default_value))
+        else:
+            self._settings['big_msg_repeat'] = default_value
 
 
 def patch_b3_clients():
