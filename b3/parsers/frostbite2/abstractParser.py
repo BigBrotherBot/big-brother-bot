@@ -104,7 +104,7 @@ class AbstractParser(b3.parser.Parser):
         'message_delay': .8,
         'big_msg_duration': 4,
         'big_b3_private_responses': False,
-        'big_mgs_repeat': 'pm',
+        'big_msg_repeat': 'pm',
         }
 
     _gameServerVars = () # list available cvar
