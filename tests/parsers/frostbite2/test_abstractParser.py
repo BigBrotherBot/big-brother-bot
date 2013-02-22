@@ -502,6 +502,18 @@ class Test_config(AbstractParser_TestCase):
                     </settings>
                 </configuration>""")
 
+        self.assert_big_msg_repeat('off', """<configuration>
+                    <settings name="thegame">
+                        <set name="big_msg_repeat">OFF</set>
+                    </settings>
+                </configuration>""")
+
+        self.assert_big_msg_repeat(default_value, """<configuration>
+                    <settings name="thegame">
+                        <set name="big_msg_repeat">junk</set>
+                    </settings>
+                </configuration>""")
+
 class Test_config_ban_agent(AbstractParser_TestCase):
 
     def setUp(self):
