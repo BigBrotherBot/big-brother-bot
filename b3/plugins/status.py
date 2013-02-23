@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 22/02/2013 - 1.4.14 - Courgette
+# * fix the sanitize bug
 # 10/02/2013 - 1.4.13 - Courgette
 # * add log message with more precise info when failing to sanitize data
 # 26/10/2012 - 1.4.12 - Courgette, xlr8or
@@ -66,7 +68,7 @@
 # Converted to use new event handlers
 
 __author__    = 'ThorN'
-__version__ = '1.4.13'
+__version__ = '1.4.14'
 
 import b3
 import time
@@ -298,9 +300,9 @@ class StatusPlugin(b3.plugin.Plugin):
                     data = xml.createElement("Data")
                     data.setAttribute("Name", "%s" % k)
                     try:
-                        clean_data = sanitizeMe(v)
+                        clean_data = sanitizeMe(str(v))
                     except Exception, err:
-                        self.error("could not sanitize %r" % v, exc_into=err)
+                        self.error("could not sanitize %r" % v, exc_info=err)
                         data.setAttribute("Value", "")
                     else:
                         data.setAttribute("Value", clean_data)
