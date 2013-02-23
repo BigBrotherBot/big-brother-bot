@@ -44,9 +44,11 @@
 # * isolate the patching code in a module function
 # 2013-01-20 - 1.6.1 - Courgette
 # * improve punkbuster event parsing
+# 2013-02-17 - 1.7 - Courgette
+# * add support for B3 event EVT_CLIENT_SQUAD_SAY
 #
 __author__  = 'Courgette'
-__version__ = '1.6.1'
+__version__ = '1.7'
 
 
 import sys, re, traceback, time, string, Queue, threading
@@ -529,8 +531,10 @@ class AbstractParser(b3.parser.Parser):
             return
         if data[2] == 'all':
             return b3.events.Event(b3.events.EVT_CLIENT_SAY, data[1].lstrip('/'), client, 'all')
-        elif data[2] == 'team' or data[2] == 'squad':
+        elif data[2] == 'team':
             return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data[1].lstrip('/'), client, data[2] + ' ' + data[3])
+        elif 'squad' in data[2]:
+            return b3.events.Event(b3.events.EVT_CLIENT_SQUAD_SAY, data[1].lstrip('/'), client, data[2] + ' ' + data[3])
         elif data[2] == 'player':
             target = self.getClient(data[3])
             return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data[1].lstrip('/'), client, target)

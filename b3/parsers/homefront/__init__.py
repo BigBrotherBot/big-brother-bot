@@ -161,7 +161,6 @@ class HomefrontParser(b3.parser.Parser):
         self.cron + b3.cron.CronTab(self.retrievePlayerList, second='*/%s' % self._playerlistInterval)
 
         # add specific events
-        self.Events.createEvent('EVT_CLIENT_SQUAD_SAY', 'Squad Say')
         self.Events.createEvent('EVT_SERVER_SAY', 'Server Chatter')
         self.Events.createEvent('EVT_CLIENT_CLAN_CHANGE', 'Client Clan Change')
         self.Events.createEvent('EVT_CLIENT_VOTE_START', 'Client Vote Start')

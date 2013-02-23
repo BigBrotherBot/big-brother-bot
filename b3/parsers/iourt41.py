@@ -170,7 +170,7 @@ __version__ = '1.15'
 
 import re, string, time, os, thread
 from b3.parsers.q3a.abstractParser import AbstractParser
-from b3.functions import soundex, levenshteinDistance, getStuffSoundingLike
+from b3.functions import getStuffSoundingLike
 import b3
 import b3.events
 
@@ -410,21 +410,22 @@ class Iourt41Parser(AbstractParser):
             self.info('map is: %s'%self.game.mapName)
 
         # get gamepaths/vars
+        cvarlist = self.cvarList("fs_")
         try:
-            self.game.fs_game = self.getCvar('fs_game').getString()
+            self.game.fs_game = cvarlist.get('fs_game')
         except:
             self.game.fs_game = None
             self.warning("Could not query server for fs_game")
 
         try:
-            self.game.fs_basepath = self.getCvar('fs_basepath').getString().rstrip('/')
+            self.game.fs_basepath = cvarlist.get('fs_basepath').rstrip('/')
             self.debug('fs_basepath: %s' % self.game.fs_basepath)
         except:
             self.game.fs_basepath = None
             self.warning("Could not query server for fs_basepath")
 
         try:
-            self.game.fs_homepath = self.getCvar('fs_homepath').getString().rstrip('/')
+            self.game.fs_homepath = cvarlist.get('fs_homepath').rstrip('/')
             self.debug('fs_homepath: %s' % self.game.fs_homepath)
         except:
             self.game.fs_homepath = None
@@ -1312,8 +1313,10 @@ class Iourt41Parser(AbstractParser):
     ###############################################################################################
 
     def getNextMap(self):
+        cvars = self.cvarList('fs_*')
+        cvars.update(self.cvarList('*map*'))
         # let's first check if a vote passed for the next map
-        nmap = self.getCvar('g_nextmap').getString()
+        nmap = cvars.get('g_nextmap')
         self.debug('g_nextmap: %s' % nmap)
         if nmap != "":
             if nmap[:4] == 'ut4_': nmap = nmap[4:]
@@ -1323,16 +1326,16 @@ class Iourt41Parser(AbstractParser):
         # seek the next map from the mapcyle file
         if not self.game.mapName: return None
 
-        mapcycle = self.getCvar('g_mapcycle').getString()
+        mapcycle = cvars.get('g_mapcycle', '')
         if self.game.fs_game is None:
             try:
-                self.game.fs_game = self.getCvar('fs_game').getString().rstrip('/')
+                self.game.fs_game = cvars.get('fs_game', '').rstrip('/')
             except:
                 self.game.fs_game = None
                 self.warning("Could not query server for fs_game")
         if self.game.fs_basepath is None:
             try:
-                self.game.fs_basepath = self.getCvar('fs_basepath').getString().rstrip('/')
+                self.game.fs_basepath = cvars.get('fs_basepath').rstrip('/')
             except:
                 self.game.fs_basepath = None
                 self.warning("Could not query server for fs_basepath")
@@ -1341,7 +1344,7 @@ class Iourt41Parser(AbstractParser):
             self.debug('could not read mapcycle file at %s' % mapfile)
             if self.game.fs_homepath is None:
                 try:
-                    self.game.fs_homepath = self.getCvar('fs_homepath').getString().rstrip('/')
+                    self.game.fs_homepath = cvars.get('fs_homepath').rstrip('/')
                 except:
                     self.game.fs_homepath = None
                     self.warning("Could not query server for fs_homepath")
@@ -1381,7 +1384,7 @@ class Iourt41Parser(AbstractParser):
 
         # find current map
         #currentmap = self.game.mapName.strip().lower() # this fails after a cyclemap
-        currentmap = self.getCvar('mapname').value
+        currentmap = cvars.get('mapname')
         try:
             tmp = maps.pop(0)
             while currentmap != tmp:
@@ -1563,14 +1566,15 @@ class Iourt41Parser(AbstractParser):
                 team = self.getTeam(m.group('team'))
                 player_teams[cid] = team
 
-        g_blueteamlist = self.getCvar('g_blueteamlist')
+        cvars = self.cvarList("*teamlist")
+        g_blueteamlist = cvars.get('g_blueteamlist')
         if g_blueteamlist:
-            for letter in g_blueteamlist.getString():
+            for letter in g_blueteamlist:
                 player_teams[letters2slots[letter]] = b3.TEAM_BLUE
 
-        g_redteamlist = self.getCvar('g_redteamlist')
+        g_redteamlist = cvars.get('g_redteamlist')
         if g_redteamlist:
-            for letter in g_redteamlist.getString():
+            for letter in g_redteamlist:
                 player_teams[letters2slots[letter]] = b3.TEAM_RED
         return player_teams
 
@@ -1591,6 +1595,31 @@ class Iourt41Parser(AbstractParser):
         except KeyError, err:
             self.warning("unknown weapon id on Hit line: %s", err)
             return None
+
+    def cvarList(self, cvar_filter=None):
+        """return a dict having cvar id as keys and strings values.
+        If cvar_filter is provided, it will be passed to the rcon cvarlist command as a parameter.
+
+        /rcon cvarlist
+cvarlist
+S R     g_modversion "4.2.009"
+S R     auth_status "public"
+S R     auth "1"
+S       g_enablePrecip "0"
+S R     g_survivor "0"
+S     C g_antilagvis "0"
+
+6 total cvars
+6 cvar indexes
+        """
+        cvars = {}
+        cmd = 'cvarlist' if cvar_filter is None else ('cvarlist %s' % cvar_filter)
+        raw_data = self.write(cmd)
+        if raw_data:
+            re_line = re.compile(r"""^.{7} (?P<cvar>\s*\w+)\s+"(?P<value>.*)"$""", re.MULTILINE)
+            for m in re_line.finditer(raw_data):
+                cvars[m.group('cvar').lower()] = m.group('value')
+        return cvars
 
 
 """

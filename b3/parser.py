@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2013/02/15 - 1.31.1 - courgette
+#   * fix reloadConfigs() which would not reload the config for the admin plugin
 #   2012/10/19 - 1.31 - courgette
 #   * add method getNextMap() to the list of method all B3 parsers should implement
 #   2012/09/14 - 1.30.1 - courgette
@@ -158,7 +160,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.30.1'
+__version__ = '1.31.1'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -626,11 +628,11 @@ class Parser(object):
         # reload main config
         self.config.load(self.config.fileName)
 
-        for k in self._pluginOrder:
+        for k in self._plugins:
             p = self._plugins[k]
             self.bot('Reload plugin config for %s', k)
             p.loadConfig()
-            
+
         self.updateDocumentation()
 
     def loadPlugins(self):

@@ -666,3 +666,50 @@ class Test_getMapsSoundingLike(Iourt41TestCase):
         self.assertEqual('ut4_tohunga_b8', self.console.getMapsSoundingLike('tohunga'))
         self.assertEqual('ut4_tohunga_b8', self.console.getMapsSoundingLike('tohung'))
 
+
+class Test_misc(Iourt41TestCase):
+
+    def setUp(self):
+        Iourt41TestCase.setUp(self)
+
+    def test_cvarlist(self):
+        # GIVEN
+        when(self.console).write("cvarlist").thenReturn(r"""cvarlist
+        g_spskill "4"
+        _B3 "B3 v1.9.0b2 [nt]"
+S R     auth_status "public"
+S R     auth "1"
+S     C g_antilagvis "0"
+     L  g_bombPlantTime "3"
+S        Admin "Courgette"
+     L  net_ip "localhost"
+    AL  com_zoneMegs "32"
+  R     sv_cheats "1"
+
+347 total cvars
+347 cvar indexes
+""")
+        # WHEN
+        rv = self.console.cvarList()
+        # THEN
+        self.assertDictEqual({
+            ' admin': 'Courgette',
+            '_b3': 'B3 v1.9.0b2 [nt]',
+            'auth': '1',
+            'auth_status': 'public',
+            'com_zonemegs': '32',
+            'g_antilagvis': '0',
+            'g_bombplanttime': '3',
+            'g_spskill': '4',
+            'net_ip': 'localhost',
+            'sv_cheats': '1'
+        }, rv)
+
+
+    def test_cvarlist_with_filter(self):
+        # GIVEN
+        with patch.object(self.console, "cvarList") as cvarList_mock:
+            # WHEN
+            rv = self.console.cvarList("*the*filter*")
+            # THEN
+            cvarList_mock.assert_called_with("*the*filter*")

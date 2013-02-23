@@ -43,7 +43,7 @@ try:
 except:
     has_py2exe = False
 
-b3version = "1.9.0b2"
+b3version = "1.10.0dev"
 
 # override egg_info command to copy the b3.egg-info/PKG-INFO file into the b3 directory
 class my_egg_info(orig_egg_info):
@@ -112,12 +112,12 @@ setup(cmdclass=cmdclass,
     packages=find_packages(),
     extras_require={ 'mysql' : 'MySQL-python' },
     package_data={
-        '': ['conf/*.xml', 'conf/templates/*.tpl', 'extplugins/xlrstats.py', 'extplugins/conf/*.xml', 'sql/*.*', 'sql/sqlite/*', 'docs/*', 'README.md']
+        '': ['conf/*.xml', 'conf/templates/*.tpl', 'extplugins/xlrstats.py', 'extplugins/conf/*.xml', 'sql/*.*', 'sql/sqlite/*', 'docs/*.txt', 'docs/*.pdf', 'README.md']
     },
     zip_safe=False,
     author='Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Leveil (Courgette)',
     author_email="info@bigbrotherbot.net",
-    description="BigBrotherBot (B3) is a cross-platform, cross-game game administration bot. Features in-game administration of game servers, multiple user access levels, and database storage. Currently include parsers for Call of Duty 1 to 7, Urban Terror (ioUrT), World of Padman, ETpro, Smokin' Guns, BFBC2, MOH, HomeFront, Open Arena, Altitude etc.",
+    description="BigBrotherBot (B3) is a cross-platform, cross-game game administration bot. Features in-game administration of game servers, multiple user access levels, and database storage. Currently include parsers for Call of Duty 1 to 8, Urban Terror (ioUrT 4.1 and 4.2), BF3, Arma II, CS:GO, Red Orchestra 2, BFBC2, MOH 2010, World of Padman, ETpro, Smokin' Guns, HomeFront, Open Arena, Altitude.",
     long_description="""\
 Big Brother Bot B3 is a complete and total server administration package for online games. B3 is designed primarily to keep your server free from the derelicts of online gaming, but offers more, much more. With the stock configuration files, B3 will will keep your server free from offensive language, and team killers alike. A completely automated and customizable warning system will warn the offending players that this type of behavior is not allowed on your server, and ultimately kick, and or ban them for a predetermined time limit.
 

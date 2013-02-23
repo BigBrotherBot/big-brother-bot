@@ -396,7 +396,8 @@ class Iourt42Parser(Iourt41Parser):
 
     def startup(self):
         try:
-            gamename = self.getCvar('gamename').getString()
+            cvar = self.getCvar('gamename')
+            gamename = cvar.getString() if cvar else None
             if gamename != 'q3urt42':
                 self.error("the iourt42 B3 parser cannot be used with a game server other than Urban Terror 4.2")
                 raise SystemExit(220)
@@ -443,7 +444,11 @@ class Iourt42Parser(Iourt41Parser):
         self.info("Frozen Sand auth system enabled : %s" % ('yes' if frozensand_auth_available else 'no'))
 
         try:
-            frozensand_auth_owners = self.getCvar('auth_owners').getString()
+            cvar = self.getCvar('auth_owners')
+            if cvar:
+                frozensand_auth_owners = cvar.getString()
+            else:
+                frozensand_auth_owners = None
         except Exception, e:
             self.warning("Could not query server for cvar auth_owners.", exc_info=e)
             frozensand_auth_owners = ""
@@ -780,8 +785,12 @@ class Iourt42Parser(Iourt41Parser):
 
 
     def is_frozensand_auth_available(self):
-        auth = self.getCvar('auth').getInt()
-        return auth != 0
+        cvar = self.getCvar('auth')
+        if cvar:
+            auth = cvar.getInt()
+            return auth != 0
+        else:
+            return False
 
 
     # Parse Userinfo
