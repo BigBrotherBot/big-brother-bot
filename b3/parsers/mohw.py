@@ -22,7 +22,7 @@ from b3.parsers.frostbite2.util import PlayerInfoBlock, MapListBlockError
 import b3
 import b3.events
 __author__  = 'Freelander'
-__version__ = '0.0'
+__version__ = '0.1'
 
 MOHW_REQUIRED_VERSION = 323174
 
