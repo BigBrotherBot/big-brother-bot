@@ -79,15 +79,128 @@ class Test_saybig(AbstractParser_TestCase):
         self.parser = ConcretegameParser(self.conf)
         self.parser._settings['big_msg_duration'] = '3.1'
 
+        self.write_patcher = patch.object(AbstractParser, 'write')
+        self.write_mock = self.write_patcher.start()
 
-    def test_saybig(self):
-        with patch.object(AbstractParser, 'write') as write_mock:
-            self.parser.saybig('test')
-            self.parser.saybig('test2')
+    def tearDown(self):
+        AbstractParser_TestCase.tearDown(self)
+        self.write_patcher.stop()
 
-            self.assertTrue(write_mock.called)
-            write_mock.assert_any_call(('admin.yell', 'test', '3'))
-            write_mock.assert_any_call(('admin.yell', 'test2', '3'))
+    def test_saybig_big_msg_repeat_off(self):
+        # GIVEN
+        self.parser._settings['big_msg_repeat'] = 'off'
+        # WHEN
+        self.parser.saybig('test')
+        # THEN
+        self.assertListEqual([call(('admin.yell', 'test', '3'))], self.write_mock.mock_calls)
+
+    def test_saybig_big_msg_repeat_pm(self):
+        # GIVEN
+        self.parser._settings['big_msg_repeat'] = 'pm'
+        # WHEN
+        self.parser.saybig('test')
+        # THEN
+        self.assertListEqual([call(('admin.yell', 'test', '3'))], self.write_mock.mock_calls)
+
+    def test_saybig_when_big_msg_repeat_all(self):
+        # GIVEN
+        self.parser._settings['big_msg_repeat'] = 'all'
+        # WHEN
+        self.parser.saybig('test')
+        # THEN
+        self.assertListEqual([
+                                 call(('admin.yell', 'test', '3')),
+                                 call(('admin.say', 'test', 'all'))
+                             ], self.write_mock.mock_calls)
+
+class Test_message(AbstractParser_TestCase):
+    def setUp(self):
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.parser = ConcretegameParser(self.conf)
+        self.parser._settings['big_msg_duration'] = '3.1'
+
+        self.write_patcher = patch.object(AbstractParser, 'write')
+        self.write_mock = self.write_patcher.start()
+
+        self.player_mock = Mock(spec=Client, name="player")
+        self.player_mock.cid = 'theplayer'
+
+    def tearDown(self):
+        AbstractParser_TestCase.tearDown(self)
+        self.write_patcher.stop()
+
+    def test_message__no_big_when_big_msg_repeat_off(self):
+        # GIVEN
+        self.parser._settings['big_b3_private_responses'] = False
+        self.parser._settings['big_msg_repeat'] = 'off'
+        # WHEN
+        self.parser.message(self.player_mock, 'test')
+        # THEN
+        self.assertListEqual([
+                                 call(('admin.say', 'test', 'player', self.player_mock.cid))
+                             ], self.write_mock.mock_calls)
+
+    def test_message__no_big_when_big_msg_repeat_pm(self):
+        # GIVEN
+        self.parser._settings['big_b3_private_responses'] = False
+        self.parser._settings['big_msg_repeat'] = 'pm'
+        # WHEN
+        self.parser.message(self.player_mock, 'test')
+        # THEN
+        self.assertListEqual([
+                                 call(('admin.say', 'test', 'player', 'theplayer'))
+                             ], self.write_mock.mock_calls)
+
+    def test_message__no_big_when_big_msg_repeat_all(self):
+        # GIVEN
+        self.parser._settings['big_b3_private_responses'] = False
+        self.parser._settings['big_msg_repeat'] = 'all'
+        # WHEN
+        self.parser.message(self.player_mock, 'test')
+        # THEN
+        self.assertListEqual([
+                                 call(('admin.say', 'test', 'player', self.player_mock.cid))
+                             ], self.write_mock.mock_calls)
+
+
+    def test_message__when_big_msg_repeat_off(self):
+        # GIVEN
+        self.parser._settings['big_b3_private_responses'] = True
+        self.parser._settings['big_msg_repeat'] = 'off'
+        # WHEN
+        self.parser.message(self.player_mock, 'test')
+        # THEN
+        self.assertListEqual([
+                                 call(('admin.yell', 'test', '3', 'player', self.player_mock.cid))
+                             ], self.write_mock.mock_calls)
+
+    def test_message__when_big_msg_repeat_pm(self):
+        # GIVEN
+        self.parser._settings['big_b3_private_responses'] = True
+        self.parser._settings['big_msg_repeat'] = 'pm'
+        # WHEN
+        self.parser.message(self.player_mock, 'test')
+        # THEN
+        self.assertListEqual([
+                                 call(('admin.yell', 'test', '3', 'player', self.player_mock.cid)),
+                                 call(('admin.say', 'test', 'player', 'theplayer'))
+                             ], self.write_mock.mock_calls)
+
+    def test_message__when_big_msg_repeat_all(self):
+        # GIVEN
+        self.parser._settings['big_b3_private_responses'] = True
+        self.parser._settings['big_msg_repeat'] = 'all'
+        # WHEN
+        self.parser.message(self.player_mock, 'test')
+        # THEN
+        self.assertListEqual([
+                                 call(('admin.yell', 'test', '3', 'player', self.player_mock.cid)),
+                                 call(('admin.say', 'test', 'player', self.player_mock.cid))
+                             ], self.write_mock.mock_calls)
 
 
 
@@ -499,6 +612,18 @@ class Test_config(AbstractParser_TestCase):
         self.assert_big_msg_repeat(default_value, """<configuration>
                     <settings name="thegame">
                         <set name="big_msg_repeat"></set>
+                    </settings>
+                </configuration>""")
+
+        self.assert_big_msg_repeat('off', """<configuration>
+                    <settings name="thegame">
+                        <set name="big_msg_repeat">OFF</set>
+                    </settings>
+                </configuration>""")
+
+        self.assert_big_msg_repeat(default_value, """<configuration>
+                    <settings name="thegame">
+                        <set name="big_msg_repeat">junk</set>
                     </settings>
                 </configuration>""")
 
