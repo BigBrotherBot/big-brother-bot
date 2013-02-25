@@ -192,6 +192,7 @@ class Test_cmd_xlrstats(XlrstatsTestCase):
 
     def test_unregistered_player(self):
         # GIVEN
+        self.console.getPlugin('admin')._warn_command_abusers = True
         self.p1.clearMessageHistory()
         # WHEN
         self.p1.says("!xlrstats")
@@ -200,6 +201,7 @@ class Test_cmd_xlrstats(XlrstatsTestCase):
 
     def test_registered_player(self):
         # GIVEN
+        self.console.getPlugin('admin')._warn_command_abusers = True
         self.p1.says("!register")
         self.p1.clearMessageHistory()
         # WHEN
