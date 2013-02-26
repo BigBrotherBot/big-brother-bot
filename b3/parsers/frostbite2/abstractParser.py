@@ -1550,13 +1550,8 @@ class AbstractParser(b3.parser.Parser):
 
         supported_gamemode_names = map(self.getGameMode, supported_gamemode_ids)
 
-        shortnames = {
-            'cq': 'conquest',
-            'cq64': 'conquest64',
-            'tdm': 'team deathmatch',
-            'sqdm': 'squad deathmatch',
-        }
-        clean_gamemode_name = shortnames.get(clean_gamemode_name, clean_gamemode_name)
+        aliases = getattr(self, '_gamemode_aliases', {})
+        clean_gamemode_name = aliases.get(clean_gamemode_name, clean_gamemode_name)
 
         matches = getStuffSoundingLike(clean_gamemode_name, supported_gamemode_names)
         if len(matches) == 1:
