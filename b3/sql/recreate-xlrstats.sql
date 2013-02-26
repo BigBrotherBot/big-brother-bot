@@ -130,6 +130,7 @@ CREATE TABLE IF NOT EXISTS `xlr_playerstats` (
   `rounds` smallint(5) unsigned NOT NULL default '0',
   `hide` tinyint(4) NOT NULL default '0',
   `fixed_name` varchar(32) NOT NULL default '',  PRIMARY KEY  (`id`),
+  `id_token` varchar(10) NOT NULL default '',
   UNIQUE KEY `client_id` (`client_id`)
 ) ENGINE=MyISAM;
 
