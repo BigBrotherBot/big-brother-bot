@@ -16,7 +16,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-
+import traceback
+import sys
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock, MapListBlockError
 import b3
@@ -175,7 +176,7 @@ class MohwParser(AbstractParser):
         """
         client = self.getClient(data[0])
         if client is None:
-            self.warning("Could not get client :( %s" % traceback.extract_tb(sys.exc_info()[2]))
+            self.warning("Could not get client : %s" % traceback.extract_tb(sys.exc_info()[2]))
             return
         if client.cid == 'Server':
             # ignore chat events for Server
@@ -271,7 +272,7 @@ class MohwParser(AbstractParser):
         version = self.output.write('version')
         self.info('server version : %s' % version)
         if version[0] != 'MOHW':
-            raise Exception("the MOHW parser can only work with Battlefield 3")
+            raise Exception("the MOHW parser can only work with a Medal of Honor Warfighter server")
         if int(version[1]) < MOHW_REQUIRED_VERSION:
             raise Exception("the MOHW parser can only work with Medal of Honor Warfighter server version %s and above. You are tr"
                             "ying to connect to %s v%s" % (MOHW_REQUIRED_VERSION, version[0], version[1]))
