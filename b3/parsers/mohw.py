@@ -132,6 +132,15 @@ class MohwParser(AbstractParser):
         'teamKillValueIncrease',
         )
 
+    # gamemodes aliases {alias: actual game mode name}
+    _gamemode_aliases = {
+        'cm': 'Combat Mission',
+        'hr': 'Home Run',
+        'sc': 'Sector Control',
+        'tdm': 'Team Death Match',
+        'hs': 'Hot Spot',
+        'bomb': 'Hot Spot',
+    }
 
     def startup(self):
         AbstractParser.startup(self)
