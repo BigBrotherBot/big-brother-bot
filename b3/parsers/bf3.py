@@ -265,6 +265,13 @@ class Bf3Parser(AbstractParser):
         'gunMasterWeaponsPreset'
         )
 
+    # gamemodes aliases {alias: actual game mode name}
+    _gamemode_aliases = {
+        'cq': 'conquest',
+        'cq64': 'conquest64',
+        'tdm': 'team deathmatch',
+        'sqdm': 'squad deathmatch',
+    }
 
     def startup(self):
         AbstractParser.startup(self)
