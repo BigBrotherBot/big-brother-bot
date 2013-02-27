@@ -275,6 +275,7 @@ class FrostbiteServer(threading.Thread):
     means of observing Frostbite events and sending commands"""
     def __init__(self, host, port, password=None, command_timeout=5.0):
         threading.Thread.__init__(self, name="FrosbiteServerThread")
+        self.daemon = True
         self.frostbite_dispatcher = FrostbiteDispatcher(host, port)
         self._stopEvent = threading.Event()
         self.password = password
