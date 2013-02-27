@@ -69,34 +69,32 @@ class Test_getServerInfo(unittest.TestCase):
 
     def test_decodeServerinfo(self):
         self.assertDictEqual({
-            'serverName': 'BigBrotherBot #2',
+            'serverName': 'BigBrotherBot #1 MOHW',
             'numPlayers': '0',
-            'maxPlayers': '16',
-            'gamemode': 'ConquestLarge0',
-            'level': 'MP_012',
-            'roundsPlayed': '1',
-            'roundsTotal': '2',
-            'numTeams': '4',
-            'team1score': '300',
-            'team2score': '215',
-            'team3score': '25',
-            'team4score': '84',
-            'targetScore': '0',
+            'maxPlayers': '20',
+            'gamemode': 'TeamDeathMatch',
+            'level': 'MP_10',
+            'roundsPlayed': '0',
+            'roundsTotal': '1',
+            'numTeams': '2',
+            'team1score': '0',
+            'team2score': '0',
+            'targetScore': '75',
             'onlineState': '',
             'isRanked': 'true',
             'hasPunkbuster': 'true',
             'hasPassword': 'false',
-            'serverUptime': '5148',
-            'roundTime': '455',
-            'gameIpAndPort': '1.2.3.4:5445',
-            'punkBusterVersion': '1.5',
-            'joinQueueEnabled': 'false',
+            'serverUptime': '86755',
+            'roundTime': '84003',
+            'gameIpAndPort': '',
+            'punkBusterVersion': '',
+            'joinQueueEnabled': '',
             'region': 'EU',
-            'closestPingSite': '45',
-            'country': 'FR',
+            'closestPingSite': 'i3d-ams',
+            'country': 'GB',
         }, MohwParser.decodeServerinfo(
-            ['BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '1', '2', '4', '300', '215', '25', '84', '0',
-             '', 'true', 'true', 'false', '5148', '455', '1.2.3.4:5445', '1.5', 'false', 'EU', '45', 'FR']
+            ['BigBrotherBot #1 MOHW', '0', '20', 'TeamDeathMatch', 'MP_10', '0', '1', '2', '0', '0', '75', '', 'true',
+             'true', 'false', '86755', '84003', '', '', '', 'EU', 'i3d-ams', 'GB']
         ))
 
 

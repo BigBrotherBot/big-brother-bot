@@ -440,12 +440,9 @@ class MohwParser(AbstractParser):
 
     def getServerInfo(self):
         """query server info, update self.game and return query results
-        Response: OK,serverName,numPlayers,maxPlayers,level,gamemode,[teamscores],isRanked,hasPunkbuster,hasPassword,serverUptime,roundTime
-        The first number in the [teamscore] component I listed is numTeams, followed by the score or ticket count for each team (0-4 items),
-        then the targetScore. (e.g. in TDM/SQDM this is the number of kills to win)
-        So when you start a Squad Deathmatch round with 50 kills needed to win, it will look like this:
-        4,0,0,0,0,50
-
+        Response: serverName,numPlayers,maxPlayers,gamemode,level,roundsPlayed,roundsTotal,numTeams,team1score,
+                  team2score,targetScore,onlineState,isRanked,hasPunkbuster,hasPassword,serverUptime,roundTime,
+                  gameIpAndPort,punkBusterVersion,joinQueueEnabled,region,closestPingSite,country
         """
         data = self.write(('serverInfo',))
         data2 = MohwParser.decodeServerinfo(data)
@@ -477,17 +474,16 @@ class MohwParser(AbstractParser):
     @staticmethod
     def decodeServerinfo(data):
         """
-        <serverName: string> <current playercount: integer> <max playercount: integer> <current gamemode: string>
-        <current map: string> <roundsPlayed: integer> <roundsTotal: string> <scores: team scores>
-        <onlineState: online state> <ranked: boolean> <punkBuster: boolean> <hasGamePassword: boolean>
-        <serverUpTime: seconds> <roundTime: seconds>
+        <serverName: string> <numPlayers: integer> <maxPlayers: integer> <gamemode: string>
+        <level: string> <roundsPlayed: integer> <roundsTotal: integer> <roundsPlayed: integer>
+        <team1score: integer> <team2score: integer> <targetScore: integer> <onlineState: online state>
+        <isRanked: boolean> <hasPunkbuster: boolean> <hasPassword: boolean> <serverUptime: seconds>
+        <roundTime: seconds> <gameIpAndPort: ip:port> <punkBusterVersion: sting> <joinQueueEnabled: boolean>
+        <region: string> <closestPingSite: string> <country: string>
 
-        ['BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '0', '2', '2', '300', '300', '0', '', 'true', 'true', 'false', '5148', '455']
-
+        ['BigBrotherBot #1 MOHW', '0', '20', 'TeamDeathMatch', 'MP_10', '0', '1', '2', '0', '0', '75', '', 'true',
+        'true', 'false', '143035', '49895', '', '', '', 'EU', 'i3d-ams', 'GB']
         """
-        numOfTeams = 0
-        if data[7] != '':
-            numOfTeams = int(data[7])
 
         response = {
             'serverName': data[0],
@@ -498,42 +494,22 @@ class MohwParser(AbstractParser):
             'roundsPlayed': data[5],
             'roundsTotal': data[6],
             'numTeams': data[7],
-            # depending on numTeams, there might be between 0 and 4 team scores here
-            'team1score': None,
-            'team2score': None,
-            'team3score': None,
-            'team4score': None,
-            'targetScore': data[7+numOfTeams + 1],
-            'onlineState': data[7+numOfTeams + 2],
-            'isRanked': data[7+numOfTeams + 3],
-            'hasPunkbuster': data[7+numOfTeams + 4],
-            'hasPassword': data[7+numOfTeams + 5],
-            'serverUptime': data[7+numOfTeams + 6],
-            'roundTime': data[7+numOfTeams + 7],
-            'gameIpAndPort': None,
-            'punkBusterVersion': None,
-            'joinQueueEnabled': None,
-            'region': None,
-            'closestPingSite': None,
-            'country': None,
-            }
-        if numOfTeams >= 1:
-            response['team1score'] = data[8]
-        if numOfTeams >= 2:
-            response['team2score'] = data[9]
-        if numOfTeams >= 3:
-            response['team3score'] = data[10]
-        if numOfTeams == 4:
-            response['team4score'] = data[11]
-
-        # since BF3 R9
-        new_info = 'gameIpAndPort', 'punkBusterVersion', 'joinQueueEnabled', 'region', 'closestPingSite', 'country'
-        start_index = 7 + numOfTeams + 8
-        for index, name in zip(range(start_index, start_index + len(new_info)), new_info):
-            try:
-                response[name] = data[index]
-            except IndexError:
-                pass
+            'team1score': data[8],
+            'team2score': data[9],
+            'targetScore': data[10],
+            'onlineState': data[11],
+            'isRanked': data[12],
+            'hasPunkbuster': data[13],
+            'hasPassword': data[14],
+            'serverUptime': data[15],
+            'roundTime': data[16],
+            'gameIpAndPort': data[17],
+            'punkBusterVersion': data[18],
+            'joinQueueEnabled': data[19],
+            'region': data[20],
+            'closestPingSite': data[21],
+            'country': data[22],
+        }
 
         return response
 
