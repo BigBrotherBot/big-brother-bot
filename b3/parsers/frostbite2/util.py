@@ -338,7 +338,7 @@ class MapListBlock:
         return self._map_data[key]
 
     def __repr__(self):
-        txt = "MapListBlock["
+        txt = self.__class__.__name__ + "["
         map_info_repr = []
         for p in self:
             map_info_repr.append("%(name)s:%(gamemode)s:%(num_of_rounds)s" % p)
