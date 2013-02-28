@@ -55,10 +55,11 @@
 #  isolate the patching code in a module function
 # 1.8.1
 #  improve punkbuster event parsing
+# 1.9
+#  fix never ending thread sayqueuelistener_worker (would make B3 process hang on keyboard interrupt)
 #
-
 __author__  = 'Courgette'
-__version__ = '1.8.1'
+__version__ = '1.9'
 
 
 import sys, re, traceback, time, string, Queue, threading, new
@@ -527,6 +528,8 @@ class AbstractParser(b3.parser.Parser):
             except Queue.Empty:
                 #self.verbose2("sayqueuelistener: had nothing to do in the last %s sec" % self.sayqueue_get_timeout)
                 pass
+            except (KeyboardInterrupt, SystemExit):
+                raise
             except Exception, err:
                 self.error(err)
         self.info("sayqueuelistener job ended")
