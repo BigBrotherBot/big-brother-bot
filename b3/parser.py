@@ -178,7 +178,16 @@ import b3.timezones
 from ConfigParser import NoOptionError
 from b3.functions import getModule, vars2printf
 from b3.decorators import memoize
-from b3.lib.elementtree import ElementTree
+
+# Import ElementTree
+try:
+    from xml.etree import cElementTree as ElementTree
+except ImportError:
+    try:
+        from xml.etree import ElementTree
+    except ImportError:
+        from b3.lib.elementtree import ElementTree
+
 
 class Parser(object):
     _lineFormat = re.compile('^([a-z ]+): (.*?)', re.IGNORECASE)

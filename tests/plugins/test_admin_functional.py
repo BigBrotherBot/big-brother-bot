@@ -504,7 +504,14 @@ class Test_config(Admin_functional_test):
     def test_no_generic_or_default_warn_readon(self):
 
         # load the default plugin_admin.xml file after having remove the 'generic' setting from section 'warn_reasons'
-        from b3.lib.elementtree import ElementTree as ET
+        try:
+            from xml.etree import cElementTree as ET
+        except ImportError:
+            try:
+                from xml.etree import ElementTree as ET
+            except ImportError:
+                from b3.lib.elementtree import ElementTree as ET
+
         root = ET.parse(ADMIN_CONFIG_FILE).getroot()
         warn_reasons_nodes = [x for x in root.findall('settings') if x.get('name') == 'warn_reasons' ][0]
         if len(warn_reasons_nodes):

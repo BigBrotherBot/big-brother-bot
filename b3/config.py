@@ -35,24 +35,21 @@
 # 11/04/2012 - 1.4 - Courgette
 # CfgConfigParser now implements methods getDuration, getboolean, getpath, loadFromString
 #
-__author__  = 'ThorN'
+__author__ = 'ThorN'
 __version__ = '1.4'
 
 import sys, time
 import b3
 from xml.parsers.expat import ExpatError
 
+# Import ElementTree
 try:
-    from b3.lib.elementtree import ElementTree
-except ImportError, err:
+    from xml.etree import cElementTree as ElementTree
+except ImportError:
     try:
         from xml.etree import ElementTree
-    except ImportError, err:
-        sys.stderr.write("""FATAL ERROR : Cannot load elementtree
-      Check that you have installed ElementTree.
-      On Linux Debian : apt-get install python-elementtree
-      """)
-        sys.exit(1)
+    except ImportError:
+        from b3.lib.elementtree import ElementTree
 
 import ConfigParser
 import os
@@ -135,7 +132,7 @@ class XmlConfigParser(B3ConfigParserMixin):
             self._settings[section] = {}
 
             for setting in settings.findall("./set"):
-                name  = setting.get('name')
+                name = setting.get('name')
                 value = setting.text
 
                 self._settings[section][name] = value
@@ -201,7 +198,7 @@ class XmlConfigParser(B3ConfigParserMixin):
         self.readfp(f)
         f.close()
 
-        self.fileName  = fileName
+        self.fileName = fileName
         self.fileMtime = os.path.getmtime(self.fileName)
 
         return True
@@ -210,10 +207,10 @@ class XmlConfigParser(B3ConfigParserMixin):
         """\
         Read the xml config from a string
         """
-        
-        self.fileName  = None
+
+        self.fileName = None
         self.fileMtime = time.time()
-        
+
         try:
             self._xml = ElementTree.XML(xmlstring)
         except ExpatError, e:
@@ -229,7 +226,7 @@ class XmlConfigParser(B3ConfigParserMixin):
     def set(self, section, option, value):
         # not implemented
         pass
-        
+
 
 class CfgConfigParser(B3ConfigParserMixin, ConfigParser.ConfigParser):
     """\
@@ -251,7 +248,7 @@ class CfgConfigParser(B3ConfigParserMixin, ConfigParser.ConfigParser):
         self.readfp(f)
         f.close()
 
-        self.fileName  = fileName
+        self.fileName = fileName
         self.fileMtime = os.path.getmtime(self.fileName)
 
         return True
@@ -259,10 +256,11 @@ class CfgConfigParser(B3ConfigParserMixin, ConfigParser.ConfigParser):
     def loadFromString(self, cfg_string):
         """ Read the cfg config from a string """
         import StringIO
+
         fp = StringIO.StringIO(cfg_string)
         self.readfp(fp)
         fp.close()
-        self.fileName  = None
+        self.fileName = None
         self.fileMtime = time.time()
         return True
 
@@ -272,7 +270,6 @@ class CfgConfigParser(B3ConfigParserMixin, ConfigParser.ConfigParser):
         f.close()
 
         return True
-
 
 
 def load(fileName):
@@ -296,6 +293,7 @@ def load(fileName):
 class ConfigFileNotFound(Exception):
     def __init__(self, value):
         Exception.__init__(self, value)
+
     def __str__(self):
         return repr(self.value)
 
@@ -303,5 +301,6 @@ class ConfigFileNotFound(Exception):
 class ConfigFileNotValid(Exception):
     def __init__(self, value):
         Exception.__init__(self, value)
+
     def __str__(self):
         return repr(self.value)
