@@ -616,22 +616,105 @@ class Test_config(Admin_functional_test):
 
 
 class Cmd_admins(Admin_functional_test):
-    def setUp(self):
-        Admin_functional_test.setUp(self)
-        self.init()
 
-    def test_nominal(self):
-        self.joe.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
+    def test_no_admin(self):
+        # GIVEN
+        self.init("""
+        <configuration>
+            <settings name="commands">
+                <set name="admins">user</set>
+            </settings>
+        </configuration>
+        """)
+        self.mike.connects(0)
+        # only user Mike is connected
+        # WHEN
+        self.mike.clearMessageHistory()
+        self.mike.says('!admins')
+        # THEN
+        self.assertListEqual(['There are no admins online'], self.mike.message_history)
+
+    def test_no_admin_custom_message(self):
+        # GIVEN
+        self.init("""
+        <configuration>
+            <settings name="commands">
+                <set name="admins">user</set>
+            </settings>
+            <settings name="messages">
+                <set name="no_admins">no admins</set>
+            </settings>
+        </configuration>
+        """)
+        self.mike.connects(0)
+        # only user Mike is connected
+        # WHEN
+        self.mike.clearMessageHistory()
+        self.mike.says('!admins')
+        # THEN
+        self.assertListEqual(['no admins'], self.mike.message_history)
+
+    def test_no_admin_blank_message(self):
+        # GIVEN
+        self.init("""
+        <configuration>
+            <settings name="commands">
+                <set name="admins">user</set>
+            </settings>
+            <settings name="messages">
+                <set name="no_admins"></set>
+            </settings>
+        </configuration>
+        """)
+        self.mike.connects(0)
+        # only user Mike is connected
+        # WHEN
+        self.mike.clearMessageHistory()
+        self.mike.says('!admins')
+        # THEN
+        self.assertListEqual([], self.mike.message_history)
+
+    def test_one_admin(self):
+        # GIVEN
+        self.init()
         self.joe.connects(0)
         # only superadmin joe is connected
+        # WHEN
+        self.joe.clearMessageHistory()
         self.joe.says('!admins')
-        self.joe.message.assert_called_with('^7Admins online: Joe^7^7 [^3100^7]')
-        # introducing mike (senioradmin)
+        # THEN
+        self.assertListEqual(['Admins online: Joe [100]'], self.joe.message_history)
+
+    def test_one_admin_custom_message(self):
+        # GIVEN
+        self.init("""
+        <configuration>
+            <settings name="commands">
+                <set name="admins">mod</set>
+            </settings>
+            <settings name="messages">
+                <set name="admins">online admins: %s</set>
+            </settings>
+        </configuration>
+        """)
+        self.joe.connects(0)
+        # WHEN
+        self.joe.clearMessageHistory()
+        self.joe.says('!admins')
+        # THEN
+        self.assertListEqual(['online admins: Joe [100]'], self.joe.message_history)
+
+    def test_two_admins(self):
+        # GIVEN
+        self.init()
+        self.joe.connects(0)
         self.mike.connects(1)
         self.joe.says('!putgroup mike senioradmin')
-        # we know have 2 admins connected
+        # WHEN
+        self.joe.clearMessageHistory()
         self.joe.says('!admins')
-        self.joe.message.assert_called_with('^7Admins online: Joe^7^7 [^3100^7], Mike^7^7 [^380^7]')
+        # THEN
+        self.assertListEqual(['Admins online: Joe [100], Mike [80]'], self.joe.message_history)
 
 
 class Cmd_regulars(Admin_functional_test):
