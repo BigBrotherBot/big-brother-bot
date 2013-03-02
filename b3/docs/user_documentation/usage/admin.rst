@@ -235,14 +235,12 @@ admins
 The :command:`!admins` command tells which admins are currently on the game server.
 
 
-usage
-"""""
+.. rubric:: usage
 
 The :command:`!admins` command takes no parameters.
 
 
-customization
-"""""""""""""
+.. rubric:: customization
 
 Admins are players who are member of a group of level equal or higher than the group/level set in the admin plugin
 config file at *admins_level*.
@@ -272,8 +270,7 @@ aliases
 The :command:`!aliases` command shows at most 10 aliases of a player.
 
 
-usage
-"""""
+.. rubric:: usage
 
 :command:`!aliases [player]`
 
@@ -282,8 +279,7 @@ If ``player`` is provided, display at most 10 aliases for that player.
 If ``player`` is not provided, display at most 10 of your aliases.
 
 
-customization
-"""""""""""""
+.. rubric:: customization
 
 The :command:`!aliases` command response can be customized in the admin plugin config file:
 
@@ -392,8 +388,7 @@ leveltest
 The :command:`!leveltest` command tells in which B3 group a player is in.
 
 
-usage
-"""""
+.. rubric:: usage
 
 :command:`!leveltest [player]`
 
@@ -402,8 +397,7 @@ If ``player`` is an on-line player name, display in which B3 group this player i
 If ``player`` is not provided, display in which B3 group you are in.
 
 
-customization
-"""""""""""""
+.. rubric:: customization
 
 The :command:`!leveltest` command responds with two types of messages depending on if the user has a group or not. Those
 messages can be customized in the admin plugin config file:
@@ -528,14 +522,12 @@ regtest
 The :command:`!regtest` command tells in which B3 group you are in.
 
 
-usage
-"""""
+.. rubric:: usage
 
 The :command:`!regtest` command takes no parameters.
 
 
-customization
-"""""""""""""
+.. rubric:: customization
 
 The response message template can be customized in the admin plugin config file at *messages:leveltest*.
 
