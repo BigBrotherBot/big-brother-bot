@@ -218,6 +218,8 @@ class AdminPlugin(b3.plugin.Plugin):
         "leveltest": "^7%s ^7[^3@%s^7] is a ^3%s ^7[^2%s^7] since %s",
         "leveltest_nogroups": "^7%s ^7[^3@%s^7] is not in any groups",
         "aliases": "^7%s^7 aliases: %s",
+        "aliases_more_suffix": "^7[^2and more^7]",
+        "no_aliases": "^7%s^7 has no aliases",
         "cmd_plugin_disabled": "^7cannot execute command. Plugin disabled"
     }
 
@@ -1695,19 +1697,19 @@ class AdminPlugin(b3.plugin.Plugin):
         sclient = self.findClientPrompt(cid, client)
         if sclient:
             if sclient.maskGroup:
-                cmd.sayLoudOrPM(client, '^7%s^7 has no aliases' % sclient.exactName)
+                cmd.sayLoudOrPM(client, self.getMessage('no_aliases', sclient.exactName))
             else:
                 myaliases = []
                 for a in sclient.aliases:
                     myaliases.append('%s^7' % a.alias)
                     if len(myaliases) > 10:
-                        myaliases.append('^7[^2and more^7]')
+                        myaliases.append(self.getMessage('aliases_more_suffix'))
                         break
 
                 if len(myaliases):
                     cmd.sayLoudOrPM(client, self.getMessage('aliases', sclient.exactName, ', '.join(myaliases)))
                 else:
-                    cmd.sayLoudOrPM(client, '^7%s^7 has no aliases' % sclient.exactName)
+                    cmd.sayLoudOrPM(client, self.getMessage('no_aliases', sclient.exactName))
 
     def cmd_warns(self, data, client=None, cmd=None):
         """\

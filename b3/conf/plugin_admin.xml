@@ -148,6 +148,8 @@
 		<set name="leveltest">^7%s ^7[^3@%s^7] is a ^3%s ^7[^2%s^7] since %s</set>
 		<set name="leveltest_nogroups">^7%s ^7[^3@%s^7] is not in any groups</set>
 		<set name="aliases">^7%s^7 aliases: %s</set>
+		<set name="aliases_more_suffix">^7[^2and more^7]</set>
+		<set name="no_aliases">^7%s^7 has no aliases</set>
 		<set name="cmd_plugin_disabled">^7cannot execute command. Plugin disabled</set>
 	</settings>
 	<settings name="warn">

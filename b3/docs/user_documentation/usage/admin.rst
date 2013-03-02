@@ -159,7 +159,8 @@ command_prefix_loud
 Some commands can have their result broadcasted to all players instead of only to the player issuing the command. To
 have such a behavior, use this command prefix instead of *command_prefix*.
 
-Note that this behavior only work with commands that consider it.
+.. note::
+ that this behavior only work with commands that consider it.
 
 expected values
   a single character
@@ -174,9 +175,9 @@ command_prefix_big
 Some commands can have their result broadcasted to all players as a very noticeable way. To have such a behavior, use
 this command prefix instead of *command_prefix*.
 
-Note that this behavior only work with commands that consider it.
-
-Also note that depending on the game, abuse of such display can be frustrating for users ; use it wisely.
+.. note::
+    This behavior only work with commands that consider it.
+    Also depending on the game, abuse of such display can be frustrating for users ; use it wisely.
 
 expected values
   a single character
@@ -223,6 +224,7 @@ default value
   ``yes``
 
 
+
 Commands
 --------
 
@@ -261,13 +263,42 @@ messages can be customized in the admin plugin config file:
 admintest
 ^^^^^^^^^
 
-TODO
+Alias for command `regtest`_
 
 
 aliases
 ^^^^^^^
 
-TODO
+The :command:`!aliases` command shows at most 10 aliases of a player.
+
+
+usage
+"""""
+
+:command:`!aliases [player]`
+
+If ``player`` is provided, display at most 10 aliases for that player.
+
+If ``player`` is not provided, display at most 10 of your aliases.
+
+
+customization
+"""""""""""""
+
+The :command:`!aliases` command response can be customized in the admin plugin config file:
+
+*messages:aliases*
+    When the player has at least an alias, the message template used is *messages:aliases*. This template must contain
+    2 `%s` placeholder which are respectively:
+    - the player's name
+    - the list of aliases
+
+*messages:aliases_more_suffix*
+    When the player has more than 10 aliases, this suffix will be added to the response.
+
+*messages:no_aliases*
+    When the player has no aliases, the message template used is *messages:no_aliases*. This template must contain
+    one `%s` placeholder which will be replaced with the player's name.
 
 
 b3
@@ -358,7 +389,40 @@ TODO
 leveltest
 ^^^^^^^^^
 
-TODO
+The :command:`!leveltest` command tells in which B3 group a player is in.
+
+
+usage
+"""""
+
+:command:`!leveltest [player]`
+
+If ``player`` is an on-line player name, display in which B3 group this player is in.
+
+If ``player`` is not provided, display in which B3 group you are in.
+
+
+customization
+"""""""""""""
+
+The :command:`!leveltest` command responds with two types of messages depending on if the user has a group or not. Those
+messages can be customized in the admin plugin config file:
+
+*messages:leveltest*
+    When the player is in a B3 group, the message template used is *messages:leveltest*. This template must contain
+    5 `%s` placeholder which are respectively:
+    - the player's name
+    - the player's B3 database identifier
+    - the player's B3 group name
+    - the player's B3 group level
+    - the date at which the player joined that B3 group
+
+*messages:leveltest_nogroups*
+    When the player is in no B3 group, the message template used is *messages:leveltest_nogroups*. This template must
+    contain 2 `%s` placeholder which are respectively:
+    - the player's name
+    - the player's B3 database identifier
+
 
 
 lookup
@@ -457,10 +521,24 @@ register
 TODO
 
 
+
 regtest
 ^^^^^^^
 
-TODO
+The :command:`!regtest` command tells in which B3 group you are in.
+
+
+usage
+"""""
+
+The :command:`!regtest` command takes no parameters.
+
+
+customization
+"""""""""""""
+
+The response message template can be customized in the admin plugin config file at *messages:leveltest*.
+
 
 
 regulars
