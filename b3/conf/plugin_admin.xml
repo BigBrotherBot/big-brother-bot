@@ -140,6 +140,7 @@
 		<set name="help_none">^7You have no available commands</set>
 		<set name="spanked">%s ^7was ^1SPANKED^7 by %s</set>
 		<set name="admins">^7Admins online: %s</set>
+		<set name="no_admin">^7There are no admins online</set>
 		<set name="regulars">^7Regular players online: %s</set>
 		<set name="no_regulars">^7There are no regular players online</set>
 		<set name="time">At the sound of the beep it will be ^3%s^7...(beeeep)</set>

@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2013/03/02 - 1.23 - Courgette
+#   * command !admins message when no admin is online can be customised in the config file -> no_admins
 #   2013/02/17 - 1.22 - Courgette
 #   * warn_command_abusers default value is no False
 #   * suggest command spelling correction in aa many situations as we can
@@ -133,7 +135,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.22'
+__version__ = '1.23'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon'
 
 import re
@@ -208,6 +210,7 @@ class AdminPlugin(b3.plugin.Plugin):
         "help_none": "^7You have no available commands",
         "spanked": "%s ^7was ^1SPANKED^7 by %s",
         "admins": "^7Admins online: %s",
+        "no_admins": "^7There are no admins online",
         "regulars": "^7Regular players online: %s",
         "no_regulars": "^7There are no regular players online",
         "time": "At the sound of the beep it will be ^3%s^7...(beeeep)",
@@ -1020,8 +1023,9 @@ class AdminPlugin(b3.plugin.Plugin):
 
             cmd.sayLoudOrPM(client, self.getMessage('admins', ', '.join(nlist)))
         else:
-            self.debug('no admins found')
-            cmd.sayLoudOrPM(client, 'There are no admins online')
+            msg = self.getMessage('no_admins')
+            if msg:
+                cmd.sayLoudOrPM(client, self.getMessage('no_admins'))
 
     def cmd_rebuild(self, data, client, cmd=None):
         """\
