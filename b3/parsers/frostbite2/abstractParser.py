@@ -1553,6 +1553,7 @@ class AbstractParser(b3.parser.Parser):
             'cq64': 'conquest64',
             'tdm': 'team deathmatch',
             'sqdm': 'squad deathmatch',
+            'ctf': 'capture the flag'
         }
         clean_gamemode_name = shortnames.get(clean_gamemode_name, clean_gamemode_name)
 
