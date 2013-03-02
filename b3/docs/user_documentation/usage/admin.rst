@@ -236,23 +236,23 @@ The :command:`!admins` command tells which admins are currently on the game serv
 usage
 """""
 
-  The :command:`!admins` command takes no parameters.
+The :command:`!admins` command takes no parameters.
 
 
 customization
 """""""""""""
 
-  Admins are players who are member of a group of level equal or higher than the group/level set in the admin plugin
-  config file at *admins_level*.
+Admins are players who are member of a group of level equal or higher than the group/level set in the admin plugin
+config file at *admins_level*.
 
-  The :command:`!admins` command responds with two types of messages depending on if there are any admins online. Those
-  messages can be customized in the admin plugin config file:
+The :command:`!admins` command responds with two types of messages depending on if there are any admins online. Those
+messages can be customized in the admin plugin config file:
 
-  *messages:admins*
+*messages:admins*
     When there is one admin online or more, the message template used is *messages:admins*. This template must contain
     a `%s` placeholder which will be replaced with the actual list of online admin names and levels.
 
-  *messages:no_admins*
+*messages:no_admins*
     When there is no admin online, the message used is *messages:no_admins*. In the special case where message
     *messages:no_admins* would be present but empty, then no answer is given back to the player when using the
     :command:`!admins` command.
