@@ -1336,15 +1336,7 @@ class AbstractParser(b3.parser.Parser):
     def getPlayerPings(self):
         """Ask the server for a given client's pings
         """
-        raise NotImplementedError # TODO : implement getPlayerPings when BF3 allows this
-        pings = {}
-        try:
-            pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
-            for p in pib:
-                pings[p['name']] = int(p['ping'])
-        except Exception, e:
-            self.debug('Unable to retrieve pings from playerlist (%r)' % e)
-        return pings
+        raise NotImplementedError
 
 
     def getPlayerScores(self):

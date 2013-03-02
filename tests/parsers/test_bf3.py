@@ -19,7 +19,9 @@
 import re
 import unittest2 as unittest
 from mock import Mock, DEFAULT, patch
+from mockito import when
 from b3.clients import Client, Clients
+from b3.fake import FakeClient
 from b3.parsers.bf3 import Bf3Parser, MAP_NAME_BY_ID, GAME_MODES_BY_MAP_ID, GAME_MODES_NAMES
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.util import MapListBlock
@@ -668,6 +670,10 @@ class Test_bf3_maps(BF3TestCase):
         self.assertEqual('Markaz Monolith', self.parser.getEasyName('XP4_FD'))
         self.assertEqual('Azadi Palace', self.parser.getEasyName('XP4_Parl'))
         self.assertEqual('Talah market', self.parser.getEasyName('XP4_Rubble'))
+        self.assertEqual('Operation Riverside', self.parser.getEasyName('XP5_001'))
+        self.assertEqual('Nebandan Flats', self.parser.getEasyName('XP5_002'))
+        self.assertEqual('Kiasar Railroad', self.parser.getEasyName('XP5_003'))
+        self.assertEqual('Sabalan Pipeline', self.parser.getEasyName('XP5_004'))
         self.assertEqual('f00', self.parser.getEasyName('f00'))
 
 
@@ -697,11 +703,15 @@ class Test_bf3_maps(BF3TestCase):
         self.assertEqual('XP4_FD', self.parser.getHardName('Markaz Monolith'))
         self.assertEqual('XP4_Parl', self.parser.getHardName('Azadi Palace'))
         self.assertEqual('XP4_Rubble', self.parser.getHardName('Talah market'))
+        self.assertEqual('XP5_001', self.parser.getHardName('Operation Riverside'))
+        self.assertEqual('XP5_002', self.parser.getHardName('Nebandan Flats'))
+        self.assertEqual('XP5_003', self.parser.getHardName('Kiasar Railroad'))
+        self.assertEqual('XP5_004', self.parser.getHardName('Sabalan Pipeline'))
         self.assertEqual('f00', self.parser.getHardName('f00'))
 
 
     def test_getMapsSoundingLike(self):
-        self.assertEqual(['operation metro', 'gulf of oman', 'seine crossing'], self.parser.getMapsSoundingLike(''), '')
+        self.assertEqual(['operation metro', 'kiasar railroad', 'gulf of oman',], self.parser.getMapsSoundingLike(''), '')
         self.assertEqual('MP_Subway', self.parser.getMapsSoundingLike('Operation Metro'), 'Operation Metro')
         self.assertEqual('MP_001', self.parser.getMapsSoundingLike('grand'))
         self.assertEqual(['operation metro', 'operation firestorm', 'operation 925'], self.parser.getMapsSoundingLike('operation'))
@@ -732,7 +742,22 @@ class Test_bf3_maps(BF3TestCase):
         self.assertEqual('XP4_Rubble', self.parser.getMapsSoundingLike('Talahmarket'))
         self.assertEqual('XP4_Rubble', self.parser.getMapsSoundingLike('Talah'))
         self.assertEqual('XP4_Rubble', self.parser.getMapsSoundingLike('market'))
-
+        self.assertEqual('XP5_001', self.parser.getMapsSoundingLike('Operation Riverside'))
+        self.assertEqual('XP5_001', self.parser.getMapsSoundingLike('Operationriverside'))
+        self.assertEqual('XP5_001', self.parser.getMapsSoundingLike('Riverside'))
+        self.assertEqual('XP5_001', self.parser.getMapsSoundingLike('riverside'))
+        self.assertEqual('XP5_002', self.parser.getMapsSoundingLike('Nebandan Flats'))
+        self.assertEqual('XP5_002', self.parser.getMapsSoundingLike('NebandanFlats'))
+        self.assertEqual('XP5_002', self.parser.getMapsSoundingLike('Nebandan'))
+        self.assertEqual('XP5_002', self.parser.getMapsSoundingLike('Flats'))
+        self.assertEqual('XP5_003', self.parser.getMapsSoundingLike('Kiasar Railroad'))
+        self.assertEqual('XP5_003', self.parser.getMapsSoundingLike('KiasarRailroad'))
+        self.assertEqual('XP5_003', self.parser.getMapsSoundingLike('Kiasar'))
+        self.assertEqual('XP5_003', self.parser.getMapsSoundingLike('Railroad'))
+        self.assertEqual('XP5_004', self.parser.getMapsSoundingLike('Sabalan Pipeline'))
+        self.assertEqual('XP5_004', self.parser.getMapsSoundingLike('SabalanPipeline'))
+        self.assertEqual('XP5_004', self.parser.getMapsSoundingLike('Sabalan'))
+        self.assertEqual('XP5_004', self.parser.getMapsSoundingLike('Pipeline'))
 
     def test_getGamemodeSoundingLike(self):
         self.assertEqual('ConquestSmall0', self.parser.getGamemodeSoundingLike('MP_011', 'ConquestSmall0'), 'ConquestSmall0')
@@ -747,10 +772,86 @@ class Test_bf3_maps(BF3TestCase):
         self.assertEqual('TankSuperiority0', self.parser.getGamemodeSoundingLike('XP3_Valley', 'tanksuperiority'), 'tanksuperiority')
         self.assertEqual('TankSuperiority0', self.parser.getGamemodeSoundingLike('XP3_Valley', 'tanksup'), 'tanksup')
         self.assertEqual('TankSuperiority0', self.parser.getGamemodeSoundingLike('XP3_Valley', 'tank'), 'tank')
+        self.assertEqual('TankSuperiority0', self.parser.getGamemodeSoundingLike('XP3_Valley', 'superiority'), 'superiority')
         self.assertEqual('SquadDeathMatch0', self.parser.getGamemodeSoundingLike('XP4_Quake', 'sqdm'), 'sqdm')
         self.assertEqual('Scavenger0', self.parser.getGamemodeSoundingLike('XP4_Quake', 'scavenger'), 'scavenger')
         self.assertEqual('Scavenger0', self.parser.getGamemodeSoundingLike('XP4_Quake', 'scav'), 'scav')
         self.assertEqual('Scavenger0', self.parser.getGamemodeSoundingLike('XP4_FD', 'scav'), 'scav')
         self.assertEqual('Scavenger0', self.parser.getGamemodeSoundingLike('XP4_Parl', 'scav'), 'scav')
         self.assertEqual('Scavenger0', self.parser.getGamemodeSoundingLike('XP4_Rubble', 'scav'), 'scav')
+        self.assertEqual('CaptureTheFlag0', self.parser.getGamemodeSoundingLike('XP5_001', 'ctf'), 'ctf')
+        self.assertEqual('CaptureTheFlag0', self.parser.getGamemodeSoundingLike('XP5_002', 'ctf'), 'ctf')
+        self.assertEqual('CaptureTheFlag0', self.parser.getGamemodeSoundingLike('XP5_003', 'ctf'), 'ctf')
+        self.assertEqual('CaptureTheFlag0', self.parser.getGamemodeSoundingLike('XP5_004', 'ctf'), 'ctf')
+        self.assertEqual('CaptureTheFlag0', self.parser.getGamemodeSoundingLike('XP5_004', 'flag'), 'flag')
+        self.assertEqual('CaptureTheFlag0', self.parser.getGamemodeSoundingLike('XP5_004', 'cap'), 'cap')
+        self.assertEqual('CaptureTheFlag0', self.parser.getGamemodeSoundingLike('XP5_004', 'capture'), 'capture')
+        self.assertEqual('AirSuperiority0', self.parser.getGamemodeSoundingLike('XP5_001', 'airsuperiority'), 'airsuperiority')
+        self.assertEqual('AirSuperiority0', self.parser.getGamemodeSoundingLike('XP5_002', 'airsuperiority'), 'airsuperiority')
+        self.assertEqual('AirSuperiority0', self.parser.getGamemodeSoundingLike('XP5_003', 'airsuperiority'), 'airsuperiority')
+        self.assertEqual('AirSuperiority0', self.parser.getGamemodeSoundingLike('XP5_004', 'airsuperiority'), 'airsuperiority')
+        self.assertEqual('AirSuperiority0', self.parser.getGamemodeSoundingLike('XP5_004', 'air'), 'air')
+        self.assertEqual('AirSuperiority0', self.parser.getGamemodeSoundingLike('XP5_004', 'airsup'), 'airsup')
+        self.assertEqual('AirSuperiority0', self.parser.getGamemodeSoundingLike('XP5_004', 'superiority'), 'superiority')
 
+
+class Test_getPlayerPings(BF3TestCase):
+
+    def setUp(self):
+        BF3TestCase.setUp(self)
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.parser = Bf3Parser(self.conf)
+        self.p1 = FakeClient(self.parser, name="Player1")
+        self.p2 = FakeClient(self.parser, name="Player2")
+
+    def test_no_player(self):
+        # WHEN
+        actual_result = self.parser.getPlayerPings()
+        # THEN
+        self.assertDictEqual({}, actual_result)
+
+    def test_one_player(self):
+        # GIVEN
+        self.p1.connects("Player1")
+        when(self.parser).write(('player.ping', self.p1.cid)).thenReturn(['140'])
+        # WHEN
+        actual_result = self.parser.getPlayerPings()
+        # THEN
+        self.assertDictEqual({self.p1.cid: 140}, actual_result)
+
+    def test_two_player(self):
+        # GIVEN
+        self.p1.connects("Player1")
+        self.p2.connects("Player2")
+        when(self.parser).write(('player.ping', self.p1.cid)).thenReturn(['140'])
+        when(self.parser).write(('player.ping', self.p2.cid)).thenReturn(['450'])
+        # WHEN
+        actual_result = self.parser.getPlayerPings()
+        # THEN
+        self.assertDictEqual({self.p1.cid: 140, self.p2.cid: 450}, actual_result)
+
+    def test_bad_data(self):
+        # GIVEN
+        self.p1.connects("Player1")
+        self.p2.connects("Player2")
+        when(self.parser).write(('player.ping', self.p1.cid)).thenReturn(['140'])
+        when(self.parser).write(('player.ping', self.p2.cid)).thenReturn(['f00'])
+        # WHEN
+        actual_result = self.parser.getPlayerPings()
+        # THEN
+        self.assertDictEqual({self.p1.cid: 140}, actual_result)
+
+    def test_exception(self):
+        # GIVEN
+        self.p1.connects("Player1")
+        self.p2.connects("Player2")
+        when(self.parser).write(('player.ping', self.p1.cid)).thenReturn(['140'])
+        when(self.parser).write(('player.ping', self.p2.cid)).thenRaise(Exception)
+        # WHEN
+        actual_result = self.parser.getPlayerPings()
+        # THEN
+        self.assertDictEqual({self.p1.cid: 140}, actual_result)
