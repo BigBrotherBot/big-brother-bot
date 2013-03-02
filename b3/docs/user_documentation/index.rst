@@ -3,8 +3,9 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+##############################################
 Welcome to BigBrotherBot's User Documentation!
-==============================================
+##############################################
 
 BigBrotherBot (B3 for short) is a complete and total server administration package for online games.
 It features :
@@ -16,8 +17,9 @@ It features :
 - Highly customizable
 
 
-
-Contents:
+********
+Contents
+********
 
 .. toctree::
    :maxdepth: 2
@@ -26,9 +28,9 @@ Contents:
    usage/index.rst
    customization.rst
 
-
+******************
 Indices and tables
-==================
+******************
 
 * :ref:`genindex`
 * :ref:`modindex`
