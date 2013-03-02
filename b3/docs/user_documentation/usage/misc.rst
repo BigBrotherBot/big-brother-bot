@@ -1,6 +1,8 @@
 Miscellaneous
 =============
 
+.. _duration-syntax:
+
 Duration syntax
 ---------------
 
@@ -25,4 +27,4 @@ w
 For example, let's say you want to ban player Joe for 1 week with reason '*insult other players*', you would use the
 command :
 
-``!ban joe 1w insult other players``
+:command:`!ban joe 1w insult other players`
