@@ -185,6 +185,8 @@ class AdminPlugin(b3.plugin.Plugin):
         "action_denied_masked": "^7%(name)s ^7is a masked higher level player, action cancelled",
         "baninfo": "^7%(name)s ^7has %(num_bans)s active bans",
         "baninfo_no_bans": "^7%(name)s ^7has no active bans",
+        "group_unknown": "^7Group %(group_name)s does not exist",
+        "group_beyond_reach": "^7Group %(group_name)s is beyond your reach",
         "ban_denied": "^7Hey %s^7, you're no Elvis, can't ban %s",
         "help_available": "^7Available commands: %s",
         "temp_ban_self": "^7%s ^7Can't ban yourself newb",
@@ -733,7 +735,7 @@ class AdminPlugin(b3.plugin.Plugin):
             group = Group(keyword=groupName)
             group = self.console.storage.getGroup(group)
         except:
-            client.message('^7Group %s does not exist' % groupName)
+            client.message(self.getMessage('group_unknown', {'group_name': groupName}))
             return False
 
         sclient.maskLevel = group.id
@@ -1170,11 +1172,11 @@ class AdminPlugin(b3.plugin.Plugin):
             group = Group(keyword=keyword)
             group = self.console.storage.getGroup(group)
         except:
-            client.message('^7Group %s does not exist' % keyword)
+            client.message(self.getMessage('group_unknown', {'group_name': keyword}))
             return False
 
         if group.level >= client.maxLevel and client.maxLevel < 100:
-            client.message('^7Group %s is beyond your reach' % group.name)
+            client.message(self.getMessage('group_beyond_reach', {'group_name': group.name}))
             return False
 
         sclient = self.findClientPrompt(cid, client)
@@ -1210,7 +1212,7 @@ class AdminPlugin(b3.plugin.Plugin):
             group = Group(keyword=keyword)
             group = self.console.storage.getGroup(group)
         except KeyError:
-            client.message('^7Group %s does not exist' % keyword)
+            client.message(self.getMessage('group_unknown', {'group_name': keyword}))
             return False
 
         sclient = self.findClientPrompt(cid, client)

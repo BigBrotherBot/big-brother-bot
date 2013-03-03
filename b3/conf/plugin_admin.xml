@@ -115,6 +115,8 @@
 		<set name="action_denied_masked">^7%(name)s ^7is a masked higher level player, action cancelled</set>
 		<set name="baninfo">^7%(name)s ^7has %(num_bans)s active bans</set>
 		<set name="baninfo_no_bans">^7%(name)s ^7has no active bans</set>
+		<set name="group_unknown">^7Group %(group_name)s does not exist</set>
+		<set name="group_beyond_reach">^7Group %(group_name)s is beyond your reach</set>
 		<set name="ban_denied">^7Hey %s^7, you're no Elvis, can't ban %s</set>
 		<set name="help_available">^7Available commands: %s</set>
 		<set name="temp_ban_self">^7%s ^7Can't ban yourself newb</set>
