@@ -154,6 +154,101 @@ class Cmd_baninfo(Admin_functional_test):
         self.assertListEqual(['Mike is banned'], self.joe.message_history)
 
 
+class Cmd_putgroup(Admin_functional_test):
+
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        # GIVEN
+        self.init("""
+        <configuration>
+            <settings name="commands">
+                <set name="putgroup">admin</set>
+            </settings>
+            <settings name="messages">
+                <set name="group_unknown">Unkonwn group: %(group_name)s</set>
+                <set name="group_beyond_reach">You can't assign players to group %(group_name)s</set>
+            </settings>
+        </configuration>
+        """)
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.assertEqual('user', self.mike.maxGroup.keyword)
+
+    def test_nominal(self):
+        # WHEN
+        self.joe.clearMessageHistory()
+        self.joe.says('!putgroup mike fulladmin')
+        # THEN
+        self.assertListEqual(['Mike put in group Full Admin'], self.joe.message_history)
+        self.assertEqual('fulladmin', self.mike.maxGroup.keyword)
+
+    def test_non_existing_group(self):
+        # WHEN
+        self.joe.clearMessageHistory()
+        self.joe.says('!putgroup mike f00')
+        # THEN
+        self.assertListEqual(['Unkonwn group: f00'], self.joe.message_history)
+        self.assertEqual('user', self.mike.maxGroup.keyword)
+
+    def test_non_existing_player(self):
+        # WHEN
+        self.joe.clearMessageHistory()
+        self.joe.says('!putgroup f00 admin')
+        # THEN
+        self.assertListEqual(['No players found matching f00'], self.joe.message_history)
+        self.assertEqual('user', self.mike.maxGroup.keyword)
+
+    def test_no_parameter(self):
+        # WHEN
+        self.joe.clearMessageHistory()
+        self.joe.says('!putgroup')
+        # THEN
+        self.assertListEqual(['Invalid parameters'], self.joe.message_history)
+        self.assertEqual('user', self.mike.maxGroup.keyword)
+
+    def test_one_parameter(self):
+        # WHEN
+        self.joe.clearMessageHistory()
+        self.joe.says('!putgroup mike')
+        # THEN
+        self.assertListEqual(['Invalid parameters'], self.joe.message_history)
+        self.assertEqual('user', self.mike.maxGroup.keyword)
+
+    def test_too_many_parameters(self):
+        # WHEN
+        self.joe.clearMessageHistory()
+        self.joe.says('!putgroup mike fulladmin 5')
+        # THEN
+        self.assertListEqual(['Invalid parameters'], self.joe.message_history)
+        self.assertEqual('user', self.mike.maxGroup.keyword)
+
+    def test_already_in_group(self):
+        # WHEN
+        self.joe.clearMessageHistory()
+        self.joe.says('!putgroup mike user')
+        # THEN
+        self.assertListEqual(['Mike is already in group User'], self.joe.message_history)
+        self.assertEqual('user', self.mike.maxGroup.keyword)
+
+    def test_group_beyond_reach(self):
+        # GIVEN
+        jack = FakeClient(self.console, name="Jack", guid="jackguid", groupBits=40, team=TEAM_RED)
+        jack.connects(3)
+        self.assertEqual('fulladmin', jack.maxGroup.keyword)
+        # WHEN
+        jack.clearMessageHistory()
+        jack.says('!putgroup mike fulladmin')
+        # THEN
+        self.assertEqual('user', self.mike.maxGroup.keyword)
+        self.assertListEqual(["You can't assign players to group Full Admin"], jack.message_history)
+        # WHEN
+        jack.clearMessageHistory()
+        jack.says('!putgroup mike admin')
+        # THEN
+        self.assertEqual('admin', self.mike.maxGroup.keyword)
+        self.assertListEqual(['Mike put in group Admin'], jack.message_history)
+
+
 class Cmd_tempban(Admin_functional_test):
 
     def setUp(self):

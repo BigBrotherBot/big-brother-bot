@@ -1161,7 +1161,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """\
         <client> <group> - add a client to a group
         """
-        m = re.match('^(.{2,}) ([a-z0-9]+)$', data, re.I)
+        m = re.match('^(.{2,}) ([a-z][a-z0-9]+)$', data, re.I)
         if not m:
             client.message(self.getMessage('invalid_parameters'))
             return False
