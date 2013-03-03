@@ -117,6 +117,9 @@
 		<set name="baninfo_no_bans">^7%(name)s ^7has no active bans</set>
 		<set name="group_unknown">^7Group %(group_name)s does not exist</set>
 		<set name="group_beyond_reach">^7Group %(group_name)s is beyond your reach</set>
+		<set name="cleared_warnings">%(admin)s^7 has cleared %(player)s^7 of all tk-points and warnings</set>
+		<set name="cleared_warnings_for_all">%(admin)s^7 has cleared everyone's tk-points and warnings</set>
+		<set name="warn_too_fast">^7Only one warning per %(num_second)s seconds can be issued</set>
 		<set name="ban_denied">^7Hey %s^7, you're no Elvis, can't ban %s</set>
 		<set name="help_available">^7Available commands: %s</set>
 		<set name="temp_ban_self">^7%s ^7Can't ban yourself newb</set>

@@ -234,6 +234,9 @@ admins
 
 The :command:`!admins` command tells which admins are currently on the game server.
 
+.. rubric:: default required level
+
+*mod*
 
 .. rubric:: usage
 
@@ -263,12 +266,19 @@ admintest
 
 Alias for command `regtest`_
 
+.. rubric:: default required level
+
+*admin*
+
 
 aliases
 ^^^^^^^
 
 The :command:`!aliases` command shows at most 10 aliases of a player.
 
+.. rubric:: default required level
+
+*mod*
 
 .. rubric:: usage
 
@@ -278,6 +288,9 @@ If ``player`` is provided, display at most 10 aliases for that player.
 
 If ``player`` is not provided, display at most 10 of your aliases.
 
+.. rubric:: alias
+
+:command:`!alias`
 
 .. rubric:: customization
 
@@ -302,6 +315,10 @@ b3
 
 The :command:`!b3` command shows the B3 version and uptime.
 
+.. rubric:: default required level
+
+*mod*
+
 .. rubric:: usage
 
 The :command:`!b3` command takes no parameters.
@@ -312,6 +329,10 @@ ban
 
 The :command:`!ban` command temporarily bans a player for the duration set by `ban_duration`_.
 
+.. rubric:: default required level
+
+*fulladmin*
+
 .. rubric:: usage
 
 :command:`!ban <player> <reason>`
@@ -320,6 +341,10 @@ The :command:`!ban` command temporarily bans a player for the duration set by `b
 
 :command:`!ban <player>`
     ban a player not specifying a reason. This is allowed only for admins of group level higher than `noreason_level`_.
+
+.. rubric:: alias
+
+:command:`!b`
 
 .. rubric:: customization
 
@@ -335,9 +360,17 @@ banall
 The `!banall` command behaves like the `ban`_ command except it will ban multiple players whom name contains a given
 term.
 
+.. rubric:: default required level
+
+*senioradmin*
+
 .. rubric:: usage
 
 :command:`!banall <term> [<reason>]`
+
+.. rubric:: alias
+
+:command:`!ball`
 
 
 baninfo
@@ -345,9 +378,17 @@ baninfo
 
 The `!baninfo` command tells if a given player has active bans.
 
+.. rubric:: default required level
+
+*admin*
+
 .. rubric:: usage
 
 :command:`!baninfo <player>`
+
+.. rubric:: alias
+
+:command:`!bi`
 
 .. rubric:: customization
 
@@ -357,13 +398,77 @@ The messages that can be displayed are: *baninfo*, *baninfo_no_bans*.
 clientinfo
 ^^^^^^^^^^
 
-TODO
+The `!clientinfo` command shows the value of a given property for a player. The purpose of this command is more for
+debug purpose than anything else but it can be useful to retrieve info such as the player IP address or guid.
+
+.. rubric:: default required level
+
+*senioradmin*
+
+.. rubric:: usage
+
+:command:`!clientinfo <player> <field>` where *field* can be one of:
+    - guid
+    - pbid
+    - name
+    - exactName
+    - ip
+    - greeting
+    - autoLogin
+    - groupBits
+    - connected
+    - lastVisit
+    - timeAdd
+    - timeEdit
+    - data
+    - bans
+    - warnings
+    - groups
+    - aliases
+    - ip_addresses
+    - maskLevel
+    - maskGroup
+    - maskedGroup
+    - maskedLevel
+    - maxLevel
+    - maxGroup
+    - numWarnings
+    - lastWarning
+    - firstWarning
+    - numBans
+    - lastBan
+
+.. note:: Not all those fields will return human readable data.
 
 
 clear
 ^^^^^
 
-TODO
+The `!clear` command clears all active warnings and tk points (if the tk plugin is active) for a given player or for all
+in-game players.
+
+.. rubric:: default required level
+
+*senioradmin*
+
+.. rubric:: usage
+
+:command:`!clear`
+
+Clears active warnings and tk points for all in-game players
+
+:command:`!clear <player>`
+
+Clears active warnings and tk points for the player identified by *<player>*
+
+.. rubric:: alias
+
+:command:`!kiss`
+
+.. rubric:: customization
+
+The messages that can be displayed are: *cleared_warnings* and *cleared_warnings_for_all*.
+
 
 
 die

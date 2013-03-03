@@ -187,6 +187,9 @@ class AdminPlugin(b3.plugin.Plugin):
         "baninfo_no_bans": "^7%(name)s ^7has no active bans",
         "group_unknown": "^7Group %(group_name)s does not exist",
         "group_beyond_reach": "^7Group %(group_name)s is beyond your reach",
+        "cleared_warnings": "%(admin)s^7 has cleared %(player)s^7 of all tk-points and warnings",
+        "cleared_warnings_for_all": "%(admin)s^7 has cleared %(player)s^7 of all tk-points and warnings",
+        "warn_too_fast": "^7Only one warning per %(num_second)s seconds can be issued",
         "ban_denied": "^7Hey %s^7, you're no Elvis, can't ban %s",
         "help_available": "^7Available commands: %s",
         "temp_ban_self": "^7%s ^7Can't ban yourself newb",
@@ -233,6 +236,7 @@ class AdminPlugin(b3.plugin.Plugin):
     def onLoadConfig(self):
         self.load_config_warn_reasons()
         self.load_config_messages()
+        self.load_config_warn()
 
         try:
             self._noreason_level = self.console.getGroupLevel(self.config.get('settings', 'noreason_level'))
@@ -777,12 +781,12 @@ class AdminPlugin(b3.plugin.Plugin):
 
             if sclient:
                 self.clearAll(sclient, client)
-                self.console.say(
-                    '%s^7 has cleared %s^7 of all tk-points and warnings' % (client.exactName, sclient.exactName))
+                self.console.say(self.getMessage('cleared_warnings', {'admin': client.exactName,
+                                                                      'player': sclient.exactName}))
         else:
             for cid, c in self.console.clients.items():
                 self.clearAll(c, client)
-            self.console.say('%s^7 has cleared everyones tk-points and warnings' % client.exactName)
+            self.console.say(self.getMessage('cleared_warnings_for_all', {'admin': client.exactName}))
 
     def clearAll(self, sclient, client=None):
         for w in sclient.warnings:
@@ -1751,7 +1755,7 @@ class AdminPlugin(b3.plugin.Plugin):
         m = self.parseUserCmd(data)
         if not m:
             client.message(self.getMessage('invalid_parameters'))
-            return False
+            return
 
         cid, keyword = m
         sclient = self.findClientPrompt(cid, client)
@@ -1761,11 +1765,9 @@ class AdminPlugin(b3.plugin.Plugin):
             elif sclient.maxLevel >= client.maxLevel:
                 client.message(self.getMessage('warn_denied', client.exactName, sclient.exactName))
             else:
-                if sclient.var(self, 'warnTime').toInt() > self.console.time() - self.config.getint('warn',
-                                                                                                    'warn_delay'):
-                    client.message(
-                        '^7Only one warning per %s seconds can be issued' % self.config.getint('warn', 'warn_delay'))
-                    return False
+                if sclient.var(self, 'warnTime').toInt() > self.console.time() - self.warn_delay:
+                    client.message(self.getMessage('warn_too_fast', {'num_second': self.warn_delay}))
+                    return
 
                 self.warnClient(sclient, keyword, client)
 
@@ -1816,9 +1818,9 @@ class AdminPlugin(b3.plugin.Plugin):
                 admin.message(msg)
         else:
             self.console.say(self.config.getTextTemplate('warn', 'message', warnings=warnings, reason=warning))
-        if warnings >= self.config.getint('warn', 'instant_kick_num'):
+        if warnings >= self.warn_instant_kick_num:
             self.warnKick(sclient, admin)
-        elif warnings >= self.config.getint('warn', 'alert_kick_num'):
+        elif warnings >= self.warn_alert_kick_num:
             duration = functions.minutesStr(self.warnKickDuration(sclient))
 
             warn = sclient.lastWarning
@@ -2218,6 +2220,47 @@ class AdminPlugin(b3.plugin.Plugin):
                          % self._messages['regme_confirmation'])
         except ValueError, err:
             self.error("message 'regme_confirmation' from config file is invalid: %s. Using default" % err)
+
+    def load_config_warn(self):
+        """
+        load section 'warn' from config.
+        """
+        self.warn_delay = 15
+        try:
+            raw_data = self.config.getint('warn', 'warn_delay')
+            if raw_data < 0:
+                raise ValueError("can't be less than 0")
+            self.warn_delay = raw_data
+        except NoOptionError:
+            self.warning("missing 'warn_delay' in section 'warn' from config file. Using default %r" % self.warn_delay)
+        except ValueError, err:
+            self.error("message 'warn_delay' in section 'warn' from config file is invalid: %s. Using default" % err)
+
+        self.warn_instant_kick_num = 5
+        try:
+            raw_data = self.config.getint('warn', 'instant_kick_num')
+            if raw_data < 0:
+                raise ValueError("can't be less than 0")
+            self.warn_instant_kick_num = raw_data
+        except NoOptionError:
+            self.warning("missing 'instant_kick_num' in section 'warn' from config file. Using default %r" %
+                         self.warn_instant_kick_num)
+        except ValueError, err:
+            self.error("message 'instant_kick_num' in section 'warn' from config file is invalid: %s. Using default" %
+                       err)
+
+        self.warn_alert_kick_num = 3
+        try:
+            raw_data = self.config.getint('warn', 'alert_kick_num')
+            if raw_data < 0:
+                raise ValueError("can't be less than 0")
+            self.warn_alert_kick_num = raw_data
+        except NoOptionError:
+            self.warning("missing 'alert_kick_num' in section 'warn' from config file. Using default %r" %
+                         self.warn_alert_kick_num)
+        except ValueError, err:
+            self.error("message 'alert_kick_num' in section 'warn' from config file is invalid: %s. Using default" %
+                       err)
 
 
     def load_config_warn_reasons(self):

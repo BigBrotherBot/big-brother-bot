@@ -1145,6 +1145,87 @@ class Cmd_spams(Admin_functional_test):
 
 
 @patch("time.sleep")
+class Cmd_warn_and_clear(Admin_functional_test):
+
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        # GIVEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="warn">user</set>
+                <set name="clear">user</set>
+            </settings>
+            <settings name="messages">
+                <set name="warn_too_fast">Only one warning every %(num_second)s seconds can be given</set>
+                <set name="warn_self">%s, you cannot give yourself a warning</set>
+                <set name="warn_denied">%s, %s is a higher level admin, you can't warn him</set>
+                <set name="cleared_warnings">%(admin)s has cleared %(player)s of all warnings</set>
+                <set name="cleared_warnings_for_all">%(admin)s has cleared everyone's warnings and tk points</set>
+            </settings>
+            <settings name="warn">
+                <set name="message">^1WARNING^7 [^3$warnings^7]: $reason</set>
+            </settings>
+        </configuration>""")
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.say_patcher = patch.object(self.console, "say")
+        self.say_mock = self.say_patcher.start()
+        self.mike_warn_patcher = patch.object(self.mike, "warn", wraps=self.mike.warn)
+        self.mike_warn_mock = self.mike_warn_patcher.start()
+
+    def tearDown(self):
+        Admin_functional_test.tearDown(self)
+        self.say_patcher.stop()
+        self.mike_warn_patcher.stop()
+
+    def test_warn(self, sleep_mock):
+        # GIVEN
+        self.joe.says('!warn mike')
+        # THEN
+        self.assertEqual(1, self.mike.numWarnings)
+        self.assertListEqual([call(60.0, '^7behave yourself', None, self.joe, '')], self.mike_warn_mock.mock_calls)
+        self.assertListEqual([call('^1WARNING^7 [^31^7]: Mike^7^7, ^7behave yourself')], self.say_mock.mock_calls)
+        self.assertListEqual([], self.joe.message_history)
+        self.assertListEqual([], self.mike.message_history)
+
+    def test_warn_self(self, sleep_mock):
+        # GIVEN
+        self.joe.says('!warn joe')
+        # THEN
+        self.assertEqual(0, self.joe.numWarnings)
+        self.assertListEqual(['Joe, you cannot give yourself a warning'], self.joe.message_history)
+
+    def test_warn_denied(self, sleep_mock):
+        # GIVEN
+        self.mike.says('!warn joe')
+        # THEN
+        self.assertEqual(0, self.joe.numWarnings)
+        self.assertListEqual(["Mike, Joe is a higher level admin, you can't warn him"], self.mike.message_history)
+
+    def test_clear_player(self, sleep_mock):
+        # GIVEN
+        self.joe.says('!warn mike')
+        self.assertEqual(1, self.mike.numWarnings)
+        # WHEN
+        self.joe.says('!clear mike')
+        # THEN
+        self.assertListEqual([call('^1WARNING^7 [^31^7]: Mike^7^7, ^7behave yourself'),
+                              call('Joe^7 has cleared Mike^7 of all warnings')], self.say_mock.mock_calls)
+        self.assertEqual(0, self.mike.numWarnings)
+
+    def test_clear_player(self, sleep_mock):
+        # GIVEN
+        self.joe.says('!warn mike')
+        self.assertEqual(1, self.mike.numWarnings)
+        # WHEN
+        self.joe.says('!clear')
+        # THEN
+        self.assertListEqual([call('^1WARNING^7 [^31^7]: Mike^7^7, ^7behave yourself'),
+                              call("Joe^7 has cleared everyone's warnings and tk points")], self.say_mock.mock_calls)
+        self.assertEqual(0, self.mike.numWarnings)
+
+
+@patch("time.sleep")
 class Test_warn_command_abusers(Admin_functional_test):
 
     def setUp(self):
