@@ -181,6 +181,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
     _default_messages = {
         "invalid_parameters": "^7Invalid parameters",
+        "error_no_reason": "^1ERROR: ^7You must supply a reason",
         "ban_denied": "^7Hey %s^7, you're no Elvis, can't ban %s",
         "help_available": "^7Available commands: %s",
         "temp_ban_self": "^7%s ^7Can't ban yourself newb",
@@ -1385,7 +1386,7 @@ class AdminPlugin(b3.plugin.Plugin):
         reason = self.getReason(keyword)
 
         if not reason and client.maxLevel < self._noreason_level:
-            client.message('^1ERROR: ^7You must supply a reason')
+            client.message(self.getMessage('error_no_reason'))
             return False
 
         sclient = self.findClientPrompt(cid, client)
@@ -1420,7 +1421,7 @@ class AdminPlugin(b3.plugin.Plugin):
         reason = self.getReason(keyword)
 
         if not reason and client.maxLevel < self._noreason_level:
-            client.message('^1ERROR: ^7You must supply a reason')
+            client.message(self.getMessage('error_no_reason'))
             return False
 
         matches = self.console.clients.getByMagic(cid)
@@ -1445,7 +1446,7 @@ class AdminPlugin(b3.plugin.Plugin):
         reason = self.getReason(keyword)
 
         if not reason and client.maxLevel < self._noreason_level:
-            client.message('^1ERROR: ^7You must supply a reason')
+            client.message(self.getMessage('error_no_reason'))
             return False
 
         sclient = self.findClientPrompt(cid, client)
@@ -1484,7 +1485,7 @@ class AdminPlugin(b3.plugin.Plugin):
         reason = self.getReason(keyword)
 
         if not reason and client.maxLevel < self._noreason_level:
-            client.message('^1ERROR: ^7You must supply a reason')
+            client.message(self.getMessage('error_no_reason'))
             return False
 
         matches = self.console.clients.getByMagic(cid)
@@ -1513,7 +1514,7 @@ class AdminPlugin(b3.plugin.Plugin):
         reason = self.getReason(keyword)
 
         if not reason and client.maxLevel < self._noreason_level:
-            client.message('^1ERROR: ^7You must supply a reason')
+            client.message(self.getMessage('error_no_reason'))
             return False
 
         sclient = self.findClientPrompt(cid, client)
@@ -1550,7 +1551,7 @@ class AdminPlugin(b3.plugin.Plugin):
         reason = self.getReason(keyword)
 
         if not reason and client.maxLevel < self._noreason_level:
-            client.message('^1ERROR: ^7You must supply a reason')
+            client.message(self.getMessage('error_no_reason'))
             return False
 
         sclient = self.findClientPrompt(cid, client)
@@ -1589,7 +1590,7 @@ class AdminPlugin(b3.plugin.Plugin):
         reason = self.getReason(keyword)
 
         if not reason and client.maxLevel < self._noreason_level:
-            client.message('^1ERROR: ^7You must supply a reason')
+            client.message(self.getMessage('error_no_reason'))
             return False
 
         duration = self.config.getDuration('settings', 'ban_duration')
@@ -2151,7 +2152,7 @@ class AdminPlugin(b3.plugin.Plugin):
         reason = self.getReason(keyword)
 
         if not reason and client.maxLevel < self._noreason_level:
-            client.message('^1ERROR: ^7You must supply a reason')
+            client.message(self.getMessage('error_no_reason'))
             return False
         elif not duration:
             client.message('^7You must supply a duration to ban for')
