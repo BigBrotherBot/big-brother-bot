@@ -309,7 +309,7 @@ class CommandTestCase(Admin_TestCase):
         self.mock_client.exactName = "MockClient"
         self.mock_command = Mock(spec=Command, name='cmd')
 
-        self.p.getMessage = Mock(return_value='')
+        self.p.getMessage = Mock(wraps=self.p.getMessage)
 
 
 class Test_cmd_iamgod(CommandTestCase):

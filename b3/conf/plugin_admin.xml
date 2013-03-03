@@ -110,6 +110,7 @@
         <set name="announce_registration">yes</set>
 	</settings>
 	<settings name="messages">
+		<set name="invalid_parameters">^7Invalid parameters</set>
 		<set name="ban_denied">^7Hey %s^7, you're no Elvis, can't ban %s</set>
 		<set name="help_available">^7Available commands: %s</set>
 		<set name="temp_ban_self">^7%s ^7Can't ban yourself newb</set>

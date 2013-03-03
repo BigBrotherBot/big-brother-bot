@@ -180,6 +180,7 @@ class AdminPlugin(b3.plugin.Plugin):
     _admins_level = 20
 
     _default_messages = {
+        "invalid_parameters": "^7Invalid parameters",
         "ban_denied": "^7Hey %s^7, you're no Elvis, can't ban %s",
         "help_available": "^7Available commands: %s",
         "temp_ban_self": "^7%s ^7Can't ban yourself newb",
@@ -713,7 +714,7 @@ class AdminPlugin(b3.plugin.Plugin):
         m = self.parseUserCmd(data)
 
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
         elif m[1] is None:
             groupName = m[0]
@@ -1089,7 +1090,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
         m = self.parseUserCmd(data)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         cid = m[0]
@@ -1121,7 +1122,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
         m = self.parseUserCmd(data)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         cid = m[0]
@@ -1156,7 +1157,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = re.match('^(.{2,}) ([a-z0-9]+)$', data, re.I)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         cid, keyword = m.groups()
@@ -1196,7 +1197,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = re.match('^([^ ]{2,}) ([a-z]+)$', cid)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         cid, keyword = m.groups()
@@ -1275,7 +1276,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
         m = self.parseUserCmd(data)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         data = m[0]
@@ -1301,7 +1302,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
         m = re.match('^(.{1,})$', data)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         clients = self.console.clients.lookupByName(data)
@@ -1343,7 +1344,7 @@ class AdminPlugin(b3.plugin.Plugin):
         m = self.parseUserCmd(data)
 
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         cid = m[0]
@@ -1358,7 +1359,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = self.parseUserCmd(data, True)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         cid, field = m
@@ -1376,7 +1377,8 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = self.parseUserCmd(data)
         if not m:
-            client.message('^7Invalid parameters')
+            msg = self.getMessage('invalid_parameters')
+            client.message(msg)
             return False
 
         cid, keyword = m
@@ -1411,7 +1413,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = self.parseUserCmd(data)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         cid, keyword = m
@@ -1436,7 +1438,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = self.parseUserCmd(data)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         cid, keyword = m
@@ -1475,7 +1477,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = self.parseUserCmd(data)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         cid, keyword = m
@@ -1504,7 +1506,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = self.parseUserCmd(data)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         cid, keyword = m
@@ -1541,7 +1543,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = self.parseUserCmd(data)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         cid, keyword = m
@@ -1580,7 +1582,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = self.parseUserCmd(data)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         cid, keyword = m
@@ -1632,7 +1634,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
         m = self.parseUserCmd(data)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         sclient = self.findClientPrompt(m[0], client)
@@ -1650,7 +1652,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
         m = self.parseUserCmd(data)
         if not m or m[1] == '':
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         sclient = self.findClientPrompt(m[0], client)
@@ -1663,7 +1665,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = self.parseUserCmd(data)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         cid, reason = m
@@ -1689,7 +1691,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = self.parseUserCmd(data)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         cid = m[0]
@@ -1724,7 +1726,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = self.parseUserCmd(data)
         if not m or m[0] == '' or m[1] == '':
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         cid, notice = m
@@ -1742,7 +1744,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = self.parseUserCmd(data)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         cid, keyword = m
@@ -1893,7 +1895,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = self.parseUserCmd(data)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         sclient = self.findClientPrompt(m[0], client)
@@ -1923,7 +1925,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = self.parseUserCmd(data)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         sclient = self.findClientPrompt(m[0], client)
@@ -1962,7 +1964,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = self.parseUserCmd(data)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         sclient = self.findClientPrompt(m[0], client)
@@ -2022,7 +2024,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = re.match('^([0-9]+[a-z]*)$', data)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         duration = functions.time2minutes(data)
@@ -2039,7 +2041,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         m = re.match('^([^ ]{2,})$', data)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         keyword = m.group(1)
@@ -2123,13 +2125,13 @@ class AdminPlugin(b3.plugin.Plugin):
         m = self.parseUserCmd(data)
 
         if not m or not m[1]:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         cid = m[0]
         m = re.match('^([0-9]+[dwhsm]*)(?:\s(.+))?$', m[1], re.I)
         if not m:
-            client.message('^7Invalid parameters')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         duration, keyword = m.groups()
@@ -2180,7 +2182,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
         m = self.parseUserCmd(data)
         if not m:
-            client.message('^7Invalid parameters, you must supply a player name')
+            client.message(self.getMessage('invalid_parameters'))
             return False
 
         if m[0] == 'b3':
