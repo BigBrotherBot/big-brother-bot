@@ -491,7 +491,7 @@ class Test_cmd_kick(CommandTestCase):
         self.mock_client.maxLevel = 5
         self.p.findClientPrompt = Mock(return_value=foo_player)
         self.kick('foo')
-        self.mock_client.message.assert_called_once_with('^7%s ^7is a masked higher level player, can\'t kick' % foo_player.exactName)
+        self.mock_client.message.assert_called_once_with('^7%s ^7is a masked higher level player, action cancelled' % foo_player.exactName)
         assert not self.mock_client.kick.called
 
     def test_nominal_no_reason(self):
@@ -576,7 +576,7 @@ class Test_cmd_spank(CommandTestCase):
         self.mock_client.maxLevel = 5
         self.p.findClientPrompt = Mock(return_value=foo_player)
         self.spank('foo')
-        self.mock_client.message.assert_called_once_with('^7%s ^7is a masked higher level player, can\'t spank' % foo_player.exactName)
+        self.mock_client.message.assert_called_once_with('^7%s ^7is a masked higher level player, action cancelled' % foo_player.exactName)
         assert not self.mock_client.kick.called
 
     def test_nominal_no_reason(self):
@@ -662,7 +662,7 @@ class Test_cmd_permban(CommandTestCase):
         self.mock_client.maxLevel = 5
         self.p.findClientPrompt = Mock(return_value=foo_player)
         self.permban('foo')
-        self.mock_client.message.assert_called_once_with('^7%s ^7is a masked higher level player, can\'t ban' % foo_player.exactName)
+        self.mock_client.message.assert_called_once_with('^7%s ^7is a masked higher level player, action cancelled' % foo_player.exactName)
         assert not self.mock_client.ban.called
 
     def test_nominal_no_reason(self):
@@ -764,7 +764,7 @@ class Test_cmd_tempban(CommandTestCase):
         self.mock_client.maxLevel = 5
         self.p.findClientPrompt = Mock(return_value=foo_player)
         self.tempban('foo 3h')
-        self.mock_client.message.assert_called_once_with('^7%s ^7is a masked higher level player, can\'t temp ban' % foo_player.exactName)
+        self.mock_client.message.assert_called_once_with('^7%s ^7is a masked higher level player, action cancelled' % foo_player.exactName)
         assert not self.mock_client.tempban.called
 
     def test_nominal_no_reason(self):

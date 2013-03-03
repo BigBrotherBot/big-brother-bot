@@ -182,6 +182,7 @@ class AdminPlugin(b3.plugin.Plugin):
     _default_messages = {
         "invalid_parameters": "^7Invalid parameters",
         "error_no_reason": "^1ERROR: ^7You must supply a reason",
+        "action_denied_masked": "^7%(name)s ^7is a masked higher level player, action cancelled",
         "ban_denied": "^7Hey %s^7, you're no Elvis, can't ban %s",
         "help_available": "^7Available commands: %s",
         "temp_ban_self": "^7%s ^7Can't ban yourself newb",
@@ -1396,7 +1397,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 return True
             elif sclient.maxLevel >= client.maxLevel:
                 if sclient.maskGroup:
-                    client.message('^7%s ^7is a masked higher level player, can\'t kick' % sclient.exactName)
+                    client.message(self.getMessage('action_denied_masked', {'name': sclient.exactName}))
                 else:
                     self.console.say(
                         self.getMessage('kick_denied', sclient.exactName, client.exactName, sclient.exactName))
@@ -1456,7 +1457,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 return True
             elif sclient.maxLevel >= client.maxLevel:
                 if sclient.maskGroup:
-                    client.message('^7%s ^7is a masked higher level player, can\'t spank' % sclient.exactName)
+                    client.message(self.getMessage('action_denied_masked', {'name': sclient.exactName}))
                 else:
                     self.console.say(
                         self.getMessage('kick_denied', sclient.exactName, client.exactName, sclient.exactName))
@@ -1524,7 +1525,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 return True
             elif sclient.maxLevel >= client.maxLevel:
                 if sclient.maskGroup:
-                    client.message('^7%s ^7is a masked higher level player, can\'t ban' % sclient.exactName)
+                    client.message(self.getMessage('action_denied_masked', {'name': sclient.exactName}))
                 else:
                     self.console.say(self.getMessage('ban_denied', client.exactName, sclient.exactName))
                 return True
@@ -1561,7 +1562,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 return True
             elif sclient.maxLevel >= client.maxLevel:
                 if sclient.maskGroup:
-                    client.message('^7%s ^7is a masked higher level player, can\'t ban' % client.exactName)
+                    client.message(self.getMessage('action_denied_masked', {'name': sclient.exactName}))
                 else:
                     self.console.say(self.getMessage('ban_denied', client.exactName, sclient.exactName))
                 return True
@@ -2165,7 +2166,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 return True
             elif sclient.maxLevel >= client.maxLevel:
                 if sclient.maskGroup:
-                    client.message('^7%s ^7is a masked higher level player, can\'t temp ban' % sclient.exactName)
+                    client.message(self.getMessage('action_denied_masked', {'name': sclient.exactName}))
                 else:
                     self.console.say(self.getMessage('temp_ban_denied', client.exactName, sclient.exactName))
                 return True
