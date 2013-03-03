@@ -59,6 +59,101 @@ class Admin_functional_test(B3TestCase):
         self.mike = FakeClient(self.console, name="Mike", exactName="Mike", guid="mikeguid", groupBits=1, team=TEAM_BLUE)
 
 
+class Cmd_baninfo(Admin_functional_test):
+
+    def test_no_parameter(self):
+        # GIVEN
+        self.init()
+        self.joe.connects(0)
+        # WHEN
+        self.joe.says('!baninfo')
+        # THEN
+        self.assertListEqual(['Invalid parameters'], self.joe.message_history)
+
+    def test_no_ban(self):
+        # GIVEN
+        self.init()
+        self.joe.connects(0)
+        self.mike.connects(1)
+        # WHEN
+        self.joe.says('!baninfo mike')
+        # THEN
+        self.assertListEqual(['Mike has no active bans'], self.joe.message_history)
+
+    def test_perm_ban(self):
+        # GIVEN
+        self.init()
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.joe.says('!permban mike f00')
+        # WHEN
+        self.joe.says('!baninfo @%s' % self.mike.id)
+        # THEN
+        self.assertListEqual(['Mike has 1 active bans'], self.joe.message_history)
+
+    def test_temp_ban(self):
+        # GIVEN
+        self.init()
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.joe.says('!ban mike f00')
+        # WHEN
+        self.joe.says('!baninfo @%s' % self.mike.id)
+        # THEN
+        self.assertListEqual(['Mike has 1 active bans'], self.joe.message_history)
+
+    def test_multiple_bans(self):
+        # GIVEN
+        self.init()
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.joe.says('!ban @%s f00' % self.mike.id)
+        self.joe.says('!permban @%s f00' % self.mike.id)
+        # WHEN
+        self.joe.says('!baninfo @%s' % self.mike.id)
+        # THEN
+        self.assertListEqual(['Mike has 2 active bans'], self.joe.message_history)
+
+    def test_no_ban_custom_message(self):
+        # WHEN
+        self.init("""
+        <configuration>
+            <settings name="commands">
+                <set name="baninfo">mod</set>
+            </settings>
+            <settings name="messages">
+                <set name="baninfo_no_bans">%(name)s is not banned</set>
+            </settings>
+        </configuration>
+        """)
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.joe.says('!baninfo mike')
+        # THEN
+        self.assertListEqual(['Mike is not banned'], self.joe.message_history)
+
+    def test_perm_ban_custom_message(self):
+        # GIVEN
+        self.init("""
+        <configuration>
+            <settings name="commands">
+                <set name="permban">fulladmin</set>
+                <set name="baninfo">mod</set>
+            </settings>
+            <settings name="messages">
+                <set name="baninfo">%(name)s is banned</set>
+            </settings>
+        </configuration>
+        """)
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.joe.says('!permban mike f00')
+        # WHEN
+        self.joe.says('!baninfo @%s' % self.mike.id)
+        # THEN
+        self.assertListEqual(['Mike is banned'], self.joe.message_history)
+
+
 class Cmd_tempban(Admin_functional_test):
 
     def setUp(self):
