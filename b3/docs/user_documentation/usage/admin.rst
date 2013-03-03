@@ -24,11 +24,11 @@ be run by users that have the minimum level needed to use the command.
 
 B3 has 8 user groups, each serving a different purpose. Several commands are available to assign players to group :
 
-- register
-- makereg
-- unreg
-- putgroup
-- ungroup
+- `register`_
+- `makereg`_
+- `unreg`_
+- `putgroup`_
+- `ungroup`_
 
 guest / level 0
 ^^^^^^^^^^^^^^^
@@ -300,26 +300,58 @@ The :command:`!aliases` command response can be customized in the admin plugin c
 b3
 ^^
 
-TODO
+The :command:`!b3` command shows the B3 version and uptime.
+
+.. rubric:: usage
+
+The :command:`!b3` command takes no parameters.
 
 
 ban
 ^^^
 
-TODO
+The :command:`!ban` command temporarily bans a player for the duration set by `ban_duration`_.
+
+.. rubric:: usage
+
+:command:`!ban <player> <reason>`
+    ban a player specifying a reason. The reason can be any text of your choice or a reference to a reason shortcut as
+    defined in the *warn_reasons* section of the admin config file.
+
+:command:`!ban <player>`
+    ban a player not specifying a reason. This is allowed only for admins of group level higher than `noreason_level`_.
+
+.. rubric:: customization
+
+The messages that can be displayed are: *invalid_parameters*, *error_no_reason*, *ban_self*, *action_denied_masked*
+and *ban_denied*.
+
+The ban duration can be changed in the plugin config file at `ban_duration`_.
 
 
 banall
 ^^^^^^
 
-TODO
+The `!banall` command behaves like the `ban`_ command except it will ban multiple players whom name contains a given
+term.
+
+.. rubric:: usage
+
+:command:`!banall <term> [<reason>]`
 
 
 baninfo
 ^^^^^^^
 
-TODO
+The `!baninfo` command tells if a given player has active bans.
 
+.. rubric:: usage
+
+:command:`!baninfo <player>`
+
+.. rubric:: customization
+
+The messages that can be displayed are: *baninfo*, *baninfo_no_bans*.
 
 
 clientinfo
