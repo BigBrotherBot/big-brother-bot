@@ -21,3 +21,4 @@ Contents:
    spamcontrol.rst
    pingwatch.rst
    punkbuster.rst
+   misc.rst

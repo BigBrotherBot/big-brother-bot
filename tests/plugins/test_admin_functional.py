@@ -59,6 +59,196 @@ class Admin_functional_test(B3TestCase):
         self.mike = FakeClient(self.console, name="Mike", exactName="Mike", guid="mikeguid", groupBits=1, team=TEAM_BLUE)
 
 
+class Cmd_baninfo(Admin_functional_test):
+
+    def test_no_parameter(self):
+        # GIVEN
+        self.init()
+        self.joe.connects(0)
+        # WHEN
+        self.joe.says('!baninfo')
+        # THEN
+        self.assertListEqual(['Invalid parameters'], self.joe.message_history)
+
+    def test_no_ban(self):
+        # GIVEN
+        self.init()
+        self.joe.connects(0)
+        self.mike.connects(1)
+        # WHEN
+        self.joe.says('!baninfo mike')
+        # THEN
+        self.assertListEqual(['Mike has no active bans'], self.joe.message_history)
+
+    def test_perm_ban(self):
+        # GIVEN
+        self.init()
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.joe.says('!permban mike f00')
+        # WHEN
+        self.joe.says('!baninfo @%s' % self.mike.id)
+        # THEN
+        self.assertListEqual(['Mike has 1 active bans'], self.joe.message_history)
+
+    def test_temp_ban(self):
+        # GIVEN
+        self.init()
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.joe.says('!ban mike f00')
+        # WHEN
+        self.joe.says('!baninfo @%s' % self.mike.id)
+        # THEN
+        self.assertListEqual(['Mike has 1 active bans'], self.joe.message_history)
+
+    def test_multiple_bans(self):
+        # GIVEN
+        self.init()
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.joe.says('!ban @%s f00' % self.mike.id)
+        self.joe.says('!permban @%s f00' % self.mike.id)
+        # WHEN
+        self.joe.says('!baninfo @%s' % self.mike.id)
+        # THEN
+        self.assertListEqual(['Mike has 2 active bans'], self.joe.message_history)
+
+    def test_no_ban_custom_message(self):
+        # WHEN
+        self.init("""
+        <configuration>
+            <settings name="commands">
+                <set name="baninfo">mod</set>
+            </settings>
+            <settings name="messages">
+                <set name="baninfo_no_bans">%(name)s is not banned</set>
+            </settings>
+        </configuration>
+        """)
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.joe.says('!baninfo mike')
+        # THEN
+        self.assertListEqual(['Mike is not banned'], self.joe.message_history)
+
+    def test_perm_ban_custom_message(self):
+        # GIVEN
+        self.init("""
+        <configuration>
+            <settings name="commands">
+                <set name="permban">fulladmin</set>
+                <set name="baninfo">mod</set>
+            </settings>
+            <settings name="messages">
+                <set name="baninfo">%(name)s is banned</set>
+            </settings>
+        </configuration>
+        """)
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.joe.says('!permban mike f00')
+        # WHEN
+        self.joe.says('!baninfo @%s' % self.mike.id)
+        # THEN
+        self.assertListEqual(['Mike is banned'], self.joe.message_history)
+
+
+class Cmd_putgroup(Admin_functional_test):
+
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        # GIVEN
+        self.init("""
+        <configuration>
+            <settings name="commands">
+                <set name="putgroup">admin</set>
+            </settings>
+            <settings name="messages">
+                <set name="group_unknown">Unkonwn group: %(group_name)s</set>
+                <set name="group_beyond_reach">You can't assign players to group %(group_name)s</set>
+            </settings>
+        </configuration>
+        """)
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.assertEqual('user', self.mike.maxGroup.keyword)
+
+    def test_nominal(self):
+        # WHEN
+        self.joe.clearMessageHistory()
+        self.joe.says('!putgroup mike fulladmin')
+        # THEN
+        self.assertListEqual(['Mike put in group Full Admin'], self.joe.message_history)
+        self.assertEqual('fulladmin', self.mike.maxGroup.keyword)
+
+    def test_non_existing_group(self):
+        # WHEN
+        self.joe.clearMessageHistory()
+        self.joe.says('!putgroup mike f00')
+        # THEN
+        self.assertListEqual(['Unkonwn group: f00'], self.joe.message_history)
+        self.assertEqual('user', self.mike.maxGroup.keyword)
+
+    def test_non_existing_player(self):
+        # WHEN
+        self.joe.clearMessageHistory()
+        self.joe.says('!putgroup f00 admin')
+        # THEN
+        self.assertListEqual(['No players found matching f00'], self.joe.message_history)
+        self.assertEqual('user', self.mike.maxGroup.keyword)
+
+    def test_no_parameter(self):
+        # WHEN
+        self.joe.clearMessageHistory()
+        self.joe.says('!putgroup')
+        # THEN
+        self.assertListEqual(['Invalid parameters'], self.joe.message_history)
+        self.assertEqual('user', self.mike.maxGroup.keyword)
+
+    def test_one_parameter(self):
+        # WHEN
+        self.joe.clearMessageHistory()
+        self.joe.says('!putgroup mike')
+        # THEN
+        self.assertListEqual(['Invalid parameters'], self.joe.message_history)
+        self.assertEqual('user', self.mike.maxGroup.keyword)
+
+    def test_too_many_parameters(self):
+        # WHEN
+        self.joe.clearMessageHistory()
+        self.joe.says('!putgroup mike fulladmin 5')
+        # THEN
+        self.assertListEqual(['Invalid parameters'], self.joe.message_history)
+        self.assertEqual('user', self.mike.maxGroup.keyword)
+
+    def test_already_in_group(self):
+        # WHEN
+        self.joe.clearMessageHistory()
+        self.joe.says('!putgroup mike user')
+        # THEN
+        self.assertListEqual(['Mike is already in group User'], self.joe.message_history)
+        self.assertEqual('user', self.mike.maxGroup.keyword)
+
+    def test_group_beyond_reach(self):
+        # GIVEN
+        jack = FakeClient(self.console, name="Jack", guid="jackguid", groupBits=40, team=TEAM_RED)
+        jack.connects(3)
+        self.assertEqual('fulladmin', jack.maxGroup.keyword)
+        # WHEN
+        jack.clearMessageHistory()
+        jack.says('!putgroup mike fulladmin')
+        # THEN
+        self.assertEqual('user', self.mike.maxGroup.keyword)
+        self.assertListEqual(["You can't assign players to group Full Admin"], jack.message_history)
+        # WHEN
+        jack.clearMessageHistory()
+        jack.says('!putgroup mike admin')
+        # THEN
+        self.assertEqual('admin', self.mike.maxGroup.keyword)
+        self.assertListEqual(['Mike put in group Admin'], jack.message_history)
+
+
 class Cmd_tempban(Admin_functional_test):
 
     def setUp(self):
@@ -616,22 +806,105 @@ class Test_config(Admin_functional_test):
 
 
 class Cmd_admins(Admin_functional_test):
-    def setUp(self):
-        Admin_functional_test.setUp(self)
-        self.init()
 
-    def test_nominal(self):
-        self.joe.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
+    def test_no_admin(self):
+        # GIVEN
+        self.init("""
+        <configuration>
+            <settings name="commands">
+                <set name="admins">user</set>
+            </settings>
+        </configuration>
+        """)
+        self.mike.connects(0)
+        # only user Mike is connected
+        # WHEN
+        self.mike.clearMessageHistory()
+        self.mike.says('!admins')
+        # THEN
+        self.assertListEqual(['There are no admins online'], self.mike.message_history)
+
+    def test_no_admin_custom_message(self):
+        # GIVEN
+        self.init("""
+        <configuration>
+            <settings name="commands">
+                <set name="admins">user</set>
+            </settings>
+            <settings name="messages">
+                <set name="no_admins">no admins</set>
+            </settings>
+        </configuration>
+        """)
+        self.mike.connects(0)
+        # only user Mike is connected
+        # WHEN
+        self.mike.clearMessageHistory()
+        self.mike.says('!admins')
+        # THEN
+        self.assertListEqual(['no admins'], self.mike.message_history)
+
+    def test_no_admin_blank_message(self):
+        # GIVEN
+        self.init("""
+        <configuration>
+            <settings name="commands">
+                <set name="admins">user</set>
+            </settings>
+            <settings name="messages">
+                <set name="no_admins"></set>
+            </settings>
+        </configuration>
+        """)
+        self.mike.connects(0)
+        # only user Mike is connected
+        # WHEN
+        self.mike.clearMessageHistory()
+        self.mike.says('!admins')
+        # THEN
+        self.assertListEqual([], self.mike.message_history)
+
+    def test_one_admin(self):
+        # GIVEN
+        self.init()
         self.joe.connects(0)
         # only superadmin joe is connected
+        # WHEN
+        self.joe.clearMessageHistory()
         self.joe.says('!admins')
-        self.joe.message.assert_called_with('^7Admins online: Joe^7^7 [^3100^7]')
-        # introducing mike (senioradmin)
+        # THEN
+        self.assertListEqual(['Admins online: Joe [100]'], self.joe.message_history)
+
+    def test_one_admin_custom_message(self):
+        # GIVEN
+        self.init("""
+        <configuration>
+            <settings name="commands">
+                <set name="admins">mod</set>
+            </settings>
+            <settings name="messages">
+                <set name="admins">online admins: %s</set>
+            </settings>
+        </configuration>
+        """)
+        self.joe.connects(0)
+        # WHEN
+        self.joe.clearMessageHistory()
+        self.joe.says('!admins')
+        # THEN
+        self.assertListEqual(['online admins: Joe [100]'], self.joe.message_history)
+
+    def test_two_admins(self):
+        # GIVEN
+        self.init()
+        self.joe.connects(0)
         self.mike.connects(1)
         self.joe.says('!putgroup mike senioradmin')
-        # we know have 2 admins connected
+        # WHEN
+        self.joe.clearMessageHistory()
         self.joe.says('!admins')
-        self.joe.message.assert_called_with('^7Admins online: Joe^7^7 [^3100^7], Mike^7^7 [^380^7]')
+        # THEN
+        self.assertListEqual(['Admins online: Joe [100], Mike [80]'], self.joe.message_history)
 
 
 class Cmd_regulars(Admin_functional_test):
@@ -869,6 +1142,87 @@ class Cmd_spams(Admin_functional_test):
         self.joe.says('!spams')
         # THEN
         self.assertListEqual(['Spamages: bar, rule2'], self.joe.message_history)
+
+
+@patch("time.sleep")
+class Cmd_warn_and_clear(Admin_functional_test):
+
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        # GIVEN
+        self.init(r"""<configuration>
+            <settings name="commands">
+                <set name="warn">user</set>
+                <set name="clear">user</set>
+            </settings>
+            <settings name="messages">
+                <set name="warn_too_fast">Only one warning every %(num_second)s seconds can be given</set>
+                <set name="warn_self">%s, you cannot give yourself a warning</set>
+                <set name="warn_denied">%s, %s is a higher level admin, you can't warn him</set>
+                <set name="cleared_warnings">%(admin)s has cleared %(player)s of all warnings</set>
+                <set name="cleared_warnings_for_all">%(admin)s has cleared everyone's warnings and tk points</set>
+            </settings>
+            <settings name="warn">
+                <set name="message">^1WARNING^7 [^3$warnings^7]: $reason</set>
+            </settings>
+        </configuration>""")
+        self.joe.connects(0)
+        self.mike.connects(1)
+        self.say_patcher = patch.object(self.console, "say")
+        self.say_mock = self.say_patcher.start()
+        self.mike_warn_patcher = patch.object(self.mike, "warn", wraps=self.mike.warn)
+        self.mike_warn_mock = self.mike_warn_patcher.start()
+
+    def tearDown(self):
+        Admin_functional_test.tearDown(self)
+        self.say_patcher.stop()
+        self.mike_warn_patcher.stop()
+
+    def test_warn(self, sleep_mock):
+        # GIVEN
+        self.joe.says('!warn mike')
+        # THEN
+        self.assertEqual(1, self.mike.numWarnings)
+        self.assertListEqual([call(60.0, '^7behave yourself', None, self.joe, '')], self.mike_warn_mock.mock_calls)
+        self.assertListEqual([call('^1WARNING^7 [^31^7]: Mike^7^7, ^7behave yourself')], self.say_mock.mock_calls)
+        self.assertListEqual([], self.joe.message_history)
+        self.assertListEqual([], self.mike.message_history)
+
+    def test_warn_self(self, sleep_mock):
+        # GIVEN
+        self.joe.says('!warn joe')
+        # THEN
+        self.assertEqual(0, self.joe.numWarnings)
+        self.assertListEqual(['Joe, you cannot give yourself a warning'], self.joe.message_history)
+
+    def test_warn_denied(self, sleep_mock):
+        # GIVEN
+        self.mike.says('!warn joe')
+        # THEN
+        self.assertEqual(0, self.joe.numWarnings)
+        self.assertListEqual(["Mike, Joe is a higher level admin, you can't warn him"], self.mike.message_history)
+
+    def test_clear_player(self, sleep_mock):
+        # GIVEN
+        self.joe.says('!warn mike')
+        self.assertEqual(1, self.mike.numWarnings)
+        # WHEN
+        self.joe.says('!clear mike')
+        # THEN
+        self.assertListEqual([call('^1WARNING^7 [^31^7]: Mike^7^7, ^7behave yourself'),
+                              call('Joe^7 has cleared Mike^7 of all warnings')], self.say_mock.mock_calls)
+        self.assertEqual(0, self.mike.numWarnings)
+
+    def test_clear_player(self, sleep_mock):
+        # GIVEN
+        self.joe.says('!warn mike')
+        self.assertEqual(1, self.mike.numWarnings)
+        # WHEN
+        self.joe.says('!clear')
+        # THEN
+        self.assertListEqual([call('^1WARNING^7 [^31^7]: Mike^7^7, ^7behave yourself'),
+                              call("Joe^7 has cleared everyone's warnings and tk points")], self.say_mock.mock_calls)
+        self.assertEqual(0, self.mike.numWarnings)
 
 
 @patch("time.sleep")

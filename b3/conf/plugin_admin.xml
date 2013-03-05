@@ -110,6 +110,16 @@
         <set name="announce_registration">yes</set>
 	</settings>
 	<settings name="messages">
+		<set name="invalid_parameters">^7Invalid parameters</set>
+		<set name="error_no_reason">^1ERROR: ^7You must supply a reason</set>
+		<set name="action_denied_masked">^7%(name)s ^7is a masked higher level player, action cancelled</set>
+		<set name="baninfo">^7%(name)s ^7has %(num_bans)s active bans</set>
+		<set name="baninfo_no_bans">^7%(name)s ^7has no active bans</set>
+		<set name="group_unknown">^7Group %(group_name)s does not exist</set>
+		<set name="group_beyond_reach">^7Group %(group_name)s is beyond your reach</set>
+		<set name="cleared_warnings">%(admin)s^7 has cleared %(player)s^7 of all tk-points and warnings</set>
+		<set name="cleared_warnings_for_all">%(admin)s^7 has cleared everyone's tk-points and warnings</set>
+		<set name="warn_too_fast">^7Only one warning per %(num_second)s seconds can be issued</set>
 		<set name="ban_denied">^7Hey %s^7, you're no Elvis, can't ban %s</set>
 		<set name="help_available">^7Available commands: %s</set>
 		<set name="temp_ban_self">^7%s ^7Can't ban yourself newb</set>
@@ -140,6 +150,7 @@
 		<set name="help_none">^7You have no available commands</set>
 		<set name="spanked">%s ^7was ^1SPANKED^7 by %s</set>
 		<set name="admins">^7Admins online: %s</set>
+		<set name="no_admin">^7There are no admins online</set>
 		<set name="regulars">^7Regular players online: %s</set>
 		<set name="no_regulars">^7There are no regular players online</set>
 		<set name="time">At the sound of the beep it will be ^3%s^7...(beeeep)</set>
@@ -147,6 +158,8 @@
 		<set name="leveltest">^7%s ^7[^3@%s^7] is a ^3%s ^7[^2%s^7] since %s</set>
 		<set name="leveltest_nogroups">^7%s ^7[^3@%s^7] is not in any groups</set>
 		<set name="aliases">^7%s^7 aliases: %s</set>
+		<set name="aliases_more_suffix">^7[^2and more^7]</set>
+		<set name="no_aliases">^7%s^7 has no aliases</set>
 		<set name="cmd_plugin_disabled">^7cannot execute command. Plugin disabled</set>
 	</settings>
 	<settings name="warn">
