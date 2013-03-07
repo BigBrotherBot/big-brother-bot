@@ -53,7 +53,7 @@ import b3.events
 __author__  = 'Courgette'
 __version__ = '1.8'
 
-BF3_REQUIRED_VERSION = 964189
+BF3_REQUIRED_VERSION = 1149977
 
 SQUAD_NOSQUAD = 0
 SQUAD_ALPHA = 1
@@ -139,7 +139,9 @@ GAME_MODES_NAMES = {
     "TeamDeathMatchC0": "TDM Close Quarters",
     "TankSuperiority0": "Tank Superiority",
     "Scavenger0": "Scavenger",
-    }
+    "AirSuperiority0": "Air Superiority",
+    "CaptureTheFlag0": "Capture the Flag",
+}
 
 GAMEMODES_IDS_BY_NAME = dict()
 for _id, name in GAME_MODES_NAMES.items():
@@ -171,7 +173,11 @@ MAP_NAME_BY_ID = {
     "XP4_FD": "Markaz Monolith",
     "XP4_Parl": "Azadi Palace",
     "XP4_Rubble": "Talah market",
-    }
+    "XP5_001": "Operation Riverside",
+    "XP5_002": "Nebandan Flats",
+    "XP5_003": "Kiasar Railroad",
+    "XP5_004": "Sabalan Pipeline",
+}
 
 MAP_ID_BY_NAME = dict()
 for _id, name in MAP_NAME_BY_ID.items():
@@ -179,30 +185,72 @@ for _id, name in MAP_NAME_BY_ID.items():
 
 GAME_MODES_BY_MAP_ID = {
     "MP_001": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
-    "MP_003": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
-    "MP_007": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
-    "MP_011": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
-    "MP_012": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
-    "MP_013": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
-    "MP_017": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
-    "MP_018": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
-    "MP_Subway": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
-    "XP1_001": ("ConquestAssaultLarge0", "ConquestAssaultSmall0", "ConquestAssaultSmall1", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
-    "XP1_002": ("ConquestLarge0", "ConquestSmall0", "ConquestAssaultSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
-    "XP1_003": ("ConquestAssaultLarge0", "ConquestAssaultSmall0", "ConquestAssaultSmall1", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
-    "XP1_004": ("ConquestAssaultLarge0", "ConquestAssaultSmall0", "ConquestAssaultSmall1", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "MP_003": (
+        "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "MP_007": (
+        "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "MP_011": (
+        "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "MP_012": (
+        "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "MP_013": (
+        "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "MP_017": (
+        "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "MP_018": (
+        "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "MP_Subway": (
+        "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "XP1_001": (
+        "ConquestAssaultLarge0", "ConquestAssaultSmall0", "ConquestAssaultSmall1", "RushLarge0", "SquadRush0",
+        "SquadDeathMatch0", "TeamDeathMatch0"),
+    "XP1_002": ("ConquestLarge0", "ConquestSmall0", "ConquestAssaultSmall0", "RushLarge0", "SquadRush0",
+                "SquadDeathMatch0", "TeamDeathMatch0"),
+    "XP1_003": ("ConquestAssaultLarge0", "ConquestAssaultSmall0", "ConquestAssaultSmall1", "RushLarge0", "SquadRush0",
+                "SquadDeathMatch0", "TeamDeathMatch0"),
+    "XP1_004": ("ConquestAssaultLarge0", "ConquestAssaultSmall0", "ConquestAssaultSmall1", "RushLarge0", "SquadRush0",
+                "SquadDeathMatch0", "TeamDeathMatch0"),
     "XP2_Factory": ("TeamDeathMatchC0", "GunMaster0", "Domination0", "SquadDeathMatch0"),
     "XP2_Office": ("TeamDeathMatchC0", "GunMaster0", "Domination0", "SquadDeathMatch0"),
     "XP2_Palace": ("TeamDeathMatchC0", "GunMaster0", "Domination0", "SquadDeathMatch0"),
     "XP2_Skybar": ("TeamDeathMatchC0", "GunMaster0", "Domination0", "SquadDeathMatch0"),
-    "XP3_Desert": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0", "TankSuperiority0"),
-    "XP3_Alborz": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0", "TankSuperiority0"),
-    "XP3_Shield": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0", "TankSuperiority0"),
-    "XP3_Valley": ("ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0", "TankSuperiority0"),
-    "XP4_Quake": ("ConquestLarge0","ConquestSmall0","RushLarge0","SquadRush0","SquadDeathMatch0","TeamDeathMatch0","GunMaster0","Scavenger0"),
-    "XP4_FD": ("ConquestLarge0","ConquestSmall0","RushLarge0","SquadRush0","SquadDeathMatch0","TeamDeathMatch0","GunMaster0","Scavenger0"),
-    "XP4_Parl": ("ConquestLarge0","ConquestSmall0","RushLarge0","SquadRush0","SquadDeathMatch0","TeamDeathMatch0","GunMaster0","Scavenger0"),
-    "XP4_Rubble": ("ConquestLarge0","ConquestSmall0","RushLarge0","SquadRush0","SquadDeathMatch0","TeamDeathMatch0","GunMaster0","Scavenger0"),
+    "XP3_Desert": (
+        "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0",
+        "TankSuperiority0"),
+    "XP3_Alborz": (
+        "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0",
+        "TankSuperiority0"),
+    "XP3_Shield": (
+        "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0",
+        "TankSuperiority0"),
+    "XP3_Valley": (
+        "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0",
+        "TankSuperiority0"),
+    "XP4_Quake": (
+        "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0",
+        "GunMaster0", "Scavenger0"),
+    "XP4_FD": (
+        "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0",
+        "GunMaster0", "Scavenger0"),
+    "XP4_Parl": (
+        "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0",
+        "GunMaster0", "Scavenger0"),
+    "XP4_Rubble": (
+        "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0",
+        "GunMaster0", "Scavenger0"),
+    "XP5_001": (
+        "CaptureTheFlag0", "AirSuperiority0", "ConquestLarge0", "ConquestAssaultLarge0", "ConquestSmall0",
+        "ConquestAssaultSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "XP5_002": (
+        "CaptureTheFlag0", "AirSuperiority0", "ConquestLarge0", "ConquestAssaultLarge0", "ConquestSmall0",
+        "ConquestAssaultSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "XP5_003": (
+        "CaptureTheFlag0", "AirSuperiority0", "ConquestLarge0", "ConquestAssaultLarge0", "ConquestSmall0",
+        "ConquestAssaultSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+    "XP5_004": (
+        "CaptureTheFlag0", "AirSuperiority0", "ConquestLarge0", "ConquestAssaultLarge0", "ConquestSmall0",
+        "ConquestAssaultSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0"),
+
 }
 
 GUNMASTER_WEAPONS_PRESET_BY_INDEX = [
@@ -218,6 +266,7 @@ GUNMASTER_WEAPONS_PRESET_BY_INDEX = [
     ]
 
 GUNMASTER_WEAPONS_PRESET_BY_NAME = dict(GUNMASTER_WEAPONS_PRESET_BY_INDEX)
+
 
 class Bf3Parser(AbstractParser):
     gameName = 'bf3'
@@ -263,12 +312,12 @@ class Bf3Parser(AbstractParser):
         'vehicleSpawnDelay',
         'premiumStatus',
         'gunMasterWeaponsPreset'
-        )
+    )
 
 
     def startup(self):
         AbstractParser.startup(self)
-        
+
         # create the 'Server' client
         self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN, squad=None)
 
@@ -287,7 +336,7 @@ class Bf3Parser(AbstractParser):
                 self.debug('client %s found on the server' % cid)
                 client = self.clients.newClient(cid, guid=p['name'], name=name, team=p['teamId'], squad=p['squadId'], data=p)
                 self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
-                
+
 
 
 
@@ -332,7 +381,7 @@ class Bf3Parser(AbstractParser):
     #    B3 Parser interface implementation
     #    
     ###############################################################################################
-        
+
     def getPlayerPings(self):
         """Ask the server for a given client's pings
         """
@@ -380,7 +429,7 @@ class Bf3Parser(AbstractParser):
                     self.debug('no such client found')
                     return None
                 p = pib[0]
-                if 'guid' in p: 
+                if 'guid' in p:
                     cid = p['name']
                     name = p['name']
                     guid = p['guid']
@@ -556,7 +605,7 @@ class Bf3Parser(AbstractParser):
         numOfTeams = 0
         if data[7] != '':
             numOfTeams = int(data[7])
-        
+
         response = {
             'serverName': data[0],
             'numPlayers': data[1],
