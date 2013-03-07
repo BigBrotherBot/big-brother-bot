@@ -151,6 +151,24 @@ class Test_PlayerInfoBlock(unittest.TestCase):
         self.assertEqual('player2-p2', bloc[1:3][1]['param2'])
         self.assertEqual("[{'param2': 'player1-p2', 'param1': 'player1-p1'}, {'param2': 'player2-p2', 'param1': 'player2-p1'}]", repr(bloc[1:3]))
 
+    def test_R38_no_player(self):
+        bloc = PlayerInfoBlock(['8', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', '0'])
+        self.assertEqual(0, len(bloc))
+        self.assertRaises(IndexError, bloc.__getitem__, 0)
+
+    def test_R38_one_player(self):
+        bloc = PlayerInfoBlock(['8', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank',
+                                '1', 'Cucurbitaceae', '', '1', '1', '0', '0', '0', '58'])
+        self.assertEqual(1, len(bloc))
+        p1 = bloc[0]
+        self.assertEqual("Cucurbitaceae", p1['name'])
+        self.assertEqual("", p1['guid'])
+        self.assertEqual("1", p1['teamId'])
+        self.assertEqual("1", p1['squadId'])
+        self.assertEqual("0", p1['kills'])
+        self.assertEqual("0", p1['deaths'])
+        self.assertEqual("0", p1['score'])
+        self.assertEqual("58", p1['rank'])
 
 class Test_TeamScoreBlock(unittest.TestCase):
 
