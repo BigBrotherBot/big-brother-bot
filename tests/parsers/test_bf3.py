@@ -19,7 +19,9 @@
 import re
 import unittest2 as unittest
 from mock import Mock, DEFAULT, patch
+from mockito import when
 from b3.clients import Client, Clients
+from b3.fake import FakeClient
 from b3.parsers.bf3 import Bf3Parser, MAP_NAME_BY_ID, GAME_MODES_BY_MAP_ID, GAME_MODES_NAMES
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.util import MapListBlock
@@ -792,3 +794,64 @@ class Test_bf3_maps(BF3TestCase):
         self.assertEqual('AirSuperiority0', self.parser.getGamemodeSoundingLike('XP5_004', 'airsup'), 'airsup')
         self.assertEqual('AirSuperiority0', self.parser.getGamemodeSoundingLike('XP5_004', 'superiority'), 'superiority')
 
+
+class Test_getPlayerPings(BF3TestCase):
+
+    def setUp(self):
+        BF3TestCase.setUp(self)
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.parser = Bf3Parser(self.conf)
+        self.p1 = FakeClient(self.parser, name="Player1")
+        self.p2 = FakeClient(self.parser, name="Player2")
+
+    def test_no_player(self):
+        # WHEN
+        actual_result = self.parser.getPlayerPings()
+        # THEN
+        self.assertDictEqual({}, actual_result)
+
+    def test_one_player(self):
+        # GIVEN
+        self.p1.connects("Player1")
+        when(self.parser).write(('player.ping', self.p1.cid)).thenReturn(['140'])
+        # WHEN
+        actual_result = self.parser.getPlayerPings()
+        # THEN
+        self.assertDictEqual({self.p1.cid: 140}, actual_result)
+
+    def test_two_player(self):
+        # GIVEN
+        self.p1.connects("Player1")
+        self.p2.connects("Player2")
+        when(self.parser).write(('player.ping', self.p1.cid)).thenReturn(['140'])
+        when(self.parser).write(('player.ping', self.p2.cid)).thenReturn(['450'])
+        # WHEN
+        actual_result = self.parser.getPlayerPings()
+        # THEN
+        self.assertDictEqual({self.p1.cid: 140, self.p2.cid: 450}, actual_result)
+
+    def test_bad_data(self):
+        # GIVEN
+        self.p1.connects("Player1")
+        self.p2.connects("Player2")
+        when(self.parser).write(('player.ping', self.p1.cid)).thenReturn(['140'])
+        when(self.parser).write(('player.ping', self.p2.cid)).thenReturn(['f00'])
+        # WHEN
+        actual_result = self.parser.getPlayerPings()
+        # THEN
+        self.assertDictEqual({self.p1.cid: 140}, actual_result)
+
+    def test_exception(self):
+        # GIVEN
+        self.p1.connects("Player1")
+        self.p2.connects("Player2")
+        when(self.parser).write(('player.ping', self.p1.cid)).thenReturn(['140'])
+        when(self.parser).write(('player.ping', self.p2.cid)).thenRaise(Exception)
+        # WHEN
+        actual_result = self.parser.getPlayerPings()
+        # THEN
+        self.assertDictEqual({self.p1.cid: 140}, actual_result)

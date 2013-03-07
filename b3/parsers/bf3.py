@@ -385,8 +385,16 @@ class Bf3Parser(AbstractParser):
     def getPlayerPings(self):
         """Ask the server for a given client's pings
         """
-        # TODO: implements getPlayerPings when pings available on admin.listPlayers
-        return {}
+        pings = {}
+        for c in self.clients.getList():
+            try:
+                words = self.write(("player.ping", c.cid))
+                pings[c.cid] = int(words[0])
+            except ValueError:
+                pass
+            except Exception, err:
+                self.error("could not get ping info for player %s: %s" % (c, err), exc_info=err)
+        return pings
 
     ###############################################################################################
     #
