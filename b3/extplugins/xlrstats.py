@@ -76,7 +76,7 @@
 # XLRstats Real Time playerstats plugin
 
 __author__ = 'Tim ter Laak / Mark Weirath'
-__version__ = '2.7.1'
+__version__ = '2.7.1' #final version before v3
 
 # Version = major.minor.patches
 

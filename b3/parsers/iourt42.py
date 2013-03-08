@@ -49,6 +49,16 @@
 #     * protect some of the Client object property
 # 26/11/2012 - 1.9 - Courgette
 #     * fix authentication for connecting player Frosen Sand Account is uniquely known in the B3 database
+# 07/12/2012 - 1.10 - Courgette
+#     * add new events : EVT_CLIENT_JUMP_TIMER_START, EVT_CLIENT_JUMP_TIMER_STOP, EVT_CLIENT_POS_SAVE,
+#       EVT_CLIENT_POS_LOAD and EVT_CLIENT_SURVIVOR_WINNERwhich can be used by plugins
+# 08/12/2012 - 1.10.1 - Courgette
+#     * fix EVT_CLIENT_JUMP_TIMER_START and EVT_CLIENT_JUMP_TIMER_STOP events when no location name is provided
+# 22/12/2012 - 1.11 - Courgette
+#     * update for UrT 4.2.009 release. adds UT_MOD_SMITED, UT_MOD_GLOCK and fix constants values for some of the
+#       UT_MOD_* constants.
+# 08/01/2013 - 1.11.1 - Courgette
+#     * fix EVT_SURVIVOR_WIN event
 #
 import re, new
 import time
@@ -60,7 +70,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.9'
+__version__ = '1.11.1'
 
 class Iourt42Client(Client):
 
@@ -239,6 +249,15 @@ class Iourt42Parser(Iourt41Parser):
         #Vote: 0 - 2
         re.compile(r'''^(?P<action>Vote): (?P<data>(?P<cid>[0-9]+) - (?P<value>.*))$'''),
 
+        #13:34 ClientJumpTimerStarted: 0 - way: 2 (Easy Way)
+        re.compile(r'^(?P<action>ClientJumpTimerStarted):\s(?P<cid>\d+)\s-\s(?P<data>way: (?P<way_id>\d+)(?:\s\((?P<way_label>.+)\))?)$', re.IGNORECASE),
+        #13:34 ClientJumpTimerStopped: 0 - 5 seconds - way: 1 (Hard Way)
+        re.compile(r'^(?P<action>ClientJumpTimerStopped):\s(?P<cid>\d+)\s-\s(?P<data>(?P<duration>.+)\s-\sway: (?P<way_id>\d+)(?:\s\((?P<way_label>.+)\))?)$', re.IGNORECASE),
+
+        #13:34 ClientSavePosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"
+        #13:34 ClientLoadPosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"
+        re.compile(r'^(?P<action>Client(Save|Load)Position):\s(?P<cid>\d+)\s-\s(?P<data>(?P<x>-?\d+(?:\.\d+)?)\s-\s(?P<y>-?\d+(?:\.\d+)?)\s-\s(?P<z>-?\d+(?:\.\d+)?)\s-\s"(?P<name>.*)")$', re.IGNORECASE),
+
         #Generated with ioUrbanTerror v4.1:
         #Hit: 12 7 1 19: BSTHanzo[FR] hit ercan in the Helmet
         #Hit: 13 10 0 8: Grover hit jacobdk92 in the Head
@@ -313,6 +332,62 @@ class Iourt42Parser(Iourt41Parser):
     _permban_with_frozensand = False
     _tempban_with_frozensand = False
 
+    ## kill modes
+    MOD_WATER='1'
+    MOD_LAVA='3'
+    MOD_TELEFRAG='5'
+    MOD_FALLING='6'
+    MOD_SUICIDE='7'
+    MOD_TRIGGER_HURT='9'
+    MOD_CHANGE_TEAM='10'
+    UT_MOD_KNIFE='12'
+    UT_MOD_KNIFE_THROWN='13'
+    UT_MOD_BERETTA='14'
+    UT_MOD_DEAGLE='15'
+    UT_MOD_SPAS='16'
+    UT_MOD_UMP45='17'
+    UT_MOD_MP5K='18'
+    UT_MOD_LR300='19'
+    UT_MOD_G36='20'
+    UT_MOD_PSG1='21'
+    UT_MOD_HK69='22'
+    UT_MOD_BLED='23'
+    UT_MOD_KICKED='24' # not exising in 4.2 ?
+    UT_MOD_HEGRENADE='25'
+    UT_MOD_SR8='27'
+    UT_MOD_AK103='29'
+    UT_MOD_SPLODED='30'
+    UT_MOD_SLAPPED='31'
+    UT_MOD_SMITED = '32'
+    UT_MOD_BOMBED='33'
+    UT_MOD_NUKED='34'
+    UT_MOD_NEGEV='35'
+    UT_MOD_HK69_HIT='36'
+    UT_MOD_M4='37'
+    UT_MOD_GLOCK='38'
+    UT_MOD_FLAG='39'
+    UT_MOD_GOOMBA='40'
+
+    ## weapons id on Hit: lines are different than the one
+    ## on the Kill: lines. Here the translation table
+    hitweapon2killweapon = {
+        1: UT_MOD_KNIFE,
+        2: UT_MOD_BERETTA,
+        3: UT_MOD_DEAGLE,
+        4: UT_MOD_SPAS,
+        5: UT_MOD_MP5K,
+        6: UT_MOD_UMP45,
+        8: UT_MOD_LR300,
+        9: UT_MOD_G36,
+        10: UT_MOD_PSG1,
+        14: UT_MOD_SR8,
+        15: UT_MOD_AK103,
+        17: UT_MOD_NEGEV,
+        19: UT_MOD_M4,
+        20: UT_MOD_GLOCK,
+        23: UT_MOD_KNIFE_THROWN,
+    }
+
 
     def __new__(cls, *args, **kwargs):
         Iourt42Parser.patch_Clients()
@@ -336,6 +411,11 @@ class Iourt42Parser(Iourt41Parser):
         self._eventMap['hotpotato'] = self.EVT_GAME_FLAG_HOTPOTATO
         self.EVT_CLIENT_CALLVOTE = self.Events.createEvent('EVT_CLIENT_CALLVOTE', 'Event client call vote')
         self.EVT_CLIENT_VOTE = self.Events.createEvent('EVT_CLIENT_VOTE', 'Event client vote')
+        self.EVT_CLIENT_JUMP_TIMER_START = self.Events.createEvent('EVT_CLIENT_JUMP_TIMER_START', 'Event client jump timer started')
+        self.EVT_CLIENT_JUMP_TIMER_STOP = self.Events.createEvent('EVT_CLIENT_JUMP_TIMER_STOP', 'Event client jump timer stopped')
+        self.EVT_CLIENT_POS_SAVE = self.Events.createEvent('EVT_CLIENT_POS_SAVE', 'Event client position saved')
+        self.EVT_CLIENT_POS_LOAD = self.Events.createEvent('EVT_CLIENT_POS_LOAD', 'Event client position loaded')
+        self.EVT_CLIENT_SURVIVOR_WINNER = self.Events.createEvent('EVT_CLIENT_SURVIVOR_WINNER', 'Event client survivor winner')
 
         self.load_conf_frozensand_ban_settings()
 
@@ -439,6 +519,60 @@ class Iourt42Parser(Iourt41Parser):
             self.debug('No client found')
             return None
         return Event(self.EVT_CLIENT_VOTE, client=client, data=value)
+
+    def OnClientjumptimerstarted(self, action, data, match=None):
+        cid = match.group('cid')
+        way_id = match.group('way_id')
+        way_label = match.group('way_label')
+        client = self.getByCidOrJoinPlayer(cid)
+        if not client:
+            self.debug('No client found')
+            return None
+        return Event(self.EVT_CLIENT_JUMP_TIMER_START, client=client, data={'way_id': way_id, 'way_label': way_label})
+
+    def OnClientjumptimerstopped(self, action, data, match=None):
+        cid = match.group('cid')
+        way_id = match.group('way_id')
+        way_label = match.group('way_label')
+        duration = match.group('duration')
+        client = self.getByCidOrJoinPlayer(cid)
+        if not client:
+            self.debug('No client found')
+            return None
+        return Event(self.EVT_CLIENT_JUMP_TIMER_STOP, client=client, data={'way_id': way_id, 'way_label': way_label, 'duration': duration})
+
+    def OnClientsaveposition(self, action, data, match=None):
+        cid = match.group('cid')
+        position = float(match.group('x')), float(match.group('y')), float(match.group('z'))
+        name = match.group('name')
+        client = self.getByCidOrJoinPlayer(cid)
+        if not client:
+            self.debug('No client found')
+            return None
+        return Event(self.EVT_CLIENT_POS_SAVE, client=client, data={'position': position, 'name': name})
+
+    def OnClientloadposition(self, action, data, match=None):
+        cid = match.group('cid')
+        position = float(match.group('x')), float(match.group('y')), float(match.group('z'))
+        name = match.group('name')
+        client = self.getByCidOrJoinPlayer(cid)
+        if not client:
+            self.debug('No client found')
+            return None
+        return Event(self.EVT_CLIENT_POS_LOAD, client=client, data={'position': position, 'name': name})
+
+    def OnSurvivorwinner(self, action, data, match=None):
+        #SurvivorWinner: Blue
+        #SurvivorWinner: Red
+        #SurvivorWinner: 0
+        if data in ('Blue', 'Red'):
+            return b3.events.Event(b3.events.EVT_SURVIVOR_WIN, data)
+        else:
+            client = self.getByCidOrJoinPlayer(data)
+            if not client:
+                self.debug('No client found')
+                return None
+            return Event(self.EVT_CLIENT_SURVIVOR_WINNER, client=client, data=None)
 
 
 

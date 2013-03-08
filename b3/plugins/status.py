@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 10/02/2013 - 1.4.13 - Courgette
+# * add log message with more precise info when failing to sanitize data
 # 26/10/2012 - 1.4.12 - Courgette, xlr8or
 # * makes sure 'Client' tags have a 'score' attribute
 # * Better sync of DB and XML saving for XLRstats v3 webfront
@@ -64,7 +66,7 @@
 # Converted to use new event handlers
 
 __author__    = 'ThorN'
-__version__ = '1.4.12'
+__version__ = '1.4.13'
 
 import b3
 import time
@@ -295,7 +297,13 @@ class StatusPlugin(b3.plugin.Plugin):
                 for k,v in c.data.iteritems():
                     data = xml.createElement("Data")
                     data.setAttribute("Name", "%s" % k)
-                    data.setAttribute("Value", sanitizeMe(v))
+                    try:
+                        clean_data = sanitizeMe(v)
+                    except Exception, err:
+                        self.error("could not sanitize %r" % v, exc_into=err)
+                        data.setAttribute("Value", "")
+                    else:
+                        data.setAttribute("Value", clean_data)
                     client.appendChild(data)
                         
                 if self._tkPlugin:

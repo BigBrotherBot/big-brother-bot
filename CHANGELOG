@@ -11,6 +11,7 @@ http://github.com/BigBrotherBot/big-brother-bot/compare/v1.8.2...v1.9.0
 - Urban Terror : fix !nextmap bug when the mapcycle file contains empty lines
 - Urban Terror : improves !map <map name> capabilities to find out the correct map name when given name is an approximate
 - Quake3 based games: fixes the 'RCON: too much tries' error message that appeared with v1.8.2
+- Red Orchestra 2 : Update client/server 1.1.0.8+
 
 # Plugin related changes:
 - The !help command does not make B3 unresponsive anymore on Quake3 based games
@@ -31,7 +32,7 @@ Urban Terror 4.2
  - New penalty available : kill. You can use it in the censor plugin configuration for instance.
  - The Spamcontrol plugin reacts to radio message spamming
  - Fires game specific events for plugins : EVT_CLIENT_RADIO, EVT_CLIENT_CALLVOTE, EVT_CLIENT_VOTE, EVT_GAME_FLAG_HOTPOTATO for other plugins to act on.
- - There are new settings in the b3.xml config file to let you choose if you want to ban using the Frozen Sand auth system (with the rcon 'auth-ban' command)
+ - There are new settings in the b3.xml config file to let you choose if you want to ban using the Frozen Sand auth system (with the rcon 'auth-ban' command). Have a look at the b3.iourt42.tpl template config file
 
 CoD8 / 4D1
  - B3 now supports CoD8 from 4D1. See http://forum.bigbrotherbot.net/call-of-duty-8-%28modern-warfare-3%29/
@@ -42,12 +43,16 @@ Counter-Strike: Global Offensive
 ArmA II
  - ArmA II and DayZ are now supported. Use the B3 parser 'arma2' for both of them.
 
+Ravaged
+ - Ravaged by 2Dawn is now supported.
 
 # Upgrading note:
 
 * Now B3 ensures group levels do exists when used in plugin config files. The plugin_admin.xml config files was using bad group level prior to B3 1.9.
   Make sure to correct them by comparing your own plugin_admin.xml with the new one.
 * SpamControl plugin : The config file plugin_spamcontrol.xml has a new section regarding the !spamins command. Make sure to update your config file.
+* FTP : if your b3.xml is set up to read your game server log file over ftp, then you may have to adjust the game_log value if you see that it isn't working good anymore. The correct url to
+  set for game_log is the url that works in your Internet Browser.
 
 
 1.8.1 -> 1.8.2

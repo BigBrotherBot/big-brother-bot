@@ -1500,7 +1500,7 @@ class Iourt41Parser(AbstractParser):
         
         if data.split('\n')[0] != "userinfo":
             self.debug("dumpuser %s returned : %s" % (cid, data))
-            self.debug('client %s probably disconnected, but its character is still hanging in game...')
+            self.debug('client %s probably disconnected, but its character is still hanging in game...' % cid)
             return None
 
         datatransformed = "%s " % cid

@@ -25,7 +25,9 @@
 #   - fix bug where the !spamins command would not accept uppercase argument
 #   - refactor the plugin to allow game specific behavior to be injected at runtime
 # 2012/08/11 - 1.3 - Courgette
-#   - improve behavior when a spamer received a warning but continues to spam
+#   - improve behavior when a spammer received a warning but continues to spam
+# 2012/12/18 - 1.3.1 - Courgette
+#   - fix regression that prevented the !spamins command to be registered since v1.2
 #
 from ConfigParser import NoOptionError
 import b3, re
@@ -33,7 +35,7 @@ import b3.events
 import b3.plugin
 
 __author__  = 'ThorN, Courgette'
-__version__ = '1.3'
+__version__ = '1.3.1'
 
 
 class SpamcontrolPlugin(b3.plugin.Plugin):
@@ -87,9 +89,19 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
                     if len(sp) == 2:
                         cmd, alias = sp
 
-                    func = self._adminPlugin.getCmd(cmd)
+                    func = self.getCmd(cmd)
                     if func:
                         self._adminPlugin.registerCommand(self, cmd, level, func, alias)
+                    else:
+                        self.warning("cannot find command function for '%s'" % cmd)
+
+    def getCmd(self, cmd):
+        """ return the method for a given command  """
+        cmd = 'cmd_%s' % cmd
+        if hasattr(self, cmd):
+            func = getattr(self, cmd)
+            return func
+        return None
 
     def getTime(self):
         """ just to ease automated tests """

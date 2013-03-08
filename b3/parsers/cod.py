@@ -55,9 +55,11 @@
 # 01/28/2012 - 1.4.26 - 82ndab.Bravo17 - Add special case COD7 suicide regex where attacker team and name appear to be swapped in the console output
 # 10/03/2012 - 1.4.27 - 82ndab.Bravo17 - pbid now empty string instead of None if pb disabled
 # 07/07/2012 - 1.4.28 - Courgette - ensures the config file has option 'game_log' in section 'server'
+# 12/31/2012 - 1.4.29 - Courgette - accepts rcon status responses having negative port numbers
+# 01/02/2013 - 1.4.30 - Courgette - improve parsing rcon status status responses that are missing characters
 
 __author__ = 'ThorN, xlr8or'
-__version__ = '1.4.28'
+__version__ = '1.4.29'
 
 import re, string, threading
 import b3
@@ -145,9 +147,29 @@ class CodParser(AbstractParser):
     #num score ping guid   name            lastmsg address               qport rate
     #--- ----- ---- ------ --------------- ------- --------------------- ----- -----
     #2     0   29 465030 <-{^4AS^7}-^3ThorN^7->^7       50 68.63.6.62:-32085      6597  5000
-    _regPlayer = re.compile(
-        r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$'
-        , re.I)
+    _regPlayer = re.compile(r"""
+^\s*
+  (?P<slot>[0-9]+)
+\s+
+  (?P<score>[0-9-]+)
+\s+
+  (?P<ping>[0-9]+)
+\s+
+  (?P<guid>[0-9]+)
+\s+
+  (?P<name>.*?)
+\s+
+  (?P<last>[0-9]+?)
+\s*
+  (?P<ip>(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]))
+:?
+  (?P<port>-?[0-9]{1,5})
+\s*
+  (?P<qport>-?[0-9]{1,5})
+\s+
+  (?P<rate>[0-9]+)
+$
+""", re.IGNORECASE | re.VERBOSE)
 
     PunkBuster = None
 

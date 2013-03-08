@@ -23,6 +23,7 @@ import unittest2 as unittest
 import b3
 from b3.clients import Client
 from b3.config import XmlConfigParser
+from b3.events import Event
 from b3.fake import FakeClient
 from b3.parsers.iourt41 import Iourt41Parser
 
@@ -529,29 +530,97 @@ class Test_OnKill(Iourt41TestCase):
     def setUp(self):
         Iourt41TestCase.setUp(self)
         self.console.startup()
+        self.joe = FakeClient(self.console, name="Joe", guid="000000000000000")
+        self.joe.connects('0')
+        self.bob = FakeClient(self.console, name="Bob", guid="111111111111111")
+        self.bob.connects('1')
+        self.world = self.console.clients['-1']
+
+    def assertEvent(self, log_line, event_type, event_client=None, event_data=None, event_target=None):
+        with patch.object(self.console, 'queueEvent') as queueEvent:
+            self.console.parseLine(log_line)
+            if event_type is None:
+                assert not queueEvent.called
+                return
+            assert queueEvent.called, "No event was fired"
+            args = queueEvent.call_args
+
+        if type(event_type) is basestring:
+            event_type_name = event_type
+        else:
+            event_type_name = self.console.getEventName(event_type)
+            self.assertIsNotNone(event_type_name, "could not find event with name '%s'" % event_type)
+
+        eventraised = args[0][0]
+        self.assertIsInstance(eventraised, Event)
+        self.assertEquals(self.console.getEventName(eventraised.type), event_type_name)
+        self.assertEquals(eventraised.data, event_data)
+        self.assertEquals(eventraised.target, event_target)
+        self.assertEquals(eventraised.client, event_client)
+
 
     def test_nuke(self):
-        logline = '5:19 Kill: 2 2 34: ^4[FR]^7Beber^1888 killed ^4[FR]^7Beber^1888 by UT_MOD_NUKED'
-        beber = FakeClient(self.console, name="Beber", guid="aaaaaaaaaaaaaaaaa")
-        beber.connects(cid='2')
+        self.assertEvent('5:19 Kill: 0 0 34: Joe killed Joe by UT_MOD_NUKED',
+            event_type='EVT_CLIENT_KILL',
+            event_client=self.world,
+            event_target=self.joe,
+            event_data=(100, self.console.UT_MOD_NUKED, 'body', 'UT_MOD_NUKED'))
 
-        events = []
-        def queueEvent(event):
-            events.append(event)
+    def test_lava(self):
+        self.assertEvent('5:19 Kill: 1022 0 3: <world> killed Joe by MOD_LAVA',
+            event_type='EVT_CLIENT_SUICIDE',
+            event_client=self.joe,
+            event_target=self.joe,
+            event_data=(100, self.console.MOD_LAVA, 'body', 'MOD_LAVA'))
 
-        with patch.object(self.console, "queueEvent", wraps=queueEvent) as queueEvent_mock:
-            self.console.parseLine(logline)
-            self.assertTrue(queueEvent_mock.called)
-            event = events[0]
+    def test_constants(self):
+        def assert_mod(kill_mod_number, kill_mod_name):
+            self.assertTrue(hasattr(self.console, kill_mod_name), "expecting parser to have a constant named %s" % kill_mod_name)
+            with patch.object(self.console, 'queueEvent') as queueEvent:
+                self.console.parseLine(r'''Kill: 0 1 %s: Joe killed Bob by %s''' % (kill_mod_number, kill_mod_name))
+                assert queueEvent.called, "No event was fired"
+                args = queueEvent.call_args
+            event_type_name = ('EVT_CLIENT_KILL', 'EVT_CLIENT_SUICIDE')
+            eventraised = args[0][0]
+            self.assertIsInstance(eventraised, Event)
+            self.assertIn(self.console.getEventKey(eventraised.type), event_type_name)
+            self.assertEquals(eventraised.data[0], 100)
+            self.assertEquals(eventraised.data[1], getattr(self.console, kill_mod_name))
+            self.assertEquals(eventraised.data[2], 'body')
+            self.assertEquals(eventraised.data[3], kill_mod_name)
 
-        self.assertEqual(self.console.clients['-1'], event.client) # world
-        self.assertEqual(beber, event.target)
-        self.assertEqual(b3.events.EVT_CLIENT_KILL, event.type)
-        damage, weapon, hitloc, damage_type = event.data
-        self.assertEqual(100, damage)
-        self.assertEqual(self.console.UT_MOD_NUKED, weapon)
-        self.assertEqual('body', hitloc)
-        self.assertEqual('UT_MOD_NUKED', damage_type)
+        assert_mod('1', 'MOD_WATER')
+        assert_mod('3', 'MOD_LAVA')
+        assert_mod('5', 'MOD_TELEFRAG')
+        assert_mod('6', 'MOD_FALLING')
+        assert_mod('7', 'MOD_SUICIDE')
+        assert_mod('9', 'MOD_TRIGGER_HURT')
+        assert_mod('10', 'MOD_CHANGE_TEAM')
+        assert_mod('12', 'UT_MOD_KNIFE')
+        assert_mod('13', 'UT_MOD_KNIFE_THROWN')
+        assert_mod('14', 'UT_MOD_BERETTA')
+        assert_mod('15', 'UT_MOD_DEAGLE')
+        assert_mod('16', 'UT_MOD_SPAS')
+        assert_mod('17', 'UT_MOD_UMP45')
+        assert_mod('18', 'UT_MOD_MP5K')
+        assert_mod('19', 'UT_MOD_LR300')
+        assert_mod('20', 'UT_MOD_G36')
+        assert_mod('21', 'UT_MOD_PSG1')
+        assert_mod('22', 'UT_MOD_HK69')
+        assert_mod('23', 'UT_MOD_BLED')
+        assert_mod('24', 'UT_MOD_KICKED')
+        assert_mod('25', 'UT_MOD_HEGRENADE')
+        assert_mod('28', 'UT_MOD_SR8')
+        assert_mod('30', 'UT_MOD_AK103')
+        assert_mod('31', 'UT_MOD_SPLODED')
+        assert_mod('32', 'UT_MOD_SLAPPED')
+        assert_mod('33', 'UT_MOD_BOMBED')
+        assert_mod('34', 'UT_MOD_NUKED')
+        assert_mod('35', 'UT_MOD_NEGEV')
+        assert_mod('37', 'UT_MOD_HK69_HIT')
+        assert_mod('38', 'UT_MOD_M4')
+        assert_mod('39', 'UT_MOD_FLAG')
+        assert_mod('40', 'UT_MOD_GOOMBA')
 
 
 class Test_getMapsSoundingLike(Iourt41TestCase):
