@@ -16,16 +16,17 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+import os
 import re
 import unittest2 as unittest
-from mock import Mock, DEFAULT, patch
-from mockito import when
+from mock import Mock, DEFAULT, patch, call
+from mockito import when, unstub
 from b3.clients import Client, Clients
 from b3.fake import FakeClient
 from b3.parsers.bf3 import Bf3Parser, MAP_NAME_BY_ID, GAME_MODES_BY_MAP_ID, GAME_MODES_NAMES
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.util import MapListBlock
-
+from b3.plugins.admin import AdminPlugin
 
 sleep_patcher = None
 def setUpModule():
@@ -64,6 +65,7 @@ class BF3TestCase(unittest.TestCase):
         if hasattr(self, "parser"):
             del self.parser.clients
             self.parser.working = False
+        unstub()  # following unstubs ALL stubs!
 
 
 
@@ -855,3 +857,139 @@ class Test_getPlayerPings(BF3TestCase):
         actual_result = self.parser.getPlayerPings()
         # THEN
         self.assertDictEqual({self.p1.cid: 140}, actual_result)
+
+
+class Test_admin_cmd_map(BF3TestCase):
+
+    def setUp(self):
+        BF3TestCase.setUp(self)
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.console = Bf3Parser(self.conf)
+
+        from b3 import __file__ as b3_module__file__
+        admin_config_file = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.xml"))
+        admin_config = XmlConfigParser()
+        admin_config.load(admin_config_file)
+        self.adminPlugin = AdminPlugin(self.console, admin_config)
+        self.adminPlugin.onLoadConfig()
+        self.adminPlugin.onStartup()
+        when(self.console).getPlugin('admin').thenReturn(self.adminPlugin)
+
+        # monkeypatch the admin plugin
+        self.console.patch_b3_admin_plugin()
+
+        self.changeMap_patcher = patch.object(self.console, "changeMap")
+        self.changeMap_mock = self.changeMap_patcher.start()
+
+        self.player = FakeClient(self.console, name="Player1", guid="Player1GUID", groupBits=128)
+        self.player.connects("p1")
+
+        # GIVEN
+        self.console.game.gameType = 'ConquestLarge0'
+        when(self.console).write(('mapList.list', 0)).thenReturn(['4', '3', 'MP_001', 'RushLarge0', '1', 'MP_003',
+                                                                  'ConquestSmall0', '2', 'XP5_001', 'ConquestSmall0',
+                                                                  '2', 'MP_007', 'SquadDeathMatch0', '3'])
+        when(self.console).write(('mapList.getMapIndices',)).thenReturn(['0', '0'])
+
+    def tearDown(self):
+        BF3TestCase.tearDown(self)
+        self.changeMap_patcher.stop()
+
+    def test_cmd_help_map(self):
+        # WHEN
+        self.player.says('!help map')
+        # THEN
+        self.assertListEqual(['!map <map> [, gamemode [, num of rounds]] - switch current map. Optionally specify a '
+                              'gamemode and # of rounds by separating them from the map name with a commas'],
+                             self.player.message_history)
+
+    def test_cmd_map_no_parameter(self):
+        # WHEN
+        self.player.says('!map')
+        # THEN
+        self.assertListEqual(['Invalid parameters, type !help map'], self.player.message_history)
+
+    def test_cmd_map_known_map_no_gamemode(self):
+        # WHEN
+        self.player.says('!map riverside, 2')
+        # THEN
+        self.assertListEqual([call('XP5_001', gamemode_id='ConquestLarge0', number_of_rounds=2)],
+                             self.changeMap_mock.mock_calls)
+        self.assertListEqual([], self.player.message_history)
+
+    def test_cmd_map_known_map_and_gamemode(self):
+        # WHEN
+        self.player.says('!map riverside, air, 1')
+        # THEN
+        self.assertListEqual([call('XP5_001', gamemode_id='AirSuperiority0', number_of_rounds=1)],
+                             self.changeMap_mock.mock_calls)
+        self.assertListEqual([], self.player.message_history)
+
+    def test_XP5_maps_and_gamemodes(self):
+        def assertCmd(cmd, expected_call):
+            self.changeMap_mock.reset_mock()
+            self.player.clearMessageHistory()
+            self.player.says(cmd)
+            self.assertListEqual([], self.player.message_history, cmd)
+            self.assertListEqual([expected_call], self.changeMap_mock.mock_calls, cmd)
+        # XP5_001
+        assertCmd('!map XP5_001, ConquestLarge0, 2', call('XP5_001', gamemode_id='ConquestLarge0', number_of_rounds=2))
+        assertCmd('!map operation Riverside, Cq64, 2', call('XP5_001', gamemode_id='ConquestLarge0', number_of_rounds=2))
+        assertCmd('!map Riverside, Cq64, 2', call('XP5_001', gamemode_id='ConquestLarge0', number_of_rounds=2))
+        assertCmd('!map Riverside, Cq, 2', call('XP5_001', gamemode_id='ConquestSmall0', number_of_rounds=2))
+        assertCmd('!map Riverside, tdm, 2', call('XP5_001', gamemode_id='TeamDeathMatch0', number_of_rounds=2))
+        assertCmd('!map Riverside, sqdm, 1', call('XP5_001', gamemode_id='SquadDeathMatch0', number_of_rounds=1))
+        assertCmd('!map Riverside, squad rush, 2', call('XP5_001', gamemode_id='SquadRush0', number_of_rounds=2))
+        assertCmd('!map Riverside, rush, 2', call('XP5_001', gamemode_id='RushLarge0', number_of_rounds=2))
+        assertCmd('!map Riverside, ctf, 2', call('XP5_001', gamemode_id='CaptureTheFlag0', number_of_rounds=2))
+        assertCmd('!map Riverside, flag, 2', call('XP5_001', gamemode_id='CaptureTheFlag0', number_of_rounds=2))
+        assertCmd('!map Riverside, capture, 2', call('XP5_001', gamemode_id='CaptureTheFlag0', number_of_rounds=2))
+        assertCmd('!map Riverside, air, 1', call('XP5_001', gamemode_id='AirSuperiority0', number_of_rounds=1))
+        assertCmd('!map Riverside, sup, 1', call('XP5_001', gamemode_id='AirSuperiority0', number_of_rounds=1))
+        # XP5_002
+        assertCmd('!map XP5_002, ConquestLarge0, 2', call('XP5_002', gamemode_id='ConquestLarge0', number_of_rounds=2))
+        assertCmd('!map Nebandan Flats, Cq64, 2', call('XP5_002', gamemode_id='ConquestLarge0', number_of_rounds=2))
+        assertCmd('!map Nebandan, Cq64, 2', call('XP5_002', gamemode_id='ConquestLarge0', number_of_rounds=2))
+        assertCmd('!map Nebandan, Cq, 2', call('XP5_002', gamemode_id='ConquestSmall0', number_of_rounds=2))
+        assertCmd('!map Nebandan, tdm, 2', call('XP5_002', gamemode_id='TeamDeathMatch0', number_of_rounds=2))
+        assertCmd('!map Nebandan, sqdm, 1', call('XP5_002', gamemode_id='SquadDeathMatch0', number_of_rounds=1))
+        assertCmd('!map flats, squad rush, 2', call('XP5_002', gamemode_id='SquadRush0', number_of_rounds=2))
+        assertCmd('!map flats, rush, 2', call('XP5_002', gamemode_id='RushLarge0', number_of_rounds=2))
+        assertCmd('!map flats, ctf, 2', call('XP5_002', gamemode_id='CaptureTheFlag0', number_of_rounds=2))
+        assertCmd('!map flats, flag, 2', call('XP5_002', gamemode_id='CaptureTheFlag0', number_of_rounds=2))
+        assertCmd('!map flats, capture, 2', call('XP5_002', gamemode_id='CaptureTheFlag0', number_of_rounds=2))
+        assertCmd('!map flats, air, 1', call('XP5_002', gamemode_id='AirSuperiority0', number_of_rounds=1))
+        assertCmd('!map flats, sup, 1', call('XP5_002', gamemode_id='AirSuperiority0', number_of_rounds=1))
+        # XP5_003
+        assertCmd('!map XP5_003, ConquestLarge0, 2', call('XP5_003', gamemode_id='ConquestLarge0', number_of_rounds=2))
+        assertCmd('!map Kiasar Railroad, Cq64, 2', call('XP5_003', gamemode_id='ConquestLarge0', number_of_rounds=2))
+        assertCmd('!map Kiasar, Cq64, 2', call('XP5_003', gamemode_id='ConquestLarge0', number_of_rounds=2))
+        assertCmd('!map Kiasar, Cq, 2', call('XP5_003', gamemode_id='ConquestSmall0', number_of_rounds=2))
+        assertCmd('!map Kiasar, tdm, 2', call('XP5_003', gamemode_id='TeamDeathMatch0', number_of_rounds=2))
+        assertCmd('!map Kiasar, sqdm, 1', call('XP5_003', gamemode_id='SquadDeathMatch0', number_of_rounds=1))
+        assertCmd('!map Kiasar, squad rush, 2', call('XP5_003', gamemode_id='SquadRush0', number_of_rounds=2))
+        assertCmd('!map Railroad, rush, 2', call('XP5_003', gamemode_id='RushLarge0', number_of_rounds=2))
+        assertCmd('!map Railroad, ctf, 2', call('XP5_003', gamemode_id='CaptureTheFlag0', number_of_rounds=2))
+        assertCmd('!map rail, flag, 2', call('XP5_003', gamemode_id='CaptureTheFlag0', number_of_rounds=2))
+        assertCmd('!map rail, capture, 2', call('XP5_003', gamemode_id='CaptureTheFlag0', number_of_rounds=2))
+        assertCmd('!map kia, air, 1', call('XP5_003', gamemode_id='AirSuperiority0', number_of_rounds=1))
+        assertCmd('!map rail, sup, 1', call('XP5_003', gamemode_id='AirSuperiority0', number_of_rounds=1))
+        # XP5_004
+        assertCmd('!map XP5_004, ConquestLarge0, 2', call('XP5_004', gamemode_id='ConquestLarge0', number_of_rounds=2))
+        assertCmd('!map Sabalan Pipeline, Cq64, 2', call('XP5_004', gamemode_id='ConquestLarge0', number_of_rounds=2))
+        assertCmd('!map Sabalan, Cq64, 2', call('XP5_004', gamemode_id='ConquestLarge0', number_of_rounds=2))
+        assertCmd('!map Sabalan, Cq, 2', call('XP5_004', gamemode_id='ConquestSmall0', number_of_rounds=2))
+        assertCmd('!map Sabalan, tdm, 2', call('XP5_004', gamemode_id='TeamDeathMatch0', number_of_rounds=2))
+        assertCmd('!map Sabalan, sqdm, 1', call('XP5_004', gamemode_id='SquadDeathMatch0', number_of_rounds=1))
+        assertCmd('!map Sabalan, squad rush, 2', call('XP5_004', gamemode_id='SquadRush0', number_of_rounds=2))
+        assertCmd('!map Pipeline, rush, 2', call('XP5_004', gamemode_id='RushLarge0', number_of_rounds=2))
+        assertCmd('!map Pipeline, ctf, 2', call('XP5_004', gamemode_id='CaptureTheFlag0', number_of_rounds=2))
+        assertCmd('!map Pipeline, flag, 2', call('XP5_004', gamemode_id='CaptureTheFlag0', number_of_rounds=2))
+        assertCmd('!map pipe, capture, 2', call('XP5_004', gamemode_id='CaptureTheFlag0', number_of_rounds=2))
+        assertCmd('!map saba, air, 1', call('XP5_004', gamemode_id='AirSuperiority0', number_of_rounds=1))
+        assertCmd('!map pipe, sup, 1', call('XP5_004', gamemode_id='AirSuperiority0', number_of_rounds=1))
+        
