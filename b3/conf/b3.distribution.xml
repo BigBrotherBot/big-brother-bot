@@ -79,7 +79,9 @@ homefront/ro2/csgo/ravaged/arma2
                 stable : will only show stable releases of B3
                 beta : will also check if a beta release is available
                 dev : will also check if a development release is available
-            If you don't know what channel to use, use 'stable'
+            If you don't know what channel to use, use 'stable'.
+
+                skip : will skip the update check
         -->
         <set name="channel">stable</set>
     </settings>

@@ -140,14 +140,16 @@ def start(configFile, nosetup=False):
         update_channel = conf.get('update', 'channel')
     except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
         pass
-    _update = checkUpdate(__version__, channel=update_channel, singleLine=False, showErrormsg=True)
-    if _update:
-        print _update
-        time.sleep(5)
+    if update_channel == 'skip':
+        print "Skipping check if a update is available."
     else:
-        print "...no update available."
-        time.sleep(1)
-
+        _update = checkUpdate(__version__, channel=update_channel, singleLine=False, showErrormsg=True)
+        if _update:
+            print _update
+            time.sleep(5)
+        else:
+            print "...no update available."
+            time.sleep(1)
 
     try:
         parserType = conf.get('b3', 'parser')
