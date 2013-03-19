@@ -676,11 +676,11 @@ class Bf3Parser(AbstractParser):
     # ----------------------------------------------------------------------------------------------------------------
     # add state property to Client
 
-    def isAlive(self, player_name=None):
+    def isAlive(self):
         """Returns whether the player is alive or not."""
         # true: player is alive/spawned
         # false: player is death or not spawned
-        _player_name = self.name if not player_name else player_name
+        _player_name = self.name
         try:
             _response = self.console.write(('player.isAlive', _player_name))
             if _response[0] == 'true':
@@ -693,9 +693,9 @@ class Bf3Parser(AbstractParser):
             self.console.error("could not get player state for player %s: %s" % (_player_name, err), exc_info=err)
     b3.clients.Client.isAlive = isAlive
 
-    def getPlayerState(self, player_name=None):
+    def getPlayerState(self):
         _state = b3.STATE_UNKNOWN
-        _isAlive = self.isAlive(player_name)
+        _isAlive = self.isAlive()
         if _isAlive:
             _state = b3.STATE_ALIVE
         elif _isAlive == False:
