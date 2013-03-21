@@ -661,16 +661,19 @@ class Parser(object):
             if not name:
                 self.critical("Config Error in the plugins section. No plugin name found in [%s]" % ElementTree.tostring(p).strip())
                 raise SystemExit(220)
-            conf = p.get('config')
-            if conf is None:
-                conf = '@b3/conf/plugin_%s.xml' % name
-            disabledconf = p.get('disabled')
-            plugins[priority] = {'name': name,
-                                 'conf': self.getAbsolutePath(conf),
-                                 'path': p.get('path'),
-                                 'disabled': disabledconf is not None and disabledconf.lower() in ('yes', '1', 'on', 'true')}
-            pluginSort.append(priority)
-            priority += 1
+            if name in [plugins[i]['name'] for i in plugins if plugins[i]['name'] == name]:
+                self.warning('Plugin %s already loaded. Avoid multiple entries of the same plugin.' % name)
+            else:
+                conf = p.get('config')
+                if conf is None:
+                    conf = '@b3/conf/plugin_%s.xml' % name
+                disabledconf = p.get('disabled')
+                plugins[priority] = {'name': name,
+                                     'conf': self.getAbsolutePath(conf),
+                                     'path': p.get('path'),
+                                     'disabled': disabledconf is not None and disabledconf.lower() in ('yes', '1', 'on', 'true')}
+                pluginSort.append(priority)
+                priority += 1
 
         pluginSort.sort()
 
