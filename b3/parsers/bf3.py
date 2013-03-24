@@ -678,8 +678,9 @@ class Bf3Parser(AbstractParser):
 
     def isAlive(self):
         """Returns whether the player is alive or not."""
-        # true: player is alive/spawned
-        # false: player is death or not spawned
+        # True: player is alive/spawned
+        # False: player is death or not spawned
+        # None: BF3 server responded with an error or unexpected value
         _player_name = self.name
         try:
             _response = self.console.write(('player.isAlive', _player_name))
