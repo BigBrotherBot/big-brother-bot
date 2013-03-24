@@ -687,7 +687,7 @@ class Bf3Parser(AbstractParser):
                 return True
             elif _response[0] == 'false':
                 return False
-        except ValueError:
+        except IndexError:
             pass
         except Exception, err:
             self.console.error("could not get player state for player %s: %s" % (_player_name, err), exc_info=err)
