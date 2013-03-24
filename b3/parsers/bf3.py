@@ -704,7 +704,9 @@ class Bf3Parser(AbstractParser):
         return _state
 
     def setPlayerState(self, v):
+        # silently prevents Client.state from being set.
+        # The Client.state value is determined by querying the BF3 server through rcon. See getPlayerState
         pass
-        #self._state = v
+
     b3.clients.Client.state = property(getPlayerState, setPlayerState)
     # ----------------------------------------------------------------------------------------------------------------
