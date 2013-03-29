@@ -17,6 +17,8 @@
 #
 # CHANGELOG
 #
+# 10/05/2013 - v0.6.1- 82ndab.Bravo17
+#  * Do not apply cod4 alterations to admin plugin
 # 25/04/2011 - v0.6 - xlr8or
 #  * action logging - get client by name.
 # 24/04/2011 - v0.5 - xlr8or
@@ -32,7 +34,7 @@
 
 
 __author__  = 'NTAuthority'
-__version__ = '0.6'
+__version__ = '0.6.1'
 
 import b3.parsers.cod4
 import re
@@ -62,6 +64,9 @@ class Cod6Parser(b3.parsers.cod4.Cod4Parser):
             self.game.sv_hostname = None
             self.warning('Could not query server for sv_hostname')
 
+    def pluginsStarted(self):
+        self.debug('Admin Plugin not patched.')
+        
     # action
     def OnA(self, action, data, match=None):
         #bugged: cid and guid both 0

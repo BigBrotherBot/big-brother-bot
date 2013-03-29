@@ -40,9 +40,11 @@
 #  fix bug in onJT() and translateAction()
 # 9/7/2011 - 1.3.2 - 82ndab.Bravo17
 #  Add fuzzy guid search in sync() from COD4 series
+# 10/03/2013 - 1.3.3 - 82ndab.Bravo17
+#  Allow kicking by full name, even if not authed by B3
 
 __author__  = 'xlr8or'
-__version__ = '1.3.2'
+__version__ = '1.3.3'
 
 import b3.parsers.cod2
 import b3.functions
@@ -55,6 +57,17 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
     gameName = 'cod5'
     IpsOnly = False
     _guidLength = 9
+    
+    _commands = {}
+    _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
+    _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
+    _commands['say'] = 'say %(prefix)s %(message)s'
+    _commands['set'] = 'set %(name)s "%(value)s"'
+    _commands['kick'] = 'clientkick %(cid)s'
+    _commands['ban'] = 'banclient %(cid)s'
+    _commands['unban'] = 'unbanuser %(name)s' # remove players from game engine's ban.txt
+    _commands['tempban'] = 'clientkick %(cid)s'
+    _commands['kickbyfullname'] = 'kick %(cid)s'
 
     """\
     Next actions need translation to the EVT_CLIENT_ACTION (Treyarch has a different approach on actions)
@@ -72,6 +85,10 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
         'rd'  # Radio Destroyed
     )
 
+    def pluginsStarted(self):
+        self.patch_b3_admin_plugin()
+        self.debug('Admin Plugin has been patched.')
+    
     def parseLine(self, line):           
         m = self.getLineParts(line)
         if not m:
