@@ -1446,3 +1446,97 @@ class Test_command_parsing(Admin_functional_test):
         self.joe.says2private("!help")
         # THEN
         self.assertListEqual(["Available commands: help, iamgod"], self.joe.message_history)
+
+
+
+class Cmd_kick(Admin_functional_test):
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init()
+        # superadmin joe is connected on slot '0'
+        self.joe.connects('0')
+        self.kick_patcher = patch.object(self.console, 'kick')
+        self.kick_mock = self.kick_patcher.start()
+
+    def tearDown(self):
+        Admin_functional_test.tearDown(self)
+        self.kick_patcher.stop()
+
+    def test_no_parameter(self):
+        # WHEN
+        self.joe.says('!kick')
+        # THEN
+        self.assertListEqual(['Invalid parameters'], self.joe.message_history)
+        self.assertListEqual([], self.kick_mock.mock_calls)
+
+    def test_self_kick(self):
+        # WHEN
+        with patch.object(self.console, "say") as say_mock:
+            self.joe.says('!kick joe')
+        # THEN
+        self.assertListEqual([], self.kick_mock.mock_calls)
+        self.assertListEqual([call("^7Joe^7 ^7Can't kick yourself newb!")], say_mock.mock_calls)
+
+    def test_no_reason_when_required(self):
+        # GIVEN
+        self.joe._groupBits = 16
+        # WHEN
+        self.joe.says('!kick f00')
+        # THEN
+        self.assertListEqual(['ERROR: You must supply a reason'], self.joe.message_history)
+        self.assertListEqual([], self.kick_mock.mock_calls)
+
+    def test_kick_higher_level_admin(self):
+        # GIVEN
+        self.mike._groupBits = 16
+        self.mike.connects("1")
+        # WHEN
+        with patch.object(self.console, "say") as say_mock:
+            self.mike.says('!kick joe reason1')
+        # THEN
+        self.assertListEqual([call("^7Joe^7^7 gets 1 point, Mike^7^7 gets none, Joe^7^7 wins, can't kick")], say_mock.mock_calls)
+        self.assertListEqual([], self.kick_mock.mock_calls)
+
+    def test_kick_masked_higher_level_admin(self):
+        # GIVEN
+        self.mike._groupBits = 16
+        self.mike.connects("1")
+        self.joe.says("!mask reg")
+        # WHEN
+        self.mike.says('!kick joe reason1')
+        # THEN
+        self.assertListEqual(["Joe is a masked higher level player, action cancelled"], self.mike.message_history)
+        self.assertListEqual([], self.kick_mock.mock_calls)
+
+    def test_existing_player_name(self):
+        # GIVEN
+        self.mike.connects('1')
+        # WHEN
+        self.joe.says('!kick mike the reason')
+        # THEN
+        self.assertListEqual([call(self.mike, 'the reason', self.joe, False)], self.kick_mock.mock_calls)
+
+    def test_unknown_player_name(self):
+        # GIVEN
+        self.mike.connects('6')
+        # WHEN
+        self.joe.says('!kick f00')
+        # THEN
+        self.assertListEqual(['No players found matching f00'], self.joe.message_history)
+        self.assertListEqual([], self.kick_mock.mock_calls)
+
+    def test_kick_by_slot_id(self):
+        # GIVEN
+        self.mike.connects('6')
+        # WHEN
+        self.joe.says('!kick 6')
+        # THEN
+        self.assertListEqual([call(self.mike, '', self.joe, False)], self.kick_mock.mock_calls)
+
+    def test_kick_by_slot_id_when_no_known_player_is_on_that_slot(self):
+        # GIVEN
+        self.mike.connects('6')
+        # WHEN
+        self.joe.says('!kick 4')
+        # THEN
+        self.assertListEqual([call('4', '', self.joe)], self.kick_mock.mock_calls)
