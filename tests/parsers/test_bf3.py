@@ -19,7 +19,8 @@
 import re
 import unittest2 as unittest
 from mock import Mock, DEFAULT, patch
-from mockito import when
+from mockito import when, verify
+import b3
 from b3.clients import Client, Clients
 from b3.fake import FakeClient
 from b3.parsers.bf3 import Bf3Parser, MAP_NAME_BY_ID, GAME_MODES_BY_MAP_ID, GAME_MODES_NAMES
@@ -855,3 +856,34 @@ class Test_getPlayerPings(BF3TestCase):
         actual_result = self.parser.getPlayerPings()
         # THEN
         self.assertDictEqual({self.p1.cid: 140}, actual_result)
+
+
+class Test_patch_b3_Client_isAlive(BF3TestCase):
+    def setUp(self):
+        BF3TestCase.setUp(self)
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.parser = Bf3Parser(self.conf)
+        self.foobar = self.parser.clients.newClient(cid='Foobar', name='Foobar', guid="FoobarGuid")
+
+    def test_unknown(self):
+        # GIVEN
+        when(self.parser).write(('player.isAlive', 'Foobar')).thenReturn()
+        # THEN
+        self.assertEqual(b3.STATE_UNKNOWN, self.foobar.state)
+
+    def test_alive(self):
+        # GIVEN
+        when(self.parser).write(('player.isAlive', 'Foobar')).thenReturn(['true'])
+        # THEN
+        self.assertEqual(b3.STATE_ALIVE, self.foobar.state)
+
+    def test_dead(self):
+        # GIVEN
+        when(self.parser).write(('player.isAlive', 'Foobar')).thenReturn(['false'])
+        # THEN
+        self.assertEqual(b3.STATE_DEAD, self.foobar.state)
+
