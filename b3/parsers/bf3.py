@@ -673,3 +673,41 @@ class Bf3Parser(AbstractParser):
 
         return response
 
+    # ----------------------------------------------------------------------------------------------------------------
+    # add state property to Client
+
+    def isAlive(self):
+        """Returns whether the player is alive or not."""
+        # True: player is alive/spawned
+        # False: player is death or not spawned
+        # None: BF3 server responded with an error or unexpected value
+        _player_name = self.name
+        try:
+            _response = self.console.write(('player.isAlive', _player_name))
+            if _response[0] == 'true':
+                return True
+            elif _response[0] == 'false':
+                return False
+        except IndexError:
+            pass
+        except Exception, err:
+            self.console.error("could not get player state for player %s: %s" % (_player_name, err), exc_info=err)
+    b3.clients.Client.isAlive = isAlive
+
+    def getPlayerState(self):
+        _state = b3.STATE_UNKNOWN
+        _isAlive = self.isAlive()
+        if _isAlive:
+            _state = b3.STATE_ALIVE
+        elif _isAlive == False:
+            _state = b3.STATE_DEAD
+
+        return _state
+
+    def setPlayerState(self, v):
+        # silently prevents Client.state from being set.
+        # The Client.state value is determined by querying the BF3 server through rcon. See getPlayerState
+        pass
+
+    b3.clients.Client.state = property(getPlayerState, setPlayerState)
+    # ----------------------------------------------------------------------------------------------------------------
