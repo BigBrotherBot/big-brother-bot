@@ -19,6 +19,10 @@
             * Accepted values : on / off
         -->
         <set name="big_b3_private_responses">on</set>
+        <!-- big_msg_repeat - B3 repeated big displayed messages in the chat.
+                    * Accepted values : all (repeat all) / pm (repeat private messages) / off (disabled)
+                -->
+        <set name="big_msg_repeat">pm</set>
         <!-- big_msg_duration : for how many seconds big messages are displayed -->
         <set name="big_msg_duration">6</set>
 	</settings>
