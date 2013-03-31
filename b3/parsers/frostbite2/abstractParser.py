@@ -105,6 +105,7 @@ class AbstractParser(b3.parser.Parser):
         'message_delay': .8,
         'big_msg_duration': 4,
         'big_b3_private_responses': False,
+        'big_msg_repeat': 'off',
         }
 
     _gameServerVars = () # list available cvar
@@ -455,14 +456,14 @@ class AbstractParser(b3.parser.Parser):
             self.warning('cannot route empty packet : %s' % traceback.extract_tb(sys.exc_info()[2]))
         eventType = packet[0]
         eventData = packet[1:]
-        
+
         match = re.search(r"^(?P<actor>[^.]+)\.(on)?(?P<event>.+)$", eventType)
         func = None
         if match:
             func = 'On%s%s' % (string.capitalize(match.group('actor')), \
                                string.capitalize(match.group('event')))
             self.verbose2("looking for event handling method called : " + func)
-            
+
         if match and hasattr(self, func):
             #self.verbose2('routing ----> %s(%r)' % (func,eventData))
             func = getattr(self, func)
@@ -470,7 +471,7 @@ class AbstractParser(b3.parser.Parser):
             #self.debug('event : %s' % event)
             if event:
                 self.queueEvent(event)
-            
+
         elif eventType in self._eventMap:
             self.queueEvent(b3.events.Event(
                     self._eventMap[eventType],
@@ -485,7 +486,7 @@ class AbstractParser(b3.parser.Parser):
 
 
     def startup(self):
-       
+
         # add specific events
         self.Events.createEvent('EVT_GAMESERVER_CONNECT', 'connected to game server')
         self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
@@ -505,6 +506,7 @@ class AbstractParser(b3.parser.Parser):
         self.load_conf_ban_agent()
         self.load_conf_big_b3_private_responses()
         self.load_conf_big_msg_duration()
+        self.load_conf_big_msg_repeat()
 
         self.start_sayqueue_worker()
 
@@ -556,11 +558,11 @@ class AbstractParser(b3.parser.Parser):
                 preparedcmd.append(a % kwargs)
             except KeyError:
                 pass
-        
+
         result = tuple(preparedcmd)
         self.debug('getCommand: %s', result)
         return result
-    
+
     def write(self, msg, maxRetries=1, needConfirmation=False):
         """Write a message to Rcon/Console
         Unfortunaltely this has been abused all over B3 
@@ -579,7 +581,7 @@ class AbstractParser(b3.parser.Parser):
                 res = self.output.write(msg, maxRetries=maxRetries, needConfirmation=needConfirmation)
                 self.output.flush()
                 return res
-            
+
     def getWrap(self, text, length=None, minWrapLen=None):
         """Returns a sequence of lines for text that fits within the limits
         """
@@ -590,7 +592,7 @@ class AbstractParser(b3.parser.Parser):
             length = self._settings['line_length']
 
         maxLength = int(length)
-        
+
         if len(text) <= maxLength:
             return [text]
         else:
@@ -611,14 +613,14 @@ class AbstractParser(b3.parser.Parser):
                     remaining = remaining[wrappoint:]
             return lines
 
-    
+
     ###############################################################################################
     #
     #    Frostbite2 events handlers
     #    
     ###############################################################################################
 
-    
+
     def OnPlayerChat(self, action, data):
         """
         player.onChat <source soldier name: string> <text: string> <target players: player subset>
@@ -659,12 +661,12 @@ class AbstractParser(b3.parser.Parser):
         else:
             event_type = b3.events.EVT_CLIENT_SAY
         return b3.events.Event(event_type, text, client)
-        
+
 
     def OnPlayerLeave(self, action, data):
         #player.onLeave: ['GunnDawg']
         client = self.getClient(data[0])
-        if client: 
+        if client:
             client.endMessageThreads = True
             client.disconnect() # this triggers the EVT_CLIENT_DISCONNECT event
         return None
@@ -729,7 +731,7 @@ class AbstractParser(b3.parser.Parser):
         if not victim:
             self.debug('No victim')
             return None
-        
+
         weapon = data[2]
 
         if data[3] == 'true':
@@ -801,7 +803,7 @@ class AbstractParser(b3.parser.Parser):
             self.game.rounds = correct_rounds_value
             self.queueEvent(b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game))
 
-        
+
     def OnServerRoundover(self, action, data):
         """
         server.onRoundOver <winning team: Team ID>
@@ -810,8 +812,8 @@ class AbstractParser(b3.parser.Parser):
         """
         #['server.onRoundOver', '2']
         return b3.events.Event(b3.events.EVT_GAME_ROUND_END, data[0])
-        
-        
+
+
     def OnServerRoundoverplayers(self, action, data):
         """
         server.onRoundOverPlayers <end-of-round soldier info : player info block>
@@ -820,8 +822,8 @@ class AbstractParser(b3.parser.Parser):
         """
         #['server.onRoundOverPlayers', '8', 'clanTag', 'name', 'guid', 'teamId', 'kills', 'deaths', 'score', 'ping', '17', 'RAID', 'mavzee', 'EA_4444444444444444555555555555C023', '2', '20', '17', '310', '147', 'RAID', 'NUeeE', 'EA_1111111111111555555555555554245A', '2', '30', '18', '445', '146', '', 'Strzaerl', 'EA_88888888888888888888888888869F30', '1', '12', '7', '180', '115', '10tr', 'russsssssssker', 'EA_E123456789461416564796848C26D0CD', '2', '12', '12', '210', '141', '', 'Daezch', 'EA_54567891356479846516496842E17F4D', '1', '25', '14', '1035', '129', '', 'Oldqsdnlesss', 'EA_B78945613465798645134659F3079E5A', '1', '8', '12', '120', '256', '', 'TTETqdfs', 'EA_1321654656546544645798641BB6D563', '1', '11', '16', '180', '209', '', 'bozer', 'EA_E3987979878946546546565465464144', '1', '22', '14', '475', '152', '', 'Asdf 1977', 'EA_C65465413213216656546546546029D6', '2', '13', '16', '180', '212', '', 'adfdasse', 'EA_4F313565464654646446446644664572', '1', '4', '25', '45', '162', 'SG1', 'De56546ess', 'EA_123132165465465465464654C2FC2FBB', '2', '5', '8', '75', '159', 'bsG', 'N06540RZ', 'EA_787897944546565656546546446C9467', '2', '8', '14', '100', '115', '', 'Psfds', 'EA_25654321321321000006546464654B81', '2', '15', '15', '245', '140', '', 'Chezear', 'EA_1FD89876543216548796130EB83E411F', '1', '9', '14', '160', '185', '', 'IxSqsdfOKxI', 'EA_481321313132131313213212313112CE', '1', '21', '12', '625', '236', '', 'Ledfg07', 'EA_1D578987994651615166516516136450', '1', '5', '6', '85', '146', '', '5 56 mm', 'EA_90488E6543216549876543216549877B', '2', '0', '0', '0', '192']
         return b3.events.Event(b3.events.EVT_GAME_ROUND_PLAYER_SCORES, PlayerInfoBlock(data))
-        
-        
+
+
     def OnServerRoundoverteamscores(self, action, data):
         """
         server.onRoundOverTeamScores <end-of-round scores: team scores>
@@ -859,7 +861,7 @@ class AbstractParser(b3.parser.Parser):
             else:
                 self.debug("no pattern matching \"%s\", defaulting to EVT_PUNKBUSTER_UNKNOWN" % str(data[0]).strip())
                 return b3.events.Event(b3.events.EVT_PUNKBUSTER_UNKNOWN, data)
-                
+
     def OnPBVersion(self, match,data):
         """PB notifies us of the version numbers
         version = match.group('version')"""
@@ -1034,13 +1036,16 @@ class AbstractParser(b3.parser.Parser):
             for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
                 self.write(self.getCommand('yell', message=line, big_msg_duration=int(float(self._settings['big_msg_duration']))))
 
+        if self._settings['big_msg_repeat'] == 'all':
+            self.write(self.getCommand('say', message=msg))
+
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         self.debug('kick reason: [%s]' % reason)
         if isinstance(client, str):
             self.write(self.getCommand('kick', cid=client, reason=reason[:80]))
             return
-        
+
         if admin:
             fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
         else:
@@ -1066,6 +1071,8 @@ class AbstractParser(b3.parser.Parser):
             else:
                 cmd_name = 'bigmessage' if self._settings['big_b3_private_responses'] else 'message'
                 self.write(self.getCommand(cmd_name, message=text, cid=client.cid, big_msg_duration=int(float(self._settings['big_msg_duration']))))
+                if self._settings['big_msg_repeat'] in ('all', 'pm'):
+                    self.write(self.getCommand('message', message=text, cid=client.cid))
         except Exception, err:
             self.warning(err)
 
@@ -1122,10 +1129,10 @@ class AbstractParser(b3.parser.Parser):
             # Also issue a server kick in case we do not ban with the server and punkbuster fails
             if client.cid: # only if client is currently connected
                 self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
-        
+
         if not silent and fullreason != '':
             self.say(fullreason)
-        
+
         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
 
 
@@ -1175,7 +1182,7 @@ class AbstractParser(b3.parser.Parser):
             traceback.print_stack() # TODO: remove this stack trace when we figured out when tempban is called with a str as client
             self.write(self.getCommand('tempbanByName', name=client, duration=duration*60, reason=reason[:80]))
             return
-        
+
         if admin:
             fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=b3.functions.minutesStr(duration)))
         else:
@@ -1227,12 +1234,12 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, {'reason': reason, 
-                                                              'duration': duration, 
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, {'reason': reason,
+                                                              'duration': duration,
                                                               'admin': admin}
                                         , client))
 
- 
+
     def getMap(self):
         """Return the current level name (not easy map name)"""
         self.getServerInfo()
@@ -1332,7 +1339,7 @@ class AbstractParser(b3.parser.Parser):
         time.sleep(1)
         self.write(('mapList.runNextRound',))
 
-        
+
     def getPlayerPings(self):
         """Ask the server for a given client's pings
         """
@@ -1429,14 +1436,14 @@ class AbstractParser(b3.parser.Parser):
         if cvarName not in self._gameServerVars:
             self.warning('unknown cvar \'%s\'' % cvarName)
             return None
-        
+
         try:
             words = self.write(('vars.%s' % cvarName,))
         except CommandFailedError, err:
             self.warning(err)
             return
         self.debug('Get cvar %s = %s', cvarName, words)
-        
+
         if words:
             if len(words) == 0:
                 return b3.cvar.Cvar(cvarName, value=None)
@@ -1458,7 +1465,7 @@ class AbstractParser(b3.parser.Parser):
 
     def checkVersion(self):
         raise NotImplementedError('checkVersion must be implemented in concrete classes')
-        
+
     def getServerVars(self):
         raise NotImplementedError('getServerVars must be implemented in concrete classes')
 
@@ -1468,17 +1475,17 @@ class AbstractParser(b3.parser.Parser):
         B3 GUID  <--> EA_guid
         """
         raise NotImplementedError('getClient must be implemented in concrete classes')
-    
+
     def getTeam(self, team):
         """convert frostbite team numbers to B3 team numbers"""
         raise NotImplementedError('getTeam must be implemented in concrete classes')
-        
+
     def getServerInfo(self):
         """query server info, update self.game and return query results
         """
         raise NotImplementedError('getServerInfo must be implemented in concrete classes')
 
-        
+
     def getNextMap(self):
         """Return the name of the next map and gamemode"""
         maps = self.getFullMapRotationList()
@@ -1649,6 +1656,42 @@ class AbstractParser(b3.parser.Parser):
                     self.config.get(self.gameName, 'max_say_line_length'), err))
         self.debug('line_length: %s' % self._settings['line_length'])
 
+    def load_conf_big_msg_repeat(self):
+        """Load big_msg_repeat from config into self._settings['big_msg_repeat']
+
+        Configure with _settings['big_msg_repeat'] repetition of big displayed messages.
+        This is useful if you want to ensure that bigtext messages are seen by the client.
+        The Frostbite2 engine display bigtext messages only when the player is spawned.
+        Unless otherwise configured, B3 uses the value 'pm' as default to ensure that
+        personalized messages are always visible from the client.
+
+        The value can be 'all', 'pm' or 'off'.
+            'all' - repeat all messages
+            'pm' -  repeat only private messages
+            'off' - disables this feature
+        """
+
+        # set 'repeat only private messages' as default
+        _default_value = 'pm'
+        # if a user config exists:
+        if self.config.has_option(self.gameName, 'big_msg_repeat'):
+            # try load settings into _cfg_result
+            try:
+                _cfg_result = self.config.get(self.gameName, 'big_msg_repeat').lower()
+                # ensure that _cfg_result is one of ('all', 'pm', 'off')
+                # If _cfg_result not in ('all', 'pm', 'off'): raise ValueError
+                if _cfg_result in ('all', 'pm', 'off'):
+                    _default_value = _cfg_result
+                else:
+                    raise ValueError('Invalid value %s.' % _cfg_result)
+            except ValueError, err:
+                # Houston - We have a problem.
+                # We give an error message and use the default value.
+                self.error('Failed to read big_msg_repeat setting. Use default. Error: %s' % err.message)
+
+        # if _settings['big_b3_private_responses']:set self._settings['big_msg_repeat'] from config or use default
+        self._settings['big_msg_repeat'] = _default_value if self._settings['big_b3_private_responses'] else 'off'
+
 
 def patch_b3_clients():
     #############################################################
@@ -1658,6 +1701,7 @@ def patch_b3_clients():
     #
     # why ?
     # because doing so make sure we're not broking any other
+    # because doing so make sure we're not broking any othebigr
     # working and long tested parser. The changes we make here
     # are only applied when the frostbite parser is loaded.
     #############################################################
