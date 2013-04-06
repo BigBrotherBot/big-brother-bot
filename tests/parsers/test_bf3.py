@@ -835,6 +835,18 @@ class Test_getPlayerPings(BF3TestCase):
         # THEN
         self.assertDictEqual({self.p1.cid: 140, self.p2.cid: 450}, actual_result)
 
+    def test_two_player_filter_client_ids(self):
+        # GIVEN
+        self.p1.connects("Player1")
+        self.p2.connects("Player2")
+        when(self.parser).write(('player.ping', self.p1.cid)).thenReturn(['140'])
+        when(self.parser).write(('player.ping', self.p2.cid)).thenReturn(['450'])
+        # WHEN
+        actual_result = self.parser.getPlayerPings(filter_client_ids=[self.p1.cid])
+        # THEN
+        self.assertDictEqual({self.p1.cid: 140}, actual_result)
+
+
     def test_bad_data(self):
         # GIVEN
         self.p1.connects("Player1")

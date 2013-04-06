@@ -397,18 +397,23 @@ class Bf3Parser(AbstractParser):
     #    
     ###############################################################################################
 
-    def getPlayerPings(self):
+    def getPlayerPings(self, filter_client_ids=None):
         """Ask the server for a given client's pings
+
+        :param filter_client_ids: If filter_client_id is an iterable, only return values for the given client ids.
         """
         pings = {}
-        for c in self.clients.getList():
+        if not filter_client_ids:
+            filter_client_ids = [client.cid for client in self.clients.getList()]
+
+        for cid in filter_client_ids:
             try:
-                words = self.write(("player.ping", c.cid))
-                pings[c.cid] = int(words[0])
+                words = self.write(("player.ping", cid))
+                pings[cid] = int(words[0])
             except ValueError:
                 pass
             except Exception, err:
-                self.error("could not get ping info for player %s: %s" % (c, err), exc_info=err)
+                self.error("could not get ping info for player %s: %s" % (cid, err), exc_info=err)
         return pings
 
     ###############################################################################################
