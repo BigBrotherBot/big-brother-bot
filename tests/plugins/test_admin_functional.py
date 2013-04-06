@@ -998,6 +998,17 @@ class spell_checker(Admin_functional_test):
         self.joe.says('@qfsmlkjazemlrkjazemrlkj')
         self.assertEqual(['Unrecognized command qfsmlkjazemlrkjazemrlkj'], self.joe.message_history)
 
+    def test_existing_command_private(self):
+        self.joe.says('/map')
+        self.assertEqual(['You must supply a map to change to.'], self.joe.message_history)
+
+    def test_misspelled_command_private(self):
+        self.joe.says('/mip')
+        self.assertEqual(['Unrecognized command mip. Did you mean /map ?'], self.joe.message_history)
+
+    def test_unrecognized_command_private(self):
+        self.joe.says('/qfsmlkjazemlrkjazemrlkj')
+        self.assertEqual(['Unrecognized command qfsmlkjazemlrkjazemrlkj'], self.joe.message_history)
 
 class Cmd_register(Admin_functional_test):
     def setUp(self):
