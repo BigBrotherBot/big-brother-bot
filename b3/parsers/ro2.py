@@ -878,12 +878,18 @@ class Ro2Parser(b3.parser.Parser):
         
         return nextmap
         
-    def getPlayerPings(self):
+    def getPlayerPings(self, filter_client_ids=None):
         """\
         returns a dict having players' id for keys and players' ping for values
+
+        :param filter_client_ids: If filter_client_id is an iterable, only return values for the given client ids.
         """
         pings = {}
         clients = self.clients.getList()
+
+        if filter_client_ids:
+             clients = filter(lambda client: client.cid in filter_client_ids, clients)
+
         for c in clients:
             try:
                 pings[c.name] = int(c.ping)

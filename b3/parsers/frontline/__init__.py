@@ -551,12 +551,16 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
         raise NotImplementedError
 
   
-    def getPlayerPings(self):
+    def getPlayerPings(self, filter_client_ids=None):
         """\
         returns a dict having players' id for keys and players' ping for values
         """
         pings = {}
         clients = self.clients.getList()
+
+        if filter_client_ids:
+             clients = filter(lambda client: client.cid in filter_client_ids, clients)
+
         for c in clients:
             try:
                 pings[c.cid] = int(c.data['Ping'])
