@@ -103,7 +103,7 @@
 		To have such a behavior, use this command prefix instead -->
 		<set name="command_prefix_big"><![CDATA[&]]></set>
         <!-- command_prefix_private : Some games support chat lines that are not be broadcasted. The prefix that can be put before b3 commands -->
-		<!-- <set name="command_prefix_private">/</set> -->
+		<set name="command_prefix_private">/</set>
 		<!-- admins_level : minimum level for groups to consider as admins -->
 		<set name="admins_level">mod</set>
 		<!-- ban_duration : tempban duration to apply to the !ban and !banall commands -->
