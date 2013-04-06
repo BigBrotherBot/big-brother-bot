@@ -1367,9 +1367,11 @@ class Parser(object):
         """
         raise NotImplementedError
 
-    def getPlayerPings(self):
+    def getPlayerPings(self, filter_client_ids=None):
         """\
         returns a dict having players' id for keys and players' ping for values
+
+        :param filter_client_ids: If filter_client_id is an iterable, only return values for the given client ids.
         """
         raise NotImplementedError
 
