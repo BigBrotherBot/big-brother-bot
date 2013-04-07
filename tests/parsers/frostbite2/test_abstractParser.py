@@ -116,11 +116,11 @@ class Test_saybig(AbstractParser_TestCase):
 class Test_message(AbstractParser_TestCase):
     def setUp(self):
         self.conf = XmlConfigParser()
-        self.conf.loadFromString("""
-                <configuration>
-                </configuration>
-            """)
+
+    def init(self, config_content):
+        self.conf.loadFromString(config_content)
         self.parser = ConcretegameParser(self.conf)
+        self.parser.startup()
         self.parser._settings['big_msg_duration'] = '3.1'
 
         self.write_patcher = patch.object(AbstractParser, 'write')
@@ -133,10 +133,17 @@ class Test_message(AbstractParser_TestCase):
         AbstractParser_TestCase.tearDown(self)
         self.write_patcher.stop()
 
+
     def test_message__no_big_when_big_msg_repeat_off(self):
         # GIVEN
-        self.parser._settings['big_b3_private_responses'] = False
-        self.parser._settings['big_msg_repeat'] = 'off'
+        self.init("""
+            <configuration>
+                <settings name="thegame">
+                    <set name="big_b3_private_responses">off</set>
+                    <set name="big_msg_repeat">off</set>
+                </settings>
+            </configuration>
+        """)
         # WHEN
         self.parser.message(self.player_mock, 'test')
         # THEN
@@ -146,8 +153,14 @@ class Test_message(AbstractParser_TestCase):
 
     def test_message__no_big_when_big_msg_repeat_pm(self):
         # GIVEN
-        self.parser._settings['big_b3_private_responses'] = False
-        self.parser._settings['big_msg_repeat'] = 'pm'
+        self.init("""
+            <configuration>
+                <settings name="thegame">
+                    <set name="big_b3_private_responses">off</set>
+                    <set name="big_msg_repeat">pm</set>
+                </settings>
+            </configuration>
+        """)
         # WHEN
         self.parser.message(self.player_mock, 'test')
         # THEN
@@ -157,8 +170,14 @@ class Test_message(AbstractParser_TestCase):
 
     def test_message__no_big_when_big_msg_repeat_all(self):
         # GIVEN
-        self.parser._settings['big_b3_private_responses'] = False
-        self.parser._settings['big_msg_repeat'] = 'all'
+        self.init("""
+            <configuration>
+                <settings name="thegame">
+                    <set name="big_b3_private_responses">off</set>
+                    <set name="big_msg_repeat">all</set>
+                </settings>
+            </configuration>
+        """)
         # WHEN
         self.parser.message(self.player_mock, 'test')
         # THEN
@@ -169,8 +188,14 @@ class Test_message(AbstractParser_TestCase):
 
     def test_message__when_big_msg_repeat_off(self):
         # GIVEN
-        self.parser._settings['big_b3_private_responses'] = True
-        self.parser._settings['big_msg_repeat'] = 'off'
+        self.init("""
+            <configuration>
+                <settings name="thegame">
+                    <set name="big_b3_private_responses">on</set>
+                    <set name="big_msg_repeat">off</set>
+                </settings>
+            </configuration>
+        """)
         # WHEN
         self.parser.message(self.player_mock, 'test')
         # THEN
@@ -180,8 +205,14 @@ class Test_message(AbstractParser_TestCase):
 
     def test_message__when_big_msg_repeat_pm(self):
         # GIVEN
-        self.parser._settings['big_b3_private_responses'] = True
-        self.parser._settings['big_msg_repeat'] = 'pm'
+        self.init("""
+            <configuration>
+                <settings name="thegame">
+                    <set name="big_b3_private_responses">on</set>
+                    <set name="big_msg_repeat">pm</set>
+                </settings>
+            </configuration>
+        """)
         # WHEN
         self.parser.message(self.player_mock, 'test')
         # THEN
@@ -192,8 +223,14 @@ class Test_message(AbstractParser_TestCase):
 
     def test_message__when_big_msg_repeat_all(self):
         # GIVEN
-        self.parser._settings['big_b3_private_responses'] = True
-        self.parser._settings['big_msg_repeat'] = 'all'
+        self.init("""
+            <configuration>
+                <settings name="thegame">
+                    <set name="big_b3_private_responses">on</set>
+                    <set name="big_msg_repeat">all</set>
+                </settings>
+            </configuration>
+        """)
         # WHEN
         self.parser.message(self.player_mock, 'test')
         # THEN
@@ -586,6 +623,7 @@ class Test_config(AbstractParser_TestCase):
     def assert_big_msg_repeat(self, expected, config):
         self.parser._settings['big_msg_repeat'] = None
         self.conf.loadFromString(config)
+        self.parser.load_conf_big_b3_private_responses()
         self.parser.load_conf_big_msg_repeat()
         self.assertEqual(expected, self.parser._settings['big_msg_repeat'])
 
@@ -593,6 +631,7 @@ class Test_config(AbstractParser_TestCase):
         default_value = 'pm'
         self.assert_big_msg_repeat('all', """<configuration>
                     <settings name="thegame">
+                        <set name="big_b3_private_responses">on</set>
                         <set name="big_msg_repeat">all</set>
                     </settings>
                 </configuration>""")
@@ -605,12 +644,14 @@ class Test_config(AbstractParser_TestCase):
 
         self.assert_big_msg_repeat(default_value, """<configuration>
                     <settings name="thegame">
+                        <set name="big_b3_private_responses">on</set>
                         <set name="big_msg_repeat">pm</set>
                     </settings>
                 </configuration>""")
 
         self.assert_big_msg_repeat(default_value, """<configuration>
                     <settings name="thegame">
+                        <set name="big_b3_private_responses">on</set>
                         <set name="big_msg_repeat"></set>
                     </settings>
                 </configuration>""")
@@ -623,6 +664,7 @@ class Test_config(AbstractParser_TestCase):
 
         self.assert_big_msg_repeat(default_value, """<configuration>
                     <settings name="thegame">
+                        <set name="big_b3_private_responses">on</set>
                         <set name="big_msg_repeat">junk</set>
                     </settings>
                 </configuration>""")

@@ -166,6 +166,7 @@ class AdminPlugin(b3.plugin.Plugin):
     cmdPrefix = '!'
     cmdPrefixLoud = '@'
     cmdPrefixBig = '&'
+    cmdPrefixPrivate = None
 
     PENALTY_KICK = 'kick'
     PENALTY_TEMPBAN = 'tempban'
@@ -300,6 +301,13 @@ class AdminPlugin(b3.plugin.Plugin):
             self.warning('could not get command_prefix_big, using default')
 
         try:
+            cmdPrefixPrivate = self.config.get('settings', 'command_prefix_private')
+            if cmdPrefixPrivate:
+                self.cmdPrefixPrivate = cmdPrefixPrivate
+        except:
+            self.warning('could not get command_prefix_private, using default')
+
+        try:
             self._warn_command_abusers = self.config.getboolean('warn', 'warn_command_abusers')
         except NoOptionError:
             self.warning('conf warn\warn_command_abusers not found, using default : no')
@@ -377,6 +385,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
             self._commands[command].prefix = self.cmdPrefix
             self._commands[command].prefixLoud = self.cmdPrefixLoud
+            self._commands[command].prefixPrivate = self.cmdPrefixPrivate
 
             self.debug('Command "%s (%s)" registered with %s for level %s' % (
                 command, alias, self._commands[command].func.__name__, self._commands[command].level))
@@ -468,7 +477,7 @@ class AdminPlugin(b3.plugin.Plugin):
                         self.debug('Error getting Tkinfo: %s', e)
                     self.debug('End of Tkinfo')
 
-        elif len(event.data) >= 2 and event.data[:1] in (self.cmdPrefix, self.cmdPrefixLoud, self.cmdPrefixBig):
+        elif len(event.data) >= 2 and event.data[:1] in (self.cmdPrefix, self.cmdPrefixLoud, self.cmdPrefixBig, self.cmdPrefixPrivate):
             # catch the confirm command for identification of the B3 devs
             if event.data[1:] == 'confirm':
                 self.debug('checking confirmation...')
@@ -477,7 +486,7 @@ class AdminPlugin(b3.plugin.Plugin):
             else:
                 self.debug('Handle command %s' % event.data)
 
-            if event.data[1:2] in (self.cmdPrefix, self.cmdPrefixLoud, self.cmdPrefixBig):
+            if event.data[1:2] in (self.cmdPrefix, self.cmdPrefixLoud, self.cmdPrefixBig, self.cmdPrefixPrivate):
                 # self.is the alias for say
                 cmd = 'say'
                 data = event.data[2:]
@@ -518,7 +527,6 @@ class AdminPlugin(b3.plugin.Plugin):
                 event.client.message('^7Please try your command after you have been authenticated')
                 self.console.clients.authorizeClients()
                 return
-
             elif private:
                 # self.is a silent command
                 if event.client.maxLevel < command.secretLevel:
@@ -531,6 +539,8 @@ class AdminPlugin(b3.plugin.Plugin):
                         results = command.executeLoud(data, event.client)
                     elif event.data[:1] == self.cmdPrefixBig and event.client.maxLevel >= 9:
                         results = command.executeBig(data, event.client)
+                    elif event.data[:1] == self.cmdPrefixPrivate and event.client.maxLevel >= 9:
+                        results = command.executePrivate(data, event.client)
                     else:
                         results = command.execute(data, event.client)
                 except (KeyboardInterrupt, SystemExit):
@@ -577,7 +587,10 @@ class AdminPlugin(b3.plugin.Plugin):
             if len(matches) > 1:
                 names = []
                 for _p in matches:
-                    names.append('^7%s [^2%s^7]' % (_p.name, _p.cid))
+                    if _p.name == _p.cid:
+                        names.append('^7%s' % (_p.name))
+                    else:
+                        names.append('^7%s [^2%s^7]' % (_p.name, _p.cid))
 
                 if client:
                     client.message(self.getMessage('players_matched', client_id, ', '.join(names)))
@@ -2385,6 +2398,7 @@ class Command:
         self.plugin = plugin
         self.loud = False
         self.big = False
+        self.private = False
 
         if help:
             self.help = help.strip()
@@ -2426,6 +2440,12 @@ class Command:
     def executeBig(self, data, client):
         cmd = copy.copy(self)
         cmd.big = True
+        self.func(data, client, cmd)
+        self.time = self.plugin.console.time()
+
+    def executePrivate(self, data, client):
+        cmd = copy.copy(self)
+        cmd.private = True
         self.func(data, client, cmd)
         self.time = self.plugin.console.time()
 

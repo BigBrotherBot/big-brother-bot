@@ -20,12 +20,23 @@ import logging
 from mock import Mock, patch, call, ANY
 from mockito import mock, when, any as anything
 import unittest2 as unittest
+from b3.clients import Client
 from b3.config import XmlConfigParser
 from b3.fake import FakeClient
 from b3.parsers.cod4 import Cod4Parser
 
 log = logging.getLogger("test")
 log.setLevel(logging.INFO)
+
+
+# keep a reference to unpatch core B3 stuff to restore them at the end of tests
+original_client_auth = Client.auth
+
+
+def tearDownModule():
+    # restore core B3 stuff
+    Client.auth = original_client_auth
+
 
 
 class Cod4TestCase(unittest.TestCase):
