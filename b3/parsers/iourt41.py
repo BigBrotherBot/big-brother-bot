@@ -164,9 +164,11 @@
 #     * improve finding the exact map in getMapsSoundingLike. Also improves changeMap() behavior as a consequence
 # 26/11/2012 - 1.15 - Courgette
 #     * protect some of the Client object property
+# 08/04/2013 - 1.16 - Courgette
+#     * add EVT_BOMB_EXPLODED event
 #
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.15'
+__version__ = '1.16'
 
 import re, string, time, os, thread
 from b3.parsers.q3a.abstractParser import AbstractParser
@@ -256,6 +258,8 @@ class Iourt41Parser(AbstractParser):
         #3:01 Bomb was defused by 3!
         #2:17 Bomb has been collected by 2
         re.compile(r'^(?P<action>Bomb)\s(?P<data>(was|has been)\s(?P<subaction>[a-z]+)\sby\s(?P<cid>[0-9]+).*)$', re.IGNORECASE),
+        #17:24 Pop!
+        re.compile(r'^(?P<action>Pop)!$', re.IGNORECASE),
 
         #Falling thru? Item stuff and so forth
         re.compile(r'^(?P<action>[a-z]+):\s(?P<data>.*)$', re.IGNORECASE),
@@ -395,7 +399,8 @@ class Iourt41Parser(AbstractParser):
         self.Events.createEvent('EVT_GAME_FLAG_RETURNED', 'Flag returned')
         self.Events.createEvent('EVT_CLIENT_GEAR_CHANGE', 'Client gear change')
         self.Events.createEvent('EVT_SURVIVOR_WIN', 'Survivor Winner')
-        
+        self.EVT_BOMB_EXPLODED = self.Events.createEvent('EVT_BOMB_EXPLODED', 'Bomb exploded')
+
         # add the world client
         self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
 
@@ -919,6 +924,9 @@ class Iourt41Parser(AbstractParser):
         #Flag Return: <color>
         color = match.group('color')
         return b3.events.Event(b3.events.EVT_GAME_FLAG_RETURNED, color)
+
+    def OnPop(self, action, data, match=None):
+        return b3.events.Event(self.EVT_BOMB_EXPLODED, data=None)
 
     def OnBomb(self, action, data, match=None):
         _cid = match.group('cid')

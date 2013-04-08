@@ -431,6 +431,47 @@ num score ping name            lastmsg  address              qport rate
         self.assertTrue(result)
 
 
+class Test_log_lines_parsing(Iourt41TestCase):
+
+    def assertEvent(self, log_line, event_type, event_client=None, event_data=None, event_target=None):
+        with patch.object(self.console, 'queueEvent') as queueEvent:
+            self.console.parseLine(log_line)
+            if event_type is None:
+                assert not queueEvent.called
+                return
+            assert queueEvent.called, "No event was fired"
+            args = queueEvent.call_args
+
+        if type(event_type) is basestring:
+            event_type_name = event_type
+        else:
+            event_type_name = self.console.getEventName(event_type)
+            self.assertIsNotNone(event_type_name, "could not find event with name '%s'" % event_type)
+
+        eventraised = args[0][0]
+        self.assertIsInstance(eventraised, Event)
+        self.assertEquals(self.console.getEventName(eventraised.type), event_type_name)
+        self.assertEquals(eventraised.data, event_data)
+        self.assertEquals(eventraised.target, event_target)
+        self.assertEquals(eventraised.client, event_client)
+
+    def setUp(self):
+        Iourt41TestCase.setUp(self)
+        self.console.startup()
+        self.joe = FakeClient(self.console, name="Joe", guid="000000000000000")
+
+    def test_SurvivorWinner_team(self):
+        self.assertEvent(r'''SurvivorWinner: Red''', event_type='EVT_SURVIVOR_WIN', event_data="Red")
+        self.assertEvent(r'''SurvivorWinner: Blue''', event_type='EVT_SURVIVOR_WIN', event_data="Blue")
+
+    def test_bomb_related(self):
+        self.joe.connects('2')
+        self.assertEvent(r'''Bomb was tossed by 2''', event_type='EVT_CLIENT_ACTION', event_data="bomb_tossed", event_client=self.joe)
+        self.assertEvent(r'''Bomb was planted by 2''', event_type='EVT_CLIENT_ACTION', event_data="bomb_planted", event_client=self.joe)
+        self.assertEvent(r'''Bomb was defused by 2!''', event_type='EVT_CLIENT_ACTION', event_data="bomb_defused", event_client=self.joe)
+        self.assertEvent(r'''Bomb has been collected by 2''', event_type='EVT_CLIENT_ACTION', event_data="bomb_collected", event_client=self.joe)
+        self.assertEvent(r'''Pop!''', event_type='EVT_BOMB_EXPLODED', event_data=None, event_client=None)
+
 
 class Test_OnClientuserinfo(Iourt41TestCase):
 

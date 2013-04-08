@@ -59,6 +59,8 @@
 #       UT_MOD_* constants.
 # 08/01/2013 - 1.11.1 - Courgette
 #     * fix EVT_SURVIVOR_WIN event
+# 08/04/2013 - 1.12 - Courgette
+#     * add EVT_BOMB_EXPLODED event
 #
 import re, new
 import time
@@ -70,7 +72,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.11.1'
+__version__ = '1.12'
 
 class Iourt42Client(Client):
 
@@ -301,6 +303,8 @@ class Iourt42Parser(Iourt41Parser):
         #3:01 Bomb was defused by 3!
         #2:17 Bomb has been collected by 2
         re.compile(r'^(?P<action>Bomb)\s(?P<data>(was|has been)\s(?P<subaction>[a-z]+)\sby\s(?P<cid>[0-9]+).*)$', re.IGNORECASE),
+        #17:24 Pop!
+        re.compile(r'^(?P<action>Pop)!$', re.IGNORECASE),
 
         #Falling thru? Item stuff and so forth
         re.compile(r'^(?P<action>[a-z]+):\s(?P<data>.*)$', re.IGNORECASE),

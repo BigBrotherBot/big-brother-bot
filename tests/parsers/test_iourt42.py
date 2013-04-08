@@ -249,6 +249,14 @@ class Test_log_lines_parsing(Iourt42TestCase):
         self.assertEvent(r'''SurvivorWinner: Red''', event_type='EVT_SURVIVOR_WIN', event_data="Red")
         self.assertEvent(r'''SurvivorWinner: Blue''', event_type='EVT_SURVIVOR_WIN', event_data="Blue")
 
+    def test_bomb_related(self):
+        self.joe.connects('2')
+        self.assertEvent(r'''Bomb was tossed by 2''', event_type='EVT_CLIENT_ACTION', event_data="bomb_tossed", event_client=self.joe)
+        self.assertEvent(r'''Bomb was planted by 2''', event_type='EVT_CLIENT_ACTION', event_data="bomb_planted", event_client=self.joe)
+        self.assertEvent(r'''Bomb was defused by 2!''', event_type='EVT_CLIENT_ACTION', event_data="bomb_defused", event_client=self.joe)
+        self.assertEvent(r'''Bomb has been collected by 2''', event_type='EVT_CLIENT_ACTION', event_data="bomb_collected", event_client=self.joe)
+        self.assertEvent(r'''Pop!''', event_type='EVT_BOMB_EXPLODED', event_data=None, event_client=None)
+
 
 
 
