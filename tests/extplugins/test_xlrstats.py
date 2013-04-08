@@ -18,6 +18,7 @@
 #
 import logging
 import os
+from time import sleep
 from mock import patch
 from mockito import when, mock
 from b3 import __file__ as b3_module__file__, TEAM_RED, TEAM_BLUE
@@ -299,7 +300,6 @@ class Test_kill(XlrstatsTestCase):
         # THEN
         self.assertEqual(['XLR Stats: P1 : K 1 D 1 TK 0 Ratio 1.00 Skill 1015.63'], self.p1.message_history)
 
-@patch('time.sleep')
 class Test_doTopList(XlrstatsTestCase):
 
     def setUp(self):
@@ -325,20 +325,21 @@ class Test_doTopList(XlrstatsTestCase):
             self.p5.connects("5")
             self.p5.says("!register")
 
-    def test_no_kill(self, sleep_mock):
+    def test_no_kill(self):
         # GIVEN
         self.p._minKills = 15
         self.p._minRounds = 30
         cmd = self.adminPlugin._commands["xlrtopstats"]
         # WHEN
         self.p1.clearMessageHistory()
-        self.p.doTopList(data="", client=self.p1, cmd=cmd)
+        with patch('time.sleep'):
+            self.p.doTopList(data="", client=self.p1, cmd=cmd)
         # THEN
         self.assertListEqual([
              'Qualify for the toplist by making 15 kills, or playing 30 rounds!'
         ], self.p1.message_history)
 
-    def test_one_kill(self, sleep_mock):
+    def test_one_kill(self):
         # GIVEN
         cmd = self.adminPlugin._commands["xlrtopstats"]
         self.p._minKills = 0
@@ -350,7 +351,8 @@ class Test_doTopList(XlrstatsTestCase):
         self.assertEqual(1, s.kills)
         # WHEN
         self.p1.clearMessageHistory()
-        self.p.doTopList(data="", client=self.p1, cmd=cmd)
+        with patch('time.sleep'):
+            self.p.doTopList(data="", client=self.p1, cmd=cmd)
         # THEN
         self.assertListEqual([
             'XLR Stats Top 3 Players:',
@@ -358,7 +360,7 @@ class Test_doTopList(XlrstatsTestCase):
         ], self.p1.message_history)
 
 
-    def test_multiple_kills(self, sleep_mock):
+    def test_multiple_kills(self):
         # GIVEN
         cmd = self.adminPlugin._commands["xlrtopstats"]
         self.p._minKills = 0
@@ -372,7 +374,8 @@ class Test_doTopList(XlrstatsTestCase):
         self.p5.kills(self.p1)
         # WHEN
         self.p1.clearMessageHistory()
-        self.p.doTopList(data="", client=self.p1, cmd=cmd)
+        with patch('time.sleep'):
+            self.p.doTopList(data="", client=self.p1, cmd=cmd)
         # THEN
         self.assertListEqual([
             'XLR Stats Top 3 Players:',
