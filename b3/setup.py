@@ -85,12 +85,10 @@ import tempfile
 try:
     from xml.etree import cElementTree as ElementTree
 except ImportError:
-    try:
-        from xml.etree import ElementTree
-    except ImportError:
-        from b3.lib.elementtree import ElementTree
+    from xml.etree import ElementTree
 
-from lib.elementtree.SimpleXMLWriter import XMLWriter
+from b3.lib.SimpleXMLWriter import XMLWriter
+
 from distutils import version
 from urlparse import urlsplit
 
@@ -542,9 +540,8 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
             self._template = self.raw_default("Load values from a template", _dflttemplate)
 
         self._template = self.getAbsolutePath(self._template)
-        self.tree = ElementTree()
         try:
-            self.tree.parse(self._template)
+            self.tree = ElementTree.parse(self._template)
             return True
         except Exception, msg:
             self.add_buffer('Could not parse xml file: %s\n' % msg)

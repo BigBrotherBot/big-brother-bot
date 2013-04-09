@@ -697,10 +697,7 @@ class Test_config(Admin_functional_test):
         try:
             from xml.etree import cElementTree as ET
         except ImportError:
-            try:
-                from xml.etree import ElementTree as ET
-            except ImportError:
-                from b3.lib.elementtree import ElementTree as ET
+            from xml.etree import ElementTree as ET
 
         root = ET.parse(ADMIN_CONFIG_FILE).getroot()
         warn_reasons_nodes = [x for x in root.findall('settings') if x.get('name') == 'warn_reasons' ][0]
