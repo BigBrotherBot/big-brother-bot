@@ -18,9 +18,10 @@
 #
 import ConfigParser
 import logging
+from unittest import TestCase
 import unittest2 as unittest
 import sys
-from b3.config import XmlConfigParser, CfgConfigParser
+from b3.config import XmlConfigParser, CfgConfigParser, ConfigFileNotValid
 from tests import B3TestCase
 
 @unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
@@ -158,6 +159,26 @@ class Test_XmlConfigParser(CommonTestMethodsMixin, B3TestCase):
     def test_get_missing(self):
         self.assert_get_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
         self.assert_get_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
+
+
+class Test_ConfigFileNotValid(TestCase):
+
+    def test_exception_message(self):
+        try:
+            raise ConfigFileNotValid("f00")
+        except ConfigFileNotValid, e:
+            self.assertEqual(repr("f00"), str(e))
+
+    def test_loading_invalid_conf(self):
+        config = XmlConfigParser()
+        try:
+            config.loadFromString(r"""<configuration """)
+        except ConfigFileNotValid, e:
+            self.assertEqual("'unclosed token: line 1, column 0'", str(e))
+        except Exception, e:
+            self.fail("unexpected exception %r" % e)
+        else:
+            self.fail("expecting exception")
 
 
 class Test_CfgConfigParser(CommonTestMethodsMixin, B3TestCase):
