@@ -1,6 +1,6 @@
 #
 # SimpleXMLWriter
-# $Id: SimpleXMLWriter.py 3225 2007-08-27 21:32:08Z fredrik $
+# $Id: SimpleXMLWriter.py 2312 2005-03-02 18:13:39Z fredrik $
 #
 # a simple XML writer
 #
@@ -20,7 +20,7 @@
 # --------------------------------------------------------------------
 # The SimpleXMLWriter module is
 #
-# Copyright (c) 2001-2007 by Fredrik Lundh
+# Copyright (c) 2001-2004 by Fredrik Lundh
 #
 # By obtaining, using, and/or copying this software and/or its
 # associated documentation, you agree that you have read, understood,
