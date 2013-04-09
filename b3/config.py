@@ -34,13 +34,16 @@
 # Change behavior of XmlConfigParser methods getboolean, getint, getfloat when config value is an empty string
 # 11/04/2012 - 1.4 - Courgette
 # CfgConfigParser now implements methods getDuration, getboolean, getpath, loadFromString
+# 10/04/2013 - 1.4.1 - Courgette
+# Fix ConfigFileNotFound and ConfigFileNotValid __str__ method
 #
-__author__ = 'ThorN'
-__version__ = '1.4'
 
-import sys, time
+__author__  = 'ThorN'
+__version__ = '1.4.1'
+
+import time
+import os
 import b3
-from xml.parsers.expat import ExpatError
 
 # Import ElementTree
 try:
@@ -52,8 +55,6 @@ except ImportError:
         from b3.lib.elementtree import ElementTree
 
 import ConfigParser
-import os
-import b3.functions
 
 
 class B3ConfigParserMixin:
@@ -111,7 +112,7 @@ class XmlConfigParser(B3ConfigParserMixin):
         """
         try:
             self._xml = ElementTree.parse(fp)
-        except ExpatError, e:
+        except Exception, e:
             raise ConfigFileNotValid("%s" % e)
 
         self._loadSettings()
@@ -213,7 +214,7 @@ class XmlConfigParser(B3ConfigParserMixin):
 
         try:
             self._xml = ElementTree.XML(xmlstring)
-        except ExpatError, e:
+        except Exception, e:
             raise ConfigFileNotValid("%s" % e)
 
         self._loadSettings()
@@ -291,16 +292,16 @@ def load(fileName):
 
 
 class ConfigFileNotFound(Exception):
-    def __init__(self, value):
-        Exception.__init__(self, value)
-
+    def __init__(self, message):
+        Exception.__init__(self, message)
+        
     def __str__(self):
-        return repr(self.value)
+        return repr(self.message)
 
 
 class ConfigFileNotValid(Exception):
-    def __init__(self, value):
-        Exception.__init__(self, value)
-
+    def __init__(self, message):
+        Exception.__init__(self, message)
+        
     def __str__(self):
-        return repr(self.value)
+        return repr(self.message)
