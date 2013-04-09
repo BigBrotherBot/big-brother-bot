@@ -49,10 +49,7 @@ import b3
 try:
     from xml.etree import cElementTree as ElementTree
 except ImportError:
-    try:
-        from xml.etree import ElementTree
-    except ImportError:
-        from b3.lib.elementtree import ElementTree
+    from xml.etree import ElementTree
 
 import ConfigParser
 
