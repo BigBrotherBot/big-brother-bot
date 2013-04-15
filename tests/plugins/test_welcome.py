@@ -142,6 +142,195 @@ class Test_default_config(Welcome_functional_test):
                          self.conf.get("messages", 'greeting_cleared'))
 
 
+class Test_config_flags(Welcome_functional_test):
+
+    def test_flags_nominal(self):
+        self.load_config("""<configuration>
+            <settings name="settings">
+                <set name="flags">34</set>
+            </settings>
+        </configuration>""")
+        self.assertEqual(34, self.p._welcomeFlags)
+
+    def test_flags_empty(self):
+        self.load_config("""<configuration>
+            <settings name="settings">
+                <set name="flags"></set>
+            </settings>
+        </configuration>""")
+        self.assertEqual(63, self.p._welcomeFlags)
+
+    def test_flags_junk(self):
+        self.load_config("""<configuration>
+            <settings name="settings">
+                <set name="flags">f00</set>
+            </settings>
+        </configuration>""")
+        self.assertEqual(63, self.p._welcomeFlags)
+
+    def test_settings_no_flags(self):
+        self.load_config("""<configuration>
+            <settings name="settings">
+            </settings>
+        </configuration>""")
+        self.assertEqual(63, self.p._welcomeFlags)
+
+    def test_welcome_first(self):
+        self.p._welcomeFlags = 0
+        self.load_config("""<configuration>
+            <settings name="settings">
+                <set name="welcome_first">yes</set>
+            </settings>
+        </configuration>""")
+        self.assertTrue(F_FIRST & self.p._welcomeFlags)
+        self.load_config("""<configuration>
+            <settings name="settings">
+                <set name="welcome_first">no</set>
+            </settings>
+        </configuration>""")
+        self.assertFalse(F_FIRST & self.p._welcomeFlags)
+
+    def test_welcome_newb(self):
+        self.p._welcomeFlags = 0
+        self.load_config("""<configuration>
+            <settings name="settings">
+                <set name="welcome_newb">yes</set>
+            </settings>
+        </configuration>""")
+        self.assertTrue(F_NEWB & self.p._welcomeFlags)
+        self.load_config("""<configuration>
+            <settings name="settings">
+                <set name="welcome_newb">no</set>
+            </settings>
+        </configuration>""")
+        self.assertFalse(F_NEWB & self.p._welcomeFlags)
+
+    def test_welcome_user(self):
+        self.p._welcomeFlags = 0
+        self.load_config("""<configuration>
+            <settings name="settings">
+                <set name="welcome_user">yes</set>
+            </settings>
+        </configuration>""")
+        self.assertTrue(F_USER & self.p._welcomeFlags)
+        self.load_config("""<configuration>
+            <settings name="settings">
+                <set name="welcome_user">no</set>
+            </settings>
+        </configuration>""")
+        self.assertFalse(F_USER & self.p._welcomeFlags)
+
+    def test_announce_first(self):
+        self.p._welcomeFlags = 0
+        self.load_config("""<configuration>
+            <settings name="settings">
+                <set name="announce_first">yes</set>
+            </settings>
+        </configuration>""")
+        self.assertTrue(F_ANNOUNCE_FIRST & self.p._welcomeFlags)
+        self.load_config("""<configuration>
+            <settings name="settings">
+                <set name="announce_first">no</set>
+            </settings>
+        </configuration>""")
+        self.assertFalse(F_ANNOUNCE_FIRST & self.p._welcomeFlags)
+
+    def test_announce_user(self):
+        self.p._welcomeFlags = 0
+        self.load_config("""<configuration>
+            <settings name="settings">
+                <set name="announce_user">yes</set>
+            </settings>
+        </configuration>""")
+        self.assertTrue(F_ANNOUNCE_USER & self.p._welcomeFlags)
+        self.load_config("""<configuration>
+            <settings name="settings">
+                <set name="announce_user">no</set>
+            </settings>
+        </configuration>""")
+        self.assertFalse(F_ANNOUNCE_USER & self.p._welcomeFlags)
+
+    def test_show_user_greeting(self):
+        self.p._welcomeFlags = 0
+        self.load_config("""<configuration>
+            <settings name="settings">
+                <set name="show_user_greeting">yes</set>
+            </settings>
+        </configuration>""")
+        self.assertTrue(F_CUSTOM_GREETING & self.p._welcomeFlags)
+        self.load_config("""<configuration>
+            <settings name="settings">
+                <set name="show_user_greeting">no</set>
+            </settings>
+        </configuration>""")
+        self.assertFalse(F_CUSTOM_GREETING & self.p._welcomeFlags)
+
+    def test_nonce_set(self):
+        self.p._welcomeFlags = 0
+        self.load_config("""<configuration>
+            <settings name="settings">
+                <set name="welcome_first">no</set>
+                <set name="welcome_newb">no</set>
+                <set name="welcome_user">no</set>
+                <set name="announce_first">no</set>
+                <set name="announce_user">no</set>
+                <set name="show_user_greeting">no</set>
+            </settings>
+        </configuration>""")
+        self.assertEqual(0, self.p._welcomeFlags)
+
+    def test_all_set(self):
+        self.p._welcomeFlags = 0
+        self.load_config("""<configuration>
+            <settings name="settings">
+                <set name="welcome_first">yes</set>
+                <set name="welcome_newb">yes</set>
+                <set name="welcome_user">yes</set>
+                <set name="announce_first">yes</set>
+                <set name="announce_user">yes</set>
+                <set name="show_user_greeting">yes</set>
+            </settings>
+        </configuration>""")
+        self.assertEqual(F_FIRST | F_NEWB | F_USER | F_ANNOUNCE_FIRST | F_ANNOUNCE_USER | F_CUSTOM_GREETING,
+                         self.p._welcomeFlags)
+
+    def test_partly_set(self):
+        self.p._welcomeFlags = 0
+        self.load_config("""<configuration>
+            <settings name="settings">
+                <set name="welcome_first">yes</set>
+                <set name="welcome_newb">no</set>
+                <set name="welcome_user">yes</set>
+                <set name="announce_first">yes</set>
+                <set name="announce_user">no</set>
+                <set name="show_user_greeting">yes</set>
+            </settings>
+        </configuration>""")
+        self.assertEqual(F_FIRST | F_USER | F_ANNOUNCE_FIRST | F_CUSTOM_GREETING,
+                         self.p._welcomeFlags)
+
+    def test_mix_old_style_and_new_style(self):
+        """
+        Old style config uses settings/flags.
+        New style uses welcome_first, welcome_newb, etc.
+        When both styles are found, ignore old style.
+        Also a missing new style option is assumed to be 'yes'
+        """
+        self.p._welcomeFlags = 0
+        self.load_config("""<configuration>
+            <settings name="settings">
+                <set name="flags">54</set>
+                <!-- <set name="welcome_first">no</set> -->
+                <set name="welcome_newb">no</set>
+                <set name="welcome_user">no</set>
+                <set name="announce_first">no</set>
+                <set name="announce_user">yes</set>
+                <set name="show_user_greeting">no</set>
+            </settings>
+        </configuration>""")
+        self.assertEqual(F_FIRST | F_ANNOUNCE_USER, self.p._welcomeFlags)
+
+
 class Test_config(Welcome_functional_test):
 
     def test_commands_greeting(self):
@@ -166,30 +355,6 @@ class Test_config(Welcome_functional_test):
             </settings>
         </configuration>""")
         self.assertEqual(20, self.p._cmd_greeting_minlevel)
-
-    def test_settings_flags(self):
-        # nominal
-        self.load_config("""<configuration>
-            <settings name="settings">
-                <set name="flags">34</set>
-            </settings>
-        </configuration>""")
-        self.assertEqual(34, self.p._welcomeFlags)
-        # empty
-        self.load_config("""<configuration>
-            <settings name="settings">
-                <set name="flags"></set>
-            </settings>
-        </configuration>""")
-        self.assertEqual(63, self.p._welcomeFlags)
-        # junk
-        self.load_config("""<configuration>
-            <settings name="settings">
-                <set name="flags">f00</set>
-            </settings>
-        </configuration>""")
-        self.assertEqual(63, self.p._welcomeFlags)
-
     def test_settings_newb_connections(self):
         # nominal
         self.load_config("""<configuration>

@@ -55,7 +55,7 @@ F_CUSTOM_GREETING = 32
 #--------------------------------------------------------------------------------------------------
 class WelcomePlugin(b3.plugin.Plugin):
     _newbConnections = 0
-    _welcomeFlags = 0
+    _welcomeFlags = F_FIRST | F_NEWB | F_USER | F_ANNOUNCE_FIRST | F_ANNOUNCE_USER | F_CUSTOM_GREETING
     _welcomeDelay = 0
     _cmd_greeting_minlevel = None
     _min_gap = 3600
@@ -74,14 +74,7 @@ class WelcomePlugin(b3.plugin.Plugin):
         if self._adminPlugin:
             self._adminPlugin.registerCommand(self, 'greeting', self._cmd_greeting_minlevel, self.cmd_greeting)
 
-        try:
-            self._welcomeFlags = self.config.getint('settings', 'flags')
-        except (NoOptionError, KeyError), err:
-            self._welcomeFlags = 63
-            self.warning("Using default value %s for 'settings/flags'. %s" % (self._welcomeFlags, err))
-        except Exception, err:
-            self._welcomeFlags = 63
-            self.error("Using default value %s for 'settings/flags'. %s" % (self._welcomeFlags, err))
+        self._load_config_flags()
 
         try:
             self._newbConnections = self.config.getint('settings', 'newb_connections')
@@ -147,7 +140,7 @@ class WelcomePlugin(b3.plugin.Plugin):
 
     def onEvent(self, event):
         if event.type == b3.events.EVT_CLIENT_AUTH:
-            if self._welcomeFlags < 1 or \
+            if self._welcomeFlags <= 0 or \
                     not event.client or \
                     event.client.id is None or \
                     event.client.cid is None or \
@@ -216,3 +209,46 @@ class WelcomePlugin(b3.plugin.Plugin):
             info['lastVisit'] = 'Unknown'
 
         return info
+
+    def _load_config_flags(self):
+        flag_options = [
+            ("welcome_first", F_FIRST),
+            ("welcome_newb", F_NEWB),
+            ("welcome_user", F_USER),
+            ("announce_first", F_ANNOUNCE_FIRST),
+            ("announce_user", F_ANNOUNCE_USER),
+            ("show_user_greeting", F_CUSTOM_GREETING)
+        ]
+        config_options = zip(*flag_options)[0]
+
+        def set_flag(flag):
+            self._welcomeFlags |= flag
+
+        def unset_flag(flag):
+            self._welcomeFlags &= ~flag
+
+        if not any(map(lambda option: self.config.has_option('settings', option), config_options)):
+            if self.config.has_option('settings', "flags"):
+                # old style config
+                try:
+                    self._welcomeFlags = self.config.getint('settings', 'flags')
+                except Exception, err:
+                    self.error("Using default value %s for 'settings/flags'. %s" % (self._welcomeFlags, err))
+            else:
+                self.warning("could not find any of '%s' in config. All welcome messages will be shown" %
+                             "', '".join(config_options))
+        else:
+            for option, F in flag_options:
+                if self.config.has_option("settings", option):
+                    try:
+                        _ = self.config.getboolean("settings", option)
+                        set_flag(F) if _ else unset_flag(F)
+                    except NoOptionError, err:
+                        self._welcomeFlags |= F
+                        self.warning("Using default value 'yes' for 'settings/%s'. %s" % (option, err))
+                    except Exception, err:
+                        self._welcomeFlags |= F
+                        self.error("Using default value 'yes' for 'settings/%s'. %s" % (option, err))
+                else:
+                    set_flag(F)
+                    self.warning("Using default value 'yes' for 'settings/%s'. Missing settings/%s in config" % (option, option))
