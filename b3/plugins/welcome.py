@@ -16,6 +16,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
+# 2013/04/18 - 1.3 - Courgette
+#  * easier config file format for defining which welcome message to display
 # 2013/04/13 - 1.2.1 - Courgette
 #  * refactoring
 #  * prevent setting a custom greeting which would use the $greeting placeholder
@@ -42,8 +44,8 @@ import b3
 import b3.events
 import b3.plugin
 
-__version__ = '1.2.1'
-__author__ = 'ThorN'
+__version__ = '1.3'
+__author__ = 'ThorN, xlr8or, Courgette'
 
 F_FIRST = 4
 F_NEWB = 1
