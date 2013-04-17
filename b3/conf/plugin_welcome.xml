@@ -1,6 +1,6 @@
 <configuration plugin="welcome">
 	<settings name="commands">
-		<set name="greeting">20</set>
+		<set name="greeting">mod</set>
 	</settings>
 	<settings name="settings">
         <!-- Choose which message will be sent on player connection.
