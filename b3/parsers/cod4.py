@@ -35,7 +35,7 @@
 #    * messages now support named $variables instead of %s
 # 8/11/2010 - 1.3.4 - GrosBedo
 #    * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
-# 22/1/2012 - 1.3.5 -92ndab-Bravo17
+# 22/1/2012 - 1.3.5 -82ndab-Bravo17
 #    * Add JT method for some COD4 mods
 # 7/3/2012 - 1.3.6 - 82ndab-Bravo17
 #    * Change Client Auth method so it updates empty pbids
@@ -45,10 +45,12 @@
 #    * improve parsing rcon status status responses that are missing characters
 # 2013/01/12 - 1.3.9 - Courgette
 #    * fix bug when cod4ClientAuthMethod handles an unexpected error
+# 2013/05/10 - 1.4.0 - 82ndab.Bravo17
+#    * Allow kicking by full name, even if not authed by B3
 #
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.3.9'
+__version__ = '1.4.0'
 
 import b3.parsers.cod2
 import b3.functions
@@ -60,6 +62,17 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
     gameName = 'cod4'
     IpsOnly = False
     _guidLength = 32
+    
+    _commands = {}
+    _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
+    _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
+    _commands['say'] = 'say %(prefix)s %(message)s'
+    _commands['set'] = 'set %(name)s "%(value)s"'
+    _commands['kick'] = 'clientkick %(cid)s'
+    _commands['ban'] = 'banclient %(cid)s'
+    _commands['unban'] = 'unbanuser %(name)s' # remove players from game engine's ban.txt
+    _commands['tempban'] = 'clientkick %(cid)s'
+    _commands['kickbyfullname'] = 'kick %(cid)s'
 
     #num score ping guid                             name            lastmsg address               qport rate
     #--- ----- ---- -------------------------------- --------------- ------- --------------------- ----- -----
@@ -97,6 +110,10 @@ $
     def __new__(cls, *args, **kwargs):
         patch_b3_clients()
         return b3.parsers.cod2.Cod2Parser.__new__(cls)
+
+    def pluginsStarted(self):
+        self.patch_b3_admin_plugin()
+        self.debug('Admin Plugin has been patched.')
 
     # join team (Some mods eg OW use JT)
     def OnJt(self, action, data, match=None):

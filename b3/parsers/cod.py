@@ -59,7 +59,7 @@
 # 01/02/2013 - 1.4.30 - Courgette - improve parsing rcon status status responses that are missing characters
 
 __author__ = 'ThorN, xlr8or'
-__version__ = '1.4.29'
+__version__ = '1.4.30'
 
 import re, string, threading
 import b3
