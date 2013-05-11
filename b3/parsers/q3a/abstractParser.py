@@ -20,7 +20,9 @@
 # $Id: q3a/abstractParser.py 103 2010-11-01 10:10:10Z xlr8or $
 #
 # CHANGELOG
-#    2012/07/07 - 1.13.2 - Courgette
+#    2013/03/07 - 1.7.4 - 82ndab-Bravo17
+#    * Add ability to do kick by full name of client not authed correctly
+#    2012/07/07 - 1.7.3 - Courgette
 #    * ensures the config file has option 'game_log' in section 'server'
 #    2012/06/17 - 1.7.2 - Courgette
 #    * syntax
@@ -82,7 +84,7 @@
 
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.7.3'
+__version__ = '1.7.4'
 
 import re, string, time
 import b3
@@ -91,6 +93,7 @@ from b3.parsers.punkbuster import PunkBuster
 import b3.parsers.q3a.rcon as rcon
 import b3.parser
 import b3.cvar
+import new
 
 #----------------------------------------------------------------------------------------------------------------------------------------------
 class AbstractParser(b3.parser.Parser):
@@ -116,6 +119,8 @@ class AbstractParser(b3.parser.Parser):
         'ban': 'banid %s %s',
         'tempban': 'clientkick %s %s',
         'moveToTeam': 'forceteam %s %s',
+        'kickbyfullname': 'kick %s',
+
     }
 
     _eventMap = {
@@ -468,7 +473,7 @@ class AbstractParser(b3.parser.Parser):
             self.writelines(lines)
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
-        if isinstance(client, str) and re.match('^[0-9]+$', client):
+        if isinstance(client, basestring) and re.match('^[0-9]+$', client):
             self.write(self.getCommand('kick', cid=client, reason=reason))
             return
 
@@ -487,6 +492,17 @@ class AbstractParser(b3.parser.Parser):
 
         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_KICK, reason, client))
         client.disconnect()
+
+    def kickbyfullname(self, client, reason='', admin=None, silent=False, *kwargs):
+        # We get here if a name was given, and the name was not found as a client
+        # This will allow the kicking of non autenticated players
+        if self._commands.has_key('kickbyfullname'):
+            self.debug('Trying kick by full name: %s for %s' % (client, reason))
+            result = self.write(self.getCommand('kickbyfullname', cid=client))
+            if result.endswith('is not on the server\n'):
+                admin.message('^7You need to use the full exact name to kick this player')
+            elif result.endswith('was kicked.\n'):
+                admin.message('^7Player kicked using full exact name')
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
         if isinstance(client, b3.clients.Client) and not client.guid:
@@ -750,3 +766,58 @@ class AbstractParser(b3.parser.Parser):
                 sp.guid = p.get('guid', sp.guid)
                 sp.data = p
                 sp.auth()
+
+                
+###################################################################
+# ALTER THE WAY admin.py work for some q3a based games
+###################################################################
+
+    def patch_b3_admin_plugin(self):
+        """
+        Monkey patches the admin plugin
+        """
+
+
+        def new_cmd_kick(self, data, client=None, cmd=None):
+            """\
+            <name> [<reason>] - kick a player
+            <fullexactname> [<reason>] - kick an incompletely authed player
+            """
+            m = self.parseUserCmd(data)
+            if not m:
+                client.message('^7Invalid parameters')
+                return False
+
+            cid, keyword = m
+            reason = self.getReason(keyword)
+
+            if not reason and client.maxLevel < self._noreason_level:
+                client.message('^1ERROR: ^7You must supply a reason')
+                return False
+
+            sclient = self.findClientPrompt(cid, client)
+            if sclient:
+                if sclient.cid == client.cid:
+                    self.console.say(self.getMessage('kick_self', client.exactName))
+                    return True
+                elif sclient.maxLevel >= client.maxLevel:
+                    if sclient.maskGroup:
+                        client.message('^7%s ^7is a masked higher level player, can\'t kick' % sclient.exactName)
+                    else:
+                        self.console.say(self.getMessage('kick_denied', sclient.exactName, client.exactName, sclient.exactName))
+                    return True
+                else:
+                    sclient.kick(reason, keyword, client)
+                    return True
+            elif re.match('^[0-9]+$', cid):
+                # failsafe, do a manual client id kick
+                self.console.kick(cid, reason, client)
+            else:
+                self.console.kickbyfullname(cid, reason, client)
+
+        adminPlugin = self.getPlugin('admin')
+
+        cmd = adminPlugin._commands['kick']
+        cmd.func = new.instancemethod(new_cmd_kick, adminPlugin)
+        cmd.help = new_cmd_kick.__doc__.strip()
+

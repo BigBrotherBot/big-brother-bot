@@ -45,13 +45,15 @@
 #   * New client will now join Auth queue if slot shows as 'Disconnected' in Auth queue
 # 25.07.2012 - 1.2.1 - Courgette
 #   * Make sure the cod7http plugin is loaded
+# 10.05.2013 - 1.2.2 -82ndab.Bravo17
+#  * Do not apply cod5 alterations to admin plugin
 #
 
 ## @file
 #  CoD7 Parser
 
 __author__  = 'Freelander, Courgette, Just a baka, Bravo17'
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
 import re
 import string
@@ -146,6 +148,9 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
         self.setVersionExceptions()
         self.debug('Parser started.')
 
+    def pluginsStarted(self):
+        self.debug('Admin Plugin not patched.')
+        
     def parseLine(self, line):
         """Called from parseLine method in Parser class to introduce pre-match logic
         and action mapping
