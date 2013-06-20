@@ -53,6 +53,9 @@ from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 import b3
 import b3.events
+import threading
+from time import sleep
+
 __author__  = 'Courgette'
 __version__ = '1.9'
 
@@ -390,6 +393,40 @@ class Bf3Parser(AbstractParser):
             if client.squad != previous_squad:
                 return b3.events.Event(b3.events.EVT_CLIENT_SQUAD_CHANGE, data[1:], client)
 
+    def OnPlayerJoin(self, action, data):
+        """
+        player.onJoin <soldier name: string> <id : EAID>
+        """
+        # we receive this event very early and even before the game client starts to connect to the game server.
+        # In some occasions, the game client fails to properly connect and the game server then fails to send
+        # us a player.onLeave event resulting in B3 thinking the player is connected while it is not.
+        # The fix is to ignore this event. If the game client successfully connect, then we'll receive other
+        # events like player.onTeamChange or even a event from punkbuster which will create the Client object.
+
+        if self._waiting_for_round_start:
+            self._OnServerLevelstarted(action=None, data=None)
+
+    def _OnServerLevelstarted(self, action, data):
+        """
+        Event server.onLevelStarted was used to be sent in Frostbite1. Unfortunately it does not exists anymore
+        in Frostbite2.
+        Instead we call this method from OnPlayerSpawn and maintain a flag which tells if we need to fire the
+        EVT_GAME_ROUND_START event
+        """
+        if self._waiting_for_round_start:
+            # prevents that EVT_GAME_ROUND_START is fired if the minimum player count is  not yet reached.
+            if len(self.getPlayerList()) >= self.getCvar('roundStartPlayerCount').getInt():
+                self._waiting_for_round_start = False
+
+                # as the game server provides us the exact round number in OnServerLoadinglevel()
+                # hence we need to deduct one to compensate?
+                # we'll still leave the call here since it provides us self.game.roundTime()
+                # next function call will increase roundcount by one, this is not wanted
+                correct_rounds_value = self.game.rounds
+                threading.Thread(target=self._startRound).start()
+                self.game.rounds = correct_rounds_value
+                self.queueEvent(b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game))
+
 
     ###############################################################################################
     #
@@ -717,3 +754,9 @@ class Bf3Parser(AbstractParser):
             pass
 
         b3.clients.Client.state = property(getPlayerState, setPlayerState)
+
+    def _startRound(self):
+        # respect var.roundLockdownCountdown
+        roundLockdownCountdown = self.getCvar('roundLockdownCountdown').getInt()
+        sleep(roundLockdownCountdown)
+        self.game.startRound()
