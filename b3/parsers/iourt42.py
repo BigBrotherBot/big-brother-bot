@@ -259,9 +259,9 @@ class Iourt42Parser(Iourt41Parser):
         #13:34 ClientJumpRunCanceled: 0 - way: 1 - attempt: 1 of 5
         re.compile(r'^(?P<action>ClientJumpRunCanceled):\s(?P<cid>\d+)\s-\s(?P<data>way:\s(?P<way_id>\d+)(?:\s-\sattempt:\s(?P<attempt_num>\d+)\sof\s(?P<attempt_max>\d+))?)$', re.IGNORECASE),
         
-        #13:34 ClientSavePosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"
-        #13:34 ClientLoadPosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"
-        re.compile(r'^(?P<action>Client(Save|Load)Position):\s(?P<cid>\d+)\s-\s(?P<data>(?P<x>-?\d+(?:\.\d+)?)\s-\s(?P<y>-?\d+(?:\.\d+)?)\s-\s(?P<z>-?\d+(?:\.\d+)?)\s-\s"(?P<name>.*)")$', re.IGNORECASE),
+        #13:34 ClientSavePosition: 0 - 335.384887 - 67.469154 - -23.875000
+        #13:34 ClientLoadPosition: 0 - 335.384887 - 67.469154 - -23.875000
+        re.compile(r'^(?P<action>Client(Save|Load)Position):\s(?P<cid>\d+)\s-\s(?P<data>(?P<x>-?\d+(?:\.\d+)?)\s-\s(?P<y>-?\d+(?:\.\d+)?)\s-\s(?P<z>-?\d+(?:\.\d+)?))$', re.IGNORECASE),
 
         #Generated with ioUrbanTerror v4.1:
         #Hit: 12 7 1 19: BSTHanzo[FR] hit ercan in the Helmet
@@ -567,22 +567,20 @@ class Iourt42Parser(Iourt41Parser):
     def OnClientsaveposition(self, action, data, match=None):
         cid = match.group('cid')
         position = float(match.group('x')), float(match.group('y')), float(match.group('z'))
-        name = match.group('name')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_CLIENT_POS_SAVE, client=client, data={'position': position, 'name': name})
+        return Event(self.EVT_CLIENT_POS_SAVE, client=client, data={'position': position})
 
     def OnClientloadposition(self, action, data, match=None):
         cid = match.group('cid')
         position = float(match.group('x')), float(match.group('y')), float(match.group('z'))
-        name = match.group('name')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_CLIENT_POS_LOAD, client=client, data={'position': position, 'name': name})
+        return Event(self.EVT_CLIENT_POS_LOAD, client=client, data={'position': position})
 
     def OnSurvivorwinner(self, action, data, match=None):
         #SurvivorWinner: Blue
