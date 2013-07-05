@@ -61,7 +61,17 @@
 #     * fix EVT_SURVIVOR_WIN event
 # 08/04/2013 - 1.12 - Courgette
 #     * add EVT_BOMB_EXPLODED event
+# 05/07/2012 - 1.13 - Fenix
+#     * added support for new UrT 4.2.013 weapons
+#     * correctly parse ClientJumpRunStarted and ClientJumpRunStopped
+#     * renamed event EVT_CLIENT_JUMP_TIMER_START into EVT_CLIENT_JUMP_RUN_START and add attempt_num and attempt_max
+#       info to the event data
+#     * renamed event EVT_CLIENT_JUMP_TIMER_STOP into EVT_CLIENT_JUMP_RUN_STOP and add attempt_num and attempt_max
+#       info to the event data
+#     * added parsing of ClientJumpRunCanceled (generate EVT_CLIENT_JUMP_RUN_CANCEL)
+#     * fixed Client(Load|Save)Position parsing
 #
+
 import re, new
 import time
 from b3.functions import time2minutes
@@ -72,7 +82,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.12'
+__version__ = '1.13'
 
 class Iourt42Client(Client):
 
@@ -206,8 +216,8 @@ class Iourt42Client(Client):
         return "Client42<@%s:%s|%s:\"%s\":%s>" % (self.id, self.guid, self.pbid, self.name, self.cid)
 
 class Iourt42Parser(Iourt41Parser):
+   
     gameName = 'iourt42'
-
 
     _commands = {
         'broadcast': '%(prefix)s^7 %(message)s',
@@ -250,15 +260,20 @@ class Iourt42Parser(Iourt41Parser):
 
         #Vote: 0 - 2
         re.compile(r'''^(?P<action>Vote): (?P<data>(?P<cid>[0-9]+) - (?P<value>.*))$'''),
-
-        #13:34 ClientJumpTimerStarted: 0 - way: 2 (Easy Way)
-        re.compile(r'^(?P<action>ClientJumpTimerStarted):\s(?P<cid>\d+)\s-\s(?P<data>way: (?P<way_id>\d+)(?:\s\((?P<way_label>.+)\))?)$', re.IGNORECASE),
-        #13:34 ClientJumpTimerStopped: 0 - 5 seconds - way: 1 (Hard Way)
-        re.compile(r'^(?P<action>ClientJumpTimerStopped):\s(?P<cid>\d+)\s-\s(?P<data>(?P<duration>.+)\s-\sway: (?P<way_id>\d+)(?:\s\((?P<way_label>.+)\))?)$', re.IGNORECASE),
-
-        #13:34 ClientSavePosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"
-        #13:34 ClientLoadPosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"
-        re.compile(r'^(?P<action>Client(Save|Load)Position):\s(?P<cid>\d+)\s-\s(?P<data>(?P<x>-?\d+(?:\.\d+)?)\s-\s(?P<y>-?\d+(?:\.\d+)?)\s-\s(?P<z>-?\d+(?:\.\d+)?)\s-\s"(?P<name>.*)")$', re.IGNORECASE),
+        
+        #13:34 ClientJumpRunStarted: 0 - way: 1
+        #13:34 ClientJumpRunStarted: 0 - way: 1 - attempt: 1 of 5
+        re.compile(r'^(?P<action>ClientJumpRunStarted):\s(?P<cid>\d+)\s-\s(?P<data>way:\s(?P<way_id>\d+)(?:\s-\sattempt:\s(?P<attempt_num>\d+)\sof\s(?P<attempt_max>\d+))?)$', re.IGNORECASE),
+        #13:34 ClientJumpRunStopped: 0 - way: 1 - time: 12345
+        #13:34 ClientJumpRunStopped: 0 - way: 1 - time: 12345 - attempt: 1 of 5
+        re.compile(r'^(?P<action>ClientJumpRunStopped):\s(?P<cid>\d+)\s-\s(?P<data>way:\s(?P<way_id>\d+)\s-\stime:\s(?P<way_time>\d+)(?:\s-\sattempt:\s(?P<attempt_num>\d+)\sof\s(?P<attempt_max>\d+))?)$', re.IGNORECASE),
+        #13:34 ClientJumpRunCanceled: 0 - way: 1
+        #13:34 ClientJumpRunCanceled: 0 - way: 1 - attempt: 1 of 5
+        re.compile(r'^(?P<action>ClientJumpRunCanceled):\s(?P<cid>\d+)\s-\s(?P<data>way:\s(?P<way_id>\d+)(?:\s-\sattempt:\s(?P<attempt_num>\d+)\sof\s(?P<attempt_max>\d+))?)$', re.IGNORECASE),
+        
+        #13:34 ClientSavePosition: 0 - 335.384887 - 67.469154 - -23.875000
+        #13:34 ClientLoadPosition: 0 - 335.384887 - 67.469154 - -23.875000
+        re.compile(r'^(?P<action>Client(Save|Load)Position):\s(?P<cid>\d+)\s-\s(?P<data>(?P<x>-?\d+(?:\.\d+)?)\s-\s(?P<y>-?\d+(?:\.\d+)?)\s-\s(?P<z>-?\d+(?:\.\d+)?))$', re.IGNORECASE),
 
         #Generated with ioUrbanTerror v4.1:
         #Hit: 12 7 1 19: BSTHanzo[FR] hit ercan in the Helmet
@@ -356,7 +371,7 @@ class Iourt42Parser(Iourt41Parser):
     UT_MOD_PSG1='21'
     UT_MOD_HK69='22'
     UT_MOD_BLED='23'
-    UT_MOD_KICKED='24' # not exising in 4.2 ?
+    UT_MOD_KICKED='24'
     UT_MOD_HEGRENADE='25'
     UT_MOD_SR8='27'
     UT_MOD_AK103='29'
@@ -369,8 +384,10 @@ class Iourt42Parser(Iourt41Parser):
     UT_MOD_HK69_HIT='36'
     UT_MOD_M4='37'
     UT_MOD_GLOCK='38'
-    UT_MOD_FLAG='39'
-    UT_MOD_GOOMBA='40'
+    UT_MOD_COLT1911='39'
+    UT_MOD_MAC11='40'
+    UT_MOD_FLAG='41'
+    UT_MOD_GOOMBA='42'
 
     ## weapons id on Hit: lines are different than the one
     ## on the Kill: lines. Here the translation table
@@ -389,7 +406,9 @@ class Iourt42Parser(Iourt41Parser):
         17: UT_MOD_NEGEV,
         19: UT_MOD_M4,
         20: UT_MOD_GLOCK,
-        23: UT_MOD_KNIFE_THROWN,
+        21: UT_MOD_COLT1911,
+        22: UT_MOD_MAC11,
+        25: UT_MOD_KNIFE_THROWN,
     }
 
 
@@ -416,8 +435,9 @@ class Iourt42Parser(Iourt41Parser):
         self._eventMap['hotpotato'] = self.EVT_GAME_FLAG_HOTPOTATO
         self.EVT_CLIENT_CALLVOTE = self.Events.createEvent('EVT_CLIENT_CALLVOTE', 'Event client call vote')
         self.EVT_CLIENT_VOTE = self.Events.createEvent('EVT_CLIENT_VOTE', 'Event client vote')
-        self.EVT_CLIENT_JUMP_TIMER_START = self.Events.createEvent('EVT_CLIENT_JUMP_TIMER_START', 'Event client jump timer started')
-        self.EVT_CLIENT_JUMP_TIMER_STOP = self.Events.createEvent('EVT_CLIENT_JUMP_TIMER_STOP', 'Event client jump timer stopped')
+        self.EVT_CLIENT_JUMP_RUN_START = self.Events.createEvent('EVT_CLIENT_JUMP_RUN_START', 'Event client jump run started')
+        self.EVT_CLIENT_JUMP_RUN_STOP = self.Events.createEvent('EVT_CLIENT_JUMP_RUN_STOP', 'Event client jump run stopped')
+        self.EVT_CLIENT_JUMP_RUN_CANCEL = self.Events.createEvent('EVT_CLIENT_JUMP_RUN_CANCEL', 'Event client jump run canceled')
         self.EVT_CLIENT_POS_SAVE = self.Events.createEvent('EVT_CLIENT_POS_SAVE', 'Event client position saved')
         self.EVT_CLIENT_POS_LOAD = self.Events.createEvent('EVT_CLIENT_POS_LOAD', 'Event client position loaded')
         self.EVT_CLIENT_SURVIVOR_WINNER = self.Events.createEvent('EVT_CLIENT_SURVIVOR_WINNER', 'Event client survivor winner')
@@ -529,46 +549,57 @@ class Iourt42Parser(Iourt41Parser):
             return None
         return Event(self.EVT_CLIENT_VOTE, client=client, data=value)
 
-    def OnClientjumptimerstarted(self, action, data, match=None):
+    def OnClientjumprunstarted(self, action, data, match=None):
         cid = match.group('cid')
         way_id = match.group('way_id')
-        way_label = match.group('way_label')
+        attempt_num = match.group('attempt_num')
+        attempt_max = match.group('attempt_max')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_CLIENT_JUMP_TIMER_START, client=client, data={'way_id': way_id, 'way_label': way_label})
+        return Event(self.EVT_CLIENT_JUMP_RUN_START, client=client, data={'way_id': way_id, 'attempt_num': attempt_num, 'attempt_max': attempt_max})
 
-    def OnClientjumptimerstopped(self, action, data, match=None):
+    def OnClientjumprunstopped(self, action, data, match=None):
         cid = match.group('cid')
         way_id = match.group('way_id')
-        way_label = match.group('way_label')
-        duration = match.group('duration')
+        way_time = match.group('way_time')
+        attempt_num = match.group('attempt_num')
+        attempt_max = match.group('attempt_max')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_CLIENT_JUMP_TIMER_STOP, client=client, data={'way_id': way_id, 'way_label': way_label, 'duration': duration})
-
+        return Event(self.EVT_CLIENT_JUMP_RUN_STOP, client=client, data={'way_id': way_id, 'way_time': way_time, 'attempt_num': attempt_num, 'attempt_max': attempt_max})
+    
+    def OnClientjumpruncanceled(self, action, data, match=None):
+        cid = match.group('cid')
+        way_id = match.group('way_id')
+        attempt_num = match.group('attempt_num')
+        attempt_max = match.group('attempt_max')
+        client = self.getByCidOrJoinPlayer(cid)
+        if not client:
+            self.debug('No client found')
+            return None
+        return Event(self.EVT_CLIENT_JUMP_RUN_CANCEL, client=client, data={'way_id': way_id, 'attempt_num': attempt_num, 'attempt_max': attempt_max})
+    
     def OnClientsaveposition(self, action, data, match=None):
         cid = match.group('cid')
         position = float(match.group('x')), float(match.group('y')), float(match.group('z'))
-        name = match.group('name')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_CLIENT_POS_SAVE, client=client, data={'position': position, 'name': name})
+        return Event(self.EVT_CLIENT_POS_SAVE, client=client, data={'position': position})
 
     def OnClientloadposition(self, action, data, match=None):
         cid = match.group('cid')
         position = float(match.group('x')), float(match.group('y')), float(match.group('z'))
-        name = match.group('name')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_CLIENT_POS_LOAD, client=client, data={'position': position, 'name': name})
+        return Event(self.EVT_CLIENT_POS_LOAD, client=client, data={'position': position})
 
     def OnSurvivorwinner(self, action, data, match=None):
         #SurvivorWinner: Blue
