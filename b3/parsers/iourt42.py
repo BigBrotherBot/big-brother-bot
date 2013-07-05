@@ -76,7 +76,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.11.1'
+__version__ = '1.12'
 
 class Iourt42Client(Client):
 
