@@ -204,8 +204,8 @@ class Iourt42Client(Client):
         return "Client42<@%s:%s|%s:\"%s\":%s>" % (self.id, self.guid, self.pbid, self.name, self.cid)
 
 class Iourt42Parser(Iourt41Parser):
+   
     gameName = 'iourt42'
-
 
     _commands = {
         'broadcast': '%(prefix)s^7 %(message)s',
@@ -352,7 +352,7 @@ class Iourt42Parser(Iourt41Parser):
     UT_MOD_PSG1='21'
     UT_MOD_HK69='22'
     UT_MOD_BLED='23'
-    UT_MOD_KICKED='24' # not exising in 4.2 ?
+    UT_MOD_KICKED='24'
     UT_MOD_HEGRENADE='25'
     UT_MOD_SR8='27'
     UT_MOD_AK103='29'
@@ -365,8 +365,10 @@ class Iourt42Parser(Iourt41Parser):
     UT_MOD_HK69_HIT='36'
     UT_MOD_M4='37'
     UT_MOD_GLOCK='38'
-    UT_MOD_FLAG='39'
-    UT_MOD_GOOMBA='40'
+    UT_MOD_COLT1911='39'
+    UT_MOD_MAC11='40'
+    UT_MOD_FLAG='41'
+    UT_MOD_GOOMBA='42'
 
     ## weapons id on Hit: lines are different than the one
     ## on the Kill: lines. Here the translation table
@@ -385,7 +387,9 @@ class Iourt42Parser(Iourt41Parser):
         17: UT_MOD_NEGEV,
         19: UT_MOD_M4,
         20: UT_MOD_GLOCK,
-        23: UT_MOD_KNIFE_THROWN,
+        21: UT_MOD_COLT1911,
+        22: UT_MOD_MAC11,
+        25: UT_MOD_KNIFE_THROWN,
     }
 
 
