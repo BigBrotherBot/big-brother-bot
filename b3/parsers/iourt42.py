@@ -255,7 +255,10 @@ class Iourt42Parser(Iourt41Parser):
         #13:34 ClientJumpRunStopped: 0 - way: 1 - time: 12345
         #13:34 ClientJumpRunStopped: 0 - way: 1 - time: 12345 - attempt: 1 of 5
         re.compile(r'^(?P<action>ClientJumpRunStopped):\s(?P<cid>\d+)\s-\s(?P<data>way:\s(?P<way_id>\d+)\s-\stime:\s(?P<way_time>\d+)(?:\s-\sattempt:\s(?P<attempt_num>\d+)\sof\s(?P<attempt_max>\d+))?)$', re.IGNORECASE),
-
+        #13:34 ClientJumpRunCanceled: 0 - way: 1
+        #13:34 ClientJumpRunCanceled: 0 - way: 1 - attempt: 1 of 5
+        re.compile(r'^(?P<action>ClientJumpRunCanceled):\s(?P<cid>\d+)\s-\s(?P<data>way:\s(?P<way_id>\d+)(?:\s-\sattempt:\s(?P<attempt_num>\d+)\sof\s(?P<attempt_max>\d+))?)$', re.IGNORECASE),
+        
         #13:34 ClientSavePosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"
         #13:34 ClientLoadPosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"
         re.compile(r'^(?P<action>Client(Save|Load)Position):\s(?P<cid>\d+)\s-\s(?P<data>(?P<x>-?\d+(?:\.\d+)?)\s-\s(?P<y>-?\d+(?:\.\d+)?)\s-\s(?P<z>-?\d+(?:\.\d+)?)\s-\s"(?P<name>.*)")$', re.IGNORECASE),
@@ -419,6 +422,7 @@ class Iourt42Parser(Iourt41Parser):
         self.EVT_CLIENT_VOTE = self.Events.createEvent('EVT_CLIENT_VOTE', 'Event client vote')
         self.EVT_CLIENT_JUMP_RUN_START = self.Events.createEvent('EVT_CLIENT_JUMP_RUN_START', 'Event client jump run started')
         self.EVT_CLIENT_JUMP_RUN_STOP = self.Events.createEvent('EVT_CLIENT_JUMP_RUN_STOP', 'Event client jump run stopped')
+        self.EVT_CLIENT_JUMP_RUN_CANCEL = self.Events.createEvent('EVT_CLIENT_JUMP_RUN_CANCEL', 'Event client jump run canceled')
         self.EVT_CLIENT_POS_SAVE = self.Events.createEvent('EVT_CLIENT_POS_SAVE', 'Event client position saved')
         self.EVT_CLIENT_POS_LOAD = self.Events.createEvent('EVT_CLIENT_POS_LOAD', 'Event client position loaded')
         self.EVT_CLIENT_SURVIVOR_WINNER = self.Events.createEvent('EVT_CLIENT_SURVIVOR_WINNER', 'Event client survivor winner')
@@ -548,7 +552,18 @@ class Iourt42Parser(Iourt41Parser):
             self.debug('No client found')
             return None
         return Event(self.EVT_CLIENT_JUMP_RUN_STOP, client=client, data={'way_id': way_id, 'way_time': way_time, 'attempt_num': attempt_num, 'attempt_num': attempt_max})
-
+    
+    def OnClientjumpruncanceled(self, action, data, match=None):
+        cid = match.group('cid')
+        way_id = match.group('way_id')
+        attempt_num = match.group('attempt_num')
+        attempt_max = match.group('attempt_max')
+        client = self.getByCidOrJoinPlayer(cid)
+        if not client:
+            self.debug('No client found')
+            return None
+        return Event(self.EVT_CLIENT_JUMP_RUN_CANCEL, client=client, data={'way_id': way_id, 'attempt_num': attempt_num, 'attempt_num': attempt_max})
+    
     def OnClientsaveposition(self, action, data, match=None):
         cid = match.group('cid')
         position = float(match.group('x')), float(match.group('y')), float(match.group('z'))
