@@ -61,9 +61,9 @@
 #     * fix EVT_SURVIVOR_WIN event
 # 05/07/2012 - 1.12 - Fenix
 #     * added support for new UrT 4.2.013 weapons
-#     * aorrectly parse ClientJumpRunStarted and ClientJumpRunStopped
+#     * correctly parse ClientJumpRunStarted and ClientJumpRunStopped
 #     * added parsing of ClientJumpRunCanceled (generate EVT_CLIENT_JUMP_RUN_CANCEL)
-#     * aixed Client(Load|Save)Position parsing
+#     * fixed Client(Load|Save)Position parsing
 #
 
 import re, new
