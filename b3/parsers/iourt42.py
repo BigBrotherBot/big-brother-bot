@@ -248,11 +248,13 @@ class Iourt42Parser(Iourt41Parser):
 
         #Vote: 0 - 2
         re.compile(r'''^(?P<action>Vote): (?P<data>(?P<cid>[0-9]+) - (?P<value>.*))$'''),
-
-        #13:34 ClientJumpTimerStarted: 0 - way: 2 (Easy Way)
-        re.compile(r'^(?P<action>ClientJumpTimerStarted):\s(?P<cid>\d+)\s-\s(?P<data>way: (?P<way_id>\d+)(?:\s\((?P<way_label>.+)\))?)$', re.IGNORECASE),
-        #13:34 ClientJumpTimerStopped: 0 - 5 seconds - way: 1 (Hard Way)
-        re.compile(r'^(?P<action>ClientJumpTimerStopped):\s(?P<cid>\d+)\s-\s(?P<data>(?P<duration>.+)\s-\sway: (?P<way_id>\d+)(?:\s\((?P<way_label>.+)\))?)$', re.IGNORECASE),
+        
+        #13:34 ClientJumpRunStarted: 0 - way: 1
+        #13:34 ClientJumpRunStarted: 0 - way: 1 - attempt: 1 of 5
+        re.compile(r'^(?P<action>ClientJumpRunStarted):\s(?P<cid>\d+)\s-\s(?P<data>way:\s(?P<way_id>\d+)(?:\s-\sattempt:\s(?P<attempt_num>\d+)\sof\s(?P<attempt_max>\d+))?)$', re.IGNORECASE),
+        #13:34 ClientJumpRunStopped: 0 - way: 1 - time: 12345
+        #13:34 ClientJumpRunStopped: 0 - way: 1 - time: 12345 - attempt: 1 of 5
+        re.compile(r'^(?P<action>ClientJumpRunStopped):\s(?P<cid>\d+)\s-\s(?P<data>way:\s(?P<way_id>\d+)\s-\stime:\s(?P<way_time>\d+)(?:\s-\sattempt:\s(?P<attempt_num>\d+)\sof\s(?P<attempt_max>\d+))?)$', re.IGNORECASE),
 
         #13:34 ClientSavePosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"
         #13:34 ClientLoadPosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"
@@ -415,8 +417,8 @@ class Iourt42Parser(Iourt41Parser):
         self._eventMap['hotpotato'] = self.EVT_GAME_FLAG_HOTPOTATO
         self.EVT_CLIENT_CALLVOTE = self.Events.createEvent('EVT_CLIENT_CALLVOTE', 'Event client call vote')
         self.EVT_CLIENT_VOTE = self.Events.createEvent('EVT_CLIENT_VOTE', 'Event client vote')
-        self.EVT_CLIENT_JUMP_TIMER_START = self.Events.createEvent('EVT_CLIENT_JUMP_TIMER_START', 'Event client jump timer started')
-        self.EVT_CLIENT_JUMP_TIMER_STOP = self.Events.createEvent('EVT_CLIENT_JUMP_TIMER_STOP', 'Event client jump timer stopped')
+        self.EVT_CLIENT_JUMP_RUN_START = self.Events.createEvent('EVT_CLIENT_JUMP_RUN_START', 'Event client jump run started')
+        self.EVT_CLIENT_JUMP_RUN_STOP = self.Events.createEvent('EVT_CLIENT_JUMP_RUN_STOP', 'Event client jump run stopped')
         self.EVT_CLIENT_POS_SAVE = self.Events.createEvent('EVT_CLIENT_POS_SAVE', 'Event client position saved')
         self.EVT_CLIENT_POS_LOAD = self.Events.createEvent('EVT_CLIENT_POS_LOAD', 'Event client position loaded')
         self.EVT_CLIENT_SURVIVOR_WINNER = self.Events.createEvent('EVT_CLIENT_SURVIVOR_WINNER', 'Event client survivor winner')
@@ -524,26 +526,28 @@ class Iourt42Parser(Iourt41Parser):
             return None
         return Event(self.EVT_CLIENT_VOTE, client=client, data=value)
 
-    def OnClientjumptimerstarted(self, action, data, match=None):
+    def OnClientjumprunstarted(self, action, data, match=None):
         cid = match.group('cid')
         way_id = match.group('way_id')
-        way_label = match.group('way_label')
+        attempt_num = match.group('attempt_num')
+        attempt_max = match.group('attempt_max')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_CLIENT_JUMP_TIMER_START, client=client, data={'way_id': way_id, 'way_label': way_label})
+        return Event(self.EVT_CLIENT_JUMP_RUN_START, client=client, data={'way_id': way_id, 'attempt_num': attempt_num, 'attempt_num': attempt_max})
 
-    def OnClientjumptimerstopped(self, action, data, match=None):
+    def OnClientjumprunstopped(self, action, data, match=None):
         cid = match.group('cid')
         way_id = match.group('way_id')
-        way_label = match.group('way_label')
-        duration = match.group('duration')
+        way_time = match.group('way_time')
+        attempt_num = match.group('attempt_num')
+        attempt_max = match.group('attempt_max')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_CLIENT_JUMP_TIMER_STOP, client=client, data={'way_id': way_id, 'way_label': way_label, 'duration': duration})
+        return Event(self.EVT_CLIENT_JUMP_RUN_STOP, client=client, data={'way_id': way_id, 'way_time': way_time, 'attempt_num': attempt_num, 'attempt_num': attempt_max})
 
     def OnClientsaveposition(self, action, data, match=None):
         cid = match.group('cid')
