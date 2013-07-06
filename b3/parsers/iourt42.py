@@ -545,7 +545,7 @@ class Iourt42Parser(Iourt41Parser):
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_CLIENT_JUMP_RUN_START, client=client, data={'way_id': way_id, 'attempt_num': attempt_num, 'attempt_num': attempt_max})
+        return Event(self.EVT_CLIENT_JUMP_RUN_START, client=client, data={'way_id': way_id, 'attempt_num': attempt_num, 'attempt_max': attempt_max})
 
     def OnClientjumprunstopped(self, action, data, match=None):
         cid = match.group('cid')
@@ -557,7 +557,7 @@ class Iourt42Parser(Iourt41Parser):
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_CLIENT_JUMP_RUN_STOP, client=client, data={'way_id': way_id, 'way_time': way_time, 'attempt_num': attempt_num, 'attempt_num': attempt_max})
+        return Event(self.EVT_CLIENT_JUMP_RUN_STOP, client=client, data={'way_id': way_id, 'way_time': way_time, 'attempt_num': attempt_num, 'attempt_max': attempt_max})
     
     def OnClientjumpruncanceled(self, action, data, match=None):
         cid = match.group('cid')
@@ -568,7 +568,7 @@ class Iourt42Parser(Iourt41Parser):
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_CLIENT_JUMP_RUN_CANCEL, client=client, data={'way_id': way_id, 'attempt_num': attempt_num, 'attempt_num': attempt_max})
+        return Event(self.EVT_CLIENT_JUMP_RUN_CANCEL, client=client, data={'way_id': way_id, 'attempt_num': attempt_num, 'attempt_max': attempt_max})
     
     def OnClientsaveposition(self, action, data, match=None):
         cid = match.group('cid')
