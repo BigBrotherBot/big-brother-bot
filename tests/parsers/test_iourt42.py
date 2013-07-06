@@ -190,54 +190,70 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_data="!help")
 
 
-    def test_ClientJumpTimerStarted(self):
+    def test_ClientJumpRunStarted(self):
         marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
         marcel.connects('0')
-        self.assertEvent(r'''ClientJumpTimerStarted: 0 - way: 1 (Hard Way)''',
-            event_type='EVT_CLIENT_JUMP_TIMER_START',
+        self.assertEvent(r'''ClientJumpRunStarted: 0 - way: 1''',
+            event_type='EVT_CLIENT_JUMP_RUN_START',
             event_client=marcel,
-            event_data={'way_id': '1', 'way_label': 'Hard Way'})
+            event_data={'way_id': '1', 'attempt_num': None, 'attempt_max': None})
 
-    def test_ClientJumpTimerStarted_no_location(self):
+    def test_ClientJumpRunStarted_with_attempt(self):
         marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
         marcel.connects('0')
-        self.assertEvent(r'''ClientJumpTimerStarted: 0 - way: 0''',
-            event_type='EVT_CLIENT_JUMP_TIMER_START',
+        self.assertEvent(r'''ClientJumpRunStarted: 0 - way: 1 - attempt: 1 of 5''',
+            event_type='EVT_CLIENT_JUMP_RUN_START',
             event_client=marcel,
-            event_data={'way_id': '0', 'way_label': None})
+            event_data={'way_id': '1', 'attempt_num': '1', 'attempt_max': '5'})
 
-    def test_ClientJumpTimerStopped(self):
+    def test_ClientJumpRunStopped(self):
         marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
         marcel.connects('0')
-        self.assertEvent(r'''ClientJumpTimerStopped: 0 - 5 seconds - way: 1 (Hard Way)''',
-            event_type='EVT_CLIENT_JUMP_TIMER_STOP',
+        self.assertEvent(r'''ClientJumpRunStopped: 0 - way: 1 - time: 12345''',
+            event_type='EVT_CLIENT_JUMP_RUN_STOP',
             event_client=marcel,
-            event_data={'way_id': '1', 'way_label': 'Hard Way', 'duration': '5 seconds'})
+            event_data={'way_id': '1', 'way_time': '12345', 'attempt_max': None, 'attempt_num': None})
 
-    def test_ClientJumpTimerStopped_no_location(self):
+    def test_ClientJumpRunStopped_with_attempt(self):
         marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
         marcel.connects('0')
-        self.assertEvent(r'''ClientJumpTimerStopped: 0 - 4 seconds - way: 0''',
-            event_type='EVT_CLIENT_JUMP_TIMER_STOP',
+        self.assertEvent(r'''ClientJumpRunStopped: 0 - way: 1 - time: 12345 - attempt: 1 of 5''',
+            event_type='EVT_CLIENT_JUMP_RUN_STOP',
             event_client=marcel,
-            event_data={'way_id': '0', 'way_label': None, 'duration': '4 seconds'})
+            event_data={'way_id': '1', 'way_time': '12345', 'attempt_max': '5', 'attempt_num': '1'})
+
+    def test_ClientJumpRunCancelled(self):
+        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel.connects('0')
+        self.assertEvent(r'''ClientJumpRunCanceled: 0 - way: 1''',
+            event_type='EVT_CLIENT_JUMP_RUN_CANCEL',
+            event_client=marcel,
+            event_data={'way_id': '1', 'attempt_max': None, 'attempt_num': None})
+
+    def test_ClientJumpRunCancelled_with_attempt(self):
+        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel.connects('0')
+        self.assertEvent(r'''ClientJumpRunCanceled: 0 - way: 1 - attempt: 1 of 5''',
+            event_type='EVT_CLIENT_JUMP_RUN_CANCEL',
+            event_client=marcel,
+            event_data={'way_id': '1', 'attempt_max': '5', 'attempt_num': '1'})
 
 
     def test_ClientSavePosition(self):
         marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
         marcel.connects('0')
-        self.assertEvent(r'''ClientSavePosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"''',
+        self.assertEvent(r'''ClientSavePosition: 0 - 335.384887 - 67.469154 - -23.875000''',
             event_type='EVT_CLIENT_POS_SAVE',
             event_client=marcel,
-            event_data={'position': (335.384887, 67.469154, -23.875), 'name': 'unknown'})
+            event_data={'position': (335.384887, 67.469154, -23.875)})
 
     def test_ClientLoadPosition(self):
         marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
         marcel.connects('0')
-        self.assertEvent(r'''ClientLoadPosition: 0 - 335.384887 - 67.469154 - -23.875000 - "unknown"''',
+        self.assertEvent(r'''ClientLoadPosition: 0 - 335.384887 - 67.469154 - -23.875000''',
             event_type='EVT_CLIENT_POS_LOAD',
             event_client=marcel,
-            event_data={'position': (335.384887, 67.469154, -23.875), 'name': 'unknown'})
+            event_data={'position': (335.384887, 67.469154, -23.875)})
 
 
     def test_SurvivorWinner_player(self):
@@ -333,7 +349,7 @@ class Test_kill_mods(Test_log_lines_parsing):
         assert_mod('21', 'UT_MOD_PSG1')
         assert_mod('22', 'UT_MOD_HK69')
         assert_mod('23', 'UT_MOD_BLED')
-        assert_mod('24', 'UT_MOD_KICKED') # not exising in 4.2 ?
+        assert_mod('24', 'UT_MOD_KICKED')
         assert_mod('25', 'UT_MOD_HEGRENADE')
         assert_mod('27', 'UT_MOD_SR8')
         assert_mod('29', 'UT_MOD_AK103')
@@ -346,8 +362,10 @@ class Test_kill_mods(Test_log_lines_parsing):
         assert_mod('36', 'UT_MOD_HK69_HIT')
         assert_mod('37', 'UT_MOD_M4')
         assert_mod('38', 'UT_MOD_GLOCK')
-        assert_mod('39', 'UT_MOD_FLAG')
-        assert_mod('40', 'UT_MOD_GOOMBA')
+        assert_mod('39', 'UT_MOD_COLT1911')
+        assert_mod('40', 'UT_MOD_MAC11')
+        assert_mod('41', 'UT_MOD_FLAG')
+        assert_mod('42', 'UT_MOD_GOOMBA')
 
 
 
