@@ -62,6 +62,10 @@
 # 05/07/2012 - 1.12 - Fenix
 #     * added support for new UrT 4.2.013 weapons
 #     * correctly parse ClientJumpRunStarted and ClientJumpRunStopped
+#     * renamed event EVT_CLIENT_JUMP_TIMER_START into EVT_CLIENT_JUMP_RUN_START and add attempt_num and attempt_max
+#       info to the event data
+#     * renamed event EVT_CLIENT_JUMP_TIMER_STOP into EVT_CLIENT_JUMP_RUN_STOP and add attempt_num and attempt_max
+#       info to the event data
 #     * added parsing of ClientJumpRunCanceled (generate EVT_CLIENT_JUMP_RUN_CANCEL)
 #     * fixed Client(Load|Save)Position parsing
 #
