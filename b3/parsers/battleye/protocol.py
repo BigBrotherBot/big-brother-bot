@@ -30,6 +30,8 @@
 #   * CommandTimeoutError will be raised if a command does not get any response in a timely manner
 # 1.1.1 - 82ndab-Bravo17
 #   * correct race condition
+# 1.1.2 - 82ndab-Bravo17 13 July 2013
+#   * improve UDP reads to avoid dropped packets
 #
 import sys
 import logging
@@ -42,7 +44,7 @@ import Queue
 from collections import deque
 
 __author__ = '82ndab-Bravo17, Courgette'
-__version__ = '1.11'
+__version__ = '1.1.2'
 
 #####################################################################################
 #
@@ -137,6 +139,7 @@ class BattleyeServer(Thread):
         self._isconnected = False
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.server.connect((self.host, self.port))
+        self.server.settimeout(0.0001)
 
         while not self.isStopped():
             #self.getLogger().debug("Is socket ready")
@@ -145,11 +148,15 @@ class BattleyeServer(Thread):
             if not exception:
                 if readable:
                     try:
-                        data = self.server.recv(8192)
-                        self.read_queue.put(data)
-                        # self.getLogger().debug("Read data: %s" % repr(data))
-                    except socket.error, (value,message): 
-                        self.getLogger().error("Socket error %s %s" % (value, message))
+                        while True:
+                            data = self.server.recv(8192)
+                            self.read_queue.put(data)
+                            # self.getLogger().debug("Read data: %s" % repr(data))
+                    except socket.timeout:
+                        # We've read all the data that there is currently, so move on.
+                        pass
+                    except socket.error, err: 
+                        self.getLogger().error("Socket error %s" % err)
                         self.stop()
                 elif writable:
                     if len(self.write_queue):

@@ -38,6 +38,8 @@
 # 09/25/2012    0.19
 #   - Allow clients with un-verified GUIDs to auth if IP's match the one in the batabase
 #   - or optionally allow clients to always auth using the nonVerified GUID's
+# 07/13/2013   0.20
+#   - Handle 'bans' command not completing correctly
 
 import sys, re, traceback, time, Queue, threading
 from logging import Formatter
@@ -50,7 +52,7 @@ import b3.cvar
 from b3.clients import Clients
 
 __author__  = '82ndab-Bravo17, Courgette'
-__version__ = '0.19'
+__version__ = '0.20'
 
 
 # disable the authorizing timer that come by default with the b3.clients.Clients class
