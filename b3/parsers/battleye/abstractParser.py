@@ -824,6 +824,10 @@ class AbstractParser(b3.parser.Parser):
         if not client or not client.guid:
             return
         bans = self.getBanlist()
+        if len(bans) == 0:
+            if admin:
+                admin.message("Server Ban list is empty, or there was an eror retrieving it")
+            return
         if not client.guid in bans:
             if admin:
                 admin.message("%s guid not found in banlist" % client.guid)
@@ -968,9 +972,14 @@ class AbstractParser(b3.parser.Parser):
         #1  8ac69e7189ecd2ff4235142feff0bd26 perm Script Detection: setVehicleInit DoThis;
         bans = {}
         raw_bans = self.output.write("bans")
-        for m in re.finditer(r'''^\s*(?P<ban_index>\d+)\s+(?P<guid>[a-fA-F0-9]+)\s+(?P<min_left>\S+)\s+(?P<reason>.*)$''', raw_bans, re.MULTILINE):
-            bans[m.group('guid')] = m.groupdict()
-        return bans
+        try:
+            for m in re.finditer(r'''^\s*(?P<ban_index>\d+)\s+(?P<guid>[a-fA-F0-9]+)\s+(?P<min_left>\S+)\s+(?P<reason>.*)$''', raw_bans, re.MULTILINE):
+                bans[m.group('guid')] = m.groupdict()
+            return bans
+        except TypeError:
+            return ""
+        except:
+            raise
 
 
 

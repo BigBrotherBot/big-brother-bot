@@ -145,13 +145,13 @@ class BattleyeServer(Thread):
             if not exception:
                 if readable:
                     try:
-                        data, addr = self.server.recvfrom(8192)
+                        data = self.server.recv(8192)
                         self.read_queue.put(data)
-                        self.getLogger().debug("Read data: %s" % repr(data))
+                        # self.getLogger().debug("Read data: %s" % repr(data))
                     except socket.error, (value,message): 
                         self.getLogger().error("Socket error %s %s" % (value, message))
                         self.stop()
-                if writable:
+                elif writable:
                     if len(self.write_queue):
                         data = self.write_queue.popleft()
                         self.getLogger().debug("Data to send: %s" % repr(data))
@@ -166,7 +166,7 @@ class BattleyeServer(Thread):
                                 seq = ord(data[8:9])
                                 self.getLogger().debug("Sent sequence was %s" % seq)
                                 self.sent_data_seq.append(seq)
-                time.sleep(.05)
+                    readable, writable, exception = select.select([self.server],[],[], .05)
             else:
                 self.stop()
         self.getLogger().debug("Ending Polling Thread")
@@ -423,13 +423,13 @@ class BattleyeServer(Thread):
             # we got all the packets that make a full command response
             data = ''
             for p in range(0, total_num_packets):
-                if len(self._multi_packet_response[p]):
+                if self._multi_packet_response.has_key(p):
                     data = data + self._multi_packet_response[p]
                 else:
-                    self.debug('Part of Multi packet response is missing')
+                    self.getLogger().debug('Part %s of Multi packet response is missing' % p)
                     for pp in range(0, total_num_packets-1):
                         self._multi_packet_response[pp] = ''
-                    return
+                    return 'Error retrieving Bans list from server'
 
             # Packet reconstituted, so delete segments
             for pp in range(0, total_num_packets-1):
