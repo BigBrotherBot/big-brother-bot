@@ -166,9 +166,11 @@
 #     * protect some of the Client object property
 # 08/04/2013 - 1.16 - Courgette
 #     * add EVT_BOMB_EXPLODED event
+# 14/07/2013 - 1.17 - Courgette
+#     * add hitlocation constants : HL_HEAD, HL_HELMET and HL_TORSO
 #
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.16'
+__version__ = '1.17'
 
 import re, string, time, os, thread
 from b3.parsers.q3a.abstractParser import AbstractParser
@@ -320,7 +322,12 @@ class Iourt41Parser(AbstractParser):
     UT_MOD_M4='38'
     UT_MOD_FLAG='39'
     UT_MOD_GOOMBA='40'
-    
+
+    # HIT LOCATIONS
+    HL_HEAD = '0'
+    HL_HELMET = '1'
+    HL_TORSO = '2'
+
     ## weapons id on Hit: lines are different than the one
     ## on the Kill: lines. Here the translation table
     hitweapon2killweapon = {

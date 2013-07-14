@@ -70,6 +70,8 @@
 #       info to the event data
 #     * added parsing of ClientJumpRunCanceled (generate EVT_CLIENT_JUMP_RUN_CANCEL)
 #     * fixed Client(Load|Save)Position parsing
+# 14/07/2013 - 1.14 - Courgette
+#     * add hitlocation constants : HL_HEAD, HL_HELMET and HL_TORSO
 #
 
 import re, new
@@ -82,7 +84,8 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.13'
+__version__ = '1.14'
+
 
 class Iourt42Client(Client):
 
@@ -214,6 +217,7 @@ class Iourt42Client(Client):
 
     def __str__(self):
         return "Client42<@%s:%s|%s:\"%s\":%s>" % (self.id, self.guid, self.pbid, self.name, self.cid)
+
 
 class Iourt42Parser(Iourt41Parser):
    
@@ -388,6 +392,11 @@ class Iourt42Parser(Iourt41Parser):
     UT_MOD_MAC11='40'
     UT_MOD_FLAG='41'
     UT_MOD_GOOMBA='42'
+
+    # HIT LOCATIONS
+    HL_HEAD = '1'
+    HL_HELMET = '2'
+    HL_TORSO = '3'
 
     ## weapons id on Hit: lines are different than the one
     ## on the Kill: lines. Here the translation table
