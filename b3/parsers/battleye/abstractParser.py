@@ -40,19 +40,21 @@
 #   - or optionally allow clients to always auth using the nonVerified GUID's
 # 07/10/2013    0.19.1
 #   - getBanlist respond with an empty dict if it fails to read the banlist data from the game server
+# 07/13/2013   0.20
+#   - Handle 'bans' command not completing correctly
 
 import sys, re, traceback, time, Queue, threading
 from logging import Formatter
 from b3.output import VERBOSE2, VERBOSE
 import b3.parser
 from b3.parsers.battleye.rcon import Rcon as BattleyeRcon
-from b3.parsers.battleye.protocol import BattleyeServer, CommandFailedError, CommandError, BattleyeError, NetworkError, CommandTimeoutError
+from b3.parsers.battleye.protocol import BattleyeServer, CommandFailedError, CommandError, BattleyeError, NetworkError
 import b3.events
 import b3.cvar
 from b3.clients import Clients
 
 __author__  = '82ndab-Bravo17, Courgette'
-__version__ = '0.19.1'
+__version__ = '0.20'
 
 
 # disable the authorizing timer that come by default with the b3.clients.Clients class
@@ -826,6 +828,10 @@ class AbstractParser(b3.parser.Parser):
         if not client or not client.guid:
             return
         bans = self.getBanlist()
+        if len(bans) == 0:
+            if admin:
+                admin.message("Server Ban list is empty, or there was an eror retrieving it")
+            return
         if not client.guid in bans:
             if admin:
                 admin.message("%s guid not found in banlist" % client.guid)
@@ -969,14 +975,13 @@ class AbstractParser(b3.parser.Parser):
         #0  b57cb4973da76f4588936416aae2de05 perm Script Detection: Gerk
         #1  8ac69e7189ecd2ff4235142feff0bd26 perm Script Detection: setVehicleInit DoThis;
         bans = {}
+        raw_bans = self.output.write("bans")
         try:
-            raw_bans = self.output.write("bans")
-        except CommandTimeoutError, err:
-            self.error('failed to get the banlist from the game server. %s' % err)
-            raw_bans = ""
-        for m in re.finditer(r'''^\s*(?P<ban_index>\d+)\s+(?P<guid>[a-fA-F0-9]+)\s+(?P<min_left>\S+)\s+(?P<reason>.*)$''', raw_bans, re.MULTILINE):
-            bans[m.group('guid')] = m.groupdict()
-        return bans
+            for m in re.finditer(r'''^\s*(?P<ban_index>\d+)\s+(?P<guid>[a-fA-F0-9]+)\s+(?P<min_left>\S+)\s+(?P<reason>.*)$''', raw_bans, re.MULTILINE):
+                bans[m.group('guid')] = m.groupdict()
+            return bans
+        except TypeError:
+            return ""
 
 
 
