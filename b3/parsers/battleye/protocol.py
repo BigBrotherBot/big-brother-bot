@@ -30,6 +30,8 @@
 #   * CommandTimeoutError will be raised if a command does not get any response in a timely manner
 # 1.1.1 - 82ndab-Bravo17
 #   * correct race condition
+# 1.1.2 - 82ndab-Bravo17 13 July 2013
+#   * improve UDP reads to avoid dropped packets
 #
 import sys
 import logging
@@ -42,7 +44,7 @@ import Queue
 from collections import deque
 
 __author__ = '82ndab-Bravo17, Courgette'
-__version__ = '1.11'
+__version__ = '1.1.2'
 
 #####################################################################################
 #
@@ -137,6 +139,7 @@ class BattleyeServer(Thread):
         self._isconnected = False
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.server.connect((self.host, self.port))
+        self.server.settimeout(0.0001)
 
         while not self.isStopped():
             #self.getLogger().debug("Is socket ready")
@@ -145,13 +148,17 @@ class BattleyeServer(Thread):
             if not exception:
                 if readable:
                     try:
-                        data, addr = self.server.recvfrom(8192)
-                        self.read_queue.put(data)
-                        self.getLogger().debug("Read data: %s" % repr(data))
-                    except socket.error, (value,message): 
-                        self.getLogger().error("Socket error %s %s" % (value, message))
+                        while True:
+                            data = self.server.recv(8192)
+                            self.read_queue.put(data)
+                            # self.getLogger().debug("Read data: %s" % repr(data))
+                    except socket.timeout:
+                        # We've read all the data that there is currently, so move on.
+                        pass
+                    except socket.error, err: 
+                        self.getLogger().error("Socket error %s" % err)
                         self.stop()
-                if writable:
+                elif writable:
                     if len(self.write_queue):
                         data = self.write_queue.popleft()
                         self.getLogger().debug("Data to send: %s" % repr(data))
@@ -166,7 +173,7 @@ class BattleyeServer(Thread):
                                 seq = ord(data[8:9])
                                 self.getLogger().debug("Sent sequence was %s" % seq)
                                 self.sent_data_seq.append(seq)
-                time.sleep(.05)
+                    readable, writable, exception = select.select([self.server],[],[], .05)
             else:
                 self.stop()
         self.getLogger().debug("Ending Polling Thread")
@@ -423,13 +430,13 @@ class BattleyeServer(Thread):
             # we got all the packets that make a full command response
             data = ''
             for p in range(0, total_num_packets):
-                if len(self._multi_packet_response[p]):
+                if self._multi_packet_response.has_key(p):
                     data = data + self._multi_packet_response[p]
                 else:
-                    self.debug('Part of Multi packet response is missing')
+                    self.getLogger().debug('Part %s of Multi packet response is missing' % p)
                     for pp in range(0, total_num_packets-1):
                         self._multi_packet_response[pp] = ''
-                    return
+                    return 'Error retrieving Bans list from server'
 
             # Packet reconstituted, so delete segments
             for pp in range(0, total_num_packets-1):
