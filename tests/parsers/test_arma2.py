@@ -22,6 +22,7 @@ from mock import Mock, patch, call
 from mockito import when
 from b3.fake import FakeClient
 from b3.parsers.arma2 import Arma2Parser
+from b3.parsers.battleye.protocol import CommandTimeoutError
 from b3.config import XmlConfigParser
 
 
@@ -553,3 +554,11 @@ GUID Bans:
             'b57c222222a76f458893641000000005': {'ban_index': '0', 'guid': 'b57c222222a76f458893641000000005', 'reason': 'Script Detection: Gerk', 'min_left': 'perm'},
             '8ac61111111cd2ff4235140000000026': {'ban_index': '1', 'guid': '8ac61111111cd2ff4235140000000026', 'reason': 'Script Detection: setVehicleInit DoThis;', 'min_left': 'perm'},
         }, rv)
+
+    def test_getBanlist_CommandTimeoutError(self):
+        # GIVEN that the game server fails to respond to the 'bans' command
+        when(self.parser.output).write("bans").thenRaise(CommandTimeoutError("no response for command : bans"))
+        # WHEN
+        rv = self.parser.getBanlist()
+        # THEN
+        self.assertDictEqual({}, rv)
