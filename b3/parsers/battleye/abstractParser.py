@@ -38,6 +38,8 @@
 # 09/25/2012    0.19
 #   - Allow clients with un-verified GUIDs to auth if IP's match the one in the batabase
 #   - or optionally allow clients to always auth using the nonVerified GUID's
+# 07/13/2013   0.20
+#   - Handle 'bans' command not completing correctly
 
 import sys, re, traceback, time, Queue, threading
 from logging import Formatter
@@ -50,7 +52,7 @@ import b3.cvar
 from b3.clients import Clients
 
 __author__  = '82ndab-Bravo17, Courgette'
-__version__ = '0.19'
+__version__ = '0.20'
 
 
 # disable the authorizing timer that come by default with the b3.clients.Clients class
@@ -824,6 +826,10 @@ class AbstractParser(b3.parser.Parser):
         if not client or not client.guid:
             return
         bans = self.getBanlist()
+        if len(bans) == 0:
+            if admin:
+                admin.message("Server Ban list is empty, or there was an eror retrieving it")
+            return
         if not client.guid in bans:
             if admin:
                 admin.message("%s guid not found in banlist" % client.guid)
@@ -968,9 +974,14 @@ class AbstractParser(b3.parser.Parser):
         #1  8ac69e7189ecd2ff4235142feff0bd26 perm Script Detection: setVehicleInit DoThis;
         bans = {}
         raw_bans = self.output.write("bans")
-        for m in re.finditer(r'''^\s*(?P<ban_index>\d+)\s+(?P<guid>[a-fA-F0-9]+)\s+(?P<min_left>\S+)\s+(?P<reason>.*)$''', raw_bans, re.MULTILINE):
-            bans[m.group('guid')] = m.groupdict()
-        return bans
+        try:
+            for m in re.finditer(r'''^\s*(?P<ban_index>\d+)\s+(?P<guid>[a-fA-F0-9]+)\s+(?P<min_left>\S+)\s+(?P<reason>.*)$''', raw_bans, re.MULTILINE):
+                bans[m.group('guid')] = m.groupdict()
+            return bans
+        except TypeError:
+            return ""
+        except:
+            raise
 
 
 
