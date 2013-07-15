@@ -18,6 +18,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    15/07/2013 - 1.6 - courgette
+#    * fire EVT_CLIENT_WARN and EVT_CLIENT_NOTICE events
 #    26/11/2012 - 1.5 - courgette
 #    * add database columns 'login' and 'password' to the Client model
 #    27/08/2012 - 1.4.1 - courgette
@@ -82,7 +84,7 @@ import time
 import traceback
 
 __author__  = 'ThorN'
-__version__ = '1.5'
+__version__ = '1.6'
 
 
 class ClientVar(object):
@@ -589,23 +591,38 @@ class Client(object):
             warn.reason = warning
             warn.keyword = keyword
             warn.save(self.console)
+            if self.console:
+                self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_WARN, data={
+                    'reason': warn.reason, 
+                    'duration': warn.duration, 
+                    'data': warn.data, 
+                    'admin': admin, 
+                    'timeExpire': warn.timeExpire
+                }, client=self))
 
             return warn
-        return None
 
     def notice(self, notice, spare, admin=None):
         if self.id:
-            warn = ClientNotice()
-            warn.timeAdd = self.console.time()
-            warn.clientId = self.id
+            notice_object = ClientNotice()
+            notice_object.timeAdd = self.console.time()
+            notice_object.clientId = self.id
 
             if admin:
-                warn.adminId = admin.id
+                notice_object.adminId = admin.id
             else:
-                warn.adminId = 0
+                notice_object.adminId = 0
 
-            warn.reason = notice
-            warn.save(self.console)
+            notice_object.reason = notice
+            notice_object.save(self.console)
+            if self.console:
+                self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_NOTICE, data={
+                    'notice': notice, 
+                    'admin': admin, 
+                    'timeAdd': notice_object.timeAdd
+                }, client=self))
+            
+            return notice_object
 
     def _get_numWarns(self):
         if not self.id:
