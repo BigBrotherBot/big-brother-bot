@@ -24,7 +24,7 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   install/index.rst
+   getting-started/index.rst
    usage/index.rst
    customization.rst
 
