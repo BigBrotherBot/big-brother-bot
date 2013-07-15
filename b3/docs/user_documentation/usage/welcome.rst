@@ -1,3 +1,5 @@
+.. _plugin-welcome:
+
 The Welcome plugin
 ==================
 
