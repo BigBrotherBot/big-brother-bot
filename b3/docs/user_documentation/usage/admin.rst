@@ -1,3 +1,5 @@
+.. _plugin-admin:
+
 The Admin plugin
 ================
 
