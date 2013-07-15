@@ -397,6 +397,18 @@ class Iourt42Parser(Iourt41Parser):
     HL_HEAD = '1'
     HL_HELMET = '2'
     HL_TORSO = '3'
+    HL_VEST = '4'
+    HL_ARM_L = '5'
+    HL_ARM_R = '6'
+    HL_GROIN = '7'
+    HL_BUTT = '8'
+    HL_LEG_UPPER_L = '9'
+    HL_LEG_UPPER_R = '10'
+    HL_LEG_LOWER_L = '11'
+    HL_LEG_LOWER_R = '12'
+    HL_FOOT_L = '13'
+    HL_FOOT_R = '14'
+    
 
     ## weapons id on Hit: lines are different than the one
     ## on the Kill: lines. Here the translation table
