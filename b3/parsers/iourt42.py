@@ -72,7 +72,10 @@
 #     * fixed Client(Load|Save)Position parsing
 # 14/07/2013 - 1.14 - Courgette
 #     * add hitlocation constants : HL_HEAD, HL_HELMET and HL_TORSO
-#
+# 15/07/2013 - 1.15 - Fenix
+#     * added missing hitlocation constants
+#     * added damage table
+#     * restored function _getDamagePoints
 
 import re, new
 import time
@@ -84,7 +87,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.14'
+__version__ = '1.15'
 
 
 class Iourt42Client(Client):
@@ -397,6 +400,18 @@ class Iourt42Parser(Iourt41Parser):
     HL_HEAD = '1'
     HL_HELMET = '2'
     HL_TORSO = '3'
+    HL_VEST = '4'
+    HL_ARM_L = '5'
+    HL_ARM_R = '6'
+    HL_GROIN = '7'
+    HL_BUTT = '8'
+    HL_LEG_UPPER_L = '9'
+    HL_LEG_UPPER_R = '10'
+    HL_LEG_LOWER_L = '11'
+    HL_LEG_LOWER_R = '12'
+    HL_FOOT_L = '13'
+    HL_FOOT_R = '14'
+    
 
     ## weapons id on Hit: lines are different than the one
     ## on the Kill: lines. Here the translation table
@@ -419,6 +434,40 @@ class Iourt42Parser(Iourt41Parser):
         22: UT_MOD_MAC11,
         25: UT_MOD_KNIFE_THROWN,
     }
+    
+    
+    ## damage table
+    ## Fenix: Hit locations start with index 1 (HL_HEAD).
+    ##        Since lists are 0 indexed we'll need to adjust the hit location
+    ##        code to match the index number. Instead of adding random values
+    ##        in the damage table, the adjustment will be made in _getDamagePoints.
+    damage = {
+        MOD_TELEFRAG: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        UT_MOD_KNIFE: [100, 60, 44, 35, 20, 20, 40, 37, 20, 20, 18, 18, 15, 15],
+        UT_MOD_KNIFE_THROWN: [100, 60, 44, 35, 20, 20, 40, 37, 20, 20, 18, 18, 15, 15],
+        UT_MOD_BERETTA: [100, 34, 30, 20, 11, 11, 25, 22, 15, 15, 13, 13, 11, 11],
+        UT_MOD_DEAGLE: [100, 66, 57, 38, 22, 22, 45, 41, 28, 28, 22, 22, 18, 18],
+        UT_MOD_SPAS: [25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25],
+        UT_MOD_UMP45: [100, 51, 44, 29, 17, 17, 36, 32, 21, 21, 17, 17, 14, 14],
+        UT_MOD_MP5K: [50, 34, 30, 20, 11, 11, 25, 22, 15, 15, 13, 13, 11, 11],
+        UT_MOD_LR300: [100, 51, 44, 29, 17, 17, 37, 33, 20, 20, 17, 17, 14, 14],
+        UT_MOD_G36: [100, 51, 44, 29, 17, 17, 37, 33, 20, 20, 17, 17, 14, 14],
+        UT_MOD_PSG1: [100, 100, 97, 63, 36, 36, 70, 70, 41, 41, 36, 36, 29, 29],
+        UT_MOD_HK69: [50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50],
+        UT_MOD_BLED: [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15],
+        UT_MOD_KICKED: [30, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20],
+        UT_MOD_HEGRENADE: [50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50],
+        UT_MOD_SR8: [100, 100, 100, 100, 50, 50, 80, 70, 60, 60, 50, 50, 40, 40],
+        UT_MOD_AK103: [100, 58, 51, 34, 19, 19, 41, 34, 22, 22, 19, 19, 15, 15],
+        UT_MOD_NEGEV: [50, 34, 30, 20, 11, 11, 25, 22, 13, 13, 11, 11, 9, 9],
+        UT_MOD_HK69_HIT: [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20],
+        UT_MOD_M4: [100, 51, 44, 29, 17, 17, 37, 33, 20, 20, 17, 17, 14, 14],
+        UT_MOD_GLOCK: [60, 40, 33, 23, 14, 14, 28, 25, 17, 17, 14, 14, 11, 11],
+        UT_MOD_COLT1911: [100, 60, 37, 27, 15, 15, 32, 29, 22, 22, 15, 15, 11, 11],
+        UT_MOD_MAC11: [34, 29, 20, 15, 11, 11, 18, 17, 15, 15, 13, 13, 11, 11],
+        UT_MOD_GOOMBA: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+        
+    }   
 
 
     def __new__(cls, *args, **kwargs):
@@ -969,17 +1018,13 @@ class Iourt42Parser(Iourt41Parser):
         """
         provide the estimated number of damage points inflicted by a hit of a given weapon to a given body location.
         """
-        '''
         try:
-            points = self.damage[weapon][int(hitloc)]
-            self.debug("_getDamagePoints(%s, %s) -> %s" % (weapon, hitloc, points))
+            points = self.damage[weapon][int(hitloc) - 1]
+            self.debug("_getDamagePoints(%s, %s) -> %d" % (weapon, hitloc, points))
             return points
-        except KeyError, err:
+        except (KeyError, IndexError), err:
             self.warning("_getDamagePoints(%s, %s) cannot find value : %s" % (weapon, hitloc, err))
             return 15
-        '''
-        # until we got real values, we return the default value
-        return 15
 
 
     def patch_spamcontrolPlugin(self):
