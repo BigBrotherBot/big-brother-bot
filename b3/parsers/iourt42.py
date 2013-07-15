@@ -1015,17 +1015,13 @@ class Iourt42Parser(Iourt41Parser):
         """
         provide the estimated number of damage points inflicted by a hit of a given weapon to a given body location.
         """
-        '''
         try:
-            points = self.damage[weapon][int(hitloc)]
-            self.debug("_getDamagePoints(%s, %s) -> %s" % (weapon, hitloc, points))
+            points = self.damage[weapon][int(hitloc) - 1]
+            self.debug("_getDamagePoints(%s, %s) -> %d" % (weapon, hitloc, points))
             return points
         except KeyError, err:
             self.warning("_getDamagePoints(%s, %s) cannot find value : %s" % (weapon, hitloc, err))
             return 15
-        '''
-        # until we got real values, we return the default value
-        return 15
 
 
     def patch_spamcontrolPlugin(self):
