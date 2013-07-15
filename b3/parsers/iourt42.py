@@ -434,6 +434,10 @@ class Iourt42Parser(Iourt41Parser):
     
     
     ## damage table
+    ## Fenix: Hit locations start with index 1 (HL_HEAD).
+    ##        Since lists are 0 indexed we'll need to adjust the hit location
+    ##        code to match the index number. Instead of adding random values
+    ##        in the damage table, the adjustment will be made in _getDamagePoints.
     damage = {
         MOD_TELEFRAG: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         UT_MOD_KNIFE: [100, 60, 44, 35, 20, 20, 40, 37, 20, 20, 18, 18, 15, 15],
