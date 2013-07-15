@@ -11,7 +11,7 @@ B3's permissions are based on groups and levels.
 Users are assigned to groups and each group has a level. Commands can be ran by
 users that have the minimum level needed to use the command.
 
-Most commands for user and group management provided by the admin plugin.
+Most commands for user and group management provided by the :ref:`admin plugin <plugin-admin>`.
 
 .. _groups-default:
 
