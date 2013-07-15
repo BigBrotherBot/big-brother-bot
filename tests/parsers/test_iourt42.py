@@ -157,7 +157,7 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_type='EVT_CLIENT_DAMAGE',
             event_client=fatmatic,
             event_target=d4dou,
-            event_data=(15, '19', '5'))
+            event_data=(17, '19', '5'))
 
     def test_Hit_2(self):
         fatmatic = FakeClient(self.console, name="Fat'Matic", guid="11111111111111")
@@ -168,7 +168,21 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_type='EVT_CLIENT_DAMAGE',
             event_client=d4dou,
             event_target=fatmatic,
-            event_data=(15, '35', '9'))
+            event_data=(13, '35', '9'))
+
+    def test_Hit_unkown_location(self):
+        fatmatic = FakeClient(self.console, name="Fat'Matic", guid="11111111111111")
+        d4dou = FakeClient(self.console, name="[FR]d4dou", guid="11111111111111")
+        fatmatic.connects('3')
+        d4dou.connects('6')
+        with patch.object(self.console, 'warning') as warning_mock:
+            self.assertEvent(r'''Hit: 6 3 321 8: Fat'Matic hit [FR]d4dou in the Pinky''',
+                event_type='EVT_CLIENT_DAMAGE',
+                event_client=fatmatic,
+                event_target=d4dou,
+                event_data=(15, '19', '321'))
+        self.assertListEqual([call('_getDamagePoints(19, 321) cannot find value : list index out of range')],
+                             warning_mock.mock_calls)
 
     def test_Kill(self):
         patate = FakeClient(self.console, name="Patate", guid="Patate_guid")
@@ -313,6 +327,13 @@ class Test_kill_mods(Test_log_lines_parsing):
             event_client=self.joe,
             event_target=self.joe,
             event_data=(100, self.console.MOD_FALLING, 'body', 'MOD_FALLING'))
+
+    def test_unknown_kill_mode(self):
+        self.assertEvent('5:19 Kill: 0 0 1234: Joe killed Joe by MOD_F00',
+            event_type='EVT_CLIENT_SUICIDE',
+            event_client=self.joe,
+            event_target=self.joe,
+            event_data=(100, '1234', 'body', 'MOD_F00'))
 
     def test_constants(self):
         def assert_mod(kill_mod_number, kill_mod_name):
