@@ -1022,7 +1022,7 @@ class Iourt42Parser(Iourt41Parser):
             points = self.damage[weapon][int(hitloc) - 1]
             self.debug("_getDamagePoints(%s, %s) -> %d" % (weapon, hitloc, points))
             return points
-        except KeyError, err:
+        except (KeyError, IndexError), err:
             self.warning("_getDamagePoints(%s, %s) cannot find value : %s" % (weapon, hitloc, err))
             return 15
 
