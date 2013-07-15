@@ -72,7 +72,10 @@
 #     * fixed Client(Load|Save)Position parsing
 # 14/07/2013 - 1.14 - Courgette
 #     * add hitlocation constants : HL_HEAD, HL_HELMET and HL_TORSO
-#
+# 15/07/2013 - 1.15 - Fenix
+#     * added missing hitlocation constants
+#     * added damage table
+#     * restored function _getDamagePoints
 
 import re, new
 import time
@@ -84,7 +87,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.14'
+__version__ = '1.15'
 
 
 class Iourt42Client(Client):
