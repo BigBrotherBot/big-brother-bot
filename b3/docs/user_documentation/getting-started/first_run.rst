@@ -1,3 +1,5 @@
+.. _getting-started:
+
 First run
 =========
 
@@ -68,3 +70,14 @@ Windows users who use the binary package, will find a shortcut.
 
 With command line parameters can influence the behavior of B3.
 An overview of all parameters can be found in the manual.
+
+Become Super Admin
+------------------
+
+After successfully installing and configuring your B3 bot you'll start B3 for
+the first time. B3 will check if there are any SuperAdmins in your database.
+If not, B3 will enable the !iamgod command for the first player typing it in game.
+
+So, it is wise to go in game immediately after starting B3 and
+typing :command:`!iamgod` in chat, it will register you as the SuperAdmin and
+disable the :command:`!iamgod` command.
