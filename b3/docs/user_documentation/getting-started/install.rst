@@ -15,11 +15,13 @@ Current packages of the stable version can downloaded in the `forum`_ or on `Sou
 
 Just run the installer and follow the instructions.
 
-Some developers offer `daily builds`_.
+Some developers offer `daily builds`_ based on latest development code.
 
 .. note::
-    Daily builds are not officially supported. If you have problems,
-    they first use stable versions before submitting support requests.
+    Daily builds are not officially supported. If you have problems, please try to use the stable version of B3.
+
+    If you find a bug in such a build, please report the bug with as much details on how to reproduce it in
+    the `forum`_.
 
 .. _`forum`: http://forum.bigbrotherbot.net/downloads/?cat=10
 .. _`SourceForge`: http://sourceforge.net/projects/bigbrotherbot/files/
