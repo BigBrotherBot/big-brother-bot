@@ -1,11 +1,10 @@
-============
- User Guide
-============
-
-:Release: |version|
-:Date: |today|
+==========
+User Guide
+==========
 
 .. toctree::
     :maxdepth: 1
 
+    introduction
     users_groups
+
