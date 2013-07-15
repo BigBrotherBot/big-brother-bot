@@ -25,6 +25,7 @@ Contents
    :maxdepth: 2
 
    getting-started/index.rst
+   userguide/index.rst
    usage/index.rst
    customization.rst
 
