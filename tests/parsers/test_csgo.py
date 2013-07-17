@@ -452,6 +452,20 @@ class Test_gamelog_parsing(CsgoTestCase):
         self.assert_has_event("EVT_CLIENT_ACTION", data='threw "molotov"', client=player)
 
 
+    def test_player_assited_killing(self):
+        # GIVEN
+        bot22 = FakeClient(self.parser, name="Pheonix", guid="BOT_22")
+        bot17 = FakeClient(self.parser, name="Ringo", guid="BOT_17")
+        bot22.connects("22")
+        bot17.connects("17")
+
+        # WHEN
+        self.clear_events()
+        self.parser.parseLine('''L 08/26/2012 - 03:46:44: "Pheonix<22><BOT><TERRORIST>" assisted killing "Ringo<17><BOT><CT>"''')
+        # THEN
+        self.assert_has_event("EVT_CLIENT_ACTION", client=bot22, target=bot17, data="assisted killing")
+
+
     def test_world_triggered_event__Round_End(self):
         # GIVEN
         # WHEN

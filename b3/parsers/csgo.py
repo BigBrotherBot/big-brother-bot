@@ -66,6 +66,7 @@
 #   * can parse "threw" game log lines and fires a EVT_CLIENT_ACTION event
 #   * can parse "killed" game log lines which have player locations in
 #   * can parse "committed suicide" game log lines which have player location in
+#   * can parse "assisted killing" game log lines
 #
 #
 import re
@@ -262,6 +263,17 @@ class CsgoParser(Parser):
             self.last_killlocation_properties = None
 
         return self.getEvent(event_type, client=attacker, target=victim, data=tuple(data))
+
+
+    @ger.gameEvent(
+        r'''^"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" assisted killing "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>"(?P<properties>.*)$'''
+    )
+    def on_assisted_killing(self, a_name, a_cid, a_guid, a_team, v_name, v_cid, v_guid, v_team, properties):
+        # L 08/26/2012 - 03:46:44: "Greg<3946><BOT><CT>" assisted killing "Dennis<3948><BOT><TERRORIST>"
+        attacker = self.getClientOrCreate(a_cid, a_guid, a_name, a_team)
+        victim = self.getClientOrCreate(v_cid, v_guid, v_name, v_team)
+        props = self.parseProperties(properties)
+        return self.getEvent("EVT_CLIENT_ACTION", client=attacker, target=victim, data="assisted killing")
 
 
     @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>"(?: \[-?\d+ -?\d+ -?\d+\])? committed suicide with "(?P<weapon>\S*)"$''')
