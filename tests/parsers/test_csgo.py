@@ -422,6 +422,17 @@ class Test_gamelog_parsing(CsgoTestCase):
         self.assert_has_event("EVT_CLIENT_ACTION", data='purchased "negev"', client=player)
 
 
+    def test_player_threw_item(self):
+        # GIVEN
+        player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111")
+        player.connects("2")
+        # WHEN
+        self.clear_events()
+        self.parser.parseLine('''L 07/17/2013 - 20:27:54: "courgette<2><STEAM_1:0:1111111><CT>" threw molotov [59 386 -225]''')
+        # THEN
+        self.assert_has_event("EVT_CLIENT_ACTION", data='threw "molotov"', client=player)
+
+
     def test_world_triggered_event__Round_End(self):
         # GIVEN
         # WHEN

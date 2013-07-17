@@ -62,7 +62,8 @@
 #   * fix ban that was queuing a EVT_CLIENT_BAN_TEMP event instead of EVT_CLIENT_BAN
 # 2013-08-17 - 1.4.2 Courgette
 #   * can parse "switched team" game log lines
-#   * can parse "purchased" game log lines
+#   * can parse "purchased" game log lines and fires a EVT_CLIENT_ACTION event
+#   * can parse "threw" game log lines and fires a EVT_CLIENT_ACTION event
 #
 #
 import re
@@ -436,6 +437,13 @@ class CsgoParser(Parser):
         # L 08/26/2012 - 03:22:37: "Calvin<3942><BOT><CT>" purchased "p90"
         # L 08/26/2012 - 03:22:37: "courgette<2><STEAM_1:0:1487018><CT>" purchased "hegrenade"
         return self.getEvent("EVT_CLIENT_ACTION", client=client, data='purchased "%s"' % item)
+
+
+    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>\S+)>" threw (?P<item>.+?)( \[-?\d+ -?\d+ -?\d+\])?$''')
+    def on_player_threw(self, name, cid, guid, team, item):
+        client = self.getClientOrCreate(cid, guid, name, team)
+        # L 08/26/2012 - 03:22:37: "courgette<2><STEAM_1:0:1111111><CT>" threw molotov [59 386 -225]
+        return self.getEvent("EVT_CLIENT_ACTION", client=client, data='threw "%s"' % item)
 
 
     @ger.gameEvent(r'''^rcon from "(?P<ip>.+):(?P<port>\d+)":\sBad Password$''')
