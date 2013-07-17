@@ -60,14 +60,14 @@
 #   * fix #90 - check that SourceMod is installed at startup
 # 2012-10-19 - 1.4.1 Courgette
 #   * fix ban that was queuing a EVT_CLIENT_BAN_TEMP event instead of EVT_CLIENT_BAN
-# 2013-08-17 - 1.4.2 Courgette
+# 2013-08-17 - 1.5 Courgette
 #   * can parse "switched team" game log lines
 #   * can parse "purchased" game log lines and fires a EVT_CLIENT_ACTION event
 #   * can parse "threw" game log lines and fires a EVT_CLIENT_ACTION event
 #   * can parse "killed" game log lines which have player locations in
 #   * can parse "committed suicide" game log lines which have player location in
 #   * can parse "assisted killing" game log lines
-#
+#   * BOT won't make it to the database clients table anymore
 #
 import re
 import time
@@ -79,7 +79,7 @@ from b3.game_event_router import Game_event_router
 from b3.parsers.source.rcon import Rcon
 
 __author__  = 'Courgette'
-__version__ = '1.4.2'
+__version__ = '1.5'
 
 
 """
@@ -328,7 +328,9 @@ class CsgoParser(Parser):
         # L 08/26/2012 - 03:22:36: "courgette<2><STEAM_1:0:1111111><>" connected, address "11.222.111.222:27005"
         # L 08/26/2012 - 03:22:36: "Moe<3><BOT><>" connected, address "none"
         client = self.getClientOrCreate(cid, guid, name, team)
-        client.ip = ip if ip != "none" else ""
+        if ip != "none" and client.ip != ip:
+            client.ip = ip
+            client.save()
 
 
     @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" disconnected \(reason "(?P<reason>.*)"\)$''')
@@ -912,14 +914,15 @@ class CsgoParser(Parser):
         
         May return None
         """
-        if guid == "BOT":
-            guid += "_" + cid
+        is_bot = guid == "BOT"
+        if is_bot:
+            guid = None
         client = self.clients.getByCID(cid)
         if client is None:
             client = self.clients.newClient(cid, guid=guid, name=name, team=TEAM_UNKNOWN)
-            client.last_update_time = time.time()
-            if guid.startswith("BOT_"):
+            if is_bot:
                 client.hide = True
+            client.last_update_time = time.time()
         else:
             if name:
                 client.name = name

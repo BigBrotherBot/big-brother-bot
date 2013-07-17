@@ -139,6 +139,26 @@ class CsgoTestCase(unittest.TestCase):
 
             self.fail("expecting event %s. Got instead: %s" % (expected_event, map(str, self.evt_queue)))
 
+    def assert_has_not_event(self, event_type, data=None, client=None, target=None):
+        """
+        assert that self.evt_queue does not contain at least one event for the given type that has the given characteristics.
+        """
+        assert isinstance(event_type, basestring)
+        unexpected_event = self.parser.getEvent(event_type, data, client, target)
+
+        if not len(self.evt_queue):
+            return
+        else:
+            def event_match(evt):
+                return (
+                    unexpected_event.type == evt.type
+                    and (data is None or data == evt.data)
+                    and (client is None or client_equal(client, evt.client))
+                    and (target is None or client_equal(target, evt.target))
+                )
+            if any(map(event_match, self.evt_queue)):
+                self.fail("not expecting event %s" % (filter(event_match, self.evt_queue)))
+
 
     def output_write(self, *args, **kwargs):
         """Used to override parser self.output.write method so we can control the response given to the 'status'
@@ -305,14 +325,23 @@ class Test_gamelog_parsing(CsgoTestCase):
         # WHEN
         self.clear_events()
         self.parser.parseLine('''L 08/26/2012 - 03:22:36: "courgette<2><STEAM_1:0:1111111><>" connected, address "11.222.111.222:27005"''')
-        # THEN
+        # THEN a client object is created
         client = self.parser.clients.getByCID("2")
         self.assertIsNotNone(client)
         self.assertEqual("courgette", client.name)
         self.assertEqual("STEAM_1:0:1111111", client.guid)
         self.assertEqual("11.222.111.222", client.ip)
+        # THEN events are fired
         self.assert_has_event("EVT_CLIENT_CONNECT", data=client, client=client)
         self.assert_has_event("EVT_CLIENT_AUTH", data=client, client=client)
+        # THEN one client object is saved to database
+        clients_from_storage = self.parser.storage.getClientsMatching({'%name%': 'courgette'})
+        self.assertEqual(1, len(clients_from_storage))
+        client_from_storage = clients_from_storage[0]
+        self.assertEqual('courgette', client_from_storage.name)
+        self.assertEqual("STEAM_1:0:1111111", client_from_storage.guid)
+        self.assertEqual("11.222.111.222", client_from_storage.ip)
+        self.assertDictContainsSubset({'clients': 1}, self.parser.storage.getCounts())
 
 
     def test_player_connected__unicode(self):
@@ -321,14 +350,24 @@ class Test_gamelog_parsing(CsgoTestCase):
         # WHEN
         self.clear_events()
         self.parser.parseLine(b'''L 08/26/2012 - 03:22:36: "Spoon\xc2\xab\xc2\xab<2><STEAM_1:0:1111111><>" connected, address "11.222.111.222:27005"''')
-        # THEN
+        # THEN a client object is created
         client = self.parser.clients.getByCID("2")
         self.assertIsNotNone(client)
+        self.assertFalse(client.hide)
         self.assertEqual(u"Spoon««", client.name)
         self.assertEqual("STEAM_1:0:1111111", client.guid)
         self.assertEqual("11.222.111.222", client.ip)
+        # THEN events are fired
         self.assert_has_event("EVT_CLIENT_CONNECT", data=client, client=client)
         self.assert_has_event("EVT_CLIENT_AUTH", data=client, client=client)
+        # THEN one client object is saved to database
+        clients_from_storage = self.parser.storage.getClientsMatching({'%name%': 'Spoon'})
+        self.assertEqual(1, len(clients_from_storage))
+        client_from_storage = clients_from_storage[0]
+        self.assertEqual(u"Spoon««", client_from_storage.name)
+        self.assertEqual("STEAM_1:0:1111111", client_from_storage.guid)
+        self.assertEqual("11.222.111.222", client_from_storage.ip)
+        self.assertDictContainsSubset({'clients': 1}, self.parser.storage.getCounts())
 
 
     def test_bot_connected(self):
@@ -337,14 +376,21 @@ class Test_gamelog_parsing(CsgoTestCase):
         # WHEN
         self.clear_events()
         self.parser.parseLine('''L 08/26/2012 - 03:22:36: "Moe<3><BOT><>" connected, address "none"''')
-        # THEN
+        # THEN a client object is created
         client = self.parser.clients.getByCID("3")
         self.assertIsNotNone(client)
+        self.assertTrue(client.hide)
         self.assertEqual("Moe", client.name)
-        self.assertEqual("BOT_3", client.guid)
+        self.assertEqual('', client.guid)
         self.assertEqual("", client.ip)
+        # THEN events are fired
         self.assert_has_event("EVT_CLIENT_CONNECT", data=client, client=client)
-        self.assert_has_event("EVT_CLIENT_AUTH", data=client, client=client)
+        self.assert_has_not_event("EVT_CLIENT_AUTH", data=client, client=client)
+        # THEN no client object is saved to database
+        clients_from_storage = self.parser.storage.getClientsMatching({'%name%': 'Moe'})
+        self.assertListEqual([], clients_from_storage)
+        self.assertDictContainsSubset({'clients': 1}, self.parser.storage.getCounts())
+        self.assertDictContainsSubset({'clients': 1}, self.parser.storage.getCounts())
 
 
     def test_kicked_by_console(self):
