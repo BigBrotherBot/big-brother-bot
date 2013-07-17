@@ -386,6 +386,31 @@ class Test_gamelog_parsing(CsgoTestCase):
         self.assert_has_event("EVT_CLIENT_TEAM_CHANGE", data=TEAM_BLUE, client=bot22)
         self.assertEqual(TEAM_BLUE, bot22.team)
 
+        
+        
+    def test_player_switched_team(self):
+        # GIVEN
+        player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111")
+        player.connects("2")
+        # WHEN
+        self.clear_events()
+        self.parser.parseLine('''L 07/17/2013 - 20:27:54: "courgette<2><STEAM_1:0:1111111>" switched from team <CT> to <Unassigned>''')
+        # THEN
+        self.assert_has_event("EVT_CLIENT_TEAM_CHANGE", data=TEAM_UNKNOWN, client=player)
+        self.assertEqual(TEAM_UNKNOWN, player.team)
+
+
+    def test_bot_switched_team(self):
+        # GIVEN
+        bot22 = FakeClient(self.parser, name="Pheonix", guid="BOT_11")
+        bot22.connects("11")
+        # WHEN
+        self.clear_events()
+        self.parser.parseLine('''L 07/17/2013 - 20:27:54: "Pheonix<11><BOT>" switched from team <Unassigned> to <TERRORIST>''')
+        # THEN
+        self.assert_has_event("EVT_CLIENT_TEAM_CHANGE", data=TEAM_BLUE, client=bot22)
+        self.assertEqual(TEAM_BLUE, bot22.team)
+
 
     def test_world_triggered_event__Round_End(self):
         # GIVEN

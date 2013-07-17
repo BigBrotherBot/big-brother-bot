@@ -60,6 +60,8 @@
 #   * fix #90 - check that SourceMod is installed at startup
 # 2012-10-19 - 1.4.1 Courgette
 #   * fix ban that was queuing a EVT_CLIENT_BAN_TEMP event instead of EVT_CLIENT_BAN
+# 2013-08-17 - 1.4.2 Courgette
+#   * can parse "switched team" game log lines
 #
 #
 import re
@@ -72,7 +74,7 @@ from b3.game_event_router import Game_event_router
 from b3.parsers.source.rcon import Rcon
 
 __author__  = 'Courgette'
-__version__ = '1.4.1'
+__version__ = '1.4.2'
 
 
 """
@@ -331,7 +333,10 @@ class CsgoParser(Parser):
         return self.getEvent("EVT_CLIENT_JOIN", client=client)
 
 
-    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<old_team>\S+)>" joined team "(?P<new_team>\S+)"$''')
+    @ger.gameEvent(
+        r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<old_team>\S+)>" joined team "(?P<new_team>\S+)"$''',
+        r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)>" switched from team <(?P<old_team>\S+)> to <(?P<new_team>\S+)>$''',
+    )
     def on_client_join_team(self, name, cid, guid, old_team, new_team):
         # L 08/26/2012 - 03:22:36: "Pheonix<11><BOT><Unassigned>" joined team "TERRORIST"
         # L 08/26/2012 - 03:22:36: "Wolf<12><BOT><Unassigned>" joined team "CT"
