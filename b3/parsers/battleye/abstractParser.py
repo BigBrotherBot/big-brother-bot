@@ -271,22 +271,22 @@ class AbstractParser(b3.parser.Parser):
             
 #'RCon admin #0 (76.108.91.78:62382) logged in'
 #'Player #0 Bravo17 (76.108.91.78:2304) connected'
-#'Player #0 Bravo17 - GUID: 80a5885ebe2420bab5e158a310fcbc7d (unverified)'
-#'Verified GUID (80a5885ebe2420bab5e158a310fcbc7d) of player #0 Bravo17'
-#'Player #2 NZ (04b81a0bd914e7ba610ef3c0ffd66a1a) has been kicked by BattlEye: Script Restriction #107'
+#'Player #0 Bravo17 - GUID: 80a5885ebe2420bab5e1581234567890 (unverified)'
+#'Verified GUID (80a5885ebe2420bab5e1581234567890) of player #0 Bravo17'
+#'Player #2 NZ (04b81a0bd914e7ba610ef31234567890) has been kicked by BattlEye: Script Restriction #107'
 #'Player #4 Kauldron disconnected'
 #(Lobby) Bravo17: hello b3'
 #(Global) Bravo17: global channel
 #Players on server:\n
 #[#] [IP Address]:[Port] [Ping] [GUID] [Name]\n
 #--------------------------------------------------\n
-#0   76.108.91.78:2304     63   80a5885ebe2420bab5e158a310fcbc7d(OK) Bravo17\n
+#0   76.108.91.78:2304     63   80a5885ebe2420bab5e1581234567890(OK) Bravo17\n
 #(1 players in total)'
 
     
 #Players on server:\n
 #[#] [IP Address]:[Port] [Ping] [GUID] [Name]\n--------------------------------------------------\n
-#0   76.108.91.78:2304     63   80a5885ebe2420bab5e158a310fcbc7d(OK) Bravo17\n
+#0   76.108.91.78:2304     63   80a5885ebe2420bab5e1581234567890(OK) Bravo17\n
 #(1 players in total)'
     
 
@@ -359,6 +359,7 @@ class AbstractParser(b3.parser.Parser):
 
     def startup(self):
 
+        self.bot('Starting BattleyeAbstractParser v%s', __version__)
         # add specific events
         self.Events.createEvent('EVT_GAMESERVER_CONNECT', 'connected to game server')
         self.Events.createEvent('EVT_CLIENT_SPAWN', 'Client Spawn')
@@ -520,7 +521,7 @@ class AbstractParser(b3.parser.Parser):
 
     def OnUnverifiedGUID(self, data):
         """
-        #Player #0 Bravo17 - GUID: 80a5885ebe2420bab5e158a310fcbc7d (unverified)
+        #Player #0 Bravo17 - GUID: 80a5885ebe2420bab5e1581234567890 (unverified)
         Players GUID has been found but not verified, no action to take
         """
 
@@ -545,7 +546,7 @@ class AbstractParser(b3.parser.Parser):
 
     def OnVerifiedGUID(self, data):
         """
-        #Verified GUID  (80a5885ebe2420bab5e158a310fcbc7d) of player #0 Bravo17
+        #Verified GUID  (80a5885ebe2420bab5e1581234567890) of player #0 Bravo17
         Players GUID has been verified, auth player
         """
         if self._useunverifiedguid:
@@ -632,8 +633,8 @@ class AbstractParser(b3.parser.Parser):
         Does not return client objects"""
         #Players on server:\n
         #[#] [IP Address]:[Port] [Ping] [GUID] [Name]\n--------------------------------------------------\n
-        #0   76.108.91.78:2304     63   80a5885ebe2420bab5e158a310fcbc7d(OK) Bravo17\n
-        #0   192.168.0.100:2316    0    80a5885ebe2420bab5e158a310fcbc7d(OK) Bravo17 (Lobby)\n
+        #0   76.108.91.78:2304     63   80a5885ebe2420bab5e1581234567890(OK) Bravo17\n
+        #0   192.168.0.100:2316    0    80a5885ebe2420bab5e1581234567890(OK) Bravo17 (Lobby)\n
         #(1 players in total)'
         player_list = self.output.write("players").splitlines()
         self.debug('Playerlist is %s' % player_list)
@@ -928,8 +929,8 @@ class AbstractParser(b3.parser.Parser):
         """Ask the server for all clients' pings"""
         #Players on server:
         #[#] [IP Address]:[Port] [Ping] [GUID] [Name]\n--------------------------------------------------
-        #0   76.108.91.78:2304     63   80a5885ebe2420bab5e158a310fcbc7d(OK) Bravo17
-        #0   192.168.0.100:2316    0    80a5885ebe2420bab5e158a310fcbc7d(OK) Bravo17 (Lobby)
+        #0   76.108.91.78:2304     63   80a5885ebe2420bab5e1581234567890(OK) Bravo17
+        #0   192.168.0.100:2316    0    80a5885ebe2420bab5e1581234567890(OK) Bravo17 (Lobby)
         #(1 players in total)
         pings = {}
         player_list = self.output.write("players")
@@ -972,8 +973,8 @@ class AbstractParser(b3.parser.Parser):
         #GUID Bans:
         #[#] [GUID] [Minutes left] [Reason]
         #----------------------------------------
-        #0  b57cb4973da76f4588936416aae2de05 perm Script Detection: Gerk
-        #1  8ac69e7189ecd2ff4235142feff0bd26 perm Script Detection: setVehicleInit DoThis;
+        #0  b57cb4973da76f458893641234567890 perm Script Detection: Gerk
+        #1  8ac69e7189ecd2ff4235141234567890 perm Script Detection: setVehicleInit DoThis;
         bans = {}
         raw_bans = self.output.write("bans")
         try:
