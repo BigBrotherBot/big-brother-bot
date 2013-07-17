@@ -128,7 +128,7 @@ class BattleyeServer(Thread):
         self.server_thread.start()
         time.sleep(.5)
 
-        self.getLogger().info("start running BattleyeServer")
+        self.getLogger().info("start running BattleyeServer v%s" % __version__)
         self.start()
         time.sleep(1)
 
