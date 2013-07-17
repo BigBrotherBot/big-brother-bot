@@ -60,7 +60,14 @@
 #   * fix #90 - check that SourceMod is installed at startup
 # 2012-10-19 - 1.4.1 Courgette
 #   * fix ban that was queuing a EVT_CLIENT_BAN_TEMP event instead of EVT_CLIENT_BAN
-#
+# 2013-08-17 - 1.5 Courgette
+#   * can parse "switched team" game log lines
+#   * can parse "purchased" game log lines and fires a EVT_CLIENT_ACTION event
+#   * can parse "threw" game log lines and fires a EVT_CLIENT_ACTION event
+#   * can parse "killed" game log lines which have player locations in
+#   * can parse "committed suicide" game log lines which have player location in
+#   * can parse "assisted killing" game log lines
+#   * BOT won't make it to the database clients table anymore
 #
 import re
 import time
@@ -72,7 +79,7 @@ from b3.game_event_router import Game_event_router
 from b3.parsers.source.rcon import Rcon
 
 __author__  = 'Courgette'
-__version__ = '1.4.1'
+__version__ = '1.5'
 
 
 """
@@ -223,12 +230,16 @@ class CsgoParser(Parser):
         pass
 
 
-    @ger.gameEvent(r'''"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" killed "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>" with "(?P<weapon>\S*)"(?P<properties>.*)$''')
+    @ger.gameEvent(
+        r'''^"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" killed "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>" with "(?P<weapon>\S*)"(?P<properties>.*)$''',
+        r'''^"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" \[-?\d+ -?\d+ -?\d+\] killed "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>" \[-?\d+ -?\d+ -?\d+\] with "(?P<weapon>\S*)"(?P<properties>.*)$'''
+    )
     def on_kill(self, a_name, a_cid, a_guid, a_team, v_name, v_cid, v_guid, v_team, weapon, properties):
         # L 08/26/2012 - 03:46:44: "Pheonix<22><BOT><TERRORIST>" killed "Ringo<17><BOT><CT>" with "glock" (headshot)
         # L 08/26/2012 - 03:46:46: "Shark<19><BOT><CT>" killed "Pheonix<22><BOT><TERRORIST>" with "hkp2000"
         # L 08/26/2012 - 03:47:40: "Stone<18><BOT><TERRORIST>" killed "Steel<13><BOT><CT>" with "glock"
-        # L 08/26/2012 - 05:08:56: "Kurt<76><BOT><TERRORIST>" killed "courgette<2><STEAM_1:0:1487018><CT>" with "galilar"'
+        # L 08/26/2012 - 05:08:56: "Kurt<76><BOT><TERRORIST>" killed "courgette<2><STEAM_1:0:1487018><CT>" with "galilar"
+        # L 08/26/2012 - 05:08:56: "Orin<3949><BOT><CT>" [280 -133 -223] killed "Dennis<3948><BOT><TERRORIST>" [-216 397 -159] with "aug"
         attacker = self.getClientOrCreate(a_cid, a_guid, a_name, a_team)
         victim = self.getClientOrCreate(v_cid, v_guid, v_name, v_team)
         # victim.state = b3.STATE_DEAD ## do we need that ? is this info used ?
@@ -254,7 +265,18 @@ class CsgoParser(Parser):
         return self.getEvent(event_type, client=attacker, target=victim, data=tuple(data))
 
 
-    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" committed suicide with "(?P<weapon>\S*)"$''')
+    @ger.gameEvent(
+        r'''^"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" assisted killing "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>"(?P<properties>.*)$'''
+    )
+    def on_assisted_killing(self, a_name, a_cid, a_guid, a_team, v_name, v_cid, v_guid, v_team, properties):
+        # L 08/26/2012 - 03:46:44: "Greg<3946><BOT><CT>" assisted killing "Dennis<3948><BOT><TERRORIST>"
+        attacker = self.getClientOrCreate(a_cid, a_guid, a_name, a_team)
+        victim = self.getClientOrCreate(v_cid, v_guid, v_name, v_team)
+        props = self.parseProperties(properties)
+        return self.getEvent("EVT_CLIENT_ACTION", client=attacker, target=victim, data="assisted killing")
+
+
+    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>"(?: \[-?\d+ -?\d+ -?\d+\])? committed suicide with "(?P<weapon>\S*)"$''')
     def on_suicide(self, name, cid, guid, team, weapon):
         # L 08/26/2012 - 03:38:04: "Pheonix<22><BOT><TERRORIST>" committed suicide with "world"
         client = self.getClientOrCreate(cid, guid, name, team)
@@ -306,7 +328,9 @@ class CsgoParser(Parser):
         # L 08/26/2012 - 03:22:36: "courgette<2><STEAM_1:0:1111111><>" connected, address "11.222.111.222:27005"
         # L 08/26/2012 - 03:22:36: "Moe<3><BOT><>" connected, address "none"
         client = self.getClientOrCreate(cid, guid, name, team)
-        client.ip = ip if ip != "none" else ""
+        if ip != "none" and client.ip != ip:
+            client.ip = ip
+            client.save()
 
 
     @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" disconnected \(reason "(?P<reason>.*)"\)$''')
@@ -331,7 +355,10 @@ class CsgoParser(Parser):
         return self.getEvent("EVT_CLIENT_JOIN", client=client)
 
 
-    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<old_team>\S+)>" joined team "(?P<new_team>\S+)"$''')
+    @ger.gameEvent(
+        r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<old_team>\S+)>" joined team "(?P<new_team>\S+)"$''',
+        r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)>" switched from team <(?P<old_team>\S+)> to <(?P<new_team>\S+)>$''',
+    )
     def on_client_join_team(self, name, cid, guid, old_team, new_team):
         # L 08/26/2012 - 03:22:36: "Pheonix<11><BOT><Unassigned>" joined team "TERRORIST"
         # L 08/26/2012 - 03:22:36: "Wolf<12><BOT><Unassigned>" joined team "CT"
@@ -422,6 +449,21 @@ class CsgoParser(Parser):
         # L 08/26/2012 - 05:04:44: "courgette<2><STEAM_1:0:1487018><CT>" say_team "team say"
         client = self.getClientOrCreate(cid, guid, name, team)
         return self.getEvent("EVT_CLIENT_TEAM_SAY", client=client, data=text)
+
+
+    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>\S+)>" purchased "(?P<item>\S+)"$''')
+    def on_player_purchased(self, name, cid, guid, team, item):
+        client = self.getClientOrCreate(cid, guid, name, team)
+        # L 08/26/2012 - 03:22:37: "Calvin<3942><BOT><CT>" purchased "p90"
+        # L 08/26/2012 - 03:22:37: "courgette<2><STEAM_1:0:1487018><CT>" purchased "hegrenade"
+        return self.getEvent("EVT_CLIENT_ACTION", client=client, data='purchased "%s"' % item)
+
+
+    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>\S+)>" threw (?P<item>.+?)( \[-?\d+ -?\d+ -?\d+\])?$''')
+    def on_player_threw(self, name, cid, guid, team, item):
+        client = self.getClientOrCreate(cid, guid, name, team)
+        # L 08/26/2012 - 03:22:37: "courgette<2><STEAM_1:0:1111111><CT>" threw molotov [59 386 -225]
+        return self.getEvent("EVT_CLIENT_ACTION", client=client, data='threw "%s"' % item)
 
 
     @ger.gameEvent(r'''^rcon from "(?P<ip>.+):(?P<port>\d+)":\sBad Password$''')
@@ -872,14 +914,15 @@ class CsgoParser(Parser):
         
         May return None
         """
-        if guid == "BOT":
-            guid += "_" + cid
+        is_bot = guid == "BOT"
+        if is_bot:
+            guid = None
         client = self.clients.getByCID(cid)
         if client is None:
             client = self.clients.newClient(cid, guid=guid, name=name, team=TEAM_UNKNOWN)
-            client.last_update_time = time.time()
-            if guid.startswith("BOT_"):
+            if is_bot:
                 client.hide = True
+            client.last_update_time = time.time()
         else:
             if name:
                 client.name = name
