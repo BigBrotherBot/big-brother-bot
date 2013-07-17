@@ -225,9 +225,16 @@ class Test_gamelog_parsing(CsgoTestCase):
         # GIVEN
         bot22 = FakeClient(self.parser, name="Pheonix", guid="BOT_22")
         bot22.connects("22")
+
         # WHEN
         self.clear_events()
         self.parser.parseLine('''L 08/26/2012 - 03:38:04: "Pheonix<22><BOT><TERRORIST>" committed suicide with "world"''')
+        # THEN
+        self.assert_has_event("EVT_CLIENT_SUICIDE", client=bot22, target=bot22, data=(100, 'world', 'body', None))
+
+        # WHEN
+        self.clear_events()
+        self.parser.parseLine('''L 08/26/2012 - 03:38:04: "Pheonix<22><BOT><TERRORIST>" [-1889 1328 -152] committed suicide with "world"''')
         # THEN
         self.assert_has_event("EVT_CLIENT_SUICIDE", client=bot22, target=bot22, data=(100, 'world', 'body', None))
 

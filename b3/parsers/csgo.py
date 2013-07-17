@@ -64,6 +64,8 @@
 #   * can parse "switched team" game log lines
 #   * can parse "purchased" game log lines and fires a EVT_CLIENT_ACTION event
 #   * can parse "threw" game log lines and fires a EVT_CLIENT_ACTION event
+#   * can parse "killed" game log lines which have player locations in
+#   * can parse "committed suicide" game log lines which have player location in
 #
 #
 import re
@@ -262,7 +264,7 @@ class CsgoParser(Parser):
         return self.getEvent(event_type, client=attacker, target=victim, data=tuple(data))
 
 
-    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" committed suicide with "(?P<weapon>\S*)"$''')
+    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>"(?: \[-?\d+ -?\d+ -?\d+\])? committed suicide with "(?P<weapon>\S*)"$''')
     def on_suicide(self, name, cid, guid, team, weapon):
         # L 08/26/2012 - 03:38:04: "Pheonix<22><BOT><TERRORIST>" committed suicide with "world"
         client = self.getClientOrCreate(cid, guid, name, team)
