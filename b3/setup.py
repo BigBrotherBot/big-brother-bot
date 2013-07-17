@@ -60,6 +60,8 @@
 #   * Added: iourt42 custom settings
 # 2012/10/31 - 1.5 - courgette
 #   * Added: arma2 support
+# 2013/07/17 1.6 - 82ndAB.Bravo17
+#   * Added: arma3 support
 #
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -67,7 +69,7 @@
 # The setup procedure, to create a new configuration file (b3.xml)
 
 __author__ = 'xlr8or'
-__version__ = '1.5'
+__version__ = '1.6'
 
 import platform
 import urllib2
@@ -166,7 +168,7 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
                   iourt41/iourt42
                   bfbc2/bf3/moh
                   etpro/altitude/oa081/smg/sof2/wop/wop15
-                  homefront/ro2/csgo/ravaged/arma2""")
+                  homefront/ro2/csgo/ravaged/arma2/arma3""")
 
         # set a template xml file to read existing settings from
         _result = False
@@ -286,6 +288,17 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
             self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
                          "The RCON password of your gameserver.")
 
+        # Arma3 specific
+        elif self._set_parser == 'arma3':
+            self.add_set("public_ip", self.read_element('server', 'public_ip', ''),
+                         "The IP address of your gameserver")
+            self.add_set("port", self.read_element('server', 'port', ''),
+                         "The ArmA3 game network communication port")
+            self.add_set("rcon_ip", self.read_element('server', 'rcon_ip', ''),
+                         "The IP of your gameserver B3 will connect to in order to send RCON commands. Usually the same as the public_ip")
+            self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
+                         "The RCON password of your gameserver.")
+                         
         # Urban Terror specific
         elif self._set_parser == 'iourt42':
             self.add_set("game_log", self.read_element('server', 'game_log', ''),
