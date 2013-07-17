@@ -387,7 +387,6 @@ class Test_gamelog_parsing(CsgoTestCase):
         self.assertEqual(TEAM_BLUE, bot22.team)
 
         
-        
     def test_player_switched_team(self):
         # GIVEN
         player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111")
@@ -410,6 +409,17 @@ class Test_gamelog_parsing(CsgoTestCase):
         # THEN
         self.assert_has_event("EVT_CLIENT_TEAM_CHANGE", data=TEAM_BLUE, client=bot22)
         self.assertEqual(TEAM_BLUE, bot22.team)
+
+
+    def test_player_purchased_item(self):
+        # GIVEN
+        player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111")
+        player.connects("2")
+        # WHEN
+        self.clear_events()
+        self.parser.parseLine('''L 07/17/2013 - 20:27:54: "courgette<2><STEAM_1:0:1111111><CT>" purchased "negev"''')
+        # THEN
+        self.assert_has_event("EVT_CLIENT_ACTION", data='purchased "negev"', client=player)
 
 
     def test_world_triggered_event__Round_End(self):
