@@ -184,6 +184,18 @@ class Test_gamelog_parsing(CsgoTestCase):
         # THEN
         self.assert_has_event("EVT_CLIENT_KILL", client=bot22, target=bot17, data=(100, 'glock', 'body', None))
 
+        # WHEN
+        self.clear_events()
+        self.parser.parseLine('''L 08/26/2012 - 03:46:44: "Pheonix<22><BOT><TERRORIST>" [280 -133 -223] killed "Ringo<17><BOT><CT>" [-216 397 -159] with "aug"''')
+        # THEN
+        self.assert_has_event("EVT_CLIENT_KILL", client=bot22, target=bot17, data=(100, 'aug', 'body', None))
+
+        # WHEN
+        self.clear_events()
+        self.parser.parseLine('''L 08/26/2012 - 03:46:44: "Pheonix<22><BOT><TERRORIST>" [280 -133 -223] killed "Ringo<17><BOT><CT>" [-216 397 -159] with "aug" (headshot)''')
+        # THEN
+        self.assert_has_event("EVT_CLIENT_KILL", client=bot22, target=bot17, data=(100, 'aug', 'head', None))
+
 
     def test_killed_but_really_is_teamkill(self):
         # GIVEN

@@ -227,12 +227,16 @@ class CsgoParser(Parser):
         pass
 
 
-    @ger.gameEvent(r'''"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" killed "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>" with "(?P<weapon>\S*)"(?P<properties>.*)$''')
+    @ger.gameEvent(
+        r'''^"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" killed "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>" with "(?P<weapon>\S*)"(?P<properties>.*)$''',
+        r'''^"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" \[-?\d+ -?\d+ -?\d+\] killed "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>" \[-?\d+ -?\d+ -?\d+\] with "(?P<weapon>\S*)"(?P<properties>.*)$'''
+    )
     def on_kill(self, a_name, a_cid, a_guid, a_team, v_name, v_cid, v_guid, v_team, weapon, properties):
         # L 08/26/2012 - 03:46:44: "Pheonix<22><BOT><TERRORIST>" killed "Ringo<17><BOT><CT>" with "glock" (headshot)
         # L 08/26/2012 - 03:46:46: "Shark<19><BOT><CT>" killed "Pheonix<22><BOT><TERRORIST>" with "hkp2000"
         # L 08/26/2012 - 03:47:40: "Stone<18><BOT><TERRORIST>" killed "Steel<13><BOT><CT>" with "glock"
-        # L 08/26/2012 - 05:08:56: "Kurt<76><BOT><TERRORIST>" killed "courgette<2><STEAM_1:0:1487018><CT>" with "galilar"'
+        # L 08/26/2012 - 05:08:56: "Kurt<76><BOT><TERRORIST>" killed "courgette<2><STEAM_1:0:1487018><CT>" with "galilar"
+        # L 08/26/2012 - 05:08:56: "Orin<3949><BOT><CT>" [280 -133 -223] killed "Dennis<3948><BOT><TERRORIST>" [-216 397 -159] with "aug"
         attacker = self.getClientOrCreate(a_cid, a_guid, a_name, a_team)
         victim = self.getClientOrCreate(v_cid, v_guid, v_name, v_team)
         # victim.state = b3.STATE_DEAD ## do we need that ? is this info used ?
