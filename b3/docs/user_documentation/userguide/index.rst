@@ -6,5 +6,7 @@ User Guide
     :maxdepth: 1
 
     introduction
+    configuration
     users_groups
+    warning_system
 
