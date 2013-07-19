@@ -454,8 +454,22 @@ class Test_gamelog_parsing(CsgoTestCase):
         
     def test_player_switched_team(self):
         # GIVEN
-        player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111")
+        player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_RED)
         player.connects("2")
+        self.assertEqual(TEAM_RED, player.team)
+        # WHEN
+        self.clear_events()
+        self.parser.parseLine('''L 07/17/2013 - 20:27:54: "courgette<2><STEAM_1:0:1111111>" switched from team <CT> to <TERRORIST>''')
+        # THEN
+        self.assert_has_event("EVT_CLIENT_TEAM_CHANGE", data=TEAM_BLUE, client=player)
+        self.assertEqual(TEAM_BLUE, player.team)
+
+
+    def test_player_switched_team_to_Unassigned(self):
+        # GIVEN
+        player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_RED)
+        player.connects("2")
+        self.assertEqual(TEAM_RED, player.team)
         # WHEN
         self.clear_events()
         self.parser.parseLine('''L 07/17/2013 - 20:27:54: "courgette<2><STEAM_1:0:1111111>" switched from team <CT> to <Unassigned>''')
@@ -1282,11 +1296,11 @@ class Test_getClientOrCreate(CsgoTestCase):
         client = self.parser.getClientOrCreate(cid="2", guid="AAAAAAAAAAAA000000000000000", name="theName", team="CT")
         self.assertEqual(TEAM_RED, client.team)
 
-        def assertTeam(execpted_team, new_team):
+        def assertTeam(excepted_team, new_team):
             # WHEN
             self.parser.getClientOrCreate(cid="2", guid="AAAAAAAAAAAA000000000000000", name="theName", team=new_team)
             # THEN
-            self.assertEqual(execpted_team, client.team)
+            self.assertEqual(excepted_team, client.team)
 
         assertTeam(TEAM_RED, "CT")
         assertTeam(TEAM_RED, None)
@@ -1296,6 +1310,23 @@ class Test_getClientOrCreate(CsgoTestCase):
         assertTeam(TEAM_BLUE, "TERRORIST")
 
 
+    def test_disconnecting_switched_team_unassigned_does_not_reconnect_player(self):
+        """
+        When a player disconnects here's what we see in the log :
+        L 07/19/2013 - 17:18:44: "f00<2008><STEAM_1:0:11111111><TERRORIST>" disconnected (reason "Disconnect by user.")
+        L 07/19/2013 - 17:18:44: "f00<2008><STEAM_1:0:11111111>" switched from team <TERRORIST> to <Unassigned>
+
+        When parsing the 2nd line, B3 MUST NOT recreate the client object
+        """
+        # GIVEN one connected player : courgette
+        client = self.parser.getClient("194")
+        self.assertEqual('courgette', client.name)
+        self.assertListEqual(['courgette'], map(lambda x: x.name, self.parser.clients.getList()))
+        # WHEN he disconnects
+        self.parser.parseLine("""L 07/19/2013 - 17:18:44: "courgette<194><STEAM_1:0:1111111><CT>" disconnected (reason "Disconnect by user.")""")
+        self.parser.parseLine("""L 07/19/2013 - 17:18:44: "courgette<194><STEAM_1:0:1111111><CT>" switched from team <TERRORIST> to <Unassigned>""")
+        # THEN no more player is in the list of connected clients
+        self.assertListEqual([], map(lambda x: x.name, self.parser.clients.getList()))
 
 class Test_functional(CsgoTestCase):
 

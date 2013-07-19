@@ -68,6 +68,8 @@
 #   * can parse "committed suicide" game log lines which have player location in
 #   * can parse "assisted killing" game log lines
 #   * BOT won't make it to the database clients table anymore
+# 2013-08-19 - 1.5.1 Courgette
+#   * do not reconnect players leaving the game server (regression from v1.5 - parsing of "switched team" lines)
 #
 import re
 import time
@@ -79,7 +81,7 @@ from b3.game_event_router import Game_event_router
 from b3.parsers.source.rcon import Rcon
 
 __author__  = 'Courgette'
-__version__ = '1.5'
+__version__ = '1.5.1'
 
 
 """
@@ -362,8 +364,14 @@ class CsgoParser(Parser):
     def on_client_join_team(self, name, cid, guid, old_team, new_team):
         # L 08/26/2012 - 03:22:36: "Pheonix<11><BOT><Unassigned>" joined team "TERRORIST"
         # L 08/26/2012 - 03:22:36: "Wolf<12><BOT><Unassigned>" joined team "CT"
-        client = self.getClientOrCreate(cid, guid, name, old_team)
-        client.team = self.getTeam(new_team)
+        # L 07/19/2013 - 17:18:44: "courgette<194><STEAM_1:0:1111111><CT>" switched from team <TERRORIST> to <Unassigned>
+        if new_team == 'Unassigned':
+            # The player might have just left the game server, so we must make sure not to recreate the Client object
+            client = self.getClient(cid)
+        else:
+            client = self.getClientOrCreate(cid, guid, name, old_team)
+        if client:
+            client.team = self.getTeam(new_team)
 
 
     @ger.gameEvent(r'''^World triggered "(?P<event_name>\S*)"(?P<properties>.*)$''')
