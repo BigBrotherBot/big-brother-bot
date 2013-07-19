@@ -1548,3 +1548,21 @@ class Cmd_kick(Admin_functional_test):
         self.joe.says('!kick 4')
         # THEN
         self.assertListEqual([call('4', '', self.joe)], self.kick_mock.mock_calls)
+
+    def test_existing_player_by_name_containing_spaces(self):
+        # GIVEN
+        self.mike.connects('1')
+        self.mike.name = "F 0 0"
+        # WHEN
+        self.joe.says('!kick f00 the reason')
+        # THEN
+        self.assertListEqual([call(self.mike, 'the reason', self.joe, False)], self.kick_mock.mock_calls)
+
+    def test_existing_player_by_name_containing_spaces_2(self):
+        # GIVEN
+        self.mike.connects('1')
+        self.mike.name = "F 0 0"
+        # WHEN
+        self.joe.says("!kick 'f 0 0' the reason")
+        # THEN
+        self.assertListEqual([call(self.mike, 'the reason', self.joe, False)], self.kick_mock.mock_calls)
