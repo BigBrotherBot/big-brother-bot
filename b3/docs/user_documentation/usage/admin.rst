@@ -490,6 +490,7 @@ enable
 
 TODO
 
+.. _find:
 
 find
 ^^^^
@@ -520,6 +521,7 @@ lastbans
 
 TODO
 
+.. _leveltest:
 
 leveltest
 ^^^^^^^^^
@@ -557,6 +559,7 @@ messages can be customized in the admin plugin config file:
     - the player's B3 database identifier
 
 
+.. _lookup:
 
 lookup
 ^^^^^^
