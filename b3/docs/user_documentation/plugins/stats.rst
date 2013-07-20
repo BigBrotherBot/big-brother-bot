@@ -1,0 +1,5 @@
+.. _plugin-stats:
+
+Stats
+=====
+

@@ -17,13 +17,7 @@ B3 currently only supports MySQL and SQLite databases.
 We recommend the use of MySQL. For small installations SQLite may be sufficient.
 If you want to use SQLite, then once is nothing more to do.
 
-1. Create a new MySQL database for B3
-    The following tools facilitate the use of the database.
-    Probably you have already installed one of these tools.
-
-        - `Adminer`_
-        - `phpMyAdmin`_
-        - `MySQL Workbench`_
+1. Create a new MySQL database for B3 (see :ref:`mysql-tools`)
 
 2. Import the table structure
     On the database you just created,
@@ -36,10 +30,6 @@ If you want to use SQLite, then once is nothing more to do.
 
         mysql -u root -p<mysql password> b3 b3.sql
 
-
-.. _`Adminer`: http://www.adminer.org/
-.. _`phpMyAdmin`: http://www.adminer.org/de/
-.. _`MySQL Workbench`: http://dev.mysql.com/downloads/tools/workbench/
 
 Configuration
 -------------

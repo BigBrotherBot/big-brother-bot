@@ -5,4 +5,5 @@ Getting Started
     :maxdepth: 2
 
     install
+    game_configuration
     first_run

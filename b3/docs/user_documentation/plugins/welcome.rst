@@ -1,7 +1,7 @@
 .. _plugin-welcome:
 
-The Welcome plugin
-==================
+Welcome
+=======
 
 The welcome plugin will welcome players that join the game server.
 

@@ -13,17 +13,17 @@ users that have the minimum level needed to use the command.
 
 Most commands for user and group management provided by the :ref:`admin plugin <plugin-admin>`.
 
-.. _groups-default:
+.. _groups:
 
-Default Groups
---------------
+B3 Groups
+---------
 
 B3 has several default user groups, each serving a different purpose.
 
 =====  ===========  ===========
 Level  Group        description
 =====  ===========  ===========
-100    superadmin   The **Super Admin** is the highest level of authority. |br|\ A Super Admin has access to all commands and is generaly only assigned to the server operators.
+100    superadmin   The **Super Admin** is the highest level of authority. |br|\ A Super Admin has access to all commands and is generally only assigned to the server owner.
 80     senioradmin  **Senior Admins** are the highest admins. |br|\ They have access to most commands except for the commands used in server/bot setup.
 60     fulladmin    **Full admins** have less authority than Senior Admins but still have access to harsher punishment commands such as !ban.
 40     admin        **Admins** are the first level of administrators. Their harshest punishment is a !kick, yet they are probably the most numerous of the admins.
@@ -48,10 +48,11 @@ with the :command:`!putgroup` command.
 The prerequisite is that the user is registered.
 
 Useful Commands:
-    - :command:`!register` - register youself as a basic user
-    - :command:`!putgroup` *<user> <group>* - Add a user to a group
-    - :command:`!putgroup` *<player_database_id> <group>* - Add a client to a group
-    - :command:`!makereg` *<name>* - Allow Admins to register a User
+    - :command:`!register` - register yourself as a basic user
+    - :command:`!makereg` <:ref:`player <targeting-player-syntax>`> - Used by admins to add a user to the regular group
+    - :command:`!unreg` <:ref:`player <targeting-player-syntax>`> - Used by admins to remove a user from the regular group
+    - :command:`!putgroup` <:ref:`player <targeting-player-syntax>`> <:ref:`group <groups>`> - Used by admins to add a user to a group
+    - :command:`!ungroup` <:ref:`player <targeting-player-syntax>`> <:ref:`group <groups>`> - Used by admins to remove a client to a group
 
 The following example would move PlayerA into the moderators group.
 

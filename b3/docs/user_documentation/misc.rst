@@ -1,6 +1,7 @@
 Miscellaneous
 =============
 
+
 .. _duration-syntax:
 
 Duration syntax
@@ -11,14 +12,14 @@ expressing different duration units :
 
 s
   second *i.e.:* ``45s``
-  
+
 m
   minute *i.e.:* ``5m``
-  
+
 h
   hour *i.e.:* ``1h``
-  
-d 
+
+d
   day *i.e.:* ``7d``
 
 w
@@ -84,3 +85,21 @@ Database ID
 
   You can use the :ref:`lookup` command to find offline users in the database.
 
+
+
+.. _mysql-tools:
+
+MySQL tools
+-----------
+
+The following tools facilitate the use and administration of a MySQL database.
+Probably you have already installed one of these tools.
+
+        - `Adminer`_
+        - `phpMyAdmin`_
+        - `MySQL Workbench`_
+
+
+.. _`Adminer`: http://www.adminer.org/
+.. _`phpMyAdmin`: http://www.adminer.org/de/
+.. _`MySQL Workbench`: http://dev.mysql.com/downloads/tools/workbench/
