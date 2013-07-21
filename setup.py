@@ -27,10 +27,11 @@
 ## @file
 # The setuptools package creator for pypi.python.org
 
-__author__  = 'ThorN, xlr8or'
-__version__ = '2.3'
+__author__  = 'ThorN, xlr8or, courgette'
+__version__ = '2.4'
 
 
+import re
 import os, glob
 import ez_setup, shutil, sys
 ez_setup.use_setuptools()
@@ -99,7 +100,16 @@ if has_py2exe:
                     try:
                         src_abs = os.path.normpath(os.path.join(src_base, src))
                         dir_util.create_tree(dst_abs, src_abs)
-                        file_util.copy_file(src_abs, dst_abs, dry_run=self.dry_run)
+                        dest_name, _ = file_util.copy_file(src_abs, dst_abs, dry_run=self.dry_run)
+                        # makes sure text files have 'Windows style' end of lines
+                        if not os.path.isdir(dest_name) and dest_name.rsplit('.', 1)[-1] in (
+                            'sql', 'txt', 'md', 'cfg', 'ini', 'txt', 'xml', 'tpl'):
+                            with open(dest_name, mode='rb') as f:
+                                data = f.read()
+                            new_data = re.sub("\r?\n", "\r\n", data)
+                            if new_data != data:
+                                with open(dest_name, mode='wb') as f:
+                                    f.write(new_data)
                     except Exception, e:
                         sys.stderr.write("%s\n" % e)
     cmdclass['py2exe'] = my_py2exe
