@@ -483,7 +483,7 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
         else:
             self.add_plugin("censor", "@conf/plugin_censor.xml")
             self.add_plugin("spamcontrol", "@conf/plugin_spamcontrol.xml")
-            self.add_plugin("admin", "@conf/plugin_admin.xml", explanation="the admin plugin is compulsory.",
+            self.add_plugin("admin", "@conf/plugin_admin.ini", explanation="the admin plugin is compulsory.",
                             prompt=False)
             self.add_plugin("tk", "@conf/plugin_tk.xml")
             self.add_plugin("stats", "@conf/plugin_stats.xml")

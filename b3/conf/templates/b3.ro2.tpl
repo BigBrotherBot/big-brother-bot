@@ -48,7 +48,7 @@
 		<set name="external_dir">@b3/extplugins</set>
 	</settings>
 	<plugins>
-		<plugin name="admin" config="@conf/plugin_admin.xml"/>
+		<plugin name="admin" config="@conf/plugin_admin.ini"/>
 		<plugin name="censor" config="@conf/plugin_censor.xml"/>
 		<plugin name="spamcontrol" config="@conf/plugin_spamcontrol.xml" />
 		<plugin name="pingwatch" config="@conf/plugin_pingwatch.xml" />

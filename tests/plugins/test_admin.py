@@ -27,17 +27,17 @@ import os
 from b3 import __file__ as b3_module__file__
 from b3.plugin import Plugin
 from b3.plugins.admin import AdminPlugin, Command
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 from b3.clients import Client, Group, ClientVar, Penalty, ClientBan, ClientTempBan
 
 
-ADMIN_CONFIG_FILE = os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.xml")
+ADMIN_CONFIG_FILE = os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.ini")
 
 class Admin_TestCase(B3TestCase):
     """ tests from a class inherithing from Admin_TestCase must call self.init() """
     def setUp(self):
         B3TestCase.setUp(self)
-        self.conf = XmlConfigParser()
+        self.conf = CfgConfigParser()
         self.p = AdminPlugin(self.console, self.conf)
 
     def init(self, config_content=None):
@@ -829,51 +829,49 @@ class Test_cmd_mask(CommandTestCase):
 class Test_sendRules(Admin_TestCase):
 
     def test_nominal(self, sleep_mock):
-        self.init(r"""<configuration><settings name="spamages">
-                        <set name="foo">foo</set>
-                        <set name="rule1">this is rule #1</set>
-                        <set name="rule2">this is rule #2</set>
-                        <set name="bar">bar</set>
-                    </settings></configuration>""")
+        self.init(r"""[spamages]
+foo: foo
+rule1: this is rule #1
+rule2: this is rule #2
+bar: bar
+""")
         self.console.say = Mock(wraps=lambda *args: sys.stdout.write("\t\tSAY: " + str(args) + "\n"))
         self.p._sendRules(None)
         self.console.say.assert_has_calls([call('this is rule #1'), call('this is rule #2')])
 
     def test_no_rule_1(self, sleep_mock):
-        self.init(r"""<configuration><settings name="spamages">
-                        <set name="rule5">this is rule #5</set>
-                        <set name="rule2">this is rule #2</set>
-                    </settings></configuration>""")
+        self.init(r"""[spamages]
+rule5: this is rule #5
+rule2: this is rule #2
+""")
         self.console.say = Mock(wraps=lambda *args: sys.stdout.write("\t\tSAY: " + str(args) + "\n"))
         self.p._sendRules(None)
         self.assertFalse(self.console.say.called)
 
 
     def test_gap_in_rules(self, sleep_mock):
-        self.init(r"""<configuration><settings name="spamages">
-                        <set name="rule1">this is rule #1</set>
-                        <set name="rule2">this is rule #2</set>
-                        <set name="rule4">this is rule #4</set>
-                    </settings></configuration>""")
+        self.init(r"""[spamages]
+rule1: this is rule #1
+rule2: this is rule #2
+rule4: this is rule #4
+""")
         self.console.say = Mock(wraps=lambda *args: sys.stdout.write("\t\tSAY: " + str(args) + "\n"))
         self.p._sendRules(None)
         self.console.say.assert_has_calls([call('this is rule #1'), call('this is rule #2')])
 
 
     def test_no_rule_in_config(self, sleep_mock):
-        self.init(r"""<configuration><settings name="spamages">
-                        <set name="foo">foo</set>
-                        <set name="bar">bar</set>
-                    </settings></configuration>""")
+        self.init(r"""[spamages]
+foo: foo
+bar: bar
+""")
         self.console.say = Mock(wraps=lambda *args: sys.stdout.write("\t\tSAY: " + str(args) + "\n"))
         self.p._sendRules(None)
         self.assertFalse(self.console.say.called)
 
 
     def test_too_many_rules(self, sleep_mock):
-        self.init(r"""<configuration><settings name="spamages">""" +
-            "\n".join(["""<set name="rule%s">this is rule #%s</set>""" % (x, x) for x in range(1, 23)]) +
-            """</settings></configuration>""")
+        self.init("""[spamages]\n""" + "\n".join(["""rule%s: this is rule #%s""" % (x, x) for x in range(1, 23)]))
         self.console.say = Mock(wraps=lambda *args: sys.stdout.write("\t\tSAY: " + str(args) + "\n"))
         self.p._sendRules(None)
         self.console.say.assert_has_calls([call('this is rule #%s' % x) for x in range(1, 20)])
@@ -998,9 +996,7 @@ class Test_conf_announce_registration(Config_reading_TestCase):
 
     def test_missing(self):
         # GIVEN
-        self.conf.loadFromString(r"""<configuration>
-            <settings name="settings">
-            </settings></configuration>""")
+        self.conf.loadFromString(r"""[settings]""")
         # WHEN
         self.p.onLoadConfig()
         # THEN
@@ -1011,10 +1007,9 @@ class Test_conf_announce_registration(Config_reading_TestCase):
 
     def test_yes(self):
         # GIVEN
-        self.conf.loadFromString(r"""<configuration>
-            <settings name="settings">
-                <set name="announce_registration">yes</set>
-            </settings></configuration>""")
+        self.conf.loadFromString(r"""[settings]
+announce_registration: yes
+""")
         # WHEN
         self.p.onLoadConfig()
         # THEN
@@ -1024,10 +1019,9 @@ class Test_conf_announce_registration(Config_reading_TestCase):
 
     def test_no(self):
         # GIVEN
-        self.conf.loadFromString(r"""<configuration>
-            <settings name="settings">
-                <set name="announce_registration">no</set>
-            </settings></configuration>""")
+        self.conf.loadFromString(r"""[settings]
+announce_registration: no
+""")
         # WHEN
         self.p.onLoadConfig()
         # THEN
@@ -1037,10 +1031,9 @@ class Test_conf_announce_registration(Config_reading_TestCase):
 
     def test_on(self):
         # GIVEN
-        self.conf.loadFromString(r"""<configuration>
-            <settings name="settings">
-                <set name="announce_registration">on</set>
-            </settings></configuration>""")
+        self.conf.loadFromString(r"""[settings]
+announce_registration: on
+""")
         # WHEN
         self.p.onLoadConfig()
         # THEN
@@ -1050,10 +1043,9 @@ class Test_conf_announce_registration(Config_reading_TestCase):
 
     def test_off(self):
         # GIVEN
-        self.conf.loadFromString(r"""<configuration>
-            <settings name="settings">
-                <set name="announce_registration">OFF</set>
-            </settings></configuration>""")
+        self.conf.loadFromString(r"""[settings]
+announce_registration: OFF
+""")
         # WHEN
         self.p.onLoadConfig()
         # THEN
@@ -1063,10 +1055,9 @@ class Test_conf_announce_registration(Config_reading_TestCase):
 
     def test_empty(self):
         # GIVEN
-        self.conf.loadFromString(r"""<configuration>
-            <settings name="settings">
-                <set name="announce_registration"></set>
-            </settings></configuration>""")
+        self.conf.loadFromString(r"""[settings]
+announce_registration:
+""")
         # WHEN
         self.p.onLoadConfig()
         # THEN
@@ -1077,10 +1068,9 @@ class Test_conf_announce_registration(Config_reading_TestCase):
 
     def test_junk(self):
         # GIVEN
-        self.conf.loadFromString(r"""<configuration>
-            <settings name="settings">
-                <set name="announce_registration">xxxxxxxxx</set>
-            </settings></configuration>""")
+        self.conf.loadFromString(r"""[settings]
+announce_registration: xxxxxxxxx
+""")
         # WHEN
         self.p.onLoadConfig()
         # THEN
@@ -1098,9 +1088,8 @@ class Test_conf_regme_confirmation(Config_reading_TestCase):
 
     def test_missing(self):
         # GIVEN
-        self.conf.loadFromString(r"""<configuration>
-            <settings name="messages">
-            </settings></configuration>""")
+        self.conf.loadFromString(r"""[messages]
+""")
         # WHEN
         self.p.onLoadConfig()
         # THEN
@@ -1112,10 +1101,9 @@ class Test_conf_regme_confirmation(Config_reading_TestCase):
 
     def test_nominal(self):
         # GIVEN
-        self.conf.loadFromString(r"""<configuration>
-            <settings name="messages">
-                <set name="regme_confirmation">Nice, you are now a member of the group %s</set>
-            </settings></configuration>""")
+        self.conf.loadFromString(r"""[messages]
+regme_confirmation: Nice, you are now a member of the group %s
+""")
         # WHEN
         self.p.onLoadConfig()
         # THEN
@@ -1125,10 +1113,9 @@ class Test_conf_regme_confirmation(Config_reading_TestCase):
 
     def test_no_place_holder(self):
         # GIVEN
-        self.conf.loadFromString(r"""<configuration>
-            <settings name="messages">
-                <set name="regme_confirmation">^7Thanks for your registration</set>
-            </settings></configuration>""")
+        self.conf.loadFromString(r"""[messages]
+regme_confirmation: ^7Thanks for your registration
+""")
         # WHEN
         self.p.onLoadConfig()
         # THEN

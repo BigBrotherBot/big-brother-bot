@@ -396,8 +396,8 @@ class FakeClient(b3.clients.Client):
 print "creating fakeConsole with @b3/conf/b3.distribution.xml"
 fakeConsole = FakeConsole('@b3/conf/b3.distribution.xml')
 
-print "creating fakeAdminPlugin with @b3/conf/plugin_admin.xml"
-fakeAdminPlugin = AdminPlugin(fakeConsole, '@b3/conf/plugin_admin.xml')
+print "creating fakeAdminPlugin with @b3/conf/plugin_admin.ini"
+fakeAdminPlugin = AdminPlugin(fakeConsole, '@b3/conf/plugin_admin.ini')
 fakeAdminPlugin.onStartup()
 
 joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="zaerezarezar", groupBits=1, team=b3.TEAM_UNKNOWN)

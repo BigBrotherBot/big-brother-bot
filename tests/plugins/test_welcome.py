@@ -33,7 +33,7 @@ from tests import B3TestCase, logging_disabled
 from b3 import __file__ as b3_module__file__
 
 
-ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.xml"))
+ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.ini"))
 WELCOME_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_welcome.xml"))
 
 
