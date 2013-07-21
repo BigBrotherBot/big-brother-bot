@@ -360,30 +360,6 @@ class Test_doTopList(XlrstatsTestCase):
         ], self.p1.message_history)
 
 
-    def test_multiple_kills(self):
-        # GIVEN
-        cmd = self.adminPlugin._commands["xlrtopstats"]
-        self.p._minKills = 0
-        self.p._minRounds = 0
-        self.p._maxDays = 0
-        self.p1.kills(self.p2)
-        self.p1.kills(self.p3)
-        self.p2.kills(self.p1)
-        self.p4.kills(self.p5)
-        self.p4.kills(self.p5)
-        self.p5.kills(self.p1)
-        # WHEN
-        self.p1.clearMessageHistory()
-        with patch('time.sleep'):
-            self.p.doTopList(data="", client=self.p1, cmd=cmd)
-        # THEN
-        self.assertListEqual([
-            'XLR Stats Top 3 Players:',
-            '# 1: P4 : Skill 1035.08 Ratio 0.00 Kills: 2',
-            '# 2: P1 : Skill 1017.89 Ratio 1.00 Kills: 2',
-            '# 3: P2 : Skill 997.18 Ratio 1.00 Kills: 1'
-        ], self.p1.message_history)
-
 
 class Test_storage(XlrstatsTestCase):
 
