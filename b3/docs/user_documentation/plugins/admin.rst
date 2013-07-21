@@ -164,7 +164,7 @@ Commands
 admins
 ^^^^^^
 
-The :command:`!admins` command tells which admins are currently on the game server.
+Tells which admins are currently on the game server.
 
 .. rubric:: default required level
 
@@ -206,7 +206,7 @@ Alias for command `regtest`_
 aliases
 ^^^^^^^
 
-The :command:`!aliases` command shows at most 10 aliases of a player.
+Show at most 10 aliases of a player.
 
 .. rubric:: default required level
 
@@ -214,7 +214,7 @@ The :command:`!aliases` command shows at most 10 aliases of a player.
 
 .. rubric:: usage
 
-:command:`!aliases [player]`
+:command:`!aliases` [:ref:`player <targeting-player-syntax>`]
 
 If ``player`` is provided, display at most 10 aliases for that player.
 
@@ -245,7 +245,7 @@ The :command:`!aliases` command response can be customized in the admin plugin c
 b3
 ^^
 
-The :command:`!b3` command shows the B3 version and uptime.
+Show the B3 version and uptime.
 
 .. rubric:: default required level
 
@@ -256,10 +256,11 @@ The :command:`!b3` command shows the B3 version and uptime.
 The :command:`!b3` command takes no parameters.
 
 
+
 ban
 ^^^
 
-The :command:`!ban` command temporarily bans a player for the duration set by `ban_duration`_.
+Temporarily ban a player for the duration set by `ban_duration`_.
 
 .. rubric:: default required level
 
@@ -267,11 +268,11 @@ The :command:`!ban` command temporarily bans a player for the duration set by `b
 
 .. rubric:: usage
 
-:command:`!ban <player> <reason>`
+:command:`!ban` <:ref:`player <targeting-player-syntax>`> <reason>
     ban a player specifying a reason. The reason can be any text of your choice or a reference to a reason shortcut as
     defined in the *warn_reasons* section of the admin config file.
 
-:command:`!ban <player>`
+:command:`!ban` <:ref:`player <targeting-player-syntax>`>
     ban a player not specifying a reason. This is allowed only for admins of group level higher than `noreason_level`_.
 
 .. rubric:: alias
@@ -286,11 +287,11 @@ and *ban_denied*.
 The ban duration can be changed in the plugin config file at `ban_duration`_.
 
 
+
 banall
 ^^^^^^
 
-The `!banall` command behaves like the `ban`_ command except it will ban multiple players whom name contains a given
-term.
+Like the `ban`_ command except it will ban multiple players whom name contains a given term.
 
 .. rubric:: default required level
 
@@ -298,7 +299,7 @@ term.
 
 .. rubric:: usage
 
-:command:`!banall <term> [<reason>]`
+:command:`!banall` <term> [<reason>]
 
 .. rubric:: alias
 
@@ -308,7 +309,7 @@ term.
 baninfo
 ^^^^^^^
 
-The `!baninfo` command tells if a given player has active bans.
+Tell if a given player has active bans.
 
 .. rubric:: default required level
 
@@ -316,7 +317,7 @@ The `!baninfo` command tells if a given player has active bans.
 
 .. rubric:: usage
 
-:command:`!baninfo <player>`
+:command:`!baninfo` <:ref:`player <targeting-player-syntax>`>
 
 .. rubric:: alias
 
@@ -327,11 +328,12 @@ The `!baninfo` command tells if a given player has active bans.
 The messages that can be displayed are: *baninfo*, *baninfo_no_bans*.
 
 
+
 clientinfo
 ^^^^^^^^^^
 
-The `!clientinfo` command shows the value of a given property for a player. The purpose of this command is more for
-debug purpose than anything else but it can be useful to retrieve info such as the player IP address or guid.
+Show the value of a given property for a player. The purpose of this command is more for debug purpose than anything
+else but it can be useful to retrieve info such as the player IP address or guid.
 
 .. rubric:: default required level
 
@@ -339,7 +341,9 @@ debug purpose than anything else but it can be useful to retrieve info such as t
 
 .. rubric:: usage
 
-:command:`!clientinfo <player> <field>` where *field* can be one of:
+:command:`!clientinfo` <:ref:`player <targeting-player-syntax>`> <field>
+  where *field* can be one of:
+
     - guid
     - pbid
     - name
@@ -373,11 +377,11 @@ debug purpose than anything else but it can be useful to retrieve info such as t
 .. note:: Not all those fields will return human readable data.
 
 
+
 clear
 ^^^^^
 
-The `!clear` command clears all active warnings and tk points (if the tk plugin is active) for a given player or for all
-in-game players.
+Clear all active warnings and tk points (if the tk plugin is active) for a given player or for all in-game players.
 
 .. rubric:: default required level
 
@@ -389,7 +393,7 @@ in-game players.
 
 Clears active warnings and tk points for all in-game players
 
-:command:`!clear <player>`
+:command:`!clear` <:ref:`player <targeting-player-syntax>`>
 
 Clears active warnings and tk points for the player identified by *<player>*
 
@@ -406,62 +410,173 @@ The messages that can be displayed are: *cleared_warnings* and *cleared_warnings
 die
 ^^^
 
-TODO
+Shutdown B3
+
+.. rubric:: default required level
+
+*superadmin*
+
 
 
 disable
 ^^^^^^^
 
-TODO
+Disable a plugin
+
+.. rubric:: default required level
+
+*superadmin*
+
+.. rubric:: usage
+
+:command:`!disable` <plugin name>
 
 
 enable
 ^^^^^^
 
-TODO
+Enable a plugin that would have been disabled
+
+.. rubric:: default required level
+
+*superadmin*
+
+.. rubric:: usage
+
+:command:`!enable` <plugin name>
+
 
 .. _find:
 
 find
 ^^^^
 
-TODO
+Return the name and slot id of connected players matching a given pattern
+
+.. rubric:: default required level
+
+*mod*
+
+.. rubric:: usage
+
+:command:`!find` <name>
+    Find a player by its name or partial name
+
+:command:`!find` <slot id>
+    Find a player by its game slot id
+
 
 
 help
 ^^^^
 
-TODO
+List available commands, or the short description of a given command
+
+.. rubric:: default required level
+
+*guest*
+
+.. rubric:: usage
+
+:command:`!help`
+
+List the commands available to the player issuing the command
+
+
+:command:`!help` <command>
+
+Show a short description of the given command
+
 
 
 kick
 ^^^^
 
-TODO
+Forcibly disconnects a player from the game server
+
+.. rubric:: default required level
+
+*admin*
+
+.. rubric:: usage
+
+:command:`!kick` <:ref:`player <targeting-player-syntax>`> <reason>
+    kick a player specifying a reason. The reason can be any text of your choice or a reference to a reason shortcut as
+    defined in the *warn_reasons* section of the admin config file.
+
+:command:`!kick` <player>
+    ban a player without specifying a reason. This is allowed only for admins of group level higher than `noreason_level`_.
+
+.. rubric:: alias
+
+:command:`!k`
+
+.. rubric:: customization
+
+The messages that can be displayed are: *invalid_parameters*, *error_no_reason*, *kick_self*, *action_denied_masked*
+and *kick_denied*.
+
 
 
 kickall
 ^^^^^^^
 
-TODO
+Forcibly disconnects all players matching a pattern from the game server
+
+.. rubric:: default required level
+
+*senioradmin*
+
+.. rubric:: usage
+
+:command:`!kickall` <pattern> <reason>
+    kick all players whose name matches the given pattern specifying a reason. The reason can be any text of your
+    choice or a reference to a reason shortcut as defined in the *warn_reasons* section of the admin config file.
+
+:command:`!kickall` <pattern>
+    kick all players whose name matches the given pattern without specifying a reason.
+    This is allowed only for admins of group level higher than `noreason_level`_.
+
+.. rubric:: alias
+
+:command:`!kall`
+
+.. rubric:: customization
+
+The messages that can be displayed are: *invalid_parameters* and *error_no_reason*.
+
 
 
 lastbans
 ^^^^^^^^
 
-TODO
+List the 5 last active bans.
+
+.. rubric:: default required level
+
+*admin*
+
+.. rubric:: usage
+
+:command:`!lastbans`
+
+.. rubric:: alias
+
+:command:`!lbans`
+
+
 
 .. _leveltest:
 
 leveltest
 ^^^^^^^^^
 
-The :command:`!leveltest` command tells in which B3 group a player is in.
+Tell in which B3 group a player is in.
 
 
 .. rubric:: usage
 
-:command:`!leveltest [player]`
+:command:`!leveltest` [:ref:`player <targeting-player-syntax>`]
 
 If ``player`` is an on-line player name, display in which B3 group this player is in.
 
@@ -494,98 +609,278 @@ messages can be customized in the admin plugin config file:
 lookup
 ^^^^^^
 
-TODO
+Return the name and database ID of a player matching a given pattern
+
+.. rubric:: default required level
+
+*senioradmin*
+
+.. rubric:: usage
+
+:command:`!lookup` <name>
+
+Find a player in the B3 database by its name or partial name
+
+.. rubric:: customization
+
+The messages that can be displayed are: *invalid_parameters*, *no_players* and *lookup_found*.
+
 
 
 makereg
 ^^^^^^^
 
-TODO
+Put a player in the *Regular* group.
+
+.. rubric:: default required level
+
+*senioradmin*
+
+.. rubric:: usage
+
+:command:`!makereg` <:ref:`player <targeting-player-syntax>`>
+
+
+.. rubric:: alias
+
+:command:`mr`
+
+.. rubric:: customization
+
+The messages that can be displayed are: *invalid_parameters*, *groups_already_in* and *groups_put*.
+
 
 
 map
 ^^^
 
-TODO
+Change the map on the server
+
+.. rubric:: default required level
+
+*senioradmin*
+
+.. rubric:: usage
+
+:command:`!map` <map name>
+
 
 
 maprotate
 ^^^^^^^^^
 
-TODO
+Load the next map on the game server
+
+.. rubric:: default required level
+
+*senioradmin*
+
+.. rubric:: usage
+
+:command:`!maprotate`
 
 
 maps
 ^^^^
 
-TODO
+List the server map rotation list
+
+.. rubric:: default required level
+
+*regular*
+
+.. rubric:: usage
+
+:command:`!maps`
 
 
 mask
 ^^^^
 
-TODO
+Mask yourself as being a member of a group of lower level
+
+.. rubric:: default required level
+
+*senioradmin*
+
+.. rubric:: usage
+
+:command:`!mask` <:ref:`group <groups>`>
+    Mask yourself as being a member of the given group.
+
+:command:`!mask` <:ref:`group <groups>`> <:ref:`player <targeting-player-syntax>`>
+    Mask another player as being a member of the given group.
+
+.. rubric:: customization
+
+The messages that can be displayed are: *invalid_parameters* and *group_unknown*.
+
 
 
 nextmap
 ^^^^^^^
 
-TODO
+Tell which map will be loaded next on the game server
+
+.. rubric:: default required level
+
+*reg*
+
+.. rubric:: usage
+
+:command:`!nextmap`
+
 
 
 notice
 ^^^^^^
 
-TODO
+Save to the B3 database a note about a player
+
+.. rubric:: default required level
+
+*admin*
+
+.. rubric:: usage
+
+:command:`!notice` <:ref:`player <targeting-player-syntax>`> <note>
+
 
 
 pause
 ^^^^^
 
-TODO
+Make B3 ignore any game event for a given duration
 
+.. rubric:: default required level
 
-pbss
-^^^^
+*senioradmin*
 
-TODO
+.. rubric:: usage
+
+:command:`!pause` <:ref:`duration <duration-syntax>`>
+
 
 
 permban
 ^^^^^^^
 
-TODO
+Permanently ban a player.
+
+.. rubric:: default required level
+
+*senioradmin*
+
+.. rubric:: usage
+
+:command:`!permban` <:ref:`player <targeting-player-syntax>`> <reason>
+    permanently ban a player specifying a reason. The reason can be any text of your choice or a reference to a reason
+    shortcut as defined in the *warn_reasons* section of the admin config file.
+
+:command:`!permban` <:ref:`player <targeting-player-syntax>`>
+    permanently ban a player not specifying a reason. This is allowed only for admins of group level higher than
+    `noreason_level`_.
+
+.. rubric:: alias
+
+:command:`!pb`
+
+.. rubric:: customization
+
+The messages that can be displayed are: *invalid_parameters*, *error_no_reason*, *ban_self*, *action_denied_masked*
+and *ban_denied*.
 
 
 poke
 ^^^^
 
-TODO
+Notify a player that he needs to move.
+
+.. rubric:: default required level
+
+*mod*
+
+.. rubric:: usage
+
+:command:`!poke` <:ref:`player <targeting-player-syntax>`>
+
+.. rubric:: customization
+
+The messages that can be displayed are: *invalid_parameters*.
+
+
 
 
 putgroup
 ^^^^^^^^
 
-TODO
+Add a player to a B3 group.
+
+.. rubric:: default required level
+
+*senioradmin*
+
+.. rubric:: usage
+
+:command:`!putgroup` <:ref:`player <targeting-player-syntax>`> <:ref:`group <groups>`>
+
+.. rubric:: customization
+
+The messages that can be displayed are: *invalid_parameters*, *group_unknown*, *group_beyond_reach*, *groups_already_in*
+and *groups_put*.
+
 
 
 rebuild
 ^^^^^^^
 
-TODO
+Sync up connected players. This can be useful for games for which B3 can loose track of connected players.
+
+.. rubric:: default required level
+
+*senioradmin*
+
+.. rubric:: usage
+
+:command:`!rebuild`
 
 
 reconfig
 ^^^^^^^^
 
-TODO
+Re-load all config files.
+
+This way you can change some settings and apply them without restarting B3.
+
+.. warning::
+    Some plugins may require a full restart of B3 to apply changes
+
+.. rubric:: default required level
+
+*superadmin*
+
+.. rubric:: usage
+
+:command:`!reconfig`
 
 
 register
 ^^^^^^^^
 
-TODO
+Register yourself as a basic user.
 
+.. rubric:: default required level
+
+*guest*
+
+.. rubric:: usage
+
+:command:`!register`
+    Put the player who typed the command into the *:ref:`user <groups>`* group
+
+.. rubric:: customization
+
+The messages that can be displayed are: *groups_already_in*, *regme_confirmation* and *regme_annouce*.
 
 
 regtest
@@ -608,13 +903,41 @@ The response message template can be customized in the admin plugin config file 
 regulars
 ^^^^^^^^
 
-TODO
+List online players which are in the regular group.
+
+.. rubric:: default required level
+
+*user*
+
+.. rubric:: usage
+
+:command:`!regulars`
+
+.. rubric:: alias
+
+:command:`!regs`
+
+.. rubric:: customization
+
+The messages that can be displayed are: *regulars* and *no_regulars*.
+
 
 
 restart
 ^^^^^^^
 
-TODO
+Restart B3.
+
+.. warning:: For this command to work, B3 must have been started with the `--restart` command line parameter
+
+.. rubric:: default required level
+
+*superadmin*
+
+.. rubric:: usage
+
+:command:`!restart`
+
 
 
 rules

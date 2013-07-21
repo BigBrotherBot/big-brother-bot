@@ -941,7 +941,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
     def cmd_register(self, data, client, cmd=None):
         """\
-        - register youself as a basic user
+        - register yourself as a basic user
         """
         try:
             group = Group(keyword='user')

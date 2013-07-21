@@ -51,7 +51,7 @@ Partial Name
     :command:`!warn sam cuss` for giving a warning to a connected player named 'Samuel'
 
   .. note::
-     You can use the :ref:`find` command to show what players match a given name.
+     You can use the :ref:`find` command to show which connected players match a given name.
 
   .. note::
      If the player's name contains blank characters as in ``M I K E``, then you can use its name without the blanks:
@@ -83,7 +83,8 @@ Database ID
   Example:
     :command:`!makereg @1235`
 
-  You can use the :ref:`lookup` command to find offline users in the database.
+.. note::
+  You can use the :ref:`lookup` command to find offline users in the database and get their database ID.
 
 
 
