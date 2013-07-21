@@ -46,7 +46,7 @@
 	<plugins>
 		<plugin name="censor" config="@conf/plugin_censor.xml" />
 		<plugin name="spamcontrol" config="@conf/plugin_spamcontrol.xml" />
-        <plugin name="admin" config="@conf/plugin_admin.xml" />
+        <plugin name="admin" config="@conf/plugin_admin.ini" />
 		<plugin name="stats" config="@conf/plugin_stats.xml" />
 		<plugin name="adv" config="@conf/plugin_adv.xml" />
 		<plugin name="status" config="@conf/plugin_status.xml" />

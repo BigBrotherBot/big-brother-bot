@@ -29,16 +29,16 @@ from b3.clients import Group
 
 from tests import B3TestCase
 from b3.fake import FakeClient
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 from b3.plugins.admin import AdminPlugin
 
-ADMIN_CONFIG_FILE = os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.xml")
+ADMIN_CONFIG_FILE = os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.ini")
 
 class Admin_functional_test(B3TestCase):
-    """ tests from a class inherithing from Admin_functional_test must call self.init() """
+    """ tests from a class inheriting from Admin_functional_test must call self.init() """
     def setUp(self):
         B3TestCase.setUp(self)
-        self.conf = XmlConfigParser()
+        self.conf = CfgConfigParser()
         self.p = AdminPlugin(self.console, self.conf)
 
     def init(self, config_content=None):
@@ -117,15 +117,11 @@ class Cmd_baninfo(Admin_functional_test):
     def test_no_ban_custom_message(self):
         # WHEN
         self.init("""
-        <configuration>
-            <settings name="commands">
-                <set name="baninfo">mod</set>
-            </settings>
-            <settings name="messages">
-                <set name="baninfo_no_bans">%(name)s is not banned</set>
-            </settings>
-        </configuration>
-        """)
+[commands]
+baninfo: mod
+[messages]
+baninfo_no_bans: %(name)s is not banned
+""")
         self.joe.connects(0)
         self.mike.connects(1)
         self.joe.says('!baninfo mike')
@@ -135,16 +131,12 @@ class Cmd_baninfo(Admin_functional_test):
     def test_perm_ban_custom_message(self):
         # GIVEN
         self.init("""
-        <configuration>
-            <settings name="commands">
-                <set name="permban">fulladmin</set>
-                <set name="baninfo">mod</set>
-            </settings>
-            <settings name="messages">
-                <set name="baninfo">%(name)s is banned</set>
-            </settings>
-        </configuration>
-        """)
+[commands]
+permban: fulladmin
+baninfo: mod
+[messages]
+baninfo: %(name)s is banned
+""")
         self.joe.connects(0)
         self.mike.connects(1)
         self.joe.says('!permban mike f00')
@@ -160,16 +152,12 @@ class Cmd_putgroup(Admin_functional_test):
         Admin_functional_test.setUp(self)
         # GIVEN
         self.init("""
-        <configuration>
-            <settings name="commands">
-                <set name="putgroup">admin</set>
-            </settings>
-            <settings name="messages">
-                <set name="group_unknown">Unkonwn group: %(group_name)s</set>
-                <set name="group_beyond_reach">You can't assign players to group %(group_name)s</set>
-            </settings>
-        </configuration>
-        """)
+[commands]
+putgroup: admin
+[messages]
+group_unknown: Unkonwn group: %(group_name)s
+group_beyond_reach: You can't assign players to group %(group_name)s
+""")
         self.joe.connects(0)
         self.mike.connects(1)
         self.assertEqual('user', self.mike.maxGroup.keyword)
@@ -691,24 +679,27 @@ class Test_config(Admin_functional_test):
         Admin_functional_test.setUp(self)
         logging.getLogger('output').setLevel(logging.INFO)
 
-    def test_no_generic_or_default_warn_readon(self):
+    def test_no_generic_or_default_warn_reason(self):
 
-        # load the default plugin_admin.xml file after having remove the 'generic' setting from section 'warn_reasons'
-        try:
-            from xml.etree import cElementTree as ET
-        except ImportError:
-            from xml.etree import ElementTree as ET
-
-        root = ET.parse(ADMIN_CONFIG_FILE).getroot()
-        warn_reasons_nodes = [x for x in root.findall('settings') if x.get('name') == 'warn_reasons' ][0]
-        if len(warn_reasons_nodes):
-            generic_nodes = [x for x in warn_reasons_nodes[0].findall('set') if x.get('name') == "generic"]
-            if len(generic_nodes):
-                warn_reasons_nodes[0].remove(generic_nodes[0])
-            default_nodes = [x for x in warn_reasons_nodes[0].findall('set') if x.get('name') == "default"]
-            if len(default_nodes):
-                warn_reasons_nodes[0].remove(default_nodes[0])
-        self.init(ET.tostring(root))
+        # load the default plugin_admin.ini file after having remove the 'generic' setting from section 'warn_reasons'
+        new_config_content = ""
+        with open(ADMIN_CONFIG_FILE) as config_file:
+            is_in_warn_reasons_section = False
+            for line in config_file:
+                if line == '[warn_reasons]':
+                    is_in_warn_reasons_section = True
+                if not is_in_warn_reasons_section:
+                    new_config_content += (line + '\n')
+                else:
+                    if line.startswith('['):
+                        new_config_content += (line + '\n')
+                        is_in_warn_reasons_section = False
+                    else:
+                        if line.startswith("generic") or line.startswith("default"):
+                            pass
+                        else:
+                            new_config_content += (line + '\n')
+        self.init(new_config_content)
 
         self.joe.message = Mock(lambda x: sys.stdout.write("message to Joe: " + x + "\n"))
         self.joe.connects(0)
@@ -720,48 +711,38 @@ class Test_config(Admin_functional_test):
 
 
     def test_bad_format_for_generic_and_default(self):
-        self.init("""<configuration>
-                        <settings name="warn_reasons">
-                            <set name="generic">1h</set>
-                            <set name="default">/</set>
-                        </settings>
-                    </configuration>""")
+        self.init("""[warn_reasons]
+generic: 1h
+default: /
+""")
         self.assertEqual((60, "^7"), self.p.warn_reasons['generic'])
         self.assertEqual((60, "^7behave yourself"), self.p.warn_reasons['default'])
 
     def test_bad_format_1(self):
-        self.init("""<configuration>
-                        <settings name="warn_reasons">
-                            <set name="foo">foo</set>
-                            <set name="bar">5d</set>
-                        </settings>
-                    </configuration>""")
+        self.init("""[warn_reasons]
+foo: foo
+bar: 5d
+""")
         self.assertNotIn('foo', self.p.warn_reasons)
 
     def test_bad_format_2(self):
-        self.init("""<configuration>
-                        <settings name="warn_reasons">
-                            <set name="foo">/foo bar</set>
-                        </settings>
-                    </configuration>""")
+        self.init("""[warn_reasons]
+foo: /foo bar
+""")
         self.assertNotIn('foo', self.p.warn_reasons)
 
     def test_bad_format_3(self):
-        self.init("""<configuration>
-                        <settings name="warn_reasons">
-                            <set name="foo">/spam#</set>
-                            <set name="bar">/spam# qsdf sq</set>
-                        </settings>
-                    </configuration>""")
+        self.init("""[warn_reasons]
+foo: /spam#
+bar: /spam# qsdf sq
+""")
         self.assertNotIn('foo', self.p.warn_reasons)
 
     def test_reference_to_warn_reason(self):
-        self.init("""<configuration>
-                        <settings name="warn_reasons">
-                            <set name="foo">2h, foo</set>
-                            <set name="bar">/foo</set>
-                        </settings>
-                    </configuration>""")
+        self.init("""[warn_reasons]
+foo: 2h, foo
+bar: /foo
+""")
         self.assertIn('foo', self.p.warn_reasons)
         self.assertEqual((120, 'foo'), self.p.warn_reasons['foo'])
         self.assertIn('bar', self.p.warn_reasons)
@@ -769,36 +750,29 @@ class Test_config(Admin_functional_test):
 
 
     def test_invalid_reference_to_warn_reason(self):
-        self.init("""<configuration>
-                        <settings name="warn_reasons">
-                            <set name="foo">2h, foo</set>
-                            <set name="bar">/nonexisting</set>
-                        </settings>
-                    </configuration>""")
+        self.init("""[warn_reasons]
+foo: 2h, foo
+bar: /nonexisting
+""")
         self.assertIn('foo', self.p.warn_reasons)
         self.assertEqual((120, 'foo'), self.p.warn_reasons['foo'])
         self.assertNotIn('bar', self.p.warn_reasons)
 
 
     def test_reference_to_spamage(self):
-        self.init("""<configuration>
-                        <settings name="spamages">
-                            <set name="foo">fOO fOO</set>
-                        </settings>
-                        <settings name="warn_reasons">
-                            <set name="bar">4h, /spam#foo</set>
-                        </settings>
-                    </configuration>""")
+        self.init("""[spamages]
+foo: fOO fOO
+[warn_reasons]
+bar: 4h, /spam#foo
+""")
         self.assertIn('bar', self.p.warn_reasons)
         self.assertEqual((240, 'fOO fOO'), self.p.warn_reasons['bar'])
 
 
     def test_invalid_reference_to_spamage(self):
-        self.init("""<configuration>
-                        <settings name="warn_reasons">
-                            <set name="bar">4h, /spam#foo</set>
-                        </settings>
-                    </configuration>""")
+        self.init("""[warn_reasons]
+bar: 4h, /spam#foo
+""")
         self.assertNotIn('bar', self.p.warn_reasons)
 
 
@@ -807,12 +781,9 @@ class Cmd_admins(Admin_functional_test):
     def test_no_admin(self):
         # GIVEN
         self.init("""
-        <configuration>
-            <settings name="commands">
-                <set name="admins">user</set>
-            </settings>
-        </configuration>
-        """)
+[commands]
+admins: user
+""")
         self.mike.connects(0)
         # only user Mike is connected
         # WHEN
@@ -824,15 +795,11 @@ class Cmd_admins(Admin_functional_test):
     def test_no_admin_custom_message(self):
         # GIVEN
         self.init("""
-        <configuration>
-            <settings name="commands">
-                <set name="admins">user</set>
-            </settings>
-            <settings name="messages">
-                <set name="no_admins">no admins</set>
-            </settings>
-        </configuration>
-        """)
+[commands]
+admins: user
+[messages]
+no_admins: no admins
+""")
         self.mike.connects(0)
         # only user Mike is connected
         # WHEN
@@ -844,15 +811,11 @@ class Cmd_admins(Admin_functional_test):
     def test_no_admin_blank_message(self):
         # GIVEN
         self.init("""
-        <configuration>
-            <settings name="commands">
-                <set name="admins">user</set>
-            </settings>
-            <settings name="messages">
-                <set name="no_admins"></set>
-            </settings>
-        </configuration>
-        """)
+[commands]
+admins: user
+[messages]
+no_admins: 
+""")
         self.mike.connects(0)
         # only user Mike is connected
         # WHEN
@@ -875,15 +838,11 @@ class Cmd_admins(Admin_functional_test):
     def test_one_admin_custom_message(self):
         # GIVEN
         self.init("""
-        <configuration>
-            <settings name="commands">
-                <set name="admins">mod</set>
-            </settings>
-            <settings name="messages">
-                <set name="admins">online admins: %s</set>
-            </settings>
-        </configuration>
-        """)
+[commands]
+admins: mod
+[messages]
+admins: online admins: %s
+""")
         self.joe.connects(0)
         # WHEN
         self.joe.clearMessageHistory()
@@ -1023,15 +982,11 @@ class Cmd_register(Admin_functional_test):
     def test_nominal_with_defaults(self):
         # GIVEN
         self.init(r"""
-        <configuration plugin="admin">
-            <settings name="commands">
-                <set name="register">guest</set>
-            </settings>
-            <settings name="messages">
-                <set name="regme_annouce">%s put in group %s</set>
-            </settings>
-        </configuration>
-        """)
+[commands]
+register: guest
+[messages]
+regme_annouce: %s put in group %s
+""")
         # WHEN
         self.player.says('!register')
         # THEN
@@ -1042,19 +997,14 @@ class Cmd_register(Admin_functional_test):
     def test_custom_messages(self):
         # GIVEN
         self.init(r"""
-        <configuration plugin="admin">
-            <settings name="commands">
-                <set name="register">guest</set>
-            </settings>
-            <settings name="settings">
-                <set name="announce_registration">yes</set>
-            </settings>
-            <settings name="messages">
-                <set name="regme_confirmation">You are now a member of the group %s</set>
-                <set name="regme_annouce">%s is now a member of group %s</set>
-            </settings>
-        </configuration>
-        """)
+[commands]
+register: guest
+[settings]
+announce_registration: yes
+[messages]
+regme_confirmation: You are now a member of the group %s
+regme_annouce: %s is now a member of group %s
+""")
         # WHEN
         self.player.says('!register')
         # THEN
@@ -1064,19 +1014,14 @@ class Cmd_register(Admin_functional_test):
     def test_no_announce(self):
         # GIVEN
         self.init(r"""
-        <configuration plugin="admin">
-            <settings name="commands">
-                <set name="register">guest</set>
-            </settings>
-            <settings name="settings">
-                <set name="announce_registration">no</set>
-            </settings>
-            <settings name="messages">
-                <set name="regme_confirmation">You are now a member of the group %s</set>
-                <set name="regme_annouce">%s is now a member of group %s</set>
-            </settings>
-        </configuration>
-        """)
+[commands]
+register: guest
+[settings]
+announce_registration: no
+[messages]
+regme_confirmation: You are now a member of the group %s
+regme_annouce: %s is now a member of group %s
+""")
         # WHEN
         self.player.says('!register')
         # THEN
@@ -1089,17 +1034,15 @@ class Cmd_spams(Admin_functional_test):
 
     def test_nominal(self, sleep_mock):
         # GIVEN
-        self.init(r"""<configuration>
-            <settings name="commands">
-                <set name="spams">20</set>
-            </settings>
-            <settings name="spamages">
-                <set name="foo">foo</set>
-                <set name="rule1">this is rule #1</set>
-                <set name="rule2">this is rule #2</set>
-                <set name="bar">bar</set>
-            </settings>
-        </configuration>""")
+        self.init(r"""
+[commands]
+spams: 20
+[spamages]
+foo: foo
+rule1: this is rule #1
+rule2: this is rule #2
+bar: bar
+""")
         self.joe.connects(0)
         # WHEN
         self.joe.says('!spams')
@@ -1108,13 +1051,11 @@ class Cmd_spams(Admin_functional_test):
 
     def test_no_spamage(self, sleep_mock):
         # GIVEN
-        self.init(r"""<configuration>
-            <settings name="commands">
-                <set name="spams">20</set>
-            </settings>
-            <settings name="spamages">
-            </settings>
-        </configuration>""")
+        self.init(r"""
+[commands]
+spams: 20
+[spamages]
+""")
         self.joe.connects(0)
         # WHEN
         self.joe.says('!spams')
@@ -1123,32 +1064,30 @@ class Cmd_spams(Admin_functional_test):
 
     def test_reconfig_loads_new_spamages(self, sleep_mock):
         # GIVEN
-        self.init(r"""<configuration>
-            <settings name="commands">
-                <set name="spams">20</set>
-            </settings>
-            <settings name="spamages">
-                <set name="foo">foo</set>
-                <set name="rule1">this is rule #1</set>
-            </settings>
-        </configuration>""")
+        first_config = r"""
+[commands]
+spams: 20
+[spamages]
+foo: foo
+rule1: this is rule #1
+"""
+        second_config = r"""
+[commands]
+spams: 20
+[spamages]
+bar: bar
+rule2: this is rule #2
+"""
+        self.init(first_config)
         self.joe.connects(0)
         self.joe.says('!spams')
         self.assertListEqual(['Spamages: foo, rule1'], self.joe.message_history)
-        # WHEN
-        self.conf.loadFromString(r"""<configuration>
-            <settings name="commands">
-                <set name="spams">20</set>
-            </settings>
-            <settings name="spamages">
-                <set name="bar">bar</set>
-                <set name="rule2">this is rule #2</set>
-            </settings>
-        </configuration>""")
-        self.joe.says('!reconfig')
+        # WHEN the config file content is changed
+        self.p.config = CfgConfigParser()
+        self.p.config.loadFromString(second_config)
+        # THEN
         self.joe.clearMessageHistory()
         self.joe.says('!spams')
-        # THEN
         self.assertListEqual(['Spamages: bar, rule2'], self.joe.message_history)
 
 
@@ -1158,22 +1097,19 @@ class Cmd_warn_and_clear(Admin_functional_test):
     def setUp(self):
         Admin_functional_test.setUp(self)
         # GIVEN
-        self.init(r"""<configuration>
-            <settings name="commands">
-                <set name="warn">user</set>
-                <set name="clear">user</set>
-            </settings>
-            <settings name="messages">
-                <set name="warn_too_fast">Only one warning every %(num_second)s seconds can be given</set>
-                <set name="warn_self">%s, you cannot give yourself a warning</set>
-                <set name="warn_denied">%s, %s is a higher level admin, you can't warn him</set>
-                <set name="cleared_warnings">%(admin)s has cleared %(player)s of all warnings</set>
-                <set name="cleared_warnings_for_all">%(admin)s has cleared everyone's warnings and tk points</set>
-            </settings>
-            <settings name="warn">
-                <set name="message">^1WARNING^7 [^3$warnings^7]: $reason</set>
-            </settings>
-        </configuration>""")
+        self.init(r"""
+[commands]
+warn: user
+clear: user
+[messages]
+warn_too_fast: Only one warning every %(num_second)s seconds can be given
+warn_self: %s, you cannot give yourself a warning
+warn_denied: %s, %s is a higher level admin, you can't warn him
+cleared_warnings: %(admin)s has cleared %(player)s of all warnings
+cleared_warnings_for_all: %(admin)s has cleared everyone's warnings and tk points
+[warn]
+message: ^1WARNING^7 [^3$warnings^7]: $reason
+""")
         self.joe.connects(0)
         self.mike.connects(1)
         self.say_patcher = patch.object(self.console, "say")
@@ -1248,12 +1184,10 @@ class Test_warn_command_abusers(Admin_functional_test):
 
     def test_conf_empty(self, sleep_mock):
         # WHEN
-        self.init(r"""<configuration>
-            <settings name="commands">
-            </settings>
-            <settings name="warn">
-            </settings>
-        </configuration>""")
+        self.init(r"""
+[commands]
+[warn]
+""")
         # THEN
         self.assertFalse(self.p._warn_command_abusers)
         self.assertIsNone(self.p.getWarning("fakecmd"))
@@ -1261,12 +1195,11 @@ class Test_warn_command_abusers(Admin_functional_test):
 
     def test_warn_reasons(self, sleep_mock):
         # WHEN
-        self.init(r"""<configuration>
-            <settings name="warn_reasons">
-                <set name="fakecmd">1h, ^7do not use fake commands</set>
-                <set name="nocmd">1h, ^7do not use commands that you do not have access to, try using !help</set>
-            </settings>
-        </configuration>""")
+        self.init(r"""
+[warn_reasons]
+fakecmd: 1h, ^7do not use fake commands
+nocmd: 1h, ^7do not use commands that you do not have access to, try using !help
+""")
         # THEN
         self.assertTupleEqual((60.0, '^7do not use commands that you do not have access to, try using !help'),
                               self.p.getWarning("nocmd"))
@@ -1274,14 +1207,12 @@ class Test_warn_command_abusers(Admin_functional_test):
 
     def test_warn_no__no_sufficient_access(self, sleep_mock):
         # WHEN
-        self.init(r"""<configuration>
-            <settings name="commands">
-                <set name="help">2</set>
-            </settings>
-            <settings name="warn">
-                <set name="warn_command_abusers">no</set>
-            </settings>
-        </configuration>""")
+        self.init(r"""
+[commands]
+help: 2
+[warn]
+warn_command_abusers: no
+""")
         self.assertFalse(self.p._warn_command_abusers)
         self.player.connects("0")
         # WHEN
@@ -1295,14 +1226,12 @@ class Test_warn_command_abusers(Admin_functional_test):
 
     def test_warn_yes__no_sufficient_access(self, sleep_mock):
         # GIVEN
-        self.init(r"""<configuration>
-            <settings name="commands">
-                <set name="help">2</set>
-            </settings>
-            <settings name="warn">
-                <set name="warn_command_abusers">yes</set>
-            </settings>
-        </configuration>""")
+        self.init(r"""
+[commands]
+help: 2
+[warn]
+warn_command_abusers: yes
+""")
         self.assertTrue(self.p._warn_command_abusers)
         self.player.connects("0")
         # WHEN
@@ -1316,17 +1245,14 @@ class Test_warn_command_abusers(Admin_functional_test):
 
     def test_warn_yes__no_sufficient_access_abuser(self, sleep_mock):
         # GIVEN
-        self.init(r"""<configuration>
-            <settings name="commands">
-                <set name="help">2</set>
-            </settings>
-            <settings name="warn">
-                <set name="warn_command_abusers">yes</set>
-            </settings>
-            <settings name="warn_reasons">
-                <set name="nocmd">90s, do not use commands you do not have access to, try using !help</set>
-            </settings>
-        </configuration>""")
+        self.init(r"""
+[commands]
+help: 2
+[warn]
+warn_command_abusers: yes
+[warn_reasons]
+nocmd: 90s, do not use commands you do not have access to, try using !help
+""")
         self.player.connects("0")
         # WHEN
         with patch.object(self.p, "info") as info_mock:
@@ -1345,14 +1271,12 @@ class Test_warn_command_abusers(Admin_functional_test):
 
     def test_warn_no__unknown_cmd(self, sleep_mock):
         # GIVEN
-        self.init(r"""<configuration>
-            <settings name="commands">
-                <set name="help">0</set>
-            </settings>
-            <settings name="warn">
-                <set name="warn_command_abusers">no</set>
-            </settings>
-        </configuration>""")
+        self.init(r"""
+[commands]
+help: 0
+[warn]
+warn_command_abusers: no
+""")
         self.assertFalse(self.p._warn_command_abusers)
         self.player.connects("0")
         # WHEN
@@ -1363,14 +1287,12 @@ class Test_warn_command_abusers(Admin_functional_test):
 
     def test_warn_yes__unknown_cmd(self, sleep_mock):
         # GIVEN
-        self.init(r"""<configuration>
-            <settings name="commands">
-                <set name="help">0</set>
-            </settings>
-            <settings name="warn">
-                <set name="warn_command_abusers">yes</set>
-            </settings>
-        </configuration>""")
+        self.init(r"""
+[commands]
+help: 0
+[warn]
+warn_command_abusers: yes
+""")
         self.assertTrue(self.p._warn_command_abusers)
         self.player.connects("0")
         # WHEN
@@ -1381,17 +1303,14 @@ class Test_warn_command_abusers(Admin_functional_test):
 
     def test_warn_yes__unknown_cmd_abuser(self, sleep_mock):
         # GIVEN
-        self.init(r"""<configuration>
-            <settings name="commands">
-                <set name="help">0</set>
-            </settings>
-            <settings name="warn">
-                <set name="warn_command_abusers">yes</set>
-            </settings>
-            <settings name="warn_reasons">
-                <set name="fakecmd">2h, do not use fake commands</set>
-            </settings>
-        </configuration>""")
+        self.init(r"""
+[commands]
+help: 0
+[warn]
+warn_command_abusers: yes
+[warn_reasons]
+fakecmd: 2h, do not use fake commands
+""")
         self.assertTrue(self.p._warn_command_abusers)
         self.player.connects("0")
         self.player.setvar(self.p, 'fakeCommand', 2)  # simulate already 2 use of the !help command
@@ -1412,11 +1331,10 @@ class Test_command_parsing(Admin_functional_test):
 
     def setUp(self):
         Admin_functional_test.setUp(self)
-        self.init(r"""<configuration>
-            <settings name="commands">
-                <set name="help">0</set>
-            </settings>
-        </configuration>""")
+        self.init(r"""
+[commands]
+help: 0
+""")
         self.joe.connects("0")
 
     def test_normal_chat(self, sleep_mock):

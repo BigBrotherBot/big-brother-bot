@@ -28,10 +28,10 @@ from tests import B3TestCase
 import unittest2 as unittest
 
 from b3.plugins.adv import AdvPlugin, MessageLoop
-from b3.config import XmlConfigParser
+from b3.config import XmlConfigParser, CfgConfigParser
 
 from b3 import __file__ as b3_module__file__
-ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.xml"))
+ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.ini"))
 ADMIN_CONFIG = None
 
 default_plugin_file = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../b3/conf/plugin_adv.xml"))
@@ -47,7 +47,7 @@ def setUpModule():
         with open(default_plugin_file, 'r') as f:
             default_plugin_content = f.read()
 
-    ADMIN_CONFIG = XmlConfigParser()
+    ADMIN_CONFIG = CfgConfigParser()
     ADMIN_CONFIG.load(ADMIN_CONFIG_FILE)
 
     timer_patcher = patch('threading.Timer')

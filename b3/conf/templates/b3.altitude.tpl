@@ -46,7 +46,7 @@
 		<set name="external_dir">@b3/extplugins</set>
 	</settings>
 	<plugins>
-		<plugin name="admin" config="@conf/plugin_admin.xml" />
+		<plugin name="admin" config="@conf/plugin_admin.ini" />
 	</plugins>
     <extplugins>
     </extplugins>

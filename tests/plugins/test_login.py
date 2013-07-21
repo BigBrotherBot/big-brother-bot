@@ -25,12 +25,12 @@ from tests import B3TestCase
 import unittest2 as unittest
 
 from b3.plugins.login import LoginPlugin
-from b3.config import XmlConfigParser
+from b3.config import XmlConfigParser, CfgConfigParser
 
 from b3 import __file__ as b3__file__
 
 default_plugin_file = os.path.normpath(os.path.join(os.path.dirname(b3__file__), "conf/plugin_login.xml"))
-ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3__file__), "conf/plugin_admin.xml"))
+ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3__file__), "conf/plugin_admin.ini"))
 
 F00_MD5 = '9f06f2538cdbb40bce9973f60506de09'
 
@@ -43,7 +43,7 @@ class LoginTestCase(B3TestCase):
 
         B3TestCase.setUp(self)
 
-        admin_conf = XmlConfigParser()
+        admin_conf = CfgConfigParser()
         admin_conf.load(ADMIN_CONFIG_FILE)
         self.adminPlugin = AdminPlugin(self.console, admin_conf)
         when(self.console).getPlugin("admin").thenReturn(self.adminPlugin)
