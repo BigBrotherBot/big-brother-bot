@@ -52,7 +52,7 @@
 	<plugins>
 		<plugin name="censor" config="@conf/plugin_censor.xml"/>
 		<plugin name="spamcontrol" config="@b3/conf/plugin_spamcontrol.xml"/>
-		<plugin name="admin" config="@conf/plugin_admin.xml"/>
+		<plugin name="admin" config="@conf/plugin_admin.ini"/>
 		<plugin name="pingwatch" config="@conf/plugin_pingwatch.xml"/>
 		<plugin name="adv" config="@conf/plugin_adv.xml"/>
 		<plugin name="status" config="@conf/plugin_status.xml"/>

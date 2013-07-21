@@ -48,7 +48,7 @@
     <plugins>
         <plugin name="censor" config="@conf/plugin_censor.xml"/>
         <plugin name="spamcontrol" config="@conf/plugin_spamcontrol.xml"/>
-        <plugin name="admin" config="@conf/plugin_admin.xml"/>
+        <plugin name="admin" config="@conf/plugin_admin.ini"/>
         <plugin name="tk" config="@conf/plugin_tk.xml"/>
         <plugin name="stats" config="@conf/plugin_stats.xml"/>
         <plugin name="pingwatch" config="@conf/plugin_pingwatch.xml"/>

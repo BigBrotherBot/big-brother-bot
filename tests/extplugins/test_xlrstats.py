@@ -29,7 +29,7 @@ from tests import B3TestCase, logging_disabled
 from b3.fake import FakeClient
 
 DEFAULT_XLRSTATS_CONFIG_FILE = os.path.join(os.path.dirname(xlrstats__file__), 'conf/xlrstats.xml')
-DEFAULT_ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.xml"))
+DEFAULT_ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.ini"))
 
 
 # Setup the logging level we'd like to be spammed with during the tests

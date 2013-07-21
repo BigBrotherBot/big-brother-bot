@@ -23,13 +23,13 @@ import unittest2 as unittest
 from mockito import when
 from b3 import TEAM_UNKNOWN
 from b3.clients import Client
-from b3.config import XmlConfigParser
+from b3.config import XmlConfigParser, CfgConfigParser
 from b3.fake import FakeClient
 from b3.parsers.ravaged import RavagedParser, TEAM_SCAVENGERS, TEAM_RESISTANCE
 from b3.plugins.admin import AdminPlugin
 
 from b3 import __file__ as b3_module__file__
-ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.xml"))
+ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.ini"))
 ADMIN_CONFIG = None
 
 
@@ -670,7 +670,7 @@ class test_functional(unittest.TestCase):
         self.parser.output = Mock()
         self.parser.output.write = Mock()
 
-        ADMIN_CONFIG = XmlConfigParser()
+        ADMIN_CONFIG = CfgConfigParser()
         ADMIN_CONFIG.load(ADMIN_CONFIG_FILE)
         self.adminPlugin = AdminPlugin(self.parser, ADMIN_CONFIG)
         when(self.parser).getPlugin("admin").thenReturn(self.adminPlugin)

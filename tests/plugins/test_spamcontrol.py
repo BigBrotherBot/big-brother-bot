@@ -32,7 +32,7 @@ from b3 import __file__ as b3_module__file__
 from b3.config import XmlConfigParser
 
 
-ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.xml"))
+ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.ini"))
 SPAMCONTROM_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_spamcontrol.xml"))
 
 class SpamcontrolTestCase(B3TestCase):
