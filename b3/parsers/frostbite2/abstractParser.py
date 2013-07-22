@@ -57,9 +57,12 @@
 #  improve punkbuster event parsing
 # 1.9
 #  fix never ending thread sayqueuelistener_worker (would make B3 process hang on keyboard interrupt)
+# 1.10
+#  fix bug in code patching the admin plugin cmd_map function that would break the command if a map was loaded for an
+#  incompatible gamemode
 #
 __author__  = 'Courgette'
-__version__ = '1.9'
+__version__ = '1.10'
 
 
 import sys, re, traceback, time, string, Queue, threading, new
@@ -226,9 +229,6 @@ class AbstractParser(b3.parser.Parser):
             else:
                 map_data = data.strip()
 
-            if gamemode_data is None:
-                gamemode_data = self.console.game.gameType
-
             if num_rounds is None:
                 # get the number of round from the current map
                 try:
@@ -251,10 +251,13 @@ class AbstractParser(b3.parser.Parser):
                 client.message('do you mean : %s ?' % ', '.join(map_id))
                 return
 
-            gamemode_id = self.console.getGamemodeSoundingLike(map_id, gamemode_data)
-            if type(gamemode_id) is list:
-                client.message('do you mean : %s ?' % ', '.join(gamemode_id))
-                return
+            if gamemode_data is None:
+                gamemode_id = self.console.game.gameType
+            else:
+                gamemode_id = self.console.getGamemodeSoundingLike(map_id, gamemode_data)
+                if type(gamemode_id) is list:
+                    client.message('do you mean : %s ?' % ', '.join(gamemode_id))
+                    return
 
             return map_id, gamemode_id, num_rounds
 
@@ -280,7 +283,7 @@ class AbstractParser(b3.parser.Parser):
                 suggestions = self.console.changeMap(map_id, gamemode_id=gamemode_id, number_of_rounds=num_rounds)
             except CommandFailedError, err:
                 if err.message == ['InvalidGameModeOnMap']:
-                    client.message("%s cannot be played with gamemode %s" % self.console.getEasyName(map_id), self.console.getGameMode(gamemode_id))
+                    client.message("%s cannot be played with gamemode %s" % (self.console.getEasyName(map_id), self.console.getGameMode(gamemode_id)))
                     client.message("supported gamemodes are : " + ', '.join([self.console.getGameMode(mode_id) for mode_id in self.console.getSupportedGameModesByMapId(map_id)]))
                     return
                 elif err.message == ['InvalidRoundsPerMap']:

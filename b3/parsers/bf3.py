@@ -21,7 +21,7 @@
 # 1.0.1 -> 1.0.3
 # 1.1.1 -> 1.1.6
 # 1.2.1 -> 1.2.1
-# 1.4.1, 1.6, 1.9
+# 1.4.1, 1.6, 1.9, 1.10
 #
 # CHANGELOG
 #
@@ -57,7 +57,7 @@ import threading
 from time import sleep
 
 __author__  = 'Courgette'
-__version__ = '1.9'
+__version__ = '1.10'
 
 BF3_REQUIRED_VERSION = 1149977
 

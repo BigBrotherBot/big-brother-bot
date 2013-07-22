@@ -18,14 +18,17 @@
 #
 import re
 import unittest2 as unittest
-from mock import Mock, DEFAULT, patch
+from mock import Mock, DEFAULT, patch, call
 from mockito import when, verify
 import b3
 from b3.clients import Client, Clients
 from b3.fake import FakeClient
 from b3.parsers.bf3 import Bf3Parser, MAP_NAME_BY_ID, GAME_MODES_BY_MAP_ID, GAME_MODES_NAMES
-from b3.config import XmlConfigParser
+from b3.config import XmlConfigParser, CfgConfigParser
+from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import MapListBlock
+from b3.plugins.admin import AdminPlugin
+from tests import logging_disabled
 
 
 sleep_patcher = None
@@ -898,4 +901,75 @@ class Test_patch_b3_Client_isAlive(BF3TestCase):
         when(self.parser).write(('player.isAlive', 'Foobar')).thenReturn(['false'])
         # THEN
         self.assertEqual(b3.STATE_DEAD, self.foobar.state)
+
+
+class Test_patch_b3_admin_plugin(BF3TestCase):
+    def setUp(self):
+        BF3TestCase.setUp(self)
+        with logging_disabled():
+            self.conf = XmlConfigParser()
+            self.conf.loadFromString("""
+                    <configuration>
+                    </configuration>
+                """)
+            self.parser = Bf3Parser(self.conf)
+            adminPlugin_conf = CfgConfigParser()
+            adminPlugin_conf.loadFromString(r"""
+[commands]
+map: 20
+""")
+            adminPlugin = AdminPlugin(self.parser, adminPlugin_conf)
+            adminPlugin.onLoadConfig()
+            adminPlugin.onStartup()
+            when(self.parser).getPlugin('admin').thenReturn(adminPlugin)
+            self.parser.patch_b3_admin_plugin()
+            self.joe = FakeClient(self.parser, name="Joe", guid="joeguid", groupBits=128)
+            self.joe.connects(cid="joe")
+            self.parser.game.gameType = "CaptureTheFlag0"
+            self.parser.game.serverinfo = {'roundsTotal': 2}
+
+    def test_map_known_on_correct_gamemode(self):
+        # GIVEN
+        self.parser.game.gameType = "GunMaster0"
+        # WHEN
+        with patch.object(self.parser, 'changeMap') as changeMap_mock:
+            self.joe.says("!map talah")
+        # THEN
+        self.assertListEqual([call('XP4_Rubble', gamemode_id='GunMaster0', number_of_rounds=2)], changeMap_mock.mock_calls)
+        self.assertListEqual([], self.joe.message_history)
+
+    def test_map_InvalidGameModeOnMap(self):
+        # WHEN
+        when(self.parser).changeMap('XP4_Rubble', gamemode_id="CaptureTheFlag0", number_of_rounds=2).thenRaise(
+            CommandFailedError(["InvalidGameModeOnMap"]))
+        self.joe.says("!map talah")
+        # THEN
+        self.assertListEqual(
+            ['Talah market cannot be played with gamemode Capture the Flag',
+             'supported gamemodes are : Conquest64, Conquest, Rush, Squad Rush, Squad Deathmatch, Team Deathmatch, Gun master, Scavenger'
+            ], self.joe.message_history)
+
+    def test_map_InvalidRoundsPerMap(self):
+        # WHEN
+        when(self.parser).changeMap('XP4_Rubble', gamemode_id="CaptureTheFlag0", number_of_rounds=2).thenRaise(
+            CommandFailedError(["InvalidRoundsPerMap"]))
+        self.joe.says("!map talah")
+        # THEN
+        self.assertListEqual(['number of rounds must be 1 or greater'], self.joe.message_history)
+
+    def test_map_Full(self):
+        # WHEN
+        when(self.parser).changeMap('XP4_Rubble', gamemode_id="CaptureTheFlag0", number_of_rounds=2).thenRaise(
+            CommandFailedError(["Full"]))
+        self.joe.says("!map talah")
+        # THEN
+        self.assertListEqual(['Map list maximum size has been reached'], self.joe.message_history)
+
+    def test_map_unknown(self):
+        # WHEN
+        with patch.object(self.parser, 'changeMap') as changeMap_mock:
+            self.joe.says("!map xxxxxxxxf00xxxxxxxxx")
+        # THEN
+        self.assertListEqual([], changeMap_mock.mock_calls)
+        self.assertListEqual(['do you mean : donya fortress, gulf of oman, damavand peak ?'], self.joe.message_history)
 
