@@ -946,7 +946,7 @@ map: 20
         # THEN
         self.assertListEqual(
             ['Talah market cannot be played with gamemode Capture the Flag',
-             'supported gamemodes are : Conquest64, Conquest, Rush, Squad Rush, Squad Deathmatch, Team Deathmatch, Gun master, Scavenger'
+             'supported gamemodes are : Conquest Assault64, Conquest Assault, Rush, Squad Rush, Squad Deathmatch, Team Deathmatch, Gun master, Scavenger'
             ], self.joe.message_history)
 
     def test_map_InvalidRoundsPerMap(self):
