@@ -48,6 +48,8 @@
 # 1.8.1
 #  add new maps and gamemodes from DLC "End Game"
 #  implement getPlayerPings
+# 1.10.1
+#  Fix the list of gamemodes available for map Talah Market
 #
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock
@@ -57,7 +59,7 @@ import threading
 from time import sleep
 
 __author__  = 'Courgette'
-__version__ = '1.10'
+__version__ = '1.10.1'
 
 BF3_REQUIRED_VERSION = 1149977
 
@@ -242,7 +244,7 @@ GAME_MODES_BY_MAP_ID = {
         "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0",
         "GunMaster0", "Scavenger0"),
     "XP4_Rubble": (
-        "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0",
+        "ConquestAssaultLarge0", "ConquestAssaultSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0",
         "GunMaster0", "Scavenger0"),
     "XP5_001": (
         "CaptureTheFlag0", "AirSuperiority0", "ConquestLarge0", "ConquestAssaultLarge0", "ConquestSmall0",
