@@ -1,3 +1,4 @@
+.. index:: Plugins; Admin, Admin plugin
 .. _plugin-admin:
 
 Admin
@@ -22,8 +23,9 @@ General settings
 
 All settings below are defined in the `settings` section of the admin plugin config file.
 
-noreason_level
-^^^^^^^^^^^^^^
+
+:index:`noreason_level`
+^^^^^^^^^^^^^^^^^^^^^^^
 
 The group/level from which admins are not required to specify a reason when giving penalties to players.
 
@@ -34,8 +36,8 @@ default value
   ``superadmin``
 
 
-hidecmd_level
-^^^^^^^^^^^^^
+:index:`hidecmd_level`
+^^^^^^^^^^^^^^^^^^^^^^
 
 The group/level required to be able to use hidden commands. On quake3 based games, a hidden command can be issued by
 telling to command to oneself.
@@ -47,8 +49,8 @@ default value
   ``senioradmin``
 
 
-long_tempban_level
-^^^^^^^^^^^^^^^^^^
+:index:`long_tempban_level`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Group/level required to be able to issue bans longer than the duration defined for the *long_tempban_max_duration*
 setting.
@@ -60,8 +62,8 @@ default value
   ``senioradmin``
 
 
-long_tempban_max_duration
-^^^^^^^^^^^^^^^^^^^^^^^^^
+:index:`long_tempban_max_duration`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Maximum ban duration that can be inflicted by admins of group/level below the one defined at the *long_tempban_level*
 setting.
@@ -73,8 +75,8 @@ default value
   ``3h``
 
 
-command_prefix
-^^^^^^^^^^^^^^
+:index:`command_prefix`
+^^^^^^^^^^^^^^^^^^^^^^^
 
 The prefix that should be put before b3 commands.
 
@@ -85,8 +87,8 @@ default value
   ``!``
 
 
-command_prefix_loud
-^^^^^^^^^^^^^^^^^^^
+:index:`command_prefix_loud`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Some commands can have their result broadcasted to all players instead of only to the player issuing the command. To
 have such a behavior, use this command prefix instead of *command_prefix*.
@@ -101,8 +103,8 @@ default value
   ``@``
 
 
-command_prefix_big
-^^^^^^^^^^^^^^^^^^
+:index:`command_prefix_big`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Some commands can have their result broadcasted to all players as a very noticeable way. To have such a behavior, use
 this command prefix instead of *command_prefix*.
@@ -118,8 +120,8 @@ default value
   ``&``
 
 
-admins_level
-^^^^^^^^^^^^
+:index:`admins_level`
+^^^^^^^^^^^^^^^^^^^^^
 
 The admin plugin considers as an admin any player who is member of a group of level higher or equal to the group/level
 defined in the admin plugin config file at *admins_level*.
@@ -131,8 +133,8 @@ default value
   ``mod``
 
 
-ban_duration
-^^^^^^^^^^^^
+:index:`ban_duration`
+^^^^^^^^^^^^^^^^^^^^^
 
 Temporary ban duration to apply to bans given by the :command:`!ban` and :command:`!banall` commands.
 
@@ -143,8 +145,8 @@ default value
   ``14d``
 
 
-announce_registration
-^^^^^^^^^^^^^^^^^^^^^
+:index:`announce_registration`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Define if a public message will be displayed to all in-game players when a user registered himself using the
 :command:`!register` command. If enable, this can encourage others to register too.
@@ -156,10 +158,25 @@ default value
   ``yes``
 
 
+.. _spamages:
+.. index:: spamages
+
+Spamages settings
+-----------------
+
+The `spamages` section of the admin plugin config file defines shortcuts for messages you want to be easily displayed to
+players with the `spam`_ command. If the message shortcut is of the form 'rule#' where # is a number between 1 and 20,
+it will be used for the `rules`_ command.
+
+.. rubric:: Related commands:
+
+`spam`_, `spams`_ and `rules`_.
+
 
 Commands
 --------
 
+.. index:: single: !admins
 
 admins
 ^^^^^^
@@ -193,6 +210,9 @@ messages can be customized in the admin plugin config file:
     :command:`!admins` command.
 
 
+
+.. index:: single: !admintest
+
 admintest
 ^^^^^^^^^
 
@@ -202,6 +222,9 @@ Alias for command `regtest`_
 
 *admin*
 
+
+
+.. index:: single: !aliases
 
 aliases
 ^^^^^^^
@@ -242,6 +265,9 @@ The :command:`!aliases` command response can be customized in the admin plugin c
     one `%s` placeholder which will be replaced with the player's name.
 
 
+
+.. index:: single: !b3
+
 b3
 ^^
 
@@ -256,6 +282,9 @@ Show the B3 version and uptime.
 The :command:`!b3` command takes no parameters.
 
 
+
+.. index:: single: !ban
+.. index:: single: !b
 
 ban
 ^^^
@@ -288,6 +317,9 @@ The ban duration can be changed in the plugin config file at `ban_duration`_.
 
 
 
+.. index:: single: !banall
+.. index:: single: !ball
+
 banall
 ^^^^^^
 
@@ -305,6 +337,10 @@ Like the `ban`_ command except it will ban multiple players whom name contains a
 
 :command:`!ball`
 
+
+
+.. index:: single: !baninfo
+.. index:: single: !bi
 
 baninfo
 ^^^^^^^
@@ -328,6 +364,8 @@ Tell if a given player has active bans.
 The messages that can be displayed are: *baninfo*, *baninfo_no_bans*.
 
 
+
+.. index:: single: !clientinfo
 
 clientinfo
 ^^^^^^^^^^
@@ -378,6 +416,9 @@ else but it can be useful to retrieve info such as the player IP address or guid
 
 
 
+.. index:: single: !clear
+.. index:: single: !kiss
+
 clear
 ^^^^^
 
@@ -407,6 +448,8 @@ The messages that can be displayed are: *cleared_warnings* and *cleared_warnings
 
 
 
+.. index:: single: !die
+
 die
 ^^^
 
@@ -417,6 +460,8 @@ Shutdown B3
 *superadmin*
 
 
+
+.. index:: single: !disable
 
 disable
 ^^^^^^^
@@ -432,6 +477,9 @@ Disable a plugin
 :command:`!disable` <plugin name>
 
 
+
+.. index:: single: !enable
+
 enable
 ^^^^^^
 
@@ -446,7 +494,9 @@ Enable a plugin that would have been disabled
 :command:`!enable` <plugin name>
 
 
+
 .. _find:
+.. index:: single: !find
 
 find
 ^^^^
@@ -466,6 +516,9 @@ Return the name and slot id of connected players matching a given pattern
     Find a player by its game slot id
 
 
+
+.. index:: single: !help
+.. index:: single: !h
 
 help
 ^^^^
@@ -488,6 +541,8 @@ List the commands available to the player issuing the command
 Show a short description of the given command
 
 
+.. index:: single: !kick
+.. index:: single: !k
 
 kick
 ^^^^
@@ -518,6 +573,9 @@ and *kick_denied*.
 
 
 
+.. index:: single: !kiall
+.. index:: single: !kall
+
 kickall
 ^^^^^^^
 
@@ -547,6 +605,9 @@ The messages that can be displayed are: *invalid_parameters* and *error_no_reaso
 
 
 
+.. index:: single: !lastbans
+.. index:: single: !lbans
+
 lastbans
 ^^^^^^^^
 
@@ -567,6 +628,8 @@ List the 5 last active bans.
 
 
 .. _leveltest:
+.. index:: single: !leveltest
+.. index:: single: !lt
 
 leveltest
 ^^^^^^^^^
@@ -582,6 +645,9 @@ If ``player`` is an on-line player name, display in which B3 group this player i
 
 If ``player`` is not provided, display in which B3 group you are in.
 
+.. rubric:: alias
+
+:command:`!lt`
 
 .. rubric:: customization
 
@@ -604,7 +670,9 @@ messages can be customized in the admin plugin config file:
     - the player's B3 database identifier
 
 
+
 .. _lookup:
+.. index:: single: !lookup
 
 lookup
 ^^^^^^
@@ -626,6 +694,9 @@ Find a player in the B3 database by its name or partial name
 The messages that can be displayed are: *invalid_parameters*, *no_players* and *lookup_found*.
 
 
+
+.. index:: single: !makereg
+.. index:: single: !mr
 
 makereg
 ^^^^^^^
@@ -650,6 +721,7 @@ Put a player in the *Regular* group.
 The messages that can be displayed are: *invalid_parameters*, *groups_already_in* and *groups_put*.
 
 
+.. index:: single: !map
 
 map
 ^^^
@@ -666,6 +738,8 @@ Change the map on the server
 
 
 
+.. index:: single: !maprotate
+
 maprotate
 ^^^^^^^^^
 
@@ -680,6 +754,9 @@ Load the next map on the game server
 :command:`!maprotate`
 
 
+
+.. index:: single: !maps
+
 maps
 ^^^^
 
@@ -693,6 +770,9 @@ List the server map rotation list
 
 :command:`!maps`
 
+
+
+.. index:: single: !mask
 
 mask
 ^^^^
@@ -717,6 +797,8 @@ The messages that can be displayed are: *invalid_parameters* and *group_unknown*
 
 
 
+.. index:: single: !nextmap
+
 nextmap
 ^^^^^^^
 
@@ -731,6 +813,8 @@ Tell which map will be loaded next on the game server
 :command:`!nextmap`
 
 
+
+.. index:: single: !notice
 
 notice
 ^^^^^^
@@ -747,6 +831,8 @@ Save to the B3 database a note about a player
 
 
 
+.. index:: single: !pause
+
 pause
 ^^^^^
 
@@ -761,6 +847,9 @@ Make B3 ignore any game event for a given duration
 :command:`!pause` <:ref:`duration <duration-syntax>`>
 
 
+
+.. index:: single: !permban
+.. index:: single: !pb
 
 permban
 ^^^^^^^
@@ -791,6 +880,9 @@ The messages that can be displayed are: *invalid_parameters*, *error_no_reason*,
 and *ban_denied*.
 
 
+
+.. index:: single: !poke
+
 poke
 ^^^^
 
@@ -810,6 +902,7 @@ The messages that can be displayed are: *invalid_parameters*.
 
 
 
+.. index:: single: !putgroup
 
 putgroup
 ^^^^^^^^
@@ -831,6 +924,8 @@ and *groups_put*.
 
 
 
+.. index:: single: !rebuild
+
 rebuild
 ^^^^^^^
 
@@ -844,6 +939,9 @@ Sync up connected players. This can be useful for games for which B3 can loose t
 
 :command:`!rebuild`
 
+
+
+.. index:: single: !reconfig
 
 reconfig
 ^^^^^^^^
@@ -864,6 +962,9 @@ This way you can change some settings and apply them without restarting B3.
 :command:`!reconfig`
 
 
+
+.. index:: single: !register
+
 register
 ^^^^^^^^
 
@@ -883,6 +984,9 @@ Register yourself as a basic user.
 The messages that can be displayed are: *groups_already_in*, *regme_confirmation* and *regme_annouce*.
 
 
+
+.. index:: single: !regtest
+
 regtest
 ^^^^^^^
 
@@ -899,6 +1003,9 @@ The :command:`!regtest` command takes no parameters.
 The response message template can be customized in the admin plugin config file at *messages:leveltest*.
 
 
+
+.. index:: single: !regulars
+.. index:: single: !regs
 
 regulars
 ^^^^^^^^
@@ -923,6 +1030,8 @@ The messages that can be displayed are: *regulars* and *no_regulars*.
 
 
 
+.. index:: single: !restart
+
 restart
 ^^^^^^^
 
@@ -940,23 +1049,101 @@ Restart B3.
 
 
 
+.. index:: single: !rules
+.. index:: single: !r
+
 rules
 ^^^^^
 
-TODO
+Display the server rules.
 
+.. rubric:: default required level
+
+*guest*
+
+.. rubric:: usage
+
+:command:`!rules`
+
+.. rubric:: alias
+
+:command:`!r`
+
+.. rubric:: customization
+
+The server rules are defined in the admin plugin config file under the section :ref:`spamages <spamages>`.
+
+Default rules are: ::
+
+    rule1: ^3Rule #1: No racism of any kind
+    rule2: ^3Rule #2: No clan stacking, members must split evenly between the teams
+    rule3: ^3Rule #3: No arguing with admins (listen and learn or leave)
+    rule4: ^3Rule #4: No abusive language or behavior towards admins or other players
+    rule5: ^3Rule #5: No offensive or potentially offensive names, annoying names, or in-game (double caret (^)) color in names
+    rule6: ^3Rule #6: No recruiting for your clan, your server, or anything else
+    rule7: ^3Rule #7: No advertising or spamming of websites or servers
+    rule8: ^3Rule #8: No profanity or offensive language (in any language)
+    rule9: ^3Rule #9: Do ^1NOT ^3fire at teammates or within 10 seconds of spawning
+    rule10: ^3Rule #10: Offense players must play for the objective and support their team
+
+If you want to add another rule, name it `rule11` and so on up to number 20.
+
+
+
+.. index:: single: !runas
 
 runas
 ^^^^^
 
-TODO
+Run a command as a different user
 
+.. rubric:: default required level
+
+*superadmin*
+
+.. rubric:: usage
+
+:command:`!runas` <name> <command>
+
+.. rubric:: alias
+
+:command:`!su`
+
+.. rubric:: customization
+
+The messages that can be displayed are: *invalid_parameters*.
+
+
+
+.. index:: single: !say
 
 say
 ^^^
 
-TODO
+Broadcast a message to all players.
 
+.. rubric:: default required level
+
+*mod*
+
+.. rubric:: usage
+
+:command:`!say` <text>
+
+.. rubric:: alias
+
+:command:`!su`
+
+.. rubric:: customization
+
+The text template can be customized with setting *say* from the *messages* section of the config file.
+
+That text template must have two place holders `%s`. The first one will be replaced by the name of the player issuing
+the command, while the second will be replaced with the text to broadcast.
+
+
+
+.. index:: single: !scream
 
 scream
 ^^^^^^
@@ -964,11 +1151,15 @@ scream
 TODO
 
 
+.. index:: single: !seen
+
 seen
 ^^^^
 
 TODO
 
+
+.. index:: single: !spam
 
 spam
 ^^^^
@@ -976,11 +1167,15 @@ spam
 TODO
 
 
+.. index:: single: !spams
+
 spams
 ^^^^^
 
 TODO
 
+
+.. index:: single: !spank
 
 spank
 ^^^^^
@@ -988,11 +1183,15 @@ spank
 TODO
 
 
+.. index:: single: !spankall
+
 spankall
 ^^^^^^^^
 
 TODO
 
+
+.. index:: single: !status
 
 status
 ^^^^^^
@@ -1000,11 +1199,15 @@ status
 TODO
 
 
+.. index:: single: !tempban
+
 tempban
 ^^^^^^^
 
 TODO
 
+
+.. index:: single: !time
 
 time
 ^^^^
@@ -1012,11 +1215,15 @@ time
 TODO
 
 
+.. index:: single: !unban
+
 unban
 ^^^^^
 
 TODO
 
+
+.. index:: single: !ungroup
 
 ungroup
 ^^^^^^^
@@ -1024,11 +1231,15 @@ ungroup
 TODO
 
 
+.. index:: single: !unmask
+
 unmask
 ^^^^^^
 
 TODO
 
+
+.. index:: single: !unreg
 
 unreg
 ^^^^^
@@ -1036,11 +1247,17 @@ unreg
 TODO
 
 
+.. index:: single: !warn
+.. index:: single: !w
+
 warn
 ^^^^
 
 TODO
 
+
+.. index:: single: !warnclear
+.. index:: single: !wc
 
 warnclear
 ^^^^^^^^^
@@ -1048,11 +1265,15 @@ warnclear
 TODO
 
 
+.. index:: single: !warninfo
+
 warninfo
 ^^^^^^^^
 
 TODO
 
+
+.. index:: single: !warnremove
 
 warnremove
 ^^^^^^^^^^
@@ -1060,11 +1281,15 @@ warnremove
 TODO
 
 
+.. index:: single: !warns
+
 warns
 ^^^^^
 
 TODO
 
+
+.. index:: single: !warntest
 
 warntest
 ^^^^^^^^

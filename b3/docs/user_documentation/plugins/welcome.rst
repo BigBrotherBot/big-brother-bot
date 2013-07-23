@@ -1,3 +1,4 @@
+.. index:: Plugins; Welcome, Welcome plugin
 .. _plugin-welcome:
 
 Welcome
@@ -25,8 +26,9 @@ Configuration
 Commands
 ^^^^^^^^
 
-greeting
-""""""""
+
+:index:`greeting`
+"""""""""""""""""
 
 Group/level required to be able to use the :command:`!greeting` command.
 
@@ -42,8 +44,8 @@ Settings
 ^^^^^^^^
 
 
-welcome_first
-"""""""""""""
+:index:`welcome_first`
+""""""""""""""""""""""
 
 Define if private message welcoming first time players will be sent.
 
@@ -54,8 +56,8 @@ default value
   ``yes``
 
 
-welcome_newb
-""""""""""""
+:index:`welcome_newb`
+"""""""""""""""""""""
 
 Define if private message welcoming newbie players will be sent.
 
@@ -66,8 +68,8 @@ default value
   ``yes``
 
 
-welcome_user
-""""""""""""
+:index:`welcome_user`
+"""""""""""""""""""""
 
 Define if private message welcoming registered players will be sent.
 
@@ -78,8 +80,8 @@ default value
   ``yes``
 
 
-announce_first
-""""""""""""""
+:index:`announce_first`
+"""""""""""""""""""""""
 
 Define if a message welcoming first time players will be broadcasted.
 
@@ -90,8 +92,8 @@ default value
   ``yes``
 
 
-announce_user
-"""""""""""""
+:index:`announce_user`
+""""""""""""""""""""""
 
 Define if a message welcoming registered players will be broadcasted.
 
@@ -102,8 +104,8 @@ default value
   ``yes``
 
 
-show_user_greeting
-""""""""""""""""""
+:index:`show_user_greeting`
+"""""""""""""""""""""""""""
 
 Define if players custom greeting message will be broadcasted.
 
@@ -115,8 +117,8 @@ default value
 
 
 
-newb_connections
-""""""""""""""""
+:index:`newb_connections`
+"""""""""""""""""""""""""
 
 Define the maximum number of connections above which a non registered player won't be considered a newbie anymore.
 
@@ -128,8 +130,8 @@ default value
 
 
 
-delay
-"""""
+:index:`delay`
+""""""""""""""
 
 Define the delay in second after which the welcome message will be sent when a player connects.
 
@@ -141,8 +143,8 @@ default value
 
 
 
-min_gap
-"""""""
+:index:`min_gap`
+""""""""""""""""
 
 Define the duration in seconds the bot must wait before welcoming a player again.
 
@@ -158,8 +160,8 @@ default value
 messages
 ^^^^^^^^
 
-first
-"""""
+:index:`first`
+""""""""""""""
 
 Define the message to sent privately to joining first time players.
 
@@ -173,8 +175,8 @@ default value
   ``^7Welcome $name^7, this must be your first visit, you are player ^3#$id. Type !help for help``
 
 
-newb
-""""
+:index:`newb`
+"""""""""""""
 
 Define the message to sent privately to joining newbie players.
 Newbie players are players with less than `newb_connections`_ connections.
@@ -189,8 +191,8 @@ default value
 
 
 
-user
-""""
+:index:`user`
+"""""""""""""
 
 Define the message to sent privately to joining registered players.
 
@@ -204,8 +206,8 @@ default value
 
 
 
-announce_first
-""""""""""""""
+:index:`announce_first`
+"""""""""""""""""""""""
 
 Define the message to broadcast when a first time player joins.
 
@@ -219,8 +221,8 @@ default value
 
 
 
-announce_user
-"""""""""""""
+:index:`announce_user`
+""""""""""""""""""""""
 
 Define the message to broadcast when a registered player joins.
 
@@ -234,8 +236,8 @@ default value
 
 
 
-greeting
-""""""""
+:index:`greeting`
+"""""""""""""""""
 
 Define the message to broadcast when a player having defined a custom greeting message with the :command:`!greeting` joins.
 
@@ -261,8 +263,8 @@ default value
 
 
 
-greeting_empty
-""""""""""""""
+:index:`greeting_empty`
+"""""""""""""""""""""""
 
 Feedback message for the :command:`!greeting` command.
 
@@ -274,8 +276,8 @@ default value
 
 
 
-greeting_yours
-""""""""""""""
+:index:`greeting_yours`
+"""""""""""""""""""""""
 
 Feedback message for the :command:`!greeting` command.
 
@@ -286,8 +288,8 @@ default value
   ``^7Your greeting is %s``
 
 
-greeting_bad
-""""""""""""
+:index:`greeting_bad`
+"""""""""""""""""""""
 
 Feedback message for the :command:`!greeting` command.
 
@@ -299,8 +301,8 @@ default value
 
 
 
-greeting_changed
-""""""""""""""""
+:index:`greeting_changed`
+"""""""""""""""""""""""""
 
 Feedback message for the :command:`!greeting` command.
 
@@ -312,8 +314,8 @@ default value
 
 
 
-greeting_cleared
-""""""""""""""""
+:index:`greeting_cleared`
+"""""""""""""""""""""""""
 
 Feedback message for the :command:`!greeting` command.
 
@@ -351,6 +353,8 @@ The text can contain the following placeholders that will be replaced just befor
 Commands
 --------
 
+
+.. index:: single: !greeting
 
 greeting
 ^^^^^^^^
