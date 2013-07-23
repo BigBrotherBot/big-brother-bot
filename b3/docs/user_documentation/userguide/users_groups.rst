@@ -1,4 +1,5 @@
 .. _guide-groups:
+.. index:: groups, levels
 
 =====================
 User Roles and Groups

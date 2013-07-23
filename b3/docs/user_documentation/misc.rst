@@ -3,6 +3,7 @@ Miscellaneous
 
 
 .. _duration-syntax:
+.. index:: duration syntax
 
 Duration syntax
 ---------------
@@ -33,6 +34,7 @@ command :
 
 
 .. _targeting-player-syntax:
+.. index:: player identification
 
 Player identification in commands
 ---------------------------------
@@ -89,6 +91,7 @@ Database ID
 
 
 .. _mysql-tools:
+.. index:: mysql tools
 
 MySQL tools
 -----------

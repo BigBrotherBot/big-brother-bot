@@ -1,4 +1,5 @@
 .. _game-configuration:
+.. index:: game server configuration, g_logsync, g_loghits
 
 Game server configuration
 =========================

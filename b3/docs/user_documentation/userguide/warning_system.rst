@@ -1,4 +1,5 @@
 .. _guide-warning:
+.. index:: warning system
 
 ==============
 Warning System

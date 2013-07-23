@@ -9,6 +9,7 @@ You'll need the following:
 - Database
 - Access to your game server
 
+.. index:: database, mysql
 
 Database Setup
 --------------

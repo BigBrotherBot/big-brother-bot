@@ -1,6 +1,8 @@
 Frequently Asked Questions
 ==========================
 
+.. index:: faq
+
 .. contents::
    :local:
    :depth: 1
