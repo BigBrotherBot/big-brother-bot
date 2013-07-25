@@ -76,6 +76,9 @@
 #     * added missing hitlocation constants
 #     * added damage table
 #     * restored function _getDamagePoints
+# 25/07/2013 - 1.16 - Fenix
+#     * fixed means of death ids
+#     * added hit2kill code translation for UT_MOD_KICKED
 
 import re, new
 import time
@@ -87,7 +90,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.15'
+__version__ = '1.16'
 
 
 class Iourt42Client(Client):
@@ -380,21 +383,21 @@ class Iourt42Parser(Iourt41Parser):
     UT_MOD_BLED='23'
     UT_MOD_KICKED='24'
     UT_MOD_HEGRENADE='25'
-    UT_MOD_SR8='27'
-    UT_MOD_AK103='29'
-    UT_MOD_SPLODED='30'
-    UT_MOD_SLAPPED='31'
-    UT_MOD_SMITED = '32'
-    UT_MOD_BOMBED='33'
-    UT_MOD_NUKED='34'
-    UT_MOD_NEGEV='35'
-    UT_MOD_HK69_HIT='36'
-    UT_MOD_M4='37'
-    UT_MOD_GLOCK='38'
-    UT_MOD_COLT1911='39'
-    UT_MOD_MAC11='40'
-    UT_MOD_FLAG='41'
-    UT_MOD_GOOMBA='42'
+    UT_MOD_SR8='28'
+    UT_MOD_AK103='30'
+    UT_MOD_SPLODED='31'
+    UT_MOD_SLAPPED='32'
+    UT_MOD_SMITED = '33'
+    UT_MOD_BOMBED='34'
+    UT_MOD_NUKED='35'
+    UT_MOD_NEGEV='36'
+    UT_MOD_HK69_HIT='37'
+    UT_MOD_M4='38'
+    UT_MOD_GLOCK='39'
+    UT_MOD_COLT1911='40'
+    UT_MOD_MAC11='41'
+    UT_MOD_FLAG='42'
+    UT_MOD_GOOMBA='43'
 
     # HIT LOCATIONS
     HL_HEAD = '1'
@@ -432,6 +435,7 @@ class Iourt42Parser(Iourt41Parser):
         20: UT_MOD_GLOCK,
         21: UT_MOD_COLT1911,
         22: UT_MOD_MAC11,
+        24: UT_MOD_KICKED,
         25: UT_MOD_KNIFE_THROWN,
     }
     
@@ -466,7 +470,6 @@ class Iourt42Parser(Iourt41Parser):
         UT_MOD_COLT1911: [100, 60, 37, 27, 15, 15, 32, 29, 22, 22, 15, 15, 11, 11],
         UT_MOD_MAC11: [34, 29, 20, 15, 11, 11, 18, 17, 15, 15, 13, 13, 11, 11],
         UT_MOD_GOOMBA: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
-        
     }   
 
 
