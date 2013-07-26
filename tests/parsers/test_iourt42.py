@@ -168,7 +168,7 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_type='EVT_CLIENT_DAMAGE',
             event_client=d4dou,
             event_target=fatmatic,
-            event_data=(13, '35', '9'))
+            event_data=(13, '36', '9'))
 
     def test_Hit_unkown_location(self):
         fatmatic = FakeClient(self.console, name="Fat'Matic", guid="11111111111111")
@@ -308,7 +308,7 @@ class Test_kill_mods(Test_log_lines_parsing):
         )
 
     def test_nuke(self):
-        self.assertEvent('5:19 Kill: 0 0 34: Joe killed Joe by UT_MOD_NUKED',
+        self.assertEvent('5:19 Kill: 0 0 35: Joe killed Joe by UT_MOD_NUKED',
             event_type='EVT_CLIENT_KILL',
             event_client=self.world,
             event_target=self.joe,
@@ -372,21 +372,21 @@ class Test_kill_mods(Test_log_lines_parsing):
         assert_mod('23', 'UT_MOD_BLED')
         assert_mod('24', 'UT_MOD_KICKED')
         assert_mod('25', 'UT_MOD_HEGRENADE')
-        assert_mod('27', 'UT_MOD_SR8')
-        assert_mod('29', 'UT_MOD_AK103')
-        assert_mod('30', 'UT_MOD_SPLODED')
-        assert_mod('31', 'UT_MOD_SLAPPED')
-        assert_mod('32', 'UT_MOD_SMITED')
-        assert_mod('33', 'UT_MOD_BOMBED')
-        assert_mod('34', 'UT_MOD_NUKED')
-        assert_mod('35', 'UT_MOD_NEGEV')
-        assert_mod('36', 'UT_MOD_HK69_HIT')
-        assert_mod('37', 'UT_MOD_M4')
-        assert_mod('38', 'UT_MOD_GLOCK')
-        assert_mod('39', 'UT_MOD_COLT1911')
-        assert_mod('40', 'UT_MOD_MAC11')
-        assert_mod('41', 'UT_MOD_FLAG')
-        assert_mod('42', 'UT_MOD_GOOMBA')
+        assert_mod('28', 'UT_MOD_SR8')
+        assert_mod('30', 'UT_MOD_AK103')
+        assert_mod('31', 'UT_MOD_SPLODED')
+        assert_mod('32', 'UT_MOD_SLAPPED')
+        assert_mod('33', 'UT_MOD_SMITED')
+        assert_mod('34', 'UT_MOD_BOMBED')
+        assert_mod('35', 'UT_MOD_NUKED')
+        assert_mod('36', 'UT_MOD_NEGEV')
+        assert_mod('37', 'UT_MOD_HK69_HIT')
+        assert_mod('38', 'UT_MOD_M4')
+        assert_mod('39', 'UT_MOD_GLOCK')
+        assert_mod('40', 'UT_MOD_COLT1911')
+        assert_mod('41', 'UT_MOD_MAC11')
+        assert_mod('42', 'UT_MOD_FLAG')
+        assert_mod('43', 'UT_MOD_GOOMBA')
 
 
 
