@@ -42,7 +42,9 @@
 #   - getBanlist respond with an empty dict if it fails to read the banlist data from the game server
 # 07/13/2013   0.20
 #   - Handle 'bans' command not completing correctly
-
+# 07/27/2013   1.0
+#   - Sync won't remove clients which are already connected by not yet authed (unverified guid)
+#
 import sys, re, traceback, time, Queue, threading
 from logging import Formatter
 from b3.output import VERBOSE2, VERBOSE
@@ -54,7 +56,7 @@ import b3.cvar
 from b3.clients import Clients
 
 __author__  = '82ndab-Bravo17, Courgette'
-__version__ = '0.20'
+__version__ = '1.0'
 
 
 # disable the authorizing timer that come by default with the b3.clients.Clients class
@@ -693,7 +695,11 @@ class AbstractParser(b3.parser.Parser):
             client = self.clients.getByCID(cid)
             c_guid = c.get('guid', None)
             if client:
-                if c_guid == client.guid:
+                if (
+                        (client.authed and c.get('verified') == 'OK' and c_guid == client.guid)
+                    or
+                        (not client.authed and c.get('verified') == '?')
+                ) and c.get('name') == client.name:
                     self.debug('Client found on server %s' % client.name)
                     mlist[cid] = client
                     self.debug ('Lobby is %s ' % c['lobby'])
