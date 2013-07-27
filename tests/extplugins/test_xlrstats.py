@@ -300,66 +300,6 @@ class Test_kill(XlrstatsTestCase):
         # THEN
         self.assertEqual(['XLR Stats: P1 : K 1 D 1 TK 0 Ratio 1.00 Skill 1015.63'], self.p1.message_history)
 
-class Test_doTopList(XlrstatsTestCase):
-
-    def setUp(self):
-        with logging_disabled():
-            XlrstatsTestCase.setUp(self)
-            self.conf.load(DEFAULT_XLRSTATS_CONFIG_FILE)
-            self.p.onLoadConfig()
-            self.p.onStartup()
-            # GIVEN 5 players P1 .. P5
-            self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID", _team=TEAM_RED)
-            self.p1.connects("1")
-            self.p1.says("!register")
-            self.p2 = FakeClient(console=self.console, name="P2", guid="P2_GUID", _team=TEAM_BLUE)
-            self.p2.connects("2")
-            self.p2.says("!register")
-            self.p3 = FakeClient(console=self.console, name="P3", guid="P3_GUID", _team=TEAM_BLUE)
-            self.p3.connects("3")
-            self.p3.says("!register")
-            self.p4 = FakeClient(console=self.console, name="P4", guid="P4_GUID", _team=TEAM_RED)
-            self.p4.connects("4")
-            self.p4.says("!register")
-            self.p5 = FakeClient(console=self.console, name="P5", guid="P5_GUID", _team=TEAM_BLUE)
-            self.p5.connects("5")
-            self.p5.says("!register")
-
-    def test_no_kill(self):
-        # GIVEN
-        self.p._minKills = 15
-        self.p._minRounds = 30
-        cmd = self.adminPlugin._commands["xlrtopstats"]
-        # WHEN
-        self.p1.clearMessageHistory()
-        with patch('time.sleep'):
-            self.p.doTopList(data="", client=self.p1, cmd=cmd)
-        # THEN
-        self.assertListEqual([
-             'Qualify for the toplist by making 15 kills, or playing 30 rounds!'
-        ], self.p1.message_history)
-
-    def test_one_kill(self):
-        # GIVEN
-        cmd = self.adminPlugin._commands["xlrtopstats"]
-        self.p._minKills = 0
-        self.p._minRounds = 0
-        self.p._maxDays = 0
-        self.p1.kills(self.p2)
-        s = self.p.get_PlayerStats(self.p1)
-        self.assertIsNotNone(s)
-        self.assertEqual(1, s.kills)
-        # WHEN
-        self.p1.clearMessageHistory()
-        with patch('time.sleep'):
-            self.p.doTopList(data="", client=self.p1, cmd=cmd)
-        # THEN
-        self.assertListEqual([
-            'XLR Stats Top 3 Players:',
-            '# 1: P1 : Skill 1024.00 Ratio 0.00 Kills: 1'
-        ], self.p1.message_history)
-
-
 
 class Test_storage(XlrstatsTestCase):
 
