@@ -79,6 +79,8 @@
 # 25/07/2013 - 1.16 - Fenix
 #     * fixed means of death ids
 #     * added hit2kill code translation for UT_MOD_KICKED
+# 30/07/2013 - 1.17 - Fenix
+#     * added EVT_CLIENT_GOTO
 
 import re, new
 import time
@@ -90,7 +92,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.16'
+__version__ = '1.17'
 
 
 class Iourt42Client(Client):
@@ -284,7 +286,10 @@ class Iourt42Parser(Iourt41Parser):
         #13:34 ClientSavePosition: 0 - 335.384887 - 67.469154 - -23.875000
         #13:34 ClientLoadPosition: 0 - 335.384887 - 67.469154 - -23.875000
         re.compile(r'^(?P<action>Client(Save|Load)Position):\s(?P<cid>\d+)\s-\s(?P<data>(?P<x>-?\d+(?:\.\d+)?)\s-\s(?P<y>-?\d+(?:\.\d+)?)\s-\s(?P<z>-?\d+(?:\.\d+)?))$', re.IGNORECASE),
-
+        
+        #13:34 ClientGoto: 0 - 1 - 335.384887 - 67.469154 - -23.875000
+        re.compile(r'^(?P<action>ClientGoto):\s(?P<cid>\d+)\s-\s(?P<tcid>\d+)\s-\s(?P<data>(?P<x>-?\d+(?:\.\d+)?)\s-\s(?P<y>-?\d+(?:\.\d+)?)\s-\s(?P<z>-?\d+(?:\.\d+)?))$', re.IGNORECASE),
+        
         #Generated with ioUrbanTerror v4.1:
         #Hit: 12 7 1 19: BSTHanzo[FR] hit ercan in the Helmet
         #Hit: 13 10 0 8: Grover hit jacobdk92 in the Head
@@ -501,6 +506,7 @@ class Iourt42Parser(Iourt41Parser):
         self.EVT_CLIENT_JUMP_RUN_CANCEL = self.Events.createEvent('EVT_CLIENT_JUMP_RUN_CANCEL', 'Event client jump run canceled')
         self.EVT_CLIENT_POS_SAVE = self.Events.createEvent('EVT_CLIENT_POS_SAVE', 'Event client position saved')
         self.EVT_CLIENT_POS_LOAD = self.Events.createEvent('EVT_CLIENT_POS_LOAD', 'Event client position loaded')
+        self.EVT_CLIENT_GOTO = self.Events.createEvent('EVT_CLIENT_GOTO', 'Event client goto')
         self.EVT_CLIENT_SURVIVOR_WINNER = self.Events.createEvent('EVT_CLIENT_SURVIVOR_WINNER', 'Event client survivor winner')
 
         self.load_conf_frozensand_ban_settings()
@@ -661,6 +667,23 @@ class Iourt42Parser(Iourt41Parser):
             self.debug('No client found')
             return None
         return Event(self.EVT_CLIENT_POS_LOAD, client=client, data={'position': position})
+    
+    def OnClientgoto(self, action, data, match=None):
+        cid = match.group('cid')
+        tcid = match.group('tcid')
+        position = float(match.group('x')), float(match.group('y')), float(match.group('z'))
+        
+        client = self.getByCidOrJoinPlayer(cid)
+        if not client:
+            self.debug('No client found')
+            return None
+        
+        target = self.getByCidOrJoinPlayer(tcid)
+        if not target:
+            self.debug('No target client found')
+            return None
+            
+        return Event(self.EVT_CLIENT_GOTO, client=client, target=target, data={'position': position})
 
     def OnSurvivorwinner(self, action, data, match=None):
         #SurvivorWinner: Blue
