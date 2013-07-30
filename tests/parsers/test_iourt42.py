@@ -268,6 +268,16 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_type='EVT_CLIENT_POS_LOAD',
             event_client=marcel,
             event_data={'position': (335.384887, 67.469154, -23.875)})
+        
+    def test_ClientGoto(self):
+        patate = FakeClient(self.console, name="Patate", guid="Patate_guid")
+        psyp = FakeClient(self.console, name="psyp", guid="psyp_guid")
+        patate.connects('0')
+        psyp.connects('1')
+        self.assertEvent(r'''ClientGoto: 0 - 1 - 335.384887 - 67.469154 - -23.875000''',
+            event_type='EVT_CLIENT_GOTO',
+            event_client=patate,
+            event_data={'target': psyp, 'position': (335.384887, 67.469154, -23.875)})
 
 
     def test_SurvivorWinner_player(self):
