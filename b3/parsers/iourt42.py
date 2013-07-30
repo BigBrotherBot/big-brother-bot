@@ -683,7 +683,7 @@ class Iourt42Parser(Iourt41Parser):
             self.debug('No target client found')
             return None
             
-        return Event(self.EVT_CLIENT_GOTO, client=client, data={'target': target, 'position': position})
+        return Event(self.EVT_CLIENT_GOTO, client=client, target=target, data={'position': position})
 
     def OnSurvivorwinner(self, action, data, match=None):
         #SurvivorWinner: Blue
