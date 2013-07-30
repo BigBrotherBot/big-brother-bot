@@ -288,7 +288,7 @@ class Iourt42Parser(Iourt41Parser):
         re.compile(r'^(?P<action>Client(Save|Load)Position):\s(?P<cid>\d+)\s-\s(?P<data>(?P<x>-?\d+(?:\.\d+)?)\s-\s(?P<y>-?\d+(?:\.\d+)?)\s-\s(?P<z>-?\d+(?:\.\d+)?))$', re.IGNORECASE),
         
         #13:34 ClientGoto: 0 - 1 - 335.384887 - 67.469154 - -23.875000
-        re.compile(r'^(?P<action>ClientGoto):\s(?P<cid>\d+)\s-\s(?P<tcid>\d+)\s-\s(?P<data>(?P<x>-?\d+(?:\.\d+)?)\s-\s(?P<y>-?\d+(?:\.\d+)?)\s-\s(?P<z>-?\d+(?:\.\d+)?))$'. re.IGNORECASE),
+        re.compile(r'^(?P<action>ClientGoto):\s(?P<cid>\d+)\s-\s(?P<tcid>\d+)\s-\s(?P<data>(?P<x>-?\d+(?:\.\d+)?)\s-\s(?P<y>-?\d+(?:\.\d+)?)\s-\s(?P<z>-?\d+(?:\.\d+)?))$', re.IGNORECASE),
         
         #Generated with ioUrbanTerror v4.1:
         #Hit: 12 7 1 19: BSTHanzo[FR] hit ercan in the Helmet
