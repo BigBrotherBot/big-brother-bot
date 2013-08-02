@@ -62,6 +62,8 @@
 #   * Added: arma2 support
 # 2013/07/17 1.6 - 82ndAB.Bravo17
 #   * Added: arma3 support
+# 2013/08/03 1.7 - 82ndAB.Bravo17
+#   * Added: Chivalry Medieval Warfare support
 #
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -69,7 +71,7 @@
 # The setup procedure, to create a new configuration file (b3.xml)
 
 __author__ = 'xlr8or'
-__version__ = '1.6'
+__version__ = '1.7'
 
 import platform
 import urllib2
@@ -167,6 +169,7 @@ class Setup:
 Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
                   iourt41/iourt42
                   bfbc2/bf3/moh
+                  chiv
                   etpro/altitude/oa081/smg/sof2/wop/wop15
                   homefront/ro2/csgo/ravaged/arma2/arma3""")
 
@@ -263,6 +266,19 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
                          "The port of your gameserver that B3 will connect to in order to send RCON commands. (see RConPort in your Ravaged server config file)")
             self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
                          "The RCON password of your gameserver. (see AdminPassword in your Ravaged server config file)")
+
+        # Chivalry specific
+        elif self._set_parser == 'chiv':
+            self.add_set("public_ip", self.read_element('server', 'public_ip', ''),
+                         "The IP address of your gameserver")
+            self.add_set("port", self.read_element('server', 'port', '27015'),
+                         "The query port of your gameserver (see SteamQueryPort in your Ravaged server config file)")
+            self.add_set("rcon_ip", self.read_element('server', 'rcon_ip', ''),
+                         "The IP of your gameserver B3 will connect to in order to send RCON commands. Usually the same as the public_ip")
+            self.add_set("rcon_port", self.read_element('server', 'rcon_port', '27960'),
+                         "The port of your gameserver that B3 will connect to in order to send RCON commands. (see 'RConPort' in section '[AOC.AOCRCon]' of your PCServer-UDKGame.ini game server config file)")
+            self.add_set("rcon_password", self.read_element('server', 'rcon_password', ''),
+                         "The RCON password of your gameserver. (see AdminPassword in your game server config file)")
 
         # Homefront specific
         elif self._set_parser == 'homefront':
