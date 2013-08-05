@@ -122,7 +122,19 @@ setup(cmdclass=cmdclass,
     packages=find_packages(),
     extras_require={ 'mysql' : 'MySQL-python' },
     package_data={
-        '': ['conf/*.xml', 'conf/templates/*.tpl', 'extplugins/xlrstats.py', 'extplugins/conf/*.xml', 'sql/*.*', 'sql/sqlite/*', 'docs/*.txt', 'docs/*.pdf', 'README.md']
+        '': [
+                'conf/*.xml', 
+                'conf/*.ini', 
+                'conf/templates/*.tpl', 
+                'extplugins/xlrstats.py', 
+                'extplugins/conf/*.xml',  
+                'extplugins/conf/*.ini', 
+                'sql/*.*', 
+                'sql/sqlite/*', 
+                'docs/*.txt', 
+                'docs/*.pdf', 
+                'README.md'
+            ]
     },
     zip_safe=False,
     author='Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Leveil (Courgette)',
