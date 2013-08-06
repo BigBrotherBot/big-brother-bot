@@ -18,6 +18,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    07/08/2013 - 1.6.1 - courgette
+#    * getting a client by its db id will return the existing client object if found in the list of connected clients
 #    15/07/2013 - 1.6 - courgette
 #    * fire EVT_CLIENT_WARN and EVT_CLIENT_NOTICE events
 #    26/11/2012 - 1.5 - courgette
@@ -84,7 +86,7 @@ import time
 import traceback
 
 __author__  = 'ThorN'
-__version__ = '1.6'
+__version__ = '1.6.1'
 
 
 class ClientVar(object):
@@ -1033,9 +1035,13 @@ class Clients(dict):
                 else:
                     clients = []
                     for c in sclient:
-                        c.clients = self
-                        c.console = self.console
-                        c.exactName = c.name
+                        connected_client = self.getByGUID(c.guid)
+                        if connected_client:
+                            c = connected_client
+                        else:
+                            c.clients = self
+                            c.exactName = c.name
+                            c.console = self.console
                         clients.append(c)
                         if len(clients) == 5:
                             break

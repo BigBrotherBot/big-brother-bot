@@ -30,9 +30,9 @@ class TestClients(B3TestCase):
     def setUp(self):
         B3TestCase.setUp(self)
         Clients.authorizeClients = Mock()
-        self.clients = Clients(self.console)
-        self.clients.newClient(1, name='joe')
-        self.clients.newClient(2, name=' H a    x\t0r')
+        self.clients = self.console.clients
+        self.clients.newClient(1, name='joe', guid="joe_guid")
+        self.clients.newClient(2, name=' H a    x\t0r', guid="haxor_guid")
 
 
     def test_getClientsByName(self):
@@ -50,6 +50,40 @@ class TestClients(B3TestCase):
         
         clients = self.clients.getClientsByName('qsdfqsdf fqsd fsqd fsd f')
         self.assertEqual([], clients)
+
+    def test_getByDB_when_client_connected(self):
+        # GIVEN
+        haxor = self.clients[2]
+        self.assertIsNotNone(haxor.cid)
+        self.assertIsNotNone(haxor.id)
+        # WHEN
+        clients = self.clients.getByDB('@%s' % haxor.id)
+        # THEN
+        self.assertEqual(1, len(clients))
+        found_client = clients[0]
+        self.assertEqual(haxor.id, found_client.id)
+        self.assertEqual(2, found_client.cid)
+        self.assertEqual(self.console, found_client.console)
+        self.assertEqual('H a    x\t0r', found_client.name)
+        self.assertEqual(' H a    x\t0r^7', found_client.exactName)
+
+    def test_getByDB_when_client_disconnected(self):
+        # GIVEN
+        haxor = self.clients[2]
+        haxor.disconnect()
+        self.assertNotIn(2, self.clients)
+        self.assertIsNotNone(haxor.id)
+        # WHEN
+        clients = self.clients.getByDB('@%s' % haxor.id)
+        # THEN
+        self.assertEqual(1, len(clients))
+        found_client = clients[0]
+        self.assertEqual(haxor.id, found_client.id)
+        self.assertIsNone(found_client.cid)
+        self.assertEqual(self.console, found_client.console)
+        self.assertEqual('H a    x\t0r', found_client.name)
+        self.assertEqual('H a    x\t0r^7', found_client.exactName)
+
 
     @patch.object(b3.events, 'Event')
     def test_disconnect(self, Event_mock):

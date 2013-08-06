@@ -25,7 +25,7 @@ from mockito import when
 import unittest2 as unittest
 
 from b3 import __file__ as b3_module__file__, TEAM_BLUE, TEAM_RED
-from b3.clients import Group
+from b3.clients import Group, Client
 
 from tests import B3TestCase
 from b3.fake import FakeClient
@@ -1466,6 +1466,20 @@ class Cmd_kick(Admin_functional_test):
         self.joe.says('!kick 4')
         # THEN
         self.assertListEqual([call('4', '', self.joe)], self.kick_mock.mock_calls)
+
+    def test_kick_by_database_id(self):
+        # GIVEN
+        self.mike.connects('6')
+        mike_from_db = self.console.storage.getClient(Client(guid=self.mike.guid))
+        self.assertIsNotNone(mike_from_db)
+        # WHEN
+        self.joe.says('!kick @%s' % mike_from_db.id)
+        # THEN
+        self.assertListEqual([call(ANY, '', self.joe, False)], self.kick_mock.mock_calls)
+        kick_call = self.kick_mock.mock_calls[0]
+        kicked_player = kick_call[1][0]
+        self.assertIsNotNone(kicked_player)
+        self.assertIsNotNone(kicked_player.cid)
 
     def test_existing_player_by_name_containing_spaces(self):
         # GIVEN
