@@ -156,10 +156,21 @@ def run_setup(config=None):
 def run_update(config=None):
     Update(config)
 
+
+def _check_arg_configfile(parser, x):
+    """
+    'Type' for argparse - checks that file exists but does not open.
+    """
+    if not os.path.exists(x):
+        parser.error('The file %s does not exist!' % x)
+    return x
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', dest='config', default=None,
-                        help='B3 config file. Example: -c b3.xml')
+    parser.add_argument('-c', '--config', dest='config', default=None, metavar='b3.xml',
+                        help='B3 config file. Example: -c b3.xml',
+                        type=lambda x: _check_arg_configfile(parser, x))
     parser.add_argument('-r', '--restart',
                         action='store_true', dest='restart', default=False,
                         help='Auto-restart B3 on crash')
