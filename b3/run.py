@@ -42,7 +42,8 @@ from b3.functions import main_is_frozen
 from b3.setup import Setup
 from b3.setup import Update
 
-try: import argparse
+try:
+    import argparse
 except ImportError:
     import b3.lib.argparse as argparse
 
@@ -155,23 +156,36 @@ def run_setup(config=None):
 def run_update(config=None):
     Update(config)
 
-def main():
-    parser = argparse.ArgumentParser(version=b3.getB3versionString())
-    parser.add_argument('-c', '--config', dest='config', default=None,
-                      help='B3 config file. Example: -c b3.xml')
-    parser.add_argument('-r', '--restart',
-                      action='store_true', dest='restart', default=False,
-                      help='Auto-restart B3 on crash')
-    parser.add_argument('-s', '--setup',
-                      action='store_true', dest='setup', default=False,
-                      help='Setup main b3.xml config file')
-    parser.add_argument('-u', '--update',
-                      action='store_true', dest='update', default=False,
-                      help='Update B3 database to latest version')
-    parser.add_argument('-n', '--nosetup',
-                      action="store_true", dest='nosetup', default=False,
-                      help='Do not enter setup mode when config is missing')
 
+def _check_arg_configfile(parser, x):
+    """
+    'Type' for argparse - checks that file exists but does not open.
+    """
+    if not os.path.exists(x):
+        parser.error('The file %s does not exist!' % x)
+    return x
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--config', dest='config', default=None, metavar='b3.xml',
+                        help='B3 config file. Example: -c b3.xml',
+                        type=lambda x: _check_arg_configfile(parser, x))
+    parser.add_argument('-r', '--restart',
+                        action='store_true', dest='restart', default=False,
+                        help='Auto-restart B3 on crash')
+    parser.add_argument('-s', '--setup',
+                        action='store_true', dest='setup', default=False,
+                        help='Setup main b3.xml config file')
+    parser.add_argument('-u', '--update',
+                        action='store_true', dest='update', default=False,
+                        help='Update B3 database to latest version')
+    parser.add_argument('-n', '--nosetup',
+                        action="store_true", dest='nosetup', default=False,
+                        help='Do not enter setup mode when config is missing')
+    parser.add_argument('-v', '--version',
+                        action='version', default=False, version=b3.getB3versionString(),
+                        help='Show Version and exit')
 
     (options, args) = parser.parse_known_args()
 
