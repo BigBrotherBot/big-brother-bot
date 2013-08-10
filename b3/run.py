@@ -156,21 +156,23 @@ def run_update(config=None):
     Update(config)
 
 def main():
-    parser = argparse.ArgumentParser(version=b3.getB3versionString())
+    parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', dest='config', default=None,
                       help='B3 config file. Example: -c b3.xml')
     parser.add_argument('-r', '--restart',
                       action='store_true', dest='restart', default=False,
                       help='Auto-restart B3 on crash')
     parser.add_argument('-s', '--setup',
-                      action='store_true', dest='setup', default=False,
-                      help='Setup main b3.xml config file')
+                      action='store_true', dest='setup', default=False, help='Setup main b3.xml config file')
     parser.add_argument('-u', '--update',
                       action='store_true', dest='update', default=False,
                       help='Update B3 database to latest version')
     parser.add_argument('-n', '--nosetup',
                       action="store_true", dest='nosetup', default=False,
                       help='Do not enter setup mode when config is missing')
+    parser.add_argument('-v', '--version',
+                      action='version', default=False, version=b3.getB3versionString(),
+                      help='Show Version and exit')
 
 
     (options, args) = parser.parse_known_args()
