@@ -168,11 +168,13 @@
 #     * add EVT_BOMB_EXPLODED event
 # 14/07/2013 - 1.17 - Courgette
 #     * add hitlocation constants : HL_HEAD, HL_HELMET and HL_TORSO
+# 10/08/2013 - 1.18 - Fenix
+#     * change getNextMap to use CVARs only (no more mapcycle file parsing)
 #
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.17'
+__version__ = '1.18'
 
-import re, string, time, os, thread
+import re, string, time, thread
 from b3.parsers.q3a.abstractParser import AbstractParser
 from b3.functions import getStuffSoundingLike
 import b3
@@ -1327,92 +1329,22 @@ class Iourt41Parser(AbstractParser):
     #
     ###############################################################################################
 
+
     def getNextMap(self):
-        cvars = self.cvarList('fs_*')
-        cvars.update(self.cvarList('*map*'))
+        cvars = self.cvarList('g_next')
         # let's first check if a vote passed for the next map
         nmap = cvars.get('g_nextmap')
         self.debug('g_nextmap: %s' % nmap)
         if nmap != "":
-            if nmap[:4] == 'ut4_': nmap = nmap[4:]
-            elif nmap[:3] == 'ut_': nmap = nmap[3:]
-            return nmap.title()
+            return nmap
+        
+        nmap = cvars.get('g_nextcyclemap')
+        self.debug('g_nextcyclemap: %s' % nmap)
+        if nmap != "":
+            return nmap
+        
+        return None
 
-        # seek the next map from the mapcyle file
-        if not self.game.mapName: return None
-
-        mapcycle = cvars.get('g_mapcycle', '')
-        if self.game.fs_game is None:
-            try:
-                self.game.fs_game = cvars.get('fs_game', '').rstrip('/')
-            except:
-                self.game.fs_game = None
-                self.warning("Could not query server for fs_game")
-        if self.game.fs_basepath is None:
-            try:
-                self.game.fs_basepath = cvars.get('fs_basepath').rstrip('/')
-            except:
-                self.game.fs_basepath = None
-                self.warning("Could not query server for fs_basepath")
-        mapfile = self.game.fs_basepath + '/' + self.game.fs_game + '/' + mapcycle
-        if not os.path.isfile(mapfile):
-            self.debug('could not read mapcycle file at %s' % mapfile)
-            if self.game.fs_homepath is None:
-                try:
-                    self.game.fs_homepath = cvars.get('fs_homepath').rstrip('/')
-                except:
-                    self.game.fs_homepath = None
-                    self.warning("Could not query server for fs_homepath")
-            mapfile = self.game.fs_homepath + '/' + self.game.fs_game + '/' + mapcycle
-        if not os.path.isfile(mapfile):
-            self.debug('could not read mapcycle file at %s' % mapfile)
-            self.error("Unable to find mapcycle file %s" % mapcycle)
-            return None
-
-        cyclemapfile = open(mapfile, 'r')
-
-        re_comment_line = re.compile(r"""^\s*(//.*)?$""")
-        lines = filter(lambda x: not re_comment_line.match(x), cyclemapfile.readlines())
-        #self.debug(lines)
-        if not len(lines):
-            return None
-
-        # get maps
-        maps = []
-        try:
-            while True:
-                tmp = lines.pop(0).strip()
-                if tmp[0] == '{':
-                    while tmp[0] != '}':
-                        tmp = lines.pop(0).strip()
-                    tmp = lines.pop(0).strip()
-                maps.append(tmp)
-        except IndexError:
-            pass
-
-        #self.debug(maps)
-
-        if len(maps) == 0:
-            return None
-
-        firstmap = maps[0]
-
-        # find current map
-        #currentmap = self.game.mapName.strip().lower() # this fails after a cyclemap
-        currentmap = cvars.get('mapname')
-        try:
-            tmp = maps.pop(0)
-            while currentmap != tmp:
-                tmp = maps.pop(0)
-            if currentmap == tmp:
-                #self.debug('found current map %s' % currentmap)
-                #self.debug(maps)
-                if len(maps) > 0:
-                    return maps.pop(0)
-                else:
-                    return firstmap
-        except IndexError:
-            return firstmap
 
     def getMapsSoundingLike(self, mapname):
         """ return a valid mapname.
