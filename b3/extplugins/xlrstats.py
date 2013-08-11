@@ -1557,17 +1557,11 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def showTables(self, xlrstats=False):
         _tables = []
-        q = 'SHOW TABLES'
-        cursor = self.query(q)
-        if cursor and (cursor.rowcount > 0):
-            while not cursor.EOF:
-                r = cursor.getRow()
-                n = str(r.values()[0])
-                if xlrstats and not n in self._xlrstatstables:
-                    pass
-                else:
-                    _tables.append(r.values()[0])
-                cursor.moveNext()
+        for table in self.console.storage.getTables():
+            if xlrstats and not table in self._xlrstatstables:
+                pass
+            else:
+                _tables.append(table)
         if xlrstats:
             self.console.verbose('Available XLRstats tables in this database: %s' % _tables)
         else:
