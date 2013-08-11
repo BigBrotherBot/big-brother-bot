@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   12/08/2013 - 1.14 - courgette
+#    add method getTables()
 #   26/11/2012 - 1.13 - courgette
 #    add database columns 'login' and 'password' to the Client model
 #   11/08/2012 - 1.12 - Courgette
@@ -64,7 +66,7 @@
 #   Added data column to penalties table
 
 __author__  = 'ThorN'
-__version__ = '1.13'
+__version__ = '1.14'
 
 
 from b3 import functions
@@ -159,6 +161,28 @@ class DatabaseStorage(Storage):
         self.dsn = dsn
         self.dsnDict = functions.splitDSN(self.dsn)
         self.connect()
+
+    def getTables(self):
+        """
+        List the tables of the current database.
+        :return: list of strings
+        """
+        tables = []
+        protocol = self.dsnDict['protocol']
+        if protocol == 'mysql':
+            q = 'SHOW TABLES'
+        elif protocol == 'sqlite':
+            q = "SELECT * FROM sqlite_master WHERE type='table'"
+        else:
+            raise AssertionError("unsupported database %s" % protocol)
+        cursor = self.query(q)
+        if cursor and not cursor.EOF:
+            while not cursor.EOF:
+                r = cursor.getRow()
+                tables.append(r.values()[0])
+                cursor.moveNext()
+        return tables
+
 
     def getField(self, name):
         return self._reName.sub(r'_\1', name)

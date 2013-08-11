@@ -83,6 +83,28 @@ class Test_MySQL(B3TestCase, StorageAPITest):
         self.storage.query("DROP DATABASE b3_test")
         self.storage.shutdown()
 
+    def test_getTables(self):
+        self.assertSetEqual(set(
+            ['aliases',
+             'ipaliases',
+             'clients',
+             'groups',
+             'penalties',
+             'data',
+             'xlr_bodyparts',
+             'xlr_mapstats',
+             'xlr_opponents',
+             'xlr_playerbody',
+             'xlr_playermaps',
+             'xlr_playerstats',
+             'xlr_weaponstats',
+             'xlr_weaponusage',
+             'xlr_actionstats',
+             'xlr_playeractions',
+             'xlr_history_monthly',
+             'xlr_history_weekly',
+             'ctime'
+            ]), set(self.storage.getTables()))
 
 if __name__ == '__main__':
     nose.main()

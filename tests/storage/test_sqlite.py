@@ -42,6 +42,29 @@ class Test_sqlite(B3TestCase, StorageAPITest):
         B3TestCase.tearDown(self)
         self.storage.shutdown()
 
+    def test_getTables(self):
+        self.assertSetEqual(set(
+            ['sqlite_sequence',
+             'aliases',
+             'ipaliases',
+             'clients',
+             'groups',
+             'penalties',
+             'data',
+             'xlr_bodyparts',
+             'xlr_mapstats',
+             'xlr_opponents',
+             'xlr_playerbody',
+             'xlr_playermaps',
+             'xlr_playerstats',
+             'xlr_weaponstats',
+             'xlr_weaponusage',
+             'xlr_actionstats',
+             'xlr_playeractions',
+             'xlr_history_monthly',
+             'xlr_history_weekly',
+             'ctime'
+            ]), set(self.storage.getTables()))
 
 if __name__ == '__main__':
     nose.main()
