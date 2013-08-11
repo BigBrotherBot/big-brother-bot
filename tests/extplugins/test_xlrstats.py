@@ -18,7 +18,6 @@
 #
 import logging
 import os
-from time import sleep
 from mock import patch
 from mockito import when, mock
 from b3 import __file__ as b3_module__file__, TEAM_RED, TEAM_BLUE
@@ -70,15 +69,16 @@ class XlrstatsTestCase(B3TestCase):
                 # with a 5 second timer
                 self.console.clients.newClient(-1, name="WORLD", guid="WORLD", hide=True)
 
+            self.conf.load(DEFAULT_XLRSTATS_CONFIG_FILE)
+            self.p.onLoadConfig()
+            self.p.minlevel = 1  # tests in this module assume unregistered players aren't considered by Xlrstats
+            self.p.onStartup()
 
 class Test_get_PlayerAnon(XlrstatsTestCase):
 
     def setUp(self):
         with logging_disabled():
             XlrstatsTestCase.setUp(self)
-            self.conf.load(DEFAULT_XLRSTATS_CONFIG_FILE)
-            self.p.onLoadConfig()
-            self.p.onStartup()
 
     def test(self):
         # WHEN
@@ -107,10 +107,6 @@ class Test_get_PlayerStats(XlrstatsTestCase):
     def setUp(self):
         with logging_disabled():
             XlrstatsTestCase.setUp(self)
-            self.conf.load(DEFAULT_XLRSTATS_CONFIG_FILE)
-            self.p.onLoadConfig()
-            self.p.onStartup()
-
             self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID")
             self.p1.connects("1")
 
@@ -181,10 +177,6 @@ class Test_cmd_xlrstats(XlrstatsTestCase):
     def setUp(self):
         with logging_disabled():
             XlrstatsTestCase.setUp(self)
-            self.conf.load(DEFAULT_XLRSTATS_CONFIG_FILE)
-            self.p.onLoadConfig()
-            self.p.onStartup()
-
             self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID")
             self.p1.connects("1")
 
@@ -247,9 +239,6 @@ class Test_kill(XlrstatsTestCase):
     def setUp(self):
         with logging_disabled():
             XlrstatsTestCase.setUp(self)
-            self.conf.load(DEFAULT_XLRSTATS_CONFIG_FILE)
-            self.p.onLoadConfig()
-            self.p.onStartup()
             # GIVEN two players P1 and P2 (P1 being a registered user)
             self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID", team=TEAM_BLUE)
             self.p1.connects("1")
@@ -302,12 +291,6 @@ class Test_kill(XlrstatsTestCase):
 
 
 class Test_storage(XlrstatsTestCase):
-
-    def setUp(self):
-        XlrstatsTestCase.setUp(self)
-        self.conf.load(DEFAULT_XLRSTATS_CONFIG_FILE)
-        self.p.onLoadConfig()
-        self.p.onStartup()
 
     def test_PlayerStats(self):
         # GIVEN
