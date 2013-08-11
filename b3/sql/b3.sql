@@ -236,7 +236,7 @@ CREATE TABLE IF NOT EXISTS `xlr_playermaps` (
 --
 
 CREATE TABLE IF NOT EXISTS `xlr_playerstats` (
-  `id` smallint(5) unsigned NOT NULL auto_increment,
+  `id` int(11) unsigned NOT NULL auto_increment,
   `client_id` int(11) unsigned NOT NULL default '0',
   `kills` mediumint(8) unsigned NOT NULL default '0',
   `deaths` mediumint(8) unsigned NOT NULL default '0',
@@ -330,7 +330,7 @@ CREATE TABLE IF NOT EXISTS `xlr_playeractions` (
 --
 
 CREATE TABLE IF NOT EXISTS `xlr_history_monthly` (
-  `id` smallint(5) unsigned NOT NULL auto_increment,
+  `id` int(11) unsigned NOT NULL auto_increment,
   `client_id` int(11) unsigned NOT NULL default '0',
   `kills` mediumint(8) unsigned NOT NULL default '0',
   `deaths` mediumint(8) unsigned NOT NULL default '0',
@@ -358,7 +358,7 @@ CREATE TABLE IF NOT EXISTS `xlr_history_monthly` (
 --
 
 CREATE TABLE IF NOT EXISTS `xlr_history_weekly` (
-  `id` smallint(5) unsigned NOT NULL auto_increment,
+  `id` int(11) unsigned NOT NULL auto_increment,
   `client_id` int(11) unsigned NOT NULL default '0',
   `kills` mediumint(8) unsigned NOT NULL default '0',
   `deaths` mediumint(8) unsigned NOT NULL default '0',

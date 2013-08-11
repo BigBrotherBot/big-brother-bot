@@ -13,13 +13,15 @@
 		<set name="Kfactor_low">4</set>
 		<set name="Kswitch_kills">100</set>
 		<set name="prematch_maxtime">70</set>
-		<set name="minlevel">1</set>
+		<set name="minlevel">0</set>
 		<set name="onemaponly">False</set>
-		<set name="keep_history">False</set>
+
 		<!-- exclude the bots from the webfront -->
 		<set name="hide_bots">True</set>
+
 		<!-- do not count kills and damages to and from bots -->
 		<set name="exclude_bots">True</set>
+
 		<!-- silent mode True = silence the enabled/disabled message on map/round start -->
 		<set name="silent">False</set>
 
@@ -28,8 +30,11 @@
   This will make topstats return the same results as the webfront.
   You'll need at least webfront version 2.2 for this to work.
   The webfronturl should point to your xlrstats website, ie: http://www.yoursite.com/xlrstats
-  The servernumber is the confignumber of the webfront install when you're using multiple servers and one xlrstats install
+  The servernumber is the confignumber of the webfront install when you're using multiple servers and one xlrstats install.
+  N.B.: When using 1 server only, make sure the servernumber on a v2 install is 0 and on a v3 install you'll have to look
+  at the servernumnber in the URL of the website.
 -->
+		<set name="webfrontversion">2</set>
 		<set name="webfronturl"></set>
 		<set name="servernumber">0</set>
 
@@ -56,8 +61,8 @@
 		<set name="bar_mp">1.00</set> 
 	</settings>
 	<settings name="actions">
-		<!-- Insert your action bonus here, as they appear in the gamelog. See example below. default is no (3) bonus -->
-		<set name="hq_defend">0.0</set> 
+		<!-- Insert your action bonus here, as they appear in the gamelog. See example below. default is a bonus of 3 points -->
+		<set name="hq_defend">3.0</set>
 	</settings>
 	<settings name="replacements">
 		<!-- Collecting MOD_*** instead of weapons. Good if you want to have bashes/melees collected instead of the weapon used to bash/melee the victim with -->

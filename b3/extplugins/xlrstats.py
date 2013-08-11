@@ -14,6 +14,8 @@
 #
 # 22-11-2012 - 3.0.0b1 - Mark Weirath
 #   preparations for version 3.0 of XLRstats
+# 11-08-2013 - 3.0.0b2 - Mark Weirath
+#   purging of the history tables added, compatibility fixes for v2-v3, draft of BattleLog Subplugin, comment headers
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -21,7 +23,7 @@
 # XLRstats Real Time playerstats plugin
 
 __author__ = 'Tim ter Laak / Mark Weirath'
-__version__ = '3.0.0'
+__version__ = '3.0.0b2'
 
 # Version = major.minor.patches
 
@@ -42,15 +44,21 @@ VICTIM = "victim"
 ASSISTER = "assister"
 
 
+########################################################################################################################
+#
+# Main Plugin XLRstats - handles all core statistics functionality
+#
+########################################################################################################################
+
 class XlrstatsPlugin(b3.plugin.Plugin):
     requiresConfigFile = True
 
     _world_clientid = None
     _ffa = ['dm', 'ffa', 'syc-ffa']
-    _damage_able_games = ['cod'] # will only count assists when damage is 50 points or more.
+    _damage_able_games = ['cod']        # will only count assists when damage is 50 points or more.
     _damage_ability = False
-    hide_bots = True # set client.hide to True so bots are hidden from the stats
-    exclude_bots = True # kills and damage to and from bots do not affect playerskill
+    hide_bots = True                    # set client.hide to True so bots are hidden from the stats
+    exclude_bots = True                 # kills and damage to and from bots do not affect playerskill
 
     # history management
     _cronTabWeek = None
@@ -58,6 +66,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     _cronTabKillBonus = None
 
     # webfront variables
+    webfrontVersion = 2                 # maintain backward compatibility
     webfrontUrl = ''
     webfrontConfigNr = 0
     _minKills = 500
@@ -78,15 +87,15 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     tk_penalty_percent = 0.1
     kill_bonus = 1.5
     assist_bonus = 0.5
-    assist_timespan = 2 # on non damage based games: damage before death timespan
-    damage_assist_release = 10 # on damage based games: release the assist (wil overwrite self.assist_timespan on startup)
+    assist_timespan = 2                 # on non damage based games: damage before death timespan
+    damage_assist_release = 10          # on damage based games: release the assist (wil overwrite self.assist_timespan on startup)
     prematch_maxtime = 70
     announce = False
     keep_history = True
     keep_time = True
-    minPlayers = 3 # minimum number of players to collect stats
-    _currentNrPlayers = 0 # current number of players present
-    silent = False # Disables the announcement when collecting stats = stealth mode
+    minPlayers = 3                      # minimum number of players to collect stats
+    _currentNrPlayers = 0               # current number of players present
+    silent = False                      # Disables the announcement when collecting stats = stealth mode
 
     # keep some private map data to detect prematches and restarts
     last_map = None
@@ -150,32 +159,14 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         ActionStats._table = self.actionstats_table
         PlayerActions._table = self.playeractions_table
 
-        #--OBSOLETE
-        # create tables if necessary
-        # This needs to be done here, because table names were loaded from config
-        #PlayerStats.createTable(ifNotExists=True)
-        #WeaponStats.createTable(ifNotExists=True)
-        #WeaponUsage.createTable(ifNotExists=True)
-        #Bodyparts.createTable(ifNotExists=True)
-        #PlayerBody.createTable(ifNotExists=True)
-        #Opponents.createTable(ifNotExists=True)
-        #MapStats.createTable(ifNotExists=True)
-        #PlayerMaps.createTable(ifNotExists=True)
-        #--end OBS
-
-        # create default tables if not present
-        # removed to avoid MySQL 5.5 issues locking the db
-        #if self._defaultTableNames:
-        #    self.console.storage.queryFromFile("@b3/sql/xlrstats.sql", silent=True)
-
         # register the events we're interested in.
         self.registerEvent(b3.events.EVT_CLIENT_JOIN)
         self.registerEvent(b3.events.EVT_CLIENT_KILL)
         self.registerEvent(b3.events.EVT_CLIENT_KILL_TEAM)
         self.registerEvent(b3.events.EVT_CLIENT_SUICIDE)
         self.registerEvent(b3.events.EVT_GAME_ROUND_START)
-        self.registerEvent(b3.events.EVT_CLIENT_ACTION) #for game-events/actions
-        self.registerEvent(b3.events.EVT_CLIENT_DAMAGE) #for assist recognition
+        self.registerEvent(b3.events.EVT_CLIENT_ACTION)         #for game-events/actions
+        self.registerEvent(b3.events.EVT_CLIENT_DAMAGE)         #for assist recognition
 
         # get the Client.id for the bot itself (guid: WORLD or Server(bfbc2/moh/hf))
         sclient = self.console.clients.getByGUID("WORLD")
@@ -228,6 +219,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         #let's try and get some variables from our webfront installation
         if self.webfrontUrl and self.webfrontUrl != '':
+            self.debug('Webfront set to: %s' % self.webfrontUrl)
             thread1 = threading.Thread(target=self.getWebsiteVariables)
             thread1.start()
         else:
@@ -287,6 +279,11 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.minPlayers = min_players
         except:
             self.debug('Using default value (%s) for settings::minplayers', self.minPlayers)
+
+        try:
+            self.webfrontVersion = self.config.get('settings', 'webfrontversion')
+        except:
+            self.debug('Using default value (%s) for settings::webfrontversion', self.webfrontVersion)
 
         try:
             self.webfrontUrl = self.config.get('settings', 'webfronturl')
@@ -470,11 +467,14 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         """
         Thread that polls for XLRstats webfront variables
         """
-        _request = str(self.webfrontUrl.rstrip('/')) + '/?config=' + str(self.webfrontConfigNr) + '&func=pluginreq'
+        if self.webfrontVersion == 2:
+            _request = str(self.webfrontUrl.rstrip('/')) + '/?config=' + str(self.webfrontConfigNr) + '&func=pluginreq'
+        else:
+            _request = str(self.webfrontUrl.rstrip('/')) + '/' + str(self.webfrontConfigNr) + '/pluginreq/index'
         try:
             f = urllib2.urlopen(_request)
             _result = f.readline().split(',')
-            # Our webfront will present us 3 values ie.: 200,20,30
+            # Our webfront will present us 3 values ie.: 200,20,30 -> minKills,minRounds,maxDays
             if len(_result) == 3:
                 # Force the collected strings to their final type. If an error occurs they will fail the try statement.
                 self._minKills = int(_result[0])
@@ -1630,6 +1630,12 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.debug('assist_bonus set to: %s' % self.assist_bonus)
 
 
+########################################################################################################################
+#
+# Sub Plugin Controller - Controls starting and stopping of main XLRstats plugin based on playercount
+#
+########################################################################################################################
+
 class XlrstatscontrollerPlugin(b3.plugin.Plugin):
     """This is a helper class/plugin that enables and disables the main XLRstats plugin
     It can not be called directly or separately from the XLRstats plugin!"""
@@ -1682,9 +1688,21 @@ class XlrstatscontrollerPlugin(b3.plugin.Plugin):
             self.debug('Nothing to do at the moment. XLRstats is already %s' % _status)
 
 
+########################################################################################################################
+#
+# Sub Plugin History - saves history snapshots, weekly and/or monthly
+#
+########################################################################################################################
+
 class XlrstatshistoryPlugin(b3.plugin.Plugin):
     """This is a helper class/plugin that saves history snapshots
     It can not be called directly or separately from the XLRstats plugin!"""
+
+    _cronTab = None
+    _max_months = 12
+    _max_weeks = 12
+    _hours = 5
+    _minutes = 10
 
     def __init__(self, console, weeklyTable, monthlyTable, playerstatsTable):
         self.console = console
@@ -1695,6 +1713,15 @@ class XlrstatshistoryPlugin(b3.plugin.Plugin):
         self._messages = {}
         self.registerEvent(b3.events.EVT_STOP)
         self.registerEvent(b3.events.EVT_EXIT)
+        # purge crontab
+        tzName = self.console.config.get('b3', 'time_zone').upper()
+        tzOffest = b3.timezones.timezones[tzName]
+        hoursGMT = (self._hours - tzOffest)%24
+        self.debug(u'%02d:%02d %s => %02d:%02d UTC' % (self._hours, self._minutes, tzName, hoursGMT, self._minutes))
+        self.info(u'everyday at %2d:%2d %s, history info older than %s months and %s weeks will be deleted' % (self._hours, self._minutes, tzName, self._max_months, self._max_weeks))
+        self._cronTab = b3.cron.PluginCronTab(self, self.purge, 0, self._minutes, hoursGMT, '*', '*', '*')
+        self.console.cron + self._cronTab
+
 
     def startup(self):
         self.console.debug('Starting SubPlugin: XlrstatsHistoryPlugin')
@@ -1715,11 +1742,13 @@ class XlrstatshistoryPlugin(b3.plugin.Plugin):
             # install crontabs
             self._cronTabMonth = b3.cron.PluginCronTab(self, self.snapshot_month, 0, 0, 0, 1, '*', '*')
             self.console.cron + self._cronTabMonth
-            self._cronTabWeek = b3.cron.PluginCronTab(self, self.snapshot_week, 0, 0, 0, '*', '*', 1) # day 1 is monday
+            self._cronTabWeek = b3.cron.PluginCronTab(self, self.snapshot_week, 0, 0, 0, '*', '*', 1)  # day 1 is monday
             self.console.cron + self._cronTabWeek
         except Exception, msg:
             self.console.error('XlrstatshistoryPlugin: Unable to install History Crontabs: %s' % msg)
 
+        # purge the tables on startup
+        self.purge()
 
     def snapshot_month(self):
         sql = (
@@ -1734,7 +1763,6 @@ class XlrstatshistoryPlugin(b3.plugin.Plugin):
         except Exception, msg:
             self.error('Creating history snapshot failed: %s' % msg)
 
-
     def snapshot_week(self):
         sql = (
             'INSERT INTO ' + self.history_weekly_table + ' (`client_id` , `kills` , `deaths` , `teamkills` , `teamdeaths` , `suicides` ' +
@@ -1748,10 +1776,52 @@ class XlrstatshistoryPlugin(b3.plugin.Plugin):
         except Exception, msg:
             self.error('Creating history snapshot failed: %s' % msg)
 
+    def purge(self):
+        # purge the months table
+        if not self._max_months or self._max_months == 0:
+            self.warning(u'max_months is invalid [%s]' % self._max_months)
+            return False
+        self.info(u'purge of history entries older than %s months ...' % self._max_months)
+        maxMonths = self.console.time() - self._max_months*24*60*60*30
+        self.verbose(u'calculated maxMonths: %s' % maxMonths)
+        _month = datetime.datetime.fromtimestamp(int(maxMonths)).strftime('%m')
+        _year = datetime.datetime.fromtimestamp(int(maxMonths)).strftime('%Y')
+        if int(_month) < self._max_months:
+            _yearPrev = int(_year)-1
+        else:
+            _yearPrev = int(_year)
+        q = "DELETE FROM %s WHERE (month < %s AND year <= %s) OR year < %s" % (self.history_monthly_table, _month, _year, _yearPrev)
+        self.debug(u'QUERY: %s ' % q)
+        cursor = self.console.storage.query(q)
+        # purge the weeks table
+        if not self._max_weeks or self._max_weeks == 0:
+            self.warning(u'max_weeks is invalid [%s]' % self._max_weeks)
+            return False
+        self.info(u'purge of history entries older than %s weeks ...' % self._max_weeks)
+        maxWeeks = self.console.time() - self._max_weeks*24*60*60*7
+        self.verbose(u'calculated maxWeeks: %s' % maxWeeks)
+        _week = datetime.datetime.fromtimestamp(int(maxWeeks)).strftime('%W')
+        _year = datetime.datetime.fromtimestamp(int(maxWeeks)).strftime('%Y')
+        if int(_week) < self._max_weeks:
+            _yearPrev = int(_year)-1
+        else:
+            _yearPrev = int(_year)
+        q = "DELETE FROM %s WHERE (week < %s AND year <= %s) OR year < %s" % (self.history_weekly_table, _week, _year, _yearPrev)
+        self.debug(u'QUERY: %s ' % q)
+        cursor = self.console.storage.query(q)
+
+
+########################################################################################################################
+#
+# Sub Plugin CTime - registers join and leave times of players
+#
+########################################################################################################################
+
 class TimeStats:
     came = None
     left = None
     client = None
+
 
 class CtimePlugin(b3.plugin.Plugin):
     """This is a helper class/plugin that saves client join and disconnect time info
@@ -1849,7 +1919,79 @@ class CtimePlugin(b3.plugin.Plugin):
         else:
             self.debug(u'CTIME LEFT: Player %s var not set!' % clientid)
 
-#-----------------------------------------------------------------------------------------------------------------------
+
+########################################################################################################################
+#
+# Sub Plugin BattleLog - registers last played matches
+#
+########################################################################################################################
+
+class BattleStats(object):
+    Id = 0
+    mapId = 0
+    gameType = ''
+    totalPlayers = 0
+    startTime = 0
+    endTime = 0
+    scores = {}
+
+
+class PlayerBattles(object):
+    battleStats_id = 0
+    startSkill = 0
+    endSkill = 0
+    kills = 0
+    teamKills = 0
+    deaths = 0
+    assists = 0
+    actions = 0
+    weaponKills = {}
+    favoriteWeaponId = 0
+
+
+class BattlelogPlugin(b3.plugin.Plugin):
+    """This is a helper class/plugin that saves last played matches
+    It can not be called directly or separately from the XLRstats plugin!"""
+
+    def __init__(self, console, battlelogGamesTable, battlelogClientsTable):
+        self.console = console
+        self.battlelog_games_table = battlelogGamesTable
+        self.battlelog_clients_table = battlelogClientsTable
+        self.query = self.console.storage.query
+
+    def startup(self):
+        self.console.debug('Starting SubPlugin: XlrstatsBattlelogPlugin')
+        # register our events
+        self.registerEvent(b3.events.EVT_CLIENT_AUTH)
+        self.registerEvent(b3.events.EVT_CLIENT_DISCONNECT)
+        self.registerEvent(b3.events.EVT_GAME_ROUND_START)
+        self.registerEvent(b3.events.EVT_GAME_ROUND_END)
+
+    def onEvent(self, event):
+        if event.type == b3.events.EVT_CLIENT_AUTH:
+            pass
+        elif event.type == b3.events.EVT_CLIENT_DISCONNECT:
+            pass
+        elif event.type == b3.events.EVT_GAME_ROUND_START:
+            pass
+        elif event.type == b3.events.EVT_GAME_ROUND_END:
+            pass
+
+    def clearBattlelog(self):
+        self.gameLog = None
+        self.clientsLog = None
+
+    def setupBattlelog(self):
+        self.gameLog = self.GameStat()
+        self.clientsLog = {}
+
+
+########################################################################################################################
+#
+# Abstract Classes to aid XLRstats Plugin Class
+#
+########################################################################################################################
+
 # This is an abstract class. Do not call directly.
 class StatObject(object):
     _table = None
