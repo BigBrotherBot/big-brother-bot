@@ -29,9 +29,10 @@
 # 19/10/2012 - 1.6   - Courgette - improve getStuffSoundingLike() so it discards non letter/digit characters
 # 20/10/2012 - 1.7   - Courgette - fix soundex() error when input string is unicode
 # 26/11/2012 - 1.8   - Courgette - add hash_password()
+# 18/08/2013 - 1.9   - Courgette - add support for empty or no MySQL password
 #
-__author__    = 'ThorN, xlr8or'
-__version__   = '1.8'
+__author__    = 'ThorN, xlr8or, courgette'
+__version__   = '1.9'
 
 import b3
 import re
@@ -63,7 +64,7 @@ def main_is_frozen():
 
 #--------------------------------------------------------------------------------------------------
 def splitDSN(url):
-    m = re.match(r'^(?:(?P<protocol>[a-z]+)://)?(?:(?P<user>[^:]+)(?::(?P<password>[^@]+))?@)?(?P<host>[^/:]+)?(?::(?P<port>\d+))?(?P<path>.*)', url)
+    m = re.match(r'^(?:(?P<protocol>[a-z]+)://)?(?:(?P<user>[^:]+)(?::(?P<password>[^@]*?))?@)?(?P<host>[^/:]+)?(?::(?P<port>\d+))?(?P<path>.*)', url)
     if not m:
         return None
 
@@ -85,6 +86,9 @@ def splitDSN(url):
         elif g['host']:
             g['path'] = g['host']
             g['host'] = None
+    elif g['protocol'] == 'mysql':
+        if g['password'] is None:
+            g['password'] = ''
 
     if g['port']:
         g['port'] = int(g['port'])
