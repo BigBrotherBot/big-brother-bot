@@ -16,21 +16,26 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+import os
 from b3.storage.database import DatabaseStorage
 from tests import B3TestCase
 from tests.storage.common import StorageAPITest
 import nose
 import unittest2 as unittest
 
+
 """
-    NOTE: to work properly you must be running a MySQL database on localhost
-    which must have a user named 'b3test' with password 'test' which has 
-    all privileges over a table (already created or not) named 'b3_test'
+    NOTE: you can customize the MySQL host, database and credential using the following
+    environment variables :
+        MYSQL_TEST_HOST
+        MYSQL_TEST_USER
+        MYSQL_TEST_PASSWORD
+        MYSQL_TEST_DB
 """
-MYSQL_DB = 'mysql://b3test:test@localhost/b3_test'
-MYSQL_HOST = 'localhost'
-MYSQL_USER = 'b3test'
-MYSQL_PASSWORD = 'test'
+MYSQL_TEST_HOST = os.environ.get('MYSQL_TEST_HOST', 'localhost')
+MYSQL_TEST_USER = os.environ.get('MYSQL_TEST_USER', 'b3test')
+MYSQL_TEST_PASSWORD = os.environ.get('MYSQL_TEST_PASSWORD', 'test')
+MYSQL_TEST_DB = os.environ.get('MYSQL_TEST_DB', 'b3_test')
 
 #===============================================================================
 # 
@@ -48,7 +53,7 @@ except ImportError:
     no_mysql_reason = "no MySQLdb module available"
 else:
     try:
-        MySQLdb.connect(host=MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASSWORD)
+        MySQLdb.connect(host=MYSQL_TEST_HOST, user=MYSQL_TEST_USER, passwd=MYSQL_TEST_PASSWORD)
     except MySQLdb.Error, err:
         is_mysql_ready = False
         no_mysql_reason = "%s" % err[1]
@@ -69,12 +74,14 @@ class Test_MySQL(B3TestCase, StorageAPITest):
         """this method is called before each test"""
         B3TestCase.setUp(self)
         try:
-            db = MySQLdb.connect(host=MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASSWORD)
+            db = MySQLdb.connect(host=MYSQL_TEST_HOST, user=MYSQL_TEST_USER, passwd=MYSQL_TEST_PASSWORD)
         except MySQLdb.OperationalError, message:
             self.fail("Error %d:\n%s" % (message[0], message[1]))
         db.query("DROP DATABASE IF EXISTS b3_test")
         db.query("CREATE DATABASE b3_test CHARACTER SET utf8;")
-        self.storage = self.console.storage = DatabaseStorage(MYSQL_DB, self.console)
+        self.storage = self.console.storage = DatabaseStorage(
+            "mysql://%s:%s@%s/%s" % (MYSQL_TEST_USER, MYSQL_TEST_PASSWORD, MYSQL_TEST_HOST, MYSQL_TEST_DB),
+            self.console)
         self.storage.executeSql("@b3/sql/b3.sql")
 
     def tearDown(self):

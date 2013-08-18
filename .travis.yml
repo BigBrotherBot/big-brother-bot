@@ -1,9 +1,14 @@
 # TravisCI config file. See http://travis-ci.org
 language: python
+
 python:
   - 2.6
   - 2.7
+
+env: MYSQL_TEST_HOST=127.0.0.1 MYSQL_TEST_USER=travis MYSQL_TEST_PASSWORD='' MYSQL_TEST_DB=b3_test
+
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install: pip install pysqlite MySQL-python unittest2 mockito nose-exclude --use-mirrors
+
 # command to run tests, e.g. python setup.py test
-script: nosetests --where=tests --exclude-dir=tests/storage/
+script: nosetests --where=tests --verbosity=3
