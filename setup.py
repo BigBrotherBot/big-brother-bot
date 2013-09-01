@@ -28,7 +28,7 @@
 # The setuptools package creator for pypi.python.org
 
 __author__  = 'ThorN, xlr8or, courgette'
-__version__ = '2.4'
+__version__ = '2.5'
 
 
 import re
@@ -193,6 +193,7 @@ Plugins provide much of the functionality for B3. These plugins can easily be co
                 "uuid", # metabans, ggcstream and telnet plugins
                 "SocketServer", # telnet plugin
                 "paramiko", # sftpytail plugin
+                "fileinput", # badrcon plugin
             ],
         }
     }
