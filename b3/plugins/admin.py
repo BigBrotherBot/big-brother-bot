@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2013/09/06 - 1.23.1 - Fenix
+#   * make conf pm_global accept yes/no
 #   2013/03/02 - 1.23 - Courgette
 #   * command !admins message when no admin is online can be customised in the config file -> no_admins
 #   2013/02/17 - 1.22 - Courgette
@@ -28,7 +30,7 @@
 #   * add default messages
 #   2013/02/10 - 1.21 - Ozon
 #   * add announce_registration option to config to (de)activate public announcement of player using the !register
-# command
+#     command
 #   * !register command feedback message is now configurable in config. See regme_confirmation
 #   2013/02/10 - 1.20 - Ozon
 #   * add spell corrector for commands
@@ -135,7 +137,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.23'
+__version__ = '1.23.1'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon'
 
 import re
@@ -1820,11 +1822,13 @@ class AdminPlugin(b3.plugin.Plugin):
             sclient.setvar(self, 'warnTime', self.console.time())
 
         warnings = sclient.numWarnings
+        
         try:
-            pmglobal = self.config.get('warn', 'pm_global')
-        except NoOptionError:
-            pmglobal = '0'
-        if pmglobal == '1':
+            pmglobal = self.config.getboolean('warn', 'pm_global')
+        except:
+            pmglobal = False
+            
+        if pmglobal:
             msg = self.config.getTextTemplate('warn', 'message', warnings=warnings, reason=warning)
             sclient.message(msg)
             if admin:
