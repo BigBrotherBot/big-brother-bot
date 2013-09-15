@@ -45,6 +45,11 @@ class PunkbusterPlugin(b3.plugin.Plugin):
         self._adminPlugin = self.console.getPlugin('admin')
     
         if self._adminPlugin:
+            
+            if self.console.PunkBuster is None:
+                self.warning('Could not register commands because Punkbuster is disabled in your b3.xml configuration file')
+                return
+            
             self._adminPlugin.registerCommand(self, 'pbss', self.config.getint('commands', 'pbss'), self.cmd_pbss)
             self._adminPlugin.registerCommand(self, 'pbbuildbans', self.config.getint('commands', 'pbbuildbans'), self.cmd_pbbuildbans)
 
