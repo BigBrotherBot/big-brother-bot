@@ -272,7 +272,13 @@ class Iourt42Parser(Iourt41Parser):
 
         #Vote: 0 - 2
         re.compile(r'''^(?P<action>Vote): (?P<data>(?P<cid>[0-9]+) - (?P<value>.*))$'''),
-        
+
+        #VotePassed: 1 - 0 - "reload"
+        re.compile(r'''^(?P<action>VotePassed): (?P<data>(?P<yes>[0-9]+) - (?P<no>[0-9]+) - "(?P<what>.*)")$'''),
+
+        #VoteFailed: 1 - 1 - "restart"
+        re.compile(r'''^(?P<action>VoteFailed): (?P<data>(?P<yes>[0-9]+) - (?P<no>[0-9]+) - "(?P<what>.*)")$'''),
+
         #13:34 ClientJumpRunStarted: 0 - way: 1
         #13:34 ClientJumpRunStarted: 0 - way: 1 - attempt: 1 of 5
         re.compile(r'^(?P<action>ClientJumpRunStarted):\s(?P<cid>\d+)\s-\s(?P<data>way:\s(?P<way_id>\d+)(?:\s-\sattempt:\s(?P<attempt_num>\d+)\sof\s(?P<attempt_max>\d+))?)$', re.IGNORECASE),
@@ -501,6 +507,8 @@ class Iourt42Parser(Iourt41Parser):
         self._eventMap['hotpotato'] = self.EVT_GAME_FLAG_HOTPOTATO
         self.EVT_CLIENT_CALLVOTE = self.Events.createEvent('EVT_CLIENT_CALLVOTE', 'Event client call vote')
         self.EVT_CLIENT_VOTE = self.Events.createEvent('EVT_CLIENT_VOTE', 'Event client vote')
+        self.EVT_VOTE_PASSED = self.Events.createEvent('EVT_VOTE_PASSED', 'Event vote passed')
+        self.EVT_VOTE_FAILED = self.Events.createEvent('EVT_VOTE_FAILED', 'Event vote failed')
         self.EVT_CLIENT_JUMP_RUN_START = self.Events.createEvent('EVT_CLIENT_JUMP_RUN_START', 'Event client jump run started')
         self.EVT_CLIENT_JUMP_RUN_STOP = self.Events.createEvent('EVT_CLIENT_JUMP_RUN_STOP', 'Event client jump run stopped')
         self.EVT_CLIENT_JUMP_RUN_CANCEL = self.Events.createEvent('EVT_CLIENT_JUMP_RUN_CANCEL', 'Event client jump run canceled')
@@ -615,6 +623,18 @@ class Iourt42Parser(Iourt41Parser):
             self.debug('No client found')
             return None
         return Event(self.EVT_CLIENT_VOTE, client=client, data=value)
+
+    def OnVotepassed(self, action, data, match=None):
+        yes_count = int(match.group('yes'))
+        no_count = int(match.group('no'))
+        vote_what = match.group('what')
+        return Event(self.EVT_VOTE_PASSED, data={"yes": yes_count, "no": no_count, "what": vote_what})
+
+    def OnVotefailed(self, action, data, match=None):
+        yes_count = int(match.group('yes'))
+        no_count = int(match.group('no'))
+        vote_what = match.group('what')
+        return Event(self.EVT_VOTE_FAILED, data={"yes": yes_count, "no": no_count, "what": vote_what})
 
     def OnClientjumprunstarted(self, action, data, match=None):
         cid = match.group('cid')

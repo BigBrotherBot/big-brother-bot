@@ -148,6 +148,16 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_client=self.joe,
             event_data="2")
 
+    def test_Votepassed(self):
+        self.assertEvent(r'''VotePassed: 1 - 0 - "reload"''',
+            event_type='EVT_VOTE_PASSED',
+            event_data={"yes": 1, "no": 0, "what": "reload"})
+
+    def test_Votefailed(self):
+        self.assertEvent(r'''VoteFailed: 1 - 1 - "restart"''',
+            event_type='EVT_VOTE_FAILED',
+            event_data={"yes": 1, "no": 1, "what": "restart"})
+
     def test_Hit_1(self):
         fatmatic = FakeClient(self.console, name="Fat'Matic", guid="11111111111111")
         d4dou = FakeClient(self.console, name="[FR]d4dou", guid="11111111111111")
