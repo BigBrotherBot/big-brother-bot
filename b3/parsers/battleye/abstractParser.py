@@ -44,7 +44,9 @@
 #   - Handle 'bans' command not completing correctly
 # 07/27/2013   1.0
 #   - Sync won't remove clients which are already connected by not yet authed (unverified guid)
-#
+# 09/16/2013   1.1
+#   - add handling of Battleye Script notifications. New Event EVT_BATTLEYE_SCRIPTLOG
+
 import sys, re, traceback, time, Queue, threading
 from logging import Formatter
 from b3.output import VERBOSE2, VERBOSE
@@ -56,7 +58,7 @@ import b3.cvar
 from b3.clients import Clients
 
 __author__  = '82ndab-Bravo17, Courgette'
-__version__ = '1.0'
+__version__ = '1.1'
 
 
 # disable the authorizing timer that come by default with the b3.clients.Clients class
@@ -109,7 +111,7 @@ class AbstractParser(b3.parser.Parser):
         'tempbanByGUID': ('addBan', '%(guid)s', '%(duration)d', '%(reason)s'),
         'shutdown': ('#shutdown', ),
         }
-
+        
     _eventMap = {
     }
 
@@ -277,6 +279,7 @@ class AbstractParser(b3.parser.Parser):
 #'Verified GUID (80a5885ebe2420bab5e1581234567890) of player #0 Bravo17'
 #'Player #2 NZ (04b81a0bd914e7ba610ef31234567890) has been kicked by BattlEye: Script Restriction #107'
 #'Player #4 Kauldron disconnected'
+#Script Log: #6 Playername (bbb6476155852ac2ab30121234567890) - #2 "bp_id") == -9999) then {player setVariable ["x_pbp_id", _p addAction [_s call x_fnc_GreyText, "addons\\\\Backpacks\\\\x_backpack.sqf","\''
 #(Lobby) Bravo17: hello b3'
 #(Global) Bravo17: global channel
 #Players on server:\n
@@ -347,6 +350,9 @@ class AbstractParser(b3.parser.Parser):
         elif message.startswith('(Command)'):
             func = self.OnPlayerChat
             eventData = message[10:] + ' (Command)'
+        elif find(message, ' Log: #') != -1:
+            func = self.OnBattleyeScriptLog
+            eventdata = message
 
         else:
             self.debug('Unhandled server message %s' % message)
@@ -366,6 +372,7 @@ class AbstractParser(b3.parser.Parser):
         self.Events.createEvent('EVT_GAMESERVER_CONNECT', 'connected to game server')
         self.Events.createEvent('EVT_CLIENT_SPAWN', 'Client Spawn')
         self.Events.createEvent('EVT_PLAYER_SYNC_COMPLETED', 'Players syncing finished')
+        self.Events.createEvent('EVT_BATTLEYE_SCRIPTLOG', 'Battleye Script Logged ')
 
         self.load_conf_max_say_line_length()
         self.load_config_message_delay()
@@ -581,9 +588,27 @@ class AbstractParser(b3.parser.Parser):
         return
         
 
+    def OnBattleyeScriptLog(self, data):
+        """
+        Script Log: #6 Playername (bbb6476155852ac2ab30121234567890) - #2 "bp_id") == -9999) then {player setVariable ["x_
+        Effect: Allow plugins to react to Battleye Script Logging
+        """
+        
+        
+        parts = data.partition('#')
+        parts = parts[2].partition(' ')
+        cid = parts[0]
+        parts = parts[2].partition(' (')
+        name = parts[0]
+        client = self.getClient(name=name, cid=cid)
+        event_type = b3.events.EVT_BATTLEYE_SCRIPTLOG
+        evt = b3.events.Event(event_type, data, client)
+        self.debug('Script Logged: Slot: %s Name %s Data: %s' % (cid, name, data))
+        return
+        
     def OnBattleyeKick(self, data):
         """
-        #Player #2 NZ (04b81a0bd914e7ba610ef3c0ffd66a1a) has been kicked by BattlEye: Script Restriction #107'
+        #Player #2 NZ (04b81a0bd914e7ba610ef31234567890) has been kicked by BattlEye: Script Restriction #107'
         Player has been kicked by Battleye
         """
 
@@ -989,6 +1014,8 @@ class AbstractParser(b3.parser.Parser):
             return bans
         except TypeError:
             return ""
+        except:
+            raise
 
 
 
