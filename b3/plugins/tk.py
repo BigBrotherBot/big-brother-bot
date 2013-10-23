@@ -437,7 +437,7 @@ class TkPlugin(b3.plugin.Plugin):
             self._adminPlugin.warnClient(attacker, self._issue_warning, None, False)
         elif points > self._damage_threshold and attacker.maxLevel < self._warn_level and a.lastWarnTime + 180 < self.console.time():
             a.lastWarnTime = self.console.time()
-            warning = self._adminPlugin.warnClient(attacker, '^3Do not attack teammates, ^1Attacked: ^7%s ^7[^3%s^7]' % (victim.exactName, points), None, False, newDuration = self._tk_warn_duration)
+            warning = self._adminPlugin.warnClient(attacker, self.getMessage('tk_warning_reason', {'vname': victim.exactName, 'points': points}), None, False, newDuration = self._tk_warn_duration)
             a.warn(v.cid, warning)
             victim.message('^7type ^3!fp ^7 to forgive ^3%s' % (attacker.exactName))
 

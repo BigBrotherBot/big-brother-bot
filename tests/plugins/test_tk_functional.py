@@ -73,6 +73,7 @@ class Tk_functional_test(B3TestCase):
                 <set name="forgive_info">^7$name^7 has ^3$points^7 TK points</set>
                 <set name="grudge_info">^7$name^7 is ^1grudged ^3$points^7 TK points</set>
                 <set name="forgive_clear">^7$name^7 cleared of ^3$points^7 TK points</set>
+                <set name="tk_warning_reason">^3Do not attack teammates, ^1Attacked: ^7$vname ^7[^3$points^7]</set>
             </settings>
             <settings name="level_0">
                 <set name="kill_multiplier">2</set>
