@@ -66,6 +66,12 @@
                $points : the number of damage points to forgive
         -->
         <set name="forgive_clear">^7$name^7 cleared of ^3$points^7 TK points</set>
+        <!-- tk_warning_reason: Warning reason used if a player kill a teammate.
+             You can use keywords :
+                $vname : victim's name
+                $points : tk points
+        -->
+        <set name="tk_warning_reason">^3Do not attack teammates, ^1Attacked: ^7$vname ^7[^3$points^7]</set>
     </settings>
     <settings name="level_0">
         <!--
