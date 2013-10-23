@@ -1,5 +1,6 @@
 MySQL-python
 pysqlite
+paramiko
 unittest2
 mockito
 nose

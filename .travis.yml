@@ -8,7 +8,7 @@ python:
 env: MYSQL_TEST_HOST=127.0.0.1 MYSQL_TEST_USER=travis MYSQL_TEST_PASSWORD='' MYSQL_TEST_DB=b3_test
 
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
-install: pip install pysqlite MySQL-python unittest2 mockito nose-exclude --use-mirrors
+install: pip install -r pip-requires.txt --use-mirrors
 
 # command to run tests, e.g. python setup.py test
 script: nosetests --where=tests --verbosity=3
