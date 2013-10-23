@@ -18,6 +18,7 @@
 #
 import logging
 import os
+from textwrap import dedent
 from mockito import when
 from b3.fake import FakeClient
 from b3.plugins.admin import AdminPlugin
@@ -25,14 +26,15 @@ from tests import B3TestCase
 import unittest2 as unittest
 
 from b3.plugins.login import LoginPlugin
-from b3.config import XmlConfigParser, CfgConfigParser
+from b3.config import CfgConfigParser
 
 from b3 import __file__ as b3__file__
 
-default_plugin_file = os.path.normpath(os.path.join(os.path.dirname(b3__file__), "conf/plugin_login.xml"))
+default_plugin_file = os.path.normpath(os.path.join(os.path.dirname(b3__file__), "conf/plugin_login.ini"))
 ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3__file__), "conf/plugin_admin.ini"))
 
 F00_MD5 = '9f06f2538cdbb40bce9973f60506de09'
+
 
 class LoginTestCase(B3TestCase):
     """ Ease testcases that need an working B3 console and need to control the censor plugin config """
@@ -54,14 +56,13 @@ class LoginTestCase(B3TestCase):
         self.console.startup()
         self.log.propagate = True
 
-
     def tearDown(self):
         B3TestCase.tearDown(self)
 
     def init_plugin(self, config_content=None):
-        self.conf = XmlConfigParser()
+        self.conf = CfgConfigParser()
         if config_content:
-            self.conf.setXml(config_content)
+            self.conf.loadFromString(config_content)
         else:
             self.conf.load(default_plugin_file)
         self.p = LoginPlugin(self.console, self.conf)
@@ -71,8 +72,6 @@ class LoginTestCase(B3TestCase):
         self.p.onLoadConfig()
         self.log.info("============================= Login plugin: starting  =================================")
         self.p.onStartup()
-
-
 
 
 @unittest.skipUnless(os.path.exists(default_plugin_file), reason="cannot get default plugin_login.xml config file at %s" % default_plugin_file)
@@ -92,42 +91,38 @@ class Test_default_config(LoginTestCase):
 class Test_load_config(LoginTestCase):
 
     def test_empty_conf(self):
-        self.init_plugin("""<configuration plugin="login">
-            <settings name="settings"/>
-        </configuration>""")
+        self.init_plugin(dedent("""
+            [settings]
+        """))
         self.assertEqual(1000, self.p.threshold)
         self.assertEqual(100, self.p.passwdlevel)
 
     def test_thresholdlevel_empty(self):
-        self.init_plugin("""<configuration plugin="login">
-            <settings name="settings">
-                <set name="thresholdlevel"></set>
-            </settings>
-        </configuration>""")
+        self.init_plugin(dedent("""
+            [settings]
+            thresholdlevel:
+        """))
         self.assertEqual(1000, self.p.threshold)
 
     def test_thresholdlevel_junk(self):
-        self.init_plugin("""<configuration plugin="login">
-            <settings name="settings">
-                <set name="thresholdlevel">f00</set>
-            </settings>
-        </configuration>""")
+        self.init_plugin(dedent("""
+            [settings]
+            thresholdlevel: f00
+        """))
         self.assertEqual(1000, self.p.threshold)
 
     def test_passwdlevel_empty(self):
-        self.init_plugin("""<configuration plugin="login">
-            <settings name="settings">
-                <set name="passwdlevel"></set>
-            </settings>
-        </configuration>""")
+        self.init_plugin(dedent("""
+            [settings]
+            passwdlevel:
+        """))
         self.assertEqual(100, self.p.passwdlevel)
 
     def test_passwdlevel_junk(self):
-        self.init_plugin("""<configuration plugin="login">
-            <settings name="settings">
-                <set name="passwdlevel">f00</set>
-            </settings>
-        </configuration>""")
+        self.init_plugin(dedent("""
+            [settings]
+            passwdlevel: f00
+        """))
         self.assertEqual(100, self.p.passwdlevel)
 
 
@@ -170,41 +165,33 @@ class Test_cmd_setpassword(LoginTestCase):
         joe_db = self.p._get_client_from_db(self.joe.id)
         self.assertEqual(F00_MD5, joe_db.password)
 
-
     def test_change_someone_else(self):
         # GIVEN
         self.joe.connects("0")
-        self.joe._groupBits = 128 # force superadmin
-
+        self.joe._groupBits = 128  # force superadmin
         jack = FakeClient(self.console, name="Jack", guid="jackguid")
         jack.connects("1")
         self.assertEqual('', jack.password)
         jack_db = self.p._get_client_from_db(jack.id)
         self.assertEqual('', jack_db.password)
-
         # WHEN
         self.joe.clearMessageHistory()
         self.joe.says("!setpassword f00 jack")
-
         # THEN
         self.assertEqual(['new password for Jack saved'], self.joe.message_history)
         self.assertEqual(F00_MD5, jack.password)
         jack_db = self.p._get_client_from_db(jack.id)
         self.assertEqual(F00_MD5, jack_db.password)
 
-
     def test_change_someone_else_not_found(self):
         # GIVEN
         self.joe.connects("0")
-        self.joe._groupBits = 128 # force superadmin
-
+        self.joe._groupBits = 128  # force superadmin
         # WHEN
         self.joe.clearMessageHistory()
         self.joe.says("!setpassword new_password jack")
-
         # THEN
         self.assertEqual(['No players found matching jack'], self.joe.message_history)
-
 
 
 class Test_auth(LoginTestCase):
@@ -223,7 +210,6 @@ class Test_auth(LoginTestCase):
         self.assertEqual([], joe.message_history)
         self.assertEqual(8, joe.groupBits)
 
-
     def test_high_level_no_password_set(self):
         # GIVEN
         joe = FakeClient(self.console, name="Joe", guid="joeguid", groupBits=128)
@@ -233,7 +219,6 @@ class Test_auth(LoginTestCase):
         # THEN
         self.assertEqual(['You need a password to use all your privileges. Ask the administrator to set a password for you.'], joe.message_history)
         self.assertEqual(2, joe.groupBits)
-
 
     def test_high_level_having_password(self):
         # GIVEN
