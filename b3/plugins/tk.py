@@ -178,6 +178,18 @@ class TkPlugin(b3.plugin.Plugin):
     _round_end_games = 'bf3'
     _use_round_end = False
     _tk_warn_duration = '1h'
+    _default_messages = dict(
+        ban='^7team damage over limit',
+        forgive='^7$vname^7 has forgiven $aname [^3$points^7]',
+        grudged='^7$vname^7 has a ^1grudge ^7against $aname [^3$points^7]',
+        forgive_many='^7$vname^7 has forgiven $attackers',
+        forgive_warning='^1ALERT^7: $name^7 auto-kick if not forgiven. Type ^3!forgive $cid ^7to forgive. [^3damage: $points^7]',
+        no_forgive='^7no one to forgive',
+        players='^7Forgive who? %s',
+        forgive_info='^7$name^7 has ^3$points^7 TK points',
+        forgive_clear='^7$name^7 cleared of ^3$points^7 TK points',
+        tk_warning_reason='^3Do not attack teammates, ^1Attacked: ^7$vname ^7[^3$points^7]',
+    )
 
     
     def onStartup(self):
