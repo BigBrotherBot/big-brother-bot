@@ -17,6 +17,11 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    23/10/2013 - 1.3.1 - courgette
+#    * the plugin falls back on default values even with an empty config file
+#    * fix bug with _round_end_games
+#    22/10/2013 - 1.3.0 - ozon
+#    * allow configurable warning reason
 #    04/04/2012 - 1.2.8 - 82ndab-Bravo17
 #    * Remove logfile errors
 #    01/29/2012 - 1.2.7 - 82ndab-Bravo17
@@ -47,15 +52,21 @@
 #    * Converted to use new event handlers
 #    7/23/2005 - 1.0.2 - ThorN
 #    * Changed temp ban duration to be based on ban_length times the number of victims
+import string
+import re
+import threading
+from ConfigParser import NoOptionError
+import time
 
-__version__ = '1.2.8'
-__author__  = 'ThorN'
-
-import b3, string, re, threading
+import b3
 import b3.events
 import b3.plugin
 import b3.cron
-import time
+
+
+__version__ = '1.3.1'
+__author__ = 'ThorN, mindriot, Courgette, xlr8or, SGT, 82ndab-Bravo17, ozon'
+
 
 class TkInfo:
     def __init__(self, plugin, cid):
@@ -114,7 +125,6 @@ class TkInfo:
             del w
             del self._warnings[cid]
 
-
     def damage(self, cid, points):
         self._attacked[cid] = True
 
@@ -123,7 +133,6 @@ class TkInfo:
             self._attackers[cid] += points
         except:
             self._attackers[cid] = points
-
         self._lastAttacker = cid
 
     def _get_lastAttacker(self):
@@ -146,52 +155,69 @@ class TkInfo:
 
     def _get_points(self):
         points = 0
-
-        if len(self._attacked):            
+        if len(self._attacked):
             for cid, bol in self._attacked.items():
                 try:
                     client = self.plugin.console.clients.getByCID(cid)
                     points += self.plugin.getClientTkInfo(client).getAttackerPoints(self.cid)
                 except:
                     pass
-
         return points
 
     attackers = property(_get_attackers)
     attacked = property(_get_attacked)
     points = property(_get_points)
 
-#--------------------------------------------------------------------------------------------------
-class TkPlugin(b3.plugin.Plugin):
-    _levels = {}
-    _adminPlugin = None
-    _maxLevel = 0
-    _maxPoints = 0
-    _grudge_enable = True
-    _grudge_level = 0
-    _private_messages = None
-    _damage_threshold = 100
-    _warn_level = 2
-    _ffa = ['dm', 'ffa', 'syc-ffa']
-    _tkpointsHalflife = 0
-    _cronTab_tkhalflife = None
-    _round_end_games = 'bf3'
-    _use_round_end = False
-    _tk_warn_duration = '1h'
-    _default_messages = dict(
-        ban='^7team damage over limit',
-        forgive='^7$vname^7 has forgiven $aname [^3$points^7]',
-        grudged='^7$vname^7 has a ^1grudge ^7against $aname [^3$points^7]',
-        forgive_many='^7$vname^7 has forgiven $attackers',
-        forgive_warning='^1ALERT^7: $name^7 auto-kick if not forgiven. Type ^3!forgive $cid ^7to forgive. [^3damage: $points^7]',
-        no_forgive='^7no one to forgive',
-        players='^7Forgive who? %s',
-        forgive_info='^7$name^7 has ^3$points^7 TK points',
-        forgive_clear='^7$name^7 cleared of ^3$points^7 TK points',
-        tk_warning_reason='^3Do not attack teammates, ^1Attacked: ^7$vname ^7[^3$points^7]',
-    )
 
-    
+class TkPlugin(b3.plugin.Plugin):
+
+    def __init__(self, console, config=None):
+        b3.plugin.Plugin.__init__(self, console, config)
+        self._adminPlugin = None
+
+        # game types that have no team based game play and for which there should be
+        # no tk detected
+        self._ffa = ['dm', 'ffa', 'syc-ffa']
+
+        # games for which the plugin will have all tk points on EVT_GAME_ROUND_END events
+        # instead of on EVT_GAME_EXIT events
+        self._round_end_games = ['bf3']
+        self._use_round_end = False
+
+        self._default_messages = dict(
+            ban='^7team damage over limit',
+            forgive='^7$vname^7 has forgiven $aname [^3$points^7]',
+            grudged='^7$vname^7 has a ^1grudge ^7against $aname [^3$points^7]',
+            forgive_many='^7$vname^7 has forgiven $attackers',
+            forgive_warning='^1ALERT^7: $name^7 auto-kick if not forgiven. Type ^3!forgive $cid ^7to forgive. [^3damage: $points^7]',
+            no_forgive='^7no one to forgive',
+            players='^7Forgive who? %s',
+            forgive_info='^7$name^7 has ^3$points^7 TK points',
+            forgive_clear='^7$name^7 cleared of ^3$points^7 TK points',
+            tk_warning_reason='^3Do not attack teammates, ^1Attacked: ^7$vname ^7[^3$points^7]',
+        )
+
+        # settings
+        self._maxPoints = 400
+        self._levels = {
+            0: (2.0, 1.0, 2),
+            1: (2.0, 1.0, 2),
+            2: (1.0, 0.5, 1),
+            20: (1.0, 0.5, 0),
+            40: (0.75, 0.5, 0)
+        }
+        self._maxLevel = 40
+        self._round_grace = 7
+        self._issue_warning = "sfire"
+        self._grudge_enable = True
+        self._grudge_level = 0
+        self._private_messages = None
+        self._damage_threshold = 100
+        self._warn_level = 2
+        self._tkpointsHalflife = 0
+        self._cronTab_tkhalflife = None
+        self._tk_warn_duration = '1h'
+
     def onStartup(self):
         self.registerEvent(b3.events.EVT_CLIENT_DAMAGE_TEAM)
         self.registerEvent(b3.events.EVT_CLIENT_KILL_TEAM)
@@ -210,72 +236,67 @@ class TkPlugin(b3.plugin.Plugin):
             self._adminPlugin.registerCommand(self, 'forgiveclear', 60, self.cmd_forgiveclear, 'fc')
             self._adminPlugin.registerCommand(self, 'forgiveprev', 0, self.cmd_forgivelast, 'fp')
 
-            #    10/20/2008 - 1.1.6b0 - mindriot
-            #    * added grudge_enable to control grudge command registration
-            try:
-                self._grudge_enable = self.config.getboolean('settings', 'grudge_enable')
-            except:
-                self.debug('Using default value (%s) for grudge_enable', self._grudge_enable)
-            try:
-                self._grudge_level = self.config.getint('settings','grudge_level')
-            except:
-                self.debug('Using default value (%s) for grudge_level', self._grudge_level)
             if self._grudge_enable:
                 self._adminPlugin.registerCommand(self, 'grudge', self._grudge_level, self.cmd_grudge, 'grudge')
-                
+
         if self._tkpointsHalflife > 0:
-            (min, sec) = self.crontab_time()
-            self._cronTab_tkhalflife = b3.cron.OneTimeCronTab(self.halveTKPoints, second=sec, minute=min)
+            minute, sec = self.crontab_time()
+            self._cronTab_tkhalflife = b3.cron.OneTimeCronTab(self.halveTKPoints, second=sec, minute=minute)
             self.console.cron + self._cronTab_tkhalflife
             self.debug('TK Crontab started')
 
-
-
     def onLoadConfig(self):
-        self._issue_warning = self.config.get('settings', 'issue_warning') 
-        self._round_grace =  self.config.getint('settings', 'round_grace')
+        try:
+            self._issue_warning = self.config.get('settings', 'issue_warning')
+        except NoOptionError:
+            self.debug("Using default value (%s) for issue_warning" % self._issue_warning)
 
         try:
-            levels = string.split(self.config.get('settings', 'levels'), ',')
+            self._round_grace = self.config.getint('settings', 'round_grace')
+        except NoOptionError:
+            self.debug("Using default value (%s) for round_grace" % self._round_grace)
 
-            for lev in levels:
-                self._levels[int(lev)] = (self.config.getfloat('level_%s' % lev, 'kill_multiplier'), self.config.getfloat('level_%s' % lev, 'damage_multiplier'), self.config.getint('level_%s' % lev, 'ban_length'))
+        try:
+            self._levels = self.load_config_for_levels()
+        except NoOptionError:
+            self.debug("Using default value (%s) for levels" % ','.join(map(str, self._levels.keys())))
+        except ValueError:
+            self.error("config is inconsistent regarding levels. Falling back on default values")
 
-            self._maxLevel = int(lev)
+        self._maxLevel = max(self._levels.keys())
+        self.debug('tk max level is %s', self._maxLevel)
 
-            self.debug('tk max level is %s', self._maxLevel)
-
+        try:
             self._maxPoints = self.config.getint('settings', 'max_points')
-        except Exception, msg:
-            self.error('There is an error with your TK Plugin config %s' % msg)
-            return False
-            
+        except NoOptionError:
+            self.debug("Using default value (%s) for max_points" % self._maxPoints)
+
         try:
-            self._private_messages = self.config.getboolean('settings','private_messages')
+            self._private_messages = self.config.getboolean('settings', 'private_messages')
         except:
             self._private_messages = True
         self.debug('Send messages privately ? %s' % self._private_messages)
         
         try:
-            self._damage_threshold = self.config.getint('settings','damage_threshold')
+            self._damage_threshold = self.config.getint('settings', 'damage_threshold')
         except:
             self._damage_threshold = 100
         self.debug('Damage Threshold is %s' % self._damage_threshold)
         
         try:
-            self._tk_warn_duration = self.config.get('settings','warn_duration')
+            self._tk_warn_duration = self.config.get('settings', 'warn_duration')
         except:
             self._tk_warn_duration = '1h'
         self.debug('TK Warning duration is %s' % self._tk_warn_duration)  
         
         try:
-            self._warn_level = self.config.getint('settings','warn_level')
+            self._warn_level = self.config.getint('settings', 'warn_level')
         except:
             self._warn_level = 2
         self.debug('Max warn level is %s' % self._warn_level)
         
         try:
-            self._tkpointsHalflife = self.config.getint('settings','halflife')
+            self._tkpointsHalflife = self.config.getint('settings', 'halflife')
         except:
             self._tkpointsHalflife = 0
         self.debug('Half life for TK points is %s (0 is disabled)' % self._tkpointsHalflife)
@@ -285,6 +306,17 @@ class TkPlugin(b3.plugin.Plugin):
             self.debug('Using ROUND_END event to halve TK points')
         else:
             self.debug('Using GAME_EXIT event to halve TK points')
+
+        #    10/20/2008 - 1.1.6b0 - mindriot
+        #    * added grudge_enable to control grudge command registration
+        try:
+            self._grudge_enable = self.config.getboolean('settings', 'grudge_enable')
+        except:
+            self.debug('Using default value (%s) for grudge_enable', self._grudge_enable)
+        try:
+            self._grudge_level = self.config.getint('settings', 'grudge_level')
+        except:
+            self.debug('Using default value (%s) for grudge_level', self._grudge_level)
 
     def onEvent(self, event):
         if self.console.game.gameType in self._ffa: 
@@ -703,42 +735,67 @@ class TkPlugin(b3.plugin.Plugin):
         if sclient:
             points = self.forgiveAll(sclient.cid)
             if self._private_messages:
-                client.message(self.getMessage('forgive_clear', { 'name' : sclient.exactName, 'points' : points }))
-                sclient.message(self.getMessage('forgive_clear', { 'name' : sclient.exactName, 'points' : points }))
+                client.message(self.getMessage('forgive_clear', {'name': sclient.exactName, 'points': points}))
+                sclient.message(self.getMessage('forgive_clear', {'name': sclient.exactName, 'points': points}))
             else:
-                self.console.say(self.getMessage('forgive_clear', { 'name' : sclient.exactName, 'points' : points }))
+                self.console.say(self.getMessage('forgive_clear', {'name': sclient.exactName, 'points': points}))
 
             return True
 
+    def load_config_for_levels(self):
+        levels_data = {}
+        is_valid = True
 
+        levels = self.config.get('settings', 'levels').split(',')
 
-if __name__ == '__main__':
-    import time
-    from b3.fake import fakeConsole
-    from b3.fake import joe
-    from b3.fake import simon
-    from b3.fake import moderator
-    
-    p = TkPlugin(fakeConsole, "@b3/conf/plugin_tk.xml")
-    p.onStartup() # register events, etc
-    
-    joe.team = b3.TEAM_BLUE
-    simon.team = b3.TEAM_BLUE
-    
-    time.sleep(5)
-    joe.kills(simon)
-    time.sleep(6)
-    simon.kills(joe)
-    time.sleep(2)
-    joe.says('!f 2')
-    time.sleep(2)
-    joe.damages(simon)
-    moderator.says('!forgiveinfo joe')
-    time.sleep(2)
-    joe.damages(simon)
-    joe.damages(simon)
-    moderator.says('!forgiveinfo joe')
-    time.sleep(2)
-    joe.kills(simon)
-    time.sleep(2)
-    
+        for lev in levels:
+            # check the level number is valid
+            try:
+                level_number = int(lev)
+            except ValueError:
+                self.error("%r is not a valid level number" % lev)
+                is_valid = False
+                continue
+
+            # check if we have a config section named after this level
+            section_name = 'level_%s' % lev
+            if section_name not in self.config.sections():
+                self.error("section %r is missing from the config file" % section_name)
+                is_valid = False
+                continue
+
+            # check that this section for that level is valid
+            try:
+                kill_multiplier = self.config.getfloat(section_name, 'kill_multiplier')
+            except NoOptionError:
+                self.error("option kill_multiplier is missing in section %s" % section_name)
+                is_valid = False
+            except ValueError, err:
+                self.error("value for kill_multiplier is invalid. %s" % err)
+                is_valid = False
+
+            try:
+                damage_multiplier = self.config.getfloat(section_name, 'damage_multiplier')
+            except NoOptionError:
+                self.error("option damage_multiplier is missing in section %s" % section_name)
+                is_valid = False
+            except ValueError, err:
+                self.error("value for damage_multiplier is invalid. %s" % err)
+                is_valid = False
+
+            try:
+                ban_length = self.config.getint(section_name, 'ban_length')
+            except NoOptionError:
+                self.error("option ban_length is missing in section %s" % section_name)
+                is_valid = False
+            except ValueError, err:
+                self.error("value for ban_length is invalid. %s" % err)
+                is_valid = False
+
+            if is_valid:
+                levels_data[level_number] = (kill_multiplier, damage_multiplier, ban_length)
+
+        if not is_valid:
+            raise ValueError
+        else:
+            return levels_data

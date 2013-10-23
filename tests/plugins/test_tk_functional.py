@@ -35,10 +35,9 @@ from b3 import __file__ as b3_module__file__
 
 ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.ini"))
 
-@unittest.skipUnless(os.path.exists(ADMIN_CONFIG_FILE), reason="cannot get default plugin config file at %s" % ADMIN_CONFIG_FILE)
-@patch("threading.Timer")
-class Tk_functional_test(B3TestCase):
 
+@unittest.skipUnless(os.path.exists(ADMIN_CONFIG_FILE), reason="cannot get default plugin config file at %s" % ADMIN_CONFIG_FILE)
+class Tk_functional_test(B3TestCase):
 
     def setUp(self):
         B3TestCase.setUp(self)
@@ -60,6 +59,10 @@ class Tk_functional_test(B3TestCase):
                 <set name="issue_warning">sfire</set>
                 <set name="grudge_enable">True</set>
                 <set name="private_messages">True</set>
+                <set name="damage_threshold">100</set>
+                <set name="warn_level">2</set>
+                <set name="halflife">0</set>
+                <set name="warn_duration">1h</set>
             </settings>
             <settings name="messages">
                 <set name="ban">^7team damage over limit</set>
@@ -109,17 +112,18 @@ class Tk_functional_test(B3TestCase):
         self.joe = FakeClient(self.console, name="Joe", guid="joeguid", groupBits=1, team=b3.TEAM_RED)
         self.mike = FakeClient(self.console, name="Mike", guid="mikeguid", groupBits=1, team=b3.TEAM_RED)
         self.bill = FakeClient(self.console, name="Bill", guid="billguid", groupBits=1, team=b3.TEAM_RED)
-        self.superadmin = FakeClient(self.console, name="superadmin",guid="superadminguid", groupBits=128, team=b3.TEAM_RED)
+        self.superadmin = FakeClient(self.console, name="superadmin", guid="superadminguid", groupBits=128, team=b3.TEAM_RED)
 
 
-    def test_dammage_different_teams(self, timer_patch):
+@patch("threading.Timer")
+class Test_tk_detected(Tk_functional_test):
+    def test_damage_different_teams(self, timer_patch):
         self.joe.warn = Mock()
         self.joe.connects(0)
         self.mike.connects(1)
         self.mike.team = b3.TEAM_BLUE
         self.joe.damages(self.mike)
         self.assertEqual(0, self.joe.warn.call_count)
-
 
     def test_kill_different_teams(self, timer_patch):
         self.joe.warn = Mock()
@@ -128,7 +132,6 @@ class Tk_functional_test(B3TestCase):
         self.mike.team = b3.TEAM_BLUE
         self.joe.kills(self.mike)
         self.assertEqual(0, self.joe.warn.call_count)
-
 
     def test_kill_within_10s(self, timer_patch):
         self.p._round_grace = 10
@@ -140,7 +143,7 @@ class Tk_functional_test(B3TestCase):
         self.joe.kills(self.mike)
         self.assertEqual(1, self.joe.warn.call_count)
 
-    def test_dammage(self, timer_patch):
+    def test_damage(self, timer_patch):
         self.p._round_grace = 0
 
         self.joe.warn = Mock()
@@ -154,7 +157,6 @@ class Tk_functional_test(B3TestCase):
         self.joe.damages(self.mike)
         self.assertEqual(0, self.joe.warn.call_count)
 
-
     def test_kill(self, timer_patch):
         self.p._round_grace = 0
 
@@ -165,7 +167,6 @@ class Tk_functional_test(B3TestCase):
         self.joe.kills(self.mike)
         self.assertEqual(1, self.joe.warn.call_count)
         self.assertIsNotNone(self.mike.getMessageHistoryLike("^7type ^3!fp ^7 to forgive"))
-
 
     def test_multikill(self, timer_patch):
         self.p._round_grace = 0
@@ -188,6 +189,8 @@ class Tk_functional_test(B3TestCase):
             self.assertEqual(1, self.joe.tempban.call_count)
 
 
+@patch("threading.Timer")
+class Test_commands(Tk_functional_test):
     def test_forgiveinfo(self, timer_patch):
         self.superadmin.connects(99)
 
@@ -216,7 +219,6 @@ class Tk_functional_test(B3TestCase):
         self.superadmin.says("!forgiveinfo joe")
         self.assertEqual(['Joe has 206 TK points, Attacked: Mike (200), Bill (6), Attacked By: Mike [27]'], self.superadmin.message_history)
 
-
     def test_forgive(self, timer_patch):
         self.superadmin.connects(99)
         self.p._round_grace = 0
@@ -236,7 +238,6 @@ class Tk_functional_test(B3TestCase):
         self.superadmin.clearMessageHistory()
         self.superadmin.says("!forgiveinfo joe")
         self.assertEqual(["Joe has 0 TK points"], self.superadmin.message_history)
-
 
     def test_forgiveclear(self, timer_patch):
         self.superadmin.connects(99)
@@ -258,7 +259,6 @@ class Tk_functional_test(B3TestCase):
         self.superadmin.clearMessageHistory()
         self.superadmin.says("!forgiveinfo joe")
         self.assertEqual(["Joe has 0 TK points"], self.superadmin.message_history)
-
 
     def test_forgivelist(self, timer_patcher):
         self.p._round_grace = 0
@@ -282,7 +282,6 @@ class Tk_functional_test(B3TestCase):
         self.joe.says("!forgivelist")
         self.assertEqual(['Forgive who? [1] Mike [14], [2] Bill [84]'], self.joe.message_history)
 
-
     def test_forgiveall(self, timer_patcher):
         self.p._round_grace = 0
 
@@ -302,7 +301,6 @@ class Tk_functional_test(B3TestCase):
         self.joe.says("!forgivelist")
         self.assertNotIn("Mike", self.joe.message_history[0])
         self.assertNotIn("Bill", self.joe.message_history[0])
-
 
     def test_forgiveprev(self, timer_patcher):
         self.p._round_grace = 0
