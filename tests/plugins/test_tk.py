@@ -19,6 +19,7 @@
 from ConfigParser import NoOptionError
 import os
 from mock import Mock, sentinel, patch, call
+import sys
 import unittest2 as unittest
 
 from b3.plugins.tk import TkPlugin, TkInfo
@@ -341,9 +342,14 @@ class Test_get_config_for_levels(Test_Tk_plugin):
         except ValueError:
             pass
         # THEN
-        self.assertListEqual([
-            call('value for kill_multiplier is invalid. could not convert string to float: f00'),
-        ], self.error_mock.mock_calls)
+        if sys.version_info <= (2, 6):
+            self.assertListEqual([
+                call('value for kill_multiplier is invalid. invalid literal for float(): f00'),
+            ], self.error_mock.mock_calls)
+        else:
+            self.assertListEqual([
+                call('value for kill_multiplier is invalid. could not convert string to float: f00'),
+            ], self.error_mock.mock_calls)
 
     def test_bad_damage_multiplier(self):
         # GIVEN
@@ -366,9 +372,14 @@ class Test_get_config_for_levels(Test_Tk_plugin):
         except ValueError:
             pass
         # THEN
-        self.assertListEqual([
-            call('value for damage_multiplier is invalid. could not convert string to float: f00'),
-        ], self.error_mock.mock_calls)
+        if sys.version_info <= (2, 6):
+            self.assertListEqual([
+                call('value for damage_multiplier is invalid. invalid literal for float(): f00'),
+            ], self.error_mock.mock_calls)
+        else:
+            self.assertListEqual([
+                call('value for damage_multiplier is invalid. could not convert string to float: f00'),
+            ], self.error_mock.mock_calls)
 
     def test_bad_ban_length(self):
         # GIVEN
