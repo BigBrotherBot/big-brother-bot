@@ -18,7 +18,7 @@
 #
 import os
 from textwrap import dedent
-from mockito import when
+from mockito import when, unstub
 import b3
 from b3.plugins.sftpytail import SftpytailPlugin
 from b3.config import CfgConfigParser
@@ -32,6 +32,9 @@ class Test_Sftpytail_plugin(B3TestCase):
         self.conf = CfgConfigParser()
         self.p = SftpytailPlugin(self.console, self.conf)
 
+    def tearDown(self):
+        B3TestCase.tearDown(self)
+        unstub()
 
 class Test_config_timeout(Test_Sftpytail_plugin):
 
