@@ -18,17 +18,18 @@
 #
 from ConfigParser import NoOptionError
 import os
+from textwrap import dedent
 from mock import Mock, sentinel, patch, call
 import sys
 import unittest2 as unittest
 
 from b3.plugins.tk import TkPlugin, TkInfo
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 
 from tests import B3TestCase
 
 
-default_plugin_file = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../b3/conf/plugin_tk.xml"))
+default_plugin_file = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../b3/conf/plugin_tk.ini"))
 
 
 class Test_Tk_plugin(B3TestCase):
@@ -36,15 +37,12 @@ class Test_Tk_plugin(B3TestCase):
     def setUp(self):
         super(Test_Tk_plugin, self).setUp()
         self.console.gameName = 'f00'
-        self.conf = XmlConfigParser()
+        self.conf = CfgConfigParser()
         self.p = TkPlugin(self.console, self.conf)
 
     def test_onLoadConfig_minimal(self):
         # GIVEN
-        self.conf.setXml(r"""
-        <configuration plugin="tk">
-        </configuration>
-        """)
+        self.conf.loadFromString(r"")
         # WHEN
         self.p = TkPlugin(self.console, self.conf)
         self.p.onLoadConfig()
@@ -69,37 +67,34 @@ class Test_Tk_plugin(B3TestCase):
 
     def test_onLoadConfig(self):
         # GIVEN
-        self.conf.setXml(r"""
-        <configuration plugin="tk">
-            <settings name="settings">
-                <set name="max_points">350</set>
-                <set name="levels">0,1,2</set>
-                <set name="round_grace">3</set>
-                <set name="issue_warning">foo</set>
-                <set name="grudge_enable">no</set>
-                <set name="private_messages">off</set>
-                <set name="damage_threshold">99</set>
-                <set name="warn_level">10</set>
-                <set name="halflife">3</set>
-                <set name="warn_duration">3h</set>
-            </settings>
-            <settings name="level_0">
-                <set name="kill_multiplier">2</set>
-                <set name="damage_multiplier">1</set>
-                <set name="ban_length">3</set>
-            </settings>
-            <settings name="level_1">
-                <set name="kill_multiplier">2</set>
-                <set name="damage_multiplier">1</set>
-                <set name="ban_length">4</set>
-            </settings>
-            <settings name="level_2">
-                <set name="kill_multiplier">1</set>
-                <set name="damage_multiplier">0.5</set>
-                <set name="ban_length">5</set>
-            </settings>
-        </configuration>
-        """)
+        self.conf.loadFromString(dedent(r"""
+            [settings]
+            max_points: 350
+            levels: 0,1,2
+            round_grace: 3
+            issue_warning: foo
+            grudge_enable: no
+            private_messages: off
+            damage_threshold: 99
+            warn_level: 10
+            halflife: 3
+            warn_duration: 3h
+            [level_0]
+
+            kill_multiplier: 2
+            damage_multiplier: 1
+            ban_length: 3
+            [level_1]
+
+            kill_multiplier: 2
+            damage_multiplier: 1
+            ban_length: 4
+            [level_2]
+
+            kill_multiplier: 1
+            damage_multiplier: 0.5
+            ban_length: 5
+        """))
         self.p = TkPlugin(self.console, self.conf)
         # WHEN
         self.p.onLoadConfig()
@@ -134,10 +129,8 @@ class Test_get_config_for_levels(Test_Tk_plugin):
 
     def test_missing_level(self):
         # GIVEN
-        self.conf.setXml(r"""
-        <configuration plugin="tk">
-        </configuration>
-        """)
+        self.conf.loadFromString(dedent(r"""
+        """))
         # WHEN
         try:
             self.p.load_config_for_levels()
@@ -149,18 +142,15 @@ class Test_get_config_for_levels(Test_Tk_plugin):
 
     def test_nominal_one_level(self):
         # GIVEN
-        self.conf.setXml(r"""
-        <configuration plugin="tk">
-            <settings name="settings">
-                <set name="levels">0</set>
-            </settings>
-            <settings name="level_0">
-                <set name="kill_multiplier">1.3</set>
-                <set name="damage_multiplier">1.1</set>
-                <set name="ban_length">3</set>
-            </settings>
-        </configuration>
-        """)
+        self.conf.loadFromString(dedent(r"""
+            [settings]
+            levels: 0
+
+            [level_0]
+            kill_multiplier: 1.3
+            damage_multiplier: 1.1
+            ban_length: 3
+        """))
         # WHEN
         levels = self.p.load_config_for_levels()
         # THEN
@@ -171,28 +161,25 @@ class Test_get_config_for_levels(Test_Tk_plugin):
 
     def test_nominal_many_levels(self):
         # GIVEN
-        self.conf.setXml(r"""
-        <configuration plugin="tk">
-            <settings name="settings">
-                <set name="levels">0,20,80</set>
-            </settings>
-            <settings name="level_0">
-                <set name="kill_multiplier">1.3</set>
-                <set name="damage_multiplier">1.1</set>
-                <set name="ban_length">3</set>
-            </settings>
-            <settings name="level_20">
-                <set name="kill_multiplier">1.8</set>
-                <set name="damage_multiplier">1.3</set>
-                <set name="ban_length">2</set>
-            </settings>
-            <settings name="level_80">
-                <set name="kill_multiplier">1</set>
-                <set name="damage_multiplier">1</set>
-                <set name="ban_length">1</set>
-            </settings>
-        </configuration>
-        """)
+        self.conf.loadFromString(dedent(r"""
+            [settings]
+            levels: 0,20,80
+
+            [level_0]
+            kill_multiplier: 1.3
+            damage_multiplier: 1.1
+            ban_length: 3
+
+            [level_20]
+            kill_multiplier: 1.8
+            damage_multiplier: 1.3
+            ban_length: 2
+
+            [level_80]
+            kill_multiplier: 1
+            damage_multiplier: 1
+            ban_length: 1
+        """))
         # WHEN
         levels = self.p.load_config_for_levels()
         # THEN
@@ -205,13 +192,10 @@ class Test_get_config_for_levels(Test_Tk_plugin):
 
     def test_level_junk(self):
         # GIVEN
-        self.conf.setXml(r"""
-        <configuration plugin="tk">
-            <settings name="settings">
-                <set name="levels">f00</set>
-            </settings>
-        </configuration>
-        """)
+        self.conf.loadFromString(dedent(r"""
+            [settings]
+            levels: f00
+        """))
         # WHEN
         try:
             self.p.load_config_for_levels()
@@ -223,23 +207,20 @@ class Test_get_config_for_levels(Test_Tk_plugin):
 
     def test_missing_section(self):
         # GIVEN
-        self.conf.setXml(r"""
-        <configuration plugin="tk">
-            <settings name="settings">
-                <set name="levels">0,20,80</set>
-            </settings>
-            <settings name="level_0">
-                <set name="kill_multiplier">1.3</set>
-                <set name="damage_multiplier">1.1</set>
-                <set name="ban_length">3</set>
-            </settings>
-            <settings name="level_80">
-                <set name="kill_multiplier">1</set>
-                <set name="damage_multiplier">1</set>
-                <set name="ban_length">1</set>
-            </settings>
-        </configuration>
-        """)
+        self.conf.loadFromString(dedent(r"""
+            [settings]
+            levels: 0,20,80
+
+            [level_0]
+            kill_multiplier: 1.3
+            damage_multiplier: 1.1
+            ban_length: 3
+
+            [level_80]
+            kill_multiplier: 1
+            damage_multiplier: 1
+            ban_length: 1
+        """))
         # WHEN
         try:
             self.p.load_config_for_levels()
@@ -251,17 +232,14 @@ class Test_get_config_for_levels(Test_Tk_plugin):
 
     def test_missing_kill_multiplier(self):
         # GIVEN
-        self.conf.setXml(r"""
-        <configuration plugin="tk">
-            <settings name="settings">
-                <set name="levels">0</set>
-            </settings>
-            <settings name="level_0">
-                <set name="damage_multiplier">1.1</set>
-                <set name="ban_length">3</set>
-            </settings>
-        </configuration>
-        """)
+        self.conf.loadFromString(dedent(r"""
+            [settings]
+            levels: 0
+
+            [level_0]
+            damage_multiplier: 1.1
+            ban_length: 3
+        """))
         # WHEN
         try:
             self.p.load_config_for_levels()
@@ -275,17 +253,14 @@ class Test_get_config_for_levels(Test_Tk_plugin):
 
     def test_missing_damage_multiplier(self):
         # GIVEN
-        self.conf.setXml(r"""
-        <configuration plugin="tk">
-            <settings name="settings">
-                <set name="levels">0</set>
-            </settings>
-            <settings name="level_0">
-                <set name="kill_multiplier">1.3</set>
-                <set name="ban_length">3</set>
-            </settings>
-        </configuration>
-        """)
+        self.conf.loadFromString(dedent(r"""
+            [settings]
+            levels: 0
+
+            [level_0]
+            kill_multiplier: 1.3
+            ban_length: 3
+        """))
         # WHEN
         try:
             self.p.load_config_for_levels()
@@ -299,17 +274,14 @@ class Test_get_config_for_levels(Test_Tk_plugin):
 
     def test_missing_ban_length(self):
         # GIVEN
-        self.conf.setXml(r"""
-        <configuration plugin="tk">
-            <settings name="settings">
-                <set name="levels">0</set>
-            </settings>
-            <settings name="level_0">
-                <set name="kill_multiplier">1.3</set>
-                <set name="damage_multiplier">1.1</set>
-            </settings>
-        </configuration>
-        """)
+        self.conf.loadFromString(dedent(r"""
+            [settings]
+            levels: 0
+
+            [level_0]
+            kill_multiplier: 1.3
+            damage_multiplier: 1.1
+        """))
         # WHEN
         try:
             self.p.load_config_for_levels()
@@ -323,18 +295,15 @@ class Test_get_config_for_levels(Test_Tk_plugin):
 
     def test_bad_kill_multiplier(self):
         # GIVEN
-        self.conf.setXml(r"""
-        <configuration plugin="tk">
-            <settings name="settings">
-                <set name="levels">0</set>
-            </settings>
-            <settings name="level_0">
-                <set name="kill_multiplier">f00</set>
-                <set name="damage_multiplier">1.1</set>
-                <set name="ban_length">3</set>
-            </settings>
-        </configuration>
-        """)
+        self.conf.loadFromString(dedent(r"""
+            [settings]
+            levels: 0
+
+            [level_0]
+            kill_multiplier: f00
+            damage_multiplier: 1.1
+            ban_length: 3
+        """))
         # WHEN
         try:
             self.p.load_config_for_levels()
@@ -353,18 +322,15 @@ class Test_get_config_for_levels(Test_Tk_plugin):
 
     def test_bad_damage_multiplier(self):
         # GIVEN
-        self.conf.setXml(r"""
-        <configuration plugin="tk">
-            <settings name="settings">
-                <set name="levels">0</set>
-            </settings>
-            <settings name="level_0">
-                <set name="kill_multiplier">1.3</set>
-                <set name="damage_multiplier">f00</set>
-                <set name="ban_length">3</set>
-            </settings>
-        </configuration>
-        """)
+        self.conf.loadFromString(dedent(r"""
+            [settings]
+            levels: 0
+
+            [level_0]
+            kill_multiplier: 1.3
+            damage_multiplier: f00
+            ban_length: 3
+        """))
         # WHEN
         try:
             self.p.load_config_for_levels()
@@ -383,18 +349,15 @@ class Test_get_config_for_levels(Test_Tk_plugin):
 
     def test_bad_ban_length(self):
         # GIVEN
-        self.conf.setXml(r"""
-        <configuration plugin="tk">
-            <settings name="settings">
-                <set name="levels">0</set>
-            </settings>
-            <settings name="level_0">
-                <set name="kill_multiplier">1.3</set>
-                <set name="damage_multiplier">1.1</set>
-                <set name="ban_length"></set>
-            </settings>
-        </configuration>
-        """)
+        self.conf.loadFromString(dedent(r"""
+            [settings]
+            levels: 0
+
+            [level_0]
+            kill_multiplier: 1.3
+            damage_multiplier: 1.1
+            ban_length:
+        """))
         # WHEN
         try:
             self.p.load_config_for_levels()
@@ -413,7 +376,7 @@ class Test_Tk_default_config(B3TestCase):
     def setUp(self):
         super(Test_Tk_default_config, self).setUp()
         self.console.gameName = 'f00'
-        self.conf = XmlConfigParser()
+        self.conf = CfgConfigParser()
         self.conf.load(default_plugin_file)
         self.p = TkPlugin(self.console, self.conf)
         self.p.onLoadConfig()
