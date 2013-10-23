@@ -30,9 +30,11 @@
 #    16/02/2013 - 1.5 - Courgette
 #    * add plugin property _default_messages to store default plugin messages
 #    * add user friendly warning and error to the log when a messaged cannot be formatted
+#    2013/10/23 - 1.6 - courgette
+#    * onLoadConfig hook is now called by the parser instead of at plugin instantiation
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.5'
+__version__ = '1.6'
 
 import b3.config
 import b3.events
@@ -129,9 +131,6 @@ class Plugin:
             
         # empty message cache
         self._messages = {}
-
-        self.onLoadConfig()
-
 
     def onLoadConfig(self):
         """\

@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2013/10/23 - 1.32 - courgette
+#   * onLoadConfig hook is now called by the parser instead of at plugin instantiation
 #   2013/02/15 - 1.31.1 - courgette
 #   * fix reloadConfigs() which would not reload the config for the admin plugin
 #   2012/10/19 - 1.31 - courgette
@@ -160,7 +162,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.31.1'
+__version__ = '1.32'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -524,6 +526,7 @@ class Parser(object):
         self.bot("Starting parser")
         self.startup()
         self.say('%s ^2[ONLINE]' % b3.version)
+        self.onLoadConfig()
         self.bot("Starting plugins")
         self.startPlugins()
         self._eventsStats_cronTab = b3.cron.CronTab(self._dumpEventsStats)

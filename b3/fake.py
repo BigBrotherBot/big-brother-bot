@@ -398,6 +398,7 @@ fakeConsole = FakeConsole('@b3/conf/b3.distribution.xml')
 
 print "creating fakeAdminPlugin with @b3/conf/plugin_admin.ini"
 fakeAdminPlugin = AdminPlugin(fakeConsole, '@b3/conf/plugin_admin.ini')
+fakeAdminPlugin.onLoadConfig()
 fakeAdminPlugin.onStartup()
 
 joe = FakeClient(fakeConsole, name="Joe", exactName="Joe", guid="zaerezarezar", groupBits=1, team=b3.TEAM_UNKNOWN)
