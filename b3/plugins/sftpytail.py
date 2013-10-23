@@ -17,6 +17,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
+# 23/10/2013 - 1.1 - Courgette
+#   * known_hosts file can be set in the plugin config file
+#   * authentication can be made by public-key auth
+#   * private key file can be set in the plugin config file
 # 22/05/2012 - 1.0.3 - Courgette
 #   * local_game_log config option can now use the @conf and @b3 shortcuts
 # 26/05/2011 - 1.0.2 - 82ndab-Bravo17
@@ -24,22 +28,21 @@
 # 27/04/2011 - 1.0.1 - 82ndab-Bravo17
 #   * Auto assign of unique local games_mp log file
 # 22/10/2010 - 1.0 - Courgette
-#   * obbey the SFTP URI scheme as described in http://tools.ietf.org/html/draft-ietf-secsh-scp-sftp-ssh-uri-04
+#   * obey the SFTP URI scheme as described in http://tools.ietf.org/html/draft-ietf-secsh-scp-sftp-ssh-uri-04
 # 07/09/2010 - 0.1.1 - GrosBedo
 #   * b3/delay option now specify the delay between each ftp log fetching
 #   * b3/local_game_log option to specify the temporary local log name (permits to manage remotely several servers at once)
 # 01/09/2010 - 0.1 - Courgette
 # * first attempt. Briefly tested. Seems to work
-
-
-__version__ = '1.0.3'
-__author__ = 'Courgette'
- 
-import b3, threading
-from b3 import functions
-import b3.plugin
+from ConfigParser import NoOptionError
+import threading
 import os.path
 import time
+
+import b3
+from b3 import functions
+import b3.plugin
+
 try:
     import paramiko
 except ImportError, e:
@@ -49,22 +52,37 @@ Install pycrypto from http://www.voidspace.org.uk/python/modules.shtml#pycrypto 
 """)
     raise e
 
+
+__version__ = '1.1'
+__author__ = 'Courgette'
+
+
 #--------------------------------------------------------------------------------------------------
 class SftpytailPlugin(b3.plugin.Plugin):
-    ### settings
-    _maxGap = 20480 # max gap in bytes between remote file and local file
-    _waitBeforeReconnect = 15 # time (in sec) to wait before reconnecting after loosing FTP connection : 
-    _connectionTimeout = 30
-    
-    requiresConfigFile = False
-    sftpconfig = None
-    buffer = None
-    _remoteFileOffset = None
-    _nbConsecutiveConnFailure = 0
-    _logAppend = False
 
-    _sftpdelay = 0.150
-    
+    requiresConfigFile = False
+    default_connection_timeout = 30  # time (in sec) to wait before reconnecting after loosing FTP connection
+    default_maxGap = 20480  # max gap in bytes between remote file and local file
+
+    def __init__(self, console, config=None):
+        b3.plugin.Plugin.__init__(self, console, config)
+        self._maxGap = SftpytailPlugin.default_maxGap
+        self._waitBeforeReconnect = 15
+        self._connectionTimeout = SftpytailPlugin.default_connection_timeout
+
+        self.sftpconfig = None
+        self.buffer = None
+        self._remoteFileOffset = None
+        self._nbConsecutiveConnFailure = 0
+        self._logAppend = False
+        self.known_hosts_file = None
+        self.private_key_file = None
+        self.lgame_log = None
+        self._publicIp = None
+        self.file = None
+
+        self._sftpdelay = 0.150
+
     def onStartup(self):
         if self.console.config.has_option('server', 'delay'):
             self._sftpdelay = self.console.config.getfloat('server', 'delay')
@@ -87,8 +105,8 @@ class SftpytailPlugin(b3.plugin.Plugin):
             self.lgame_log = os.path.normpath(os.path.expanduser(logext))
             self.debug('Local Game Log is %s' % self.lgame_log)
 
-        if self.console.config.get('server','game_log')[0:7] == 'sftp://' :
-            self.initThread(self.console.config.get('server','game_log'))
+        if self.console.config.get('server', 'game_log')[0:7] == 'sftp://':
+            self.initThread(self.console.config.get('server', 'game_log'))
 
         if self.console.config.has_option('server', 'log_append'):
             self._logAppend = self.console.config.getboolean('server', 'log_append')
@@ -96,24 +114,53 @@ class SftpytailPlugin(b3.plugin.Plugin):
             self._logAppend = False
 
     def onLoadConfig(self):
+
         try:
             self._connectionTimeout = self.config.getint('settings', 'timeout')
-        except: 
-            self.warning("Error reading timeout from config file. Using default value")
+            if self._connectionTimeout < 0:
+                raise ValueError("timeout cannot be negative")
+        except Exception, err:
+            self.warning("Error reading timeout from config file (%s). Using default value" % err)
+            self._connectionTimeout = SftpytailPlugin.default_connection_timeout
         self.info("FTP connection timeout: %s" % self._connectionTimeout)
 
         try:
             self._maxGap = self.config.getint('settings', 'maxGapBytes')
-        except: 
-            self.warning("Error reading maxGapBytes from config file. Using default value")
+            if self._maxGap < 0:
+                raise ValueError("maxGapBytes cannot be negative")
+        except Exception, err:
+            self.warning("Error reading maxGapBytes from config file (%s). Using default value" % err)
+            self._maxGap = SftpytailPlugin.default_maxGap
         self.info("Maximum gap allowed between remote and local gamelog: %s bytes" % self._maxGap)
-        
-    
+
+        try:
+            self.known_hosts_file = self.config.getpath('settings', 'known_hosts_file')
+            if not os.path.isfile(self.known_hosts_file):
+                raise ValueError("kown_host file %r does not exists" % self.known_hosts_file)
+        except (NoOptionError, KeyError):
+            pass
+        except Exception, err:
+            self.error("can't accept known_hosts_file value. %s" % err)
+            self.known_hosts_file = None
+        self.info("known_hosts_file : %r" % self.known_hosts_file)
+
+        try:
+            self.private_key_file = self.config.getpath('settings', 'private_key_file')
+            if not os.path.isfile(self.private_key_file):
+                raise ValueError("private key file %r does not exists" % self.private_key_file)
+        except (NoOptionError, KeyError):
+            pass
+        except Exception, err:
+            self.error("can't accept private_key_file value. %s" % err.message)
+            self.private_key_file = None
+        self.info("private_key_file : %r" % self.private_key_file)
+
     def initThread(self, ftpfileDSN):
         self.sftpconfig = functions.splitDSN(ftpfileDSN)
         thread1 = threading.Thread(target=self.update)
         self.info("Starting sftpytail thread")
         thread1.start()
+        return thread1
     
     def update(self):
         def handleDownload(block):
@@ -148,7 +195,7 @@ class SftpytailPlugin(b3.plugin.Plugin):
                     self.debug("remote file rotation detected")
                     self._remoteFileOffset = 0
                 if remoteSize > self._remoteFileOffset:
-                    if  (remoteSize - self._remoteFileOffset) > self._maxGap:
+                    if (remoteSize - self._remoteFileOffset) > self._maxGap:
                         self.verbose('gap between local and remote file too large (%s bytes)', (remoteSize - self._remoteFileOffset))
                         self.verbose('downloading only the last %s bytes' % self._maxGap)
                         self._remoteFileOffset = remoteSize - self._maxGap
@@ -167,13 +214,12 @@ class SftpytailPlugin(b3.plugin.Plugin):
                         self.console.unpause()
                         self.debug('Unpausing')
             except paramiko.SSHException, e:
-                self.debug(str(e))
+                self.warning(str(e))
                 self._nbConsecutiveConnFailure += 1
-                self.verbose('Lost connection to server, pausing until updated properly')
+                self.verbose('Lost connection to server, pausing until updated properly.')
                 if self.console._paused is False:
                     self.console.pause()
                 self.file.close()
-                self.debug('sFtp error: resetting local log file?')
                 if self._logAppend:
                     try:
                         self.file = open(self.lgame_log, 'ab')
@@ -202,12 +248,18 @@ class SftpytailPlugin(b3.plugin.Plugin):
                     time.sleep(self._waitBeforeReconnect)
             time.sleep(self._sftpdelay)
         self.verbose("B3 is down, stopping sFtpytail thread")
-        try: rfile.close()
-        except: pass
-        try: transport.close()
-        except: pass
-        try: self.file.close()
-        except: pass
+        try:
+            rfile.close()
+        except:
+            pass
+        try:
+            transport.close()
+        except:
+            pass
+        try:
+            self.file.close()
+        except:
+            pass
     
     def sftpconnect(self):
         hostname = self.sftpconfig['host']
@@ -216,56 +268,58 @@ class SftpytailPlugin(b3.plugin.Plugin):
         password = self.sftpconfig['password']
         
         # get host key, if we know one
-        hostkeytype = None
         hostkey = None
-        sftp = None
-        try:
-            host_keys = paramiko.util.load_host_keys(os.path.expanduser('~/.ssh/known_hosts'))
-        except IOError:
-            try:
-                # try ~/ssh/ too, because windows can't have a folder named ~/.ssh/
-                host_keys = paramiko.util.load_host_keys(os.path.expanduser('~/ssh/known_hosts'))
-            except IOError:
-                self.debug('*** Unable to open host keys file')
-                host_keys = {}
-                
-        if host_keys.has_key(hostname):
+        host_keys = self.get_host_keys()
+        if hostname in host_keys:
             hostkeytype = host_keys[hostname].keys()[0]
             hostkey = host_keys[hostname][hostkeytype]
             self.info('Using host key of type %s' % hostkeytype)
+
         self.info('Connecting to %s ...', self.sftpconfig["host"])
-        
         # now, connect and use paramiko Transport to negotiate SSH2 across the connection
         t = paramiko.Transport((hostname, port))
-        t.connect(username=username, password=password, hostkey=hostkey)
+        t.connect(username=username, password=password, hostkey=hostkey, pkey=self.get_private_key())
         sftp = paramiko.SFTPClient.from_transport(t)
         channel = sftp.get_channel()
         channel.settimeout(self._connectionTimeout)
         self.console.clients.sync()
         self.info("Connection successful")
         return t, sftp
-    
-    
-if __name__ == '__main__':
-    from b3.fake import fakeConsole
-    
-    print "------------------------------------"
-    config = b3.config.XmlConfigParser()
-    config.setXml("""
-    <configuration plugin="sftpytail">
-        <settings name="settings">
-            <set name="timeout">15</set>
-            <set name="maxGapBytes">1024</set>
-        </settings>
-    </configuration>
-    """)
-    p = SftpytailPlugin(fakeConsole, config)
 
-    
-    print "------------------------------------"
-    p = SftpytailPlugin(fakeConsole)
+    def get_host_keys_file(self):
+        """
+        get the path of the host keys file.
+        The host key file can either be defined in the plugin config file or well known locations:
+            ~/.ssh/known_hosts
+            ~/ssh/known_hosts
+        """
+        host_keys_file = self.known_hosts_file
+        for potential_location in ['~/.ssh/known_hosts', '~/ssh/known_hosts']:
+            if host_keys_file is not None:
+                break
+            path = b3.getAbsolutePath(potential_location)
+            if os.path.isfile(path):
+                host_keys_file = path
+        return host_keys_file
 
-    p.initThread('sftp://www.somewhere.tld/somepath/somefile.log')
-    time.sleep(30)
-    fakeConsole.shutdown()
-    time.sleep(8)
+    def get_host_keys(self):
+        host_keys_file = self.get_host_keys_file()
+        host_keys = {}
+        try:
+            host_keys = paramiko.util.load_host_keys(host_keys_file)
+        except Exception, err:
+            self.warning("cannot read host keys file %r. " % host_keys_file, exc_info=err)
+        return host_keys
+
+    def get_private_key(self):
+        if self.private_key_file is not None:
+            with open(self.private_key_file, "r") as f:
+                key_head = f.readline()
+            if 'DSA' in key_head:
+                key_type = paramiko.DSSKey
+            elif 'RSA' in key_head:
+                key_type = paramiko.RSAKey
+            else:
+                raise ValueError("Can't identify private key type")
+            with open(self.private_key_file, "r") as f:
+                return key_type.from_private_key(f)
