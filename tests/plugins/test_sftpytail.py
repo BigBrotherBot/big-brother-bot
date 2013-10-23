@@ -18,11 +18,18 @@
 #
 import os
 from textwrap import dedent
+import unittest
 from mockito import when, unstub
 import b3
-from b3.plugins.sftpytail import SftpytailPlugin
 from b3.config import CfgConfigParser
 from tests import B3TestCase
+
+try:
+    import paramiko
+except ImportError:
+    raise unittest.SkipTest("paramiko module required")
+
+from b3.plugins.sftpytail import SftpytailPlugin
 
 
 class Test_Sftpytail_plugin(B3TestCase):
@@ -35,6 +42,7 @@ class Test_Sftpytail_plugin(B3TestCase):
     def tearDown(self):
         B3TestCase.tearDown(self)
         unstub()
+
 
 class Test_config_timeout(Test_Sftpytail_plugin):
 
