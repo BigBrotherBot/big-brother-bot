@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
+# 23/10/2013 - 1.2 - Courgette
+#   * add support for encrypted private keys
 # 23/10/2013 - 1.1 - Courgette
 #   * known_hosts file can be set in the plugin config file
 #   * authentication can be made by public-key auth
@@ -278,7 +280,11 @@ class SftpytailPlugin(b3.plugin.Plugin):
         self.info('Connecting to %s ...', self.sftpconfig["host"])
         # now, connect and use paramiko Transport to negotiate SSH2 across the connection
         t = paramiko.Transport((hostname, port))
-        t.connect(username=username, password=password, hostkey=hostkey, pkey=self.get_private_key())
+        private_key = self.get_private_key(password)
+        if private_key is None:
+            t.connect(username=username, password=password, hostkey=hostkey)
+        else:
+            t.connect(username=username, hostkey=hostkey, pkey=private_key)
         sftp = paramiko.SFTPClient.from_transport(t)
         channel = sftp.get_channel()
         channel.settimeout(self._connectionTimeout)
@@ -311,7 +317,7 @@ class SftpytailPlugin(b3.plugin.Plugin):
             self.warning("cannot read host keys file %r. " % host_keys_file, exc_info=err)
         return host_keys
 
-    def get_private_key(self):
+    def get_private_key(self, password=None):
         if self.private_key_file is not None:
             with open(self.private_key_file, "r") as f:
                 key_head = f.readline()
@@ -322,4 +328,4 @@ class SftpytailPlugin(b3.plugin.Plugin):
             else:
                 raise ValueError("Can't identify private key type")
             with open(self.private_key_file, "r") as f:
-                return key_type.from_private_key(f)
+                return key_type.from_private_key(f, password=password)
