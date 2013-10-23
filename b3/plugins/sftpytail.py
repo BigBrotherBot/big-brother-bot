@@ -55,7 +55,7 @@ Install pycrypto from http://www.voidspace.org.uk/python/modules.shtml#pycrypto 
     raise e
 
 
-__version__ = '1.1'
+__version__ = '1.2'
 __author__ = 'Courgette'
 
 
