@@ -342,7 +342,7 @@ class Test_get_config_for_levels(Test_Tk_plugin):
         except ValueError:
             pass
         # THEN
-        if sys.version_info <= (2, 6):
+        if sys.version_info < (2, 7):
             self.assertListEqual([
                 call('value for kill_multiplier is invalid. invalid literal for float(): f00'),
             ], self.error_mock.mock_calls)
@@ -372,7 +372,7 @@ class Test_get_config_for_levels(Test_Tk_plugin):
         except ValueError:
             pass
         # THEN
-        if sys.version_info <= (2, 6):
+        if sys.version_info < (2, 7):
             self.assertListEqual([
                 call('value for damage_multiplier is invalid. invalid literal for float(): f00'),
             ], self.error_mock.mock_calls)
