@@ -19,6 +19,7 @@
 # CHANGELOG:
 # 24/10/2013 - 1.2.1 - Courgette
 #   * fix issue when public_ip and rcon_ip are different in b3.xml or when a domain name is used in place of an IP
+#   * get rid of "no handler found for paramiko.transport" errors
 # 23/10/2013 - 1.2 - Courgette
 #   * add support for encrypted private keys
 # 23/10/2013 - 1.1 - Courgette
@@ -39,6 +40,7 @@
 # 01/09/2010 - 0.1 - Courgette
 # * first attempt. Briefly tested. Seems to work
 from ConfigParser import NoOptionError
+import logging
 import threading
 import os.path
 import time
@@ -104,6 +106,12 @@ class SftpytailPlugin(b3.plugin.Plugin):
             self._logAppend = self.console.config.getboolean('server', 'log_append')
         else:
             self._logAppend = False
+
+        # get rid of "no handler found for paramiko.transport" errors
+        paramiko_logger = logging.getLogger('paramiko')
+        paramiko_logger.handlers = [logging.NullHandler()]
+        paramiko_logger.propagate = False
+
 
     def onLoadConfig(self):
 
