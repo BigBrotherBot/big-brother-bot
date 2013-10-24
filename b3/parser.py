@@ -18,6 +18,9 @@
 #
 #
 # CHANGELOG
+#   2013/10/24 - 1.33 - courgette
+#   * fix httpytail, ftpytail and sftpytail plugins that would be loaded twice if found in the plugins section of the b3.xml file
+#   * fix onLoadConfig hook is now called by the parser instead of at plugin instantiation
 #   2013/10/23 - 1.32 - courgette
 #   * onLoadConfig hook is now called by the parser instead of at plugin instantiation
 #   2013/02/15 - 1.31.1 - courgette
@@ -162,7 +165,7 @@
 #    Added warning, info, exception, and critical log handlers
 
 __author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.32'
+__version__ = '1.33'
 
 # system modules
 import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
@@ -724,27 +727,24 @@ class Parser(object):
                 loadPlugin(self, 'publist')
             except Exception, err:
                 self.verbose('Error loading plugin publist', exc_info=err)
-        if self.config.has_option('server','game_log') \
-            and self.config.get('server','game_log')[0:6] == 'ftp://' :
-            try:
-                loadPlugin(self, 'ftpytail')
-            except Exception, err:
-                self.critical('Error loading plugin ftpytail', exc_info=err)
-                raise SystemExit('error while loading ftpytail')
-        if self.config.has_option('server','game_log') \
-            and self.config.get('server','game_log')[0:7] == 'sftp://' :
-            try:
-                loadPlugin(self, 'sftpytail')
-            except Exception, err:
-                self.critical('Error loading plugin sftpytail', exc_info=err)
-                raise SystemExit('error while loading sftpytail')
-        if self.config.has_option('server','game_log') \
-            and self.config.get('server','game_log')[0:7] == 'http://' :
-            try:
-                loadPlugin(self, 'httpytail')
-            except Exception, err:
-                self.critical('Error loading plugin httpytail', exc_info=err)
-                raise SystemExit('error while loading httpytail')
+
+        if self.config.has_option('server', 'game_log'):
+            game_log = self.config.get('server', 'game_log')
+            remote_log_plugin = None
+            if game_log.startswith('ftp://'):
+                remote_log_plugin = 'ftpytail'
+            elif game_log.startswith('sftp://'):
+                remote_log_plugin = 'sftpytail'
+            elif game_log.startswith('http://'):
+                remote_log_plugin = 'httpytail'
+
+            if remote_log_plugin and remote_log_plugin not in self._pluginOrder:
+                try:
+                    loadPlugin(self, remote_log_plugin)
+                except Exception, err:
+                    self.critical('Error loading plugin %s' % remote_log_plugin, exc_info=err)
+                    raise SystemExit('error while loading %s' % remote_log_plugin)
+
         if 'admin' not in self._pluginOrder:
             # critical will exit, admin plugin must be loaded!
             self.critical('AdminPlugin is essential and MUST be loaded! Cannot continue without admin plugin.')
