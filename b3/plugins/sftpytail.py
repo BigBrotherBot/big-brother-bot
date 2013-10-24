@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
+# 24/10/2013 - 1.2.1 - Courgette
+#   * fix issue when public_ip and rcon_ip are different in b3.xml or when a domain name is used in place of an IP
 # 23/10/2013 - 1.2 - Courgette
 #   * add support for encrypted private keys
 # 23/10/2013 - 1.1 - Courgette
@@ -55,7 +57,7 @@ Install pycrypto from http://www.voidspace.org.uk/python/modules.shtml#pycrypto 
     raise e
 
 
-__version__ = '1.2'
+__version__ = '1.2.1'
 __author__ = 'Courgette'
 
 
@@ -92,19 +94,7 @@ class SftpytailPlugin(b3.plugin.Plugin):
         if self.console.config.has_option('server', 'local_game_log'):
             self.lgame_log = self.console.config.getpath('server', 'local_game_log')
         else:
-            # setup ip addresses
-            self._publicIp = self.console.config.get('server', 'public_ip')
-            self._port = self.console.config.getint('server', 'port')
-
-            if self._publicIp[0:1] == '~' or self._publicIp[0:1] == '/':
-                # load ip from a file
-                f = file(self.console.getAbsolutePath(self._publicIp))
-                self._publicIp = f.read().strip()
-                f.close()
-                
-            logext = str(self._publicIp.replace('.', '_'))
-            logext = 'games_mp_' + logext + '_' + str(self._port) + '.log'
-            self.lgame_log = os.path.normpath(os.path.expanduser(logext))
+            self.lgame_log = os.path.normpath(os.path.expanduser(self.console.input.name))
             self.debug('Local Game Log is %s' % self.lgame_log)
 
         if self.console.config.get('server', 'game_log')[0:7] == 'sftp://':
