@@ -526,7 +526,7 @@ class Parser(object):
         self.bot("Starting parser")
         self.startup()
         self.say('%s ^2[ONLINE]' % b3.version)
-        self.onLoadConfig()
+        self.call_plugins_onLoadConfig()
         self.bot("Starting plugins")
         self.startPlugins()
         self._eventsStats_cronTab = b3.cron.CronTab(self._dumpEventsStats)
@@ -697,6 +697,12 @@ class Parser(object):
                 self.bot('Plugin %s (%s - %s) loaded', plugin_name, version, author)
                 self.screen.write('.')
                 self.screen.flush()
+
+    def call_plugins_onLoadConfig(self):
+        """For each loaded plugin, call the onLoadConfig hook"""
+        for plugin_name in self._pluginOrder:
+            p = self._plugins[plugin_name]
+            p.onLoadConfig()
 
     def loadArbPlugins(self):
         """Load must have plugins and check for admin plugin"""
