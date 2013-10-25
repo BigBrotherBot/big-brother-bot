@@ -17,6 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 import logging
+import threading
 
 from mock import Mock, call, patch, ANY
 import sys, os, thread
@@ -27,12 +28,13 @@ import unittest2 as unittest
 from b3 import __file__ as b3_module__file__, TEAM_BLUE, TEAM_RED
 from b3.clients import Group, Client
 
-from tests import B3TestCase
+from tests import B3TestCase, InstantTimer
 from b3.fake import FakeClient
 from b3.config import CfgConfigParser
 from b3.plugins.admin import AdminPlugin
 
 ADMIN_CONFIG_FILE = os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.ini")
+
 
 class Admin_functional_test(B3TestCase):
     """ tests from a class inheriting from Admin_functional_test must call self.init() """
@@ -1108,6 +1110,12 @@ warn_denied: %s, %s is a higher level admin, you can't warn him
 cleared_warnings: %(admin)s has cleared %(player)s of all warnings
 cleared_warnings_for_all: %(admin)s has cleared everyone's warnings and tk points
 [warn]
+tempban_num: 3
+duration_divider: 30
+max_duration: 1d
+alert: ^1ALERT^7: $name^7 auto-kick from warnings if not cleared [^3$warnings^7] $reason
+alert_kick_num: 3
+reason: ^7too many warnings: $reason
 message: ^1WARNING^7 [^3$warnings^7]: $reason
 """)
         self.joe.connects(0)
@@ -1129,6 +1137,62 @@ message: ^1WARNING^7 [^3$warnings^7]: $reason
         self.assertEqual(1, self.mike.numWarnings)
         self.assertListEqual([call(60.0, '^7behave yourself', None, self.joe, '')], self.mike_warn_mock.mock_calls)
         self.assertListEqual([call('^1WARNING^7 [^31^7]: Mike^7^7, ^7behave yourself')], self.say_mock.mock_calls)
+        self.assertListEqual([], self.joe.message_history)
+        self.assertListEqual([], self.mike.message_history)
+
+    @patch('threading.Timer', new_callable=lambda: InstantTimer)
+    def test_warn_then_auto_kick(self, instant_timer, sleep_mock):
+        # GIVEN
+        self.p.warn_delay = 0
+        self.assertEqual(0, self.mike.numWarnings)
+        # WHEN
+        with patch.object(self.mike, 'tempban') as mike_tempban_mock:
+            self.joe.says('!warn mike')
+            self.joe.says('!warn mike')
+            self.joe.says('!warn mike')
+        # THEN Mike has 3 active warnings
+        self.assertEqual(3, self.mike.numWarnings)
+        # THEN appropriate messages were sent
+        self.assertListEqual([
+            call('^1WARNING^7 [^31^7]: Mike^7^7, ^7behave yourself'),
+            call('^1WARNING^7 [^32^7]: Mike^7^7, ^7behave yourself'),
+            call('^1WARNING^7 [^33^7]: Mike^7^7, ^7behave yourself'),
+            call(u'^1ALERT^7: Mike^7^7 auto-kick from warnings if not cleared [^33^7] ^7behave yourself'),
+        ], self.say_mock.mock_calls)
+        # THEN Mike was kicked for having too many warnings
+        self.assertListEqual([
+            call(u'^7too many warnings: ^7behave yourself', u'None', 6, self.joe, False, '')
+        ], mike_tempban_mock.mock_calls)
+        # THEN No private message was sent
+        self.assertListEqual([], self.joe.message_history)
+        self.assertListEqual([], self.mike.message_history)
+
+
+    @patch('threading.Timer', new_callable=lambda: InstantTimer)
+    def test_warn_then_auto_kick_duration_divider_60(self, instant_timer, sleep_mock):
+        # GIVEN
+        self.p.config._sections['warn']['duration_divider'] = '60'
+        self.p.warn_delay = 0
+        self.assertEqual(0, self.mike.numWarnings)
+        # WHEN
+        with patch.object(self.mike, 'tempban') as mike_tempban_mock:
+            self.joe.says('!warn mike')
+            self.joe.says('!warn mike')
+            self.joe.says('!warn mike')
+        # THEN Mike has 3 active warnings
+        self.assertEqual(3, self.mike.numWarnings)
+        # THEN appropriate messages were sent
+        self.assertListEqual([
+            call('^1WARNING^7 [^31^7]: Mike^7^7, ^7behave yourself'),
+            call('^1WARNING^7 [^32^7]: Mike^7^7, ^7behave yourself'),
+            call('^1WARNING^7 [^33^7]: Mike^7^7, ^7behave yourself'),
+            call(u'^1ALERT^7: Mike^7^7 auto-kick from warnings if not cleared [^33^7] ^7behave yourself'),
+        ], self.say_mock.mock_calls)
+        # THEN Mike was kicked for having too many warnings
+        self.assertListEqual([
+            call(u'^7too many warnings: ^7behave yourself', u'None', 3, self.joe, False, '')
+        ], mike_tempban_mock.mock_calls)
+        # THEN No private message was sent
         self.assertListEqual([], self.joe.message_history)
         self.assertListEqual([], self.mike.message_history)
 
