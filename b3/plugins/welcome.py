@@ -61,6 +61,19 @@ class WelcomePlugin(b3.plugin.Plugin):
     _welcomeDelay = 0
     _cmd_greeting_minlevel = None
     _min_gap = 3600
+    _default_messages = dict(
+        first='^7Welcome $name^7, this must be your first visit, you are player ^3#$id. Type !help for help',
+        newb='^7[^2Authed^7] Welcome back $name ^7[^3@$id^7], last visit ^3$lastVisit. Type !register in chat to register. Type !help for help',
+        user='^7[^2Authed^7] Welcome back $name ^7[^3@$id^7], last visit ^3$lastVisit^7, you\'re a ^2$group^7, played $connections times',
+        announce_first='^7Everyone welcome $name^7, player number ^3#$id^7, to the server',
+        announce_user='^7Everyone welcome back $name^7, player number ^3#$id^7, to the server, played $connections times',
+        greeting='^7$name^7 joined: $greeting',
+        greeting_empty='^7You have no greeting set',
+        greeting_yours='^7Your greeting is %s',
+        greeting_bad='^7Greeting is not formatted properly: %s',
+        greeting_changed='^7Greeting changed to: %s',
+        greeting_cleared='^7Greeting cleared',
+    )
 
     def onStartup(self):
         self.registerEvent(b3.events.EVT_CLIENT_AUTH)
