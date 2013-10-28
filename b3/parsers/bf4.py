@@ -213,9 +213,11 @@ class Bf4Parser(AbstractParser):
     _gamemode_aliases = {
         'cq': 'conquest',
         'cq64': 'conquest64',
+		'dom' : 'Domination0',
+		'elm' : 'Elimination0',
+		'obl' : 'Obliteration',
         'tdm': 'team deathmatch',
         'sqdm': 'squad deathmatch',
-        'ctf': 'capture the flag'
     }
 
     def __new__(cls, *args, **kwargs):
