@@ -81,6 +81,8 @@
 #     * added hit2kill code translation for UT_MOD_KICKED
 # 30/07/2013 - 1.17 - Fenix
 #     * added EVT_CLIENT_GOTO
+# 27/09/2013 - 1.18 - Courgette
+#     * added EVT_VOTE_PASSED and EVT_VOTE_FAILED
 
 import re, new
 import time
@@ -92,7 +94,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.17'
+__version__ = '1.18'
 
 
 class Iourt42Client(Client):
