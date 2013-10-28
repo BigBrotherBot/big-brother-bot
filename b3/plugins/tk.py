@@ -195,6 +195,7 @@ class TkPlugin(b3.plugin.Plugin):
             forgive_info='^7$name^7 has ^3$points^7 TK points',
             forgive_clear='^7$name^7 cleared of ^3$points^7 TK points',
             tk_warning_reason='^3Do not attack teammates, ^1Attacked: ^7$vname ^7[^3$points^7]',
+            tk_request_action='^7type ^3!fp ^7 to forgive ^3%s',
         )
 
         # settings
@@ -483,7 +484,7 @@ class TkPlugin(b3.plugin.Plugin):
             a.lastWarnTime = self.console.time()
             warning = self._adminPlugin.warnClient(attacker, self.getMessage('tk_warning_reason', {'vname': victim.exactName, 'points': points}), None, False, newDuration = self._tk_warn_duration)
             a.warn(v.cid, warning)
-            victim.message('^7type ^3!fp ^7 to forgive ^3%s' % (attacker.exactName))
+            victim.message(self.getMessage('tk_request_action', attacker.exactName))
 
     def getClientTkInfo(self, client):
         if not client.isvar(self, 'tkinfo'):
