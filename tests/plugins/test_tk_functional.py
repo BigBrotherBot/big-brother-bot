@@ -77,6 +77,7 @@ class Tk_functional_test(B3TestCase):
             grudge_info: ^7$name^7 is ^1grudged ^3$points^7 TK points
             forgive_clear: ^7$name^7 cleared of ^3$points^7 TK points
             tk_warning_reason: ^3Do not attack teammates, ^1Attacked: ^7$vname ^7[^3$points^7]
+            tk_request_action: ^7type ^3!fp ^7 to forgive ^3%s
 
             [level_0]
             kill_multiplier: 2
