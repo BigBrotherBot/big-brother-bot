@@ -35,10 +35,10 @@ import b3.events
 import threading
 from time import sleep
 
-__author__ = 'Courgette, ozon'
+__author__ = 'Courgette, ozon, Dwarfer'
 __version__ = '1.0.0'
 
-BF4_REQUIRED_VERSION = 0
+BF4_REQUIRED_VERSION = 86637
 
 SQUAD_NOSQUAD = 0
 SQUAD_ALPHA = 1
