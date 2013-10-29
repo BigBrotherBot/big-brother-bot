@@ -29,6 +29,7 @@
 #   * local_game_log config option can now use the @conf and @b3 shortcuts
 # 19/02/2013 - 1.0 - Courgette
 #   * fix issue when public_ip and rcon_ip are different in b3.xml or when a domain name is used in place of an IP
+<<<<<<< HEAD
 # 02/02/2013 - 1.1 - Courgette
 #   * minor change to make the plugin behave nicely when B3 sends the EXIT or STOP event
 
@@ -37,6 +38,13 @@ __author__ = 'GrosBedo, 82ndab-Bravo17, Courgette'
 
 import b3
 import threading
+=======
+
+__version__ = '1.0'
+__author__ = 'GrosBedo, 82ndab-Bravo17, Courgette'
+ 
+import b3, threading
+>>>>>>> upstream/master
 from b3 import functions
 import b3.events
 import b3.plugin

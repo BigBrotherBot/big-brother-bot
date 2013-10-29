@@ -48,8 +48,11 @@
 # 1.8.1
 #  add new maps and gamemodes from DLC "End Game"
 #  implement getPlayerPings
+<<<<<<< HEAD
 # 1.10.1
 #  Fix the list of gamemodes available for map Talah Market
+=======
+>>>>>>> upstream/master
 #
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock
@@ -59,7 +62,11 @@ import threading
 from time import sleep
 
 __author__  = 'Courgette'
+<<<<<<< HEAD
 __version__ = '1.10.1'
+=======
+__version__ = '1.8.1'
+>>>>>>> upstream/master
 
 BF3_REQUIRED_VERSION = 1149977
 
@@ -244,7 +251,11 @@ GAME_MODES_BY_MAP_ID = {
         "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0",
         "GunMaster0", "Scavenger0"),
     "XP4_Rubble": (
+<<<<<<< HEAD
         "ConquestAssaultLarge0", "ConquestAssaultSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0",
+=======
+        "ConquestLarge0", "ConquestSmall0", "RushLarge0", "SquadRush0", "SquadDeathMatch0", "TeamDeathMatch0",
+>>>>>>> upstream/master
         "GunMaster0", "Scavenger0"),
     "XP5_001": (
         "CaptureTheFlag0", "AirSuperiority0", "ConquestLarge0", "ConquestAssaultLarge0", "ConquestSmall0",
@@ -321,6 +332,7 @@ class Bf3Parser(AbstractParser):
         'premiumStatus',
         'gunMasterWeaponsPreset'
     )
+<<<<<<< HEAD
 
     # gamemodes aliases {alias: actual game mode name}
     _gamemode_aliases = {
@@ -330,6 +342,8 @@ class Bf3Parser(AbstractParser):
         'sqdm': 'squad deathmatch',
         'ctf': 'capture the flag'
     }
+=======
+>>>>>>> upstream/master
 
     def __new__(cls, *args, **kwargs):
         Bf3Parser.patch_b3_Client_isAlive()
@@ -436,12 +450,17 @@ class Bf3Parser(AbstractParser):
     #    
     ###############################################################################################
 
+<<<<<<< HEAD
     def getPlayerPings(self, filter_client_ids=None):
+=======
+    def getPlayerPings(self):
+>>>>>>> upstream/master
         """Ask the server for a given client's pings
 
         :param filter_client_ids: If filter_client_id is an iterable, only return values for the given client ids.
         """
         pings = {}
+<<<<<<< HEAD
         if not filter_client_ids:
             filter_client_ids = [client.cid for client in self.clients.getList()]
 
@@ -453,6 +472,16 @@ class Bf3Parser(AbstractParser):
                 pass
             except Exception, err:
                 self.error("could not get ping info for player %s: %s" % (cid, err), exc_info=err)
+=======
+        for c in self.clients.getList():
+            try:
+                words = self.write(("player.ping", c.cid))
+                pings[c.cid] = int(words[0])
+            except ValueError:
+                pass
+            except Exception, err:
+                self.error("could not get ping info for player %s: %s" % (c, err), exc_info=err)
+>>>>>>> upstream/master
         return pings
 
     ###############################################################################################

@@ -30,11 +30,17 @@
 # 19/02/2013 - 1.4 - Courgette
 #    * fix EventsStats.dumpStats which would fail if called before any event was seen
 #    * make EventsStats.dumpStats computations abort if B3 log level lower than required to display the results
+<<<<<<< HEAD
 # 15/07/2013 - 1.5 - courgette
 #    * add events EVT_CLIENT_WARN and EVT_CLIENT_NOTICE
 
 __author__  = 'ThorN, xlr8or, Courgette'
 __version__ = '1.5'
+=======
+
+__author__  = 'ThorN, xlr8or, Courgette'
+__version__ = '1.4'
+>>>>>>> upstream/master
 
 import re
 from collections import deque
