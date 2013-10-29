@@ -38,7 +38,7 @@ from time import sleep
 __author__ = 'Courgette, ozon'
 __version__ = '1.0.0'
 
-BF4_REQUIRED_VERSION = 1149977
+BF4_REQUIRED_VERSION = 0
 
 SQUAD_NOSQUAD = 0
 SQUAD_ALPHA = 1
