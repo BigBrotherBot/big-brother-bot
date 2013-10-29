@@ -926,6 +926,7 @@ class Cmd_map(Admin_functional_test):
         self.assertEqual(0, self.joe.message.call_count)
 
 
+<<<<<<< HEAD
 class spell_checker(Admin_functional_test):
     def setUp(self):
         Admin_functional_test.setUp(self)
@@ -1439,6 +1440,8 @@ help: 0
 
 
 
+=======
+>>>>>>> upstream/master
 class Cmd_kick(Admin_functional_test):
     def setUp(self):
         Admin_functional_test.setUp(self)
@@ -1495,7 +1498,11 @@ class Cmd_kick(Admin_functional_test):
         # WHEN
         self.mike.says('!kick joe reason1')
         # THEN
+<<<<<<< HEAD
         self.assertListEqual(["Joe is a masked higher level player, action cancelled"], self.mike.message_history)
+=======
+        self.assertListEqual(["Joe is a masked higher level player, can't kick"], self.mike.message_history)
+>>>>>>> upstream/master
         self.assertListEqual([], self.kick_mock.mock_calls)
 
     def test_existing_player_name(self):
@@ -1529,6 +1536,7 @@ class Cmd_kick(Admin_functional_test):
         # WHEN
         self.joe.says('!kick 4')
         # THEN
+<<<<<<< HEAD
         self.assertListEqual([call('4', '', self.joe)], self.kick_mock.mock_calls)
 
     def test_kick_by_database_id(self):
@@ -1562,3 +1570,6 @@ class Cmd_kick(Admin_functional_test):
         self.joe.says("!kick 'f 0 0' the reason")
         # THEN
         self.assertListEqual([call(self.mike, 'the reason', self.joe, False)], self.kick_mock.mock_calls)
+=======
+        self.assertListEqual([call('4', '', self.joe)], self.kick_mock.mock_calls)
+>>>>>>> upstream/master
