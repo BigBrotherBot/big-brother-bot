@@ -114,7 +114,7 @@ class Setup:
     _equaLength = 15
     ## @todo bfbc2 and moh need to be added later when parsers correctly implemented pb.
     _PBSupportedParsers = ['cod', 'cod2', 'cod4', 'cod5', 'cod6', 'cod7', 'cod8']
-    _frostBite = ['bfbc2', 'moh', 'bf3']
+    _frostBite = ['bfbc2', 'moh', 'bf3', 'bf4']
 
     def __init__(self, config=None):
         if config:
@@ -168,7 +168,7 @@ class Setup:
                      """\
 Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
                   iourt41/iourt42
-                  bfbc2/bf3/moh
+                  bfbc2/bf3/moh/bf4
                   chiv
                   etpro/altitude/oa081/smg/sof2/wop/wop15
                   homefront/ro2/csgo/ravaged/arma2/arma3""")
