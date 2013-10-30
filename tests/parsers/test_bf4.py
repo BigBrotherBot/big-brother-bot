@@ -73,118 +73,7 @@ class BF4TestCase(unittest.TestCase):
 
 class Test_getServerInfo(unittest.TestCase):
 
-    def test_decodeServerinfo_pre_R9(self):
-        self.assertDictContainsSubset({
-            'serverName': 'BigBrotherBot #2',
-            'numPlayers': '0',
-            'maxPlayers': '16',
-            'gamemode': 'ConquestLarge0',
-            'level': 'MP_012',
-            'roundsPlayed': '0',
-            'roundsTotal': '2',
-            'numTeams': '0',
-            'team1score': None,
-            'team2score': None,
-            'team3score': None,
-            'team4score': None,
-            'targetScore': '0',
-            'onlineState': '',
-            'isRanked': 'true',
-            'hasPunkbuster': 'true',
-            'hasPassword': 'false',
-            'serverUptime': '5148',
-            'roundTime': '455',
-        }, Bf4Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '0', '2', '0', '0', '', 'true', 'true', 'false', '5148', '455')))
-
-        self.assertDictContainsSubset({
-            'serverName': 'BigBrotherBot #2',
-            'numPlayers': '0',
-            'maxPlayers': '16',
-            'gamemode': 'ConquestLarge0',
-            'level': 'MP_012',
-            'roundsPlayed': '0',
-            'roundsTotal': '2',
-            'numTeams': '1',
-            'team1score': '47',
-            'team2score': None,
-            'team3score': None,
-            'team4score': None,
-            'targetScore': '0',
-            'onlineState': '',
-            'isRanked': 'true',
-            'hasPunkbuster': 'true',
-            'hasPassword': 'false',
-            'serverUptime': '5148',
-            'roundTime': '455',
-        }, Bf4Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '0', '2', '1', '47', '0', '', 'true', 'true', 'false', '5148', '455')))
-
-        self.assertDictContainsSubset({
-            'serverName': 'BigBrotherBot #2',
-            'numPlayers': '0',
-            'maxPlayers': '16',
-            'gamemode': 'ConquestLarge0',
-            'level': 'MP_012',
-            'roundsPlayed': '0',
-            'roundsTotal': '2',
-            'numTeams': '2',
-            'team1score': '300',
-            'team2score': '300',
-            'team3score': None,
-            'team4score': None,
-            'targetScore': '0',
-            'onlineState': '',
-            'isRanked': 'true',
-            'hasPunkbuster': 'true',
-            'hasPassword': 'false',
-            'serverUptime': '5148',
-            'roundTime': '455',
-        }, Bf4Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '0', '2', '2', '300', '300', '0', '', 'true', 'true', 'false', '5148', '455')))
-
-        self.assertDictContainsSubset({
-            'serverName': 'BigBrotherBot #2',
-            'numPlayers': '0',
-            'maxPlayers': '16',
-            'gamemode': 'ConquestLarge0',
-            'level': 'MP_012',
-            'roundsPlayed': '1',
-            'roundsTotal': '2',
-            'numTeams': '3',
-            'team1score': '300',
-            'team2score': '215',
-            'team3score': '25',
-            'team4score': None,
-            'targetScore': '0',
-            'onlineState': '',
-            'isRanked': 'true',
-            'hasPunkbuster': 'true',
-            'hasPassword': 'false',
-            'serverUptime': '5148',
-            'roundTime': '455',
-        }, Bf4Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '1', '2', '3', '300', '215', '25', '0', '', 'true', 'true', 'false', '5148', '455')))
-
-        self.assertDictContainsSubset({
-            'serverName': 'BigBrotherBot #2',
-            'numPlayers': '0',
-            'maxPlayers': '16',
-            'gamemode': 'ConquestLarge0',
-            'level': 'MP_012',
-            'roundsPlayed': '1',
-            'roundsTotal': '2',
-            'numTeams': '4',
-            'team1score': '300',
-            'team2score': '215',
-            'team3score': '25',
-            'team4score': '84',
-            'targetScore': '0',
-            'onlineState': '',
-            'isRanked': 'true',
-            'hasPunkbuster': 'true',
-            'hasPassword': 'false',
-            'serverUptime': '5148',
-            'roundTime': '455',
-        }, Bf4Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '1', '2', '4', '300', '215', '25', '84', '0', '', 'true', 'true', 'false', '5148', '455')))
-
-    def test_decodeServerinfo_R9(self):
+    def test_decodeServerinfo_R2(self):
         self.maxDiff = None
         self.assertDictEqual({
             'serverName': 'BigBrotherBot #2',
@@ -212,7 +101,9 @@ class Test_getServerInfo(unittest.TestCase):
             'region': 'EU',
             'closestPingSite': '45',
             'country': 'FR',
-        }, Bf4Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '0', '2', '0', '0', '', 'true', 'true', 'false', '5148', '455', '1.2.3.4:5445', '1.5', 'false', 'EU', '45', 'FR')))
+            'blazePlayerCount': '0',
+            'blazeGameState': 'IN_GAME'
+        }, Bf4Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '0', '2', '0', '0', '', 'true', 'true', 'false', '5148', '455', '1.2.3.4:5445', '1.5', 'false', 'EU', '45', 'FR', '0', 'IN_GAME')))
 
         self.assertDictEqual({
             'serverName': 'BigBrotherBot #2',
@@ -240,7 +131,9 @@ class Test_getServerInfo(unittest.TestCase):
             'region': 'EU',
             'closestPingSite': '45',
             'country': 'FR',
-        }, Bf4Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '0', '2', '1', '47', '0', '', 'true', 'true', 'false', '5148', '455', '1.2.3.4:5445', '1.5', 'false', 'EU', '45', 'FR')))
+            'blazePlayerCount': '0',
+            'blazeGameState': 'IN_GAME'
+        }, Bf4Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '0', '2', '1', '47', '0', '', 'true', 'true', 'false', '5148', '455', '1.2.3.4:5445', '1.5', 'false', 'EU', '45', 'FR', '0', 'IN_GAME')))
 
         self.assertDictEqual({
             'serverName': 'BigBrotherBot #2',
@@ -268,7 +161,9 @@ class Test_getServerInfo(unittest.TestCase):
             'region': 'EU',
             'closestPingSite': '45',
             'country': 'FR',
-        }, Bf4Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '0', '2', '2', '300', '300', '0', '', 'true', 'true', 'false', '5148', '455', '1.2.3.4:5445', '1.5', 'false', 'EU', '45', 'FR')))
+            'blazePlayerCount': '0',
+            'blazeGameState': 'IN_GAME'
+        }, Bf4Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '0', '2', '2', '300', '300', '0', '', 'true', 'true', 'false', '5148', '455', '1.2.3.4:5445', '1.5', 'false', 'EU', '45', 'FR', '0', 'IN_GAME')))
 
         self.assertDictEqual({
             'serverName': 'BigBrotherBot #2',
@@ -296,7 +191,9 @@ class Test_getServerInfo(unittest.TestCase):
             'region': 'EU',
             'closestPingSite': '45',
             'country': 'FR',
-        }, Bf4Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '1', '2', '3', '300', '215', '25', '0', '', 'true', 'true', 'false', '5148', '455', '1.2.3.4:5445', '1.5', 'false', 'EU', '45', 'FR')))
+            'blazePlayerCount': '0',
+            'blazeGameState': 'IN_GAME',
+        }, Bf4Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '1', '2', '3', '300', '215', '25', '0', '', 'true', 'true', 'false', '5148', '455', '1.2.3.4:5445', '1.5', 'false', 'EU', '45', 'FR', '0', 'IN_GAME')))
 
         self.assertDictEqual({
             'serverName': 'BigBrotherBot #2',
@@ -324,57 +221,15 @@ class Test_getServerInfo(unittest.TestCase):
             'region': 'EU',
             'closestPingSite': '45',
             'country': 'FR',
-        }, Bf4Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '1', '2', '4', '300', '215', '25', '84', '0', '', 'true', 'true', 'false', '5148', '455', '1.2.3.4:5445', '1.5', 'false', 'EU', '45', 'FR')))
+            'blazePlayerCount': '0',
+            'blazeGameState': 'IN_GAME',
+        }, Bf4Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '1', '2', '4', '300', '215', '25', '84', '0', '', 'true', 'true', 'false', '5148', '455', '1.2.3.4:5445', '1.5', 'false', 'EU', '45', 'FR', '0', 'IN_GAME')))
 
-    def test_getServerInfo_pre_R9(self):
-        self.maxDiff = None
-        bf3_response = ('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '1', '2',
-                                  '4', '300', '215', '25', '84',
-                                  '0', '', 'true', 'true', 'false', '5148', '455')
-        parser = Mock(spec=Bf4Parser)
-        parser.write = lambda x: bf3_response
-
-        data = Bf4Parser.getServerInfo(parser)
-        self.assertEqual(bf3_response, data)
-        self.assertEqual(parser.game.sv_hostname, 'BigBrotherBot #2')
-        self.assertEqual(parser.game.sv_maxclients, 16)
-        self.assertEqual(parser.game.gameType, 'ConquestLarge0')
-        self.assertFalse(parser._publicIp.called)
-        self.assertFalse(parser._port.called)
-
-        self.assertEqual({
-            'serverName': 'BigBrotherBot #2',
-            'numPlayers': '0',
-            'maxPlayers': '16',
-            'gamemode': 'ConquestLarge0',
-            'level': 'MP_012',
-            'roundsPlayed': '1',
-            'roundsTotal': '2',
-            'numTeams': '4',
-            'team1score': '300',
-            'team2score': '215',
-            'team3score': '25',
-            'team4score': '84',
-            'targetScore': '0',
-            'onlineState': '',
-            'isRanked': 'true',
-            'hasPunkbuster': 'true',
-            'hasPassword': 'false',
-            'serverUptime': '5148',
-            'roundTime': '455',
-            'gameIpAndPort': None,
-            'punkBusterVersion': None,
-            'joinQueueEnabled': None,
-            'region': None,
-            'closestPingSite': None,
-            'country': None,
-        }, parser.game.serverinfo)
-
-    def test_getServerInfo_R9(self):
+    def test_getServerInfo_R2(self):
 
         bf4_response = ['i3D.net - BigBrotherBot #3 (FR)', '0', '16', 'SquadDeathMatch0', 'MP_013',
                         '0', '1','4', '0', '0', '0', '0', '50', '', 'true', 'true', 'false', '92480',
-                        '4832', '4.5.6.7:542', '', '', 'EU', 'ams', 'DE']
+                        '4832', '4.5.6.7:542', '', '', 'EU', 'ams', 'DE', '0', 'IN_GAME']
         parser = Mock(spec=Bf4Parser)
         parser.write = lambda x: bf4_response
 
@@ -411,6 +266,8 @@ class Test_getServerInfo(unittest.TestCase):
             'region': 'EU',
             'closestPingSite': 'ams',
             'country': 'DE',
+            'blazePlayerCount': '0',
+            'blazeGameState': 'IN_GAME'
         }, parser.game.serverinfo)
 
 
