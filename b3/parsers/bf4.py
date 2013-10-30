@@ -600,6 +600,9 @@ class Bf4Parser(AbstractParser):
             'region': None,
             'closestPingSite': None,
             'country': None,
+            #'matchMakingEnabled': None,
+            'blazePlayerCount': None,
+            'blazeGameState': None,
         }
         if numOfTeams >= 1:
             response['team1score'] = data[8]
@@ -610,7 +613,8 @@ class Bf4Parser(AbstractParser):
         if numOfTeams == 4:
             response['team4score'] = data[11]
 
-        new_info = 'gameIpAndPort', 'punkBusterVersion', 'joinQueueEnabled', 'region', 'closestPingSite', 'country'
+        new_info = ('gameIpAndPort', 'punkBusterVersion', 'joinQueueEnabled', 'region', 'closestPingSite', 'country',
+                    'blazePlayerCount', 'blazeGameState')
         start_index = 7 + numOfTeams + 8
         for index, name in zip(range(start_index, start_index + len(new_info)), new_info):
             try:
