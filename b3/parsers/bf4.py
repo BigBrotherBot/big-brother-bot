@@ -473,7 +473,7 @@ class Bf4Parser(AbstractParser):
         self.game['maxSpectators'] = getCvarInt('maxSpectators')
         self.game['miniMap'] = getCvarBool('miniMap')
         self.game['miniMapSpotting'] = getCvarBool('miniMapSpotting')
-        self.game['mpExperience'] = getCvarInt('mpExperience')
+        self.game['mpExperience'] = getCvar('mpExperience')
         self.game['nameTag'] = getCvarBool('nameTag')
         self.game['onlySquadLeaderSpawn'] = getCvarBool('onlySquadLeaderSpawn')
         self.game['playerRespawnTime'] = getCvarInt('playerRespawnTime')
