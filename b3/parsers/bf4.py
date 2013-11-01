@@ -38,8 +38,7 @@ from time import sleep
 __author__ = 'Courgette, ozon, Dwarfer'
 __version__ = '1.0.0'
 
-BF4_REQUIRED_VERSION = 86637
-
+BF4_REQUIRED_VERSION = 87254
 SQUAD_NOSQUAD = 0
 SQUAD_ALPHA = 1
 SQUAD_BRAVO = 2
@@ -199,6 +198,7 @@ class Bf4Parser(AbstractParser):
         'teamKillValueIncrease',    # <count>  Set kill-value increase for a teamkill
         'vehicleSpawnAllowed',      # <bool>  Set whether vehicles should spawn in-game
         'vehicleSpawnDelay',        # <modifier: percent>  Set vehicle spawn delay scale factor
+        'preset',                   # allows you to set the server to either normal, hardcore infantry or custom
     )
 
     # gamemodes aliases {alias: actual game mode name}
@@ -473,7 +473,7 @@ class Bf4Parser(AbstractParser):
         self.game['maxSpectators'] = getCvarInt('maxSpectators')
         self.game['miniMap'] = getCvarBool('miniMap')
         self.game['miniMapSpotting'] = getCvarBool('miniMapSpotting')
-        self.game['mpExperience'] = getCvarInt('mpExperience')
+        self.game['mpExperience'] = getCvar('mpExperience')
         self.game['nameTag'] = getCvarBool('nameTag')
         self.game['onlySquadLeaderSpawn'] = getCvarBool('onlySquadLeaderSpawn')
         self.game['playerRespawnTime'] = getCvarInt('playerRespawnTime')
@@ -498,6 +498,7 @@ class Bf4Parser(AbstractParser):
         self.game['teamKillValueIncrease'] = getCvarFloat('teamKillValueIncrease')
         self.game['vehicleSpawnAllowed'] = getCvarBool('vehicleSpawnAllowed')
         self.game['vehicleSpawnDelay'] = getCvarInt('vehicleSpawnDelay')
+        self.game['preset'] = getCvar('preset')
 
         self.game.timeLimit = self.game.gameModeCounter
         self.game.fragLimit = self.game.gameModeCounter
