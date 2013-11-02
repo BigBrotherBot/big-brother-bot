@@ -38,7 +38,8 @@ from time import sleep
 __author__ = 'Courgette, ozon, Dwarfer'
 __version__ = '1.0.0'
 
-BF4_REQUIRED_VERSION = 87254
+BF4_REQUIRED_VERSION = 87884
+
 SQUAD_NOSQUAD = 0
 SQUAD_ALPHA = 1
 SQUAD_BRAVO = 2
@@ -199,6 +200,7 @@ class Bf4Parser(AbstractParser):
         'vehicleSpawnAllowed',      # <bool>  Set whether vehicles should spawn in-game
         'vehicleSpawnDelay',        # <modifier: percent>  Set vehicle spawn delay scale factor
         'preset',                   # allows you to set the server to either normal, hardcore infantry or custom
+        'unlockMode'                # which set of unlocks is available on an unranked server (all/common/stats/none)
     )
 
     # gamemodes aliases {alias: actual game mode name}
@@ -499,6 +501,7 @@ class Bf4Parser(AbstractParser):
         self.game['vehicleSpawnAllowed'] = getCvarBool('vehicleSpawnAllowed')
         self.game['vehicleSpawnDelay'] = getCvarInt('vehicleSpawnDelay')
         self.game['preset'] = getCvar('preset')
+        self.game['unlockMode'] = getCvar('unlockMode')
 
         self.game.timeLimit = self.game.gameModeCounter
         self.game.fragLimit = self.game.gameModeCounter
