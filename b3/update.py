@@ -148,7 +148,7 @@ $''', re.VERBOSE)
 def getDefaultChannel(currentVersion):
     if currentVersion is None:
         return UPDATE_CHANNEL_STABLE
-    m = re.match(r'^\d+\.\d+(\.\d+)?(?i)(?P<prerelease>[ab]|dev)\d*$', currentVersion)
+    m = re.match(r'^\d+\.\d+(\.\d+)?(?i)(?P<prerelease>[ab]|dev)\d*(\.daily\d*)?$', currentVersion)
     if not m:
         return UPDATE_CHANNEL_STABLE
     elif m.group('prerelease').lower() in ('dev', 'a'):
@@ -171,7 +171,6 @@ def checkUpdate(currentVersion, channel=None, singleLine=True, showErrormsg=Fals
 
     message = None
     errorMessage = None
-    version_info = None
     try:
         json_data = urllib2.urlopen(URL_B3_LATEST_VERSION, timeout=timeout).read()
         version_info = json.loads(json_data)
@@ -186,7 +185,6 @@ def checkUpdate(currentVersion, channel=None, singleLine=True, showErrormsg=Fals
         errorMessage = repr(e)
     else:
         latestVersion = None
-        latestUrl = None
         try:
             channels = version_info['B3']['channels']
         except KeyError, err:
@@ -197,7 +195,7 @@ def checkUpdate(currentVersion, channel=None, singleLine=True, showErrormsg=Fals
             else:
                 try:
                     latestVersion = channels[channel]['latest-version']
-                except KeyError:
+                except KeyError, err:
                     errorMessage = repr(err) + ". %s" % version_info
 
         if not errorMessage:
