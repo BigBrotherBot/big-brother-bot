@@ -319,18 +319,26 @@ class Bf4Parser(AbstractParser):
 
         :param filter_client_ids: If filter_client_id is an iterable, only return values for the given client ids.
         """
+
         pings = {}
         if not filter_client_ids:
-            filter_client_ids = [client.cid for client in self.clients.getList()]
-
-        for cid in filter_client_ids:
             try:
-                words = self.write(("player.ping", cid))
-                pings[cid] = int(words[0])
+                player_info_block = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
+                for player in player_info_block:
+                    pings[player['name']] = int(player['ping'])
             except ValueError:
-                pass
+                pass  # continue if the ping value is empty
             except Exception, err:
-                self.error("could not get ping info for player %s: %s" % (cid, err), exc_info=err)
+                self.error('Unable to retrieve pings from playerlist', exc_info=err)
+        else:
+            for cid in filter_client_ids:
+                try:
+                    words = self.write(("player.ping", cid))
+                    pings[cid] = int(words[0])
+                except ValueError:
+                    pass  # continue if the ping value is empty
+                except Exception, err:
+                    self.error("could not get ping info for player %s: %s" % (cid, err), exc_info=err)
         return pings
 
     ###############################################################################################
