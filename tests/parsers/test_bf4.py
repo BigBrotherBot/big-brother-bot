@@ -608,7 +608,10 @@ class Test_getPlayerPings(BF4TestCase):
     def test_one_player(self):
         # GIVEN
         self.p1.connects("Player1")
-        when(self.parser).write(('player.ping', self.p1.cid)).thenReturn(['140'])
+        when(self.parser).write(('admin.listPlayers', 'all')).thenReturn(
+            ['9', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping',
+             '1', 'Player1', 'EA_XXX', '1', '1', '0', '0', '0', '1', '140']
+        )
         # WHEN
         actual_result = self.parser.getPlayerPings()
         # THEN
@@ -618,8 +621,11 @@ class Test_getPlayerPings(BF4TestCase):
         # GIVEN
         self.p1.connects("Player1")
         self.p2.connects("Player2")
-        when(self.parser).write(('player.ping', self.p1.cid)).thenReturn(['140'])
-        when(self.parser).write(('player.ping', self.p2.cid)).thenReturn(['450'])
+        when(self.parser).write(('admin.listPlayers', 'all')).thenReturn(
+            ['9', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping',
+             '2', 'Player1', 'EA_XXX', '1', '1', '0', '0', '0', '1', '140',
+             'Player2', 'EA_XXY', '1', '1', '0', '0', '0', '1', '450']
+        )
         # WHEN
         actual_result = self.parser.getPlayerPings()
         # THEN
@@ -636,13 +642,26 @@ class Test_getPlayerPings(BF4TestCase):
         # THEN
         self.assertDictEqual({self.p1.cid: 140}, actual_result)
 
-
-    def test_bad_data(self):
+    def test_bad_data_filter_client_ids(self):
         # GIVEN
         self.p1.connects("Player1")
         self.p2.connects("Player2")
         when(self.parser).write(('player.ping', self.p1.cid)).thenReturn(['140'])
         when(self.parser).write(('player.ping', self.p2.cid)).thenReturn(['f00'])
+        # WHEN
+        actual_result = self.parser.getPlayerPings(filter_client_ids=[self.p1.cid, self.p2.cid])
+        # THEN
+        self.assertDictEqual({self.p1.cid: 140}, actual_result)
+
+    def test_bad_data(self):
+        # GIVEN
+        self.p1.connects("Player1")
+        self.p2.connects("Player2")
+        when(self.parser).write(('admin.listPlayers', 'all')).thenReturn(
+            ['9', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping',
+             '1', 'Player1', 'EA_XXX', '1', '1', '0', '0', '0', '1', '140',
+             'Player2', 'EA_XYZ', '1', '1', '0', '0', '0', '1', 'f00']
+        )
         # WHEN
         actual_result = self.parser.getPlayerPings()
         # THEN
@@ -655,7 +674,7 @@ class Test_getPlayerPings(BF4TestCase):
         when(self.parser).write(('player.ping', self.p1.cid)).thenReturn(['140'])
         when(self.parser).write(('player.ping', self.p2.cid)).thenRaise(Exception)
         # WHEN
-        actual_result = self.parser.getPlayerPings()
+        actual_result = self.parser.getPlayerPings(filter_client_ids=[self.p1.cid, self.p2.cid])
         # THEN
         self.assertDictEqual({self.p1.cid: 140}, actual_result)
 

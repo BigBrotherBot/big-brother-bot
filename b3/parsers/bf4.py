@@ -38,7 +38,7 @@ from time import sleep
 __author__ = 'Courgette, ozon, Dwarfer'
 __version__ = '1.0.0'
 
-BF4_REQUIRED_VERSION = 86637
+BF4_REQUIRED_VERSION = 87884
 
 SQUAD_NOSQUAD = 0
 SQUAD_ALPHA = 1
@@ -199,6 +199,8 @@ class Bf4Parser(AbstractParser):
         'teamKillValueIncrease',    # <count>  Set kill-value increase for a teamkill
         'vehicleSpawnAllowed',      # <bool>  Set whether vehicles should spawn in-game
         'vehicleSpawnDelay',        # <modifier: percent>  Set vehicle spawn delay scale factor
+        'preset',                   # allows you to set the server to either normal, hardcore infantry or custom
+        'unlockMode'                # which set of unlocks is available on an unranked server (all/common/stats/none)
     )
 
     # gamemodes aliases {alias: actual game mode name}
@@ -317,18 +319,26 @@ class Bf4Parser(AbstractParser):
 
         :param filter_client_ids: If filter_client_id is an iterable, only return values for the given client ids.
         """
+
         pings = {}
         if not filter_client_ids:
-            filter_client_ids = [client.cid for client in self.clients.getList()]
-
-        for cid in filter_client_ids:
             try:
-                words = self.write(("player.ping", cid))
-                pings[cid] = int(words[0])
+                player_info_block = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
+                for player in player_info_block:
+                    pings[player['name']] = int(player['ping'])
             except ValueError:
-                pass
+                pass  # continue if the ping value is empty
             except Exception, err:
-                self.error("could not get ping info for player %s: %s" % (cid, err), exc_info=err)
+                self.error('Unable to retrieve pings from playerlist', exc_info=err)
+        else:
+            for cid in filter_client_ids:
+                try:
+                    words = self.write(("player.ping", cid))
+                    pings[cid] = int(words[0])
+                except ValueError:
+                    pass  # continue if the ping value is empty
+                except Exception, err:
+                    self.error("could not get ping info for player %s: %s" % (cid, err), exc_info=err)
         return pings
 
     ###############################################################################################
@@ -473,7 +483,7 @@ class Bf4Parser(AbstractParser):
         self.game['maxSpectators'] = getCvarInt('maxSpectators')
         self.game['miniMap'] = getCvarBool('miniMap')
         self.game['miniMapSpotting'] = getCvarBool('miniMapSpotting')
-        self.game['mpExperience'] = getCvarInt('mpExperience')
+        self.game['mpExperience'] = getCvar('mpExperience')
         self.game['nameTag'] = getCvarBool('nameTag')
         self.game['onlySquadLeaderSpawn'] = getCvarBool('onlySquadLeaderSpawn')
         self.game['playerRespawnTime'] = getCvarInt('playerRespawnTime')
@@ -498,6 +508,8 @@ class Bf4Parser(AbstractParser):
         self.game['teamKillValueIncrease'] = getCvarFloat('teamKillValueIncrease')
         self.game['vehicleSpawnAllowed'] = getCvarBool('vehicleSpawnAllowed')
         self.game['vehicleSpawnDelay'] = getCvarInt('vehicleSpawnDelay')
+        self.game['preset'] = getCvar('preset')
+        self.game['unlockMode'] = getCvar('unlockMode')
 
         self.game.timeLimit = self.game.gameModeCounter
         self.game.fragLimit = self.game.gameModeCounter
