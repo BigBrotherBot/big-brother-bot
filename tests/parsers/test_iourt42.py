@@ -24,7 +24,9 @@ from b3.clients import Clients, Client
 from b3.config import XmlConfigParser
 from b3.events import Event
 from b3.fake import FakeClient as original_FakeClient
+from b3.output import VERBOSE2
 from b3.parsers.iourt42 import Iourt42Parser, Iourt42Client
+from tests import logging_disabled
 
 log = logging.getLogger("test")
 log.setLevel(logging.INFO)
@@ -75,7 +77,8 @@ class Iourt42TestCase(unittest.TestCase):
                     <set name="game_log"/>
                 </settings>
             </configuration>""")
-        self.console = Iourt42Parser(self.parser_conf)
+        with logging_disabled():
+            self.console = Iourt42Parser(self.parser_conf)
         self.console.PunkBuster = None # no Punkbuster support in that game
 
         self.output_mock = mock()
@@ -86,6 +89,7 @@ class Iourt42TestCase(unittest.TestCase):
             return self.output_mock.write(*args, **kwargs)
         self.console.write = Mock(wraps=write)
 
+        logging.getLogger('output').setLevel(VERBOSE2)
 
     def tearDown(self):
         if hasattr(self, "parser"):

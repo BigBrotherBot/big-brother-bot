@@ -100,6 +100,7 @@ __version__ = '1.18'
 class Iourt42Client(Client):
 
     def auth_by_guid(self):
+        self.console.verbose("auth by guid: %r" % self.guid)
         try:
             return self.console.storage.getClient(self)
         except KeyError, msg:
@@ -107,6 +108,7 @@ class Iourt42Client(Client):
             return False
 
     def auth_by_pbid(self):
+        self.console.verbose("auth by FSA: %r" % self.pbid)
         clients_matching_pbid = self.console.storage.getClientsMatching({ 'pbid' : self.pbid })
         if len(clients_matching_pbid) > 1:
             self.console.error("DATA ERROR: found %s client having Frozen Sand Account '%s'" % (len(clients_matching_pbid), self.pbid))
@@ -127,6 +129,7 @@ class Iourt42Client(Client):
             return False
 
     def auth_by_pbid_and_guid(self):
+        self.console.verbose("auth by both guid and FSA: %r, %r" % (self.guid, self.pbid))
         clients_matching_pbid = self.console.storage.getClientsMatching({ 'pbid': self.pbid, 'guid': self.guid })
         if len(clients_matching_pbid):
             self.id = clients_matching_pbid[0].id
@@ -152,6 +155,7 @@ class Iourt42Client(Client):
             name = self.name
             ip = self.ip
             pbid = self.pbid
+            self.console.verbose2("auth with %r" % {'name': name, 'ip': ip, 'pbid': pbid})
 
             if not pbid and self.cid:
                 fsa_info = self.console.queryClientFrozenSandAccount(self.cid)
