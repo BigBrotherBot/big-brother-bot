@@ -28,6 +28,8 @@
 # 0.1
 #  functional parser implementation based on the BF3 parser
 #
+import sys
+import traceback
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 import b3
@@ -150,6 +152,23 @@ BASE_GAME_MODES_BY_MAP_ID = dict().fromkeys(BASE_MAP_NAME_BY_ID, tuple(BASE_GAME
 GAME_MODES_BY_MAP_ID = BASE_GAME_MODES_BY_MAP_ID
 
 
+COMROSE_CHAT_NAME_BY_ID = {
+    'ID_CHAT_ATTACK/DEFEND': 'ATTACK/DEFEND',
+    'ID_CHAT_AFFIRMATIVE': 'AFFIRMATIVE',
+    'ID_CHAT_NEGATIVE': 'NEGATIVE',
+    'ID_CHAT_THANKS': 'THANK YOU',
+    'ID_CHAT_GOGOGO': 'GO GO GO',
+    'ID_CHAT_GET_IN': 'GET IN',
+    'ID_CHAT_GET_OUT': 'GET OUT',
+    'ID_CHAT_REQUEST_MEDIC': 'NEED MEDIC',
+    'ID_CHAT_REQUEST_AMMO': 'NEED AMMO',
+    'ID_CHAT_REQUEST_RIDE': 'NEED A RIDE',
+    'ID_CHAT_REQUEST_REPAIRS': 'NEED REPAIRS',
+    'ID_CHAT_REQUEST_ORDER': 'REQUEST ORDER',
+    'ID_CHAT_SORRY': 'SORRY',
+}
+
+
 class Bf4Parser(AbstractParser):
     gameName = 'bf4'
 
@@ -222,6 +241,9 @@ class Bf4Parser(AbstractParser):
     def startup(self):
         AbstractParser.startup(self)
 
+        # create event for comrose actions
+        self.Events.createEvent('EVT_CLIENT_COMROSE', 'Client Comrose')
+
         # create the 'Server' client
         self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN, squad=None)
 
@@ -245,6 +267,41 @@ class Bf4Parser(AbstractParser):
     #    Frostbite2 events handlers
     #    
     ###############################################################################################
+
+    def OnPlayerChat(self, action, data):
+        """
+        player.onChat <source soldier name: string> <text: string> <target group: player subset>
+
+        Effect: Player with name <source soldier name> (or the server, or the
+        server admin) has sent chat message <text> to some people
+
+        Comment: The chat text is as represented before the profanity filtering
+        If <source soldier name> is 'Server', then the message was sent from the
+        server rather than from an actual player If sending to a specific player,
+        and the player doesn't exist, then the target group will be 'player' ''
+        """
+        #['envex', 'gg', 'team', 1]
+        #['envex', 'gg', 'all']
+        #['envex', 'gg', 'squad' 2]
+        #['envex', 'gg', 'player', 'Courgette']
+        client = self.getClient(data[0])
+        if client is None:
+            self.warning("Could not get client :( %s" % traceback.extract_tb(sys.exc_info()[2]))
+            return
+        if client.cid == 'Server':
+            # ignore chat events for Server
+            return
+        if data[2] == 'all':
+            return b3.events.Event(b3.events.EVT_CLIENT_SAY, data[1].lstrip('/'), client, 'all')
+        elif data[1] in COMROSE_CHAT_NAME_BY_ID:
+            return b3.events.Event(b3.events.EVT_CLIENT_COMROSE, data[1], client, data[2] + ' ' + data[3])
+        elif data[2] == 'team':
+            return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data[1].lstrip('/'), client, data[2] + ' ' + data[3])
+        elif 'squad' in data[2]:
+            return b3.events.Event(b3.events.EVT_CLIENT_SQUAD_SAY, data[1].lstrip('/'), client, data[2] + ' ' + data[3])
+        elif data[2] == 'player':
+            target = self.getClient(data[3])
+            return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data[1].lstrip('/'), client, target)
 
     def OnPlayerTeamchange(self, action, data):
         """
