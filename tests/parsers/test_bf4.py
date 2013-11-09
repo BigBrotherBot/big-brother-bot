@@ -337,6 +337,27 @@ class Test_bf3_events(BF4TestCase):
         self.assertEquals('test squad', event.data)
         self.assertEqual(self.joe, event.client)
 
+    def test_player_onChat_event_squad_comrose(self):
+        self.parser.getClient = Mock(return_value=self.joe)
+
+        self.parser.routeFrostbitePacket(['player.onChat', 'Cucurbitaceae', 'ID_CHAT_REQUEST_RIDE', 'squad', '1', '1'])
+        self.assertEqual(1, self.parser.queueEvent.call_count)
+
+        event = self.parser.queueEvent.call_args[0][0]
+        self.assertEqual("Client Comrose", self.parser.getEventName(event.type))
+        self.assertEquals('ID_CHAT_REQUEST_RIDE', event.data)
+        self.assertEqual(self.joe, event.client)
+
+    def test_player_onChat_event_team_comrose(self):
+        self.parser.getClient = Mock(return_value=self.joe)
+
+        self.parser.routeFrostbitePacket(['player.onChat', 'Cucurbitaceae', 'ID_CHAT_THANKS', 'team', '1', ])
+        self.assertEqual(1, self.parser.queueEvent.call_count)
+
+        event = self.parser.queueEvent.call_args[0][0]
+        self.assertEqual("Client Comrose", self.parser.getEventName(event.type))
+        self.assertEquals('ID_CHAT_THANKS', event.data)
+        self.assertEqual(self.joe, event.client)
 
 class Test_punkbuster_events(BF4TestCase):
 
