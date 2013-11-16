@@ -934,7 +934,7 @@ class AdminPlugin(b3.plugin.Plugin):
         plugin = self.console.getPlugin(data)
         if plugin:
             if not plugin.isEnabled():
-                client.message('^7Plugin %s is already disable.' % data)
+                client.message('^7Plugin %s is already disabled.' % data)
             else:
                 plugin.disable()
                 self.console.say('^7%s is now ^1OFF' % plugin.__class__.__name__)
