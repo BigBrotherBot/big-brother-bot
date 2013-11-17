@@ -137,10 +137,11 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.23.1'
+__version__ = '1.24'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon'
 
 import re
+import imp
 import time
 import threading
 import sys
@@ -934,7 +935,7 @@ class AdminPlugin(b3.plugin.Plugin):
         plugin = self.console.getPlugin(data)
         if plugin:
             if not plugin.isEnabled():
-                client.message('^7Plugin %s is already disable.' % data)
+                client.message('^7Plugin %s is already disabled.' % data)
             else:
                 plugin.disable()
                 self.console.say('^7%s is now ^1OFF' % plugin.__class__.__name__)
@@ -2218,6 +2219,68 @@ class AdminPlugin(b3.plugin.Plugin):
                 self.console.say('^7%s %s^7!' % (
                     random.choice(('Wake up', '*poke*', 'Attention', 'Get up', 'Go', 'Move out')), sclient.exactName))
 
+    def cmd_pluginfo(self, data, client=None, cmd=None):
+        """\
+        <plugin> - Display information on the specified plugin
+        """
+        if not data:
+            client.message('Missing data, try !help pluginfo')
+            return
+
+        # lowercase the input string
+        data = data.strip().lower()
+        if data == 'admin':
+
+            a = __author__
+            v = __version__
+
+        else:
+
+            try:
+
+                # check if it's a standard plugin
+                package = 'b3.plugins.%s' % data
+                module = __import__(package)
+                components = package.split('.')
+                for comp in components[1:]:
+                    module = getattr(module, comp)
+
+            except ImportError:
+
+                try:
+                    # check if it's an external plugin
+                    fp, path, desc = imp.find_module(data, [self.console.config.getpath('plugins', 'external_dir')])
+                    module = imp.load_module(data, fp, path, desc)
+                except (ImportError, NoOptionError):
+                    fp = None
+                    module = None
+                finally:
+                    if fp:
+                        fp.close()
+
+            if not module:
+                client.message('^7No plugin named ^1%s ^7loaded' % data)
+                return
+
+            a = getattr(module, '__author__', 'Unknown Author')
+            v = getattr(module, '__version__', 'Unknown Version')
+
+        # cleanup a bit the author
+        # some people put also website and/or email address in it
+        r1 = re.compile(r'(?:http[s]?://|www.)[^\s]*')  # web
+        r2 = re.compile(r'[a-zA-Z0-9._%-+]+@[a-zA-Z0-9._%-]+.[a-zA-Z]{2,6}')  # email
+
+        if re.search(r1, a):
+            a = re.sub(r1, '', a)
+            a = re.sub(re.compile(r'-|\|'), '', a)
+
+        if re.search(r2, a):
+            a = re.sub(r2, '', a)
+            a = re.sub(re.compile(r'-|\|'), '', a)
+
+        a = a.strip()
+        n = '%sPlugin' % data.title()
+        cmd.sayLoudOrPM(client, '%s v ^3%s ^7by ^3%s' % (n, v, a))
 
     def load_config_messages(self):
         """
