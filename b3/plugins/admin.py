@@ -2251,7 +2251,7 @@ class AdminPlugin(b3.plugin.Plugin):
                     # check if it's an external plugin
                     fp, path, desc = imp.find_module(data, [self.console.config.getpath('plugins', 'external_dir')])
                     module = imp.load_module(data, fp, path, desc)
-                except ImportError:
+                except (ImportError, NoOptionError):
                     fp = None
                     module = None
                 finally:
