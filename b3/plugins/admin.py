@@ -137,7 +137,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.23.1'
+__version__ = '1.24'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon'
 
 import re
