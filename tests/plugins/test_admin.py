@@ -278,7 +278,7 @@ class Test_misc_cmd(Admin_TestCase):
         mock_pluginA.isEnabled = Mock(return_value=False)
         self.p.console.getPlugin = Mock(return_value=mock_pluginA)
         self.p.cmd_disable(data='foo', client=mock_client, cmd=mock_command)
-        mock_client.message.assert_called_once_with('^7Plugin foo is already disable.')
+        mock_client.message.assert_called_once_with('^7Plugin foo is already disabled.')
 
         mock_client.reset_mock()
         mock_pluginA = Mock(spec=Plugin)

@@ -318,13 +318,13 @@ class Cmd_help(Admin_functional_test):
 
     def test_no_arg(self):
         self.joe.says('!help')
-        self.joe.message.assert_called_with('^7Available commands: admins, admintest, aliases, b3, ban, banall, baninfo,'
-                                            ' clear, clientinfo, die, disable, enable, find, help, iamgod, kick, kickall, lastbans'
-                                            ', leveltest, list, lookup, makereg, map, maprotate, maps, mask, nextmap, no'
-                                            'tice, pause, permban, poke, putgroup, rebuild, reconfig, regtest, regulars, restart, '
-                                            'rules, runas, say, scream, seen, spam, spams, spank, spankall, status, temp'
-                                            'ban, time, unban, ungroup, unmask, unreg, warn, warnclear, warninfo, warnremove, w'
-                                            'arns, warntest')
+        self.joe.message.assert_called_with('^7Available commands: admins, admintest, aliases, b3, ban, banall, baninfo'
+                                            ', clear, clientinfo, die, disable, enable, find, help, iamgod, kick, kicka'
+                                            'll, lastbans, leveltest, list, lookup, makereg, map, maprotate, maps, mask'
+                                            ', nextmap, notice, pause, permban, pluginfo, poke, putgroup, rebuild, reco'
+                                            'nfig, regtest, regulars, restart, rules, runas, say, scream, seen, spam, s'
+                                            'pams, spank, spankall, status, tempban, time, unban, ungroup, unmask, unre'
+                                            'g, warn, warnclear, warninfo, warnremove, warns, warntest')
         self.mike.message = Mock()
         self.mike.connects(0)
         self.mike.says('!help')
