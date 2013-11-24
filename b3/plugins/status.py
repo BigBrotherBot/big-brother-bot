@@ -77,7 +77,6 @@ import StringIO
 import re
 import b3.plugin
 import b3.cron
-from cgi import escape
 from ftplib import FTP
 from b3 import functions
 from xml.dom.minidom import Document
