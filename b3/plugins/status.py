@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 24/11/2013 - 1.4.15 - Fenix
+# * improved plugin configuration file loading
+# * fixed plugin syntax to match PEP8 coding style guide
 # 22/02/2013 - 1.4.14 - Courgette
 # * fix the sanitize bug
 # 10/02/2013 - 1.4.13 - Courgette
@@ -68,7 +71,7 @@
 # Converted to use new event handlers
 
 __author__ = 'ThorN'
-__version__ = '1.4.14'
+__version__ = '1.4.15'
 
 import b3
 import b3.cron
