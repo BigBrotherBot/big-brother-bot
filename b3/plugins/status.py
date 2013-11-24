@@ -67,24 +67,25 @@
 # 8/29/2005 - 1.2.0 - ThorN
 # Converted to use new event handlers
 
-__author__    = 'ThorN'
+__author__ = 'ThorN'
 __version__ = '1.4.14'
 
 import b3
-import time
-import os
-import StringIO
-import re
-import b3.plugin
 import b3.cron
+import b3.plugin
+import os
+import re
+import StringIO
+import time
+from b3 import functions
+from b3.functions import sanitizeMe
 from ftplib import FTP
 from ConfigParser import NoOptionError
-from b3 import functions
 from xml.dom.minidom import Document
-from b3.functions import sanitizeMe
 
-#--------------------------------------------------------------------------------------------------
+
 class StatusPlugin(b3.plugin.Plugin):
+
     _tkPlugin = None
     _cronTab = None
     _ftpstatus = False
@@ -92,8 +93,8 @@ class StatusPlugin(b3.plugin.Plugin):
     _interval = 60
     _outputFile = '~/status.xml'
     _enableDBsvarSaving = False
-    _svarTable = 'current_svars'
     _enableDBclientSaving = False
+    _svarTable = 'current_svars'
     _clientTable = 'current_clients'
     
     def onLoadConfig(self):
@@ -157,10 +158,33 @@ class StatusPlugin(b3.plugin.Plugin):
             self.debug('Using default table for saving current clients: %s' % self._clientTable)
 
         if self._enableDBsvarSaving:
-            sql = "CREATE TABLE IF NOT EXISTS `%s` (`id` int(11) NOT NULL auto_increment,`name` varchar(255) NOT NULL,`value` varchar(255) NOT NULL, PRIMARY KEY  (`id`), UNIQUE KEY `name` (`name`)) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;" % (self._svarTable)
+            sql = """CREATE TABLE IF NOT EXISTS `%s` (
+                            `id` int(11) NOT NULL auto_increment,
+                            `name` varchar(255) NOT NULL,
+                            `value` varchar(255) NOT NULL,
+                            PRIMARY KEY  (`id`), UNIQUE KEY `name` (`name`)
+                     ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;""" % self._svarTable
             self.console.storage.query(sql)
+
         if self._enableDBclientSaving:
-            sql = "CREATE TABLE IF NOT EXISTS `%s` (`id` INT(3) NOT NULL AUTO_INCREMENT,`Updated` INT(10) NOT NULL ,`Name` VARCHAR(32) NOT NULL ,`Level` INT(10) NOT NULL ,`DBID` INT(10) NOT NULL ,`CID` INT(3) NOT NULL ,`Joined` VARCHAR(25) NOT NULL ,`Connections` INT(11) NOT NULL ,`State` INT(1) NOT NULL ,`Score` INT(10) NOT NULL ,`IP` VARCHAR(16) NOT NULL ,`GUID` VARCHAR(36) NOT NULL ,`PBID` VARCHAR(32) NOT NULL ,`Team` INT(1) NOT NULL ,`ColorName` VARCHAR(32) NOT NULL, PRIMARY KEY (`id`)) ENGINE = MYISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;" % (self._clientTable)
+            sql = """CREATE TABLE IF NOT EXISTS `%s` (
+                            `id` INT(3) NOT NULL AUTO_INCREMENT,
+                            `Updated` INT(10) NOT NULL ,
+                            `Name` VARCHAR(32) NOT NULL ,
+                            `Level` INT(10) NOT NULL ,
+                            `DBID` INT(10) NOT NULL ,
+                            `CID` INT(3) NOT NULL ,
+                            `Joined` VARCHAR(25) NOT NULL ,
+                            `Connections` INT(11) NOT NULL ,
+                            `State` INT(1) NOT NULL ,
+                            `Score` INT(10) NOT NULL ,
+                            `IP` VARCHAR(16) NOT NULL ,
+                            `GUID` VARCHAR(36) NOT NULL ,
+                            `PBID` VARCHAR(32) NOT NULL ,
+                            `Team` INT(1) NOT NULL ,
+                            `ColorName` VARCHAR(32) NOT NULL,
+                            PRIMARY KEY (`id`)
+                     ) ENGINE = MYISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;""" % self._clientTable
             self.console.storage.query(sql)
 
         if self._cronTab:
@@ -182,7 +206,7 @@ class StatusPlugin(b3.plugin.Plugin):
 
     def update(self):
         clients = self.console.clients.getList()
-        scoreList = self.console.getPlayerScores() 
+        score_list = self.console.getPlayerScores()
                  
         self.verbose('Building XML status')
         xml = Document()
@@ -200,8 +224,9 @@ class StatusPlugin(b3.plugin.Plugin):
         fraglimit = ''
         capturelimit = ''
         rounds = ''
-        roundTime = ''
-        mapTime = ''
+        round_time = ''
+        map_time = ''
+
         if c.gameName:
             gamename = c.gameName
         if c.gameType:
@@ -217,9 +242,10 @@ class StatusPlugin(b3.plugin.Plugin):
         if c.rounds:
             rounds = c.rounds
         if c.roundTime:
-            roundTime = c.roundTime()
+            round_time = c.roundTime()
         if c.mapTime():
-            mapTime = c.mapTime()
+            map_time = c.mapTime()
+
         # For XML:
         game = xml.createElement("Game")
         game.setAttribute("Ip", str(self.console._publicIp))
@@ -231,8 +257,8 @@ class StatusPlugin(b3.plugin.Plugin):
         game.setAttribute("FragLimit", str(fraglimit))
         game.setAttribute("CaptureLimit", str(capturelimit))
         game.setAttribute("Rounds", str(rounds))
-        game.setAttribute("RoundTime", str(roundTime))
-        game.setAttribute("MapTime", str(mapTime))
+        game.setAttribute("RoundTime", str(round_time))
+        game.setAttribute("MapTime", str(map_time))
         game.setAttribute("OnlinePlayers", str(len(clients)))
         b3status.appendChild(game)
         # For DB:
@@ -245,11 +271,11 @@ class StatusPlugin(b3.plugin.Plugin):
         self.storeServerinfo("FragLimit", str(fraglimit))
         self.storeServerinfo("CaptureLimit",str(capturelimit) )
         self.storeServerinfo("Rounds", str(rounds))
-        self.storeServerinfo("RoundTime", str(roundTime))
-        self.storeServerinfo("MapTime", str(mapTime))
+        self.storeServerinfo("RoundTime", str(round_time))
+        self.storeServerinfo("MapTime", str(map_time))
         self.storeServerinfo("OnlinePlayers", str(len(clients)))
 
-        for k,v in self.console.game.__dict__.items():
+        for k, v in self.console.game.__dict__.items():
             data = xml.createElement("Data")
             data.setAttribute("Name", str(k))
             data.setAttribute("Value", str(v))
@@ -257,11 +283,13 @@ class StatusPlugin(b3.plugin.Plugin):
             self.storeServerinfo(k, v)
 
         if self._enableDBsvarSaving:
-            sql = "INSERT INTO %s (name, value) VALUES ('lastupdate',UNIX_TIMESTAMP()) ON DUPLICATE KEY UPDATE value = VALUES(value);" % (self._svarTable)
+            sql = """INSERT INTO %s (name, value) VALUES ('lastupdate',UNIX_TIMESTAMP())
+                     ON DUPLICATE KEY UPDATE value = VALUES(value);""" % self._svarTable
             try:
                 self.console.storage.query(sql)
-            except:
-                self.error('Error: inserting svars. sqlqry=%s' % (sql))
+            except Exception, e:
+                self.error('Could not insert svars: %s. sqlqry=%s' % (e, sql))
+
         # --- End Game section        
 
         # --- Clients section
@@ -271,14 +299,14 @@ class StatusPlugin(b3.plugin.Plugin):
 
         if self._enableDBclientSaving:
             # empty table current_clients
-            sql = "TRUNCATE TABLE `%s`;" % (self._clientTable)
+            sql = """TRUNCATE TABLE `%s`;""" % self._clientTable
             self.console.storage.query(sql)
 
         for c in clients:
             if not c.name:
-                c.name = "@"+str(c.id)
+                c.name = "@" + str(c.id)
             if c.exactName == "^7":
-                c.exactName = "@"+str(c.id)+"^7"
+                c.exactName = "@" + str(c.id) + "^7"
 
             if not c.maskedLevel:
                 _level = c.maxLevel
@@ -305,31 +333,31 @@ class StatusPlugin(b3.plugin.Plugin):
                 client.setAttribute("Team", str(c.team))
                 client.setAttribute("Joined", str(time.ctime(c.timeAdd)))
                 client.setAttribute("Updated", str(time.ctime(c.timeEdit)))
-                if scoreList and c.cid in scoreList:
-                    client.setAttribute("Score", str(scoreList[c.cid]))
+                if score_list and c.cid in score_list:
+                    client.setAttribute("Score", str(score_list[c.cid]))
                 else:
                     client.setAttribute("Score", "")
                 client.setAttribute("State", str(c.state))
                 if self._enableDBclientSaving:
-                    qryBuilderKey = ""
-                    qryBuilderValue = ""
+                    builder_key = ""
+                    builder_value = ""
                     # get our attributes
                     for k, v in client.attributes.items():
                         # build the qrystring
-                        qryBuilderKey = "%s%s," % (qryBuilderKey, k)
-                        qryBuilderValue = "%s'%s'," % (qryBuilderValue, v)
+                        builder_key = "%s%s," % (builder_key, k)
+                        builder_value = "%s'%s'," % (builder_value, v)
                     # cut last ,
-                    qryBuilderKey = qryBuilderKey[:-1]
-                    qryBuilderValue = qryBuilderValue[:-1]
+                    builder_key = builder_key[:-1]
+                    builder_value = builder_value[:-1]
                     # and insert
                     try:
-                        sql = "INSERT INTO %s (%s) VALUES (%s); " % (self._clientTable, qryBuilderKey, qryBuilderValue)
+                        sql = """INSERT INTO %s (%s) VALUES (%s) ;""" % (self._clientTable, builder_key, builder_value)
                         self.console.storage.query(sql)
-                    except:
-                        self.error('Error: inserting clients. sqlqry=%s' % (sql))
+                    except Exception, e:
+                        self.error('Could not insert clients: %s. sqlqry=%s' % (e, sql))
 
                 b3clients.appendChild(client)
-                for k,v in c.data.iteritems():
+                for k, v in c.data.iteritems():
                     data = xml.createElement("Data")
                     data.setAttribute("Name", "%s" % k)
                     try:
@@ -347,14 +375,15 @@ class StatusPlugin(b3.plugin.Plugin):
                         tkplugin.setAttribute("Points", str(c.var(self, 'points')))
                         client.appendChild(tkplugin)            
                         if hasattr(c, 'tkplugin_attackers'):
-                            for acid,points in c.var(self, 'attackers').value.items():
+                            for acid, points in c.var(self, 'attackers').value.items():
                                 try:
                                     attacker = xml.createElement("Attacker")
                                     attacker.setAttribute("Name", sanitizeMe(self.console.clients[acid].name))
                                     attacker.setAttribute("CID", str(acid))
                                     attacker.setAttribute("Points", str(points))
                                     tkplugin.appendChild(attacker)
-                                except:
+                                except Exception, e:
+                                    self.warning('Could not append child node in XML tree: %s' % e)
                                     pass
                                 
             except Exception, err:
@@ -369,37 +398,35 @@ class StatusPlugin(b3.plugin.Plugin):
         if self._enableDBsvarSaving:
             #remove forbidden sql characters
             _k = re.sub("'", "", str(k))
-            _v = re.sub("'", "", str(v))[:255] # length of the database varchar field
-            sql = "INSERT INTO %s (name, value) VALUES ('%s','%s') ON DUPLICATE KEY UPDATE value = VALUES(value);" % (self._svarTable, _k, _v)
+            _v = re.sub("'", "", str(v))[:255]  # length of the database varchar field
+            sql = """INSERT INTO %s (name, value) VALUES ('%s','%s')
+                     ON DUPLICATE KEY UPDATE value = VALUES(value) ;""" % (self._svarTable, _k, _v)
             try:
                 self.console.storage.query(sql)
-            except:
-                self.error('Error: inserting svars. sqlqry=%s' % (sql))
+            except Exception, e:
+                self.error('Could not insert svars: %s. sqlqry=%s' % (e, sql))
 
     def writeXML(self, xml):
-        if self._ftpstatus == True:
+        if self._ftpstatus:
             self.debug('Uploading XML status to FTP server')
-            ftp=FTP(self._ftpinfo['host'],self._ftpinfo['user'],passwd=self._ftpinfo['password'])
+            ftp=FTP(self._ftpinfo['host'], self._ftpinfo['user'], passwd=self._ftpinfo['password'])
             ftp.cwd(os.path.dirname(self._ftpinfo['path']))
             ftpfile = StringIO.StringIO()
             ftpfile.write(xml)
             ftpfile.seek(0)
-            ftp.storbinary('STOR '+os.path.basename(self._ftpinfo['path']), ftpfile)
+            ftp.storbinary('STOR ' + os.path.basename(self._ftpinfo['path']), ftpfile)
         else:
             self.debug('Writing XML status to %s', self._outputFile)
             f = file(self._outputFile, 'w')
             f.write(xml)
             f.close()
-            
-            
+
 if __name__ == '__main__':
     from b3.fake import fakeConsole
-    from b3.fake import joe
-    from b3.fake import simon
-    
+
     p = StatusPlugin(fakeConsole, "@b3/conf/plugin_status.xml")
     p.onStartup()
     p.update()
     
-    while True: pass
-    
+    while True:
+        pass
