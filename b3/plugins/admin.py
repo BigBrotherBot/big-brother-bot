@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2013/11/16 - 1.24 - Fenix
+#   * added command !pluginfo (display plugin information)
 #   2013/09/06 - 1.23.1 - Fenix
 #   * make conf pm_global accept yes/no
 #   2013/03/02 - 1.23 - Courgette
