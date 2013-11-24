@@ -78,6 +78,7 @@ import re
 import b3.plugin
 import b3.cron
 from ftplib import FTP
+from ConfigParser import NoOptionError
 from b3 import functions
 from xml.dom.minidom import Document
 from b3.functions import sanitizeMe
@@ -88,38 +89,71 @@ class StatusPlugin(b3.plugin.Plugin):
     _cronTab = None
     _ftpstatus = False
     _ftpinfo = None
+    _interval = 60
+    _outputFile = '~/status.xml'
     _enableDBsvarSaving = False
     _svarTable = 'current_svars'
     _enableDBclientSaving = False
     _clientTable = 'current_clients'
     
     def onLoadConfig(self):
-        if self.config.get('settings','output_file')[0:6] == 'ftp://':
-            self._ftpinfo = functions.splitDSN(self.config.get('settings','output_file'))
-            self._ftpstatus = True
-        else:        
-            self._outputFile = self.config.getpath('settings', 'output_file')
+
+        try:
+
+            if self.config.get('settings', 'output_file')[0:6] == 'ftp://':
+                self._ftpstatus = True
+                self._ftpinfo = functions.splitDSN(self.config.get('settings', 'output_file'))
+                self.debug('Using custom remote path for settings/output_file: %s/%s' % (self._ftpinfo['host'],
+                                                                                         self._ftpinfo['path']))
+            else:
+                self._outputFile = self.config.getpath('settings', 'output_file')
+                self.debug('Using custom local path for settings/output_file: %s' % self._outputFile)
+
+        except NoOptionError:
+            self._outputFile = os.path.normpath(os.path.expanduser(self._outputFile))
+            self.warning('Could not find settings/output_file in config file, using default: %s' % self._outputFile)
                 
         self._tkPlugin = self.console.getPlugin('tk')
-        self._interval = self.config.getint('settings', 'interval')
+
+        try:
+            self._interval = self.config.getint('settings', 'interval')
+            self.debug('Using custom value for settings/interval: %s' % self._interval)
+        except NoOptionError:
+            self.warning('Could not find settings/interval in config file, using default: %s' % self._interval)
+        except ValueError, e:
+            self.error('Could not load settings/interval config value: %s' % e)
+            self.debug('Using default value (%s) for settings/interval' % self._interval)
+
         try:
             self._enableDBsvarSaving = self.config.getboolean('settings', 'enableDBsvarSaving')
-        except:
-            self._enableDBsvarSaving = False
+            self.debug('Using custom value for settings/enableDBsvarSaving: %s' % self._enableDBsvarSaving)
+        except NoOptionError:
+            self.warning('Could not find settings/enableDBsvarSaving in config file, using default: %s' %
+                         self._enableDBsvarSaving)
+        except ValueError, e:
+            self.error('Could not load settings/enableDBsvarSaving config value: %s' % e)
+            self.debug('Using default value (%s) for settings/enableDBsvarSaving' % self._enableDBsvarSaving)
+
         try:
             self._enableDBclientSaving = self.config.getboolean('settings', 'enableDBclientSaving')
-        except:
-            self._enableDBclientSaving = False
+            self.debug('Using custom value for settings/enableDBclientSaving: %s' % self._enableDBclientSaving)
+        except NoOptionError:
+            self.warning('Could not find settings/enableDBclientSaving in config file, using default: %s' %
+                         self._enableDBclientSaving)
+        except ValueError, e:
+            self.error('Could not load settings/enableDBclientSaving config value: %s' % e)
+            self.debug('Using default value (%s) for settings/enableDBclientSaving' % self._enableDBclientSaving)
 
         try:
             self._svarTable = self.config.get('settings', 'svar_table')
             self.debug('Using custom table for saving server svars: %s' % self._svarTable)
-        except:
+        except NoOptionError:
             self.debug('Using default table for saving server svars: %s' % self._svarTable)
+
         try:
             self._clientTable = self.config.get('settings', 'client_table')
             self.debug('Using custom table for saving current clients: %s' % self._clientTable)
-        except:
+        except NoOptionError:
             self.debug('Using default table for saving current clients: %s' % self._clientTable)
 
         if self._enableDBsvarSaving:
