@@ -36,6 +36,7 @@ import b3
 import b3.events
 import threading
 from time import sleep
+from b3.parsers.frostbite2.protocol import CommandFailedError
 
 __author__ = 'Courgette, ozon, Dwarfer'
 __version__ = '1.0.0'
@@ -616,6 +617,17 @@ class Bf4Parser(AbstractParser):
             return b3.TEAM_SPEC
         else:
             return b3.TEAM_UNKNOWN
+
+    def getMap(self):
+        """Return the current level name (not easy map name)"""
+        # First, we try to get the map name from the server.
+        # If this fails, we use the old method and get the map name from the server vars.
+        try:
+            return self.write(('currentLevel',))[0]
+        except CommandFailedError, err:
+            self.warning(err)
+            self.getServerInfo()
+            return self.game.mapName
 
     @staticmethod
     def decodeServerinfo(data):
