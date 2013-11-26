@@ -18,7 +18,7 @@
         <!-- big_b3_private_responses - if on, then all private message sent by B3 will be displayed as a large on-screen message
             * Accepted values : on / off
         -->
-        <set name="big_b3_private_responses">on</set>
+        <set name="big_b3_private_responses">off</set>
         <!-- big_msg_repeat - B3 repeated big displayed messages in the chat.
                     * Accepted values : all (repeat all) / pm (repeat private messages) / off (disabled)
                 -->
@@ -36,9 +36,9 @@
         <!-- ban_agent : choose how to ban players.
             Available agents are : 'server' or 'punkbuster'.
             Available options are :
-             'server' : to save bans in the BF3 server banlist only
+             'server' : to save bans in the BF4 server banlist only
              'punkbuster' : to save bans in punkbuster only
-             'both' : to save bans in both the BF3 server and punkbuster banlists
+             'both' : to save bans in both the BF4 server and punkbuster banlists
             Default value is 'server'
         -->
         <set name="ban_agent">server</set>
@@ -65,15 +65,15 @@
 		<plugin name="censor" config="@conf/plugin_censor.xml"/>
 		<plugin name="spamcontrol" config="@b3/conf/plugin_spamcontrol.xml"/>
 		<plugin name="admin" config="@conf/plugin_admin.ini"/>
-		<!-- <plugin name="pingwatch" config="@conf/plugin_pingwatch.xml" /> NO PING INFO AVAILABLE FROM BF3 -->
+		<plugin name="pingwatch" config="@conf/plugin_pingwatch.xml" />
 		<plugin name="adv" config="@conf/plugin_adv.xml"/>
 		<plugin name="status" config="@conf/plugin_status.xml"/>
 		<plugin name="welcome" config="@conf/plugin_welcome.xml"/>
 		<!-- <plugin name="punkbuster" config="@conf/plugin_punkbuster.xml"/> -->
 	</plugins>
     <extplugins>
-        <plugin name="poweradminbf3" config="external_dir/conf/plugin_poweradminbf3.ini"
-                dlocation="http://forum.bigbrotherbot.net/index.php?action=downloads;sa=downfile&amp;id=172"/>
+        <plugin name="poweradminbf4" config="external_dir/conf/plugin_poweradminbf4.ini"
+                dlocation="http://github.com/maikelwever/b3-plugin-poweradminbf4/archive/master.zip"/>
         <plugin name="chatlogger" config="external_dir/conf/plugin_chatlogger.xml"
                 dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=7" sql="chatlogger.sql"/>
         <plugin name="xlrstats" config="external_dir/conf/xlrstats.xml"/>
