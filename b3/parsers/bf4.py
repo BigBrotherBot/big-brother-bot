@@ -270,20 +270,14 @@ class Bf4Parser(AbstractParser):
 
     def OnPlayerChat(self, action, data):
         """
-        player.onChat <source soldier name: string> <text: string> <target group: player subset>
+        player.onChat <source soldier name: string> <text: string> <target players: player subset>
 
         Effect: Player with name <source soldier name> (or the server, or the
-        server admin) has sent chat message <text> to some people
+            server admin) has sent chat message <text> to <target players>
 
-        Comment: The chat text is as represented before the profanity filtering
-        If <source soldier name> is 'Server', then the message was sent from the
-        server rather than from an actual player If sending to a specific player,
-        and the player doesn't exist, then the target group will be 'player' ''
+        Comment: If <source soldier name> is "Server", then the message was sent
+            from the server rather than from an actual player
         """
-        #['envex', 'gg', 'team', 1]
-        #['envex', 'gg', 'all']
-        #['envex', 'gg', 'squad' 2]
-        #['envex', 'gg', 'player', 'Courgette']
         client = self.getClient(data[0])
         if client is None:
             self.warning("Could not get client :( %s" % traceback.extract_tb(sys.exc_info()[2]))
@@ -291,17 +285,32 @@ class Bf4Parser(AbstractParser):
         if client.cid == 'Server':
             # ignore chat events for Server
             return
-        if data[2] == 'all':
-            return b3.events.Event(b3.events.EVT_CLIENT_SAY, data[1].lstrip('/'), client, 'all')
-        elif data[1] in COMROSE_CHAT_NAME_BY_ID:
-            return b3.events.Event(b3.events.EVT_CLIENT_COMROSE, data[1], client, data[2] + ' ' + data[3])
-        elif data[2] == 'team':
-            return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data[1].lstrip('/'), client, data[2] + ' ' + data[3])
+        text = data[1]
+
+        if text in COMROSE_CHAT_NAME_BY_ID:
+            return b3.events.Event(b3.events.EVT_CLIENT_COMROSE, text, client, data[2] + ' ' + data[3])
+
+        # existing commands can be prefixed with a '/' instead of usual prefixes
+        cmdPrefix = '!'
+        cmd_prefixes = (cmdPrefix, '@', '&')
+        admin_plugin = self.getPlugin('admin')
+        if admin_plugin:
+            cmdPrefix = admin_plugin.cmdPrefix
+            cmd_prefixes = (cmdPrefix, admin_plugin.cmdPrefixLoud, admin_plugin.cmdPrefixBig)
+        cmd_name = text[1:].split(' ', 1)[0].lower()
+        if len(text) >= 2 and text[0] == '/':
+            if text[1] in cmd_prefixes:
+                text = text[1:]
+            elif cmd_name in admin_plugin._commands:
+                text = cmdPrefix + text[1:]
+
+        if 'team' in data[2]:
+            event_type = b3.events.EVT_CLIENT_TEAM_SAY
         elif 'squad' in data[2]:
-            return b3.events.Event(b3.events.EVT_CLIENT_SQUAD_SAY, data[1].lstrip('/'), client, data[2] + ' ' + data[3])
-        elif data[2] == 'player':
-            target = self.getClient(data[3])
-            return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data[1].lstrip('/'), client, target)
+            event_type = b3.events.EVT_CLIENT_SQUAD_SAY
+        else:
+            event_type = b3.events.EVT_CLIENT_SAY
+        return b3.events.Event(event_type, text, client)
 
     def OnPlayerTeamchange(self, action, data):
         """
