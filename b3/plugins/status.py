@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 30/11/2013 - 1.4.16 - Courgette
+# * save status info to database by default
 # 24/11/2013 - 1.4.15 - Fenix
 # * improved plugin configuration file loading
 # * fixed plugin syntax to match PEP8 coding style guide
@@ -71,7 +73,7 @@
 # Converted to use new event handlers
 
 __author__ = 'ThorN'
-__version__ = '1.4.15'
+__version__ = '1.4.16'
 
 import b3
 import b3.cron
@@ -95,8 +97,8 @@ class StatusPlugin(b3.plugin.Plugin):
     _ftpinfo = None
     _interval = 60
     _outputFile = '~/status.xml'
-    _enableDBsvarSaving = False
-    _enableDBclientSaving = False
+    _enableDBsvarSaving = True
+    _enableDBclientSaving = True
     _svarTable = 'current_svars'
     _clientTable = 'current_clients'
     
