@@ -32,9 +32,11 @@
 #    * add user friendly warning and error to the log when a messaged cannot be formatted
 #    2013/10/23 - 1.6 - courgette
 #    * onLoadConfig hook is now called by the parser instead of at plugin instantiation
+#    2013/11/30 - 1.7 - courgette
+#    * add two plugin hooks: onEnable and onDisable
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.6'
+__version__ = '1.7'
 
 import b3.config
 import b3.events
@@ -71,9 +73,11 @@ class Plugin:
 
     def enable(self):
         self._enabled = True
+        self.onEnable()
 
     def disable(self):
         self._enabled = False
+        self.onDisable()
 
     def isEnabled(self):
         return self._enabled
@@ -132,13 +136,6 @@ class Plugin:
         # empty message cache
         self._messages = {}
 
-    def onLoadConfig(self):
-        """\
-        This is called after loadConfig(). Any plugin private variables loaded
-        from the config need to be reset here.
-        """
-        return True
-
     def saveConfig(self):
         self.bot('Saving config %s', self.config.fileName)
         return self.config.save()
@@ -155,15 +152,6 @@ class Plugin:
         Depreciated. Use onStartup().
         """
         pass
-
-    def onStartup(self):
-        """\
-        Called after the plugin is created before it is started. Overwrite this
-        for anything you need to initialize you plugin with.
-        """
-
-        # support backwards compatability
-        self.startup()
 
     def start(self):
         """\
@@ -183,14 +171,11 @@ class Plugin:
         """
         self.verbose('Warning: No handle func for %s', self.__class__.__name__)
 
-    def onEvent(self, event):
-        """\
-        Called by B3 when a registered event is encountered. You must overwrite
-        this to intercept events.
-        """
-
-        # support backwards compatability
-        self.handle(event)
+    ###############################################################################
+    ##                                                                           ##
+    ##     Logging methods                                                       ##
+    ##                                                                           ##
+    ###############################################################################
 
     def error(self, msg, *args, **kwargs):
         """\
@@ -239,3 +224,43 @@ class Plugin:
         Log a critical message to the main log.
         """
         self.console.critical('%s: %s' % (self.__class__.__name__, msg), *args, **kwargs)
+
+    ###############################################################################
+    ##                                                                           ##
+    ##     Plugin hooks                                                          ##
+    ##     Inheriting classes can implement the following methods.               ##
+    ##                                                                           ##
+    ###############################################################################
+
+    def onLoadConfig(self):
+        """\
+        This is called after loadConfig() and if a user use the !reconfig command.
+        Any plugin private variables loaded from the config need to be reset here.
+        """
+        return True
+
+    def onStartup(self):
+        """\
+        Called after the plugin is created before it is started. Overwrite this
+        for anything you need to initialize you plugin with.
+        """
+        # support backwards compatibility
+        self.startup()
+
+    def onEvent(self, event):
+        """\
+        Called when a registered event is received.
+        """
+        # support backwards compatibility
+        self.handle(event)
+
+    def onEnable(self):
+        """\
+        Called when the plugin is enabled
+        """
+
+    def onDisable(self):
+        """\
+        Called when the plugin is disabled
+        """
+
