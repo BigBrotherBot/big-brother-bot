@@ -57,6 +57,8 @@ import b3
 import b3.events
 import threading
 from time import sleep
+from b3.parsers.frostbite2.protocol import CommandFailedError
+
 
 __author__  = 'Courgette'
 __version__ = '1.10.1'
@@ -741,6 +743,11 @@ class Bf3Parser(AbstractParser):
                     return False
             except IndexError:
                 pass
+            except CommandFailedError, err:
+                if err.message[0] == 'InvalidPlayerName':
+                    pass
+                else:
+                    raise Exception(err)
             except Exception, err:
                 self.console.error("could not get player state for player %s: %s" % (_player_name, err), exc_info=err)
         b3.clients.Client.isAlive = isAlive

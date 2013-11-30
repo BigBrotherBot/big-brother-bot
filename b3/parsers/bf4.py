@@ -722,7 +722,7 @@ class Bf4Parser(AbstractParser):
             """Returns whether the player is alive or not."""
             # True: player is alive/spawned
             # False: player is death or not spawned
-            # None: BF3 server responded with an error or unexpected value
+            # None: BF$ server responded with an error or unexpected value
             _player_name = self.name
             try:
                 _response = self.console.write(('player.isAlive', _player_name))
@@ -732,6 +732,11 @@ class Bf4Parser(AbstractParser):
                     return False
             except IndexError:
                 pass
+            except CommandFailedError, err:
+                if err.message[0] == 'InvalidPlayerName':
+                    pass
+                else:
+                    raise Exception(err)
             except Exception, err:
                 self.console.error("could not get player state for player %s: %s" % (_player_name, err), exc_info=err)
         b3.clients.Client.isAlive = isAlive
