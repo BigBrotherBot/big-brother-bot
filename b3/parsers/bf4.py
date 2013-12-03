@@ -24,9 +24,8 @@
 # 1.4.1, 1.6, 1.9, 1.10
 #
 # CHANGELOG
-#
-# 0.1
-#  functional parser implementation based on the BF3 parser
+#  v1.0.1   : update to server version R13 that include DLC1 (China Rising) map pack
+#  v1.0.0   : functional parser implementation based on the BF3 parser
 #
 import sys
 import traceback
@@ -39,9 +38,9 @@ from time import sleep
 from b3.parsers.frostbite2.protocol import CommandFailedError
 
 __author__ = 'Courgette, ozon, Dwarfer'
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
-BF4_REQUIRED_VERSION = 93111
+BF4_REQUIRED_VERSION = 94318
 
 SQUAD_NOSQUAD = 0
 SQUAD_ALPHA = 1
@@ -142,7 +141,15 @@ BASE_MAP_NAME_BY_ID = {
     'MP_TheDish': 'Rogue Transmission',
     'MP_Tremors': 'Dawnbreaker',
 }
+# DLC1 (China Rising) game maps: dict('Engine name'='Human-readable name')
+XP1_MAP_NAME_BY_ID = {
+    'XP1_001': 'Silk Road',
+    'XP1_002': 'Altai Range',
+    'XP1_003': 'Guilin Peaks',
+    'XP1_004': 'Dragon Pass',
+}
 MAP_NAME_BY_ID = BASE_MAP_NAME_BY_ID
+MAP_NAME_BY_ID.update(XP1_MAP_NAME_BY_ID)
 
 MAP_ID_BY_NAME = dict()
 for _id, name in MAP_NAME_BY_ID.items():
@@ -150,8 +157,9 @@ for _id, name in MAP_NAME_BY_ID.items():
 
 # GAME_MODES_BY_MAP_ID = dict('Map Engine name': tuple('Game mode engine names'))
 BASE_GAME_MODES_BY_MAP_ID = dict().fromkeys(BASE_MAP_NAME_BY_ID, tuple(BASE_GAME_MODES_NAMES.keys()))
+XP1_GAME_MODES_BY_MAP_ID = dict().fromkeys(XP1_MAP_NAME_BY_ID, tuple(BASE_GAME_MODES_NAMES.keys()))
 GAME_MODES_BY_MAP_ID = BASE_GAME_MODES_BY_MAP_ID
-
+GAME_MODES_BY_MAP_ID.update(XP1_GAME_MODES_BY_MAP_ID)
 
 COMROSE_CHAT_NAME_BY_ID = {
     'ID_CHAT_ATTACK/DEFEND': 'ATTACK/DEFEND',
