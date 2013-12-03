@@ -555,7 +555,7 @@ class Test_bf3_maps(BF4TestCase):
 
 
     def test_getMapsSoundingLike(self):
-        self.assertEqual(['lancang dam', 'operation locker', 'flood zone', ], self.parser.getMapsSoundingLike(''), '')
+        self.assertEqual(['dragon pass', 'lancang dam', 'operation locker', ], self.parser.getMapsSoundingLike(''), '')
         self.assertEqual('MP_Abandoned', self.parser.getMapsSoundingLike('Zavod 311'), 'Zavod 311')
         self.assertEqual('MP_Tremors', self.parser.getMapsSoundingLike('dawn'))
         #self.assertEqual(['operation metro', 'operation firestorm', 'operation 925'], self.parser.getMapsSoundingLike('operation'))
@@ -588,6 +588,10 @@ class Test_bf3_maps(BF4TestCase):
         self.assertEqual('MP_TheDish', self.parser.getMapsSoundingLike('trans'))
         self.assertEqual('MP_TheDish', self.parser.getMapsSoundingLike('Rogue Transmission'))
         self.assertEqual('MP_Tremors', self.parser.getMapsSoundingLike('Dawnbreaker'))
+        self.assertEqual('XP1_001', self.parser.getMapsSoundingLike('silk'))
+        self.assertEqual('XP1_002', self.parser.getMapsSoundingLike('altai'))
+        self.assertEqual('XP1_003', self.parser.getMapsSoundingLike('guilin'))
+        self.assertEqual('XP1_004', self.parser.getMapsSoundingLike('dragon'))
 
     def test_getGamemodeSoundingLike(self):
         self.assertEqual('ConquestSmall0', self.parser.getGamemodeSoundingLike('MP_Siege', 'ConquestSmall0'), 'ConquestSmall0')
