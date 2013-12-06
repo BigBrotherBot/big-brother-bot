@@ -112,7 +112,7 @@ SQUAD_NAMES = {
 }
 
 # Base game modes: dict('Engine name'='Human-readable name')
-BASE_GAME_MODES_NAMES = {
+GAME_MODES_NAMES = {
     'ConquestLarge0': 'Conquest64',
     'ConquestSmall0': 'Conquest',
     'RushLarge0': 'Rush',
@@ -120,16 +120,16 @@ BASE_GAME_MODES_NAMES = {
     'TeamDeathMatch0': 'Team Deathmatch',
     'Domination0': 'Domination',
     'Elimination0': 'Defuse',
-    'Obliteration': 'Obliteration'
+    'Obliteration': 'Obliteration',
+    "AirSuperiority0": "Air Superiority",
 }
-GAME_MODES_NAMES = BASE_GAME_MODES_NAMES
 
 GAMEMODES_IDS_BY_NAME = dict()
 for _id, name in GAME_MODES_NAMES.items():
     GAMEMODES_IDS_BY_NAME[name.lower()] = _id
 
-# Base game maps: dict('Engine name'='Human-readable name')
-BASE_MAP_NAME_BY_ID = {
+# game maps: dict('Engine name'='Human-readable name')
+MAP_NAME_BY_ID = {
     'MP_Abandoned': 'Zavod 311',
     'MP_Damage': 'Lancang Dam',
     'MP_Flooded': 'Flood Zone',
@@ -140,26 +140,47 @@ BASE_MAP_NAME_BY_ID = {
     'MP_Siege': 'Siege of Shanghai',
     'MP_TheDish': 'Rogue Transmission',
     'MP_Tremors': 'Dawnbreaker',
-}
-# DLC1 (China Rising) game maps: dict('Engine name'='Human-readable name')
-XP1_MAP_NAME_BY_ID = {
     'XP1_001': 'Silk Road',
     'XP1_002': 'Altai Range',
     'XP1_003': 'Guilin Peaks',
     'XP1_004': 'Dragon Pass',
 }
-MAP_NAME_BY_ID = BASE_MAP_NAME_BY_ID
-MAP_NAME_BY_ID.update(XP1_MAP_NAME_BY_ID)
 
 MAP_ID_BY_NAME = dict()
 for _id, name in MAP_NAME_BY_ID.items():
     MAP_ID_BY_NAME[name.lower()] = _id
 
 # GAME_MODES_BY_MAP_ID = dict('Map Engine name': tuple('Game mode engine names'))
-BASE_GAME_MODES_BY_MAP_ID = dict().fromkeys(BASE_MAP_NAME_BY_ID, tuple(BASE_GAME_MODES_NAMES.keys()))
-XP1_GAME_MODES_BY_MAP_ID = dict().fromkeys(XP1_MAP_NAME_BY_ID, tuple(BASE_GAME_MODES_NAMES.keys()))
-GAME_MODES_BY_MAP_ID = BASE_GAME_MODES_BY_MAP_ID
-GAME_MODES_BY_MAP_ID.update(XP1_GAME_MODES_BY_MAP_ID)
+GAME_MODES_BY_MAP_ID = {
+    'MP_Abandoned': ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'MP_Damage':    ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'MP_Flooded':   ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'MP_Journey':   ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'MP_Naval':     ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'MP_Prison':    ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'MP_Resort':    ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'MP_Siege':     ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'MP_TheDish':   ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'MP_Tremors':   ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'XP1_001':      ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'AirSuperiority0'),
+    'XP1_002':      ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'AirSuperiority0'),
+    'XP1_003':      ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'AirSuperiority0'),
+    'XP1_004':      ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'AirSuperiority0'),
+}
 
 COMROSE_CHAT_NAME_BY_ID = {
     'ID_CHAT_ATTACK/DEFEND': 'ATTACK/DEFEND',
