@@ -112,7 +112,7 @@ SQUAD_NAMES = {
 }
 
 # Base game modes: dict('Engine name'='Human-readable name')
-BASE_GAME_MODES_NAMES = {
+GAME_MODES_NAMES = {
     'ConquestLarge0': 'Conquest64',
     'ConquestSmall0': 'Conquest',
     'RushLarge0': 'Rush',
@@ -120,16 +120,16 @@ BASE_GAME_MODES_NAMES = {
     'TeamDeathMatch0': 'Team Deathmatch',
     'Domination0': 'Domination',
     'Elimination0': 'Defuse',
-    'Obliteration': 'Obliteration'
+    'Obliteration': 'Obliteration',
+    "AirSuperiority0": "Air Superiority",
 }
-GAME_MODES_NAMES = BASE_GAME_MODES_NAMES
 
 GAMEMODES_IDS_BY_NAME = dict()
 for _id, name in GAME_MODES_NAMES.items():
     GAMEMODES_IDS_BY_NAME[name.lower()] = _id
 
-# Base game maps: dict('Engine name'='Human-readable name')
-BASE_MAP_NAME_BY_ID = {
+# game maps: dict('Engine name'='Human-readable name')
+MAP_NAME_BY_ID = {
     'MP_Abandoned': 'Zavod 311',
     'MP_Damage': 'Lancang Dam',
     'MP_Flooded': 'Flood Zone',
@@ -140,26 +140,47 @@ BASE_MAP_NAME_BY_ID = {
     'MP_Siege': 'Siege of Shanghai',
     'MP_TheDish': 'Rogue Transmission',
     'MP_Tremors': 'Dawnbreaker',
-}
-# DLC1 (China Rising) game maps: dict('Engine name'='Human-readable name')
-XP1_MAP_NAME_BY_ID = {
     'XP1_001': 'Silk Road',
     'XP1_002': 'Altai Range',
     'XP1_003': 'Guilin Peaks',
     'XP1_004': 'Dragon Pass',
 }
-MAP_NAME_BY_ID = BASE_MAP_NAME_BY_ID
-MAP_NAME_BY_ID.update(XP1_MAP_NAME_BY_ID)
 
 MAP_ID_BY_NAME = dict()
 for _id, name in MAP_NAME_BY_ID.items():
     MAP_ID_BY_NAME[name.lower()] = _id
 
 # GAME_MODES_BY_MAP_ID = dict('Map Engine name': tuple('Game mode engine names'))
-BASE_GAME_MODES_BY_MAP_ID = dict().fromkeys(BASE_MAP_NAME_BY_ID, tuple(BASE_GAME_MODES_NAMES.keys()))
-XP1_GAME_MODES_BY_MAP_ID = dict().fromkeys(XP1_MAP_NAME_BY_ID, tuple(BASE_GAME_MODES_NAMES.keys()))
-GAME_MODES_BY_MAP_ID = BASE_GAME_MODES_BY_MAP_ID
-GAME_MODES_BY_MAP_ID.update(XP1_GAME_MODES_BY_MAP_ID)
+GAME_MODES_BY_MAP_ID = {
+    'MP_Abandoned': ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'MP_Damage':    ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'MP_Flooded':   ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'MP_Journey':   ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'MP_Naval':     ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'MP_Prison':    ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'MP_Resort':    ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'MP_Siege':     ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'MP_TheDish':   ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'MP_Tremors':   ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'XP1_001':      ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'AirSuperiority0'),
+    'XP1_002':      ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'AirSuperiority0'),
+    'XP1_003':      ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'AirSuperiority0'),
+    'XP1_004':      ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'AirSuperiority0'),
+}
 
 COMROSE_CHAT_NAME_BY_ID = {
     'ID_CHAT_ATTACK/DEFEND': 'ATTACK/DEFEND',
@@ -389,31 +410,22 @@ class Bf4Parser(AbstractParser):
     #    
     ###############################################################################################
 
-    def getPlayerPings(self, filter_client_ids=None):
+    def getPlayerPings(self, filter_client_ids=[]):
         """Ask the server for a given client's pings
 
         :param filter_client_ids: If filter_client_id is an iterable, only return values for the given client ids.
         """
 
         pings = {}
-        if not filter_client_ids:
-            try:
-                player_info_block = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
-                for player in player_info_block:
+        try:
+            player_info_block = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
+            for player in player_info_block:
+                if player['name'] in filter_client_ids or len(filter_client_ids) == 0:
                     pings[player['name']] = int(player['ping'])
-            except ValueError:
-                pass  # continue if the ping value is empty
-            except Exception, err:
-                self.error('Unable to retrieve pings from playerlist', exc_info=err)
-        else:
-            for cid in filter_client_ids:
-                try:
-                    words = self.write(("player.ping", cid))
-                    pings[cid] = int(words[0])
-                except ValueError:
-                    pass  # continue if the ping value is empty
-                except Exception, err:
-                    self.error("could not get ping info for player %s: %s" % (cid, err), exc_info=err)
+        except (ValueError, TypeError):
+            pass  # continue if the ping value is empty
+        except Exception, err:
+            self.error('Unable to retrieve pings from player List', exc_info=err)
         return pings
 
     ###############################################################################################
