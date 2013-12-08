@@ -34,9 +34,12 @@
 #    * onLoadConfig hook is now called by the parser instead of at plugin instantiation
 #    2013/11/30 - 1.7 - courgette
 #    * add two plugin hooks: onEnable and onDisable
+#    12/08/2013 - 1.8 - Fenix
+#    * adjust syntax to match PEP8 + fixed some typos
+#    * optionally map a specific event onto a specific plugin method: needs to be specified during event registration
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.7'
+__version__ = '1.8'
 
 import b3.config
 import b3.events
