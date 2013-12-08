@@ -34,9 +34,12 @@
 #    * onLoadConfig hook is now called by the parser instead of at plugin instantiation
 #    2013/11/30 - 1.7 - courgette
 #    * add two plugin hooks: onEnable and onDisable
+#    12/08/2013 - 1.8 - Fenix
+#    * adjust syntax to match PEP8 + fixed some typos
+#    * optionally map a specific event onto a specific plugin method: needs to be specified during event registration
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.7'
+__version__ = '1.8'
 
 import b3.config
 import b3.events
@@ -45,26 +48,29 @@ from ConfigParser import NoOptionError
 
 class Plugin:
     _enabled = True
+    _messages = {}
     console = None
+    eventmanager = None
+    eventmap = None
     events = []
     config = None
     working = True
-    _messages = {}
 
     requiresConfigFile = True  # plugin developers : customize this
     _default_messages = {}  # plugin developers : customize this
 
     def __init__(self, console, config=None):
         self.console = console
-        
+        self.eventmanager = b3.events.eventManager
+        self.eventmap = dict()
         if isinstance(config, b3.config.XmlConfigParser) \
-            or isinstance(config, b3.config.CfgConfigParser):
+           or isinstance(config, b3.config.CfgConfigParser):
             self.config = config
         else:
             try:
                 self.loadConfig(config)
             except b3.config.ConfigFileNotValid, e:
-                self.critical("The config file XML syntax is broken: %s" %e)
+                self.critical("The config file XML syntax is broken: %s" % e)
                 self.critical("Use a XML editor to modify your config files, it makes easy to spot errors")
                 raise 
 
@@ -110,17 +116,17 @@ class Plugin:
                 self.error("failed to format message %r (%r) with parameters %r. %s", msg, _msg, args, err)
                 raise
 
-    def loadConfig(self, fileName=None):
-        if fileName:
-            self.bot('Loading config %s for %s', fileName, self.__class__.__name__)
+    def loadConfig(self, filename=None):
+        if filename:
+            self.bot('Loading config %s for %s', filename, self.__class__.__name__)
             try:
-                self.config = b3.config.load(fileName)
-            except b3.config.ConfigFileNotFound, e:
+                self.config = b3.config.load(filename)
+            except b3.config.ConfigFileNotFound:
                 if self.requiresConfigFile:
-                    self.critical('Could not find config file %s' % fileName)
+                    self.critical('Could not find config file %s' % filename)
                     return False
                 else:
-                    self.bot('No config file found for %s. (was not required either)'%self.__class__.__name__)
+                    self.bot('No config file found for %s. (was not required either)' % self.__class__.__name__)
                     return True
         elif self.config:
             self.bot('Loading config %s for %s', self.config.fileName, self.__class__.__name__)
@@ -130,7 +136,7 @@ class Plugin:
                 self.error('Could not load config for %s', self.__class__.__name__)
                 return False
             else:
-                self.bot('No config file found for %s. (was not required either)'%self.__class__.__name__)
+                self.bot('No config file found for %s. (was not required either)' % self.__class__.__name__)
                 return True
             
         # empty message cache
@@ -140,16 +146,36 @@ class Plugin:
         self.bot('Saving config %s', self.config.fileName)
         return self.config.save()
 
-    def registerEvent(self, eventName):
-        self.events.append(eventName)
-        self.console.registerHandler(eventName, self)
+    def createEventMapping(self, name, hook):
+        """\
+        Map a B3 specific event onto a plugin method.
+        """
+        readable_name = self.eventmanager.getName(name)
+        if name not in self.events:
+            # make sure the event we are going to map has been registered already
+            raise AssertionError('<%s> is not an event registered for <%s>' % (readable_name, self.__class__.__name__))
+
+        hook = getattr(self, hook.__name__, None)
+        if not callable(hook):
+            # make sure the given hook to be a valid method of our plugin
+            raise AttributeError('<%s> is not a valid method of class <%s>' % (hook.__name__, self.__class__.__name__))
+
+        # add the mapping
+        self.eventmap[name] = hook
+        self.debug('Event <%s> mapped over <%s> method' % (readable_name, hook.__name__))
+
+    def registerEvent(self, name, hook=None):
+        self.events.append(name)
+        self.console.registerHandler(name, self)
+        if hook:
+            self.createEventMapping(name, hook)
 
     def createEvent(self, key, name):
         self.console.createEvent(key, name)
 
     def startup(self):
         """\
-        Depreciated. Use onStartup().
+        Deprecated. Use onStartup().
         """
         pass
 
@@ -160,14 +186,22 @@ class Plugin:
         pass
 
     def parseEvent(self, event):
-        self.onEvent(event)
+        """\
+        Dispatch an Event.
+        """
+        try:
+            self.eventmap[event.type](event)
+        except KeyError:
+            # NOTE: AttributeError should never be raised at this point
+            # since we already do the very same check on plugin startup
+            self.onEvent(event)  # keep backwards compatibility
 
         if event.type == b3.events.EVT_EXIT or event.type == b3.events.EVT_STOP:
             self.working = False
 
     def handle(self, event):
         """\
-        Depreciated. Use onEvent().
+        Deprecated. Use onEvent().
         """
         self.verbose('Warning: No handle func for %s', self.__class__.__name__)
 
@@ -263,4 +297,3 @@ class Plugin:
         """\
         Called when the plugin is disabled
         """
-
