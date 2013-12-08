@@ -45,8 +45,10 @@ from ConfigParser import NoOptionError
 
 class Plugin:
     _enabled = True
-    _messages = dict()
+    _messages = {}
     console = None
+    eventmanager = None
+    eventmap = None
     events = []
     config = None
     working = True
@@ -56,7 +58,8 @@ class Plugin:
 
     def __init__(self, console, config=None):
         self.console = console
-        
+        self.eventmanager = b3.events.eventManager
+        self.eventmap = dict()
         if isinstance(config, b3.config.XmlConfigParser) \
            or isinstance(config, b3.config.CfgConfigParser):
             self.config = config
@@ -140,9 +143,29 @@ class Plugin:
         self.bot('Saving config %s', self.config.fileName)
         return self.config.save()
 
-    def registerEvent(self, eventname):
-        self.events.append(eventname)
-        self.console.registerHandler(eventname, self)
+    def createEventMapping(self, name, hook):
+        """\
+        Map a B3 specific event onto a plugin method.
+        """
+        readable_name = self.eventmanager.getName(name)
+        if name not in self.events:
+            # make sure the event we are going to map has been registered already
+            raise AssertionError('<%s> is not an event registered for <%s>' % (readable_name, self.__class__.__name__))
+
+        hook = getattr(self, hook.__name__, None)
+        if not callable(hook):
+            # make sure the given hook to be a valid method of our plugin
+            raise AttributeError('<%s> is not a valid method of class <%s>' % (hook.__name__, self.__class__.__name__))
+
+        # add the mapping
+        self.eventmap[name] = hook
+        self.debug('Event <%s> mapped over <%s> method' % (readable_name, hook.__name__))
+
+    def registerEvent(self, name, hook=None):
+        self.events.append(name)
+        self.console.registerHandler(name, self)
+        if hook:
+            self.createEventMapping(name, hook)
 
     def createEvent(self, key, name):
         self.console.createEvent(key, name)
@@ -160,7 +183,15 @@ class Plugin:
         pass
 
     def parseEvent(self, event):
-        self.onEvent(event)
+        """\
+        Dispatch an Event.
+        """
+        try:
+            self.eventmap[event.type](event)
+        except KeyError:
+            # NOTE: AttributeError should never be raised at this point
+            # since we already do the very same check on plugin startup
+            self.onEvent(event)  # keep backwards compatibility
 
         if event.type == b3.events.EVT_EXIT or event.type == b3.events.EVT_STOP:
             self.working = False

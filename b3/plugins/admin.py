@@ -278,7 +278,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
 
     def onStartup(self):
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_SAY'))
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_SAY'), self.onEvent)
         self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_SAY'))
         self.registerEvent(self.console.getEventID('EVT_CLIENT_SQUAD_SAY'))
         self.registerEvent(self.console.getEventID('EVT_CLIENT_PRIVATE_SAY'))
