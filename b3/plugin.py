@@ -45,11 +45,11 @@ from ConfigParser import NoOptionError
 
 class Plugin:
     _enabled = True
+    _messages = dict()
     console = None
     events = []
     config = None
     working = True
-    _messages = {}
 
     requiresConfigFile = True  # plugin developers : customize this
     _default_messages = {}  # plugin developers : customize this
@@ -58,13 +58,13 @@ class Plugin:
         self.console = console
         
         if isinstance(config, b3.config.XmlConfigParser) \
-            or isinstance(config, b3.config.CfgConfigParser):
+           or isinstance(config, b3.config.CfgConfigParser):
             self.config = config
         else:
             try:
                 self.loadConfig(config)
             except b3.config.ConfigFileNotValid, e:
-                self.critical("The config file XML syntax is broken: %s" %e)
+                self.critical("The config file XML syntax is broken: %s" % e)
                 self.critical("Use a XML editor to modify your config files, it makes easy to spot errors")
                 raise 
 
@@ -110,17 +110,17 @@ class Plugin:
                 self.error("failed to format message %r (%r) with parameters %r. %s", msg, _msg, args, err)
                 raise
 
-    def loadConfig(self, fileName=None):
-        if fileName:
-            self.bot('Loading config %s for %s', fileName, self.__class__.__name__)
+    def loadConfig(self, filename=None):
+        if filename:
+            self.bot('Loading config %s for %s', filename, self.__class__.__name__)
             try:
-                self.config = b3.config.load(fileName)
-            except b3.config.ConfigFileNotFound, e:
+                self.config = b3.config.load(filename)
+            except b3.config.ConfigFileNotFound:
                 if self.requiresConfigFile:
-                    self.critical('Could not find config file %s' % fileName)
+                    self.critical('Could not find config file %s' % filename)
                     return False
                 else:
-                    self.bot('No config file found for %s. (was not required either)'%self.__class__.__name__)
+                    self.bot('No config file found for %s. (was not required either)' % self.__class__.__name__)
                     return True
         elif self.config:
             self.bot('Loading config %s for %s', self.config.fileName, self.__class__.__name__)
@@ -130,7 +130,7 @@ class Plugin:
                 self.error('Could not load config for %s', self.__class__.__name__)
                 return False
             else:
-                self.bot('No config file found for %s. (was not required either)'%self.__class__.__name__)
+                self.bot('No config file found for %s. (was not required either)' % self.__class__.__name__)
                 return True
             
         # empty message cache
@@ -140,16 +140,16 @@ class Plugin:
         self.bot('Saving config %s', self.config.fileName)
         return self.config.save()
 
-    def registerEvent(self, eventName):
-        self.events.append(eventName)
-        self.console.registerHandler(eventName, self)
+    def registerEvent(self, eventname):
+        self.events.append(eventname)
+        self.console.registerHandler(eventname, self)
 
     def createEvent(self, key, name):
         self.console.createEvent(key, name)
 
     def startup(self):
         """\
-        Depreciated. Use onStartup().
+        Deprecated. Use onStartup().
         """
         pass
 
@@ -167,7 +167,7 @@ class Plugin:
 
     def handle(self, event):
         """\
-        Depreciated. Use onEvent().
+        Deprecated. Use onEvent().
         """
         self.verbose('Warning: No handle func for %s', self.__class__.__name__)
 
@@ -263,4 +263,3 @@ class Plugin:
         """\
         Called when the plugin is disabled
         """
-
