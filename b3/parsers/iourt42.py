@@ -83,6 +83,8 @@
 #     * added EVT_CLIENT_GOTO
 # 27/09/2013 - 1.18 - Courgette
 #     * added EVT_VOTE_PASSED and EVT_VOTE_FAILED
+# 09/12/2013 - 1.19 - Fenix
+#     * added EVT_CLIENT_SPAWN and EVT_FLAG_RETURN_TIME
 
 import re, new
 import time
@@ -94,7 +96,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.18'
+__version__ = '1.19'
 
 
 class Iourt42Client(Client):
