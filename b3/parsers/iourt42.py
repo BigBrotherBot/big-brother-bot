@@ -285,6 +285,10 @@ class Iourt42Parser(Iourt41Parser):
         #VoteFailed: 1 - 1 - "restart"
         re.compile(r'''^(?P<action>VoteFailed): (?P<data>(?P<yes>[0-9]+) - (?P<no>[0-9]+) - "(?P<what>.*)")$'''),
 
+        #FlagCaptureTime: 0: 1234567890
+        #FlagCaptureTime: 1: 1125480101
+        re.compile(r'''^(?P<action>FlagCaptureTime):\s(?P<cid>[0-9]+):\s(?P<captime>[0-9]+)$''', re.IGNORECASE),
+
         #13:34 ClientJumpRunStarted: 0 - way: 1
         #13:34 ClientJumpRunStarted: 0 - way: 1 - attempt: 1 of 5
         re.compile(r'^(?P<action>ClientJumpRunStarted):\s(?P<cid>\d+)\s-\s(?P<data>way:\s(?P<way_id>\d+)(?:\s-\sattempt:\s(?P<attempt_num>\d+)\sof\s(?P<attempt_max>\d+))?)$', re.IGNORECASE),
@@ -519,6 +523,7 @@ class Iourt42Parser(Iourt41Parser):
         self.EVT_CLIENT_VOTE = self.Events.createEvent('EVT_CLIENT_VOTE', 'Event client vote')
         self.EVT_VOTE_PASSED = self.Events.createEvent('EVT_VOTE_PASSED', 'Event vote passed')
         self.EVT_VOTE_FAILED = self.Events.createEvent('EVT_VOTE_FAILED', 'Event vote failed')
+        self.EVT_FLAG_CAPTURE_TIME = self.Events.createEvent('EVT_FLAG_CAPTURE_TIME', 'Event flag capture time')
         self.EVT_CLIENT_JUMP_RUN_START = self.Events.createEvent('EVT_CLIENT_JUMP_RUN_START', 'Event client jump run started')
         self.EVT_CLIENT_JUMP_RUN_STOP = self.Events.createEvent('EVT_CLIENT_JUMP_RUN_STOP', 'Event client jump run stopped')
         self.EVT_CLIENT_JUMP_RUN_CANCEL = self.Events.createEvent('EVT_CLIENT_JUMP_RUN_CANCEL', 'Event client jump run canceled')
@@ -647,6 +652,17 @@ class Iourt42Parser(Iourt41Parser):
         vote_what = match.group('what')
         return Event(self.EVT_VOTE_FAILED, data={"yes": yes_count, "no": no_count, "what": vote_what})
 
+    def OnFlagcapturetime(self, action, data, match=None):
+        #FlagCaptureTime: 0: 1234567890
+        #FlagCaptureTime: 1: 1125480101
+        cid = match.group('cid')
+        captime = int(match.group('captime'))
+        client = self.getByCidOrJoinPlayer(cid)
+        if not client:
+            self.debug('No client found')
+            return None
+        return Event(self.EVT_FLAG_CAPTURE_TIME, client=client, data=captime)
+
     def OnClientjumprunstarted(self, action, data, match=None):
         cid = match.group('cid')
         way_id = match.group('way_id')
@@ -739,7 +755,6 @@ class Iourt42Parser(Iourt41Parser):
                 self.debug('No client found')
                 return None
             return Event(self.EVT_CLIENT_SURVIVOR_WINNER, client=client, data=None)
-
 
 
     ###############################################################################################
