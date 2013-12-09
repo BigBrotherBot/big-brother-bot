@@ -301,7 +301,11 @@ class Iourt42Parser(Iourt41Parser):
         
         #13:34 ClientGoto: 0 - 1 - 335.384887 - 67.469154 - -23.875000
         re.compile(r'^(?P<action>ClientGoto):\s(?P<cid>\d+)\s-\s(?P<tcid>\d+)\s-\s(?P<data>(?P<x>-?\d+(?:\.\d+)?)\s-\s(?P<y>-?\d+(?:\.\d+)?)\s-\s(?P<z>-?\d+(?:\.\d+)?))$', re.IGNORECASE),
-        
+
+        #ClientSpawn: 0
+        #ClientSpawn: 1
+        re.compile(r'^(?P<action>ClientSpawn):\s(?P<cid>[0-9]+)$', re.IGNORECASE),
+
         #Generated with ioUrbanTerror v4.1:
         #Hit: 12 7 1 19: BSTHanzo[FR] hit ercan in the Helmet
         #Hit: 13 10 0 8: Grover hit jacobdk92 in the Head
@@ -521,6 +525,7 @@ class Iourt42Parser(Iourt41Parser):
         self.EVT_CLIENT_POS_SAVE = self.Events.createEvent('EVT_CLIENT_POS_SAVE', 'Event client position saved')
         self.EVT_CLIENT_POS_LOAD = self.Events.createEvent('EVT_CLIENT_POS_LOAD', 'Event client position loaded')
         self.EVT_CLIENT_GOTO = self.Events.createEvent('EVT_CLIENT_GOTO', 'Event client goto')
+        self.EVT_CLIENT_SPAWN = self.Events.createEvent('EVT_CLIENT_SPAWN', 'Event client spawn')
         self.EVT_CLIENT_SURVIVOR_WINNER = self.Events.createEvent('EVT_CLIENT_SURVIVOR_WINNER', 'Event client survivor winner')
 
         self.load_conf_frozensand_ban_settings()
@@ -710,6 +715,17 @@ class Iourt42Parser(Iourt41Parser):
             return None
             
         return Event(self.EVT_CLIENT_GOTO, client=client, target=target, data={'position': position})
+
+    def OnClientspawn(self, action, data, match=None):
+        #ClientSpawn: 0
+        #ClientSpawn: 1
+        cid = match.group('cid')
+        client = self.getByCidOrJoinPlayer(cid)
+        if not client:
+            self.debug('No client found')
+            return None
+
+        return Event(self.EVT_CLIENT_SPAWN, client=client, data=None)
 
     def OnSurvivorwinner(self, action, data, match=None):
         #SurvivorWinner: Blue
