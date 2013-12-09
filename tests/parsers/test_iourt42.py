@@ -162,6 +162,14 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_type='EVT_VOTE_FAILED',
             event_data={"yes": 1, "no": 1, "what": "restart"})
 
+    def test_Flagcapturetime(self):
+        patate = FakeClient(self.console, name="Patate", guid="Patate_guid")
+        patate.connects('0')
+        self.assertEvent(r'''FlagCaptureTime: 0: 1234567890''',
+            event_type='EVT_FLAG_CAPTURE_TIME',
+            event_client=patate,
+            event_data=1234567890)
+
     def test_Hit_1(self):
         fatmatic = FakeClient(self.console, name="Fat'Matic", guid="11111111111111")
         d4dou = FakeClient(self.console, name="[FR]d4dou", guid="11111111111111")
@@ -216,7 +224,6 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_type='EVT_CLIENT_SAY',
             event_client=marcel,
             event_data="!help")
-
 
     def test_ClientJumpRunStarted(self):
         marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
@@ -294,6 +301,13 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_target=psyp,
             event_data={'position': (335.384887, 67.469154, -23.875)})
 
+    def test_ClientSpawn(self):
+        patate = FakeClient(self.console, name="Patate", guid="Patate_guid")
+        patate.connects('0')
+        self.assertEvent(r'''ClientSpawn: 0''',
+            event_type='EVT_CLIENT_SPAWN',
+            event_client=patate,
+            event_data=None)
 
     def test_SurvivorWinner_player(self):
         marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
