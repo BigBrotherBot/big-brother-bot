@@ -294,6 +294,13 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_target=psyp,
             event_data={'position': (335.384887, 67.469154, -23.875)})
 
+    def test_ClientSpawn(self):
+        patate = FakeClient(self.console, name="Patate", guid="Patate_guid")
+        patate.connects('0')
+        self.assertEvent(r'''ClientSpawn: 0''',
+            event_type='EVT_CLIENT_SPAWN',
+            event_client=patate,
+            event_data=None)
 
     def test_SurvivorWinner_player(self):
         marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
