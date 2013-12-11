@@ -85,6 +85,8 @@
 #     * added EVT_VOTE_PASSED and EVT_VOTE_FAILED
 # 09/12/2013 - 1.19 - Fenix
 #     * added EVT_CLIENT_SPAWN and EVT_FLAG_RETURN_TIME
+# 11/12/2013 - 1.20 - Courgette
+#     * fix: players with ':' in their name can't run commands ('UrT bug spotted' showing up in the log)
 
 import re, new
 import time
@@ -96,7 +98,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.19'
+__version__ = '1.20'
 
 
 class Iourt42Client(Client):
@@ -340,7 +342,7 @@ class Iourt42Parser(Iourt41Parser):
         # SGT: fix issue with OnSay when something like this come and the match could'nt find the name group
         # say: 7 -crespino-:
         # say: 6 ^5Marcel ^2[^6CZARMY^2]: !help
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<name>.+?):\s*(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<name>.+?): (?P<text>.*))$', re.IGNORECASE),
 
         #15:42 Flag Return: RED
         #15:42 Flag Return: BLUE
