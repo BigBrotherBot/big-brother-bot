@@ -40,7 +40,7 @@ from b3.parsers.frostbite2.protocol import CommandFailedError
 __author__ = 'Courgette, ozon, Dwarfer'
 __version__ = '1.0.1'
 
-BF4_REQUIRED_VERSION = 94318
+BF4_REQUIRED_VERSION = 96245
 
 SQUAD_NOSQUAD = 0
 SQUAD_ALPHA = 1
@@ -428,6 +428,15 @@ class Bf4Parser(AbstractParser):
             self.error('Unable to retrieve pings from player List', exc_info=err)
         return pings
 
+    def saybig(self, msg):
+        """\
+        broadcast a message to all players in a way that will catch their attention.
+        """
+        # todo: remove this if admin.yell works again
+        # admin.yell is currently broken (server version >= R15)
+        # we give this message over admin.say
+        self.write(self.getCommand('say', message=msg))
+
     ###############################################################################################
     #
     #    Other methods
@@ -526,77 +535,70 @@ class Bf4Parser(AbstractParser):
 
     def getServerVars(self):
         """Update the game property from server fresh data"""
-        def getCvar(cvar):
+
+        def get_cvar(cvar, cvar_type='string'):
+            """Helper function to query cvar from the server."""
+            # todo: handle disallowed cvars like "gamePassword" on ranked servers
             try:
-                return self.getCvar(cvar).getString()
-            except Exception:
+                if cvar_type == 'string':
+                    return self.getCvar(cvar).getString()
+                elif cvar_type == 'bool':
+                    return self.getCvar(cvar).getBoolean()
+                elif cvar_type == 'int':
+                    return self.getCvar(cvar).getInt()
+                elif cvar_type == 'float':
+                    return self.getCvar(cvar).getFloat()
+            except (Exception, AttributeError), err:
+                self.error('Unable to retrieve cvar: %s (%s) Error: %s' % (cvar, cvar_type, err), exc_info=err)
                 pass
 
-        def getCvarBool(cvar):
-            try:
-                return self.getCvar(cvar).getBoolean()
-            except Exception:
-                pass
-
-        def getCvarInt(cvar):
-            try:
-                return self.getCvar(cvar).getInt()
-            except Exception:
-                pass
-
-        def getCvarFloat(cvar):
-            try:
-                return self.getCvar(cvar).getFloat()
-            except Exception:
-                pass
-
-        self.game['3dSpotting'] = getCvarBool('3dSpotting')
-        self.game['3pCam'] = getCvarBool('3pCam')
-        self.game['alwaysAllowSpectators'] = getCvarBool('alwaysAllowSpectators')
-        self.game['autoBalance'] = getCvarBool('autoBalance')
-        self.game['bulletDamage'] = getCvarInt('bulletDamage')
-        self.game['commander'] = getCvarBool('commander')
-        self.game['crossHair'] = getCvarBool('crossHair')
-        self.game['forceReloadWholeMags'] = getCvarBool('forceReloadWholeMags')
-        self.game['friendlyFire'] = getCvarBool('friendlyFire')
-        self.game['gameModeCounter'] = getCvarInt('gameModeCounter')
-        self.game['gamePassword'] = getCvar('gamePassword')
-        self.game['hitIndicatorsEnabled'] = getCvarBool('hitIndicatorsEnabled')
-        self.game['hud'] = getCvarBool('hud')
-        self.game['idleBanRounds'] = getCvarInt('idleBanRounds')
-        self.game['idleTimeout'] = getCvarInt('idleTimeout')
-        self.game['killCam'] = getCvarBool('killCam')
-        self.game['maxPlayers'] = getCvarInt('maxPlayers')
-        self.game['maxSpectators'] = getCvarInt('maxSpectators')
-        self.game['miniMap'] = getCvarBool('miniMap')
-        self.game['miniMapSpotting'] = getCvarBool('miniMapSpotting')
-        self.game['mpExperience'] = getCvar('mpExperience')
-        self.game['nameTag'] = getCvarBool('nameTag')
-        self.game['onlySquadLeaderSpawn'] = getCvarBool('onlySquadLeaderSpawn')
-        self.game['playerRespawnTime'] = getCvarInt('playerRespawnTime')
-        self.game['regenerateHealth'] = getCvarBool('regenerateHealth')
-        self.game['roundLockdownCountdown'] = getCvarInt('roundLockdownCountdown')
-        self.game['roundRestartPlayerCount'] = getCvarInt('roundRestartPlayerCount')
-        self.game['roundStartPlayerCount'] = getCvarInt('roundStartPlayerCount')
-        self.game['roundTimeLimit'] = getCvarInt('roundTimeLimit')
-        self.game['serverDescription'] = getCvar('serverDescription')
-        self.game['serverMessage'] = getCvar('serverMessage')
-        self.game['serverName'] = getCvar('serverName')
-        self.game['serverType'] = getCvar('serverType')
-        self.game['soldierHealth'] = getCvarInt('soldierHealth')
-        self.game['team1FactionOverride'] = getCvarInt('team1FactionOverride')
-        self.game['team2FactionOverride'] = getCvarInt('team2FactionOverride')
-        self.game['team3FactionOverride'] = getCvarInt('team3FactionOverride')
-        self.game['team4FactionOverride'] = getCvarInt('team4FactionOverride')
-        self.game['teamKillCountForKick'] = getCvarInt('teamKillCountForKick')
-        self.game['teamKillKickForBan'] = getCvarInt('teamKillKickForBan')
-        self.game['teamKillValueDecreasePerSecond'] = getCvarFloat('teamKillValueDecreasePerSecond')
-        self.game['teamKillValueForKick'] = getCvarFloat('teamKillValueForKick')
-        self.game['teamKillValueIncrease'] = getCvarFloat('teamKillValueIncrease')
-        self.game['vehicleSpawnAllowed'] = getCvarBool('vehicleSpawnAllowed')
-        self.game['vehicleSpawnDelay'] = getCvarInt('vehicleSpawnDelay')
-        self.game['preset'] = getCvar('preset')
-        self.game['unlockMode'] = getCvar('unlockMode')
+        self.game['3dSpotting'] = get_cvar('3dSpotting', 'bool')
+        self.game['3pCam'] = get_cvar('3pCam', 'bool')
+        self.game['alwaysAllowSpectators'] = get_cvar('alwaysAllowSpectators', 'bool')
+        self.game['autoBalance'] = get_cvar('autoBalance', 'bool')
+        self.game['bulletDamage'] = get_cvar('bulletDamage', 'int')
+        self.game['commander'] = get_cvar('commander', 'bool')
+        self.game['crossHair'] = get_cvar('crossHair', 'bool')
+        self.game['forceReloadWholeMags'] = get_cvar('forceReloadWholeMags', 'bool')
+        self.game['friendlyFire'] = get_cvar('friendlyFire', 'bool')
+        self.game['gameModeCounter'] = get_cvar('gameModeCounter', 'int')
+        self.game['gamePassword'] = get_cvar('gamePassword')
+        self.game['hitIndicatorsEnabled'] = get_cvar('hitIndicatorsEnabled', 'bool')
+        self.game['hud'] = get_cvar('hud', 'bool')
+        self.game['idleBanRounds'] = get_cvar('idleBanRounds', 'int')
+        self.game['idleTimeout'] = get_cvar('idleTimeout', 'int')
+        self.game['killCam'] = get_cvar('killCam', 'bool')
+        self.game['maxPlayers'] = get_cvar('maxPlayers', 'int')
+        self.game['maxSpectators'] = get_cvar('maxSpectators', 'int')
+        self.game['miniMap'] = get_cvar('miniMap', 'bool')
+        self.game['miniMapSpotting'] = get_cvar('miniMapSpotting', 'bool')
+        self.game['mpExperience'] = get_cvar('mpExperience')
+        self.game['nameTag'] = get_cvar('nameTag', 'bool')
+        self.game['onlySquadLeaderSpawn'] = get_cvar('onlySquadLeaderSpawn', 'bool')
+        self.game['playerRespawnTime'] = get_cvar('playerRespawnTime', 'int')
+        self.game['regenerateHealth'] = get_cvar('regenerateHealth', 'bool')
+        self.game['roundLockdownCountdown'] = get_cvar('roundLockdownCountdown', 'int')
+        self.game['roundRestartPlayerCount'] = get_cvar('roundRestartPlayerCount', 'int')
+        self.game['roundStartPlayerCount'] = get_cvar('roundStartPlayerCount', 'int')
+        self.game['roundTimeLimit'] = get_cvar('roundTimeLimit', 'int')
+        self.game['serverDescription'] = get_cvar('serverDescription')
+        self.game['serverMessage'] = get_cvar('serverMessage')
+        self.game['serverName'] = get_cvar('serverName')
+        self.game['serverType'] = get_cvar('serverType')
+        self.game['soldierHealth'] = get_cvar('soldierHealth', 'int')
+        self.game['team1FactionOverride'] = get_cvar('team1FactionOverride', 'int')
+        self.game['team2FactionOverride'] = get_cvar('team2FactionOverride', 'int')
+        self.game['team3FactionOverride'] = get_cvar('team3FactionOverride', 'int')
+        self.game['team4FactionOverride'] = get_cvar('team4FactionOverride', 'int')
+        self.game['teamKillCountForKick'] = get_cvar('teamKillCountForKick', 'int')
+        self.game['teamKillKickForBan'] = get_cvar('teamKillKickForBan', 'int')
+        self.game['teamKillValueDecreasePerSecond'] = get_cvar('teamKillValueDecreasePerSecond', 'float')
+        self.game['teamKillValueForKick'] = get_cvar('teamKillValueForKick', 'float')
+        self.game['teamKillValueIncrease'] = get_cvar('teamKillValueIncrease', 'float')
+        self.game['vehicleSpawnAllowed'] = get_cvar('vehicleSpawnAllowed', 'bool')
+        self.game['vehicleSpawnDelay'] = get_cvar('vehicleSpawnDelay', 'int')
+        self.game['preset'] = get_cvar('preset')
+        self.game['unlockMode'] = get_cvar('unlockMode')
 
         self.game.timeLimit = self.game.gameModeCounter
         self.game.fragLimit = self.game.gameModeCounter
