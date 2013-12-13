@@ -40,7 +40,7 @@ from b3.parsers.frostbite2.protocol import CommandFailedError
 __author__ = 'Courgette, ozon, Dwarfer'
 __version__ = '1.0.1'
 
-BF4_REQUIRED_VERSION = 94318
+BF4_REQUIRED_VERSION = 96245
 
 SQUAD_NOSQUAD = 0
 SQUAD_ALPHA = 1
