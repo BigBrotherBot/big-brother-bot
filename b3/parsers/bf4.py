@@ -35,7 +35,7 @@ import b3
 import b3.events
 import threading
 from time import sleep
-from b3.parsers.frostbite2.protocol import CommandFailedError
+from b3.parsers.frostbite2.protocol import CommandFailedError, CommandUnknownCommandError, CommandDisallowedError
 
 __author__ = 'Courgette, ozon, Dwarfer'
 __version__ = '1.0.1'
@@ -538,19 +538,16 @@ class Bf4Parser(AbstractParser):
 
         def get_cvar(cvar, cvar_type='string'):
             """Helper function to query cvar from the server."""
-            # todo: handle disallowed cvars like "gamePassword" on ranked servers
-            try:
+            _cvar = self.getCvar(cvar)
+            if _cvar:
                 if cvar_type == 'string':
-                    return self.getCvar(cvar).getString()
+                    return _cvar.getString()
                 elif cvar_type == 'bool':
-                    return self.getCvar(cvar).getBoolean()
+                    return _cvar.getBoolean()
                 elif cvar_type == 'int':
-                    return self.getCvar(cvar).getInt()
+                    return _cvar.getInt()
                 elif cvar_type == 'float':
-                    return self.getCvar(cvar).getFloat()
-            except (Exception, AttributeError), err:
-                self.error('Unable to retrieve cvar: %s (%s) Error: %s' % (cvar, cvar_type, err), exc_info=err)
-                pass
+                    return _cvar.getFloat()
 
         self.game['3dSpotting'] = get_cvar('3dSpotting', 'bool')
         self.game['3pCam'] = get_cvar('3pCam', 'bool')
