@@ -163,6 +163,8 @@ class FrostbiteError(Exception): pass
 class CommandError(FrostbiteError): pass
 class CommandTimeoutError(CommandError): pass
 class CommandFailedError(CommandError): pass
+class CommandDisallowedError(CommandError): pass
+class CommandUnknownCommandError(CommandError): pass
 
 class NetworkError(FrostbiteError): pass
 
@@ -323,7 +325,11 @@ class FrostbiteServer(threading.Thread):
         self.getLogger().debug("command #%i sent. %s " % (command_id, repr(command)))
         
         response = self._wait_for_response(command_id)
-        if response[0] != "OK":
+        if response[0] in ('CommandDisallowedOnRanked', 'CommandDisallowedOnOfficial'):
+            raise CommandDisallowedError(response)
+        elif response[0] == 'UnknownCommand':
+            raise CommandUnknownCommandError(response)
+        elif response[0] != "OK":
             raise CommandFailedError(response)
         else:
             return response[1:]
