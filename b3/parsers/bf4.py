@@ -489,8 +489,7 @@ class Bf4Parser(AbstractParser):
                     guid = p['guid']
                     teamId = p['teamId']
                     squadId = p['squadId']
-                    player_type = p['type']
-                    client = self.clients.newClient(cid, guid=guid, name=name, team=self.getTeam(teamId), teamId=int(teamId), squad=squadId, player_type=int(player_type), data=p)
+                    client = self.clients.newClient(cid, guid=guid, name=name, team=self.getTeam(teamId), teamId=int(teamId), squad=squadId, data=p)
                     self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
         return client
 
@@ -809,6 +808,19 @@ class Bf4Parser(AbstractParser):
             pass
 
         b3.clients.Client.player_type = property(get_player_type, set_player_type)
+
+        def get_commander_state(self):
+            if self.player_type == BF4_COMMANDER:
+                return True
+            else:
+                return False
+
+        def set_commander_state(self):
+            # silently prevents Client.is_commander from being set.
+            # The Client.is_commander value is determined from Client.type
+            pass
+
+        b3.clients.Client.is_commander = property(get_commander_state, set_commander_state)
 
     def _startRound(self):
         # respect var.roundLockdownCountdown

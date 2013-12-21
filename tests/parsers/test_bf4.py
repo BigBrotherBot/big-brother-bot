@@ -856,3 +856,32 @@ class Test_Client_player_type(BF4TestCase):
              'Foobar', 'xxxxy', '0', '0', '0', '0', '0', '71', '65535', '2'])
         # THEN
         self.assertEqual(BF4_COMMANDER, self.foobar.player_type)
+
+class Test_Client_is_commander(BF4TestCase):
+    def setUp(self):
+        BF4TestCase.setUp(self)
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.parser = Bf4Parser(self.conf)
+        self.foobar = self.parser.clients.newClient(cid='Foobar', name='Foobar', guid="FoobarGuid")
+
+    def test_player_is_commander(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type', '1',
+             'Foobar', 'xxxxy', '0', '0', '0', '0', '0', '71', '65535', '2'])
+        # THEN
+        self.assertEqual(BF4_COMMANDER, self.foobar.player_type)
+        self.assertTrue(self.foobar.is_commander)
+
+    def test_player_is_not_commander(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type', '1',
+             'Foobar', 'xxxxy', '0', '0', '0', '0', '0', '71', '65535', '0'])
+        # THEN
+        self.assertNotEqual(BF4_COMMANDER, self.foobar.player_type)
+        self.assertFalse(self.foobar.is_commander)
