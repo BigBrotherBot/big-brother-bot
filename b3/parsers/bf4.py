@@ -42,6 +42,10 @@ __version__ = '1.0.1'
 
 BF4_REQUIRED_VERSION = 96245
 
+BF4_PLAYER = 0              # normal player
+BF4_SPECTATOR = 1           # spectator which is not visible in the game for other player but visible as player for b3
+BF4_COMMANDER = 2           # commander which is visible for other player and b3
+
 SQUAD_NOSQUAD = 0
 SQUAD_ALPHA = 1
 SQUAD_BRAVO = 2
@@ -266,6 +270,7 @@ class Bf4Parser(AbstractParser):
 
     def __new__(cls, *args, **kwargs):
         Bf4Parser.patch_b3_Client_isAlive()
+        Bf4Parser.patch_b3_Client_propertys()
         return AbstractParser.__new__(cls)
 
     def startup(self):
@@ -484,7 +489,8 @@ class Bf4Parser(AbstractParser):
                     guid = p['guid']
                     teamId = p['teamId']
                     squadId = p['squadId']
-                    client = self.clients.newClient(cid, guid=guid, name=name, team=self.getTeam(teamId), teamId=int(teamId), squad=squadId, data=p)
+                    player_type = p['type']
+                    client = self.clients.newClient(cid, guid=guid, name=name, team=self.getTeam(teamId), teamId=int(teamId), squad=squadId, player_type=int(player_type), data=p)
                     self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
         return client
 
@@ -779,6 +785,30 @@ class Bf4Parser(AbstractParser):
             pass
 
         b3.clients.Client.state = property(getPlayerState, setPlayerState)
+
+    @staticmethod
+    def patch_b3_Client_propertys():
+        """Add some properties to the Client Object"""
+
+        def _get_player_type(self):
+            """Queries the type of player from the server"""
+            _player_type = 0
+            _player_name = self.name
+            try:
+                _player_info_block = PlayerInfoBlock(self.console.write(('admin.listPlayers', 'player', _player_name)))
+                return int(_player_info_block[0]['type'])
+            except Exception, err:
+                self.console.error("could not get player_type for player %s: %s" % (self.name, err), exc_info=err)
+
+        b3.clients.Client._get_player_type = _get_player_type
+
+        def get_player_type(self):
+            return self._get_player_type()
+
+        def set_player_type(self, ptype):
+            pass
+
+        b3.clients.Client.player_type = property(get_player_type, set_player_type)
 
     def _startRound(self):
         # respect var.roundLockdownCountdown

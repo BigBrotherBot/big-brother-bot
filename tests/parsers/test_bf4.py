@@ -23,7 +23,7 @@ from mockito import when, verify
 import b3
 from b3.clients import Client, Clients
 from b3.fake import FakeClient
-from b3.parsers.bf4 import Bf4Parser, MAP_NAME_BY_ID, GAME_MODES_BY_MAP_ID, GAME_MODES_NAMES
+from b3.parsers.bf4 import Bf4Parser, MAP_NAME_BY_ID, GAME_MODES_BY_MAP_ID, GAME_MODES_NAMES, BF4_COMMANDER, BF4_PLAYER, BF4_SPECTATOR
 from b3.config import XmlConfigParser, CfgConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import MapListBlock
@@ -821,3 +821,38 @@ map: 20
         self.assertListEqual([], changeMap_mock.mock_calls)
         self.assertListEqual(['do you mean : siege of shanghai, flood zone, rogue transmission ?'], self.joe.message_history)
 
+
+class Test_Client_player_type(BF4TestCase):
+    def setUp(self):
+        BF4TestCase.setUp(self)
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.parser = Bf4Parser(self.conf)
+        self.foobar = self.parser.clients.newClient(cid='Foobar', name='Foobar', guid="FoobarGuid")
+
+    def test_player_type_player(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type', '1',
+             'O2ON', 'xxxxy', '0', '0', '0', '0', '0', '71', '65535', '0'])
+        # THEN
+        self.assertEqual(BF4_PLAYER, self.foobar.player_type)
+
+    def test_player_type_spectrator(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type', '1',
+             'Foobar', 'xxxxy', '0', '0', '0', '0', '0', '71', '65535', '1'])
+        # THEN
+        self.assertEqual(BF4_SPECTATOR, self.foobar.player_type)
+
+    def test_player_type_commander(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type', '1',
+             'Foobar', 'xxxxy', '0', '0', '0', '0', '0', '71', '65535', '2'])
+        # THEN
+        self.assertEqual(BF4_COMMANDER, self.foobar.player_type)
