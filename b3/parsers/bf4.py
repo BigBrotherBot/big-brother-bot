@@ -35,12 +35,12 @@ import b3
 import b3.events
 import threading
 from time import sleep
-from b3.parsers.frostbite2.protocol import CommandFailedError
+from b3.parsers.frostbite2.protocol import CommandFailedError, CommandUnknownCommandError, CommandDisallowedError
 
 __author__ = 'Courgette, ozon, Dwarfer'
 __version__ = '1.0.1'
 
-BF4_REQUIRED_VERSION = 96245
+BF4_REQUIRED_VERSION = 99392
 
 SQUAD_NOSQUAD = 0
 SQUAD_ALPHA = 1
@@ -250,6 +250,7 @@ class Bf4Parser(AbstractParser):
         'vehicleSpawnDelay',        # <modifier: percent>  Set vehicle spawn delay scale factor
         'preset',                   # allows you to set the server to either normal, hardcore infantry or custom
         'unlockMode'                # which set of unlocks is available on an unranked server (all/common/stats/none)
+        'ticketBleedRate'           # controls the rate of tickets drop
     )
 
     # gamemodes aliases {alias: actual game mode name}
@@ -538,19 +539,16 @@ class Bf4Parser(AbstractParser):
 
         def get_cvar(cvar, cvar_type='string'):
             """Helper function to query cvar from the server."""
-            # todo: handle disallowed cvars like "gamePassword" on ranked servers
-            try:
+            _cvar = self.getCvar(cvar)
+            if _cvar:
                 if cvar_type == 'string':
-                    return self.getCvar(cvar).getString()
+                    return _cvar.getString()
                 elif cvar_type == 'bool':
-                    return self.getCvar(cvar).getBoolean()
+                    return _cvar.getBoolean()
                 elif cvar_type == 'int':
-                    return self.getCvar(cvar).getInt()
+                    return _cvar.getInt()
                 elif cvar_type == 'float':
-                    return self.getCvar(cvar).getFloat()
-            except (Exception, AttributeError), err:
-                self.error('Unable to retrieve cvar: %s (%s) Error: %s' % (cvar, cvar_type, err), exc_info=err)
-                pass
+                    return _cvar.getFloat()
 
         self.game['3dSpotting'] = get_cvar('3dSpotting', 'bool')
         self.game['3pCam'] = get_cvar('3pCam', 'bool')
@@ -599,6 +597,7 @@ class Bf4Parser(AbstractParser):
         self.game['vehicleSpawnDelay'] = get_cvar('vehicleSpawnDelay', 'int')
         self.game['preset'] = get_cvar('preset')
         self.game['unlockMode'] = get_cvar('unlockMode')
+        self.game['ticketBleedRate'] = get_cvar('ticketBleedRate', 'int')
 
         self.game.timeLimit = self.game.gameModeCounter
         self.game.fragLimit = self.game.gameModeCounter
