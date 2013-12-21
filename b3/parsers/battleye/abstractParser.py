@@ -675,6 +675,7 @@ class AbstractParser(b3.parser.Parser):
         #0   192.168.0.100:2316    0    80a5885ebe2420bab5e1581234567890(OK) Bravo17 (Lobby)\n
         #(1 players in total)'
         players = {}
+        player_list = None
         try:
             player_list = self.output.write("players").splitlines()
         except AttributeError, err:
