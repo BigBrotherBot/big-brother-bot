@@ -250,6 +250,7 @@ class Bf4Parser(AbstractParser):
         'vehicleSpawnDelay',        # <modifier: percent>  Set vehicle spawn delay scale factor
         'preset',                   # allows you to set the server to either normal, hardcore infantry or custom
         'unlockMode'                # which set of unlocks is available on an unranked server (all/common/stats/none)
+        'ticketBleedRate'           # controls the rate of tickets drop
     )
 
     # gamemodes aliases {alias: actual game mode name}
@@ -596,6 +597,7 @@ class Bf4Parser(AbstractParser):
         self.game['vehicleSpawnDelay'] = get_cvar('vehicleSpawnDelay', 'int')
         self.game['preset'] = get_cvar('preset')
         self.game['unlockMode'] = get_cvar('unlockMode')
+        self.game['ticketBleedRate'] = get_cvar('ticketBleedRate', 'int')
 
         self.game.timeLimit = self.game.gameModeCounter
         self.game.fragLimit = self.game.gameModeCounter
