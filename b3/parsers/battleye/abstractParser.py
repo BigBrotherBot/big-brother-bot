@@ -361,9 +361,9 @@ class AbstractParser(b3.parser.Parser):
         elif message.startswith('(Command)'):
             func = self.OnPlayerChat
             eventData = message[10:] + ' (Command)'
-        elif find(message, ' Log: #') != -1:
+        elif message.find(' Log: #') != -1:
             func = self.OnBattleyeScriptLog
-            eventdata = message
+            eventData = message
 
         else:
             self.debug('Unhandled server message %s' % message)
