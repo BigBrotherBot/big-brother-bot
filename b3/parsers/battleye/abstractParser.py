@@ -48,6 +48,8 @@
 #   - add handling of Battleye Script notifications. New Event EVT_BATTLEYE_SCRIPTLOG
 # 10/09/2013   1.1.1
 #   - Add handling of empty player list returned from server
+# 21/12/2013   1.1.2
+#   - Added more commands to the commands list
 
 import sys, re, traceback, time, Queue, threading
 from logging import Formatter
@@ -60,7 +62,7 @@ import b3.cvar
 from b3.clients import Clients
 
 __author__  = '82ndab-Bravo17, Courgette'
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 
 # disable the authorizing timer that come by default with the b3.clients.Clients class
@@ -112,6 +114,13 @@ class AbstractParser(b3.parser.Parser):
         'tempban': ('ban', '%(cid)s', '%(duration)d', '%(reason)s'),
         'tempbanByGUID': ('addBan', '%(guid)s', '%(duration)d', '%(reason)s'),
         'shutdown': ('#shutdown', ),
+        'mission': ('#mission', '%(missionname)s'),
+        'missionsscreen': ('#missions', ),
+        'restartmission': ('#restart', ),
+        'reassignroles': ('#reassign', ),
+        'servermonitor': ('#monitor', '%(onoff)s'),
+        'listmissions': ('missions', ),
+        'serverdebug': ('#debug', '%(cmd)s', '%(interval)d')
         }
         
     _eventMap = {
@@ -666,6 +675,7 @@ class AbstractParser(b3.parser.Parser):
         #0   192.168.0.100:2316    0    80a5885ebe2420bab5e1581234567890(OK) Bravo17 (Lobby)\n
         #(1 players in total)'
         players = {}
+        player_list = None
         try:
             player_list = self.output.write("players").splitlines()
         except AttributeError, err:
