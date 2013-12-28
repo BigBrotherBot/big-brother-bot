@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 28/23/2013 - 1.4.17 - Courgette
+# * close ftp connection
 # 30/11/2013 - 1.4.16 - Courgette
 # * save status info to database by default
 # 24/11/2013 - 1.4.15 - Fenix
@@ -73,7 +75,7 @@
 # Converted to use new event handlers
 
 __author__ = 'ThorN'
-__version__ = '1.4.16'
+__version__ = '1.4.17'
 
 import b3
 import b3.cron
@@ -414,17 +416,17 @@ class StatusPlugin(b3.plugin.Plugin):
     def writeXML(self, xml):
         if self._ftpstatus:
             self.debug('Uploading XML status to FTP server')
-            ftp=FTP(self._ftpinfo['host'], self._ftpinfo['user'], passwd=self._ftpinfo['password'])
+            ftp_file = StringIO.StringIO()
+            ftp_file.write(xml)
+            ftp_file.seek(0)
+            ftp = FTP(self._ftpinfo['host'], self._ftpinfo['user'], passwd=self._ftpinfo['password'])
             ftp.cwd(os.path.dirname(self._ftpinfo['path']))
-            ftpfile = StringIO.StringIO()
-            ftpfile.write(xml)
-            ftpfile.seek(0)
-            ftp.storbinary('STOR ' + os.path.basename(self._ftpinfo['path']), ftpfile)
+            ftp.storbinary('STOR ' + os.path.basename(self._ftpinfo['path']), ftp_file)
+            ftp.quit()
         else:
             self.debug('Writing XML status to %s', self._outputFile)
-            f = file(self._outputFile, 'w')
-            f.write(xml)
-            f.close()
+            with open(self._outputFile, 'w') as f:
+                f.write(xml)
 
 if __name__ == '__main__':
     from b3.fake import fakeConsole
