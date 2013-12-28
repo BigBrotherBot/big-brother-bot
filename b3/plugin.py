@@ -191,7 +191,7 @@ class Plugin:
         """
         try:
             self.eventmap[event.type](event)
-        except KeyError:
+        except (KeyError, TypeError):
             # NOTE: AttributeError should never be raised at this point
             # since we already do the very same check on plugin startup
             self.onEvent(event)  # keep backwards compatibility
