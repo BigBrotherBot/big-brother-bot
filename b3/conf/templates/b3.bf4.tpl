@@ -76,7 +76,7 @@
                 dlocation="http://github.com/maikelwever/b3-plugin-poweradminbf4/archive/master.zip"/>
         <plugin name="chatlogger" config="external_dir/conf/plugin_chatlogger.xml"
                 dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=7" sql="chatlogger.sql"/>
-        <plugin name="xlrstats" config="external_dir/conf/xlrstats.xml"/>
+        <plugin name="xlrstats" config="external_dir/conf/plugin_xlrstats.ini"/>
         <plugin name="makeroom" config="external_dir/conf/plugin_makeroom.xml" dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=148"/>
         <plugin name="metabans" config="external_dir/conf/plugin_metabans.xml" dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=153"/>
     </extplugins>
