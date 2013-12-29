@@ -123,6 +123,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     _defaultTableNames = True
     _default_messages = {
         'cmd_xlrstats' : '^3XLR Stats: ^7%(name)s ^7: K ^2%(kills)s ^7D ^3%(deaths)s ^7TK ^1%(teamkills)s ^7Ratio ^5%(ratio)s ^7Skill ^3%(skill)s',
+        'cmd_xlrtopstats': '^3# %(number)s: ^7%(name)s ^7: Skill ^3%(skill)s ^7Ratio ^5%(ratio)s ^7Kills: ^2%(kills)s',
     }
 
     def startup(self):
@@ -1449,8 +1450,12 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             c = 1
             while not cursor.EOF:
                 r = cursor.getRow()
-                message = '^3# %s: ^7%s ^7: Skill ^3%1.02f ^7Ratio ^5%1.02f ^7Kills: ^2%s' % (
-                    c, r['name'], r['skill'], r['ratio'], r['kills'])
+                message = self.getMessage('cmd_xlrtopstats', {'number': c,
+                                                              'name': r['name'],
+                                                              'skill': '%1.02f' % r['skill'],
+                                                              'ratio': '%1.02f' % r['ratio'],
+                                                              'kills': r['kills'],
+                                                              })
                 if ext:
                     self.console.say(message)
                 else:
