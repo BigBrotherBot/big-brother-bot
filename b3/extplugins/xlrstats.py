@@ -1636,6 +1636,7 @@ class XlrstatscontrollerPlugin(b3.plugin.Plugin):
 
     def __init__(self, console, minPlayers=3, silent=False):
         self.console = console
+        self.console.debug('Initializing SubPlugin: XlrstatsControllerPlugin')
         self.minPlayers = minPlayers
         self.silent = silent
         # empty message cache
@@ -1700,6 +1701,7 @@ class XlrstatshistoryPlugin(b3.plugin.Plugin):
 
     def __init__(self, console, weeklyTable, monthlyTable, playerstatsTable):
         self.console = console
+        self.console.debug('Initializing SubPlugin: XlrstatsHistoryPlugin')
         self.history_weekly_table = weeklyTable
         self.history_monthly_table = monthlyTable
         self.playerstats_table = playerstatsTable
@@ -1829,10 +1831,9 @@ class CtimePlugin(b3.plugin.Plugin):
 
     def __init__(self, console, cTimeTable):
         self.console = console
+        self.console.debug('Initializing SubPlugin: XlrstatsCtimePlugin')
         self.ctime_table = cTimeTable
-        self.registerEvent(b3.events.EVT_CLIENT_AUTH)
-        self.registerEvent(b3.events.EVT_CLIENT_DISCONNECT)
-        self.query = self.console.storage.query
+        #self.query = self.console.storage.query
         tzName = self.console.config.get('b3', 'time_zone').upper()
         tzOffest = b3.timezones.timezones[tzName]
         hoursGMT = (self._hours - tzOffest)%24
@@ -1840,6 +1841,14 @@ class CtimePlugin(b3.plugin.Plugin):
         self.info(u'everyday at %2d:%2d %s, connection info older than %s days will be deleted' % (self._hours, self._minutes, tzName, self._max_age_in_days))
         self._cronTab = b3.cron.PluginCronTab(self, self.purge, 0, self._minutes, hoursGMT, '*', '*', '*')
         self.console.cron + self._cronTab
+
+    def startup(self):
+        self.console.debug('Starting SubPlugin: XlrstatsCtimePlugin')
+        #define a shortcut to the storage.query function
+        self.query = self.console.storage.query
+        #registering events
+        self.registerEvent(b3.events.EVT_CLIENT_AUTH)
+        self.registerEvent(b3.events.EVT_CLIENT_DISCONNECT)
 
     def purge(self):
         if not self._max_age_in_days or self._max_age_in_days == 0:
