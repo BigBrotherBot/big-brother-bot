@@ -21,13 +21,13 @@ import os
 from mock import patch
 from mockito import when, mock
 from b3 import __file__ as b3_module__file__, TEAM_RED, TEAM_BLUE
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 from b3.extplugins.xlrstats import XlrstatsPlugin, __file__ as xlrstats__file__
 from b3.plugins.admin import AdminPlugin, Command
 from tests import B3TestCase, logging_disabled
 from b3.fake import FakeClient
 
-DEFAULT_XLRSTATS_CONFIG_FILE = os.path.join(os.path.dirname(xlrstats__file__), 'conf/xlrstats.xml')
+DEFAULT_XLRSTATS_CONFIG_FILE = os.path.join(os.path.dirname(xlrstats__file__), 'conf/plugin_xlrstats.ini')
 DEFAULT_ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.ini"))
 
 
@@ -59,7 +59,7 @@ class XlrstatsTestCase(B3TestCase):
             self.adminPlugin.onStartup()
 
             # We need a config for the Xlrstats plugin
-            self.conf = XmlConfigParser()  # It is an empty config but we can fill it up later
+            self.conf = CfgConfigParser()  # It is an empty config but we can fill it up later
 
             # Now we create an instance of the SUT (System Under Test) which is the XlrstatsPlugin
             self.p = XlrstatsPlugin(self.console, self.conf)
