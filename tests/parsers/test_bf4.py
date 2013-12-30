@@ -23,7 +23,7 @@ from mockito import when, verify
 import b3
 from b3.clients import Client, Clients
 from b3.fake import FakeClient
-from b3.parsers.bf4 import Bf4Parser, MAP_NAME_BY_ID, GAME_MODES_BY_MAP_ID, GAME_MODES_NAMES
+from b3.parsers.bf4 import Bf4Parser, MAP_NAME_BY_ID, GAME_MODES_BY_MAP_ID, GAME_MODES_NAMES, BF4_COMMANDER, BF4_PLAYER, BF4_SPECTATOR
 from b3.config import XmlConfigParser, CfgConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import MapListBlock
@@ -258,7 +258,7 @@ class Test_getServerInfo(unittest.TestCase):
                                                          team4score='14')))
 
 
-class Test_bf3_events(BF4TestCase):
+class Test_bf4_events(BF4TestCase):
 
     def setUp(self):
         self.conf = XmlConfigParser()
@@ -408,9 +408,9 @@ class Test_punkbuster_events(BF4TestCase):
         self.assert_pb_misc_evt("PunkBuster Server: Auto Screenshot 000714 Requested from 25 Goldbat")
 
 
-class Test_bf3_sends_no_guid(BF4TestCase):
+class Test_bf4_sends_no_guid(BF4TestCase):
     """
-    See bug https://github.com/courgette/big-brother-bot/issues/69
+    See bug https://github.com/thomasleveil/big-brother-bot/issues/69
     """
     def setUp(self):
         BF4TestCase.setUp(self)
@@ -486,7 +486,7 @@ class Test_bf3_sends_no_guid(BF4TestCase):
 
 
 
-class Test_bf3_maps(BF4TestCase):
+class Test_bf4_maps(BF4TestCase):
 
     def setUp(self):
         BF4TestCase.setUp(self)
@@ -620,8 +620,8 @@ class Test_getPlayerPings(BF4TestCase):
         # GIVEN
         self.p1.connects("Player1")
         when(self.parser).write(('admin.listPlayers', 'all')).thenReturn(
-            ['9', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping',
-             '1', 'Player1', 'EA_XXX', '1', '1', '0', '0', '0', '1', '140']
+            ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type',
+             '1', 'Player1', 'EA_XXX', '1', '1', '0', '0', '0', '1', '140', '0']
         )
         # WHEN
         actual_result = self.parser.getPlayerPings()
@@ -633,9 +633,9 @@ class Test_getPlayerPings(BF4TestCase):
         self.p1.connects("Player1")
         self.p2.connects("Player2")
         when(self.parser).write(('admin.listPlayers', 'all')).thenReturn(
-            ['9', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping',
-             '2', 'Player1', 'EA_XXX', '1', '1', '0', '0', '0', '1', '140',
-             'Player2', 'EA_XXY', '1', '1', '0', '0', '0', '1', '450']
+            ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type',
+             '2', 'Player1', 'EA_XXX', '1', '1', '0', '0', '0', '1', '140', '0',
+             'Player2', 'EA_XXY', '1', '1', '0', '0', '0', '1', '450', '0']
         )
         # WHEN
         actual_result = self.parser.getPlayerPings()
@@ -647,9 +647,9 @@ class Test_getPlayerPings(BF4TestCase):
         self.p1.connects("Player1")
         self.p2.connects("Player2")
         when(self.parser).write(('admin.listPlayers', 'all')).thenReturn(
-            ['9', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping',
-             '2', 'Player1', 'EA_XXX', '1', '1', '0', '0', '0', '1', '140',
-             'Player2', 'EA_XXY', '1', '1', '0', '0', '0', '1', '450']
+            ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type',
+             '2', 'Player1', 'EA_XXX', '1', '1', '0', '0', '0', '1', '140', '0',
+             'Player2', 'EA_XXY', '1', '1', '0', '0', '0', '1', '450', '0']
         )
         # WHEN
         actual_result = self.parser.getPlayerPings(filter_client_ids=[self.p1.cid])
@@ -661,9 +661,9 @@ class Test_getPlayerPings(BF4TestCase):
         self.p1.connects("Player1")
         self.p2.connects("Player2")
         when(self.parser).write(('admin.listPlayers', 'all')).thenReturn(
-            ['9', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping',
-             '1', 'Player1', 'EA_XXX', '1', '1', '0', '0', '0', '1', '140',
-             'Player2', 'EA_XYZ', '1', '1', '0', '0', '0', '1', 'f00']
+            ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type',
+             '1', 'Player1', 'EA_XXX', '1', '1', '0', '0', '0', '1', '140', '0',
+             'Player2', 'EA_XYZ', '1', '1', '0', '0', '0', '1', 'f00', '0']
         )
         # WHEN
         actual_result = self.parser.getPlayerPings(filter_client_ids=[self.p1.cid, self.p2.cid])
@@ -675,9 +675,9 @@ class Test_getPlayerPings(BF4TestCase):
         self.p1.connects("Player1")
         self.p2.connects("Player2")
         when(self.parser).write(('admin.listPlayers', 'all')).thenReturn(
-            ['9', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping',
-             '1', 'Player1', 'EA_XXX', '1', '1', '0', '0', '0', '1', '140',
-             'Player2', 'EA_XYZ', '1', '1', '0', '0', '0', '1', 'f00']
+            ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type',
+             '1', 'Player1', 'EA_XXX', '1', '1', '0', '0', '0', '1', '140', '0',
+             'Player2', 'EA_XYZ', '1', '1', '0', '0', '0', '1', 'f00', '0']
         )
         # WHEN
         actual_result = self.parser.getPlayerPings()
@@ -689,9 +689,9 @@ class Test_getPlayerPings(BF4TestCase):
         self.p1.connects("Player1")
         self.p2.connects("Player2")
         when(self.parser).write(('admin.listPlayers', 'all')).thenReturn(
-            ['9', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping',
-             '1', 'Player1', 'EA_XXX', '1', '1', '0', '0', '0', '1', '140',
-             'Player2', 'EA_XYZ', '1', '1', '0', '0', '0', '1', 'f00']
+            ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type',
+             '1', 'Player1', 'EA_XXX', '1', '1', '0', '0', '0', '1', '140', '0',
+             'Player2', 'EA_XYZ', '1', '1', '0', '0', '0', '1', 'f00', '0']
         )
         # WHEN
         actual_result = self.parser.getPlayerPings(filter_client_ids=[self.p1.cid, self.p2.cid])
@@ -806,4 +806,134 @@ map: 20
         # THEN
         self.assertListEqual([], changeMap_mock.mock_calls)
         self.assertListEqual(['do you mean : siege of shanghai, flood zone, rogue transmission ?'], self.joe.message_history)
+
+
+class Test_Client_player_type(BF4TestCase):
+    def setUp(self):
+        BF4TestCase.setUp(self)
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.parser = Bf4Parser(self.conf)
+        self.foobar = self.parser.clients.newClient(cid='Foobar', name='Foobar', guid="FoobarGuid")
+
+    def test_player_type_player(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type', '1',
+             'Foobar', 'xxxxy', '1', '0', '0', '0', '0', '71', '65535', '0'])
+        # THEN
+        self.assertEqual(BF4_PLAYER, self.foobar.player_type)
+
+    def test_player_type_spectator(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type', '1',
+             'Foobar', 'xxxxy', '0', '0', '0', '0', '0', '71', '65535', '1'])
+        # THEN
+        self.assertEqual(BF4_SPECTATOR, self.foobar.player_type)
+
+    def test_player_type_commander(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type', '1',
+             'Foobar', 'xxxxy', '1', '0', '0', '0', '0', '71', '65535', '2'])
+        # THEN
+        self.assertEqual(BF4_COMMANDER, self.foobar.player_type)
+
+class Test_Client_is_commander(BF4TestCase):
+    def setUp(self):
+        BF4TestCase.setUp(self)
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""
+                <configuration>
+                </configuration>
+            """)
+        self.parser = Bf4Parser(self.conf)
+        self.foobar = self.parser.clients.newClient(cid='Foobar', name='Foobar', guid="FoobarGuid")
+
+    def test_player_is_commander(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type', '1',
+             'Foobar', 'xxxxy', '1', '0', '0', '0', '0', '71', '65535', '2'])
+        # THEN
+        self.assertEqual(BF4_COMMANDER, self.foobar.player_type)
+        self.assertTrue(self.foobar.is_commander)
+
+    def test_player_is_not_commander(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type', '1',
+             'Foobar', 'xxxxy', '1', '0', '0', '0', '0', '71', '65535', '0'])
+        # THEN
+        self.assertNotEqual(BF4_COMMANDER, self.foobar.player_type)
+        self.assertFalse(self.foobar.is_commander)
+
+
+class Test_getClient(BF4TestCase):
+    def setUp(self):
+        BF4TestCase.setUp(self)
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""<configuration/>""")
+        self.parser = Bf4Parser(self.conf)
+
+    @staticmethod
+    def build_listPlayer_response(cid, team_id, type_id):
+        """
+        :param type_id: {0: player, 1: spectator, 2: commander}
+        :type cid: str
+        :type team_id: str
+        :type type_id: str
+        :rtype : list of str
+        """
+        return ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type', '1',
+             cid, 'xxxxy', team_id, '0', '0', '0', '0', '71', '65535', type_id]
+
+    def test_team_red_player(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            self.build_listPlayer_response('Foobar', '1', '0'))
+        # WHEN
+        player = self.parser.getClient('Foobar')
+        # THEN
+        self.assertEqual(b3.TEAM_RED, player.team)
+
+    def test_team_blue_player(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            self.build_listPlayer_response('Foobar', '2', '0'))
+        # WHEN
+        player = self.parser.getClient('Foobar')
+        # THEN
+        self.assertEqual(b3.TEAM_BLUE, player.team)
+
+    def test_team_red_commander(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            self.build_listPlayer_response('Foobar', '1', '2'))
+        # WHEN
+        player = self.parser.getClient('Foobar')
+        # THEN
+        self.assertEqual(b3.TEAM_RED, player.team)
+
+    def test_team_blue_commander(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            self.build_listPlayer_response('Foobar', '2', '2'))
+        # WHEN
+        player = self.parser.getClient('Foobar')
+        # THEN
+        self.assertEqual(b3.TEAM_BLUE, player.team)
+
+    def test_team_spectator(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            self.build_listPlayer_response('Foobar', '0', '1'))
+        # WHEN
+        player = self.parser.getClient('Foobar')
+        # THEN
+        self.assertEqual(b3.TEAM_SPEC, player.team)
 

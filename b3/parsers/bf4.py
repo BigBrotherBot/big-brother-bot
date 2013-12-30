@@ -42,6 +42,10 @@ __version__ = '1.0.1'
 
 BF4_REQUIRED_VERSION = 99392
 
+BF4_PLAYER = 0              # normal player
+BF4_SPECTATOR = 1           # spectator which is not visible in the game for other player but visible as player for b3
+BF4_COMMANDER = 2           # commander which is visible for other player and b3
+
 SQUAD_NOSQUAD = 0
 SQUAD_ALPHA = 1
 SQUAD_BRAVO = 2
@@ -266,7 +270,7 @@ class Bf4Parser(AbstractParser):
     }
 
     def __new__(cls, *args, **kwargs):
-        Bf4Parser.patch_b3_Client_isAlive()
+        Bf4Parser.patch_b3_Client_properties()
         return AbstractParser.__new__(cls)
 
     def startup(self):
@@ -285,13 +289,7 @@ class Bf4Parser(AbstractParser):
         self.info('connecting all players...')
         plist = self.getPlayerList()
         for cid, p in plist.iteritems():
-            client = self.clients.getByCID(cid)
-            if not client:
-                #self.clients.newClient(playerdata['cid'], guid=playerdata['guid'], name=playerdata['name'], team=playerdata['team'], squad=playerdata['squad'])
-                name = p['name']
-                self.debug('client %s found on the server' % cid)
-                client = self.clients.newClient(cid, guid=p['name'], name=name, team=p['teamId'], squad=p['squadId'], data=p)
-                self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
+            self.getClient(cid)
 
     ###############################################################################################
     #
@@ -485,7 +483,8 @@ class Bf4Parser(AbstractParser):
                     guid = p['guid']
                     teamId = p['teamId']
                     squadId = p['squadId']
-                    client = self.clients.newClient(cid, guid=guid, name=name, team=self.getTeam(teamId), teamId=int(teamId), squad=squadId, data=p)
+                    typeId = p.get('type')
+                    client = self.clients.newClient(cid, guid=guid, name=name, team=self.getTeam(teamId, typeId), teamId=int(teamId), squad=squadId, data=p)
                     self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
         return client
 
@@ -627,14 +626,19 @@ class Bf4Parser(AbstractParser):
         self.game.serverinfo = data2
         return data
 
-    def getTeam(self, team):
-        """convert team numbers to B3 team numbers"""
+    def getTeam(self, team, type_id=None):
+        """convert team numbers to B3 team numbers
+        :param team the team number as sent by the BF4 server
+        :param type_id the type number as sent by the BF4 server - Commander / player / spectator
+        """
         team = int(team)
-        if team == 1:
+        if type_id and int(type_id) == BF4_SPECTATOR:
+            return b3.TEAM_SPEC
+        elif team == 1:
             return b3.TEAM_RED
         elif team == 2:
             return b3.TEAM_BLUE
-        elif team == 3:
+        elif team == 0:
             return b3.TEAM_SPEC
         else:
             return b3.TEAM_UNKNOWN
@@ -736,8 +740,12 @@ class Bf4Parser(AbstractParser):
         return response
 
     @staticmethod
-    def patch_b3_Client_isAlive():
-        """ add state property to Client """
+    def patch_b3_Client_properties():
+        """Add some properties to the Client Object"""
+
+        #
+        # Add isAlive() to Client and set Client.state property
+        #
 
         def isAlive(self):
             """Returns whether the player is alive or not."""
@@ -747,10 +755,11 @@ class Bf4Parser(AbstractParser):
             _player_name = self.name
             try:
                 _response = self.console.write(('player.isAlive', _player_name))
-                if _response[0] == 'true':
-                    return True
-                elif _response[0] == 'false':
-                    return False
+                if _response:
+                    if _response[0] == 'true':
+                        return True
+                    elif _response[0] == 'false':
+                        return False
             except IndexError:
                 pass
             except CommandFailedError, err:
@@ -778,6 +787,40 @@ class Bf4Parser(AbstractParser):
             pass
 
         b3.clients.Client.state = property(getPlayerState, setPlayerState)
+
+        #
+        # add is_commander property and _get_player_type() to Client
+        #
+
+        def _get_player_type(self):
+            """Queries the type of player from the server"""
+            _player_type = 0
+            _player_name = self.name
+            try:
+                _player_info_block = PlayerInfoBlock(self.console.write(('admin.listPlayers', 'player', _player_name)))
+                return int(_player_info_block[0]['type'])
+            except Exception, err:
+                self.console.error("could not get player_type for player %s: %s" % (self.name, err), exc_info=err)
+
+        b3.clients.Client._get_player_type = _get_player_type
+
+        def get_player_type(self):
+            return self._get_player_type()
+
+        def set_player_type(self, ptype):
+            pass
+
+        b3.clients.Client.player_type = property(get_player_type, set_player_type)
+
+        def get_commander_state(self):
+            return self.player_type == BF4_COMMANDER
+
+        def set_commander_state(self):
+            # silently prevents Client.is_commander from being set.
+            # The Client.is_commander value is determined from Client.type
+            pass
+
+        b3.clients.Client.is_commander = property(get_commander_state, set_commander_state)
 
     def _startRound(self):
         # respect var.roundLockdownCountdown
