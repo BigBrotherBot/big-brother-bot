@@ -271,7 +271,7 @@ class Bf4Parser(AbstractParser):
 
     def __new__(cls, *args, **kwargs):
         Bf4Parser.patch_b3_Client_isAlive()
-        Bf4Parser.patch_b3_Client_propertys()
+        Bf4Parser.patch_b3_Client_properties()
         return AbstractParser.__new__(cls)
 
     def startup(self):
@@ -785,7 +785,7 @@ class Bf4Parser(AbstractParser):
         b3.clients.Client.state = property(getPlayerState, setPlayerState)
 
     @staticmethod
-    def patch_b3_Client_propertys():
+    def patch_b3_Client_properties():
         """Add some properties to the Client Object"""
 
         def _get_player_type(self):
@@ -809,10 +809,7 @@ class Bf4Parser(AbstractParser):
         b3.clients.Client.player_type = property(get_player_type, set_player_type)
 
         def get_commander_state(self):
-            if self.player_type == BF4_COMMANDER:
-                return True
-            else:
-                return False
+            return self.player_type == BF4_COMMANDER
 
         def set_commander_state(self):
             # silently prevents Client.is_commander from being set.
