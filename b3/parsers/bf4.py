@@ -270,7 +270,6 @@ class Bf4Parser(AbstractParser):
     }
 
     def __new__(cls, *args, **kwargs):
-        Bf4Parser.patch_b3_Client_isAlive()
         Bf4Parser.patch_b3_Client_properties()
         return AbstractParser.__new__(cls)
 
@@ -741,8 +740,12 @@ class Bf4Parser(AbstractParser):
         return response
 
     @staticmethod
-    def patch_b3_Client_isAlive():
-        """ add state property to Client """
+    def patch_b3_Client_properties():
+        """Add some properties to the Client Object"""
+
+        #
+        # Add isAlive() to Client and set Client.state property
+        #
 
         def isAlive(self):
             """Returns whether the player is alive or not."""
@@ -784,9 +787,9 @@ class Bf4Parser(AbstractParser):
 
         b3.clients.Client.state = property(getPlayerState, setPlayerState)
 
-    @staticmethod
-    def patch_b3_Client_properties():
-        """Add some properties to the Client Object"""
+        #
+        # add is_commander property and _get_player_type() to Client
+        #
 
         def _get_player_type(self):
             """Queries the type of player from the server"""
