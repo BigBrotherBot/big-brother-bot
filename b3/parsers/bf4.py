@@ -755,10 +755,11 @@ class Bf4Parser(AbstractParser):
             _player_name = self.name
             try:
                 _response = self.console.write(('player.isAlive', _player_name))
-                if _response[0] == 'true':
-                    return True
-                elif _response[0] == 'false':
-                    return False
+                if _response:
+                    if _response[0] == 'true':
+                        return True
+                    elif _response[0] == 'false':
+                        return False
             except IndexError:
                 pass
             except CommandFailedError, err:
