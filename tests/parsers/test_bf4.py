@@ -885,3 +885,69 @@ class Test_Client_is_commander(BF4TestCase):
         # THEN
         self.assertNotEqual(BF4_COMMANDER, self.foobar.player_type)
         self.assertFalse(self.foobar.is_commander)
+
+
+class Test_getClient(BF4TestCase):
+    def setUp(self):
+        BF4TestCase.setUp(self)
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""<configuration/>""")
+        self.parser = Bf4Parser(self.conf)
+
+    @staticmethod
+    def build_listPlayer_response(cid, team_id, type_id):
+        """
+        :param type_id: {0: player, 1: spectator, 2: commander}
+        :type cid: str
+        :type team_id: str
+        :type type_id: str
+        :rtype : list of str
+        """
+        return ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type', '1',
+             cid, 'xxxxy', team_id, '0', '0', '0', '0', '71', '65535', type_id]
+
+    def test_team_red_player(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            self.build_listPlayer_response('Foobar', '1', '0'))
+        # WHEN
+        player = self.parser.getClient('Foobar')
+        # THEN
+        self.assertEqual(b3.TEAM_RED, player.team)
+
+    def test_team_blue_player(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            self.build_listPlayer_response('Foobar', '2', '0'))
+        # WHEN
+        player = self.parser.getClient('Foobar')
+        # THEN
+        self.assertEqual(b3.TEAM_BLUE, player.team)
+
+    def test_team_red_commander(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            self.build_listPlayer_response('Foobar', '1', '2'))
+        # WHEN
+        player = self.parser.getClient('Foobar')
+        # THEN
+        self.assertEqual(b3.TEAM_RED, player.team)
+
+    def test_team_blue_commander(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            self.build_listPlayer_response('Foobar', '2', '2'))
+        # WHEN
+        player = self.parser.getClient('Foobar')
+        # THEN
+        self.assertEqual(b3.TEAM_BLUE, player.team)
+
+    def test_team_spectator(self):
+        # GIVEN
+        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
+            self.build_listPlayer_response('Foobar', '-99', '1'))  # TODO: check the actual team id that is returned by
+            # the admin.listPlayers command for a spectator and replace -99 with that value
+        # WHEN
+        player = self.parser.getClient('Foobar')
+        # THEN
+        self.assertEqual(b3.TEAM_SPEC, player.team)

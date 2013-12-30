@@ -290,13 +290,7 @@ class Bf4Parser(AbstractParser):
         self.info('connecting all players...')
         plist = self.getPlayerList()
         for cid, p in plist.iteritems():
-            client = self.clients.getByCID(cid)
-            if not client:
-                #self.clients.newClient(playerdata['cid'], guid=playerdata['guid'], name=playerdata['name'], team=playerdata['team'], squad=playerdata['squad'])
-                name = p['name']
-                self.debug('client %s found on the server' % cid)
-                client = self.clients.newClient(cid, guid=p['name'], name=name, team=p['teamId'], squad=p['squadId'], data=p)
-                self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
+            self.getClient(cid)
 
     ###############################################################################################
     #
@@ -490,7 +484,8 @@ class Bf4Parser(AbstractParser):
                     guid = p['guid']
                     teamId = p['teamId']
                     squadId = p['squadId']
-                    client = self.clients.newClient(cid, guid=guid, name=name, team=self.getTeam(teamId), teamId=int(teamId), squad=squadId, data=p)
+                    typeId = p.get('type')
+                    client = self.clients.newClient(cid, guid=guid, name=name, team=self.getTeam(teamId, typeId), teamId=int(teamId), squad=squadId, data=p)
                     self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
         return client
 
@@ -632,10 +627,15 @@ class Bf4Parser(AbstractParser):
         self.game.serverinfo = data2
         return data
 
-    def getTeam(self, team):
-        """convert team numbers to B3 team numbers"""
+    def getTeam(self, team, type_id=None):
+        """convert team numbers to B3 team numbers
+        :param team the team number as sent by the BF4 server
+        :param type_id the type number as sent by the BF4 server - Commander / player / spectator
+        """
         team = int(team)
-        if team == 1:
+        if type_id and int(type_id) == BF4_SPECTATOR:
+            return b3.TEAM_SPEC
+        elif team == 1:
             return b3.TEAM_RED
         elif team == 2:
             return b3.TEAM_BLUE
