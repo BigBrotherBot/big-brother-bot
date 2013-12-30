@@ -638,7 +638,7 @@ class Bf4Parser(AbstractParser):
             return b3.TEAM_RED
         elif team == 2:
             return b3.TEAM_BLUE
-        elif team == 3:
+        elif team == 0:
             return b3.TEAM_SPEC
         else:
             return b3.TEAM_UNKNOWN

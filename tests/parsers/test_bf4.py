@@ -837,7 +837,7 @@ class Test_Client_player_type(BF4TestCase):
         # GIVEN
         when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
             ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type', '1',
-             'Foobar', 'xxxxy', '0', '0', '0', '0', '0', '71', '65535', '0'])
+             'Foobar', 'xxxxy', '1', '0', '0', '0', '0', '71', '65535', '0'])
         # THEN
         self.assertEqual(BF4_PLAYER, self.foobar.player_type)
 
@@ -853,7 +853,7 @@ class Test_Client_player_type(BF4TestCase):
         # GIVEN
         when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
             ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type', '1',
-             'Foobar', 'xxxxy', '0', '0', '0', '0', '0', '71', '65535', '2'])
+             'Foobar', 'xxxxy', '1', '0', '0', '0', '0', '71', '65535', '2'])
         # THEN
         self.assertEqual(BF4_COMMANDER, self.foobar.player_type)
 
@@ -872,7 +872,7 @@ class Test_Client_is_commander(BF4TestCase):
         # GIVEN
         when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
             ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type', '1',
-             'Foobar', 'xxxxy', '0', '0', '0', '0', '0', '71', '65535', '2'])
+             'Foobar', 'xxxxy', '1', '0', '0', '0', '0', '71', '65535', '2'])
         # THEN
         self.assertEqual(BF4_COMMANDER, self.foobar.player_type)
         self.assertTrue(self.foobar.is_commander)
@@ -881,7 +881,7 @@ class Test_Client_is_commander(BF4TestCase):
         # GIVEN
         when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
             ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type', '1',
-             'Foobar', 'xxxxy', '0', '0', '0', '0', '0', '71', '65535', '0'])
+             'Foobar', 'xxxxy', '1', '0', '0', '0', '0', '71', '65535', '0'])
         # THEN
         self.assertNotEqual(BF4_COMMANDER, self.foobar.player_type)
         self.assertFalse(self.foobar.is_commander)
@@ -945,9 +945,9 @@ class Test_getClient(BF4TestCase):
     def test_team_spectator(self):
         # GIVEN
         when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
-            self.build_listPlayer_response('Foobar', '-99', '1'))  # TODO: check the actual team id that is returned by
-            # the admin.listPlayers command for a spectator and replace -99 with that value
+            self.build_listPlayer_response('Foobar', '0', '1'))
         # WHEN
         player = self.parser.getClient('Foobar')
         # THEN
         self.assertEqual(b3.TEAM_SPEC, player.team)
+
