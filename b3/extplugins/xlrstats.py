@@ -121,7 +121,10 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     ctime_table = 'ctime'
     #
     _defaultTableNames = True
-
+    _default_messages = {
+        'cmd_xlrstats' : '^3XLR Stats: ^7%(name)s ^7: K ^2%(kills)s ^7D ^3%(deaths)s ^7TK ^1%(teamkills)s ^7Ratio ^5%(ratio)s ^7Skill ^3%(skill)s',
+        'cmd_xlrtopstats': '^3# %(number)s: ^7%(name)s ^7: Skill ^3%(skill)s ^7Ratio ^5%(ratio)s ^7Kills: ^2%(kills)s',
+    }
 
     def startup(self):
         # get the admin plugin so we can register commands
@@ -1379,8 +1382,15 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 client.message('^3XLR Stats: ^7Stats for %s are not available (hidden).' % sclient.exactName)
                 return None
             else:
-                message = '^3XLR Stats: ^7%s ^7: K ^2%s ^7D ^3%s ^7TK ^1%s ^7Ratio ^5%1.02f ^7Skill ^3%1.02f' % (
-                    sclient.exactName, stats.kills, stats.deaths, stats.teamkills, stats.ratio, stats.skill)
+                message_vars = {
+                    'name': sclient.exactName,
+                    'kills': stats.kills,
+                    'deaths': stats.deaths,
+                    'teamkills': stats.teamkills,
+                    'ratio': '%1.02f' % stats.ratio,
+                    'skill': '%1.02f' % stats.skill,
+                }
+                message = self.getMessage('cmd_xlrstats', message_vars)
                 cmd.sayLoudOrPM(client, message)
         else:
             client.message('^3XLR Stats: ^7Could not find stats for %s' % sclient.exactName)
@@ -1440,8 +1450,12 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             c = 1
             while not cursor.EOF:
                 r = cursor.getRow()
-                message = '^3# %s: ^7%s ^7: Skill ^3%1.02f ^7Ratio ^5%1.02f ^7Kills: ^2%s' % (
-                    c, r['name'], r['skill'], r['ratio'], r['kills'])
+                message = self.getMessage('cmd_xlrtopstats', {'number': c,
+                                                              'name': r['name'],
+                                                              'skill': '%1.02f' % r['skill'],
+                                                              'ratio': '%1.02f' % r['ratio'],
+                                                              'kills': r['kills'],
+                                                              })
                 if ext:
                     self.console.say(message)
                 else:

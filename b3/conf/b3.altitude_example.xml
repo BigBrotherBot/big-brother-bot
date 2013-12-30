@@ -125,7 +125,7 @@
 			a look in the B3 forums (look for XLR Extensions) for more
 			information before enabling this. Extra database tables are
 			necessary.
-		<plugin name="xlrstats" config="@b3/extplugins/conf/xlrstats.xml"/>
+		<plugin name="xlrstats" config="@b3/extplugins/conf/plugin_xlrstats.ini"/>
 		-->
 		
 		<!-- You can find many others plugin for B3 which can extend functionalities a lot !
