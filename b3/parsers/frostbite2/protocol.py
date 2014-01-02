@@ -3,8 +3,10 @@
 # Changelog
 # 2010/07/23 - xlr8or - v1.0.1
 # * fixed infinite loop in a python socket thread in receivePacket() on gameserver restart
+# 2014/01/02 - courgette - v1.1
+# * fix FrostbiteServer not closing properly the asyncore connexion when the game server is unreachable
 
-__version__ = '1.0.1'
+__version__ = '1.1'
 
 import logging
 from struct import pack, unpack
@@ -278,6 +280,7 @@ class FrostbiteServer(threading.Thread):
     def __init__(self, host, port, password=None, command_timeout=5.0):
         threading.Thread.__init__(self, name="FrosbiteServerThread")
         self.daemon = True
+        self.test_connectivity(host, port)
         self.frostbite_dispatcher = FrostbiteDispatcher(host, port)
         self._stopEvent = threading.Event()
         self.password = password
@@ -287,9 +290,6 @@ class FrostbiteServer(threading.Thread):
         self.pending_commands = {}
         self.__command_reply_event = threading.Event()
         self.observers = set()
-        # test connection
-        sock = socket.create_connection((host, port), timeout=2)
-        sock.close()
         # ok start working
         self.start()
         time.sleep(1.5)
@@ -359,6 +359,11 @@ class FrostbiteServer(threading.Thread):
     #
     #===============================================================================
 
+    @staticmethod
+    def test_connectivity(host, port):
+        sock = socket.create_connection((host, port), timeout=2)
+        sock.close()
+    
     def __getattr__(self, name):
         if name == 'connected':
             return self.frostbite_dispatcher.connected
