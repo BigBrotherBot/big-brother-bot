@@ -43,13 +43,15 @@
 # 07/13/2013   0.20
 #   - Handle 'bans' command not completing correctly
 # 07/27/2013   1.0
-#   - Sync won't remove clients which are already connected by not yet authed (unverified guid)
+#   - Sync won't remove clients which are already connected but not yet authed (unverified guid)
 # 09/16/2013   1.1
 #   - add handling of Battleye Script notifications. New Event EVT_BATTLEYE_SCRIPTLOG
 # 10/09/2013   1.1.1
 #   - Add handling of empty player list returned from server
 # 21/12/2013   1.1.2
 #   - Added more commands to the commands list
+# 22/12/2013   1.1.3
+#   - Sync won't remove clients which are already connected but do not get have their GUID calculated
 
 import sys, re, traceback, time, Queue, threading
 from logging import Formatter
@@ -62,7 +64,7 @@ import b3.cvar
 from b3.clients import Clients
 
 __author__  = '82ndab-Bravo17, Courgette'
-__version__ = '1.1.2'
+__version__ = '1.1.3'
 
 
 # disable the authorizing timer that come by default with the b3.clients.Clients class
@@ -128,9 +130,9 @@ class AbstractParser(b3.parser.Parser):
 
     _regPlayer = re.compile(r'^(?P<cid>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9]+)\s+(?P<ping>[0-9-]+)\s+(?P<guid>[0-9a-f]+)\((?P<verified>[A-Z\?]+)\)\s+(?P<name>.*?)$', re.I)
     _regPlayer_lobby = re.compile(r'^(?P<cid>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9]+)\s+(?P<ping>[0-9-]+)\s+(?P<guid>[0-9a-f]+)\((?P<verified>[A-Z\?]+)\)\s+(?P<name>.*?)\s+(?P<lobby>\(Lobby\))$', re.I)
+    _regPlayer_noguidyet = re.compile(r'^(?P<cid>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9]+)\s+(?P<ping>-1+)\s+(?P<verified>-)\s+(?P<name>.*?)\s+(?P<lobby>\(Lobby\))$', re.I)
     re_playerlist = re.compile(r'''^\s*(?P<cid>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9]+)\s+(?P<ping>[0-9-]+)\s+(?P<guid>[0-9a-f]+)\((?P<verified>[A-Z\?]+)\)\s+(?P<name>.*?)(?:\s+(?P<lobby>\(Lobby\)))?$''', re.I|re.MULTILINE)
     _useunverifiedguid = False
-
 
     # flag to find out if we need to fire a EVT_GAME_ROUND_START event.
     _waiting_for_round_start = True
@@ -554,6 +556,8 @@ class AbstractParser(b3.parser.Parser):
 
         client = self.getClient(name=name, cid=cid, guid=guid)
         if client:
+            # if client.ip:
+            #     self.verbose2('UnVerified GUID, client IP is %s', client.ip)
             # update client data
             client.guid = guid
             client.name = name
@@ -577,6 +581,8 @@ class AbstractParser(b3.parser.Parser):
 
         client = self.getClient(name=name, cid=cid, guid=guid)
         if client:
+            # if client.ip:
+            #     self.verbose2('Verified GUID, client IP is %s', client.ip)
             # update client data
             client.guid = guid
             client.name = name
@@ -673,6 +679,7 @@ class AbstractParser(b3.parser.Parser):
         #[#] [IP Address]:[Port] [Ping] [GUID] [Name]\n--------------------------------------------------\n
         #0   76.108.91.78:2304     63   80a5885ebe2420bab5e1581234567890(OK) Bravo17\n
         #0   192.168.0.100:2316    0    80a5885ebe2420bab5e1581234567890(OK) Bravo17 (Lobby)\n
+        #12  90.0.216.144:2304     -1   - babasss (Lobby)\n
         #(1 players in total)'
         players = {}
         player_list = None
@@ -696,12 +703,13 @@ class AbstractParser(b3.parser.Parser):
                     pl['lobby'] = True
                     players[pl['cid']] = pl
                 elif pl['verified'] =='?':
-                        self.debug('Player in Lobby GUID not yet verified: %s' % pl)
-                        pl['lobby'] = True
-                        players[pl['cid']] = pl
+                    self.debug('Player in Lobby GUID not yet verified: %s' % pl)
+                    pl['lobby'] = True
+                    players[pl['cid']] = pl
                 else:
-                        self.debug('Player in Lobby GUID status unknown: %s' % pl)
+                    self.debug('Player in Lobby GUID status unknown: %s' % pl)
             else:
+        
                 p = re.match(self._regPlayer, player_list[i])
                 if p:
                     pl = p.groupdict()
@@ -715,8 +723,16 @@ class AbstractParser(b3.parser.Parser):
                         players[pl['cid']] = pl
                     else:
                         self.debug('Player GUID status unknown: %s' % pl)
+
                 else:
-                    self.debug('Not Matched: %s ' % player_list[i])
+                    p = re.match(self._regPlayer_noguidyet, player_list[i])
+                    if p:
+                        pl = p.groupdict()
+                        self.debug('Player GUID not yet known: %s' % pl)
+                        pl['lobby'] = True
+                        players[pl['cid']] = pl
+                    else:
+                        self.debug('Not Matched: %s ' % player_list[i])
 
         self.debug('Players on server: %s' % players)
         return players
@@ -744,6 +760,8 @@ class AbstractParser(b3.parser.Parser):
                         (client.authed and c.get('verified') == 'OK' and c_guid == client.guid)
                     or
                         (not client.authed and c.get('verified') == '?')
+                    or 
+                        (not client.authed and c.get('verified') == '-')
                 ) and c.get('name') == client.name:
                     self.debug('Client found on server %s' % client.name)
                     mlist[cid] = client
@@ -756,7 +774,7 @@ class AbstractParser(b3.parser.Parser):
                         client.team = self.getTeam('unknown')
                 else:
                     # Wrong client in slot
-                    self.debug('Removing %s from list' % client.name)
+                    self.debug('Removing %s from list - wrong client' % client.name)
                     client.disconnect()
             else:
                 self.debug('Look for client in storage')
@@ -767,7 +785,7 @@ class AbstractParser(b3.parser.Parser):
                     if c_verified == 'OK' or self._useunverifiedguid:
                         cl = self.getClient(c['name'], guid=c_guid, cid=c['cid'], ip=c_ip)
                     elif c_ip:
-                        # case where guid is not verified but as we have an IP we can try to verify it ourselve
+                        # case where guid is not verified but as we have an IP we can try to verify it ourselves
                         client_matches = self.storage.getClientsMatching({'guid': c_guid, 'ip': c_ip})
                         if len(client_matches) == 1:
                             # assume that guid is OK as it matches a known client entry in database with that same IP
@@ -789,7 +807,7 @@ class AbstractParser(b3.parser.Parser):
             for client in self.clients.getList():
 
                 if client.cid not in client_cid_list:
-                    self.debug('Removing %s from list' % client.name)
+                    self.debug('Removing %s from list - left server' % client.name)
                     client.disconnect()
         self.queueEvent(b3.events.Event(b3.events.EVT_PLAYER_SYNC_COMPLETED, None, None))
         
