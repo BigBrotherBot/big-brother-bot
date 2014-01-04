@@ -142,7 +142,7 @@ class WelcomePlugin(b3.plugin.Plugin):
             info = {
                 'name'    : client.exactName,
                 'id'    : str(client.id),
-                'connections' : str(client.connections)
+                'connections' : '{0:,}'.format(client.connections)
             }
 
             if client.maskedGroup:
