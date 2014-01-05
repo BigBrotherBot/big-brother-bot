@@ -141,7 +141,7 @@ class WelcomePlugin(b3.plugin.Plugin):
         if client.connected and _timeDiff > self._min_gap:
             info = {
                 'name'    : client.exactName,
-                'id'    : str(client.id),
+                'id'    : format(client.id, ','),
                 'connections' : format(client.connections, ',')
             }
 
