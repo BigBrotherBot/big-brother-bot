@@ -70,6 +70,8 @@
 #   * BOT won't make it to the database clients table anymore
 # 2013-08-19 - 1.5.1 Courgette
 #   * do not reconnect players leaving the game server (regression from v1.5 - parsing of "switched team" lines)
+# 2014-01-10 - 1.5.2 Fenix
+#   * correctly flag bot guid with "BOT<slot>" upon client connect
 #
 import re
 import time
@@ -81,7 +83,7 @@ from b3.game_event_router import Game_event_router
 from b3.parsers.source.rcon import Rcon
 
 __author__  = 'Courgette'
-__version__ = '1.5.1'
+__version__ = '1.5.2'
 
 
 """
@@ -924,7 +926,7 @@ class CsgoParser(Parser):
         """
         is_bot = guid == "BOT"
         if is_bot:
-            guid = None
+            guid += str(cid)
         client = self.clients.getByCID(cid)
         if client is None:
             client = self.clients.newClient(cid, guid=guid, name=name, team=TEAM_UNKNOWN)
