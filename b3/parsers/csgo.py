@@ -70,6 +70,8 @@
 #   * BOT won't make it to the database clients table anymore
 # 2013-08-19 - 1.5.1 Courgette
 #   * do not reconnect players leaving the game server (regression from v1.5 - parsing of "switched team" lines)
+# 2014-01-10 - 1.6 Courgette
+#   * add missing B3 event EVT_GAME_ROUND_START
 #
 import re
 import time
@@ -81,7 +83,7 @@ from b3.game_event_router import Game_event_router
 from b3.parsers.source.rcon import Rcon
 
 __author__  = 'Courgette'
-__version__ = '1.5.1'
+__version__ = '1.6'
 
 
 """
@@ -382,6 +384,7 @@ class CsgoParser(Parser):
         # L 08/29/2012 - 22:26:59: World triggered "killlocation" (attacker_position "-282 749 -21") (victim_position "68 528 64")
         if event_name == "Round_Start":
             self.game.startRound()
+            return self.getEvent('EVT_GAME_ROUND_START', data=self.game)
         elif event_name == "Round_End":
             return self.getEvent("EVT_GAME_ROUND_END")
         elif event_name in ("Game_Commencing"):
