@@ -18,6 +18,7 @@
 #
 import logging
 import os
+from textwrap import dedent
 from mock import patch
 from mockito import when, mock
 from b3 import __file__ as b3_module__file__, TEAM_RED, TEAM_BLUE
@@ -63,22 +64,35 @@ class XlrstatsTestCase(B3TestCase):
 
             # Now we create an instance of the SUT (System Under Test) which is the XlrstatsPlugin
             self.p = XlrstatsPlugin(self.console, self.conf)
+            when(self.console).getPlugin("xlrstats").thenReturn(self.p)
 
             # create a client object to represent the game server
             with patch("b3.clients.Clients.authorizeClients"):  # we patch authorizeClients or it will spawn a thread
                 # with a 5 second timer
                 self.console.clients.newClient(-1, name="WORLD", guid="WORLD", hide=True)
 
+    def init(self, config_content=None):
+        """
+        Load the config and starts the xlrstats plugin.
+        If no config_content is provided, use the default config file
+
+        :param config_content: optional XLRstats config
+        :type config_content: str
+        """
+        if config_content is None:
             self.conf.load(DEFAULT_XLRSTATS_CONFIG_FILE)
-            self.p.onLoadConfig()
-            self.p.minlevel = 1  # tests in this module assume unregistered players aren't considered by Xlrstats
-            self.p.onStartup()
+        else:
+            self.conf.loadFromString(config_content)
+        self.p.onLoadConfig()
+        self.p.minlevel = 1  # tests in this module assume unregistered players aren't considered by Xlrstats
+        self.p.onStartup()
 
 class Test_get_PlayerAnon(XlrstatsTestCase):
 
     def setUp(self):
+        XlrstatsTestCase.setUp(self)
         with logging_disabled():
-            XlrstatsTestCase.setUp(self)
+            self.init()
 
     def test(self):
         # WHEN
@@ -105,8 +119,9 @@ class Test_get_PlayerAnon(XlrstatsTestCase):
 class Test_get_PlayerStats(XlrstatsTestCase):
 
     def setUp(self):
+        XlrstatsTestCase.setUp(self)
         with logging_disabled():
-            XlrstatsTestCase.setUp(self)
+            self.init()
             self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID")
             self.p1.connects("1")
 
@@ -175,8 +190,10 @@ class Test_get_PlayerStats(XlrstatsTestCase):
 class Test_cmd_xlrstats(XlrstatsTestCase):
 
     def setUp(self):
+        XlrstatsTestCase.setUp(self)
         with logging_disabled():
-            XlrstatsTestCase.setUp(self)
+            self.init()
+
             self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID")
             self.p1.connects("1")
 
@@ -237,8 +254,9 @@ class Test_kill(XlrstatsTestCase):
     """
 
     def setUp(self):
+        XlrstatsTestCase.setUp(self)
         with logging_disabled():
-            XlrstatsTestCase.setUp(self)
+            self.init()
             # GIVEN two players P1 and P2 (P1 being a registered user)
             self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID", team=TEAM_BLUE)
             self.p1.connects("1")
@@ -291,6 +309,11 @@ class Test_kill(XlrstatsTestCase):
 
 
 class Test_storage(XlrstatsTestCase):
+
+    def setUp(self):
+        XlrstatsTestCase.setUp(self)
+        with logging_disabled():
+            self.init()
 
     def test_PlayerStats(self):
         # GIVEN
@@ -551,3 +574,75 @@ class Test_storage(XlrstatsTestCase):
         self.assertIsNotNone(s2)
 
         self.assertEqual(s.count, s2.count)
+
+
+class Test_events(XlrstatsTestCase):
+
+    def setUp(self):
+        XlrstatsTestCase.setUp(self)
+        with logging_disabled():
+            self.init(dedent("""
+                [settings]
+                minplayers: 1
+                prematch_maxtime: 0
+            """))
+            self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID", groupBits=1)
+            self.p1.connects("1")
+
+            map_stats = self.p.get_MapStats("Map1")
+            self.p.save_Stat(map_stats)
+            self.map1_id = map_stats.id
+
+            map_stats = self.p.get_MapStats("Map1")
+            self.p.save_Stat(map_stats)
+            self.map2_id = map_stats.id
+
+            player_stats = self.p.get_PlayerStats(client=self.p1)
+            self.p.save_Stat(player_stats)
+            self.p1stats_id = player_stats.id
+
+            self.console.game.mapName = "Map1"
+
+    def fireEvent(self, event_name, *args, **kwargs):
+        self.console.queueEvent(self.console.getEvent(event_name, *args, **kwargs))
+
+    def test_map_rounds_get_saved(self):
+        # WHEN the player plays 3 complete rounds
+        self.console.game.mapName = "Map1"
+        self.fireEvent('EVT_GAME_ROUND_END')
+        self.fireEvent('EVT_GAME_ROUND_START')
+        self.fireEvent('EVT_GAME_ROUND_END')
+        self.fireEvent('EVT_GAME_ROUND_START')
+        self.fireEvent('EVT_GAME_ROUND_END')
+        self.console.game.mapName = "Map2"
+        self.fireEvent('EVT_GAME_ROUND_START')
+        self.fireEvent('EVT_GAME_ROUND_END')
+        self.console.game.mapName = "Map3"
+        self.fireEvent('EVT_GAME_ROUND_START')
+        # THEN
+        map_stats = self.p.get_MapStats("Map1")
+        self.assertEqual(2, map_stats.rounds)
+        map_stats = self.p.get_MapStats("Map2")
+        self.assertEqual(1, map_stats.rounds)
+
+    def test_playermaps_rounds_get_saved(self):
+        # WHEN a player plays 3 complete rounds
+        self.fireEvent('EVT_GAME_ROUND_START')
+        self.fireEvent("EVT_CLIENT_JOIN", client=self.p1)
+        self.fireEvent('EVT_GAME_ROUND_END')
+        self.fireEvent('EVT_GAME_ROUND_START')
+        self.fireEvent("EVT_CLIENT_JOIN", client=self.p1)
+        # THEN
+        playermap_stats = self.p.get_PlayerMaps(self.p1stats_id, self.map1_id)
+        self.assertEqual(2, playermap_stats.rounds)
+
+    def test_player_rounds_get_saved(self):
+        # WHEN a player plays 3 complete rounds
+        self.fireEvent('EVT_GAME_ROUND_START')
+        self.fireEvent("EVT_CLIENT_JOIN", client=self.p1)
+        self.fireEvent('EVT_GAME_ROUND_END')
+        self.fireEvent('EVT_GAME_ROUND_START')
+        self.fireEvent("EVT_CLIENT_JOIN", client=self.p1)
+        # THEN
+        player_stats = self.p.get_PlayerStats(client=self.p1)
+        self.assertEqual(2, player_stats.rounds)
