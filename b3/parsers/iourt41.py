@@ -170,9 +170,11 @@
 #     * add hitlocation constants : HL_HEAD, HL_HELMET and HL_TORSO
 # 10/08/2013 - 1.18 - Fenix
 #     * change getNextMap to use CVARs only (no more mapcycle file parsing)
+# 2014/01/11 - 1.18.1 - Courgette
+#     * maskLevel -> maskGroupId to reflect changes in B3 core
 #
 __author__  = 'xlr8or, Courgette'
-__version__ = '1.18'
+__version__ = '1.18.1'
 
 import re, string, time, thread
 from b3.parsers.q3a.abstractParser import AbstractParser
@@ -677,7 +679,7 @@ class Iourt41Parser(AbstractParser):
                 for k, v in bclient.iteritems():
                     if hasattr(client, 'gear') and k == 'gear' and client.gear != v:
                         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_GEAR_CHANGE, v, client))
-                    if not k.startswith('_') and k not in ('login', 'password', 'groupBits', 'maskLevel', 'autoLogin', 'greeting'):
+                    if not k.startswith('_') and k not in ('login', 'password', 'groupBits', 'maskGroupId', 'autoLogin', 'greeting'):
                         setattr(client, k, v)
             else:
                 #make a new client

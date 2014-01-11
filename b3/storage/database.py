@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2014/01/11 - 1.15 - courgette
+#    rename field mask_level to mask_group_id
 #   12/08/2013 - 1.14 - courgette
 #    add method getTables()
 #   26/11/2012 - 1.13 - courgette
@@ -66,7 +68,7 @@
 #   Added data column to penalties table
 
 __author__  = 'ThorN'
-__version__ = '1.14'
+__version__ = '1.15'
 
 
 from b3 import functions
@@ -440,21 +442,6 @@ class DatabaseStorage(Storage):
         return clients
 
     def setClient(self, client):
-        """
-        id int(11)   PRI NULL auto_increment 
-        ip varchar(16) YES   NULL   
-        greeting varchar(128) YES   NULL   
-        connections int(11) YES   NULL   
-        time_edit int(11) YES   NULL   
-        guid varchar(32)   MUL     
-        pbid varchar(32) YES   NULL   
-        name varchar(32) YES   NULL   
-        time_add int(11) YES   NULL   
-        auto_login int(11) YES   NULL   
-        mask_level int(11) YES   NULL   
-        group_bits int(11) 
-        """
-
         self.console.debug('Storage: setClient %s' % client)
 
         fields = (
@@ -467,7 +454,7 @@ class DatabaseStorage(Storage):
             'name',
             'time_add',
             'auto_login',
-            'mask_level',
+            'mask_group_id',
             'group_bits',
             'login',
             'password'

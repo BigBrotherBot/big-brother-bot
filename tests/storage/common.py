@@ -23,7 +23,7 @@ class StorageAPITest(object):
     storage = None
         
     def test_setClient(self):
-        c1 = Client(ip="1.2.3.4", connections=2, guid="abcdefghijkl", pbid="123546abcdef", name="some dude", greeting="hi!", mask_level=20, group_bits=8, login="test login", password="test password")
+        c1 = Client(ip="1.2.3.4", connections=2, guid="abcdefghijkl", pbid="123546abcdef", name="some dude", greeting="hi!", mask_group_id=8, group_bits=8, login="test login", password="test password")
         c1_id = self.storage.setClient(c1)
         self.assertEqual(1, c1_id)
         c2 = self.storage.getClient(Client(id=c1_id))

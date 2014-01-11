@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2014/01/11 - 1.26 - Courgette
+#   * maskLevel -> maskGroup to reflect changes in B3 core
 #   2014/01/07 - 1.25 - Courgette
 #   * removed the 'peeing in the gene pool' reason for tempbans with durations between 5 and 10 min
 #   2013/11/16 - 1.24 - Fenix
@@ -141,7 +143,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.25'
+__version__ = '1.26'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon'
 
 import re
@@ -762,8 +764,7 @@ class AdminPlugin(b3.plugin.Plugin):
             client.message(self.getMessage('group_unknown', {'group_name': groupName}))
             return False
 
-        sclient.maskLevel = group.id
-        sclient._maskGroup = None
+        sclient.maskGroup = group
         sclient.save()
 
         if sclient != client:
@@ -783,8 +784,7 @@ class AdminPlugin(b3.plugin.Plugin):
             sclient = self.findClientPrompt(m[0], client)
 
         if sclient:
-            sclient.maskLevel = 0
-            sclient._maskGroup = None
+            sclient.maskGroup = None
             sclient.save()
 
             if sclient != client:
