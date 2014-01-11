@@ -87,6 +87,8 @@
 #     * added EVT_CLIENT_SPAWN and EVT_FLAG_RETURN_TIME
 # 11/12/2013 - 1.20 - Courgette
 #     * fix: players with ':' in their name can't run commands ('UrT bug spotted' showing up in the log)
+# 2014/01/11 - 1.20.1 - Courgette
+#     * maskLevel -> maskGroupId to reflect changes in B3 core
 
 import re, new
 import time
@@ -98,7 +100,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__  = 'Courgette'
-__version__ = '1.20'
+__version__ = '1.20.1'
 
 
 class Iourt42Client(Client):
@@ -1011,7 +1013,7 @@ class Iourt42Parser(Iourt41Parser):
                 for k, v in bclient.iteritems():
                     if hasattr(client, 'gear') and k == 'gear' and client.gear != v:
                         self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_GEAR_CHANGE, v, client))
-                    if not k.startswith('_') and k not in ('login', 'password', 'groupBits', 'maskLevel', 'autoLogin', 'greeting'):
+                    if not k.startswith('_') and k not in ('login', 'password', 'groupBits', 'maskGroupId', 'autoLogin', 'greeting'):
                         setattr(client, k, v)
             else:
                 #make a new client

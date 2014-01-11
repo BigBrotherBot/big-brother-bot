@@ -18,6 +18,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    2014/01/11 - 1.7 - courgette
+#    * get rid of field maskLevel, see maskGroupId instead
 #    07/08/2013 - 1.6.1 - courgette
 #    * getting a client by its db id will return the existing client object if found in the list of connected clients
 #    15/07/2013 - 1.6 - courgette
@@ -86,7 +88,7 @@ import time
 import traceback
 
 __author__  = 'ThorN'
-__version__ = '1.6.1'
+__version__ = '1.7'
 
 
 class ClientVar(object):
@@ -128,7 +130,7 @@ class Client(object):
     ip   = ''
     greeting = ''
     autoLogin = 1
-    maskLevel = 0
+    maskGroupId = None
     groupBits = 0
     login = ''
     password = ''
@@ -329,32 +331,24 @@ class Client(object):
     connections = property(_get_connections, _set_connections)
 
     #------------------------
-    _maskLevel = 0
-    def _set_maskLevel(self, v):
-        self._maskLevel = int(v)
-
-    def _get_maskLevel(self):
-        return self._maskLevel
-
-    maskLevel = property(_get_maskLevel, _set_maskLevel)
-
-    #------------------------
     _maskGroup = None
     def _set_maskGroup(self, g):
-        self.maskLevel = g.id
-        self._maskGroup = None
+        if g is None:
+            self.maskGroupId = None
+            self._maskGroup = None
+        else:
+            self.maskGroupId = g.id
+            self._maskGroup = g
 
     def _get_maskGroup(self):
-        if not self.maskLevel:
+        if self.maskGroupId is None:
             return None
-        elif not self._maskGroup:
+        elif self._maskGroup is None:
             groups = self.console.storage.getGroups()
-
             for g in groups:
-                if g.id & self.maskLevel:
+                if g.id & self.maskGroupId:
                     self._maskGroup = g
                     break
-
         return self._maskGroup
 
     maskGroup = property(_get_maskGroup, _set_maskGroup)

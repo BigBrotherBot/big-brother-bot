@@ -369,6 +369,45 @@ class Cmd_mask(Admin_functional_test):
         self.joe.says('!admins')
         self.joe.message.assert_called_with('^7Admins online: Joe^7^7 [^3100^7], Mike^7^7 [^380^7]')
 
+    def _test_persistence_for_group(self, group_keyword):
+        """
+        Makes sure that a user with group 'superadmin', when masked as the given group is still masked with
+        that given group once he reconnects. Hence making sure we persists the mask group between connections.
+        :param group_keyword: str
+        """
+        group_to_mask_as = self.console.storage.getGroup(Group(keyword=group_keyword))
+        self.assertIsNotNone(group_to_mask_as)
+        ## GIVEN that joe masks himself
+        self.joe.connects(0)
+        self.joe.says('!mask ' + group_keyword)
+        self.assertEqual(128, self.joe.maxGroup.id)
+        self.assertIsNotNone(self.joe.maskGroup, "expecting Joe to have a masked group")
+        self.assertEqual(group_to_mask_as.id, self.joe.maskGroup.id, "expecting Joe2 to have %s for the mask group id" % group_to_mask_as.id)
+        self.assertEqual(group_to_mask_as.id, self.joe.maskedGroup.id, "expecting Joe2 to have %s for the masked group id" % group_to_mask_as.id)
+        ## WHEN joe reconnects
+        self.joe.disconnects()
+        client = self.console.storage.getClient(Client(id=self.joe.id))
+        joe2 = FakeClient(self.console, **client.__dict__)
+        joe2.connects(1)
+        ## THEN joe is still masked
+        self.assertEqual(128, joe2.maxGroup.id)
+        self.assertIsNotNone(joe2.maskGroup, "expecting Joe2 to have a masked group")
+        self.assertEqual(group_to_mask_as.id, joe2.maskGroup.id, "expecting Joe2 to have %s for the mask group id" % group_to_mask_as.id)
+        self.assertEqual(group_to_mask_as.id, joe2.maskedGroup.id, "expecting Joe2 to have %s for the masked group id" % group_to_mask_as.id)
+        ## THEN the content of the mask_group_id column in the client table must be correct
+        client_data = self.console.storage.getClient(Client(id=joe2.id))
+        self.assertIsNotNone(client_data)
+        self.assertEqual(group_to_mask_as.id, client_data.maskGroupId, "expecting %s to be the value in the mask_group_id column in database" % group_to_mask_as.id)
+
+    def test_persistence(self):
+        self._test_persistence_for_group("user")
+        self._test_persistence_for_group("reg")
+        self._test_persistence_for_group("mod")
+        self._test_persistence_for_group("admin")
+        self._test_persistence_for_group("fulladmin")
+        self._test_persistence_for_group("senioradmin")
+        self._test_persistence_for_group("superadmin")
+
 
 class Cmd_makereg_unreg(Admin_functional_test):
     def setUp(self):

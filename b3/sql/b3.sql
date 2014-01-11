@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS clients (
   pbid varchar(32) NOT NULL default '',
   name varchar(32) NOT NULL default '',
   auto_login tinyint(1) unsigned NOT NULL default '0',
-  mask_level tinyint(1) unsigned NOT NULL default '0',
+  mask_group_id mediumint(8) unsigned default NULL,
   group_bits mediumint(8) unsigned NOT NULL default '0',
   greeting varchar(128) NOT NULL default '',
   time_add int(11) unsigned NOT NULL default '0',

@@ -992,6 +992,13 @@ class Update(Setup):
         else:
             self.add_buffer('Version older than 1.10.0...\n')
 
+        # update to v1.10.1
+        if _currentversion >= '1.10.1':
+            self.executeSql('@b3/sql/b3-update-1.10.1.sql', _dbstring)
+            self.add_buffer('Updating database to version 1.10.1...\n')
+        else:
+            self.add_buffer('Version older than 1.10.1...\n')
+
         # need to update xlrstats?
         #_result = self.raw_default('Do you have xlrstats installed (with default table names)?', 'yes')
         #if _result == 'yes':
