@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2014/01/11 - 1.25.1 - Courgette
+#   * fix maskLevel is set with group id while it should be group level
 #   2014/01/07 - 1.25 - Courgette
 #   * removed the 'peeing in the gene pool' reason for tempbans with durations between 5 and 10 min
 #   2013/11/16 - 1.24 - Fenix
@@ -141,7 +143,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.25'
+__version__ = '1.25.1'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon'
 
 import re
@@ -762,8 +764,7 @@ class AdminPlugin(b3.plugin.Plugin):
             client.message(self.getMessage('group_unknown', {'group_name': groupName}))
             return False
 
-        sclient.maskLevel = group.id
-        sclient._maskGroup = None
+        sclient.maskLevel = group.level
         sclient.save()
 
         if sclient != client:
@@ -784,7 +785,6 @@ class AdminPlugin(b3.plugin.Plugin):
 
         if sclient:
             sclient.maskLevel = 0
-            sclient._maskGroup = None
             sclient.save()
 
             if sclient != client:
