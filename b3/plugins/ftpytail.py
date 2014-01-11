@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
+# 03/01/2014 - 1.7 - 82ndab.Bravo17
+#   * allow plugin to optionally perform a dummy read of the log file in order to update the filesize in Windows Server 2008
 # 27/11/2012 - 1.6 - Courgette
 #   * remove the first '/' from the url-path to respect RFC 1738
 #   * fix issue when public_ip and rcon_ip are different in b3.xml
@@ -64,7 +66,7 @@
 # 17/06/2009 - 1.0 - Bakes
 #     Initial Plugin, basic functionality.
  
-__version__ = '1.6'
+__version__ = '1.7'
 __author__ = 'Bakes, Courgette'
  
 import b3, threading
@@ -95,6 +97,8 @@ class FtpytailPlugin(b3.plugin.Plugin):
     _ftplib_debug_level = 0 # 0: no debug, 1: normal debug, 2: extended debug
     
     _gamelog_read_delay = 0.150
+    _use_windows_cache_fix = False
+    _cache_refresh_delay = 1
     
     def onStartup(self):
         versionsearch = re.search("^((?P<mainversion>[0-9]).(?P<lowerversion>[0-9]+)?)", sys.version)
@@ -155,7 +159,19 @@ class FtpytailPlugin(b3.plugin.Plugin):
         self.info("until %s consecutive errors are met, the bot will wait for \
 %s seconds (short_delay), then it will wait for %s seconds (long_delay)" 
             % (self._maxConsecutiveConnFailure, self._short_delay, self._long_delay))
+            
+        try:
+            self._use_windows_cache_fix = self.config.getboolean('settings', 'use_windows_cache_fix')
+        except: 
+            self.warning("Error reading setting for Windows Cache Fix from config file. Using default value")
+        self.info("Use the Windows Cache Fix: %s" % self._use_windows_cache_fix)
 
+        try:
+            self._cache_refresh_delay = self.config.getint('settings', 'cache_refresh_delay')
+        except: 
+            self.warning("Error reading cache_refresh_delay from config file. Using default value")
+        self.info("cache_refresh_delay: %s seconds" % self._cache_refresh_delay)
+        
 
     def initThread(self, ftpfileDSN):
         self.ftpconfig = functions.splitDSN(ftpfileDSN)
@@ -172,6 +188,11 @@ class FtpytailPlugin(b3.plugin.Plugin):
                 self.buffer = block
             else:
                 self.buffer = self.buffer + block
+        
+        def forceWindowsCacheReload(dummy):
+            # no need to do anything here so
+            return
+            
         ftp = None
         self.file = open(self.lgame_log, 'ab')
         self.file.write('\r\n')
@@ -186,6 +207,11 @@ class FtpytailPlugin(b3.plugin.Plugin):
                     self.verbose("Connection successful. Remote file size is %s" % remoteSize)
                     if self._remoteFileOffset is None:
                         self._remoteFileOffset = remoteSize
+                        
+                if self._use_windows_cache_fix:
+                    time.sleep(self._cache_refresh_delay)
+                    ftp.retrbinary('RETR ' + os.path.basename(self.url_path), forceWindowsCacheReload, 1, rest=self._remoteFileOffset)
+                    
                 remoteSize = ftp.size(os.path.basename(self.url_path))
                 if remoteSize < self._remoteFileOffset:
                     self.debug("remote file rotation detected")
