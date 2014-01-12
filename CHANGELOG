@@ -1,3 +1,12 @@
+1.9.1 -> 1.9.2
+----
+A list of changed files is available after release here:
+http://github.com/BigBrotherBot/big-brother-bot/compare/v1.9.1...v1.9.2
+----
+
+Minor release to fix an installation problem when using the easy_install tool with python 2.6
+
+
 1.9.0 -> 1.9.1
 ----
 A list of changed files is available after release here:
