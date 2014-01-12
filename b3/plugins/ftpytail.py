@@ -161,13 +161,13 @@ class FtpytailPlugin(b3.plugin.Plugin):
             % (self._maxConsecutiveConnFailure, self._short_delay, self._long_delay))
             
         try:
-            self._use_windows_cache_fix = self.config.getboolean('settings', 'use_windows_cache_fix')
+            self._use_windows_cache_fix = self.console.config.getboolean('server', 'use_windows_cache_fix')
         except: 
             self.warning("Error reading setting for Windows Cache Fix from config file. Using default value")
         self.info("Use the Windows Cache Fix: %s" % self._use_windows_cache_fix)
 
         try:
-            self._cache_refresh_delay = self.config.getint('settings', 'cache_refresh_delay')
+            self._cache_refresh_delay = self.console.config.getint('server', 'cache_refresh_delay')
         except: 
             self.warning("Error reading cache_refresh_delay from config file. Using default value")
         self.info("cache_refresh_delay: %s seconds" % self._cache_refresh_delay)
