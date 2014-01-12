@@ -108,7 +108,7 @@ if has_py2exe:
 setup(cmdclass=cmdclass,
     name="b3",
     version=b3version,
-    tests_requires=['nose>=1.0', 'nose-exclude', 'mockito', 'pysqlite'],
+    tests_require=['nose>=1.0', 'nose-exclude', 'mockito', 'pysqlite'],
     packages=find_packages(),
     extras_require={ 'mysql' : 'MySQL-python' },
     package_data={
