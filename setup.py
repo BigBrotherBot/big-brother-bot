@@ -43,7 +43,7 @@ try:
 except:
     has_py2exe = False
 
-b3version = "1.9.1"
+b3version = "1.9.2"
 
 # override egg_info command to copy the b3.egg-info/PKG-INFO file into the b3 directory
 class my_egg_info(orig_egg_info):
@@ -108,7 +108,7 @@ if has_py2exe:
 setup(cmdclass=cmdclass,
     name="b3",
     version=b3version,
-    setup_requires=['nose>=1.0', 'nose-exclude', 'mockito', 'pysqlite'],
+    tests_requires=['nose>=1.0', 'nose-exclude', 'mockito', 'pysqlite'],
     packages=find_packages(),
     extras_require={ 'mysql' : 'MySQL-python' },
     package_data={
