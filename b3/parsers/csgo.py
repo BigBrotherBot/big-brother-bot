@@ -575,7 +575,7 @@ class CsgoParser(Parser):
         """\
         display a message to a given player
         """
-        if not client.hide:  # do not talk to bots
+        if not client.bot:  # do not talk to bots
             if msg and len(msg.strip()):
                 template = 'sm_psay #%(guid)s "%(msg)s"'
                 if "B3 Say" in self.sm_plugins:
@@ -618,7 +618,7 @@ class CsgoParser(Parser):
         fire the event ('EVT_CLIENT_BAN', data={'reason': reason,
         'admin': admin}, client=target)
         """
-        if client.hide:  # exclude bots
+        if client.bot:  # exclude bots
             return
 
         self.debug('BAN : client: %s, reason: %s', client, reason)
@@ -652,7 +652,7 @@ class CsgoParser(Parser):
         """\
         unban a given player on the game server
         """
-        if client.hide:  # exclude bots
+        if client.bot:  # exclude bots
             return
 
         self.debug('UNBAN: Name: %s, Ip: %s, Guid: %s' % (client.name, client.ip, client.guid))
@@ -684,7 +684,7 @@ class CsgoParser(Parser):
         fire the event ('EVT_CLIENT_BAN_TEMP', data={'reason': reason,
         'duration': duration, 'admin': admin}, client=target)
         """
-        if client.hide:  # exclude bots
+        if client.bot:  # exclude bots
             return
 
         self.debug('TEMPBAN : client: %s, duration: %s, reason: %s', client, duration, reason)
@@ -877,14 +877,14 @@ class CsgoParser(Parser):
         
         May return None
         """
-        is_bot = guid == "BOT"
-        if is_bot:
-            guid = None
+        bot = False
+        if guid == 'BOT':
+            guid += str(cid)
+            bot = True
+
         client = self.clients.getByCID(cid)
         if client is None:
-            client = self.clients.newClient(cid, guid=guid, name=name, team=TEAM_UNKNOWN)
-            if is_bot:
-                client.hide = True
+            client = self.clients.newClient(cid, guid=guid, name=name, bot=bot, team=TEAM_UNKNOWN)
             client.last_update_time = time.time()
         else:
             if name:
