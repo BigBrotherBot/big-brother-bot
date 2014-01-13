@@ -48,11 +48,15 @@
 # * should fix the bot's team issue
 # 15/09/2010 - 0.9.1 - GrosBedo
 # * added !nextmap and !maps support
+# 13/01/2014 - 0.9.2 - Fenix
+# * pep8 coding style guide
+# * changed bots giud to match other q3a parsers (BOT<slot>)
+# * correctly set client bot flag upon new client connection
 #
 
 
 __author__ = 'xlr8or, Courgette'
-__version__ = '0.9.1'
+__version__ = '0.9.2'
 
 import re
 import string
