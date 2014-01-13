@@ -76,9 +76,13 @@
 # * change data format for EVT_CLIENT_BAN events
 # 14/06/2011 - 0.11.0 - Courgette
 # * cvar code moved to q3a AbstractParser
+# 13/01/2014 - 0.11.1 - Fenix
+# * pep8 coding style guide
+# * changed bots giud to match other q3a parsers (BOT<slot>)
+# * correctly set client bot flag upon new client connection
 #
 __author__ = 'Courgette, GrosBedo'
-__version__ = '0.11.0'
+__version__ = '0.11.1'
 
 import re
 import string
