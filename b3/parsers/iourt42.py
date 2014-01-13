@@ -87,7 +87,10 @@
 #     * added EVT_CLIENT_SPAWN and EVT_FLAG_RETURN_TIME
 # 11/12/2013 - 1.20 - Courgette
 #     * fix: players with ':' in their name can't run commands ('UrT bug spotted' showing up in the log)
-
+# 13/01/2014 - 1.21 - Fenix
+#     * pep8 coding style guide
+#     * correctly set the client bot flag upon new client connection
+#
 import b3
 import re
 import new
@@ -99,7 +102,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__ = 'Courgette'
-__version__ = '1.20'
+__version__ = '1.21'
 
 
 class Iourt42Client(Client):
