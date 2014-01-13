@@ -51,39 +51,44 @@
 #
 
 
-__author__  = 'xlr8or, Courgette'
+__author__ = 'xlr8or, Courgette'
 __version__ = '0.9.1'
 
-import re, string, thread, time, threading
+import re
+import string
 import b3
 import b3.events
-from b3.parsers.q3a.abstractParser import AbstractParser
 import b3.parsers.punkbuster
 
+from b3.parsers.q3a.abstractParser import AbstractParser
+
+
 class Smg11Parser(AbstractParser):
+
     gameName = 'smg'
     _connectingSlots = []
     _maplist = None
     
-    _settings = {}
-    _settings['line_length'] = 65
-    _settings['min_wrap_length'] = 100
-
+    _settings = dict(
+        line_length=65,
+        min_wrap_length=100,
+    )
     _empty_name_default = 'EmptyNameDefault'
 
-    _commands = {}
-    _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
-    _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
-    _commands['say'] = 'say %(prefix)s %(message)s'
-    _commands['set'] = 'set %(name)s "%(value)s"'
-    _commands['kick'] = 'clientkick %(cid)s'
-    _commands['ban'] = 'banClient %(cid)s'
-    _commands['tempban'] = 'clientkick %(cid)s'
+    _commands = dict(
+        message='tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s',
+        deadsay='tell %(cid)s %(prefix)s [DEAD]^7 %(message)s',
+        say='say %(prefix)s %(message)s',
+        set='set %(name)s "%(value)s"',
+        kick='clientkick %(cid)s',
+        ban='banClient %(cid)s',
+        tempban='clientkick %(cid)s',
+    )
 
-    _eventMap = {
-        'warmup' : b3.events.EVT_GAME_WARMUP,
-        'restartgame' : b3.events.EVT_GAME_ROUND_END
-    }
+    _eventMap = dict(
+        warmup=b3.events.EVT_GAME_WARMUP,
+        restartgame=b3.events.EVT_GAME_ROUND_END
+    )
 
     # remove the time off of the line
     _lineClear = re.compile(r'^(?:[0-9:.]+\s?)?')
@@ -94,13 +99,13 @@ class Smg11Parser(AbstractParser):
         
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<pbid>[0-9A-Z]{32}):\s*(?P<name>[^:]+):\s*(?P<num1>[0-9]+):\s*(?P<num2>[0-9]+):\s*(?P<ip>[0-9.]+):(?P<port>[0-9]+))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<name>.+):\s+(?P<text>.*))$', re.IGNORECASE),
-        #
+
         #1536:37Kill: 1 18 9: ^1klaus killed ^1[pura]fox.nl by MOD_MP40
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
-        #
+
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<text>.*))$', re.IGNORECASE),
-        #
+
         # Falling through?
         # 1:05 ClientConnect: 3
         # 1:05 ClientUserinfoChanged: 3 guid\CAB616192CB5652375401264987A23D0\n\xlr8or\t\0\model\wq_male2/red\g_redteam\\g_blueteam\\hc\100\w\0\l\0\tt\0\tl\0
@@ -119,40 +124,40 @@ class Smg11Parser(AbstractParser):
     PunkBuster = None
 
     ## kill mode constants: modNames[meansOfDeath]
-    MOD_UNKNOWN='0'
-    #melee
-    MOD_KNIFE='1'
-    #pistols
-    MOD_REM58='2'
-    MOD_SCHOFIELD='3'
-    MOD_PEACEMAKER='4'
-    #rifles
-    MOD_WINCHESTER66='5'
-    MOD_LIGHTNING='6'
-    MOD_SHARPS='7'
-    #shotguns
-    MOD_REMINGTON_GAUGE='8'
-    MOD_SAWEDOFF='9'
-    MOD_WINCH97='10'
-    #automatics
-    MOD_GATLING='11'
-    #explosives
-    MOD_DYNAMITE='12'
-    MOD_MOLOTOV='13'
-    #misc
-    MOD_WATER='14'
-    MOD_SLIME='15'
-    MOD_LAVA='16'
-    MOD_CRUSH='17'
-    MOD_TELEFRAG='18'
-    MOD_FALLING='19'
-    MOD_SUICIDE='20'
-    MOD_WORLD_DAMAGE='21'
-    MOD_TRIGGER_HURT='22'
-    MOD_NAIL='23'
-    MOD_CHAINGUN='24'
-    MOD_PROXIMITY_MINE='25'
-    MOD_BOILER='26'
+    MOD_UNKNOWN = '0'
+    # melee
+    MOD_KNIFE = '1'
+    # pistols
+    MOD_REM58 = '2'
+    MOD_SCHOFIELD = '3'
+    MOD_PEACEMAKER = '4'
+    # rifles
+    MOD_WINCHESTER66 = '5'
+    MOD_LIGHTNING = '6'
+    MOD_SHARPS = '7'
+    # shotguns
+    MOD_REMINGTON_GAUGE = '8'
+    MOD_SAWEDOFF = '9'
+    MOD_WINCH97 = '10'
+    # automatics
+    MOD_GATLING = '11'
+    # explosives
+    MOD_DYNAMITE = '12'
+    MOD_MOLOTOV = '13'
+    # misc
+    MOD_WATER = '14'
+    MOD_SLIME = '15'
+    MOD_LAVA = '16'
+    MOD_CRUSH = '17'
+    MOD_TELEFRAG = '18'
+    MOD_FALLING = '19'
+    MOD_SUICIDE = '20'
+    MOD_WORLD_DAMAGE = '21'
+    MOD_TRIGGER_HURT = '22'
+    MOD_NAIL = '23'
+    MOD_CHAINGUN = '24'
+    MOD_PROXIMITY_MINE = '25'
+    MOD_BOILER = '26'
 
     ## meansOfDeath to be considered suicides
     Suicides = (
@@ -184,10 +189,10 @@ class Smg11Parser(AbstractParser):
         #    self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
 
         # get map from the status rcon command
-        map = self.getMap()
+        _map = self.getMap()
         if map:
-            self.game.mapName = map
-            self.info('map is: %s'%self.game.mapName)
+            self.game.mapName = _map
+            self.info('map is: %s' % self.game.mapName)
 
         # initialize connected clients
         self.info('discover connected clients')
@@ -196,14 +201,14 @@ class Smg11Parser(AbstractParser):
             userinfostring = self.queryClientUserInfoByCid(cid)
             if userinfostring:
                 self.OnClientuserinfochanged(None, userinfostring)
-        
-            
+
 #---------------------------------------------------------------------------------------------------
 
     # Added for debugging and identifying/catching log lineparts
     def getLineParts(self, line):
         line = re.sub(self._lineClear, '', line, 1)
 
+        m = None
         for f in self._lineFormats:
             m = re.match(f, line)
             if m:
@@ -215,20 +220,20 @@ class Smg11Parser(AbstractParser):
             target = None
             
             try:
-                action =  m.group('action').lower()
+                action = m.group('action').lower()
             except IndexError:
                 # special case for damage lines where no action group can be set
                 action = 'damage'
             
-            return (m, action, m.group('data').strip(), client, target)
+            return m, action, m.group('data').strip(), client, target
+
         elif '------' not in line:
             self.verbose('XLR--------> line did not match format: %s' % line)
 
 #---------------------------------------------------------------------------------------------------
-       
-        
+
     def OnClientconnect(self, action, data, match=None):
-        self._clientConnectID = data
+        #self._clientConnectID = data
         client = self.clients.getByCID(data)
         self.debug('OnClientConnect: %s, %s' % (data, client))
         return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
@@ -252,33 +257,37 @@ class Smg11Parser(AbstractParser):
                 for k, v in bclient.iteritems():
                     setattr(client, k, v)
             else:
-                if not bclient.has_key('name'):
+                if 'name' not in bclient.keys:
                     bclient['name'] = self._empty_name_default
 
-                if bclient.has_key('team'):
+                if 'team' not in bclient.keys:
                     bclient['team'] = self.getTeam(bclient['team'])
 
-                if bclient.has_key('guid'):
+                if 'guid' in bclient.keys:
                     guid = bclient['guid']
                 else:
-                    if bclient.has_key('skill'):
+
+                    if 'skill' in bclient.keys():
                         guid = 'BOT-' + str(cid)
                         self.verbose('BOT connected!')
-                        self.clients.newClient(cid, name=bclient['name'], ip='0.0.0.0', state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid }, money=20)
+                        self.clients.newClient(cid, name=bclient['name'], ip='0.0.0.0', state=b3.STATE_ALIVE,
+                                               guid=guid, data={'guid': guid}, money=20)
                     else:
                         self.warning('cannot connect player because he has no guid and is not a bot either')
+
                     self._connectingSlots.remove(cid)
                     return None
                 
-                if not bclient.has_key('ip'):
+                if 'ip' not in bclient.keys():
                     infoclient = self.parseUserInfo(self.queryClientUserInfoByCid(cid))
                     if 'ip' in infoclient:
                         bclient['ip'] = infoclient['ip']
                     else:
                         self.warning('failed to get client ip')
                 
-                if bclient.has_key('ip'):
-                    self.clients.newClient(cid, name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid }, money=20)
+                if 'ip' in bclient.keys():
+                    self.clients.newClient(cid, name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE,
+                                           guid=guid, data={'guid': guid}, money=20)
                 else:
                     self.warning('failed to get connect client')
                     
@@ -288,7 +297,7 @@ class Smg11Parser(AbstractParser):
 
     # disconnect
     def OnKill(self, action, data, match=None):
-        self.debug('OnKill: %s (%s)'%(match.group('aweap'),match.group('text')))
+        self.debug('OnKill: %s (%s)' % (match.group('aweap'), match.group('text')))
         
         victim = self.getByCidOrJoinPlayer(match.group('cid'))
         if not victim:
@@ -304,7 +313,7 @@ class Smg11Parser(AbstractParser):
         ## Fix attacker
         if match.group('aweap') in self.Suicides:
             # those kills should be considered suicides
-            self.debug('OnKill: Fixed attacker, suicide detected: %s' %match.group('text'))
+            self.debug('OnKill: Fixed attacker, suicide detected: %s' % match.group('text'))
             attacker = victim
         else:
             attacker = self.getByCidOrJoinPlayer(match.group('acid'))
@@ -314,8 +323,8 @@ class Smg11Parser(AbstractParser):
             self.debug('No attacker')
             return None
 
-        dType = match.group('text').split()[-1:][0]
-        if not dType:
+        dtype = match.group('text').split()[-1:][0]
+        if not dtype:
             self.debug('No damageType, weapon: %s' % weapon)
             return None
 
@@ -332,13 +341,15 @@ class Smg11Parser(AbstractParser):
             victim.hitloc = 'body'
         
         victim.state = b3.STATE_DEAD
-        #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (victim.name, attacker.name, weapon, victim.hitloc, dType))
+        #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (
+        #             victim.name, attacker.name, weapon, victim.hitloc, dType))
         # need to pass some amount of damage for the teamkill plugin - 100 is a kill
-        return b3.events.Event(event, (100, weapon, victim.hitloc, dType), attacker, victim)
+        return b3.events.Event(event, (100, weapon, victim.hitloc, dtype), attacker, victim)
 
     def OnClientdisconnect(self, action, data, match=None):
         client = self.clients.getByCID(data)
-        if client: client.disconnect()
+        if client:
+            client.disconnect()
         return None
 
     # startgame
@@ -368,8 +379,7 @@ class Smg11Parser(AbstractParser):
     def OnSayteam(self, action, data, match=None):
         # Teaminfo does not exist in the sayteam logline. Parse it as a normal say line
         return self.OnSay(action, data, match)
-    
-    
+
     def OnItem(self, action, data, match=None):
         #Item: 0 pickup_money (5) picked up ($25)
         #Item: 0 weapon_schofield bought ($18/$20)
@@ -378,17 +388,19 @@ class Smg11Parser(AbstractParser):
         client = self.getByCidOrJoinPlayer(cid)
         if client:
             if 'pickup_money' in item:
-                rePickup_money = re.compile(r"^pickup_money \((?P<amount>\d+)\) picked up \(\$(?P<totalmoney>\d+)\)$")
-                m = rePickup_money.search(item)
+                re_pickup_money = re.compile(r"^pickup_money \((?P<amount>\d+)\) picked up \(\$(?P<totalmoney>\d+)\)$")
+                m = re_pickup_money.search(item)
                 if m is not None:
                     amount = m.group('amount')
                     totalmoney = m.group('totalmoney')
                     setattr(client, 'money', int(totalmoney))
                     self.verbose('%s has now $%s' % (client.name, client.money))
-                    return b3.events.Event(b3.events.EVT_CLIENT_GAIN_MONEY, {'amount': amount, 'totalmoney': totalmoney}, client)
+                    return b3.events.Event(b3.events.EVT_CLIENT_GAIN_MONEY,
+                                           {'amount': amount, 'totalmoney': totalmoney},
+                                           client)
             if 'bought' in item:
-                reBought = re.compile(r"^(?P<item>.+) bought \(\$(?P<cost>\d+)/\$(?P<totalmoney>\d+)\)$")
-                m = reBought.search(item)
+                re_bought = re.compile(r"^(?P<item>.+) bought \(\$(?P<cost>\d+)/\$(?P<totalmoney>\d+)\)$")
+                m = re_bought.search(item)
                 if m is not None:
                     what = m.group('item')
                     cost = m.group('cost')
@@ -396,12 +408,15 @@ class Smg11Parser(AbstractParser):
                     if cost is not None and totalmoney is not None:
                         setattr(client, 'money', int(totalmoney) - int(cost))
                         self.verbose('%s has now $%s' % (client.name, client.money))
-                        return b3.events.Event(b3.events.EVT_CLIENT_SPEND_MONEY, {'item': what, 'cost': cost, 'totalmoney': client.money}, client)
-            return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, item, client)
-        return None
-    
+                        return b3.events.Event(b3.events.EVT_CLIENT_SPEND_MONEY,
+                                               {'item': what, 'cost': cost, 'totalmoney': client.money},
+                                               client)
 
-    # damage
+            return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, item, client)
+
+        return None
+
+    #damage
     #468950: client:0 health:90 damage:21.6 where:arm from:MOD_SCHOFIELD by:2
     def OnDamage(self, action, data, match=None):
         victim = self.clients.getByCID(match.group('cid'))
@@ -428,21 +443,21 @@ class Smg11Parser(AbstractParser):
 #---------------------------------------------------------------------------------------------------
 
     def parseUserInfo(self, info):
-        #ClientUserinfoChanged: 0 guid\0F4EE0CC25562B035AC58D081E517D8A\n\Courgette\t\3\model\wq_male1\g_redteam\Lawmen\g_blueteam\Outlaws\hc\100\w\0\l\0\tt\0\tl\0\v\1.1b4 20100116\md5\9F13F403F961CA6900C849D017F9E3E9
-        playerID, info = string.split(info, ' ', 1)
+        #ClientUserinfoChanged: 0 guid\0F4EE0CC25562B035AC58D081E517D8A\n\Courgette\t\3\model\wq_male1l...
+        player_id, info = string.split(info, ' ', 1)
 
         if info[:1] != '\\':
             info = '\\' + info
 
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', info)
 
-        data = {}
+        data = dict()
         for o in options:
             data[o[0]] = o[1]
 
-        data['cid'] = playerID
+        data['cid'] = player_id
 
-        if data.has_key('n'):
+        if 'n' in data.keys():
             data['name'] = data['n']
 
         t = 0
@@ -452,19 +467,20 @@ class Smg11Parser(AbstractParser):
             t = data['t']
 
         data['team'] = self.getTeam(t)
-        
-        
-        if data.has_key('cl_guid'):
+
+        if 'cl_guid' in data.keys():
             data['guid'] = data['cl_guid']
-        if data.has_key('guid'):
+
+        if 'guid' in data.keys():
             data['guid'] = data['guid']
         
         return data
 
-
     def getTeam(self, team):
-        if team == 'red': team = 1
-        if team == 'blue': team = 2
+        if team == 'red':
+            team = 1
+        if team == 'blue':
+            team = 2
         team = int(team)
         if team == 1:
             #self.verbose('Team is Red')
@@ -479,25 +495,24 @@ class Smg11Parser(AbstractParser):
             return b3.TEAM_UNKNOWN
 
     # Translate the gameType to a readable format (also for teamkill plugin!)
-    def defineGameType(self, gameTypeInt):
+    def defineGameType(self, gametype_int):
 
-        _gameType = ''
-        _gameType = str(gameTypeInt)
-        #self.debug('gameTypeInt: %s' % gameTypeInt)
+        _gametype = str(gametype_int)
+        #self.debug('gametype_int: %s' % gameTypeInt)
         
-        if gameTypeInt == '0':
-            _gameType = 'dm'        # Deathmatch
-        elif gameTypeInt == '1':
-            _gameType = 'du'        # Duel
-        elif gameTypeInt == '3':
-            _gameType = 'tdm'       # Team Death Match
-        elif gameTypeInt == '4':
-            _gameType = 'ts'        # Team Survivor (Round TDM)
-        elif gameTypeInt == '5':
-            _gameType = 'br'        # Bank Robbery
+        if gametype_int == '0':
+            _gametype = 'dm'        # Deathmatch
+        elif gametype_int == '1':
+            _gametype = 'du'        # Duel
+        elif gametype_int == '3':
+            _gametype = 'tdm'       # Team Death Match
+        elif gametype_int == '4':
+            _gametype = 'ts'        # Team Survivor (Round TDM)
+        elif gametype_int == '5':
+            _gametype = 'br'        # Bank Robbery
         
-        #self.debug('_gameType: %s' % _gameType)
-        return _gameType
+        #self.debug('_gametype: %s' % _gameType)
+        return _gametype
 
     def getMaps(self):
         if self._maplist is not None:
@@ -529,8 +544,9 @@ class Smg11Parser(AbstractParser):
         # "nextmap" is: "vstr next4; echo test; vstr aupo3; map oasago2"
         # the last command in the line is the one that decides what is the next map
         # in a case like : map oasago2; echo test; vstr nextmap6; vstr nextmap3
-        # the parser will recursively look each last vstr var, and if it can't find a map, fallback to the last map command
-        self.debug('Extracting nextmap name from: %s' % (data))
+        # the parser will recursively look each last vstr var, and if it can't find a map,
+        # fallback to the last map command
+        self.debug('Extracting nextmap name from: %s' % data)
         nextmapregex = re.compile(r'.*("|;)\s*((?P<vstr>vstr (?P<vstrnextmap>[a-z0-9_]+))|(?P<map>map (?P<mapnextmap>[a-z0-9_]+)))', re.IGNORECASE)
         m = re.match(nextmapregex, data)
         if m:
@@ -540,30 +556,35 @@ class Smg11Parser(AbstractParser):
             elif m.group('vstr'):
                 self.debug('Nextmap is redirecting to var: %s' % (m.group('vstrnextmap')))
                 data = self.write(m.group('vstrnextmap'))
-                result = self.findNextMap(data) # recursively dig into the vstr vars to find the last map called
-                if result: # if a result was found in a deeper level, then we return it to the upper level, until we get back to the root level
+                result = self.findNextMap(data)  # recursively dig into the vstr vars to find the last map called
+                if result:
+                    # if a result was found in a deeper level,
+                    # then we return it to the upper level,
+                    # until we get back to the root level
                     return result
-                else: # if none could be found, then try to find a map command in the current string
+                else:
+                    # if none could be found, then try to find a map command in the current string
                     nextmapregex = re.compile(r'.*("|;)\s*(?P<map>map (?P<mapnextmap>[a-z0-9_]+))"', re.IGNORECASE)
                     m = re.match(nextmapregex, data)
                     if m.group('map'):
                         self.debug('Found nextmap: %s' % (m.group('mapnextmap')))
                         return m.group('mapnextmap')
-                    else: # if none could be found, we go up a level by returning None (remember this is done recursively)
+                    else:
+                    # if none could be found, we go up a level by returning None (remember this is done recursively)
                         self.debug('No nextmap found in this string !')
                         return None
         else:
-            self.debug('No nextmap found in this string !')
+            self.debug('No nextmap found in this string!')
             return None
 
     def sync(self):
         plist = self.getPlayerList()
-        mlist = {}
+        mlist = dict()
 
         for cid, c in plist.iteritems():
             client = self.getByCidOrJoinPlayer(cid)
             if client:
-                if client.guid and c.has_key('guid'):
+                if client.guid and 'guid' in c.keys():
                     if client.guid == c['guid']:
                         # player matches
                         self.debug('in-sync %s == %s', client.guid, c['guid'])
@@ -571,7 +592,7 @@ class Smg11Parser(AbstractParser):
                     else:
                         self.debug('no-sync %s <> %s', client.guid, c['guid'])
                         client.disconnect()
-                elif client.ip and c.has_key('ip'):
+                elif client.ip and 'ip' in c.keys():
                     if client.ip == c['ip']:
                         # player matches
                         self.debug('in-sync %s == %s', client.ip, c['ip'])
@@ -597,8 +618,7 @@ class Smg11Parser(AbstractParser):
             if int(cid) == int(ccid):
                 self.debug('Client found in status/playerList')
                 return p
-    
-    
+
     def getByCidOrJoinPlayer(self, cid):
         client = self.clients.getByCID(cid)
         if client:
@@ -608,14 +628,13 @@ class Smg11Parser(AbstractParser):
             if userinfostring:
                 self.OnClientuserinfochanged(None, userinfostring)
             return self.clients.getByCID(cid)
-        
-        
+
     def queryClientUserInfoByCid(self, cid):
-        """
+        """\
         : dumpuser 5
         Player 5 is not on the server
         
-       : dumpuser 0
+        : dumpuser 0
         userinfo
         --------
         name                Courgette
@@ -646,7 +665,6 @@ class Smg11Parser(AbstractParser):
         cg_latentSnaps      0
         cg_latentCmds       0
         cg_plOut            0
-
         """
         data = self.write('dumpuser %s' % cid)
         if not data:
@@ -668,28 +686,24 @@ class Smg11Parser(AbstractParser):
         return datatransformed
 
 #---- Documentation --------------------------------------------------------------------------------
-"""
-
-//infos clienuserinfochanged
-//0 = player_ID
-//n = name
-//t = team
-//c = class
-//r = rank
-//m = medals
-//s = skills
-//dn = disguised name
-//dr = disguised rank
-//w = weapon
-//lw = weapon last used
-//sw = 2nd weapon (not sure)
-//mu = muted
-//ref = referee
-//lw = latched weapon (weapon on next spawn)
-//sw = latched secondary weapon (secondary weapon on next spawn)
-//p = privilege level (peon = 0, referee (vote), referee (password), semiadmin, rconauth) (etpro only)
-//ss = stats restored by stat saver (etpro only)
-//sc = shoutcaster status (etpro only)
-//tv = ETTV slave (etpro only)
-
-"""
+#infos clienuserinfochanged
+#0 = player_ID
+#n = name
+#t = team
+#c = class
+#r = rank
+#m = medals
+#s = skills
+#dn = disguised name
+#dr = disguised rank
+#w = weapon
+#lw = weapon last used
+#sw = 2nd weapon (not sure)
+#mu = muted
+#ref = referee
+#lw = latched weapon (weapon on next spawn)
+#sw = latched secondary weapon (secondary weapon on next spawn)
+#p = privilege level (peon = 0, referee (vote), referee (password), semiadmin, rconauth) (etpro only)
+#ss = stats restored by stat saver (etpro only)
+#sc = shoutcaster status (etpro only)
+#tv = ETTV slave (etpro only)
