@@ -72,7 +72,11 @@
 #   * do not reconnect players leaving the game server (regression from v1.5 - parsing of "switched team" lines)
 # 2014-01-10 - 1.6 Courgette
 #   * add missing B3 event EVT_GAME_ROUND_START
+# 2014-01-13 - 1.7 Fenix
+#   * code cleanup
+#   * correctly set bot flag in getClientOrCreate
 #
+
 import re
 import time
 from b3.clients import Client, Clients
@@ -83,7 +87,7 @@ from b3.game_event_router import Game_event_router
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '1.6'
+__version__ = '1.7'
 
 
 # GAME SETUP
