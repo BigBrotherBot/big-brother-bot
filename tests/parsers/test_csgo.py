@@ -385,9 +385,9 @@ class Test_gamelog_parsing(CsgoTestCase):
         # THEN a client object is created
         client = self.parser.clients.getByCID("3")
         self.assertIsNotNone(client)
-        self.assertTrue(client.hide)
+        self.assertTrue(client.bot)
         self.assertEqual("Moe", client.name)
-        self.assertEqual('', client.guid)
+        self.assertEqual('BOT3', client.guid)
         self.assertEqual("", client.ip)
         # THEN events are fired
         self.assert_has_event("EVT_CLIENT_CONNECT", data=client, client=client)

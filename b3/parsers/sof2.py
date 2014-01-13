@@ -18,41 +18,49 @@
 #
 #
 # CHANGELOG
+# 13/01/2014 - 1.1 - Fenix
+# * pep8 coding style guide
+# * correctly set client bot flag upon new client connection
 
 __author__ = 'xlr8or, ~cGs*Pr3z, ~cGs*AQUARIUS'
-__version__ = '1.0.0'
+__version__ = '1.1'
 
-from b3.parsers.q3a.abstractParser import AbstractParser
-import re, string
 import b3
 import b3.events
+import b3.parsers.punkbuster
+import re
+import string
 
-#----------------------------------------------------------------------------------------------------------------------------------------------
+from b3.parsers.q3a.abstractParser import AbstractParser
+
+
 class Sof2Parser(AbstractParser):
+
     gameName = 'sof2'
     IpsOnly = False
     IpCombi = False
     privateMsg = False
     _empty_name_default = 'EmptyNameDefault'
 
-    _settings = {}
-    _settings['line_length'] = 65
-    _settings['min_wrap_length'] = 100
+    _settings = dict(
+        line_length=65,
+        min_wrap_length=100
+    )
 
-    _commands = {}
-    _commands['message'] = 'say %(prefix)s [^3%(name)s^7]: %(message)s'
-    _commands['deadsay'] = 'say %(prefix)s^7 %(message)s'
-    _commands['say'] = 'say %(prefix)s^7 %(message)s'
+    _commands = dict(
+        message='say %(prefix)s [^3%(name)s^7]: %(message)s',
+        deadsay='say %(prefix)s^7 %(message)s',
+        say='say %(prefix)s^7 %(message)s',
+        set='set %(name)s "%(value)s"',
+        kick='clientkick %(cid)s',
+        ban='addip %(cid)s',
+        tempban='clientkick %(cid)s',
+    )
 
-    _commands['set'] = 'set %(name)s "%(value)s"'
-    _commands['kick'] = 'clientkick %(cid)s'
-    _commands['ban'] = 'addip %(cid)s'
-    _commands['tempban'] = 'clientkick %(cid)s'
-
-    _eventMap = {
-        'warmup': b3.events.EVT_GAME_WARMUP,
-        'shutdowngame': b3.events.EVT_GAME_ROUND_END
-    }
+    _eventMap = dict(
+        warmup=b3.events.EVT_GAME_WARMUP,
+        shutdowngame=b3.events.EVT_GAME_ROUND_END
+    )
 
     # remove the time off of the line
     _lineClear = re.compile(r'^(?:[0-9:]+\s?)?')
@@ -62,24 +70,18 @@ class Sof2Parser(AbstractParser):
         #Generated with : SoF2 version: SOF2MP GOLD V1.03 win-x86 Nov  5 2002
         #Kill: 0 0 18: xlr8or killed xlr8or by MOD_SMOHG92_GRENADE
         #Kill: <killer> <victim> <meansofdeath>
-        re.compile(
-            r'^(?P<action>[a-z]+):\s*(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s*(?P<text>.*))$',
-            re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s*(?P<text>.*))$',re.IGNORECASE),
 
         #hit: 0 0 520 368 0: xlr8or hit xlr8or at location 520 for 368
-		#hit: 0 1 8192 80 0: xlr8or hit sh.andrei at location 8192 for 80
+        #hit: 0 1 8192 80 0: xlr8or hit sh.andrei at location 8192 for 80
         #hit: <acid> <cid> <location> <damage> <meansofdeath>: <aname> hit <name> at location <location> for <damage>
-        re.compile(
-            r'^(?P<action>[a-z]+):\s(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<hitloc>[0-9]+)\s(?P<damage>[0-9]+)\s(?P<aweap>[0-9]+):\s+(?P<text>.*))$'
-            , re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<hitloc>[0-9]+)\s(?P<damage>[0-9]+)\s(?P<aweap>[0-9]+):\s+(?P<text>.*))$', re.IGNORECASE),
 
         #say: xlr8or: hello
         re.compile(r'^(?P<action>say):\s*(?P<data>(?P<name>[^:]+):\s*(?P<text>.*))$', re.IGNORECASE),
 
         #ClientConnect: <cid> - <ip>:<port> [<guid>]
-        re.compile(
-            r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s-\s(?P<ip>[0-9.]+):(?P<port>[-0-9]+)\s\[(?P<cl_guid>[0-9A-Z]{32})\])$',
-            re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s-\s(?P<ip>[0-9.]+):(?P<port>[-0-9]+)\s\[(?P<cl_guid>[0-9A-Z]{32})\])$',re.IGNORECASE),
 
         #Bot connecting
         #ClientConnect: 4 -  []
@@ -87,7 +89,7 @@ class Sof2Parser(AbstractParser):
 
         #Falling thru?
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>.*)$', re.IGNORECASE)
-        )
+    )
 
     #status
     #map: mp_shop
@@ -100,14 +102,14 @@ class Sof2Parser(AbstractParser):
     #  4     3    0 Homer~Sexual         50 bot                   54183 16384
     #  7     6    0 Wet~Sponge           50 bot                       0 16384
     #  8     4    0 PaashaasSchaamhaarVerzamelaar     50 bot                       0 16384
-
-    #_regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
-    _regPlayer = re.compile(
-        r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$'
-        , re.I)
+    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
     _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
 
-    PunkBuster = None
+    punk_buster = None
+
+    _clientConnectID = None
+    _clientConnectGuid = None
+    _clientConnectIp = None
 
     #kill modes (aweap, meansofdeath)
     MOD_UNKNOWN = '0'
@@ -158,19 +160,20 @@ class Sof2Parser(AbstractParser):
     MOD_M15_GRENADE_ALT = '45'
 
     def startup(self):
+
         # add the world client
-        client = self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
+        self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
 
         if self.privateMsg:
             self.warning('SoF2 will need a mod to enable private messaging!')
 
         if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
-            self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
+            self.punk_buster = b3.parsers.punkbuster.PunkBuster(self)
 
         # get map from the status rcon command
-        map = self.getMap()
-        if map:
-            self.game.mapName = map
+        _map = self.getMap()
+        if _map:
+            self.game.mapName = _map
             self.info('map is: %s' % self.game.mapName)
 
         # initialize connected clients
@@ -181,10 +184,11 @@ class Sof2Parser(AbstractParser):
             if userinfostring:
                 self.OnClientuserinfo(None, userinfostring)
 
-
     def getLineParts(self, line):
+
         line = re.sub(self._lineClear, '', line, 1)
 
+        m = None
         for f in self._lineFormats:
             m = re.match(f, line)
             if m:
@@ -194,37 +198,37 @@ class Sof2Parser(AbstractParser):
         if m:
             client = None
             target = None
-            return (m, m.group('action').lower(), m.group('data').strip(), client, target)
+            return m, m.group('action').lower(), m.group('data').strip(), client, target
         else:
             self.verbose('line did not match format: %s' % line)
 
     def parseUserInfo(self, info):
-        #0 \ip\145.99.135.000:-12553\cl_guid\XXXXD914662572D3649B94B1EA5F921\cl_punkbuster\0\details\5\name\xlr8or\rate\9000\snaps\20\identity\NPC_Sam/sam_gladstone\cl_anonymous\0\cg_predictItems\1\cg_antiLag\1\cg_autoReload\1\cg_smoothClients\0\team_identity\shopguard1\outfitting\GACAA
-        playerID, info = string.split(info, ' ', 1)
+        #0 \ip\145.99.135.000:-12553\cl_guid\XXXXD914662572D3649B94B1EA5F921\cl_punkbuster\0\details\5\name\xlr8or...
+        player_id, info = string.split(info, ' ', 1)
 
         if info[:1] != '\\':
             info = '\\' + info
 
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', info)
 
-        data = {}
+        data = dict()
         for o in options:
             data[o[0]] = o[1]
 
-        data['cid'] = playerID
+        data['cid'] = player_id
 
-        if data.has_key('n'):
+        if 'n' in data.keys():
             data['name'] = data['n']
 
         t = 0
-        if data.has_key('team'):
+        if 'team' in data.keys():
             t = data['team']
-        elif data.has_key('t'):
+        elif 't' in data.keys():
             t = data['t']
 
         data['team'] = self.getTeam(t)
 
-        if data.has_key('cl_guid') and not data.has_key('pbid'):
+        if 'cl_guid' in data.keys() and not 'pbid' in data.keys():
             data['pbid'] = data['cl_guid']
 
         return data
@@ -232,9 +236,9 @@ class Sof2Parser(AbstractParser):
     # Need to override message format. Game does not support PM's
     def message(self, client, text):
         try:
-            if client == None:
+            if client is None:
                 self.say(text)
-            elif client.cid == None:
+            elif client.cid is None:
                 pass
             else:
                 lines = []
@@ -242,122 +246,134 @@ class Sof2Parser(AbstractParser):
                     lines.append(self.getCommand('message', prefix=self.msgPrefix, name=client.name, message=line))
 
                 self.writelines(lines)
-        except:
+        except Exception:
             pass
 
     def OnClientconnect(self, action, data, match=None):
         # we get user info in two parts:
         # ClientConnect: 0 - 79.172.5.254:20100 [894E22B3636F8E9198C566C28AD87D0B]
         # ClientUserinfoChanged: 0 n\xlr8or\t\0\identity\NPC_Sam/sam_gladstone
-        # we need to store the ClientConnect ID, the guid and IP for the next call to Clientuserinfochanged only on initial connection
+        # we need to store the ClientConnect ID, the guid and IP for the next call to
+        # Clientuserinfochanged only on initial connection
 
         try:
-            self._clientConnectID = match.group('cid') # Normal client connected
-        except:
+            # Normal client connected
+            self._clientConnectID = match.group('cid')
+        except IndexError:
+
             try:
-                self._clientConnectID = match.group('bcid') # Game Bot identifier
+                # Game Bot identifier
+                self._clientConnectID = match.group('bcid')
                 self._clientConnectGuid = 'BOT' + str(match.group('bcid'))
                 self._clientConnectIp = '0.0.0.0'
                 self.bot('Bot Connected')
                 return None
-            except:
+            except IndexError:
                 self.error('Parser could not connect client')
                 return None
 
         try:
-            self._clientConnectGuid = match.group('cl_guid') # If we have no cl_guid we'll use the ip instead.
-        except:
+            # If we have no cl_guid we'll use the ip instead
+            self._clientConnectGuid = match.group('cl_guid')
+        except IndexError:
             self._clientConnectGuid = match.group('ip')
 
         self._clientConnectIp = match.group('ip')
-        self.verbose('Client Connected cid: %s, guid: %s, ip: %s' % (
-            self._clientConnectID, self._clientConnectGuid, self._clientConnectIp))
+        self.verbose('Client Connected cid: %s, guid: %s, ip: %s' % (self._clientConnectID,
+                                                                     self._clientConnectGuid,
+                                                                     self._clientConnectIp))
 
     # Parse Userinfo
     # Only called when bot is starting on a populated server
     def OnClientuserinfo(self, action, data, match=None):
-        #0 \ip\145.99.135.000:-12553\cl_guid\XXXXD914662572D3649B94B1EA5F921\cl_punkbuster\0\details\5\name\xlr8or\rate\9000\snaps\20\identity\NPC_Sam/sam_gladstone\cl_anonymous\0\cg_predictItems\1\cg_antiLag\1\cg_autoReload\1\cg_smoothClients\0\team_identity\shopguard1\outfitting\GACAA
+
+        #0 \ip\145.99.135.000:-12553\cl_guid\XXXXD914662572D3649B94B1EA5F921\cl_punkbuster\0\details\5\name\xlr8or...
+        bot = False
         bclient = self.parseUserInfo(data)
 
-        if bclient.has_key('name'):
+        if 'name' in bclient.keys():
             # remove spaces from name
-            bclient['name'] = bclient['name'].replace(' ','')
+            bclient['name'] = bclient['name'].replace(' ', '')
 
         # split port from ip field
-        if bclient.has_key('ip'):
+        if 'ip' in bclient.keys():
             if bclient['ip'] == 'bot':
                 #not sure if this one works...
                 self.bot('Bot Connected!')
                 bclient['ip'] = '0.0.0.0'
                 bclient['cl_guid'] = 'BOT' + str(bclient['cid'])
+                bot = True
             else:
-                ipPortData = string.split(bclient['ip'], ':', 1)
-                bclient['ip'] = ipPortData[0]
-                if len(ipPortData) > 1:
-                    bclient['port'] = ipPortData[1]
+                ip_port_data = string.split(bclient['ip'], ':', 1)
+                bclient['ip'] = ip_port_data[0]
+                if len(ip_port_data) > 1:
+                    bclient['port'] = ip_port_data[1]
 
-        if bclient.has_key('team'):
+        if 'team' in bclient.keys():
             bclient['team'] = self.getTeam(bclient['team'])
 
-        if bclient.has_key('cl_guid') and not bclient.has_key('pbid') and self.PunkBuster:
+        if 'cl_guid' in bclient.keys() and not 'pbid' in bclient.keys() and self.punk_buster:
             bclient['pbid'] = bclient['cl_guid']
 
         self.verbose('Parsed user info %s' % bclient)
 
         if bclient:
-            client = self.clients.getByCID(bclient['cid'])
 
+            client = self.clients.getByCID(bclient['cid'])
             if client:
                 # update existing client
                 for k, v in bclient.iteritems():
                     setattr(client, k, v)
             else:
-                #make a new client
-                if self.PunkBuster:
+                # make a new client
+                if self.punk_buster:
                     # we will use punkbuster's guid
                     guid = None
                 else:
                     # use io guid
-                    if bclient.has_key('cl_guid'):
+                    if 'cl_guid' in bclient.keys():
                         guid = bclient['cl_guid']
                     else:
                         guid = 'unknown'
 
-                if not bclient.has_key('name'):
+                if not 'name' in bclient.keys():
                     bclient['name'] = self._empty_name_default
 
-                if not bclient.has_key('ip') and guid == 'unknown':
+                if not 'ip' in bclient.keys() and guid == 'unknown':
                     # happens when a client is (temp)banned and got kicked so client was destroyed, but
                     # infoline was still waiting to be parsed.
                     self.debug('Client disconnected. Ignoring.')
                     return None
 
                 nguid = ''
-                # overide the guid... use ip's only if self.console.IpsOnly is set True.
+                # override the guid... use ip's only if
+                # self.console.IpsOnly is set True.
                 if self.IpsOnly:
                     nguid = bclient['ip']
-                # replace last part of the guid with two segments of the ip
+                # replace last part of the guid with two
+                # segments of the ip
                 elif self.IpCombi:
                     i = bclient['ip'].split('.')
-                    d = len(i[0])+len(i[1])
-                    nguid = guid[:-d]+i[0]+i[1]
-                # Some Quake clients don't have a cl_guid, we'll use ip instead, this is pure fallback!
+                    d = len(i[0]) + len(i[1])
+                    nguid = guid[:-d] + i[0] + i[1]
+                # Some Quake clients don't have a cl_guid,
+                # we'll use ip instead, this is pure fallback!
                 elif guid == 'unknown':
                     nguid = bclient['ip']
 
                 if nguid != '':
                     guid = nguid
 
-                client = self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid })
+                self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'],
+                                       state=b3.STATE_ALIVE, guid=guid, bot=bot, data={'guid': guid})
 
         return None
 
     def OnClientuserinfochanged(self, action, data, match=None):
-        #ClientUserinfoChanged: 0 n\xlr8or\t\0\identity\NPC_Sam/sam_gladstone
-        try:
-            id = self._clientConnectID
-        except:
-            id = None # We've already connected before
+        # ClientUserinfoChanged: 0 n\xlr8or\t\0\identity\NPC_Sam/sam_gladstone
+        _id = None
+        if self._clientConnectID is not None:
+            _id = self._clientConnectID
 
         self._clientConnectID = None
 
@@ -366,7 +382,7 @@ class Sof2Parser(AbstractParser):
         if bclient:
             client = self.clients.getByCID(bclient['cid'])
 
-            if id:
+            if _id:
                 bclient['cl_guid'] = self._clientConnectGuid
                 self._clientConnectGuid = None
                 bclient['ip'] = self._clientConnectIp
@@ -379,12 +395,12 @@ class Sof2Parser(AbstractParser):
                 for k, v in bclient.iteritems():
                     setattr(client, k, v)
             else:
-                #make a new client
+                # make a new client
                 client = self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'],
                                                 state=b3.STATE_ALIVE, guid=bclient['cl_guid'],
                                                 data={'guid': bclient['cl_guid']})
 
-        if id:
+        if _id:
             return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
         else:
             return None
@@ -392,7 +408,8 @@ class Sof2Parser(AbstractParser):
     # disconnect
     def OnClientdisconnect(self, action, data, match=None):
         client = self.clients.getByCID(data)
-        if client: client.disconnect()
+        if client:
+            client.disconnect()
         return None
 
     def OnInitgame(self, action, data, match=None):
@@ -538,13 +555,15 @@ class Sof2Parser(AbstractParser):
 
         ## Fix attacker
         if match.group('aweap') in (
-            self.MOD_MM1_GRENADE_LAUNCHER, self.MOD_RPG7_LAUNCHER, self.MOD_M84_GRENADE, self.MOD_SMOHG92_GRENADE,
-            self.MOD_ANM14_GRENADE, self.MOD_M15_GRENADE, self.MOD_WATER, self.MOD_FALLING, self.MOD_SUICIDE,
-            self.MOD_TRIGGER_HURT, self.MOD_M4_ASSAULT_RIFLE_ALT, self.MOD_M84_GRENADE_ALT, self.MOD_SMOHG92_GRENADE_ALT
-            , self.MOD_ANM14_GRENADE_ALT, self.MOD_M15_GRENADE_ALT):
+                self.MOD_MM1_GRENADE_LAUNCHER, self.MOD_RPG7_LAUNCHER, self.MOD_M84_GRENADE, self.MOD_SMOHG92_GRENADE,
+                self.MOD_ANM14_GRENADE, self.MOD_M15_GRENADE, self.MOD_WATER, self.MOD_FALLING, self.MOD_SUICIDE,
+                self.MOD_TRIGGER_HURT, self.MOD_M4_ASSAULT_RIFLE_ALT, self.MOD_M84_GRENADE_ALT,
+                self.MOD_SMOHG92_GRENADE_ALT, self.MOD_ANM14_GRENADE_ALT, self.MOD_M15_GRENADE_ALT):
+
             # those kills should be considered suicides
-            self.debug(
-                'OnKill: mm1_grenade_launcher/rpg7_launcher/m84_grenade/smohg92_grenade/anm14/m15_grenade/water/suicide/trigger_hurt/m4_assault_rifle_alt/m84_grenade_alt/smohg92_grenade_alt/anm14_alt/m15_grenade_alt should be suicides')
+            self.debug('OnKill: mm1_grenade_launcher/rpg7_launcher/m84_grenade/smohg92_grenade/anm14/m15_grenade/water/'
+                       'suicide/trigger_hurt/m4_assault_rifle_alt/m84_grenade_alt/smohg92_grenade_alt/anm14_alt/'
+                       'm15_grenade_alt should be suicides')
             attacker = victim
         else:
             attacker = self.clients.getByCID(match.group('acid'))
@@ -554,8 +573,8 @@ class Sof2Parser(AbstractParser):
             self.debug('No attacker')
             return None
 
-        dType = match.group('text').split()[-1:][0]
-        if not dType:
+        dtype = match.group('text').split()[-1:][0]
+        if not dtype:
             self.debug('No damageType, weapon: %s' % weapon)
             return None
 
@@ -564,10 +583,8 @@ class Sof2Parser(AbstractParser):
         # fix event for team change and suicides and tk
         if attacker.cid == victim.cid:
             if weapon == self.MOD_TEAMCHANGE:
-                """
-                Do not pass a teamchange event here. That event is passed
-                shortly after the kill.
-                """
+                # Do not pass a teamchange event here. That event is passed
+                # shortly after the kill.
                 self.verbose('Team Change Event Caught, exiting')
                 return None
             else:
@@ -580,9 +597,10 @@ class Sof2Parser(AbstractParser):
             victim.hitloc = 'body'
 
         victim.state = b3.STATE_DEAD
-        #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (victim.name, attacker.name, weapon, victim.hitloc, dType))
+        #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (
+        # victim.name, attacker.name, weapon, victim.hitloc, dType))
         # need to pass some amount of damage for the teamkill plugin - 100 is a kill
-        return b3.events.Event(event, (100, weapon, victim.hitloc, dType), attacker, victim)
+        return b3.events.Event(event, (100, weapon, victim.hitloc, dtype), attacker, victim)
 
     # item
     def OnItem(self, action, data, match=None):
@@ -595,50 +613,50 @@ class Sof2Parser(AbstractParser):
         return None
 
     # Translate the gameType to a readable format
-    def defineGameType(self, gameTypeInt):
-        _gameType = ''
-        _gameType = str(gameTypeInt)
-        #self.debug('gameTypeInt: %s' % gameTypeInt)
+    def defineGameType(self, gametype_int):
 
-        if gameTypeInt == '0':
-            _gameType = 'ass'
-        elif gameTypeInt == '1':
-            _gameType = 'cnh'
-        elif gameTypeInt == '2':
-            _gameType = 'ctb'
-        elif gameTypeInt == '3':
-            _gameType = 'cctf'
-        elif gameTypeInt == '4':
-            _gameType = 'ctf'
-        elif gameTypeInt == '5':
-            _gameType = 'dem'
-        elif gameTypeInt == '6':
-            _gameType = 'dm'
-        elif gameTypeInt == '7':
-            _gameType = 'dom'
-        elif gameTypeInt == '8':
-            _gameType = 'elim'
-        elif gameTypeInt == '9':
-            _gameType = 'gold'
-        elif gameTypeInt == '10':
-            _gameType = 'inf'
-        elif gameTypeInt == '11':
-            _gameType = 'knockback'
-        elif gameTypeInt == '12':
-            _gameType = 'lms'
-        elif gameTypeInt == '13':
-            _gameType = 'rctf'
-        elif gameTypeInt == '14':
-            _gameType = 'stq'
-        elif gameTypeInt == '15':
-            _gameType = 'tctb'
-        elif gameTypeInt == '16':
-            _gameType = 'tdm'
-        elif gameTypeInt == '17':
-            _gameType = 'tstq'
+        #self.debug('gametype_int: %s' % gametype_int)
+        _gametype = str(gametype_int)
 
-        #self.debug('_gameType: %s' % _gameType)
-        return _gameType
+        if gametype_int == '0':
+            _gametype = 'ass'
+        elif gametype_int == '1':
+            _gametype = 'cnh'
+        elif gametype_int == '2':
+            _gametype = 'ctb'
+        elif gametype_int == '3':
+            _gametype = 'cctf'
+        elif gametype_int == '4':
+            _gametype = 'ctf'
+        elif gametype_int == '5':
+            _gametype = 'dem'
+        elif gametype_int == '6':
+            _gametype = 'dm'
+        elif gametype_int == '7':
+            _gametype = 'dom'
+        elif gametype_int == '8':
+            _gametype = 'elim'
+        elif gametype_int == '9':
+            _gametype = 'gold'
+        elif gametype_int == '10':
+            _gametype = 'inf'
+        elif gametype_int == '11':
+            _gametype = 'knockback'
+        elif gametype_int == '12':
+            _gametype = 'lms'
+        elif gametype_int == '13':
+            _gametype = 'rctf'
+        elif gametype_int == '14':
+            _gametype = 'stq'
+        elif gametype_int == '15':
+            _gametype = 'tctb'
+        elif gametype_int == '16':
+            _gametype = 'tdm'
+        elif gametype_int == '17':
+            _gametype = 'tstq'
+
+        #self.debug('_gametype: %s' % _gametype)
+        return _gametype
 
     def joinPlayers(self):
         plist = self.getPlayerList()
@@ -674,7 +692,6 @@ class Sof2Parser(AbstractParser):
         cg_smoothClients    0
         team_identity       shopguard1
         outfitting          GACAA
-
         """
         data = self.write('dumpuser %s' % name)
         if not data:
@@ -706,9 +723,6 @@ class Sof2Parser(AbstractParser):
             if userinfostring:
                 self.OnClientuserinfo(None, userinfostring)
             return self.clients.getByExactName(name)
-
-
-
 
 #HL_FOOT_RT
 #HL_FOOT_LT

@@ -1174,12 +1174,9 @@ class Clients(dict):
         self.resetIndex()
 
         self.console.debug('Client Connected: [%s] %s - %s (%s)', self[client.cid].cid, self[client.cid].name, self[client.cid].guid, self[client.cid].data)
-
-        self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_CONNECT,
-            client,
-            client))
+        self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_CONNECT, client, client))
     
-        if client.guid:
+        if client.guid and not client.bot:
             client.auth()
         elif not client.authed:
             self.authorizeClients()

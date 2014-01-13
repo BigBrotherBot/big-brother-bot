@@ -39,45 +39,51 @@
 #  * fix MOD_SHOTGUN -> MOD_PUMPER
 # 2011-04-10 - 1.2.3 - Courgette
 #  * fix commands that should use quotation marks
+# 2014-01-15 - 1.3 - Fenix
+#  * pep8 coding style guide
+#  * corrrectly set client bot flag upon new client connection
 
 
-__author__  = 'xlr8or, Courgette'
-__version__ = '1.2.3'
+__author__ = 'xlr8or, Courgette'
+__version__ = '1.3'
 
-from b3.parsers.q3a.abstractParser import AbstractParser
-import re, string
 import b3
 import b3.events
+import b3.parser
+import re
+import string
+
+from b3.parsers.q3a.abstractParser import AbstractParser
 from b3.events import EVT_GAME_WARMUP, EVT_GAME_ROUND_END
 
-DEBUG_EVENTS=False
+DEBUG_EVENTS = False
 
 #kill modes
-MOD_UNKNOWN='0'
-MOD_PUMPER='1'
-MOD_GAUNTLET='2'
-MOD_MACHINEGUN='3'
-MOD_GRENADE='4'
-MOD_GRENADE_SPLASH='5'
-MOD_ROCKET='6'
-MOD_ROCKET_SPLASH='7'
-MOD_PLASMA='8'
-MOD_PLASMA_SPLASH='9'
-MOD_RAILGUN='10'
-MOD_LIGHTNING='11'
-MOD_BFG='12'
-MOD_BFG_SPLASH='13'
-MOD_KILLERDUCKS='14'
-MOD_WATER='15'
-MOD_SLIME='16'
-MOD_LAVA='17'
-MOD_CRUSH='18'
-MOD_TELEFRAG='19'
-MOD_FALLING='20' # not used in wop
-MOD_SUICIDE='21'
-MOD_TARGET_LASER='22' # not used in wop
-MOD_TRIGGER_HURT='23'
-MOD_GRAPPLE='24' # not used in wop
+MOD_UNKNOWN = '0'
+MOD_PUMPER = '1'
+MOD_GAUNTLET = '2'
+MOD_MACHINEGUN = '3'
+MOD_GRENADE = '4'
+MOD_GRENADE_SPLASH = '5'
+MOD_ROCKET = '6'
+MOD_ROCKET_SPLASH = '7'
+MOD_PLASMA = '8'
+MOD_PLASMA_SPLASH = '9'
+MOD_RAILGUN = '10'
+MOD_LIGHTNING = '11'
+MOD_BFG = '12'
+MOD_BFG_SPLASH = '13'
+MOD_KILLERDUCKS = '14'
+MOD_WATER = '15'
+MOD_SLIME = '16'
+MOD_LAVA = '17'
+MOD_CRUSH = '18'
+MOD_TELEFRAG = '19'
+MOD_FALLING = '20'  # not used in wop
+MOD_SUICIDE = '21'
+MOD_TARGET_LASER = '22'  # not used in wop
+MOD_TRIGGER_HURT = '23'
+MOD_GRAPPLE = '24'  # not used in wop
 
 # game types
 GAMETYPE_FFA = '0'
@@ -90,33 +96,33 @@ GAMETYPE_CTL = '6'
 GAMETYPE_TSYC = '7'
 GAMETYPE_BB = '8'
 
-TEAM_BASED_GAMETYPES = (GAMETYPE_TFFA, GAMETYPE_CTL, \
-                        GAMETYPE_TSYC, GAMETYPE_BB)
+TEAM_BASED_GAMETYPES = (GAMETYPE_TFFA, GAMETYPE_CTL, GAMETYPE_TSYC, GAMETYPE_BB)
 
-#----------------------------------------------------------------------------------------------------------------------------------------------
+
 class Wop15Parser(AbstractParser):
+
     gameName = 'wop15'
 
-    _settings = {}
-    _settings['line_length'] = 65
-    _settings['min_wrap_length'] = 100
+    _settings = dict(
+        line_length=65,
+        _settings=100,
+    )
 
-    _commands = {}
-    _commands['message'] = 'stell %(cid)s "%(prefix)s ^3[pm]^7 %(message)s"'
-    _commands['deadsay'] = 'stell %(cid)s "%(prefix)s [DEAD]^7 %(message)s"'
-    _commands['say'] = 'ssay "%(prefix)s^7 %(message)s"'
-    _commands['saybig'] = 'scp -1 "%(prefix)s^7 %(message)s"'
+    _commands = dict(
+        message='stell %(cid)s "%(prefix)s ^3[pm]^7 %(message)s"',
+        deadsay='stell %(cid)s "%(prefix)s [DEAD]^7 %(message)s"',
+        say='ssay "%(prefix)s^7 %(message)s"',
+        saybig='scp -1 "%(prefix)s^7 %(message)s"',
+        set='set %(name)s "%(value)s"',
+        kick='clientkick %(cid)s',
+        ban='banAddr %(cid)s',
+        tempban='clientkick %(cid)s',
+    )
 
-    _commands['set'] = 'set %(name)s "%(value)s"'
-    _commands['kick'] = 'clientkick %(cid)s'
-    _commands['ban'] = 'banAddr %(cid)s'
-    _commands['tempban'] = 'clientkick %(cid)s'
-
-
-    _eventMap = {
-        'warmup' : EVT_GAME_WARMUP,
-        'shutdowngame' : EVT_GAME_ROUND_END
-    }
+    _eventMap = dict(
+        warmup=EVT_GAME_WARMUP,
+        shutdowngame=EVT_GAME_ROUND_END
+    )
 
     # remove the time off of the line
     _lineClear = re.compile(r'^(?:[0-9:]+\s?)?')
@@ -154,23 +160,18 @@ class Wop15Parser(AbstractParser):
     #  0     0    2    0 ^0PAD^4MAN^7           50 bot                       0 16384
     #  1     0    3   43 PadPlayer^7           0 2001:41b8:9bf:fe04:f40c:d4ff:fe2b:6af9 45742 90000
     _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<team>[0-9]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
-
     _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
-
-    PunkBuster = None
-
-
 
     def startup(self):
         # add the world client
         self.clients.newClient('-1', guid='WORLD', name='World', hide=True)
-        self.world_client = self.clients.newClient('1022', guid='ENTITYNUM_WORLD', name='World', hide=True)
+        self.clients.newClient('1022', guid='ENTITYNUM_WORLD', name='World', hide=True)
 
         # get map from the status rcon command
-        map = self.getMap()
-        if map:
-            self.game.mapName = map
-            self.info('map is: %s'%self.game.mapName)
+        _map = self.getMap()
+        if _map:
+            self.game.mapName = _map
+            self.info('map is: %s' % self.game.mapName)
         
         # initialize connected clients
         plist = self.getPlayerList()
@@ -178,7 +179,6 @@ class Wop15Parser(AbstractParser):
             userinfostring = self.queryClientUserInfoByCid(cid)
             if userinfostring:
                 self.OnClientuserinfo(None, userinfostring)
-
 
     # ##########################################################################
     #
@@ -191,12 +191,10 @@ class Wop15Parser(AbstractParser):
         #ClientConnect: 2  151.16.71.226
         #ClientConnect: 0
         try:
-            cid = match.group('cid') # Normal client connected
-            client = self.getByCidOrJoinPlayer(cid)
+            cid = match.group('cid')  # Normal client connected
             self.verbose('Client Connected cid: %s' % cid)
         except IndexError:
             pass
-        
 
     def OnClientuserinfochanged(self, action, data, match=None):
         bclient = self.parseUserInfo(data)
@@ -213,7 +211,8 @@ class Wop15Parser(AbstractParser):
     # disconnect
     def OnClientdisconnect(self, action, data, match=None):
         client = self.clients.getByCID(data)
-        if client: client.disconnect()
+        if client:
+            client.disconnect()
         return None
 
     def OnInitgame(self, action, data, match=None):
@@ -320,8 +319,8 @@ class Wop15Parser(AbstractParser):
         # fix event for team change and suicides and tk
         if attacker.cid == victim.cid:
             event = 'EVT_CLIENT_DAMAGE_SELF'
-        elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team \
-            and self.game.gameType in TEAM_BASED_GAMETYPES:
+        elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team and \
+                self.game.gameType in TEAM_BASED_GAMETYPES:
             event = 'EVT_CLIENT_DAMAGE_TEAM'
 
         # if not logging damage we need a general hitloc (for xlrstats)
@@ -362,7 +361,7 @@ class Wop15Parser(AbstractParser):
         23:   MOD_TRIGGER_HURT, Killed by a trigger_hurt
         24:   MOD_GRAPPLE, Killed by grapple, not used in WoP
         """
-        self.debug('OnKill: %s (%s)'%(match.group('aweap'),match.group('data')))
+        self.debug('OnKill: %s (%s)' % (match.group('aweap'), match.group('data')))
         cid = match.group('cid')
         if not -1 < int(cid) < 64:
             cid = '1022'
@@ -395,8 +394,8 @@ class Wop15Parser(AbstractParser):
         # fix event for team change and suicides and tk
         if attacker.cid == victim.cid:
             event = 'EVT_CLIENT_SUICIDE'
-        elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team \
-            and self.game.gameType in TEAM_BASED_GAMETYPES:
+        elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team and \
+                self.game.gameType in TEAM_BASED_GAMETYPES:
             event = 'EVT_CLIENT_KILL_TEAM'
 
         # if not logging damage we need a general hitloc (for xlrstats)
@@ -404,7 +403,8 @@ class Wop15Parser(AbstractParser):
             victim.hitloc = 'body'
         
         victim.state = b3.STATE_DEAD
-        #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (victim.name, attacker.name, weapon, victim.hitloc, dType))
+        #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (
+        # victim.name, attacker.name, weapon, victim.hitloc, dType))
         # need to pass some amount of damage for the teamkill plugin - 100 is a kill
         return self.getEvent(event, (100, weapon, victim.hitloc), attacker, victim)
 
@@ -418,15 +418,16 @@ class Wop15Parser(AbstractParser):
             return self.getEvent('EVT_CLIENT_ITEM_PICKUP', item, client)
         return None
 
-
     def OnClientuserinfo(self, action, data, match=None):
+        bot = False
         bclient = self.parseUserInfo(data)
         self.verbose('Parsed user info %s' % bclient)
-        
-        if not bclient.has_key('cl_guid') and bclient.has_key('skill'):
+
+        if not 'cl_guid' in bclient.keys() and 'skill' in bclient.keys():
             # must be a bot connecting
             self.bot('Bot Connecting!')
             bclient['ip'] = '0.0.0.0'
+            bot = true
             
         if 'cl_guid' in bclient:
             bclient['guid'] = bclient['cl_guid']
@@ -439,11 +440,11 @@ class Wop15Parser(AbstractParser):
             else:
                 cid = bclient['cid']
                 del bclient['cid']
-                client = self.clients.newClient(cid, state=b3.STATE_ALIVE, **bclient)
+                client = self.clients.newClient(cid, state=b3.STATE_ALIVE, bot=bot, **bclient)
                 
             self.debug("client is now : %s" % client)
+
         return
-    
 
     # ##########################################################################
     #
@@ -459,17 +460,16 @@ class Wop15Parser(AbstractParser):
         if len(lines):        
             self.writelines(lines)
 
-
     # ##########################################################################
     #
     # other
     #
     # ##########################################################################
 
-
     def getLineParts(self, line):
         line = re.sub(self._lineClear, '', line, 1)
 
+        m = None
         for f in self._lineFormats:
             m = re.match(f, line)
             if m:
@@ -479,69 +479,69 @@ class Wop15Parser(AbstractParser):
         if m:
             client = None
             target = None
-            return (m, m.group('action').lower(), m.group('data').strip(), client, target)
+            return m, m.group('action').lower(), m.group('data').strip(), client, target
         else:
             self.verbose('line did not match format: %s' % line)
 
     def parseUserInfo(self, info):
-        #3 n\Dr.Schraube\t\0\model\padman/padsoldier_red\hmodel\padman/padsoldier_red\c1\4\c2\1\hc\100\w\0\l\0\tt\0\tl\0\sl\
-        playerID, info = string.split(info, ' ', 1)
+        #3 n\Dr.Schraube\t\0\model\padman/padsoldier_red\hmodel\padman/padsoldier_red\c1\4\c2\1\hc\100\w\0\l\0...
+        player_id, info = string.split(info, ' ', 1)
 
         if info[:1] != '\\':
             info = '\\' + info
 
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', info)
 
-        data = {}
+        data = dict()
         for o in options:
             data[o[0]] = o[1]
 
-        data['cid'] = playerID
+        data['cid'] = player_id
 
-        if data.has_key('n'):
+        if 'n' in data.keys():
             data['name'] = data['n']
 
         t = 0
-        if data.has_key('team'):
+        if 'team' in data.keys():
             t = data['team']
-        elif data.has_key('t'):
+        elif 't' in data.keys():
             t = data['t']
 
         data['team'] = self.getTeam(t)
 
-        if data.has_key('cl_guid') and not data.has_key('guid'):
+        if 'cl_guid' in data.keys() and not 'guid' in data.keys():
             data['guid'] = data['cl_guid']
 
         return data
     
     # Translate the gameType to a readable format
     # //WoP gametypes: 0=FFA / 1=1v1 / 2=SP / 3=SYC-FFA / 4=LPS / 5=TDM / 6=CTL / 7=SYC-TP / 8=BB
-    def defineGameType(self, gameTypeInt):
+    def defineGameType(self, gametype_int):
 
-        _gameType = ''
-        #self.debug('gameTypeInt: %s' % gameTypeInt)
+        _gametype = ''
+        #self.debug('gametype_int: %s' % gametype_int)
         
-        if gameTypeInt == GAMETYPE_FFA:
-            _gameType = 'FFA'
-        elif gameTypeInt == GAMETYPE_1VS1:
-            _gameType = 'lVSl'
-        elif gameTypeInt == GAMETYPE_SP:
-            _gameType = 'SP'
-        elif gameTypeInt == GAMETYPE_SYC:
-            _gameType = 'SYC'
-        elif gameTypeInt == GAMETYPE_LPS:
-            _gameType = 'LPS'
-        elif gameTypeInt == GAMETYPE_TFFA:
-            _gameType = 'TFFA'
-        elif gameTypeInt == GAMETYPE_CTL:
-            _gameType = 'CTL'
-        elif gameTypeInt == GAMETYPE_TSYC:
-            _gameType = 'TSYC'
-        elif gameTypeInt == GAMETYPE_BB:
-            _gameType = 'BB'
+        if gametype_int == GAMETYPE_FFA:
+            _gametype = 'FFA'
+        elif gametype_int == GAMETYPE_1VS1:
+            _gametype = 'lVSl'
+        elif gametype_int == GAMETYPE_SP:
+            _gametype = 'SP'
+        elif gametype_int == GAMETYPE_SYC:
+            _gametype = 'SYC'
+        elif gametype_int == GAMETYPE_LPS:
+            _gametype = 'LPS'
+        elif gametype_int == GAMETYPE_TFFA:
+            _gametype = 'TFFA'
+        elif gametype_int == GAMETYPE_CTL:
+            _gametype = 'CTL'
+        elif gametype_int == GAMETYPE_TSYC:
+            _gametype = 'TSYC'
+        elif gametype_int == GAMETYPE_BB:
+            _gametype = 'BB'
         
-        #self.debug('_gameType: %s' % _gameType)
-        return _gameType
+        #self.debug('_gametype: %s' % _gametype)
+        return _gametype
 
     def joinPlayers(self):
         plist = self.getPlayerList()
@@ -605,7 +605,7 @@ class Wop15Parser(AbstractParser):
     def getByCidOrJoinPlayer(self, cid):
         if int(cid) > 63:
             self.debug("a client cid cannot be over 63 ! received : %s" % cid)
-            return
+            return None
         client = self.clients.getByCID(cid)
         if client is None:
             self.debug('cannot find client by cid %r' % cid)
@@ -623,113 +623,111 @@ class Wop15Parser(AbstractParser):
         finally:
             return b3.parser.Parser.queueEvent(self, event, expire)
 
-"""
-game log information provided by GedankenBlitz:
-
-stell $cid $text
-Serverside tell chat.
-
-ssay $text
-Serverside say chat.
-
-sprint $cid $text
-Print text to a client. Text will be printed to the upper left chat area.
-
-New loglines;
-DropItem: $cid $classname
-Award: $cid $awardname
-AddScore: $cid $score $reason
-Vote: failed timeout
-Vote: failed
-Vote: passed
-CvarChange: $cvar-name $cvar-value
-AddTeamScore: $teamname $score $reason
-Callvote: $cid $vote
-
-Changed loglines;
-Kill: $attacker-cid $means-of-death $target-cid
-Teamscores: red $score-red blue $score-blue
-Score: $cid $score
-Say: $cid $text
-SayTeam: $cid $text
-Tell: $cid $target-cid $text
-
-rcon status currently includes an extra column for the player team;
-map: wop_padcloisterctl
-num score team ping name            lastmsg address               qport rate
---- ----- ---- ---- --------------- ------- --------------------- ----- -----
-  0     0    2    0 ^0PAD^4MAN^7           50 bot                       0 16384
-  1     0    3   43 PadPlayer^7           0 2001:41b8:9bf:fe04:f40c:d4ff:fe2b:6af9 45742 90000
-
-Awardnames are;
-excellent
-gauntlet
-cap
-impressive
-defend
-assist
-denied
-spraygod
-spraykiller
-unkown
-
-Teamnames are;
-FREE
-RED
-BLUE
-SPECTATOR
-This order matches the team numbers, which start with index 0.
-
-Inbuilt score reasons include;
-suicide
-teamkill
-kill
-survive
-spray
-spray_wrongwall
-target_score
-frag_carrier
-carrier_protect
-defense
-recovery
-capture
-capture_team
-assist_return
-assist_frag_carrier
-flag
-spraykiller
-spraygod
-
-Means of death have changed to
-MOD_UNKNOWN = 0
-MOD_PUMPER
-MOD_PUNCHY
-MOD_NIPPER
-MOD_BALLOONY
-MOD_BALLOONY_SPLASH
-MOD_BETTY
-MOD_BETTY_SPLASH
-MOD_BUBBLEG
-MOD_BUBBLEG_SPLASH // should be unused
-MOD_SPLASHER
-MOD_BOASTER
-MOD_IMPERIUS
-MOD_IMPERIUS_SPLASH
-MOD_INJECTOR // new
-MOD_KILLERDUCKS
-MOD_WATER
-MOD_SLIME
-MOD_LAVA
-MOD_CRUSH
-MOD_TELEFRAG
-MOD_FALLING   // should be unused
-MOD_SUICIDE
-MOD_TARGET_LASER
-MOD_TRIGGER_HURT
-MOD_GRAPPLE   // should be unused
-MOD_BAMBAM // new
-MOD_BOOMIES // new
-
-Votes depend on the vote of course, an example is;
-map wop_dinerbb; set nextmap "wop_padcrashctl"
-"""
+# game log information provided by GedankenBlitz:
+#
+# stell $cid $text
+# Serverside tell chat.
+#
+# ssay $text
+# Serverside say chat.
+#
+# sprint $cid $text
+# Print text to a client. Text will be printed to the upper left chat area.
+#
+# New loglines;
+# DropItem: $cid $classname
+# Award: $cid $awardname
+# AddScore: $cid $score $reason
+# Vote: failed timeout
+# Vote: failed
+# Vote: passed
+# CvarChange: $cvar-name $cvar-value
+# AddTeamScore: $teamname $score $reason
+# Callvote: $cid $vote
+#
+# Changed loglines;
+# Kill: $attacker-cid $means-of-death $target-cid
+# Teamscores: red $score-red blue $score-blue
+# Score: $cid $score
+# Say: $cid $text
+# SayTeam: $cid $text
+# Tell: $cid $target-cid $text
+#
+# rcon status currently includes an extra column for the player team;
+# map: wop_padcloisterctl
+# num score team ping name            lastmsg address               qport rate
+# --- ----- ---- ---- --------------- ------- --------------------- ----- -----
+#   0     0    2    0 ^0PAD^4MAN^7           50 bot                       0 16384
+#   1     0    3   43 PadPlayer^7           0 2001:41b8:9bf:fe04:f40c:d4ff:fe2b:6af9 45742 90000
+#
+# Awardnames are;
+# excellent
+# gauntlet
+# cap
+# impressive
+# defend
+# assist
+# denied
+# spraygod
+# spraykiller
+# unkown
+#
+# Teamnames are;
+# FREE
+# RED
+# BLUE
+# SPECTATOR
+# This order matches the team numbers, which start with index 0.
+#
+# Inbuilt score reasons include;
+# suicide
+# teamkill
+# kill
+# survive
+# spray
+# spray_wrongwall
+# target_score
+# frag_carrier
+# carrier_protect
+# defense
+# recovery
+# capture
+# capture_team
+# assist_return
+# assist_frag_carrier
+# flag
+# spraykiller
+# spraygod
+#
+# Means of death have changed to
+# MOD_UNKNOWN = 0
+# MOD_PUMPER
+# MOD_PUNCHY
+# MOD_NIPPER
+# MOD_BALLOONY
+# MOD_BALLOONY_SPLASH
+# MOD_BETTY
+# MOD_BETTY_SPLASH
+# MOD_BUBBLEG
+# MOD_BUBBLEG_SPLASH // should be unused
+# MOD_SPLASHER
+# MOD_BOASTER
+# MOD_IMPERIUS
+# MOD_IMPERIUS_SPLASH
+# MOD_INJECTOR // new
+# MOD_KILLERDUCKS
+# MOD_WATER
+# MOD_SLIME
+# MOD_LAVA
+# MOD_CRUSH
+# MOD_TELEFRAG
+# MOD_FALLING   // should be unused
+# MOD_SUICIDE
+# MOD_TARGET_LASER
+# MOD_TRIGGER_HURT
+# MOD_GRAPPLE   // should be unused
+# MOD_BAMBAM // new
+# MOD_BOOMIES // new
+#
+# Votes depend on the vote of course, an example is;
+# map wop_dinerbb; set nextmap "wop_padcrashctl"
