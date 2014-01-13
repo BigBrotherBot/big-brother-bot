@@ -78,62 +78,55 @@ import time
 from b3.clients import Client, Clients
 from b3.functions import minutesStr, time2minutes, getStuffSoundingLike
 from b3.parser import Parser
-from b3 import TEAM_UNKNOWN, TEAM_BLUE, TEAM_SPEC, TEAM_RED
+from b3 import TEAM_UNKNOWN, TEAM_BLUE, TEAM_RED
 from b3.game_event_router import Game_event_router
 from b3.parsers.source.rcon import Rcon
 
-__author__  = 'Courgette'
+__author__ = 'Courgette'
 __version__ = '1.6'
 
 
-"""
-GAME SETUP
-==========
-
-In order to have a consistent name for the game log file, you need to start the game server with '-condebug' as a
-command line parameter. The game server log file can then be found in the csgo folder under the name 'console.log'.
-
-You must have SourceMod installed on the game server. See http://www.sourcemod.net/
-
-Make sure to avoid conflict with in-game commands between B3 and SourceMod by choosing different command prefixes.
-See PublicChatTrigger and SilentChatTrigger in addons/sourcemod/configs/core.cfg
-
-
-SourceMod recommended plugins
------------------------------
-
-### B3 Say
-If you have the SourceMod plugin B3 Say installed (http://forum.bigbrotherbot.net/counter-strike-global-offensive/sourcemod-plugins-for-b3/)
-then the messages sent by B3 will better displayed on screen.
-
-### SuperLogs:CS:S
-If you have the SourceMod plugin SuperLogs:CS:S installed (http://forums.alliedmods.net/showthread.php?p=897271) then
-kill stats will be more accurate.
-
-
-"""
-
-
-"""
-TODO
-====
-
-# from https://developer.valvesoftware.com/wiki/HL_Log_Standard
-
-- find out if a player can rename himself in-game, and if yes, what kind of event we have in the game log : "Name<uid><wonid><team>" changed name to "Name"
-- find out if we can have injury game log line : "Name<uid><wonid><team>" attacked "Name<uid><wonid><team>" with "weapon" (damage "damage")
-- find out if we can have Player-Player Actions : "Name<uid><wonid><team>" triggered "action" against "Name<uid><wonid><team>"
-
-
-
-
-
-"""
+# GAME SETUP
+# ==========
+#
+# In order to have a consistent name for the game log file, you need to start the game server with '-condebug' as a
+# command line parameter. The game server log file can then be found in the csgo folder under the name 'console.log'.
+#
+# You must have SourceMod installed on the game server. See http://www.sourcemod.net/
+#
+# Make sure to avoid conflict with in-game commands between B3 and SourceMod by choosing different command prefixes.
+# See PublicChatTrigger and SilentChatTrigger in addons/sourcemod/configs/core.cfg
+#
+#
+# SourceMod recommended plugins
+# -----------------------------
+#
+# ## B3 Say
+# If you have the SourceMod plugin B3 Say installed then the messages sent by B3 will better displayed on screen.
+# http://forum.bigbrotherbot.net/counter-strike-global-offensive/sourcemod-plugins-for-b3/
+#
+# ## SuperLogs:CS:S
+# If you have the SourceMod plugin SuperLogs:CS:S installed (http://forums.alliedmods.net/showthread.php?p=897271) then
+# kill stats will be more accurate.
+#
+# TODO
+# ====
+#
+# From https://developer.valvesoftware.com/wiki/HL_Log_Standard
+#
+# - find out if a player can rename himself in-game, and if yes,
+#   what kind of event we have in the game log : "Name<uid><wonid><team>" changed name to "Name"
+# - find out if we can have injury game log line :
+#   "Name<uid><wonid><team>" attacked "Name<uid><wonid><team>" with "weapon" (damage "damage")
+# - find out if we can have Player-Player Actions :
+#   "Name<uid><wonid><team>" triggered "action" against "Name<uid><wonid><team>"
+#
 
 # disable the authorizing timer that come by default with the b3.clients.Clients class
 Clients.authorizeClients = lambda *args, **kwargs: None
 
-# Regular expression recognizing a HalfLife game engine log line as described at https://developer.valvesoftware.com/wiki/HL_Log_Standard
+# Regular expression recognizing a HalfLife game engine log line as
+# described at https://developer.valvesoftware.com/wiki/HL_Log_Standard
 RE_HL_LOG_LINE = r'''^L [01]\d/[0-3]\d/\d+ - [0-2]\d:[0-5]\d:[0-5]\d:\s*(?P<data>.*)'''
 
 # Regular expression able to extract properties from HalfLife game engine log line as described at
@@ -143,11 +136,11 @@ RE_HL_LOG_PROPERTY = re.compile('''\((?P<key>[^\s\(\)]+)(?P<data>| "(?P<value>[^
 # Regular expression to parse cvar queries responses
 RE_CVAR = re.compile(r'''^"(?P<cvar>\S+?)" = "(?P<value>.*?)" \( def. "(?P<default>.*?)".*$''', re.MULTILINE)
 
-
 ger = Game_event_router()
 
+
 class CsgoParser(Parser):
-    """
+    """\
     The 'Counter-Strike: Global Offensive' B3 parser class
     """
     gameName = "csgo"
@@ -156,17 +149,13 @@ class CsgoParser(Parser):
     PunkBuster = None
 
     # extract the time from game log line
-    _lineTime  = re.compile(r"""^L [01]\d/[0-3]\d/\d+ - [0-2]\d:(?P<minutes>[0-5]\d):(?P<seconds>[0-5]\d):\s*""")
-
+    _lineTime = re.compile(r"""^L [01]\d/[0-3]\d/\d+ - [0-2]\d:(?P<minutes>[0-5]\d):(?P<seconds>[0-5]\d):\s*""")
 
     # game engine does not support color code, so we need this property
     # in order to get stripColors working
     _reColor = re.compile(r'(\^[0-9])')
 
-
-    _settings = {'line_length': 200,
-                 'min_wrap_length': 200}
-
+    _settings = dict(line_length=200, min_wrap_length=200)
 
     ###############################################################################################
     #
@@ -185,8 +174,8 @@ class CsgoParser(Parser):
         self.createEvent("EVT_SUPERLOGS_WEAPONSTATS2", "SourceMod SuperLogs weaponstats2")
         self.createEvent("EVT_SERVER_REQUIRES_RESTART", "Source server requires restart")
 
-        # create the 'Server' client
-        # todo self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
+        # TODO: create the 'Server' client
+        # self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
 
         self.game.cvar = {}
         self.queryServerInfo()
@@ -197,15 +186,12 @@ class CsgoParser(Parser):
         # keeps the last properties from a killlocation game event
         self.last_killlocation_properties = None
 
-
     def pluginsStarted(self):
         """
         Called once all plugins were started.
         Handy if some of them must be monkey-patched.
         """
         pass
-
-
 
     ###############################################################################################
     #
@@ -216,7 +202,7 @@ class CsgoParser(Parser):
     ###############################################################################################
 
     @ger.gameEvent(
-        r'''^//''', # comment log line
+        r'''^//''',  # comment log line
         r'''^server cvars start''',
         r'''^server cvars end''',
         r'''^\[basechat\.smx\] .*''',
@@ -232,7 +218,6 @@ class CsgoParser(Parser):
         # L 08/30/2012 - 00:43:10: Log file closed.
         # L 08/30/2012 - 00:45:42: [META] Loaded 1 plugin.
         pass
-
 
     @ger.gameEvent(
         r'''^"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" killed "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>" with "(?P<weapon>\S*)"(?P<properties>.*)$''',
@@ -268,7 +253,6 @@ class CsgoParser(Parser):
 
         return self.getEvent(event_type, client=attacker, target=victim, data=tuple(data))
 
-
     @ger.gameEvent(
         r'''^"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" assisted killing "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>"(?P<properties>.*)$'''
     )
@@ -279,7 +263,6 @@ class CsgoParser(Parser):
         props = self.parseProperties(properties)
         return self.getEvent("EVT_CLIENT_ACTION", client=attacker, target=victim, data="assisted killing")
 
-
     @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>"(?: \[-?\d+ -?\d+ -?\d+\])? committed suicide with "(?P<weapon>\S*)"$''')
     def on_suicide(self, name, cid, guid, team, weapon):
         # L 08/26/2012 - 03:38:04: "Pheonix<22><BOT><TERRORIST>" committed suicide with "world"
@@ -288,7 +271,6 @@ class CsgoParser(Parser):
         damage_pct = 100
         damage_type = None
         return self.getEvent("EVT_CLIENT_SUICIDE", client=client, target=client, data=(damage_pct, weapon, "body", damage_type))
-
 
     @ger.gameEvent(
         r'''^"(?P<cvar_name>\S+)" = "(?P<cvar_value>\S*)"$''',
@@ -300,18 +282,15 @@ class CsgoParser(Parser):
         # L 08/26/2012 - 03:49:56: "sv_specspeed" = "3"
         self.game.cvar[cvar_name] = cvar_value
 
-
     @ger.gameEvent(r'''^-------- Mapchange to (?P<new_map>\S+) --------$''')
     def on_map_change(self, new_map):
         # L 08/27/2012 - 23:57:14: -------- Mapchange to de_dust --------
         self.game.mapName = new_map
 
-
     @ger.gameEvent(r'''^Loading map "(?P<new_map>\S+)"$''')
     def on_started_map(self, new_map):
         # L 08/26/2012 - 03:49:56: Loading map "de_nuke"
         self.game.mapName = new_map
-
 
     @ger.gameEvent(r'''^Started map "(?P<new_map>\S+)" \(CRC "-?\d+"\)$''')
     def on_started_map(self, new_map):
@@ -320,12 +299,10 @@ class CsgoParser(Parser):
         self.game.mapName = new_map
         self.game.startMap()
 
-
     @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>\S*)><(?P<team>\S*)>" STEAM USERID validated$''')
     def on_userid_validated(self, name, cid, guid, team):
         # L 08/26/2012 - 03:22:36: "courgette<2><STEAM_1:0:1111111><>" STEAM USERID validated
         self.getClientOrCreate(cid, guid, name, team)
-
 
     @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" connected, address "(?P<ip>.+)"$''')
     def on_client_connected(self, name, cid, guid, team, ip):
@@ -336,8 +313,9 @@ class CsgoParser(Parser):
             client.ip = ip
             client.save()
 
-
-    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" disconnected \(reason "(?P<reason>.*)"\)$''')
+    @ger.gameEvent(
+        r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" disconnected \(reason "(?P<reason>.*)"\)$'''
+    )
     def on_client_disconnected(self, name, cid, guid, team, reason):
         # L 08/26/2012 - 04:45:04: "Kyle<63><BOT><CT>" disconnected (reason "Kicked by Console")
         client = self.getClient(cid)
@@ -349,7 +327,6 @@ class CsgoParser(Parser):
         if event:
             return event
 
-
     @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" entered the game$''')
     def on_client_entered(self, name, cid, guid, team):
         # L 08/26/2012 - 05:29:48: "Rip<93><BOT><>" entered the game
@@ -358,15 +335,14 @@ class CsgoParser(Parser):
         client = self.getClientOrCreate(cid, guid, name, team)
         return self.getEvent("EVT_CLIENT_JOIN", client=client)
 
-
     @ger.gameEvent(
         r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<old_team>\S+)>" joined team "(?P<new_team>\S+)"$''',
         r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)>" switched from team <(?P<old_team>\S+)> to <(?P<new_team>\S+)>$''',
     )
     def on_client_join_team(self, name, cid, guid, old_team, new_team):
-        # L 08/26/2012 - 03:22:36: "Pheonix<11><BOT><Unassigned>" joined team "TERRORIST"
-        # L 08/26/2012 - 03:22:36: "Wolf<12><BOT><Unassigned>" joined team "CT"
-        # L 07/19/2013 - 17:18:44: "courgette<194><STEAM_1:0:1111111><CT>" switched from team <TERRORIST> to <Unassigned>
+        #L 08/26/2012 - 03:22:36: "Pheonix<11><BOT><Unassigned>" joined team "TERRORIST"
+        #L 08/26/2012 - 03:22:36: "Wolf<12><BOT><Unassigned>" joined team "CT"
+        #L 07/19/2013 - 17:18:44: "courgette<194><STEAM_1:0:1111111><CT>" switched from team <TERRORIST> to <Unassigned>
         if new_team == 'Unassigned':
             # The player might have just left the game server, so we must make sure not to recreate the Client object
             client = self.getClient(cid)
@@ -374,7 +350,6 @@ class CsgoParser(Parser):
             client = self.getClientOrCreate(cid, guid, name, old_team)
         if client:
             client.team = self.getTeam(new_team)
-
 
     @ger.gameEvent(r'''^World triggered "(?P<event_name>\S*)"(?P<properties>.*)$''')
     def on_world_action(self, event_name, properties):
@@ -387,7 +362,7 @@ class CsgoParser(Parser):
             return self.getEvent('EVT_GAME_ROUND_START', data=self.game)
         elif event_name == "Round_End":
             return self.getEvent("EVT_GAME_ROUND_END")
-        elif event_name in ("Game_Commencing"):
+        elif event_name == "Game_Commencing":
             pass
         elif event_name == "killlocation":
             # killlocation log lines are generated by the SourceMod SuperLogs plugin right before a kill event
@@ -395,7 +370,6 @@ class CsgoParser(Parser):
             self.last_killlocation_properties = properties
         else:
             self.warning("unexpected world event : '%s'. Please report this on the B3 forums" % event_name)
-
 
     @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" triggered "(?P<event_name>\S+)"(?P<properties>.*)$''')
     def on_player_action(self, name, cid, guid, team, event_name, properties):
@@ -428,24 +402,21 @@ class CsgoParser(Parser):
         else:
             self.warning("unknown client event : '%s'. Please report this on the B3 forums" % event_name)
 
-
     @ger.gameEvent(r'''^Team "(?P<team>\S+)" triggered "(?P<event_name>[^"]+)"(?P<properties>.*)$''')
     def on_team_action(self, team, event_name, properties):
         # L 08/26/2012 - 03:48:09: Team "CT" triggered "SFUI_Notice_Target_Saved" (CT "3") (T "5")
         # L 08/26/2012 - 03:51:50: Team "TERRORIST" triggered "SFUI_Notice_Target_Bombed" (CT "1") (T "1")
         if event_name in ("SFUI_Notice_Target_Saved", "SFUI_Notice_Target_Bombed", "SFUI_Notice_Terrorists_Win",
             "SFUI_Notice_CTs_Win", "SFUI_Notice_Bomb_Defused"):
-            pass # TODO should we do anything with that info ?
+            pass  # TODO should we do anything with that info ?
         else:
             self.warning("unexpected team event : '%s'. Please report this on the B3 forums" % event_name)
-
 
     @ger.gameEvent(r'''^Team "(?P<team>\S+)" scored "(?P<points>\d+)" with "(?P<num_players>\d+)" players$''')
     def on_team_score(self, team, points, num_players):
         # L 08/26/2012 - 03:48:09: Team "CT" scored "3" with "5" players
         # L 08/26/2012 - 03:48:09: Team "TERRORIST" scored "5" with "5" players
-        pass # TODO should we do anything with that info ?
-
+        pass  # TODO should we do anything with that info ?
 
     @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*?)>" say "(?P<text>.*)"$''')
     def on_client_say(self, name, cid, guid, team, text):
@@ -454,13 +425,11 @@ class CsgoParser(Parser):
         client = self.getClientOrCreate(cid, guid, name, team)
         return self.getEvent("EVT_CLIENT_SAY", client=client, data=text)
 
-
     @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*?)>" say_team "(?P<text>.*)"$''')
     def on_client_teamsay(self, name, cid, guid, team, text):
         # L 08/26/2012 - 05:04:44: "courgette<2><STEAM_1:0:1487018><CT>" say_team "team say"
         client = self.getClientOrCreate(cid, guid, name, team)
         return self.getEvent("EVT_CLIENT_TEAM_SAY", client=client, data=text)
-
 
     @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>\S+)>" purchased "(?P<item>\S+)"$''')
     def on_player_purchased(self, name, cid, guid, team, item):
@@ -469,31 +438,26 @@ class CsgoParser(Parser):
         # L 08/26/2012 - 03:22:37: "courgette<2><STEAM_1:0:1487018><CT>" purchased "hegrenade"
         return self.getEvent("EVT_CLIENT_ACTION", client=client, data='purchased "%s"' % item)
 
-
     @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>\S+)>" threw (?P<item>.+?)( \[-?\d+ -?\d+ -?\d+\])?$''')
     def on_player_threw(self, name, cid, guid, team, item):
         client = self.getClientOrCreate(cid, guid, name, team)
         # L 08/26/2012 - 03:22:37: "courgette<2><STEAM_1:0:1111111><CT>" threw molotov [59 386 -225]
         return self.getEvent("EVT_CLIENT_ACTION", client=client, data='threw "%s"' % item)
 
-
     @ger.gameEvent(r'''^rcon from "(?P<ip>.+):(?P<port>\d+)":\sBad Password$''')
     def on_bad_rcon_password(self, ip, port):
         # L 08/26/2012 - 05:21:23: rcon from "78.207.134.100:15073": Bad Password
         self.error("Bad RCON password, check your b3.xml file")
-
 
     @ger.gameEvent(r'''^Molotov projectile spawned at (?P<coord>-?[\d.]+ -?[\d.]+ -?[\d.]+), velocity (?P<velocity>-?[\d.]+ -?[\d.]+ -?[\d.]+)$''')
     def on_molotov_spawed(self, coord, velocity):
         # L 08/26/2012 - 05:21:24: Molotov projectile spawned at 132.012238 -2071.752197 -347.858246, velocity 487.665253 106.295044 121.257591
         pass # Do we care ?
 
-
     @ger.gameEvent(r'''^rcon from "(?P<ip>.+):(?P<port>\d+)": command "(?P<cmd>.*)"$''')
     def on_rcon(self, ip, port, cmd):
         # L 08/26/2012 - 05:37:56: rcon from "11.222.111.122:15349": command "say test"
         pass
-
 
     @ger.gameEvent(r'''^Banid: "(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" was banned "for (?P<duration>.+)" by "(?P<admin>.*)"$''')
     def on_banid(self, name, cid, guid, team, duration, admin):
@@ -502,7 +466,6 @@ class CsgoParser(Parser):
         if client:
             return self.getEvent("EVT_CLIENT_BAN_TEMP", {"duration": duration, "admin": admin, 'reason': None}, client)
 
-
     @ger.gameEvent(r'''^\[basecommands.smx\] ".+<\d+><.+><.*>" kicked "(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>"(?P<properties>.*)$''')
     def on_kicked(self, name, cid, guid, team, properties):
         # L 08/28/2012 - 00:12:07: [basecommands.smx] "Console<0><Console><Console>" kicked "courgette<91><STEAM_1:0:1111111><>" (reason "f00")
@@ -510,7 +473,6 @@ class CsgoParser(Parser):
         if client:
             p = self.parseProperties(properties)
             return self.getEvent("EVT_CLIENT_KICK", p.get('reason', ''), client)
-
 
     @ger.gameEvent(r'''^server_message: "(?P<msg>.*)"(?P<properties>.*)$''')
     def on_server_message(self, msg, properties):
@@ -521,12 +483,10 @@ class CsgoParser(Parser):
         else:
             self.warning("unexpected server_message : '%s'. Please report this on the B3 forums" % msg)
 
-
     @ger.gameEvent(r'''^Log file started (?P<properties>.*)$''')
     def on_server_message(self, properties):
         # Log file started (file "logs/L000_000_000_000_0_201208300045_000.log") (game "/home/steam/steamcmd/cs_go/csgo") (version "5038")
         pass
-
 
     @ger.gameEvent(
         r'''^(?P<data>Your server needs to be restarted.*)$''',
@@ -537,17 +497,14 @@ class CsgoParser(Parser):
         # L 09/17/2012 - 23:26:45: Your server is out of date.  Please update and restart.
         return self.getEvent('EVT_SERVER_REQUIRES_RESTART', data)
 
-
     # -------------- /!\  this one must be the last /!\ --------------
+
     @ger.gameEvent(r'''^(?P<data>.+)$''')
     def on_unknown_line(self, data):
         """
         catch all lines that were not handled
         """
         self.warning("unhandled log line : %s. Please report this on the B3 forums" % data)
-
-
-
 
     ###############################################################################################
     #
@@ -562,15 +519,13 @@ class CsgoParser(Parser):
         """
         return self.queryServerInfo()
 
-
     def authorizeClients(self):
         """\
         For all connected players, fill the client object with properties allowing to find
         the user in the database (usualy guid, or punkbuster id, ip) and call the
         Client.auth() method
         """
-        pass # no need as all game log lines have the client guid
-
+        pass  # no need as all game log lines have the client guid
 
     def sync(self):
         """\
@@ -590,7 +545,6 @@ class CsgoParser(Parser):
                 mlist[cid] = client
         return mlist
 
-
     def say(self, msg):
         """\
         broadcast a message to all players
@@ -603,7 +557,6 @@ class CsgoParser(Parser):
                 msg = self.msgPrefix + ' ' + msg
             for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
                 self.output.write(template % line)
-
 
     def saybig(self, msg):
         """\
@@ -618,12 +571,11 @@ class CsgoParser(Parser):
             for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
                 self.output.write(template % line)
 
-
     def message(self, client, msg):
         """\
         display a message to a given player
         """
-        if not client.hide: # do not talk to bots
+        if not client.hide:  # do not talk to bots
             if msg and len(msg.strip()):
                 template = 'sm_psay #%(guid)s "%(msg)s"'
                 if "B3 Say" in self.sm_plugins:
@@ -633,12 +585,10 @@ class CsgoParser(Parser):
                 for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
                     self.output.write(template % {'guid': client.guid, 'msg': line})
 
-
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
         kick a given player
         """
-
         self.debug('kick reason: [%s]' % reason)
         if isinstance(client, basestring):
             clients = self.clients.getByMagic(client)
@@ -648,9 +598,12 @@ class CsgoParser(Parser):
                 client = client[0]
 
         if admin:
-            fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+            fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client,
+                                                                               reason=reason,
+                                                                               admin=admin))
         else:
-            fullreason = self.getMessage('kicked', self.getMessageVariables(client=client, reason=reason))
+            fullreason = self.getMessage('kicked', self.getMessageVariables(client=client,
+                                                                            reason=reason))
         fullreason = self.stripColors(fullreason)
         reason = self.stripColors(reason)
 
@@ -659,14 +612,13 @@ class CsgoParser(Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
-        ban a given player on the game server and in case of success
+        Ban a given player on the game server and in case of success
         fire the event ('EVT_CLIENT_BAN', data={'reason': reason,
         'admin': admin}, client=target)
         """
-        if client.hide: # exclude bots
+        if client.hide:  # exclude bots
             return
 
         self.debug('BAN : client: %s, reason: %s', client, reason)
@@ -678,9 +630,12 @@ class CsgoParser(Parser):
                 client = client[0]
 
         if admin:
-            fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+            fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client,
+                                                                               reason=reason,
+                                                                               admin=admin))
         else:
-            fullreason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
+            fullreason = self.getMessage('banned', self.getMessageVariables(client=client,
+                                                                            reason=reason))
         fullreason = self.stripColors(fullreason)
         reason = self.stripColors(reason)
 
@@ -693,12 +648,11 @@ class CsgoParser(Parser):
 
         self.queueEvent(self.getEvent("EVT_CLIENT_BAN", {'reason': reason, 'admin': admin}, client))
 
-
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\
         unban a given player on the game server
         """
-        if client.hide: # exclude bots
+        if client.hide:  # exclude bots
             return
 
         self.debug('UNBAN: Name: %s, Ip: %s, Guid: %s' % (client.name, client.ip, client.guid))
@@ -706,19 +660,23 @@ class CsgoParser(Parser):
             self.do_unban_by_ip(client)
             self.verbose('UNBAN: Removed ip (%s) from banlist' % client.ip)
             if admin:
-                admin.message('Unbanned: %s. His last ip (%s) has been removed from banlist.' % (client.exactName, client.ip))
+                admin.message('Unbanned: %s. His last ip (%s) has been removed from banlist.' %
+                              (client.exactName, client.ip))
             if admin:
-                fullreason = self.getMessage('unbanned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+                fullreason = self.getMessage('unbanned_by', self.getMessageVariables(client=client,
+                                                                                     reason=reason,
+                                                                                     admin=admin))
             else:
-                fullreason = self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason))
+                fullreason = self.getMessage('unbanned', self.getMessageVariables(client=client,
+                                                                                  reason=reason))
+
             if not silent and fullreason != '':
                 self.say(fullreason)
 
         self.do_unban_by_steamid(client)
-        self.verbose('UNBAN: Removed guid (%s) from banlist' %client.guid)
+        self.verbose('UNBAN: Removed guid (%s) from banlist' % client.guid)
         if admin:
             admin.message('Unbanned: Removed %s guid from banlist' % client.exactName)
-
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
         """\
@@ -726,7 +684,7 @@ class CsgoParser(Parser):
         fire the event ('EVT_CLIENT_BAN_TEMP', data={'reason': reason,
         'duration': duration, 'admin': admin}, client=target)
         """
-        if client.hide: # exclude bots
+        if client.hide:  # exclude bots
             return
 
         self.debug('TEMPBAN : client: %s, duration: %s, reason: %s', client, duration, reason)
@@ -738,9 +696,15 @@ class CsgoParser(Parser):
                 client = client[0]
 
         if admin:
-            fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=minutesStr(duration)))
+            fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client,
+                                                                                    reason=reason,
+                                                                                    admin=admin,
+                                                                                    banduration=minutesStr(duration)))
         else:
-            fullreason = self.getMessage('temp_banned', self.getMessageVariables(client=client, reason=reason, banduration=minutesStr(duration)))
+            fullreason = self.getMessage('temp_banned', self.getMessageVariables(client=client,
+                                                                                 reason=reason,
+                                                                                 banduration=minutesStr(duration)))
+
         fullreason = self.stripColors(fullreason)
         reason = self.stripColors(reason)
 
@@ -749,8 +713,8 @@ class CsgoParser(Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(self.getEvent("EVT_CLIENT_BAN_TEMP", {'reason': reason, 'duration': duration, 'admin': admin}, client))
-
+        self.queueEvent(self.getEvent("EVT_CLIENT_BAN_TEMP",
+                                      dict(reason=reason, duration=duration, admin=admin), client))
 
     def getMap(self):
         """\
@@ -759,7 +723,6 @@ class CsgoParser(Parser):
         self.queryServerInfo()
         return self.game.mapName
 
-
     def getMaps(self):
         """\
         return the available maps/levels name
@@ -767,7 +730,6 @@ class CsgoParser(Parser):
         rv = self.output.write('listmaps')
         if rv:
             return [x for x in rv.split('\n') if x and x != "Map Cycle:" and not x.startswith('L ')]
-
 
     def rotateMap(self):
         """\
@@ -778,8 +740,6 @@ class CsgoParser(Parser):
             self.saybig('Changing to next map : %s' % next_map)
             time.sleep(1)
             self.output.write('map %s' % next_map)
-
-
 
     def changeMap(self, map_name):
         """\
@@ -792,7 +752,6 @@ class CsgoParser(Parser):
         else:
             return rv
 
-
     def getPlayerPings(self):
         """\
         returns a dict having players' id for keys and players' ping for values
@@ -803,16 +762,14 @@ class CsgoParser(Parser):
             pings[cid] = client.ping
         return pings
 
-
     def getPlayerScores(self):
         """\
         returns a dict having players' id for keys and players' scores for values
         """
         # TODO getPlayerScores if doable
-        return {}
+        return dict()
 
-
-    def inflictCustomPenalty(self, type, client, reason=None, duration=None, admin=None, data=None):
+    def inflictCustomPenalty(self, ptype, client, reason=None, duration=None, admin=None, data=None):
         """
         Called if b3.admin.penalizeClient() does not know a given penalty type.
         Overwrite this to add customized penalties for your game like 'slap', 'nuke',
@@ -820,8 +777,8 @@ class CsgoParser(Parser):
         /!\ This method must return True if the penalty was inflicted.
         """
         pass
-        # TODO inflictCustomPenalty (sm_slap sm_slay sm_votekick sm_voteban sm_voteburn sm_voteslay sm_gag sm_mute sm_silence)
-
+        # TODO
+        # inflictCustomPenalty(sm_slap sm_slay sm_votekick sm_voteban sm_voteburn sm_voteslay sm_gag sm_mute sm_silence)
 
     def getNextMap(self):
         """
@@ -830,27 +787,26 @@ class CsgoParser(Parser):
         next_map = self.getCvar("sm_nextmap")
         return next_map
 
-
     ###############################################################################################
     #
     #    Other methods
     #
     ###############################################################################################
 
-    def getWrap(self, text, length=80, minWrapLen=150):
-        """Returns a sequence of lines for text that fits within the limits"""
+    def getWrap(self, text, length=80, min_wrap_len=150):
+        """\
+        Returns a sequence of lines for text that fits within the limits
+        """
         if not text:
             return []
 
         length = int(length)
         clean_text = self.stripColors(text.strip())
 
-
-        if len(clean_text) <= minWrapLen:
+        if len(clean_text) <= min_wrap_len:
             return [clean_text]
 
         text = re.split(r'\s+', clean_text)
-
         lines = []
 
         line = text[0]
@@ -872,7 +828,6 @@ class CsgoParser(Parser):
 
         return lines
 
-
     def parseLine(self, line):
         if line is None:
             return
@@ -889,9 +844,8 @@ class CsgoParser(Parser):
                     if event:
                         self.queueEvent(event)
 
-
     def parseProperties(self, properties):
-        """
+        """\
         parse HL log properties as described at https://developer.valvesoftware.com/wiki/HL_Log_Standard#Notes
         :param properties: string representing HL log properties
         :return: a dict representing all the property key:value parsed
@@ -900,16 +854,15 @@ class CsgoParser(Parser):
         if properties:
             for match in re.finditer(RE_HL_LOG_PROPERTY, properties):
                 if match.group('data') == '':
-                    rv[match.group('key')] = True # Parenthised properties with no explicit value indicate a boolean true value
+                    # Parenthised properties with no explicit value indicate a boolean true value
+                    rv[match.group('key')] = True
                 else:
                     rv[match.group('key')] = match.group('value')
         return rv
 
-
     def getClient(self, cid):
-        """
+        """\
         return an already connected client by searching the clients cid index.
-
         May return None
         """
         client = self.clients.getByCID(cid)
@@ -917,9 +870,8 @@ class CsgoParser(Parser):
             return client
         return None
 
-
     def getClientOrCreate(self, cid, guid, name, team=None):
-        """
+        """\
         return an already connected client by searching the clients cid index
         or create a new client.
         
@@ -943,9 +895,8 @@ class CsgoParser(Parser):
                 client.team = parsed_team
         return client
 
-
     def getTeam(self, team):
-        """
+        """\
         convert team CS:GO id to B3 team numbers
         """
         if not team or team == "Unassigned":
@@ -954,23 +905,22 @@ class CsgoParser(Parser):
             return TEAM_BLUE
         elif team == "CT":
             return TEAM_RED
-#        elif team = "???": # TODO find out what the spec team is
-#            return TEAM_SPEC
+        #elif team = "???": # TODO find out what the spec team is
+        #     return TEAM_SPEC
         else:
             self.debug("unexpected team id : %s" % team)
             return TEAM_UNKNOWN
 
-
     def queryServerInfo(self):
         """
         query the server for its status and refresh local data :
-         self.game.sv_hostname
-         self.game.mapName
+          self.game.sv_hostname
+          self.game.mapName
         furthermore, discover connected players, refresh their ping and ip info
         finally return a dict of <cid, client>
         """
+        clients = dict()
         rv = self.output.write("status")
-        clients = {}
         if rv:
             re_player = re.compile(r'''^#\s*(?P<cid>\d+) (?:\d+) "(?P<name>.+)" (?P<guid>\S+) (?P<duration>\d+:\d+) (?P<ping>\d+) (?P<loss>\S+) (?P<state>\S+) (?P<rate>\d+) (?P<ip>\d+\.\d+\.\d+\.\d+):(?P<port>\d+)$''')
             for line in rv.split('\n'):
@@ -987,8 +937,8 @@ class CsgoParser(Parser):
                         client.ping = m.group('ping')
                         client.ip = m.group('ip')
                         clients[client.cid] = client
-            return clients
 
+            return clients
 
     def getAvailableMaps(self):
         """
@@ -1002,7 +952,6 @@ class CsgoParser(Parser):
                 response.append(m.group('map_name'))
         return response
 
-
     def getCvar(self, cvar_name):
         if not cvar_name:
             self.warning('trying to query empty cvar %r' % cvar_name)
@@ -1011,7 +960,6 @@ class CsgoParser(Parser):
         m = re.search(RE_CVAR, rv)
         if m:
             return m.group('value')
-
 
     def setCvar(self, cvarName, value):
         """
@@ -1023,7 +971,6 @@ class CsgoParser(Parser):
         else:
             self.error('%s is not a valid cvar name', cvarName)
 
-
     def do_kick(self, client, reason=None):
         if not client.cid:
             self.warning("Trying to kick %s which has no slot id" % client)
@@ -1033,7 +980,6 @@ class CsgoParser(Parser):
             else:
                 self.output.write("sm_kick #%s" % client.cid)
 
-
     def do_ban(self, client, reason=None):
         # sm_addban <time> <steamid> [reason]
         if reason:
@@ -1041,7 +987,6 @@ class CsgoParser(Parser):
         else:
             self.output.write('sm_addban %s "%s"' % (0, client.guid))
         self.do_kick(client, reason)
-
 
     def do_tempban(self, client, duration=2, reason=None):
         # sm_addban <time> <steamid> [reason]
@@ -1051,19 +996,16 @@ class CsgoParser(Parser):
             self.output.write('sm_addban %s "%s"' % (int(time2minutes(duration)), client.guid))
         self.do_kick(client, reason)
 
-
     def do_unban_by_steamid(self, client):
         # sm_unban <steamid|ip>
         self.output.write('sm_unban "%s"' % client.guid)
-
 
     def do_unban_by_ip(self, client):
         # sm_unban <steamid|ip>
         self.output.write('sm_unban %s' % client.ip)
 
-
     def is_sourcemod_installed(self):
-        """
+        """\
         return a True if Source Mod is installed on the game server
         """
         data = self.output.write("sm version")
@@ -1076,30 +1018,31 @@ class CsgoParser(Parser):
         else:
             return False
 
-
     def get_loaded_sm_plugins(self):
-        """
+        """\
         return a dict with SourceMod plugins' name as keys and value is a tuple (index, version, author)
         """
-        re_sm_plugin = re.compile(r'''^(?P<index>.+) "(?P<name>.+)" \((?P<version>.+)\) by (?P<author>.+)$''', re.MULTILINE)
-        response = {}
+        re_sm_plugin = re.compile(r'''^(?P<index>.+) "(?P<name>.+)" \((?P<version>.+)\) by (?P<author>.+)$''',
+                                  re.MULTILINE)
+
+        response = dict()
         data = self.output.write("sm plugins list")
         if data:
             for m in re.finditer(re_sm_plugin, data):
                 response[m.group('name')] = (m.group('index'), m.group('version'), m.group('author'))
         return response
 
-
     def getMapsSoundingLike(self, mapname):
-        """ return a valid mapname.
+        """\
+        return a valid mapname.
         If no exact match is found, then return close candidates as a list
         """
-        supportedMaps = [m.lower() for m in self.getAvailableMaps()]
+        supported_maps = [m.lower() for m in self.getAvailableMaps()]
         wanted_map = mapname.lower()
-        if wanted_map in supportedMaps:
+        if wanted_map in supported_maps:
             return wanted_map
 
-        matches = getStuffSoundingLike(wanted_map, supportedMaps)
+        matches = getStuffSoundingLike(wanted_map, supported_maps)
         if len(matches) == 1:
             # one match, get the map id
             return matches[0]
