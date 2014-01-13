@@ -358,7 +358,7 @@ class Oa081Parser(AbstractParser):
                         guid = 'BOT' + str(cid)
                         self.verbose('BOT connected!')
                         self.clients.newClient(cid, name=bclient['name'], ip='0.0.0.0', state=b3.STATE_ALIVE,
-                                               guid=guid, data={'guid': guid}, team=bclient['team'], money=20)
+                                               guid=guid, data={'guid': guid}, team=bclient['team'], bot=True, money=20)
                         self._connectingSlots.remove(cid)
                         return None
                     else:
@@ -376,7 +376,7 @@ class Oa081Parser(AbstractParser):
                 
                 if 'ip' in bclient.keys():
                     self.clients.newClient(cid, name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE,
-                                           guid=guid, data={'guid': guid}, team=bclient['team'], money=20)
+                                           guid=guid, data={'guid': guid}, team=bclient['team'], bot=False, money=20)
                 else:
                     self.warning('failed to get connect client')
                     
