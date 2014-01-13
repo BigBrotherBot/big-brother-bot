@@ -990,11 +990,13 @@ class Iourt42Parser(Iourt41Parser):
         #0 \gear\GMIORAA\team\blue\skill\5.000000\characterfile\bots/ut_chicken_c.c\color\4\sex\male\race\2\snaps\20\...
         bclient = self.parseUserInfo(data)
 
+        bot = False
         if not 'cl_guid' in bclient.keys() and 'skill' in bclient.keys():
             # must be a bot connecting
             self.bot('Bot Connecting!')
             bclient['ip'] = '0.0.0.0'
             bclient['cl_guid'] = 'BOT' + str(bclient['cid'])
+            bot = True
 
         if 'name' in bclient.keys():
             # remove spaces from name
@@ -1073,7 +1075,7 @@ class Iourt42Parser(Iourt41Parser):
                     guid = nguid
 
                 self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'],
-                                       state=b3.STATE_ALIVE, guid=guid, pbid=fsa, data=auth_info)
+                                       state=b3.STATE_ALIVE, bot=bot, guid=guid, pbid=fsa, data=auth_info)
 
         return None
 
