@@ -268,7 +268,7 @@ class Smg11Parser(AbstractParser):
                 else:
 
                     if 'skill' in bclient.keys():
-                        guid = 'BOT-' + str(cid)
+                        guid = 'BOT' + str(cid)
                         self.verbose('BOT connected!')
                         self.clients.newClient(cid, name=bclient['name'], ip='0.0.0.0', state=b3.STATE_ALIVE,
                                                guid=guid, data={'guid': guid}, money=20)
