@@ -172,9 +172,12 @@
 #     * add hitlocation constants : HL_HEAD, HL_HELMET and HL_TORSO
 # 10/08/2013 - 1.18 - Fenix
 #     * change getNextMap to use CVARs only (no more mapcycle file parsing)
+# 13/01/2014 - 1.19 - Fenix
+#     * pep8 coding style guide
+#     * correctly set the client bot flag upon new client connection
 #
 __author__ = 'xlr8or, Courgette'
-__version__ = '1.18'
+__version__ = '1.19'
 
 import b3
 import b3.events
