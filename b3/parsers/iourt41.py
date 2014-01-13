@@ -654,15 +654,17 @@ class Iourt41Parser(AbstractParser):
         #0 \gear\GMIORAA\team\blue\skill\5.000000\characterfile\bots/ut_chicken_c.c\color\4\sex\male\race\2\snaps\20\...
         bclient = self.parseUserInfo(data)
 
+        bot = False
         if 'cl_guid' not in bclient.keys() and 'skill' in bclient.keys():
             # must be a bot connecting
             self.bot('Bot Connecting!')
             bclient['ip'] = '0.0.0.0'
             bclient['cl_guid'] = 'BOT' + str(bclient['cid'])
+            bot = True
 
         if 'name' in bclient.keys():
             # remove spaces from name
-            bclient['name'] = bclient['name'].replace(' ','')
+            bclient['name'] = bclient['name'].replace(' ', '')
 
         # split port from ip field
         if 'ip' in bclient.keys():
@@ -680,8 +682,8 @@ class Iourt41Parser(AbstractParser):
         self.verbose('Parsed user info %s' % bclient)
         
         if bclient:
-            client = self.clients.getByCID(bclient['cid'])
 
+            client = self.clients.getByCID(bclient['cid'])
             if client:
                 # update existing client
                 for k, v in bclient.iteritems():
@@ -742,7 +744,7 @@ class Iourt41Parser(AbstractParser):
                     guid = nguid
 
                 self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'],
-                                       state=b3.STATE_ALIVE, guid=guid, data=dict(guid=guid))
+                                       state=b3.STATE_ALIVE, guid=guid, bot=bot, data=dict(guid=guid))
 
         return None
 
