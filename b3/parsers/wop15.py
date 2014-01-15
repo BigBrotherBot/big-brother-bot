@@ -416,13 +416,15 @@ class Wop15Parser(AbstractParser):
         return None
 
     def OnClientuserinfo(self, action, data, match=None):
+        bot = False
         bclient = self.parseUserInfo(data)
         self.verbose('Parsed user info %s' % bclient)
-        
+
         if not 'cl_guid' in bclient.keys() and 'skill' in bclient.keys():
             # must be a bot connecting
             self.bot('Bot Connecting!')
             bclient['ip'] = '0.0.0.0'
+            bot = true
             
         if 'cl_guid' in bclient:
             bclient['guid'] = bclient['cl_guid']
@@ -435,7 +437,7 @@ class Wop15Parser(AbstractParser):
             else:
                 cid = bclient['cid']
                 del bclient['cid']
-                client = self.clients.newClient(cid, state=b3.STATE_ALIVE, **bclient)
+                client = self.clients.newClient(cid, state=b3.STATE_ALIVE, bot=bot, **bclient)
                 
             self.debug("client is now : %s" % client)
 
