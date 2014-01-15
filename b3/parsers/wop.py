@@ -23,9 +23,12 @@
 # * getMap() is now inherited from q3a
 # 09/04/2011 - 1.0.3 - Courgette
 # * reflect that cid are not converted to int anymore in the clients module
+# 14/01/2014 - 1.1 - Fenix
+# * pep8 coding style guide
+# * correctly set the client bot flag upon new client connection
 
 __author__ = 'xlr8or'
-__version__ = '1.0.3'
+__version__ = '1.1'
 
 import re
 import string
