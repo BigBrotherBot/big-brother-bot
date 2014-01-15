@@ -27,9 +27,14 @@
 # * added !nextmap and !maps support
 # 09/04/2011 - 0.1.4 - Courgette
 # * reflect that cid are not converted to int anymore in the clients module
+# 13/01/2014 - 0.1.5 - Fenix
+# * pep8 coding style guide
+# * changed bots guid to match other q3a parsers (BOT<slot>)
+# * correctly set client bot flag upon new client connection
+#
 
 __author__ = 'xlr8or, Courgette'
-__version__ = '0.1.4'
+__version__ = '0.1.5'
 
 import b3
 import b3.events
