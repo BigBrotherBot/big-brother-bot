@@ -39,10 +39,13 @@
 #  * fix MOD_SHOTGUN -> MOD_PUMPER
 # 2011-04-10 - 1.2.3 - Courgette
 #  * fix commands that should use quotation marks
+# 2014-01-15 - 1.3 - Fenix
+#  * pep8 coding style guide
+#  * corrrectly set client bot flag upon new client connection
 
 
 __author__ = 'xlr8or, Courgette'
-__version__ = '1.2.3'
+__version__ = '1.3'
 
 import b3
 import b3.events
