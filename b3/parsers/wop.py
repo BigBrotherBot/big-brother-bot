@@ -248,7 +248,10 @@ class WopParser(AbstractParser):
                     setattr(client, k, v)
             else:
                 # make a new client
-                client = self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE, guid=bclient['cl_guid'], data={ 'guid' : bclient['cl_guid'] })
+                bot = True if bclient['cl_guid'][:3] == 'BOT' else False
+                client = self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'],
+                                                state=b3.STATE_ALIVE, guid=bclient['cl_guid'], bot=bot,
+                                                data={'guid': bclient['cl_guid']})
 
         if _id:
             return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
