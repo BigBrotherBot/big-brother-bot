@@ -218,7 +218,7 @@ class SmgParser(AbstractParser):
                     guid = 'BOT' + str(cid)
                     self.verbose('BOT connected!')
                     self.clients.newClient(cid, name=bclient['name'], ip='0.0.0.0', state=b3.STATE_ALIVE,
-                                           guid=guid, data={'guid': guid})
+                                           guid=guid, bot=True, data={'guid': guid})
                     return None
 
                 self._counter[cid] = 1
@@ -529,7 +529,7 @@ class SmgParser(AbstractParser):
             t.start()
             return None
             
-        self.clients.newClient(cid, name=name, ip=ip, state=b3.STATE_ALIVE, guid=guid, data={'guid': guid})
+        self.clients.newClient(cid, name=name, ip=ip, state=b3.STATE_ALIVE, guid=guid, bot=False, data={'guid': guid})
 
 #---- Documentation --------------------------------------------------------------------------------
 # //infos clienuserinfochanged
