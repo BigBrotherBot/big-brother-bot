@@ -283,7 +283,9 @@ class Sof2Parser(AbstractParser):
     # Parse Userinfo
     # Only called when bot is starting on a populated server
     def OnClientuserinfo(self, action, data, match=None):
+
         #0 \ip\145.99.135.000:-12553\cl_guid\XXXXD914662572D3649B94B1EA5F921\cl_punkbuster\0\details\5\name\xlr8or...
+        bot = False
         bclient = self.parseUserInfo(data)
 
         if 'name' in bclient.keys():
@@ -297,6 +299,7 @@ class Sof2Parser(AbstractParser):
                 self.bot('Bot Connected!')
                 bclient['ip'] = '0.0.0.0'
                 bclient['cl_guid'] = 'BOT' + str(bclient['cid'])
+                bot = True
             else:
                 ip_port_data = string.split(bclient['ip'], ':', 1)
                 bclient['ip'] = ip_port_data[0]
@@ -340,7 +343,7 @@ class Sof2Parser(AbstractParser):
                     return None
 
                 nguid = ''
-                # overide the guid... use ip's only if
+                # override the guid... use ip's only if
                 # self.console.IpsOnly is set True.
                 if self.IpsOnly:
                     nguid = bclient['ip']
@@ -359,7 +362,7 @@ class Sof2Parser(AbstractParser):
                     guid = nguid
 
                 self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'],
-                                       state=b3.STATE_ALIVE, guid=guid, data={'guid': guid})
+                                       state=b3.STATE_ALIVE, guid=guid, bot=bot, data={'guid': guid})
 
         return None
 
