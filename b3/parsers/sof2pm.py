@@ -24,26 +24,27 @@ __version__ = '1.0.0'
 
 from b3.parsers.sof2 import Sof2Parser
 
-#----------------------------------------------------------------------------------------------------------------------------------------------
+
 class Sof2PmParser(Sof2Parser):
+
     gameName = 'sof2pm'
     privateMsg = True
 
-    _commands = {}
-    _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
-    _commands['deadsay'] = 'say %(prefix)s^7 %(message)s'
-    _commands['say'] = 'say %(prefix)s^7 %(message)s'
-
-    _commands['set'] = 'set %(name)s "%(value)s"'
-    _commands['kick'] = 'clientkick %(cid)s'
-    _commands['ban'] = 'addip %(cid)s'
-    _commands['tempban'] = 'clientkick %(cid)s'
+    _commands = dict(
+        message='tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s',
+        deadsay='say %(prefix)s^7 %(message)s',
+        say='say %(prefix)s^7 %(message)s',
+        set='set %(name)s "%(value)s"',
+        kick='clientkick %(cid)s',
+        ban='addip %(cid)s',
+        tempban='clientkick %(cid)s',
+    )
 
     def message(self, client, text):
         try:
-            if client == None:
+            if client is None:
                 self.say(text)
-            elif client.cid == None:
+            elif client.cid is None:
                 pass
             else:
                 lines = []
@@ -51,6 +52,5 @@ class Sof2PmParser(Sof2Parser):
                     lines.append(self.getCommand('message', cid=client.cid, prefix=self.msgPrefix, message=line))
 
                 self.writelines(lines)
-        except:
+        except Exception:
             pass
-
