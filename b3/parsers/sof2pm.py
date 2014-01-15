@@ -18,9 +18,11 @@
 #
 #
 # CHANGELOG
+# 15/01/2014 - 1.1 - Fenix
+# * pep8 coding style guide
 
 __author__ = 'xlr8or, ~cGs*Pr3z, ~cGs*AQUARIUS'
-__version__ = '1.0.0'
+__version__ = '1.1'
 
 from b3.parsers.sof2 import Sof2Parser
 
