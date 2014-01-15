@@ -18,9 +18,12 @@
 #
 #
 # CHANGELOG
+# 13/01/2014 - 1.1 - Fenix
+# * pep8 coding style guide
+# * correctly set client bot flag upon new client connection
 
 __author__ = 'xlr8or, ~cGs*Pr3z, ~cGs*AQUARIUS'
-__version__ = '1.0.0'
+__version__ = '1.1'
 
 import b3
 import b3.events
