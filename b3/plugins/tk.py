@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    15/01/2014 - 1.3.2 - Fenix
+#    * add 'lms' to ffa gametype: skip teamkill detection for Last Man Standing on Urban Terror 4.2
 #    23/10/2013 - 1.3.1 - courgette
 #    * the plugin falls back on default values even with an empty config file
 #    * fix bug with _round_end_games
@@ -64,7 +66,7 @@ import b3.plugin
 import b3.cron
 
 
-__version__ = '1.3.1'
+__version__ = '1.3.2'
 __author__ = 'ThorN, mindriot, Courgette, xlr8or, SGT, 82ndab-Bravo17, ozon'
 
 
@@ -177,7 +179,7 @@ class TkPlugin(b3.plugin.Plugin):
 
         # game types that have no team based game play and for which there should be
         # no tk detected
-        self._ffa = ['dm', 'ffa', 'syc-ffa']
+        self._ffa = ['dm', 'ffa', 'syc-ffa', 'lms']
 
         # games for which the plugin will have all tk points on EVT_GAME_ROUND_END events
         # instead of on EVT_GAME_EXIT events
