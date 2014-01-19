@@ -18,6 +18,8 @@
 #
 #
 # CHANGELOG
+#   2014/01/19 - 1.34 - Ozon
+#   * improve plugin config file search
 #   2013/10/24 - 1.33 - courgette
 #   * fix httpytail, ftpytail and sftpytail plugins that would be loaded twice if found in the plugins section of the b3.xml file
 #   * fix onLoadConfig hook is now called by the parser instead of at plugin instantiation
@@ -164,11 +166,11 @@
 #    Added atexit handlers
 #    Added warning, info, exception, and critical log handlers
 
-__author__  = 'ThorN, Courgette, xlr8or, Bakes'
-__version__ = '1.33'
+__author__  = 'ThorN, Courgette, xlr8or, Bakes, Ozon'
+__version__ = '1.34'
 
 # system modules
-import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket
+import os, sys, re, time, thread, traceback, Queue, imp, atexit, socket, glob
 
 import b3
 import b3.storage
@@ -654,7 +656,34 @@ class Parser(object):
         
         extplugins_dir = self.config.getpath('plugins', 'external_dir')
         self.bot('Loading Plugins (external plugin directory: %s)' % extplugins_dir)
-        
+
+        def _get_config_path(_plugin):
+            """Helper that return a config path for the given Plugin."""
+            # read config path from b3 configuration
+            cfg = _plugin.get('config')
+            # Check if the configuration file exists - if not, attempts to find the configuration file
+            if cfg is not None and os.path.exists(self.getAbsolutePath(cfg)):
+                return self.getAbsolutePath(cfg)
+            else:
+                # warn the users
+                if cfg is None:
+                    self.warning('No configuration file specified for plugin %s.' % p.get('name'))
+                else:
+                    self.warning('The specified configuration file %s for the plugin %s does not exist.'
+                                 % (cfg, p.get('name')))
+
+                # try to find a config file
+                _cfg_path = glob.glob(self.getAbsolutePath('@b3\\conf\\') + '*%s*' % p.get('name'))
+                if len(_cfg_path) == 0:
+                    _cfg_path = glob.glob(self.getAbsolutePath(extplugins_dir) + '\\conf\\' + '*%s*' % p.get('name'))
+
+                if len(_cfg_path) != 1 or _cfg_path[0] in [c.get('conf', '') for c in plugins.values()]:
+                    # return none if no file found or file already loaded
+                    return cfg
+                else:
+                    self.warning('Using %s as configuration file for %s' % (_cfg_path[0], p.get('name')))
+                    return _cfg_path[0]
+
         plugins = {}
         pluginSort = []
 
@@ -667,12 +696,12 @@ class Parser(object):
             if name in [plugins[i]['name'] for i in plugins if plugins[i]['name'] == name]:
                 self.warning('Plugin %s already loaded. Avoid multiple entries of the same plugin.' % name)
             else:
-                conf = p.get('config')
-                if conf is None:
-                    conf = '@b3/conf/plugin_%s.xml' % name
+                conf = _get_config_path(p)
+                #if conf is None:
+                #    conf = '@b3/conf/plugin_%s.xml' % name
                 disabledconf = p.get('disabled')
                 plugins[priority] = {'name': name,
-                                     'conf': self.getAbsolutePath(conf),
+                                     'conf': conf,
                                      'path': p.get('path'),
                                      'disabled': disabledconf is not None and disabledconf.lower() in ('yes', '1', 'on', 'true')}
                 pluginSort.append(priority)
