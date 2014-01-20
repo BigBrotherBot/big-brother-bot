@@ -36,14 +36,16 @@
 #   * do not fail if 'destination' is found in config but empty
 # 2011/05/11 - 1.2.5 - Courgette
 #   * update B3 website URL
+# 2014/01/20 - 1.2.6 - ozon
+#   * add json output
 
 """ 
 This module will generate a user documentation depending
 on current config
 """
 
-__author__    = 'Courgette'
-__version__ = '1.2.5'
+__author__    = 'Courgette, ozon'
+__version__ = '1.2.6'
 
 import time, os, StringIO, string, re
 from xml.dom.minidom import Document
@@ -53,7 +55,7 @@ from b3 import getConfPath
 from b3.functions import splitDSN
 
 class DocBuilder:
-    _supportedExportType = ['xml','html', 'htmltable']
+    _supportedExportType = ['xml','html', 'htmltable', 'json']
     _console = None
     _adminPlugin = None
     _outputType = 'html'
@@ -98,8 +100,13 @@ class DocBuilder:
                 self._write(self.getHtml())
             elif self._outputType == 'htmltable':
                 self._write(self.getHtmlTable())
-        
+            elif self._outputType == 'json':
+                self._write(self.get_json())
     
+    def get_json(self):
+        import json
+        return json.dumps(self._getCommandsDict(), indent=4)
+
     def getXml(self):
         xml = Document()
         xDoc = xml.createElement("b3doc")
@@ -517,10 +524,10 @@ $(document).ready(function(){
                 tmp['alias'] = cmd.prefix + cmd.alias
             tmp['plugin'] = re.sub('Plugin$', '', cmd.plugin.__class__.__name__) 
             tmp['description'] = escape(cmd.help)
-            tmp['minlevel'] = str(cmd.level[0])
-            tmp['maxlevel'] = str(cmd.level[1])
+            tmp['minlevel'] = str(cmd.level[0]) if self._outputType != 'json' else cmd.level[0]
+            tmp['maxlevel'] = str(cmd.level[1]) if self._outputType != 'json' else cmd.level[1]
             commands[cmd] = tmp
-            
+
         def commands_compare(x, y):
             if x['plugin'] < y['plugin']: return -1
             elif x['plugin'] > y['plugin']: return 1

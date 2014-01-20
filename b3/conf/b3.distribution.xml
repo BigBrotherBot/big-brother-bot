@@ -63,7 +63,7 @@ homefront/ro2/csgo/ravaged/arma2
 	</settings>
 	<settings name="autodoc">
 		<!-- Autodoc will generate a user documentation for all B3 commands 
-		 * type : can be one of : html, htmltable, xml
+		 * type : can be one of : html, htmltable, xml, json
 		 * maxlevel : if you want to exclude commands reserved for higher levels
 		 * destination : can be a file or a ftp url
 		 by default, a html documentation is created in your conf folder
