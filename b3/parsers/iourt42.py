@@ -90,7 +90,12 @@
 # 13/01/2014 - 1.21 - Fenix
 #     * pep8 coding style guide
 #     * correctly set the client bot flag upon new client connection
+# 12/01/2014 - 1.22 - Fenix
+#     * updated Radio call regex: allow to parse log lines with missing radio location
+#     * removed duplicated regular expression (Radio)
+#     * increase parser version (1.22) and updated changelog
 #
+
 import b3
 import re
 import new
@@ -101,8 +106,8 @@ from b3.clients import Client
 from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
-__author__ = 'Courgette'
-__version__ = '1.21'
+__author__ = 'Courgette, Fenix'
+__version__ = '1.22'
 
 
 class Iourt42Client(Client):
@@ -279,10 +284,7 @@ class Iourt42Parser(Iourt41Parser):
 
     _lineFormats = (
         #Radio: 0 - 7 - 2 - "New Alley" - "I'm going for the flag"
-        re.compile(r'''^(?P<action>Radio): (?P<data>(?P<cid>[0-9]+) - (?P<msg_group>[0-9]+) - (?P<msg_id>[0-9]+) - "(?P<location>.+)" - "(?P<text>.*)")$'''),
-
-        #Radio: 0 - 7 - 2 - "New Alley" - "I'm going for the flag"
-        re.compile(r'''^(?P<action>Radio): (?P<data>(?P<cid>[0-9]+) - (?P<msg_group>[0-9]+) - (?P<msg_id>[0-9]+) - "(?P<location>.+)" - "(?P<text>.*)")$'''),
+        re.compile(r'''^(?P<action>Radio): (?P<data>(?P<cid>[0-9]+) - (?P<msg_group>[0-9]+) - (?P<msg_id>[0-9]+) - "(?P<location>.*)" - "(?P<text>.*)")$'''),
 
         #Callvote: 1 - "map dressingroom"
         re.compile(r'''^(?P<action>Callvote): (?P<data>(?P<cid>[0-9]+) - "(?P<vote_string>.*)")$'''),
