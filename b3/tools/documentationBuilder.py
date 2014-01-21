@@ -44,18 +44,23 @@ This module will generate a user documentation depending
 on current config
 """
 
-__author__    = 'Courgette, ozon'
+__author__ = 'Courgette, ozon'
 __version__ = '1.2.6'
 
-import time, os, StringIO, string, re
+import time
+import os
+import StringIO
+import string
+import re
 from xml.dom.minidom import Document
 from ftplib import FTP
 from cgi import escape
 from b3 import getConfPath
 from b3.functions import splitDSN
 
+
 class DocBuilder:
-    _supportedExportType = ['xml','html', 'htmltable', 'json']
+    _supportedExportType = ['xml', 'html', 'htmltable', 'json']
     _console = None
     _adminPlugin = None
     _outputType = 'html'
@@ -70,8 +75,8 @@ class DocBuilder:
             raise Exception('AUTODOC: cannot generate documentation without the admin plugin')
                 
         if self._console.config.has_section('autodoc'):
-            if self._console.config.has_option('autodoc','destination'):
-                dest = self._console.config.get('autodoc','destination')
+            if self._console.config.has_option('autodoc', 'destination'):
+                dest = self._console.config.get('autodoc', 'destination')
                 if dest is None:
                     self._console.warning('AUTODOC: destination found but empty. using default')
                 else:
@@ -81,13 +86,12 @@ class DocBuilder:
                         # assume file
                         self._outputUrl = 'file://' + self._console.config.getpath('autodoc', 'destination')
         
-            if self._console.config.has_option('autodoc','type'):
-                self._outputType = self._console.config.get('autodoc','type')
+            if self._console.config.has_option('autodoc', 'type'):
+                self._outputType = self._console.config.get('autodoc', 'type')
     
-            if self._console.config.has_option('autodoc','maxlevel'):
-                self._maxlevel = self._console.config.getint('autodoc','maxlevel')
-    
-    
+            if self._console.config.has_option('autodoc', 'maxlevel'):
+                self._maxlevel = self._console.config.getint('autodoc', 'maxlevel')
+
     def save(self):
         if self._outputType not in self._supportedExportType:
             self._console.error('AUTODOC: %s type of doc unsupported' % self._outputType)
@@ -112,7 +116,7 @@ class DocBuilder:
         xDoc = xml.createElement("b3doc")
         xDoc.setAttribute("time", time.asctime())
         xDoc.setAttribute("game", self._console.game.gameName)
-        xDoc.setAttribute("address", self._console._publicIp +':'+ str(self._console._port))
+        xDoc.setAttribute("address", self._console._publicIp + ':' + str(self._console._port))
         
         xCommands = xml.createElement("b3commands")
         for cmd in self._getCommandsDict():
@@ -438,14 +442,13 @@ $(document).ready(function(){
         """ 
         
         return html % {
-            'server': self._console._publicIp +':'+ str(self._console._port),
+            'server': self._console._publicIp + ':' + str(self._console._port),
             'cssstyle': cssstyle,
             'javascript': javascript,
             'dateUpdated': time.asctime(),
             'commandsTable': self.getHtmlTable()
         } 
-    
-    
+
     def getHtmlTable(self):
         text = """
             <table id="b3commands">
@@ -554,7 +557,7 @@ $(document).ready(function(){
         
         if dsn['protocol'] == 'ftp':
             self._console.debug('Uploading to FTP server %s' % dsn['host'])
-            ftp=FTP(dsn['host'],dsn['user'],passwd=dsn['password'])
+            ftp = FTP(dsn['host'], dsn['user'], passwd=dsn['password'])
             ftp.cwd(os.path.dirname(dsn['path']))
             ftpfile = StringIO.StringIO()
             ftpfile.write(text)
@@ -567,4 +570,3 @@ $(document).ready(function(){
             f.close()
         else:
             self._console.error('AUTODOC: protocol [%s] is not supported' % dsn['protocol'])
-            
