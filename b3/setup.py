@@ -411,7 +411,7 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
         xml.comment("Autodoc will generate a user documentation for all B3 commands")
         xml.data("\t\t")
         xml.comment("by default, a html documentation is created in your conf folder")
-        self.add_set("type", self.read_element('autodoc', 'type', 'html'), "html, htmltable or xml")
+        self.add_set("type", self.read_element('autodoc', 'type', 'html'), "html, htmltable, json or xml")
         self.add_set("maxlevel", self.read_element('autodoc', 'maxlevel', '100'),
                      "if you want to exclude commands reserved for higher levels")
         self.add_set("destination", self.read_element('autodoc', 'destination', ''),
