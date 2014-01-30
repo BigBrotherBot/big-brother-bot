@@ -18,6 +18,9 @@
 #
 # CHANGELOG
 #
+#   20/01/2014 - 1.15 - Fenix
+#     refactored syntax: get close to PEP8
+#     fixed impossibility to retrieve group 'guest' in getGroup()
 #   12/08/2013 - 1.14 - courgette
 #     add method getTables()
 #   26/11/2012 - 1.13 - courgette
@@ -65,7 +68,7 @@
 #     Added data column to penalties table
 
 __author__ = 'ThorN'
-__version__ = '1.14'
+__version__ = '1.15'
 
 
 from b3 import functions
@@ -814,7 +817,7 @@ class DatabaseStorage(Storage):
             if not g:
                 raise KeyError('No group matching keyword %s' % group.keyword)
 
-        elif hasattr(group, 'level') and group.level:
+        elif hasattr(group, 'level') and group.level >= 0:
             q = QueryBuilder(self.db).SelectQuery('*', 'groups', dict(level=group.level), None, 1)
             self.console.verbose2(q)
             cursor = self.query(q)
