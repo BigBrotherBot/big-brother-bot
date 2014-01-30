@@ -109,13 +109,12 @@ class Test_config(SpamcontrolTestCase):
         """))
         self.assertEqual(0, self.p._maxSpamins)
 
-
     def test_mod_level_empty(self):
         self.init_plugin(dedent("""
             [settings]
             mod_level:
         """))
-        self.assertEqual(self.default_mod_level, self.p._modLevel)
+        self.assertEqual(0, self.p._modLevel)
 
     def test_mod_level_NaN(self):
         self.init_plugin(dedent("""
