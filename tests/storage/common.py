@@ -339,7 +339,6 @@ class StorageAPITest(object):
         self.storage.query = Mock(return_value=None)
         self.assertEquals((), self.storage.getClientPenalties(c1))
 
-
     def test_getClientLastPenalty(self):
         client = Mock()
         client.id = 15
@@ -379,7 +378,6 @@ class StorageAPITest(object):
         self.assertIsInstance(penalty, Penalty)
         self.assertEqual(penalty.data, 'pC')
         self.assertIsNone(self.storage.getClientFirstPenalty(Penalty(clientId=3231)))
-
 
     def test_disableClientPenalties(self):
         c1 = Mock()
@@ -444,7 +442,6 @@ class StorageAPITest(object):
         self.storage.query = Mock(return_value=None)
         self.assertEqual(0, self.storage.numPenalties(client=c1))
 
-
     def test_getGroups(self):
         groups = self.storage.getGroups()
         self.assertEqual(8, len(groups))
@@ -490,13 +487,12 @@ class StorageAPITest(object):
 
     def test_getGroup_bad_group(self):
         try:
-            self.storage.getGroup(Group())
+            self.storage.getGroup(Group(level=-1))
             self.fail("expecting KeyError")
         except KeyError:
             pass
         except Exception:
             self.fail("expecting KeyError")
-
 
     def test_getCounts(self):
         c1 = Client(guid="aaaaaaaaa")
