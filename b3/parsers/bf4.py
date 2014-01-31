@@ -241,10 +241,7 @@ class Bf4Parser(AbstractParser):
         'serverName',               # <name>  Set the server name
         'serverType',               # <type>  Set the server type: Official, Ranked, Unranked or Private
         'soldierHealth',            # <modifier: percent>  Set soldier max health scale factor
-        'team1FactionOverride',     # <factionId>  Set the faction for team 1
-        'team2FactionOverride',     # <factionId>  Set the faction for team 2
-        'team3FactionOverride',     # <factionId>  Set the faction for team 3
-        'team4FactionOverride',     # <factionId>  Set the faction for team 4
+        'teamFactionOverride',      # Overwrites team factions
         'teamKillCountForKick',     # <count>  Set number of teamkills allowed during a round
         'teamKillKickForBan',       # <count>  Set number of team-kill kicks that will lead to permaban
         'teamKillValueDecreasePerSecond',   # <count>  Set kill-value decrease per second
@@ -575,10 +572,7 @@ class Bf4Parser(AbstractParser):
         self.game['serverName'] = get_cvar('serverName')
         self.game['serverType'] = get_cvar('serverType')
         self.game['soldierHealth'] = get_cvar('soldierHealth', 'int')
-        self.game['team1FactionOverride'] = get_cvar('team1FactionOverride', 'int')
-        self.game['team2FactionOverride'] = get_cvar('team2FactionOverride', 'int')
-        self.game['team3FactionOverride'] = get_cvar('team3FactionOverride', 'int')
-        self.game['team4FactionOverride'] = get_cvar('team4FactionOverride', 'int')
+        self.game['teamFactionOverride'] = get_cvar('teamFactionOverride', 'string')
         self.game['teamKillCountForKick'] = get_cvar('teamKillCountForKick', 'int')
         self.game['teamKillKickForBan'] = get_cvar('teamKillKickForBan', 'int')
         self.game['teamKillValueDecreasePerSecond'] = get_cvar('teamKillValueDecreasePerSecond', 'float')
