@@ -427,14 +427,6 @@ class Bf4Parser(AbstractParser):
             self.error('Unable to retrieve pings from player List', exc_info=err)
         return pings
 
-    def saybig(self, msg):
-        """\
-        broadcast a message to all players in a way that will catch their attention.
-        """
-        # todo: remove this if admin.yell works again
-        # admin.yell is currently broken (server version >= R15)
-        # we give this message over admin.say
-        self.write(self.getCommand('say', message=msg))
 
     ###############################################################################################
     #
