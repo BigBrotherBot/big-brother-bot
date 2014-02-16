@@ -3,7 +3,7 @@
 # XLRstats
 # statistics-generating plugin for B3 (www.bigbrotherbot.net)
 # (c) 2004, 2005 Tim ter Laak (ttlogic@xlr8or.com)
-# (c) 2005 - 2013 Mark Weirath (xlr8or@xlr8or.com)
+# (c) 2005 - 2014 Mark Weirath (xlr8or@xlr8or.com)
 #
 # This program is free software and licensed under the terms of
 # the GNU General Public License (GPL), version 2.
@@ -15,15 +15,18 @@
 # 22-11-2012 - 3.0.0b1 - Mark Weirath
 #   preparations for version 3.0 of XLRstats
 # 11-08-2013 - 3.0.0b2 - Mark Weirath
-#   purging of the history tables added, compatibility fixes for v2-v3, draft of BattleLog Subplugin, comment headers
+#   purging of the history tables added, compatibility fixes for v2-v3, draft of BattleLog subPlugin, comment headers
+# 16-02-2014 - 3.0.0-beta.3 - Mark Weirath
+#   Moved minPlayers checking to XLRstats plugin, obsoleted the subPlugin: XLRstatsControllerPlugin
+#   Switched to semantic versioning (http://semver.org/)
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
 ## @file
 # XLRstats Real Time playerstats plugin
 
-__author__ = 'Tim ter Laak / Mark Weirath'
-__version__ = '3.0.0b2'
+__author__ = 'xlr8or & ttlogic'
+__version__ = '3.0.0-beta.3'
 
 # Version = major.minor.patches
 
@@ -94,6 +97,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     keep_history = True
     keep_time = True
     minPlayers = 3                      # minimum number of players to collect stats
+    xlrstatsActive = False              # parsing events based on minPlayers?
     _currentNrPlayers = 0               # current number of players present
     silent = False                      # Disables the announcement when collecting stats = stealth mode
 
@@ -241,13 +245,16 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             p.startup()
 
         #start the xlrstats controller
-        p = XlrstatscontrollerPlugin(self.console, self.minPlayers, self.silent)
-        p.startup()
+        #p = XlrstatscontrollerPlugin(self.console, self.minPlayers, self.silent)
+        #p.startup()
 
         #get the map we're in, in case this is a new map and we need to create a db record for it.
         map = self.get_MapStats(self.console.game.mapName)
         if map:
             self.verbose('Map %s ready' % map.name)
+
+        # check number of online players (if available)
+        self.checkMinPlayers()
 
         msg = 'XLRstats v. %s by %s started.' % (__version__, __author__)
         self.console.say(msg)
@@ -441,21 +448,24 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def onEvent(self, event):
         if event.type == b3.events.EVT_CLIENT_JOIN:
+            self.checkMinPlayers()
             self.join(event.client)
-        elif event.type == b3.events.EVT_CLIENT_KILL:
+        elif event.type == b3.events.EVT_CLIENT_KILL and self.xlrstatsActive:
             self.kill(event.client, event.target, event.data)
-        elif event.type == b3.events.EVT_CLIENT_KILL_TEAM:
+        elif event.type == b3.events.EVT_CLIENT_KILL_TEAM and self.xlrstatsActive:
             if self.console.game.gameType in self._ffa:
                 self.kill(event.client, event.target, event.data)
             else:
                 self.teamkill(event.client, event.target, event.data)
-        elif event.type == b3.events.EVT_CLIENT_DAMAGE:
+        elif event.type == b3.events.EVT_CLIENT_DAMAGE and self.xlrstatsActive:
             self.damage(event.client, event.target, event.data)
-        elif event.type == b3.events.EVT_CLIENT_SUICIDE:
+        elif event.type == b3.events.EVT_CLIENT_SUICIDE and self.xlrstatsActive:
             self.suicide(event.client, event.target, event.data)
         elif event.type == b3.events.EVT_GAME_ROUND_START:
+            #disable k/d counting if minimum players are not met
+            self.checkMinPlayers(_roundstart=True)
             self.roundstart()
-        elif event.type == b3.events.EVT_CLIENT_ACTION:
+        elif event.type == b3.events.EVT_CLIENT_ACTION and self.xlrstatsActive:
             self.action(event.client, event.data)
         else:
             self.dumpEvent(event)
@@ -489,8 +499,33 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.debug('Couldn\'t retrieve webfront variables, using defaults')
 
 
+    def checkMinPlayers(self, _roundstart=False):
+        """Checks if minimum amount of players are present
+        if minimum amount of players is reached will enable stats collecting
+        and if not it disables stats counting on next roundstart"""
+        self._currentNrPlayers = len(self.console.clients.getList())
+        self.debug(
+            'Checking number of players online. Minimum = %s, Current = %s' % (self.minPlayers, self._currentNrPlayers))
+        if self._currentNrPlayers < self.minPlayers and self.xlrstatsActive and _roundstart:
+            self.info('XLRstats Disabled: Not enough players online')
+            if not self.silent:
+                self.console.say('XLRstats Disabled: Not enough players online!')
+            self.xlrstatsActive = False
+        elif self._currentNrPlayers >= self.minPlayers and not self.xlrstatsActive:
+            self.info('XLRstats Enabled: Collecting Stats')
+            if not self.silent:
+                self.console.say('XLRstats Enabled: Now collecting stats!')
+            self.xlrstatsActive = True
+        else:
+            if self.xlrstatsActive:
+                _status = 'enabled'
+            else:
+                _status = 'disabled'
+            self.debug('Nothing to do at the moment. XLRstats is already %s' % _status)
+
+
     def win_prob(self, player_skill, opponent_skill):
-        return 1 / ( 10 ** ( (opponent_skill - player_skill) / self.steepness ) + 1 )
+        return 1 / (10 ** ((opponent_skill - player_skill) / self.steepness) + 1)
 
 
     # Retrieves an existing stats record for given client,
@@ -1297,8 +1332,6 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         return
 
     def roundstart(self):
-        #disable k/d counting if minimum players are not met
-
         if self.last_map is None:
             self.last_map = self.console.game.mapName
             #self.last_roundtime = self.console.game._roundTimeStart
@@ -1534,6 +1567,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             player.id_token = token
             self.verbose('Saving identification token %s' % token)
             self.save_Stat(player)
+            client.message('^3Token saved!')
 
         return
 
@@ -1641,60 +1675,61 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 ########################################################################################################################
 #
 # Sub Plugin Controller - Controls starting and stopping of main XLRstats plugin based on playercount
+# OBSOLETE! Removed since it also affected the commands being unavailable when inactive.
 #
 ########################################################################################################################
 
-class XlrstatscontrollerPlugin(b3.plugin.Plugin):
-    """This is a helper class/plugin that enables and disables the main XLRstats plugin
-    It can not be called directly or separately from the XLRstats plugin!"""
-
-    def __init__(self, console, minPlayers=3, silent=False):
-        self.console = console
-        self.console.debug('Initializing SubPlugin: XlrstatsControllerPlugin')
-        self.minPlayers = minPlayers
-        self.silent = silent
-        # empty message cache
-        self._messages = {}
-        self.registerEvent(b3.events.EVT_STOP)
-        self.registerEvent(b3.events.EVT_EXIT)
-
-    def startup(self):
-        self.console.debug('Starting SubPlugin: XlrstatsControllerPlugin')
-        #get a reference to the main Xlrstats plugin
-        self._xlrstatsPlugin = self.console.getPlugin('xlrstats')
-        # register the events we're interested in.
-        self.registerEvent(b3.events.EVT_CLIENT_JOIN)
-        self.registerEvent(b3.events.EVT_GAME_ROUND_START)
-
-    def onEvent(self, event):
-        if event.type == b3.events.EVT_CLIENT_JOIN:
-            self.checkMinPlayers()
-        elif event.type == b3.events.EVT_GAME_ROUND_START:
-            self.checkMinPlayers(_roundstart=True)
-
-    def checkMinPlayers(self, _roundstart=False):
-        """Checks if minimum amount of players are present
-        if minimum amount of players is reached will enable stats collecting
-        and if not it disables stats counting on next roundstart"""
-        self._currentNrPlayers = len(self.console.clients.getList())
-        self.debug(
-            'Checking number of players online. Minimum = %s, Current = %s' % (self.minPlayers, self._currentNrPlayers))
-        if self._currentNrPlayers < self.minPlayers and self._xlrstatsPlugin.isEnabled() and _roundstart:
-            self.info('Disabling XLRstats: Not enough players online')
-            if not self.silent:
-                self.console.say('XLRstats Disabled: Not enough players online!')
-            self._xlrstatsPlugin.disable()
-        elif self._currentNrPlayers >= self.minPlayers and not self._xlrstatsPlugin.isEnabled():
-            self.info('Enabling XLRstats: Collecting Stats')
-            if not self.silent:
-                self.console.say('XLRstats Enabled: Now collecting stats!')
-            self._xlrstatsPlugin.enable()
-        else:
-            if self._xlrstatsPlugin.isEnabled():
-                _status = 'Enabled'
-            else:
-                _status = 'Disabled'
-            self.debug('Nothing to do at the moment. XLRstats is already %s' % _status)
+# class XlrstatscontrollerPlugin(b3.plugin.Plugin):
+#     """This is a helper class/plugin that enables and disables the main XLRstats plugin
+#     It can not be called directly or separately from the XLRstats plugin!"""
+#
+#     def __init__(self, console, minPlayers=3, silent=False):
+#         self.console = console
+#         self.console.debug('Initializing SubPlugin: XlrstatsControllerPlugin')
+#         self.minPlayers = minPlayers
+#         self.silent = silent
+#         # empty message cache
+#         self._messages = {}
+#         self.registerEvent(b3.events.EVT_STOP)
+#         self.registerEvent(b3.events.EVT_EXIT)
+#
+#     def startup(self):
+#         self.console.debug('Starting SubPlugin: XlrstatsControllerPlugin')
+#         #get a reference to the main Xlrstats plugin
+#         self._xlrstatsPlugin = self.console.getPlugin('xlrstats')
+#         # register the events we're interested in.
+#         self.registerEvent(b3.events.EVT_CLIENT_JOIN)
+#         self.registerEvent(b3.events.EVT_GAME_ROUND_START)
+#
+#     def onEvent(self, event):
+#         if event.type == b3.events.EVT_CLIENT_JOIN:
+#             self.checkMinPlayers()
+#         elif event.type == b3.events.EVT_GAME_ROUND_START:
+#             self.checkMinPlayers(_roundstart=True)
+#
+#     def checkMinPlayers(self, _roundstart=False):
+#         """Checks if minimum amount of players are present
+#         if minimum amount of players is reached will enable stats collecting
+#         and if not it disables stats counting on next roundstart"""
+#         self._currentNrPlayers = len(self.console.clients.getList())
+#         self.debug(
+#             'Checking number of players online. Minimum = %s, Current = %s' % (self.minPlayers, self._currentNrPlayers))
+#         if self._currentNrPlayers < self.minPlayers and self._xlrstatsPlugin.isEnabled() and _roundstart:
+#             self.info('Disabling XLRstats: Not enough players online')
+#             if not self.silent:
+#                 self.console.say('XLRstats Disabled: Not enough players online!')
+#             self._xlrstatsPlugin.disable()
+#         elif self._currentNrPlayers >= self.minPlayers and not self._xlrstatsPlugin.isEnabled():
+#             self.info('Enabling XLRstats: Collecting Stats')
+#             if not self.silent:
+#                 self.console.say('XLRstats Enabled: Now collecting stats!')
+#             self._xlrstatsPlugin.enable()
+#         else:
+#             if self._xlrstatsPlugin.isEnabled():
+#                 _status = 'Enabled'
+#             else:
+#                 _status = 'Disabled'
+#             self.debug('Nothing to do at the moment. XLRstats is already %s' % _status)
 
 
 ########################################################################################################################
