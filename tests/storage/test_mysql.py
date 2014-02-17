@@ -77,8 +77,8 @@ class Test_MySQL(B3TestCase, StorageAPITest):
             db = MySQLdb.connect(host=MYSQL_TEST_HOST, user=MYSQL_TEST_USER, passwd=MYSQL_TEST_PASSWORD)
         except MySQLdb.OperationalError, message:
             self.fail("Error %d:\n%s" % (message[0], message[1]))
-        db.query("DROP DATABASE IF EXISTS b3_test")
-        db.query("CREATE DATABASE b3_test CHARACTER SET utf8;")
+        db.query("DROP DATABASE IF EXISTS `%s`" % MYSQL_TEST_DB)
+        db.query("CREATE DATABASE `%s` CHARACTER SET utf8;" % MYSQL_TEST_DB)
         self.storage = self.console.storage = DatabaseStorage(
             "mysql://%s:%s@%s/%s" % (MYSQL_TEST_USER, MYSQL_TEST_PASSWORD, MYSQL_TEST_HOST, MYSQL_TEST_DB),
             self.console)
@@ -87,7 +87,7 @@ class Test_MySQL(B3TestCase, StorageAPITest):
     def tearDown(self):
         """this method is called after each test"""
         B3TestCase.tearDown(self)
-        self.storage.query("DROP DATABASE b3_test")
+        self.storage.query("DROP DATABASE `%s`" % MYSQL_TEST_DB)
         self.storage.shutdown()
 
     def test_getTables(self):
