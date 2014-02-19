@@ -125,7 +125,8 @@ GAME_MODES_NAMES = {
     'Domination0': 'Domination',
     'Elimination0': 'Defuse',
     'Obliteration': 'Obliteration',
-    "AirSuperiority0": "Air Superiority",
+    'AirSuperiority0': 'Air Superiority',
+    'CaptureTheFlag0': 'Capture the Flag',
 }
 
 GAMEMODES_IDS_BY_NAME = dict()
@@ -144,6 +145,10 @@ MAP_NAME_BY_ID = {
     'MP_Siege': 'Siege of Shanghai',
     'MP_TheDish': 'Rogue Transmission',
     'MP_Tremors': 'Dawnbreaker',
+    'XP0_Caspian': 'Caspian Border 2014',
+    'XP0_Firestorm': 'Firestorm 2014',
+    'XP0_Oman': 'Gulf Of Oman 2014',
+    'XP0_Metro': 'Operation Metro 2014',
     'XP1_001': 'Silk Road',
     'XP1_002': 'Altai Range',
     'XP1_003': 'Guilin Peaks',
@@ -176,6 +181,14 @@ GAME_MODES_BY_MAP_ID = {
                      'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
     'MP_Tremors':   ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
                      'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0'),
+    'XP0_Caspian':  ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'CaptureTheFlag0'),
+    'XP0_Firestorm':('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'CaptureTheFlag0'),
+    'XP0_Oman':     ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'CaptureTheFlag0'),
+    'XP0_Metro':    ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'CaptureTheFlag0'),
     'XP1_001':      ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
                      'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'AirSuperiority0'),
     'XP1_002':      ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
@@ -264,6 +277,7 @@ class Bf4Parser(AbstractParser):
         'elm': 'defuse',
         'obl': 'obliteration',
         'rush': 'rush',
+        'ctf': 'capture the flag',
     }
 
     def __new__(cls, *args, **kwargs):
