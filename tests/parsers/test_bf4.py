@@ -805,7 +805,8 @@ map: 20
             self.joe.says("!map xxxxxxxxf00xxxxxxxxx")
         # THEN
         self.assertListEqual([], changeMap_mock.mock_calls)
-        self.assertListEqual(['do you mean : siege of shanghai, flood zone, rogue transmission ?'], self.joe.message_history)
+        self.assertEqual(1, len(self.joe.message_history))
+        self.assertTrue(self.joe.message_history[0].startswith("do you mean"))
 
 
 class Test_Client_player_type(BF4TestCase):
