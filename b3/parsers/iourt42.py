@@ -189,6 +189,9 @@ class Iourt42Client(Client):
                 # auth with cl_guid only
                 try:
                     in_storage = self.auth_by_guid()
+                    # fix up corrupted data due to bug 162
+                    if in_storage and in_storage.pbid == 'None':
+                        in_storage.pbid = None
                 except Exception, e:
                     self.console.error("auth by guid failed", exc_info=e)
                     self.authorizing = False

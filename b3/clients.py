@@ -18,6 +18,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    2014/02/22 - 1.6.3 - courgette
+#    * fix issue 162 - 'None' string get written to the database 'clients.pbid' column when Client.pbid is None
 #    2014/01/11 - 1.6.2 - courgette
 #    * fix maskLevel is set with group id while it should be group level
 #    07/08/2013 - 1.6.1 - courgette
@@ -88,7 +90,7 @@ import time
 import traceback
 
 __author__  = 'ThorN'
-__version__ = '1.6.1'
+__version__ = '1.6.3'
 
 
 class ClientVar(object):
@@ -716,6 +718,10 @@ class Client(object):
             # can't save a client without a guid
             return False
         else:
+            # fix missing pbid. Workaround a bug in the database layer that would insert the string "None"
+            # in db if pbid is None :/ The empty string being the default value for that db column!! ÙO
+            if self.pbid is None:
+                self.pbid = ''
             if console:
                 self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_UPDATE, data=self, client=self))
             return self.console.storage.setClient(self)
