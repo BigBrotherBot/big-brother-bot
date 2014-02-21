@@ -346,9 +346,9 @@ def getStuffSoundingLike(stuff, expected_stuff):
                     match.append(clean_expected_stuff[m])
 
     if not len(match):
-        match = expected_stuff
+        match = sorted(list(expected_stuff))
         match.sort(key=lambda _map: levenshteinDistance(clean_stuff, _map.strip()))
-    return match
+    return list(set(match))
 
 
 def hash_password(password):

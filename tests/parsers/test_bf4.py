@@ -541,7 +541,7 @@ class Test_bf4_maps(BF4TestCase):
 
 
     def test_getMapsSoundingLike(self):
-        self.assertEqual(['dragon pass', 'lancang dam', 'firestorm 2014', ], self.parser.getMapsSoundingLike(''), '')
+        self.assertEqual(['rogue transmission', 'lancang dam', 'golmud railway'], self.parser.getMapsSoundingLike(''), '')
         self.assertEqual('MP_Abandoned', self.parser.getMapsSoundingLike('Zavod 311'), 'Zavod 311')
         self.assertEqual('MP_Tremors', self.parser.getMapsSoundingLike('dawn'))
         #self.assertEqual(['operation metro', 'operation firestorm', 'operation 925'], self.parser.getMapsSoundingLike('operation'))
@@ -559,7 +559,7 @@ class Test_bf4_maps(BF4TestCase):
         self.assertEqual('MP_Journey', self.parser.getMapsSoundingLike('railway'))
         self.assertEqual('MP_Journey', self.parser.getMapsSoundingLike('Golmud Railway'))
         self.assertEqual('MP_Naval', self.parser.getMapsSoundingLike('paracel'))
-        self.assertEqual(['firestorm 2014', 'paracel storm'], self.parser.getMapsSoundingLike('storm'))
+        self.assertEqual(['paracel storm', 'firestorm 2014'], self.parser.getMapsSoundingLike('storm'))
         self.assertEqual('MP_Naval', self.parser.getMapsSoundingLike('Paracel Storm'))
         self.assertEqual(['operation locker', 'operation metro 2014'], self.parser.getMapsSoundingLike('operation'))
         self.assertEqual('MP_Prison', self.parser.getMapsSoundingLike('locker'))
@@ -586,8 +586,8 @@ class Test_bf4_maps(BF4TestCase):
     def test_getGamemodeSoundingLike(self):
         self.assertEqual('ConquestSmall0', self.parser.getGamemodeSoundingLike('MP_Siege', 'ConquestSmall0'), 'ConquestSmall0')
         self.assertEqual('ConquestSmall0', self.parser.getGamemodeSoundingLike('MP_Siege', 'Conquest'), 'Conquest')
-        self.assertListEqual(['Team Deathmatch', 'Squad Deathmatch'], self.parser.getGamemodeSoundingLike('MP_Siege', 'Deathmatch'), 'Deathmatch')
-        self.assertListEqual(['Rush', 'Defuse', 'Conquest'], self.parser.getGamemodeSoundingLike('MP_Siege', 'foo'))
+        self.assertListEqual(['Squad Deathmatch', 'Team Deathmatch'], self.parser.getGamemodeSoundingLike('MP_Siege', 'Deathmatch'), 'Deathmatch')
+        self.assertListEqual(['Rush', 'Conquest', 'Conquest64'], self.parser.getGamemodeSoundingLike('MP_Siege', 'foo'))
         self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_Siege', 'tdm'), 'tdm')
         self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_Siege', 'teamdeathmatch'), 'teamdeathmatch')
         self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_Siege', 'team death match'), 'team death match')

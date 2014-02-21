@@ -214,5 +214,5 @@ class Test_getStuffSoundingLike(unittest.TestCase):
         self.assertListEqual(['jack'], functions.getStuffSoundingLike('jak', ['bar', 'foO', 'joe', 'jack', 'averell', 'william']))
 
     def test_fallback(self):
-        self.assertListEqual(['bar', 'foO', 'joe', 'jack', 'averell', 'william'], functions.getStuffSoundingLike('xxx', ['bar', 'foO', 'joe', 'jack', 'averell', 'william']))
+        self.assertListEqual(['bar', 'william', 'joe', 'averell', 'foO', 'jack'], functions.getStuffSoundingLike('xxx', ['bar', 'foO', 'joe', 'jack', 'averell', 'william']))
 
