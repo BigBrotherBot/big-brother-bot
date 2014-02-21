@@ -94,8 +94,10 @@
 #     * updated Radio call regex: allow to parse log lines with missing radio location
 #     * removed duplicated regular expression (Radio)
 #     * increase parser version (1.22) and updated changelog
+# 2014/02/22 - 1.23 - Courgette
+#     * fix 162 - 'None' string is written to the database client.pbid column
+#     * fix auth-whois rcon response not being parsed properly since it has a newline character
 #
-
 import b3
 import re
 import new
@@ -107,7 +109,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__ = 'Courgette, Fenix'
-__version__ = '1.22'
+__version__ = '1.23'
 
 
 class Iourt42Client(Client):
@@ -393,7 +395,8 @@ class Iourt42Parser(Iourt41Parser):
     _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): (?P<name>.*) (?P<team>RED|BLUE|SPECTATOR|FREE) k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) ping:(?P<ping>[0-9]+|CNCT|ZMBI)( (?P<ip>[0-9.]+):(?P<port>[0-9-]+))?$', re.I) # NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
 
     # /rcon auth-whois replies patterns
-    _re_authwhois = re.compile(r"""^auth: id: (?P<cid>\d+) - name: \^7(?P<name>.+?) - login: (?P<login>.*?) - notoriety: (?P<notoriety>.+?) - level: (?P<level>-?\d+?)(?:\s+- (?P<extra>.*))?$""", re.MULTILINE)
+    # 'auth: id: 0 - name: ^7Courgette - login: courgette - notoriety: serious - level: -1  \n'
+    _re_authwhois = re.compile(r"""^auth: id: (?P<cid>\d+) - name: \^7(?P<name>.+?) - login: (?P<login>.*?) - notoriety: (?P<notoriety>.+?) - level: (?P<level>-?\d+?)(?:\s+- (?P<extra>.*))?\s*$""", re.MULTILINE)
 
     _permban_with_frozensand = False
     _tempban_with_frozensand = False

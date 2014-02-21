@@ -541,6 +541,15 @@ class Test_queryClientFrozenSandAccount(Iourt42TestCase):
         # THEN
         self.assertDictEqual({'cid': '0', 'name': 'laCourge', 'login': 'courgette', 'notoriety': 'serious', 'level': '-1', 'extra': None}, data)
 
+    def test_authed_with_newline_char(self):
+        # GIVEN
+        when(self.console).write('auth-whois 0').thenReturn(r'''auth: id: 0 - name: ^7laCourge - login: courgette - notoriety: serious - level: -1
+''')
+        # WHEN
+        data = self.console.queryClientFrozenSandAccount('0')
+        # THEN
+        self.assertDictEqual({'cid': '0', 'name': 'laCourge', 'login': 'courgette', 'notoriety': 'serious', 'level': '-1', 'extra': None}, data)
+
     def test_not_active(self):
         # GIVEN
         when(self.console).write('auth-whois 3').thenReturn(r'''Client 3 is not active.''')
