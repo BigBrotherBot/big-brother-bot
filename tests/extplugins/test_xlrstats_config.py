@@ -71,7 +71,7 @@ class Test_conf(XlrstatsTestCase):
         self.assertEqual(1000, self.p.defaultskill)
         self.assertEqual(16, self.p.Kfactor_high)
         self.assertEqual(4, self.p.Kfactor_low)
-        self.assertEqual(100, self.p.Kswitch_kills)
+        self.assertEqual(100, self.p.Kswitch_confrontations)
         self.assertEqual(600, self.p.steepness)
         self.assertEqual(0.05, self.p.suicide_penalty_percent)
         self.assertEqual(0.1, self.p.tk_penalty_percent)
@@ -80,6 +80,7 @@ class Test_conf(XlrstatsTestCase):
         self.assertEqual(70, self.p.prematch_maxtime)
         self.assertFalse(self.p.announce)
         self.assertTrue(self.p.keep_time)
+        self.assertTrue(self.p.provisional_ranking)
         self.assertTrue(self.p._defaultTableNames)
         self.assertEqual('xlr_playerstats', self.p.playerstats_table)
         self.assertEqual('xlr_weaponstats', self.p.weaponstats_table)
@@ -116,7 +117,7 @@ class Test_conf(XlrstatsTestCase):
         self.assertEqual(1000, self.p.defaultskill)
         self.assertEqual(16, self.p.Kfactor_high)
         self.assertEqual(4, self.p.Kfactor_low)
-        self.assertEqual(100, self.p.Kswitch_kills)
+        self.assertEqual(100, self.p.Kswitch_confrontations)
         self.assertEqual(600, self.p.steepness)
         self.assertEqual(0.05, self.p.suicide_penalty_percent)
         self.assertEqual(0.1, self.p.tk_penalty_percent)
@@ -125,6 +126,7 @@ class Test_conf(XlrstatsTestCase):
         self.assertEqual(70, self.p.prematch_maxtime)
         self.assertFalse(self.p.announce)
         self.assertTrue(self.p.keep_time)
+        self.assertTrue(self.p.provisional_ranking)
         self.assertTrue(self.p._defaultTableNames)
         self.assertEqual('xlr_playerstats', self.p.playerstats_table)
         self.assertEqual('xlr_weaponstats', self.p.weaponstats_table)
@@ -840,56 +842,56 @@ class Test_conf_settings_Kfactor_low(Conf_settings_test_case):
         self.assertEqual(self.DEFAULT_VALUE, self.p.Kfactor_low)
 
 
-class Test_conf_settings_Kswitch_kills(Conf_settings_test_case):
-    DEFAULT_VALUE = 100
+class Test_conf_settings_Kswitch_confrontations(Conf_settings_test_case):
+    DEFAULT_VALUE = 50
 
     def test_missing(self):
         # WHEN
         self.init('')
         # THEN
-        self.assertEqual(self.DEFAULT_VALUE, self.p.Kswitch_kills)
+        self.assertEqual(self.DEFAULT_VALUE, self.p.Kswitch_confrontations)
 
     def test_empty(self):
         # WHEN
-        self.init('Kswitch_kills: ')
+        self.init('Kswitch_confrontations: ')
         # THEN
-        self.assertEqual(self.DEFAULT_VALUE, self.p.Kswitch_kills)
+        self.assertEqual(self.DEFAULT_VALUE, self.p.Kswitch_confrontations)
 
     def test_junk(self):
         # WHEN
-        self.init('Kswitch_kills: f00')
+        self.init('Kswitch_confrontations: f00')
         # THEN
-        self.assertEqual(self.DEFAULT_VALUE, self.p.Kswitch_kills)
+        self.assertEqual(self.DEFAULT_VALUE, self.p.Kswitch_confrontations)
 
     def test_negative(self):
         # WHEN
-        self.init('Kswitch_kills: -5')
+        self.init('Kswitch_confrontations: -5')
         # THEN
-        self.assertEqual(-5, self.p.Kswitch_kills)
+        self.assertEqual(-5, self.p.Kswitch_confrontations)
 
     def test_0(self):
         # WHEN
-        self.init('Kswitch_kills: 0')
+        self.init('Kswitch_confrontations: 0')
         # THEN
-        self.assertEqual(0, self.p.Kswitch_kills)
+        self.assertEqual(0, self.p.Kswitch_confrontations)
 
     def test_1(self):
         # WHEN
-        self.init('Kswitch_kills: 1')
+        self.init('Kswitch_confrontations: 1')
         # THEN
-        self.assertEqual(1, self.p.Kswitch_kills)
+        self.assertEqual(1, self.p.Kswitch_confrontations)
 
     def test_8(self):
         # WHEN
-        self.init('Kswitch_kills: 8')
+        self.init('Kswitch_confrontations: 8')
         # THEN
-        self.assertEqual(8, self.p.Kswitch_kills)
+        self.assertEqual(8, self.p.Kswitch_confrontations)
 
     def test_float(self):
         # WHEN
-        self.init('Kswitch_kills: 0.5')
+        self.init('Kswitch_confrontations: 0.5')
         # THEN
-        self.assertEqual(self.DEFAULT_VALUE, self.p.Kswitch_kills)
+        self.assertEqual(self.DEFAULT_VALUE, self.p.Kswitch_confrontations)
 
 
 class Test_conf_settings_steepness(Conf_settings_test_case):
@@ -1340,6 +1342,75 @@ class Test_conf_settings_keep_time(Conf_settings_test_case):
         self.init('keep_time: false')
         # THEN
         self.assertFalse(self.p.keep_time)
+
+
+class Test_conf_settings_provisional_ranking(Conf_settings_test_case):
+
+    def test_missing(self):
+        # WHEN
+        self.init('')
+        # THEN
+        self.assertTrue(self.p.provisional_ranking)
+
+    def test_empty(self):
+        # WHEN
+        self.init('provisional_ranking: ')
+        # THEN
+        self.assertTrue(self.p.provisional_ranking)
+
+    def test_junk(self):
+        # WHEN
+        self.init('provisional_ranking: f00')
+        # THEN
+        self.assertTrue(self.p.provisional_ranking)
+
+    def test_true(self):
+        # WHEN
+        self.init('provisional_ranking: true')
+        # THEN
+        self.assertTrue(self.p.provisional_ranking)
+
+    def test_on(self):
+        # WHEN
+        self.init('provisional_ranking: on')
+        # THEN
+        self.assertTrue(self.p.provisional_ranking)
+
+    def test_1(self):
+        # WHEN
+        self.init('provisional_ranking: 1')
+        # THEN
+        self.assertTrue(self.p.provisional_ranking)
+
+    def test_yes(self):
+        # WHEN
+        self.init('provisional_ranking: yes')
+        # THEN
+        self.assertTrue(self.p.provisional_ranking)
+
+    def test_false(self):
+        # WHEN
+        self.init('provisional_ranking: false')
+        # THEN
+        self.assertFalse(self.p.provisional_ranking)
+
+    def test_off(self):
+        # WHEN
+        self.init('provisional_ranking: off')
+        # THEN
+        self.assertFalse(self.p.provisional_ranking)
+
+    def test_0(self):
+        # WHEN
+        self.init('provisional_ranking: 0')
+        # THEN
+        self.assertFalse(self.p.provisional_ranking)
+
+    def test_no(self):
+        # WHEN
+        self.init('provisional_ranking: false')
+        # THEN
+        self.assertFalse(self.p.provisional_ranking)
 
 
 class Conf_tables_test_case(XlrstatsTestCase):

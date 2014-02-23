@@ -26,7 +26,7 @@
 # XLRstats Real Time playerstats plugin
 
 __author__ = 'xlr8or & ttlogic'
-__version__ = '3.0.0-beta.3'
+__version__ = '3.0.0-beta.4'
 
 # Version = major.minor.patches
 
@@ -58,7 +58,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     _world_clientid = None
     _ffa = ['dm', 'ffa', 'syc-ffa']
-    _damage_able_games = ['cod']        # will only count assists when damage is 50 points or more.
+    _damage_able_games = ['cod4', 'cod5', 'cod6', 'cod7', 'cod8'] # will only count assists when damage is 50 points or more.
     _damage_ability = False
     hide_bots = True                    # set client.hide to True so bots are hidden from the stats
     exclude_bots = True                 # kills and damage to and from bots do not affect playerskill
@@ -72,24 +72,25 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     webfrontVersion = 2                 # maintain backward compatibility
     webfrontUrl = ''
     webfrontConfigNr = 0
-    _minKills = 500
-    _minRounds = 50
+    _minKills = 100
+    _minRounds = 10
     _maxDays = 14
 
     # config variables
     defaultskill = 1000
-    minlevel = 1
+    minlevel = 0
     onemaponly = False
 
     Kfactor_high = 16
     Kfactor_low = 4
-    Kswitch_kills = 100
+    Kswitch_confrontations = 50
 
     steepness = 600
     suicide_penalty_percent = 0.05
     tk_penalty_percent = 0.1
-    kill_bonus = 1.5
-    assist_bonus = 0.5
+    action_bonus = 1.0
+    kill_bonus = 1.0
+    assist_bonus = 0.3
     assist_timespan = 2                 # on non damage based games: damage before death timespan
     damage_assist_release = 10          # on damage based games: release the assist (wil overwrite self.assist_timespan on startup)
     prematch_maxtime = 70
@@ -100,6 +101,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     xlrstatsActive = False              # parsing events based on minPlayers?
     _currentNrPlayers = 0               # current number of players present
     silent = False                      # Disables the announcement when collecting stats = stealth mode
+    provisional_ranking = True          # First Kswitch_confrontations will not alter killers stats
 
     # keep some private map data to detect prematches and restarts
     last_map = None
@@ -190,7 +192,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
 
         #determine the ability to work with damage based assists
-        if self.console.gameName[:3] in self._damage_able_games:
+        if self.console.gameName in self._damage_able_games:
             self._damage_ability = True
             self.assist_timespan = self.damage_assist_release
 
@@ -232,12 +234,17 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         else:
             self.debug('No Webfront Url available, using defaults')
 
-        #set proper kill_bonus and crontab
-        self.calculateKillBonus()
-        if self._cronTabKillBonus:
-            self.console.cron - self._cronTabKillBonus
-        self._cronTabKillBonus = b3.cron.PluginCronTab(self, self.calculateKillBonus, 0, '*/10')
-        self.console.cron + self._cronTabKillBonus
+        # when all clients are eligible for stats we rely on provisional ranking to maintain the skill points pool
+        # if not all players are eligible for stats we use a dynamic kill_bonus to maintain the points pool
+        if self.minlevel > 0:
+            #set proper kill_bonus and crontab
+            self.calculateKillBonus()
+            if self._cronTabKillBonus:
+                self.console.cron - self._cronTabKillBonus
+            self._cronTabKillBonus = b3.cron.PluginCronTab(self, self.calculateKillBonus, 0, '*/10')
+            self.console.cron + self._cronTabKillBonus
+        else:
+            self.debug('All players participate in XLRstats: kill_bonus: %s, assist_bonus: %s' % (self.kill_bonus, self.assist_bonus))
 
         #start the ctime subplugin
         if self.keep_time:
@@ -267,6 +274,11 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
 
     def load_config_settings(self):
+        try:
+            self.provisional_ranking = self.config.getboolean('settings', 'provisional_ranking')
+        except:
+            self.debug('Using default value (%s) for settings::provisional_ranking', self.provisional_ranking)
+
         try:
             self.silent = self.config.getboolean('settings', 'silent')
         except:
@@ -342,9 +354,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.debug('Using default value (%i) for settings::Kfactor_low', self.Kfactor_low)
 
         try:
-            self.Kswitch_kills = self.config.getint('settings', 'Kswitch_kills')
+            self.Kswitch_confrontations = self.config.getint('settings', 'Kswitch_confrontations')
         except:
-            self.debug('Using default value (%i) for settings::Kswitch_kills', self.Kswitch_kills)
+            self.debug('Using default value (%i) for settings::Kswitch_confrontations', self.Kswitch_confrontations)
 
         try:
             self.steepness = self.config.getint('settings', 'steepness')
@@ -544,7 +556,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             s.id = r['id']
             s.client_id = r['client_id']
             s.kills = r['kills']
-            if s.kills > self.Kswitch_kills:
+            if (s.kills + s.deaths) > self.Kswitch_confrontations:
                 s.Kfactor = self.Kfactor_low
             else:
                 s.Kfactor = self.Kfactor_high
@@ -933,6 +945,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             if victimstats is None:
                 return
 
+        _killer_confrontations = killerstats.kills + killerstats.deaths
+        _victom_confrontations = victimstats.kills + victimstats.deaths
+
         #calculate winning probabilities for both players
         killer_prob = self.win_prob(killerstats.skill, victimstats.skill)
         #performance patch provided by IzNoGod: ELO states that killer_prob + victim_prob = 1
@@ -989,10 +1004,14 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             else:
                 killerstats.winstreak = int(killerstats.winstreak)
 
-            if self.announce and not killerstats.hide:
-                client.message('^5XLRstats:^7 Killed %s -> skill: ^2+%.3f^7 -> ^2%.1f^7' % (
-                    target.name, (killerstats.skill - oldskill), killerstats.skill))
-            self.save_Stat(killerstats)
+            # implementation of provisional ranking 23-2-2014 MWe:
+            # we use the first Kswitch_confrontations to determine the victims skill,
+            # we don't adjust the killers skill just yet, unless the victim is anonymous (not participating in xlrstats)
+            if victimstats.kills > self.Kswitch_confrontations or not self.provisional_ranking or anonymous == VICTIM:
+                if self.announce and not killerstats.hide:
+                    client.message('^5XLRstats:^7 Killed %s -> skill: ^2+%.3f^7 -> ^2%.1f^7' % (
+                        target.name, (killerstats.skill - oldskill), killerstats.skill))
+                self.save_Stat(killerstats)
 
         #calculate new stats for the victim
         if anonymous != VICTIM:
@@ -1028,10 +1047,14 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             else:
                 victimstats.losestreak = int(victimstats.losestreak)
 
-            if self.announce and not victimstats.hide:
-                target.message('^5XLRstats:^7 Killed by %s -> skill: ^1%.3f^7 -> ^2%.1f^7' % (
-                    client.name, (victimstats.skill - oldskill), victimstats.skill))
-            self.save_Stat(victimstats)
+            # implementation of provisional ranking 23-2-2014 MWe:
+            # we use the first Kswitch_confrontations to determine the victims skill,
+            # we don't adjust the victims skill just yet, unless the killer is anonymous (not participating in xlrstats)
+            if killerstats.kills > self.Kswitch_confrontations or not self.provisional_ranking or anonymous == KILLER:
+                if self.announce and not victimstats.hide:
+                    target.message('^5XLRstats:^7 Killed by %s -> skill: ^1%.3f^7 -> ^2%.1f^7' % (
+                        client.name, (victimstats.skill - oldskill), victimstats.skill))
+                self.save_Stat(victimstats)
 
         #make sure the record for anonymous is really created with an insert once
         if anonymous:
@@ -1385,14 +1408,14 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         #get applicable action bonus
         try:
-            action_bonus = self.config.getfloat('actions', action.name)
+            _action_bonus = self.config.getfloat('actions', action.name)
             #self.verbose('----> XLRstats: Found a bonus for %s: %s' %(action.name, action_bonus))
         except:
-            action_bonus = 3
+            _action_bonus = self.action_bonus
 
-        if action_bonus:
+        if _action_bonus:
             #self.verbose('----> XLRstats: Old Skill: %s.' %playerstats.skill)
-            playerstats.skill += action_bonus
+            playerstats.skill += _action_bonus
             #self.verbose('----> XLRstats: New Skill: %s.' %playerstats.skill)
             self.save_Stat(playerstats)
 
@@ -1454,7 +1477,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         FROM `%s`, `%s` \
             WHERE (`%s`.id = `%s`.client_id) \
             AND ((`%s`.kills > %s) \
-            OR (`%s`.rounds > %s)) \
+            AND (`%s`.rounds > %s)) \
             AND (`%s`.hide = 0) \
             AND (%s - `%s`.time_edit  <= %s*60*60*24) \
             AND `%s`.id NOT IN \
@@ -1498,7 +1521,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 time.sleep(1)
         else:
             self.debug('No players qualified for the toplist yet...')
-            message = 'Qualify for the toplist by making %i kills, or playing %i rounds!' % (
+            message = 'Qualify for the toplist by making at least %i kills and playing %i rounds!' % (
                 self._minKills, self._minRounds)
             if ext:
                 self.console.say(message)
@@ -1652,24 +1675,35 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         diff = 0.0
         _oldkillbonus = self.kill_bonus
 
-        q = 'SELECT MAX(skill) AS max_skill FROM %s' % self.playerstats_table
+        # querymax skill from players active in the last 20 days
+        seconds = 20 * 86400
+        q = 'SELECT `%s`.time_edit, MAX(`%s`.skill) AS max_skill FROM `%s`, `%s` \
+                WHERE %s - `%s`.time_edit <= %s'\
+                % (self.clients_table, self.playerstats_table, self.clients_table, self.playerstats_table,
+                   int(time.time()), self.clients_table, seconds)
         cursor = self.query(q)
         r = cursor.getRow()
         max = r['max_skill']
         if max is None:
             max = self.defaultskill
+        self.verbose('max skill: %s' % max)
         diff = max - self.defaultskill
         if diff < 0:
             self.kill_bonus = 2.0
         elif diff < 400:
             self.kill_bonus = 1.5
+        elif diff > 1000:
+            self.kill_bonus = 1
         else:
             c = 200.0 / diff + 1
             self.kill_bonus = round(c, 1)
         self.assist_bonus = self.kill_bonus / 3
         if self.kill_bonus != _oldkillbonus:
-            self.debug('kill_bonus set to: %s' % self.kill_bonus)
-            self.debug('assist_bonus set to: %s' % self.assist_bonus)
+            self.debug('kill_bonus changed to: %s' % self.kill_bonus)
+            self.debug('assist_bonus changed to: %s' % self.assist_bonus)
+        else:
+            self.verbose('kill_bonus: %s' % self.kill_bonus)
+            self.verbose('assist_bonus: %s' % self.assist_bonus)
 
 
 ########################################################################################################################

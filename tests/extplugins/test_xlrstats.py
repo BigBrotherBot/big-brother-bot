@@ -557,7 +557,7 @@ class Test_storage(XlrstatsTestCase):
 
         self.assertEqual(s.count, s2.count)
 
-    def test_ActionStats(self):
+    def test_PlayerActions(self):
         # GIVEN
         playerid = 74564
         actionid = 74
