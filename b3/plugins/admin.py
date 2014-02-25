@@ -597,13 +597,13 @@ class AdminPlugin(b3.plugin.Plugin):
                 names = []
                 for _p in matches:
                     if _p.name == _p.cid:
-                        names.append('^7%s' % (_p.name))
+                        names.append('^7%s' % _p.name)
                     else:
                         names.append('^7%s [^2%s^7]' % (_p.name, _p.cid))
 
                 if client:
                     client.message(self.getMessage('players_matched', client_id, ', '.join(names)))
-                return False
+                return None
             else:
                 return matches[0]
         else:
