@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2014/02/26 - 1.25.2 - Fenix
+#   * changed findClientPrompt to return None instead of False when it finds multiple matches
+#   * correctly initialize superadmins list: fix code unpredictability
 #   2014/01/11 - 1.25.1 - Courgette
 #   * fix maskLevel is set with group id while it should be group level
 #   2014/01/07 - 1.25 - Courgette
@@ -143,7 +146,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.25.1'
+__version__ = '1.25.2'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon'
 
 import re
