@@ -341,6 +341,9 @@ class AdminPlugin(b3.plugin.Plugin):
             self.error(
                 'There is no database connection! Cannot store or retrieve any information. Fix the database connection first!')
         else:
+
+            superadmins = []
+
             try:
                 superadmins = self.console.clients.lookupSuperAdmins()
                 self.debug('%s superadmins found in database' % len(superadmins))
