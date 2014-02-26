@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2014/02/26 - 1.25.2 - Fenix
+#   * changed findClientPrompt to return None instead of False when it finds multiple matches
+#   * correctly initialize superadmins list: fix code unpredictability
 #   2014/01/11 - 1.25.1 - Courgette
 #   * fix maskLevel is set with group id while it should be group level
 #   2014/01/07 - 1.25 - Courgette
@@ -143,7 +146,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.25.1'
+__version__ = '1.25.2'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon'
 
 import re
@@ -341,6 +344,9 @@ class AdminPlugin(b3.plugin.Plugin):
             self.error(
                 'There is no database connection! Cannot store or retrieve any information. Fix the database connection first!')
         else:
+
+            superadmins = []
+
             try:
                 superadmins = self.console.clients.lookupSuperAdmins()
                 self.debug('%s superadmins found in database' % len(superadmins))
@@ -597,13 +603,13 @@ class AdminPlugin(b3.plugin.Plugin):
                 names = []
                 for _p in matches:
                     if _p.name == _p.cid:
-                        names.append('^7%s' % (_p.name))
+                        names.append('^7%s' % _p.name)
                     else:
                         names.append('^7%s [^2%s^7]' % (_p.name, _p.cid))
 
                 if client:
                     client.message(self.getMessage('players_matched', client_id, ', '.join(names)))
-                return False
+                return None
             else:
                 return matches[0]
         else:
