@@ -1413,6 +1413,144 @@ class Test_conf_settings_provisional_ranking(Conf_settings_test_case):
         self.assertFalse(self.p.provisional_ranking)
 
 
+class Test_conf_settings_auto_correct(Conf_settings_test_case):
+
+    def test_missing(self):
+        # WHEN
+        self.init('')
+        # THEN
+        self.assertTrue(self.p.auto_correct)
+
+    def test_empty(self):
+        # WHEN
+        self.init('auto_correct: ')
+        # THEN
+        self.assertTrue(self.p.auto_correct)
+
+    def test_junk(self):
+        # WHEN
+        self.init('auto_correct: f00')
+        # THEN
+        self.assertTrue(self.p.auto_correct)
+
+    def test_true(self):
+        # WHEN
+        self.init('auto_correct: true')
+        # THEN
+        self.assertTrue(self.p.auto_correct)
+
+    def test_on(self):
+        # WHEN
+        self.init('auto_correct: on')
+        # THEN
+        self.assertTrue(self.p.auto_correct)
+
+    def test_1(self):
+        # WHEN
+        self.init('auto_correct: 1')
+        # THEN
+        self.assertTrue(self.p.auto_correct)
+
+    def test_yes(self):
+        # WHEN
+        self.init('auto_correct: yes')
+        # THEN
+        self.assertTrue(self.p.auto_correct)
+
+    def test_false(self):
+        # WHEN
+        self.init('auto_correct: false')
+        # THEN
+        self.assertFalse(self.p.auto_correct)
+
+    def test_off(self):
+        # WHEN
+        self.init('auto_correct: off')
+        # THEN
+        self.assertFalse(self.p.auto_correct)
+
+    def test_0(self):
+        # WHEN
+        self.init('auto_correct: 0')
+        # THEN
+        self.assertFalse(self.p.auto_correct)
+
+    def test_no(self):
+        # WHEN
+        self.init('auto_correct: false')
+        # THEN
+        self.assertFalse(self.p.auto_correct)
+
+
+class Test_conf_settings_auto_purge(Conf_settings_test_case):
+
+    def test_missing(self):
+        # WHEN
+        self.init('')
+        # THEN
+        self.assertTrue(self.p.auto_purge)
+
+    def test_empty(self):
+        # WHEN
+        self.init('auto_purge: ')
+        # THEN
+        self.assertTrue(self.p.auto_purge)
+
+    def test_junk(self):
+        # WHEN
+        self.init('auto_purge: f00')
+        # THEN
+        self.assertTrue(self.p.auto_purge)
+
+    def test_true(self):
+        # WHEN
+        self.init('auto_purge: true')
+        # THEN
+        self.assertTrue(self.p.auto_purge)
+
+    def test_on(self):
+        # WHEN
+        self.init('auto_purge: on')
+        # THEN
+        self.assertTrue(self.p.auto_purge)
+
+    def test_1(self):
+        # WHEN
+        self.init('auto_purge: 1')
+        # THEN
+        self.assertTrue(self.p.auto_purge)
+
+    def test_yes(self):
+        # WHEN
+        self.init('auto_purge: yes')
+        # THEN
+        self.assertTrue(self.p.auto_purge)
+
+    def test_false(self):
+        # WHEN
+        self.init('auto_purge: false')
+        # THEN
+        self.assertFalse(self.p.auto_purge)
+
+    def test_off(self):
+        # WHEN
+        self.init('auto_purge: off')
+        # THEN
+        self.assertFalse(self.p.auto_purge)
+
+    def test_0(self):
+        # WHEN
+        self.init('auto_purge: 0')
+        # THEN
+        self.assertFalse(self.p.auto_purge)
+
+    def test_no(self):
+        # WHEN
+        self.init('auto_purge: false')
+        # THEN
+        self.assertFalse(self.p.auto_purge)
+
+
 class Conf_tables_test_case(XlrstatsTestCase):
 
     def init(self, option_snippet=''):

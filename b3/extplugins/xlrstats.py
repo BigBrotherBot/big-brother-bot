@@ -88,9 +88,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     steepness = 600
     suicide_penalty_percent = 0.05
     tk_penalty_percent = 0.1
-    action_bonus = 1.0
-    kill_bonus = 1.0
-    assist_bonus = 0.3
+    action_bonus = 2.0
+    kill_bonus = 1.5
+    assist_bonus = 0.5
     assist_timespan = 2                 # on non damage based games: damage before death timespan
     damage_assist_release = 10          # on damage based games: release the assist (wil overwrite self.assist_timespan on startup)
     prematch_maxtime = 70
@@ -102,6 +102,10 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     _currentNrPlayers = 0               # current number of players present
     silent = False                      # Disables the announcement when collecting stats = stealth mode
     provisional_ranking = True          # First Kswitch_confrontations will not alter killers stats
+    auto_correct = True                 # Auto correct skill points every two hours to maintain a healthy pool
+    auto_correct_ignore_days = 150      # How many days before ignoring a players skill in the auto-correct calculation
+    auto_purge = False                  # Purge players and associated data automatically (cannot be undone!)
+    purge_player_days = 365             # Number of days after which players will be auto-purged
 
     # keep some private map data to detect prematches and restarts
     last_map = None
@@ -191,12 +195,12 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 self.save_Stat(player)
 
 
-        #determine the ability to work with damage based assists
+        # determine the ability to work with damage based assists
         if self.console.gameName in self._damage_able_games:
             self._damage_ability = True
             self.assist_timespan = self.damage_assist_release
 
-        #investigate if we can and want to keep a history
+        # investigate if we can and want to keep a history
         self._xlrstatstables = [self.playerstats_table, self.weaponstats_table, self.weaponusage_table,
                                 self.bodyparts_table, self.playerbody_table, self.opponents_table, self.mapstats_table,
                                 self.playermaps_table, self.actionstats_table, self.playeractions_table]
@@ -226,7 +230,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         #optimize xlrstats tables
         #self.optimizeTables(self._xlrstatstables)
 
-        #let's try and get some variables from our webfront installation
+        # let's try and get some variables from our webfront installation
         if self.webfrontUrl and self.webfrontUrl != '':
             self.debug('Webfront set to: %s' % self.webfrontUrl)
             thread1 = threading.Thread(target=self.getWebsiteVariables)
@@ -234,19 +238,19 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         else:
             self.debug('No Webfront Url available, using defaults')
 
-        # when all clients are eligible for stats we rely on provisional ranking to maintain the skill points pool
-        # if not all players are eligible for stats we use a dynamic kill_bonus to maintain the points pool
-        if self.minlevel > 0:
-            #set proper kill_bonus and crontab
-            self.calculateKillBonus()
-            if self._cronTabKillBonus:
-                self.console.cron - self._cronTabKillBonus
-            self._cronTabKillBonus = b3.cron.PluginCronTab(self, self.calculateKillBonus, 0, '*/10')
-            self.console.cron + self._cronTabKillBonus
-        else:
-            self.debug('All players participate in XLRstats: kill_bonus: %s, assist_bonus: %s' % (self.kill_bonus, self.assist_bonus))
+        # Analyze the ELO pool of points
+        self.correctStats()
+        self._cronTabCorrectStats = b3.cron.PluginCronTab(self, self.correctStats, 0, '0', '*/2')
+        self.console.cron + self._cronTabCorrectStats
 
-        #start the ctime subplugin
+        self.purgePlayers()
+
+        # set proper kill_bonus and crontab
+        self.calculateKillBonus()
+        self._cronTabKillBonus = b3.cron.PluginCronTab(self, self.calculateKillBonus, 0, '*/10')
+        self.console.cron + self._cronTabKillBonus
+
+        # start the ctime subplugin
         if self.keep_time:
             p = CtimePlugin(self.console, self.ctime_table)
             p.startup()
@@ -255,7 +259,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         #p = XlrstatscontrollerPlugin(self.console, self.minPlayers, self.silent)
         #p.startup()
 
-        #get the map we're in, in case this is a new map and we need to create a db record for it.
+        # get the map we're in, in case this is a new map and we need to create a db record for it.
         map = self.get_MapStats(self.console.game.mapName)
         if map:
             self.verbose('Map %s ready' % map.name)
@@ -278,6 +282,16 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.provisional_ranking = self.config.getboolean('settings', 'provisional_ranking')
         except:
             self.debug('Using default value (%s) for settings::provisional_ranking', self.provisional_ranking)
+
+        try:
+            self.auto_correct = self.config.getboolean('settings', 'auto_correct')
+        except:
+            self.debug('Using default value (%s) for settings::auto_correct', self.auto_correct)
+
+        try:
+            self.auto_purge = self.config.getboolean('settings', 'auto_purge')
+        except:
+            self.debug('Using default value (%s) for settings::auto_purge', self.auto_purge)
 
         try:
             self.silent = self.config.getboolean('settings', 'silent')
@@ -1009,7 +1023,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             # we don't adjust the killers skill just yet, unless the victim is anonymous (not participating in xlrstats)
             if victimstats.kills > self.Kswitch_confrontations or not self.provisional_ranking or anonymous == VICTIM:
                 if self.announce and not killerstats.hide:
-                    client.message('^5XLRstats:^7 Killed %s -> skill: ^2+%.3f^7 -> ^2%.1f^7' % (
+                    client.message('^5XLRstats:^7 Killed %s -> skill: ^2+%.2f^7 -> ^2%.2f^7' % (
                         target.name, (killerstats.skill - oldskill), killerstats.skill))
                 self.save_Stat(killerstats)
 
@@ -1052,7 +1066,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             # we don't adjust the victims skill just yet, unless the killer is anonymous (not participating in xlrstats)
             if killerstats.kills > self.Kswitch_confrontations or not self.provisional_ranking or anonymous == KILLER:
                 if self.announce and not victimstats.hide:
-                    target.message('^5XLRstats:^7 Killed by %s -> skill: ^1%.3f^7 -> ^2%.1f^7' % (
+                    target.message('^5XLRstats:^7 Killed by %s -> skill: ^1%.2f^7 -> ^2%.2f^7' % (
                         client.name, (victimstats.skill - oldskill), victimstats.skill))
                 self.save_Stat(victimstats)
 
@@ -1594,6 +1608,21 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         return
 
+    def cmd_xlrstatus(self, data, client, cmd=None):
+        """\
+        Exposes current plugin status and major settings
+        """
+        if not self.xlrstatsActive:
+            _neededPlayers = len(self.console.clients.getList()) - self.minPlayers
+            client.message('^3XLRstats disabled, need %s more players.' % abs(_neededPlayers))
+        else:
+            client.message('^3XLRstats enabled, collecting stats.')
+
+        if self.provisional_ranking:
+            client.message('^3Provisional phase: %s confrontations' % self.Kswitch_confrontations)
+
+        client.message('^3Auto correct: %s, Auto Purge: %s' % (self.auto_correct, self.auto_purge))
+
     ## @todo: add mysql condition
     def updateTableColumns(self):
         self.verbose('Checking if we need to update tables for version 2.0.0')
@@ -1692,8 +1721,6 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.kill_bonus = 2.0
         elif diff < 400:
             self.kill_bonus = 1.5
-        elif diff > 1000:
-            self.kill_bonus = 1
         else:
             c = 200.0 / diff + 1
             self.kill_bonus = round(c, 1)
@@ -1704,6 +1731,90 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         else:
             self.verbose('kill_bonus: %s' % self.kill_bonus)
             self.verbose('assist_bonus: %s' % self.assist_bonus)
+
+    def correctStats(self):
+        self.debug('Gathering Xlrstats statistics')
+        _seconds = self.auto_correct_ignore_days * 86400
+        q = 'SELECT MAX(`%s`.skill) AS max_skill, MIN(`%s`.skill) AS min_skill, SUM(`%s`.skill) AS sum_skill, \
+            AVG(`%s`.skill) AS avg_skill , COUNT(`%s`.id) AS count \
+              FROM %s, %s \
+              WHERE `%s`.id = `%s`.client_id \
+              AND %s - `%s`.time_edit <= %s' \
+            % (self.playerstats_table, self.playerstats_table, self.playerstats_table,
+               self.playerstats_table, self.playerstats_table,
+               self.playerstats_table, self.clients_table,
+               self.clients_table, self.playerstats_table,
+               int(time.time()), self.clients_table, _seconds)
+        cursor = self.query(q)
+        r = cursor.getRow()
+
+        if r['count'] == 0:
+            return None
+
+        _acceptable_average = self.defaultskill + 200
+        #self.verbose('%s; %s; %s' % (r['sum_skill'], _acceptable_average, r['count']))
+        _surplus = r['sum_skill'] - (r['count'] * _acceptable_average)
+        _correction = _surplus / r['count']
+        _correction_factor = (r['count'] * _acceptable_average) / r['sum_skill']
+
+        self.verbose('------------------------------------------')
+        self.verbose('- Total players participating: %d' % r['count'])
+        self.verbose('- Total skill points in pool: %.2f' % r['sum_skill'])
+        self.verbose('------------------------------------------')
+        self.verbose('- Highest skill in pool: %.2f' % r['max_skill'])
+        self.verbose('- Lowest skill in pool: %.2f' % r['min_skill'])
+        self.verbose('------------------------------------------')
+        self.verbose('- Average skill: %.2f' % r['avg_skill'])
+        self.verbose('- Acceptable average skill: %.2f' % _acceptable_average)
+        self.verbose('------------------------------------------')
+        self.verbose('- Difference (total) with acceptable pool: %.2f' % _surplus)
+        self.verbose('- Points deviation per player: %.2f' % _correction)
+        self.verbose('- Deviation factor: %.2f' % _correction_factor)
+        self.verbose('------------------------------------------')
+        if _correction_factor < 1:
+            self.verbose('- !!CORRECTION OF SKILL ADVISED!!')
+        else:
+            self.verbose('- Pool has room for inflation... no action needed')
+        self.verbose('------------------------------------------')
+
+        if self.auto_correct and _correction_factor < 1:
+            self.debug('Correcting overall skill...')
+            q = 'UPDATE `%s` SET `skill`=(SELECT `skill` * %s )' % (self.playerstats_table, _correction_factor)
+            cursor = self.query(q)
+
+
+    def purgePlayers(self):
+        if not self.auto_purge:
+            return None
+        self.debug('Purgin Players who haven\'t been online for %s days...' % self.purge_player_days)
+
+        # find players who haven't been online for a long time
+        _seconds = self.purge_player_days * 86400
+        q = 'SELECT `%s`.id, `%s`.time_edit, `%s`.client_id, `%s`.id as player_id FROM `%s`, `%s` ' \
+            'WHERE `%s`.id = `%s`.client_id ' \
+            'AND %s - `%s`.time_edit > %s'\
+            % (self.clients_table, self.clients_table, self.playerstats_table, self.playerstats_table,
+               self.clients_table, self.playerstats_table, self.clients_table, self.playerstats_table,
+               int(time.time()), self.clients_table, _seconds)
+        cursor = self.query(q)
+        if cursor and not cursor.EOF:
+            while not cursor.EOF:
+                r = cursor.getRow()
+                self.verbose(r)
+                self.purgePlayerStats(r['player_id'])
+                self.purgeAssociated(self.playeractions_table, r['player_id'])
+                self.purgeAssociated(self.playerbody_table, r['player_id'])
+                self.purgeAssociated(self.playermaps_table, r['player_id'])
+                self.purgeAssociated(self.weaponusage_table, r['player_id'])
+                cursor.moveNext()
+
+    def purgePlayerStats(self, _id):
+        _q = 'DELETE FROM %s WHERE id = %s' % (self.playerstats_table, _id)
+        _c = self.query(_q)
+
+    def purgeAssociated(self, _table, _id):
+        _q = 'DELETE FROM %s WHERE player_id = %s' % (_table, _id)
+        _c = self.query(_q)
 
 
 ########################################################################################################################
