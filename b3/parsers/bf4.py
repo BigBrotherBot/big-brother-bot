@@ -393,6 +393,20 @@ class Bf4Parser(AbstractParser):
         if self._waiting_for_round_start:
             self._OnServerLevelstarted(action=None, data=None)
 
+    def OnPlayerDisconnect(self, action, data):
+        """
+        player.onDisconnect <soldier name: string> <reason: string>
+        """
+        # We receive this event if a player disconnects from the game. If a player lave the game, the reason is empty.
+        # The "reason" may contain an error id or a kick/ban reason.
+        # Example from server:['player.onDisconnect', 'O2ON', 'PLAYER_CONN_LOST']
+
+        client = self.clients.getByCID(data[0])
+        reason = data[1]
+
+        # todo: forward this event to b3
+        pass
+
     def _OnServerLevelstarted(self, action, data):
         """
         Event server.onLevelStarted was used to be sent in Frostbite1. Unfortunately it does not exists anymore
