@@ -24,6 +24,7 @@
 # 1.4.1, 1.6, 1.9, 1.10
 #
 # CHANGELOG
+#  v1.0.2   : forward server event player.onDisconnect to EVT_CLIENT_DISCONNECT_REASON
 #  v1.0.1   : update to server version R13 that include DLC1 (China Rising) map pack
 #  v1.0.0   : functional parser implementation based on the BF3 parser
 #
@@ -38,7 +39,7 @@ from time import sleep
 from b3.parsers.frostbite2.protocol import CommandFailedError, CommandUnknownCommandError, CommandDisallowedError
 
 __author__ = 'Courgette, ozon, Dwarfer'
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 BF4_REQUIRED_VERSION = 111118
 
@@ -289,6 +290,7 @@ class Bf4Parser(AbstractParser):
 
         # create event for comrose actions
         self.Events.createEvent('EVT_CLIENT_COMROSE', 'Client Comrose')
+        self.Events.createEvent('EVT_CLIENT_DISCONNECT_REASON', 'Client disconnected')
 
         # create the 'Server' client
         self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN, squad=None)
@@ -400,12 +402,10 @@ class Bf4Parser(AbstractParser):
         # We receive this event if a player disconnects from the game. If a player lave the game, the reason is empty.
         # The "reason" may contain an error id or a kick/ban reason.
         # Example from server:['player.onDisconnect', 'O2ON', 'PLAYER_CONN_LOST']
-
-        client = self.clients.getByCID(data[0])
+        client = self.getClient(data[0])
         reason = data[1]
 
-        # todo: forward this event to b3
-        pass
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_DISCONNECT_REASON, reason, client=client))
 
     def _OnServerLevelstarted(self, action, data):
         """
