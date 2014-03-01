@@ -345,6 +345,18 @@ class Test_bf4_events(BF4TestCase):
         self.assertEquals('ID_CHAT_THANKS', event.data)
         self.assertEqual(self.joe, event.client)
 
+    def test_player_onDisconnect_event(self):
+        self.parser.getClient = Mock(return_value=self.joe)
+
+        self.parser.routeFrostbitePacket(['player.onDisconnect', 'Cucurbitaceae', 'test'])
+        self.assertEqual(1, self.parser.queueEvent.call_count)
+
+        event = self.parser.queueEvent.call_args[0][0]
+        print event.client.name
+        self.assertEqual('Client disconnected', self.parser.getEventName(event.type))
+        self.assertEquals('test', event.data)
+        self.assertEqual(self.joe, event.client)
+
 class Test_punkbuster_events(BF4TestCase):
 
     def setUp(self):
