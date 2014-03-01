@@ -1621,7 +1621,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         if self.provisional_ranking:
             client.message('^3Provisional phase: %s confrontations' % self.Kswitch_confrontations)
 
-        client.message('^3Auto correct: %s, Auto Purge: %s' % (self.auto_correct, self.auto_purge))
+        client.message('^3auto_correct: %s, auto_purge: %s, k_b: %s, as_b: %s, ac_b: %s'
+                       % (self.auto_correct, self.auto_purge, self.kill_bonus, self.assist_bonus, self.action_bonus))
 
     ## @todo: add mysql condition
     def updateTableColumns(self):
@@ -1751,7 +1752,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         if r['count'] == 0:
             return None
 
-        _acceptable_average = self.defaultskill + 200
+        _acceptable_average = self.defaultskill + 100
         #self.verbose('%s; %s; %s' % (r['sum_skill'], _acceptable_average, r['count']))
         _surplus = r['sum_skill'] - (r['count'] * _acceptable_average)
         _correction = _surplus / r['count']
