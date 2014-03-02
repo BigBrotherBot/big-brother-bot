@@ -19,6 +19,11 @@
 # 16-02-2014 - 3.0.0-beta.3 - Mark Weirath
 #   Moved minPlayers checking to XLRstats plugin, obsoleted the subPlugin: XLRstatsControllerPlugin
 #   Switched to semantic versioning (http://semver.org/)
+# 23-02-2014 - 3.0.0-beta.4 - Mark Weirath
+#   Added provisional ranking, auto correction of stat pool and auto purge ability
+#   Added cmd_xlrstatus
+# 02-03-2014 - 3.0.0-beta.5 - Mark Weirath
+#   Protect world client in auto correction, minor improvements
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -26,9 +31,9 @@
 # XLRstats Real Time playerstats plugin
 
 __author__ = 'xlr8or & ttlogic'
-__version__ = '3.0.0-beta.4'
+__version__ = '3.0.0-beta.5'
 
-# Version = major.minor.patches
+# Version = major.minor.patches(-development.version)
 
 import datetime
 import time
@@ -92,7 +97,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     kill_bonus = 1.5
     assist_bonus = 0.5
     assist_timespan = 2                 # on non damage based games: damage before death timespan
-    damage_assist_release = 10          # on damage based games: release the assist (wil overwrite self.assist_timespan on startup)
+    damage_assist_release = 10          # on damage based games: release the assist (will overwrite self.assist_timespan on startup)
     prematch_maxtime = 70
     announce = False
     keep_history = True
@@ -129,7 +134,11 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     history_weekly_table = 'xlr_history_weekly'
     # default table name for the ctime subplugin
     ctime_table = 'ctime'
-    #
+    # default tablenames for the Battlestats subplugin
+    battlestats_table = 'xlr_battlestats'
+    playerbattles_table = 'xlr_playerbattles'
+
+
     _defaultTableNames = True
     _default_messages = {
         'cmd_xlrstats' : '^3XLR Stats: ^7%(name)s ^7: K ^2%(kills)s ^7D ^3%(deaths)s ^7TK ^1%(teamkills)s ^7Ratio ^5%(ratio)s ^7Skill ^3%(skill)s',
@@ -1737,15 +1746,17 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         self.debug('Gathering Xlrstats statistics')
         _seconds = self.auto_correct_ignore_days * 86400
         q = 'SELECT MAX(`%s`.skill) AS max_skill, MIN(`%s`.skill) AS min_skill, SUM(`%s`.skill) AS sum_skill, \
-            AVG(`%s`.skill) AS avg_skill , COUNT(`%s`.id) AS count \
-              FROM %s, %s \
-              WHERE `%s`.id = `%s`.client_id \
-              AND %s - `%s`.time_edit <= %s' \
+                AVG(`%s`.skill) AS avg_skill , COUNT(`%s`.id) AS count \
+                FROM %s, %s \
+                WHERE `%s`.id = `%s`.client_id \
+                AND `%s`.client_id <> %s \
+                AND %s - `%s`.time_edit <= %s' \
             % (self.playerstats_table, self.playerstats_table, self.playerstats_table,
-               self.playerstats_table, self.playerstats_table,
-               self.playerstats_table, self.clients_table,
-               self.clients_table, self.playerstats_table,
-               int(time.time()), self.clients_table, _seconds)
+                self.playerstats_table, self.playerstats_table,
+                self.playerstats_table, self.clients_table,
+                self.clients_table, self.playerstats_table,
+                self.playerstats_table, self._world_clientid,
+                int(time.time()), self.clients_table, _seconds)
         cursor = self.query(q)
         r = cursor.getRow()
 
@@ -1753,6 +1764,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             return None
 
         _acceptable_average = self.defaultskill + 100
+        _factor_decimals = 6
         #self.verbose('%s; %s; %s' % (r['sum_skill'], _acceptable_average, r['count']))
         _surplus = r['sum_skill'] - (r['count'] * _acceptable_average)
         _correction = _surplus / r['count']
@@ -1769,8 +1781,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         self.verbose('- Acceptable average skill: %.2f' % _acceptable_average)
         self.verbose('------------------------------------------')
         self.verbose('- Difference (total) with acceptable pool: %.2f' % _surplus)
-        self.verbose('- Points deviation per player: %.2f' % _correction)
-        self.verbose('- Deviation factor: %.2f' % _correction_factor)
+        self.verbose('- Avg. points deviation p/player: %.3f' % _correction)
+        self.verbose('- Deviation factor: %s' % round(_correction_factor, _factor_decimals))
         self.verbose('------------------------------------------')
         if _correction_factor < 1:
             self.verbose('- !!CORRECTION OF SKILL ADVISED!!')
@@ -1778,9 +1790,10 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.verbose('- Pool has room for inflation... no action needed')
         self.verbose('------------------------------------------')
 
-        if self.auto_correct and _correction_factor < 1:
-            self.debug('Correcting overall skill...')
-            q = 'UPDATE `%s` SET `skill`=(SELECT `skill` * %s )' % (self.playerstats_table, _correction_factor)
+        if self.auto_correct and round(_correction_factor, _factor_decimals) < 1:
+            self.debug('Correcting overall skill with factor %s...' % round(_correction_factor, _factor_decimals))
+            q = 'UPDATE `%s` SET `skill`=(SELECT `skill` * %s ) WHERE `%s`.client_id <> %s' \
+                % (self.playerstats_table, _correction_factor, self.playerstats_table, self._world_clientid)
             cursor = self.query(q)
 
 
@@ -2124,30 +2137,7 @@ class CtimePlugin(b3.plugin.Plugin):
 #
 ########################################################################################################################
 
-class BattleStats(object):
-    Id = 0
-    mapId = 0
-    gameType = ''
-    totalPlayers = 0
-    startTime = 0
-    endTime = 0
-    scores = {}
-
-
-class PlayerBattles(object):
-    battleStats_id = 0
-    startSkill = 0
-    endSkill = 0
-    kills = 0
-    teamKills = 0
-    deaths = 0
-    assists = 0
-    actions = 0
-    weaponKills = {}
-    favoriteWeaponId = 0
-
-
-class BattlelogPlugin(b3.plugin.Plugin):
+class BattlestatsPlugin(b3.plugin.Plugin):
     """This is a helper class/plugin that saves last played matches
     It can not be called directly or separately from the XLRstats plugin!"""
 
@@ -2180,7 +2170,7 @@ class BattlelogPlugin(b3.plugin.Plugin):
         self.clientsLog = None
 
     def setupBattlelog(self):
-        self.gameLog = self.GameStat()
+        self.gameLog = BattleStats()
         self.clientsLog = {}
 
 
@@ -2452,6 +2442,46 @@ class PlayerActions(StatObject):
         q = 'UPDATE %s SET player_id=%s, action_id=%s, count=%s WHERE id=%s' % (
             self._table, self.player_id, self.action_id, self.count, self.id)
         return q
+
+
+class BattleStats(StatObject):
+    #default name of the table for this data object
+    _table = 'battlestats'
+
+    id = 0
+    map_id = 0
+    game_type = ''
+    total_players = 0
+    start_time = time.time()
+    end_time = 0
+    scores = {}
+
+    def _insertquery(self):
+        q = 'INSERT INTO %s ( map_id, game_type, total_players, start_time, end_time, scores ) \
+            VALUES ("%s", %s, %s, %s, %s, "%s")' \
+            % (self._table, self.map_id, self.game_type, self.total_players, self.start_time, self.end_time, self.scores)
+        return q
+
+    def _updatequery(self):
+        q = 'UPDATE %s SET map_id=%s, game_type="%s", total_players=%s, start_time=%s, end_time=%s, scores="%s"' % (
+            self._table, self.map_id, self.game_type, self.total_players, self.start_time, self.end_time, self.scores)
+        return q
+
+
+class PlayerBattles(StatObject):
+    #default name of the table for this data object
+    _table = 'playerbattles'
+
+    battlestats_id = 0
+    start_skill = 0
+    end_skill = 0
+    kills = 0
+    teamKills = 0
+    deaths = 0
+    assists = 0
+    actions = 0
+    weapon_kills = {}
+    favorite_weapon_id = 0
 
 
 if __name__ == '__main__':
