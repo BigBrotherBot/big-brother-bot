@@ -67,11 +67,11 @@ class Test_conf(XlrstatsTestCase):
         self.assertEqual(0, self.p.webfrontConfigNr)
         self.assertTrue(self.p.keep_history)
         self.assertFalse(self.p.onemaponly)
-        self.assertEqual(1, self.p.minlevel)
+        self.assertEqual(0, self.p.minlevel)
         self.assertEqual(1000, self.p.defaultskill)
         self.assertEqual(16, self.p.Kfactor_high)
         self.assertEqual(4, self.p.Kfactor_low)
-        self.assertEqual(100, self.p.Kswitch_confrontations)
+        self.assertEqual(50, self.p.Kswitch_confrontations)
         self.assertEqual(600, self.p.steepness)
         self.assertEqual(0.05, self.p.suicide_penalty_percent)
         self.assertEqual(0.1, self.p.tk_penalty_percent)
@@ -117,7 +117,7 @@ class Test_conf(XlrstatsTestCase):
         self.assertEqual(1000, self.p.defaultskill)
         self.assertEqual(16, self.p.Kfactor_high)
         self.assertEqual(4, self.p.Kfactor_low)
-        self.assertEqual(100, self.p.Kswitch_confrontations)
+        self.assertEqual(50, self.p.Kswitch_confrontations)
         self.assertEqual(600, self.p.steepness)
         self.assertEqual(0.05, self.p.suicide_penalty_percent)
         self.assertEqual(0.1, self.p.tk_penalty_percent)
@@ -635,7 +635,7 @@ class Test_conf_settings_onemaponly(Conf_settings_test_case):
 
 
 class Test_conf_settings_minlevel(Conf_settings_test_case):
-    DEFAULT_VALUE = 1
+    DEFAULT_VALUE = 0
 
     def test_missing(self):
         # WHEN
@@ -1488,19 +1488,19 @@ class Test_conf_settings_auto_purge(Conf_settings_test_case):
         # WHEN
         self.init('')
         # THEN
-        self.assertTrue(self.p.auto_purge)
+        self.assertFalse(self.p.auto_purge)
 
     def test_empty(self):
         # WHEN
         self.init('auto_purge: ')
         # THEN
-        self.assertTrue(self.p.auto_purge)
+        self.assertFalse(self.p.auto_purge)
 
     def test_junk(self):
         # WHEN
         self.init('auto_purge: f00')
         # THEN
-        self.assertTrue(self.p.auto_purge)
+        self.assertFalse(self.p.auto_purge)
 
     def test_true(self):
         # WHEN
