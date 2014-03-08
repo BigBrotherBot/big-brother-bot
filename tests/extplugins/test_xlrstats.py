@@ -263,7 +263,7 @@ class Test_kill(XlrstatsTestCase):
             self.p1.says("!register")
             self.p2 = FakeClient(console=self.console, name="P2", guid="P2_GUID", team=TEAM_RED)
             self.p2.connects("2")
-            self.p.xlrstatsActive = True
+            self.p._xlrstats_active = True
 
     def test_p1_kills_p2(self):
         # GIVEN
