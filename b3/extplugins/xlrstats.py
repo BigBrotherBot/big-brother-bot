@@ -24,6 +24,8 @@
 #   Added cmd_xlrstatus
 # 02-03-2014 - 3.0.0-beta.5 - Mark Weirath
 #   Protect world client in auto correction, minor improvements
+# 10-03-2014 - 3.0.0-beta.6 - Fenix
+#   Added cmd_xlrpurge: purge XLRstats for the given player
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -31,7 +33,7 @@
 # XLRstats Real Time playerstats plugin
 
 __author__ = 'xlr8or & ttlogic'
-__version__ = '3.0.0-beta.5'
+__version__ = '3.0.0-beta.6'
 
 # Version = major.minor.patches(-development.version)
 
@@ -1633,6 +1635,27 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         client.message('^3auto_correct: %s, auto_purge: %s, k_b: %s, as_b: %s, ac_b: %s'
                        % (self.auto_correct, self.auto_purge, self.kill_bonus, self.assist_bonus, self.action_bonus))
+
+    def cmd_xlrpurge(self, data, client, cmd=None):
+        """\
+        <player> - clear XLRstats for the given player
+        """
+        sclient = self._adminPlugin.findClientPrompt(data, client)
+        if not sclient:
+            return
+
+        stats = self.get_PlayerStats(sclient)
+        if not stats:
+            client.message('^3XLR Stats: ^7Could not find stats for %s' % sclient.exactName)
+            return
+
+        self.purgePlayerStats(stats.id)
+        self.purgeAssociated(self.playeractions_table, stats.id)
+        self.purgeAssociated(self.playerbody_table, stats.id)
+        self.purgeAssociated(self.playermaps_table, stats.id)
+        self.purgeAssociated(self.weaponusage_table, stats.id)
+
+        client.message('^3XLR Stats: ^7Stats for %s have been purged' % sclient.exactName)
 
     ## @todo: add mysql condition
     def updateTableColumns(self):
