@@ -17,6 +17,11 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 13/03/2014 - 1.4.18 - Fenix
+# * double check for server and client vars table to exists before attempting to create them
+# * use the correct data type for 'Updated' column
+# * enforce database tables drop->create so we do not have to bother with schema updates
+# * minor bugfixes
 # 28/23/2013 - 1.4.17 - Courgette
 # * close ftp connection
 # 30/11/2013 - 1.4.16 - Courgette
@@ -75,11 +80,12 @@
 # Converted to use new event handlers
 
 __author__ = 'ThorN'
-__version__ = '1.4.17'
+__version__ = '1.4.18'
 
 import b3
 import b3.cron
 import b3.plugin
+import b3.events
 import os
 import re
 import StringIO
@@ -370,8 +376,8 @@ class StatusPlugin(b3.plugin.Plugin):
                     builder_key = builder_key[:-1]
                     builder_value = builder_value[:-1]
                     # and insert
+                    sql = """INSERT INTO %s (%s) VALUES (%s) ;""" % (self._clientTable, builder_key, builder_value)
                     try:
-                        sql = """INSERT INTO %s (%s) VALUES (%s) ;""" % (self._clientTable, builder_key, builder_value)
                         self.console.storage.query(sql)
                     except Exception, e:
                         self.error('Could not insert clients: %s. sqlqry=%s' % (e, sql))
