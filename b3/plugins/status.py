@@ -180,7 +180,7 @@ class StatusPlugin(b3.plugin.Plugin):
         if self._enableDBclientSaving and self._clientTable not in tables:
             sql = """CREATE TABLE IF NOT EXISTS `%s` (
                             `id` INT(3) NOT NULL AUTO_INCREMENT,
-                            `Updated` INT(10) NOT NULL ,
+                            `Updated` VARCHAR(25) NOT NULL ,
                             `Name` VARCHAR(32) NOT NULL ,
                             `Level` INT(10) NOT NULL ,
                             `DBID` INT(10) NOT NULL ,
