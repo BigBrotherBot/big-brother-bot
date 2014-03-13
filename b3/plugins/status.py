@@ -164,7 +164,11 @@ class StatusPlugin(b3.plugin.Plugin):
         except NoOptionError:
             self.debug('Using default table for saving current clients: %s' % self._clientTable)
 
-        if self._enableDBsvarSaving:
+        tables = []
+        if self._enableDBsvarSaving or self._enableDBclientSaving:
+            tables = self.console.storage.getTables()
+
+        if self._enableDBsvarSaving and self._svarTable not in tables:
             sql = """CREATE TABLE IF NOT EXISTS `%s` (
                             `id` int(11) NOT NULL auto_increment,
                             `name` varchar(255) NOT NULL,
@@ -173,7 +177,7 @@ class StatusPlugin(b3.plugin.Plugin):
                      ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;""" % self._svarTable
             self.console.storage.query(sql)
 
-        if self._enableDBclientSaving:
+        if self._enableDBclientSaving and self._clientTable not in tables:
             sql = """CREATE TABLE IF NOT EXISTS `%s` (
                             `id` INT(3) NOT NULL AUTO_INCREMENT,
                             `Updated` INT(10) NOT NULL ,
