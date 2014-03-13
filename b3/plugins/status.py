@@ -17,6 +17,11 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
 #
 # CHANGELOG
+# 13/03/2014 - 1.4.18 - Fenix
+# * double check for server and client vars table to exists before attempting to create them
+# * use the correct data type for 'Updated' column
+# * enforce database tables drop->create so we do not have to bother with schema updates
+# * minor bugfixes
 # 28/23/2013 - 1.4.17 - Courgette
 # * close ftp connection
 # 30/11/2013 - 1.4.16 - Courgette
@@ -75,11 +80,12 @@
 # Converted to use new event handlers
 
 __author__ = 'ThorN'
-__version__ = '1.4.17'
+__version__ = '1.4.18'
 
 import b3
 import b3.cron
 import b3.plugin
+import b3.events
 import os
 import re
 import StringIO
@@ -164,35 +170,48 @@ class StatusPlugin(b3.plugin.Plugin):
         except NoOptionError:
             self.debug('Using default table for saving current clients: %s' % self._clientTable)
 
-        if self._enableDBsvarSaving:
-            sql = """CREATE TABLE IF NOT EXISTS `%s` (
-                            `id` int(11) NOT NULL auto_increment,
-                            `name` varchar(255) NOT NULL,
-                            `value` varchar(255) NOT NULL,
-                            PRIMARY KEY  (`id`), UNIQUE KEY `name` (`name`)
-                     ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;""" % self._svarTable
-            self.console.storage.query(sql)
+        if self._enableDBsvarSaving or self._enableDBclientSaving:
+            tables = self.console.storage.getTables()
 
-        if self._enableDBclientSaving:
-            sql = """CREATE TABLE IF NOT EXISTS `%s` (
-                            `id` INT(3) NOT NULL AUTO_INCREMENT,
-                            `Updated` INT(10) NOT NULL ,
-                            `Name` VARCHAR(32) NOT NULL ,
-                            `Level` INT(10) NOT NULL ,
-                            `DBID` INT(10) NOT NULL ,
-                            `CID` INT(3) NOT NULL ,
-                            `Joined` VARCHAR(25) NOT NULL ,
-                            `Connections` INT(11) NOT NULL ,
-                            `State` INT(1) NOT NULL ,
-                            `Score` INT(10) NOT NULL ,
-                            `IP` VARCHAR(16) NOT NULL ,
-                            `GUID` VARCHAR(36) NOT NULL ,
-                            `PBID` VARCHAR(32) NOT NULL ,
-                            `Team` INT(1) NOT NULL ,
-                            `ColorName` VARCHAR(32) NOT NULL,
-                            PRIMARY KEY (`id`)
-                     ) ENGINE = MYISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;""" % self._clientTable
-            self.console.storage.query(sql)
+            # server vars table
+            if self._enableDBsvarSaving:
+                if self._svarTable in tables:
+                    # enforce table drop so we do not have to bother with schema updates
+                    self.console.storage.query("""DROP TABLE IF EXISTS `%s`""" % self._svarTable)
+
+                sql = """CREATE TABLE IF NOT EXISTS `%s` (
+                                `id` int(11) NOT NULL auto_increment,
+                                `name` varchar(255) NOT NULL,
+                                `value` varchar(255) NOT NULL,
+                                PRIMARY KEY  (`id`), UNIQUE KEY `name` (`name`)
+                         ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;""" % self._svarTable
+                self.console.storage.query(sql)
+
+            # client vars table
+            if self._enableDBclientSaving:
+                if self._clientTable in tables:
+                    # enforce table drop so we do not have to bother with schema updates
+                    self.console.storage.query("""DROP TABLE IF EXISTS `%s`""" % self._clientTable)
+
+                sql = """CREATE TABLE IF NOT EXISTS `%s` (
+                                `id` INT(3) NOT NULL AUTO_INCREMENT,
+                                `Updated` VARCHAR(25) NOT NULL ,
+                                `Name` VARCHAR(32) NOT NULL ,
+                                `Level` INT(10) NOT NULL ,
+                                `DBID` INT(10) NOT NULL ,
+                                `CID` INT(3) NOT NULL ,
+                                `Joined` VARCHAR(25) NOT NULL ,
+                                `Connections` INT(11) NOT NULL ,
+                                `State` INT(1) NOT NULL ,
+                                `Score` INT(10) NOT NULL ,
+                                `IP` VARCHAR(16) NOT NULL ,
+                                `GUID` VARCHAR(36) NOT NULL ,
+                                `PBID` VARCHAR(32) NOT NULL ,
+                                `Team` INT(1) NOT NULL ,
+                                `ColorName` VARCHAR(32) NOT NULL,
+                                PRIMARY KEY (`id`)
+                         ) ENGINE = MYISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;""" % self._clientTable
+                self.console.storage.query(sql)
 
         if self._cronTab:
             # remove existing crontab
@@ -357,8 +376,8 @@ class StatusPlugin(b3.plugin.Plugin):
                     builder_key = builder_key[:-1]
                     builder_value = builder_value[:-1]
                     # and insert
+                    sql = """INSERT INTO %s (%s) VALUES (%s) ;""" % (self._clientTable, builder_key, builder_value)
                     try:
-                        sql = """INSERT INTO %s (%s) VALUES (%s) ;""" % (self._clientTable, builder_key, builder_value)
                         self.console.storage.query(sql)
                     except Exception, e:
                         self.error('Could not insert clients: %s. sqlqry=%s' % (e, sql))
