@@ -17,6 +17,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2014/03/20 - 1.26 - Fenix
+#   * make use of self._admins_level in acquireCmdLock() method instead of constant value
+#   * refactored plugin syntax: get close to PEP8
+#   * let the plugin use the new event dispatcher
 #   2014/02/26 - 1.25.2 - Fenix
 #   * changed findClientPrompt to return None instead of False when it finds multiple matches
 #   * correctly initialize superadmins list: fix code unpredictability
@@ -146,8 +150,8 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.25.2'
-__author__ = 'ThorN, xlr8or, Courgette, Ozon'
+__version__ = '1.26'
+__author__ = 'ThorN, xlr8or, Courgette, Ozon, Fenix'
 
 import re
 import imp
