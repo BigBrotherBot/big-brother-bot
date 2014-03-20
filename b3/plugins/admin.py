@@ -444,10 +444,10 @@ class AdminPlugin(b3.plugin.Plugin):
         """\
         Plugin startup
         """
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_SAY'))
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_SAY'))
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_SQUAD_SAY'))
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_PRIVATE_SAY'))
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_SAY'), self.OnSay)
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_SAY'), self.OnSay)
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_SQUAD_SAY'), self.OnSay)
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_PRIVATE_SAY'), self.OnPrivateSay)
         self.createEvent('EVT_ADMIN_COMMAND', 'Admin Command')
 
         try:
@@ -582,16 +582,11 @@ class AdminPlugin(b3.plugin.Plugin):
     ##                                                                                                                ##
     ####################################################################################################################
 
-    def onEvent(self, event):
+    def OnPrivateSay(self, event):
         """\
-        Handle intercepted events
+        Handle private say events
         """
-        if event.type in (self.console.getEventID('EVT_CLIENT_SAY'),
-                          self.console.getEventID('EVT_CLIENT_TEAM_SAY'),
-                          self.console.getEventID('EVT_CLIENT_SQUAD_SAY')):
-            self.OnSay(event)
-        elif event.type == self.console.getEventID('EVT_CLIENT_PRIVATE_SAY') and \
-                event.target and event.client.id == event.target.id:
+        if event.target and event.client.id == event.target.id:
             self.OnSay(event, True)
 
     def OnSay(self, event, private=False):
