@@ -419,7 +419,7 @@ class AdminPlugin(b3.plugin.Plugin):
             self.OnSay(event, True)
 
     def aquireCmdLock(self, cmd, client, delay, all=True):
-        if client.maxLevel >= 20:
+        if client.maxLevel >= self._admins_level:
             return True
         elif cmd.time + delay <= self.console.time():
             return True
