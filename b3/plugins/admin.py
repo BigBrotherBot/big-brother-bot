@@ -410,7 +410,7 @@ class AdminPlugin(b3.plugin.Plugin):
             self.exception(msg)
             return False
 
-    def handle(self, event):
+    def onEvent(self, event):
         if event.type in (self.console.getEventID('EVT_CLIENT_SAY'), self.console.getEventID('EVT_CLIENT_TEAM_SAY'),
                           self.console.getEventID('EVT_CLIENT_SQUAD_SAY')):
             self.OnSay(event)
