@@ -41,7 +41,7 @@ from b3.parsers.frostbite2.protocol import CommandFailedError, CommandUnknownCom
 __author__ = 'Courgette, ozon, Dwarfer'
 __version__ = '1.0.2'
 
-BF4_REQUIRED_VERSION = 111118
+BF4_REQUIRED_VERSION = 117719
 
 BF4_PLAYER = 0              # normal player
 BF4_SPECTATOR = 1           # spectator which is not visible in the game for other player but visible as player for b3
@@ -128,6 +128,8 @@ GAME_MODES_NAMES = {
     'Obliteration': 'Obliteration',
     'AirSuperiority0': 'Air Superiority',
     'CaptureTheFlag0': 'Capture the Flag',
+    'CarrierAssaultSmall0': 'Carrier Assault',
+    'CarrierAssaultLarge0': 'Carrier Assault64',
 }
 
 GAMEMODES_IDS_BY_NAME = dict()
@@ -154,6 +156,10 @@ MAP_NAME_BY_ID = {
     'XP1_002': 'Altai Range',
     'XP1_003': 'Guilin Peaks',
     'XP1_004': 'Dragon Pass',
+    'XP2_001': 'Lost Islands',
+    'XP2_002': 'Nansha Strike',
+    'XP2_003': 'Wave Breaker',
+    'XP2_004': 'Operation Mortar',
 }
 
 MAP_ID_BY_NAME = dict()
@@ -198,6 +204,18 @@ GAME_MODES_BY_MAP_ID = {
                      'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'AirSuperiority0'),
     'XP1_004':      ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
                      'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'AirSuperiority0'),
+    'XP2_001':      ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'CaptureTheFlag0',
+                     'CarrierAssaultSmall0', 'CarrierAssaultLarge0'),
+    'XP2_002':      ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'CaptureTheFlag0',
+                     'CarrierAssaultSmall0', 'CarrierAssaultLarge0'),
+    'XP2_003':      ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'CaptureTheFlag0',
+                     'CarrierAssaultSmall0', 'CarrierAssaultLarge0'),
+    'XP2_004':      ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'CaptureTheFlag0',
+                     'CarrierAssaultSmall0', 'CarrierAssaultLarge0'),
 }
 
 COMROSE_CHAT_NAME_BY_ID = {
@@ -279,6 +297,8 @@ class Bf4Parser(AbstractParser):
         'obl': 'obliteration',
         'rush': 'rush',
         'ctf': 'capture the flag',
+        'ca': 'carrier assault',
+        'ca64': 'carrier assault64',
     }
 
     def __new__(cls, *args, **kwargs):
