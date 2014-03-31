@@ -553,7 +553,7 @@ class Test_bf4_maps(BF4TestCase):
 
 
     def test_getMapsSoundingLike(self):
-        self.assertEqual(['rogue transmission', 'lancang dam', 'golmud railway'], self.parser.getMapsSoundingLike(''), '')
+        self.assertEqual(['rogue transmission', 'hainan resort', 'lancang dam'], self.parser.getMapsSoundingLike(''), '')
         self.assertEqual('MP_Abandoned', self.parser.getMapsSoundingLike('Zavod 311'), 'Zavod 311')
         self.assertEqual('MP_Tremors', self.parser.getMapsSoundingLike('dawn'))
         #self.assertEqual(['operation metro', 'operation firestorm', 'operation 925'], self.parser.getMapsSoundingLike('operation'))
@@ -573,7 +573,7 @@ class Test_bf4_maps(BF4TestCase):
         self.assertEqual('MP_Naval', self.parser.getMapsSoundingLike('paracel'))
         self.assertEqual(['paracel storm', 'firestorm 2014'], self.parser.getMapsSoundingLike('storm'))
         self.assertEqual('MP_Naval', self.parser.getMapsSoundingLike('Paracel Storm'))
-        self.assertEqual(['operation locker', 'operation metro 2014'], self.parser.getMapsSoundingLike('operation'))
+        self.assertEqual(['operation locker', 'operation mortar', 'operation metro 2014'], self.parser.getMapsSoundingLike('operation'))
         self.assertEqual('MP_Prison', self.parser.getMapsSoundingLike('locker'))
         self.assertEqual('MP_Prison', self.parser.getMapsSoundingLike('Operation Locker'))
         self.assertEqual('MP_Resort', self.parser.getMapsSoundingLike('hainan'))
@@ -594,6 +594,14 @@ class Test_bf4_maps(BF4TestCase):
         self.assertEqual('XP0_Firestorm', self.parser.getMapsSoundingLike('firestorm'))
         self.assertEqual('XP0_Oman', self.parser.getMapsSoundingLike('oman'))
         self.assertEqual('XP0_Metro', self.parser.getMapsSoundingLike('metro'))
+        self.assertEqual('XP2_001', self.parser.getMapsSoundingLike('islands'))
+        self.assertEqual('XP2_002', self.parser.getMapsSoundingLike('nansha'))
+        self.assertEqual('XP2_003', self.parser.getMapsSoundingLike('wave'))
+        self.assertEqual('XP2_004', self.parser.getMapsSoundingLike('mortar'))
+        self.assertEqual('XP2_001', self.parser.getMapsSoundingLike('lost'))
+        self.assertEqual('XP2_002', self.parser.getMapsSoundingLike('strike'))
+        self.assertEqual('XP2_003', self.parser.getMapsSoundingLike('wave breaker'))
+        self.assertEqual('XP2_004', self.parser.getMapsSoundingLike('operation mortar'))
 
     def test_getGamemodeSoundingLike(self):
         self.assertEqual('ConquestSmall0', self.parser.getGamemodeSoundingLike('MP_Siege', 'ConquestSmall0'), 'ConquestSmall0')
@@ -612,6 +620,8 @@ class Test_bf4_maps(BF4TestCase):
         self.assertEqual('Elimination0', self.parser.getGamemodeSoundingLike('MP_Siege', 'def'), 'def')
         self.assertEqual('SquadDeathMatch0', self.parser.getGamemodeSoundingLike('MP_Siege', 'sqdm'), 'sqdm')
         self.assertEqual('CaptureTheFlag0', self.parser.getGamemodeSoundingLike('XP0_Caspian', 'ctf'), 'ctf')
+        self.assertEqual('CarrierAssaultSmall0', self.parser.getGamemodeSoundingLike('XP2_001', 'ca'), 'ca')
+        self.assertEqual('CarrierAssaultLarge0', self.parser.getGamemodeSoundingLike('XP2_001', 'ca64'), 'ca64')
 
 
 class Test_getPlayerPings(BF4TestCase):
