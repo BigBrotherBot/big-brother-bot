@@ -796,19 +796,15 @@ map: 20
         self.assertListEqual([], self.joe.message_history)
 
     def test_map_InvalidGameModeOnMap(self):
-        # BF4 cupport currently all game modes on every map
-        # we take for this test a BF3 game mode that is not implement in Bf4
-
+        self.parser.game.gameType = "CaptureTheFlag0"
         # WHEN
-        #when(self.parser).changeMap('MP_Siege', gamemode_id="CaptureTheFlag0", number_of_rounds=2).thenRaise(
-        #    CommandFailedError(["InvalidGameModeOnMap"]))
-        #self.joe.says("!map siege")
+        when(self.parser).changeMap('MP_Siege', gamemode_id="CaptureTheFlag0", number_of_rounds=2).thenRaise(
+            CommandFailedError(["InvalidGameModeOnMap"]))
+        self.joe.says("!map siege")
         # THEN
-        #self.assertListEqual(
-        #    ['Siege of Shanghai cannot be played with gamemode CaptureTheFlag0',
-        #     'supported gamemodes are : Squad Deathmatch, Domination, Team Deathmatch, Rush, Obliteration, Conquest, Defuse, Conquest64'
-        #    ], self.joe.message_history)
-        pass
+        self.assertListEqual(['Siege of Shanghai cannot be played with gamemode Capture the Flag',
+                              'supported gamemodes are : Conquest64, Conquest, Defuse, Obliteration, Rush, Team Deathmatch, Squad Deathmatch, Domination'], self.joe.message_history)
+
 
     def test_map_InvalidRoundsPerMap(self):
         # WHEN
