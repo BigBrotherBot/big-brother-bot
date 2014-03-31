@@ -53,10 +53,10 @@ can skip the 'Installing Source Distribution' section, and proceed to
 1. Create a database in MySQL for B3 to use. Create a user that has full 
    permissions on this database for B3. 
    
-   *Note*: You could also do this by running the script b3/docs/b3-db.sql on
+   *Note*: You could also do this by running the script b3/sql/b3-db.sql on
    MySQL,but don't forget to edit the password in that file first.
 
-2. Run the B3 database SQL script (b3/docs/b3.sql) on your B3 database.
+2. Run the B3 database SQL script (b3/sql/b3.sql) on your B3 database.
 
 ### Setting up B3
 
