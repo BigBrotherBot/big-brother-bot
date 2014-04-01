@@ -64,6 +64,8 @@
 #   * Added: arma3 support
 # 2013/08/03 1.7 - 82ndAB.Bravo17
 #   * Added: Chivalry Medieval Warfare support
+# 2014/04/01 1.8 - Courgette
+#   * Added: Insurgency support
 #
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -71,7 +73,7 @@
 # The setup procedure, to create a new configuration file (b3.xml)
 
 __author__ = 'xlr8or'
-__version__ = '1.7'
+__version__ = '1.8'
 
 import platform
 import urllib2
@@ -171,7 +173,7 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
                   bfbc2/bf3/moh/bf4
                   chiv
                   etpro/altitude/oa081/smg/sof2/wop/wop15
-                  homefront/ro2/csgo/ravaged/arma2/arma3""")
+                  homefront/ro2/csgo/ravaged/arma2/arma3/insurgency""")
 
         # set a template xml file to read existing settings from
         _result = False

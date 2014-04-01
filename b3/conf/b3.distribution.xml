@@ -20,7 +20,7 @@
                 iourt41/iourt42
                 bfbc2/bf3/moh
                 etpro/altitude/oa081/smg/sof2/wop/wop15
-homefront/ro2/csgo/ravaged/arma2
+                homefront/ro2/csgo/ravaged/arma2/insurgency
             (it should NOT be 'changeme')
 		-->
 		<set name="parser">changeme</set>
