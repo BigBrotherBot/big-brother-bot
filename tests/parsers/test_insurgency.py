@@ -17,16 +17,20 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-from mock import Mock, call, patch
-from mockito import when, verify
+import os
+from mock import Mock, patch
+from mockito import when
 import sys
 import unittest2 as unittest
 from b3 import TEAM_BLUE, TEAM_RED, TEAM_UNKNOWN, TEAM_SPEC
-from b3.clients import Client
-from b3.config import XmlConfigParser
+from b3.config import XmlConfigParser, CfgConfigParser
 from b3.fake import FakeClient
 from b3.parsers.insurgency import InsurgencyParser
+from b3.plugins.admin import AdminPlugin
 
+from b3 import __file__ as b3_module__file__
+
+ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.ini"))
 
 STATUS_RESPONSE = '''\
 hostname: Courgette's Server
@@ -59,10 +63,12 @@ def client_equal(client_a, client_b):
         return False
     if client_a is not None and client_b is None:
         return False
-#    for p in ('cid', 'guid', 'name', 'ip', 'ping'):
-#        if client_a.get(p, None) != client_b.get(p, None):
-#            return False
-    return all(map(lambda x: getattr(client_a, x, None) == getattr(client_b, x, None), ('cid', 'guid', 'name', 'ip', 'ping')))
+    #    for p in ('cid', 'guid', 'name', 'ip', 'ping'):
+    #        if client_a.get(p, None) != client_b.get(p, None):
+    #            return False
+    return all(
+        map(lambda x: getattr(client_a, x, None) == getattr(client_b, x, None), ('cid', 'guid', 'name', 'ip', 'ping')))
+
 #    return True
 
 
@@ -77,13 +83,13 @@ class InsurgencyTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         from b3.fake import FakeConsole
+
         InsurgencyParser.__bases__ = (FakeConsole,)
         # Now parser inheritance hierarchy is :
         # InsurgencyParser -> FakeConsole -> Parser
 
-
     def setUp(self):
-        self.status_response = None # defaults to STATUS_RESPONSE module attribute
+        self.status_response = None  # defaults to STATUS_RESPONSE module attribute
         self.conf = XmlConfigParser()
         self.conf.loadFromString("""<configuration></configuration>""")
         self.parser = InsurgencyParser(self.conf)
@@ -92,13 +98,14 @@ class InsurgencyTestCase(unittest.TestCase):
         when(self.parser).is_sourcemod_installed().thenReturn(True)
 
         self.evt_queue = []
+
         def queue_event(evt):
             self.evt_queue.append(evt)
+
         self.queueEvent_patcher = patch.object(self.parser, "queueEvent", wraps=queue_event)
         self.queueEvent_mock = self.queueEvent_patcher.start()
 
         self.parser.startup()
-
 
     def tearDown(self):
         self.queueEvent_patcher.stop()
@@ -106,13 +113,11 @@ class InsurgencyTestCase(unittest.TestCase):
             del self.parser.clients
             self.parser.working = False
 
-
     def clear_events(self):
         """
         clear the event queue, so when assert_has_event is called, it will look only at the newly caught events.
         """
         self.evt_queue = []
-
 
     def assert_has_event(self, event_type, data=WHATEVER, client=WHATEVER, target=WHATEVER):
         """
@@ -135,8 +140,8 @@ class InsurgencyTestCase(unittest.TestCase):
         else:
             for evt in self.evt_queue:
                 if expected_event.type == evt.type \
-                        and (expected_event.data == evt.data or data == WHATEVER)\
-                        and (client_equal(expected_event.client, evt.client) or client == WHATEVER)\
+                        and (expected_event.data == evt.data or data == WHATEVER) \
+                        and (client_equal(expected_event.client, evt.client) or client == WHATEVER) \
                         and (client_equal(expected_event.target, evt.target) or target == WHATEVER):
                     return
 
@@ -159,9 +164,9 @@ class InsurgencyTestCase(unittest.TestCase):
                     and (client is None or client_equal(client, evt.client))
                     and (target is None or client_equal(target, evt.target))
                 )
+
             if any(map(event_match, self.evt_queue)):
                 self.fail("not expecting event %s" % (filter(event_match, self.evt_queue)))
-
 
     def output_write(self, *args, **kwargs):
         """Used to override parser self.output.write method so we can control the response given to the 'status'
@@ -173,33 +178,86 @@ class InsurgencyTestCase(unittest.TestCase):
                 return STATUS_RESPONSE
 
 
+class AdminTestCase(unittest.TestCase):
+    """
+    Test case that is suitable for testing Insurgency parser specific features with the B3 admin plugin available
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        from b3.fake import FakeConsole
+
+        InsurgencyParser.__bases__ = (FakeConsole,)
+        # Now parser inheritance hierarchy is :
+        # InsurgencyParser -> FakeConsole -> Parser
+
+
+    def setUp(self):
+        self.status_response = None  # defaults to STATUS_RESPONSE module attribute
+        self.conf = XmlConfigParser()
+        self.conf.loadFromString("""<configuration></configuration>""")
+        self.parser = InsurgencyParser(self.conf)
+        self.parser.output = Mock()
+        self.parser.output.write = Mock(wraps=sys.stdout.write)
+        when(self.parser).is_sourcemod_installed().thenReturn(True)
+
+        adminPlugin_conf = CfgConfigParser()
+        adminPlugin_conf.load(ADMIN_CONFIG_FILE)
+        adminPlugin = AdminPlugin(self.parser, adminPlugin_conf)
+        adminPlugin.onLoadConfig()
+        adminPlugin.onStartup()
+        when(self.parser).getPlugin('admin').thenReturn(adminPlugin)
+
+        self.parser.startup()
+
+
+    def tearDown(self):
+        if hasattr(self, "parser"):
+            del self.parser.clients
+            self.parser.working = False
+
 
 class Test_gamelog_parsing(InsurgencyTestCase):
-
     def test_client_say(self):
         # GIVEN
         player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_BLUE)
         player.connects("3")
         # WHEN
         self.clear_events()
-        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<3><STEAM_1:0:1111111><#Team_Security>" say "!pb @531 rule1"''')
+        self.parser.parseLine(
+            '''L 04/01/2014 - 12:56:51: "courgette<3><STEAM_1:0:1111111><#Team_Security>" say "!pb @531 rule1"''')
         # THEN
         self.assert_has_event("EVT_CLIENT_SAY", "!pb @531 rule1", player)
 
 
 class Test_parser_other(InsurgencyTestCase):
-
     def test_getTeam(self):
         self.assertEqual(TEAM_RED, self.parser.getTeam('#Team_Security'))
         self.assertEqual(TEAM_BLUE, self.parser.getTeam('#Team_Insurgent'))
         self.assertEqual(TEAM_UNKNOWN, self.parser.getTeam('#Team_Unassigned'))
 
 
-class Test_getClientOrCreate(InsurgencyTestCase):
+class FunctionalTest(AdminTestCase):
+    def test_permban(self):
+        # GIVEN
+        superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128,
+                                team=TEAM_UNKNOWN)
+        superadmin.connects("1")
+        bill = FakeClient(self.parser, name="bill", guid="guid_bill", team=TEAM_UNKNOWN)
+        bill.connects("2")
+        # WHEN
+        superadmin.says("!permban bill rule1")
+        # THEN
+        superadmin.says('!baninfo @%s' % bill.id)
+        self.assertListEqual(['banned: bill (@2) has been added to banlist', 'bill has 1 active bans'],
+                             superadmin.message_history)
 
+
+class Test_getClientOrCreate(InsurgencyTestCase):
     def test_changing_team(self):
         # GIVEN
-        client = self.parser.getClientOrCreate(cid="2", guid="AAAAAAAAAAAA000000000000000", name="theName", team="#Team_Security")
+        client = self.parser.getClientOrCreate(cid="2", guid="AAAAAAAAAAAA000000000000000", name="theName",
+                                               team="#Team_Security")
         self.assertEqual(TEAM_RED, client.team)
 
         def assertTeam(excepted_team, new_team):
