@@ -61,7 +61,7 @@ from b3.functions import splitDSN
 
 
 class DocBuilder:
-    _supportedExportType = ['xml', 'html', 'htmltable', 'json']
+    _supportedExportType = ['xml', 'html', 'oldhtml', 'htmltable', 'json']
     _console = None
     _adminPlugin = None
     _outputType = 'html'
@@ -103,6 +103,12 @@ class DocBuilder:
             if self._outputType == 'xml':
                 self._write(self.getXml())
             elif self._outputType == 'html':
+                from string import Template
+                doc_template = Template(self.load_html_template(template=self._template_path+'b3doc-ng_template.html'))
+                self._write(doc_template.safe_substitute(
+                    json_data=self.get_json()
+                ))
+            elif self._outputType == 'oldhtml':
                 from string import Template
                 doc_template = Template(self.load_html_template(template=self._template_path+'b3doc_template.html'))
                 self._write(doc_template.safe_substitute(
