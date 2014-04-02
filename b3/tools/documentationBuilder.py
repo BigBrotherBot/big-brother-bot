@@ -246,7 +246,8 @@ class DocBuilder:
             if cmd.alias is not None and cmd.alias != '' :
                 tmp['alias'] = cmd.prefix + cmd.alias
             tmp['plugin'] = re.sub('Plugin$', '', cmd.plugin.__class__.__name__) 
-            tmp['description'] = escape(cmd.help)
+            _cmd_help = escape(cmd.help)
+            tmp['description'] = _cmd_help if _cmd_help[0] != '-' else _cmd_help[1:]
             tmp['minlevel'] = str(cmd.level[0]) if self._outputType != 'json' else cmd.level[0]
             tmp['maxlevel'] = str(cmd.level[1]) if self._outputType != 'json' else cmd.level[1]
             commands[cmd] = tmp
