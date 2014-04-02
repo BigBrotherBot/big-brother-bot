@@ -55,6 +55,7 @@ import re
 from xml.dom.minidom import Document
 from ftplib import FTP
 from cgi import escape
+import datetime
 from b3 import getConfPath
 from b3.functions import splitDSN
 
@@ -123,7 +124,28 @@ class DocBuilder:
 
     def get_json(self):
         import json
-        return json.dumps(self._getCommandsDict(), indent=4)
+
+        output = {
+            'commands': self._getCommandsDict(),
+            'updated': datetime.datetime.now().isoformat(),
+            'level_info': {},
+            'server_info': {
+                'ip': self._console._publicIp,
+                'port': self._console._port,
+            }
+        }
+
+        # add group level info to output
+        for g in self._console.storage.getGroups():
+            output['level_info'].update({
+                g.level: {
+                    'name': g.name,
+                    'keyword': g.keyword,
+                    'level': g.level
+                }
+            })
+
+        return json.dumps(output, indent=4)
 
     def getXml(self):
         xml = Document()
