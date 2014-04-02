@@ -76,6 +76,7 @@ py2exe_dataFiles = [
     ('conf/templates', listdirectory('b3/conf/templates/')),
     ('extplugins', ['b3/extplugins/xlrstats.py']),
     ('extplugins/conf', listdirectory('b3/extplugins/conf/')),
+    ('conf/templates/autodoc', listdirectory('b3/conf/templates/autodoc/')),
     ]
 
 
@@ -125,7 +126,8 @@ setup(cmdclass=cmdclass,
         '': [
                 'conf/*.xml', 
                 'conf/*.ini', 
-                'conf/templates/*.tpl', 
+                'conf/templates/*.tpl',
+                'conf/templates/autodoc/*.html',
                 'extplugins/xlrstats.py', 
                 'extplugins/conf/*.xml',  
                 'extplugins/conf/*.ini', 
