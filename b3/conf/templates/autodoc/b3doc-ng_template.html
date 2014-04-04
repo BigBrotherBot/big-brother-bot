@@ -57,6 +57,10 @@
 
     }
 
+    #b3doc-search_btn {
+      cursor: pointer; cursor: hand;
+    }
+
   </style>
 </head>
 <body>
@@ -98,8 +102,8 @@
       </div>
       <div class="col-xs-2">
         <div class="input-group input-group-sm">
-          <input id="b3doc-search" type="search" class="form-control" placeholder="Search">
-          <span class="input-group-addon"><span class="glyphicon glyphicon-search"></span></span>
+          <input id="b3doc-search" type="search" class="form-control" placeholder="Search command ...">
+          <span id="b3doc-search_btn" class="input-group-addon"><span class="glyphicon glyphicon-search"></span></span>
         </div>
       </div>
     </div>
@@ -250,13 +254,27 @@
         }
     );
 
+    // handle search form
     $('#b3doc-search').on('keyup change', function () {
+      if ( $('#b3doc-search').val() && $('#b3doc-search_btn').children().hasClass('glyphicon-search') ) {
+        $('#b3doc-search_btn').children().removeClass('glyphicon-search').addClass('glyphicon-remove');
+      } else if ( !$('#b3doc-search').val() && $('#b3doc-search_btn').children().hasClass('glyphicon-remove') ) {
+        $('#b3doc-search_btn').children().removeClass('glyphicon-remove').addClass('glyphicon-search');
+      }
       $('#b3doc').dataTable().fnFilter($(this).val());
     });
 
-    $('#filter_level_dropdown_btn').click(function () {
-    $('#level_popover').toggle();
-  });
+    $('#b3doc-search_btn').on('click', function () {
+      if ( $('#b3doc-search').val() ) {
+        $('#b3doc-search').val('');
+        $('#b3doc').dataTable().fnFilter('');
+        $('#b3doc-search_btn').children().removeClass('glyphicon-remove').addClass('glyphicon-search');
+      }
+    });
+
+    $('#filter_level_dropdown_btn').on('click', function () {
+      $('#level_popover').toggle();
+    });
 
     $('#footer p').html('updated on ' + new Date(b3doc_data.updated).toUTCString());
   });
