@@ -56,7 +56,7 @@ from xml.dom.minidom import Document
 from ftplib import FTP
 from cgi import escape
 import datetime
-from b3 import getConfPath
+from b3 import getConfPath, getB3Path
 from b3.functions import splitDSN
 
 
@@ -67,7 +67,6 @@ class DocBuilder:
     _outputType = 'html'
     _outputUrl = 'file://' + getConfPath() + '/b3doc.html'
     _maxlevel = None
-    _template_path = getConfPath() + '/templates/autodoc/'
     
     def __init__(self, console):
         self._console = console
@@ -104,13 +103,13 @@ class DocBuilder:
                 self._write(self.getXml())
             elif self._outputType == 'html':
                 from string import Template
-                doc_template = Template(self.load_html_template(template=self._template_path+'b3doc-ng_template.html'))
+                doc_template = Template(self.load_html_template(template='b3doc-ng_template.html'))
                 self._write(doc_template.safe_substitute(
                     json_data=self.get_json()
                 ))
             elif self._outputType == 'oldhtml':
                 from string import Template
-                doc_template = Template(self.load_html_template(template=self._template_path+'b3doc_template.html'))
+                doc_template = Template(self.load_html_template(template='b3doc_template.html'))
                 self._write(doc_template.safe_substitute(
                     commandsTable=self.getHtmlTable(),
                     dateUpdated=time.asctime(),
@@ -123,7 +122,16 @@ class DocBuilder:
 
     def load_html_template(self, template):
         """Loads template file from the file system"""
-        with open(template, 'r') as template_file:
+
+        # build template file path
+        _template_path = os.path.join(getConfPath(), 'conf/templates/autodoc/')
+        if not os.path.isfile(_template_path):
+            _template_path = os.path.join(getB3Path(), 'conf/templates/autodoc/')
+
+        _template_file = _template_path + template
+
+        # open template
+        with open(_template_file, 'r') as template_file:
                     template_data = template_file.read()
 
         return template_data
