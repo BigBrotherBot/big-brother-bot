@@ -118,7 +118,7 @@ class DocBuilder:
             elif self._outputType == 'htmltable':
                 self._write(self.getHtmlTable())
             elif self._outputType == 'json':
-                self._write(self.get_json())
+                self._write(self.get_json(indent=4))
 
     def load_html_template(self, template):
         """Loads template file from the file system"""
@@ -136,7 +136,7 @@ class DocBuilder:
 
         return template_data
 
-    def get_json(self):
+    def get_json(self, indent=None):
         import json
 
         output = {
@@ -159,7 +159,7 @@ class DocBuilder:
                 }
             })
 
-        return json.dumps(output, indent=4)
+        return json.dumps(output, indent=indent)
 
     def getXml(self):
         xml = Document()
