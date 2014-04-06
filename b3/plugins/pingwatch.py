@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    06/04/2014 - 1.3 - Fenix
+#       PEP8 coding style guide
+#       Improved plugin startup and configuration file loading
 #    04/23/2010 - 1.2.2 - Bakes
 #       Fix to !ci after bug reported by sgt
 #    03/28/2010 - 1.2.1 - xlr8or
@@ -29,7 +32,7 @@
 #       Converted to use new event handlers
 
 __author__ = 'ThorN'
-__version__ = '1.2.2'
+__version__ = '1.3'
 
 
 import b3
