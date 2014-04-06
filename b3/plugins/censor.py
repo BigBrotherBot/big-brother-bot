@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    2014/04/06 - 3.2 - Fenix
+#       PEP8 coding style guide
 #    2012/07/03 - 3.1 - Courgette
 #       Fixes a bug wich prevented regular expression "\sd[i!1*]ck\s" to match for word "d!ck"
 #    2012/07/03 - 3.0.1 - Courgette
@@ -37,14 +39,19 @@
 #       Added data column to penalties table
 #       Put censored message/name in the warning data
 
-__author__  = 'ThorN, xlr8or, Bravo17, Courgette'
-__version__ = '3.1'
+__author__ = 'ThorN, xlr8or, Bravo17, Courgette'
+__version__ = '3.2'
 
-import b3, re, traceback, sys, threading
+import b3
+import re
+import traceback
+import sys
+import threading
 import b3.events
 import b3.plugin
 from b3.config import XmlConfigParser
 from b3 import functions
+
 
 class PenaltyData:
     def __init__(self, **kwargs):
@@ -57,11 +64,13 @@ class PenaltyData:
     duration = 0
 
     def __repr__(self):
-        return """Penalty(type=%r, reason=%r, keyword=%r, duration=%r)""" % (self.type, self.reason, self.keyword, self.duration)
+        return """Penalty(type=%r, reason=%r, keyword=%r, duration=%r)""" % (self.type, self.reason,
+                                                                             self.keyword, self.duration)
 
     def __str__(self):
         data = {"type": self.type, "reason": self.reason, "reasonkeyword": self.keyword, "duration": self.duration}
         return "<penalty " + ' '.join(['%s="%s"' % (k, v) for k, v in data.items() if v]) + " />"
+
 
 class CensorData:
     def __init__(self, **kwargs):
@@ -75,7 +84,7 @@ class CensorData:
     def __repr__(self):
         return """CensorData(name=%r, penalty=%r, regexp=%r)""" % (self.name, self.penalty, self.regexp)
 
-#--------------------------------------------------------------------------------------------------
+
 class CensorPlugin(b3.plugin.Plugin):
     _adminPlugin = None
     _reClean = re.compile(r'[^0-9a-z ]+', re.I)
@@ -83,52 +92,62 @@ class CensorPlugin(b3.plugin.Plugin):
     _defaultBadNamePenalty = PenaltyData(type="warning", keyword="badname")
     _maxLevel = 0
     _ignoreLength = 3
+    _badWords = None
+    _badNames = None
 
     def onStartup(self):
+        """\
+        Initialize plugin
+        """
         self._adminPlugin = self.console.getPlugin('admin')
         if not self._adminPlugin:
+            self.critical('could not start without admin plugin')
             return False
 
-        self.registerEvent(b3.events.EVT_CLIENT_SAY)
-        self.registerEvent(b3.events.EVT_CLIENT_TEAM_SAY)
-        self.registerEvent(b3.events.EVT_CLIENT_NAME_CHANGE)
-        self.registerEvent(b3.events.EVT_CLIENT_AUTH)
-
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_SAY'))
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_SAY'))
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_NAME_CHANGE'))
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'))
 
     def onLoadConfig(self):
+        """\
+        Load plugin configuration
+        """
         assert isinstance(self.config, XmlConfigParser)
         try:
             self._maxLevel = self.config.getint('settings', 'max_level')
         except Exception, err:
             self._maxLevel = 0
             self.warning(err)
-            self.warning("using default value %s for settings:max_level" % self._maxLevel)
+            self.warning('using default value %s for settings:max_level' % self._maxLevel)
         try:
             self._ignoreLength = self.config.getint('settings', 'ignore_length')
         except Exception, err:
             self._ignoreLength = 3
             self.warning(err)
-            self.warning("using default value %s for settings:ignore_length" % self._ignoreLength)
+            self.warning('using default value %s for settings:ignore_length' % self._ignoreLength)
 
         default_badwords_penalty_nodes = self.config.get('badwords/penalty')
         if len(default_badwords_penalty_nodes):
             penalty = default_badwords_penalty_nodes[0]
-            self._defaultBadWordPenalty = PenaltyData(type = penalty.get('type'),
-                                reason = penalty.get('reason'),
-                                keyword = penalty.get('reasonkeyword'),
-                                duration = functions.time2minutes(penalty.get('duration')))
+            self._defaultBadWordPenalty = PenaltyData(type=penalty.get('type'),
+                                                      reason=penalty.get('reason'),
+                                                      keyword=penalty.get('reasonkeyword'),
+                                                      duration=functions.time2minutes(penalty.get('duration')))
         else:
-            self.warning("""no default badwords penalty found in config. Using default : %s""" % self._defaultBadNamePenalty)
+            self.warning('no default badwords penalty found in config. '
+                         'Using default : %s' % self._defaultBadNamePenalty)
 
         default_badnames_penalty_nodes = self.config.get('badnames/penalty')
         if len(default_badnames_penalty_nodes):
             penalty = default_badnames_penalty_nodes[0]
-            self._defaultBadNamePenalty = PenaltyData(type = penalty.get('type'),
-                            reason = penalty.get('reason'),
-                            keyword = penalty.get('reasonkeyword'),
-                            duration = functions.time2minutes(penalty.get('duration')))
+            self._defaultBadNamePenalty = PenaltyData(type=penalty.get('type'),
+                                                      reason=penalty.get('reason'),
+                                                      keyword=penalty.get('reasonkeyword'),
+                                                      duration=functions.time2minutes(penalty.get('duration')))
         else:
-            self.warning("""no default badnames penalty found in config. Using default : %s""" % self._defaultBadNamePenalty)
+            self.warning('no default badnames penalty found in config. '
+                         'Using default : %s' % self._defaultBadNamePenalty)
 
         # load bad words into memory
         self._badWords = []
@@ -137,9 +156,9 @@ class CensorPlugin(b3.plugin.Plugin):
             word_node = e.find('word')
             regexp_node = e.find('regexp')
             self._add_bad_word(rulename=e.get('name'),
-                penalty=penalty_node,
-                word=word_node.text if word_node is not None else None,
-                regexp=regexp_node.text if regexp_node is not None else None)
+                               penalty=penalty_node,
+                               word=word_node.text if word_node is not None else None,
+                               regexp=regexp_node.text if regexp_node is not None else None)
 
         # load bad names into memory
         self._badNames = []
@@ -148,10 +167,9 @@ class CensorPlugin(b3.plugin.Plugin):
             word_node = e.find('word')
             regexp_node = e.find('regexp')
             self._add_bad_name(rulename=e.get('name'),
-                penalty=penalty_node,
-                word=word_node.text if word_node is not None else None,
-                regexp=regexp_node.text if regexp_node is not None else None)
-
+                               penalty=penalty_node,
+                               word=word_node.text if word_node is not None else None,
+                               regexp=regexp_node.text if regexp_node is not None else None)
 
     def _add_bad_word(self, rulename, penalty=None, word=None, regexp=None):
         if word is regexp is None:
@@ -160,11 +178,12 @@ class CensorPlugin(b3.plugin.Plugin):
             self.warning("badword rule [%s] cannot have both a word and regular expression to search for" % rulename)
         elif regexp is not None:
             # has a regular expression
-            self._badWords.append(self._getCensorData(rulename, regexp.strip(), penalty, self._defaultBadWordPenalty))
+            self._badWords.append(self._get_censor_data(rulename, regexp.strip(), penalty, self._defaultBadWordPenalty))
             self.debug("badword rule '%s' loaded" % rulename)
         elif word is not None:
             # has a plain word
-            self._badWords.append(self._getCensorData(rulename, '\\s' + word.strip() + '\\s', penalty, self._defaultBadWordPenalty))
+            self._badWords.append(self._get_censor_data(rulename, '\\s' + word.strip() + '\\s',
+                                                        penalty, self._defaultBadWordPenalty))
             self.debug("badword rule '%s' loaded" % rulename)
 
     def _add_bad_name(self, rulename, penalty=None, word=None, regexp=None):
@@ -174,32 +193,35 @@ class CensorPlugin(b3.plugin.Plugin):
             self.warning("badname rule [%s] cannot have both a word and regular expression to search for" % rulename)
         elif regexp is not None:
             # has a regular expression
-            self._badNames.append(self._getCensorData(rulename, regexp.strip(), penalty, self._defaultBadNamePenalty))
+            self._badNames.append(self._get_censor_data(rulename, regexp.strip(), penalty, self._defaultBadNamePenalty))
             self.debug("badname rule '%s' loaded" % rulename)
         elif word is not None:
             # has a plain word
-            self._badNames.append(self._getCensorData(rulename, '\\s' + word.strip() + '\\s', penalty, self._defaultBadNamePenalty))
+            self._badNames.append(self._get_censor_data(rulename, '\\s' + word.strip() + '\\s',
+                                                        penalty, self._defaultBadNamePenalty))
             self.debug("badname rule '%s' loaded" % rulename)
 
-    def _getCensorData(self, name, regexp, penalty, defaultPenalty):
+    def _get_censor_data(self, name, regexp, penalty, default):
         try:
             regexp = re.compile(regexp, re.I)
-        except re.error, e:
+        except re.error:
             self.error('Invalid regular expression: %s - %s' % (name, regexp))
             raise
 
         if penalty is not None:
-            pd = PenaltyData(type = penalty.get('type'),
-                            reason = penalty.get('reason'),
-                            keyword = penalty.get('reasonkeyword'),
-                            duration = functions.time2minutes(penalty.get('duration')))
+            pd = PenaltyData(type=penalty.get('type'),
+                             reason=penalty.get('reason'),
+                             keyword=penalty.get('reasonkeyword'),
+                             duration=functions.time2minutes(penalty.get('duration')))
         else:
-            pd = defaultPenalty
+            pd = default
 
         return CensorData(name=name, penalty=pd, regexp=regexp)
 
-
     def onEvent(self, event):
+        """\
+        Handle intercepted events
+        """
         try:
             if not self.isEnabled():
                 return
@@ -212,14 +234,14 @@ class CensorPlugin(b3.plugin.Plugin):
             elif not event.client.connected:
                 return
 
-            if event.type == b3.events.EVT_CLIENT_AUTH or event.type == b3.events.EVT_CLIENT_NAME_CHANGE:
+            if event.type == self.console.getEventID('EVT_CLIENT_AUTH') or \
+               event.type == self.console.getEventID('EVT_CLIENT_NAME_CHANGE'):
                 self.checkBadName(event.client)
 
             elif len(event.data) > self._ignoreLength:
-                if event.type == b3.events.EVT_CLIENT_SAY or \
-                   event.type == b3.events.EVT_CLIENT_TEAM_SAY:
+                if event.type == self.console.getEventID('EVT_CLIENT_SAY') or \
+                   event.type == self.console.getEventID('EVT_CLIENT_TEAM_SAY'):
                     self.checkBadWord(event.data, event.client)
-
 
         except b3.events.VetoEvent:
             raise
@@ -230,18 +252,20 @@ class CensorPlugin(b3.plugin.Plugin):
         """\
         This is the default penalisation for using bad language in say and teamsay
         """
-        #self.debug("%s"%((penalty.type, penalty.reason, penalty.keyword, penalty.duration),))
+        # self.debug("%s"%((penalty.type, penalty.reason, penalty.keyword, penalty.duration),))
         # fix for reason keyword not working
         if penalty.keyword is None:
             penalty.keyword = penalty.reason
-        self._adminPlugin.penalizeClient(penalty.type, client, penalty.reason, penalty.keyword, penalty.duration, None, data)
+        self._adminPlugin.penalizeClient(penalty.type, client, penalty.reason,
+                                         penalty.keyword, penalty.duration, None, data)
 
     def penalizeClientBadname(self, penalty, client, data=''):
         """\
         This is the penalisation for bad names
         """
-        #self.debug("%s"%((penalty.type, penalty.reason, penalty.keyword, penalty.duration),))
-        self._adminPlugin.penalizeClient(penalty.type, client, penalty.reason, penalty.keyword, penalty.duration, None, data)
+        # self.debug("%s"%((penalty.type, penalty.reason, penalty.keyword, penalty.duration),))
+        self._adminPlugin.penalizeClient(penalty.type, client, penalty.reason,
+                                         penalty.keyword, penalty.duration, None, data)
 
     def checkBadName(self, client):
         if not client.connected:
@@ -252,7 +276,6 @@ class CensorPlugin(b3.plugin.Plugin):
         self.info("Checking '%s'=>'%s' for badname" % (client.exactName, cleaned_name))
 
         was_penalized = False
-
         for w in self._badNames:
             if w.regexp.search(client.exactName):
                 self.debug("badname rule [%s] matches '%s'" % (w.name, client.exactName))
@@ -285,9 +308,5 @@ class CensorPlugin(b3.plugin.Plugin):
                 self.penalizeClient(w.penalty, client, '%s => %s' % (text, cleaned))
                 raise b3.events.VetoEvent
 
-
     def clean(self, data):
         return re.sub(self._reClean, ' ', self.console.stripColors(data.lower()))
-    
-
-    
