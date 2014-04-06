@@ -40,42 +40,94 @@ from ConfigParser import NoOptionError
 
 
 class PingwatchPlugin(b3.plugin.Plugin):
+
+    _adminPlugin = None
+    _cronTab = None
+
     _interval = 0
     _maxPing = 0
     _maxPingDuration = 0
-    _ignoreTill = 0
-    _cronTab = None
-    _maxCiPing = 500
-    _minLevel = 20
 
-    def onStartup(self):
-        """\
-        Initialize plugin
-        """
-        self.registerEvent(self.console.getEventID('EVT_GAME_EXIT'), self.onGameExit)
-        self._ignoreTill = self.console.time() + 120  # dont check pings on startup
+    _ignoreTill = 0
+    _maxCiPing = 500
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   STARTUP                                                                                                      ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def onLoadConfig(self):
         """\
         Load plugin configuration
         """
         try:
-            self._minLevel = self.config.get('commands', 'ci')
-        except NoOptionError:
-            pass 
+            self._interval = self.config.getint('settings', 'interval')
+            self.debug('loaded settings/interval: %s' % self._interval)
+        except (NoOptionError, ValueError), e:
+            self.error('could not load settings/interval config value: %s' % e)
+            self.debug('using default value (%s) for settings/interval' % self._interval)
 
-        self._interval = self.config.getint('settings', 'interval')
-        self._maxPing = self.config.getint('settings', 'max_ping')
-        self._maxPingDuration = self.config.getint('settings', 'max_ping_duration')
+        try:
+            self._maxPing = self.config.getint('settings', 'max_ping')
+            self.debug('loaded settings/max_ping: %s' % self._maxPing)
+        except (NoOptionError, ValueError), e:
+            self.error('could not load settings/max_ping config value: %s' % e)
+            self.debug('using default value (%s) for settings/max_ping' % self._maxPing)
 
+        try:
+            self._maxPingDuration = self.config.getint('settings', 'max_ping_duration')
+            self.debug('loaded settings/max_ping_duration: %s' % self._maxPingDuration)
+        except (NoOptionError, ValueError), e:
+            self.error('could not load settings/max_ping config value: %s' % e)
+            self.debug('using default value (%s) for settings/max_ping_duration' % self._maxPingDuration)
+
+    def onStartup(self):
+        """\
+        Initialize plugin
+        """
+        self._adminPlugin = self.console.getPlugin('admin')
+        if not self._adminPlugin:
+            self.critical('could not start without admin plugin')
+            return False
+
+        # register events needed
+        self.registerEvent(self.console.getEventID('EVT_GAME_EXIT'), self.onGameExit)
+        self._ignoreTill = self.console.time() + 120  # dont check pings on startup
+
+        # register our commands
+        if 'commands' in self.config.sections():
+            for cmd in self.config.options('commands'):
+                level = self.config.get('commands', cmd)
+                sp = cmd.split('-')
+                alias = None
+                if len(sp) == 2:
+                    cmd, alias = sp
+
+                func = self.getCmd(cmd)
+                if func:
+                    self._adminPlugin.registerCommand(self, cmd, level, func, alias)
+
+        # remove existing crontab
         if self._cronTab:
-            # remove existing crontab
             self.console.cron - self._cronTab
 
+        # setup the new crontab
         self._cronTab = b3.cron.PluginCronTab(self, self.check, '*/%s' % self._interval)
         self.console.cron + self._cronTab
-        self._adminPlugin = self.console.getPlugin('admin')
-        self._adminPlugin.registerCommand(self, 'ci', self._minLevel, self.cmd_ci)
+
+    def getCmd(self, cmd):
+        cmd = 'cmd_%s' % cmd
+        if hasattr(self, cmd):
+            func = getattr(self, cmd)
+            return func
+        return None
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   EVENTS                                                                                                       ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def onGameExit(self, event):
         """\
@@ -83,6 +135,12 @@ class PingwatchPlugin(b3.plugin.Plugin):
         """
         # ignore ping watching for 2 minutes
         self._ignoreTill = self.console.time() + 120
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   CRONJOB                                                                                                      ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def check(self):
         """\
@@ -113,6 +171,12 @@ class PingwatchPlugin(b3.plugin.Plugin):
                     self.console.say('^7%s ^7ping detected as Connection Interrupted (CI)' % client.name)
                 else:
                     self.console.say('^7%s ^7ping detected as too high %s' % (client.name, ping))
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   COMMANDS                                                                                                     ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def cmd_ci(self, data, client=None, cmd=None):
         """\
