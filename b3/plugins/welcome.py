@@ -16,6 +16,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
+# 2014/04/07 - 1.4 - Fenix
+#  * pep8 coding style guide
+#  * improved plugin startup and configuration file loading
 # 2013/04/18 - 1.3 - Courgette
 #  * easier config file format for defining which welcome message to display
 # 2013/04/13 - 1.2.1 - Courgette
@@ -46,7 +49,7 @@ import re
 
 from ConfigParser import NoOptionError
 
-__version__ = '1.3'
+__version__ = '1.4'
 __author__ = 'ThorN, xlr8or, Courgette'
 
 F_FIRST = 4
