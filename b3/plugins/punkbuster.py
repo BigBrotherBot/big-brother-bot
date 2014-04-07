@@ -17,88 +17,149 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#
+# 06/04/2014 - 1.2 - Fenix
+#    * pep8 coding style guide
+#    * improved plugin startup and configuration file loading
 # 19/07/2011 - 1.1.0 - Freelander
-#    Support for ftp access to pbbans.dat
+#    * Support for ftp access to pbbans.dat
 # 27/08/2009 - 1.0.9 - Bakes
-#    Use command levels set in punkbuster plugin config not admin plugin.
+#    * Use command levels set in punkbuster plugin config not admin plugin.
 # 11/30/2005 - 1.0.8 - ThorN
-#    Use PluginCronTab instead of CronTab
+#    * Use PluginCronTab instead of CronTab
 
-__author__  = 'ThorN'
-__version__ = '1.1.0'
+__author__ = 'ThorN'
+__version__ = '1.2'
 
-import b3, time
+import b3
 import b3.plugin
 import b3.cron
-from b3 import functions
 import StringIO
 import ftplib
+import time
 
-#--------------------------------------------------------------------------------------------------
+from b3 import functions
+from ConfigParser import NoOptionError
+
+
 class PunkbusterPlugin(b3.plugin.Plugin):
+
+    _adminPlugin = None
     _cronTab = None
-    _rebuildBans = 0
     _remoteBansFile = False
     _ftpConfig = None
+    _bansFile = '~/cod/pb/pbbans.dat'
+    _rebuildBans = '0 0 * * *'
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   STARTUP                                                                                                      ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def onStartup(self):
+        """\
+        Initialize the plugin
+        """
         self._adminPlugin = self.console.getPlugin('admin')
-    
-        if self._adminPlugin:
-            
-            if self.console.PunkBuster is None:
-                self.warning('Could not register commands because Punkbuster is disabled in your b3.xml configuration file')
-                return
-            
-            self._adminPlugin.registerCommand(self, 'pbss', self.config.getint('commands', 'pbss'), self.cmd_pbss)
-            self._adminPlugin.registerCommand(self, 'pbbuildbans', self.config.getint('commands', 'pbbuildbans'), self.cmd_pbbuildbans)
+        if not self._adminPlugin:
+            self.critical('could not start without admin plugin')
+            return False
+
+        if self.console.PunkBuster is None:
+            self.warning('could not register commands because Punkbuster is disabled in your b3.xml configuration file')
+            return False
+
+        # register our commands
+        if 'commands' in self.config.sections():
+            for cmd in self.config.options('commands'):
+                level = self.config.get('commands', cmd)
+                sp = cmd.split('-')
+                alias = None
+                if len(sp) == 2:
+                    cmd, alias = sp
+
+                func = self.getCmd(cmd)
+                if func:
+                    self._adminPlugin.registerCommand(self, cmd, level, func, alias)
 
     def onLoadConfig(self):
-        if self.config.get('settings','bans_file')[0:6] == 'ftp://':
-            self._bansFile = self.config.get('settings','bans_file')
+        """\
+        Load plugin configuration
+        """
+        try:
+            self._bansFile = self.config.get('settings', 'bans_file')
+            self.debug('loaded settings/bans_file: %s' % self._bansFile)
+        except NoOptionError, e:
+            self.error('could not load settings/bans_file config value: %s' % e)
+            self.debug('using default value (%s) for settings/bans_file' % self._bansFile)
+
+        if self._bansFile[0:6] == 'ftp://':
             self._remoteBansFile = True
             self._ftpConfig = functions.splitDSN(self._bansFile)
-            self.info('Accessing pbbans.dat file in remote mode')
+            self.info('accessing pbbans.dat file in remote mode')
         else:
-            self._bansFile = self.console.getAbsolutePath(self.config.get('settings', 'bans_file'))
+            self._bansFile = self.console.getAbsolutePath(self._bansFile)
 
-
-        self._rebuildBans = self.config.get('settings', 'rebuild_bans')
+        try:
+            self._rebuildBans = self.config.get('settings', 'rebuild_bans')
+            self.debug('loaded settings/rebuild_bans: %s' % self._rebuildBans)
+        except NoOptionError, e:
+            self.error('could not load settings/rebuild_bans config value: %s' % e)
+            self.debug('using default value (%s) for settings/rebuild_bans' % self._rebuildBans)
 
         if self._cronTab:
             # remove old crontab
             self.console.cron - self._cronTab
 
-        if self._rebuildBans == '0' or self._rebuildBans == 0:
-            self._rebuildBans = 0
-        else:
+        if self._rebuildBans != '0':
             minute, hour, day, month, dow = self._rebuildBans.split(' ')
-            self._cronTab = b3.cron.PluginCronTab(self, self.rebuildBans, '0', minute, hour, day, month, dow)
+            self._cronTab = b3.cron.PluginCronTab(self, self.rebuild_bans, '0', minute, hour, day, month, dow)
             self.console.cron + self._cronTab
 
-    def rebuildBans(self):
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   FUNCTIONS                                                                                                    ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
+    def getCmd(self, cmd):
+        """\
+        Return the method for a given command
+        """
+        cmd = 'cmd_%s' % cmd
+        if hasattr(self, cmd):
+            func = getattr(self, cmd)
+            return func
+        return None
+
+    def rebuild_bans(self):
         """\
         Rebuild pbbans.dat from database
         """
-        cursor = self.console.storage.query("""\
-SELECT DISTINCT(c.id), c.name, c.ip, c.pbid, p.time_add, p.reason FROM penalties p, clients c
-WHERE c.id = p.client_id && type = 'Ban' && p.inactive = 0 && 
-p.time_expire = -1
-ORDER BY p.time_add""")
+        q = """SELECT DISTINCT(c.id), c.name, c.ip, c.pbid, p.time_add, p.reason
+               FROM penalties p, clients c
+               WHERE c.id = p.client_id && type = 'Ban' && p.inactive = 0 && p.time_expire = -1
+               ORDER BY p.time_add"""
+
+        cursor = self.console.storage.query(q)
 
         i = 0
         if self._remoteBansFile:
             f = StringIO.StringIO()
         else:
-            f = file(self._bansFile , 'w')
+            f = file(self._bansFile, 'w')
 
         while not cursor.EOF:
             r = cursor.getRow()
-
             if r['reason'] != '':            
-                f.write('[%s] %s "%s" "%s" %s" ""\r\n\r\n' % (time.strftime('%m.%d.%Y %H:%M:%S', time.localtime(int(r['time_add']))), r['pbid'], r['name'], r['ip'], r['reason']))
+                f.write('[%s] %s "%s" "%s" %s" ""\r\n\r\n' % (time.strftime('%m.%d.%Y %H:%M:%S',
+                                                              time.localtime(int(r['time_add']))),
+                                                              r['pbid'], r['name'], r['ip'], r['reason']))
             else:
-                f.write('[%s] %s "%s" "%s"\r\n\r\n' % (time.strftime('%m.%d.%Y %H:%M:%S', time.localtime(int(r['time_add']))), r['pbid'], r['name'], r['ip']))
+                f.write('[%s] %s "%s" "%s"\r\n\r\n' % (time.strftime('%m.%d.%Y %H:%M:%S',
+                                                       time.localtime(int(r['time_add']))),
+                                                       r['pbid'], r['name'], r['ip']))
 
             i += 1
             cursor.moveNext()
@@ -123,22 +184,28 @@ ORDER BY p.time_add""")
 
         return i
 
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   COMMANDS                                                                                                     ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
     def cmd_pbss(self, data, client=None, cmd=None):
         """\
-        <player> - Capture a screenshot from the player
+        <client> - capture a screenshot from the player
         """
         m = self._adminPlugin.parseUserCmd(data)
         if not m:
-            client.message('^7Invalid parameters, you must supply a player name')
-            return False
+            client.message('^7Missing data, try !help pbss')
+            return
 
         sclient = self._adminPlugin.findClientPrompt(m[0], client)
         if sclient:
-            client.message('^3PunkBuster: ^7 %s' % self.console.PunkBuster.getSs(sclient))
+            client.message('^3PunkBuster: ^7%s' % self.console.PunkBuster.getSs(sclient))
 
     def cmd_pbbuildbans(self, data, client=None, cmd=None):
         """\
         Rebuild punkbuster ban file
         """
-        bans = self.rebuildBans()
-        client.message('^3PunkBuster: ^7 rebuilt %s bans' % bans)
+        bans = self.rebuild_bans()
+        client.message('^3PunkBuster: ^7rebuilt %s bans' % bans)

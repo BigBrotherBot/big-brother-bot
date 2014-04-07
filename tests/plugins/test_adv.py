@@ -352,7 +352,7 @@ class Test_commands(AdvTestCase):
         self.joe.clearMessageHistory()
         self.p.cmd_advrem(data=None, client=self.joe)
         self.assertEqual(['f00', 'bar', 'test'], self.p._msg.items)
-        self.assertEqual(['Invalid data, use the !advlist command to list valid items numbers'], self.joe.message_history)
+        self.assertEqual(['Missing data, try !help advrem'], self.joe.message_history)
 
     def test_advrem_junk(self):
         self.init_plugin("""
@@ -426,7 +426,7 @@ class Test_commands(AdvTestCase):
         self.joe.clearMessageHistory()
         self.p.cmd_advadd(data=None, client=self.joe)
         self.assertEqual(['f00'], self.p._msg.items)
-        self.assertEqual(['Invalid data, specify the message to add'], self.joe.message_history)
+        self.assertEqual(['Missing data, try !help advadd'], self.joe.message_history)
 
 
 class Test_keywords(AdvTestCase):

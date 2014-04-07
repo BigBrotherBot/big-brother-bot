@@ -26,78 +26,109 @@
 #     * use hashlib if available instead of the deprecated md5
 # 1.1 - 25/11/2012 - Courgette
 #     * always read password from database to prevent security issues arising from bugged b3 game parsers
+# 1.2 - 06/04/2014 - Fenix
+#     * pep8 coding style guide
+#     * improved plugin startup and configuration file loading
 #
+
 import string
-from b3.clients import Client
 import b3.events
 import b3.plugin
 from b3.functions import hash_password
+from b3.clients import Client
+from ConfigParser import NoOptionError
 
-__author__    = 'Tim ter Laak'
-__version__ = '1.1'
+__author__ = 'Tim ter Laak'
+__version__ = '1.2'
 
 
 class LoginPlugin(b3.plugin.Plugin):
 
+    _adminPlugin = None
+
     _pmcomm = ''
+    _threshold = 1000
+    _passwdlevel = 100
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   STARTUP                                                                                                      ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def onLoadConfig(self):
+        """\
+        Load plugin configuration
+        """
         try:
-            self.threshold = self.config.getint('settings', 'thresholdlevel') 
-        except:
-            self.threshold = 1000
-            self.debug('Using default value (%i) for settings::thresholdlevel', self.threshold)
-        try:
-            self.passwdlevel = self.config.getint('settings', 'passwdlevel') 
-        except:
-            self.passwdlevel = 100
-            self.debug('Using default value (%i) for settings::passwdlevel', self.passwdlevel)
-        return
+            self._threshold = self.config.getint('settings', 'thresholdlevel')
+            self.debug('loaded settings/thresholdlevel: %s' % self._threshold)
+        except (NoOptionError, ValueError), e:
+            self.error('could not load settings/thresholdlevel config value: %s' % e)
+            self.debug('using default value (%s) for settings/thresholdlevel' % self._threshold)
 
+        try:
+            self._passwdlevel = self.config.getint('settings', 'passwdlevel')
+            self.debug('loaded settings/passwdlevel: %s' % self._passwdlevel)
+        except (NoOptionError, ValueError), e:
+            self.error('could not load settings/passwdlevel config value: %s' % e)
+            self.debug('using default value (%s) for settings/passwdlevel' % self._passwdlevel)
 
     def onStartup(self):
-        self.registerEvent(b3.events.EVT_CLIENT_AUTH)
+        """\
+        Initialize plugin
+        """
         self._adminPlugin = self.console.getPlugin('admin')
-        if self._adminPlugin:
-            self._adminPlugin.registerCommand(self, 'login', 2, self.cmd_login, secretLevel=1)
-            self._adminPlugin.registerCommand(self, 'setpassword', self.passwdlevel, self.cmd_setpassword)
+        if not self._adminPlugin:
+            self.critical('could not start without admin plugin')
+            return False
+
+        # register the events needed
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.onAuth)
+
+        # register our commands
+        self._adminPlugin.registerCommand(self, 'login', 2, self.cmd_login, secretLevel=1)
+        self._adminPlugin.registerCommand(self, 'setpassword', self._passwdlevel, self.cmd_setpassword)
 
         # Whats the command to send a private message?
-        if self.console.gameName[:5] == 'etpro':
-            self._pmcomm = '/m'
-        else:
-            self._pmcomm = '/tell'
-        self.debug('Using "%s" as the private messaging command' %self._pmcomm)
+        self._pmcomm = '/m' if self.console.gameName[:5] == 'etpro' else '/tell'
+        self.debug('using "%s" as the private messaging command' % self._pmcomm)
 
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   EVENTS                                                                                                       ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
-    def onEvent(self, event):
-        if event.type == b3.events.EVT_CLIENT_AUTH:
-            self.onAuth(event.client)
-        else:
-            self.debug('login.dumpEvent -- Type %s, Client %s, Target %s, Data %s', event.type, event.client, event.target, event.data)
-
-    def onAuth(self, client):
-        if client.maxLevel > self.threshold and not client.isvar(self, 'loggedin'):
-
+    def onAuth(self, event):
+        """\
+        Handle EVT_CLIENT_AUTH
+        """
+        client = event.client
+        if client.maxLevel > self._threshold and not client.isvar(self, 'loggedin'):
             client_from_db = self._get_client_from_db(client.id)
-
-            #save original groupbits
+            # save original groupbits
             client.setvar(self, 'login_groupbits', client_from_db.groupBits)
 
-            #set new groupBits
             try:
+                # set new groupBits
                 g = self.console.storage.getGroup('reg')
                 client.groupBits = g.id
-            except:
+            except Exception:
                 client.groupBits = 2
 
             if not client_from_db.password:
-                client.message('You need a password to use all your privileges. Ask the administrator to set a password for you.')
-                return
+                m = 'You need a password to use all your privileges. Ask the administrator to set a password for you.'
+                client.message(m)
             else:
-                message = 'Login via console: %s %s !login yourpassword' %(self._pmcomm, client.cid)
-                client.message(message)
-                return
+                m = 'Login via console: %s %s !login yourpassword' % (self._pmcomm, client.cid)
+                client.message(m)
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   COMMANDS                                                                                                     ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def cmd_login(self, data, client, cmd=None):
         """\
@@ -118,29 +149,27 @@ class LoginPlugin(b3.plugin.Plugin):
                 client.setvar(self, 'loggedin', 1)
                 client.groupBits = client.var(self, 'login_groupbits').value
                 client.message('You are successfully logged in.')
-                return
             else:
                 client.message('^1***Access denied***^7')
-                return
         else:
-            message = 'Usage (via console): %s %s !login yourpassword' %(self._pmcomm, client.cid)
+            message = 'Usage (via console): %s %s !login yourpassword' % (self._pmcomm, client.cid)
             client.message(message)
-            return
         
     def cmd_setpassword(self, data, client, cmd=None):
         """\
-        <password> [<name>] - set a password for a client
+        <password> [<client>] - set a password for a client
         """
         if not data:
-            client.message('usage: %s%s <new password> [name]' % (cmd.prefix, cmd.command))
+            client.message('usage: %s%s <new password> [<client>]' % (cmd.prefix, cmd.command))
             return
 
         data = string.split(data)
         if len(data) > 1:
             sclient = self._adminPlugin.findClientPrompt(data[1], client)
-            if not sclient: return        
+            if not sclient:
+                return
             if client.maxLevel <= sclient.maxLevel and client.maxLevel < 100:
-                client.message('You can only change passwords of yourself or lower level players.')
+                client.message('You can only change passwords of yourself or lower level players')
                 return
         else:
             sclient = client
@@ -148,10 +177,12 @@ class LoginPlugin(b3.plugin.Plugin):
         sclient.password = hash_password(data[0])
         sclient.save()
         if client == sclient:
-            client.message("your new password is saved")
+            client.message("Your new password has been saved")
         else:
-            client.message("new password for %s saved" % sclient.name)
-
+            client.message("New password for %s saved" % sclient.name)
 
     def _get_client_from_db(self, client_id):
+        """\
+        Retrieve a client from the storage layer
+        """
         return self.console.storage.getClient(Client(id=client_id))

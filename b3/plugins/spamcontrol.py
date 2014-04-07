@@ -17,8 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#
 # 2005/08/29 - 1.1.0 - ThorN
-#   Converted to use new event handlers
+#   - Converted to use new event handlers
 # 2012/08/11 - 1.2 - Courgette
 #   - Can define group for using the !spamins command different than mod_level
 #   - Can define an alias for the !spamins command
@@ -28,17 +29,25 @@
 #   - improve behavior when a spammer received a warning but continues to spam
 # 2012/12/18 - 1.3.1 - Courgette
 #   - fix regression that prevented the !spamins command to be registered since v1.2
+# 2014/04/07 - 1.4 - Fenix
+#   - pep8 coding style guide
+#   - improved plugin startup and configuration file loading
 #
-from ConfigParser import NoOptionError
-import b3, re
+
+import b3
 import b3.events
 import b3.plugin
+import re
+from ConfigParser import NoOptionError
 
-__author__  = 'ThorN, Courgette'
-__version__ = '1.3.1'
+__author__ = 'ThorN, Courgette'
+__version__ = '1.4'
 
 
 class SpamcontrolPlugin(b3.plugin.Plugin):
+
+    _adminPlugin = None
+
     _maxSpamins = 10
     _modLevel = 20
     _falloffRate = 6.5
@@ -47,40 +56,55 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
     # This mechanism allows game parsers to add behaviour for game specific events.
     eventHanlders = {}
 
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   STARTUP                                                                                                      ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def onLoadConfig(self):
+        """\
+        Load plugin configuration
+        """
         try:
             self._maxSpamins = self.config.getint('settings', 'max_spamins')
             if self._maxSpamins < 0:
                 self._maxSpamins = 0
-        except (NoOptionError, ValueError), err:
-            self._maxSpamins = 10
-            self.warning("using default value %s for max_spamins. %s" % (self._maxSpamins, err))
+            self.debug('loaded settings/max_spamins: %s' % self._maxSpamins)
+        except (NoOptionError, ValueError), e:
+            self.error('could not load settings/max_spamins config value: %s' % e)
+            self.debug('using default value (%s) for settings/max_spamins' % self._maxSpamins)
 
         try:
             self._modLevel = self.console.getGroupLevel(self.config.get('settings', 'mod_level'))
-        except (NoOptionError, KeyError), err:
-            self.warning("using default value %s for mod_level. %s" % (self._modLevel, err))
+            self.debug('loaded settings/mod_level: %s' % self._modLevel)
+        except (NoOptionError, KeyError), e:
+            self.error('could not load settings/mod_level config value: %s' % e)
+            self.debug('using default value (%s) for settings/mod_level' % self._modLevel)
 
         try:
             self._falloffRate = self.config.getfloat('settings', 'falloff_rate')
-        except (NoOptionError, ValueError), err:
-            self._falloffRate = 6.5
-            self.warning("using default value %s for falloff_rate. %s" % (self._falloffRate, err))
-
+            self.debug('loaded settings/falloff_rate: %s' % self._falloffRate)
+        except (NoOptionError, ValueError), e:
+            self.error('could not load settings/falloff_rate config value: %s' % e)
+            self.debug('using default value (%s) for settings/falloff_rate' % self._falloffRate)
 
     def onStartup(self):
-        self.registerEvent(b3.events.EVT_CLIENT_SAY)
-        self.registerEvent(b3.events.EVT_CLIENT_TEAM_SAY)
+        """\
+        Initialize the plugin
+        """
+        # register the events needed
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_SAY'))
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_SAY'))
 
         self.eventHanlders = {
-            b3.events.EVT_CLIENT_SAY: self.onChat,
-            b3.events.EVT_CLIENT_TEAM_SAY: self.onChat,
-            }
+            self.console.getEventID('EVT_CLIENT_SAY'): self.onChat,
+            self.console.getEventID('EVT_CLIENT_TEAM_SAY'): self.onChat,
+        }
 
         self._adminPlugin = self.console.getPlugin('admin')
         if self._adminPlugin:
-            # register commands
+            # register our commands
             if 'commands' in self.config.sections():
                 for cmd in self.config.options('commands'):
                     level = self.config.get('commands', cmd)
@@ -92,11 +116,17 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
                     func = self.getCmd(cmd)
                     if func:
                         self._adminPlugin.registerCommand(self, cmd, level, func, alias)
-                    else:
-                        self.warning("cannot find command function for '%s'" % cmd)
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   FUNCTIONS                                                                                                    ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def getCmd(self, cmd):
-        """ return the method for a given command  """
+        """\
+        Return the method for a given command
+        """
         cmd = 'cmd_%s' % cmd
         if hasattr(self, cmd):
             func = getattr(self, cmd)
@@ -104,72 +134,18 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
         return None
 
     def getTime(self):
-        """ just to ease automated tests """
+        """\
+        Just to ease automated tests
+        """
         return self.console.time()
 
-
-    def cmd_spamins(self, data, client, cmd=None):
-        """\
-        [name] - display a spamins level
-        """
-        if data:
-            sclient = self._adminPlugin.findClientPrompt(data, client)
-        else:
-            sclient = client
-
-        if sclient:
-            if sclient.maxLevel >= self._modLevel:
-                cmd.sayLoudOrPM(client, '%s ^7is too cool to spam' % sclient.exactName)
-            else:
-                now = self.getTime()
-                last_message_time = sclient.var(self, 'last_message_time', now).value
-                gap = now - last_message_time
-
-                maxspamins = spamins = sclient.var(self, 'spamins', 0).value
-                spamins -= int(gap / self._falloffRate)
-
-                if spamins < 1:
-                    spamins = 0
-
-                cmd.sayLoudOrPM(client, '%s ^7currently has %s spamins, peak was %s' % (sclient.exactName, spamins, maxspamins))
-
-
-    def onEvent(self, event):
-        if not event.client or event.client.maxLevel >= self._modLevel:
-            return
-
-        self.eventHanlders[event.type](event)
-
-
-    def onChat(self, event):
-        points = 0
-        client = event.client
-        text = event.data
-
-        last_message = client.var(self, 'last_message').value
-
-        color = re.match(r'\^[0-9]', event.data)
-        if color and text == last_message:
-            points += 5
-        elif text == last_message:
-            points += 3
-        elif color:
-            points += 2
-        elif text.startswith('QUICKMESSAGE_'):
-            points += 2
-        else:
-            points += 1
-
-        if text[:1] == '!':
-            points += 1
-
-        self.add_spam_points(client, points, text)
-
-
     def add_spam_points(self, client, points, text):
+        """\
+        Add spam points to the given client
+        """
         now = self.getTime()
         if client.var(self, 'ignore_till', now).value > now:
-            #ignore the user
+            # ignore the user
             raise b3.events.VetoEvent
 
         last_message_time = client.var(self, 'last_message_time', now).value
@@ -199,3 +175,73 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
             client.setvar(self, 'spamins', spamins)
             raise b3.events.VetoEvent
 
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   EVENTS                                                                                                       ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
+    def onEvent(self, event):
+        """\
+        Handle intercepted events
+        """
+        if not event.client or event.client.maxLevel >= self._modLevel:
+            return
+        self.eventHanlders[event.type](event)
+
+    def onChat(self, event):
+        """\
+        Handle EVT_CLIENT_SAY and EVT_CLIENT_TEAM_SAY
+        """
+        points = 0
+        client = event.client
+        text = event.data
+        last_message = client.var(self, 'last_message').value
+        color = re.match(r'\^[0-9]', event.data)
+        if color and text == last_message:
+            points += 5
+        elif text == last_message:
+            points += 3
+        elif color:
+            points += 2
+        elif text.startswith('QUICKMESSAGE_'):
+            points += 2
+        else:
+            points += 1
+
+        if text[:1] == '!':
+            points += 1
+
+        self.add_spam_points(client, points, text)
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   COMMANDS                                                                                                     ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
+    def cmd_spamins(self, data, client, cmd=None):
+        """\
+        [<name>] - display a spamins level
+        """
+        if data:
+            sclient = self._adminPlugin.findClientPrompt(data, client)
+            if not sclient:
+                return
+        else:
+            sclient = client
+
+        if sclient.maxLevel >= self._modLevel:
+            cmd.sayLoudOrPM(client, '%s ^7is too cool to spam' % sclient.exactName)
+        else:
+            now = self.getTime()
+            last_message_time = sclient.var(self, 'last_message_time', now).value
+            gap = now - last_message_time
+
+            msmin = smin = sclient.var(self, 'spamins', 0).value
+            smin -= int(gap / self._falloffRate)
+
+            if smin < 1:
+                smin = 0
+
+            cmd.sayLoudOrPM(client, '%s ^7currently has %s spamins, peak was %s' % (sclient.exactName, smin, msmin))

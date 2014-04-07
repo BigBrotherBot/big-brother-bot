@@ -83,9 +83,6 @@ class Test_default_config(Welcome_functional_test):
         Welcome_functional_test.setUp(self)
         self.load_config()
 
-    def test_commands_greeting(self):
-        self.assertEqual(20, self.p._cmd_greeting_minlevel)
-
     def test_settings_flags(self):
         self.assertEqual(63, self.p._welcomeFlags)
 
@@ -314,25 +311,6 @@ class Test_config_flags(Welcome_functional_test):
 
 class Test_config(Welcome_functional_test):
 
-    def test_commands_greeting(self):
-        # nominal
-        self.load_config(dedent("""
-            [commands]
-            greeting: 60
-        """))
-        self.assertEqual(60, self.p._cmd_greeting_minlevel)
-        # empty
-        self.load_config(dedent("""
-            [commands]
-            greeting: 
-        """))
-        self.assertEqual(20, self.p._cmd_greeting_minlevel)
-        # junk
-        self.load_config(dedent("""
-            [commands]
-            greeting: f00
-        """))
-        self.assertEqual(20, self.p._cmd_greeting_minlevel)
     def test_settings_newb_connections(self):
         # nominal
         self.load_config(dedent("""

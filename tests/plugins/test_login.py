@@ -82,10 +82,10 @@ class Test_default_config(LoginTestCase):
         self.init_plugin()
 
     def test_thresholdlevel(self):
-        self.assertEqual(40, self.p.threshold)
+        self.assertEqual(40, self.p._threshold)
 
     def test_passwdlevel(self):
-        self.assertEqual(40, self.p.passwdlevel)
+        self.assertEqual(40, self.p._passwdlevel)
 
 
 class Test_load_config(LoginTestCase):
@@ -94,36 +94,36 @@ class Test_load_config(LoginTestCase):
         self.init_plugin(dedent("""
             [settings]
         """))
-        self.assertEqual(1000, self.p.threshold)
-        self.assertEqual(100, self.p.passwdlevel)
+        self.assertEqual(1000, self.p._threshold)
+        self.assertEqual(100, self.p._passwdlevel)
 
     def test_thresholdlevel_empty(self):
         self.init_plugin(dedent("""
             [settings]
             thresholdlevel:
         """))
-        self.assertEqual(1000, self.p.threshold)
+        self.assertEqual(1000, self.p._threshold)
 
     def test_thresholdlevel_junk(self):
         self.init_plugin(dedent("""
             [settings]
             thresholdlevel: f00
         """))
-        self.assertEqual(1000, self.p.threshold)
+        self.assertEqual(1000, self.p._threshold)
 
     def test_passwdlevel_empty(self):
         self.init_plugin(dedent("""
             [settings]
             passwdlevel:
         """))
-        self.assertEqual(100, self.p.passwdlevel)
+        self.assertEqual(100, self.p._passwdlevel)
 
     def test_passwdlevel_junk(self):
         self.init_plugin(dedent("""
             [settings]
             passwdlevel: f00
         """))
-        self.assertEqual(100, self.p.passwdlevel)
+        self.assertEqual(100, self.p._passwdlevel)
 
 
 class Test_cmd_setpassword(LoginTestCase):
@@ -144,7 +144,7 @@ class Test_cmd_setpassword(LoginTestCase):
         self.joe.clearMessageHistory()
         self.joe.says("!setpassword")
         # THEN
-        self.assertEqual(['usage: !setpassword <new password> [name]'], self.joe.message_history)
+        self.assertEqual(['usage: !setpassword <new password> [<client>]'], self.joe.message_history)
         self.assertEqual('', self.joe.password)
         joe_db = self.p._get_client_from_db(self.joe.id)
         self.assertEqual('', joe_db.password)
@@ -160,7 +160,7 @@ class Test_cmd_setpassword(LoginTestCase):
         self.joe.clearMessageHistory()
         self.joe.says("!setpassword f00")
         # THEN
-        self.assertEqual(['your new password is saved'], self.joe.message_history)
+        self.assertEqual(['Your new password has been saved'], self.joe.message_history)
         self.assertEqual(F00_MD5, self.joe.password)
         joe_db = self.p._get_client_from_db(self.joe.id)
         self.assertEqual(F00_MD5, joe_db.password)
@@ -178,7 +178,7 @@ class Test_cmd_setpassword(LoginTestCase):
         self.joe.clearMessageHistory()
         self.joe.says("!setpassword f00 jack")
         # THEN
-        self.assertEqual(['new password for Jack saved'], self.joe.message_history)
+        self.assertEqual(['New password for Jack saved'], self.joe.message_history)
         self.assertEqual(F00_MD5, jack.password)
         jack_db = self.p._get_client_from_db(jack.id)
         self.assertEqual(F00_MD5, jack_db.password)
