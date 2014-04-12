@@ -77,10 +77,12 @@
 # 07/04/2014 - 1.11 - Fenix
 #   * pep8 coding style guide
 #   * fixed variable initialization unpredicatability
-#
+# 12/04/2014 - 1.11.1 - Courgette
+#   * fix plugin failling to load when no plugin config file is set in b3.xml
+#   * fix missing time import for time.strftime
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.11'
+__version__ = '1.11.1'
 
 import b3
 import b3.cron
@@ -92,6 +94,7 @@ import urllib2
 import socket
 import os
 import random
+from time import strftime
 from b3 import functions
 from b3.functions import getModule
 from ConfigParser import NoOptionError
@@ -118,6 +121,9 @@ class PublistPlugin(b3.plugin.Plugin):
         """\
         Load plugin configuration
         """
+        if self.config is None:
+            return
+
         try:
             self._secondUrl = self.config.get('settings', 'url')
             self.debug('Using second url : %s' % self._secondUrl)
@@ -154,7 +160,7 @@ class PublistPlugin(b3.plugin.Plugin):
         
         # planning initial heartbeat
         # v1.9.1: Changing the threaded timer to a one time crontab to enable quick shutdown of the bot.
-        _im = int(time.strftime('%M')) + self._initial_heartbeat_delay_minutes
+        _im = int(strftime('%M')) + self._initial_heartbeat_delay_minutes
         if _im >= 60:
             _im -= 60
 
