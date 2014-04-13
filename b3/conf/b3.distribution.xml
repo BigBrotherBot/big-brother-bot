@@ -116,15 +116,15 @@
             
             -->
 		<plugin name="censor" config="@conf/plugin_censor.xml" />
-		<plugin name="spamcontrol" config="@conf/plugin_spamcontrol.xml" />
+		<plugin name="spamcontrol" config="@conf/plugin_spamcontrol.ini" />
         <plugin name="admin" config="@conf/plugin_admin.ini" />
-		<plugin name="tk" config="@conf/plugin_tk.xml" />
-		<plugin name="stats" config="@conf/plugin_stats.xml" />
-		<plugin name="pingwatch" config="@conf/plugin_pingwatch.xml" />
+		<plugin name="tk" config="@conf/plugin_tk.ini" />
+		<plugin name="stats" config="@conf/plugin_stats.ini" />
+		<plugin name="pingwatch" config="@conf/plugin_pingwatch.ini" />
 		<plugin name="adv" config="@conf/plugin_adv.xml" />
-		<plugin name="status" config="@conf/plugin_status.xml" />
-		<plugin name="welcome" config="@conf/plugin_welcome.xml" />
-		<plugin name="punkbuster" config="@conf/plugin_punkbuster.xml" />
+		<plugin name="status" config="@conf/plugin_status.ini" />
+		<plugin name="welcome" config="@conf/plugin_welcome.ini" />
+		<plugin name="punkbuster" config="@conf/plugin_punkbuster.ini" />
 
 		<!-- The next plugins are external, 3rd party plugins and should reside in the external_dir. Example: -->
 		<!-- plugin config="@b3/extplugins/conf/newplugin.xml" name="newplugin" -->
