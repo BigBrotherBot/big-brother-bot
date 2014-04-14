@@ -801,7 +801,7 @@ class Iourt42Parser(Iourt41Parser):
         elif not client.id:
             # no client id, database must be down, do tempban
             self.error('Q3AParser.ban(): no client id, database must be down, doing tempban')
-            return self.tempban(client, reason, '1d', admin, silent)
+            return self.tempban(client, reason, 1440, admin, silent)
 
         if admin:
             fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client,
