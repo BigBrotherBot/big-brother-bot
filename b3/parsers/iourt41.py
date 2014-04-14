@@ -235,16 +235,19 @@ class Iourt41Parser(AbstractParser):
         #Generated with ioUrbanTerror v4.1:
         #Hit: 12 7 1 19: BSTHanzo[FR] hit ercan in the Helmet
         #Hit: 13 10 0 8: Grover hit jacobdk92 in the Head
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<hitloc>[0-9]+)\s(?P<aweap>[0-9]+):\s+(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<hitloc>[0-9]+)\s'
+                   r'(?P<aweap>[0-9]+):\s+(?P<text>.*))$', re.IGNORECASE),
 
         #6:37 Kill: 0 1 16: XLR8or killed =lvl1=Cheetah by UT_MOD_SPAS
         #2:56 Kill: 14 4 21: Qst killed Leftovercrack by UT_MOD_PSG1
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s+(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s+'
+                   r'(?P<text>.*))$', re.IGNORECASE),
 
         #Processing chats and tell events...
         #5:39 saytell: 15 16 repelSteeltje: nno
         #5:39 saytell: 15 15 repelSteeltje: nno
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<name>[^ ]+):\s+(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<name>[^ ]+):\s+'
+                   r'(?P<text>.*))$', re.IGNORECASE),
 
         #3:53 say: 8 denzel: lol
         #15:37 say: 9 .:MS-T:.BstPL: this name is quite a challenge
@@ -267,7 +270,8 @@ class Iourt41Parser(AbstractParser):
         #2:32 Bomb was planted by 2
         #3:01 Bomb was defused by 3!
         #2:17 Bomb has been collected by 2
-        re.compile(r'^(?P<action>Bomb)\s(?P<data>(was|has been)\s(?P<subaction>[a-z]+)\sby\s(?P<cid>[0-9]+).*)$', re.IGNORECASE),
+        re.compile(r'^(?P<action>Bomb)\s(?P<data>(was|has been)\s(?P<subaction>[a-z]+)\sby\s(?P<cid>[0-9]+).*)$',
+                   re.IGNORECASE),
 
         #17:24 Pop!
         re.compile(r'^(?P<action>Pop)!$', re.IGNORECASE),
@@ -285,7 +289,10 @@ class Iourt41Parser(AbstractParser):
     #   2     0   19 ^1XLR^78^8^9or^7        0 145.99.135.227:27960  41893  8000  # player with a live ping
     #   4     0 CNCT Dz!k^7                450 83.175.191.27:64459   50308 20000  # connecting player
     #   9     0 ZMBI ^7                   1900 81.178.80.68:27960    10801  8000  # zombies (need to be disconnected!)
-    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+|CNCT|ZMBI)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+|CNCT|ZMBI)\s+'
+                            r'(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+'
+                            r'(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+
     _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
 
     # Map: ut4_algiers
@@ -294,9 +301,9 @@ class Iourt41Parser(AbstractParser):
     # 0:  FREE k:0 d:0 ping:0
     # 4: yene RED k:16 d:8 ping:50 92.104.110.192:63496
     _reTeamScores = re.compile(r'^Scores:\s+R:(?P<RedScore>.+)\s+B:(?P<BlueScore>.+)$', re.I)
-
-    # NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
-    _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): (?P<name>.*) (?P<team>RED|BLUE|SPECTATOR|FREE) k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) ping:(?P<ping>[0-9]+|CNCT|ZMBI)( (?P<ip>[0-9.]+):(?P<port>[0-9-]+))?$', re.I)
+    _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): (?P<name>.*) (?P<team>RED|BLUE|SPECTATOR|FREE) '
+                                r'k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) ping:(?P<ping>[0-9]+|CNCT|ZMBI)( '
+                                r'(?P<ip>[0-9.]+):(?P<port>[0-9-]+))?$', re.I)
 
     PunkBuster = None
 
