@@ -289,40 +289,47 @@ class Iourt42Parser(Iourt41Parser):
 
     _lineFormats = (
         #Radio: 0 - 7 - 2 - "New Alley" - "I'm going for the flag"
-        re.compile(r'''^(?P<action>Radio): (?P<data>(?P<cid>[0-9]+) - (?P<msg_group>[0-9]+) - (?P<msg_id>[0-9]+) - "(?P<location>.*)" - "(?P<text>.*)")$'''),
+        re.compile(r'^(?P<action>Radio): (?P<data>(?P<cid>[0-9]+) - (?P<msg_group>[0-9]+) - (?P<msg_id>[0-9]+) - '
+                   r'"(?P<location>.*)" - "(?P<text>.*)")$'),
 
         #Callvote: 1 - "map dressingroom"
-        re.compile(r'''^(?P<action>Callvote): (?P<data>(?P<cid>[0-9]+) - "(?P<vote_string>.*)")$'''),
+        re.compile(r'^(?P<action>Callvote): (?P<data>(?P<cid>[0-9]+) - "(?P<vote_string>.*)")$'),
 
         #Vote: 0 - 2
-        re.compile(r'''^(?P<action>Vote): (?P<data>(?P<cid>[0-9]+) - (?P<value>.*))$'''),
+        re.compile(r'^(?P<action>Vote): (?P<data>(?P<cid>[0-9]+) - (?P<value>.*))$'),
 
         #VotePassed: 1 - 0 - "reload"
-        re.compile(r'''^(?P<action>VotePassed): (?P<data>(?P<yes>[0-9]+) - (?P<no>[0-9]+) - "(?P<what>.*)")$'''),
+        re.compile(r'^(?P<action>VotePassed): (?P<data>(?P<yes>[0-9]+) - (?P<no>[0-9]+) - "(?P<what>.*)")$'),
 
         #VoteFailed: 1 - 1 - "restart"
-        re.compile(r'''^(?P<action>VoteFailed): (?P<data>(?P<yes>[0-9]+) - (?P<no>[0-9]+) - "(?P<what>.*)")$'''),
+        re.compile(r'^(?P<action>VoteFailed): (?P<data>(?P<yes>[0-9]+) - (?P<no>[0-9]+) - "(?P<what>.*)")$'),
 
         #FlagCaptureTime: 0: 1234567890
         #FlagCaptureTime: 1: 1125480101
-        re.compile(r'''^(?P<action>FlagCaptureTime):\s(?P<cid>[0-9]+):\s(?P<captime>[0-9]+)$''', re.IGNORECASE),
+        re.compile(r'^(?P<action>FlagCaptureTime):\s(?P<cid>[0-9]+):\s(?P<captime>[0-9]+)$', re.IGNORECASE),
 
         #13:34 ClientJumpRunStarted: 0 - way: 1
         #13:34 ClientJumpRunStarted: 0 - way: 1 - attempt: 1 of 5
-        re.compile(r'^(?P<action>ClientJumpRunStarted):\s(?P<cid>\d+)\s-\s(?P<data>way:\s(?P<way_id>\d+)(?:\s-\sattempt:\s(?P<attempt_num>\d+)\sof\s(?P<attempt_max>\d+))?)$', re.IGNORECASE),
+        re.compile(r'^(?P<action>ClientJumpRunStarted):\s(?P<cid>\d+)\s-\s(?P<data>way:\s(?P<way_id>\d+)'
+                   r'(?:\s-\sattempt:\s(?P<attempt_num>\d+)\sof\s(?P<attempt_max>\d+))?)$', re.IGNORECASE),
         #13:34 ClientJumpRunStopped: 0 - way: 1 - time: 12345
         #13:34 ClientJumpRunStopped: 0 - way: 1 - time: 12345 - attempt: 1 of 5
-        re.compile(r'^(?P<action>ClientJumpRunStopped):\s(?P<cid>\d+)\s-\s(?P<data>way:\s(?P<way_id>\d+)\s-\stime:\s(?P<way_time>\d+)(?:\s-\sattempt:\s(?P<attempt_num>\d+)\sof\s(?P<attempt_max>\d+))?)$', re.IGNORECASE),
+        re.compile(r'^(?P<action>ClientJumpRunStopped):\s(?P<cid>\d+)\s-\s(?P<data>way:\s(?P<way_id>\d+)'
+                   r'\s-\stime:\s(?P<way_time>\d+)(?:\s-\sattempt:\s(?P<attempt_num>\d+)\sof\s(?P<attempt_max>\d+'
+                   r'))?)$', re.IGNORECASE),
         #13:34 ClientJumpRunCanceled: 0 - way: 1
         #13:34 ClientJumpRunCanceled: 0 - way: 1 - attempt: 1 of 5
-        re.compile(r'^(?P<action>ClientJumpRunCanceled):\s(?P<cid>\d+)\s-\s(?P<data>way:\s(?P<way_id>\d+)(?:\s-\sattempt:\s(?P<attempt_num>\d+)\sof\s(?P<attempt_max>\d+))?)$', re.IGNORECASE),
+        re.compile(r'^(?P<action>ClientJumpRunCanceled):\s(?P<cid>\d+)\s-\s(?P<data>way:\s(?P<way_id>\d+)'
+                   r'(?:\s-\sattempt:\s(?P<attempt_num>\d+)\sof\s(?P<attempt_max>\d+))?)$', re.IGNORECASE),
         
         #13:34 ClientSavePosition: 0 - 335.384887 - 67.469154 - -23.875000
         #13:34 ClientLoadPosition: 0 - 335.384887 - 67.469154 - -23.875000
-        re.compile(r'^(?P<action>Client(Save|Load)Position):\s(?P<cid>\d+)\s-\s(?P<data>(?P<x>-?\d+(?:\.\d+)?)\s-\s(?P<y>-?\d+(?:\.\d+)?)\s-\s(?P<z>-?\d+(?:\.\d+)?))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>Client(Save|Load)Position):\s(?P<cid>\d+)\s-\s(?P<data>(?P<x>-?\d+(?:\.\d+)'
+                   r'?)\s-\s(?P<y>-?\d+(?:\.\d+)?)\s-\s(?P<z>-?\d+(?:\.\d+)?))$', re.IGNORECASE),
         
         #13:34 ClientGoto: 0 - 1 - 335.384887 - 67.469154 - -23.875000
-        re.compile(r'^(?P<action>ClientGoto):\s(?P<cid>\d+)\s-\s(?P<tcid>\d+)\s-\s(?P<data>(?P<x>-?\d+(?:\.\d+)?)\s-\s(?P<y>-?\d+(?:\.\d+)?)\s-\s(?P<z>-?\d+(?:\.\d+)?))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>ClientGoto):\s(?P<cid>\d+)\s-\s(?P<tcid>\d+)\s-\s(?P<data>(?P<x>-?\d+(?:\.\d+)'
+                   r'?)\s-\s(?P<y>-?\d+(?:\.\d+)?)\s-\s(?P<z>-?\d+(?:\.\d+)?))$', re.IGNORECASE),
 
         #ClientSpawn: 0
         #ClientSpawn: 1
@@ -331,22 +338,19 @@ class Iourt42Parser(Iourt41Parser):
         #Generated with ioUrbanTerror v4.1:
         #Hit: 12 7 1 19: BSTHanzo[FR] hit ercan in the Helmet
         #Hit: 13 10 0 8: Grover hit jacobdk92 in the Head
-        re.compile(r'^(?P<action>Hit):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<hitloc>[0-9]+)\s(?P<aweap>[0-9]+):\s+(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>Hit):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<hitloc>[0-9]+)\s'
+                   r'(?P<aweap>[0-9]+):\s+(?P<text>.*))$', re.IGNORECASE),
 
         #6:37 Kill: 0 1 16: XLR8or killed =lvl1=Cheetah by UT_MOD_SPAS
         #2:56 Kill: 14 4 21: Qst killed Leftovercrack by UT_MOD_PSG1
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s+(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s+'
+                   r'(?P<text>.*))$', re.IGNORECASE),
 
         #Processing chats and tell events...
         #5:39 saytell: 15 16 repelSteeltje: nno
         #5:39 saytell: 15 15 repelSteeltje: nno
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<name>.+?):\s+(?P<text>.*))$', re.IGNORECASE),
-
-        #3:53 say: 8 denzel: lol
-        #15:37 say: 9 .:MS-T:.BstPL: this name is quite a challenge
-        #2:28 sayteam: 12 New_UrT_Player_v4.1: woekele
-        #16:33 Flag: 2 0: team_CTF_redflag
-        #re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<name>[^ ]+):\s+(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<name>.+?):\s+(?P<text>.*))$',
+                   re.IGNORECASE),
 
         # SGT: fix issue with OnSay when something like this come and the match could'nt find the name group
         # say: 7 -crespino-:
@@ -366,7 +370,8 @@ class Iourt42Parser(Iourt41Parser):
         #2:32 Bomb was planted by 2
         #3:01 Bomb was defused by 3!
         #2:17 Bomb has been collected by 2
-        re.compile(r'^(?P<action>Bomb)\s(?P<data>(was|has been)\s(?P<subaction>[a-z]+)\sby\s(?P<cid>[0-9]+).*)$', re.IGNORECASE),
+        re.compile(r'^(?P<action>Bomb)\s(?P<data>(was|has been)\s(?P<subaction>[a-z]+)\sby\s(?P<cid>[0-9]+).*)$',
+                   re.IGNORECASE),
 
         #17:24 Pop!
         re.compile(r'^(?P<action>Pop)!$', re.IGNORECASE),
@@ -383,7 +388,10 @@ class Iourt42Parser(Iourt41Parser):
     #   2     0   19 ^1XLR^78^8^9or^7        0 145.99.135.227:27960  41893  8000  # player with a live ping
     #   4     0 CNCT Dz!k^7                450 83.175.191.27:64459   50308 20000  # connecting player
     #   9     0 ZMBI ^7                   1900 81.178.80.68:27960    10801  8000  # zombies (need to be disconnected!)
-    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+|CNCT|ZMBI)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+|CNCT|ZMBI)\s+'
+                            r'(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+'
+                            r'(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+
     _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
 
     # Map: ut4_algiers
@@ -392,11 +400,15 @@ class Iourt42Parser(Iourt41Parser):
     # 0:  FREE k:0 d:0 ping:0
     # 4: yene RED k:16 d:8 ping:50 92.104.110.192:63496
     _reTeamScores = re.compile(r'^Scores:\s+R:(?P<RedScore>.+)\s+B:(?P<BlueScore>.+)$', re.I)
-    _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): (?P<name>.*) (?P<team>RED|BLUE|SPECTATOR|FREE) k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) ping:(?P<ping>[0-9]+|CNCT|ZMBI)( (?P<ip>[0-9.]+):(?P<port>[0-9-]+))?$', re.I) # NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
+    _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): (?P<name>.*) (?P<team>RED|BLUE|SPECTATOR|FREE) '
+                                r'k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) ping:(?P<ping>[0-9]+|CNCT|ZMBI)( '
+                                r'(?P<ip>[0-9.]+):(?P<port>[0-9-]+))?$', re.I)
 
     # /rcon auth-whois replies patterns
     # 'auth: id: 0 - name: ^7Courgette - login: courgette - notoriety: serious - level: -1  \n'
-    _re_authwhois = re.compile(r"""^auth: id: (?P<cid>\d+) - name: \^7(?P<name>.+?) - login: (?P<login>.*?) - notoriety: (?P<notoriety>.+?) - level: (?P<level>-?\d+?)(?:\s+- (?P<extra>.*))?\s*$""", re.MULTILINE)
+    _re_authwhois = re.compile(r'^auth: id: (?P<cid>\d+) - name: \^7(?P<name>.+?) - login: (?P<login>.*?) - '
+                               r'notoriety: (?P<notoriety>.+?) - level: (?P<level>-?\d+?)(?:\s+- (?P<extra>.*))?\s*$',
+                               re.MULTILINE)
 
     _permban_with_frozensand = False
     _tempban_with_frozensand = False
