@@ -243,7 +243,7 @@ class Iourt42Client(Client):
 
             self.refreshLevel()
 
-            self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_AUTH, self, self))
+            self.console.queueEvent(b3.events.Event(self.console.getEventID('EVT_CLIENT_AUTH'), self, self))
             self.authorizing = False
 
             return self.authed
@@ -554,11 +554,11 @@ class Iourt42Parser(Iourt41Parser):
         if self.spamcontrolPlugin:
             self.patch_spamcontrolPlugin()
 
-    ###############################################################################################
-    #
-    #    Config loaders
-    #
-    ###############################################################################################
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  CONFIG LOADERS                                                                                                ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def load_conf_frozensand_ban_settings(self):
         try:
@@ -612,11 +612,11 @@ class Iourt42Parser(Iourt41Parser):
 
         self.info("Send temporary bans to Frozen Sand : %s" % ('yes' if self._tempban_with_frozensand else 'no'))
 
-    ###############################################################################################
-    #
-    #    Events handlers
-    #
-    ###############################################################################################
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  EVENT HANDLERS                                                                                                ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def OnRadio(self, action, data, match=None):
         cid = match.group('cid')
@@ -628,7 +628,7 @@ class Iourt42Parser(Iourt41Parser):
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_CLIENT_RADIO,
+        return Event(self.getEventID('EVT_CLIENT_RADIO'),
                      client=client,
                      data=dict(msg_group=msg_group,
                                msg_id=msg_id,
@@ -642,7 +642,7 @@ class Iourt42Parser(Iourt41Parser):
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_CLIENT_CALLVOTE, client=client, data=vote_string)
+        return Event(self.getEventID('EVT_CLIENT_CALLVOTE'), client=client, data=vote_string)
 
     def OnVote(self, action, data, match=None):
         cid = match.group('cid')
@@ -651,19 +651,19 @@ class Iourt42Parser(Iourt41Parser):
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_CLIENT_VOTE, client=client, data=value)
+        return Event(self.getEventID('EVT_CLIENT_VOTE'), client=client, data=value)
 
     def OnVotepassed(self, action, data, match=None):
         yes_count = int(match.group('yes'))
         no_count = int(match.group('no'))
         vote_what = match.group('what')
-        return Event(self.EVT_VOTE_PASSED, data=dict(yes=yes_count, no=no_count, what=vote_what))
+        return Event(self.getEventID('EVT_VOTE_PASSED'), data=dict(yes=yes_count, no=no_count, what=vote_what))
 
     def OnVotefailed(self, action, data, match=None):
         yes_count = int(match.group('yes'))
         no_count = int(match.group('no'))
         vote_what = match.group('what')
-        return Event(self.EVT_VOTE_FAILED, data=dict(yes=yes_count, no=no_count, what=vote_what))
+        return Event(self.getEventID('EVT_VOTE_FAILED'), data=dict(yes=yes_count, no=no_count, what=vote_what))
 
     def OnFlagcapturetime(self, action, data, match=None):
         # FlagCaptureTime: 0: 1234567890
@@ -674,7 +674,7 @@ class Iourt42Parser(Iourt41Parser):
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_FLAG_CAPTURE_TIME, client=client, data=captime)
+        return Event(self.getEventID('EVT_FLAG_CAPTURE_TIME'), client=client, data=captime)
 
     def OnClientjumprunstarted(self, action, data, match=None):
         cid = match.group('cid')
@@ -685,7 +685,7 @@ class Iourt42Parser(Iourt41Parser):
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_CLIENT_JUMP_RUN_START,
+        return Event(self.getEventID('EVT_CLIENT_JUMP_RUN_START'),
                      client=client,
                      data=dict(way_id=way_id,
                                attempt_num=attempt_num,
@@ -701,7 +701,7 @@ class Iourt42Parser(Iourt41Parser):
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_CLIENT_JUMP_RUN_STOP,
+        return Event(self.getEventID('EVT_CLIENT_JUMP_RUN_STOP'),
                      client=client,
                      data=dict(way_id=way_id,
                                way_time=way_time,
@@ -717,7 +717,7 @@ class Iourt42Parser(Iourt41Parser):
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_CLIENT_JUMP_RUN_CANCEL,
+        return Event(self.getEventID('EVT_CLIENT_JUMP_RUN_CANCEL'),
                      client=client,
                      data=dict(way_id=way_id,
                                attempt_num=attempt_num,
@@ -730,7 +730,7 @@ class Iourt42Parser(Iourt41Parser):
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_CLIENT_POS_SAVE, client=client, data=dict(position=position))
+        return Event(self.getEventID('EVT_CLIENT_POS_SAVE'), client=client, data=dict(position=position))
 
     def OnClientloadposition(self, action, data, match=None):
         cid = match.group('cid')
@@ -739,13 +739,12 @@ class Iourt42Parser(Iourt41Parser):
         if not client:
             self.debug('No client found')
             return None
-        return Event(self.EVT_CLIENT_POS_LOAD, client=client, data=dict(position=position))
+        return Event(self.getEventID('EVT_CLIENT_POS_LOAD'), client=client, data=dict(position=position))
     
     def OnClientgoto(self, action, data, match=None):
         cid = match.group('cid')
         tcid = match.group('tcid')
         position = float(match.group('x')), float(match.group('y')), float(match.group('z'))
-        
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
             self.debug('No client found')
@@ -756,7 +755,7 @@ class Iourt42Parser(Iourt41Parser):
             self.debug('No target client found')
             return None
             
-        return Event(self.EVT_CLIENT_GOTO, client=client, target=target, data=dict(position=position))
+        return Event(self.getEventID('EVT_CLIENT_GOTO'), client=client, target=target, data=dict(position=position))
 
     def OnClientspawn(self, action, data, match=None):
         # ClientSpawn: 0
@@ -767,26 +766,26 @@ class Iourt42Parser(Iourt41Parser):
             self.debug('No client found')
             return None
 
-        return Event(self.EVT_CLIENT_SPAWN, client=client, data=None)
+        return Event(self.getEventID('EVT_CLIENT_SPAWN'), client=client, data=None)
 
     def OnSurvivorwinner(self, action, data, match=None):
         # SurvivorWinner: Blue
         # SurvivorWinner: Red
         # SurvivorWinner: 0
         if data in ('Blue', 'Red'):
-            return b3.events.Event(b3.events.EVT_SURVIVOR_WIN, data)
+            return b3.events.Event(self.getEventID('EVT_SURVIVOR_WIN'), data)
         else:
             client = self.getByCidOrJoinPlayer(data)
             if not client:
                 self.debug('No client found')
                 return None
-            return Event(self.EVT_CLIENT_SURVIVOR_WINNER, client=client, data=None)
+            return Event(self.getEventID('EVT_CLIENT_SURVIVOR_WINNER'), client=client, data=None)
 
-    ###############################################################################################
-    #
-    #    B3 Parser interface implementation
-    #
-    ###############################################################################################
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def authorizeClients(self):
         pass
@@ -847,7 +846,7 @@ class Iourt42Parser(Iourt41Parser):
             admin.message('^3banned^7: ^1%s^7 (^2@%s^7). His last ip (^1%s^7) has been added to banlist' %
                           (client.exactName, client.id, client.ip))
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
+        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_BAN'), {'reason': reason, 'admin': admin}, client))
         client.disconnect()
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
@@ -904,9 +903,9 @@ class Iourt42Parser(Iourt41Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, dict(reason=reason,
-                                                                            duration=duration,
-                                                                            admin=admin), client))
+        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_BAN_TEMP'), dict(reason=reason,
+                                                                                     duration=duration,
+                                                                                     admin=admin), client))
         client.disconnect()
 
     def inflictCustomPenalty(self, ptype, client, reason=None, duration=None, admin=None, data=None):
@@ -947,11 +946,11 @@ class Iourt42Parser(Iourt41Parser):
                 client.message("%s" % reason)
             return True
 
-    ###############################################################################################
-    #
-    #    Other methods
-    #
-    ###############################################################################################
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  OTHER METHODS                                                                                                 ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def queryClientFrozenSandAccount(self, cid):
         """\
@@ -1032,7 +1031,7 @@ class Iourt42Parser(Iourt41Parser):
                 # update existing client
                 for k, v in bclient.iteritems():
                     if hasattr(client, 'gear') and k == 'gear' and client.gear != v:
-                        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_GEAR_CHANGE, v, client))
+                        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_GEAR_CHANGE'), v, client))
                     if not k.startswith('_') and k not in ('login', 'password', 'groupBits', 'maskLevel',
                                                            'autoLogin', 'greeting'):
                         setattr(client, k, v)
@@ -1137,12 +1136,13 @@ class Iourt42Parser(Iourt41Parser):
         """ This method alters the Spamcontrol plugin after it started to make it aware of RADIO spam """
         self.info("Patching Spamcontrol plugin")
         # teach the Spamcontrol plugin how to react on such events
+
         def onRadio(this, event):
             new_event = Event(type=event.type, client=event.client, target=event.target, data=repr(event.data))
             this.onChat(new_event)
         self.spamcontrolPlugin.onRadio = new.instancemethod(onRadio, self.spamcontrolPlugin, SpamcontrolPlugin)
-        self.spamcontrolPlugin.eventHanlders[self.EVT_CLIENT_RADIO] = self.spamcontrolPlugin.onRadio
-        self.spamcontrolPlugin.registerEvent(self.EVT_CLIENT_RADIO)
+        self.spamcontrolPlugin.eventHanlders[self.getEventID('EVT_CLIENT_RADIO')] = self.spamcontrolPlugin.onRadio
+        self.spamcontrolPlugin.registerEvent(self.getEventID('EVT_CLIENT_RADIO'))
 
     @staticmethod
     def patch_Clients():
@@ -1155,7 +1155,7 @@ class Iourt42Parser(Iourt41Parser):
                                self[client.cid].cid, self[client.cid].name,
                                self[client.cid].guid, self[client.cid].data)
 
-            self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_CONNECT, client, client))
+            self.console.queueEvent(b3.events.Event(self.console.getEventID('EVT_CLIENT_CONNECT'), client, client))
 
             if client.guid:
                 client.auth()
