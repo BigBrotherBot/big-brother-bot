@@ -97,7 +97,13 @@
 # 2014/02/22 - 1.23 - Courgette
 #     * fix 162 - 'None' string is written to the database client.pbid column
 #     * fix auth-whois rcon response not being parsed properly since it has a newline character
+# 2014/04/14 - 1.24 - Fenix
+#     * use getEventID method to obtain event ids: remove some warnings
+#     * use integer value while calling tempban method: remove another silly warning
+#     * rewritten regular expressions on multiline: respect pep8 constraint of 110 chars per line
+#     * remove duplicate reference of event ids
 #
+
 import b3
 import re
 import new
@@ -109,7 +115,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__ = 'Courgette, Fenix'
-__version__ = '1.23'
+__version__ = '1.24'
 
 
 class Iourt42Client(Client):
