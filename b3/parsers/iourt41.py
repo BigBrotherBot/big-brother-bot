@@ -175,9 +175,12 @@
 # 13/01/2014 - 1.19 - Fenix
 #     * pep8 coding style guide
 #     * correctly set the client bot flag upon new client connection
+# 14/04/2014 - 1.20 - Fenix
+#     * rewritten regular expressions on multiline: respect pep8 constraint of 110 chars per line
+#     * use getEventID method to obtain event ids: remove some warnings
 #
 __author__ = 'xlr8or, Courgette'
-__version__ = '1.19'
+__version__ = '1.20'
 
 import b3
 import b3.events
