@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
+# 15/04/2014 - 1.2.2 - Fenix
+#   * pep8 coding style guide
 # 24/10/2013 - 1.2.1 - Courgette
 #   * fix issue when public_ip and rcon_ip are different in b3.xml or when a domain name is used in place of an IP
 #   * get rid of "no handler found for paramiko.transport" errors
@@ -36,34 +38,36 @@
 #   * obey the SFTP URI scheme as described in http://tools.ietf.org/html/draft-ietf-secsh-scp-sftp-ssh-uri-04
 # 07/09/2010 - 0.1.1 - GrosBedo
 #   * b3/delay option now specify the delay between each ftp log fetching
-#   * b3/local_game_log option to specify the temporary local log name (permits to manage remotely several servers at once)
+#   * b3/local_game_log option to specify the temporary local log name (permits to manage
+#     remotely several servers at once)
 # 01/09/2010 - 0.1 - Courgette
-# * first attempt. Briefly tested. Seems to work
-from ConfigParser import NoOptionError
+#   * first attempt. Briefly tested. Seems to work
+
 import logging
 import threading
 import os.path
 import time
 
 import b3
-from b3 import functions
 import b3.plugin
+import b3.output
+
+from b3 import functions
+from ConfigParser import NoOptionError
 
 try:
     import paramiko
 except ImportError, e:
     log = b3.output.getInstance()
-    log.critical("""Missing module paramiko. The paramiko module is required to connect with SFTP.
-Install pycrypto from http://www.voidspace.org.uk/python/modules.shtml#pycrypto and paramiko from http://www.lag.net/paramiko/
-""")
+    log.critical("Missing module paramiko. The paramiko module is required to connect with SFTP. "
+                 "Install pycrypto from http://www.voidspace.org.uk/python/modules.shtml#pycrypto and "
+                 "paramiko from http://www.lag.net/paramiko/")
     raise e
 
-
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 __author__ = 'Courgette'
 
 
-#--------------------------------------------------------------------------------------------------
 class SftpytailPlugin(b3.plugin.Plugin):
 
     requiresConfigFile = False
@@ -90,6 +94,9 @@ class SftpytailPlugin(b3.plugin.Plugin):
         self._sftpdelay = 0.150
 
     def onStartup(self):
+        """\
+        Initialize plugin
+        """
         if self.console.config.has_option('server', 'delay'):
             self._sftpdelay = self.console.config.getfloat('server', 'delay')
         
@@ -100,7 +107,7 @@ class SftpytailPlugin(b3.plugin.Plugin):
             self.debug('Local Game Log is %s' % self.lgame_log)
 
         if self.console.config.get('server', 'game_log')[0:7] == 'sftp://':
-            self.initThread(self.console.config.get('server', 'game_log'))
+            self.init_thread(self.console.config.get('server', 'game_log'))
 
         if self.console.config.has_option('server', 'log_append'):
             self._logAppend = self.console.config.getboolean('server', 'log_append')
@@ -112,14 +119,15 @@ class SftpytailPlugin(b3.plugin.Plugin):
         paramiko_logger.handlers = [logging.NullHandler()]
         paramiko_logger.propagate = False
 
-
     def onLoadConfig(self):
-
+        """\
+        Load configuration file
+        """
         try:
             self._connectionTimeout = self.config.getint('settings', 'timeout')
             if self._connectionTimeout < 0:
                 raise ValueError("timeout cannot be negative")
-        except Exception, err:
+        except (NoOptionError, ValueError), err:
             self.warning("Error reading timeout from config file (%s). Using default value" % err)
             self._connectionTimeout = SftpytailPlugin.default_connection_timeout
         self.info("FTP connection timeout: %s" % self._connectionTimeout)
@@ -128,7 +136,7 @@ class SftpytailPlugin(b3.plugin.Plugin):
             self._maxGap = self.config.getint('settings', 'maxGapBytes')
             if self._maxGap < 0:
                 raise ValueError("maxGapBytes cannot be negative")
-        except Exception, err:
+        except (NoOptionError, ValueError), err:
             self.warning("Error reading maxGapBytes from config file (%s). Using default value" % err)
             self._maxGap = SftpytailPlugin.default_maxGap
         self.info("Maximum gap allowed between remote and local gamelog: %s bytes" % self._maxGap)
@@ -139,7 +147,7 @@ class SftpytailPlugin(b3.plugin.Plugin):
                 raise ValueError("kown_host file %r does not exists" % self.known_hosts_file)
         except (NoOptionError, KeyError):
             pass
-        except Exception, err:
+        except ValueError, err:
             self.error("can't accept known_hosts_file value. %s" % err)
             self.known_hosts_file = None
         self.info("known_hosts_file : %r" % self.known_hosts_file)
@@ -150,20 +158,20 @@ class SftpytailPlugin(b3.plugin.Plugin):
                 raise ValueError("private key file %r does not exists" % self.private_key_file)
         except (NoOptionError, KeyError):
             pass
-        except Exception, err:
+        except ValueError, err:
             self.error("can't accept private_key_file value. %s" % err.message)
             self.private_key_file = None
         self.info("private_key_file : %r" % self.private_key_file)
 
-    def initThread(self, ftpfileDSN):
-        self.sftpconfig = functions.splitDSN(ftpfileDSN)
+    def init_thread(self, ftpfiledsn):
+        self.sftpconfig = functions.splitDSN(ftpfiledsn)
         thread1 = threading.Thread(target=self.update)
         self.info("Starting sftpytail thread")
         thread1.start()
         return thread1
     
     def update(self):
-        def handleDownload(block):
+        def handle_download(block):
             self.verbose('received %s bytes' % len(block))
             self._remoteFileOffset += len(block)
             if self.buffer is None:
@@ -184,28 +192,30 @@ class SftpytailPlugin(b3.plugin.Plugin):
                     self._nbConsecutiveConnFailure = 0
                 try:
                     #self.verbose("Getting remote file size for %s" % self.sftpconfig['path'])
-                    remoteSize = sftp.stat(self.sftpconfig['path']).st_size
+                    remotesize = sftp.stat(self.sftpconfig['path']).st_size
                     #self.verbose("Remote file size is %s" % remoteSize)
-                except IOError, e:
-                    self.critical(e)
-                    raise e
+                except IOError, err:
+                    self.critical(err)
+                    raise err
                 if self._remoteFileOffset is None:
-                    self._remoteFileOffset = remoteSize
-                if remoteSize < self._remoteFileOffset:
+                    self._remoteFileOffset = remotesize
+                if remotesize < self._remoteFileOffset:
                     self.debug("remote file rotation detected")
                     self._remoteFileOffset = 0
-                if remoteSize > self._remoteFileOffset:
-                    if (remoteSize - self._remoteFileOffset) > self._maxGap:
-                        self.verbose('gap between local and remote file too large (%s bytes)', (remoteSize - self._remoteFileOffset))
+                if remotesize > self._remoteFileOffset:
+                    if (remotesize - self._remoteFileOffset) > self._maxGap:
+                        gap = remotesize - self._remoteFileOffset
+                        self.verbose('gap between local and remote file too large (%s bytes)', gap)
                         self.verbose('downloading only the last %s bytes' % self._maxGap)
-                        self._remoteFileOffset = remoteSize - self._maxGap
-                    #self.debug('RETR from remote offset %s. (expecting to read at least %s bytes)' % (self._remoteFileOffset, remoteSize - self._remoteFileOffset))
+                        self._remoteFileOffset = remotesize - self._maxGap
+                    #self.debug('RETR from remote offset %s. (expecting to read at least %s bytes)' % (
+                    #           self._remoteFileOffset, remoteSize - self._remoteFileOffset))
                     if not rfile:
                         self.debug('opening remote game log file %s for reading' % self.sftpconfig['path'])
                         rfile = sftp.open(self.sftpconfig['path'], 'r')
                     rfile.seek(self._remoteFileOffset)
                     self.debug('reading remote game log file from offset %s' % self._remoteFileOffset)
-                    handleDownload(rfile.read())      
+                    handle_download(rfile.read())
                     if self.buffer:
                         self.file.write(self.buffer)
                         self.buffer = None
@@ -213,8 +223,8 @@ class SftpytailPlugin(b3.plugin.Plugin):
                     if self.console._paused:
                         self.console.unpause()
                         self.debug('Unpausing')
-            except paramiko.SSHException, e:
-                self.warning(str(e))
+            except paramiko.SSHException, err:
+                self.warning(str(err))
                 self._nbConsecutiveConnFailure += 1
                 self.verbose('Lost connection to server, pausing until updated properly.')
                 if self.console._paused is False:
@@ -226,7 +236,7 @@ class SftpytailPlugin(b3.plugin.Plugin):
                         self.file.write('\r\n')
                         self.file.write('B3 has restarted writing the log file\r\n')
                         self.file.write('\r\n')
-                    except:
+                    except IOError:
                         self.file = open(self.lgame_log, 'w')
                 else:
                     self.file = open(self.lgame_log, 'w')
@@ -236,7 +246,7 @@ class SftpytailPlugin(b3.plugin.Plugin):
                     rfile.close()
                     transport.close()
                     self.debug('sFTP Connection Closed')
-                except:
+                except IOError:
                     pass
                 rfile = None
                 sftp = None
@@ -250,15 +260,15 @@ class SftpytailPlugin(b3.plugin.Plugin):
         self.verbose("B3 is down, stopping sFtpytail thread")
         try:
             rfile.close()
-        except:
+        except IOError:
             pass
         try:
             transport.close()
-        except:
+        except IOError:
             pass
         try:
             self.file.close()
-        except:
+        except IOError:
             pass
     
     def sftpconnect(self):

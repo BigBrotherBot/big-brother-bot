@@ -17,8 +17,11 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
+# 14/04/2014 - 1.7.1 - Fenix
+#   * pep8 coding style guide
 # 03/01/2014 - 1.7 - 82ndab.Bravo17
-#   * allow plugin to optionally perform a dummy read of the log file in order to update the filesize in Windows Server 2008
+#   * allow plugin to optionally perform a dummy read of the log file in order to update
+#     the filesize in Windows Server 2008
 # 27/11/2012 - 1.6 - Courgette
 #   * remove the first '/' from the url-path to respect RFC 1738
 #   * fix issue when public_ip and rcon_ip are different in b3.xml
@@ -42,7 +45,8 @@
 #   * display exact error message whenever the ftp connection fails
 # 04/09/2010 - 1.5.2 - GrosBedo
 #   * b3/delay option now specify the delay between each ftp log fetching
-#   * b3/local_game_log option to specify the temporary local log name (permits to manage remotely several servers at once)
+#   * b3/local_game_log option to specify the temporary local log name (permits to manage
+#     remotely several servers at once)
 # 02/09/2010 - 1.5.1 - Courgette
 #    * fix bug in 1.5. Dectect FTP permanent error and give up in such cases
 # 02/09/2010 - 1.5 - Courgette
@@ -66,25 +70,36 @@
 # 17/06/2009 - 1.0 - Bakes
 #     Initial Plugin, basic functionality.
  
-__version__ = '1.7'
+__version__ = '1.7.1'
 __author__ = 'Bakes, Courgette'
- 
-import b3, threading
-from b3 import functions
+
+import b3
 import b3.plugin
 import os.path
-from ftplib import FTP
+import threading
 import ftplib
 import time
 import re
 import sys
-#--------------------------------------------------------------------------------------------------
+
+from ConfigParser import NoOptionError
+from ftplib import FTP
+from b3 import functions
+
+
 class FtpytailPlugin(b3.plugin.Plugin):
     ### settings
-    _maxGap = 20480 # max gap in bytes between remote file and local file
-    _maxConsecutiveConnFailure = 30 # after that amount of consecutive failure, pause the bot for _long_delay seconds
-    _short_delay = 1 # time (in sec) to wait before reconnecting after loosing FTP connection (if _nbConsecutiveConnFailure < _maxConsecutiveConnFailure)
-    _long_delay = 15 # time (in sec) to wait before reconnecting after loosing FTP connection (if _nbConsecutiveConnFailure > _maxConsecutiveConnFailure)
+    _maxGap = 20480  # max gap in bytes between remote file and local file
+    _maxConsecutiveConnFailure = 30  # after that amount of consecutive failure, pause the bot for _long_delay seconds
+
+    # time (in sec) to wait before reconnecting after loosing
+    # FTP connection (if _nbConsecutiveConnFailure < _maxConsecutiveConnFailure)
+    _short_delay = 1
+
+    # time (in sec) to wait before reconnecting after loosing
+    # FTP connection (if _nbConsecutiveConnFailure > _maxConsecutiveConnFailure)
+    _long_delay = 15
+
     _connectionTimeout = 30
     
     requiresConfigFile = False
@@ -94,17 +109,25 @@ class FtpytailPlugin(b3.plugin.Plugin):
     _nbConsecutiveConnFailure = 0
     _logAppend = False
     
-    _ftplib_debug_level = 0 # 0: no debug, 1: normal debug, 2: extended debug
+    _ftplib_debug_level = 0  # 0: no debug, 1: normal debug, 2: extended debug
     
     _gamelog_read_delay = 0.150
     _use_windows_cache_fix = False
     _cache_refresh_delay = 1
+
+    file = None
+    lgame_log = None
+    url_path = None
     
     def onStartup(self):
+        """\
+        Initialize plugin
+        """
         versionsearch = re.search("^((?P<mainversion>[0-9]).(?P<lowerversion>[0-9]+)?)", sys.version)
         version = int(versionsearch.group(3))
         if version < 6:
-            self.error('Python Version %s, this is not supported and may lead to hangs. Please update Python to 2.6' % versionsearch.group(1))
+            self.error('Python Version %s, this is not supported and may lead to hangs. '
+                       'Please update Python to 2.6' % versionsearch.group(1))
             self.console.die()
 
         if self.console.config.has_option('server', 'delay'):
@@ -117,8 +140,8 @@ class FtpytailPlugin(b3.plugin.Plugin):
             self.lgame_log = os.path.normpath(os.path.expanduser(self.console.input.name))
             self.debug('Local Game Log is %s' % self.lgame_log)
 
-        if self.console.config.get('server','game_log')[0:6] == 'ftp://' :
-            self.initThread(self.console.config.get('server','game_log'))
+        if self.console.config.get('server', 'game_log')[0:6] == 'ftp://':
+            self.init_thread(self.console.config.get('server', 'game_log'))
             
         if self.console.config.has_option('server', 'log_append'):
             self._logAppend = self.console.config.getboolean('server', 'log_append')
@@ -126,70 +149,73 @@ class FtpytailPlugin(b3.plugin.Plugin):
             self._logAppend = False
     
     def onLoadConfig(self):
+        """\
+        Load plugin configuration
+        """
         try:
             self._connectionTimeout = self.config.getint('settings', 'timeout')
-        except: 
+        except (NoOptionError, ValueError):
             self.warning("Error reading timeout from config file. Using default value")
         self.info("FTP connection timeout: %s" % self._connectionTimeout)
 
         try:
             self._maxGap = self.config.getint('settings', 'maxGapBytes')
-        except: 
+        except (NoOptionError, ValueError):
             self.warning("Error reading maxGapBytes from config file. Using default value")
         self.info("Maximum gap allowed between remote and local gamelog: %s bytes" % self._maxGap)
 
         try:
             self._maxConsecutiveConnFailure = self.config.getint('settings', 'max_consecutive_failures')
-        except: 
+        except (NoOptionError, ValueError):
             self.warning("Error reading max_consecutive_failures from config file. Using default value")
         self.info("max_consecutive_failures: %s" % self._maxConsecutiveConnFailure)
 
         try:
             self._short_delay = self.config.getfloat('settings', 'short_delay')
-        except: 
+        except (NoOptionError, ValueError):
             self.warning("Error reading short_delay from config file. Using default value")
         self.info("short_delay: %s seconds" % self._short_delay)
 
         try:
             self._long_delay = self.config.getint('settings', 'long_delay')
-        except: 
+        except (NoOptionError, ValueError):
             self.warning("Error reading maxGapBytes from config file. Using default value")
         self.info("long_delay: %s seconds" % self._long_delay)
 
-        self.info("until %s consecutive errors are met, the bot will wait for \
-%s seconds (short_delay), then it will wait for %s seconds (long_delay)" 
-            % (self._maxConsecutiveConnFailure, self._short_delay, self._long_delay))
+        self.info("until %s consecutive errors are met, the bot will wait for %s seconds (short_delay), "
+                  "then it will wait for %s seconds (long_delay)" % (self._maxConsecutiveConnFailure,
+                                                                     self._short_delay, self._long_delay))
             
         try:
             self._use_windows_cache_fix = self.console.config.getboolean('server', 'use_windows_cache_fix')
-        except: 
+        except (NoOptionError, ValueError):
             self.warning("Error reading setting for Windows Cache Fix from config file. Using default value")
         self.info("Use the Windows Cache Fix: %s" % self._use_windows_cache_fix)
 
         try:
             self._cache_refresh_delay = self.console.config.getint('server', 'cache_refresh_delay')
-        except: 
+        except (NoOptionError, ValueError):
             self.warning("Error reading cache_refresh_delay from config file. Using default value")
         self.info("cache_refresh_delay: %s seconds" % self._cache_refresh_delay)
-        
 
-    def initThread(self, ftpfileDSN):
-        self.ftpconfig = functions.splitDSN(ftpfileDSN)
-        self.url_path = self.ftpconfig['path'][1:] # the '/' is not part of the uri-path according to RFC 1738 3.1. Common Internet Scheme Syntax
+    def init_thread(self, ftpfiledsn):
+        self.ftpconfig = functions.splitDSN(ftpfiledsn)
+        # the '/' is not part of the uri-path according to RFC 1738 3.1. Common Internet Scheme Syntax
+        self.url_path = self.ftpconfig['path'][1:]
         thread1 = threading.Thread(target=self.update)
         self.info("Starting ftpytail thread")
         thread1.start()
     
     def update(self):
-        def handleDownload(block):
+        def handle_download(block):
             #self.debug('received %s bytes' % len(block))
             self._remoteFileOffset += len(block)
-            if self.buffer == None:
+            if self.buffer is None:
                 self.buffer = block
             else:
                 self.buffer = self.buffer + block
         
-        def forceWindowsCacheReload(dummy):
+        def force_windows_cache_reload(dummy):
             # no need to do anything here so
             return
             
@@ -203,30 +229,38 @@ class FtpytailPlugin(b3.plugin.Plugin):
                 if not ftp:
                     ftp = self.ftpconnect()
                     self._nbConsecutiveConnFailure = 0
-                    remoteSize = ftp.size(os.path.basename(self.url_path))
-                    self.verbose("Connection successful. Remote file size is %s" % remoteSize)
+                    remotesize = ftp.size(os.path.basename(self.url_path))
+                    self.verbose("Connection successful. Remote file size is %s" % remotesize)
                     if self._remoteFileOffset is None:
-                        self._remoteFileOffset = remoteSize
+                        self._remoteFileOffset = remotesize
                         
                 if self._use_windows_cache_fix:
                     time.sleep(self._cache_refresh_delay)
-                    ftp.retrbinary('RETR ' + os.path.basename(self.url_path), forceWindowsCacheReload, 1, rest=self._remoteFileOffset)
+                    ftp.retrbinary('RETR ' + os.path.basename(self.url_path),
+                                   force_windows_cache_reload, 1,
+                                   rest=self._remoteFileOffset)
                     
-                remoteSize = ftp.size(os.path.basename(self.url_path))
-                if remoteSize < self._remoteFileOffset:
+                remotesize = ftp.size(os.path.basename(self.url_path))
+                if remotesize < self._remoteFileOffset:
                     self.debug("remote file rotation detected")
                     self._remoteFileOffset = 0
-                if remoteSize > self._remoteFileOffset:
-                    if  (remoteSize - self._remoteFileOffset) > self._maxGap:
-                        self.debug('gap between local and remote file too large (%s bytes)', (remoteSize - self._remoteFileOffset))
+                if remotesize > self._remoteFileOffset:
+                    if (remotesize - self._remoteFileOffset) > self._maxGap:
+                        gap = remotesize - self._remoteFileOffset
+                        self.debug('gap between local and remote file too large (%s bytes)', gap)
                         self.debug('downloading only the last %s bytes' % self._maxGap)
-                        self._remoteFileOffset = remoteSize - self._maxGap
-                    #self.debug('RETR from remote offset %s. (expecting to read at least %s bytes)' % (self._remoteFileOffset, remoteSize - self._remoteFileOffset))
-                    ftp.retrbinary('RETR ' + os.path.basename(self.url_path), handleDownload, rest=self._remoteFileOffset)          
+                        self._remoteFileOffset = remotesize - self._maxGap
+                    #self.debug('RETR from remote offset %s. (expecting to read at least %s '
+                    #           'bytes)' % (self._remoteFileOffset, remoteSize - self._remoteFileOffset))
+                    ftp.retrbinary('RETR ' + os.path.basename(self.url_path),
+                                   handle_download,
+                                   rest=self._remoteFileOffset)
+
                     if self.buffer:
                         self.file.write(self.buffer)
                         self.buffer = None
                         self.file.flush()
+
                     if self.console._paused:
                         self.console.unpause()
                         self.debug('Unpausing')
@@ -244,17 +278,20 @@ class FtpytailPlugin(b3.plugin.Plugin):
                         self.file.write('\r\n')
                         self.file.write('B3 has restarted writing the log file\r\n')
                         self.file.write('\r\n')
-                    except:
+                    except IOError:
                         self.file = open(self.lgame_log, 'w')
                 else:
                     self.file = open(self.lgame_log, 'w')
+
                 self.file.close()
                 self.file = open(self.lgame_log, 'ab')
+
                 try:
                     ftp.close()
                     self.debug('FTP Connection Closed')
-                except:
+                except IOError:
                     pass
+
                 ftp = None
                 
                 if self._nbConsecutiveConnFailure <= self._maxConsecutiveConnFailure:
@@ -264,26 +301,28 @@ class FtpytailPlugin(b3.plugin.Plugin):
                     time.sleep(self._long_delay)
             time.sleep(self._gamelog_read_delay)
         self.verbose("stopping Ftpytail update thread")
+
         try:
             ftp.close()
-        except:
+        except IOError:
             pass
         try:
             self.file.close()
-        except:
+        except IOError:
             pass
     
     def ftpconnect(self):
-        #self.debug('Python Version %s.%s, so setting timeout of 10 seconds' % (versionsearch.group(2), versionsearch.group(3)))
+        #self.debug('Python Version %s.%s, so setting timeout of 10 seconds' % (versionsearch.group(2),
+        #           versionsearch.group(3)))
         self.verbose('Connecting to %s:%s ...' % (self.ftpconfig["host"], self.ftpconfig["port"]))
         ftp = FTP()
         ftp.set_debuglevel(self._ftplib_debug_level)
         ftp.connect(self.ftpconfig['host'], self.ftpconfig['port'], self._connectionTimeout)
         ftp.login(self.ftpconfig['user'], self.ftpconfig['password'])
         ftp.voidcmd('TYPE I')
-        dir = os.path.dirname(self.url_path)
-        self.debug('trying to cwd to [%s]' % dir)
-        ftp.cwd(dir)
+        d = os.path.dirname(self.url_path)
+        self.debug('trying to cwd to [%s]' % d)
+        ftp.cwd(d)
         self.console.clients.sync()
         return ftp
     
@@ -313,8 +352,7 @@ if __name__ == '__main__':
     p = FtpytailPlugin(fakeConsole, config)
     p.onStartup()
 
-    #p.initThread('ftp://www.somewhere.tld/somepath/somefile.log')
-    p.initThread('ftp://thomas@127.0.0.1/DRIVERS/test.txt')
+    p.init_thread('ftp://thomas@127.0.0.1/DRIVERS/test.txt')
     time.sleep(120)
     fakeConsole.shutdown()
     time.sleep(8)

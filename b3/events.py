@@ -32,17 +32,21 @@
 #    * make EventsStats.dumpStats computations abort if B3 log level lower than required to display the results
 # 15/07/2013 - 1.5 - courgette
 #    * add events EVT_CLIENT_WARN and EVT_CLIENT_NOTICE
+# 15/04/2014 - 1.5.1 - Fenix
+#    * pep8 coding style guide
 
-__author__  = 'ThorN, xlr8or, Courgette'
-__version__ = '1.5'
+__author__ = 'ThorN, xlr8or, Courgette'
+__version__ = '1.5.1'
 
 import re
-from collections import deque
 import b3
+
 from b3.functions import meanstdv
 from b3.decorators import memoize
 from b3.output import VERBOSE
+from collections import deque
 from logging import DEBUG
+
 
 class Events:
     def __init__(self):
@@ -89,62 +93,81 @@ class Events:
         ))        
 
     def createEvent(self, key, name=None):
+        """\
+        Create an event
+        """
         g = globals()
 
         try:
-            id = self._events[key] = g[key]
-        except:
-            id = self._events[key] = len(self._events) + 1
+            _id = self._events[key] = g[key]
+        except KeyError:
+            _id = self._events[key] = len(self._events) + 1
 
         if name:        
-            self._eventNames[id] = name
+            self._eventNames[_id] = name
         else:
-            self._eventNames[id] = 'Unnamed (%s)' % key
+            self._eventNames[_id] = 'Unnamed (%s)' % key
 
-        g[key] = id
-
-        return id
+        g[key] = _id
+        return _id
 
     def getName(self, key):
+        """\
+        Return an event name
+        """
         try:
             return self._eventNames[self.getId(key)]
-        except:
+        except KeyError:
             return 'Unknown (%s)' % key
 
     def getId(self, key):
+        """\
+        Return an event ID given it's key
+        """
         if re.match('^[0-9]+$', str(key)):
             return int(key)
         else:
             try:
                 return self._events[key]
-            except:
+            except KeyError:
                 return None
 
     @memoize
     def getKey(self, event_id):
-        """Get the key of a given event ID"""
+        """\
+        Get the key of a given event ID
+        """
         matching_keys = [k for k, v in self._events.iteritems() if v == event_id]
         if not len(matching_keys):
-            raise KeyError, "could not find any B3 event with ID %s" % event_id
+            raise KeyError("could not find any B3 event with ID %s" % event_id)
         assert len(matching_keys) == 1, "expecting only one event key per event ID. %r" % matching_keys
         return matching_keys[0]
 
     def loadEvents(self, events):
-        for k,n in events:
+        """\
+        Load default events
+        """
+        for k, n in events:
             self.createEvent(k, n)
 
     def _get_events(self):
+        """\
+        Return the event dict
+        """
         return self._events
 
     events = property(_get_events)
 
+
 class Event(object):
+
     def __init__(self, type, data, client=None, target=None):
         self.time = b3.console.time()
         self.type = type
         self.data = data
         self.client = client
         self.target = target
+
     def __str__(self):
         return "Event<%s>(%r, %s, %s)" % (eventManager.getKey(self.type), self.data, self.client, self.target)
 
@@ -157,14 +180,14 @@ class EventsStats(object):
         self._queue_wait = deque(maxlen=max_samples)
         
     def add_event_handled(self, plugin_name, event_name, milliseconds_elapsed):
-        if not self._handling_timers.has_key(plugin_name):
+        if not plugin_name in self._handling_timers.keys():
             self._handling_timers[plugin_name] = {}
-        if not self._handling_timers[plugin_name].has_key(event_name):
+        if not event_name in self._handling_timers[plugin_name].keys():
             self._handling_timers[plugin_name][event_name] = deque(maxlen=self._max_samples)
         self._handling_timers[plugin_name][event_name].append(milliseconds_elapsed)
         self.console.verbose2("%s event handled by %s in %0.3f ms", event_name, plugin_name, milliseconds_elapsed)
 
-    def add_event_wait(self,milliseconds_wait):
+    def add_event_wait(self, milliseconds_wait):
         self._queue_wait.append(milliseconds_wait)
         
     def dumpStats(self):
@@ -173,19 +196,21 @@ class EventsStats(object):
                 for event_name, event_timers in plugin_timers.iteritems():
                     mean, stdv = meanstdv(event_timers)
                     if len(event_timers):
-                        self.console.verbose("%s %s : (ms) min(%0.1f), max(%0.1f), mean(%0.1f), stddev(%0.1f)",
-                              plugin_name, event_name,  min(event_timers),
-                              max(event_timers), mean, stdv)
+                        self.console.verbose("%s %s : (ms) min(%0.1f), max(%0.1f), mean(%0.1f), "
+                                             "stddev(%0.1f)", plugin_name, event_name, min(event_timers),
+                                             max(event_timers), mean, stdv)
 
         if self.console.log.isEnabledFor(DEBUG):
             mean, stdv = meanstdv(self._queue_wait)
             if len(self._queue_wait):
-                self.console.debug("Events waiting in queue stats : (ms) min(%0.1f), max(%0.1f), mean(%0.1f), stddev(%0.1f)",
-                                 min(self._queue_wait), max(self._queue_wait), mean, stdv)
+                self.console.debug("Events waiting in queue stats : (ms) min(%0.1f), max(%0.1f), mean(%0.1f), "
+                                   "stddev(%0.1f)", min(self._queue_wait), max(self._queue_wait), mean, stdv)
     
-#-----------------------------------------------------------------------------------------------------------------------
-# raise to cancel event processing
+
 class VetoEvent(Exception):
+    """\
+    Raised to cancel event processing
+    """
     pass
 
 eventManager = Events()

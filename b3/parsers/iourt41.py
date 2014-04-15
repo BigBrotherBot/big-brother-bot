@@ -175,9 +175,12 @@
 # 13/01/2014 - 1.19 - Fenix
 #     * pep8 coding style guide
 #     * correctly set the client bot flag upon new client connection
+# 14/04/2014 - 1.20 - Fenix
+#     * rewritten regular expressions on multiline: respect pep8 constraint of 110 chars per line
+#     * use getEventID method to obtain event ids: remove some warnings
 #
 __author__ = 'xlr8or, Courgette'
-__version__ = '1.19'
+__version__ = '1.20'
 
 import b3
 import b3.events
@@ -235,16 +238,19 @@ class Iourt41Parser(AbstractParser):
         #Generated with ioUrbanTerror v4.1:
         #Hit: 12 7 1 19: BSTHanzo[FR] hit ercan in the Helmet
         #Hit: 13 10 0 8: Grover hit jacobdk92 in the Head
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<hitloc>[0-9]+)\s(?P<aweap>[0-9]+):\s+(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<hitloc>[0-9]+)\s'
+                   r'(?P<aweap>[0-9]+):\s+(?P<text>.*))$', re.IGNORECASE),
 
         #6:37 Kill: 0 1 16: XLR8or killed =lvl1=Cheetah by UT_MOD_SPAS
         #2:56 Kill: 14 4 21: Qst killed Leftovercrack by UT_MOD_PSG1
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s+(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s+'
+                   r'(?P<text>.*))$', re.IGNORECASE),
 
         #Processing chats and tell events...
         #5:39 saytell: 15 16 repelSteeltje: nno
         #5:39 saytell: 15 15 repelSteeltje: nno
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<name>[^ ]+):\s+(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<name>[^ ]+):\s+'
+                   r'(?P<text>.*))$', re.IGNORECASE),
 
         #3:53 say: 8 denzel: lol
         #15:37 say: 9 .:MS-T:.BstPL: this name is quite a challenge
@@ -267,7 +273,8 @@ class Iourt41Parser(AbstractParser):
         #2:32 Bomb was planted by 2
         #3:01 Bomb was defused by 3!
         #2:17 Bomb has been collected by 2
-        re.compile(r'^(?P<action>Bomb)\s(?P<data>(was|has been)\s(?P<subaction>[a-z]+)\sby\s(?P<cid>[0-9]+).*)$', re.IGNORECASE),
+        re.compile(r'^(?P<action>Bomb)\s(?P<data>(was|has been)\s(?P<subaction>[a-z]+)\sby\s(?P<cid>[0-9]+).*)$',
+                   re.IGNORECASE),
 
         #17:24 Pop!
         re.compile(r'^(?P<action>Pop)!$', re.IGNORECASE),
@@ -285,7 +292,10 @@ class Iourt41Parser(AbstractParser):
     #   2     0   19 ^1XLR^78^8^9or^7        0 145.99.135.227:27960  41893  8000  # player with a live ping
     #   4     0 CNCT Dz!k^7                450 83.175.191.27:64459   50308 20000  # connecting player
     #   9     0 ZMBI ^7                   1900 81.178.80.68:27960    10801  8000  # zombies (need to be disconnected!)
-    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+|CNCT|ZMBI)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+|CNCT|ZMBI)\s+'
+                            r'(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+'
+                            r'(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+
     _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
 
     # Map: ut4_algiers
@@ -294,9 +304,9 @@ class Iourt41Parser(AbstractParser):
     # 0:  FREE k:0 d:0 ping:0
     # 4: yene RED k:16 d:8 ping:50 92.104.110.192:63496
     _reTeamScores = re.compile(r'^Scores:\s+R:(?P<RedScore>.+)\s+B:(?P<BlueScore>.+)$', re.I)
-
-    # NOTE: this won't work properly if the server has private slots. see http://forums.urbanterror.net/index.php/topic,9356.0.html
-    _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): (?P<name>.*) (?P<team>RED|BLUE|SPECTATOR|FREE) k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) ping:(?P<ping>[0-9]+|CNCT|ZMBI)( (?P<ip>[0-9.]+):(?P<port>[0-9-]+))?$', re.I)
+    _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): (?P<name>.*) (?P<team>RED|BLUE|SPECTATOR|FREE) '
+                                r'k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) ping:(?P<ping>[0-9]+|CNCT|ZMBI)( '
+                                r'(?P<ip>[0-9.]+):(?P<port>[0-9-]+))?$', re.I)
 
     PunkBuster = None
 
@@ -419,7 +429,7 @@ class Iourt41Parser(AbstractParser):
         self.Events.createEvent('EVT_GAME_FLAG_RETURNED', 'Flag returned')
         self.Events.createEvent('EVT_CLIENT_GEAR_CHANGE', 'Client gear change')
         self.Events.createEvent('EVT_SURVIVOR_WIN', 'Survivor Winner')
-        self.EVT_BOMB_EXPLODED = self.Events.createEvent('EVT_BOMB_EXPLODED', 'Bomb exploded')
+        self.Events.createEvent('EVT_BOMB_EXPLODED', 'Bomb exploded')
 
         # add the world client
         self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
@@ -631,11 +641,11 @@ class Iourt41Parser(AbstractParser):
             # client.message('you morron')
             # return True
 
-    ###############################################################################################
-    #
-    #    Events handlers
-    #
-    ###############################################################################################
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  EVENT HANDLERS                                                                                                ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     # Connect/Join
     def OnClientconnect(self, action, data, match=None):
@@ -648,7 +658,7 @@ class Iourt41Parser(AbstractParser):
         # 19:42.36 ClientBegin: 4
         client = self.getByCidOrJoinPlayer(data)
         if client:
-            return b3.events.Event(b3.events.EVT_CLIENT_JOIN, data=data, client=client)
+            return b3.events.Event(self.getEventID('EVT_CLIENT_JOIN'), data=data, client=client)
 
     # Parse Userinfo
     def OnClientuserinfo(self, action, data, match=None):
@@ -691,7 +701,7 @@ class Iourt41Parser(AbstractParser):
                 # update existing client
                 for k, v in bclient.iteritems():
                     if hasattr(client, 'gear') and k == 'gear' and client.gear != v:
-                        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_GEAR_CHANGE, v, client))
+                        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_GEAR_CHANGE'), v, client))
                     if not k.startswith('_') and k not in ('login', 'password', 'groupBits', 'maskLevel',
                                                            'autoLogin', 'greeting'):
                         setattr(client, k, v)
@@ -804,12 +814,12 @@ class Iourt41Parser(AbstractParser):
             self.debug('No attacker')
             return None
 
-        event = b3.events.EVT_CLIENT_DAMAGE
+        event = self.getEventID('EVT_CLIENT_DAMAGE')
 
         if attacker.cid == victim.cid:
-            event = b3.events.EVT_CLIENT_DAMAGE_SELF
+            event = self.getEventID('EVT_CLIENT_DAMAGE_SELF')
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
-            event = b3.events.EVT_CLIENT_DAMAGE_TEAM
+            event = self.getEventID('EVT_CLIENT_DAMAGE_TEAM')
 
         hitloc = match.group('hitloc')
         weapon = self._convertHitWeaponToKillWeapon(match.group('aweap'))
@@ -895,7 +905,7 @@ class Iourt41Parser(AbstractParser):
             self.debug('No damageType, weapon: %s' % weapon)
             return None
 
-        event = b3.events.EVT_CLIENT_KILL
+        event = self.getEventID('EVT_CLIENT_KILL')
 
         # fix event for team change and suicides and tk
         if attacker.cid == victim.cid:
@@ -905,9 +915,9 @@ class Iourt41Parser(AbstractParser):
                 self.verbose('Team Change Event Caught, exiting')
                 return None
             else:
-                event = b3.events.EVT_CLIENT_SUICIDE
+                event = self.getEventID('EVT_CLIENT_SUICIDE')
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
-            event = b3.events.EVT_CLIENT_KILL_TEAM
+            event = self.getEventID('EVT_CLIENT_KILL_TEAM')
 
         # if not logging damage we need a general hitloc (for xlrstats)
         if 'lastDamageTaken' in victim.data:
@@ -953,10 +963,10 @@ class Iourt41Parser(AbstractParser):
         # Flag Return: BLUE
         # Flag Return: <color>
         color = match.group('color')
-        return b3.events.Event(b3.events.EVT_GAME_FLAG_RETURNED, color)
+        return b3.events.Event(self.getEventID('EVT_GAME_FLAG_RETURNED'), color)
 
     def OnPop(self, action, data, match=None):
-        return b3.events.Event(self.EVT_BOMB_EXPLODED, data=None)
+        return b3.events.Event(self.getEventID('EVT_BOMB_EXPLODED'), data=None)
 
     def OnBomb(self, action, data, match=None):
         _cid = match.group('cid')
@@ -986,7 +996,7 @@ class Iourt41Parser(AbstractParser):
             self.debug('No client found')
             return None
         self.verbose('OnAction: %s: %s %s' % (client.name, actiontype, data))
-        return b3.events.Event(b3.events.EVT_CLIENT_ACTION, actiontype, client)
+        return b3.events.Event(self.getEventID('EVT_CLIENT_ACTION'), actiontype, client)
 
     # item
     def OnItem(self, action, data, match=None):
@@ -1000,7 +1010,7 @@ class Iourt41Parser(AbstractParser):
                 self.verbose('Itempickup corrected to action: %s' % item)
                 return self.OnAction(cid, item, data)
             # self.verbose('OnItem: %s picked up %s' % (client.name, item) )
-            return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, item, client)
+            return b3.events.Event(self.getEventID('EVT_CLIENT_ITEM_PICKUP'), item, client)
         return None
 
     # survivor winner
@@ -1008,9 +1018,7 @@ class Iourt41Parser(AbstractParser):
         #SurvivorWinner: Blue
         #SurvivorWinner: Red
         self.debug('EVENT: OnSurvivorwinner')
-        return b3.events.Event(b3.events.EVT_SURVIVOR_WIN, data)  
-        
-#-------------------------------------------------------------------------------
+        return b3.events.Event(self.getEventID('EVT_SURVIVOR_WIN'), data)
 
     # say
     def OnSay(self, action, data, match=None):
@@ -1038,7 +1046,7 @@ class Iourt41Parser(AbstractParser):
         if data and ord(data[:1]) == 21:
             data = data[1:]
 
-        return b3.events.Event(b3.events.EVT_CLIENT_SAY, data, client)
+        return b3.events.Event(self.getEventID('EVT_CLIENT_SAY'), data, client)
 
     # sayteam
     def OnSayteam(self, action, data, match=None):
@@ -1063,7 +1071,7 @@ class Iourt41Parser(AbstractParser):
         if data and ord(data[:1]) == 21:
             data = data[1:]
 
-        return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data, client, client.team)
+        return b3.events.Event(self.getEventID('EVT_CLIENT_TEAM_SAY'), data, client, client.team)
 
     # saytell
     def OnSaytell(self, action, data, match=None):
@@ -1091,7 +1099,7 @@ class Iourt41Parser(AbstractParser):
         if data and ord(data[:1]) == 21:
             data = data[1:]
 
-        return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data, client, tclient)
+        return b3.events.Event(self.getEventID('EVT_CLIENT_PRIVATE_SAY'), data, client, tclient)
 
     # tell
     def OnTell(self, action, data, match=None):
@@ -1120,7 +1128,7 @@ class Iourt41Parser(AbstractParser):
         # self.clients.sync()
         # self.debug('Synchronizing client info')
         self._maplist = None  # when UrT server reloads, newly uploaded maps get available: force refresh
-        return b3.events.Event(b3.events.EVT_GAME_EXIT, data)
+        return b3.events.Event(self.getEventID('EVT_GAME_EXIT'), data)
 
     # Startgame
     def OnInitgame(self, action, data, match=None):
@@ -1148,13 +1156,13 @@ class Iourt41Parser(AbstractParser):
         self.game.startMap()
         self.game.rounds = 0
         thread.start_new_thread(self.clients.sync, ())
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
+        return b3.events.Event(self.getEventID('EVT_GAME_ROUND_START'), self.game)
 
     # Warmup
     def OnWarmup(self, action, data=None, match=None):
         self.debug('EVENT: OnWarmup')
         self.game.rounds = 0
-        return b3.events.Event(b3.events.EVT_GAME_WARMUP, data)
+        return b3.events.Event(self.getEventID('EVT_GAME_WARMUP'), data)
 
     # Start Round
     def OnInitround(self, action, data, match=None):
@@ -1181,13 +1189,13 @@ class Iourt41Parser(AbstractParser):
         self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
         self.game.startRound()
 
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
+        return b3.events.Event(self.getEventID('EVT_GAME_ROUND_START'), self.game)
 
-    ###############################################################################################
-    #
-    #    B3 Parser interface implementation
-    #
-    ###############################################################################################
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def saybig(self, msg):
         lines = []
@@ -1234,7 +1242,7 @@ class Iourt41Parser(AbstractParser):
             admin.message('^3banned^7: ^1%s^7 (^2@%s^7). His last ip (^1%s^7) has been added to banlist' %
                           (client.exactName, client.id, client.ip))
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
+        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_BAN'), {'reason': reason, 'admin': admin}, client))
         client.disconnect()
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -1246,9 +1254,9 @@ class Iourt41Parser(AbstractParser):
             admin.message('^3Unbanned^7: ^1%s^7 (^2@%s^7). His last ip (^1%s^7) has been removed from banlist. '
                           'Trying to remove duplicates...' % (client.exactName, client.id, client.ip))
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_UNBAN, admin, client))
+        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_UNBAN'), admin, client))
 
-    def getPlayerPings(self):
+    def getPlayerPings(self, filter_client_ids=None):
         data = self.write('status')
         if not data:
             return dict()

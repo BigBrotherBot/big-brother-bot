@@ -18,6 +18,8 @@
 #
 # CHANGELOG
 #
+#   15/04/2014 - 1.15.1 - Fenix
+#     added missing import: b3.clients
 #   20/01/2014 - 1.15 - Fenix
 #     refactored syntax: get close to PEP8
 #     fixed impossibility to retrieve group 'guest' in getGroup()
@@ -68,19 +70,21 @@
 #     Added data column to penalties table
 
 __author__ = 'ThorN'
-__version__ = '1.15'
+__version__ = '1.15.1'
 
 
-from b3 import functions
-from b3.querybuilder import QueryBuilder
-from b3.storage import Storage
-import b3
 import os
 import re
 import sys
 import thread
 import time
 import traceback
+import b3
+import b3.clients
+
+from b3 import functions
+from b3.querybuilder import QueryBuilder
+from b3.storage import Storage
 
 
 class DatabaseStorage(Storage):

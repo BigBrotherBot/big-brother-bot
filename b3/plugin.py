@@ -37,9 +37,11 @@
 #    12/08/2013 - 1.8 - Fenix
 #    * adjust syntax to match PEP8 + fixed some typos
 #    * optionally map a specific event onto a specific plugin method: needs to be specified during event registration
-
+#    15/04/2014 - 1.8.1 - Fenix
+#    * use self.console.getEventID to retrieve event ids: remove some warnings
+#
 __author__ = 'ThorN, Courgette'
-__version__ = '1.8'
+__version__ = '1.8.1'
 
 import b3.config
 import b3.events
@@ -74,8 +76,8 @@ class Plugin:
                 self.critical("Use a XML editor to modify your config files, it makes easy to spot errors")
                 raise 
 
-        self.registerEvent(b3.events.EVT_STOP)
-        self.registerEvent(b3.events.EVT_EXIT)
+        self.registerEvent(self.console.getEventID('EVT_STOP'))
+        self.registerEvent(self.console.getEventID('EVT_EXIT'))
 
     def enable(self):
         self._enabled = True
@@ -196,7 +198,8 @@ class Plugin:
             # since we already do the very same check on plugin startup
             self.onEvent(event)  # keep backwards compatibility
 
-        if event.type == b3.events.EVT_EXIT or event.type == b3.events.EVT_STOP:
+        if event.type == self.console.getEventID('EVT_EXIT') or \
+                        event.type == self.console.getEventID('EVT_STOP'):
             self.working = False
 
     def handle(self, event):

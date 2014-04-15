@@ -16,8 +16,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-__author__  = 'ThorN'
-__version__ = '1.0.1'
+__author__ = 'ThorN'
+__version__ = '1.0.2'
+
 
 class Cvar(object):
     name = ''
@@ -27,10 +28,10 @@ class Cvar(object):
     def __init__(self, name, **kwargs):
         self.name = name
 
-        if kwargs.has_key('value'):
+        if 'value' in kwargs.keys():
             self.value = kwargs['value']
 
-        if kwargs.has_key('default'):
+        if 'default' in kwargs.keys():
             self.default = kwargs['default']
 
     def __getitem__(self, key):
@@ -45,7 +46,10 @@ class Cvar(object):
             return self.__dict__[key]
 
     def __repr__(self):
-        return '<%s name: "%s", value: "%s", default: "%s">' % (self.__class__.__name__, self.name, self.value, self.default)
+        return '<%s name: "%s", value: "%s", default: "%s">' % (self.__class__.__name__,
+                                                                self.name,
+                                                                self.value,
+                                                                self.default)
 
     def getString(self):
         return str(self.value)
@@ -62,7 +66,7 @@ class Cvar(object):
         elif self.value in ('no', '0', 'off', 'false'):
             return False
         else:
-            raise ValueError('%s is not a boolean value' % (self.value))
+            raise ValueError('%s is not a boolean value' % self.value)
 
     def save(self, console):
         """\
