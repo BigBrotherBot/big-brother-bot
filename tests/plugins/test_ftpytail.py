@@ -17,12 +17,11 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 from tests import B3TestCase
-from b3.plugins.publist import PublistPlugin
+from b3.plugins.ftpytail import FtpytailPlugin
 
 
-class PublistPluginTestCase(B3TestCase):
+class FtpytailPluginTestCase(B3TestCase):
     def test_load_plugin(self):
-        p = PublistPlugin(self.console)
+        p = FtpytailPlugin(self.console)
         p.onLoadConfig()
-        p.onStartup()
 
