@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
+# 16/04/2014 - 1.7.2 - Courgette
+#   * fix regression from 1.7.1
 # 14/04/2014 - 1.7.1 - Fenix
 #   * pep8 coding style guide
 # 03/01/2014 - 1.7 - 82ndab.Bravo17
@@ -70,7 +72,7 @@
 # 17/06/2009 - 1.0 - Bakes
 #     Initial Plugin, basic functionality.
  
-__version__ = '1.7.1'
+__version__ = '1.7.2'
 __author__ = 'Bakes, Courgette'
 
 import b3
@@ -152,6 +154,9 @@ class FtpytailPlugin(b3.plugin.Plugin):
         """\
         Load plugin configuration
         """
+        if self.config is None:
+            return
+
         try:
             self._connectionTimeout = self.config.getint('settings', 'timeout')
         except (NoOptionError, ValueError):
