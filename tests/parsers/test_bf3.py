@@ -715,10 +715,10 @@ class Test_bf3_maps(BF3TestCase):
 
 
     def test_getMapsSoundingLike(self):
-        self.assertEqual(['operation metro', 'kiasar railroad', 'gulf of oman',], self.parser.getMapsSoundingLike(''), '')
+        self.assertEqual(['damavand peak', 'operation metro', 'death valley'], self.parser.getMapsSoundingLike(''), '')
         self.assertEqual('MP_Subway', self.parser.getMapsSoundingLike('Operation Metro'), 'Operation Metro')
         self.assertEqual('MP_001', self.parser.getMapsSoundingLike('grand'))
-        self.assertEqual(['operation metro', 'operation firestorm', 'operation 925'], self.parser.getMapsSoundingLike('operation'))
+        self.assertEqual(['operation metro', 'operation 925', 'operation firestorm'], self.parser.getMapsSoundingLike('operation'))
         self.assertEqual('XP3_Desert', self.parser.getMapsSoundingLike('bandar'))
         self.assertEqual('XP3_Desert', self.parser.getMapsSoundingLike('desert'))
         self.assertEqual('XP3_Alborz', self.parser.getMapsSoundingLike('alborz'))
@@ -766,7 +766,7 @@ class Test_bf3_maps(BF3TestCase):
     def test_getGamemodeSoundingLike(self):
         self.assertEqual('ConquestSmall0', self.parser.getGamemodeSoundingLike('MP_011', 'ConquestSmall0'), 'ConquestSmall0')
         self.assertEqual('ConquestSmall0', self.parser.getGamemodeSoundingLike('MP_011', 'Conquest'), 'Conquest')
-        self.assertListEqual(['Team Deathmatch', 'Squad Deathmatch'], self.parser.getGamemodeSoundingLike('MP_011', 'Deathmatch'), 'Deathmatch')
+        self.assertListEqual(['Squad Deathmatch', 'Team Deathmatch'], self.parser.getGamemodeSoundingLike('MP_011', 'Deathmatch'), 'Deathmatch')
         self.assertListEqual(['Rush', 'Conquest', 'Conquest64'], self.parser.getGamemodeSoundingLike('MP_011', 'foo'))
         self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'tdm'), 'tdm')
         self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'teamdeathmatch'), 'teamdeathmatch')
@@ -902,6 +902,9 @@ class Test_patch_b3_Client_isAlive(BF3TestCase):
         # THEN
         self.assertEqual(b3.STATE_DEAD, self.foobar.state)
 
+    def test_exception_InvalidPlayerName(self):
+        when(self.parser).write(('player.isAlive', 'Foobar')).thenRaise(CommandFailedError(['InvalidPlayerName']))
+        self.assertEqual(b3.STATE_UNKNOWN, self.foobar.state)
 
 class Test_patch_b3_admin_plugin(BF3TestCase):
     def setUp(self):
@@ -971,5 +974,6 @@ map: 20
             self.joe.says("!map xxxxxxxxf00xxxxxxxxx")
         # THEN
         self.assertListEqual([], changeMap_mock.mock_calls)
-        self.assertListEqual(['do you mean : donya fortress, gulf of oman, damavand peak ?'], self.joe.message_history)
+        self.assertEqual(1, len(self.joe.message_history))
+        self.assertTrue(self.joe.message_history[0].startswith("do you mean"))
 

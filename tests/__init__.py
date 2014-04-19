@@ -89,3 +89,27 @@ class B3TestCase(unittest.TestCase):
     def tearDown(self):
         flush_console_streams()
         testcase_lock.release()
+
+
+## Makes a way to patch threading.Timer so it behave synchronously and instantly
+## Usage:
+##
+## @patch('threading.Timer', new_callable=lambda: InstantTimer)
+## def test_my_code_using_threading_Timer(instant_timer):
+##     t = threading.Timer(30, print, args=['hi'])
+##     t.start()  # prints 'hi' instantly and in the same thread
+##
+class InstantTimer(object):
+    def __init__(self, interval, function, args=[], kwargs={}):
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+
+    def cancel(self):
+        pass
+
+    def start(self):
+        self.run()
+
+    def run(self):
+        self.function(*self.args, **self.kwargs)

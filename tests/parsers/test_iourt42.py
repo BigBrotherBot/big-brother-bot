@@ -24,7 +24,9 @@ from b3.clients import Clients, Client
 from b3.config import XmlConfigParser
 from b3.events import Event
 from b3.fake import FakeClient as original_FakeClient
+from b3.output import VERBOSE2
 from b3.parsers.iourt42 import Iourt42Parser, Iourt42Client
+from tests import logging_disabled
 
 log = logging.getLogger("test")
 log.setLevel(logging.INFO)
@@ -75,7 +77,8 @@ class Iourt42TestCase(unittest.TestCase):
                     <set name="game_log"/>
                 </settings>
             </configuration>""")
-        self.console = Iourt42Parser(self.parser_conf)
+        with logging_disabled():
+            self.console = Iourt42Parser(self.parser_conf)
         self.console.PunkBuster = None # no Punkbuster support in that game
 
         self.output_mock = mock()
@@ -83,9 +86,12 @@ class Iourt42TestCase(unittest.TestCase):
         def write(*args, **kwargs):
             pretty_args = map(repr, args) + ["%s=%s" % (k, v) for k, v in kwargs.iteritems()]
             log.info("write(%s)" % ', '.join(pretty_args))
+            if args == ("gamename",):
+                return r'''"gamename" is:"q3urt42^7"'''
             return self.output_mock.write(*args, **kwargs)
         self.console.write = Mock(wraps=write)
 
+        logging.getLogger('output').setLevel(VERBOSE2)
 
     def tearDown(self):
         if hasattr(self, "parser"):
@@ -158,6 +164,14 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_type='EVT_VOTE_FAILED',
             event_data={"yes": 1, "no": 1, "what": "restart"})
 
+    def test_Flagcapturetime(self):
+        patate = FakeClient(self.console, name="Patate", guid="Patate_guid")
+        patate.connects('0')
+        self.assertEvent(r'''FlagCaptureTime: 0: 1234567890''',
+            event_type='EVT_FLAG_CAPTURE_TIME',
+            event_client=patate,
+            event_data=1234567890)
+
     def test_Hit_1(self):
         fatmatic = FakeClient(self.console, name="Fat'Matic", guid="11111111111111")
         d4dou = FakeClient(self.console, name="[FR]d4dou", guid="11111111111111")
@@ -212,7 +226,6 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_type='EVT_CLIENT_SAY',
             event_client=marcel,
             event_data="!help")
-
 
     def test_ClientJumpRunStarted(self):
         marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
@@ -290,6 +303,13 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_target=psyp,
             event_data={'position': (335.384887, 67.469154, -23.875)})
 
+    def test_ClientSpawn(self):
+        patate = FakeClient(self.console, name="Patate", guid="Patate_guid")
+        patate.connects('0')
+        self.assertEvent(r'''ClientSpawn: 0''',
+            event_type='EVT_CLIENT_SPAWN',
+            event_client=patate,
+            event_data=None)
 
     def test_SurvivorWinner_player(self):
         marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
@@ -308,7 +328,40 @@ class Test_log_lines_parsing(Iourt42TestCase):
         self.assertEvent(r'''Bomb has been collected by 2''', event_type='EVT_CLIENT_ACTION', event_data="bomb_collected", event_client=self.joe)
         self.assertEvent(r'''Pop!''', event_type='EVT_BOMB_EXPLODED', event_data=None, event_client=None)
 
+    def test_say_after_player_changed_name(self):
+        def assert_new_name_and_text_does_not_break_auth(new_name, text="!help"):
+            # WHEN the player renames himself
+            self.console.parseLine(r'''777:16 ClientUserinfoChanged: 2 n\%s\t\3\r\1\tl\0\f0\\f1\\f2\\a0\0\a1\255\a2\0''' % new_name)
+            self.console.parseLine(r'''777:16 AccountValidated: 2 - louk - 6 - "basic"''')
+            self.console.parseLine(r'''777:16 ClientUserinfo: 2 \name\%s\ip\49.111.22.33:27960\password\xxxxxx\racered\0\raceblue\0\rate\16000\ut_timenudge\0\cg_rgb\0 255 0\funred\ninja,caprd,bartsor\funblue\ninja,gasmask,capbl\cg_physics\1\snaps\20\color1\4\color2\5\handicap\100\sex\male\cg_autoPickup\-1\cg_ghost\0\cl_time\n34|0610q5qH=t<a\racefree\1\gear\GZAAVWT\authc\2708\cl_guid\AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\weapmodes\01000110220000020002000''' % new_name)
+            self.console.parseLine(r'''777:16 ClientUserinfoChanged: 2 n\%s\t\3\r\1\tl\0\f0\\f1\\f2\\a0\0\a1\255\a2\0''' % new_name)
+            # THEN the next chat line should work
+            self.assertEvent(r'''777:18 say: 2 %s: %s''' % (new_name, text),
+                event_type='EVT_CLIENT_SAY',
+                event_client=player,
+                event_data=text)
 
+        # GIVEN a known player with FSA louk, cl_guid "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" that will connect on slot 2
+        player = FakeClient(console=self.console, name="Chucky", guid="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", pbid="louk")
+        player.connects("2")
+
+        # THEN
+        assert_new_name_and_text_does_not_break_auth("joe")
+        assert_new_name_and_text_does_not_break_auth("joe:")
+        assert_new_name_and_text_does_not_break_auth("jo:e")
+        assert_new_name_and_text_does_not_break_auth("j:oe")
+        assert_new_name_and_text_does_not_break_auth(":joe")
+        assert_new_name_and_text_does_not_break_auth("joe", "what does the fox say: Ring-ding-ding-ding-dingeringeding!")
+        assert_new_name_and_text_does_not_break_auth("joe:", "what does the fox say: Ring-ding-ding-ding-dingeringeding!")
+        assert_new_name_and_text_does_not_break_auth("jo:e", "what does the fox say: Ring-ding-ding-ding-dingeringeding!")
+        assert_new_name_and_text_does_not_break_auth("j:oe", "what does the fox say: Ring-ding-ding-ding-dingeringeding!")
+        assert_new_name_and_text_does_not_break_auth(":joe", "what does the fox say: Ring-ding-ding-ding-dingeringeding!")
+        assert_new_name_and_text_does_not_break_auth("joe:foo")
+        assert_new_name_and_text_does_not_break_auth("joe:foo", "what does the fox say: Ring-ding-ding-ding-dingeringeding!")
+        assert_new_name_and_text_does_not_break_auth("j:oe", ":")
+        assert_new_name_and_text_does_not_break_auth("j:oe", " :")
+        assert_new_name_and_text_does_not_break_auth("j:oe", " : ")
+        assert_new_name_and_text_does_not_break_auth("j:oe", ": ")
 
 
 class Test_kill_mods(Test_log_lines_parsing):
@@ -483,6 +536,15 @@ class Test_queryClientFrozenSandAccount(Iourt42TestCase):
     def test_authed(self):
         # GIVEN
         when(self.console).write('auth-whois 0').thenReturn(r'''auth: id: 0 - name: ^7laCourge - login: courgette - notoriety: serious - level: -1''')
+        # WHEN
+        data = self.console.queryClientFrozenSandAccount('0')
+        # THEN
+        self.assertDictEqual({'cid': '0', 'name': 'laCourge', 'login': 'courgette', 'notoriety': 'serious', 'level': '-1', 'extra': None}, data)
+
+    def test_authed_with_newline_char(self):
+        # GIVEN
+        when(self.console).write('auth-whois 0').thenReturn(r'''auth: id: 0 - name: ^7laCourge - login: courgette - notoriety: serious - level: -1
+''')
         # WHEN
         data = self.console.queryClientFrozenSandAccount('0')
         # THEN

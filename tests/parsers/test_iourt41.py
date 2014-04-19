@@ -472,6 +472,43 @@ class Test_log_lines_parsing(Iourt41TestCase):
         self.assertEvent(r'''Bomb has been collected by 2''', event_type='EVT_CLIENT_ACTION', event_data="bomb_collected", event_client=self.joe)
         self.assertEvent(r'''Pop!''', event_type='EVT_BOMB_EXPLODED', event_data=None, event_client=None)
 
+    def test_say_after_player_changed_name(self):
+        def assert_new_name_and_text_does_not_break_auth(new_name, text="!help"):
+            # WHEN the player renames himself
+            self.console.parseLine(r'''777:16 ClientUserinfoChanged: 2 n\%s\t\3\r\1\tl\0\f0\\f1\\f2\\a0\0\a1\255\a2\0''' % new_name)
+            self.console.parseLine(r'''777:16 AccountValidated: 2 - louk - 6 - "basic"''')
+            self.console.parseLine(r'''777:16 ClientUserinfo: 2 \name\%s\ip\49.111.22.33:27960\password\xxxxxx\racered\0\raceblue\0\rate\16000\ut_timenudge\0\cg_rgb\0 255 0\funred\ninja,caprd,bartsor\funblue\ninja,gasmask,capbl\cg_physics\1\snaps\20\color1\4\color2\5\handicap\100\sex\male\cg_autoPickup\-1\cg_ghost\0\cl_time\n34|0610q5qH=t<a\racefree\1\gear\GZAAVWT\authc\2708\cl_guid\AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\weapmodes\01000110220000020002000''' % new_name)
+            self.console.parseLine(r'''777:16 ClientUserinfoChanged: 2 n\%s\t\3\r\1\tl\0\f0\\f1\\f2\\a0\0\a1\255\a2\0''' % new_name)
+            # THEN the next chat line should work
+            self.assertEvent(r'''777:18 say: 2 %s: %s''' % (new_name, text),
+                event_type='EVT_CLIENT_SAY',
+                event_client=player,
+                event_data=text.lstrip())
+
+        # GIVEN a known player with cl_guid "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" that will connect on slot 2
+        player = FakeClient(console=self.console, name="Chucky", guid="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        player.connects("2")
+
+        # THEN
+        assert_new_name_and_text_does_not_break_auth("joe")
+        assert_new_name_and_text_does_not_break_auth("joe:")
+        assert_new_name_and_text_does_not_break_auth("jo:e")
+        assert_new_name_and_text_does_not_break_auth("j:oe")
+        assert_new_name_and_text_does_not_break_auth(":joe")
+        assert_new_name_and_text_does_not_break_auth("joe:")
+        assert_new_name_and_text_does_not_break_auth("joe:foo")
+        assert_new_name_and_text_does_not_break_auth("joe", "what does the fox say: Ring-ding-ding-ding-dingeringeding!")
+        assert_new_name_and_text_does_not_break_auth("joe:", "what does the fox say: Ring-ding-ding-ding-dingeringeding!")
+        assert_new_name_and_text_does_not_break_auth("jo:e", "what does the fox say: Ring-ding-ding-ding-dingeringeding!")
+        assert_new_name_and_text_does_not_break_auth("j:oe", "what does the fox say: Ring-ding-ding-ding-dingeringeding!")
+        assert_new_name_and_text_does_not_break_auth(":joe", "what does the fox say: Ring-ding-ding-ding-dingeringeding!")
+        assert_new_name_and_text_does_not_break_auth("joe:", "what does the fox say: Ring-ding-ding-ding-dingeringeding!")
+        assert_new_name_and_text_does_not_break_auth("joe:foo", "what does the fox say: Ring-ding-ding-ding-dingeringeding!")
+        assert_new_name_and_text_does_not_break_auth("j:oe", ":")
+        assert_new_name_and_text_does_not_break_auth("j:oe", " :")
+        assert_new_name_and_text_does_not_break_auth("j:oe", " : ")
+        assert_new_name_and_text_does_not_break_auth("j:oe", ": ")
+
 
 class Test_OnClientuserinfo(Iourt41TestCase):
 

@@ -68,7 +68,8 @@ __version__ = '1.10'
 import sys, re, traceback, time, string, Queue, threading, new
 import b3.parser
 from b3.parsers.frostbite2.rcon import Rcon as FrostbiteRcon
-from b3.parsers.frostbite2.protocol import FrostbiteServer, CommandFailedError, CommandError, NetworkError
+from b3.parsers.frostbite2.protocol import (FrostbiteServer, CommandFailedError, CommandError, NetworkError,
+                                            CommandUnknownCommandError, CommandDisallowedError)
 from b3.parsers.frostbite2.util import PlayerInfoBlock, MapListBlock, BanlistContent
 import b3.events
 import b3.cvar
@@ -1445,6 +1446,10 @@ class AbstractParser(b3.parser.Parser):
         except CommandFailedError, err:
             self.warning(err)
             return
+        except (CommandDisallowedError, CommandUnknownCommandError), err:
+            self.warning('Unable to retrieve cvar: %s Error: %s' % (cvarName, err))
+            return None
+
         self.debug('Get cvar %s = %s', cvarName, words)
 
         if words:
@@ -1453,7 +1458,6 @@ class AbstractParser(b3.parser.Parser):
             else:
                 return b3.cvar.Cvar(cvarName, value=words[0])
         return None
-
 
     def setCvar(self, cvarName, value):
         """Set a server var"""

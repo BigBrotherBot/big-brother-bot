@@ -20,6 +20,8 @@
 # $Id: q3a/abstractParser.py 103 2010-11-01 10:10:10Z xlr8or $
 #
 # CHANGELOG
+#    2014/04/14 - 1.7.5 - Fenix
+#    * pep8 coding style guide
 #    2013/03/07 - 1.7.4 - 82ndab-Bravo17
 #    * Add ability to do kick by full name of client not authed correctly
 #    2012/07/07 - 1.7.3 - Courgette
@@ -69,37 +71,40 @@
 #      method is built following a CamelCase syntax. IE: action "Flag return" will
 #      call the method named "OnFlagReturn"
 #    2/27/2009 - 1.2.3 - xlr8or
-#    Removed error message for getPlayerList(), getPlayerPings() and getPlayerScores()
+#    * Removed error message for getPlayerList(), getPlayerPings() and getPlayerScores()
 #    5/6/2008 - 1.2.2 - Anubis
-#    Added OnShutdowngame()
+#    * Added OnShutdowngame()
 #    5/6/2008 - 1.2.1 - xlr8or
-#    Modified _reColor to strip Ascii > 127 also
+#    * Modified _reColor to strip Ascii > 127 also
 #    12/2/2005 - 1.1.0 - ThorN
-#    Fixed getCvar() regular expression
+#    * Fixed getCvar() regular expression
 #    11/29/2005 - 1.1.0 - ThorN
-#    Added setCvar() and fixed getCvar()
+#    * Added setCvar() and fixed getCvar()
 #    7/23/2005 - 1.0.1 - ThorN
-#    Added log message for when ban() decides to do a tempban
+#    * Added log message for when ban() decides to do a tempban
 
+__author__ = 'ThorN, xlr8or'
+__version__ = '1.7.5'
 
-
-__author__  = 'ThorN, xlr8or'
-__version__ = '1.7.4'
-
-import re, string, time
+import re
+import string
+import time
+import new
 import b3
 import b3.events
-from b3.parsers.punkbuster import PunkBuster
-import b3.parsers.q3a.rcon as rcon
+import b3.clients
+import b3.functions
 import b3.parser
 import b3.cvar
-import new
 
-#----------------------------------------------------------------------------------------------------------------------------------------------
+from b3.parsers.q3a import rcon
+from b3.parsers.punkbuster import PunkBuster
+
+
 class AbstractParser(b3.parser.Parser):
-    '''
+    """\
     An abstract base class to help with developing q3a parsers 
-    '''
+    """
     gameName = None
     privateMsg = True
     rconTest = True
@@ -124,22 +129,24 @@ class AbstractParser(b3.parser.Parser):
     }
 
     _eventMap = {
-        'warmup' : b3.events.EVT_GAME_WARMUP,
-        'shutdowngame' : b3.events.EVT_GAME_ROUND_END
+        'warmup': b3.events.EVT_GAME_WARMUP,
+        'shutdowngame': b3.events.EVT_GAME_ROUND_END
     }
 
     # remove the time off of the line
     _lineClear = re.compile(r'^(?:[0-9:]+\s?)?')
-    _lineTime  = re.compile(r'^(?P<minutes>[0-9]+):(?P<seconds>[0-9]+).*')
+    _lineTime = re.compile(r'^(?P<minutes>[0-9]+):(?P<seconds>[0-9]+).*')
 
     _lineFormats = (
         #1579:03ConnectInfo: 0: E24F9B2702B9E4A1223E905BF597FA92: ^w[^2AS^w]^2Lead: 3: 3: 24.153.180.106:2794
-        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<pbid>[0-9A-Z]{32}):\s*(?P<name>[^:]+):\s*(?P<num1>[0-9]+):\s*(?P<num2>[0-9]+):\s*(?P<ip>[0-9.]+):(?P<port>[0-9]+))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<pbid>[0-9A-Z]{32}):\s*(?P<name>[^:]+):\s*'
+                   r'(?P<num1>[0-9]+):\s*(?P<num2>[0-9]+):\s*(?P<ip>[0-9.]+):(?P<port>[0-9]+))$', re.IGNORECASE),
         #1536:17sayc: 0: ^w[^2AS^w]^2Lead:  sorry...
         #1536:34sayteamc: 17: ^1[^7DP^1]^4Timekiller: ^4ammo ^2here !!!!!
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<name>.+):\s+(?P<text>.*))$', re.IGNORECASE),
         #1536:37Kill: 1 18 9: ^1klaus killed ^1[pura]fox.nl by MOD_MP40
-        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<aweap>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<aweap>[0-9]+):\s*'
+                   r'(?P<text>.*))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<text>.*))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>.*)$', re.IGNORECASE)
@@ -148,33 +155,39 @@ class AbstractParser(b3.parser.Parser):
     #num score ping guid   name            lastmsg address               qport rate
     #--- ----- ---- ------ --------------- ------- --------------------- ----- -----
     #2     0   29 465030 <-{^4AS^7}-^3ThorN^7->^7       50 68.63.6.62:-32085      6597  5000
-    #_regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
-    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9a-zA-Z]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9a-zA-Z]+)\s+'
+                            r'(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)'
+                            r'\s+(?P<rate>[0-9]+)$', re.I)
 
-    _regPlayerShort = re.compile(r'\s+(?P<slot>[0-9]+)\s+(?P<score>[0-9]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*)\^7\s+', re.I)
+    _regPlayerShort = re.compile(r'\s+(?P<slot>[0-9]+)\s+(?P<score>[0-9]+)\s+'
+                                 r'(?P<ping>[0-9]+)\s+(?P<name>.*)\^7\s+', re.I)
+
     _reColor = re.compile(r'(\^[0-9a-z])|[\x80-\xff]')
     _reCvarName = re.compile(r'^[a-z0-9_.]+$', re.I)
     _reCvar = (
         #"sv_maxclients" is:"16^7" default:"8^7"
         #latched: "12"
-        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?"\s+default:\s*"(?P<default>.*?)(\^7)?"$', re.I | re.M),
+        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?'
+                   r'"\s+default:\s*"(?P<default>.*?)(\^7)?"$', re.I | re.M),
         #"g_maxGameClients" is:"0^7", the default
         #latched: "1"
-        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<default>(?P<value>.*?))(\^7)?",\s+the\sdefault$', re.I | re.M),
+        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<default>(?P<value>'
+                   r'.*?))(\^7)?",\s+the\sdefault$', re.I | re.M),
         #"mapname" is:"ut4_abbey^7"
         re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?"$', re.I | re.M),
     )
     _reMapNameFromStatus = re.compile(r'^map:\s+(?P<map>.+)$', re.I)
 
     PunkBuster = None
+    _clientConnectID = None
 
     def startup(self):
-        if not self.config.has_option('server','game_log'):
+        if not self.config.has_option('server', 'game_log'):
             self.critical("your main config file is missing the 'game_log' setting in section 'server'")
             raise SystemExit(220)
 
         # add the world client
-        client = self.clients.newClient('1022', guid='WORLD', name='World', hide=True, pbid='WORLD')
+        self.clients.newClient('1022', guid='WORLD', name='World', hide=True, pbid='WORLD')
 
         if self.config.has_option('server', 'punkbuster') and self.config.getboolean('server', 'punkbuster'):
             self.PunkBuster = PunkBuster(self)
@@ -202,34 +215,25 @@ class AbstractParser(b3.parser.Parser):
             return False
 
         match, action, data, client, target = m
-
-        func = 'On%s' % string.capwords(action).replace(' ','')
-        
+        func = 'On%s' % string.capwords(action).replace(' ', '')
         #self.debug("-==== FUNC!!: " + func)
         
         if hasattr(self, func):
             func = getattr(self, func)
             event = func(action, data, match)
-
             if event:
                 self.queueEvent(event)
         elif action in self._eventMap:
-            self.queueEvent(b3.events.Event(
-                    self._eventMap[action],
-                    data,
-                    client,
-                    target
-                ))
+            self.queueEvent(b3.events.Event(self._eventMap[action], data, client, target))
         else:
-            self.queueEvent(b3.events.Event(
-                    b3.events.EVT_UNKNOWN,
-                    str(action) + ': ' + str(data),
-                    client,
-                    target
-                ))
+            self.queueEvent(b3.events.Event(self.getEventID('EVT_UNKNOWN'),
+                                            str(action) + ': ' + str(data),
+                                            client, target))
 
     def getClient(self, match=None, attacker=None, victim=None):
-        """Get a client object using the best availible data"""
+        """\
+        Get a client object using the best availible data
+        """
         if attacker:
             return self.clients.getByCID(attacker.group('acid'))
         elif victim:
@@ -237,34 +241,31 @@ class AbstractParser(b3.parser.Parser):
         elif match:
             return self.clients.getByCID(match.group('cid'))
 
-    #----------------------------------
     def OnSay(self, action, data, match=None):
-        """\
-        if self.type == b3.COMMAND:
-            # we really need the second line
-            text = self.read()
-            if text:
-                msg = string.split(text[:-1], '^7: ', 1)
-                if not len(msg) == 2:
-                    return None
-        else:
-        """
+        #if self.type == b3.COMMAND:
+        #    # we really need the second line
+        #    text = self.read()
+        #    if text:
+        #        msg = string.split(text[:-1], '^7: ', 1)
+        #        if not len(msg) == 2:
+        #            return None
+        #else:
         msg = string.split(data, ': ', 1)
         if not len(msg) == 2:
             return None
 
         client = self.clients.getByExactName(msg[0])
-
-        return b3.events.Event(b3.events.EVT_CLIENT_SAY, msg[1], client)
+        return b3.events.Event(self.getEventID('EVT_CLIENT_SAY'), msg[1], client)
 
     def OnShutdowngame(self, action, data, match=None):
         #self.game.mapEnd()
         #self.clients.sync()
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_END, data)
+        return b3.events.Event(self.getEventID('EVT_GAME_ROUND_END'), data)
 
     def OnClientdisconnect(self, action, data, match=None):
         client = self.getClient(match)
-        if client: client.disconnect()
+        if client:
+            client.disconnect()
         return None
 
     def OnSayteam(self, action, data, match=None):
@@ -273,20 +274,19 @@ class AbstractParser(b3.parser.Parser):
             return None
 
         client = self.clients.getByName(msg[0])
-
         if client:
-            return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, msg[1], client, client.team)
+            return b3.events.Event(self.getEventID('EVT_CLIENT_TEAM_SAY'), msg[1], client, client.team)
         else:
             return None
 
     def OnExit(self, action, data, match=None):
         self.game.mapEnd()
-        return b3.events.Event(b3.events.EVT_GAME_EXIT, None)
+        return b3.events.Event(self.getEventID('EVT_GAME_EXIT'), None)
 
     def OnItem(self, action, data, match=None):
         client = self.getClient(match)
         if client:
-            return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, match.group('text'), client)
+            return b3.events.Event(self.getEventID('EVT_CLIENT_ITEM_PICKUP'), match.group('text'), client)
         return None
 
     def OnClientbegin(self, action, data, match=None):
@@ -294,9 +294,7 @@ class AbstractParser(b3.parser.Parser):
         # 19:42.36 ClientBegin: 4
         # 19:42.36 Userinfo: \cg_etVersion\ET Pro, ET 2.56\cg_u
         # we need to store the ClientConnect ID for the next call to userinfo
-
         self._clientConnectID = data
-
         return None
 
     def OnClientconnect(self, action, data, match=None):
@@ -304,9 +302,7 @@ class AbstractParser(b3.parser.Parser):
         # 19:42.36 ClientConnect: 4
         # 19:42.36 Userinfo: \cg_etVersion\ET Pro, ET 2.56\cg_u
         # we need to store the ClientConnect ID for the next call to userinfo
-
         self._clientConnectID = data
-
         return None
 
     def OnClientuserinfo(self, action, data, match=None):
@@ -320,7 +316,7 @@ class AbstractParser(b3.parser.Parser):
                 for k, v in bclient.iteritems():
                     setattr(client, k, v)
             else:
-                client = self.clients.newClient(bclient['cid'], **bclient)
+                self.clients.newClient(bclient['cid'], **bclient)
 
         return None
 
@@ -334,24 +330,19 @@ class AbstractParser(b3.parser.Parser):
         #    client = self.clients.getByExactName(f[0])
         #    if client:
 
-        try:
-            id = self._clientConnectID
-        except Exception:
-            id = None
-
+        _id = self._clientConnectID
         self._clientConnectID = None
 
-        if not id:
+        if not _id:
             self.error('OnUserinfo called without a ClientConnect ID')
             return None
 
-        return self.OnClientuserinfo(action, '%s %s' % (id, data), match)
+        return self.OnClientuserinfo(action, '%s %s' % (_id, data), match)
 
     def OnKill(self, action, data, match=None):
         #Kill: 1022 0 6: <world> killed <-NoX-ThorN-> by MOD_FALLING
         #20:26.59 Kill: 3 2 9: ^9n^2@^9ps killed [^0BsD^7:^0Und^7erKo^0ver^7] by MOD_MP40
         #m = re.match(r'^([0-9]+)\s([0-9]+)\s([0-9]+): (.*?) killed (.*?) by ([A-Z_]+)$', data)
-
         attacker = self.getClient(attacker=match)
         if not attacker:
             self.bot('No attacker')
@@ -362,7 +353,7 @@ class AbstractParser(b3.parser.Parser):
             self.bot('No victim')
             return None
 
-        return b3.events.Event(b3.events.EVT_CLIENT_KILL, (100, match.group('aweap'), None), attacker, victim)
+        return b3.events.Event(self.getEventID('EVT_CLIENT_KILL'), (100, match.group('aweap'), None), attacker, victim)
 
     def OnInitgame(self, action, data, match=None):
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)
@@ -378,13 +369,14 @@ class AbstractParser(b3.parser.Parser):
                 setattr(self.game, o[0], o[1])
 
         self.game.startRound()
+        return b3.events.Event(self.getEventID('EVT_GAME_ROUND_START'), self.game)
 
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
-
-    #----------------------------------
     def parseUserInfo(self, info):
-        #0 \g_password\none\cl_guid\0A337702493AF67BB0B0F8565CE8BC6C\cl_wwwDownload\1\name\thorn\rate\25000\snaps\20\cl_anonymous\0\cl_punkbuster\1\password\test\protocol\83\qport\16735\challenge\-79719899\ip\69.85.205.66:27960
-        playerID, info = string.split(info, ' ', 1)
+        """\
+        Parse the userinfo string
+        """
+        #0 \g_password\none\cl_guid\0A337702493AF67BB0B0F8565CE8BC6C\cl_wwwDownload\1\name\thorn\rate\25000...
+        cid, info = string.split(info, ' ', 1)
 
         if info[:1] != '\\':
             info = '\\' + info
@@ -395,24 +387,26 @@ class AbstractParser(b3.parser.Parser):
         for o in options:
             data[o[0]] = o[1]
 
-        if data.has_key('n'):
+        if 'n' in data.keys():
             data['name'] = data['n']
 
         t = None
-        if data.has_key('team'):
+        if 'team' in data.keys():
             t = data['team']
-        elif data.has_key('t'):
+        elif 't' in data.keys():
             t = data['t']
 
         data['team'] = self.getTeam(t)
 
-        if data.has_key('cl_guid') and not data.has_key('pbid'):
+        if 'cl_guid' in data.keys() and 'pbid' not in data.keys():
             data['pbid'] = data['cl_guid']
 
         return data
 
     def getTeam(self, team):
-        team = str(team).lower() # We convert to a string and lower the case because there is a problem when trying to detect numbers if it's not a string (weird)
+         # We convert to a string and lower the case because
+         # there is a problem when trying to detect numbers if it's not a string (weird)
+        team = str(team).lower()
         if team == 'free' or team == '0':
             result = b3.TEAM_FREE
         elif team == 'red' or team == '1':
@@ -425,7 +419,6 @@ class AbstractParser(b3.parser.Parser):
             result = b3.TEAM_UNKNOWN
         return result
 
-
     def message(self, client, text):
         try:
             if client is None:
@@ -436,7 +429,6 @@ class AbstractParser(b3.parser.Parser):
                 lines = []
                 for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
                     lines.append(self.getCommand('message', cid=client.cid, prefix=self.msgPrefix, message=line))
-
                 self.writelines(lines)
         except Exception:
             pass
@@ -445,12 +437,11 @@ class AbstractParser(b3.parser.Parser):
         lines = []
         for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
             lines.append(self.getCommand('say', prefix=self.msgPrefix, message=line))
-
         if len(lines):        
             self.writelines(lines)
     
     def saybig(self, msg):
-        for c in range(1,6):
+        for c in range(1, 6):
             self.say('^%i%s' % (c, msg))
 
     def smartSay(self, client, msg):
@@ -483,20 +474,23 @@ class AbstractParser(b3.parser.Parser):
             self.write(self.getCommand('kick', cid=client.cid, reason=reason))
 
         if admin:
-            fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+            fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client,
+                                                                               reason=reason,
+                                                                               admin=admin))
         else:
-            fullreason = self.getMessage('kicked', self.getMessageVariables(client=client, reason=reason))
+            fullreason = self.getMessage('kicked', self.getMessageVariables(client=client,
+                                                                            reason=reason))
 
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_KICK, reason, client))
+        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_KICK'), reason, client))
         client.disconnect()
 
     def kickbyfullname(self, client, reason='', admin=None, silent=False, *kwargs):
         # We get here if a name was given, and the name was not found as a client
         # This will allow the kicking of non autenticated players
-        if self._commands.has_key('kickbyfullname'):
+        if 'kickbyfullname' in self._commands.keys():
             self.debug('Trying kick by full name: %s for %s' % (client, reason))
             result = self.write(self.getCommand('kickbyfullname', cid=client))
             if result.endswith('is not on the server\n'):
@@ -514,7 +508,7 @@ class AbstractParser(b3.parser.Parser):
         elif not client.id:
             # no client id, database must be down, do tempban
             self.error('Q3AParser.ban(): no client id, database must be down, doing tempban')
-            return self.tempban(client, reason, '1d', admin, silent)
+            return self.tempban(client, reason, 1440, admin, silent)
 
         if self.PunkBuster:
             self.PunkBuster.ban(client, reason)
@@ -525,14 +519,17 @@ class AbstractParser(b3.parser.Parser):
             self.write(self.getCommand('ban', cid=client.cid, reason=reason))
 
         if admin:
-            fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+            fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client,
+                                                                               reason=reason,
+                                                                               admin=admin))
         else:
-            fullreason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
+            fullreason = self.getMessage('banned', self.getMessageVariables(client=client,
+                                                                            reason=reason))
 
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
+        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_BAN'), {'reason': reason, 'admin': admin}, client))
         client.disconnect()
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -544,20 +541,23 @@ class AbstractParser(b3.parser.Parser):
                     admin.message('^3Unbanned^7: %s^7: %s' % (client.exactName, result))
                 
                 if admin:
-                    fullreason = self.getMessage('unbanned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+                    fullreason = self.getMessage('unbanned_by', self.getMessageVariables(client=client,
+                                                                                         reason=reason,
+                                                                                         admin=admin))
                 else:
-                    fullreason = self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason))
+                    fullreason = self.getMessage('unbanned', self.getMessageVariables(client=client,
+                                                                                      reason=reason))
 
                 if not silent and fullreason != '':
                     self.say(fullreason)
             elif admin:
                 admin.message('%s^7 unbanned but has no punkbuster id' % client.exactName)
         elif admin:
-            admin.message('^3Unbanned^7: %s^7. You may need to manually remove the user from the game\'s ban file.' % client.exactName)
+            admin.message('^3Unbanned^7: %s^7. You may need to manually remove the user '
+                          'from the game\'s ban file.' % client.exactName)
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
         duration = b3.functions.time2minutes(duration)
-
         if isinstance(client, b3.clients.Client) and not client.guid:
             # client has no guid, kick instead
             return self.kick(client, reason, admin, silent)
@@ -565,9 +565,16 @@ class AbstractParser(b3.parser.Parser):
             self.write(self.getCommand('tempban', cid=client, reason=reason))
             return
         elif admin:
-            fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=b3.functions.minutesStr(duration)))
+            fullreason = self.getMessage('temp_banned_by',
+                                         self.getMessageVariables(client=client,
+                                                                  reason=reason,
+                                                                  admin=admin,
+                                                                  banduration=b3.functions.minutesStr(duration)))
         else:
-            fullreason = self.getMessage('temp_banned', self.getMessageVariables(client=client, reason=reason, banduration=b3.functions.minutesStr(duration)))
+            fullreason = self.getMessage('temp_banned',
+                                         self.getMessageVariables(client=client,
+                                                                  reason=reason,
+                                                                  banduration=b3.functions.minutesStr(duration)))
 
         if self.PunkBuster:
             # punkbuster acts odd if you ban for more than a day
@@ -583,10 +590,8 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, {'reason': reason, 
-                                                              'duration': duration, 
-                                                              'admin': admin}
-                                        , client))
+        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_BAN_TEMP'),
+                                        {'reason': reason, 'duration': duration, 'admin': admin}, client))
         client.disconnect()
 
     def rotateMap(self):
@@ -594,12 +599,12 @@ class AbstractParser(b3.parser.Parser):
         time.sleep(1)
         self.write('map_rotate 0')
         
-    def changeMap(self, map):
-        self.say('^7Changing map to %s' % map)
+    def changeMap(self, mapname):
+        self.say('^7Changing map to %s' % mapname)
         time.sleep(1)
-        self.write('map %s' % map)
+        self.write('map %s' % mapname)
 
-    def getPlayerPings(self):
+    def getPlayerPings(self, filter_client_ids=None):
         data = self.write('status')
         if not data:
             return {}
@@ -636,17 +641,7 @@ class AbstractParser(b3.parser.Parser):
                 #self.verbose('getPlayerScores() = Line did not match format: %s' % line)
         
         return players
-        
-    def getPlayerScoressssss(self):
-        plist = self.getPlayerListRcon()
-        scorelist = {}
 
-        for cid, c in plist.iteritems():
-            client = self.clients.getByCID(cid)
-            if client:
-                scorelist[str(cid)] = c['score']
-        return scorelist
-        
     def getPlayerList(self, maxRetries=None):
         if self.PunkBuster:
             return self.PunkBuster.getPlayerList()
@@ -667,17 +662,19 @@ class AbstractParser(b3.parser.Parser):
                         players[str(m.group('slot'))] = d
                         
                     else:
-                        self.debug('Duplicate or Incorrect slot number - client ignored %s lastslot %s' % (m.group('slot'), lastslot))
+                        self.debug('Duplicate or Incorrect slot number - '
+                                   'client ignored %s lastslot %s' % (m.group('slot'), lastslot))
 
         return players
 
-
-    def getCvar(self, cvarName):
-        if self._reCvarName.match(cvarName):
+    def getCvar(self, cvar_name):
+        if self._reCvarName.match(cvar_name):
             #"g_password" is:"^7" default:"scrim^7"
-            val = self.write(cvarName)
-            self.debug('Get cvar %s = [%s]', cvarName, val)
-            #sv_mapRotation is:gametype sd map mp_brecourt map mp_carentan map mp_dawnville map mp_depot map mp_harbor map mp_hurtgen map mp_neuville map mp_pavlov map mp_powcamp map mp_railyard map mp_rocket map mp_stalingrad^7 default:^7
+            val = self.write(cvar_name)
+            self.debug('Get cvar %s = [%s]', cvar_name, val)
+            #sv_mapRotation is:gametype sd map mp_brecourt map mp_carentan map mp_dawnville map mp_depot
+            # map mp_harbor map mp_hurtgen map mp_neuville map mp_pavlov map mp_powcamp map mp_railyard
+            # map mp_rocket map mp_stalingrad^7 default:^7
 
             m = None
             for f in self._reCvar:
@@ -688,7 +685,7 @@ class AbstractParser(b3.parser.Parser):
 
             if m:
                 #self.debug('m.lastindex %s' % m.lastindex)
-                if m.group('cvar').lower() == cvarName.lower():
+                if m.group('cvar').lower() == cvar_name.lower():
                     try:
                         default_value = m.group('default')
                     except IndexError:
@@ -697,16 +694,16 @@ class AbstractParser(b3.parser.Parser):
             else:
                 return None
 
-    def set(self, cvarName, value):
+    def set(self, cvar_name, value):
         self.warning('Parser.set() is depreciated, use Parser.setCvar() instead')
-        self.setCvar(cvarName, value)
+        self.setCvar(cvar_name, value)
 
-    def setCvar(self, cvarName, value):
-        if re.match('^[a-z0-9_.]+$', cvarName, re.I):
-            self.debug('Set cvar %s = [%s]', cvarName, value)
-            self.write(self.getCommand('set', name=cvarName, value=value))
+    def setCvar(self, cvar_name, value):
+        if re.match('^[a-z0-9_.]+$', cvar_name, re.I):
+            self.debug('Set cvar %s = [%s]', cvar_name, value)
+            self.write(self.getCommand('set', name=cvar_name, value=value))
         else:
-            self.error('%s is not a valid cvar name', cvarName)
+            self.error('%s is not a valid cvar name', cvar_name)
 
     def getMap(self):
         data = self.write('status')
@@ -715,7 +712,6 @@ class AbstractParser(b3.parser.Parser):
 
         line = data.split('\n')[0]
         #self.debug('[%s]'%line.strip())
-
         m = re.match(self._reMapNameFromStatus, line.strip())
         if m:
             return str(m.group('map'))
@@ -732,7 +728,7 @@ class AbstractParser(b3.parser.Parser):
         for cid, c in plist.iteritems():
             client = self.clients.getByCID(cid)
             if client:
-                if client.guid and c.has_key('guid'):
+                if client.guid and 'guid' in c.keys():
                     if client.guid == c['guid']:
                         # player matches
                         self.debug('in-sync %s == %s', client.guid, c['guid'])
@@ -740,7 +736,7 @@ class AbstractParser(b3.parser.Parser):
                     else:
                         self.debug('no-sync %s <> %s', client.guid, c['guid'])
                         client.disconnect()
-                elif client.ip and c.has_key('ip'):
+                elif client.ip and 'ip' in c.keys():
                     if client.ip == c['ip']:
                         # player matches
                         self.debug('in-sync %s == %s', client.ip, c['ip'])
@@ -761,13 +757,12 @@ class AbstractParser(b3.parser.Parser):
             sp = self.clients.getByCID(cid)
             if sp:
                 # Only set provided data, otherwise use the currently set data
-                sp.ip   = p.get('ip', sp.ip)
+                sp.ip = p.get('ip', sp.ip)
                 sp.pbid = p.get('pbid', sp.pbid)
                 sp.guid = p.get('guid', sp.guid)
                 sp.data = p
                 sp.auth()
 
-                
 ###################################################################
 # ALTER THE WAY admin.py work for some q3a based games
 ###################################################################
@@ -776,8 +771,6 @@ class AbstractParser(b3.parser.Parser):
         """
         Monkey patches the admin plugin
         """
-
-
         def new_cmd_kick(self, data, client=None, cmd=None):
             """\
             <name> [<reason>] - kick a player
@@ -804,7 +797,10 @@ class AbstractParser(b3.parser.Parser):
                     if sclient.maskGroup:
                         client.message('^7%s ^7is a masked higher level player, can\'t kick' % sclient.exactName)
                     else:
-                        self.console.say(self.getMessage('kick_denied', sclient.exactName, client.exactName, sclient.exactName))
+                        self.console.say(self.getMessage('kick_denied',
+                                                         sclient.exactName,
+                                                         client.exactName,
+                                                         sclient.exactName))
                     return True
                 else:
                     sclient.kick(reason, keyword, client)
@@ -815,9 +811,7 @@ class AbstractParser(b3.parser.Parser):
             else:
                 self.console.kickbyfullname(cid, reason, client)
 
-        adminPlugin = self.getPlugin('admin')
-
-        cmd = adminPlugin._commands['kick']
-        cmd.func = new.instancemethod(new_cmd_kick, adminPlugin)
+        admin_plugin = self.getPlugin('admin')
+        cmd = admin_plugin._commands['kick']
+        cmd.func = new.instancemethod(new_cmd_kick, admin_plugin)
         cmd.help = new_cmd_kick.__doc__.strip()
-

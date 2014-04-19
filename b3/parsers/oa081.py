@@ -76,39 +76,46 @@
 # * change data format for EVT_CLIENT_BAN events
 # 14/06/2011 - 0.11.0 - Courgette
 # * cvar code moved to q3a AbstractParser
+# 13/01/2014 - 0.11.1 - Fenix
+# * pep8 coding style guide
+# * changed bots giud to match other q3a parsers (BOT<slot>)
+# * correctly set client bot flag upon new client connection
 #
-__author__  = 'Courgette, GrosBedo'
-__version__ = '0.11.0'
+__author__ = 'Courgette, GrosBedo'
+__version__ = '0.11.1'
 
-import re, string, thread, time, threading
+import re
+import string
 import b3
 import b3.events
 from b3.parsers.q3a.abstractParser import AbstractParser
 
+
 class Oa081Parser(AbstractParser):
+
     gameName = 'oa081'
+
     _connectingSlots = []
     _maplist = None
     
-    _settings = {}
-    _settings['line_length'] = 65
-    _settings['min_wrap_length'] = 100
-
+    _settings = dict(
+        line_length=65,
+        min_wrap_length=100
+    )
     _empty_name_default = 'EmptyNameDefault'
 
-    _commands = {}
-    #_commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
-    #_commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
-    _commands['message'] = 'say %(prefix)s ^3[pm]^7 %(message)s'
-    _commands['deadsay'] = 'say %(prefix)s [DEAD]^7 %(message)s'
-    _commands['say'] = 'say %(prefix)s %(message)s'
-    _commands['set'] = 'set %(name)s "%(value)s"'
-    _commands['kick'] = 'clientkick %(cid)s'
-    _commands['ban'] = 'banaddr %(cid)s' #addip for q3a
-    _commands['tempban'] = 'clientkick %(cid)s'
-    _commands['banByIp'] = 'banaddr %(ip)s'
-    _commands['unbanByIp'] = 'bandel %(cid)s' #removeip for q3a
-    _commands['banlist'] = 'listbans' #g_banips for q3a
+    _commands = dict(
+        message='say %(prefix)s ^3[pm]^7 %(message)s',
+        deadsay='say %(prefix)s [DEAD]^7 %(message)s',
+        say='say %(prefix)s %(message)s',
+        set='set %(name)s "%(value)s"',
+        kick='clientkick %(cid)s',
+        ban='banaddr %(cid)s',
+        tempban='clientkick %(cid)s',
+        banByIp='banaddr %(ip)s',
+        unbanByIp='bandel %(cid)s',
+        banlist='listbans',
+    )
 
     _eventMap = {
         'warmup' : b3.events.EVT_GAME_WARMUP,
@@ -139,7 +146,6 @@ class Oa081Parser(AbstractParser):
         # 8:36 Award: 10 1: Karamel is a fake gained the EXCELLENT award!
         re.compile(r'^(?P<action>Award):\s+(?P<cid>[0-9]+)\s+(?P<awardtype>[0-9]+):\s+(?P<data>(?P<name>.+) gained the (?P<awardname>\w+) award!)$', re.IGNORECASE),
 
-        #
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<text>.*))$', re.IGNORECASE),
 
@@ -154,7 +160,6 @@ class Oa081Parser(AbstractParser):
         # 54:52 Item: 2 weapon_plasmagun
         re.compile(r'^(?P<action>Item):\s+(?P<cid>[0-9]+)\s+(?P<data>.*)$', re.IGNORECASE),
 
-        #
         # Falling through?
         # 1:05 ClientConnect: 3
         # 1:05 ClientUserinfoChanged: 3 guid\CAB616192CB5652375401264987A23D0\n\xlr8or\t\0\model\wq_male2/red\g_redteam\\g_blueteam\\hc\100\w\0\l\0\tt\0\tl\0
@@ -177,12 +182,10 @@ class Oa081Parser(AbstractParser):
     _reTeamScores = re.compile(r'^red:(?P<RedScore>.+)\s+blue:(?P<BlueScore>.+)$', re.I)
     _rePlayerScore = re.compile(r'^score:\s+(?P<score>[0-9]+)\s+ping:\s+(?P<ping>[0-9]+|CNCT|ZMBI)\s+client:\s+(?P<slot>[0-9]+)\s+(?P<name>.*)$', re.I)
 
-    
     # Ban #1: 200.200.200.200/32
     _reBanList = re.compile(r'^Ban #(?P<cid>[0-9]+):\s+(?P<ip>[0-9]+.[0-9]+.[0-9]+.[0-9]+)/(?P<range>[0-9]+)$', re.I)
 
     PunkBuster = None
-
 
     ##  means of death
     #===========================================================================
@@ -217,8 +220,8 @@ class Oa081Parser(AbstractParser):
     MOD_JUICED = 27
     # #endif
     MOD_GRAPPLE = 28
-    #===========================================================================
 
+    #===========================================================================
     
     ## meansOfDeath to be considered suicides
     Suicides = (
@@ -230,6 +233,7 @@ class Oa081Parser(AbstractParser):
         MOD_SUICIDE,
         MOD_TRIGGER_HURT,
     )
+
 #---------------------------------------------------------------------------------------------------
 
     def startup(self):
@@ -254,7 +258,7 @@ class Oa081Parser(AbstractParser):
             self.game.fs_game = fs_game
             self.game.modName = fs_game
             self.debug('fs_game: %s' % self.game.fs_game)
-        except:
+        except Exception:
             self.game.fs_game = None
             self.game.modName = None
             self.warning("Could not query server for fs_game")
@@ -262,21 +266,21 @@ class Oa081Parser(AbstractParser):
         try:
             self.game.fs_basepath = self.getCvar('fs_basepath').getString().rstrip('/')
             self.debug('fs_basepath: %s' % self.game.fs_basepath)
-        except:
+        except Exception:
             self.game.fs_basepath = None
             self.warning("Could not query server for fs_basepath")
 
         try:
             self.game.fs_homepath = self.getCvar('fs_homepath').getString().rstrip('/')
             self.debug('fs_homepath: %s' % self.game.fs_homepath)
-        except:
+        except Exception:
             self.game.fs_homepath = None
             self.warning("Could not query server for fs_homepath")
 
         try:
             self.game.gameType = self.defineGameType(self.getCvar('g_gametype').getString())
             self.debug('g_gametype: %s' % self.game.gameType)
-        except:
+        except Exception:
             self.game.gameType = None
             self.warning("Could not query server for g_gametype")
 
@@ -287,14 +291,14 @@ class Oa081Parser(AbstractParser):
             userinfostring = self.queryClientUserInfoByCid(cid)
             if userinfostring:
                 self.OnClientuserinfochanged(None, userinfostring)
-        
-            
+
 #---------------------------------------------------------------------------------------------------
 
     # Added for debugging and identifying/catching log lineparts
     def getLineParts(self, line):
         line = re.sub(self._lineClear, '', line, 1)
 
+        m = None
         for f in self._lineFormats:
             m = re.match(f, line)
             if m:
@@ -306,17 +310,17 @@ class Oa081Parser(AbstractParser):
             target = None
             
             try:
-                action =  m.group('action').lower()
+                action = m.group('action').lower()
             except IndexError:
                 # special case for damage lines where no action group can be set
                 action = 'damage'
             
-            return (m, action, m.group('data').strip(), client, target)
+            return m, action, m.group('data').strip(), client, target
+
         elif '------' not in line:
             self.verbose('XLR--------> line did not match format: %s' % line)
 
 #---------------------------------------------------------------------------------------------------
-       
         
     def OnClientconnect(self, action, data, match=None):
         client = self.clients.getByCID(data)
@@ -325,8 +329,12 @@ class Oa081Parser(AbstractParser):
 
     # Parse Userinfo
     def OnClientuserinfochanged(self, action, data, match=None):
-        if data is None: # if the client disconnected and we are trying to force the server to give us an id, we end up with an empty data object, so we just return and everything should be fine (the slot should already be removed ln 336)
+        if data is None:
+            # if the client disconnected and we are trying to force the server
+            # to give us an id, we end up with an empty data object, so we just return and
+            # everything should be fine (the slot should already be removed ln 336)
             return
+
         bclient = self.parseUserInfo(data)
         self.verbose('Parsed user info %s' % bclient)
         if bclient:
@@ -344,16 +352,17 @@ class Oa081Parser(AbstractParser):
                 for k, v in bclient.iteritems():
                     setattr(client, k, v)
             else:
-                if not bclient.has_key('name'):
+                if not 'name' in bclient.keys():
                     bclient['name'] = self._empty_name_default
 
-                if bclient.has_key('guid'):
+                if 'guid' in bclient.keys():
                     guid = bclient['guid']
                 else:
-                    if bclient.has_key('skill'):
-                        guid = 'BOT-' + str(cid)
+                    if 'skill' in bclient.keys():
+                        guid = 'BOT' + str(cid)
                         self.verbose('BOT connected!')
-                        self.clients.newClient(cid, name=bclient['name'], ip='0.0.0.0', state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid }, team=bclient['team'], money=20)
+                        self.clients.newClient(cid, name=bclient['name'], ip='0.0.0.0', state=b3.STATE_ALIVE,
+                                               guid=guid, data={'guid': guid}, team=bclient['team'], bot=True, money=20)
                         self._connectingSlots.remove(cid)
                         return None
                     else:
@@ -362,15 +371,16 @@ class Oa081Parser(AbstractParser):
                         self.OnClientuserinfochanged(None, self.queryClientUserInfoByCid(cid))
                         return
                 
-                if not bclient.has_key('ip'):
+                if not 'ip' in bclient.keys():
                     infoclient = self.parseUserInfo(self.queryClientUserInfoByCid(cid))
                     if 'ip' in infoclient:
                         bclient['ip'] = infoclient['ip']
                     else:
                         self.warning('failed to get client ip')
                 
-                if bclient.has_key('ip'):
-                    self.clients.newClient(cid, name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid }, team=bclient['team'], money=20)
+                if 'ip' in bclient.keys():
+                    self.clients.newClient(cid, name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE,
+                                           guid=guid, data={'guid': guid}, team=bclient['team'], bot=False, money=20)
                 else:
                     self.warning('failed to get connect client')
                     
@@ -380,7 +390,7 @@ class Oa081Parser(AbstractParser):
 
     # disconnect
     def OnKill(self, action, data, match=None):
-        self.debug('OnKill: %s (%s)'%(match.group('aweap'),match.group('text')))
+        self.debug('OnKill: %s (%s)' % (match.group('aweap'), match.group('text')))
         
         victim = self.getByCidOrJoinPlayer(match.group('cid'))
         if not victim:
@@ -396,7 +406,7 @@ class Oa081Parser(AbstractParser):
         ## Fix attacker
         if match.group('aweap') in self.Suicides:
             # those kills should be considered suicides
-            self.debug('OnKill: Fixed attacker, suicide detected: %s' %match.group('text'))
+            self.debug('OnKill: Fixed attacker, suicide detected: %s' % match.group('text'))
             attacker = victim
         else:
             attacker = self.getByCidOrJoinPlayer(match.group('acid'))
@@ -406,8 +416,8 @@ class Oa081Parser(AbstractParser):
             self.debug('No attacker')
             return None
 
-        dType = match.group('text').split()[-1:][0]
-        if not dType:
+        dtype = match.group('text').split()[-1:][0]
+        if not dtype:
             self.debug('No damageType, weapon: %s' % weapon)
             return None
 
@@ -424,13 +434,15 @@ class Oa081Parser(AbstractParser):
             victim.hitloc = 'body'
         
         victim.state = b3.STATE_DEAD
-        #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (victim.name, attacker.name, weapon, victim.hitloc, dType))
+        #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (victim.name,
+        #             attacker.name, weapon, victim.hitloc, dType))
         # need to pass some amount of damage for the teamkill plugin - 100 is a kill
-        return b3.events.Event(event, (100, weapon, victim.hitloc, dType), attacker, victim)
+        return b3.events.Event(event, (100, weapon, victim.hitloc, dtype), attacker, victim)
 
     def OnClientdisconnect(self, action, data, match=None):
         client = self.clients.getByCID(data)
-        if client: client.disconnect()
+        if client:
+            client.disconnect()
         return None
 
     # startgame
@@ -457,9 +469,9 @@ class Oa081Parser(AbstractParser):
 
         return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
 
-
     def OnSayteam(self, action, data, match=None):
-        # Teaminfo does not exist in the sayteam logline, so we can't know in which team the user is in. So we set him in a -1 void team.
+        # Teaminfo does not exist in the sayteam logline, so we can't know in which team the user is in.
+        # So we set him in a -1 void team.
         client = self.clients.getByExactName(match.group('name'))
 
         if not client:
@@ -470,10 +482,8 @@ class Oa081Parser(AbstractParser):
         client.name = match.group('name')
         return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data, client, -1)
 
-
     def OnTell(self, action, data, match=None):
         #5:27 tell: woekele to XLR8or: test
-
         client = self.clients.getByExactName(match.group('name'))
         tclient = self.clients.getByExactName(match.group('aname'))
 
@@ -495,7 +505,7 @@ class Oa081Parser(AbstractParser):
         if not client:
             self.debug('No client found')
             return None
-        self.verbose('OnAction: %s: %s %s' % (client.name, actiontype, data) )
+        self.verbose('OnAction: %s: %s %s' % (client.name, actiontype, data))
         return b3.events.Event(b3.events.EVT_CLIENT_ACTION, actiontype, client)
 
     def OnItem(self, action, data, match=None):
@@ -522,12 +532,14 @@ class Oa081Parser(AbstractParser):
             '2': 'flag_returned',
             '3': 'flag_carrier_kill',
         }
+
         try:
             action_id = action_types[match.group('type')]
         except KeyError:
             action_id = 'flag_action_' + match.group('type')
             self.debug('unknown CTF action type: %s (%s)' % (match.group('type'), match.group('data')))
-        self.debug('CTF Event: %s from team %s %s by %s' %(action_id, flagcolor, flagteam, client.name))
+
+        self.debug('CTF Event: %s from team %s %s by %s' % (action_id, flagcolor, flagteam, client.name))
         if action_id == 'flag_returned':
             return b3.events.Event(b3.events.EVT_GAME_FLAG_RETURNED, flagcolor)
         else:
@@ -546,47 +558,47 @@ class Oa081Parser(AbstractParser):
         action_type = 'award_%s' % match.group('awardname')
         return b3.events.Event(b3.events.EVT_CLIENT_ACTION, action_type, client)
 
-
 #---------------------------------------------------------------------------------------------------
 
     def parseUserInfo(self, info):
-        #ClientUserinfoChanged: 0 n\Courgette\t\0\model\sarge/classic\hmodel\sarge/classic\g_redteam\\g_blueteam\\c1\2\c2\7\hc\100\w\0\l\0\tt\0\tl\0\id\201AB4BBC40B4EC7445B49CE82D209EC
-        playerID, info = string.split(info, ' ', 1)
+        #ClientUserinfoChanged: 0 n\Courgette\t\0\model\sarge/classic\hmodel\sarge/classic\g_redteam...
+        player_id, info = string.split(info, ' ', 1)
 
         if info[:1] != '\\':
             info = '\\' + info
 
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', info)
 
-        data = {}
+        data = dict()
         for o in options:
             data[o[0]] = o[1]
 
-        data['cid'] = playerID
+        data['cid'] = player_id
 
-        if data.has_key('n'):
+        if 'n' in data.keys():
             data['name'] = data['n']
 
         t = -1
-        if data.has_key('team'):
+        if 'team' in data.keys():
             t = data['team']
-        elif data.has_key('t'):
+        elif 't' in data.keys():
             t = data['t']
 
         data['team'] = self.getTeam(t)
-        
-        
-        if data.has_key('id'):
+
+        if 'id' in data.keys():
             data['guid'] = data['id']
             del data['id']
-        if data.has_key('cl_guid'):
+
+        if 'cl_guid' in data:
             data['guid'] = data['cl_guid']
         
         return data
 
-
     def getTeam(self, team):
-        team = str(team).lower() # We convert to a string and lower the case because there is a problem when trying to detect numbers if it's not a string (weird)
+        # We convert to a string and lower the case because there is a problem
+        # when trying to detect numbers if it's not a string (weird)
+        team = str(team).lower()
         if team == 'free' or team == '0':
             #self.debug('Team is Free (no team)')
             result = b3.TEAM_FREE
@@ -607,33 +619,32 @@ class Oa081Parser(AbstractParser):
         return result
 
     # Translate the gameType to a readable format (also for teamkill plugin!)
-    def defineGameType(self, gameTypeInt):
+    def defineGameType(self, gametype_int):
 
-        _gameType = ''
-        _gameType = str(gameTypeInt)
+        _gametype = str(gametype_int)
         #self.debug('gameTypeInt: %s' % gameTypeInt)
         
-        if gameTypeInt == '0':
-            _gameType = 'dm'        # Free for all
-        elif gameTypeInt == '1':
-            _gameType = 'du'        # Tourney
-        elif gameTypeInt == '3':
-            _gameType = 'tdm'       # Team Deathmatch
-        elif gameTypeInt == '4':
-            _gameType = 'ctf'        # Capture The Flag
-        elif gameTypeInt == '8':
-            _gameType = 'el'        # Elimination
-        elif gameTypeInt == '9':
-            _gameType = 'ctfel'        # CTF Elimination
-        elif gameTypeInt == '10':
-            _gameType = 'lms'        # Last Man Standing
-        elif gameTypeInt == '11':
-            _gameType = 'del'        # Double Domination
-        elif gameTypeInt == '12':
-            _gameType = 'dom'        # Domination
+        if gametype_int == '0':
+            _gametype = 'dm'        # Free for all
+        elif gametype_int == '1':
+            _gametype = 'du'        # Tourney
+        elif gametype_int == '3':
+            _gametype = 'tdm'       # Team Deathmatch
+        elif gametype_int == '4':
+            _gametype = 'ctf'       # Capture The Flag
+        elif gametype_int == '8':
+            _gametype = 'el'        # Elimination
+        elif gametype_int == '9':
+            _gametype = 'ctfel'     # CTF Elimination
+        elif gametype_int == '10':
+            _gametype = 'lms'       # Last Man Standing
+        elif gametype_int == '11':
+            _gametype = 'del'       # Double Domination
+        elif gametype_int == '12':
+            _gametype = 'dom'       # Domination
         
         #self.debug('_gameType: %s' % _gameType)
-        return _gameType
+        return _gametype
 
     def getMaps(self):
         if self._maplist is not None:
@@ -665,8 +676,9 @@ class Oa081Parser(AbstractParser):
         # "nextmap" is: "vstr next4; echo test; vstr aupo3; map oasago2"
         # the last command in the line is the one that decides what is the next map
         # in a case like : map oasago2; echo test; vstr nextmap6; vstr nextmap3
-        # the parser will recursively look each last vstr var, and if it can't find a map, fallback to the last map command
-        self.debug('Extracting nextmap name from: %s' % (data))
+        # the parser will recursively look each last vstr var, and if it can't find a map,
+        # fallback to the last map command
+        self.debug('Extracting nextmap name from: %s' % data)
         nextmapregex = re.compile(r'.*("|;)\s*((?P<vstr>vstr (?P<vstrnextmap>[a-z0-9_]+))|(?P<map>map (?P<mapnextmap>[a-z0-9_]+)))', re.IGNORECASE)
         m = re.match(nextmapregex, data)
         if m:
@@ -677,15 +689,19 @@ class Oa081Parser(AbstractParser):
                 self.debug('Nextmap is redirecting to var: %s' % (m.group('vstrnextmap')))
                 data = self.write(m.group('vstrnextmap'))
                 result = self.findNextMap(data) # recursively dig into the vstr vars to find the last map called
-                if result: # if a result was found in a deeper level, then we return it to the upper level, until we get back to the root level
+                if result:
+                    # if a result was found in a deeper level, then we return it to the upper level,
+                    # until we get back to the root level
                     return result
-                else: # if none could be found, then try to find a map command in the current string
+                else:
+                    # if none could be found, then try to find a map command in the current string
                     nextmapregex = re.compile(r'.*("|;)\s*(?P<map>map (?P<mapnextmap>[a-z0-9_]+))"', re.IGNORECASE)
                     m = re.match(nextmapregex, data)
                     if m.group('map'):
                         self.debug('Found nextmap: %s' % (m.group('mapnextmap')))
                         return m.group('mapnextmap')
-                    else: # if none could be found, we go up a level by returning None (remember this is done recursively)
+                    else:
+                        # if none could be found, we go up a level by returning None (remember this is done recursively)
                         self.debug('No nextmap found in this string !')
                         return None
         else:
@@ -712,17 +728,20 @@ class Oa081Parser(AbstractParser):
             return self.tempban(client, reason, '1d', admin, silent)
 
         if admin:
-            fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+            fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client,
+                                                                               reason=reason,
+                                                                               admin=admin))
         else:
-            fullreason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
+            fullreason = self.getMessage('banned', self.getMessageVariables(client=client,
+                                                                            reason=reason))
 
         if client.cid is None:
             # ban by ip, this happens when we !permban @xx a player that is not connected
-            self.debug('EFFECTIVE BAN : %s',self.getCommand('banByIp', ip=client.ip, reason=reason))
+            self.debug('EFFECTIVE BAN : %s', self.getCommand('banByIp', ip=client.ip, reason=reason))
             self.write(self.getCommand('banByIp', ip=client.ip, reason=reason))
         else:
             # ban by cid
-            self.debug('EFFECTIVE BAN : %s',self.getCommand('ban', cid=client.cid, reason=reason))
+            self.debug('EFFECTIVE BAN : %s', self.getCommand('ban', cid=client.cid, reason=reason))
             self.write(self.getCommand('ban', cid=client.cid, reason=reason))
 
         if not silent and fullreason != '':
@@ -744,9 +763,12 @@ class Oa081Parser(AbstractParser):
                         self.debug('EFFECTIVE UNBAN : %s',self.getCommand('unbanByIp', cid=m.group('cid')))
 
                 if admin:
-                    fullreason = self.getMessage('unbanned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+                    fullreason = self.getMessage('unbanned_by', self.getMessageVariables(client=client,
+                                                                                         reason=reason,
+                                                                                         admin=admin))
                 else:
-                    fullreason = self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason))
+                    fullreason = self.getMessage('unbanned', self.getMessageVariables(client=client,
+                                                                                      reason=reason))
 
                 if not silent and fullreason != '':
                     self.say(fullreason)
@@ -770,12 +792,12 @@ class Oa081Parser(AbstractParser):
 
     def sync(self):
         plist = self.getPlayerList()
-        mlist = {}
+        mlist = dict()
 
         for cid, c in plist.iteritems():
             client = self.getByCidOrJoinPlayer(cid)
             if client:
-                if client.guid and c.has_key('guid'):
+                if client.guid and 'guid' in c.keys():
                     if client.guid == c['guid']:
                         # player matches
                         self.debug('in-sync %s == %s', client.guid, c['guid'])
@@ -783,7 +805,7 @@ class Oa081Parser(AbstractParser):
                     else:
                         self.debug('no-sync %s <> %s', client.guid, c['guid'])
                         client.disconnect()
-                elif client.ip and c.has_key('ip'):
+                elif client.ip and 'ip' in c.keys():
                     if client.ip == c['ip']:
                         # player matches
                         self.debug('in-sync %s == %s', client.ip, c['ip'])
@@ -806,7 +828,6 @@ class Oa081Parser(AbstractParser):
                 self.debug('Client found in status/playerList')
                 return p
     
-    
     def getByCidOrJoinPlayer(self, cid):
         client = self.clients.getByCID(cid)
         if client:
@@ -816,8 +837,7 @@ class Oa081Parser(AbstractParser):
             if userinfostring:
                 self.OnClientuserinfochanged(None, userinfostring)
             return self.clients.getByCID(cid)
-        
-        
+
     def queryClientUserInfoByCid(self, cid):
         """
         : dumpuser 5
@@ -866,4 +886,3 @@ class Oa081Parser(AbstractParser):
             datatransformed += "\\%s\\%s" % (var, val)
 
         return datatransformed
-

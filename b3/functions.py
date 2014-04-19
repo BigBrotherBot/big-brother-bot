@@ -30,9 +30,12 @@
 # 20/10/2012 - 1.7   - Courgette - fix soundex() error when input string is unicode
 # 26/11/2012 - 1.8   - Courgette - add hash_password()
 # 18/08/2013 - 1.9   - Courgette - add support for empty or no MySQL password
+# 21/02/2014 - 1.10  - Courgette - fix getStuffSoundingLike that would return non unique suggest ons or would not
+#                                  return suggestions in the same order for the same input values if ordered
+#                                  differently and if having multiple same levenshtein distance
 #
 __author__    = 'ThorN, xlr8or, courgette'
-__version__   = '1.9'
+__version__   = '1.10'
 
 import b3
 import re
@@ -346,9 +349,9 @@ def getStuffSoundingLike(stuff, expected_stuff):
                     match.append(clean_expected_stuff[m])
 
     if not len(match):
-        match = expected_stuff
+        match = sorted(list(expected_stuff))
         match.sort(key=lambda _map: levenshteinDistance(clean_stuff, _map.strip()))
-    return match
+    return list(set(match))
 
 
 def hash_password(password):

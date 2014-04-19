@@ -1,0 +1,12 @@
+image: python2.7
+env:
+  - MYSQL_TEST_HOST=127.0.0.1
+  - MYSQL_TEST_USER=root
+  - MYSQL_TEST_PASSWORD=
+  - MYSQL_TEST_DB=b3
+script:
+  - pip install pysqlite MySQL-python unittest2 mock mockito nose-exclude
+  - mysql -h 127.0.0.1 -u root < b3/sql/b3-db.sql
+  - nosetests --where=tests
+services:
+  - mysql

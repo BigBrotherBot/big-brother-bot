@@ -69,6 +69,9 @@ def client_equal(client_a, client_b):
 #    return True
 
 
+WHATEVER = object()  # sentinel used in CsgoTestCase.assert_has_event
+
+
 class CsgoTestCase(unittest.TestCase):
     """
     Test case that is suitable for testing CS:GO parser specific features
@@ -114,7 +117,7 @@ class CsgoTestCase(unittest.TestCase):
         self.evt_queue = []
 
 
-    def assert_has_event(self, event_type, data=None, client=None, target=None):
+    def assert_has_event(self, event_type, data=WHATEVER, client=WHATEVER, target=WHATEVER):
         """
         assert that self.evt_queue contains at least one event for the given type that has the given characteristics.
         """
@@ -126,15 +129,18 @@ class CsgoTestCase(unittest.TestCase):
         elif len(self.evt_queue) == 1:
             actual_event = self.evt_queue[0]
             self.assertEqual(expected_event.type, actual_event.type)
-            self.assertEqual(expected_event.data, actual_event.data)
-            self.assertTrue(client_equal(expected_event.client, actual_event.client))
-            self.assertTrue(client_equal(expected_event.target, actual_event.target))
+            if data != WHATEVER:
+                self.assertEqual(expected_event.data, actual_event.data)
+            if client != WHATEVER:
+                self.assertTrue(client_equal(expected_event.client, actual_event.client))
+            if target != WHATEVER:
+                self.assertTrue(client_equal(expected_event.target, actual_event.target))
         else:
             for evt in self.evt_queue:
                 if expected_event.type == evt.type \
-                    and expected_event.data == evt.data \
-                    and client_equal(expected_event.client, evt.client) \
-                    and client_equal(expected_event.target, evt.target):
+                        and (expected_event.data == evt.data or data == WHATEVER)\
+                        and (client_equal(expected_event.client, evt.client) or client == WHATEVER)\
+                        and (client_equal(expected_event.target, evt.target) or target == WHATEVER):
                     return
 
             self.fail("expecting event %s. Got instead: %s" % (expected_event, map(str, self.evt_queue)))
@@ -379,9 +385,9 @@ class Test_gamelog_parsing(CsgoTestCase):
         # THEN a client object is created
         client = self.parser.clients.getByCID("3")
         self.assertIsNotNone(client)
-        self.assertTrue(client.hide)
+        self.assertTrue(client.bot)
         self.assertEqual("Moe", client.name)
-        self.assertEqual('', client.guid)
+        self.assertEqual('BOT3', client.guid)
         self.assertEqual("", client.ip)
         # THEN events are fired
         self.assert_has_event("EVT_CLIENT_CONNECT", data=client, client=client)
@@ -543,6 +549,7 @@ class Test_gamelog_parsing(CsgoTestCase):
             self.parser.parseLine('''L 08/26/2012 - 03:22:36: World triggered "Round_Start"''')
             # THEN
             self.assertTrue(startRound_mock.called)
+            self.assert_has_event("EVT_GAME_ROUND_START")
 
 
     def test_world_triggered_event__Game_Commencing(self):

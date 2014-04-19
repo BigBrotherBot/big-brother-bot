@@ -283,7 +283,7 @@ class Test_getMapsSoundingLike(MohwTestCase):
         self.assertEqual('MP_21', self.parser.getMapsSoundingLike('compound'))
 
     def test_suggestions(self):
-        self.assertEqual(['novi grad warzone', 'shogore valley', 'darra gun market'], self.parser.getMapsSoundingLike(''))
+        self.assertEqual(['shogore valley', 'sarajevo stadium', 'tungunan jungle'], self.parser.getMapsSoundingLike(''))
 
 
 class Test_getGamemodeSoundingLike(MohwTestCase):
@@ -344,7 +344,7 @@ class Test_getGamemodeSoundingLike(MohwTestCase):
 
     def test_suggestions(self):
         # unrecognizable input, falling back on available gamemodes for current map
-        self.assertEqual(['Sector Control', 'Team Death Match', 'Home Run'],
+        self.assertEqual(['Team Death Match', 'Combat Mission', 'Home Run'],
                          self.parser.getGamemodeSoundingLike('MP_12', ''))
 
 

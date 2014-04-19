@@ -128,6 +128,7 @@ class TestGetDefaultChannel(unittest.TestCase):
         self.assertEqual(update.UPDATE_CHANNEL_DEV, update.getDefaultChannel("1.0dev"))
         self.assertEqual(update.UPDATE_CHANNEL_DEV, update.getDefaultChannel("1.0.1dev2"))
         self.assertEqual(update.UPDATE_CHANNEL_DEV, update.getDefaultChannel("1.2dev5"))
+        self.assertEqual(update.UPDATE_CHANNEL_DEV, update.getDefaultChannel("1.10.0dev.daily118"))
 
 
 class TestCheckUpdateUrl(unittest.TestCase):
@@ -163,7 +164,7 @@ class TestCheckUpdate (unittest.TestCase):
     def setUp(self):
         self.expected_stable = u'*** NOTICE: B3 1.4.3 is available. See http://www.url.stable.fake ! ***'
         self.expected_beta = u'*** NOTICE: B3 1.5.3b3 is available. See http://www.url.beta.fake ! ***'
-        self.expected_dev = u'*** NOTICE: B3 1.6dev5 is available. See http://www.url.dev.fake ! ***'
+        self.expected_dev = u'*** NOTICE: B3 1.6dev5.daily135 is available. See http://www.url.dev.fake ! ***'
 
         def urlopen(*args, **kwargs):
             """
@@ -184,7 +185,7 @@ class TestCheckUpdate (unittest.TestCase):
                             },
                             "dev": {
                                 "url": "http://www.url.dev.fake",
-                                "latest-version": "1.6dev5"
+                                "latest-version": "1.6dev5.daily135"
                             }
                         }
                     }
@@ -212,7 +213,6 @@ class TestCheckUpdate (unittest.TestCase):
         for v in ('1.6dev5', '1.6dev6', '1.7dev'):
             self.assertEqual(None, update.checkUpdate(v))
 
-
     def test_stable_channel(self):
         for v in ('1.0dev15','1.0b', '1.0', '1.1.1', '1.1.1b', '1.1.1b2', '1.1.1dev7', '1.4', '1.4.2', '1.4.3dev',
                   '1.4.3dev1', '1.4.3b', '1.4.3b1'):
@@ -232,13 +232,12 @@ class TestCheckUpdate (unittest.TestCase):
             self.assertEqual(None, update.checkUpdate(v, channel=update.UPDATE_CHANNEL_BETA))
 
     def test_dev_channel(self):
-        for v in ('1.0dev15','1.0b', '1.0', '1.1.1', '1.1.1b', '1.1.1b2', '1.1.1dev7', '1.4', '1.4.2', '1.4.3dev',
+        for v in ('1.0dev15', '1.0b', '1.0', '1.1.1', '1.1.1b', '1.1.1b2', '1.1.1dev7', '1.4', '1.4.2', '1.4.3dev',
                   '1.4.3dev1', '1.4.3b', '1.4.3b1', '1.4.3', '1.4.3', '1.4.4dev', '1.4.4b', '1.4.4', '1.5',
                   '1.5.2', '1.5.3dev', '1.5.3dev1', '1.5.3b', '1.5.3b1', '1.5.3b2', '1.5.3b3', '1.5.3b4', '1.5.3',
-                  '1.5.4dev', '1.5.4b', '1.5.4', '1.6dev', '1.6dev4'):
+                  '1.5.4dev', '1.5.4b', '1.5.4', '1.6dev', '1.6dev4', '1.6dev5.daily134'):
             self.assertEqual(self.expected_dev, update.checkUpdate(v, channel=update.UPDATE_CHANNEL_DEV))
-        for v in ('1.6dev5',
-                  '1.6dev6', '1.6b', '1.6b1', '1.6', '1.6.1'):
+        for v in ('1.6dev5', '1.6dev6', '1.6b', '1.6b1', '1.6', '1.6.1', '1.6dev5.daily135'):
             self.assertEqual(None, update.checkUpdate(v, channel=update.UPDATE_CHANNEL_DEV))
 
     def test_unknown_channel(self):

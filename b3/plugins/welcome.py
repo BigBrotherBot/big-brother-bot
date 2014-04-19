@@ -16,6 +16,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
+# 2014/04/07 - 1.4 - Fenix
+#  * pep8 coding style guide
+#  * improved plugin startup and configuration file loading
 # 2013/04/18 - 1.3 - Courgette
 #  * easier config file format for defining which welcome message to display
 # 2013/04/13 - 1.2.1 - Courgette
@@ -36,15 +39,17 @@
 #    Removed error generated in welcoming thread on first time players
 # 2/26/2009 - 1.0.3 - xlr8or
 #    Do not welcome players that where already welcomed in the last hour
-import threading
-import time
-import re
-from ConfigParser import NoOptionError
+
 import b3
 import b3.events
 import b3.plugin
+import threading
+import time
+import re
 
-__version__ = '1.3'
+from ConfigParser import NoOptionError
+
+__version__ = '1.4'
 __author__ = 'ThorN, xlr8or, Courgette'
 
 F_FIRST = 4
@@ -54,108 +59,194 @@ F_ANNOUNCE_FIRST = 8
 F_ANNOUNCE_USER = 2
 F_CUSTOM_GREETING = 32
 
-#--------------------------------------------------------------------------------------------------
+
 class WelcomePlugin(b3.plugin.Plugin):
-    _newbConnections = 0
+
+    _adminPlugin = None
+    _newbConnections = 15
     _welcomeFlags = F_FIRST | F_NEWB | F_USER | F_ANNOUNCE_FIRST | F_ANNOUNCE_USER | F_CUSTOM_GREETING
-    _welcomeDelay = 0
-    _cmd_greeting_minlevel = None
+    _welcomeDelay = 30
     _min_gap = 3600
+    _default_messages = dict(
+        first='^7Welcome $name^7, this must be your first visit, you are player ^3#$id. Type !help for help',
+        newb='^7[^2Authed^7] Welcome back $name ^7[^3@$id^7], last visit ^3$lastVisit. '
+             'Type !register in chat to register. Type !help for help',
+        user='^7[^2Authed^7] Welcome back $name ^7[^3@$id^7], last visit ^3$lastVisit^7, '
+             'you\'re a ^2$group^7, played $connections times',
+        announce_first='^7Everyone welcome $name^7, player number ^3#$id^7, to the server',
+        announce_user='^7Everyone welcome back $name^7, player number ^3#$id^7, to the server, '
+                      'played $connections times',
+        greeting='^7$name^7 joined: $greeting',
+        greeting_empty='^7You have no greeting set',
+        greeting_yours='^7Your greeting is %s',
+        greeting_bad='^7Greeting is not formatted properly: %s',
+        greeting_changed='^7Greeting changed to: %s',
+        greeting_cleared='^7Greeting cleared',
+    )
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   STARTUP                                                                                                      ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def onStartup(self):
-        self.registerEvent(b3.events.EVT_CLIENT_AUTH)
+        """\
+        Initialize the plugin
+        """
+        self._adminPlugin = self.console.getPlugin('admin')
+        if not self._adminPlugin:
+            self.critical('could not start without admin plugin')
+            return False
+
+        # register our commands
+        if 'commands' in self.config.sections():
+            for cmd in self.config.options('commands'):
+                level = self.config.get('commands', cmd)
+                sp = cmd.split('-')
+                alias = None
+                if len(sp) == 2:
+                    cmd, alias = sp
+
+                func = self.getCmd(cmd)
+                if func:
+                    self._adminPlugin.registerCommand(self, cmd, level, func, alias)
+
+        # register events needed
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.onAuth)
 
     def onLoadConfig(self):
-        try:
-            self._cmd_greeting_minlevel = self.config.getint('commands', 'greeting')
-        except:
-            self._cmd_greeting_minlevel = 20
-            self.warning('using default value %s for command !greeting' % self._cmd_greeting_minlevel)
-        
-        self._adminPlugin = self.console.getPlugin('admin')
-        if self._adminPlugin:
-            self._adminPlugin.registerCommand(self, 'greeting', self._cmd_greeting_minlevel, self.cmd_greeting)
-
+        """\
+        Load plugin configuration
+        """
         self._load_config_flags()
 
         try:
             self._newbConnections = self.config.getint('settings', 'newb_connections')
-        except (NoOptionError, KeyError), err:
+            self.debug('loaded settings/newb_connections: %s' % self._newbConnections)
+        except (NoOptionError, ValueError), e:
             self._newbConnections = 15
-            self.warning("Using default value %s for 'settings/newb_connections'. %s" % (self._newbConnections, err))
-        except Exception, err:
-            self._newbConnections = 15
-            self.error("Using default value %s for 'settings/newb_connections'. %s" % (self._newbConnections, err))
+            self.error('could not load settings/newb_connections config value: %s' % e)
+            self.debug('using default value (%s) for settings/newb_connections' % self._newbConnections)
 
         try:
             self._welcomeDelay = self.config.getint('settings', 'delay')
+            self.debug('loaded settings/delay: %s' % self._welcomeDelay)
             if self._welcomeDelay < 15 or self._welcomeDelay > 90:
                 self._welcomeDelay = 30
-                self.debug('Welcome delay not in range 15-90 using 30 instead.')
-            self.info('delay set to %s. The bot will wait %ss after a player connects to write the welcome message' % (self._welcomeDelay, self._welcomeDelay))
-        except:
+                self.debug('welcome delay not in range 15-90: using 30 instead')
+        except (NoOptionError, ValueError), e:
             self._welcomeDelay = 30
+            self.error('could not load settings/delay config value: %s' % e)
+            self.debug('using default value (%s) for settings/delay' % self._welcomeDelay)
+
+        self.info('welcomer delay set to %s: the bot will wait %ss after a player connects '
+                  'to write the welcome message' % (self._welcomeDelay, self._welcomeDelay))
 
         try:
             self._min_gap = self.config.getint('settings', 'min_gap')
+            self.debug('loaded settings/min_gap: %s' % self._min_gap)
             if self._min_gap < 0:
                 self._min_gap = 0
-            self.info('min_gap set to %s. The bot will not welcome a player more than once every %s seconds' % (self._min_gap, self._min_gap))
-        except:
+                self.debug('min_gap must be positive or 0: using 0 instead')
+        except (NoOptionError, ValueError), e:
             self._min_gap = 3600
-            self.warning('error while reading min_gap from config. min_gap set to %s (default).' % (self._min_gap))
-            
-    def cmd_greeting(self, data, client, cmd=None):
+            self.error('could not load settings/min_gap config value: %s' % e)
+            self.debug('using default value (%s) for settings/min_gap' % self._min_gap)
+
+        self.info('min_gap set to %s: the bot will not welcome a player more than once '
+                  'every %s seconds' % (self._min_gap, self._min_gap))
+
+    def _load_config_flags(self):
         """\
-        [<greeting>] - set or list your greeting (use 'none' to remove)
+        Load configuration flags
         """
-        if data.lower() == 'none':
-            client.greeting = ''
-            client.save()
-            client.message(self.getMessage('greeting_cleared'))
-        elif data:
-            prepared_data = re.sub(r'\$(name|maxLevel|group|connections)', r'%(\1)s', data)
+        flag_options = [
+            ("welcome_first", F_FIRST),
+            ("welcome_newb", F_NEWB),
+            ("welcome_user", F_USER),
+            ("announce_first", F_ANNOUNCE_FIRST),
+            ("announce_user", F_ANNOUNCE_USER),
+            ("show_user_greeting", F_CUSTOM_GREETING)
+        ]
 
-            if len(prepared_data) > 255:
-                client.message('^7Your greeting is too long')
-            else:
+        config_options = zip(*flag_options)[0]
+
+        def set_flag(flag):
+            self._welcomeFlags |= flag
+
+        def unset_flag(flag):
+            self._welcomeFlags &= ~flag
+
+        if not any(map(lambda opt: self.config.has_option('settings', opt), config_options)):
+            if self.config.has_option('settings', 'flags'):
+                # old style config
                 try:
-                    client.message('Greeting Test: %s' % (str(prepared_data) % {
-                        'name': client.exactName,
-                        'maxLevel': client.maxLevel,
-                        'group': getattr(client.maxGroup, 'name', None),
-                        'connections': client.connections
-                    }))
-                except ValueError, msg:
-                    client.message(self.getMessage('greeting_bad', msg))
-                    return False
-                else:
-                    client.greeting = prepared_data
-                    client.save()
-                    client.message(self.getMessage('greeting_changed', data))
-                    return True
-        else:
-            if client.greeting:
-                client.message(self.getMessage('greeting_yours', client.greeting))
+                    self._welcomeFlags = self.config.getint('settings', 'flags')
+                    self.debug('loaded settings/flags: %s' % self._welcomeFlags)
+                except (NoOptionError, ValueError), e:
+                    self.error('could not load settings/flags config value: %s' % e)
+                    self.debug('using default value (%s) for settings/flags' % self._welcomeFlags)
             else:
-                client.message(self.getMessage('greeting_empty'))
+                self.warning("could not find any of '%s' in config: all welcome messages will be shown" %
+                             "', '".join(config_options))
+        else:
+            for opt, F in flag_options:
+                if self.config.has_option("settings", opt):
+                    try:
+                        _ = self.config.getboolean("settings", opt)
+                        set_flag(F) if _ else unset_flag(F)
+                    except (NoOptionError, ValueError), e:
+                        self.error('could not load settings/%s config value: %s' % (opt, e))
+                        self.debug('using default value (yes) for settings/%s' % opt)
+                else:
+                    set_flag(F)
+                    self.warning('could not find settings/%s config value' % opt)
+                    self.debug('using default value (yes) for settings/%s' % opt)
 
-    def onEvent(self, event):
-        if event.type == b3.events.EVT_CLIENT_AUTH:
-            if self._welcomeFlags <= 0 or \
-                    not event.client or \
-                    event.client.id is None or \
-                    event.client.cid is None or \
-                    not event.client.connected or \
-                    event.client.pbid == 'WORLD':
-                return
-            if self.console.upTime() < 300:
-                self.debug('not welcoming player because the bot started less than 5 min ago')
-                return
-            t = threading.Timer(self._welcomeDelay, self.welcome, (event.client,))
-            t.start()
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   FUNCTIONS                                                                                                    ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
+    def getCmd(self, cmd):
+        """\
+        Return the method for a given command
+        """
+        cmd = 'cmd_%s' % cmd
+        if hasattr(self, cmd):
+            func = getattr(self, cmd)
+            return func
+        return None
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   EVENTS                                                                                                       ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
+    def onAuth(self, event):
+        """\
+        Handle EVT_CLIENT_AUTH
+        """
+        if self._welcomeFlags <= 0 or \
+                not event.client or \
+                event.client.id is None or \
+                event.client.cid is None or \
+                not event.client.connected or \
+                event.client.pbid == 'WORLD':
+            return
+        if self.console.upTime() < 300:
+            self.debug('not welcoming player because the bot started less than 5 min ago')
+            return
+        t = threading.Timer(self._welcomeDelay, self.welcome, (event.client,))
+        t.start()
 
     def welcome(self, client):
+        """\
+        Welcome a player
+        """
         if client.lastVisit:
             self.debug('LastVisit: %s' % self.console.formatTime(client.lastVisit))
             _timeDiff = time.time() - client.lastVisit
@@ -212,45 +303,43 @@ class WelcomePlugin(b3.plugin.Plugin):
 
         return info
 
-    def _load_config_flags(self):
-        flag_options = [
-            ("welcome_first", F_FIRST),
-            ("welcome_newb", F_NEWB),
-            ("welcome_user", F_USER),
-            ("announce_first", F_ANNOUNCE_FIRST),
-            ("announce_user", F_ANNOUNCE_USER),
-            ("show_user_greeting", F_CUSTOM_GREETING)
-        ]
-        config_options = zip(*flag_options)[0]
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   COMMANDS                                                                                                     ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
-        def set_flag(flag):
-            self._welcomeFlags |= flag
+    def cmd_greeting(self, data, client, cmd=None):
+        """\
+        [<greeting>] - set or list your greeting (use 'none' to remove)
+        """
+        if data.lower() == 'none':
+            client.greeting = ''
+            client.save()
+            client.message(self.getMessage('greeting_cleared'))
+        elif data:
+            prepared_data = re.sub(r'\$(name|maxLevel|group|connections)', r'%(\1)s', data)
 
-        def unset_flag(flag):
-            self._welcomeFlags &= ~flag
-
-        if not any(map(lambda option: self.config.has_option('settings', option), config_options)):
-            if self.config.has_option('settings', "flags"):
-                # old style config
-                try:
-                    self._welcomeFlags = self.config.getint('settings', 'flags')
-                except Exception, err:
-                    self.error("Using default value %s for 'settings/flags'. %s" % (self._welcomeFlags, err))
+            if len(prepared_data) > 255:
+                client.message('^7Your greeting is too long')
             else:
-                self.warning("could not find any of '%s' in config. All welcome messages will be shown" %
-                             "', '".join(config_options))
-        else:
-            for option, F in flag_options:
-                if self.config.has_option("settings", option):
-                    try:
-                        _ = self.config.getboolean("settings", option)
-                        set_flag(F) if _ else unset_flag(F)
-                    except NoOptionError, err:
-                        self._welcomeFlags |= F
-                        self.warning("Using default value 'yes' for 'settings/%s'. %s" % (option, err))
-                    except Exception, err:
-                        self._welcomeFlags |= F
-                        self.error("Using default value 'yes' for 'settings/%s'. %s" % (option, err))
+                try:
+                    client.message('Greeting Test: %s' % (str(prepared_data) % {
+                        'name': client.exactName,
+                        'maxLevel': client.maxLevel,
+                        'group': getattr(client.maxGroup, 'name', None),
+                        'connections': client.connections
+                    }))
+                except ValueError, msg:
+                    client.message(self.getMessage('greeting_bad', msg))
+                    return False
                 else:
-                    set_flag(F)
-                    self.warning("Using default value 'yes' for 'settings/%s'. Missing settings/%s in config" % (option, option))
+                    client.greeting = prepared_data
+                    client.save()
+                    client.message(self.getMessage('greeting_changed', data))
+                    return True
+        else:
+            if client.greeting:
+                client.message(self.getMessage('greeting_yours', client.greeting))
+            else:
+                client.message(self.getMessage('greeting_empty'))

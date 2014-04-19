@@ -18,6 +18,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    2014/02/22 - 1.6.3 - courgette
+#    * fix issue 162 - 'None' string get written to the database 'clients.pbid' column when Client.pbid is None
+#    2014/01/11 - 1.6.2 - courgette
+#    * fix maskLevel is set with group id while it should be group level
 #    07/08/2013 - 1.6.1 - courgette
 #    * getting a client by its db id will return the existing client object if found in the list of connected clients
 #    15/07/2013 - 1.6 - courgette
@@ -86,7 +90,7 @@ import time
 import traceback
 
 __author__  = 'ThorN'
-__version__ = '1.6.1'
+__version__ = '1.6.3'
 
 
 class ClientVar(object):
@@ -332,6 +336,7 @@ class Client(object):
     _maskLevel = 0
     def _set_maskLevel(self, v):
         self._maskLevel = int(v)
+        self._maskGroup = None
 
     def _get_maskLevel(self):
         return self._maskLevel
@@ -341,30 +346,28 @@ class Client(object):
     #------------------------
     _maskGroup = None
     def _set_maskGroup(self, g):
-        self.maskLevel = g.id
+        self.maskLevel = g.level
         self._maskGroup = None
 
     def _get_maskGroup(self):
         if not self.maskLevel:
             return None
         elif not self._maskGroup:
-            groups = self.console.storage.getGroups()
-
-            for g in groups:
-                if g.id & self.maskLevel:
-                    self._maskGroup = g
-                    break
-
+            try:
+                group = self.console.storage.getGroup(Group(level=self.maskLevel))
+            except Exception, err:
+                self.console.error("could not find group with level %r" % self.maskLevel, exc_info=err)
+                self.maskLevel = 0
+                return None
+            else:
+                self._maskGroup = group
         return self._maskGroup
 
     maskGroup = property(_get_maskGroup, _set_maskGroup)
 
     def _get_maskedGroup(self):
         group = self.maskGroup
-        if group:
-            return group
-        else:
-            return self.maxGroup
+        return group if group else self.maxGroup
 
     maskedGroup = property(_get_maskedGroup)
 
@@ -715,6 +718,10 @@ class Client(object):
             # can't save a client without a guid
             return False
         else:
+            # fix missing pbid. Workaround a bug in the database layer that would insert the string "None"
+            # in db if pbid is None :/ The empty string being the default value for that db column!! ÙO
+            if self.pbid is None:
+                self.pbid = ''
             if console:
                 self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_UPDATE, data=self, client=self))
             return self.console.storage.setClient(self)
@@ -1174,12 +1181,9 @@ class Clients(dict):
         self.resetIndex()
 
         self.console.debug('Client Connected: [%s] %s - %s (%s)', self[client.cid].cid, self[client.cid].name, self[client.cid].guid, self[client.cid].data)
-
-        self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_CONNECT,
-            client,
-            client))
+        self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_CONNECT, client, client))
     
-        if client.guid:
+        if client.guid and not client.bot:
             client.auth()
         elif not client.authed:
             self.authorizeClients()

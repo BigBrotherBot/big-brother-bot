@@ -20,7 +20,7 @@
                 iourt41/iourt42
                 bfbc2/bf3/moh
                 etpro/altitude/oa081/smg/sof2/wop/wop15
-homefront/ro2/csgo/ravaged/arma2
+                homefront/ro2/csgo/ravaged/arma2/insurgency
             (it should NOT be 'changeme')
 		-->
 		<set name="parser">changeme</set>
@@ -63,7 +63,7 @@ homefront/ro2/csgo/ravaged/arma2
 	</settings>
 	<settings name="autodoc">
 		<!-- Autodoc will generate a user documentation for all B3 commands 
-		 * type : can be one of : html, htmltable, xml
+		 * type : can be one of : html, htmltable, xml, json
 		 * maxlevel : if you want to exclude commands reserved for higher levels
 		 * destination : can be a file or a ftp url
 		 by default, a html documentation is created in your conf folder
@@ -116,15 +116,15 @@ homefront/ro2/csgo/ravaged/arma2
             
             -->
 		<plugin name="censor" config="@conf/plugin_censor.xml" />
-		<plugin name="spamcontrol" config="@conf/plugin_spamcontrol.xml" />
+		<plugin name="spamcontrol" config="@conf/plugin_spamcontrol.ini" />
         <plugin name="admin" config="@conf/plugin_admin.ini" />
-		<plugin name="tk" config="@conf/plugin_tk.xml" />
-		<plugin name="stats" config="@conf/plugin_stats.xml" />
-		<plugin name="pingwatch" config="@conf/plugin_pingwatch.xml" />
+		<plugin name="tk" config="@conf/plugin_tk.ini" />
+		<plugin name="stats" config="@conf/plugin_stats.ini" />
+		<plugin name="pingwatch" config="@conf/plugin_pingwatch.ini" />
 		<plugin name="adv" config="@conf/plugin_adv.xml" />
-		<plugin name="status" config="@conf/plugin_status.xml" />
-		<plugin name="welcome" config="@conf/plugin_welcome.xml" />
-		<plugin name="punkbuster" config="@conf/plugin_punkbuster.xml" />
+		<plugin name="status" config="@conf/plugin_status.ini" />
+		<plugin name="welcome" config="@conf/plugin_welcome.ini" />
+		<plugin name="punkbuster" config="@conf/plugin_punkbuster.ini" />
 
 		<!-- The next plugins are external, 3rd party plugins and should reside in the external_dir. Example: -->
 		<!-- plugin config="@b3/extplugins/conf/newplugin.xml" name="newplugin" -->
@@ -136,7 +136,7 @@ homefront/ro2/csgo/ravaged/arma2
 			a look in the B3 forums (look for XLR Extensions) for more
 			information before enabling this. Extra database tables are
 			necessary.
-		<plugin name="xlrstats" config="@b3/extplugins/conf/xlrstats.xml"/>
+		<plugin name="xlrstats" config="@b3/extplugins/conf/plugin_xlrstats.ini"/>
 		-->
 		
 		<!-- You can find many others plugin for B3 which can extend functionalities a lot !

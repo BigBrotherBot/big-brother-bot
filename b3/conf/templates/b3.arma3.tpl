@@ -59,6 +59,6 @@
                 dlocation="https://github.com/82ndab-Bravo17/b3-arma2plugins/zipball/master"/>
         <plugin name="arma2restarts" config="external_dir/conf/arma2restarts.xml"
                 dlocation="https://github.com/82ndab-Bravo17/b3-arma2plugins/zipball/master"/>
-        <plugin name="xlrstats" config="external_dir/conf/xlrstats.xml"/>
+        <plugin name="xlrstats" config="external_dir/conf/plugin_xlrstats.ini"/>
     </extplugins>
 </configuration>

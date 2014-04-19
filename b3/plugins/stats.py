@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#    2013/10/30 - 1.4 Courgette
+#    * fix bug when using the !testscore command against a team mate
+#    * display topstat and topxp awards on EVT_GAME_MAP_CHANGE event additionally to the EVT_GAME_EXIT event.
 #    04/14/2011 - 1.3.7 Courgette
 #    * fix bug with !topstats and  !topxp
 #    04/13/2011 - 1.3.6 Courgette
@@ -42,82 +45,137 @@
 #    * Added !topstats command
 #    8/29/2005 - 1.1.0 - ThorN
 #    * Converted to use new event handlers
-
-__author__ = 'ThorN, GrosBedo'
-__version__ = '1.3.7'
-
-
+from ConfigParser import NoOptionError, NoSectionError
 import string
 import b3
 import b3.events
 import b3.plugin
 
-#--------------------------------------------------------------------------------------------------
+__author__ = 'ThorN, GrosBedo'
+__version__ = '1.4'
+
+
 class StatsPlugin(b3.plugin.Plugin):
     _adminPlugin = None
 
+    def __init__(self, console, config=None):
+        b3.plugin.Plugin.__init__(self, console, config)
+        self.mapstatslevel = None
+        self.testscorelevel = None
+        self.topstatslevel = None
+        self.topxplevel = None
+        self.startPoints = None
+        self.resetscore = None
+        self.resetxp = None
+        self.show_awards = None
+        self.show_awards_xp = None
+
+    def load_default_config(self):
+        self.mapstatslevel = 0
+        self.testscorelevel = 0
+        self.topstatslevel = 2
+        self.topxplevel = 2
+        self.startPoints = 100
+        self.resetscore = False
+        self.resetxp = False
+        self.show_awards = False
+        self.show_awards_xp = False
+
     def onLoadConfig(self):
-        try:
-            self.mapstatslevel = self.config.getint('commands', 'mapstats')
-        except:
-            self.mapstatslevel = 0
-            self.debug('Using default value (%i) for commands::mapstats', self.mapstatslevel)
+        self.load_default_config()
 
         try:
-            self.testscorelevel = self.config.getint('commands', 'testscore')
-        except:
-            self.testscorelevel = 0
-            self.debug('Using default value (%i) for commands::testscore', self.testscorelevel)
+            commands_options = self.config.options("commands")
+        except NoSectionError:
+            commands_options = []
+
+        def load_command_level(cmd_name):
+            matching_options = [x for x in commands_options if x.startswith('%s-' % cmd_name)]
+            if len(matching_options):
+                option_name = matching_options[0]
+            else:
+                option_name = cmd_name
+            return self.config.getint('commands', option_name)
 
         try:
-            self.topstatslevel = self.config.getint('commands', 'topstats')
-        except:
-            self.topstatslevel = 2
-            self.debug('Using default value (%i) for commands::topstats', self.topstatslevel)
+            self.mapstatslevel = load_command_level('mapstats')
+        except NoOptionError:
+            pass
+        except Exception, err:
+            self.error(err)
+        self.info('commands::mapstats level: %s', self.mapstatslevel)
 
         try:
-            self.topxplevel = self.config.getint('commands', 'topxp')
-        except:
-            self.topxplevel = 2
-            self.debug('Using default value (%i) for commands::topxp', self.topxplevel)
+            self.testscorelevel = load_command_level('testscore')
+        except NoOptionError:
+            pass
+        except Exception, err:
+            self.error(err)
+        self.info('commands::testscore level: %s', self.testscorelevel)
+
+        try:
+            self.topstatslevel = load_command_level('topstats')
+        except NoOptionError:
+            pass
+        except Exception, err:
+            self.error(err)
+        self.info('commands::topstats level: %s', self.topstatslevel)
+
+        try:
+            self.topxplevel = load_command_level('topxp')
+        except NoOptionError:
+            pass
+        except Exception, err:
+            self.error(err)
+        self.info('commands::topxp level: %s', self.topxplevel)
+
 
         try:
             self.startPoints = self.config.getint('settings', 'startPoints')
-        except:
-            self.startPoints = 100
-            self.debug('Using default value (%i) for settings::startPoints', self.startPoints)
+        except NoOptionError:
+            pass
+        except Exception, err:
+            self.error(err)
+        self.info('settings::startPoints: %s', self.startPoints)
 
         try:
             self.resetscore = self.config.getboolean('settings', 'resetscore')
-        except:
-            self.resetscore = False
-            self.debug('Using default value (%s) for settings::resetscore', self.resetscore)
+        except NoOptionError:
+            pass
+        except Exception, err:
+            self.error(err)
+        self.info('settings::resetscore: %s', self.resetscore)
 
         try:
             self.resetxp = self.config.getboolean('settings', 'resetxp')
-        except:
-            self.resetxp = False
-            self.debug('Using default value (%s) for settings::resetxp', self.resetxp)
+        except NoOptionError:
+            pass
+        except Exception, err:
+            self.error(err)
+        self.info('settings::resetxp: %s', self.resetxp)
 
         try:
             self.show_awards = self.config.getboolean('settings', 'show_awards')
-        except:
-            self.show_awards = False
-            self.debug('Using default value (%s) for settings::show_awards', self.show_awards)
+        except NoOptionError:
+            pass
+        except Exception, err:
+            self.error(err)
+        self.info('settings::show_awards: %s', self.show_awards)
 
         try:
             self.show_awards_xp = self.config.getboolean('settings', 'show_awards_xp')
-        except:
-            self.show_awards_xp = False
-            self.debug('Using default value (%s) for settings::show_awards_xp', self.show_awards_xp)
-
+        except NoOptionError:
+            pass
+        except Exception, err:
+            self.error(err)
+        self.info('settings::show_awards_xp: %s', self.show_awards_xp)
 
     def onStartup(self):
         self._adminPlugin = self.console.getPlugin('admin')
         if not self._adminPlugin:
             self.critical('Cannot find the admin plugin. Disabling Stats plugin')
             self.disable()
-            return False
+            return
 
         # register our commands
         if 'commands' in self.config.sections():
@@ -131,20 +189,20 @@ class StatsPlugin(b3.plugin.Plugin):
                 if func:
                     self._adminPlugin.registerCommand(self, cmd, level, func, alias)
 
-
         self.registerEvent(b3.events.EVT_CLIENT_DAMAGE_TEAM)
         self.registerEvent(b3.events.EVT_CLIENT_KILL_TEAM)
         self.registerEvent(b3.events.EVT_CLIENT_KILL)
         self.registerEvent(b3.events.EVT_CLIENT_DAMAGE)
-        #self.registerEvent(b3.events.EVT_CLIENT_DISCONNECT)
-        self.registerEvent(b3.events.EVT_GAME_EXIT) # used to show awards at the end of round
-        #self.registerEvent(b3.events.EVT_GAME_ROUND_END) # used to show awards at the end of round
+        self.registerEvent(b3.events.EVT_GAME_EXIT)  # used to show awards at the end of round
+        self.registerEvent(b3.events.EVT_GAME_MAP_CHANGE)  # used to show awards at the end of round
         self.registerEvent(b3.events.EVT_GAME_ROUND_START) # better to reinit stats at round start than round end, so that players can still query their stats at the end
 
     def onEvent(self, event):
-        if event.type == b3.events.EVT_GAME_EXIT:
-            if self.show_awards: self.cmd_topstats(None)
-            if self.show_awards_xp: self.cmd_topxp(None)
+        if event.type in (b3.events.EVT_GAME_EXIT, b3.events.EVT_GAME_MAP_CHANGE):
+            if self.show_awards:
+                self.cmd_topstats(None)
+            if self.show_awards_xp:
+                self.cmd_topxp(None)
         elif event.type == b3.events.EVT_GAME_ROUND_START:
             self.debug('Map Start: clearing stats')
             for cid, c in self.console.clients.items():
@@ -170,8 +228,8 @@ class StatsPlugin(b3.plugin.Plugin):
                         else:
                             c.var(self, 'oldexperience', 0).value += c.var(self, 'experience', 0).value
                             c.setvar(self, 'experience', 0)
-                    except:
-                        pass
+                    except Exception, err:
+                        self.error(err)
         elif event.client:
             if event.type == b3.events.EVT_CLIENT_DAMAGE:
                 self.clientDamage(event.client, event.target, int(event.data[0]))
@@ -182,7 +240,6 @@ class StatsPlugin(b3.plugin.Plugin):
             elif event.type == b3.events.EVT_CLIENT_KILL_TEAM:
                 self.clientKillTeam(event.client, event.target, int(event.data[0]))
 
-
     def getCmd(self, cmd):
         """ return the method for a given command  """
         cmd = 'cmd_%s' % cmd
@@ -190,7 +247,6 @@ class StatsPlugin(b3.plugin.Plugin):
             func = getattr(self, cmd)
             return func
         return None
-
 
     def clientDamage(self, killer, victim, points):
         if points > 100:
@@ -234,8 +290,6 @@ class StatsPlugin(b3.plugin.Plugin):
         self.updateXP(killer)
         self.updateXP(victim)
         
-        return
-
     def clientKillTeam(self, killer, victim, points):
         if points > 100:
             points = 100
@@ -251,8 +305,6 @@ class StatsPlugin(b3.plugin.Plugin):
 
         self.updateXP(killer)
         self.updateXP(victim)
-        
-        return
 
     def updateXP(self, sclient):
         realpoints = sclient.var(self, 'pointsWon', 0).value - sclient.var(self, 'pointsLost', 0).value
@@ -268,7 +320,8 @@ class StatsPlugin(b3.plugin.Plugin):
         """
         if data:
             sclient = self._adminPlugin.findClientPrompt(data, client)
-            if not sclient: return            
+            if not sclient:
+                return
         else:
             sclient = client
 
@@ -285,12 +338,15 @@ class StatsPlugin(b3.plugin.Plugin):
             return
 
         sclient = self._adminPlugin.findClientPrompt(data, client)
-        if not sclient: return    
+        if not sclient:
+            return
         elif sclient == client:
             client.message('^7You don\'t get points for killing yourself')
-            return
-
-        cmd.sayLoudOrPM(client, '^3Stats: ^7%s^7 will get ^3%s ^7skill points for killing %s^7' % (client.exactName, self.score(client, sclient), sclient.exactName))
+        elif sclient.team in (b3.TEAM_BLUE, b3.TEAM_RED) and sclient.team == client.team:
+            client.message('^7You don\'t get points for killing a team mate')
+        else:
+            cmd.sayLoudOrPM(client, '^3Stats: ^7%s^7 will get ^3%s ^7skill points for killing %s^7' %
+                                    (client.exactName, self.score(client, sclient), sclient.exactName))
 
     def cmd_topstats(self, data, client=None, cmd=None):
         """\
@@ -367,30 +423,7 @@ class StatsPlugin(b3.plugin.Plugin):
         if v < 1:
             v = 1.00
 
-        """
-        if k > v:
-            high = k
-            low  = v
-        else:
-            high = v
-            low  = k
-
-        vshift = float(high) / float(low)
-        self.console.verbose('stats vshift %s' % vshift)
-
-        #per = (vshift * 100) / 10
-        per = (vshift * 10.0) / 100.0
-
-        self.console.verbose('stats per %s' % per)
-
-        if per > 100:
-            per = 100.0
-        elif per < 1:
-            per = 1.0
-        """
-
         vshift = (float(v) / float(k)) / 2
-        self.console.verbose('stats vshift %s' % vshift)
 
         points = (15.00 * vshift) + 5
 
@@ -400,103 +433,3 @@ class StatsPlugin(b3.plugin.Plugin):
             points = 100.00
 
         return round(points, 2)
-
-"""
-#--------------------------------------------------------------------------------------------------
-class ClientStats(DelayedSQLObject):
-    _table = 'stats'
-    timeAdd = IntCol(default=0)
-    kills = IntCol(default=0)
-    teamKills = IntCol(default=0)
-    deaths = IntCol(default=0)
-    score  = IntCol(default=0)
-    shotsGot  = IntCol(default=0)
-    shotsHit  = IntCol(default=0)
-    damageGot  = IntCol(default=0)
-    damageHit  = IntCol(default=0)
-    captures = IntCol(default=0)
-    pickups = IntCol(default=0)
-    rank = IntCol(default=0)
-    gameName = StringCol(default='',length=3)
-    gameType = StringCol(default='',length=3)
-    pointsWon = IntCol(default=0)
-    pointsLost = IntCol(default=0)
-    playTime = IntCol(default=0)
-
-    lastEventTime = 0
-
-#    client = ForeignKey('Clients.Client')
-
-    def __init__(self):
-        ClientStats.__init__(self)
-        self.createTable(ifNotExists=True)
-        
-    def experiance(self):
-        return ( self.kills + self.deaths ) / ( (self.pointsWon + self.pointsLost) / self.playTime )
-
-    def save(self):
-        self.playTime += ( (time.time() - time.timezone) - self.lastEventTime ) / 60
-        #DelayedSQLObject.save(self)
-"""
-
-
-if __name__ == '__main__':
-    """
-    Automated tests below
-    """
-    from b3.fake import fakeConsole
-    from b3.fake import superadmin, joe 
-    import time
-    
-    from b3.config import XmlConfigParser
-    
-    conf = XmlConfigParser()
-    conf.setXml("""
-<configuration plugin="stats">
-  <settings name="commands">
-    <set name="mapstats-mystatalias">0</set>
-    <set name="testscore-tscr">0</set>
-    <set name="topstats-tops">2</set>
-    <set name="topxp-txp">2</set>
-  </settings>
-  <settings name="settings">
-    <set name="startPoints">100</set>
-    <set name="resetscore">no</set>
-    <set name="resetxp">no</set>
-  </settings>
-</configuration>
-    """)
-
-    
-    p = StatsPlugin(fakeConsole, conf)
-    p.onStartup()
-    p.onLoadConfig()
-    
-    time.sleep(1)
-    joe.connects(cid=3)
-    joe.says("!mapstats")
-    joe.says("!mystatalias")
-    joe.says("!testscore")
-    joe.says("!tscr")
-    joe.says("!topstats")
-    joe.says("!tops")
-    joe.says("!topxp")
-    joe.says("!txp")
-    
-    
-    superadmin.connects(cid=2)
-    joe.kills(superadmin)
-    joe.kills(superadmin)
-    joe.kills(superadmin)
-    superadmin.kills(joe)
-    
-    superadmin.says("!mapstats")
-    superadmin.says("!mystatalias")
-    superadmin.says("!testscore")
-    superadmin.says("!tscr")
-    superadmin.says("!topstats")
-    superadmin.says("!tops")
-    superadmin.says("!topxp")
-    superadmin.says("!txp")
-    
-    

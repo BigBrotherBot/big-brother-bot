@@ -17,6 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 import logging
+import threading
 
 from mock import Mock, call, patch, ANY
 import sys, os, thread
@@ -27,12 +28,13 @@ import unittest2 as unittest
 from b3 import __file__ as b3_module__file__, TEAM_BLUE, TEAM_RED
 from b3.clients import Group, Client
 
-from tests import B3TestCase
+from tests import B3TestCase, InstantTimer
 from b3.fake import FakeClient
 from b3.config import CfgConfigParser
 from b3.plugins.admin import AdminPlugin
 
 ADMIN_CONFIG_FILE = os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.ini")
+
 
 class Admin_functional_test(B3TestCase):
     """ tests from a class inheriting from Admin_functional_test must call self.init() """
@@ -316,13 +318,13 @@ class Cmd_help(Admin_functional_test):
 
     def test_no_arg(self):
         self.joe.says('!help')
-        self.joe.message.assert_called_with('^7Available commands: admins, admintest, aliases, b3, ban, banall, baninfo,'
-                                            ' clear, clientinfo, die, disable, enable, find, help, iamgod, kick, kickall, lastbans'
-                                            ', leveltest, list, lookup, makereg, map, maprotate, maps, mask, nextmap, no'
-                                            'tice, pause, permban, poke, putgroup, rebuild, reconfig, regtest, regulars, restart, '
-                                            'rules, runas, say, scream, seen, spam, spams, spank, spankall, status, temp'
-                                            'ban, time, unban, ungroup, unmask, unreg, warn, warnclear, warninfo, warnremove, w'
-                                            'arns, warntest')
+        self.joe.message.assert_called_with('^7Available commands: admins, admintest, aliases, b3, ban, banall, baninfo'
+                                            ', clear, clientinfo, die, disable, enable, find, help, iamgod, kick, kicka'
+                                            'll, lastbans, leveltest, list, lookup, makereg, map, maprotate, maps, mask'
+                                            ', nextmap, notice, pause, permban, pluginfo, poke, putgroup, rebuild, reco'
+                                            'nfig, regtest, regulars, restart, rules, runas, say, scream, seen, spam, s'
+                                            'pams, spank, spankall, status, tempban, time, unban, ungroup, unmask, unre'
+                                            'g, warn, warnclear, warninfo, warnremove, warns, warntest')
         self.mike.message = Mock()
         self.mike.connects(0)
         self.mike.says('!help')
@@ -366,6 +368,51 @@ class Cmd_mask(Admin_functional_test):
         self.joe.says('!unmask mike')
         self.joe.says('!admins')
         self.joe.message.assert_called_with('^7Admins online: Joe^7^7 [^3100^7], Mike^7^7 [^380^7]')
+
+    def _test_persistence_for_group(self, group_keyword):
+        """
+        Makes sure that a user with group 'superadmin', when masked as the given group is still masked with
+        that given group once he reconnects. Hence making sure we persists the mask group between connections.
+        :param group_keyword: str
+        """
+        group_to_mask_as = self.console.storage.getGroup(Group(keyword=group_keyword))
+        self.assertIsNotNone(group_to_mask_as)
+        ## GIVEN that joe masks himself
+        self.joe.connects(0)
+        self.joe.says('!mask ' + group_keyword)
+        self.assertEqual(128, self.joe.maxGroup.id)
+        self.assertEqual(100, self.joe.maxGroup.level)
+        self.assertIsNotNone(self.joe.maskGroup, "expecting Joe to have a masked group")
+        self.assertEqual(group_to_mask_as.id, self.joe.maskGroup.id, "expecting Joe2 to have %s for the mask group id" % group_to_mask_as.id)
+        self.assertEqual(group_to_mask_as.level, self.joe.maskGroup.level, "expecting Joe2 to have %s for the mask group level" % group_to_mask_as.level)
+        self.assertEqual(group_to_mask_as.id, self.joe.maskedGroup.id, "expecting Joe2 to have %s for the masked group id" % group_to_mask_as.id)
+        self.assertEqual(group_to_mask_as.level, self.joe.maskedGroup.level, "expecting Joe2 to have %s for the masked group level" % group_to_mask_as.level)
+        ## WHEN joe reconnects
+        self.joe.disconnects()
+        client = self.console.storage.getClient(Client(id=self.joe.id))
+        joe2 = FakeClient(self.console, **client.__dict__)
+        joe2.connects(1)
+        ## THEN joe is still masked
+        self.assertEqual(128, joe2.maxGroup.id)
+        self.assertEqual(100, joe2.maxGroup.level)
+        self.assertIsNotNone(joe2.maskGroup, "expecting Joe2 to have a masked group")
+        self.assertEqual(group_to_mask_as.id, joe2.maskGroup.id, "expecting Joe2 to have %s for the mask group id" % group_to_mask_as.id)
+        self.assertEqual(group_to_mask_as.level, joe2.maskGroup.level, "expecting Joe2 to have %s for the mask group level" % group_to_mask_as.level)
+        self.assertEqual(group_to_mask_as.id, joe2.maskedGroup.id, "expecting Joe2 to have %s for the masked group id" % group_to_mask_as.id)
+        self.assertEqual(group_to_mask_as.level, joe2.maskedGroup.level, "expecting Joe2 to have %s for the masked group level" % group_to_mask_as.level)
+        ## THEN the content of the mask_level column in the client table must be correct
+        client_data = self.console.storage.getClient(Client(id=joe2.id))
+        self.assertIsNotNone(client_data)
+        self.assertEqual(group_to_mask_as.level, client_data._maskLevel, "expecting %s to be the value in the mask_level column in database" % group_to_mask_as.level)
+
+    def test_persistence(self):
+        self._test_persistence_for_group("user")
+        self._test_persistence_for_group("reg")
+        self._test_persistence_for_group("mod")
+        self._test_persistence_for_group("admin")
+        self._test_persistence_for_group("fulladmin")
+        self._test_persistence_for_group("senioradmin")
+        self._test_persistence_for_group("superadmin")
 
 
 class Cmd_makereg_unreg(Admin_functional_test):
@@ -814,7 +861,7 @@ no_admins: no admins
 [commands]
 admins: user
 [messages]
-no_admins: 
+no_admins:
 """)
         self.mike.connects(0)
         # only user Mike is connected
@@ -1108,6 +1155,12 @@ warn_denied: %s, %s is a higher level admin, you can't warn him
 cleared_warnings: %(admin)s has cleared %(player)s of all warnings
 cleared_warnings_for_all: %(admin)s has cleared everyone's warnings and tk points
 [warn]
+tempban_num: 3
+duration_divider: 30
+max_duration: 1d
+alert: ^1ALERT^7: $name^7 auto-kick from warnings if not cleared [^3$warnings^7] $reason
+alert_kick_num: 3
+reason: ^7too many warnings: $reason
 message: ^1WARNING^7 [^3$warnings^7]: $reason
 """)
         self.joe.connects(0)
@@ -1129,6 +1182,62 @@ message: ^1WARNING^7 [^3$warnings^7]: $reason
         self.assertEqual(1, self.mike.numWarnings)
         self.assertListEqual([call(60.0, '^7behave yourself', None, self.joe, '')], self.mike_warn_mock.mock_calls)
         self.assertListEqual([call('^1WARNING^7 [^31^7]: Mike^7^7, ^7behave yourself')], self.say_mock.mock_calls)
+        self.assertListEqual([], self.joe.message_history)
+        self.assertListEqual([], self.mike.message_history)
+
+    @patch('threading.Timer', new_callable=lambda: InstantTimer)
+    def test_warn_then_auto_kick(self, instant_timer, sleep_mock):
+        # GIVEN
+        self.p.warn_delay = 0
+        self.assertEqual(0, self.mike.numWarnings)
+        # WHEN
+        with patch.object(self.mike, 'tempban') as mike_tempban_mock:
+            self.joe.says('!warn mike')
+            self.joe.says('!warn mike')
+            self.joe.says('!warn mike')
+        # THEN Mike has 3 active warnings
+        self.assertEqual(3, self.mike.numWarnings)
+        # THEN appropriate messages were sent
+        self.assertListEqual([
+            call('^1WARNING^7 [^31^7]: Mike^7^7, ^7behave yourself'),
+            call('^1WARNING^7 [^32^7]: Mike^7^7, ^7behave yourself'),
+            call('^1WARNING^7 [^33^7]: Mike^7^7, ^7behave yourself'),
+            call(u'^1ALERT^7: Mike^7^7 auto-kick from warnings if not cleared [^33^7] ^7behave yourself'),
+        ], self.say_mock.mock_calls)
+        # THEN Mike was kicked for having too many warnings
+        self.assertListEqual([
+            call(u'^7too many warnings: ^7behave yourself', u'None', 6, self.joe, False, '')
+        ], mike_tempban_mock.mock_calls)
+        # THEN No private message was sent
+        self.assertListEqual([], self.joe.message_history)
+        self.assertListEqual([], self.mike.message_history)
+
+
+    @patch('threading.Timer', new_callable=lambda: InstantTimer)
+    def test_warn_then_auto_kick_duration_divider_60(self, instant_timer, sleep_mock):
+        # GIVEN
+        self.p.config._sections['warn']['duration_divider'] = '60'
+        self.p.warn_delay = 0
+        self.assertEqual(0, self.mike.numWarnings)
+        # WHEN
+        with patch.object(self.mike, 'tempban') as mike_tempban_mock:
+            self.joe.says('!warn mike')
+            self.joe.says('!warn mike')
+            self.joe.says('!warn mike')
+        # THEN Mike has 3 active warnings
+        self.assertEqual(3, self.mike.numWarnings)
+        # THEN appropriate messages were sent
+        self.assertListEqual([
+            call('^1WARNING^7 [^31^7]: Mike^7^7, ^7behave yourself'),
+            call('^1WARNING^7 [^32^7]: Mike^7^7, ^7behave yourself'),
+            call('^1WARNING^7 [^33^7]: Mike^7^7, ^7behave yourself'),
+            call(u'^1ALERT^7: Mike^7^7 auto-kick from warnings if not cleared [^33^7] ^7behave yourself'),
+        ], self.say_mock.mock_calls)
+        # THEN Mike was kicked for having too many warnings
+        self.assertListEqual([
+            call(u'^7too many warnings: ^7behave yourself', u'None', 3, self.joe, False, '')
+        ], mike_tempban_mock.mock_calls)
+        # THEN No private message was sent
         self.assertListEqual([], self.joe.message_history)
         self.assertListEqual([], self.mike.message_history)
 
