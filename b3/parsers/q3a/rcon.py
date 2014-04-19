@@ -250,7 +250,7 @@ class Rcon:
             return status_cache.get(key='status', createfunc=self._requestStatusCached)
 
         with self.lock:
-            _data = self.sendRcon(cmd, maxRetries=maxRetries)
+            _data = self.sendRcon(_cmd, maxRetries=maxRetries)
 
         return _data if _data else ''
 
