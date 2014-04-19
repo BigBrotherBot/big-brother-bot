@@ -18,7 +18,8 @@
 #
 # CHANGELOG:
 # 03/01/2014 - 1.7 - 82ndab.Bravo17
-#   * allow plugin to optionally perform a dummy read of the log file in order to update the filesize in Windows Server 2008
+#   * allow plugin to optionally perform a dummy read of the log file in order to update
+#     the filesize in Windows Server 2008
 # 27/11/2012 - 1.6 - Courgette
 #   * remove the first '/' from the url-path to respect RFC 1738
 #   * fix issue when public_ip and rcon_ip are different in b3.xml
