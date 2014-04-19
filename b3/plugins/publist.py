@@ -147,6 +147,10 @@ class PublistPlugin(b3.plugin.Plugin):
 
         # set cvar for advertising purposes
         self.console.setCvar('_B3', 'B3 %s' % b3.versionId)
+        try:
+            self.console.setCvar('_B3', 'B3 %s' % b3.versionId)
+        except:
+            pass
 
         if self.console._publicIp == '127.0.0.1':
             self.info("publist will not send heartbeat to master server as publicIp is not public.")
