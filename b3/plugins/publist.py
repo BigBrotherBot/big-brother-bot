@@ -80,9 +80,11 @@
 # 12/04/2014 - 1.11.1 - Courgette
 #   * fix plugin failling to load when no plugin config file is set in b3.xml
 #   * fix missing time import for time.strftime
+# 19/04/2014 - 1.11.2 - Courgette
+#   * fix regression preventing the plugin to load with games not based on the Q3 game engine (i.e. Arma)
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.11.1'
+__version__ = '1.11.2'
 
 import b3
 import b3.cron
@@ -146,7 +148,10 @@ class PublistPlugin(b3.plugin.Plugin):
             return False
 
         # set cvar for advertising purposes
-        self.console.setCvar('_B3', 'B3 %s' % b3.versionId)
+        try:
+            self.console.setCvar('_B3', 'B3 %s' % b3.versionId)
+        except Exception:
+            pass  # some B3 parser have no cvar and no setCvar method (Q3 specific method)
 
         if self.console._publicIp == '127.0.0.1':
             self.info("publist will not send heartbeat to master server as publicIp is not public.")
