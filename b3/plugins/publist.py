@@ -80,9 +80,11 @@
 # 12/04/2014 - 1.11.1 - Courgette
 #   * fix plugin failling to load when no plugin config file is set in b3.xml
 #   * fix missing time import for time.strftime
+# 19/04/2014 - 1.11.2 - Courgette
+#   * fix regression preventing the plugin to load with games not based on the Q3 game engine (i.e. Arma)
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.11.1'
+__version__ = '1.11.2'
 
 import b3
 import b3.cron
