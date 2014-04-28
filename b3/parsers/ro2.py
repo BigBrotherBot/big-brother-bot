@@ -53,6 +53,8 @@
 #   Track team changes for eg teamspeak plugin
 #   2012-12-01 : 1.41
 #   Incorporate chat changes for server/game v 1.1.0.8
+#   2014-04-25 : 1.42
+#   Allow for empty chat messages
 #
 #
 from b3 import functions
@@ -73,7 +75,7 @@ import hashlib
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.41'
+__version__ = '1.42'
 
 
 class Ro2Parser(b3.parser.Parser):
@@ -414,11 +416,12 @@ class Ro2Parser(b3.parser.Parser):
         name = self.getUsername(data['username'])
         text = data['message']
         # if a command and it contains #no convert to @no
-        if text[0] == '!':
-            match = re.search(r' #([0-9]+)\b', text)
-            if match:
-                start = match.start()
-                text = (text[0:start+1] + '@' + text[start+2:])
+        if len(text) > 0:
+            if text[0] == '!':
+                match = re.search(r' #([0-9]+)\b', text)
+                if match:
+                    start = match.start()
+                    text = (text[0:start+1] + '@' + text[start+2:])
                 
         team = False
         if data.has_key('teamnotice'):
