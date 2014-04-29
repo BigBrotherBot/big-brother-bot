@@ -99,7 +99,7 @@ class Plugin:
             except NoOptionError:
                 self.warning("config file is missing %r in section 'messages'" % msg)
                 if msg in self._default_messages:
-                    self._messages[msg] = self._default_messages[msg]
+                    self._messages[msg] = b3.functions.vars2printf(self._default_messages[msg]).strip()
                 else:
                     raise
             _msg = self._messages[msg]

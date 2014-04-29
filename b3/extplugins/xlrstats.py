@@ -24,6 +24,8 @@
 #   Added cmd_xlrstatus
 # 02-03-2014 - 3.0.0-beta.5 - Mark Weirath
 #   Protect world client in auto correction, minor improvements
+# 04-21-2014 - 3.0.0-beta.6 - 82ndab-Bravo17
+#   Change default messages to new format
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -31,7 +33,7 @@
 # XLRstats Real Time playerstats plugin
 
 __author__ = 'xlr8or & ttlogic'
-__version__ = '3.0.0-beta.5'
+__version__ = '3.0.0-beta.6'
 
 # Version = major.minor.patches(-development.version)
 
@@ -142,8 +144,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     _defaultTableNames = True
     _default_messages = {
-        'cmd_xlrstats': '^3XLR Stats: ^7%(name)s ^7: K ^2%(kills)s ^7D ^3%(deaths)s ^7TK ^1%(teamkills)s ^7Ratio ^5%(ratio)s ^7Skill ^3%(skill)s',
-        'cmd_xlrtopstats': '^3# %(number)s: ^7%(name)s ^7: Skill ^3%(skill)s ^7Ratio ^5%(ratio)s ^7Kills: ^2%(kills)s',
+        'cmd_xlrstats': '^3XLR Stats: ^7$name ^7: K ^2$kills ^7D ^3$deaths ^7TK ^1$teamkills ^7Ratio ^5$ratio ^7Skill ^3$skill',
+        'cmd_xlrtopstats': '^3# $number: ^7$name ^7: Skill ^3$skill ^7Ratio ^5$ratio ^7Kills: ^2$kills',
     }
 
     def startup(self):

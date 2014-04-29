@@ -16,6 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
+
 # 27/03/2010 - 1.2.1 - xlr8or - set default port for mysql
 # 11/04/2010 - 1.2.2 - Courgette - make splitDSN support usernames containing '@'
 # 01/09/2010 - 1.3 - Courgette - make splitDSN add default ftp and sftp port
@@ -33,9 +34,10 @@
 # 21/02/2014 - 1.10  - Courgette - fix getStuffSoundingLike that would return non unique suggest ons or would not
 #                                  return suggestions in the same order for the same input values if ordered
 #                                  differently and if having multiple same levenshtein distance
+# 21/04/2014 - 1.11 - 82ndab_Bravo17 - allow _ char in vars2printf replacements
 #
 __author__    = 'ThorN, xlr8or, courgette'
-__version__   = '1.10'
+__version__   = '1.11'
 
 import b3
 import re
@@ -186,7 +188,7 @@ def minutesStr(timeStr):
 
 def vars2printf(inputStr):
     if inputStr is not None and inputStr != '':
-        return re.sub(r'\$([a-zA-Z]+)', r'%(\1)s', inputStr)
+        return re.sub(r'\$([a-zA-Z_]+)', r'%(\1)s', inputStr)
     else:
         return ''
 

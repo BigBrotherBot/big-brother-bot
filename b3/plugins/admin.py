@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#   2014/04/21 - 1.27 - 82ndab-Bravo17
+#   * Change default messages to new format
 #   2014/03/20 - 1.26 - Fenix
 #   * make use of self._admins_level in acquireCmdLock() method instead of constant value
 #   * refactored plugin syntax: get close to PEP8
@@ -150,7 +152,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.26'
+__version__ = '1.27'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon, Fenix'
 
 import re
@@ -201,14 +203,14 @@ class AdminPlugin(b3.plugin.Plugin):
     _default_messages = {
         "invalid_parameters": "^7Invalid parameters",
         "error_no_reason": "^1ERROR: ^7You must supply a reason",
-        "action_denied_masked": "^7%(name)s ^7is a masked higher level player, action cancelled",
-        "baninfo": "^7%(name)s ^7has %(num_bans)s active bans",
-        "baninfo_no_bans": "^7%(name)s ^7has no active bans",
-        "group_unknown": "^7Group %(group_name)s does not exist",
-        "group_beyond_reach": "^7Group %(group_name)s is beyond your reach",
-        "cleared_warnings": "%(admin)s^7 has cleared %(player)s^7 of all tk-points and warnings",
-        "cleared_warnings_for_all": "%(admin)s^7 has cleared %(player)s^7 of all tk-points and warnings",
-        "warn_too_fast": "^7Only one warning per %(num_second)s seconds can be issued",
+        "action_denied_masked": "^7$name ^7is a masked higher level player, action cancelled",
+        "baninfo": "^7$name ^7has $num_bans active bans",
+        "baninfo_no_bans": "^7$name ^7has no active bans",
+        "group_unknown": "^7Group $group_name does not exist",
+        "group_beyond_reach": "^7Group $group_name is beyond your reach",
+        "cleared_warnings": "$admin ^7has cleared $player ^ of all tk-points and warnings",
+        "cleared_warnings_for_all": "$admin ^7has cleared $player ^7of all tk-points and warnings",
+        "warn_too_fast": "^7Only one warning per $num_second seconds can be issued",
         "ban_denied": "^7Hey %s^7, you're no Elvis, can't ban %s",
         "help_available": "^7Available commands: %s",
         "temp_ban_self": "^7%s ^7Can't ban yourself newb",
