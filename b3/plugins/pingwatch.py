@@ -9,14 +9,17 @@
 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
+#
+#    02/05/2014 - 1.3.1 - Fenix
+#       Make use of the new getCmd function from functions module
 #    06/04/2014 - 1.3 - Fenix
 #       PEP8 coding style guide
 #       Improved plugin startup and configuration file loading
@@ -32,13 +35,15 @@
 #       Converted to use new event handlers
 
 __author__ = 'ThorN'
-__version__ = '1.3'
+__version__ = '1.3.1'
 
 
 import b3
 import b3.events
 import b3.plugin
 import b3.cron
+
+from b3.functions import getCmd
 from ConfigParser import NoOptionError
 
 
@@ -107,7 +112,7 @@ class PingwatchPlugin(b3.plugin.Plugin):
                 if len(sp) == 2:
                     cmd, alias = sp
 
-                func = self.getCmd(cmd)
+                func = getCmd(self, cmd)
                 if func:
                     self._adminPlugin.registerCommand(self, cmd, level, func, alias)
 
@@ -118,13 +123,6 @@ class PingwatchPlugin(b3.plugin.Plugin):
         # setup the new crontab
         self._cronTab = b3.cron.PluginCronTab(self, self.check, '*/%s' % self._interval)
         self.console.cron + self._cronTab
-
-    def getCmd(self, cmd):
-        cmd = 'cmd_%s' % cmd
-        if hasattr(self, cmd):
-            func = getattr(self, cmd)
-            return func
-        return None
 
     ####################################################################################################################
     ##                                                                                                                ##

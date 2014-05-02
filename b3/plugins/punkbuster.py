@@ -18,6 +18,8 @@
 #
 # CHANGELOG
 #
+# 02/05/2014 - 1.2.1 - Fenix
+#    * Make use of the new getCmd function from functions module
 # 06/04/2014 - 1.2 - Fenix
 #    * pep8 coding style guide
 #    * improved plugin startup and configuration file loading
@@ -29,7 +31,7 @@
 #    * Use PluginCronTab instead of CronTab
 
 __author__ = 'ThorN'
-__version__ = '1.2'
+__version__ = '1.2.1'
 
 import b3
 import b3.plugin
@@ -39,6 +41,7 @@ import ftplib
 import time
 
 from b3 import functions
+from b3.functions import getCmd
 from ConfigParser import NoOptionError
 
 
@@ -79,7 +82,7 @@ class PunkbusterPlugin(b3.plugin.Plugin):
                 if len(sp) == 2:
                     cmd, alias = sp
 
-                func = self.getCmd(cmd)
+                func = getCmd(self, cmd)
                 if func:
                     self._adminPlugin.registerCommand(self, cmd, level, func, alias)
 
@@ -122,16 +125,6 @@ class PunkbusterPlugin(b3.plugin.Plugin):
     ##   FUNCTIONS                                                                                                    ##
     ##                                                                                                                ##
     ####################################################################################################################
-
-    def getCmd(self, cmd):
-        """\
-        Return the method for a given command
-        """
-        cmd = 'cmd_%s' % cmd
-        if hasattr(self, cmd):
-            func = getattr(self, cmd)
-            return func
-        return None
 
     def rebuild_bans(self):
         """\
