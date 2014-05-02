@@ -25,43 +25,35 @@
 #
 # CHANGELOG
 #
-# 0.1
-#  functional parser but BF3 admin protocol is not fully implemented on the BF3 side. See TODOs
-# 1.0
-#  update parser for BF3 R20
-# 1.1
-#  reflects changes in AbstractParser and refactor the class by moving some of the code to AbstractParser
-# 1.2
-#  reflects changes in AbstractParser due to BF3 server R21 release
-# 1.3
-#  BF3 server R24 changes
-# 1.4
-#  add available gamemodes by map
-#  check minimum required BF3 server version on startup
-#  fix issue from 1.3 that made impossible to use commands related to Close Quarter maps
-# 1.5
-#  add new maps and gamemode from DLC "Armored Kill"
-# 1.7
-#  add new maps and gamemode from DLC "Aftermath"
-# 1.8
-#  add GUNMASTER_WEAPONS_PRESET_BY_INDEX and GUNMASTER_WEAPONS_PRESET_BY_NAME constants
-# 1.8.1
-#  add new maps and gamemodes from DLC "End Game"
-#  implement getPlayerPings
-# 1.10.1
-#  Fix the list of gamemodes available for map Talah Market
+# 0.1 - functional parser but BF3 admin protocol is not fully implemented on the BF3 side. See TODOs
+# 1.0 - update parser for BF3 R20
+# 1.1 - reflects changes in AbstractParser and refactor the class by moving some of the code to AbstractParser
+# 1.2 - reflects changes in AbstractParser due to BF3 server R21 release
+# 1.3 - BF3 server R24 changes
+# 1.4 - add available gamemodes by map
+#     - check minimum required BF3 server version on startup
+#     - fix issue from 1.3 that made impossible to use commands related to Close Quarter maps
+# 1.5 - add new maps and gamemode from DLC "Armored Kill"
+# 1.7 - add new maps and gamemode from DLC "Aftermath"
+# 1.8 - add GUNMASTER_WEAPONS_PRESET_BY_INDEX and GUNMASTER_WEAPONS_PRESET_BY_NAME constants
+# 1.8.1 - add new maps and gamemodes from DLC "End Game"
+#       - implement getPlayerPings
+# 1.10.1 - Fix the list of gamemodes available for map Talah Market
+# 1.10.2 - Syntax changes
+#        - Correctly initialize class attributes
 #
-from b3.parsers.frostbite2.abstractParser import AbstractParser
-from b3.parsers.frostbite2.util import PlayerInfoBlock
+
 import b3
 import b3.events
 import threading
 from time import sleep
+from b3.parsers.frostbite2.abstractParser import AbstractParser
+from b3.parsers.frostbite2.util import PlayerInfoBlock
 from b3.parsers.frostbite2.protocol import CommandFailedError
 
 
 __author__  = 'Courgette'
-__version__ = '1.10.1'
+__version__ = '1.10.2'
 
 BF3_REQUIRED_VERSION = 1149977
 
@@ -279,6 +271,7 @@ GUNMASTER_WEAPONS_PRESET_BY_NAME = dict(GUNMASTER_WEAPONS_PRESET_BY_INDEX)
 
 
 class Bf3Parser(AbstractParser):
+
     gameName = 'bf3'
 
     _gameServerVars = (
@@ -332,6 +325,8 @@ class Bf3Parser(AbstractParser):
         'sqdm': 'squad deathmatch',
         'ctf': 'capture the flag'
     }
+
+    _gamePort = None
 
     def __new__(cls, *args, **kwargs):
         Bf3Parser.patch_b3_Client_isAlive()
@@ -757,7 +752,7 @@ class Bf3Parser(AbstractParser):
             _isAlive = self.isAlive()
             if _isAlive:
                 _state = b3.STATE_ALIVE
-            elif _isAlive == False:
+            elif _isAlive is False:
                 _state = b3.STATE_DEAD
 
             return _state

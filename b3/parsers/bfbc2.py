@@ -9,15 +9,16 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 #
-# ====================== CHANGELOG ========================
+# CHANGELOG
+#
 # 2010/03/09 - 0.1 - Courgette
 # * parser is able to connect to a distant BFBC2 server through TCP
 #   and listens for BFBC2 events.
@@ -162,11 +163,15 @@
 # 2010-11-21 - 2.1.1 - Durzo
 # * adjust mapnames from mappack 7 and vietnam expansion 
 # 2011-06-04 - 2.2 - Courgette
-# makes use of the new pluginsStarted parser hook
+# * makes use of the new pluginsStarted parser hook
 # 2011-12-15 - 2.3 - Courgette
-# makes sure EVT_CLIENT_TEAM_CHANGE gets fired after updating the squad info
+# * makes sure EVT_CLIENT_TEAM_CHANGE gets fired after updating the squad info
 # 2012-10-60 - 2.4 - Courgette
-# reflect changes in abstract parser 1.6
+# * reflect changes in abstract parser 1.6
+# 2014-05-02 - 2.5 - Fenix
+# * replaced saybigqueuelistene() method name with saybigqueuelistenerworker(): was overwriting an attribute
+# * minor syntax cleanup
+# * replaced variable named using python built-in names
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -232,6 +237,7 @@ BUILD_NUMBER_R17 = 560541
 
 #----------------------------------------------------------------------------------------------------------------------------------------------
 class Bfbc2Parser(AbstractParser):
+
     gameName = 'bfbc2'
 
     _gameServerVars = (
@@ -263,7 +269,7 @@ class Bfbc2Parser(AbstractParser):
     def startup(self):
         AbstractParser.startup(self)
 
-        self.saybigqueuelistener = threading.Thread(target=self.saybigqueuelistener)
+        self.saybigqueuelistener = threading.Thread(target=self.saybigqueuelistenerworker)
         self.saybigqueuelistener.setDaemon(True)
         self.saybigqueuelistener.start()
 
@@ -309,7 +315,7 @@ class Bfbc2Parser(AbstractParser):
                 self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
 
 
-    def saybigqueuelistener(self):
+    def saybigqueuelistenerworker(self):
         while self.working:
             msg = self.saybigqueue.get()
             for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
@@ -570,9 +576,9 @@ class Bfbc2Parser(AbstractParser):
 
     def messagebig(self, client, text):
         try:
-            if client == None:
+            if client is None:
                 self.saybig(text)
-            elif client.cid == None:
+            elif client.cid is None:
                 pass
             else:
                 self.write(self.getCommand('messagebig', message=text, cid=client.cid, duration=2400))
@@ -597,7 +603,7 @@ class Bfbc2Parser(AbstractParser):
             self.write(('admin.runNextLevel',))
     
     
-    def changeMap(self, map):
+    def changeMap(self, mapname):
         """Change to the given map
         
         1) determine the level name
@@ -616,32 +622,32 @@ class Bfbc2Parser(AbstractParser):
             the map list and load it
         """        
         supportedMaps = self.getSupportedMaps()
-        if map not in supportedMaps:
-            match = self.getMapsSoundingLike(map)
+        if mapname not in supportedMaps:
+            match = self.getMapsSoundingLike(mapname)
             if len(match) == 1:
-                map = match[0]
+                mapname = match[0]
             else:
                 return match
             
-        if map in supportedMaps:
+        if mapname in supportedMaps:
             levelnames = self.write(('mapList.list',))
-            if map not in levelnames:
+            if mapname not in levelnames:
                 # add the map to the map list
                 nextIndex = self.getNextMapIndex()
                 if nextIndex == -1:
-                    self.write(('mapList.append', map))
+                    self.write(('mapList.append', mapname))
                     nextIndex = 0
                 else:
                     if nextIndex == 0:
                         # case where the map list contains only 1 map
                         nextIndex = 1
-                    self.write(('mapList.insert', nextIndex, map))
+                    self.write(('mapList.insert', nextIndex, mapname))
             else:
                 nextIndex = 0
-                while nextIndex < len(levelnames) and levelnames[nextIndex] != map:
+                while nextIndex < len(levelnames) and levelnames[nextIndex] != mapname:
                     nextIndex += 1
             
-            self.say('Changing map to %s' % map)
+            self.say('Changing map to %s' % mapname)
             time.sleep(1)
             self.write(('mapList.nextLevelIndex', nextIndex))
             self.write(('admin.runNextLevel', ))

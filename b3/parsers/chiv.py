@@ -20,21 +20,24 @@
 # CHANGELOG
 # 1.0 - first working version
 # 1.1 - cosmetics and add a few TODO
+# 1.2 - minor fixes
 #
-import sys
 
-from b3.parser import Parser
+import sys
 import asyncore
 import socket
 import b3
+
+from b3.parser import Parser
 from struct import pack, unpack
 from hashlib import sha1
 
 __author__  = 'tliszak'
-__version__ = '1.1'
+__version__ = '1.2'
 
 
 class MessageType:
+
     SERVER_CONNECT = 0
     SERVER_CONNECT_SUCCESS = 1
     PASSWORD = 2
@@ -80,7 +83,7 @@ class ChivParser(Parser):
 
         while self.working:
             if self._paused:
-                if self._pauseNotice == False:
+                if self._pauseNotice is False:
                     self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
                     self._pauseNotice = True
             else:
@@ -372,7 +375,7 @@ class ChivParser(Parser):
         packet.addString(map_name)
         self.sendPacket(packet)
 
-    def getPlayerPings(self):
+    def getPlayerPings(self, filter_client_ids=None):
         """\
         returns a dict having players' id for keys and players' ping for values
         """
@@ -407,17 +410,17 @@ class Packet(object):
     message = None
     
     def encode(self):
-        str = ""
-        str += pack('>H', self.msgType)
-        str += pack('>i', len(self.data))
-        str += self.data
-        return str
+        s = ""
+        s += pack('>H', self.msgType)
+        s += pack('>i', len(self.data))
+        s += self.data
+        return s
         
     def addGUID(self, playerId):
         self.data += pack('>Q', long(playerId))
     
-    def addString(self, str):
-        encodedData = str.encode('utf-8')
+    def addString(self, s):
+        encodedData = s.encode('utf-8')
         self.data += pack('>i', len(encodedData))
         self.data += encodedData
 

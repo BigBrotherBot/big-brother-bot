@@ -77,6 +77,11 @@
 # 2014-01-13 - 1.7 Fenix
 #   * code cleanup
 #   * correctly set bot flag in getClientOrCreate
+# 2014-05-02 - 1.7.1 - Fenix
+#   * rewrote import statements
+#   * initialize missing class attributes
+#   * fixed getPlayerPings method declaration not matching the method in Parser class
+#   * fixed client retrieval in kick, ban and tempban function
 #
 
 import re
@@ -162,6 +167,9 @@ class CsgoParser(Parser):
     _reColor = re.compile(r'(\^[0-9])')
 
     _settings = dict(line_length=200, min_wrap_length=200)
+
+    last_killlocation_properties = None
+    sm_plugins = None
 
     ###############################################################################################
     #
@@ -605,7 +613,7 @@ class CsgoParser(Parser):
             if len(clients) != 1:
                 return
             else:
-                client = client[0]
+                client = clients[0]
 
         if admin:
             fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client,
@@ -637,7 +645,7 @@ class CsgoParser(Parser):
             if len(clients) != 1:
                 return
             else:
-                client = client[0]
+                client = clients[0]
 
         if admin:
             fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client,
@@ -703,7 +711,7 @@ class CsgoParser(Parser):
             if len(clients) != 1:
                 return
             else:
-                client = client[0]
+                client = clients[0]
 
         if admin:
             fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client,
@@ -762,7 +770,7 @@ class CsgoParser(Parser):
         else:
             return rv
 
-    def getPlayerPings(self):
+    def getPlayerPings(self, filter_client_ids=None):
         """\
         returns a dict having players' id for keys and players' ping for values
         """

@@ -8,30 +8,28 @@
 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
-# 7/23/2005 - 1.1.0
-#    * Added damage type to Damage and Kill event data
+#
+# 7/23/2005 - 1.1.0 - Added damage type to Damage and Kill event data
 # 27/6/2009 - 1.3.1 - xlr8or - Added Action Mechanism (event) for version 1.1.5 
 # 28/8/2009 - 1.3.2 - Bakes - added regexp for CoD4 suicides
 # 17/1/2010 - 1.3.3 - xlr8or - moved sync to InitGame (30 second delay)
 # 25/1/2010 - 1.4.0 - xlr8or - refactored cod parser series
-# 26/1/2010 - 1.4.1 - xlr8or
-#    * Added authorizeClients() for IpsOnly
-#    * minor bugfixes after initial tests
+# 26/1/2010 - 1.4.1 - xlr8or - Added authorizeClients() for IpsOnly
+#                            - minor bugfixes after initial tests
 # 26/1/2010 - 1.4.2 - xlr8or - Added mapEnd() on Exitlevel
 # 27/1/2010 - 1.4.3 - xlr8or - Minor bugfix in sync() for IpsOnly
 # 28/1/2010 - 1.4.4 - xlr8or - Make sure cid is entering Authentication queue only once. 
 # 29/1/2010 - 1.4.5 - xlr8or - Minor rewrite of Auth queue check 
-# 31/1/2010 - 1.4.6 - xlr8or
-#    * Added unban for non pb servers
-#    * Fixed bug: rcon command banid replaced by banclient
+# 31/1/2010 - 1.4.6 - xlr8or - Added unban for non pb servers
+#                            - Fixed bug: rcon command banid replaced by banclient
 # 28/3/2010 - 1.4.7 - xlr8or - Added PunkBuster activity check on startup
 # 18/4/2010 - 1.4.8 - xlr8or - Trying to prevent key errors in newPlayer()
 # 18/4/2010 - 1.4.9 - xlr8or - Forcing g_logsync to make server write unbuffered gamelogs
@@ -57,36 +55,47 @@
 # 07/07/2012 - 1.4.28 - Courgette - ensures the config file has option 'game_log' in section 'server'
 # 12/31/2012 - 1.4.29 - Courgette - accepts rcon status responses having negative port numbers
 # 01/02/2013 - 1.4.30 - Courgette - improve parsing rcon status status responses that are missing characters
+# 05/02/2014 - 1.4.31 - Fenix - fixed empty group in regular expression
+#                             - rewrote dictionary creation as literal
+#                             - correctly initialize variables before usage
 
 __author__ = 'ThorN, xlr8or'
-__version__ = '1.4.30'
+__version__ = '1.4.31'
 
-import re, string, threading
+import re
+import string
+import threading
 import b3
 import b3.events
-from b3.parsers.q3a.abstractParser import AbstractParser
 import b3.parsers.punkbuster
 
+from b3.parsers.q3a.abstractParser import AbstractParser
+
 class CodParser(AbstractParser):
+
     gameName = 'cod'
     IpsOnly = False
+
     _guidLength = 6 # (minimum) length of the guid
     _pbRegExp = re.compile(r'^[0-9a-f]{32}$', re.IGNORECASE) # RegExp to match a PunkBuster ID
     _logSync = 3 # Value for unbuffered game logging (append mode)
     _counter = {}
-    _settings = {}
-    _settings['line_length'] = 65
-    _settings['min_wrap_length'] = 120
 
-    _commands = {}
-    _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
-    _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
-    _commands['say'] = 'say %(prefix)s %(message)s'
-    _commands['set'] = 'set %(name)s "%(value)s"'
-    _commands['kick'] = 'clientkick %(cid)s'
-    _commands['ban'] = 'banclient %(cid)s'
-    _commands['unban'] = 'unbanuser %(name)s' # remove players from game engine's ban.txt
-    _commands['tempban'] = 'clientkick %(cid)s'
+    _settings = {
+        'line_length': 65,
+        'min_wrap_length': 120
+    }
+
+    _commands = {
+        'message': 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s',
+        'deadsay': 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s',
+        'say': 'say %(prefix)s %(message)s',
+        'set': 'set %(name)s "%(value)s"',
+        'kick': 'clientkick %(cid)s',
+        'ban': 'banclient %(cid)s',
+        'unban': 'unbanuser %(name)s',
+        'tempban': 'clientkick %(cid)s'
+    }
 
     _eventMap = {
         'warmup': b3.events.EVT_GAME_WARMUP,
@@ -118,7 +127,7 @@ class CodParser(AbstractParser):
             , re.IGNORECASE),
         # For this one they appear to have swapped the attacker team and name in the output, hence the specific entry for attacker name as it is a unique case
         re.compile(
-            r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]*);(?P<name>[^;]+);(?P<aguid>[^;]*);(?P<acid>[0-9]{1,2});(?P<aname>world);(?P<ateam>);(?P<aweap>none);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$'
+            r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]*);(?P<name>[^;]+);(?P<aguid>[^;]*);(?P<acid>[0-9]{1,2});(?P<aname>world);(?P<ateam>[a-z]*);(?P<aweap>none);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$'
             , re.IGNORECASE),
 
 
@@ -194,9 +203,9 @@ $
                     'PunkBuster test FAILED, Check your game server setup and B3 config! Disabling PB support!')
 
         # get map from the status rcon command
-        map = self.getMap()
-        if map:
-            self.game.mapName = map
+        mapname = self.getMap()
+        if mapname:
+            self.game.mapName = mapname
             self.info('map is: %s' % self.game.mapName)
 
         # Force g_logsync
@@ -552,10 +561,9 @@ $
 
         if maps:
             maps = re.findall(self._reMap, maps[0])
-
             gmap = self.game.mapName.strip().lower()
-
             found = False
+            nmap = ''
             for nmap in maps:
                 nmap = nmap.strip().lower()
                 if found:
@@ -565,7 +573,7 @@ $
                     # current map, break on next map
                     found = True
 
-            if found == True:
+            if found is True:
                 # map is first map in rotation
                 nmap = maps[0].strip().lower()
 

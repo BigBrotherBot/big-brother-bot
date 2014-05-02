@@ -9,72 +9,70 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
-# 1.0
-#  update parser for BF3 R20
-# 1.1
-#  add event EVT_GAMESERVER_CONNECT which is triggered every time B3 connects to the game server
-# 1.1.1
-#  fix and refactor admin.yell
-# 1.2
-#  introduce new setting 'big_b3_private_responses'
-# 1.3
-#  introduce new setting 'big_msg_duration'
-#  refactor the code that reads the config file
-# 1.4
-#  commands can now start with just the '/' character if the user wants to hide the command from other players instead
-#  of having to type '/!'
-# 1.4.1
-#  add a space between the bot name and the message in saybig()
-# 1.4.2
-#  fixes bug regarding round count on round change events
-# 1.4.3 - 1.4.5
-#  improves handling of commands prefixed only with '/' instead of usual command prefixes. Leading '/' is removed if
-#  followed by an existing command name or if followed by a command prefix.
-# 1.5
-#  parser can now create EVT_CLIENT_TEAM_SAY events (requires BF3 server R21)
-# 1.5.1
-#  fixes issue with BF3 failing to provide EA_GUID https://github.com/courgette/big-brother-bot/issues/69
-# 1.5.2
-#  fixes issue that made B3 fail to ban/tempban a client with empty guid
-# 1.6
-#  replace admin plugin !map command with a Frostbite2 specific implementation. Now can call !map <map>, <gamemode>
-#  refactor getMapsSoundingLike
-#  add getGamemodeSoundingLike
-# 1.7
-#  replace admin plugin !map command with a Frostbite2 specific implementation. Now can call !map <map>[, <gamemode>[, <num of rounds>]]
-#  when returning map info, provide : map name (gamemode) # rounds
-# 1.8
-#  isolate the patching code in a module function
-# 1.8.1
-#  improve punkbuster event parsing
-# 1.9
-#  fix never ending thread sayqueuelistener_worker (would make B3 process hang on keyboard interrupt)
-# 1.10
-#  fix bug in code patching the admin plugin cmd_map function that would break the command if a map was loaded for an
-#  incompatible gamemode
+#
+# 1.0   - update parser for BF3 R20
+# 1.1   - add event EVT_GAMESERVER_CONNECT which is triggered every time B3 connects to the game server
+# 1.1.1 - fix and refactor admin.yell
+# 1.2   - introduce new setting 'big_b3_private_responses'
+# 1.3   - introduce new setting 'big_msg_duration'
+#       - refactor the code that reads the config file
+# 1.4   - commands can now start with just the '/' character if the user wants to hide the command from
+#         other players instead of having to type '/!'
+# 1.4.1 - add a space between the bot name and the message in saybig()
+# 1.4.2 - fixes bug regarding round count on round change events
+# 1.4.3 - 1.4.5 - improves handling of commands prefixed only with '/' instead of usual command prefixes.
+#                 Leading '/' is removed if followed by an existing command name or if followed by a command prefix.
+# 1.5   - parser can now create EVT_CLIENT_TEAM_SAY events (requires BF3 server R21)
+# 1.5.1 - fixes issue with BF3 failing to provide EA_GUID https://github.com/courgette/big-brother-bot/issues/69
+# 1.5.2 - fixes issue that made B3 fail to ban/tempban a client with empty guid
+# 1.6   - replace admin plugin !map command with a Frostbite2 specific implementation. Now can call !map <map>, <gamemode>
+#       - refactor getMapsSoundingLike
+#       - add getGamemodeSoundingLike
+# 1.7   - replace admin plugin !map command with a Frostbite2 specific implementation.
+#         Now can call !map <map>[, <gamemode>[, <num of rounds>]] when returning map info, provide : map name (gamemode) # rounds
+# 1.8   - isolate the patching code in a module function
+# 1.8.1 - improve punkbuster event parsing
+# 1.9   - fix never ending thread sayqueuelistener_worker (would make B3 process hang on keyboard interrupt)
+# 1.10  - fix bug in code patching the admin plugin cmd_map function that would break the command if a map
+#         was loaded for an incompatible gamemode
+# 1.11  - rewrote import statements
+#       - replaced variable names using python built-in names
 #
 __author__  = 'Courgette'
-__version__ = '1.10'
+__version__ = '1.11'
 
 
-import sys, re, traceback, time, string, Queue, threading, new
+import sys
+import re
+import traceback
+import time
+import string
+import Queue
+import threading
+import new
 import b3.parser
-from b3.parsers.frostbite2.rcon import Rcon as FrostbiteRcon
-from b3.parsers.frostbite2.protocol import (FrostbiteServer, CommandFailedError, CommandError, NetworkError,
-                                            CommandUnknownCommandError, CommandDisallowedError)
-from b3.parsers.frostbite2.util import PlayerInfoBlock, MapListBlock, BanlistContent
 import b3.events
 import b3.cvar
-from b3.functions import getStuffSoundingLike
 
+from b3.parsers.frostbite2.rcon import Rcon as FrostbiteRcon
+from b3.parsers.frostbite2.protocol import FrostbiteServer
+from b3.parsers.frostbite2.protocol import CommandFailedError
+from b3.parsers.frostbite2.protocol import CommandError
+from b3.parsers.frostbite2.protocol import NetworkError
+from b3.parsers.frostbite2.protocol import CommandUnknownCommandError
+from b3.parsers.frostbite2.protocol import CommandDisallowedError
+from b3.parsers.frostbite2.util import PlayerInfoBlock
+from b3.parsers.frostbite2.util import MapListBlock
+from b3.parsers.frostbite2.util import BanlistContent
+from b3.functions import getStuffSoundingLike
 
 # how long should the bot try to connect to the Frostbite server before giving out (in second)
 GAMESERVER_CONNECTION_WAIT_TIMEOUT = 600
@@ -110,7 +108,7 @@ class AbstractParser(b3.parser.Parser):
         'big_msg_duration': 4,
         'big_b3_private_responses': False,
         'big_msg_repeat': 'off',
-        }
+    }
 
     _gameServerVars = () # list available cvar
 
@@ -131,10 +129,9 @@ class AbstractParser(b3.parser.Parser):
         'unbanByIp': ('banList.remove', 'ip', '%(ip)s'),
         'tempban': ('banList.add', 'guid', '%(guid)s', 'seconds', '%(duration)d', '%(reason)s'),
         'tempbanByName': ('banList.add', 'name', '%(name)s', 'seconds', '%(duration)d', '%(reason)s'),
-        }
-
-    _eventMap = {
     }
+
+    _eventMap = {}
 
     _punkbusterMessageFormats = (
         (re.compile(r'^.*: PunkBuster Server for .+ \((?P<version>.+)\)\sEnabl.*$'), 'OnPBVersion'),
@@ -183,19 +180,19 @@ class AbstractParser(b3.parser.Parser):
         composed of digits exclusively. In such case it behave as if id was a slot number as for Quake3 servers.
         This method patches the self.clients object so that it getByMagic method behaves as expected for Frostbite servers.
         """
-        def new_clients_getByMagic(self, id):
-            id = id.strip()
+        def new_clients_getByMagic(self, _id):
+            _id = _id.strip()
 
-            if re.match(r'^@([0-9]+)$', id):
-                return self.getByDB(id)
-            elif id[:1] == '\\':
-                c = self.getByName(id[1:])
+            if re.match(r'^@([0-9]+)$', _id):
+                return self.getByDB(_id)
+            elif _id[:1] == '\\':
+                c = self.getByName(_id[1:])
                 if c and not c.hide:
                     return [c]
                 else:
                     return []
             else:
-                return self.getClientsByName(id)
+                return self.getClientsByName(_id)
         b3.clients.Clients.getByMagic = new_clients_getByMagic
 
 
@@ -262,11 +259,8 @@ class AbstractParser(b3.parser.Parser):
 
             return map_id, gamemode_id, num_rounds
 
-
-        """
-        Monkey path the cmd_map method of the loaded AdminPlugin instance to accept optional 2nd and 3rd parameters
-        which are the game mode and number of rounds
-        """
+        # Monkey path the cmd_map method of the loaded AdminPlugin instance to accept optional 2nd and 3rd parameters
+        # which are the game mode and number of rounds
         def new_cmd_map(self, data, client, cmd=None):
             """\
             <map> [, gamemode [, num of rounds]] - switch current map. Optionally specify a gamemode and # of rounds by separating them from the map name with a commas
@@ -464,7 +458,7 @@ class AbstractParser(b3.parser.Parser):
         match = re.search(r"^(?P<actor>[^.]+)\.(on)?(?P<event>.+)$", eventType)
         func = None
         if match:
-            func = 'On%s%s' % (string.capitalize(match.group('actor')), \
+            func = 'On%s%s' % (string.capitalize(match.group('actor')),
                                string.capitalize(match.group('event')))
             self.verbose2("looking for event handling method called : " + func)
 
@@ -902,15 +896,15 @@ class AbstractParser(b3.parser.Parser):
         connect/disconnect the client.
         """
         name = match.group('name')
-        dict = {
+        data = {
             'slot': match.group('slot'),
             'ip': match.group('ip'),
             'port': match.group('port'),
             'pbuid': match.group('pbuid'),
             'name': name
         }
-        self.verbose('PB lost connection: %s' %dict)
-        return b3.events.Event(b3.events.EVT_PUNKBUSTER_LOST_PLAYER, dict)
+        self.verbose('PB lost connection: %s' % data)
+        return b3.events.Event(b3.events.EVT_PUNKBUSTER_LOST_PLAYER, data)
 
     def OnPBScheduledTask(self, match, data):
         """We get notified the server ran a PB scheduled task
@@ -1344,7 +1338,7 @@ class AbstractParser(b3.parser.Parser):
         self.write(('mapList.runNextRound',))
 
 
-    def getPlayerPings(self):
+    def getPlayerPings(self, filter_client_ids=None):
         """Ask the server for a given client's pings
         """
         raise NotImplementedError

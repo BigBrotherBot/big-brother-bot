@@ -8,12 +8,12 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
@@ -65,13 +65,14 @@
 # * Fixed typo in mapname
 # 2011-11-05 - 1.1.4 - Courgette
 # * makes sure to release the self.exiting lock
+# 2014-05-02 - 1.1.5 - Fenix
+# * rewrote import statements
+# * remove class attribute duplicates
+# * rewrote dictionary creation as literal
+# * correctly initialize class attributes
+# * replaced variable names using python built-in names
 #
-from b3 import functions
-from b3.clients import Client
-from b3.lib.sourcelib import SourceQuery
-from b3.parser import Parser
-from b3.parsers.homefront.protocol import MessageType, ChannelType
-from ftplib import FTP
+
 import asyncore
 import b3
 import b3.cron
@@ -84,20 +85,29 @@ import string
 import sys
 import time
 
+from ftplib import FTP
+from b3 import functions
+from b3.clients import Client
+from b3.lib.sourcelib import SourceQuery
+from b3.parser import Parser
+from b3.parsers.homefront.protocol import MessageType
+from b3.parsers.homefront.protocol import ChannelType
+
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.1.4'
+__version__ = '1.1.5'
 
 
 
 class HomefrontParser(b3.parser.Parser):
-    '''
+    """
     The HomeFront B3 parser class
-    '''
+    """
     gameName = "homefront"
     privateMsg = True
     OutputClass = rcon.Rcon
     PunkBuster = None 
+
     _serverConnection = None
 
     # homefront engine does not support color code, so we need this property
@@ -106,27 +116,30 @@ class HomefrontParser(b3.parser.Parser):
     # Map related
     _currentmap = None
     _ini_file = None
-    _currentmap = None
+    _original_connection_handle_close_method = None
     _mapline = re.compile(r'^(?P<start>Map=)(?P<mapname>[^\?]+)\?(?P<sep>GameMode=)(?P<gamemode>.*)$', re.IGNORECASE)
     _reSteamId64 = re.compile(r'^[0-9]{17}$')
-    ftpconfig = None
+    _nbConsecutiveConnFailure = 0
     _ftplib_debug_level = 0 # 0: no debug, 1: normal debug, 2: extended debug
     _connectionTimeout = 30
-    maplist = None
-    mapgamelist = None
     _playerlistInterval = 15
     _server_banlist = {}
 
-    _commands = {}
-    _commands['message'] = ('adminpm %(uid)s %(prefix)s [pm] %(message)s')
-    _commands['say'] = ('adminsay %(prefix)s %(message)s')
-    _commands['saybig'] = ('adminbigsay %(prefix)s %(message)s')
-    _commands['kick'] = ('admin kick "%(playerid)s"')
-    _commands['ban'] = ('admin kickban "%(playerid)s" "%(admin)s" "[B3] %(reason)s"')
-    _commands['unban'] = ('admin unban %(playerId)s')
-    _commands['tempban'] = ('admin kick "%(playerid)s"')
-    _commands['maprotate'] = ('admin nextmap')
-    
+    ftpconfig = None
+    maplist = None
+    mapgamelist = None
+
+    _commands = {
+        'message': 'adminpm %(uid)s %(prefix)s [pm] %(message)s', 
+        'say': 'adminsay %(prefix)s %(message)s',
+        'saybig': 'adminbigsay %(prefix)s %(message)s', 
+        'kick': 'admin kick "%(playerid)s"',
+        'ban': 'admin kickban "%(playerid)s" "%(admin)s" "[B3] %(reason)s"',
+        'unban': 'admin unban %(playerId)s', 
+        'tempban': 'admin kick "%(playerid)s"',
+        'maprotate': 'admin nextmap'
+    }
+
     _settings = {'line_length': 90, 
                  'min_wrap_length': 100}
     
@@ -259,11 +272,10 @@ class HomefrontParser(b3.parser.Parser):
         self.updateDocumentation()
 
         while self.working:
-            """
-            While we are working, connect to the Homefront server
-            """
+            # While we are working, connect
+            # to the Homefront server
             if self._paused:
-                if self._pauseNotice == False:
+                if self._pauseNotice is False:
                     self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
                     self._pauseNotice = True
             else:
@@ -842,8 +854,8 @@ class HomefrontParser(b3.parser.Parser):
             if self._ini_file == 'ftp':
                 self.getftpini()
             else:
-                input = open(self._ini_file, 'r')
-                for line in input:
+                _input = open(self._ini_file, 'r')
+                for line in _input:
                     mapline = self.checkMapline(line)
                     if mapline:
                         if mapline[1] == 'FL':
@@ -857,9 +869,9 @@ class HomefrontParser(b3.parser.Parser):
             return self.mapgamelist
 
     def checkMapline(self, line):
-        map = re.match( self._mapline, line)
-        if map:
-            d = map.groupdict()
+        mapname = re.match( self._mapline, line)
+        if mapname:
+            d = mapname.groupdict()
             d2 = [d['mapname'], d['gamemode']]
             return d2
         else:
@@ -872,7 +884,7 @@ class HomefrontParser(b3.parser.Parser):
         #CT admin NextMap
         self.write(self.getCommand('maprotate'))
         
-    def changeMap(self, map):
+    def changeMap(self, mapname):
         """\
         load a given map/level
         return a list of suggested map names in cases it fails to recognize the map that was provided
@@ -1019,7 +1031,7 @@ class HomefrontParser(b3.parser.Parser):
     def getftpini(self):
         def handleDownload(line):
             #self.debug('received %s bytes' % len(block))
-            line = line + '\n'
+            line += '\n'
             mapline = self.checkMapline(line)
             if mapline:
                 self.maplist.append(mapline[0])
@@ -1056,9 +1068,9 @@ class HomefrontParser(b3.parser.Parser):
         ftp.connect(self.ftpconfig['host'], self.ftpconfig['port'], self._connectionTimeout)
         ftp.login(self.ftpconfig['user'], self.ftpconfig['password'])
         ftp.voidcmd('TYPE I')
-        dir = os.path.dirname(self.ftpconfig['path'])
-        self.debug('trying to cwd to [%s]' % dir)
-        ftp.cwd(dir)
+        d = os.path.dirname(self.ftpconfig['path'])
+        self.debug('trying to cwd to [%s]' % d)
+        ftp.cwd(d)
         return ftp
     
 

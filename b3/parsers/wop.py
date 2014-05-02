@@ -26,6 +26,8 @@
 # 14/01/2014 - 1.1 - Fenix
 # * pep8 coding style guide
 # * correctly set the client bot flag upon new client connection
+# 02/05/2014 - 1.2 - Fenix
+# * correctly initialize variable before referencing
 
 __author__ = 'xlr8or'
 __version__ = '1.1'
@@ -227,6 +229,7 @@ class WopParser(AbstractParser):
 
     def OnClientuserinfochanged(self, action, data, match=None):
         _id = None
+        client = NOne
         if self._clientConnectID is not None:
             _id = self._clientConnectID
 

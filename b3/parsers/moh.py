@@ -18,6 +18,7 @@
 #
 #
 # CHANGELOG
+#
 # 2010/11/07 - 0.10 - Courgette
 # * add new maps info
 # 2010/11/08 - 0.9.2 - GrosBedo
@@ -63,21 +64,25 @@
 # makes use of the new pluginsStarted parser hook
 # 2011-06-05 - 1.4.0 - Courgette
 # * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
-# 2012-10-60 - 1.5 - Courgette
-# reflect changes in abstract parser 1.6
+# 2012-10-06 - 1.5 - Courgette
+# * reflect changes in abstract parser 1.6
+# 2014-05-02 - 1.5.1 - Fenix
+# * Replace attribute names using python built-in ones
 #
-__author__  = 'Bakes, Courgette'
-__version__ = '1.5'
+__author__ = 'Bakes, Courgette'
+__version__ = '1.5.1'
 
 import time
 import b3.events
+import b3.functions
+
 from b3.parsers.frostbite.abstractParser import AbstractParser
 from b3.parsers.frostbite.util import PlayerInfoBlock
-import b3.functions
 
 SAY_LINE_MAX_LENGTH = 100
 
 class MohParser(AbstractParser):
+
     gameName = 'moh'
     
     _gameServerVars = (
@@ -483,7 +488,7 @@ class MohParser(AbstractParser):
             self.write(('admin.runNextRound',))
     
     
-    def changeMap(self, map):
+    def changeMap(self, mapname):
         """Change to the given map
         
         1) determine the level name
@@ -503,35 +508,35 @@ class MohParser(AbstractParser):
         """
 
         supportedMaps = self.getSupportedMaps()
-        if 'levels/%s'%map in supportedMaps:
-            map = 'levels/%s'%map
+        if 'levels/%s' % mapname in supportedMaps:
+            mapname = 'levels/%s' % mapname
 
-        if map not in supportedMaps:
-            match = self.getMapsSoundingLike(map)
+        if mapname not in supportedMaps:
+            match = self.getMapsSoundingLike(mapname)
             if len(match) == 1:
-                map = match[0]
+                mapname = match[0]
             else:
                 return match
 
-        if map in supportedMaps:
+        if mapname in supportedMaps:
             levelnames = self.write(('mapList.list',))
-            if map not in levelnames:
+            if mapname not in levelnames:
                 # add the map to the map list
                 nextIndex = self.getNextMapIndex()
                 if nextIndex == -1:
-                    self.write(('mapList.append', map))
+                    self.write(('mapList.append', mapname))
                     nextIndex = 0
                 else:
                     if nextIndex == 0:
                         # case where the map list contains only 1 map
                         nextIndex = 1
-                    self.write(('mapList.insert', nextIndex, map))
+                    self.write(('mapList.insert', nextIndex, mapname))
             else:
                 nextIndex = 0
-                while nextIndex < len(levelnames) and levelnames[nextIndex] != map:
+                while nextIndex < len(levelnames) and levelnames[nextIndex] != mapname:
                     nextIndex += 1
             
-            self.say('Changing map to %s' % map)
+            self.say('Changing map to %s' % mapname)
             time.sleep(1)
             self.write(('mapList.nextLevelIndex', nextIndex))
             self.write(('admin.runNextRound', ))

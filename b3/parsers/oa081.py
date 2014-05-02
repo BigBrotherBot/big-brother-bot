@@ -80,9 +80,11 @@
 # * pep8 coding style guide
 # * changed bots giud to match other q3a parsers (BOT<slot>)
 # * correctly set client bot flag upon new client connection
+# 02/05/2014 - 0.11.2 - Fenix
+# * fixed getPlayerPings method declaration not matching the method in Parser class
 #
 __author__ = 'Courgette, GrosBedo'
-__version__ = '0.11.1'
+__version__ = '0.11.2'
 
 import re
 import string
@@ -773,7 +775,7 @@ class Oa081Parser(AbstractParser):
                 if not silent and fullreason != '':
                     self.say(fullreason)
 
-    def getPlayerPings(self):
+    def getPlayerPings(self, filter_client_ids=None):
         data = self.write('status')
         if not data:
             return {}

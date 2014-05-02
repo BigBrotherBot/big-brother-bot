@@ -24,22 +24,29 @@
 # 1.4.1, 1.6, 1.9, 1.10
 #
 # CHANGELOG
+#  v1.0.3   : rewrote import statements
 #  v1.0.2   : forward server event player.onDisconnect to EVT_CLIENT_DISCONNECT_REASON
 #  v1.0.1   : update to server version R13 that include DLC1 (China Rising) map pack
 #  v1.0.0   : functional parser implementation based on the BF3 parser
+#             fixed 'filter_client_ids' variable initialization
+#             fixed class attribute initialization
 #
-import sys
-import traceback
-from b3.parsers.frostbite2.abstractParser import AbstractParser
-from b3.parsers.frostbite2.util import PlayerInfoBlock
+
 import b3
 import b3.events
 import threading
+import sys
+import traceback
+
 from time import sleep
-from b3.parsers.frostbite2.protocol import CommandFailedError, CommandUnknownCommandError, CommandDisallowedError
+from b3.parsers.frostbite2.abstractParser import AbstractParser
+from b3.parsers.frostbite2.util import PlayerInfoBlock
+from b3.parsers.frostbite2.protocol import CommandFailedError
+from b3.parsers.frostbite2.protocol import CommandUnknownCommandError
+from b3.parsers.frostbite2.protocol import CommandDisallowedError
 
 __author__ = 'Courgette, ozon, Dwarfer'
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 BF4_REQUIRED_VERSION = 117719
 
@@ -236,7 +243,10 @@ COMROSE_CHAT_NAME_BY_ID = {
 
 
 class Bf4Parser(AbstractParser):
+
     gameName = 'bf4'
+
+    _gamePort = None
 
     _gameServerVars = (
         '3dSpotting',               # <bool>  Set if spotted targets are visible in the 3d-world
@@ -454,13 +464,16 @@ class Bf4Parser(AbstractParser):
     #    
     ###############################################################################################
 
-    def getPlayerPings(self, filter_client_ids=[]):
-        """Ask the server for a given client's pings
-
+    def getPlayerPings(self, filter_client_ids=None):
+        """
+        Ask the server for a given client's pings
         :param filter_client_ids: If filter_client_id is an iterable, only return values for the given client ids.
         """
-
         pings = {}
+
+        if filter_client_ids is None:
+            filter_client_ids = []
+
         try:
             player_info_block = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
             for player in player_info_block:
@@ -810,7 +823,7 @@ class Bf4Parser(AbstractParser):
             _isAlive = self.isAlive()
             if _isAlive:
                 _state = b3.STATE_ALIVE
-            elif _isAlive == False:
+            elif _isAlive is False:
                 _state = b3.STATE_DEAD
 
             return _state

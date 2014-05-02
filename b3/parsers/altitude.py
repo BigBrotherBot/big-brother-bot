@@ -10,37 +10,40 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-# 2011-05-01 - 1.0 - Courgette
-# * first release. Need work regarding teams and teamkills
-# 2011-05-01 - 1.1 - Courgette
-# * fix unban
-# * add 3 new B3 events : EVT_CLIENT_CONSOLE_COMMAND, EVT_CLIENT_CALL_VOTE and 
-#   EVT_CLIENT_VOTE
-# * try to fight back when ppl call kick vote against admins
-# * unban admins who got kicked to pass by the default 2m tempban on kicks
-# * more team ID found. Still need to figure out the game mod that are team based
-#   to properly assign B3 team IDs
-# 2011-06-05 - 1.2 - Courgette
-# * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
+#   2011-05-01 - 1.0 - Courgette
+#   * first release. Need work regarding teams and teamkills
+#   2011-05-01 - 1.1 - Courgette
+#   * fix unban
+#   * add 3 new B3 events : EVT_CLIENT_CONSOLE_COMMAND, EVT_CLIENT_CALL_VOTE and EVT_CLIENT_VOTE
+#   * try to fight back when ppl call kick vote against admins
+#   * unban admins who got kicked to pass by the default 2m tempban on kicks
+#   * more team ID found. Still need to figure out the game mod that are team based to properly assign B3 team IDs
+#   2011-06-05 - 1.2 - Courgette
+#   * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
+#   2014-05-02 - 1.3 - Fenix
+#   * minor syntax changes
+#   * fixed getPlayerPings method declaration not matching the method in Parser class
 #
-from b3.events import EVT_CUSTOM
-from b3.parser import Parser
+
 import b3
 import json
 import re
 import time
 
+from b3.events import EVT_CUSTOM
+from b3.parser import Parser
+
 __author__  = 'Courgette'
-__version__ = '1.2'
+__version__ = '1.3'
 
 
 """
@@ -113,17 +116,17 @@ class AltitudeParser(Parser):
         """method call for each line of the game log file that must return
         a B3 event"""
         ## conveniently, Altitude log lines are encoded in JSON
-        ''' Examples of log lines :
-{"port":27276,"time":103197,"name":"Courgette test Server","type":"serverInit","maxPlayerCount":14}
-{"port":27276,"time":103344,"map":"ball_cave","type":"mapLoading"}
-{"port":27276,"time":103682,"type":"serverStart"}
-{"port":27276,"demo":false,"time":103691,"level":1,"player":0,"nickname":"Bot 1","aceRank":0,"vaporId":"00000000-0000-0000-0000-000000000000","type":"clientAdd","ip":"0.0.0.0:100001"}
-{"port":27276,"demo":false,"time":12108767,"level":9,"player":2,"nickname":"Courgette","aceRank":0,"vaporId":"d8123456-18a4-124e-a45b-155641685161","type":"clientAdd","ip":"192.168.10.1:27272"}
-{"port":27276,"time":12110927,"type":"pingSummary","pingByPlayer":{"2":0}}
-{"port":27276,"time":12123445,"player":2,"team":2,"type":"teamChange"}
-{"port":27276,"time":12124957,"plane":"Loopy","player":1,"perkRed":"Tracker","perkGreen":"Rubberized Hull","team":4,"type":"spawn","perkBlue":"Turbocharger","skin":"Flame Skin"}
-{"port":27276,"time":15048305,"streak":0,"source":"turret","player":-1,"victim":1,"multi":0,"xp":10,"type":"kill"}
-        '''
+        # Examples of log lines :
+        # {"port":27276,"time":103197,"name":"Courgette test Server","type":"serverInit","maxPlayerCount":14}
+        # {"port":27276,"time":103344,"map":"ball_cave","type":"mapLoading"}
+        # {"port":27276,"time":103682,"type":"serverStart"}
+        # {"port":27276,"demo":false,"time":103691,"level":1,"player":0,"nickname":"Bot 1","aceRank":0,"vaporId":"00000000-0000-0000-0000-000000000000","type":"clientAdd","ip":"0.0.0.0:100001"}
+        # {"port":27276,"demo":false,"time":12108767,"level":9,"player":2,"nickname":"Courgette","aceRank":0,"vaporId":"d8123456-18a4-124e-a45b-155641685161","type":"clientAdd","ip":"192.168.10.1:27272"}
+        # {"port":27276,"time":12110927,"type":"pingSummary","pingByPlayer":{"2":0}}
+        # {"port":27276,"time":12123445,"player":2,"team":2,"type":"teamChange"}
+        # {"port":27276,"time":12124957,"plane":"Loopy","player":1,"perkRed":"Tracker","perkGreen":"Rubberized Hull","team":4,"type":"spawn","perkBlue":"Turbocharger","skin":"Flame Skin"}
+        # {"port":27276,"time":15048305,"streak":0,"source":"turret","player":-1,"victim":1,"multi":0,"xp":10,"type":"kill"}
+
         altitude_event = json.loads(line)
         
         if altitude_event['port'] != self._port:
@@ -230,7 +233,7 @@ class AltitudeParser(Parser):
         """
         c = self.clients.getByCID(altitude_event['player'])
         if c:
-            if altitude_event['server'] == False:
+            if altitude_event['server'] is False:
                 return self.getEvent('EVT_CLIENT_SAY', data=altitude_event['message'], client=c)
             else:
                 return self.getEvent('EVT_CUSTOM', data=altitude_event, client=c)
@@ -241,9 +244,7 @@ class AltitudeParser(Parser):
         example :
         {u'streak': 0, u'multi': 0, u'player': -1, u'source': u'plane', u'victim': 0, u'time': 3571497, u'xp': 10, u'type': u'kill', u'port': 27276}
         """
-        '''
-        NOTE: there is no team kill in that game
-        '''
+        # NOTE: there is no team kill in that game
         attacker = self.clients.getByCID(altitude_event['player'])
         if not attacker:
             self.debug('No attacker!')
@@ -654,14 +655,14 @@ class AltitudeParser(Parser):
         """
         raise NotImplementedError
         
-    def changeMap(self, map):
+    def changeMap(self, mapname):
         """\
         load a given map/level
         return a list of suggested map names in cases it fails to recognize the map that was provided
         """
-        self.write("changeMap %s" % map)
+        self.write("changeMap %s" % mapname)
 
-    def getPlayerPings(self):
+    def getPlayerPings(self, filter_client_ids=None):
         """\
         returns a dict having players' id for keys and players' ping for values
         """
@@ -695,11 +696,10 @@ class AltitudeParser(Parser):
         """ This game allows anyone to call a kick vote agains an admin.
         Here we keep an eye on every kick vote and if we found someone calling
         a kick vote on a player of higher level, then we kick him """
-        ''' example of altitude call vote event :
-            {"port":27276, "time":3250286, "arguments":["kick","Courgette"],
-            "source":"c0aaf37d-e56d-4431-aa1e-69d5e18be5e6", "command":"vote",
-            "group":"Anonymous", "type":"consoleCommandExecute"}
-        '''
+        # example of altitude call vote event :
+        # {"port":27276, "time":3250286, "arguments":["kick","Courgette"],
+        # "source":"c0aaf37d-e56d-4431-aa1e-69d5e18be5e6", "command":"vote",
+        # "group":"Anonymous", "type":"consoleCommandExecute"}
         altitude_event = b3event.data
         kick_target = self.clients.getByName(altitude_event['arguments'][1])
         vote_caller = b3event.client
