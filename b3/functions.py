@@ -35,9 +35,11 @@
 #                                  return suggestions in the same order for the same input values if ordered
 #                                  differently and if having multiple same levenshtein distance
 # 21/04/2014 - 1.11 - 82ndab_Bravo17 - allow _ char in vars2printf replacements
+# 02/05/2014 - 1.12 - Fenix - added getCmd method: return a command reference given it's name and plugin instance
+#                           - syntax cleanup
 #
 __author__    = 'ThorN, xlr8or, courgette'
-__version__   = '1.11'
+__version__   = '1.12'
 
 import b3
 import re
@@ -47,6 +49,7 @@ import imp
 import string
 import urllib2
 from hashlib import md5
+
 import collections
 
 
@@ -58,9 +61,15 @@ def getModule(name):
     return mod
 
 
-
+def getCmd(instance, cmd):
+    cmd = 'cmd_%s' % cmd
+    if hasattr(instance, cmd):
+        func = getattr(instance, cmd)
+        return func
+    return None
 
 #--------------------------------------------------------------------------------------------------
+
 def main_is_frozen():
     """detect if b3 is running from b3_run.exe"""
     return (hasattr(sys, "frozen") or # new py2exe
@@ -68,6 +77,7 @@ def main_is_frozen():
         imp.is_frozen("__main__")) # tools/freeze
 
 #--------------------------------------------------------------------------------------------------
+
 def splitDSN(url):
     m = re.match(r'^(?:(?P<protocol>[a-z]+)://)?(?:(?P<user>[^:]+)(?::(?P<password>[^@]*?))?@)?(?P<host>[^/:]+)?(?::(?P<port>\d+))?(?P<path>.*)', url)
     if not m:
@@ -107,6 +117,7 @@ def splitDSN(url):
     return g
 
 #--------------------------------------------------------------------------------------------------
+
 def confirm(client):
     msg = 'No confirmation...'
     try:
@@ -126,6 +137,7 @@ def confirm(client):
     return msg
 
 #--------------------------------------------------------------------------------------------------
+
 def minutes2int(mins):
     if re.match('^[0-9.]+$', mins):
         return round(float(mins), 2)
@@ -133,6 +145,7 @@ def minutes2int(mins):
         return 0
 
 #--------------------------------------------------------------------------------------------------
+
 def time2minutes(timeStr):
     if not timeStr:
         return 0
@@ -156,6 +169,7 @@ def time2minutes(timeStr):
         return minutes2int(timeStr)
 
 #--------------------------------------------------------------------------------------------------
+
 def minutesStr(timeStr):
     mins = float(time2minutes(timeStr))
 
@@ -193,6 +207,7 @@ def vars2printf(inputStr):
         return ''
 
 #--------------------------------------------------------------------------------------------------
+
 def levenshteinDistance(a,b):
     c = {}
     n = len(a); m = len(b)
@@ -213,53 +228,57 @@ def levenshteinDistance(a,b):
             c[i,j] = min(x,y,z)
     return c[n,m]
 
+#--------------------------------------------------------------------------------------------------
 
-def soundex(str):
+def soundex(s1):
     """Return the soundex value to a string argument."""
 
     IGNORE = "~!@#$%^&*()_+=-`[]\|;:'/?.,<>\" \t\f\v"
     TABLE  = string.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ',
                           '01230120022455012623010202')
 
-    str = string.strip(string.upper(str))
-    if not str:
+    s1 = string.strip(string.upper(s1))
+    if not s1:
         return "Z000"
-    str2 = str[0]
-    str = string.translate(str.encode('ascii', 'ignore'), TABLE, IGNORE)
-    if not str:
+    s2 = s1[0]
+    s1 = string.translate(s1.encode('ascii', 'ignore'), TABLE, IGNORE)
+    if not s1:
         return "Z000"
-    prev = str[0]
-    for x in str[1:]:
+    prev = s1[0]
+    for x in s1[1:]:
         if x != prev and x != "0":
-                str2 = str2 + x
+                s2 = s2 + x
         prev = x
     # pad with zeros
-    str2 += "0000"
-    return str2[:4]
+    s2 += "0000"
+    return s2[:4]
 
+#--------------------------------------------------------------------------------------------------
 
-"""
-Calculate mean and standard deviation of data x[]:
-    mean = {\sum_i x_i \over n}
-    std = sqrt(\sum_i (x_i - mean)^2 \over n-1)
-credit: http://www.physics.rutgers.edu/~masud/computing/WPark_recipes_in_python.html
-"""
 def meanstdv(x):
+    """
+    Calculate mean and standard deviation of data x[]:
+        mean = {\sum_i x_i \over n}
+        std = sqrt(\sum_i (x_i - mean)^2 \over n-1)
+    credit: http://www.physics.rutgers.edu/~masud/computing/WPark_recipes_in_python.html
+    """
     from math import sqrt
     n, mean, std = len(x), 0, 0
     for a in x:
         mean = mean + a
     try:
-        mean = mean / float(n)
+        mean /= float(n)
     except ZeroDivisionError:
         mean = 0
     for a in x:
-        std = std + (a - mean)**2
+        std += (a - mean) ** 2
     try:
         std = sqrt(std / float(n-1))
     except ZeroDivisionError:
         std = 0
     return mean, std
+
+#--------------------------------------------------------------------------------------------------
 
 def fuzzyGuidMatch(a, b):
     a = a.upper()
@@ -282,6 +301,7 @@ def fuzzyGuidMatch(a, b):
     return False
 
 #--------------------------------------------------------------------------------------------------
+
 def sanitizeMe(s):
     if s:
         return re.sub(r'[\x00-\x1F]|[\x7F-\xff]', '?', s)
@@ -289,13 +309,14 @@ def sanitizeMe(s):
         return ''
 
 #--------------------------------------------------------------------------------------------------
+
 ## @todo see if functions.executeSQL() and storage.DatabaseStorage.queryFromFile() can be combined.
-def executeSql(db, file):
+def executeSql(db, f):
     """This method executes an external sql file on the current database
     A similar function can be found in storage.DatabaseStorage.queryFromFile()
     This one returns if a file is not found.
     """
-    sqlFile = b3.getAbsolutePath(file)
+    sqlFile = b3.getAbsolutePath(f)
     if os.path.exists(sqlFile):
         try:
             f = open(sqlFile, 'r')
@@ -312,11 +333,12 @@ def executeSql(db, file):
     else:
         return 'notfound'
     return 'success'
+
 #--------------------------------------------------------------------------------------------------
 
-
 def getStuffSoundingLike(stuff, expected_stuff):
-    """found matching stuff for the given expected_stuff list.
+    """
+    Found matching stuff for the given expected_stuff list.
     If no exact match is found, then return close candidates using by substring match.
     If no subtring matches, then use soundex and then LevenshteinDistance algorithms
     """
@@ -355,9 +377,12 @@ def getStuffSoundingLike(stuff, expected_stuff):
         match.sort(key=lambda _map: levenshteinDistance(clean_stuff, _map.strip()))
     return list(set(match))
 
+#--------------------------------------------------------------------------------------------------
 
 def hash_password(password):
     return md5(password).hexdigest()
+
+#--------------------------------------------------------------------------------------------------
 
 # simplified spell checker from Peter Norvig
 # http://www.norvig.com/spell-correct.html
@@ -397,4 +422,3 @@ def corrent_spell(c_word, wordbook):
         result = False
 
     return result
-
