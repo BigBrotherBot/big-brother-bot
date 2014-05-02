@@ -16,8 +16,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
+# 2014/05/02 - 1.4.1 - Fenix
+#  * Make use of the new getCmd function from functions module
 # 2014/04/07 - 1.4 - Fenix
-#  * pep8 coding style guide
+#  * PEP8 coding style guide
 #  * improved plugin startup and configuration file loading
 # 2013/04/18 - 1.3 - Courgette
 #  * easier config file format for defining which welcome message to display
@@ -47,6 +49,7 @@ import threading
 import time
 import re
 
+from b3.functions import getCmd
 from ConfigParser import NoOptionError
 
 __version__ = '1.4'
@@ -108,7 +111,7 @@ class WelcomePlugin(b3.plugin.Plugin):
                 if len(sp) == 2:
                     cmd, alias = sp
 
-                func = self.getCmd(cmd)
+                func = getCmd(self, cmd)
                 if func:
                     self._adminPlugin.registerCommand(self, cmd, level, func, alias)
 
@@ -203,22 +206,6 @@ class WelcomePlugin(b3.plugin.Plugin):
                     set_flag(F)
                     self.warning('could not find settings/%s config value' % opt)
                     self.debug('using default value (yes) for settings/%s' % opt)
-
-    ####################################################################################################################
-    ##                                                                                                                ##
-    ##   FUNCTIONS                                                                                                    ##
-    ##                                                                                                                ##
-    ####################################################################################################################
-
-    def getCmd(self, cmd):
-        """\
-        Return the method for a given command
-        """
-        cmd = 'cmd_%s' % cmd
-        if hasattr(self, cmd):
-            func = getattr(self, cmd)
-            return func
-        return None
 
     ####################################################################################################################
     ##                                                                                                                ##

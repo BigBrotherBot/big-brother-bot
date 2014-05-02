@@ -9,12 +9,12 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
@@ -30,18 +30,22 @@
 # 2012/12/18 - 1.3.1 - Courgette
 #   - fix regression that prevented the !spamins command to be registered since v1.2
 # 2014/04/07 - 1.4 - Fenix
-#   - pep8 coding style guide
+#   - PEP8 coding style guide
 #   - improved plugin startup and configuration file loading
+# 2014/05/02 - 1.4.1 - Fenix
+#   - Make use of the new getCmd function from functions module
 #
 
 import b3
 import b3.events
 import b3.plugin
 import re
+
+from b3.functions import getCmd
 from ConfigParser import NoOptionError
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.4'
+__version__ = '1.4.1'
 
 
 class SpamcontrolPlugin(b3.plugin.Plugin):
@@ -113,7 +117,7 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
                     if len(sp) == 2:
                         cmd, alias = sp
 
-                    func = self.getCmd(cmd)
+                    func = getCmd(self, cmd)
                     if func:
                         self._adminPlugin.registerCommand(self, cmd, level, func, alias)
 
@@ -122,16 +126,6 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
     ##   FUNCTIONS                                                                                                    ##
     ##                                                                                                                ##
     ####################################################################################################################
-
-    def getCmd(self, cmd):
-        """\
-        Return the method for a given command
-        """
-        cmd = 'cmd_%s' % cmd
-        if hasattr(self, cmd):
-            func = getattr(self, cmd)
-            return func
-        return None
 
     def getTime(self):
         """\

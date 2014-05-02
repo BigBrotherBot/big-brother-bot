@@ -19,10 +19,10 @@
 #
 # 2013-01-20 - 0.4.1 - Courgette
 # * improve punkbuster event parsing
+# 2014-05-02 - 0.4.2 - Fenix
+# * syntax cleanup
 #
-from b3.clients import Client
-from b3.lib.sourcelib import SourceQuery
-from b3.parser import Parser
+
 import asyncore
 import b3
 import b3.cron
@@ -31,11 +31,14 @@ import rcon
 import re
 import sys
 import time
+from b3.clients import Client
+from b3.lib.sourcelib import SourceQuery
+from b3.parser import Parser
 from ConfigParser import NoOptionError
 
 
 __author__  = 'Courgette'
-__version__ = '0.4.1'
+__version__ = '0.4.2'
 
 _gameevents_mapping = list()
 def gameEvent(*decorator_param):
@@ -44,7 +47,7 @@ def gameEvent(*decorator_param):
             if isinstance(param, type(re.compile(''))):
                 _gameevents_mapping.append((param, func))
             elif isinstance(param, basestring):
-                _gameevents_mapping.append((re.compile(param), func))
+                _gameevents_mapping.append((re.compile(str(param)), func))
         return func
     return wrapper
 
@@ -56,9 +59,9 @@ def getGameEventHandler(line):
     return None, {}
 
 class FrontlineParser(b3.parser.Parser):
-    '''
+    """
     The Frontline B3 parser class
-    '''
+    """
     gameName = "frontline"
     privateMsg = True
     OutputClass = rcon.Rcon

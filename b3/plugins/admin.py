@@ -9,14 +9,18 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
+#
+#   2014/05/02 - 1.28 - Fenix
+#   * Make use of the new getCmd function from functions module
+#   * Minor syntax fixes
 #   2014/04/21 - 1.27 - 82ndab-Bravo17
 #   * Change default messages to new format
 #   2014/03/20 - 1.26 - Fenix
@@ -152,7 +156,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.27'
+__version__ = '1.28'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon, Fenix'
 
 import re
@@ -163,18 +167,22 @@ import sys
 import traceback
 import thread
 import random
-from ConfigParser import NoOptionError
 import copy
+import b3.plugin
 
 from b3 import functions
 from b3.clients import Client, Group
 from b3.functions import minutesStr
-import b3.plugin
+from b3.functions import getCmd
+from ConfigParser import NoOptionError
 
 
 # pylint: disable-msg=E1103
 class AdminPlugin(b3.plugin.Plugin):
+
     _commands = {}
+
+    _tkPlugin = None
     _parseUserCmdRE = re.compile(r"^(?P<cid>'[^']{2,}'|[0-9]+|[^\s]{2,}|@[0-9]+)(\s+(?P<parms>.*))?$")
     _long_tempban_max_duration = 1440  # 60m/h x 24h = 1440m = 1d
     _warn_command_abusers = None
@@ -501,7 +509,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 if len(sp) == 2:
                     cmd, alias = sp
 
-                func = self.getCmd(cmd)
+                func = getCmd(self, cmd)
                 if func:
                     self.registerCommand(self, cmd, level, func, alias)
 
@@ -534,7 +542,7 @@ class AdminPlugin(b3.plugin.Plugin):
             elif len(superadmins) == 0:
                 self.verbose('No SuperAdmins found, enabling !iamgod')
                 # There are no superadmins, enable the !iamgod command
-                self.registerCommand(self, 'iamgod', 0, self.getCmd('iamgod'))
+                self.registerCommand(self, 'iamgod', 0, getCmd(self, 'iamgod'))
             else:
                 self.verbose('SuperAdmin(s) found, no need for !iamgod')
 
@@ -772,14 +780,6 @@ class AdminPlugin(b3.plugin.Plugin):
             return True
         else:
             return False
-
-    def getCmd(self, cmd):
-        cmd = 'cmd_%s' % cmd
-        if hasattr(self, cmd):
-            func = getattr(self, cmd)
-            return func
-
-        return None
 
     def get_cmdSoundingLike(self, c_word, client):
         c_list = []

@@ -17,56 +17,71 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
-# 2010-10-23 - 1.1 - Courgette
-#    * remove bfbc2 names
-# 2010-11-07 - 1.1.1 - GrosBedo
-#    * messages now support named $variables instead of %s
-# 2010-11-08 - 1.1.2 - GrosBedo
-#    * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
-# 2010-11-02 - 1.2 - Courgette
-#    * call getEasyName() in OnServerLoadinglevel
-#    * fix getSupportedMaps()
-#    * OnServerLoadinglevel() now fills game.rounds and game.sv_maxrounds 
-# 2010-11-21 - 1.3 - Courgette
+#
+#   2010-10-23 - 1.1 - Courgette
+#   * remove bfbc2 names
+#   2010-11-07 - 1.1.1 - GrosBedo
+#   * messages now support named $variables instead of %s
+#   2010-11-08 - 1.1.2 - GrosBedo
+#   * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
+#   2010-11-02 - 1.2 - Courgette
+#   * call getEasyName() in OnServerLoadinglevel
+#   * fix getSupportedMaps()
+#   * OnServerLoadinglevel() now fills game.rounds and game.sv_maxrounds
+#   2010-11-21 - 1.3 - Courgette
 #    * remove rotateMap and changeMap as their implementation differs for MoH 
-# 2011-05-22 - 1.4 - Courgette
-# * create specific events : EVT_GAME_ROUND_PLAYER_SCORES and EVT_GAME_ROUND_TEAM_SCORES
-# * handle Frostbite events : OnServerRoundover, OnServerRoundoverplayers and OnServerRoundoverteamscores
-# 2011-05-24 - 1.4.1 - Courgette
-# * fix getSupportedMaps() so it uses the maplist set for the next round instead of current
-# 2011-05-25 - 1.4.2 - Courgette
-# * fix bug introduced in 1.4.1
-# 2011-06-05 - 1.5.0 - Courgette
-# * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
-# 2011-11-05 - 1.5.1 - Courgette
-# * make sure to release the self.exiting lock
-# 2012-10-06 - 1.6 - Courgette
-# * isolate the patching code in a module function
-# 2013-01-20 - 1.6.1 - Courgette
-# * improve punkbuster event parsing
-# 2013-02-17 - 1.7 - Courgette
-# * add support for B3 event EVT_CLIENT_SQUAD_SAY
+#   2011-05-22 - 1.4 - Courgette
+#   * create specific events : EVT_GAME_ROUND_PLAYER_SCORES and EVT_GAME_ROUND_TEAM_SCORES
+#   * handle Frostbite events : OnServerRoundover, OnServerRoundoverplayers and OnServerRoundoverteamscores
+#   2011-05-24 - 1.4.1 - Courgette
+#   * fix getSupportedMaps() so it uses the maplist set for the next round instead of current
+#   2011-05-25 - 1.4.2 - Courgette
+#   * fix bug introduced in 1.4.1
+#   2011-06-05 - 1.5.0 - Courgette
+#   * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
+#   2011-11-05 - 1.5.1 - Courgette
+#   * make sure to release the self.exiting lock
+#   2012-10-06 - 1.6 - Courgette
+#   * isolate the patching code in a module function
+#   2013-01-20 - 1.6.1 - Courgette
+#   * improve punkbuster event parsing
+#   2013-02-17 - 1.7 - Courgette
+#   * add support for B3 event EVT_CLIENT_SQUAD_SAY
+#   2014-05-02 - 1.7.1 - Fenix
+#   * syntax cleanup
+#   * rewrote import statements
+#   * rewrote dictionary creation as literals
+#   * renamed sayqueuelistener() method in sayqueuelistenerworker(): was overwriting an attribute
+#   * correctly initialize variables before usage
 #
 __author__  = 'Courgette'
-__version__ = '1.7'
+__version__ = '1.7.1'
 
 
-import sys, re, traceback, time, string, Queue, threading
+import sys
+import re
+import traceback
+import time
+import string
+import Queue
+import threading
 import b3.parser
 import b3.parsers.frostbite.rcon as rcon
-from b3.parsers.frostbite.connection import FrostbiteConnection, FrostbiteException, FrostbiteCommandFailedError
-from b3.parsers.frostbite.util import PlayerInfoBlock
 import b3.events
-#from b3.parsers.frostbite.punkbuster import PunkBuster as Bfbc2PunkBuster
 import b3.cvar
+
 from b3.functions import soundex, levenshteinDistance
+from b3.parsers.frostbite.connection import FrostbiteConnection
+from b3.parsers.frostbite.connection import FrostbiteException
+from b3.parsers.frostbite.connection import FrostbiteCommandFailedError
+from b3.parsers.frostbite.util import PlayerInfoBlock
 
 SAY_LINE_MAX_LENGTH = 100
 
 class AbstractParser(b3.parser.Parser):
-    '''
+    """
     An abstract base class to help with developing frostbite parsers 
-    '''
+    """
     gameName = None
     privateMsg = True
     OutputClass = rcon.Rcon
@@ -80,22 +95,24 @@ class AbstractParser(b3.parser.Parser):
     # in order to get stripColors working
     _reColor = re.compile(r'(\^[0-9])') 
     
-    _settings = {}
-    _settings['line_length'] = 65
-    _settings['min_wrap_length'] = 65
-    _settings['message_delay'] = 2
+    _settings = {
+        'line_length': 65,
+        'min_wrap_length': 65,
+        'message_delay': 2
+    }
 
     _gameServerVars = () # list available cvar
 
-    _commands = {}
-    _commands['message'] = ('admin.say', '%(message)s', 'player', '%(cid)s')
-    _commands['say'] = ('admin.say', '%(message)s', 'all')
-    _commands['kick'] = ('admin.kickPlayer', '%(cid)s', '%(reason)s')
-    _commands['ban'] = ('banList.add', 'guid', '%(guid)s', 'perm', '%(reason)s')
-    _commands['banByIp'] = ('banList.add', 'ip', '%(ip)s', 'perm', '%(reason)s')
-    _commands['unban'] = ('banList.remove', 'guid', '%(guid)s')
-    _commands['unbanByIp'] = ('banList.remove', 'ip', '%(ip)s')
-    _commands['tempban'] = ('banList.add', 'guid', '%(guid)s', 'seconds', '%(duration)d', '%(reason)s')
+    _commands = {
+        'message': ('admin.say', '%(message)s', 'player', '%(cid)s'),
+        'say': ('admin.say', '%(message)s', 'all'),
+        'kick': ('admin.kickPlayer', '%(cid)s', '%(reason)s'),
+        'ban': ('banList.add', 'guid', '%(guid)s', 'perm', '%(reason)s'),
+        'banByIp': ('banList.add', 'ip', '%(ip)s', 'perm', '%(reason)s'),
+        'unban': ('banList.remove', 'guid', '%(guid)s'),
+        'unbanByIp': ('banList.remove', 'ip', '%(ip)s'),
+        'tempban': ('banList.add', 'guid', '%(guid)s', 'seconds', '%(duration)d', '%(reason)s')
+    }
 
     _eventMap = {
         'player.onKicked': b3.events.EVT_CLIENT_KICK,
@@ -128,11 +145,9 @@ class AbstractParser(b3.parser.Parser):
         self.updateDocumentation()
 
         while self.working:
-            """
-            While we are working, connect to the frostbite server
-            """
+            # While we are working, connect to the frostbite server
             if self._paused:
-                if self._pauseNotice == False:
+                if self._pauseNotice is False:
                     self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
                     self._pauseNotice = True
             else:
@@ -148,9 +163,7 @@ class AbstractParser(b3.parser.Parser):
                         
                     nbConsecutiveReadFailure = 0
                     while self.working:
-                        """
-                        While we are working and connected, read a packet
-                        """
+                        # While we are working and connected, read a packet
                         if not self._paused:
                             try:
                                 packet = self._serverConnection.readEvent()
@@ -196,7 +209,9 @@ class AbstractParser(b3.parser.Parser):
         
         eventType = packet[0]
         eventData = packet[1:]
-        
+
+        data = ''
+        func = ''
         match = re.search(r"^(?P<actor>[^.]+)\.on(?P<event>.+)$", eventType)
         if match:
             func = 'On%s%s' % (string.capitalize(match.group('actor')), \
@@ -243,12 +258,12 @@ class AbstractParser(b3.parser.Parser):
             #self.debug('punkbuster enabled in config')
             #self.PunkBuster = Bfbc2PunkBuster(self)
         
-        self.sayqueuelistener = threading.Thread(target=self.sayqueuelistener)
+        self.sayqueuelistener = threading.Thread(target=self.sayqueuelistenerworker)
         self.sayqueuelistener.setDaemon(True)
         self.sayqueuelistener.start()
 
     
-    def sayqueuelistener(self):
+    def sayqueuelistenerworker(self):
         while self.working:
             msg = self.sayqueue.get()
             for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
@@ -310,7 +325,7 @@ class AbstractParser(b3.parser.Parser):
             # Then we got a command
             if self.replay:
                 self.bot('Sent rcon message: %s' % msg)
-            elif self.output == None:
+            elif self.output is None:
                 pass
             else:
                 res = self.output.write(msg, maxRetries=maxRetries, needConfirmation=needConfirmation)
@@ -405,7 +420,7 @@ class AbstractParser(b3.parser.Parser):
             self.debug('Unable to retrieve scores from playerlist')
         return scores
     
-    def getPlayerPings(self):
+    def getPlayerPings(self, filter_client_ids=None):
         """Ask the server for a given client's pings
         """
         pings = {}
@@ -493,12 +508,12 @@ class AbstractParser(b3.parser.Parser):
                 if m.find(data) != -1:
                     shortmaplist.append(m)
             if len(shortmaplist) > 0:
-                shortmaplist.sort(key=lambda map: levenshteinDistance(data, string.replace(map.strip())))
+                shortmaplist.sort(key=lambda mapname: levenshteinDistance(data, mapname.strip()))
                 self.debug("shortmaplist sorted by distance : %s" % shortmaplist)
                 match = shortmaplist[:3]
             else:
                 easyNames = supportedEasyNames.keys()
-                easyNames.sort(key=lambda map: levenshteinDistance(data, map.strip()))
+                easyNames.sort(key=lambda mapname: levenshteinDistance(data, mapname.strip()))
                 self.debug("maplist sorted by distance : %s" % easyNames)
                 match = easyNames[:3]
         return match
@@ -718,6 +733,8 @@ class AbstractParser(b3.parser.Parser):
         on the type of PB message.
         """
         #self.debug("PB> %s" % data)
+        match = None
+        funcName = None
         if data and data[0]:
             for regexp, funcName in self._punkbusterMessageFormats:
                 match = re.match(regexp, str(data[0]).strip())
@@ -769,29 +786,28 @@ class AbstractParser(b3.parser.Parser):
         Part of this code is obsolete since R15, IP is saved to DB on OnPBNewConnection()
         """
         name = match.group('name')
-        dict = {
+        data = {
             'slot': match.group('slot'),
             'ip': match.group('ip'),
             'port': match.group('port'),
             'pbuid': match.group('pbuid'),
             'name': name
         }
-        """ Code Obsolete since R15:
-        client = self.clients.getByCID(dict['name'])
-        if not client:
-            matchingClients = self.storage.getClientsMatching( {'pbid': match.group('pbuid')} )
-            if matchingClients and len(matchingClients) == 0:
-                client = matchingClients[0]
-        if not client:
-            self.error('unable to find client %s. weird' %name )
-        else:
-            # update client data with PB id and IP
-            client.pbid = dict['pbuid']
-            client.ip = dict['ip']
-            client.save()
-        """
-        self.verbose('PB lost connection: %s' %dict)
-        return b3.events.Event(b3.events.EVT_PUNKBUSTER_LOST_PLAYER, dict)
+        # Code Obsolete since R15:
+        # client = self.clients.getByCID(dict['name'])
+        # if not client:
+        #     matchingClients = self.storage.getClientsMatching( {'pbid': match.group('pbuid')} )
+        #     if matchingClients and len(matchingClients) == 0:
+        #         client = matchingClients[0]
+        # if not client:
+        #     self.error('unable to find client %s. weird' %name )
+        # else:
+        #     # update client data with PB id and IP
+        #    client.pbid = dict['pbuid']
+        #     client.ip = dict['ip']
+        #     client.save()
+        self.verbose('PB lost connection: %s' % data)
+        return b3.events.Event(b3.events.EVT_PUNKBUSTER_LOST_PLAYER, data)
 
     def OnPBScheduledTask(self, match, data):
         """We get notified the server ran a PB scheduled task
@@ -826,9 +842,9 @@ class AbstractParser(b3.parser.Parser):
 
     def message(self, client, text):
         try:
-            if client == None:
+            if client is None:
                 self.say(text)
-            elif client.cid == None:
+            elif client.cid is None:
                 pass
             else:
                 self.write(self.getCommand('message', message=text, cid=client.cid))
@@ -918,7 +934,7 @@ class AbstractParser(b3.parser.Parser):
         if response == "OK":
             self.verbose('UNBAN: Removed guid (%s) from banlist' %client.guid)
             if admin:
-                admin.message('Unbanned: Removed %s guid from banlist' % (client.exactName))
+                admin.message('Unbanned: Removed %s guid from banlist' % client.exactName)
         
         if self.PunkBuster:
             self.PunkBuster.unBanGUID(client)

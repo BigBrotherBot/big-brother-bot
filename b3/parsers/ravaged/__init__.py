@@ -18,38 +18,48 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
-# 1.0 - 2012-10-19
-#   * feature complete - need live testing with real gameplay
-# 1.1 - 2012-10-19
-#   * recognize a new type of game event when a player dies by crashing a vehicule
-#   * add getNextMap()
-#   * fix changeMap()
-#   * improve getMapsSoundingLike()
-# 1.2 - 2012-10-20
-#   * fix: wasn't saving player names to database
-#   * change: reduce maximum line length in chat (or it would be truncated by the server)
-# 1.3 - 2012-10-22
-#   * fix: kill events so stats and xlrstats plugin can do their job
-#   * change: make getMap() crash proof
-# 1.4 - 2012-10-26
-#   * new: recognize game type from map names
-# 1.5 - 2012-11-14
-#   * new: get the game server hostname by querying the game server on its Source Query port
+
+# 1.0 - 2012-10-19 - feature complete - need live testing with real gameplay
+# 1.1 - 2012-10-19 - recognize a new type of game event when a player dies by crashing a vehicule
+#                  - add getNextMap()
+#                  - fix changeMap()
+#                  - improve getMapsSoundingLike()
+# 1.2 - 2012-10-20 - fix: wasn't saving player names to database
+#                  - change: reduce maximum line length in chat (or it would be truncated by the server)
+# 1.3 - 2012-10-22 - fix: kill events so stats and xlrstats plugin can do their job
+#                  - change: make getMap() crash proof
+# 1.4 - 2012-10-26 - new: recognize game type from map names
+# 1.5 - 2012-11-14 - new: get the game server hostname by querying the game server on its Source Query port
+# 1.6 - 2014-05-02 - rewrote import statements
+#                  - correctly declare getPlayerPings() method to match the one in Parser class
+#                  - removed some warnings
+#                  - fixed client retrieval in kick, ban and tempban function
 #
-from Queue import Queue, Full, Empty
+
 import logging
 import re
 import sys
 import time
 import traceback
-from b3 import version as b3_version, TEAM_UNKNOWN, TEAM_BLUE, TEAM_RED
+
+from b3 import version as b3_version
+from b3 import TEAM_UNKNOWN
+from b3 import TEAM_BLUE
+from b3 import TEAM_RED
 from b3.clients import Clients
-from b3.functions import time2minutes, getStuffSoundingLike, minutesStr
+from b3.functions import time2minutes
+from b3.functions import getStuffSoundingLike
+from b3.functions import minutesStr
 from b3.game_event_router import Game_event_router
 from b3.parser import Parser
-from b3.parsers.ravaged.ravaged_rcon import RavagedServerCommandError, RavagedServer, RavagedServerNetworkError, RavagedServerCommandTimeout, RavagedServerError
+from b3.parsers.ravaged.ravaged_rcon import RavagedServerCommandError
+from b3.parsers.ravaged.ravaged_rcon import RavagedServer
+from b3.parsers.ravaged.ravaged_rcon import RavagedServerNetworkError
+from b3.parsers.ravaged.ravaged_rcon import RavagedServerCommandTimeout
+from b3.parsers.ravaged.ravaged_rcon import RavagedServerError
 from b3.parsers.ravaged.rcon import Rcon as RavagedRcon
 from b3.lib.sourcelib import SourceQuery
+from Queue import Queue, Full, Empty
 
 
 __author__  = 'Courgette'
@@ -359,7 +369,7 @@ class RavagedParser(Parser):
             if len(clients) != 1:
                 return
             else:
-                client = client[0]
+                client = clients[0]
 
         if admin:
             fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
@@ -389,7 +399,7 @@ class RavagedParser(Parser):
             if len(clients) != 1:
                 return
             else:
-                client = client[0]
+                client = clients[0]
 
         if admin:
             fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
@@ -436,7 +446,7 @@ class RavagedParser(Parser):
             if len(clients) != 1:
                 return
             else:
-                client = client[0]
+                client = clients[0]
 
         if admin:
             fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=minutesStr(duration)))
@@ -505,7 +515,7 @@ class RavagedParser(Parser):
             return rv
 
 
-    def getPlayerPings(self):
+    def getPlayerPings(self, filter_client_ids=None):
         """\
         returns a dict having players' id for keys and players' ping for values
         """
@@ -632,7 +642,8 @@ class RavagedParser(Parser):
 
     def do_ban(self, client, reason=None):
         # kickban <steamid> reason <days>
-        self.do_tempban(client, duration="365d", reason=reason)
+        # Fenix: duration was 356d (converted into int to remove a warning)
+        self.do_tempban(client, duration=525600, reason=reason)
 
 
     def do_tempban(self, client, duration=2, reason=None):

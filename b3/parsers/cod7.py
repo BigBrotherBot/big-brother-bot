@@ -8,66 +8,78 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-# 15.01.2011 - 1.0.0 - Freelander, Courgette
+#   15.01.2011 - 1.0.0 - Freelander, Courgette
 #   * Initial release
-# 22.01.2011 - 1.0.1 - Freelander
+#   22.01.2011 - 1.0.1 - Freelander
 #   * Do not try to authenticate [3arc]democlient
 #   * Inherits from cod5 parser now to handle actions
-# 01.02.2011 - 1.0.2 - Freelander
+#   01.02.2011 - 1.0.2 - Freelander
 #   * Force glogsync to 1 on every round start as it may be lost after a 
 #     server restart/crash 
-# 01.02.2011 - 1.0.3 - Just a baka
+#   01.02.2011 - 1.0.3 - Just a baka
 #   * Pre-Match Logic
-# 08.02.2011 - 1.0.4 - Just a baka
+#   08.02.2011 - 1.0.4 - Just a baka
 #   * Reworked Pre-Match logic to reflect latest changes to cod7http
-# 02.03.2011 - 1.0.5 -Bravo17
+#   02.03.2011 - 1.0.5 -Bravo17
 #   * Added test to make sure cod7http still running
 #   * Tidied up startup console output
-# 02.04.2011 - 1.0.6 - Freelander
+#   02.04.2011 - 1.0.6 - Freelander
 #   * onK: Fix for suicide events to be handled correctly by XLRstats
 #   * Set playercount to 4 in pre-match logic
-# 09.04.2011 - 1.0.7 - Courgette
+#   09.04.2011 - 1.0.7 - Courgette
 #   * reflect that cid are not converted to int anymore in the clients module
-# 14.04.2011 - 1.0.8 - Freelander
+#   14.04.2011 - 1.0.8 - Freelander
 #   * Fixed rcon set command that was changed as setadmindvar in CoD7
-# 25.05.2011 - 1.1 - Courgette
+#   25.05.2011 - 1.1 - Courgette
 #   * kick commands now sends reason
-# 30.12.2011 - 1.2 - Bravo17
+#   30.12.2011 - 1.2 - Bravo17
 #   * New client will now join Auth queue if slot shows as 'Disconnected' in Auth queue
-# 25.07.2012 - 1.2.1 - Courgette
+#   25.07.2012 - 1.2.1 - Courgette
 #   * Make sure the cod7http plugin is loaded
-# 10.05.2013 - 1.2.2 -82ndab.Bravo17
-#  * Do not apply cod5 alterations to admin plugin
+#   10.05.2013 - 1.2.2 - 82ndab.Bravo17
+#   * Do not apply cod5 alterations to admin plugin
+#   02.05.2014 - 1.2.3 - Fenix
+#   * Rewrote dictionary creation as literal
+#   * Replace attribute names using python built-in ones
+#   * Correctly use self._preMatch instead of self.preMatch in if-else clause
+#   * include Cod7Rcon class declaration in cod7.py module
 #
 
 ## @file
 #  CoD7 Parser
 
 __author__  = 'Freelander, Courgette, Just a baka, Bravo17'
-__version__ = '1.2.2'
+__version__ = '1.2.3'
 
+import os
+import b3
 import re
 import string
 import threading
-import b3.parsers.cod7_rcon as rcon
 import b3.parsers.cod5
-import os
+import b3.parsers.q3a.rcon
+
+
+class Cod7Rcon(b3.parsers.q3a.rcon.Rcon):
+    rconsendstring = '\xff\xff\xff\xff\x00%s %s\00'
+    rconreplystring = '\xff\xff\xff\xff\x01print\n'
 
 class Cod7Parser(b3.parsers.cod5.Cod5Parser):
+
     gameName = 'cod7'
     IpsOnly = False
-    _guidLength = 5
-    OutputClass = rcon.Cod7Rcon
+    OutputClass = Cod7Rcon
 
+    _guidLength = 5
     _usePreMatchLogic = True
     _preMatch = False
     _elFound = True
@@ -77,15 +89,16 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
     _logTimerOld = 0
     _cod7httpplugin = None
 
-    _commands = {}
-    _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
-    _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
-    _commands['say'] = 'say %(prefix)s %(message)s'
-    _commands['set'] = 'setadmindvar %(name)s "%(value)s"'
-    _commands['kick'] = 'clientkick %(cid)s "%(reason)s"'
-    _commands['ban'] = 'banclient %(cid)s'
-    _commands['unban'] = 'unbanuser "%(name)s"'
-    _commands['tempban'] = 'clientkick %(cid)s "%(reason)s"'
+    _commands = {
+        'message': 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s',
+        'deadsay': 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s',
+        'say': 'say %(prefix)s %(message)s',
+        'set': 'setadmindvar %(name)s "%(value)s"',
+        'kick': 'clientkick %(cid)s "%(reason)s"',
+        'ban': 'banclient %(cid)s',
+        'unban': 'unbanuser "%(name)s"',
+        'tempban': 'clientkick %(cid)s "%(reason)s"'
+    }
 
     """\
     Next actions need translation to the EVT_CLIENT_ACTION (Treyarch has a different approach on actions)
@@ -114,9 +127,9 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
             raise SystemExit(220)
 
         # get map from the status rcon command
-        map = self.getMap()
-        if map:
-            self.game.mapName = map
+        mapname = self.getMap()
+        if mapname:
+            self.game.mapName = mapname
             self.info('map is: %s'%self.game.mapName)
 
         if self.config.has_option('server', 'use_prematch_logic'):
@@ -199,7 +212,7 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
 
         # Round switch (InitGame after ShutdownGame, but there was no ExitLevel):
         if self._preMatch and not self._elFound and self._igBlockFound and self._sgFound and self._logTimerOld <= self._logTimer:
-            self.preMatch = False
+            self._preMatch = False
             self.debug('PRE-MATCH OFF: found a round change.')
             self._igBlockFound = False
             self._sgFound = False
@@ -305,7 +318,7 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
             t = threading.Timer(2, self.newPlayer, (cid, codguid, name))
             t.start()
             self.debug('%s connected, waiting for Authentication...' %name)
-            self.debug('Our Authentication queue: %s' % self._counter)
+            self.debug('Our Authentication queue: %s' % self._counter.__str__())
 
     # kill
     def OnK(self, action, data, match=None):

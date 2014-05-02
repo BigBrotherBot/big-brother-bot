@@ -8,49 +8,56 @@
 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-# v1.1.2  : xlr8or - Alternate approach on the <32 character guid issue
-# v1.1.3  : xlr8or - Improved approach for non PB servers
-#         : Tighter regexp for playernames. _reColor strips ascii <33, 47 and >127
-#           This includes spaces and also the / is removed. 
-# v1.1.4  : xlr8or - Removed bug for non PB servers
-# v1.1.5  : Bakes - Improved suicide code, now works with weapon suicides, not falling.
-# v1.1.6  : xlr8or - Minor bugfix regarding unassigned pbid on non pb servers.
-# v1.2.0  : xlr8or - Big CoD4 MakeOver 
-# 17/1/2010 - 1.2.1 - xlr8or
-#  * Moved OnInitgame and OnExitlevel to codparser!
-# 25/1/2010 - 1.3.0 - xlr8or - refactored cod parser series
-# 27/1/2010 - 1.3.1 - xlr8or
-#  * Added authorizeClients() for IpsOnly
-#  * Minor bugfix in sync() for IpsOnly
-# 31/1/2010 - 1.3.2 - xlr8or
-#  * Modified unban to remove bans from game's ban list
-# 1/5/2010 - 1.3.2 - xlr8or - delegate guid length checking to cod parser
-# 7/11/2010 - 1.3.3 - GrosBedo
-#    * messages now support named $variables instead of %s
-# 8/11/2010 - 1.3.4 - GrosBedo
-#    * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
-# 22/1/2012 - 1.3.5 -82ndab-Bravo17
-#    * Add JT method for some COD4 mods
-# 7/3/2012 - 1.3.6 - 82ndab-Bravo17
-#    * Change Client Auth method so it updates empty pbids
-# 2012/11/18 - 1.3.7 - Courgette
-#    * fix: player not authenticated (without punkbuster) when qport or port is a negative number
-# 2013/01/02 - 1.3.8 - Courgette
-#    * improve parsing rcon status status responses that are missing characters
-# 2013/01/12 - 1.3.9 - Courgette
-#    * fix bug when cod4ClientAuthMethod handles an unexpected error
-# 2013/05/10 - 1.4.0 - 82ndab.Bravo17
-#    * Allow kicking by full name, even if not authed by B3
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+#
+# CHANGELOG
+#
+#   v1.1.2  : xlr8or - Alternate approach on the <32 character guid issue
+#   v1.1.3  : xlr8or - Improved approach for non PB servers
+#           : Tighter regexp for playernames. _reColor strips ascii <33, 47 and >127
+#             This includes spaces and also the / is removed.
+#   v1.1.4  : xlr8or - Removed bug for non PB servers
+#   v1.1.5  : Bakes - Improved suicide code, now works with weapon suicides, not falling.
+#   v1.1.6  : xlr8or - Minor bugfix regarding unassigned pbid on non pb servers.
+#   v1.2.0  : xlr8or - Big CoD4 MakeOver
+#
+#   17/1/2010 - 1.2.1 - xlr8or
+#   * Moved OnInitgame and OnExitlevel to codparser!
+#   25/1/2010 - 1.3.0 - xlr8or - refactored cod parser series
+#   27/1/2010 - 1.3.1 - xlr8or
+#   * Added authorizeClients() for IpsOnly
+#   * Minor bugfix in sync() for IpsOnly
+#   31/1/2010 - 1.3.2 - xlr8or
+#   * Modified unban to remove bans from game's ban list
+#   1/5/2010 - 1.3.2 - xlr8or - delegate guid length checking to cod parser
+#   7/11/2010 - 1.3.3 - GrosBedo
+#   * messages now support named $variables instead of %s
+#   8/11/2010 - 1.3.4 - GrosBedo
+#   * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
+#   22/1/2012 - 1.3.5 -82ndab-Bravo17
+#   * Add JT method for some COD4 mods
+#   7/3/2012 - 1.3.6 - 82ndab-Bravo17
+#   * Change Client Auth method so it updates empty pbids
+#   2012/11/18 - 1.3.7 - Courgette
+#   * fix: player not authenticated (without punkbuster) when qport or port is a negative number
+#   2013/01/02 - 1.3.8 - Courgette
+#   * improve parsing rcon status status responses that are missing characters
+#   2013/01/12 - 1.3.9 - Courgette
+#   * fix bug when cod4ClientAuthMethod handles an unexpected error
+#   2013/05/10 - 1.4.0 - 82ndab.Bravo17
+#   * Allow kicking by full name, even if not authed by B3
+#   2014/05/02 - 1.4.1 - Fenix
+#   * Rewrote dictionary creation as literal
 #
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.0'
+__version__ = '1.4.1'
 
 import b3.parsers.cod2
 import b3.functions
@@ -59,20 +66,22 @@ from b3 import functions
 
 
 class Cod4Parser(b3.parsers.cod2.Cod2Parser):
+
     gameName = 'cod4'
     IpsOnly = False
     _guidLength = 32
     
-    _commands = {}
-    _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
-    _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
-    _commands['say'] = 'say %(prefix)s %(message)s'
-    _commands['set'] = 'set %(name)s "%(value)s"'
-    _commands['kick'] = 'clientkick %(cid)s'
-    _commands['ban'] = 'banclient %(cid)s'
-    _commands['unban'] = 'unbanuser %(name)s' # remove players from game engine's ban.txt
-    _commands['tempban'] = 'clientkick %(cid)s'
-    _commands['kickbyfullname'] = 'kick %(cid)s'
+    _commands = {
+        'message': 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s',
+        'deadsay': 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s',
+        'say': 'say %(prefix)s %(message)s',
+        'set': 'set %(name)s "%(value)s"',
+        'kick': 'clientkick %(cid)s',
+        'ban': 'banclient %(cid)s',
+        'unban': 'unbanuser %(name)s',
+        'tempban': 'clientkick %(cid)s',
+        'kickbyfullname': 'kick %(cid)s'
+    }
 
     #num score ping guid                             name            lastmsg address               qport rate
     #--- ----- ---- -------------------------------- --------------- ------- --------------------- ----- -----

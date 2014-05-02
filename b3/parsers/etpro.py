@@ -8,19 +8,26 @@
 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
-# 05/04/2009: 0.0.1: Updating so that it works for etpro
-# 31/01/2010 - 0.0.2 - Courgette
-# * getMap() is now inherited from q3a
-# 09/04/2011 - 0.0.3 - Courgette
-# * reflect that cid are not converted to int anymore in the clients module
+#
+#   05/04/2009: 0.0.1
+#   * Updating so that it works for etpro
+#   31/01/2010 - 0.0.2 - Courgette
+#   * getMap() is now inherited from q3a
+#   09/04/2011 - 0.0.3 - Courgette
+#   * Reflect that cid are not converted to int anymore in the clients module
+#   02/05/2014 - 0.0.4 - Fenix
+#   * rewrote dictionary creation as literal
+#   * removed some warnings
+#   * minor syntax changes
+#   * replaced variable named using python built-in names
 #
 #
 # CREDITS
@@ -40,8 +47,8 @@
 # - say (chat window, with "console: " in front)
 
 
-__author__    = 'xlr8or, ailmanki'
-__version__ = '0.0.3'
+__author__ = 'xlr8or, ailmanki'
+__version__ = '0.0.4'
 
 import re, string
 import b3
@@ -50,24 +57,26 @@ from b3.parsers.q3a.abstractParser import AbstractParser
 import b3.parsers.punkbuster
 
 class EtproParser(AbstractParser):
+
     gameName = 'etpro'
     IpsOnly = False    # Setting True will use ip's only for identification.
     IpCombi = False    # Setting True will replace last part of the guid with 2 segments of the ip.
 
-    _settings = {}
-    _settings['line_length'] = 65
-    _settings['min_wrap_length'] = 100
+    _settings = {
+        'line_length': 65,
+        'min_wrap_length': 100
+    }
 
     _empty_name_default = 'EmptyNameDefault'
 
-    _commands = {}
-    _commands['message'] = 'm %(name)s %(prefix)s^7 %(message)s'
-    _commands['deadsay'] = 'm %(name)s %(prefix)s [DEAD]^7 %(message)s'
-    _commands['say'] = 'cpmsay %(prefix)s %(message)s'
-    _commands['set'] = 'set %(name)s "%(value)s"'
-    _commands['kick'] = 'clientkick %(cid)s'
-    _commands['ban'] = 'banid %(cid)s'
-    _commands['tempban'] = 'clientkick %(cid)s'
+    _commands = {
+        'message': 'm %(name)s %(prefix)s^7 %(message)s',
+        'deadsay': 'm %(name)s %(prefix)s [DEAD]^7 %(message)s',
+        'say': 'cpmsay %(prefix)s %(message)s',
+        'set': 'set %(name)s "%(value)s"',
+        'kick': 'clientkick %(cid)s',
+        'ban': 'banid %(cid)s',
+        'tempban': 'clientkick %(cid)s'}
 
     _eventMap = {
         'warmup' : b3.events.EVT_GAME_WARMUP,
@@ -210,17 +219,17 @@ class EtproParser(AbstractParser):
         #    self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
 
         # get map from the status rcon command
-        map = self.getMap()
-        if map:
-            self.game.mapName = map
+        mapname = self.getMap()
+        if mapname:
+            self.game.mapName = mapname
             self.info('map is: %s'%self.game.mapName)
 
 #---------------------------------------------------------------------------------------------------
 
     # Added for debugging and identifying/catching log lineparts
     def getLineParts(self, line):
+        m = None
         line = re.sub(self._lineClear, '', line, 1)
-
         for f in self._lineFormats:
             m = re.match(f, line)
             if m:
@@ -230,7 +239,7 @@ class EtproParser(AbstractParser):
         if m:
             client = None
             target = None
-            return (m, m.group('action').lower(), m.group('data').strip(), client, target)
+            return m, m.group('action').lower(), m.group('data').strip(), client, target
         elif '------' not in line:
             self.verbose('XLR--------> line did not match format: %s' % line)
 
@@ -326,10 +335,8 @@ class EtproParser(AbstractParser):
         # fix event for team change and suicides and tk
         if attacker.cid == victim.cid:
             if weapon == self.MOD_SWITCHTEAM:
-                """
-                Do not pass a teamchange event here. That event is passed
-                shortly after the kill (in clients.py by adjusting the client object).
-                """
+                # Do not pass a teamchange event here. That event is passed
+                # shortly after the kill (in clients.py by adjusting the client object).
                 self.verbose('Team Change Event Caught, exiting')
                 return None
             else:
@@ -470,9 +477,9 @@ class EtproParser(AbstractParser):
 
     def message(self, client, text):
         try:
-            if client == None:
+            if client is None:
                 self.say(text)
-            elif client.cid == None:
+            elif client.cid is None:
                 pass
             else:
                 lines = []
@@ -535,9 +542,7 @@ class EtproParser(AbstractParser):
 
 
     def getMaps(self):
-        m=[]
-        m.append('Command not supported!')
-        return m
+        return ['Command not supported!']
 
     def getNextMap(self):
         return 'Command not supported!'
@@ -571,29 +576,26 @@ class EtproParser(AbstractParser):
         return mlist
 
 
-#---- Documentation --------------------------------------------------------------------------------
-"""
-
-//infos clienuserinfochanged
-//0 = player_ID
-//n = name
-//t = team
-//c = class
-//r = rank
-//m = medals
-//s = skills
-//dn = disguised name
-//dr = disguised rank
-//w = weapon
-//lw = weapon last used
-//sw = 2nd weapon (not sure)
-//mu = muted
-//ref = referee
-//lw = latched weapon (weapon on next spawn)
-//sw = latched secondary weapon (secondary weapon on next spawn)
-//p = privilege level (peon = 0, referee (vote), referee (password), semiadmin, rconauth) (etpro only)
-//ss = stats restored by stat saver (etpro only)
-//sc = shoutcaster status (etpro only)
-//tv = ETTV slave (etpro only)
-
-"""
+# ---- Documentation --------------------------------------------------------------------------------
+#
+#//infos clienuserinfochanged
+#//0 = player_ID
+#//n = name
+#//t = team
+#//c = class
+#//r = rank
+#//m = medals
+#//s = skills
+#//dn = disguised name
+#//dr = disguised rank
+#//w = weapon
+#//lw = weapon last used
+#//sw = 2nd weapon (not sure)
+#//mu = muted
+#//ref = referee
+#//lw = latched weapon (weapon on next spawn)
+#//sw = latched secondary weapon (secondary weapon on next spawn)
+#//p = privilege level (peon = 0, referee (vote), referee (password), semiadmin, rconauth) (etpro only)
+#//ss = stats restored by stat saver (etpro only)
+#//sc = shoutcaster status (etpro only)
+#//tv = ETTV slave (etpro only)

@@ -9,15 +9,16 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 #
 # CHANGELOG
+#
 # 2012/07/24 - 0.0 - Courgette
 #  * parser created
 # 2012/08/08 - 1.0 - Courgette
@@ -102,6 +103,8 @@
 #     * use integer value while calling tempban method: remove another silly warning
 #     * rewritten regular expressions on multiline: respect pep8 constraint of 110 chars per line
 #     * remove duplicate reference of event ids
+# 2014/05/02 - 1.24.1 - Fenix
+#     * correctly initialized spamcontrolPlugin class attribute
 #
 
 import b3
@@ -115,7 +118,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__ = 'Courgette, Fenix'
-__version__ = '1.24'
+__version__ = '1.24.1'
 
 
 class Iourt42Client(Client):
@@ -415,6 +418,8 @@ class Iourt42Parser(Iourt41Parser):
     _re_authwhois = re.compile(r'^auth: id: (?P<cid>\d+) - name: \^7(?P<name>.+?) - login: (?P<login>.*?) - '
                                r'notoriety: (?P<notoriety>.+?) - level: (?P<level>-?\d+?)(?:\s+- (?P<extra>.*))?\s*$',
                                re.MULTILINE)
+
+    spamcontrolPlugin = None
 
     _permban_with_frozensand = False
     _tempban_with_frozensand = False

@@ -9,18 +9,23 @@
 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 #
 # CHANGELOG
-# 13/01/2014 - 1.1 - Fenix
-# * pep8 coding style guide
-# * correctly set client bot flag upon new client connection
+#
+#   13/01/2014 - 1.1 - Fenix
+#   * PEP8 coding style guide
+#   * correctly set client bot flag upon new client connection
+#   02/05/2014 - 1.2 - Fenix
+#   * correctly initialize variable before referencing
+#   * use the correct number of parameters while calling queryClientUserInfoByName
+#
 
 __author__ = 'xlr8or, ~cGs*Pr3z, ~cGs*AQUARIUS'
 __version__ = '1.1'
@@ -372,6 +377,7 @@ class Sof2Parser(AbstractParser):
     def OnClientuserinfochanged(self, action, data, match=None):
         # ClientUserinfoChanged: 0 n\xlr8or\t\0\identity\NPC_Sam/sam_gladstone
         _id = None
+        client = None
         if self._clientConnectID is not None:
             _id = self._clientConnectID
 
@@ -719,7 +725,7 @@ class Sof2Parser(AbstractParser):
         if client:
             return client
         else:
-            userinfostring = self.queryClientUserInfoByName(name)
+            userinfostring = self.queryClientUserInfoByName('-1', name)
             if userinfostring:
                 self.OnClientuserinfo(None, userinfostring)
             return self.clients.getByExactName(name)

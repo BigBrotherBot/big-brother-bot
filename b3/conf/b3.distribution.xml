@@ -125,6 +125,7 @@
 		<plugin name="status" config="@conf/plugin_status.ini" />
 		<plugin name="welcome" config="@conf/plugin_welcome.ini" />
 		<plugin name="punkbuster" config="@conf/plugin_punkbuster.ini" />
+        <plugin name="cmdmanager" config="@conf/plugin_cmdmanager.ini" />
 
 		<!-- The next plugins are external, 3rd party plugins and should reside in the external_dir. Example: -->
 		<!-- plugin config="@b3/extplugins/conf/newplugin.xml" name="newplugin" -->

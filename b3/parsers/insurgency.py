@@ -22,19 +22,28 @@
 #
 # 2014-04-01 - 0.1 - Courgette
 #   * copied from csgo
+# 2014-05-02 - 0.2 - Fenix
+#   * rewrote import statements
+#   * initialize missing class attributes
+#   * fixed getPlayerPings method declaration not matching the method in Parser class
+#   * fixed client retrieval in kick, ban and tempban function
 #
 
 import re
 import time
-from b3.clients import Client, Clients
-from b3.functions import minutesStr, time2minutes, getStuffSoundingLike
+
+from b3.clients import Client
+from b3.clients import Clients
+from b3.functions import minutesStr
+from b3.functions import time2minutes
+from b3.functions import getStuffSoundingLike
 from b3.parser import Parser
 from b3 import TEAM_UNKNOWN, TEAM_BLUE, TEAM_RED
 from b3.game_event_router import Game_event_router
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '0.1'
+__version__ = '0.2'
 
 
 # GAME SETUP
@@ -92,6 +101,9 @@ class InsurgencyParser(Parser):
     _reColor = re.compile(r'(\^[0-9])')
 
     _settings = dict(line_length=200, min_wrap_length=200)
+
+    sm_plugins = None
+    last_killlocation_properties = None
 
     ###############################################################################################
     #
@@ -535,7 +547,7 @@ class InsurgencyParser(Parser):
             if len(clients) != 1:
                 return
             else:
-                client = client[0]
+                client = clients[0]
 
         if admin:
             fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client,
@@ -567,7 +579,7 @@ class InsurgencyParser(Parser):
             if len(clients) != 1:
                 return
             else:
-                client = client[0]
+                client = clients[0]
 
         if admin:
             fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client,
@@ -633,7 +645,7 @@ class InsurgencyParser(Parser):
             if len(clients) != 1:
                 return
             else:
-                client = client[0]
+                client = clients[0]
 
         if admin:
             fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client,
@@ -692,7 +704,7 @@ class InsurgencyParser(Parser):
         else:
             return rv
 
-    def getPlayerPings(self):
+    def getPlayerPings(self, filter_client_ids=None):
         """\
         returns a dict having players' id for keys and players' ping for values
         """

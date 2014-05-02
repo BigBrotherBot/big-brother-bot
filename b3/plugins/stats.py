@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # CHANGELOG
+#
+#    2014/05/02 - 1.4.1 - Fenix
+#    * Make use of the new getCmd function from functions module
 #    2013/10/30 - 1.4 Courgette
 #    * fix bug when using the !testscore command against a team mate
 #    * display topstat and topxp awards on EVT_GAME_MAP_CHANGE event additionally to the EVT_GAME_EXIT event.
@@ -45,14 +48,17 @@
 #    * Added !topstats command
 #    8/29/2005 - 1.1.0 - ThorN
 #    * Converted to use new event handlers
+
 from ConfigParser import NoOptionError, NoSectionError
 import string
 import b3
 import b3.events
 import b3.plugin
 
+from b3.functions import getCmd
+
 __author__ = 'ThorN, GrosBedo'
-__version__ = '1.4'
+__version__ = '1.4.1'
 
 
 class StatsPlugin(b3.plugin.Plugin):
@@ -185,7 +191,7 @@ class StatsPlugin(b3.plugin.Plugin):
                 alias = None
                 if len(sp) == 2:
                     cmd, alias = sp
-                func = self.getCmd(cmd)
+                func = getCmd(self, cmd)
                 if func:
                     self._adminPlugin.registerCommand(self, cmd, level, func, alias)
 
@@ -239,14 +245,6 @@ class StatsPlugin(b3.plugin.Plugin):
                 self.clientKill(event.client, event.target, int(event.data[0]))
             elif event.type == b3.events.EVT_CLIENT_KILL_TEAM:
                 self.clientKillTeam(event.client, event.target, int(event.data[0]))
-
-    def getCmd(self, cmd):
-        """ return the method for a given command  """
-        cmd = 'cmd_%s' % cmd
-        if hasattr(self, cmd):
-            func = getattr(self, cmd)
-            return func
-        return None
 
     def clientDamage(self, killer, victim, points):
         if points > 100:

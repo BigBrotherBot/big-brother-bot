@@ -14,9 +14,10 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
+
 # 07/28/2012    0.1     Initial release
 # 08/31/2012    0.12    Various fixes and cleanups
 # 09/01/2012    0.13    Check for non-verified GUIDs in Player List from server
@@ -52,19 +53,33 @@
 #   - Added more commands to the commands list
 # 22/12/2013   1.1.3
 #   - Sync won't remove clients which are already connected but do not get have their GUID calculated
+# 02/05/2014c  1.1.4
+#   - rewrote import statements
+#   - correctly declare getPlayerPings() method to match the declaration in Parser class
+#
 
-import sys, re, traceback, time, Queue, threading
-from logging import Formatter
-from b3.output import VERBOSE2, VERBOSE
+import sys
+import re
+import traceback
+import time
+import Queue
+import threading
 import b3.parser
-from b3.parsers.battleye.rcon import Rcon as BattleyeRcon
-from b3.parsers.battleye.protocol import BattleyeServer, CommandFailedError, CommandError, BattleyeError, NetworkError
 import b3.events
 import b3.cvar
+
+from b3.parsers.battleye.rcon import Rcon as BattleyeRcon
+from b3.parsers.battleye.protocol import BattleyeServer
+from b3.parsers.battleye.protocol import CommandFailedError
+from b3.parsers.battleye.protocol import CommandError
+from b3.parsers.battleye.protocol import BattleyeError
+from b3.parsers.battleye.protocol import NetworkError
+from logging import Formatter
+from b3.output import VERBOSE2, VERBOSE
 from b3.clients import Clients
 
 __author__  = '82ndab-Bravo17, Courgette'
-__version__ = '1.1.3'
+__version__ = '1.1.4'
 
 
 # disable the authorizing timer that come by default with the b3.clients.Clients class
@@ -994,7 +1009,7 @@ class AbstractParser(b3.parser.Parser):
         pass
 
         
-    def getPlayerPings(self):
+    def getPlayerPings(self, filter_client_ids=None):
         """Ask the server for all clients' pings"""
         #Players on server:
         #[#] [IP Address]:[Port] [Ping] [GUID] [Name]\n--------------------------------------------------

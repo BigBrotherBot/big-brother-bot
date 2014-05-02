@@ -8,36 +8,49 @@
 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
+# CHANGELOG
+#
+#   02/5/2014 - 0.0.2 - Fenix
+#   * Added missing import statements
+#   * Fixed wrong import statement for PunkBuster
+#   * Syntax
 
 __author__  = 'ThorN'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
-import re, string
+import re
+import string
 import b3
+import b3.events
+
+from b3.parsers.punkbuster import PunkBuster
 from b3.parsers.q3a.abstractParser import AbstractParser
-import PunkBuster
 
 class EtParser(AbstractParser):
+
     gameName = 'et'
     privateMsg = False
-    _settings = {}
-    _settings['line_length'] = 65
-    _settings['min_wrap_length'] = 90
 
-    _commands = {}
-    _commands['message'] = 'qsay %s %s ^8[pm]^7 %s'
-    _commands['say'] = 'qsay %s %s'
-    _commands['set'] = 'set %s %s'
-    _commands['kick'] = 'clientkick %s %s'
-    _commands['ban'] = 'banid %s %s'
-    _commands['tempban'] = 'clientkick %s %s'
+    _settings = {
+        'line_length': 65,
+        'min_wrap_length': 90
+    }
+
+    _commands = {
+        'message': 'qsay %s %s ^8[pm]^7 %s',
+        'say': 'qsay %s %s',
+        'set': 'set %s %s',
+        'kick': 'clientkick %s %s',
+        'ban': 'banid %s %s',
+        'tempban': 'clientkick %s %s'
+    }
 
     _eventMap = {
         'warmup' : b3.events.EVT_GAME_WARMUP,
@@ -77,9 +90,9 @@ class EtParser(AbstractParser):
 
     def message(self, client, text):
         try:
-            if client == None:
+            if client is None:
                 self.say(text)
-            elif client.cid == None:
+            elif client.cid is None:
                 pass
             else:
                 lines = []
@@ -122,7 +135,7 @@ class EtParser(AbstractParser):
         client.name = self.stripColors(client.exactName)
         self.clients.update(client)
 
-    #1579:03ClientUserinfoChangedGUID: 0 E24F9B2702B9E4A1223E905BF597FA92 n\^w[^2AS^w]^2Lead\t\3\c\3\r\0\m\0000000\s\0000000\dn\\dr\0\w\3\lw\3\sw\7\mu\0\ref\0
+    #1579:03ClientUserinfoChangedGUID: 0 E24F9B2702B9E4A1223E905BF597FA92 n\^w[^2AS^w]^2Lead\t\3\c\3\r\0\m\0000000\s...
     def OnClientuserinfochangedguid(self, action, data, match=None):
         client = self.clients.getByCID(match.group('cid'))
         cid, pbid, data = string.split(data, ' ', 2)
