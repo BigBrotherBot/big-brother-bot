@@ -229,7 +229,7 @@ class Test_plugin(SpamcontrolTestCase):
         self.joe.clearMessageHistory()
         self.joe.says("!spamins")
         # THEN
-        self.assertListEqual(['You do not have sufficient access to use !spamins'], self.joe.message_history)
+        self.assertListEqual(['You need to be in group Moderator to use !spamins'], self.joe.message_history)
         # WHEN
         self.superadmin.says("!putgroup joe mod")
         self.joe.clearMessageHistory()

@@ -207,7 +207,7 @@ class Test_cmd_xlrstats(XlrstatsTestCase):
         # WHEN
         self.p1.says("!xlrstats")
         # THEN
-        self.assertEqual(['You do not have sufficient access to use !xlrstats'], self.p1.message_history)
+        self.assertEqual(['You need to be in group User to use !xlrstats'], self.p1.message_history)
 
     def test_registered_player(self):
         # GIVEN
