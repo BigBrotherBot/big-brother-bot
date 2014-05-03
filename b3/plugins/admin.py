@@ -18,6 +18,8 @@
 #
 # CHANGELOG
 #
+#   2014/05/03 - 1.28.1 - Fenix
+#   * Tell player why he is not allowed to use a certain command (issue #183)
 #   2014/05/02 - 1.28 - Fenix
 #   * Make use of the new getCmd function from functions module
 #   * Minor syntax fixes
@@ -734,6 +736,7 @@ class AdminPlugin(b3.plugin.Plugin):
                     return False
 
             if command.canUse(event.client):
+
                 try:
                     if event.data[:1] == self.cmdPrefixLoud and event.client.maxLevel >= 9:
                         results = command.executeLoud(data, event.client)
@@ -752,6 +755,7 @@ class AdminPlugin(b3.plugin.Plugin):
                     self.console.queueEvent(self.console.getEvent('EVT_ADMIN_COMMAND',
                                                                   (command, data, results), event.client))
             else:
+
                 if self._warn_command_abusers and event.client.maxLevel < self._admins_level:
                     event.client.var(self, 'noCommand', 0).value += 1
                     if event.client.var(self, 'noCommand').toInt() >= 3:
@@ -762,9 +766,18 @@ class AdminPlugin(b3.plugin.Plugin):
                 if command.level is None:
                     event.client.message('^7%s%s command is disabled' % (self.cmdPrefix, cmd))
                 else:
-                    self.info("%s does not have sufficient rights to use %s%s. Required level: %s"
-                              % (event.client.name, self.cmdPrefix, cmd, command.level[0]))
-                    if self._warn_command_abusers:
+                    self.info("%s does not have sufficient rights to use %s%s. "
+                              "Required level: %s" % (event.client.name, self.cmdPrefix, cmd, command.level[0]))
+                    try:
+                        # show the preconfigured message
+                        group = self.console.getGroup(command.level[0])
+                        event.client.message(self.getMessage('cmd_not_enough_access', {'group_name': group.name,
+                                                                                       'prefix': self.cmdPrefix,
+                                                                                       'command': cmd}))
+                    except Exception, e:
+                        # fallback to default one if we errors shows up (mostly invalid command level/group specified
+                        # in the configuration file thus we fail in retrieving the group from the storage)
+                        self.warning("could not format 'cmd_not_enough_access' message (using default): %s" % e)
                         event.client.message('^7You do not have sufficient access to use %s%s' % (self.cmdPrefix, cmd))
 
     ####################################################################################################################
