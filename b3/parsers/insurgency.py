@@ -39,7 +39,7 @@ from b3.functions import time2minutes
 from b3.functions import getStuffSoundingLike
 from b3.parser import Parser
 from b3 import TEAM_UNKNOWN, TEAM_BLUE, TEAM_RED
-from b3.game_event_router import Game_event_router
+from b3.decorators import Game_event_router
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'

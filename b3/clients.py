@@ -10,14 +10,20 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
+#
+#    2014/05/05 - 1.6.4 - Fenix
+#    * fixed None comparison performed with equality operators
+#    * removed class attributes duplicate declaration
+#    * added missing super constructor to Clients class
+#    * simplified some chained comparisons
 #    2014/02/22 - 1.6.3 - courgette
 #    * fix issue 162 - 'None' string get written to the database 'clients.pbid' column when Client.pbid is None
 #    2014/01/11 - 1.6.2 - courgette
@@ -79,6 +85,7 @@
 #     Added data field to Penalty
 #     Added data parameter to Client.warn()
 #     Added data parameter to Client.tempban()
+
 import b3
 import b3.events
 import functions
@@ -100,49 +107,41 @@ class ClientVar(object):
         self.value = value
 
     def toInt(self):
-        if self.value == None:
+        if self.value is None:
             return 0
 
         return int(self.value)
 
     def toString(self):
-        if self.value == None:
+        if self.value is None:
             return ''
 
         return str(self.value)
 
     def items(self):
-        if self.value == None:
+        if self.value is None:
             return ()
 
         return self.value.items()
 
     def length(self):
-        if self.value == None:
+        if self.value is None:
             return 0
 
         return len(self.value)
 
 #-----------------------------------------------------------------------------------------------------------------------
 class Client(object):
+
     # fields in storage
-    guid = ''
-    pbid = ''
-    name = ''
-    ip   = ''
     greeting = ''
     autoLogin = 1
-    maskLevel = 0
-    groupBits = 0
     login = ''
     password = ''
 
     # fields on object
     console = None
     cid = None
-    exactName = None
-    team = b3.TEAM_UNKNOWN
-    maxGroup = None
     authed = False
     hide = False # set to true for non-player clients (world entities)
     bot = False
@@ -474,7 +473,7 @@ class Client(object):
     _maxLevel = None
     _maxGroup = None
     def _get_maxLevel(self):
-        if self._maxLevel == None:
+        if self._maxLevel is None:
             if self.groups and len(self.groups):
                 m = -1
                 for g in self.groups:
@@ -714,7 +713,7 @@ class Client(object):
     def save(self, console=None):
         self.timeEdit = time.time()
 
-        if self.guid == None or str(self.guid) == '0':
+        if self.guid is None or str(self.guid) == '0':
             # can't save a client without a guid
             return False
         else:
@@ -808,6 +807,11 @@ class Penalty(Struct):
     reason = ''
     keyword = ''
     data = ''
+
+    _timeAdd = 0
+    _timeEdit = 0
+    _timeExpire = 0
+    _duration = 0
 
     def _set_timeExpire(self, v):
         self._timeExpire = int(v)
@@ -938,6 +942,7 @@ class Clients(dict):
     console = None
 
     def __init__(self, console):
+        super(Clients, self).__init__()
         self.console = console
         self._nameIndex    = {}
         self._guidIndex    = {}
@@ -996,11 +1001,11 @@ class Clients(dict):
         for cid,c in self.items():
             if c.hide:
                 continue
-            elif not masked and c.maskGroup and c.maskGroup.level >= min and c.maskGroup.level <= max:
+            elif not masked and c.maskGroup and min <= c.maskGroup.level <= max:
                 clist.append(c)
             elif not masked and c.maskGroup:
                 continue
-            elif c.maxLevel >= min and c.maxLevel <= max:
+            elif min <= c.maxLevel <= max:
                 #self.console.debug('getClientsByLevel hidden = %s', c.hide)
                 clist.append(c)
         return clist
@@ -1158,7 +1163,7 @@ class Clients(dict):
 
     def disconnect(self, client):
         client.connected = False
-        if client.cid == None:
+        if client.cid is None:
             return
         
         cid = client.cid

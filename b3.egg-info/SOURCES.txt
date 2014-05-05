@@ -18,7 +18,6 @@ b3/events.py
 b3/fake.py
 b3/functions.py
 b3/game.py
-b3/game_event_router.py
 b3/output.py
 b3/parser.py
 b3/pkg_handler.py
