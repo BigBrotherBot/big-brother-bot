@@ -22,8 +22,6 @@ import b3
 import unittest2 as unittest
 
 from textwrap import dedent
-from mock import Mock
-from mock import patch
 from mockito import when
 from b3.plugins.admin import AdminPlugin
 from b3.plugins.cmdmanager import CmdmanagerPlugin
@@ -64,6 +62,26 @@ class Cmdmanager_TestCase(B3TestCase):
         self.p = CmdmanagerPlugin(self.console, self.conf)
         self.p.onLoadConfig()
         self.p.onStartup()
+
+    def assert_cmd_groups(self, cmd_name, groups):
+        """
+        Assert a command has the given authorized groups set correctly.
+        :param cmd_name: str name of a command
+        :param groups: str minimum group required to run the command or group range
+        """
+        cmd = self.adminPlugin._commands[cmd_name]
+        self.assertIsNotNone(cmd, "could not find command %r" % cmd_name)
+        self.assertEqual(groups, self.p.get_command_level_string(cmd))
+
+    def assert_cmd_alias(self, cmd_name, alias_name):
+        """
+        Assert a command has the given alias.
+        :param cmd_name: str command name
+        :param alias_name: str expected alias name, or None
+        """
+        cmd = self.adminPlugin._commands[cmd_name]
+        self.assertIsNotNone(cmd, "could not find command %r" % cmd_name)
+        self.assertEqual(alias_name if alias_name is not None else '', cmd.alias)
 
 
 @unittest.skipUnless(os.path.exists(ADMIN_CONFIG_FILE), reason="cannot get default plugin config file at %s" % ADMIN_CONFIG_FILE)
@@ -115,21 +133,25 @@ class Test_commands(Cmdmanager_TestCase):
         # GIVEN
         superadmin = FakeClient(self.console, name="superadmin", guid="superadminguid", groupBits=128)
         superadmin.connects("1")
+
         # WHEN
         superadmin.clearMessageHistory()
         superadmin.says("!cmdlevel help admin")
         # THEN
         self.assertListEqual(['command !help level changed: admin'], superadmin.message_history)
+        self.assert_cmd_groups("help", "^2admin")
 
     def test_cmdlevel_single_invalid_minlevel(self):
         # GIVEN
         superadmin = FakeClient(self.console, name="superadmin", guid="superadminguid", groupBits=128)
         superadmin.connects("1")
+        self.assert_cmd_groups("help", "^2guest")
         # WHEN
         superadmin.clearMessageHistory()
         superadmin.says("!cmdlevel help fakegroup")
         # THEN
         self.assertListEqual(['invalid level specified: fakegroup'], superadmin.message_history)
+        self.assert_cmd_groups("help", "^2guest")
 
     ####################################################################################################################
     ##                                                                                                                ##
@@ -141,31 +163,37 @@ class Test_commands(Cmdmanager_TestCase):
         # GIVEN
         superadmin = FakeClient(self.console, name="superadmin", guid="superadminguid", groupBits=128)
         superadmin.connects("1")
+        self.assert_cmd_groups("help", "^2guest")
         # WHEN
         superadmin.clearMessageHistory()
         superadmin.says("!cmdlevel help admin-senioradmin")
         # THEN
         self.assertListEqual(['command !help level changed: admin-senioradmin'], superadmin.message_history)
+        self.assert_cmd_groups("help", "^2admin^3-^2senioradmin")
 
     def test_cmdlevel_double_invalid_minlevel_maxlevel(self):
         # GIVEN
         superadmin = FakeClient(self.console, name="superadmin", guid="superadminguid", groupBits=128)
         superadmin.connects("1")
+        self.assert_cmd_groups("help", "^2guest")
         # WHEN
         superadmin.clearMessageHistory()
         superadmin.says("!cmdlevel help admin-fakegroup")
         # THEN
         self.assertListEqual(['invalid level specified: fakegroup'], superadmin.message_history)
+        self.assert_cmd_groups("help", "^2guest")
 
     def test_cmdlevel_double_minlevel_greater_than_maxlevel(self):
         # GIVEN
         superadmin = FakeClient(self.console, name="superadmin", guid="superadminguid", groupBits=128)
         superadmin.connects("1")
+        self.assert_cmd_groups("help", "^2guest")
         # WHEN
         superadmin.clearMessageHistory()
         superadmin.says("!cmdlevel help fulladmin-admin")
         # THEN
         self.assertListEqual(['invalid level: fulladmin is greater than admin'], superadmin.message_history)
+        self.assert_cmd_groups("help", "^2guest")
 
     ####################################################################################################################
     ##                                                                                                                ##
@@ -223,38 +251,46 @@ class Test_commands(Cmdmanager_TestCase):
         # GIVEN
         superadmin = FakeClient(self.console, name="superadmin", guid="superadminguid", groupBits=128)
         superadmin.connects("1")
+        self.assert_cmd_alias("help", "h")
         # WHEN
         superadmin.clearMessageHistory()
         superadmin.says("!cmdalias help !")
         # THEN
         self.assertListEqual(['invalid alias specified'], superadmin.message_history)
+        self.assert_cmd_alias("help", "h")
 
     def test_cmdalias_already_in_use(self):
         # GIVEN
         superadmin = FakeClient(self.console, name="superadmin", guid="superadminguid", groupBits=128)
         superadmin.connects("1")
+        self.assert_cmd_alias("ban", "b")
         # WHEN
         superadmin.clearMessageHistory()
         superadmin.says("!cmdalias ban tempban")
         # THEN
         self.assertListEqual(['command !tempban is already in use'], superadmin.message_history)
+        self.assert_cmd_alias("ban", "b")
 
     def test_cmdalias_add_alias(self):
         # GIVEN
         superadmin = FakeClient(self.console, name="superadmin", guid="superadminguid", groupBits=128)
         superadmin.connects("1")
+        self.assert_cmd_alias("register", None)
         # WHEN
         superadmin.clearMessageHistory()
         superadmin.says("!cmdalias register newregister")
         # THEN
         self.assertListEqual(['added alias for command !register: !newregister'], superadmin.message_history)
+        self.assert_cmd_alias("register", "newregister")
 
     def test_cmdalias_update_alias(self):
         # GIVEN
         superadmin = FakeClient(self.console, name="superadmin", guid="superadminguid", groupBits=128)
         superadmin.connects("1")
+        self.assert_cmd_alias("help", "h")
         # WHEN
         superadmin.clearMessageHistory()
         superadmin.says("!cmdalias help newhelp")
         # THEN
         self.assertListEqual(['updated alias for command !help: !newhelp'], superadmin.message_history)
+        self.assert_cmd_alias("help", "newhelp")
