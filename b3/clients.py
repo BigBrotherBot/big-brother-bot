@@ -19,6 +19,8 @@
 #
 # CHANGELOG
 #
+#    2014/05/09 - 1.6.5 - Fenix
+#    * changed kick.timeExpire = 0 -> kick.timeExpire = -1: fix inability to retrieve kick penalties from the storage
 #    2014/05/05 - 1.6.4 - Fenix
 #    * fixed None comparison performed with equality operators
 #    * removed class attributes duplicate declaration
@@ -510,19 +512,19 @@ class Client(object):
         self.console.kick(self, reason, admin, silent)
 
         if self.id:
-            ban = ClientKick()
-            ban.timeExpire = 0
-            ban.clientId = self.id
-            ban.keyword = keyword
-            ban.data = data
+            kick = ClientKick()
+            kick.timeExpire = -1
+            kick.clientId = self.id
+            kick.keyword = keyword
+            kick.data = data
 
             if admin:
-                ban.adminId = admin.id
+                kick.adminId = admin.id
             else:
-                ban.adminId = 0
+                kick.adminId = 0
 
-            ban.reason = reason
-            ban.save(self.console)
+            kick.reason = reason
+            kick.save(self.console)
 
     def ban(self, reason='', keyword=None, admin=None, silent=False, data='', *kwargs):
         self.console.ban(self, reason, admin, silent)

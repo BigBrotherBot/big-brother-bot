@@ -8,3 +8,6 @@ ALTER TABLE `xlr_playerstats` ADD `id_token` VARCHAR( 10 ) NOT NULL DEFAULT '';
 ALTER TABLE  `xlr_playerstats` CHANGE  `id`  `id` INT( 11 ) UNSIGNED NOT NULL AUTO_INCREMENT;
 ALTER TABLE  `xlr_history_monthly` CHANGE  `id`  `id` INT( 11 ) UNSIGNED NOT NULL AUTO_INCREMENT;
 ALTER TABLE  `xlr_history_weekly` CHANGE  `id`  `id` INT( 11 ) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+-- Update time_expire column value for Kick penalties
+UPDATE `penalties` SET `time_expire`=-1 WHERE `type` = 'Kick'
