@@ -1550,6 +1550,7 @@ class Cmd_kick(Admin_functional_test):
         self.joe.says('!kick mike the reason')
         # THEN
         self.assertListEqual([call(self.mike, 'the reason', self.joe, False)], self.kick_mock.mock_calls)
+        self.assertEqual(1, self.console.storage.numPenalties(self.mike, 'Kick'))
 
     def test_unknown_player_name(self):
         # GIVEN
@@ -1567,6 +1568,7 @@ class Cmd_kick(Admin_functional_test):
         self.joe.says('!kick 6')
         # THEN
         self.assertListEqual([call(self.mike, '', self.joe, False)], self.kick_mock.mock_calls)
+        self.assertEqual(1, self.console.storage.numPenalties(self.mike, 'Kick'))
 
     def test_kick_by_slot_id_when_no_known_player_is_on_that_slot(self):
         # GIVEN
