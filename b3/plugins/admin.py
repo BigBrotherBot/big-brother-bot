@@ -18,6 +18,8 @@
 #
 # CHANGELOG
 #
+#   2014/05/16 - 1.29 - Courgette
+#   * Add an optional parameter to the !spam command to allow to send a message to a given player in private
 #   2014/05/03 - 1.28.1 - Fenix
 #   * Tell player why he is not allowed to use a certain command (issue #183)
 #   2014/05/02 - 1.28 - Fenix
@@ -158,7 +160,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.28'
+__version__ = '1.29'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon, Fenix'
 
 import re
@@ -2333,19 +2335,25 @@ class AdminPlugin(b3.plugin.Plugin):
 
     def cmd_spam(self, data, client=None, cmd=None):
         """\
-        <message> - spam a predefined message
+        [player] <message> - spam a predefined message to all players or a given player
         """
-        m = re.match('^([^ ]{2,})$', data)
+        m = re.match('^((?P<player>\w+)\s+)?(?P<keyword>\w{2,})$', data)
         if not m:
             client.message(self.getMessage('invalid_parameters'))
-            return False
-
-        keyword = m.group(1)
-        s = self.getSpam(keyword)
-        if s:
-            self.console.say(s)
-        else:
+            return
+        keyword = m.group("keyword")
+        msg = self.getSpam(keyword)
+        if not msg:
             client.message('^7Could not find spam message %s' % keyword)
+            return
+        player_name = m.group("player")
+        if not player_name:
+            self.console.say(msg)
+            return
+        sclient = self.findClientPrompt(player_name, client)
+        if sclient:
+            sclient.message(msg)
+
 
     def cmd_rules(self, data, client=None, cmd=None):
         """\

@@ -1609,3 +1609,45 @@ class Cmd_kick(Admin_functional_test):
         self.joe.says("!kick 'f 0 0' the reason")
         # THEN
         self.assertListEqual([call(self.mike, 'the reason', self.joe, False)], self.kick_mock.mock_calls)
+
+
+class Cmd_spam(Admin_functional_test):
+
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init()
+        self.joe.connects(0)
+        self.mike.connects(1)
+
+    def test_no_parameter(self):
+        with patch.object(self.console, "say") as say_mock:
+            self.joe.says('!spam')
+        self.assertListEqual([], say_mock.mock_calls)
+        self.assertListEqual(['Invalid parameters'], self.joe.message_history)
+
+    def test_unknown_spammage_keyword(self):
+        with patch.object(self.console, "say") as say_mock:
+            self.joe.says('!spam f00')
+        self.assertListEqual([], say_mock.mock_calls)
+        self.assertListEqual(['Could not find spam message f00'], self.joe.message_history)
+
+    def test_nominal_to_all_players(self):
+        with patch.object(self.console, "say") as say_mock:
+            self.joe.says('!spam rule1')
+        self.assertListEqual([call('^3Rule #1: No racism of any kind')], say_mock.mock_calls)
+        self.assertListEqual([], self.joe.message_history)
+
+    def test_nominal_to_mike(self):
+        with patch.object(self.console, "say") as say_mock:
+            self.joe.says('!spam mike rule1')
+        self.assertListEqual([], say_mock.mock_calls)
+        self.assertListEqual([], self.joe.message_history)
+        self.assertListEqual(['Rule #1: No racism of any kind'], self.mike.message_history)
+
+    def test_nominal_to_unknown_player(self):
+        with patch.object(self.console, "say") as say_mock:
+            self.joe.says('!spam f00 rule1')
+        self.assertListEqual([], say_mock.mock_calls)
+        self.assertListEqual(["No players found matching f00"], self.joe.message_history)
+        self.assertListEqual([], self.mike.message_history)
+

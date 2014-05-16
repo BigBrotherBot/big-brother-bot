@@ -1201,7 +1201,10 @@ Spam a predefined message.
 .. rubric:: usage
 
 :command:`!spam` <:ref:`message id <spamages>`>
-    will spam the message defined in the *spamages* section of the config file under the given message id.
+    will spam the message defined in the *spamages* section of the config file under the given message id to all players.
+
+:command:`!spam` <:ref:`player <targeting-player-syntax>`> <:ref:`message id <spamages>`>
+    will spam the message defined in the *spamages* section of the config file under the given message id to the specified player in a private message.
 
 .. rubric:: alias
 
