@@ -9,24 +9,25 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 #
 # CHANGELOG
+#
 #    11/29/2005 - 1.3.0 - ThorN
-#    Added warning, info, exception, and critical log handlers
+#    * added warning, info, exception, and critical log handlers
 #    14/11/2009 - 1.3.1 - Courgette
-#    display a user friendly error message when a plugin config file as broken XML
+#    * display a user friendly error message when a plugin config file as broken XML
 #    29/11/2009 - 1.4.0 - Courgette
-#    constructor now also accepts an instance of Config in place of a config file name
+#    * constructor now also accepts an instance of Config in place of a config file name
 #    29/11/2009 - 1.4.1 - Courgette
-#    the onLoadConfig callback is now always called after loadConfig() is called. This
-#    aims to make sure onLoadConfig is called after the user use the !reconfig command
+#    * the onLoadConfig callback is now always called after loadConfig() is called. This aims to make sure
+#      onLoadConfig is called after the user use the !reconfig command
 #    16/02/2013 - 1.5 - Courgette
 #    * add plugin property _default_messages to store default plugin messages
 #    * add user friendly warning and error to the log when a messaged cannot be formatted
@@ -39,9 +40,12 @@
 #    * optionally map a specific event onto a specific plugin method: needs to be specified during event registration
 #    15/04/2014 - 1.8.1 - Fenix
 #    * use self.console.getEventID to retrieve event ids: remove some warnings
+#    21/05/2014 - 1.8.2 - Fenix
+#    * minor syntax cleanup
+#    * moved event mapping function into Parser class
 #
 __author__ = 'ThorN, Courgette'
-__version__ = '1.8.1'
+__version__ = '1.8.2'
 
 import b3.config
 import b3.events
@@ -148,47 +152,27 @@ class Plugin:
         self.bot('Saving config %s', self.config.fileName)
         return self.config.save()
 
-    def createEventMapping(self, name, hook):
-        """\
-        Map a B3 specific event onto a plugin method.
-        """
-        readable_name = self.eventmanager.getName(name)
-        if name not in self.events:
-            # make sure the event we are going to map has been registered already
-            raise AssertionError('<%s> is not an event registered for <%s>' % (readable_name, self.__class__.__name__))
-
-        hook = getattr(self, hook.__name__, None)
-        if not callable(hook):
-            # make sure the given hook to be a valid method of our plugin
-            raise AttributeError('<%s> is not a valid method of class <%s>' % (hook.__name__, self.__class__.__name__))
-
-        # add the mapping
-        self.eventmap[name] = hook
-        self.debug('Event <%s> mapped over <%s> method' % (readable_name, hook.__name__))
-
     def registerEvent(self, name, hook=None):
         self.events.append(name)
-        self.console.registerHandler(name, self)
-        if hook:
-            self.createEventMapping(name, hook)
+        self.console.registerHandler(name, hook, self)
 
     def createEvent(self, key, name):
         self.console.createEvent(key, name)
 
     def startup(self):
-        """\
+        """
         Deprecated. Use onStartup().
         """
         pass
 
     def start(self):
-        """\
+        """
         Called after Plugin.startup().
         """
         pass
 
     def parseEvent(self, event):
-        """\
+        """
         Dispatch an Event.
         """
         try:
@@ -199,11 +183,11 @@ class Plugin:
             self.onEvent(event)  # keep backwards compatibility
 
         if event.type == self.console.getEventID('EVT_EXIT') or \
-                        event.type == self.console.getEventID('EVT_STOP'):
+                event.type == self.console.getEventID('EVT_STOP'):
             self.working = False
 
     def handle(self, event):
-        """\
+        """
         Deprecated. Use onEvent().
         """
         self.verbose('Warning: No handle func for %s', self.__class__.__name__)
@@ -215,49 +199,49 @@ class Plugin:
     ###############################################################################
 
     def error(self, msg, *args, **kwargs):
-        """\
+        """
         Log an error message to the main log.
         """
         self.console.error('%s: %s' % (self.__class__.__name__, msg), *args, **kwargs)
 
     def debug(self, msg, *args, **kwargs):
-        """\
+        """
         Log a debug message to the main log.
         """
         self.console.debug('%s: %s' % (self.__class__.__name__, msg), *args, **kwargs)
 
     def bot(self, msg, *args, **kwargs):
-        """\
+        """
         Log a bot message to the main log.
         """
         self.console.bot('%s: %s' % (self.__class__.__name__, msg), *args, **kwargs)
 
     def verbose(self, msg, *args, **kwargs):
-        """\
+        """
         Log a verbose message to the main log. More "chatty" than a debug message.
         """
         self.console.verbose('%s: %s' % (self.__class__.__name__, msg), *args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
-        """\
+        """
         Log a warning message to the main log.
         """        
         self.console.warning('%s: %s' % (self.__class__.__name__, msg), *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
-        """\
+        """
         Log an info message to the main log.
         """        
         self.console.info('%s: %s' % (self.__class__.__name__, msg), *args, **kwargs)
 
     def exception(self, msg, *args, **kwargs):
-        """\
+        """
         Log an exception message to the main log.
         """        
         self.console.exception('%s: %s' % (self.__class__.__name__, msg), *args, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
-        """\
+        """
         Log a critical message to the main log.
         """
         self.console.critical('%s: %s' % (self.__class__.__name__, msg), *args, **kwargs)
@@ -270,14 +254,14 @@ class Plugin:
     ###############################################################################
 
     def onLoadConfig(self):
-        """\
+        """
         This is called after loadConfig() and if a user use the !reconfig command.
         Any plugin private variables loaded from the config need to be reset here.
         """
         return True
 
     def onStartup(self):
-        """\
+        """
         Called after the plugin is created before it is started. Overwrite this
         for anything you need to initialize you plugin with.
         """
@@ -285,18 +269,18 @@ class Plugin:
         self.startup()
 
     def onEvent(self, event):
-        """\
+        """
         Called when a registered event is received.
         """
         # support backwards compatibility
         self.handle(event)
 
     def onEnable(self):
-        """\
+        """
         Called when the plugin is enabled
         """
 
     def onDisable(self):
-        """\
+        """
         Called when the plugin is disabled
         """
