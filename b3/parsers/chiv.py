@@ -10,18 +10,20 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
-# 1.0 - first working version
-# 1.1 - cosmetics and add a few TODO
-# 1.2 - minor fixes
 #
+#   1.0 - first working version
+#   1.1 - cosmetics and add a few TODO
+#   1.2 - minor fixes
+#   1.3 - patch admin plugin doList() method: display the client DB id instead of slot
+#         patch admin plugin cmd_find() method: display the client DB id instead of slot
 
 import sys
 import asyncore
@@ -29,11 +31,13 @@ import socket
 import b3
 
 from b3.parser import Parser
-from struct import pack, unpack
+from b3.plugins.admin import AdminPlugin
+from struct import pack
+from struct import unpack
 from hashlib import sha1
 
-__author__  = 'tliszak'
-__version__ = '1.2'
+__author__ = 'tliszak'
+__version__ = '1.3'
 
 
 class MessageType:
@@ -72,7 +76,12 @@ class ChivParser(Parser):
     _currentMap = None
     _currentMapIndex = None
     _mapList = None
-    
+
+    def __new__(cls, *args, **kwargs):
+        ChivParser.patch_admin_plugin_doList()
+        ChivParser.patch_admin_plugin_cmd_find()
+        return Parser.__new__(cls)
+
     def run(self):
         """Main worker thread for B3"""
         self.screen.write('Startup Complete : B3 is running! Let\'s get to work!\n\n')
@@ -193,7 +202,7 @@ class ChivParser(Parser):
             self._client.sendPacket(packet)
 
     def getPlayerList(self):
-        """\
+        """
         Query the game server for connected players.
         return a dict having players' id for keys and players' data as another dict for values
         """
@@ -201,7 +210,7 @@ class ChivParser(Parser):
         return clients
 
     def authorizeClients(self):
-        """\
+        """
         For all connected players, fill the client object with properties allowing to find 
         the user in the database (usualy guid, or punkbuster id, ip) and call the 
         Client.auth() method 
@@ -209,7 +218,7 @@ class ChivParser(Parser):
         pass  # No need as every rcon packet about a player gives the guid
     
     def sync(self):
-        """\
+        """
         For all connected players returned by self.getPlayerList(), get the matching Client
         object from self.clients (with self.clients.getByCID(cid) or similar methods) and
         look for inconsistencies. If required call the client.disconnect() method to remove
@@ -221,8 +230,8 @@ class ChivParser(Parser):
         pass
     
     def say(self, msg):
-        """\
-        broadcast a message to all players
+        """
+        Broadcast a message to all players
         """
         msg = self.stripColors(msg)
         
@@ -232,8 +241,8 @@ class ChivParser(Parser):
         self.sendPacket(packet)
 
     def saybig(self, msg):
-        """\
-        broadcast a message to all players in a way that will catch their attention.
+        """
+        Broadcast a message to all players in a way that will catch their attention.
         """
         msg = self.stripColors(msg)
 
@@ -243,8 +252,8 @@ class ChivParser(Parser):
         self.sendPacket(packet)
 
     def message(self, client, text):
-        """\
-        display a message to a given player
+        """
+        Display a message to a given player
         """
         text = self.stripColors(text)
 
@@ -255,8 +264,8 @@ class ChivParser(Parser):
         self.sendPacket(packet)
         
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
-        """\
-        kick a given player
+        """
+        Kick a given player
         """
         reason = self.stripColors(reason)
 
@@ -269,8 +278,8 @@ class ChivParser(Parser):
         self.queueEvent(self.getEvent('EVT_CLIENT_KICK', reason, client))
         
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
-        """\
-        ban a given player on the game server and in case of success
+        """
+        Ban a given player on the game server and in case of success
         fire the event ('EVT_CLIENT_BAN', data={'reason': reason, 
         'admin': admin}, client=target)
         """
@@ -285,8 +294,8 @@ class ChivParser(Parser):
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
-        """\
-        unban a given player on the game server
+        """
+        Unban a given player on the game server
         """
         reason = self.stripColors(reason)
 
@@ -298,8 +307,8 @@ class ChivParser(Parser):
         self.queueEvent(self.getEvent('EVT_CLIENT_UNBAN', reason, client))
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
-        """\
-        tempban a given player on the game server and in case of success
+        """
+        Tempban a given player on the game server and in case of success
         fire the event ('EVT_CLIENT_BAN_TEMP', data={'reason': reason, 
         'duration': duration, 'admin': admin}, client=target)
         """
@@ -324,14 +333,14 @@ class ChivParser(Parser):
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason, 'duration': duration, 'admin': admin}, client))
 
     def getMap(self):
-        """\
-        return the current map/level name
+        """
+        Return the current map/level name
         """
         return self._currentMap  # TODO handle the case where self._currentMap is not set. Can we query the game server ?
 
     def getNextMap(self):
-        """\
-        return the next map/level name to be played
+        """
+        Return the next map/level name to be played
         """
         numMaps = len(self._mapList)
         currentmap = self.getMap()
@@ -352,23 +361,23 @@ class ChivParser(Parser):
         return nextmap
 
     def getMaps(self):
-        """\
-        return the available maps/levels name
+        """
+        Return the available maps/levels name
         """
         return self._mapList  # TODO handle the case where self._mapList is not set. Can we query the game server ?
 
     def rotateMap(self):
-        """\
-        load the next map/level
+        """
+        Load the next map/level
         """
         packet = Packet()
         packet.msgType = MessageType.ROTATE_MAP
         self.sendPacket(packet)
         
     def changeMap(self, map_name):
-        """\
-        load a given map/level
-        return a list of suggested map names in cases it fails to recognize the map that was provided
+        """
+        Load a given map/level
+        Return a list of suggested map names in cases it fails to recognize the map that was provided
         """
         packet = Packet()
         packet.msgType = MessageType.CHANGE_MAP
@@ -376,8 +385,8 @@ class ChivParser(Parser):
         self.sendPacket(packet)
 
     def getPlayerPings(self, filter_client_ids=None):
-        """\
-        returns a dict having players' id for keys and players' ping for values
+        """
+        Returns a dict having players' id for keys and players' ping for values
         """
         pings = {}
         clients = self.clients.getList()
@@ -389,8 +398,8 @@ class ChivParser(Parser):
         return pings
 
     def getPlayerScores(self):
-        """\
-        returns a dict having players' id for keys and players' scores for values
+        """
+        Returns a dict having players' id for keys and players' scores for values
         """
         scores = {}
         clients = self.clients.getList()
@@ -401,7 +410,47 @@ class ChivParser(Parser):
                 pass
         return scores
 
-        
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  APPLY PATCHES                                                                                                 ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
+    @staticmethod
+    def patch_admin_plugin_doList():
+        """
+        Patch the admin plugin doList method enforcing a custom player_id pattern.
+        Unreal Engine 3 doesn't support the player slot number as RCON command parameter, so it's useless displaying it
+        (is uses the client GUID instead which can be retrieved also using the player database id).
+        Check: http://forum.bigbrotherbot.net/general-discussion/!list-command/
+        """
+        def doList(self, client, cmd):
+            names = []
+            for c in self.console.clients.getClientsByLevel():
+                names.append('^7%s [^2@%s^7]' % (c.name, c.id))
+            cmd.sayLoudOrPM(client, ', '.join(names))
+            return True
+
+        AdminPlugin.doList = doList
+
+    @staticmethod
+    def patch_admin_plugin_cmd_find():
+        """
+        Patch the admin plugin !find command displaying the client database id instead of the slot number.
+        """
+        def cmd_find(self, data, client=None, cmd=None):
+            m = self.parseUserCmd(data)
+            if not m:
+                client.message(self.getMessage('invalid_parameters'))
+                return
+
+            cid = m[0]
+            sclient = self.findClientPrompt(cid, client)
+            if sclient:
+                cmd.sayLoudOrPM(client, '^7Found player matching %s [^2@%s^7] %s' % (cid, sclient.id, sclient.exactName))
+
+        AdminPlugin.cmd_find = cmd_find
+
 class Packet(object):
     msgType = None
     data = ""
