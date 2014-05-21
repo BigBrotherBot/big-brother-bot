@@ -9,24 +9,34 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
-from mock import patch, call, ANY
+
+from mock import patch
+from mock import call
+from mock import ANY
 from ConfigParser import NoOptionError
 from b3.config import CfgConfigParser
 from b3.plugin import Plugin
+from b3.events import Event
 from tests import B3TestCase
 
 
 class MyPlugin(Plugin):
+
+    stub_not_callable = 0
+
     def __init__(self, console, config=None):
         Plugin.__init__(self, console, config=config)
         self._messages = {}
+
+    def stub_method(self, event):
+        pass
 
 
 class Test_Plugin_getMessage(B3TestCase):
@@ -145,5 +155,42 @@ f00: bar -%(param1)s- bar
             self.assertRaises(KeyError, p.getMessage, 'f00', {'param_foo': 'foo'})
         # THEN
         self.assertListEqual([call('failed to format message %r (%r) with parameters %r. Missing value for %s', 'f00',
-                                   'bar -%(param1)s- bar', ({'param_foo': 'foo'},), ANY)],
-                             error_mock.mock_calls)
+                                   'bar -%(param1)s- bar', ({'param_foo': 'foo'},), ANY)], error_mock.mock_calls)
+
+
+class Test_Plugin_registerEvent(B3TestCase):
+
+    def setUp(self):
+        B3TestCase.setUp(self)
+        self.conf = CfgConfigParser()
+
+    def test_register_event_no_hook(self):
+        # GIVEN
+        k = self.console.getEventID('EVT_CLIENT_SAY')
+        p = MyPlugin(self.console, self.conf)
+        p.registerEvent(k)
+        # THEN
+        self.assertIn(k, self.console._handlers.keys())
+        self.assertIn(p, self.console._handlers[k])
+        self.assertNotIn(k, p.eventmap.keys())
+
+    def test_register_event_with_not_valid_hook(self):
+        # GIVEN
+        k = self.console.getEventID('EVT_CLIENT_SAY')
+        p = MyPlugin(self.console, self.conf)
+        p.registerEvent(k, p.stub_not_callable)
+        # THEN
+        self.assertIn(k, self.console._handlers.keys())
+        self.assertIn(p, self.console._handlers[k])
+        self.assertNotIn(k, p.eventmap.keys())
+
+    def test_register_event_with_valid_hook(self):
+        # GIVEN
+        k = self.console.getEventID('EVT_CLIENT_SAY')
+        p = MyPlugin(self.console, self.conf)
+        p.registerEvent(k, p.stub_method)
+        # THEN
+        self.assertIn(k, self.console._handlers.keys())
+        self.assertIn(p, self.console._handlers[k])
+        self.assertIn(k, p.eventmap.keys())
+        self.assertEqual(p.eventmap[k], p.stub_method)
