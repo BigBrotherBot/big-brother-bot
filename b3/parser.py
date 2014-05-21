@@ -9,15 +9,18 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 #
 # CHANGELOG
+#
+#   2014/05/21 - 1.35.1 - Fenix
+#   * moved plugin event mapping function into Parser class
 #   2014/04/14 - 1.35 - Fenix
 #   * pep8 coding style guide
 #   2014/01/19 - 1.34 - Ozon
@@ -286,7 +289,7 @@ class Parser(object):
     _port = 0
     _rconPassword = ''
 
-    """\
+    """
     === Exiting ===
 
     The parser runs two threads: main and handler.  The main thread is
@@ -334,7 +337,7 @@ class Parser(object):
     exitcode = None
 
     def __init__(self, conf):
-        """\
+        """
         Object contructor
         """
         self._timeStart = self.time()
@@ -553,7 +556,7 @@ class Parser(object):
         atexit.register(self.shutdown)
 
     def getAbsolutePath(self, path):
-        """\
+        """
         Return an absolute path name and expand the user prefix (~)
         """
         return b3.getAbsolutePath(path)
@@ -562,7 +565,7 @@ class Parser(object):
         self._eventsStats.dumpStats()
 
     def start(self):
-        """\
+        """
         Start B3
         """
         self.bot("Starting parser")
@@ -581,7 +584,7 @@ class Parser(object):
         self.run()
 
     def die(self):
-        """\
+        """
         Stop B3 with the die exit status (222)
         """
         self.shutdown()
@@ -589,7 +592,7 @@ class Parser(object):
         sys.exit(222)
 
     def restart(self):
-        """\
+        """
         Stop B3 with the restart exit status (221)
         """
         self.shutdown()
@@ -598,13 +601,13 @@ class Parser(object):
         sys.exit(221)
 
     def upTime(self):
-        """\
+        """
         Amount of time B3 has been running
         """
         return self.time() - self._timeStart
 
     def loadConfig(self, conf):
-        """\
+        """
         Set the config file to load
         """
         if not conf:
@@ -614,35 +617,35 @@ class Parser(object):
         return True
 
     def saveConfig(self):
-        """\
+        """
         Save configration changes
         """
         self.bot('Saving config %s', self.config.fileName)
         return self.config.save()
 
     def startup(self):
-        """\
+        """
         Called after the parser is created before run(). Overwrite this
         for anything you need to initialize you parser with.
         """
         pass
 
     def pluginsStarted(self):
-        """\
+        """
         Called after the parser loaded and started all plugins. 
         Overwrite this in parsers to take actions once plugins are ready
         """
         pass
 
     def pause(self):
-        """\
+        """
         Pause B3 log parsing
         """
         self.bot('PAUSING')
         self._paused = True
 
     def unpause(self):
-        """\
+        """
         Unpause B3 log parsing
         """
         self._paused = False
@@ -650,13 +653,13 @@ class Parser(object):
         self.input.seek(0, os.SEEK_END)
 
     def loadEvents(self):
-        """\
+        """
         Load events from event manager
         """
         self._events = self.Events.events
 
     def createEvent(self, key, name=None):
-        """\
+        """
         Create a new event
         """
         self.Events.createEvent(key, name)
@@ -664,7 +667,7 @@ class Parser(object):
         return self._events[key]
 
     def getEventID(self, key):
-        """\
+        """
         Get the numeric ID of an event key
         """
         return self.Events.getId(key)
@@ -676,19 +679,19 @@ class Parser(object):
         return b3.events.Event(self.Events.getId(key), data, client, target)
 
     def getEventName(self, key):
-        """\
+        """
         Get the name of an event by its key
         """
         return self.Events.getName(key)
 
     def getEventKey(self, event_id):
-        """\
+        """
         Get the key of a given event ID
         """
         return self.Events.getKey(event_id)
 
     def getPlugin(self, plugin):
-        """\
+        """
         Get a reference to a loaded plugin
         """
         try:
@@ -697,7 +700,7 @@ class Parser(object):
             return None
 
     def reloadConfigs(self):
-        """\
+        """
         Reload all config files
         """
         # reload main config
@@ -710,7 +713,7 @@ class Parser(object):
         self.updateDocumentation()
 
     def loadPlugins(self):
-        """\
+        """
         Load plugins specified in the config
         """
         self.screen.write('Loading Plugins  : ')
@@ -720,7 +723,7 @@ class Parser(object):
         self.bot('Loading Plugins (external plugin directory: %s)' % extplugins_dir)
 
         def _get_config_path(_plugin):
-            """\
+            """
             Helper that return a config path for the given Plugin
             """
             # read config path from b3 configuration
@@ -798,7 +801,7 @@ class Parser(object):
                 self.screen.flush()
 
     def call_plugins_onLoadConfig(self):
-        """\
+        """
         For each loaded plugin, call the onLoadConfig hook
         """
         for plugin_name in self._pluginOrder:
@@ -806,7 +809,7 @@ class Parser(object):
             p.onLoadConfig()
 
     def loadArbPlugins(self):
-        """\
+        """
         Load must have plugins and check for admin plugin
         """
         def loadPlugin(parser_mod, plugin_id):
@@ -852,7 +855,7 @@ class Parser(object):
         self.screen.flush()
 
     def pluginImport(self, name, path=None):
-        """\
+        """
         Import a single plugin
         """
         if path is not None:
@@ -884,7 +887,7 @@ class Parser(object):
                     fp.close()
 
     def startPlugins(self):
-        """\
+        """
         Start all loaded plugins
         """
         self.screen.write('Starting Plugins : ')
@@ -917,7 +920,7 @@ class Parser(object):
         self.screen.write(' (%s)\n' % (len(self._pluginOrder)+1))
 
     def disablePlugins(self):
-        """\
+        """
         Disable all plugins except for publist, ftpytail and admin
         """
         for k in self._pluginOrder:
@@ -927,7 +930,7 @@ class Parser(object):
                 p.disable()
 
     def enablePlugins(self):
-        """\
+        """
         Enable all plugins except for publist, ftpytail and admin
         """
         for k in self._pluginOrder:
@@ -937,7 +940,7 @@ class Parser(object):
                 p.enable()
 
     def getMessage(self, msg, *args):
-        """\
+        """
         Return a message from the config file
         """
         try:
@@ -958,7 +961,7 @@ class Parser(object):
             return msg
 
     def getMessageVariables(self, *args, **kwargs):
-        """\
+        """
         Dynamically generate a dictionary of fields available for messages in config file
         """
         variables = {}
@@ -998,7 +1001,7 @@ class Parser(object):
         return variables
 
     def getCommand(self, cmd, **kwargs):
-        """\
+        """
         Return a reference to a loaded command
         """
         try:
@@ -1051,7 +1054,7 @@ class Parser(object):
         return tz_offset, tz_name
 
     def formatTime(self, gmttime, tz_name=None):
-        """\
+        """
         Return a time string formated to local time in the b3 config time_format
         """
         if tz_name:
@@ -1069,7 +1072,7 @@ class Parser(object):
         return time.strftime(time_format, time.gmtime(gmttime + tz_offset))
 
     def run(self):
-        """\
+        """
         Main worker thread for B3
         """
         self.screen.write('Startup Complete : B3 is running! Let\'s get to work!\n\n')
@@ -1137,24 +1140,34 @@ class Parser(object):
                 sys.exit(self.exitcode)
 
     def parseLine(self, line):
-        """\
+        """
         Parse a single line from the log file
         """
         m = re.match(self._lineFormat, line)
         if m:
             self.queueEvent(b3.events.Event(self.getEventID('EVT_UNKNOWN'), m.group(2)[:1]))
 
-    def registerHandler(self, event_name, event_handler):
-        """\
+    def registerHandler(self, event_name, event_hook, event_handler):
+        """
         Register an event handler
         """
-        self.debug('Register Event: %s: %s', self.Events.getName(event_name), event_handler.__class__.__name__)
         if not event_name in self._handlers.keys():
             self._handlers[event_name] = []
         self._handlers[event_name].append(event_handler)
 
+        # check for a valid func mapping
+        if not event_hook or not callable(event_hook):
+            # no valid hook has been specified so the event will be dispatched using the old system: onEvent()
+            self.debug('%s: Register event <%s>', event_handler.__class__.__name__, self.Events.getName(event_name))
+            return
+
+        # create the event mapping
+        event_handler.eventmap[event_name] = event_hook
+        self.debug('%s: Register event <%s -> %s>', event_handler.__class__.__name__,
+                   self.Events.getName(event_name), event_hook.__name__)
+
     def queueEvent(self, event, expire=10):
-        """\
+        """
         Queue an event for processing
         """
         if not hasattr(event, 'type'):
@@ -1172,7 +1185,7 @@ class Parser(object):
         return False
 
     def handleEvents(self):
-        """\
+        """
         Event handler thread
         """
         while self.working:
@@ -1204,7 +1217,7 @@ class Parser(object):
                     except SystemExit, e:
                         self.exitcode = e.code
                     except Exception, msg:
-                        self.error('handler %s could not handle event %s: %s: %s %s', hfunc.__class__.__name__,
+                        self.error('Handler %s could not handle event %s: %s: %s %s', hfunc.__class__.__name__,
                                    event_name, msg.__class__.__name__, msg, traceback.extract_tb(sys.exc_info()[2]))
                     finally:
                         elapsed = time.clock() - timer_plugin_begin
@@ -1217,7 +1230,7 @@ class Parser(object):
             self.exiting.release()
 
     def write(self, msg, maxRetries=None):
-        """\
+        """
         Write a message to Rcon/Console
         """
         if self.replay:
@@ -1230,7 +1243,7 @@ class Parser(object):
             return res
 
     def writelines(self, msg):
-        """\
+        """
         Write a sequence of messages to Rcon/Console. Optimized for speed
         """
         if self.replay:
@@ -1243,7 +1256,7 @@ class Parser(object):
             return res
 
     def read(self):
-        """\
+        """
         Read from game server log file
         """
         if not hasattr(self, 'input'):
@@ -1264,7 +1277,7 @@ class Parser(object):
         return self.input.readlines() 
 
     def shutdown(self):
-        """\
+        """
         Shutdown B3
         """
         try:
@@ -1282,7 +1295,7 @@ class Parser(object):
             self.error(e)
 
     def getWrap(self, text, length=80, minWrapLen=150):
-        """\
+        """
         Returns a sequence of lines for text that fits within the limits
         """
         if not text:
@@ -1324,25 +1337,25 @@ class Parser(object):
         return lines
 
     def error(self, msg, *args, **kwargs):
-        """\
+        """
         Log an error
         """
         self.log.error(msg, *args, **kwargs)
 
     def debug(self, msg, *args, **kwargs):
-        """\
+        """
         Log a debug message
         """
         self.log.debug(msg, *args, **kwargs)
 
     def bot(self, msg, *args, **kwargs):
-        """\
+        """
         Log a bot message
         """
         self.log.bot(msg, *args, **kwargs)
 
     def verbose(self, msg, *args, **kwargs):
-        """\
+        """
         Log a verbose message
         """
         self.log.verbose(msg, *args, **kwargs)
@@ -1352,37 +1365,37 @@ class Parser(object):
         self.log.verbose2(msg, *args, **kwargs)
 
     def console(self, msg, *args, **kwargs):
-        """\
+        """
         Log a message from the console
         """
         self.log.console(msg, *args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
-        """\
+        """
         Log a message from the console
         """
         self.log.warning(msg, *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
-        """\
+        """
         Log a message from the console
         """
         self.log.info(msg, *args, **kwargs)
 
     def exception(self, msg, *args, **kwargs):
-        """\
+        """
         Log a message from the console
         """
         self.log.exception(msg, *args, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
-        """\
+        """
         Log a message from the console
         """
         self.log.critical(msg, *args, **kwargs)
 
     def time(self):
-        """\
+        """
         Return the current time in GMT/UTC
         """
         if self.replay:
@@ -1391,7 +1404,7 @@ class Parser(object):
         return int(time.time())
 
     def _get_cron(self):
-        """\
+        """
         Instantiate the main Cron object
         """
         if not self._cron:
@@ -1405,7 +1418,7 @@ class Parser(object):
         return re.sub(self._reColor, '', text).strip()
 
     def updateDocumentation(self):
-        """\
+        """
         Create a documentation for all available commands
         """
         if self.config.has_section('autodoc'):
@@ -1427,14 +1440,14 @@ class Parser(object):
     ###############################################################################
 
     def getPlayerList(self):
-        """\
+        """
         Query the game server for connected players.
         return a dict having players' id for keys and players' data as another dict for values
         """
         raise NotImplementedError
 
     def authorizeClients(self):
-        """\
+        """
         For all connected players, fill the client object with properties allowing to find 
         the user in the database (usualy guid, or punkbuster id, ip) and call the 
         Client.auth() method 
@@ -1442,7 +1455,7 @@ class Parser(object):
         raise NotImplementedError
     
     def sync(self):
-        """\
+        """
         For all connected players returned by self.getPlayerList(), get the matching Client
         object from self.clients (with self.clients.getByCID(cid) or similar methods) and
         look for inconsistencies. If required call the client.disconnect() method to remove
@@ -1454,31 +1467,31 @@ class Parser(object):
         raise NotImplementedError
     
     def say(self, msg):
-        """\
+        """
         Broadcast a message to all players
         """
         raise NotImplementedError
 
     def saybig(self, msg):
-        """\
+        """
         Broadcast a message to all players in a way that will catch their attention.
         """
         raise NotImplementedError
 
     def message(self, client, text):
-        """\
+        """
         Display a message to a given player
         """
         raise NotImplementedError
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
-        """\
+        """
         Kick a given player
         """
         raise NotImplementedError
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
-        """\
+        """
         Ban a given player on the game server and in case of success
         fire the event ('EVT_CLIENT_BAN', data={'reason': reason, 
         'admin': admin}, client=target)
@@ -1486,13 +1499,13 @@ class Parser(object):
         raise NotImplementedError
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
-        """\
+        """
         Unban a given player on the game server
         """
         raise NotImplementedError
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
-        """\
+        """
         Tempban a given player on the game server and in case of success
         fire the event ('EVT_CLIENT_BAN_TEMP', data={'reason': reason, 
         'duration': duration, 'admin': admin}, client=target)
@@ -1500,45 +1513,45 @@ class Parser(object):
         raise NotImplementedError
 
     def getMap(self):
-        """\
+        """
         Return the current map/level name
         """
         raise NotImplementedError
 
     def getNextMap(self):
-        """\
+        """
         Return the next map/level name to be played
         """
         raise NotImplementedError
 
     def getMaps(self):
-        """\
+        """
         Return the available maps/levels name
         """
         raise NotImplementedError
 
     def rotateMap(self):
-        """\
+        """
         Load the next map/level
         """
         raise NotImplementedError
         
     def changeMap(self, map_name):
-        """\
+        """
         Load a given map/level
         Return a list of suggested map names in cases it fails to recognize the map that was provided
         """
         raise NotImplementedError
 
     def getPlayerPings(self, filter_client_ids=None):
-        """\
+        """
         Returns a dict having players' id for keys and players' ping for values
         :param filter_client_ids: If filter_client_id is an iterable, only return values for the given client ids.
         """
         raise NotImplementedError
 
     def getPlayerScores(self):
-        """\
+        """
         Returns a dict having players' id for keys and players' scores for values
         """
         raise NotImplementedError
