@@ -38,6 +38,8 @@
 #   * update B3 website URL
 # 2014/01/20 - 1.2.6 - ozon
 #   * add json output
+# 2014/05/25 - 1.2.7 - Courgette
+#   * fix crash when command description is an empty string
 
 """ 
 This module will generate a user documentation depending
@@ -45,7 +47,7 @@ on current config
 """
 
 __author__ = 'Courgette, ozon'
-__version__ = '1.2.6'
+__version__ = '1.2.7'
 
 import time
 import os
@@ -261,7 +263,10 @@ class DocBuilder:
                 tmp['alias'] = cmd.prefix + cmd.alias
             tmp['plugin'] = re.sub('Plugin$', '', cmd.plugin.__class__.__name__) 
             _cmd_help = escape(cmd.help)
-            tmp['description'] = _cmd_help if _cmd_help[0] != '-' else _cmd_help[1:]
+            if _cmd_help.startswith('-'):
+                tmp['description'] = _cmd_help[1:]
+            else:
+                tmp['description'] = _cmd_help
             tmp['minlevel'] = str(cmd.level[0]) if self._outputType != 'json' else cmd.level[0]
             tmp['maxlevel'] = str(cmd.level[1]) if self._outputType != 'json' else cmd.level[1]
             commands[cmd] = tmp
