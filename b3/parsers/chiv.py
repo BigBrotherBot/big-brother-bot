@@ -25,6 +25,7 @@
 #   1.3 - patch admin plugin doList() method: display the client DB id instead of slot
 #         patch admin plugin cmd_find() method: display the client DB id instead of slot
 #   1.4 - add debug messages to expose the RCON communication (when log level is down to 8 in b3.xml)
+#   1.5 - fix bug with kill events when either the attacker or victim was not recognized by B3
 
 import sys
 import asyncore
@@ -38,7 +39,7 @@ from struct import unpack
 from hashlib import sha1
 
 __author__ = 'tliszak'
-__version__ = '1.4'
+__version__ = '1.5'
 
 
 class MessageType:
@@ -173,6 +174,12 @@ class ChivParser(Parser):
             eventName = 'EVT_CLIENT_KILL'
             hitloc = 'body'
 
+            if not attacker:
+                self.debug("attacker not found: %s, packet: %r" % (attackerId, packet))
+                return
+            if not victim:
+                self.debug("victim not found: %s, packet: %r" % (victimId, packet))
+                return
             if attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
                 eventName = 'EVT_CLIENT_KILL_TEAM'
                 
