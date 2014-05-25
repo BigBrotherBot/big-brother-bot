@@ -24,6 +24,7 @@
 #   1.2 - minor fixes
 #   1.3 - patch admin plugin doList() method: display the client DB id instead of slot
 #         patch admin plugin cmd_find() method: display the client DB id instead of slot
+#   1.4 - add debug messages to expose the RCON communication (when log level is down to 8 in b3.xml)
 
 import sys
 import asyncore
@@ -37,7 +38,7 @@ from struct import unpack
 from hashlib import sha1
 
 __author__ = 'tliszak'
-__version__ = '1.3'
+__version__ = '1.4'
 
 
 class MessageType:
@@ -171,7 +172,7 @@ class ChivParser(Parser):
             victim = self.clients.getByGUID(victimId)
             eventName = 'EVT_CLIENT_KILL'
             hitloc = 'body'
-            
+
             if attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
                 eventName = 'EVT_CLIENT_KILL_TEAM'
                 
@@ -452,11 +453,14 @@ class ChivParser(Parser):
         AdminPlugin.cmd_find = cmd_find
 
 class Packet(object):
-    msgType = None
-    data = ""
-    dataLength = 0
-    playerId = None
-    message = None
+
+    def __init__(self):
+        self.original_packet = None
+        self.msgType = None
+        self.data = ""
+        self.dataLength = 0
+        self.playerId = None
+        self.message = None
     
     def encode(self):
         s = ""
@@ -477,6 +481,7 @@ class Packet(object):
         self.data += pack('>i', num)
         
     def decode(self, packet):
+        self.original_packet = packet
         self.msgType = unpack('>H', packet[0:2])[0]
         self.dataLength = unpack('>i', packet[2:6])[0]
         self.data = packet[6:6+self.dataLength]
@@ -497,6 +502,11 @@ class Packet(object):
         data = self.data[0:length]
         self.data = self.data[length:]
         return data.decode('utf-8')
+
+    def __repr__(self):
+        if self.original_packet is not None:
+            return "Packet().decode(%r) - %s" % (self.original_packet, self.msgType)
+        return "Packet(%r)" % self.__dict__
     
     @staticmethod
     def getHeaderSize():
@@ -511,6 +521,7 @@ class Client(asyncore.dispatcher_with_send):
 
     def __init__(self, console, host, port, password, packetListener):
         asyncore.dispatcher_with_send.__init__(self)
+        self.console = console
         self._host = host
         self._port = port
         self._password = password
@@ -518,13 +529,16 @@ class Client(asyncore.dispatcher_with_send):
         self.isAuthed = False
         self.keepalive = True
         self.readBuffer = ""
+        self.console.info("starting RCON for game server %s:%s" % (host, port))
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connect((self._host, self._port))
 
     def handle_connect(self):
         self.isAuthed = False
+        self.console.info("RCON connection established")
 
     def send_password(self, challenge):
+        self.console.info("RCON authenticating...")
         password = self._password
         password += challenge
         sha1_pass_bytes = sha1(password).hexdigest().upper()
@@ -548,11 +562,17 @@ class Client(asyncore.dispatcher_with_send):
             if len(self.readBuffer) >= packetSize:
                 packet = Packet()
                 packet.decode(self.readBuffer)
-                self._packetListener(packet)
+                if packet.msgType != MessageType.PING:
+                    self.console.verbose2("RCON> %r" % packet)
+                try:
+                    self._packetListener(packet)
+                except Exception as e:
+                    self.error("failed to handle game server %r" % packet, exc_info=e)
                 self.readBuffer = self.readBuffer[packetSize:]
        
     def sendPacket(self, packet):
         try:
+            self.console.verbose2("RCON< %r" % packet)
             self.send(packet.encode())
         except socket.error, e:
             self.console.error(repr(e))
