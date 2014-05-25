@@ -147,6 +147,16 @@
       data: b3doc_data.commands,
       sDom: "t<'row'<'col-xs-6'l><'col-xs-6'p>>",
       info: false,
+      stateSave: true,
+      stateLoadParams: function (settings, data) {
+        data.oSearch.sSearch = "";
+        f_min = data.f_min;
+        f_max = data.f_max;
+      },
+      stateSaveParams: function (settings, data) {
+        data.f_min = f_min;
+        data.f_max = f_max;
+      },
       order: [
         [ 1, "asc" ]
       ],
@@ -181,7 +191,7 @@
     $.each(m_items, function (d, j) {
       // set class=active for first entry
       var class_active = '';
-      if (d == 0) {
+      if ( j.value == table.column(0).search()[0] ) {
         class_active = 'active';
       }
       $('<li role="presentation" class="' + class_active + '"/>')
@@ -227,7 +237,6 @@
       if (f_max < parseInt($('#filter_min_level option:selected').val())) {
         $('#filter_min_level').val(f_min);
       }
-      console.log(f_max)
       table.draw();
     });
 
@@ -237,9 +246,9 @@
       $('#filter_min_level').append('<option value="' + d + '">' + d + ' - ' + level.name + '</option>');
       $('#filter_max_level').append('<option value="' + d + '">' + d + ' - ' + level.name + '</option>');
     });
-    // set max level to 100
-    // todo: make it dynmic
-    $('#filter_max_level').val(100);
+
+    $('#filter_min_level').val(f_min).change();
+    $('#filter_max_level').val(f_max).change();
 
 
 
