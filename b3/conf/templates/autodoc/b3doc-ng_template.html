@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>B3 commands documentation</title>
   <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-  <link rel="stylesheet" href="http://cdn.datatables.net/plug-ins/40e2d46e03/integration/bootstrap/3/dataTables.bootstrap.css">
+  <link rel="stylesheet" href="http://cdn.datatables.net/plug-ins/28e7751dbec/integration/bootstrap/3/dataTables.bootstrap.css">
   <style>
     html,
     body {
@@ -59,6 +59,11 @@
 
     #b3doc-search_btn {
       cursor: pointer; cursor: hand;
+    }
+
+    table.dataTable thead > tr > th {
+     padding-left: 8px;
+     padding-right: 8px;
     }
 
   </style>
@@ -130,8 +135,8 @@
 </div>
 <script src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
 <script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-<script src="http://datatables.net/download/build/nightly/jquery.dataTables.min.js?_=196d0219f598ce19c84c48d0557e51d3"></script>
-<script src="http://cdn.datatables.net/plug-ins/40e2d46e03/integration/bootstrap/3/dataTables.bootstrap.js"></script>
+<script src="http:////cdn.datatables.net/1.10.0/js/jquery.dataTables.min.js"></script>
+<script src="http://cdn.datatables.net/plug-ins/28e7751dbec/integration/bootstrap/3/dataTables.bootstrap.js"></script>
 <script type="text/javascript" charset="utf-8">
   $(document).ready(function () {
     var b3doc_data = ${json_data};
@@ -142,6 +147,16 @@
       data: b3doc_data.commands,
       sDom: "t<'row'<'col-xs-6'l><'col-xs-6'p>>",
       info: false,
+      stateSave: true,
+      stateLoadParams: function (settings, data) {
+        data.oSearch.sSearch = "";
+        f_min = data.f_min;
+        f_max = data.f_max;
+      },
+      stateSaveParams: function (settings, data) {
+        data.f_min = f_min;
+        data.f_max = f_max;
+      },
       order: [
         [ 1, "asc" ]
       ],
@@ -176,7 +191,7 @@
     $.each(m_items, function (d, j) {
       // set class=active for first entry
       var class_active = '';
-      if (d == 0) {
+      if ( j.value == table.column(0).search()[0] ) {
         class_active = 'active';
       }
       $('<li role="presentation" class="' + class_active + '"/>')
@@ -222,7 +237,6 @@
       if (f_max < parseInt($('#filter_min_level option:selected').val())) {
         $('#filter_min_level').val(f_min);
       }
-      console.log(f_max)
       table.draw();
     });
 
@@ -232,9 +246,9 @@
       $('#filter_min_level').append('<option value="' + d + '">' + d + ' - ' + level.name + '</option>');
       $('#filter_max_level').append('<option value="' + d + '">' + d + ' - ' + level.name + '</option>');
     });
-    // set max level to 100
-    // todo: make it dynmic
-    $('#filter_max_level').val(100);
+
+    $('#filter_min_level').val(f_min).change();
+    $('#filter_max_level').val(f_max).change();
 
 
 
