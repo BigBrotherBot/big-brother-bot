@@ -26,6 +26,8 @@
 #         patch admin plugin cmd_find() method: display the client DB id instead of slot
 #   1.4 - add debug messages to expose the RCON communication (when log level is down to 8 in b3.xml)
 #   1.5 - fix bug with kill events when either the attacker or victim was not recognized by B3
+#   1.6 - current map is now the map name only
+#       - improve Packet representation
 
 import sys
 import asyncore
@@ -39,7 +41,7 @@ from struct import unpack
 from hashlib import sha1
 
 __author__ = 'tliszak'
-__version__ = '1.5'
+__version__ = '1.6'
 
 
 class MessageType:
@@ -145,11 +147,12 @@ class ChivParser(Parser):
                 client.disconnect()
         elif packet.msgType == MessageType.MAP_CHANGED:
             self._currentMapIndex = packet.getInt()
-            self._currentMap = packet.getString()
-            event = self.getEvent('EVT_GAME_ROUND_START', self._currentMap)
+            currentMap = packet.getString()
+            self.game.mapName = currentMap
+            event = self.getEvent('EVT_GAME_ROUND_START', currentMap)
             self.queueEvent(event)
         elif packet.msgType == MessageType.MAP_LIST:
-            mapName = packet.getString()
+            mapName = packet.getString().split('?', 1)[0]
             if self._mapList is None:
                 self._mapList = []
             self._mapList.append(mapName)
@@ -158,7 +161,7 @@ class ChivParser(Parser):
             team = packet.getInt()
             client = self.clients.getByGUID(playerId)
             if client:
-                client.team = team
+                client.team = team  # TODO: map to B3 team ids TEAM_BLUE, TEAM_RED, etc
         elif packet.msgType == MessageType.NAME_CHANGED:
             playerId = packet.getGUID()
             name = packet.getString()
@@ -191,7 +194,7 @@ class ChivParser(Parser):
             victim = self.clients.getByGUID(victimId)
             if victim:
                 weapon = None
-                hitloc = (0, 0, 0)
+                hitloc = None
                 event = self.getEvent('EVT_CLIENT_SUICIDE', (100, weapon, hitloc), victim, victim)    
                 self.queueEvent(event)
         elif packet.msgType == MessageType.ROUND_END:
@@ -204,6 +207,8 @@ class ChivParser(Parser):
             client = self.clients.getByGUID(playerId)
             if client:
                 client.ping = ping
+        else:
+            self.warning("Unkown RCON message type: %s. REPORT THIS TO THE B3 FORUMS. %r" % (packet.msgType, packet))
 
     def sendPacket(self, packet):
         if self._client and self._client.isAuthed:
@@ -344,7 +349,7 @@ class ChivParser(Parser):
         """
         Return the current map/level name
         """
-        return self._currentMap  # TODO handle the case where self._currentMap is not set. Can we query the game server ?
+        return self.game.mapName  # TODO handle the case where self._currentMap is not set. Can we query the game server ?
 
     def getNextMap(self):
         """
@@ -462,13 +467,13 @@ class ChivParser(Parser):
 class Packet(object):
 
     def __init__(self):
-        self.original_packet = None
+        self.raw_packet = None
         self.msgType = None
         self.data = ""
         self.dataLength = 0
         self.playerId = None
         self.message = None
-    
+
     def encode(self):
         s = ""
         s += pack('>H', self.msgType)
@@ -486,13 +491,7 @@ class Packet(object):
 
     def addInt(self, num):
         self.data += pack('>i', num)
-        
-    def decode(self, packet):
-        self.original_packet = packet
-        self.msgType = unpack('>H', packet[0:2])[0]
-        self.dataLength = unpack('>i', packet[2:6])[0]
-        self.data = packet[6:6+self.dataLength]
-        
+
     def getGUID(self):
         playerId = unpack('>Q', self.data[0:8])[0]
         playerId = str(playerId)
@@ -511,8 +510,11 @@ class Packet(object):
         return data.decode('utf-8')
 
     def __repr__(self):
-        if self.original_packet is not None:
-            return "Packet().decode(%r) - %s" % (self.original_packet, self.msgType)
+        if self.raw_packet is not None:
+            return "Packet.decode(%r)  # {'msgType': %r, 'dataLength': %r, 'data': %r}" % (self.raw_packet,
+                                                                                           self.msgType,
+                                                                                           self.dataLength,
+                                                                                           self.data)
         return "Packet(%r)" % self.__dict__
     
     @staticmethod
@@ -522,7 +524,15 @@ class Packet(object):
     @staticmethod
     def getPacketSize(packet):
         return unpack('>i', packet[2:6])[0] + Packet.getHeaderSize()
-    
+
+    @staticmethod
+    def decode(raw_packet):
+        p = Packet()
+        p.msgType = unpack('>H', raw_packet[0:2])[0]
+        p.dataLength = unpack('>i', raw_packet[2:6])[0]
+        p.data = raw_packet[6:6+p.dataLength]
+        p.raw_packet = raw_packet[0:6+p.dataLength]
+        return p
 
 class Client(asyncore.dispatcher_with_send):
 
@@ -567,8 +577,7 @@ class Client(asyncore.dispatcher_with_send):
         while len(self.readBuffer) >= Packet.getHeaderSize():
             packetSize = Packet.getPacketSize(self.readBuffer)
             if len(self.readBuffer) >= packetSize:
-                packet = Packet()
-                packet.decode(self.readBuffer)
+                packet = Packet.decode(self.readBuffer)
                 if packet.msgType != MessageType.PING:
                     self.console.verbose2("RCON> %r" % packet)
                 try:
