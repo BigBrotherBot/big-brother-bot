@@ -1033,6 +1033,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 killerstats.winstreak = int(killerstats.winstreak)
 
             # first check if both players are in provisional ranking state. If true we need to save both players stats.
+            _both_provisional  = False
             if (victimstats.kills + victimstats.deaths) < self.Kswitch_confrontations and (killerstats.kills + killerstats.deaths) < self.Kswitch_confrontations and self.provisional_ranking:
                 _both_provisional = True
                 self.verbose('----> XLRstats: Both players in provisional ranking state!')
