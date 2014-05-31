@@ -950,6 +950,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             return
 
         _assists_count, _assists_sum, _victim_sum = self.check_Assists(client, target, data, 'kill')
+        _both_provisional = False
 
         anonymous = None
 
@@ -1033,7 +1034,6 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 killerstats.winstreak = int(killerstats.winstreak)
 
             # first check if both players are in provisional ranking state. If true we need to save both players stats.
-            _both_provisional  = False
             if (victimstats.kills + victimstats.deaths) < self.Kswitch_confrontations and (killerstats.kills + killerstats.deaths) < self.Kswitch_confrontations and self.provisional_ranking:
                 _both_provisional = True
                 self.verbose('----> XLRstats: Both players in provisional ranking state!')
@@ -1080,6 +1080,11 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 victimstats.losestreak = victimstats.curstreak
             else:
                 victimstats.losestreak = int(victimstats.losestreak)
+
+            # first check if both players are in provisional ranking state. If true we need to save both players stats.
+            if (victimstats.kills + victimstats.deaths) < self.Kswitch_confrontations and (killerstats.kills + killerstats.deaths) < self.Kswitch_confrontations and self.provisional_ranking:
+                _both_provisional = True
+                self.verbose('----> XLRstats: Both players in provisional ranking state!')
 
             # implementation of provisional ranking 23-2-2014 MWe:
             # we use the first Kswitch_confrontations to determine the victims skill,
