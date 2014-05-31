@@ -24,8 +24,10 @@
 #   Added cmd_xlrstatus
 # 02-03-2014 - 3.0.0-beta.5 - Mark Weirath
 #   Protect world client in auto correction, minor improvements
-# 04-21-2014 - 3.0.0-beta.6 - 82ndab-Bravo17
+# 21-04-2014 - 3.0.0-beta.6 - 82ndab-Bravo17
 #   Change default messages to new format
+# 31-05-2014 - 3.0.0-beta.7 - Mark Weirath
+#   Fix provisional ranking when both players are below threshold
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -33,7 +35,7 @@
 # XLRstats Real Time playerstats plugin
 
 __author__ = 'xlr8or & ttlogic'
-__version__ = '3.0.0-beta.6'
+__version__ = '3.0.0-beta.7'
 
 # Version = major.minor.patches(-development.version)
 
@@ -110,7 +112,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     _xlrstats_active = False            # parsing events based on min_players?
     _current_nr_players = 0             # current number of players present
     silent = False                      # Disables the announcement when collecting stats = stealth mode
-    provisional_ranking = True          # First Kswitch_confrontations will not alter killers stats
+    provisional_ranking = True          # First Kswitch_confrontations will not alter opponents stats (unless both are under the limit)
     auto_correct = True                 # Auto correct skill points every two hours to maintain a healthy pool
     _auto_correct_ignore_days = 60      # How many days before ignoring a players skill in the auto-correct calculation
     auto_purge = False                  # Purge players and associated data automatically (cannot be undone!)
@@ -1030,10 +1032,15 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             else:
                 killerstats.winstreak = int(killerstats.winstreak)
 
+            # first check if both players are in provisional ranking state. If true we need to save both players stats.
+            if (victimstats.kills + victimstats.deaths) < self.Kswitch_confrontations and (killerstats.kills + killerstats.deaths) < self.Kswitch_confrontations and self.provisional_ranking:
+                _both_provisional = True
+                self.verbose('----> XLRstats: Both players in provisional ranking state!')
+
             # implementation of provisional ranking 23-2-2014 MWe:
             # we use the first Kswitch_confrontations to determine the victims skill,
             # we don't adjust the killers skill just yet, unless the victim is anonymous (not participating in xlrstats)
-            if victimstats.kills > self.Kswitch_confrontations or not self.provisional_ranking or anonymous == VICTIM:
+            if _both_provisional or (victimstats.kills + victimstats.deaths) > self.Kswitch_confrontations or not self.provisional_ranking or anonymous == VICTIM:
                 if self.announce and not killerstats.hide:
                     client.message('^5XLRstats:^7 Killed %s -> skill: ^2+%.2f^7 -> ^2%.2f^7' % (
                         target.name, (killerstats.skill - oldskill), killerstats.skill))
@@ -1076,7 +1083,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             # implementation of provisional ranking 23-2-2014 MWe:
             # we use the first Kswitch_confrontations to determine the victims skill,
             # we don't adjust the victims skill just yet, unless the killer is anonymous (not participating in xlrstats)
-            if killerstats.kills > self.Kswitch_confrontations or not self.provisional_ranking or anonymous == KILLER:
+            if _both_provisional or (killerstats.kills + killerstats.deaths) > self.Kswitch_confrontations or not self.provisional_ranking or anonymous == KILLER:
                 if self.announce and not victimstats.hide:
                     target.message('^5XLRstats:^7 Killed by %s -> skill: ^1%.2f^7 -> ^2%.2f^7' % (
                         client.name, (victimstats.skill - oldskill), victimstats.skill))
