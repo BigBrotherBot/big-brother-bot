@@ -1158,8 +1158,9 @@ class Parser(object):
         """
         self.debug('%s: Register event <%s>', event_handler.__class__.__name__, self.Events.getName(event_name))
         if not event_name in self._handlers.keys():
-            self._handlers[event_name] = set()
-        self._handlers[event_name].add(event_handler)
+            self._handlers[event_name] = []
+        if event_handler not in self._handlers[event_name]:
+            self._handlers[event_name].append(event_handler)
 
     def queueEvent(self, event, expire=10):
         """

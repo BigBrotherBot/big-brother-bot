@@ -174,10 +174,11 @@ class Plugin:
 
         # if it's the first time we are mapping
         if not name in self.eventmap.keys():
-            self.eventmap[name] = set()
+            self.eventmap[name] = []
 
         # create the mapping
-        self.eventmap[name].add(hook)
+        if hook not in self.eventmap[name]:
+            self.eventmap[name].append(hook)
         self.debug('Created event mapping: %s:%s' % (readable_name, hook.__name__))
 
     def registerEvent(self, name, *args):
