@@ -19,6 +19,9 @@
 #
 # CHANGELOG
 #
+#   2014/06/02 - 1.35.2 - Fenix
+#   * moved back event mapping logic into Plugin class: Parser should be aware only of Plugins listening for incoming
+#    events and not how to dispatch them: for more info see https://github.com/BigBrotherBot/big-brother-bot/pull/193
 #   2014/05/21 - 1.35.1 - Fenix
 #   * moved plugin event mapping function into Parser class
 #   2014/04/14 - 1.35 - Fenix
@@ -173,7 +176,7 @@
 #    * added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon'
-__version__ = '1.35'
+__version__ = '1.35.2'
 
 import os
 import sys
@@ -1147,24 +1150,14 @@ class Parser(object):
         if m:
             self.queueEvent(b3.events.Event(self.getEventID('EVT_UNKNOWN'), m.group(2)[:1]))
 
-    def registerHandler(self, event_name, event_hook, event_handler):
+    def registerHandler(self, event_name, event_handler):
         """
         Register an event handler
         """
+        self.debug('%s: Register event <%s>', event_handler.__class__.__name__, self.Events.getName(event_name))
         if not event_name in self._handlers.keys():
             self._handlers[event_name] = []
         self._handlers[event_name].append(event_handler)
-
-        # check for a valid func mapping
-        if not event_hook or not callable(event_hook):
-            # no valid hook has been specified so the event will be dispatched using the old system: onEvent()
-            self.debug('%s: Register event <%s>', event_handler.__class__.__name__, self.Events.getName(event_name))
-            return
-
-        # create the event mapping
-        event_handler.eventmap[event_name] = event_hook
-        self.debug('%s: Register event <%s -> %s>', event_handler.__class__.__name__,
-                   self.Events.getName(event_name), event_hook.__name__)
 
     def queueEvent(self, event, expire=10):
         """
