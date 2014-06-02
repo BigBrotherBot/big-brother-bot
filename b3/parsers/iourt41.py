@@ -178,9 +178,11 @@
 # 14/04/2014 - 1.20 - Fenix
 #     * rewritten regular expressions on multiline: respect pep8 constraint of 110 chars per line
 #     * use getEventID method to obtain event ids: remove some warnings
+# 02/06/2014 - 1.20.1 - Fenix
+#     * fixed reColor regex stripping whitespaces between words
 #
 __author__ = 'xlr8or, Courgette'
-__version__ = '1.20'
+__version__ = '1.20.1'
 
 import b3
 import b3.events
@@ -296,7 +298,7 @@ class Iourt41Parser(AbstractParser):
                             r'(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+'
                             r'(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
 
-    _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
+    _reColor = re.compile(r'(\^\d)')
 
     # Map: ut4_algiers
     # Players: 8
