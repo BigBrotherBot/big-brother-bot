@@ -19,6 +19,8 @@
 #
 # CHANGELOG
 #
+#   2014/06/02 - 1.35.2 - Courgette
+#   * prevent the same plugin to register multiple times for the same event
 #   2014/06/02 - 1.35.2 - Fenix
 #   * moved back event mapping logic into Plugin class: Parser should be aware only of Plugins listening for incoming
 #    events and not how to dispatch them: for more info see https://github.com/BigBrotherBot/big-brother-bot/pull/193
@@ -176,7 +178,7 @@
 #    * added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon'
-__version__ = '1.35.2'
+__version__ = '1.35.3'
 
 import os
 import sys
@@ -1156,8 +1158,8 @@ class Parser(object):
         """
         self.debug('%s: Register event <%s>', event_handler.__class__.__name__, self.Events.getName(event_name))
         if not event_name in self._handlers.keys():
-            self._handlers[event_name] = []
-        self._handlers[event_name].append(event_handler)
+            self._handlers[event_name] = set()
+        self._handlers[event_name].add(event_handler)
 
     def queueEvent(self, event, expire=10):
         """
