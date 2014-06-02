@@ -177,7 +177,8 @@ class Plugin:
             self.eventmap[name] = []
 
         # create the mapping
-        self.eventmap[name].append(hook)
+        if hook not in self.eventmap[name]:
+            self.eventmap[name].append(hook)
         self.debug('Created event mapping: %s:%s' % (readable_name, hook.__name__))
 
     def registerEvent(self, name, *args):
@@ -192,6 +193,12 @@ class Plugin:
                     self.registerEventHook(name, hook)
                 except (AssertionError, AttributeError), e:
                     self.error('could not register event hook: %s' % e)
+        else:
+            try:
+                self.registerEventHook(name, self.onEvent)
+            except (AssertionError, AttributeError), e:
+                self.error('could not register event hook: %s' % e)
+
 
     def createEvent(self, key, name):
         self.console.createEvent(key, name)
@@ -212,16 +219,12 @@ class Plugin:
         """
         Dispatch an Event.
         """
-        try:
-            collection = self.eventmap[event.type]
-            for func in collection:
-                try:
-                    func(event)
-                except TypeError, e:
-                    self.error('could not parse event %s: %s' % (event.type, e))
-        except KeyError:
-            # keep backwards compatibility
-            self.onEvent(event)
+        collection = self.eventmap[event.type]
+        for func in collection:
+            try:
+                func(event)
+            except TypeError, e:
+                self.error('could not parse event %s: %s' % (event.type, e))
 
         if event.type == self.console.getEventID('EVT_EXIT') or \
             event.type == self.console.getEventID('EVT_STOP'):
