@@ -105,6 +105,8 @@
 #     * remove duplicate reference of event ids
 # 2014/05/02 - 1.24.1 - Fenix
 #     * correctly initialized spamcontrolPlugin class attribute
+# 2014/06/02 - 1.24.2 - Fenix
+#     * fixed reColor regex stripping whitespaces between words
 #
 
 import b3
@@ -118,7 +120,7 @@ from b3.events import Event
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 __author__ = 'Courgette, Fenix'
-__version__ = '1.24.1'
+__version__ = '1.24.2'
 
 
 class Iourt42Client(Client):
@@ -401,7 +403,7 @@ class Iourt42Parser(Iourt41Parser):
                             r'(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+'
                             r'(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
 
-    _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
+    _reColor = re.compile(r'(\^\d)')
 
     # Map: ut4_algiers
     # Players: 8
