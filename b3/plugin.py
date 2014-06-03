@@ -43,9 +43,13 @@
 #    21/05/2014 - 1.8.2 - Fenix
 #    * minor syntax cleanup
 #    * moved event mapping function into Parser class
+#    02/06/2014 - 1.8.3 - Fenix
+#    * moved back event mapping logic into Plugin class: Parser should be aware only of Plugins listening for incoming
+#      events and not how to dispatch them: for more info see https://github.com/BigBrotherBot/big-brother-bot/pull/193
+#    * added possibility to register multiple event hooks for the same event inside a plugin
 #
 __author__ = 'ThorN, Courgette'
-__version__ = '1.8.2'
+__version__ = '1.8.3'
 
 import b3.config
 import b3.events
@@ -152,9 +156,49 @@ class Plugin:
         self.bot('Saving config %s', self.config.fileName)
         return self.config.save()
 
-    def registerEvent(self, name, hook=None):
+    def registerEventHook(self, name, hook):
+        """
+        Register an event hook which will be used to
+        dispatch a specific event once it reaches our plugin.
+        NOTE: This should be only called internally by registerEvent().
+        """
+        readable_name = self.eventmanager.getName(name)
+        if name not in self.events:
+             # make sure the event we are going to map has been registered already
+             raise AssertionError('%s is not an event registered for plugin %s' % (readable_name, self.__class__.__name__))
+
+        hook = getattr(self, hook.__name__, None)
+        if not callable(hook):
+            # make sure the given hook to be a valid method of our plugin
+            raise AttributeError('%s is not a valid method of class %s' % (hook.__name__, self.__class__.__name__))
+
+        # if it's the first time we are mapping
+        if not name in self.eventmap.keys():
+            self.eventmap[name] = []
+
+        # create the mapping
+        if hook not in self.eventmap[name]:
+            self.eventmap[name].append(hook)
+        self.debug('Created event mapping: %s:%s' % (readable_name, hook.__name__))
+
+    def registerEvent(self, name, *args):
+        """
+        Register an event for later processing.
+        """
         self.events.append(name)
-        self.console.registerHandler(name, hook, self)
+        self.console.registerHandler(name, self)
+        if len(args) > 0:
+            for hook in args:
+                try:
+                    self.registerEventHook(name, hook)
+                except (AssertionError, AttributeError), e:
+                    self.error('could not register event hook: %s' % e)
+        else:
+            try:
+                self.registerEventHook(name, self.onEvent)
+            except (AssertionError, AttributeError), e:
+                self.error('could not register event hook: %s' % e)
+
 
     def createEvent(self, key, name):
         self.console.createEvent(key, name)
@@ -175,15 +219,15 @@ class Plugin:
         """
         Dispatch an Event.
         """
-        try:
-            self.eventmap[event.type](event)
-        except (KeyError, TypeError):
-            # NOTE: AttributeError should never be raised at this point
-            # since we already do the very same check on plugin startup
-            self.onEvent(event)  # keep backwards compatibility
+        collection = self.eventmap[event.type]
+        for func in collection:
+            try:
+                func(event)
+            except TypeError, e:
+                self.error('could not parse event %s: %s' % (event.type, e))
 
         if event.type == self.console.getEventID('EVT_EXIT') or \
-                event.type == self.console.getEventID('EVT_STOP'):
+            event.type == self.console.getEventID('EVT_STOP'):
             self.working = False
 
     def handle(self, event):

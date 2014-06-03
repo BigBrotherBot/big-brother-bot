@@ -16,6 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
+import logging
 
 from mock import patch
 from mock import call
@@ -34,9 +35,21 @@ class MyPlugin(Plugin):
     def __init__(self, console, config=None):
         Plugin.__init__(self, console, config=config)
         self._messages = {}
+        self.stub_method_call_count = 0
+        self.stub_method2_call_count = 0
+        self.onEvent_call_count = 0
 
     def stub_method(self, event):
-        pass
+        self.stub_method_call_count += 1
+        logging.debug("stub_method called")
+
+    def stub_method2(self, event):
+        self.stub_method2_call_count += 1
+        logging.debug("stub_method2 called")
+
+    def onEvent(self, event):
+        self.onEvent_call_count += 1
+        logging.debug("onEvent called")
 
 
 class Test_Plugin_getMessage(B3TestCase):
@@ -172,7 +185,13 @@ class Test_Plugin_registerEvent(B3TestCase):
         # THEN
         self.assertIn(k, self.console._handlers.keys())
         self.assertIn(p, self.console._handlers[k])
-        self.assertNotIn(k, p.eventmap.keys())
+        self.assertIn(k, p.eventmap.keys())
+        # WHEN
+        self.console.queueEvent(Event(k, None))
+        # THEN
+        self.assertEqual(1, p.onEvent_call_count)
+        self.assertEqual(0, p.stub_method_call_count)
+        self.assertEqual(0, p.stub_method2_call_count)
 
     def test_register_event_with_not_valid_hook(self):
         # GIVEN
@@ -183,6 +202,12 @@ class Test_Plugin_registerEvent(B3TestCase):
         self.assertIn(k, self.console._handlers.keys())
         self.assertIn(p, self.console._handlers[k])
         self.assertNotIn(k, p.eventmap.keys())
+        # WHEN
+        self.console.queueEvent(Event(k, None))
+        # THEN
+        self.assertEqual(0, p.onEvent_call_count)
+        self.assertEqual(0, p.stub_method_call_count)
+        self.assertEqual(0, p.stub_method2_call_count)
 
     def test_register_event_with_valid_hook(self):
         # GIVEN
@@ -193,4 +218,135 @@ class Test_Plugin_registerEvent(B3TestCase):
         self.assertIn(k, self.console._handlers.keys())
         self.assertIn(p, self.console._handlers[k])
         self.assertIn(k, p.eventmap.keys())
-        self.assertEqual(p.eventmap[k], p.stub_method)
+        self.assertIn(p.stub_method, p.eventmap[k])
+        # WHEN
+        self.console.queueEvent(Event(k, None))
+        # THEN
+        self.assertEqual(0, p.onEvent_call_count)
+        self.assertEqual(1, p.stub_method_call_count)
+        self.assertEqual(0, p.stub_method2_call_count)
+
+    def test_register_event_with_sequential_valid_hooks(self):
+        # GIVEN
+        k = self.console.getEventID('EVT_CLIENT_SAY')
+        p = MyPlugin(self.console, self.conf)
+        p.registerEvent(k, p.stub_method)
+        p.registerEvent(k, p.stub_method2)
+        # THEN
+        self.assertIn(k, self.console._handlers.keys())
+        self.assertIn(p, self.console._handlers[k])
+        self.assertIn(k, p.eventmap.keys())
+        self.assertIn(p.stub_method, p.eventmap[k])
+        self.assertIn(p.stub_method2, p.eventmap[k])
+        # WHEN
+        self.console.queueEvent(Event(k, None))
+        # THEN
+        self.assertEqual(0, p.onEvent_call_count)
+        self.assertEqual(1, p.stub_method_call_count)
+        self.assertEqual(1, p.stub_method2_call_count)
+
+    def test_register_event_with_sequential_valid_and_invalid_hooks(self):
+        # GIVEN
+        k = self.console.getEventID('EVT_CLIENT_SAY')
+        p = MyPlugin(self.console, self.conf)
+        p.registerEvent(k, p.stub_method)
+        p.registerEvent(k, p.stub_not_callable)
+        # THEN
+        self.assertIn(k, self.console._handlers.keys())
+        self.assertIn(p, self.console._handlers[k])
+        self.assertIn(k, p.eventmap.keys())
+        self.assertIn(p.stub_method, p.eventmap[k])
+        self.assertNotIn(p.stub_method2, p.eventmap[k])
+        # WHEN
+        self.console.queueEvent(Event(k, None))
+        # THEN
+        self.assertEqual(0, p.onEvent_call_count)
+        self.assertEqual(1, p.stub_method_call_count)
+        self.assertEqual(0, p.stub_method2_call_count)
+
+    def test_register_event_with_list_of_valid_hooks(self):
+        # GIVEN
+        k = self.console.getEventID('EVT_CLIENT_SAY')
+        p = MyPlugin(self.console, self.conf)
+        p.registerEvent(k, p.stub_method, p.stub_method2)
+        # THEN
+        self.assertIn(k, self.console._handlers.keys())
+        self.assertIn(p, self.console._handlers[k])
+        self.assertIn(k, p.eventmap.keys())
+        self.assertIn(p.stub_method, p.eventmap[k])
+        self.assertIn(p.stub_method2, p.eventmap[k])
+        # WHEN
+        self.console.queueEvent(Event(k, None))
+        # THEN
+        self.assertEqual(0, p.onEvent_call_count)
+        self.assertEqual(1, p.stub_method_call_count)
+        self.assertEqual(1, p.stub_method2_call_count)
+
+    def test_register_event_with_list_of_valid_and_invalid_hooks(self):
+        # GIVEN
+        k = self.console.getEventID('EVT_CLIENT_SAY')
+        p = MyPlugin(self.console, self.conf)
+        p.registerEvent(k, p.stub_method, p.stub_not_callable)
+        # THEN
+        self.assertIn(k, self.console._handlers.keys())
+        self.assertIn(p, self.console._handlers[k])
+        self.assertIn(k, p.eventmap.keys())
+        self.assertIn(p.stub_method, p.eventmap[k])
+        self.assertNotIn(p.stub_method2, p.eventmap[k])
+        # WHEN
+        self.console.queueEvent(Event(k, None))
+        # THEN
+        self.assertEqual(0, p.onEvent_call_count)
+        self.assertEqual(1, p.stub_method_call_count)
+        self.assertEqual(0, p.stub_method2_call_count)
+
+    def test_parse_registered_event_with_multiple_valid_hooks(self):
+        # GIVEN
+        k = self.console.getEventID('EVT_CLIENT_SAY')
+        p = MyPlugin(self.console, self.conf)
+        p.registerEvent(k, p.stub_method)   # register the first hook
+        p.registerEvent(k, p.stub_method2)  # register the second hook
+        # WHEN
+        self.console.queueEvent(Event(k, None))
+        # THEN
+        self.assertEqual(0, p.onEvent_call_count)
+        self.assertEqual(1, p.stub_method_call_count)
+        self.assertEqual(1, p.stub_method2_call_count)
+
+    def test_parse_registered_event_with_multiple_valid_hooks_and_old_fashion_way(self):
+        # GIVEN
+        k = self.console.getEventID('EVT_CLIENT_SAY')
+        p = MyPlugin(self.console, self.conf)
+        p.registerEvent(k)   # old fashion
+        p.registerEvent(k, p.stub_method)
+        # WHEN
+        self.console.queueEvent(Event(k, None))
+        # THEN
+        self.assertEqual(1, p.onEvent_call_count)
+        self.assertEqual(1, p.stub_method_call_count)
+        self.assertEqual(0, p.stub_method2_call_count)
+
+    def test_parse_registered_event_with_no_hook_registered(self):
+        # GIVEN
+        k = self.console.getEventID('EVT_CLIENT_SAY')
+        p = MyPlugin(self.console, self.conf)
+        # WHEN
+        self.console.queueEvent(Event(k, None))
+        # THEN
+        self.assertEqual(0, p.onEvent_call_count)
+        self.assertEqual(0, p.stub_method_call_count)
+        self.assertEqual(0, p.stub_method2_call_count)
+
+    def test_register_event_same_hook_registered_multiple_times(self):
+        # GIVEN
+        k = self.console.getEventID('EVT_CLIENT_SAY')
+        p = MyPlugin(self.console, self.conf)
+        p.registerEvent(k, p.stub_method)
+        p.registerEvent(k, p.stub_method)
+        p.registerEvent(k, p.stub_method)
+        # WHEN
+        self.console.queueEvent(Event(k, None))
+        # THEN
+        self.assertEqual(0, p.onEvent_call_count)
+        self.assertEqual(1, p.stub_method_call_count)
+        self.assertEqual(0, p.stub_method2_call_count)
