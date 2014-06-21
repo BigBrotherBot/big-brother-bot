@@ -18,6 +18,8 @@
 #
 # CHANGELOG
 #
+#   2014/06/21 - 1.30 - Courgette
+#   * fix spam command not considering the loud command prefix (ie: &spam instead of !spam)
 #   2014/05/16 - 1.29 - Courgette
 #   * Add an optional parameter to the !spam command to allow to send a message to a given player in private
 #   2014/05/03 - 1.28.1 - Fenix
@@ -160,7 +162,7 @@
 #    Added data field to warnClient(), warnKick(), and checkWarnKick()
 #
 
-__version__ = '1.29'
+__version__ = '1.30'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon, Fenix'
 
 import re
@@ -2348,7 +2350,10 @@ class AdminPlugin(b3.plugin.Plugin):
             return
         player_name = m.group("player")
         if not player_name:
-            self.console.say(msg)
+            if cmd and cmd.big:
+                self.console.saybig(msg)
+            else:
+                self.console.say(msg)
             return
         sclient = self.findClientPrompt(player_name, client)
         if sclient:

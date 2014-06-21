@@ -1651,3 +1651,8 @@ class Cmd_spam(Admin_functional_test):
         self.assertListEqual(["No players found matching f00"], self.joe.message_history)
         self.assertListEqual([], self.mike.message_history)
 
+    def test_nominal_to_all_players_big(self):
+        with patch.object(self.console, "saybig") as saybig_mock:
+            self.joe.says('&spam rule1')
+        self.assertListEqual([call('^3Rule #1: No racism of any kind')], saybig_mock.mock_calls)
+        self.assertListEqual([], self.joe.message_history)
