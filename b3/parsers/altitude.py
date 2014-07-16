@@ -32,6 +32,8 @@
 #   2014-05-02 - 1.3 - Fenix
 #   * minor syntax changes
 #   * fixed getPlayerPings method declaration not matching the method in Parser class
+#   2014-07-16 : 1.4 Fenix
+#   * added admin key in EVT_CLIENT_KICK data dict when available
 #
 
 import b3
@@ -43,7 +45,7 @@ from b3.events import EVT_CUSTOM
 from b3.parser import Parser
 
 __author__  = 'Courgette'
-__version__ = '1.3'
+__version__ = '1.4'
 
 
 """
@@ -585,7 +587,7 @@ class AltitudeParser(Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
         self.write("kick %s" % client.name)
-        self.queueEvent(self.getEvent('EVT_CLIENT_KICK', data=reason, client=client))
+        self.queueEvent(self.getEvent(self.getEventID('EVT_CLIENT_KICK'), {'reason': reason, 'admin': admin}, client))
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
         """\

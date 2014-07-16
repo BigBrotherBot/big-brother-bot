@@ -21,6 +21,8 @@
 # * improve punkbuster event parsing
 # 2014-05-02 - 0.4.2 - Fenix
 # * syntax cleanup
+# 2014-07-16 : 0.4.3 - Fenix
+# * added admin key in EVT_CLIENT_KICK data dict when available
 #
 
 import asyncore
@@ -38,7 +40,7 @@ from ConfigParser import NoOptionError
 
 
 __author__  = 'Courgette'
-__version__ = '0.4.2'
+__version__ = '0.4.3'
 
 _gameevents_mapping = list()
 def gameEvent(*decorator_param):
@@ -429,8 +431,8 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
             self.write('KICK ProfileID=%s Reason="%s"' % (client.guid, reason))
         else:
             self.write('KICK ProfileID=%s' % client.guid)
-        
-        self.queueEvent(self.getEvent('EVT_CLIENT_KICK', reason, client))
+
+        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_KICK'), {'reason': reason, 'admin': None}, client))
         client.disconnect()
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):

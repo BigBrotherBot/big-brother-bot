@@ -27,6 +27,7 @@
 #   * initialize missing class attributes
 #   * fixed getPlayerPings method declaration not matching the method in Parser class
 #   * fixed client retrieval in kick, ban and tempban function
+# 2014-07-16 : 0.3 - Fenix: added admin key in EVT_CLIENT_KICK data dict when available
 #
 
 import re
@@ -43,7 +44,7 @@ from b3.decorators import Game_event_router
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '0.2'
+__version__ = '0.3'
 
 
 # GAME SETUP
@@ -270,7 +271,7 @@ class InsurgencyParser(Parser):
         event = None
         if client:
             if reason == "Kicked by Console":
-                event = self.getEvent("EVT_CLIENT_KICK", client=client, data=reason)
+                event = self.getEvent("EVT_CLIENT_KICK", client=client, data={'reason': reason, 'admin': None})
             client.disconnect()
         if event:
             return event
@@ -424,7 +425,7 @@ class InsurgencyParser(Parser):
         client = self.storage.getClient(Client(guid=guid))
         if client:
             p = self.parseProperties(properties)
-            return self.getEvent("EVT_CLIENT_KICK", p.get('reason', ''), client)
+            return self.getEvent("EVT_CLIENT_KICK", {'reason': p.get('reason', ''), 'admin': None}, client)
 
     @ger.gameEvent(r'''^server_message: "(?P<msg>.*)"(?P<properties>.*)$''')
     def on_server_message(self, msg, properties):

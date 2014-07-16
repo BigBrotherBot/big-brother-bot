@@ -97,7 +97,10 @@ if __name__ == '__main__':
 # * fix issue with plugins' registered events when importing fakeConsole in different TestSuites
 # 1.11 - 2012/04/15
 # * fix issue with message_history of FakeClient which was shared between instances
-__version__ = '1.11'
+# 1.12 - 2014/07/16
+# * added admin key in EVT_CLIENT_KICK data dict when available
+
+__version__ = '1.12'
 
 
 from b3.cvar import Cvar
@@ -261,7 +264,7 @@ class FakeConsole(b3.parser.Parser):
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         print '>>>kick %s for %s' % (client.name, reason)
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_KICK, reason, client))
+        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_KICK, {'reason': reason, 'admin': admin}, client))
         client.disconnect()
     
     def message(self, client, text):

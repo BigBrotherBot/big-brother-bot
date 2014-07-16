@@ -20,6 +20,8 @@
 # $Id: q3a/abstractParser.py 103 2010-11-01 10:10:10Z xlr8or $
 #
 # CHANGELOG
+#    2014/07/16 : 1.7.6 - Fenix
+#    * added admin key in EVT_CLIENT_KICK data dict when available
 #    2014/04/14 - 1.7.5 - Fenix
 #    * pep8 coding style guide
 #    2013/03/07 - 1.7.4 - 82ndab-Bravo17
@@ -84,7 +86,7 @@
 #    * Added log message for when ban() decides to do a tempban
 
 __author__ = 'ThorN, xlr8or'
-__version__ = '1.7.5'
+__version__ = '1.7.6'
 
 import re
 import string
@@ -484,7 +486,7 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_KICK'), reason, client))
+        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_KICK'), {'reason': reason, 'admin': admin}, client))
         client.disconnect()
 
     def kickbyfullname(self, client, reason='', admin=None, silent=False, *kwargs):
