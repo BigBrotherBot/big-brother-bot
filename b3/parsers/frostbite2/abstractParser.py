@@ -45,9 +45,11 @@
 #         was loaded for an incompatible gamemode
 # 1.11  - rewrote import statements
 #       - replaced variable names using python built-in names
+# 1.12  - added admin key in EVT_CLIENT_KICK data dict when available
+
 #
 __author__  = 'Courgette'
-__version__ = '1.11'
+__version__ = '1.12'
 
 
 import sys
@@ -754,7 +756,7 @@ class AbstractParser(b3.parser.Parser):
             return None
         client = self.getClient(data[0])
         reason = data[1]
-        return b3.events.Event(b3.events.EVT_CLIENT_KICK, data=reason, client=client)
+        return b3.events.Event(b3.events.EVT_CLIENT_KICK, data={'reason': reason, 'admin': None}, client=client)
 
 
     def OnServerLevelloaded(self, action, data):

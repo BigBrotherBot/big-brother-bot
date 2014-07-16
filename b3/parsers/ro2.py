@@ -55,6 +55,7 @@
 #   Incorporate chat changes for server/game v 1.1.0.8
 #   2014-04-25 : 1.42
 #   Allow for empty chat messages
+#   2014-07-16 : 1.43 added admin key in EVT_CLIENT_KICK data dict when available
 #
 #
 from b3 import functions
@@ -75,7 +76,7 @@ import hashlib
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.42'
+__version__ = '1.43'
 
 
 class Ro2Parser(b3.parser.Parser):
@@ -700,7 +701,7 @@ class Ro2Parser(b3.parser.Parser):
 
 
         self.writeAdminCommand(self.getCommand('kick', playerid=client.cid))
-        self.queueEvent(self.getEvent('EVT_CLIENT_KICK', reason, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_KICK', {'reason': reason, 'admin': admin}, client))
         client.disconnect()
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):

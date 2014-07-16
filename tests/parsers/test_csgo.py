@@ -407,7 +407,7 @@ class Test_gamelog_parsing(CsgoTestCase):
         self.clear_events()
         self.parser.parseLine('''L 08/26/2012 - 04:45:04: "Pheonix<22><BOT><TERRORIST>" disconnected (reason "Kicked by Console")''')
         # THEN
-        self.assert_has_event("EVT_CLIENT_KICK", data='Kicked by Console', client=bot22)
+        self.assert_has_event("EVT_CLIENT_KICK", data={'reason': 'Kicked by Console', 'admin': None}, client=bot22)
         self.assert_has_event("EVT_CLIENT_DISCONNECT", data='22', client=bot22)
 
 
@@ -718,7 +718,7 @@ class Test_gamelog_parsing(CsgoTestCase):
         self.clear_events()
         self.parser.parseLine('''L 08/28/2012 - 00:12:07: [basecommands.smx] "Console<0><Console><Console>" kicked "courgette<91><STEAM_1:0:1111111><>" (reason "f00")''')
         # THEN
-        self.assert_has_event("EVT_CLIENT_KICK", 'f00', player)
+        self.assert_has_event("EVT_CLIENT_KICK", {'reason': 'f00', 'admin': None}, player)
 
 
     def test_EVT_SUPERLOGS_WEAPONSTATS(self):

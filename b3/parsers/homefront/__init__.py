@@ -71,7 +71,9 @@
 # * rewrote dictionary creation as literal
 # * correctly initialize class attributes
 # * replaced variable names using python built-in names
-#
+# 2014-07-16 - 1.1.6 Fenix
+# * added admin key in EVT_CLIENT_KICK data dict when available
+
 
 import asyncore
 import b3
@@ -95,7 +97,7 @@ from b3.parsers.homefront.protocol import ChannelType
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.1.5'
+__version__ = '1.1.6'
 
 
 
@@ -745,7 +747,8 @@ class HomefrontParser(b3.parser.Parser):
             self.write(self.getCommand('kick', playerid=client.guid))
         else:
             self.write(self.getCommand('kick', playerid=client.cid))
-        self.queueEvent(self.getEvent('EVT_CLIENT_KICK', reason, client))
+
+        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_KICK'), {'reason': reason, 'admin': admin}, client))
         client.disconnect()
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):

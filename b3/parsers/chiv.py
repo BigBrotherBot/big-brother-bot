@@ -28,6 +28,7 @@
 #   1.5 - fix bug with kill events when either the attacker or victim was not recognized by B3
 #   1.6 - current map is now the map name only
 #       - improve Packet representation
+#   1.7 - added admin key in EVT_CLIENT_KICK data dict when available
 
 import sys
 import asyncore
@@ -41,7 +42,7 @@ from struct import unpack
 from hashlib import sha1
 
 __author__ = 'tliszak'
-__version__ = '1.6'
+__version__ = '1.7'
 
 
 class MessageType:
@@ -287,8 +288,7 @@ class ChivParser(Parser):
         packet.addGUID(client.guid)
         packet.addString(reason)
         self.sendPacket(packet)
-
-        self.queueEvent(self.getEvent('EVT_CLIENT_KICK', reason, client))
+        self.queueEvent(self.getEvent(self.getEventID('EVT_CLIENT_KICK'), {'reason': reason, 'admin': admin}, client))
         
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
         """
