@@ -48,7 +48,7 @@ from b3.parsers.frostbite2.protocol import CommandDisallowedError
 __author__ = 'Courgette, ozon, Dwarfer'
 __version__ = '1.0.3'
 
-BF4_REQUIRED_VERSION = 117719
+BF4_REQUIRED_VERSION = 135082
 
 BF4_PLAYER = 0              # normal player
 BF4_SPECTATOR = 1           # spectator which is not visible in the game for other player but visible as player for b3
