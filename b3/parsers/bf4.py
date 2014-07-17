@@ -137,6 +137,7 @@ GAME_MODES_NAMES = {
     'CaptureTheFlag0': 'Capture the Flag',
     'CarrierAssaultSmall0': 'Carrier Assault',
     'CarrierAssaultLarge0': 'Carrier Assault64',
+    'Chainlink0': 'Chain Link',
 }
 
 GAMEMODES_IDS_BY_NAME = dict()
@@ -167,6 +168,10 @@ MAP_NAME_BY_ID = {
     'XP2_002': 'Nansha Strike',
     'XP2_003': 'Wave Breaker',
     'XP2_004': 'Operation Mortar',
+    'XP3_MarketPl': 'Pearl Market',
+    'XP3_Prpganda': 'Propaganda',
+    'XP3_UrbanGdn': 'Lumphini Garden',
+    'XP3_WtrFront': 'Sunken Dragon',
 }
 
 MAP_ID_BY_NAME = dict()
@@ -223,6 +228,18 @@ GAME_MODES_BY_MAP_ID = {
     'XP2_004':      ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
                      'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'CaptureTheFlag0',
                      'CarrierAssaultSmall0', 'CarrierAssaultLarge0'),
+    'XP3_MarketPl': ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'CaptureTheFlag0',
+                     'Chainlink0'),
+    'XP3_Prpganda': ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'CaptureTheFlag0',
+                     'Chainlink0'),
+    'XP3_UrbanGdn': ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'CaptureTheFlag0',
+                     'Chainlink0'),
+    'XP3_WtrFront': ('ConquestLarge0', 'ConquestSmall0', 'Elimination0', 'Obliteration', 'RushLarge0',
+                     'TeamDeathMatch0', 'SquadDeathMatch0', 'Domination0', 'CaptureTheFlag0',
+                     'Chainlink0'),
 }
 
 COMROSE_CHAT_NAME_BY_ID = {
@@ -309,6 +326,7 @@ class Bf4Parser(AbstractParser):
         'ctf': 'capture the flag',
         'ca': 'carrier assault',
         'ca64': 'carrier assault64',
+        'cl': 'chain link',
     }
 
     def __new__(cls, *args, **kwargs):
