@@ -525,6 +525,7 @@ class Test_bf4_maps(BF4TestCase):
 
 
     def test_getEasyName(self):
+        # main maps
         self.assertEqual('Zavod 311', self.parser.getEasyName('MP_Abandoned'))
         self.assertEqual('Lancang Dam', self.parser.getEasyName('MP_Damage'))
         self.assertEqual('Flood Zone', self.parser.getEasyName('MP_Flooded'))
@@ -535,10 +536,32 @@ class Test_bf4_maps(BF4TestCase):
         self.assertEqual('Siege of Shanghai', self.parser.getEasyName('MP_Siege'))
         self.assertEqual('Rogue Transmission', self.parser.getEasyName('MP_TheDish'))
         self.assertEqual('Dawnbreaker', self.parser.getEasyName('MP_Tremors'))
+        # China Rising) maps
+        self.assertEqual('Silk Road', self.parser.getEasyName('XP1_001'))
+        self.assertEqual('Altai Range', self.parser.getEasyName('XP1_002'))
+        self.assertEqual('Guilin Peaks', self.parser.getEasyName('XP1_003'))
+        self.assertEqual('Dragon Pass', self.parser.getEasyName('XP1_004'))
+        # Second Assault maps
+        self.assertEqual('Caspian Border 2014', self.parser.getEasyName('XP0_Caspian'))
+        self.assertEqual('Firestorm 2014', self.parser.getEasyName('XP0_Firestorm'))
+        self.assertEqual('Gulf Of Oman 2014', self.parser.getEasyName('XP0_Oman'))
+        self.assertEqual('Operation Metro 2014', self.parser.getEasyName('XP0_Metro'))
+        # Naval Strike maps
+        self.assertEqual('Lost Islands', self.parser.getEasyName('XP2_001'))
+        self.assertEqual('Nansha Strike', self.parser.getEasyName('XP2_002'))
+        self.assertEqual('Wave Breaker', self.parser.getEasyName('XP2_003'))
+        self.assertEqual('Operation Mortar', self.parser.getEasyName('XP2_004'))
+        # Sunken Dragon maps
+        self.assertEqual('Pearl Market', self.parser.getEasyName('XP3_MarketPl'))
+        self.assertEqual('Propaganda', self.parser.getEasyName('XP3_Prpganda'))
+        self.assertEqual('Lumphini Garden', self.parser.getEasyName('XP3_UrbanGdn'))
+        self.assertEqual('Sunken Dragon', self.parser.getEasyName('XP3_WtrFront'))
+        # foo
         self.assertEqual('f00', self.parser.getEasyName('f00'))
 
 
     def test_getHardName(self):
+        # main maps
         self.assertEqual('MP_Abandoned', self.parser.getHardName('Zavod 311'))
         self.assertEqual('MP_Damage', self.parser.getHardName('Lancang Dam'))
         self.assertEqual('MP_Flooded', self.parser.getHardName('Flood Zone'))
@@ -549,6 +572,27 @@ class Test_bf4_maps(BF4TestCase):
         self.assertEqual('MP_Siege', self.parser.getHardName('Siege of Shanghai'))
         self.assertEqual('MP_TheDish', self.parser.getHardName('Rogue Transmission'))
         self.assertEqual('MP_Tremors', self.parser.getHardName('Dawnbreaker'))
+        # China Rising) maps
+        self.assertEqual('XP1_001', self.parser.getHardName('Silk Road'))
+        self.assertEqual('XP1_002', self.parser.getHardName('Altai Range'))
+        self.assertEqual('XP1_003', self.parser.getHardName('Guilin Peaks'))
+        self.assertEqual('XP1_004', self.parser.getHardName('Dragon Pass'))
+        # Second Assault maps
+        self.assertEqual('XP0_Caspian', self.parser.getHardName('Caspian Border 2014'))
+        self.assertEqual('XP0_Firestorm', self.parser.getHardName('Firestorm 2014'))
+        self.assertEqual('XP0_Oman', self.parser.getHardName('Gulf Of Oman 2014'))
+        self.assertEqual('XP0_Metro', self.parser.getHardName('Operation Metro 2014'))
+        # Naval Strike maps
+        self.assertEqual('XP2_001', self.parser.getHardName('Lost Islands'))
+        self.assertEqual('XP2_002', self.parser.getHardName('Nansha Strike'))
+        self.assertEqual('XP2_003', self.parser.getHardName('Wave Breaker'))
+        self.assertEqual('XP2_004', self.parser.getHardName('Operation Mortar'))
+        # Sunken Dragon maps
+        self.assertEqual('XP3_MarketPl', self.parser.getHardName('Pearl Market'))
+        self.assertEqual('XP3_Prpganda', self.parser.getHardName('Propaganda'))
+        self.assertEqual('XP3_UrbanGdn', self.parser.getHardName('Lumphini Garden'))
+        self.assertEqual('XP3_WtrFront', self.parser.getHardName('Sunken Dragon'))
+        #foo
         self.assertEqual('f00', self.parser.getHardName('f00'))
 
 
@@ -589,7 +633,7 @@ class Test_bf4_maps(BF4TestCase):
         self.assertEqual('XP1_001', self.parser.getMapsSoundingLike('silk'))
         self.assertEqual('XP1_002', self.parser.getMapsSoundingLike('altai'))
         self.assertEqual('XP1_003', self.parser.getMapsSoundingLike('guilin'))
-        self.assertEqual('XP1_004', self.parser.getMapsSoundingLike('dragon'))
+        self.assertEqual(['sunken dragon', 'dragon pass'], self.parser.getMapsSoundingLike('dragon'))
         self.assertEqual('XP0_Caspian', self.parser.getMapsSoundingLike('caspian'))
         self.assertEqual('XP0_Firestorm', self.parser.getMapsSoundingLike('firestorm'))
         self.assertEqual('XP0_Oman', self.parser.getMapsSoundingLike('oman'))
@@ -602,6 +646,12 @@ class Test_bf4_maps(BF4TestCase):
         self.assertEqual('XP2_002', self.parser.getMapsSoundingLike('strike'))
         self.assertEqual('XP2_003', self.parser.getMapsSoundingLike('wave breaker'))
         self.assertEqual('XP2_004', self.parser.getMapsSoundingLike('operation mortar'))
+        self.assertEqual('XP3_MarketPl', self.parser.getMapsSoundingLike('pearl market'))
+        self.assertEqual('XP3_MarketPl', self.parser.getMapsSoundingLike('pearl'))
+        self.assertEqual('XP3_MarketPl', self.parser.getMapsSoundingLike('market'))
+        self.assertEqual('XP3_Prpganda', self.parser.getMapsSoundingLike('propaganda'))
+        self.assertEqual('XP3_UrbanGdn', self.parser.getMapsSoundingLike('lumphini garden'))
+        self.assertEqual('XP3_WtrFront', self.parser.getMapsSoundingLike('sunken dragon'))
 
     def test_getGamemodeSoundingLike(self):
         self.assertEqual('ConquestSmall0', self.parser.getGamemodeSoundingLike('MP_Siege', 'ConquestSmall0'), 'ConquestSmall0')
@@ -622,6 +672,7 @@ class Test_bf4_maps(BF4TestCase):
         self.assertEqual('CaptureTheFlag0', self.parser.getGamemodeSoundingLike('XP0_Caspian', 'ctf'), 'ctf')
         self.assertEqual('CarrierAssaultSmall0', self.parser.getGamemodeSoundingLike('XP2_001', 'ca'), 'ca')
         self.assertEqual('CarrierAssaultLarge0', self.parser.getGamemodeSoundingLike('XP2_001', 'ca64'), 'ca64')
+        self.assertEqual('Chainlink0', self.parser.getGamemodeSoundingLike('XP3_Prpganda', 'cl'), 'cl')
 
 
 class Test_getPlayerPings(BF4TestCase):
