@@ -19,7 +19,10 @@
 #
 # CHANGELOG
 #
-#   2014/06/02 - 1.35.2 - Courgette
+#   2014/07/18 - 1.36 - Fenix
+#   * new getWrap implementation based on the textwrap.TextWrapper class: the maximum length of each
+#   * message can be customized in the _settings dictionary (_settings['line_length'] for instance)
+#   2014/06/02 - 1.35.3 - Courgette
 #   * prevent the same plugin to register multiple times for the same event
 #   2014/06/02 - 1.35.2 - Fenix
 #   * moved back event mapping logic into Plugin class: Parser should be aware only of Plugins listening for incoming
@@ -140,45 +143,44 @@
 #   2010/03/22 - 1.14.1 - Courgette
 #   * change maprotate() to rotateMap()
 #   2010/03/21 - 1.14 - Courgette
-#    * create method stubs for inheriting classes to implement
+#   * create method stubs for inheriting classes to implement
 #   10/03/2010 - v1.13 - Courgette
-#    * add rconPort for games which have a different rcon port than the game port
-#    * server.game_log option is not mandatory anymore. This makes B3 able to work
-#      with game servers having no game log file
-#    * do not test rcon anymore as the test process differs depending on the game
+#   * add rconPort for games which have a different rcon port than the game port
+#   * server.game_log option is not mandatory anymore. This makes B3 able to work
+#     with game servers having no game log file
+#   * do not test rcon anymore as the test process differs depending on the game
 #   12/12/2009 - v1.12.3 - Courgette
-#    * when working in remote mode, does not download the remote log file.
+#   * when working in remote mode, does not download the remote log file.
 #   06/12/2009 - v1.12.2 - Courgette
-#    * write() can specify a custom maxRetries value
+#   * write() can specify a custom maxRetries value
 #   22/11/2009 - v1.12.1 - Courgette
-#    * b3.xml can have option ('server','rcon_timeout') to specify a custom delay
-#      (in secondes) to use for the rcon socket
+#   * b3.xml can have option ('server','rcon_timeout') to specify a custom delay (secondes) to use for the rcon socket
 #   17/11/2009 - v1.12.0 - Courgette
-#    * b3.xml can now have an optional section named 'devmode'
-#    * move 'replay' option to section 'devmode'
-#    * move 'delay' option to section 'b3'
-#    * add option 'log2console' to section 'devmode'. This will make the bot
-#      write to stderr instead of b3.log (useful if using eclipse or such IDE)
-#    * fix replay mode when bot detected time reset from game log
+#   * b3.xml can now have an optional section named 'devmode'
+#   * move 'replay' option to section 'devmode'
+#   * move 'delay' option to section 'b3'
+#   * add option 'log2console' to section 'devmode'. This will make the bot
+#     write to stderr instead of b3.log (useful if using eclipse or such IDE)
+#   * fix replay mode when bot detected time reset from game log
 #   09/10/2009 - v1.11.2 - xlr8or
-#    * Saved original sys.stdout to console.screen to aid communications to b3 screen
+#   * Saved original sys.stdout to console.screen to aid communications to b3 screen
 #   12/09/2009 - v1.11.1 - xlr8or
-#    * Added few functions and prevent spamming b3.log on pause
+#   * Added few functions and prevent spamming b3.log on pause
 #   28/08/2009 - v1.11.0 - Bakes
-#    * adds Remote B3 thru FTP functionality.
+#   * adds Remote B3 thru FTP functionality.
 #   19/08/2009 - v1.10.0 - courgette
-#    * adds the inflictCustomPenalty() that allows to define game specific penalties.
-#      requires admin.py v1.4+
+#   * adds the inflictCustomPenalty() that allows to define game specific penalties.
+#     requires admin.py v1.4+
 #   10/7/2009 - added code to load publist by default - xlr8or
 #   29/4/2009 - fixed ignored exit code (for restarts/shutdowns) - arbscht
 #   10/20/2008 - 1.9.1b0 - mindriot
-#    * fixed slight typo of b3.events.EVT_UNKOWN to b3.events.EVT_UNKNOWN
+#   * fixed slight typo of b3.events.EVT_UNKOWN to b3.events.EVT_UNKNOWN
 #   11/29/2005 - 1.7.0 - ThorN
-#    * added atexit handlers
-#    * added warning, info, exception, and critical log handlers
+#   * added atexit handlers
+#   * added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon'
-__version__ = '1.35.3'
+__version__ = '1.36'
 
 import os
 import sys
@@ -205,6 +207,7 @@ from ConfigParser import NoOptionError
 from b3.clients import Clients, Group
 from b3.functions import getModule, vars2printf
 from b3.decorators import memoize
+from textwrap import TextWrapper
 
 try:
     from xml.etree import cElementTree as ElementTree
@@ -219,6 +222,7 @@ class Parser(object):
     _handlers = {}
     _plugins = {}
     _pluginOrder = []
+    _debug = True
     _paused = False
     _pauseNotice = False
     _events = {}
@@ -248,10 +252,10 @@ class Parser(object):
     gameName = None
     type = None
     working = True
+    wrapper = None
     queue = None
     config = None
     storage = None
-    _debug = True
     output = None
     log = None
     replay = False
@@ -275,8 +279,7 @@ class Parser(object):
     OutputClass = b3.parsers.q3a.rcon.Rcon
 
     _settings = {
-        'line_length': 65,
-        'min_wrap_length': 100,
+        'line_length': 80,
         'message_delay': 0
     }
 
@@ -286,7 +289,9 @@ class Parser(object):
 
     name = 'b3'
     prefix = '^2%s:^3'
+    pmPrefix = '^8[pm]^7'
     msgPrefix = ''
+    deadPrefix = '[DEAD]^7'
 
     _publicIp = ''
     _rconIp = ''
@@ -545,6 +550,12 @@ class Parser(object):
         self.clients = Clients(self)
         self.loadPlugins()
         self.loadArbPlugins()
+
+        # allow configurable max line length
+        if self.config.has_option('server', 'max_line_length'):
+            self._settings['line_length'] = self.config.getint('server', 'max_line_length')
+
+        self.debug('line_length: %s' % self._settings['line_length'])
 
         self.game = b3.game.Game(self, self.gameName)
         
@@ -1240,11 +1251,14 @@ class Parser(object):
 
     def writelines(self, msg):
         """
-        Write a sequence of messages to Rcon/Console. Optimized for speed
+        Write a sequence of messages to Rcon/Console. Optimized for speed.
+        :param msg: The message to be sent to Rcon/Console.
         """
         if self.replay:
             self.bot('Sent rcon message: %s' % msg)
         elif self.output is None:
+            pass
+        elif not msg:
             pass
         else:
             res = self.output.writelines(msg)
@@ -1290,47 +1304,22 @@ class Parser(object):
         except Exception, e:
             self.error(e)
 
-    def getWrap(self, text, length=80, minWrapLen=150):
+    def getWrap(self, text):
         """
-        Returns a sequence of lines for text that fits within the limits
+        Returns a sequence of lines for text that fits within the limits.
+        :param text: The text that needs to be splitted.
         """
         if not text:
             return []
 
-        length = int(length)
-        text = text.replace('//', '/ /')
+        if not self.wrapper:
+            # initialize the wrapper if needed
+            self.wrapper = TextWrapper(width=self._settings['line_length'],
+                                       drop_whitespace=True,
+                                       break_long_words=True,
+                                       break_on_hyphens=False)
 
-        if len(text) <= minWrapLen:
-            return [text]
-
-        text = re.split(r'\s+', text)
-
-        lines = []
-        color = '^7'
-
-        line = text[0]
-        for t in text[1:]:
-            if len(re.sub(self._reColor, '', line)) + len(re.sub(self._reColor, '', t)) + 2 <= length:
-                line = '%s %s' % (line, t)
-            else:
-                if len(lines) > 0:
-                    lines.append('^3>%s%s' % (color, line))
-                else:
-                    lines.append('%s%s' % (color, line))
-
-                m = re.findall(self._reColor, line)
-                if m:
-                    color = m[-1]
-
-                line = t
-
-        if len(line):
-            if len(lines) > 0:
-                lines.append('^3>%s%s' % (color, line))
-            else:
-                lines.append('%s%s' % (color, line))
-
-        return lines
+        return self.wrapper.wrap(text)
 
     def error(self, msg, *args, **kwargs):
         """
@@ -1357,7 +1346,9 @@ class Parser(object):
         self.log.verbose(msg, *args, **kwargs)
 
     def verbose2(self, msg, *args, **kwargs):
-        """Log an extra verbose message"""
+        """
+        Log an extra verbose message
+        """
         self.log.verbose2(msg, *args, **kwargs)
 
     def console(self, msg, *args, **kwargs):

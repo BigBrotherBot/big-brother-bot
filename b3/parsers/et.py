@@ -17,13 +17,18 @@
 #
 # CHANGELOG
 #
-#   02/5/2014 - 0.0.2 - Fenix
-#   * Added missing import statements
-#   * Fixed wrong import statement for PunkBuster
-#   * Syntax
+#   02/05/2014 - 0.0.2 - Fenix
+#   * added missing import statements
+#   * fixed wrong import statement for PunkBuster
+#   * syntax cleanup
+#   18/07/2014 - 0.0.3 - Fenix
+#   * updated parser to comply with the new getWrap implementation
+#   * removed _settings dict re-declaration: was the same of the AbstractParser
+#   * updated rcon command patterns
+from b3.functions import prefixText
 
 __author__  = 'ThorN'
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 import re
 import string
@@ -38,18 +43,13 @@ class EtParser(AbstractParser):
     gameName = 'et'
     privateMsg = False
 
-    _settings = {
-        'line_length': 65,
-        'min_wrap_length': 90
-    }
-
     _commands = {
-        'message': 'qsay %s %s ^8[pm]^7 %s',
-        'say': 'qsay %s %s',
-        'set': 'set %s %s',
-        'kick': 'clientkick %s %s',
-        'ban': 'banid %s %s',
-        'tempban': 'clientkick %s %s'
+        'ban': 'banid %(cid)s %(reason)s',
+        'kick': 'clientkick %(cid)s %(reason)s',
+        'message': 'qsay %(message)s',
+        'say': 'qsay %(message)s',
+        'set': 'set %(name)s %(value)s',
+        'tempban': 'clientkick %(cid)s %(reason)s'
     }
 
     _eventMap = {
@@ -62,12 +62,17 @@ class EtParser(AbstractParser):
 
     _lineFormats = (
         #1579:03ConnectInfo: 0: E24F9B2702B9E4A1223E905BF597FA92: ^w[^2AS^w]^2Lead: 3: 3: 24.153.180.106:2794
-        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<pbid>[0-9A-Z]{32}):\s*(?P<name>[^:]+):\s*(?P<num1>[0-9]+):\s*(?P<num2>[0-9]+):\s*(?P<ip>[0-9.]+):(?P<port>[0-9]+))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<pbid>[0-9A-Z]{32}):\s*(?P<name>[^:]+):\s*'
+                   r'(?P<num1>[0-9]+):\s*(?P<num2>[0-9]+):\s*(?P<ip>[0-9.]+):(?P<port>[0-9]+))$', re.IGNORECASE),
+
         #1536:17sayc: 0: ^w[^2AS^w]^2Lead:  sorry...
         #1536:34sayteamc: 17: ^1[^7DP^1]^4Timekiller: ^4ammo ^2here !!!!!
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<name>.+):\s+(?P<text>.*))$', re.IGNORECASE),
+
         #1536:37Kill: 1 18 9: ^1klaus killed ^1[pura]fox.nl by MOD_MP40
-        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<aweap>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<aweap>[0-9]+):\s*'
+                   r'(?P<text>.*))$', re.IGNORECASE),
+
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<text>.*))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>.*)$', re.IGNORECASE)
@@ -85,23 +90,29 @@ class EtParser(AbstractParser):
         client.hide = True
 
         self.clients.update(client)
-
         self.PunkBuster = PunkBuster.PunkBuster(self)
 
     def message(self, client, text):
-        try:
-            if client is None:
-                self.say(text)
-            elif client.cid is None:
-                pass
-            else:
-                lines = []
-                for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
-                    lines.append('qsay %s ^8[%s^8]^7 %s' % (self.msgPrefix, client.exactName, line))
+        """
+        Send a private message to a client.
+        :param client: The client to who send the message.
+        :param text: The message to be sent.
+        """
+        if client is None:
+            # do a normal say
+            self.say(text)
+            return
 
-                self.writelines(lines)
-        except:
-            pass
+        if client.cid is None:
+            # skip this message
+            return
+
+        lines = []
+        message = prefixText([self.msgPrefix, self.pmPrefix], text)
+        message = message.strip()
+        for line in self.getWrap(message):
+            lines.append(self.getCommand('message', message=line))
+        self.writelines(lines)
 
     # join
     #1579:03ConnectInfo: 0: E24F9B2702B9E4A1223E905BF597FA92: ^w[^2AS^w]^2Lead: 3: 3: 24.153.180.106:2794

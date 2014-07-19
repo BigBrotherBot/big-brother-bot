@@ -46,10 +46,10 @@
 # 1.11  - rewrote import statements
 #       - replaced variable names using python built-in names
 # 1.12  - added admin key in EVT_CLIENT_KICK data dict when available
-
+# 1.13  - updated abstract parser to comply with the new getWrap implementation
 #
 __author__  = 'Courgette'
-__version__ = '1.12'
+__version__ = '1.13'
 
 
 import sys
@@ -74,7 +74,7 @@ from b3.parsers.frostbite2.protocol import CommandDisallowedError
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 from b3.parsers.frostbite2.util import MapListBlock
 from b3.parsers.frostbite2.util import BanlistContent
-from b3.functions import getStuffSoundingLike
+from b3.functions import getStuffSoundingLike, prefixText
 
 # how long should the bot try to connect to the Frostbite server before giving out (in second)
 GAMESERVER_CONNECTION_WAIT_TIMEOUT = 600
@@ -86,9 +86,6 @@ class AbstractParser(b3.parser.Parser):
 
     gameName = None
     privateMsg = True
-
-    # hard limit for rcon command admin.say
-    SAY_LINE_MAX_LENGTH = 128
 
     OutputClass = FrostbiteRcon
     _serverConnection = None
@@ -105,7 +102,6 @@ class AbstractParser(b3.parser.Parser):
 
     _settings = {
         'line_length': 128,
-        'min_wrap_length': 128,
         'message_delay': .8,
         'big_msg_duration': 4,
         'big_b3_private_responses': False,
@@ -276,6 +272,7 @@ class AbstractParser(b3.parser.Parser):
                 return
 
             map_id, gamemode_id, num_rounds = parsed_data
+
             try:
                 suggestions = self.console.changeMap(map_id, gamemode_id=gamemode_id, number_of_rounds=num_rounds)
             except CommandFailedError, err:
@@ -307,7 +304,9 @@ class AbstractParser(b3.parser.Parser):
 
 
     def run(self):
-        """Main worker thread for B3"""
+        """
+        Main worker thread for B3
+        """
         self.bot('Start listening ...')
         self.screen.write('Startup Complete : B3 is running! Let\'s get to work!\n\n')
         self.screen.write('(If you run into problems, check %s for detailed log info)\n' % self.config.getpath('b3', 'logfile'))
@@ -501,7 +500,6 @@ class AbstractParser(b3.parser.Parser):
         self.Events.createEvent('EVT_PUNKBUSTER_UCON', 'PunkBuster UCON')
         self.Events.createEvent('EVT_PUNKBUSTER_SCREENSHOT_RECEIVED', 'PunkBuster Screenshot received')
 
-        self.load_conf_max_say_line_length()
         self.load_config_message_delay()
         self.load_conf_ban_agent()
         self.load_conf_big_b3_private_responses()
@@ -522,7 +520,7 @@ class AbstractParser(b3.parser.Parser):
         while self.working:
             try:
                 msg = self.sayqueue.get(timeout=self.sayqueue_get_timeout)
-                for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
+                for line in self.getWrap(self.stripColors(prefixText([self.msgPrefix], msg))):
                     self.write(self.getCommand('say', message=line))
                     if self.working:
                         time.sleep(self._settings['message_delay'])
@@ -581,38 +579,6 @@ class AbstractParser(b3.parser.Parser):
                 res = self.output.write(msg, maxRetries=maxRetries, needConfirmation=needConfirmation)
                 self.output.flush()
                 return res
-
-    def getWrap(self, text, length=None, minWrapLen=None):
-        """Returns a sequence of lines for text that fits within the limits
-        """
-        if not text:
-            return []
-
-        if length is None:
-            length = self._settings['line_length']
-
-        maxLength = int(length)
-
-        if len(text) <= maxLength:
-            return [text]
-        else:
-            wrappoint = text[:maxLength].rfind(" ")
-            if wrappoint == 0:
-                wrappoint = maxLength
-            lines = [text[:wrappoint]]
-            remaining = text[wrappoint:]
-            while len(remaining) > 0:
-                if len(remaining) <= maxLength:
-                    lines.append(remaining)
-                    remaining = ""
-                else:
-                    wrappoint = remaining[:maxLength].rfind(" ")
-                    if wrappoint == 0:
-                        wrappoint = maxLength
-                    lines.append(remaining[0:wrappoint])
-                    remaining = remaining[wrappoint:]
-            return lines
-
 
     ###############################################################################################
     #
@@ -1028,12 +994,12 @@ class AbstractParser(b3.parser.Parser):
         self.sayqueue.put(msg)
 
     def saybig(self, msg):
-        """\
-        broadcast a message to all players in a way that will catch their attention.
+        """
+        Broadcast a message to all players in a way that will catch their attention.
         """
         if msg and len(msg.strip())>0:
-            text = self.stripColors(self.msgPrefix + ' ' + msg)
-            for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
+            text = self.stripColors(prefixText([self.msgPrefix], msg))
+            for line in self.getWrap(text):
                 self.write(self.getCommand('yell', message=line, big_msg_duration=int(float(self._settings['big_msg_duration']))))
 
         if self._settings['big_msg_repeat'] == 'all':
@@ -1641,24 +1607,6 @@ class AbstractParser(b3.parser.Parser):
                     'failed to read message_delay setting "%s" : %s' % (self.config.get(self.gameName, 'message_delay'), err))
         self.debug('message_delay: %s' % self._settings['message_delay'])
 
-
-    def load_conf_max_say_line_length(self):
-        if self.config.has_option(self.gameName, 'max_say_line_length'):
-            try:
-                maxlength = self.config.getint(self.gameName, 'max_say_line_length')
-                if maxlength > self.SAY_LINE_MAX_LENGTH:
-                    self.warning('max_say_line_length cannot be greater than %s' % self.SAY_LINE_MAX_LENGTH)
-                    maxlength = self.SAY_LINE_MAX_LENGTH
-                if maxlength < 20:
-                    self.warning('max_say_line_length is way too short. using minimum value 20')
-                    maxlength = 20
-                self._settings['line_length'] = maxlength
-                self._settings['min_wrap_length'] = maxlength
-            except Exception, err:
-                self.error('failed to read max_say_line_length setting "%s" : %s' % (
-                    self.config.get(self.gameName, 'max_say_line_length'), err))
-        self.debug('line_length: %s' % self._settings['line_length'])
-
     def load_conf_big_msg_repeat(self):
         """Load big_msg_repeat from config into self._settings['big_msg_repeat']
 
@@ -1733,7 +1681,7 @@ def patch_b3_clients():
                 self.messagequeue = Queue.Queue()
             # fill the queue
             text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
-            for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
+            for line in self.console.getWrap(text):
                 self.messagequeue.put(line)
             # create a thread that executes the worker and pushes out the queue
             if not hasattr(self, 'messagehandler') or not self.messagehandler.isAlive():
@@ -1760,7 +1708,7 @@ def patch_b3_clients():
     def frostbiteClientYellMethod(self, msg):
         if msg and len(msg.strip())>0:
             text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
-            for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
+            for line in self.console.getWrap(text):
                 self.console.write(self.console.getCommand('bigmessage', message=line, cid=self.cid, big_msg_duration=int(float(self.console._settings['big_msg_duration']))))
     b3.clients.Client.yell = frostbiteClientYellMethod
 

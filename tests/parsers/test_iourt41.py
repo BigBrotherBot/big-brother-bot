@@ -170,7 +170,7 @@ num score ping name            lastmsg  address              qport rate
         superman = Client(console=self.console, cid="11")
         self.console.msgPrefix = "B3:"
         self.console.message(superman, "something")
-        verify(self.output_mock).write('tell 11 B3: ^3[pm]^7 something')
+        verify(self.output_mock).write('tell 11 B3: ^8[pm]^7 something')
 
 
     def test_kick(self):

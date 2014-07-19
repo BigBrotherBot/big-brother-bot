@@ -15,20 +15,20 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 #
 # CHANGELOG
 #
-# 2012-08-28 - 0.4 - Courgette
+#   2012-08-28 - 0.4 - Courgette
 #   * fix sync()
-# 2012-08-28 - 0.5 - Courgette
+#   2012-08-28 - 0.5 - Courgette
 #   * fix SourceRconError: RCON message too large to send
 #   * should fix UnicodeDecodeError in Rcon class when sending a command
 #   * refactors the regular expressions for game events to make them easier to read
 #   * add method parseProperties which helps extracting extended game log format
 #   * add SourceMod SuperLogs CS:S specific events : EVT_SUPERLOGS_WEAPONSTATS and EVT_SUPERLOGS_WEAPONSTATS2
-# 2012-08-29 - 0.6 - Courgette
+#   2012-08-29 - 0.6 - Courgette
 #   * fix Courgette/big-brother-bot#84 - SourceRconError: RCON message too large to send
 #   * fix Courgette/big-brother-bot#85 - rcon write() does is missing the maxRetries parameter
 #   * fix Courgette/big-brother-bot#86 - UnicodeDecodeError
@@ -36,31 +36,31 @@
 #     if the SourceMod SuperLogs plugin is active and provides kill locations.
 #   * fire EVT_CLIENT_ACTION events for game events Got_The_Bomb, Dropped_The_Bomb, Planted_The_Bomb,
 #     Begin_Bomb_Defuse_Without_Kit, Defused_The_Bomb, headshot, round_mvp
-# 2012-09-11 - 0.7 Courgette
+#   2012-09-11 - 0.7 Courgette
 #   * tweak say lines max length
-# 2012-09-11 - 0.8 Courgette
+#   2012-09-11 - 0.8 Courgette
 #   * full unicode support
-# 2012-09-13 - 1.0 Courgette
+#   2012-09-13 - 1.0 Courgette
 #   * split long messages into lines and add B3 prefixes to them
-# 2012-09-13 - 1.1 Courgette
+#   2012-09-13 - 1.1 Courgette
 #   * add support for SourceMod plugin "B3 Say"
-# 2012-09-17 - 1.2 Courgette
+#   2012-09-17 - 1.2 Courgette
 #   * fix say event when player has no team
 #   * fix ban/tempban/unban
 #   * add event EVT_SERVER_REQUIRES_RESTART which is triggered when the server requires a restart. This can be useful
 #     for a plugin could act upon such event by send an email to admin, restarting the server, ...
 #   * implement rotateMap() => the admin plugin !mapcycle command now works
 #   * the admin plugin !map command is now able to provide suggestions if map name is incorrect
-# 2012-09-19 - 1.3 Courgette
+#   2012-09-19 - 1.3 Courgette
 #   * fix issue #88 (https://github.com/courgette/big-brother-bot/issues/88) regarding clan name appearing in some of
 #     the game log lines in place of the player team.
-# 2012-10-08 - 1.4 Courgette
+#   2012-10-08 - 1.4 Courgette
 #   * better detection of EVT_SERVER_REQUIRES_RESTART
 #   * now detect client action Begin_Bomb_Defuse_With_Kit
 #   * fix #90 - check that SourceMod is installed at startup
-# 2012-10-19 - 1.4.1 Courgette
+#   2012-10-19 - 1.4.1 Courgette
 #   * fix ban that was queuing a EVT_CLIENT_BAN_TEMP event instead of EVT_CLIENT_BAN
-# 2013-08-17 - 1.5 Courgette
+#   2013-08-17 - 1.5 Courgette
 #   * can parse "switched team" game log lines
 #   * can parse "purchased" game log lines and fires a EVT_CLIENT_ACTION event
 #   * can parse "threw" game log lines and fires a EVT_CLIENT_ACTION event
@@ -68,34 +68,42 @@
 #   * can parse "committed suicide" game log lines which have player location in
 #   * can parse "assisted killing" game log lines
 #   * BOT won't make it to the database clients table anymore
-# 2013-08-19 - 1.5.1 Courgette
+#   2013-08-19 - 1.5.1 Courgette
 #   * do not reconnect players leaving the game server (regression from v1.5 - parsing of "switched team" lines)
-# 2014-01-10 - 1.6 Courgette
+#   2014-01-10 - 1.6 Courgette
 #   * add missing B3 event EVT_GAME_ROUND_START
-# 2014-01-13 - 1.6.1 Courgette
+#   2014-01-13 - 1.6.1 Courgette
 #   * add missing B3 event EVT_CLIENT_JOIN at round start. See #148
-# 2014-01-13 - 1.7 Fenix
+#   2014-01-13 - 1.7 Fenix
 #   * code cleanup
 #   * correctly set bot flag in getClientOrCreate
-# 2014-05-02 - 1.7.1 - Fenix
+#   2014-05-02 - 1.7.1 - Fenix
 #   * rewrote import statements
 #   * initialize missing class attributes
 #   * fixed getPlayerPings method declaration not matching the method in Parser class
 #   * fixed client retrieval in kick, ban and tempban function
-# 2014-07-16 : 1.7.2 - Fenix
+#   2014-07-16 : 1.7.2 - Fenix
 #   * added admin key in EVT_CLIENT_KICK data dict when available
+#   2014/07/18 - 1.7.3 - Fenix
+#   * updated abstract parser to comply with the new getWrap implementation
 
 import re
 import time
-from b3.clients import Client, Clients
-from b3.functions import minutesStr, time2minutes, getStuffSoundingLike
-from b3.parser import Parser
-from b3 import TEAM_UNKNOWN, TEAM_BLUE, TEAM_RED
+
+from b3 import TEAM_UNKNOWN
+from b3 import TEAM_BLUE
+from b3 import TEAM_RED
+from b3.clients import Client
+from b3.clients import Clients
 from b3.decorators import Game_event_router
+from b3.functions import minutesStr, prefixText
+from b3.functions import time2minutes
+from b3.functions import getStuffSoundingLike
+from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '1.7.2'
+__version__ = '1.7.3'
 
 
 # GAME SETUP
@@ -167,7 +175,9 @@ class CsgoParser(Parser):
     # in order to get stripColors working
     _reColor = re.compile(r'(\^[0-9])')
 
-    _settings = dict(line_length=200, min_wrap_length=200)
+    _settings = {
+        'line_length': 200,
+    }
 
     last_killlocation_properties = None
     sm_plugins = None
@@ -573,8 +583,8 @@ class CsgoParser(Parser):
             if "B3 Say" in self.sm_plugins:
                 template = 'b3_say %s'
             else:
-                msg = self.msgPrefix + ' ' + msg
-            for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+                msg = prefixText([self.msgPrefix], msg)
+            for line in self.getWrap(msg):
                 self.output.write(template % line)
 
     def saybig(self, msg):
@@ -586,8 +596,8 @@ class CsgoParser(Parser):
             if "B3 Say" in self.sm_plugins:
                 template = 'b3_hsay %s'
             else:
-                msg = self.msgPrefix + ' ' + msg
-            for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+                msg = prefixText([self.msgPrefix], msg)
+            for line in self.getWrap(msg):
                 self.output.write(template % line)
 
     def message(self, client, msg):
@@ -600,8 +610,8 @@ class CsgoParser(Parser):
                 if "B3 Say" in self.sm_plugins:
                     template = 'b3_psay #%(guid)s "%(msg)s"'
                 else:
-                    msg = self.msgPrefix + ' ' + msg
-                for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+                    msg = prefixText([self.msgPrefix], msg)
+                for line in self.getWrap(msg):
                     self.output.write(template % {'guid': client.guid, 'msg': line})
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -811,41 +821,6 @@ class CsgoParser(Parser):
     #    Other methods
     #
     ###############################################################################################
-
-    def getWrap(self, text, length=80, min_wrap_len=150):
-        """\
-        Returns a sequence of lines for text that fits within the limits
-        """
-        if not text:
-            return []
-
-        length = int(length)
-        clean_text = self.stripColors(text.strip())
-
-        if len(clean_text) <= min_wrap_len:
-            return [clean_text]
-
-        text = re.split(r'\s+', clean_text)
-        lines = []
-
-        line = text[0]
-        for t in text[1:]:
-            if len(line) + len(t) + 2 <= length:
-                line = '%s %s' % (line, t)
-            else:
-                if len(lines) > 0:
-                    lines.append(u'› %s' % line)
-                else:
-                    lines.append(line)
-                line = t
-
-        if len(line):
-            if len(lines) > 0:
-                lines.append(u'› %s' % line)
-            else:
-                lines.append(line)
-
-        return lines
 
     def parseLine(self, line):
         if line is None:

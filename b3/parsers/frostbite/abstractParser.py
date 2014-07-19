@@ -14,7 +14,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
@@ -53,9 +53,12 @@
 #   * rewrote dictionary creation as literals
 #   * renamed sayqueuelistener() method in sayqueuelistenerworker(): was overwriting an attribute
 #   * correctly initialize variables before usage
+#   2014/07/18 - 1.7.2 - Fenix
+#   * updated abstract parser to comply with the new getWrap implementation
 #
+
 __author__  = 'Courgette'
-__version__ = '1.7.1'
+__version__ = '1.7.2'
 
 
 import sys
@@ -70,13 +73,12 @@ import b3.parsers.frostbite.rcon as rcon
 import b3.events
 import b3.cvar
 
-from b3.functions import soundex, levenshteinDistance
+from b3.functions import soundex, levenshteinDistance, prefixText
 from b3.parsers.frostbite.connection import FrostbiteConnection
 from b3.parsers.frostbite.connection import FrostbiteException
 from b3.parsers.frostbite.connection import FrostbiteCommandFailedError
 from b3.parsers.frostbite.util import PlayerInfoBlock
 
-SAY_LINE_MAX_LENGTH = 100
 
 class AbstractParser(b3.parser.Parser):
     """
@@ -96,12 +98,11 @@ class AbstractParser(b3.parser.Parser):
     _reColor = re.compile(r'(\^[0-9])') 
     
     _settings = {
-        'line_length': 65,
-        'min_wrap_length': 65,
+        'line_length': 100,
         'message_delay': 2
     }
 
-    _gameServerVars = () # list available cvar
+    _gameServerVars = () # list available cvars
 
     _commands = {
         'message': ('admin.say', '%(message)s', 'player', '%(cid)s'),
@@ -214,8 +215,7 @@ class AbstractParser(b3.parser.Parser):
         func = ''
         match = re.search(r"^(?P<actor>[^.]+)\.on(?P<event>.+)$", eventType)
         if match:
-            func = 'On%s%s' % (string.capitalize(match.group('actor')), \
-                               string.capitalize(match.group('event')))
+            func = 'On%s%s' % (string.capitalize(match.group('actor')), string.capitalize(match.group('event')))
             #self.debug("-==== FUNC!!: " + func)
             
         if match and hasattr(self, func):
@@ -261,15 +261,14 @@ class AbstractParser(b3.parser.Parser):
         self.sayqueuelistener = threading.Thread(target=self.sayqueuelistenerworker)
         self.sayqueuelistener.setDaemon(True)
         self.sayqueuelistener.start()
-
     
     def sayqueuelistenerworker(self):
         while self.working:
-            msg = self.sayqueue.get()
-            for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
+            message = self.sayqueue.get()
+            message = self.stripColors(prefixText([self.msgPrefix], message)).strip()
+            for line in self.getWrap(message):
                 self.write(self.getCommand('say', message=line))
                 time.sleep(self._settings['message_delay'])
-                
 
     def joinPlayers(self):
         self.info('Joining players...')
@@ -331,34 +330,6 @@ class AbstractParser(b3.parser.Parser):
                 res = self.output.write(msg, maxRetries=maxRetries, needConfirmation=needConfirmation)
                 self.output.flush()
                 return res
-            
-    def getWrap(self, text, length=SAY_LINE_MAX_LENGTH, minWrapLen=SAY_LINE_MAX_LENGTH):
-        """Returns a sequence of lines for text that fits within the limits
-        """
-        if not text:
-            return []
-    
-        maxLength = int(length)
-        
-        if len(text) <= maxLength:
-            return [text]
-        else:
-            wrappoint = text[:maxLength].rfind(" ")
-            if wrappoint == 0:
-                wrappoint = maxLength
-            lines = [text[:wrappoint]]
-            remaining = text[wrappoint:]
-            while len(remaining) > 0:
-                if len(remaining) <= maxLength:
-                    lines.append(remaining)
-                    remaining = ""
-                else:
-                    wrappoint = remaining[:maxLength].rfind(" ")
-                    if wrappoint == 0:
-                        wrappoint = maxLength
-                    lines.append(remaining[0:wrappoint])
-                    remaining = remaining[wrappoint:]
-            return lines
         
     ##########################################################################
  
@@ -1061,7 +1032,7 @@ def patch_b3_clients():
                 self.messagequeue = Queue.Queue()
             # fill the queue
             text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
-            for line in self.console.getWrap(text, self.console._settings['line_length'], self.console._settings['min_wrap_length']):
+            for line in self.console.getWrap(text):
                 self.messagequeue.put(line)
             # create a thread that executes the worker and pushes out the queue
             if not hasattr(self, 'messagehandler') or not self.messagehandler.isAlive():

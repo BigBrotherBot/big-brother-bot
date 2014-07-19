@@ -16,14 +16,23 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-import traceback
-import sys
-from b3.parsers.frostbite2.abstractParser import AbstractParser
-from b3.parsers.frostbite2.util import PlayerInfoBlock, MapListBlockError
+# CHANGELOG
+#
+#   2014/07/18 - 0.2 - Fenix
+#   * updated parser to comply with the new getWrap implementation
+
 import b3
 import b3.events
+import traceback
+import sys
+from b3.functions import prefixText
+
+from b3.parsers.frostbite2.abstractParser import AbstractParser
+from b3.parsers.frostbite2.util import PlayerInfoBlock
+from b3.parsers.frostbite2.util import MapListBlockError
+
 __author__  = 'Freelander'
-__version__ = '0.1'
+__version__ = '0.2'
 
 MOHW_REQUIRED_VERSION = 323174
 
@@ -255,8 +264,8 @@ class MohwParser(AbstractParser):
         broadcast a message to all players in a way that will catch their attention.
         """
         if msg and len(msg.strip())>0:
-            text = self.stripColors(self.msgPrefix + ' ' + msg)
-            for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
+            text = self.stripColors(prefixText([self.msgPrefix], msg))
+            for line in self.getWrap(text):
                 self.write(self.getCommand('yell', message=line))
 
     def message(self, client, text):

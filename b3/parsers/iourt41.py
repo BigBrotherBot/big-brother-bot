@@ -14,175 +14,180 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 #
 # CHANGELOG
-# v1.0.3 - Courgette added support for banlist.txt
-#          xlr8or added parsing Damage (OnHit)
-# v1.0.4 - xlr8or added EVT_CLIENT_TEAM_CHANGE in OnKill
-# v1.0.5 - xlr8or added hitloc and damageType info to accomodate XLRstats
-# v1.0.6 - Fixed a bug where the parser wouldn't parse the shutdowngame and warmup functions
-# v1.0.7 - Better synchronizing and identification of connecting players and zombies
-# v1.0.8 - Better Zombie handling (Zombies being a result of: sv_zombietime (default 2 seconds))
-#          (Zombie time is the time after a disconnect that the slot cannot be used and thus is in Zombie state)
-#          Added functionality to use ip's only, not using the guid at all (experimental)
-# v1.0.9 - Try to get the map name at start
-#           Provide getPlayerScores method
-# v1.0.10 - Modified _reColor so name sanitation is the same as UrT. Here it does more than just remove color.
-# v1.0.11 - Courgette - Add getScores  # NOTE: this won't work properly if the server has private slots.
-#                       see http://forums.urbanterror.net/index.php/topic,9356.0.html
-# v1.0.12 - Courgette - Fix regex that failed to parse chat lines when player's name ends with ':'
-# v1.0.13 - xlr8or - support for !maps and !nextmap command
-# v1.0.14 - xlr8or - better understanding of mapcycle.txt
-# v1.0.15 - mindriot - 01-Nov-2008
-# * client with empty name ("") resulted in error and B3 not registering client - now given _empty_name_default
-# v1.0.16 - xlr8or - added IpCombi. Setting True will replace the last part of the guid with two segments of the ip
-#                    Increases security on admins who have cl_guidServerUniq set to 0 in client config (No cloning).
-# v1.0.17 - mindriot - 02-Nov-2008 - empty_name_default now only given upon client connect, due to possibility of no
-#                                    name specified in ClientUserinfo at any time
-# v1.0.19 - xlr8or - Disabled PunkBuster default settings due to recent supportrequests in the forums with missing
-#                    PB line in b3.xml
-# v1.1.0 - xlr8or - Added Action Mechanism (event) for B3 v1.1.5+
-# v1.1.1 - courgette
-# * Debugged Action Mechanism (event) for B3 v1.1.5+
-# v1.2.0 - 19/08/2009 - Courgette
-# * adds slap, nuke, mute new custom penalty types (can be used in censor or admin plugin)
-# * requires admin plugin v1.4+ and parser.py v1.10+
-# v1.3.0 - 20/10/2009 - Courgette
-# * upon bot start, already connected players are correctly recognized
-# v1.4.0 - 26/10/2009 - Courgette
-# * when no client is found by cid, try to join the player using /rcon dumpuser <cid>
-# v1.5.0 - 11/11/2009 - Courgette
-#    * create a new event: EVT_GAME_FLAG_RETURNED which is fired when the flag return because of time
-#    * code refactoring
-# v1.5.1 - 17/11/2009 - Courgette
-#    * harden getNextMap by :
-#      o wrapping initial getCvar queries with try:except bloc
-#      o requerying required cvar if missing
-#      o forcing map list refresh on server reload or round end
-# v1.5.2 - 26/11/2009 - Courgette
-#    * fix a bug that prevented kills by slap or nuke from firing kill events
-# v1.6.1 - 30/11/2009 - Courgette
-#    * separate parsing of lines ClientUserInfo and ClientUserInfoChanged to better translate 
-#    ClientUserInfoChanged data. Also OnClientUserInfoChanged does not create new client if 
-#    cid is unknown.
-# v1.6.2 - 05/12/2009 - Courgette
-#    * fix _rePlayerScore regexp
-#    * on startup, also try to get players' team (which is not given by dumpuser)
-# v1.6.3 - 06/12/2009 - Courgette
-#    * harden queryClientUserInfoByCid making sure we got a positive response. (Never trust input data...)
-#    * fix _rePlayerScore regexp again
-# v1.6.4 - 06/12/2009 - Courgette
-#    * sync() will retries to get player list up to 4 for times before giving up as
-#      sync() after map change too often fail 2 times.
-# v1.6.5 - 09/12/2009 - Courgette
-#    * different handling of 'name' in OnClientuserinfo. Now log looks less worrying
-#    * prevent exception on the rare case where a say line shows no text after cid (hence no regexp match)
-# v1.7 - 21/12/2009 - Courgette
-#    * add new UrT specific event : EVT_CLIENT_GEAR_CHANGE
-# v1.7.1 - 30/12/2009 - Courgette
-#    * Say, Sayteam and Saytell lines do not trigger name change anymore and detect the UrT bug described
-#      in http://www.bigbrotherbot.net/forums/urt/b3-bot-sometimes-mix-up-client-id%27s/ . Hopefully this
-#      definitely fixes the wrong aliases issue.
-# v1.7.2 - 30/12/2009 - Courgette
-#    * improve say lines slot bug detection for cases where no player exists on slot 0. 
-#      Refactor detection code to follow the KISS rule (keep it simple and stupid)
-# v1.7.3 - 31/12/2009 - Courgette
-#    * fix bug getting client by name when UrT slot 0 bug 
-#    * requires clients.py 1.2.8+
-# v1.7.4 - 02/01/2010 - Courgette
-#    * improve Urt slot bug workaround as it appears it can occur with slot num different than 0
-# v1.7.5 - 05/01/2010 - Courgette
-#    * fix minor bug in saytell
-# v1.7.6 - 16/01/2010 - xlr8or
-#    * removed maxRetries=4 keyword from getPlayerList()
-# v1.7.7 - 16/01/2010 - Courgette
-#    * put back maxRetries=4 keyword from getPlayerList(). @xlr8or: make sure you have the latest
-#      q3a.py file (v1.3.1+) for maxRetries to work.
-# v1.7.8 - 18/01/2010 - Courgette
-#    * update getPlayerList and sync so that connecting players (CNCT) are not ignored.
-#      This will allow to use commands like !ci or !kick on hanging players.
-# v1.7.9 - 26/01/2010 - xlr8or
-#    * moved getMap() to q3a.py
-# v1.7.10 - 10/04/2010 - Bakes
-#    * bigsay() function can be used by plugins.
-# v1.7.11 - 15/04/2010 - Courgette
-#    * add debugging info for getNextMap()
-# v1.7.12 - 28/05/2010 - xlr8or
-#    * connect bots
-# v1.7.13 - 07/11/2010 - GrosBedo
-#    * messages now support named $variables instead of %s
-# v1.7.14 - 08/11/2010 - GrosBedo
-#    * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
-# v1.7.15 - 21/12/2010 - SGT
-#    * fix CNCT ping error in getPlayersPings
-#    * fix incorrect game type for ffa
-#    * move getMapList after game initialization
-# v1.7.16 - 09/04/2011 - Courgette
-#    * reflect that cid are not converted to int anymore in the clients module
-# v1.7.17 - 03/05/2011 - Courgette
-#     * reflect changes in inflictCustomPenalty method signature
-# v1.8.0 - 31/05/2011 - Courgette
-#     * Damage event now carry correct damage points
-#     * Damage event weapon code is now the same as the one used for Kill events
-# v1.8.1 / 1.8.2 - 01/06/2011 - Courgette
-#     * fix Damage points
-#     * when game log provides hit info, Kill event will use last damage points instead of 100
-# v1.9.0 - 2011-06-04 - Courgette
-#     * makes use of the new pluginsStarted parser hook
-# v1.10.0 - 2011-06-05 - Courgette
-#     * change data format for EVT_CLIENT_BAN events
-# 14/06/2011 - 1.11.0 - Courgette
-#     * cvar code moved to q3a AbstractParser
-# 12/09/2011 - 1.11.1 - Courgette
-#     * EVT_CLIENT_JOIN event is now triggered when player actually join a team
-#     * the call to self.clients.sync() that was made each round is now made on game init and in its own thread
-# 29/09/2011 - 1.11.2 - Courgette
-#     * fix MOD_TELEFRAG attacker on kill event to prevent people from being considered
-#       as tkers in such cases.
-# 15/10/2011 - 1.11.3 - Courgette
-#     * better team recognition of existing players at B3 start
-# 15/11/2011 - 1.11.4 - Courgette
-#     * players's team get refreshed after unpausing the bot (useful when used with FTP and B3 lose the connection
-#       for a while)
-# 03/03/2012 - 1.11.5 - SGT
-#     * Create Survivor Winner Event
-#     * Create Unban event
-#     * fix issue with OnSay when something like this come and the match couldn't find the name group, say: 7 -crespino-
-# 08/04/2012 - 1.12 - Courgette
-#     * fixes rotatemap() - thanks to Beber888
-#     * refactor unban()
-#     * changeMap() can now provide suggestions
-# 05/05/2012 - 1.13 - Courgette
-#     * fixes issue xlr8or/big-brother-bot#87 - missing ip when trying to auth a client crashes the bot
-# 19/05/2012 - 1.13.1 - Courgette
-#     * fixes issue with kill events when killed by UT_MOD_SLAPPED, UT_MOD_NUKED, MOD_TELEFRAG
-# 07/07/2012 - 1.13.2 - Courgette
-#     * ensures the config file has option 'game_log' in section 'server'
-# 12/08/2012 - 1.13.3 - Courgette
-#     * fix !nextmap bug when the mapcycle file contains empty lines
-# 19/10/2012 - 1.14 - Courgette
-#     * improve finding the exact map in getMapsSoundingLike. Also improves changeMap() behavior as a consequence
-# 26/11/2012 - 1.15 - Courgette
-#     * protect some of the Client object property
-# 08/04/2013 - 1.16 - Courgette
-#     * add EVT_BOMB_EXPLODED event
-# 14/07/2013 - 1.17 - Courgette
-#     * add hitlocation constants : HL_HEAD, HL_HELMET and HL_TORSO
-# 10/08/2013 - 1.18 - Fenix
-#     * change getNextMap to use CVARs only (no more mapcycle file parsing)
-# 13/01/2014 - 1.19 - Fenix
-#     * pep8 coding style guide
-#     * correctly set the client bot flag upon new client connection
-# 14/04/2014 - 1.20 - Fenix
-#     * rewritten regular expressions on multiline: respect pep8 constraint of 110 chars per line
-#     * use getEventID method to obtain event ids: remove some warnings
-# 02/06/2014 - 1.20.1 - Fenix
-#     * fixed reColor regex stripping whitespaces between words
 #
-__author__ = 'xlr8or, Courgette'
-__version__ = '1.20.1'
+#   v1.0.3 - Courgette - added support for banlist.txt
+#            xlr8or - added parsing Damage (OnHit)
+#   v1.0.4 - xlr8or - added EVT_CLIENT_TEAM_CHANGE in OnKill
+#   v1.0.5 - xlr8or - added hitloc and damageType info to accomodate XLRstats
+#   v1.0.6 - Fixed a bug where the parser wouldn't parse the shutdowngame and warmup functions
+#   v1.0.7 - Better synchronizing and identification of connecting players and zombies
+#   v1.0.8 - Better Zombie handling (Zombies being a result of: sv_zombietime (default 2 seconds))
+#            (Zombie time is the time after a disconnect that the slot cannot be used and thus is in Zombie state)
+#            Added functionality to use ip's only, not using the guid at all (experimental)
+#   v1.0.9 - Try to get the map name at start
+#            Provide getPlayerScores method
+#   v1.0.10 - Modified _reColor so name sanitation is the same as UrT. Here it does more than just remove color.
+#   v1.0.11 - Courgette - Add getScores  # NOTE: this won't work properly if the server has private slots.
+#   v1.0.12 - Courgette - Fix regex that failed to parse chat lines when player's name ends with ':'
+#   v1.0.13 - xlr8or - support for !maps and !nextmap command
+#   v1.0.14 - xlr8or - better understanding of mapcycle.txt
+#   v1.0.15 - mindriot - client with empty name ("") resulted in error and B3 not registering
+#                        client - now given _empty_name_default
+#   v1.0.16 - xlr8or - Added IpCombi. Setting True will replace the last part of the guid with two segments of the ip
+#                      Increases security on admins who have cl_guidServerUniq set to 0 in client config (No cloning).
+#   v1.0.17 - mindriot - empty_name_default now only given upon client connect, due to possibility of no
+#                      name specified in ClientUserinfo at any time
+#   v1.0.19 - xlr8or - Disabled PunkBuster default settings due to recent supportrequests in the forums with missing
+#                      PB line in b3.xml
+#   v1.1.0 - xlr8or - Added Action Mechanism (event) for B3 v1.1.5+
+#   v1.1.1 - courgette - Debugged Action Mechanism (event) for B3 v1.1.5+
+#
+#   v1.2.0 - 19/08/2009 - Courgette
+#   * adds slap, nuke, mute new custom penalty types (can be used in censor or admin plugin)
+#   * requires admin plugin v1.4+ and parser.py v1.10+
+#   v1.3.0 - 20/10/2009 - Courgette
+#   * upon bot start, already connected players are correctly recognized
+#   v1.4.0 - 26/10/2009 - Courgette
+#   * when no client is found by cid, try to join the player using /rcon dumpuser <cid>
+#   v1.5.0 - 11/11/2009 - Courgette
+#   * create a new event: EVT_GAME_FLAG_RETURNED which is fired when the flag return because of time
+#   * code refactoring
+#   v1.5.1 - 17/11/2009 - Courgette
+#   * harden getNextMap by :
+#     - wrapping initial getCvar queries with try:except bloc
+#     - requerying required cvar if missing
+#     - forcing map list refresh on server reload or round end
+#   v1.5.2 - 26/11/2009 - Courgette
+#   * fix a bug that prevented kills by slap or nuke from firing kill events
+#   v1.6.1 - 30/11/2009 - Courgette
+#   * separate parsing of lines ClientUserInfo and ClientUserInfoChanged to better translate
+#     ClientUserInfoChanged data. Also OnClientUserInfoChanged does not create new client if cid is unknown.
+#   v1.6.2 - 05/12/2009 - Courgette
+#   * fix _rePlayerScore regexp
+#   * on startup, also try to get players' team (which is not given by dumpuser)
+#   v1.6.3 - 06/12/2009 - Courgette
+#   * harden queryClientUserInfoByCid making sure we got a positive response. (Never trust input data...)
+#   * fix _rePlayerScore regexp again
+#   v1.6.4 - 06/12/2009 - Courgette
+#   * sync() will retries to get player list up to 4 for times before giving up as
+#     sync() after map change too often fail 2 times.
+#   v1.6.5 - 09/12/2009 - Courgette
+#   * different handling of 'name' in OnClientuserinfo. Now log looks less worrying
+#   * prevent exception on the rare case where a say line shows no text after cid (hence no regexp match)
+#   v1.7 - 21/12/2009 - Courgette
+#   * add new UrT specific event : EVT_CLIENT_GEAR_CHANGE
+#   v1.7.1 - 30/12/2009 - Courgette
+#   * Say, Sayteam and Saytell lines do not trigger name change anymore and detect the UrT bug described
+#     in http://www.bigbrotherbot.net/forums/urt/b3-bot-sometimes-mix-up-client-id%27s/ . Hopefully this
+#     definitely fixes the wrong aliases issue.
+#   v1.7.2 - 30/12/2009 - Courgette
+#   * Improve say lines slot bug detection for cases where no player exists on slot 0.
+#   * Refactor detection code to follow the KISS rule (keep it simple and stupid)
+#   v1.7.3 - 31/12/2009 - Courgette
+#   * Fix bug getting client by name when UrT slot 0 bug
+#   * Requires clients.py 1.2.8+
+#   v1.7.4 - 02/01/2010 - Courgette
+#   * improve Urt slot bug workaround as it appears it can occur with slot num different than 0
+#   v1.7.5 - 05/01/2010 - Courgette
+#   * fix minor bug in saytell
+#   v1.7.6 - 16/01/2010 - xlr8or
+#   * removed maxRetries=4 keyword from getPlayerList()
+#   v1.7.7 - 16/01/2010 - Courgette
+#   * put back maxRetries=4 keyword from getPlayerList(). @xlr8or: make sure you have the latest
+#     q3a.py file (v1.3.1+) for maxRetries to work.
+#   v1.7.8 - 18/01/2010 - Courgette
+#   * update getPlayerList and sync so that connecting players (CNCT) are not ignored.
+#     This will allow to use commands like !ci or !kick on hanging players.
+#   v1.7.9 - 26/01/2010 - xlr8or
+#   * moved getMap() to q3a.py
+#   v1.7.10 - 10/04/2010 - Bakes
+#   * bigsay() function can be used by plugins.
+#   v1.7.11 - 15/04/2010 - Courgette
+#   * add debugging info for getNextMap()
+#   v1.7.12 - 28/05/2010 - xlr8or
+#   * connect bots
+#   v1.7.13 - 07/11/2010 - GrosBedo
+#   * messages now support named $variables instead of %s
+#   v1.7.14 - 08/11/2010 - GrosBedo
+#   * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
+#   v1.7.15 - 21/12/2010 - SGT
+#   * fix CNCT ping error in getPlayersPings
+#   * fix incorrect game type for ffa
+#   * move getMapList after game initialization
+#   v1.7.16 - 09/04/2011 - Courgette
+#   * reflect that cid are not converted to int anymore in the clients module
+#   v1.7.17 - 03/05/2011 - Courgette
+#   * reflect changes in inflictCustomPenalty method signature
+#   v1.8.0 - 31/05/2011 - Courgette
+#   * Damage event now carry correct damage points
+#   * Damage event weapon code is now the same as the one used for Kill events
+#   v1.8.1 / 1.8.2 - 01/06/2011 - Courgette
+#   * fix Damage points
+#   * when game log provides hit info, Kill event will use last damage points instead of 100
+#   v1.9.0 - 2011-06-04 - Courgette
+#   * makes use of the new pluginsStarted parser hook
+#   v1.10.0 - 2011-06-05 - Courgette
+#   * change data format for EVT_CLIENT_BAN events
+#   14/06/2011 - 1.11.0 - Courgette
+#   * cvar code moved to q3a AbstractParser
+#   12/09/2011 - 1.11.1 - Courgette
+#   * EVT_CLIENT_JOIN event is now triggered when player actually join a team
+#   * the call to self.clients.sync() that was made each round is now made on game init and in its own thread
+#   29/09/2011 - 1.11.2 - Courgette
+#   * fix MOD_TELEFRAG attacker on kill event to prevent people from being considered as tkers in such cases.
+#   15/10/2011 - 1.11.3 - Courgette
+#   * better team recognition of existing players at B3 start
+#   15/11/2011 - 1.11.4 - Courgette
+#   * players's team get refreshed after unpausing the bot (useful when used with FTP and B3 lose the connection
+#     for a while)
+#   03/03/2012 - 1.11.5 - SGT
+#   * Create Survivor Winner Event
+#   * Create Unban event
+#   * fix issue with OnSay when something like this come and the match couldn't find the name group, say: 7 -crespino-
+#   08/04/2012 - 1.12 - Courgette
+#   * fixes rotatemap() - thanks to Beber888
+#   * refactor unban()
+#   * changeMap() can now provide suggestions
+#   05/05/2012 - 1.13 - Courgette
+#   * fixes issue xlr8or/big-brother-bot#87 - missing ip when trying to auth a client crashes the bot
+#   19/05/2012 - 1.13.1 - Courgette
+#   * fixes issue with kill events when killed by UT_MOD_SLAPPED, UT_MOD_NUKED, MOD_TELEFRAG
+#   07/07/2012 - 1.13.2 - Courgette
+#   * ensures the config file has option 'game_log' in section 'server'
+#   12/08/2012 - 1.13.3 - Courgette
+#   * fix !nextmap bug when the mapcycle file contains empty lines
+#   19/10/2012 - 1.14 - Courgette
+#   * improve finding the exact map in getMapsSoundingLike. Also improves changeMap() behavior as a consequence
+#   26/11/2012 - 1.15 - Courgette
+#   * protect some of the Client object property
+#   08/04/2013 - 1.16 - Courgette
+#   * add EVT_BOMB_EXPLODED event
+#   14/07/2013 - 1.17 - Courgette
+#   * add hitlocation constants : HL_HEAD, HL_HELMET and HL_TORSO
+#   10/08/2013 - 1.18 - Fenix
+#   * change getNextMap to use CVARs only (no more mapcycle file parsing)
+#   13/01/2014 - 1.19 - Fenix
+#   * pep8 coding style guide
+#   * correctly set the client bot flag upon new client connection
+#   14/04/2014 - 1.20 - Fenix
+#   * rewritten regular expressions on multiline: respect pep8 constraint of 110 chars per line
+#   * use getEventID method to obtain event ids: remove some warnings
+#   02/06/2014 - 1.20.1 - Fenix
+#   * fixed reColor regex stripping whitespaces between words
+#   18/07/2014 - 1.21 - Fenix
+#   * updated parser to comply with the new getWrap implementation
+#   * general parser cleanup
+#   * reformat changelog to it can actually be read :)
+#   * removed _settings dict re-declaration: was the same of the AbstractParser
+#   * updated rcon command patterns
+
+
+__author__ = 'xlr8or, Courgette, Fenix'
+__version__ = '1.21'
 
 import b3
 import b3.events
@@ -194,7 +199,7 @@ import time
 import thread
 
 from b3.parsers.q3a.abstractParser import AbstractParser
-from b3.functions import getStuffSoundingLike
+from b3.functions import getStuffSoundingLike, prefixText
 
 
 class Iourt41Parser(AbstractParser):
@@ -204,28 +209,24 @@ class Iourt41Parser(AbstractParser):
     IpCombi = False
     _maplist = None
 
-    _settings = dict()
-    _settings['line_length'] = 65
-    _settings['min_wrap_length'] = 100
-
     _empty_name_default = 'EmptyNameDefault'
 
-    _commands = dict()
-    _commands['broadcast'] = '%(prefix)s^7 %(message)s'
-    _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
-    _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
-    _commands['say'] = 'say %(prefix)s %(message)s'
-    _commands['saybig'] = 'bigtext "%(prefix)s %(message)s"'
-
-    _commands['set'] = 'set %(name)s "%(value)s"'
-    _commands['kick'] = 'clientkick %(cid)s'
-    _commands['ban'] = 'addip %(cid)s'
-    _commands['tempban'] = 'clientkick %(cid)s'
-    _commands['banByIp'] = 'addip %(ip)s'
-    _commands['unbanByIp'] = 'removeip %(ip)s'
-    _commands['slap'] = 'slap %(cid)s'
-    _commands['nuke'] = 'nuke %(cid)s'
-    _commands['mute'] = 'mute %(cid)s %(seconds)s'
+    _commands = {
+        'ban': 'addip %(cid)s',
+        'banByIp': 'addip %(ip)s',
+        'broadcast': '%(message)s',
+        'kick': 'clientkick %(cid)s',
+        'message': 'tell %(cid)s %(message)s',
+        'moveToTeam': 'forceteam %(cid)s %(team)s',
+        'mute': 'mute %(cid)s %(seconds)s',
+        'nuke': 'nuke %(cid)s',
+        'say': 'say %(message)s',
+        'saybig': 'bigtext "%(message)s"',
+        'set': 'set %(name)s "%(value)s"',
+        'slap': 'slap %(cid)s',
+        'tempban': 'clientkick %(cid)s',
+        'unbanByIp': 'removeip %(ip)s',
+    }
 
     _eventMap = {
         #'warmup' : b3.events.EVT_GAME_WARMUP,
@@ -291,9 +292,9 @@ class Iourt41Parser(AbstractParser):
     # map: ut4_casa
     # num score ping name            lastmsg address               qport rate
     # --- ----- ---- --------------- ------- --------------------- ----- -----
-    #   2     0   19 ^1XLR^78^8^9or^7        0 145.99.135.227:27960  41893  8000  # player with a live ping
-    #   4     0 CNCT Dz!k^7                450 83.175.191.27:64459   50308 20000  # connecting player
-    #   9     0 ZMBI ^7                   1900 81.178.80.68:27960    10801  8000  # zombies (need to be disconnected!)
+    #   2     0   19 ^1XLR^78^8^9or        0 145.99.135.227:27960  41893  8000  # player with a live ping
+    #   4     0 CNCT Dz!k^7              450 83.175.191.27:64459   50308 20000  # connecting player
+    #   9     0 ZMBI ^7                 1900 81.178.80.68:27960    10801  8000  # zombies (need to be disconnected!)
     _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+|CNCT|ZMBI)\s+'
                             r'(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+'
                             r'(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
@@ -371,31 +372,30 @@ class Iourt41Parser(AbstractParser):
         22: UT_MOD_KNIFE_THROWN,
     }
 
-    """ From data provided by Garreth http://bit.ly/jf4QXc on http://bit.ly/krwBCv :
-
-                                Head(0) Helmet(1)     Torso(2)     Kevlar(3)     Arms(4)    Legs(5)    Body(6)    Killed
-    MOD_TELEFRAG='5'             0        0             0             0             0         0         0         0
-    UT_MOD_KNIFE='12'           100      60            44            35            20        20        44        100
-    UT_MOD_KNIFE_THROWN='13'    100      60            44            35            20        20        44        100
-    UT_MOD_BERETTA='14'         100      34            30            20            11        11        30        100
-    UT_MOD_DEAGLE='15'          100      66            57            38            22        22        57        100
-    UT_MOD_SPAS='16'            25       25            25            25            25        25        25        100
-    UT_MOD_UMP45='17'           100      51            44            29            17        17        44        100
-    UT_MOD_MP5K='18'            50       34            30            20            11        11        30        100
-    UT_MOD_LR300='19'           100      51            44            29            17        17        44        100
-    UT_MOD_G36='20'             100      51            44            29            17        17        44        100
-    UT_MOD_PSG1='21'            100      63            97            63            36        36        97        100
-    UT_MOD_HK69='22'            50       50            50            50            50        50        50        100
-    UT_MOD_BLED='23'            15       15            15            15            15        15        15        15
-    UT_MOD_KICKED='24'          20       20            20            20            20        20        20        100
-    UT_MOD_HEGRENADE='25'       50       50            50            50            50        50        50        100
-    UT_MOD_SR8='28'             100      100           100           100           50        50        100       100
-    UT_MOD_AK103='30'           100      58            51            34            19        19        51        100
-    UT_MOD_NEGEV='35'           50       34            30            20            11        11        30        100
-    UT_MOD_HK69_HIT='37'        20       20            20            20            20        20        20        100
-    UT_MOD_M4='38'              100      51            44            29            17        17        44        100
-    UT_MOD_GOOMBA='40'          100      100           100           100           100       100       100       100
-    """
+    # From data provided by Garreth http://bit.ly/jf4QXc on http://bit.ly/krwBCv :
+    #
+    #                            Head(0) Helmet(1)     Torso(2)     Kevlar(3)     Arms(4)    Legs(5)    Body(6)   Killed
+    # MOD_TELEFRAG='5'             0        0             0             0             0         0         0          0
+    # UT_MOD_KNIFE='12'           100      60            44            35            20        20        44        100
+    # UT_MOD_KNIFE_THROWN='13'    100      60            44            35            20        20        44        100
+    # UT_MOD_BERETTA='14'         100      34            30            20            11        11        30        100
+    # UT_MOD_DEAGLE='15'          100      66            57            38            22        22        57        100
+    # UT_MOD_SPAS='16'            25       25            25            25            25        25        25        100
+    # UT_MOD_UMP45='17'           100      51            44            29            17        17        44        100
+    # UT_MOD_MP5K='18'            50       34            30            20            11        11        30        100
+    # UT_MOD_LR300='19'           100      51            44            29            17        17        44        100
+    # UT_MOD_G36='20'             100      51            44            29            17        17        44        100
+    # UT_MOD_PSG1='21'            100      63            97            63            36        36        97        100
+    # UT_MOD_HK69='22'            50       50            50            50            50        50        50        100
+    # UT_MOD_BLED='23'            15       15            15            15            15        15        15        15
+    # UT_MOD_KICKED='24'          20       20            20            20            20        20        20        100
+    # UT_MOD_HEGRENADE='25'       50       50            50            50            50        50        50        100
+    # UT_MOD_SR8='28'             100      100           100           100           50        50        100       100
+    # UT_MOD_AK103='30'           100      58            51            34            19        19        51        100
+    # UT_MOD_NEGEV='35'           50       34            30            20            11        11        30        100
+    # UT_MOD_HK69_HIT='37'        20       20            20            20            20        20        20        100
+    # UT_MOD_M4='38'              100      51            44            29            17        17        44        100
+    # UT_MOD_GOOMBA='40'          100      100           100           100           100       100       100       100
 
     damage = dict(
         MOD_TELEFRAG=[0, 0, 0, 0, 0, 0, 0, 0],
@@ -598,15 +598,17 @@ class Iourt41Parser(AbstractParser):
         #self.debug('_gameType: %s' % _gameType)
         return _gametype
 
-    # self.console.broadcast, a variant on self.console.say in UrT.
-    # This will print to upper left, the server message area.
-    def broadcast(self, msg):
+    def broadcast(self, text):
+        """
+        A Say variant in UrT which will print text upper left, server message area.
+        :param text: The message to be sent.
+        """
         lines = []
-        for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
-            lines.append(self.getCommand('broadcast', prefix=self.msgPrefix, message=line))
-
-        if len(lines):
-            self.writelines(lines)
+        message = prefixText([self.msgPrefix], text)
+        message = message.strip()
+        for line in self.getWrap(message):
+            lines.append(self.getCommand('broadcast', message=line))
+        self.writelines(lines)
 
     def inflictCustomPenalty(self, ptype, client, reason=None, duration=None, admin=None, data=None):
         if ptype == 'slap' and client:
@@ -1199,13 +1201,17 @@ class Iourt41Parser(AbstractParser):
     ##                                                                                                                ##
     ####################################################################################################################
 
-    def saybig(self, msg):
+    def saybig(self, text):
+        """
+        Print a message in the center screen.
+        :param text: The message to be sent.
+        """
         lines = []
-        for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
-            lines.append(self.getCommand('saybig', prefix=self.msgPrefix, message=line))
-
-        if len(lines):
-            self.writelines(lines)
+        message = prefixText([self.msgPrefix], text)
+        message = message.strip()
+        for line in self.getWrap(message):
+            lines.append(self.getCommand('saybig', message=line))
+        self.writelines(lines)
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
         self.debug('BAN : client: %s, reason: %s', client, reason)
