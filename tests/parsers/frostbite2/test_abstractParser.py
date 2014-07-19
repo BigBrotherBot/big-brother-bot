@@ -714,57 +714,6 @@ class Test_config_ban_agent(AbstractParser_TestCase):
         self.assert_frostbite("""<configuration><settings name="server"><set name="ban_agent"></set></settings></configuration>""")
         self.assert_frostbite("""<configuration><settings name="server"><set name="ban_agent"/></settings></configuration>""")
 
-
-class Test_conf_max_say_line_length(AbstractParser_TestCase):
-
-    def setUp(self):
-        self.conf = XmlConfigParser()
-        self.conf.loadFromString("""<configuration/>""")
-        self.parser = ConcretegameParser(self.conf)
-
-        self.MAX_SAY_LINE_LENGTH__MIN = 20
-        self.MAX_SAY_LINE_LENGTH__MAX = self.parser.SAY_LINE_MAX_LENGTH
-        self.MAX_SAY_LINE_LENGTH__DEFAULT = self.parser._settings['line_length']
-
-        log = logging.getLogger('output')
-        log.setLevel(logging.DEBUG)
-
-    def _assert(self, conf_data=None, expected=None):
-        self.conf.loadFromString("""
-            <configuration>
-                <settings name="thegame">%s</settings>
-            </configuration>
-            """ % (('<set name="max_say_line_length">%s</set>' % conf_data) if conf_data is not None else ''))
-        self.parser.load_conf_max_say_line_length()
-        if expected:
-            self.assertEqual(expected, self.parser._settings['line_length'])
-
-
-    def test_max_say_line_length__None(self):
-        self._assert(conf_data=None, expected=self.MAX_SAY_LINE_LENGTH__DEFAULT)
-
-    def test_max_say_line_length__empty(self):
-        self._assert(conf_data='', expected=self.MAX_SAY_LINE_LENGTH__DEFAULT)
-
-    def test_max_say_line_length__nan(self):
-        self._assert(conf_data='foo', expected=self.MAX_SAY_LINE_LENGTH__DEFAULT)
-
-    def test_max_say_line_length__too_low(self):
-        self._assert(conf_data=self.MAX_SAY_LINE_LENGTH__MIN - 1, expected=self.MAX_SAY_LINE_LENGTH__MIN)
-
-    def test_max_say_line_length__lowest(self):
-        self._assert(conf_data=self.MAX_SAY_LINE_LENGTH__MIN, expected=self.MAX_SAY_LINE_LENGTH__MIN)
-
-    def test_max_say_line_length__25(self):
-        self._assert(conf_data='25', expected=25)
-
-    def test_max_say_line_length__highest(self):
-        self._assert(conf_data=self.MAX_SAY_LINE_LENGTH__MAX, expected=self.MAX_SAY_LINE_LENGTH__MAX)
-
-    def test_max_say_line_length__too_high(self):
-        self._assert(conf_data=self.MAX_SAY_LINE_LENGTH__MAX+1, expected=self.MAX_SAY_LINE_LENGTH__MAX)
-
-
 class Test_bf3_config_message_delay(AbstractParser_TestCase):
 
     def setUp(self):

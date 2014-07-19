@@ -55,12 +55,13 @@
 #   Incorporate chat changes for server/game v 1.1.0.8
 #   2014-04-25 : 1.42
 #   Allow for empty chat messages
-#   2014-07-16 : 1.43 added admin key in EVT_CLIENT_KICK data dict when available
+#   2014-07-16 : 1.43 - Fenix
+#   * added admin key in EVT_CLIENT_KICK data dict when available
+#   2014/07/18 : 1.44 - Fenix
+#   * updated parser to comply with the new getWrap implementation
+#   * fixed _commands['message'] pattern: was missing %(uid)s placeholder
 #
-#
-from b3 import functions
-from b3.parser import Parser
-from ftplib import FTP
+
 import b3
 import b3.cron
 import ftplib
@@ -74,9 +75,13 @@ import urllib2
 import cookielib
 import hashlib
 
+from b3 import functions
+from b3.functions import prefixText
+from b3.parser import Parser
+from ftplib import FTP
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.43'
+__version__ = '1.44'
 
 
 class Ro2Parser(b3.parser.Parser):
@@ -112,21 +117,30 @@ class Ro2Parser(b3.parser.Parser):
     map_cycles = {}
     map_cycle_no = 0
     active_map_cycle = 0
-    _gametypes = {"TE" : "ROGame.ROGameInfoTerritories", "CD" : "ROGame.ROGameInfoCountdown", "FF" : "ROGame.ROGameInfoFirefight" }
-    _maps = {"TE" : ['TE-Apartments', 'TE-Barracks', 'TE-CommisarsHouse', 'TE-FallenFighters', 'TE-GrainElevator', 'TE-Gumrak', 'TE-PavlovsHouse', 'TE-RedOctoberFactory', 'TE-Spartanovka', 'TE-Station'],
-            "CD" : ['CD-Apartments', 'CD-Barracks', 'CD-CommisarsHouse', 'CD-FallenFighters', 'CD-GrainElevator', 'CD-Gumrak', 'CD-PavlovsHouse', 'CD-RedOctoberFactory', 'CD-Spartanovka', 'CD-Station'],
-            "FF" : ['FF-Apartments', 'FF-Barracks', 'FF-GrainElevator', 'FF-Station']
-            }
 
-    _commands = {}
-    _commands['message'] = '%(prefix)s %(message)s'
-    _commands['say'] = ('%(prefix)s %(message)s')
-    _commands['kick'] = ('adminkick+%(playerid)s')
-    _commands['ban'] = ('adminkickban+%(playerid)s')
-    _commands['tempban'] = ('adminkick+%(playerid)s')
+    _gametypes = {
+        "TE" : "ROGame.ROGameInfoTerritories",
+        "CD" : "ROGame.ROGameInfoCountdown",
+        "FF" : "ROGame.ROGameInfoFirefight"
+    }
+
+    _maps = {
+        "TE" : ['TE-Apartments', 'TE-Barracks', 'TE-CommisarsHouse', 'TE-FallenFighters', 'TE-GrainElevator', 'TE-Gumrak', 'TE-PavlovsHouse', 'TE-RedOctoberFactory', 'TE-Spartanovka', 'TE-Station'],
+        "CD" : ['CD-Apartments', 'CD-Barracks', 'CD-CommisarsHouse', 'CD-FallenFighters', 'CD-GrainElevator', 'CD-Gumrak', 'CD-PavlovsHouse', 'CD-RedOctoberFactory', 'CD-Spartanovka', 'CD-Station'],
+        "FF" : ['FF-Apartments', 'FF-Barracks', 'FF-GrainElevator', 'FF-Station']
+    }
+
+    _commands = {
+        'message': '%(uid)s %(message)s',
+        'say': '%(message)s',
+        'kick': 'adminkick+%(playerid)s',
+        'ban': 'adminkickban+%(playerid)s',
+        'tempban': 'adminkick+%(playerid)s',
+    }
     
-    _settings = {'line_length': 90, 
-                 'min_wrap_length': 100}
+    _settings = {
+        'line_length': 90,
+    }
     
     prefix = '%s: '
     
@@ -666,27 +680,25 @@ class Ro2Parser(b3.parser.Parser):
         return mlist
 
     def say(self, msg):
-        """\
-        broadcast a message to all players
         """
-        msg = self.stripMsgColors(msg)
-        for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
-            line = self.stripMsgColors(line)
-            self.write(self.getCommand('say',  prefix=self.msgPrefix, message=line))
+        Broadcast a message to all players
+        """
+        msg = prefixText([self.msgPrefix], self.stripMsgColors(msg))
+        for line in self.getWrap(msg):
+            self.write(self.getCommand('say', message=line))
 
     def message(self, client, text):
-        """\
-        display a message to a given player
+        """
+        Display a message to a given player
         """
         # actually send private messages
-        text = self.stripMsgColors(text)
-        for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
-            line = self.stripMsgColors(line)
-            self.write(self.getCommand('message', uid=client.guid, prefix=self.msgPrefix, message=line))
+        text = prefixText([self.msgPrefix], self.stripMsgColors(text))
+        for line in self.getWrap(text):
+            self.write(self.getCommand('message', uid=client.guid, message=line))
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
-        """\
-        kick a given player
+        """
+        Kick a given player
         """
         self.debug('KICK : client: %s, reason: %s', client.cid, reason)
         if admin:
@@ -808,7 +820,7 @@ class Ro2Parser(b3.parser.Parser):
                     if line[0:14] == 'GameMapCycles=':
                         self.map_cycles[str(self.map_cycle_no)] = line
                         self.map_cycle_no += 1
-                        if self.active_map_cycle >= 0 and self.map_cycle_no > self.active_map_cycle:
+                        if 0 <= self.active_map_cycle < self.map_cycle_no:
                             break
 
                 input.close()

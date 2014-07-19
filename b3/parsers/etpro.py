@@ -18,7 +18,7 @@
 # CHANGELOG
 #
 #   05/04/2009: 0.0.1
-#   * Updating so that it works for etpro
+#   * updating so that it works for etpro
 #   31/01/2010 - 0.0.2 - Courgette
 #   * getMap() is now inherited from q3a
 #   09/04/2011 - 0.0.3 - Courgette
@@ -28,6 +28,10 @@
 #   * removed some warnings
 #   * minor syntax changes
 #   * replaced variable named using python built-in names
+#   18/07/2014 - 0.0.5 - Fenix
+#   * updated parser to comply with the new getWrap implementation
+#   * removed _settings dict re-declaration: was the same of the AbstractParser
+#   * updated rcon command patterns
 #
 #
 # CREDITS
@@ -39,22 +43,25 @@
 # ETPro has not bots.
 # ETPro 3.2.6 - no additional LUA or QMM scripts used
 #
-#etpro:
+# ETPRO:
 # - qsay (chat window,
 # - cpmsay (left popup area) available since 3.0.15+
 # - cp (center print)
 # - bp (banner print area, top of screen)
 # - say (chat window, with "console: " in front)
+from b3.functions import prefixText
 
 
 __author__ = 'xlr8or, ailmanki'
-__version__ = '0.0.4'
+__version__ = '0.0.5'
 
 import re, string
 import b3
 import b3.events
-from b3.parsers.q3a.abstractParser import AbstractParser
 import b3.parsers.punkbuster
+
+from b3.parsers.q3a.abstractParser import AbstractParser
+
 
 class EtproParser(AbstractParser):
 
@@ -62,16 +69,10 @@ class EtproParser(AbstractParser):
     IpsOnly = False    # Setting True will use ip's only for identification.
     IpCombi = False    # Setting True will replace last part of the guid with 2 segments of the ip.
 
-    _settings = {
-        'line_length': 65,
-        'min_wrap_length': 100
-    }
-
     _empty_name_default = 'EmptyNameDefault'
 
     _commands = {
-        'message': 'm %(name)s %(prefix)s^7 %(message)s',
-        'deadsay': 'm %(name)s %(prefix)s [DEAD]^7 %(message)s',
+        'message': 'm %(name)s %(message)s',
         'say': 'cpmsay %(prefix)s %(message)s',
         'set': 'set %(name)s "%(value)s"',
         'kick': 'clientkick %(cid)s',
@@ -89,11 +90,13 @@ class EtproParser(AbstractParser):
     _lineFormats = (
         #-------ET Lines----------------------------------------------------------------------------
         #1579:03 ConnectInfo: 0: E24F9B2702B9E4A1223E905BF597FA92: ^w[^2AS^w]^2Lead: 3: 3: 24.153.180.106:2794
-        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<pbid>[0-9A-Z]{32}):\s*(?P<name>[^:]+):\s*(?P<num1>[0-9]+):\s*(?P<num2>[0-9]+):\s*(?P<ip>[0-9.]+):(?P<port>[0-9]+))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<pbid>[0-9A-Z]{32}):\s*(?P<name>[^:]+):\s*'
+                   r'(?P<num1>[0-9]+):\s*(?P<num2>[0-9]+):\s*(?P<ip>[0-9.]+):(?P<port>[0-9]+))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<name>.+):\s+(?P<text>.*))$', re.IGNORECASE),
         #
         #1536:37Kill: 1 18 9: ^1klaus killed ^1[pura]fox.nl by MOD_MP40
-        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s*'
+                   r'(?P<text>.*))$', re.IGNORECASE),
         #
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<text>.*))$', re.IGNORECASE),
@@ -122,7 +125,10 @@ class EtproParser(AbstractParser):
     # num score ping name            lastmsg address               qport rate
     # --- ----- ---- --------------- ------- --------------------- ----- -----
     #   2     0   45 xlr8or[*]             0 145.99.135.227:27960  39678 25000
-    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+'
+                            r'(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+'
+                            r'(?P<rate>[0-9]+)$', re.I)
+
     _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
 
     PunkBuster = None
@@ -476,30 +482,37 @@ class EtproParser(AbstractParser):
         return data
 
     def message(self, client, text):
-        try:
-            if client is None:
-                self.say(text)
-            elif client.cid is None:
-                pass
-            else:
-                lines = []
-                for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
-                    lines.append(self.getCommand('message', name=client.name, prefix=self.msgPrefix, message=line))
+        """
+        Send a private message to a client.
+        :param client: The client to who send the message.
+        :param text: The message to be sent.
+        """
+        if client is None:
+            # do a normal say
+            self.say(text)
+            return
 
-                self.writelines(lines)
-        except:
-            pass
-
-    def sayDead(self, msg):
-        wrapped = self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length'])
         lines = []
-        for client in self.clients.getClientsByState(b3.STATE_DEAD):
-            if client.cid:                
-                for line in wrapped:
-                    lines.append(self.getCommand('deadsay', name=client.name, prefix=self.msgPrefix, message=line))
+        message = prefixText([self.msgPrefix, self.pmPrefix], text)
+        message = message.strip()
+        for line in self.getWrap(message):
+            lines.append(self.getCommand('message', name=client.name, message=line))
+        self.writelines(lines)
 
-        if len(lines):        
-            self.writelines(lines)
+    def sayDead(self, text):
+        """
+        Send a private message to all the dead clients.
+        :param text: The message to be sent.
+        """
+        lines = []
+        message = prefixText([self.msgPrefix, self.deadPrefix], text)
+        message = message.strip()
+        wrapped = self.getWrap(message)
+        for client in self.clients.getClientsByState(b3.STATE_DEAD):
+            if client.cid:
+                for line in wrapped:
+                    lines.append(self.getCommand('message', name=client.name, message=line))
+        self.writelines(lines)
 
     def getTeam(self, team):
         if team == 'red': team = 1

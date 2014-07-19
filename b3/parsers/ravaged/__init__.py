@@ -34,7 +34,7 @@
 #                  - correctly declare getPlayerPings() method to match the one in Parser class
 #                  - removed some warnings
 #                  - fixed client retrieval in kick, ban and tempban function
-#
+# 1.7 - 2014-07-18 - updated parser to comply with the new getWrap implementation
 
 import logging
 import re
@@ -63,12 +63,9 @@ from Queue import Queue, Full, Empty
 
 
 __author__  = 'Courgette'
-__version__ = '1.5'
-
+__version__ = '1.7'
 
 ger = Game_event_router()
-
-
 
 # how long should the bot try to connect to the Frostbite server before giving out (in second)
 GAMESERVER_CONNECTION_WAIT_TIMEOUT = 600
@@ -99,7 +96,6 @@ class RavagedParser(Parser):
 
     _settings = {
         'line_length': 180,
-        'min_wrap_length': 180,
         'private_message_color': '00FC48',
         'say_color': 'F2C880',
         'saybig_color': 'FC00E2',
@@ -335,7 +331,7 @@ class RavagedParser(Parser):
         """
         if msg and len(msg.strip()):
             msg = "%s <FONT COLOR='#%s'> %s" % (self.msgPrefix, self._settings.get('say_color', 'F2C880'), msg)
-            for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+            for line in self.getWrap(msg):
                 self.output.write("say <FONT COLOR='#%s'> %s" % (self._settings.get('say_color', 'F2C880'), line))
 
 
@@ -345,7 +341,7 @@ class RavagedParser(Parser):
         """
         if msg and len(msg.strip()):
             msg = "%s <FONT COLOR='#%s'> %s" % (self.msgPrefix, self._settings.get('saybig_color', 'FC00E2'), msg)
-            for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+            for line in self.getWrap(msg):
                 self.output.write("say <FONT COLOR='#%s'> %s" % (self._settings.get('saybig_color', 'FC00E2'), line))
 
 
@@ -355,7 +351,7 @@ class RavagedParser(Parser):
         """
         if msg and len(msg.strip()):
             msg = "%s <FONT COLOR='#%s'> %s" % (self.msgPrefix, self._settings.get('private_message_color', '00FC48'), msg)
-            for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+            for line in self.getWrap(msg):
                 self.output.write("playersay %s <FONT COLOR='#%s'> %s" % (client.cid, self._settings.get('private_message_color', '00FC48'), line))
 
 
@@ -554,42 +550,6 @@ class RavagedParser(Parser):
     #    Other methods
     #
     ###############################################################################################
-
-    def getWrap(self, text, length=80, minWrapLen=150):
-        """Returns a sequence of lines for text that fits within the limits"""
-        if not text:
-            return []
-
-        length = int(length)
-        clean_text = self.stripColors(text.strip())
-
-
-        if len(clean_text) <= minWrapLen:
-            return [clean_text]
-
-        text = re.split(r'\s+', clean_text)
-
-        lines = []
-
-        line = text[0]
-        for t in text[1:]:
-            if len(line) + len(t) + 2 <= length:
-                line = '%s %s' % (line, t)
-            else:
-                if len(lines) > 0:
-                    lines.append(u'%s' % line)
-                else:
-                    lines.append(line)
-                line = t
-
-        if len(line):
-            if len(lines) > 0:
-                lines.append(u'%s' % line)
-            else:
-                lines.append(line)
-
-        return lines
-
 
     def getClientOrCreate(self, guid, name, team=None):
         """

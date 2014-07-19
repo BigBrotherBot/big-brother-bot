@@ -14,38 +14,41 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 #
 # CHANGELOG
-# 2011-04-04 - 1.1.0 - Courgette
-#  * remove inheritence from WopParser
-#  * made changes introduced with Wop 1.5.2 beta
-#  * auth() players at parser startup, making use of the dumpuser command
-# 2011-04-07 - 1.2.0 - Courgette
-#  * change rcon ban command to 'banaddr'
-#  * remove attacker fixes for special death
-#  * add EVT_CLIENT_PRIVATE_SAY
-#  * ENTITYNUM_WORLD : now a known 'client' in B3
-#  * don't fire teamkills/teamdamage events in gametypes with no teams (see TEAM_BASED_GAMETYPES)
-#  * add a DEBUG_EVENT flag
-#  * do not provides fake guid for bot, so they won't autheticate and won't make it to database
-# 2011-04-07 - 1.2.1 - Courgette
-#  * fix TEAM_BASED_GAMETYPES
-# 2011-04-07 - 1.2.2 - Courgette
-#  * fix Tell regexp when cid is -1
-#  * reflect that cid are not converted to int anymore in the clients module
-#  * do not try to fix attacket in OnKill
-#  * fix MOD_SHOTGUN -> MOD_PUMPER
-# 2011-04-10 - 1.2.3 - Courgette
-#  * fix commands that should use quotation marks
-# 2014-01-15 - 1.3 - Fenix
-#  * pep8 coding style guide
-#  * corrrectly set client bot flag upon new client connection
-
+#
+#   2011-04-04 - 1.1.0 - Courgette
+#   * remove inheritence from WopParser
+#   * made changes introduced with Wop 1.5.2 beta
+#   * auth() players at parser startup, making use of the dumpuser command
+#   2011-04-07 - 1.2.0 - Courgette
+#   * change rcon ban command to 'banaddr'
+#   * remove attacker fixes for special death
+#   * add EVT_CLIENT_PRIVATE_SAY
+#   * ENTITYNUM_WORLD : now a known 'client' in B3
+#   * don't fire teamkills/teamdamage events in gametypes with no teams (see TEAM_BASED_GAMETYPES)
+#   * add a DEBUG_EVENT flag
+#   * do not provides fake guid for bot, so they won't autheticate and won't make it to database
+#   2011-04-07 - 1.2.1 - Courgette
+#   * fix TEAM_BASED_GAMETYPES
+#   2011-04-07 - 1.2.2 - Courgette
+#   * fix Tell regexp when cid is -1
+#   * reflect that cid are not converted to int anymore in the clients module
+#   * do not try to fix attacket in OnKill
+#   * fix MOD_SHOTGUN -> MOD_PUMPER
+#   2011-04-10 - 1.2.3 - Courgette
+#   * fix commands that should use quotation marks
+#   2014-01-15 - 1.3 - Fenix
+#   * PEP8 coding style guide
+#   * correctly set client bot flag upon new client connection
+#   2014-07-17 - 1.4 - Fenix
+#   * updated abstract parser to comply with the new getWrap implementation
+#   * updated rcon command patterns
 
 __author__ = 'xlr8or, Courgette'
-__version__ = '1.3'
+__version__ = '1.4'
 
 import b3
 import b3.events
@@ -54,11 +57,12 @@ import re
 import string
 
 from b3.parsers.q3a.abstractParser import AbstractParser
-from b3.events import EVT_GAME_WARMUP, EVT_GAME_ROUND_END
+from b3.events import EVT_GAME_WARMUP
+from b3.events import EVT_GAME_ROUND_END
 
 DEBUG_EVENTS = False
 
-#kill modes
+# kill modes
 MOD_UNKNOWN = '0'
 MOD_PUMPER = '1'
 MOD_GAUNTLET = '2'
@@ -103,26 +107,24 @@ class Wop15Parser(AbstractParser):
 
     gameName = 'wop15'
 
-    _settings = dict(
-        line_length=65,
-        _settings=100,
-    )
+    _settings = {
+        'line_length': 65,
+    }
 
-    _commands = dict(
-        message='stell %(cid)s "%(prefix)s ^3[pm]^7 %(message)s"',
-        deadsay='stell %(cid)s "%(prefix)s [DEAD]^7 %(message)s"',
-        say='ssay "%(prefix)s^7 %(message)s"',
-        saybig='scp -1 "%(prefix)s^7 %(message)s"',
-        set='set %(name)s "%(value)s"',
-        kick='clientkick %(cid)s',
-        ban='banAddr %(cid)s',
-        tempban='clientkick %(cid)s',
-    )
+    _commands = {
+        'message': 'stell %(cid)s "%(message)s"',
+        'say': 'ssay "%(message)s"',
+        'saybig': 'scp -1 "%(message)s"',
+        'set': 'set %(name)s "%(value)s"',
+        'kick': 'clientkick %(cid)s',
+        'ban': 'banAddr %(cid)s',
+        'tempban': 'clientkick %(cid)s',
+    }
 
-    _eventMap = dict(
-        warmup=EVT_GAME_WARMUP,
-        shutdowngame=EVT_GAME_ROUND_END
-    )
+    _eventMap = {
+        'warmup': EVT_GAME_WARMUP,
+        'shutdowngame': EVT_GAME_ROUND_END
+    }
 
     # remove the time off of the line
     _lineClear = re.compile(r'^(?:[0-9:]+\s?)?')
@@ -159,7 +161,10 @@ class Wop15Parser(AbstractParser):
     #--- ----- ---- ---- --------------- ------- --------------------- ----- -----
     #  0     0    2    0 ^0PAD^4MAN^7           50 bot                       0 16384
     #  1     0    3   43 PadPlayer^7           0 2001:41b8:9bf:fe04:f40c:d4ff:fe2b:6af9 45742 90000
-    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<team>[0-9]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+)\s+(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<team>[0-9]+)\s+(?P<ping>[0-9]+)\s+'
+                            r'(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+)\s+(?P<qport>[0-9]+)\s+'
+                            r'(?P<rate>[0-9]+)$', re.I)
+
     _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
 
     def startup(self):
@@ -445,20 +450,6 @@ class Wop15Parser(AbstractParser):
             self.debug("client is now : %s" % client)
 
         return
-
-    # ##########################################################################
-    #
-    # Parser API implementation
-    #
-    # ##########################################################################
-    
-    def say(self, msg):
-        lines = []
-        for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
-            lines.append(self.getCommand('say', prefix=self.msgPrefix, message=line))
-
-        if len(lines):        
-            self.writelines(lines)
 
     # ##########################################################################
     #

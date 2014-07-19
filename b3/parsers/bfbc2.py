@@ -19,159 +19,160 @@
 #
 # CHANGELOG
 #
-# 2010/03/09 - 0.1 - Courgette
-# * parser is able to connect to a distant BFBC2 server through TCP
-#   and listens for BFBC2 events.
-# * BFBC2 events are routed to create matching B3 events
-# 2010/03/12 - 0.2 - Courgette
-# * the bot recognize players, commands and can respond
-# 2010/03/14 - 0.3 - Courgette
-# * better handling of 'connection reset by peer' issue
-# 2010/03/14 - 0.4 - Courgette
-# * save clantag as part of the name
-# * save Punkbuster ID when client disconnects (when we get notified by PB)
-# * save client IP on client connects (when we get notified by PB)
-# 2010/03/14 - 0.5 - Courgette
-# * add EVT_CLIENT_CONNECT
-# * recognize kill/suicide/teamkill
-# * add kick, tempban, unban, ban
-# 2010/03/14 - 0.5.1 - Courgette
-# * fix bug in OnPlayerKill
-# 2010/03/14 - 0.5.2 - Courgette
-# * remove junk
-# 2010/03/14 - 0.5.2 - Courgette
-# * fix EVT_CLIENT_SUICIDE parameters
-# 2010/03/16 - 0.5.3 - SpacepiG
-# * added maps, nextmap, getEasyName for translating map name.
-# 2010/03/16 - 0.6 - Courgette
-# * set client.team whenever we got the info from the BFBC2 server
-# 2010/03/16 - 0.6.1 - Courgette
-# * fix getCvar
-# 2010/03/21 - 0.7 - Bakes
-# * sync each 5 sec. to detect team changes 
-# 2010/03/21 - 0.7.1 - Courgette
-# * fix bug in getCvar when result is an empty list
-# 2010/03/21 - 0.7.2 - Bakes
-# * rotateMap() function added for !maprotate functionality.
-# 2010/03/21 - 0.7.3 - Bakes
-# * message_delay added so that self.say doesn't spew out spam.
-# 2010/03/21 - 0.7.4 - Bakes
-# * say messages are now queued instead of hanging the bot.
-# 2010/03/21 - 0.7.5 - Bakes
-# * fixes the 'multiple say event' problem that causes plenty of spam warnings.
-# 2010/03/24 - 0.7.6 - Courgette
-# * interrupt sayqueuelistener if the bot is paused
-# * review all Punkbuster related code
-# 2010/03/26 - 0.8 - Courgette
-# * refactor the way clients' messages are queued too ensure consecutive
-#   messages are displayed at a peaceful rate. Previously this was done
-#   in a very similar way in the b3/clients.py file. But it is better
-#   to make those changes only for BFBC2 at the moment
-# 2010/03/27 - 0.8.1 - Bakes
-# * teamkill event fixed - EVT_CLIENT_KILL_TEAM not EVT_CLIENT_TEAMKILL
-# 2010/03/27 - 0.8.2 - Courgette
-# * getEasyName return the level name is no easyname is found.
-# * getEasyName return correct name for maps in SQDM mode
-# 2010/03/30 - 0.8.3 - Courgette
-# * fix self.Punkbuster
-# * add Squad constants
-# 2010/04/01 - 0.8.4 - Bakes
-# * self.game.* is now updated correctly every 15 seconds.
-# 2010/04/05 - 1.0 - Courgette
-# * update parser to follow BFBC2 R9 protocol changes
-# 2010/04/07 - 1.1 - Courgette
-# * fix OnPlayerTeamchange
-# * fix OnPlayerSquadchange
-# * fix OnServerLoadinglevel
-# * fix OnServerLevelstarted
-# * introduced a mechanisms that ensure the server loade a target map. This
-#   ensure changeMap and mapRotate actually change maps and not just change 
-#   map sides (as admin.runNextLevel does natively)
-# * make used of the soundex/levenshteinDistance algorithm to get map name from
-#   user commands
-# 2010/04/08 - 1.2 - Courgette
-# * change the way map change was ensured as R9 build 527791 makes things easier
-# * ignore chat events when the player who speaks is 'Server'
-# * fix client.squad value type
-# * on map load, update self.game.<whatever we can> so other plugins can find more data
-# * handle gracefully cases where the mapList is empty
-# * fix typo in 'africa harbor'
-# 2010/04/10 - 1.2.1 - Courgette
-# * you can now specify in b3.xml what custom maximum line length you want to 
-#   see in the chat zone. 
-# * make sure the BFBC2 server is R9 or later
-# 2010/04/11 - 1.2.2 - Courgette, Bakes
-# * make this module compatible with python 2.4
-# * saybig() function is now available for use by plugins.
-# 2010/04/11 - 1.2.3 - Bakes
-# * fixed arica harbor typo
-# 2010/04/11 - 1.2.4 - Bakes
-# * client.messagebig() is now available for use by plugins.
-# * getHardName is added from poweradminbfbc2, reverse of getEasyname
-# 2010/04/12 - 1.2.5 - Courgette
-# * make sure client.squad and client.team are of type int. 
-# 2010/04/12 - 1.2.6 - Courgette
-# Fix client.team inconsistency
-# * add client.teamId property which is the exact team id as understood by the BFBC2 
-#   (while client.team follow the B3 team numbering scheme : b3.TEAM_BLUE, b3.TEAM_SPEC, etc)
-# 2010/05/19 - 1.2.7 - Bakes
-# * fixed issue between this and clients.py by overwriting the clients.py method. Will need to
-#   be fixed more comprehensively at a later date, this is a quick fix and nothing more!
-# 2010/05/21 - 1.2.8 - xlr8or
-# * delegated getByCID override to clients.py and fix it there
-# 2010/05/22 - 1.2.9 - nicholasperkins (inserted by Bakes)
-# * new method for getWrap that doesn't split strings in the middle of words.
-# 2010/07/20 - 1.3.0 - xlr8or
-# * modified OnPlayerKill to work with R15+
-# * fixed infinite loop in a python socket thread in receivePacket() (in protocol.py) on gameserver restart
-# * fixed (statusplugin crontab) error when polling for playerscores and -pings while server is unreachable
-# 2010/07/26 - 1.3.1 - xlr8or
-# * make sure we don't create a new client without a guid and;
-# * pass guid to getClient() in OnPlayerAuthenticated() for a better chance on a guid
-# 2010/07/28 - 1.3.1 - Durzo
-# * merge onPlayerSpawn event with latest xlr8or code base
-# 2010/07/29 - 1.3.2 - xlr8or
-# * Added EVT_PUNKBUSTER_NEW_CONNECTION when IP address is published by PB
-#  (to aid IP and GeoIP based plugins)
-# * Removed obsolete code in OnPBLostConection() that generated a consistent error.
-# * Fixed unban()
-# * Added needConfirmation var to write() so we can test on the confirmationtype ("OK", "NotFound") sent by the server on rcon.
-# 2010-07-30 - 1.3.3 - xlr8or
-# * Added joinClient() to OnServerLevelstarted() so rounds are counted for playerstats
-# 2010-07-30 - 1.3.4 - xlr8or
-# * Quick mapretrieval on startup
-# 2010-07-30 - 1.3.5 - xlr8or
-# * Fixed self.game.rounds
-# 2010-08-15 - 1.3.6 - xlr8or
-# * Fix PB handling when the PB server was renamed to something else than 'PunkBuster Server'
-# * Added OnPBVersion() for testing purposes 
-# 2010-09-02 - 1.3.7 - xlr8or
-# * Fix memory leak due to never ending threads in messagequeue workers
-# 2010-09-02 - 1.3.8 - xlr8or
-# * Better thread handling in messagequeue workers
-# * Fix bug on exit preventing --restart to function properly
-# 2010-09-02 - 1.3.9 - xlr8or
-# * Debugged messagequeue workers
-# 2010-09-02 - 1.3.10 - xlr8or
-# * More debugging messagequeue workers
-# 2010-09-25 - 1.4 - Bakes
-# * Refactored into Frostbite and Bfbc2 for MoH support.
-# 2010-10-23 - 2.0 - Courgette
-# * Refactored with inheritence from a frostbite specific abstract parser
-# 2010-11-21 - 2.1 - Courgette
-# * import rotateMap and changeMap from abstractParser 
-# 2010-11-21 - 2.1.1 - Durzo
-# * adjust mapnames from mappack 7 and vietnam expansion 
-# 2011-06-04 - 2.2 - Courgette
-# * makes use of the new pluginsStarted parser hook
-# 2011-12-15 - 2.3 - Courgette
-# * makes sure EVT_CLIENT_TEAM_CHANGE gets fired after updating the squad info
-# 2012-10-60 - 2.4 - Courgette
-# * reflect changes in abstract parser 1.6
-# 2014-05-02 - 2.5 - Fenix
-# * replaced saybigqueuelistene() method name with saybigqueuelistenerworker(): was overwriting an attribute
-# * minor syntax cleanup
-# * replaced variable named using python built-in names
+#   2010/03/09 - 0.1 - Courgette
+#   * parser is able to connect to a distant BFBC2 server through TCP and listens for BFBC2 events.
+#   * BFBC2 events are routed to create matching B3 events
+#   2010/03/12 - 0.2 - Courgette
+#   * the bot recognize players, commands and can respond
+#   2010/03/14 - 0.3 - Courgette
+#   * better handling of 'connection reset by peer' issue
+#   2010/03/14 - 0.4 - Courgette
+#   * save clantag as part of the name
+#   * save Punkbuster ID when client disconnects (when we get notified by PB)
+#   * save client IP on client connects (when we get notified by PB)
+#   2010/03/14 - 0.5 - Courgette
+#   * add EVT_CLIENT_CONNECT
+#   * recognize kill/suicide/teamkill
+#   * add kick, tempban, unban, ban
+#   2010/03/14 - 0.5.1 - Courgette
+#   * fix bug in OnPlayerKill
+#   2010/03/14 - 0.5.2 - Courgette
+#   * remove junk
+#   2010/03/14 - 0.5.2 - Courgette
+#   * fix EVT_CLIENT_SUICIDE parameters
+#   2010/03/16 - 0.5.3 - SpacepiG
+#   * added maps, nextmap, getEasyName for translating map name.
+#   2010/03/16 - 0.6 - Courgette
+#   * set client.team whenever we got the info from the BFBC2 server
+#   2010/03/16 - 0.6.1 - Courgette
+#   * fix getCvar
+#   2010/03/21 - 0.7 - Bakes
+#   * sync each 5 sec. to detect team changes
+#   2010/03/21 - 0.7.1 - Courgette
+#   * fix bug in getCvar when result is an empty list
+#   2010/03/21 - 0.7.2 - Bakes
+#   * rotateMap() function added for !maprotate functionality.
+#   2010/03/21 - 0.7.3 - Bakes
+#   * message_delay added so that self.say doesn't spew out spam.
+#   2010/03/21 - 0.7.4 - Bakes
+#   * say messages are now queued instead of hanging the bot.
+#   2010/03/21 - 0.7.5 - Bakes
+#   * fixes the 'multiple say event' problem that causes plenty of spam warnings.
+#   2010/03/24 - 0.7.6 - Courgette
+#   * interrupt sayqueuelistener if the bot is paused
+#   * review all Punkbuster related code
+#   2010/03/26 - 0.8 - Courgette
+#   * refactor the way clients' messages are queued too ensure consecutive
+#     messages are displayed at a peaceful rate. Previously this was done
+#     in a very similar way in the b3/clients.py file. But it is better
+#     to make those changes only for BFBC2 at the moment
+#   2010/03/27 - 0.8.1 - Bakes
+#   * teamkill event fixed - EVT_CLIENT_KILL_TEAM not EVT_CLIENT_TEAMKILL
+#   2010/03/27 - 0.8.2 - Courgette
+#   * getEasyName return the level name is no easyname is found.
+#   * getEasyName return correct name for maps in SQDM mode
+#   2010/03/30 - 0.8.3 - Courgette
+#   * fix self.Punkbuster
+#   * add Squad constants
+#   2010/04/01 - 0.8.4 - Bakes
+#   * self.game.* is now updated correctly every 15 seconds.
+#   2010/04/05 - 1.0 - Courgette
+#   * update parser to follow BFBC2 R9 protocol changes
+#   2010/04/07 - 1.1 - Courgette
+#   * fix OnPlayerTeamchange
+#   * fix OnPlayerSquadchange
+#   * fix OnServerLoadinglevel
+#   * fix OnServerLevelstarted
+#   * introduced a mechanisms that ensure the server loade a target map. This
+#     ensure changeMap and mapRotate actually change maps and not just change
+#     map sides (as admin.runNextLevel does natively)
+#   * make used of the soundex/levenshteinDistance algorithm to get map name from
+#     user commands
+#   2010/04/08 - 1.2 - Courgette
+#   * change the way map change was ensured as R9 build 527791 makes things easier
+#   * ignore chat events when the player who speaks is 'Server'
+#   * fix client.squad value type
+#   * on map load, update self.game.<whatever we can> so other plugins can find more data
+#   * handle gracefully cases where the mapList is empty
+#   * fix typo in 'africa harbor'
+#   2010/04/10 - 1.2.1 - Courgette
+#   * you can now specify in b3.xml what custom maximum line length you want to see in the chat zone.
+#   * make sure the BFBC2 server is R9 or later
+#   2010/04/11 - 1.2.2 - Courgette, Bakes
+#   * make this module compatible with python 2.4
+#   * saybig() function is now available for use by plugins.
+#   2010/04/11 - 1.2.3 - Bakes
+#   * fixed arica harbor typo
+#   2010/04/11 - 1.2.4 - Bakes
+#   * client.messagebig() is now available for use by plugins.
+#   * getHardName is added from poweradminbfbc2, reverse of getEasyname
+#   2010/04/12 - 1.2.5 - Courgette
+#   * make sure client.squad and client.team are of type int.
+#   2010/04/12 - 1.2.6 - Courgette
+#   * Fix client.team inconsistency
+#   * add client.teamId property which is the exact team id as understood by the BFBC2
+#     (while client.team follow the B3 team numbering scheme : b3.TEAM_BLUE, b3.TEAM_SPEC, etc)
+#   2010/05/19 - 1.2.7 - Bakes
+#   * fixed issue between this and clients.py by overwriting the clients.py method. Will need to
+#     be fixed more comprehensively at a later date, this is a quick fix and nothing more!
+#   2010/05/21 - 1.2.8 - xlr8or
+#   * delegated getByCID override to clients.py and fix it there
+#   2010/05/22 - 1.2.9 - nicholasperkins (inserted by Bakes)
+#   * new method for getWrap that doesn't split strings in the middle of words.
+#   2010/07/20 - 1.3.0 - xlr8or
+#   * modified OnPlayerKill to work with R15+
+#   * fixed infinite loop in a python socket thread in receivePacket() (in protocol.py) on gameserver restart
+#   * fixed (statusplugin crontab) error when polling for playerscores and -pings while server is unreachable
+#   2010/07/26 - 1.3.1 - xlr8or
+#   * make sure we don't create a new client without a guid and;
+#   * pass guid to getClient() in OnPlayerAuthenticated() for a better chance on a guid
+#   2010/07/28 - 1.3.1 - Durzo
+#   * merge onPlayerSpawn event with latest xlr8or code base
+#   2010/07/29 - 1.3.2 - xlr8or
+#   * Added EVT_PUNKBUSTER_NEW_CONNECTION when IP address is published by PB
+#     (to aid IP and GeoIP based plugins)
+#   * Removed obsolete code in OnPBLostConection() that generated a consistent error.
+#   * Fixed unban()
+#   * Added needConfirmation var to write() so we can test on the confirmationtype ("OK", "NotFound") sent by the server on rcon.
+#   2010-07-30 - 1.3.3 - xlr8or
+#   * Added joinClient() to OnServerLevelstarted() so rounds are counted for playerstats
+#   2010-07-30 - 1.3.4 - xlr8or
+#   * Quick mapretrieval on startup
+#   2010-07-30 - 1.3.5 - xlr8or
+#   * Fixed self.game.rounds
+#   2010-08-15 - 1.3.6 - xlr8or
+#   * Fix PB handling when the PB server was renamed to something else than 'PunkBuster Server'
+#   * Added OnPBVersion() for testing purposes
+#   2010-09-02 - 1.3.7 - xlr8or
+#   * Fix memory leak due to never ending threads in messagequeue workers
+#   2010-09-02 - 1.3.8 - xlr8or
+#   * Better thread handling in messagequeue workers
+#   * Fix bug on exit preventing --restart to function properly
+#   2010-09-02 - 1.3.9 - xlr8or
+#   * Debugged messagequeue workers
+#   2010-09-02 - 1.3.10 - xlr8or
+#   * More debugging messagequeue workers
+#   2010-09-25 - 1.4 - Bakes
+#   * Refactored into Frostbite and Bfbc2 for MoH support.
+#   2010-10-23 - 2.0 - Courgette
+#   * Refactored with inheritence from a frostbite specific abstract parser
+#   2010-11-21 - 2.1 - Courgette
+#   * import rotateMap and changeMap from abstractParser
+#   2010-11-21 - 2.1.1 - Durzo
+#   * adjust mapnames from mappack 7 and vietnam expansion
+#   2011-06-04 - 2.2 - Courgette
+#   * makes use of the new pluginsStarted parser hook
+#   2011-12-15 - 2.3 - Courgette
+#   * makes sure EVT_CLIENT_TEAM_CHANGE gets fired after updating the squad info
+#   2012-10-60 - 2.4 - Courgette
+#   * reflect changes in abstract parser 1.6
+#   2014-05-02 - 2.5 - Fenix
+#   * replaced saybigqueuelistene() method name with saybigqueuelistenerworker(): was overwriting an attribute
+#   * minor syntax cleanup
+#   * replaced variable named using python built-in names
+#   2014-07-18 - 2.6 - Fenix
+#   * updated parser to comply with the new getWrap implementation
+#   * rewritten changelog
 #
 # ===== B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER ======
 # -- standard B3 events  -- 
@@ -204,12 +205,14 @@
 # EVT_CLIENT_AUTH
 # EVT_CLIENT_DISCONNECT
 #
+from b3.functions import prefixText
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '2.4'
+__version__ = '2.6'
 
 import time, threading, Queue
 import b3.events
+
 from b3.parsers.frostbite.abstractParser import AbstractParser
 from b3.parsers.frostbite.util import PlayerInfoBlock
 
@@ -277,26 +280,9 @@ class Bfbc2Parser(AbstractParser):
         self._commands['messagebig'] = ('admin.yell', '%(message)s', '%(duration)s', 'player', '%(cid)s')
         self._commands['saybig'] = ('admin.yell', '%(message)s', '%(duration)s', 'all')
 
-
         # create the 'Server' client
         self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN, squad=SQUAD_NEUTRAL)
-        
 
-        if self.config.has_option('bfbc2', 'max_say_line_length'):
-            try:
-                maxlength = self.config.getint('bfbc2', 'max_say_line_length')
-                if maxlength > SAY_LINE_MAX_LENGTH:
-                    self.warning('max_say_line_length cannot be greater than %s' % SAY_LINE_MAX_LENGTH)
-                    maxlength = SAY_LINE_MAX_LENGTH
-                if maxlength < 20:
-                    self.warning('max_say_line_length is way too short. using default')
-                    maxlength = self._settings['line_length']
-                self._settings['line_length'] = maxlength
-                self._settings['min_wrap_length'] = maxlength
-            except Exception, err:
-                self.error('failed to read max_say_line_length setting "%s" : %s' % (self.config.get('bfbc2', 'max_say_line_length'), err))
-        self.debug('line_length: %s' % self._settings['line_length'])
-            
         self.verbose('GameType: %s, Map: %s' %(self.game.gameType, self.game.mapName))
         
 
@@ -314,15 +300,13 @@ class Bfbc2Parser(AbstractParser):
                 client = self.clients.newClient(cid, guid=p['guid'], name=name, team=p['teamId'], squad=p['squadId'], data=p)
                 self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
 
-
     def saybigqueuelistenerworker(self):
         while self.working:
             msg = self.saybigqueue.get()
-            for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
+            for line in self.getWrap(self.stripColors(prefixText([self.msgPrefix], msg))):
                 self.write(self.getCommand('saybig', message=line, duration=2400))
                 time.sleep(self._settings['message_delay'])
- 
- 
+
     def checkVersion(self):
         version = self.output.write('version')
         self.info('server version : %s' % version)

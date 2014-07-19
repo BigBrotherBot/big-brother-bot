@@ -25,10 +25,14 @@
 #   02/05/2014 - 1.2 - Fenix
 #   * correctly initialize variable before referencing
 #   * use the correct number of parameters while calling queryClientUserInfoByName
+#   18/07/2014 - 1.3 - Fenix
+#   * updated abstract parser to comply with the new getWrap implementation
+#   * updated rcon command patterns
 #
+from b3.functions import prefixText
 
 __author__ = 'xlr8or, ~cGs*Pr3z, ~cGs*AQUARIUS'
-__version__ = '1.1'
+__version__ = '1.3'
 
 import b3
 import b3.events
@@ -45,27 +49,27 @@ class Sof2Parser(AbstractParser):
     IpsOnly = False
     IpCombi = False
     privateMsg = False
+
     _empty_name_default = 'EmptyNameDefault'
 
-    _settings = dict(
-        line_length=65,
-        min_wrap_length=100
-    )
+    _settings = {
+        'line_length': 65,
+        'min_wrap_length': 100
+    }
 
-    _commands = dict(
-        message='say %(prefix)s [^3%(name)s^7]: %(message)s',
-        deadsay='say %(prefix)s^7 %(message)s',
-        say='say %(prefix)s^7 %(message)s',
-        set='set %(name)s "%(value)s"',
-        kick='clientkick %(cid)s',
-        ban='addip %(cid)s',
-        tempban='clientkick %(cid)s',
-    )
+    _commands = {
+        'ban': 'addip %(cid)s',
+        'kick': 'clientkick %(cid)s',
+        'message': 'say %(message)s',
+        'say': 'say %(message)s',
+        'set': 'set %(name)s "%(value)s"',
+        'tempban': 'clientkick %(cid)s',
+    }
 
-    _eventMap = dict(
-        warmup=b3.events.EVT_GAME_WARMUP,
-        shutdowngame=b3.events.EVT_GAME_ROUND_END
-    )
+    _eventMap = {
+        'warmup': b3.events.EVT_GAME_WARMUP,
+        'shutdowngame': b3.events.EVT_GAME_ROUND_END
+    }
 
     # remove the time off of the line
     _lineClear = re.compile(r'^(?:[0-9:]+\s?)?')
@@ -238,21 +242,16 @@ class Sof2Parser(AbstractParser):
 
         return data
 
-    # Need to override message format. Game does not support PM's
     def message(self, client, text):
-        try:
-            if client is None:
-                self.say(text)
-            elif client.cid is None:
-                pass
-            else:
-                lines = []
-                for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
-                    lines.append(self.getCommand('message', prefix=self.msgPrefix, name=client.name, message=line))
-
-                self.writelines(lines)
-        except Exception:
-            pass
+        """
+        Need to override message format. Game does not support PM's
+        """
+        lines = []
+        message = prefixText([self.msgPrefix, "^7[^3%s^7]:" % client.name], text)
+        message = message.strip()
+        for line in self.getWrap(message):
+            lines.append(self.getCommand('message', message=line))
+        self.writelines(lines)
 
     def OnClientconnect(self, action, data, match=None):
         # we get user info in two parts:

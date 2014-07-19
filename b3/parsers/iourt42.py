@@ -270,11 +270,11 @@ class Iourt42Parser(Iourt41Parser):
     gameName = 'iourt42'
 
     _commands = {
-        'broadcast': '%(prefix)s^7 %(message)s',
-        'message': 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s',
-        'deadsay': 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s',
-        'say': 'say %(prefix)s %(message)s',
-        'saybig': 'bigtext "%(prefix)s %(message)s"',
+        'broadcast': '%(message)s',
+        'message': 'tell %(cid)s %(message)s',
+        'deadsay': 'tell %(cid)s %(message)s',
+        'say': 'say %(message)s',
+        'saybig': 'bigtext "%(message)s"',
         'set': 'set %(name)s "%(value)s"',
         'kick': 'kick %(cid)s "%(reason)s"',
         'ban': 'addip %(cid)s',
