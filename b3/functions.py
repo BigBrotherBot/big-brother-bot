@@ -422,3 +422,36 @@ def corrent_spell(c_word, wordbook):
         result = False
 
     return result
+
+#--------------------------------------------------------------------------------------------------
+def prefixText(prefixes, text):
+    """
+    add prefixes to a given text.
+
+    :param prefixes: list[basestring] the list of prefixes to preprend to the text
+    :param text: basestring the text to be prefixed
+    :return basestring
+
+    >>> prefixText(None, None)
+    ''
+    >>> prefixText(None, 'f00')
+    'f00'
+    >>> prefixText([], 'f00')
+    'f00'
+    >>> prefixText(['p1'], 'f00')
+    'p1 f00'
+    >>> prefixText(['p1', 'p2'], 'f00')
+    'p1 p2 f00'
+    >>> prefixText(['p1'], None)
+    ''
+    >>> prefixText(['p1'], '')
+    ''
+    """
+    buff = ''
+    if text:
+        if prefixes:
+            for prefix in prefixes:
+                if prefix:
+                    buff += prefix + ' '
+        buff += text
+    return buff

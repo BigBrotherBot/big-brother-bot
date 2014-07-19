@@ -13,26 +13,30 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-# 2013-01-20 - 0.4.1 - Courgette
-# * improve punkbuster event parsing
-# 2014-05-02 - 0.4.2 - Fenix
-# * syntax cleanup
-# 2014-07-16 : 0.4.3 - Fenix
-# * added admin key in EVT_CLIENT_KICK data dict when available
+#   2013-01-20 - 0.4.1 - Courgette
+#   * improve punkbuster event parsing
+#   2014-05-02 - 0.4.2 - Fenix
+#   * syntax cleanup
+#   2014-07-16 : 0.4.3 - Fenix
+#   * added admin key in EVT_CLIENT_KICK data dict when available
+#   2014-07-18 : 0.4.4 - Fenix
+#   * updated parser to comply with the new getWrap implementation
 #
 
 import asyncore
 import b3
 import b3.cron
+from b3.functions import prefixText
 import protocol
 import rcon
 import re
 import sys
 import time
+
 from b3.clients import Client
 from b3.lib.sourcelib import SourceQuery
 from b3.parser import Parser
@@ -40,7 +44,7 @@ from ConfigParser import NoOptionError
 
 
 __author__  = 'Courgette'
-__version__ = '0.4.3'
+__version__ = '0.4.4'
 
 _gameevents_mapping = list()
 def gameEvent(*decorator_param):
@@ -76,6 +80,7 @@ class FrontlineParser(b3.parser.Parser):
     _reColor = re.compile(r'(\^[0-9])')
     _connectionTimeout = 30
     _playerlistInterval = 3
+    _nbConsecutiveConnFailure = 0
     _server_banlist = {}
 
     _settings = {'line_length': 200, 
@@ -382,25 +387,22 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
                 self.info(u"%s last update is too old" % client)
                 client.disconnect()
         return mlist
-        
-    
+
     def say(self, msg):
         """\
         broadcast a message to all players
         """
-        msg = self.stripColors(msg)
-        for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
-            line = self.stripColors(line)
-            self.write('SAY %s %s' % (self.msgPrefix, line))
+        msg = prefixText([self.msgPrefix], self.stripColors(msg))
+        for line in self.getWrap(msg):
+            self.write('SAY %s' % line)
 
     def saybig(self, msg):
         """\
         broadcast a message to all players in a way that will catch their attention.
         """
-        msg = self.stripColors(msg)
-        for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
-            line = self.stripColors(line)
-            self.write('SAY #%s# %s' % (self.msgPrefix, line))
+        msg = prefixText(['#' + self.msgPrefix + '#'], self.stripColors(msg))
+        for line in self.getWrap(msg):
+            self.write('SAY %s' % line)
 
     def message(self, client, text):
         """\
@@ -408,8 +410,7 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
         """
         # actually send private messages
         text = self.stripColors(text)
-        for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
-            line = self.stripColors(line)
+        for line in self.getWrap(text):
             self.write('PLAYERSAY PlayerID=%(cid)s SayText="%(message)s"' % {'cid':client.cid, 'message':line})
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):

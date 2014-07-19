@@ -17,15 +17,15 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
-
-# 07/28/2012    0.1     Initial release
-# 08/31/2012    0.12    Various fixes and cleanups
-# 09/01/2012    0.13    Check for non-verified GUIDs in Player List from server
-# 09/01/2012    0.14    Allow for non-ascii names by replacing clients.Client.auth method
-# 09/05/2012    0.15    change the way events EVT_CLIENT_CONNECT and EVT_CLIENT_AUTH work
-#                       fix EVT_CLIENT_DISCONNECT
-# 09/10/2012    0.16    Fix UTF-8 encoding issues
-# 09/15/2012    0.17
+#
+#   07/28/2012    0.1     Initial release
+#   08/31/2012    0.12    Various fixes and cleanups
+#   09/01/2012    0.13    Check for non-verified GUIDs in Player List from server
+#   09/01/2012    0.14    Allow for non-ascii names by replacing clients.Client.auth method
+#   09/05/2012    0.15    Change the way events EVT_CLIENT_CONNECT and EVT_CLIENT_AUTH work
+#                         Fix EVT_CLIENT_DISCONNECT
+#   09/10/2012    0.16    Fix UTF-8 encoding issues
+#   09/15/2012    0.17
 #   - reduce code size by moving some network code to the protocol module
 #   - take advantage of new BattleyeServer.command() behaviour which is synchronous since protocol.py v1.1. This makes the parser much easier to write/read
 #   - move all UTF-8 encoding/decoding related code to the protocol module. In the B3 parser code, there is no need to worry about those issues.
@@ -34,29 +34,30 @@
 #   - add prefix to say/saybig/message methods
 #   - implements getPlayerPings()
 #   - add method getBanlist()
-# 09/20/1012    0.18
+#   09/20/1012    0.18
 #   - Make restart method work correctly when called from a plugin
-# 09/25/2012    0.19
+#   09/25/2012    0.19
 #   - Allow clients with un-verified GUIDs to auth if IP's match the one in the batabase
 #   - or optionally allow clients to always auth using the nonVerified GUID's
-# 07/10/2013    0.19.1
+#   07/10/2013    0.19.1
 #   - getBanlist respond with an empty dict if it fails to read the banlist data from the game server
-# 07/13/2013   0.20
+#   07/13/2013   0.20
 #   - Handle 'bans' command not completing correctly
-# 07/27/2013   1.0
+#   07/27/2013   1.0
 #   - Sync won't remove clients which are already connected but not yet authed (unverified guid)
-# 09/16/2013   1.1
+#   09/16/2013   1.1
 #   - add handling of Battleye Script notifications. New Event EVT_BATTLEYE_SCRIPTLOG
-# 10/09/2013   1.1.1
+#   10/09/2013   1.1.1
 #   - Add handling of empty player list returned from server
-# 21/12/2013   1.1.2
+#   21/12/2013   1.1.2
 #   - Added more commands to the commands list
-# 22/12/2013   1.1.3
+#   22/12/2013   1.1.3
 #   - Sync won't remove clients which are already connected but do not get have their GUID calculated
-# 02/05/2014c  1.1.4
+#   02/05/2014   1.1.4
 #   - rewrote import statements
 #   - correctly declare getPlayerPings() method to match the declaration in Parser class
-#
+#   18/07/2014 - 1.1.5 - Fenix
+#   * updated abstract parser to comply with the new getWrap implementation
 
 import sys
 import re
@@ -64,6 +65,7 @@ import traceback
 import time
 import Queue
 import threading
+from b3.functions import prefixText
 import b3.parser
 import b3.events
 import b3.cvar
@@ -74,12 +76,12 @@ from b3.parsers.battleye.protocol import CommandFailedError
 from b3.parsers.battleye.protocol import CommandError
 from b3.parsers.battleye.protocol import BattleyeError
 from b3.parsers.battleye.protocol import NetworkError
-from logging import Formatter
 from b3.output import VERBOSE2, VERBOSE
 from b3.clients import Clients
+from logging import Formatter
 
 __author__  = '82ndab-Bravo17, Courgette'
-__version__ = '1.1.4'
+__version__ = '1.1.5'
 
 
 # disable the authorizing timer that come by default with the b3.clients.Clients class
@@ -115,9 +117,8 @@ class AbstractParser(b3.parser.Parser):
 
     _settings = {
         'line_length': 128,
-        'min_wrap_length': 128,
         'message_delay': .8,
-        }
+    }
 
     _gameServerVars = () # list available cvar
 
@@ -430,7 +431,7 @@ class AbstractParser(b3.parser.Parser):
 
 
     def _say(self, msg):
-        for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + msg), self._settings['line_length'], self._settings['min_wrap_length']):
+        for line in self.getWrap(self.stripColors(prefixText([self.msgPrefix], msg))):
             self.write(self.getCommand('say', message=line))
             time.sleep(self._settings['message_delay'])
 
@@ -863,7 +864,7 @@ class AbstractParser(b3.parser.Parser):
 
     def message(self, client, text):
         if client:
-            for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + text), self._settings['line_length'], self._settings['min_wrap_length']):
+            for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + text)):
                 self.write(self.getCommand('message', cid=client.cid, message=line))
 
 
@@ -1143,7 +1144,9 @@ class AbstractParser(b3.parser.Parser):
 
             
     def restart(self):
-        """Stop B3 with the restart exit status (221)"""
+        """
+        Stop B3 with the restart exit status (221)
+        """
         # Need to set this so that if restart is called from within a plugin, and there is no event, exitcode is correctly set
         self.exitcode = 221
         self.shutdown()
@@ -1153,38 +1156,3 @@ class AbstractParser(b3.parser.Parser):
         self.bot('Restarting...')
 
         sys.exit(221)
-
-    def getWrap(self, text, length=None, minWrapLen=None):
-        """Returns a sequence of lines for text that fits within the limits
-        """
-        if not text:
-            return []
-
-        if length is None:
-            length = self._settings['line_length']
-
-        maxLength = int(length)
-
-        if len(text) <= maxLength:
-            return [text]
-        else:
-            wrappoint = text[:maxLength].rfind(" ")
-            if wrappoint == 0:
-                wrappoint = maxLength
-            lines = [text[:wrappoint]]
-            remaining = text[wrappoint:]
-            while len(remaining) > 0:
-                if len(remaining) <= maxLength:
-                    lines.append(remaining)
-                    remaining = ""
-                else:
-                    wrappoint = remaining[:maxLength].rfind(" ")
-                    if wrappoint == 0:
-                        wrappoint = maxLength
-                    lines.append(remaining[0:wrappoint])
-                    remaining = remaining[wrappoint:]
-            return lines
-
-
-
-

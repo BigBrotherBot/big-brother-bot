@@ -20,31 +20,36 @@
 #
 # CHANGELOG
 #
-# 2014-04-01 - 0.1 - Courgette
+#   2014-04-01 - 0.1 - Courgette
 #   * copied from csgo
-# 2014-05-02 - 0.2 - Fenix
+#   2014-05-02 - 0.2 - Fenix
 #   * rewrote import statements
 #   * initialize missing class attributes
 #   * fixed getPlayerPings method declaration not matching the method in Parser class
 #   * fixed client retrieval in kick, ban and tempban function
-# 2014-07-16 : 0.3 - Fenix: added admin key in EVT_CLIENT_KICK data dict when available
+#   2014-07-16 - 0.3 - Fenix:
+#   * added admin key in EVT_CLIENT_KICK data dict when available
+#   2014/07/18 - 0.4 - Fenix
+#   * updated abstract parser to comply with the new getWrap implementation
 #
 
 import re
 import time
 
+from b3 import TEAM_UNKNOWN
+from b3 import TEAM_BLUE
+from b3 import TEAM_RED
 from b3.clients import Client
 from b3.clients import Clients
-from b3.functions import minutesStr
+from b3.decorators import Game_event_router
+from b3.functions import minutesStr, prefixText
 from b3.functions import time2minutes
 from b3.functions import getStuffSoundingLike
 from b3.parser import Parser
-from b3 import TEAM_UNKNOWN, TEAM_BLUE, TEAM_RED
-from b3.decorators import Game_event_router
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '0.3'
+__version__ = '0.4'
 
 
 # GAME SETUP
@@ -507,8 +512,8 @@ class InsurgencyParser(Parser):
             if "B3 Say" in self.sm_plugins:
                 template = 'b3_say %s'
             else:
-                msg = self.msgPrefix + ' ' + msg
-            for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+                msg = prefixText([self.msgPrefix], msg)
+            for line in self.getWrap(msg):
                 self.output.write(template % line)
 
     def saybig(self, msg):
@@ -520,8 +525,8 @@ class InsurgencyParser(Parser):
             if "B3 Say" in self.sm_plugins:
                 template = 'b3_hsay %s'
             else:
-                msg = self.msgPrefix + ' ' + msg
-            for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+                msg = prefixText([self.msgPrefix], msg)
+            for line in self.getWrap(msg):
                 self.output.write(template % line)
 
     def message(self, client, msg):
@@ -534,8 +539,8 @@ class InsurgencyParser(Parser):
                 if "B3 Say" in self.sm_plugins:
                     template = 'b3_psay #%(guid)s "%(msg)s"'
                 else:
-                    msg = self.msgPrefix + ' ' + msg
-                for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
+                    msg = prefixText([self.msgPrefix], msg)
+                for line in self.getWrap(msg):
                     self.output.write(template % {'guid': client.guid, 'msg': line})
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -745,41 +750,6 @@ class InsurgencyParser(Parser):
     #    Other methods
     #
     ###############################################################################################
-
-    def getWrap(self, text, length=80, min_wrap_len=150):
-        """\
-        Returns a sequence of lines for text that fits within the limits
-        """
-        if not text:
-            return []
-
-        length = int(length)
-        clean_text = self.stripColors(text.strip())
-
-        if len(clean_text) <= min_wrap_len:
-            return [clean_text]
-
-        text = re.split(r'\s+', clean_text)
-        lines = []
-
-        line = text[0]
-        for t in text[1:]:
-            if len(line) + len(t) + 2 <= length:
-                line = '%s %s' % (line, t)
-            else:
-                if len(lines) > 0:
-                    lines.append(u'› %s' % line)
-                else:
-                    lines.append(line)
-                line = t
-
-        if len(line):
-            if len(lines) > 0:
-                lines.append(u'› %s' % line)
-            else:
-                lines.append(line)
-
-        return lines
 
     def parseLine(self, line):
         if line is None:

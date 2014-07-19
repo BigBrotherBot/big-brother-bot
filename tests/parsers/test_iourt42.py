@@ -840,27 +840,27 @@ auth: id: 0 - name: ^7laCourge - login: courgette - notoriety: serious - level: 
 
     def test_say(self):
         self.console.say("f00")
-        self.console.write.assert_has_calls([call('say  f00')])
+        self.console.write.assert_has_calls([call('say f00')])
 
 
     def test_saybig(self):
         self.console.saybig("f00")
-        self.console.write.assert_has_calls([call('bigtext " f00"')])
+        self.console.write.assert_has_calls([call('bigtext "f00"')])
 
 
     def test_message(self):
         self.console.message(self.player, "f00")
-        self.console.write.assert_has_calls(call('tell 4  ^3[pm]^7 f00'))
+        self.console.write.assert_has_calls(call('tell 4 ^8[pm]^7 f00'))
 
 
     def test_kick(self):
         self.console.kick(self.player, reason="f00")
-        self.console.write.assert_has_calls([call('kick 4 "f00"'), call('say  theName^7 was kicked f00')])
+        self.console.write.assert_has_calls([call('kick 4 "f00"'), call('say theName^7 was kicked f00')])
 
 
     def test_ban(self):
         self.console.ban(self.player, reason="f00")
-        self.console.write.assert_has_calls([call('addip 4'), call('say  theName^7 was banned f00')])
+        self.console.write.assert_has_calls([call('addip 4'), call('say theName^7 was banned f00')])
 
 
     def test_unban(self):
@@ -874,7 +874,7 @@ auth: id: 0 - name: ^7laCourge - login: courgette - notoriety: serious - level: 
 
     def test_tempban(self):
         self.console.tempban(self.player, reason="f00", duration="1h")
-        self.console.write.assert_has_calls([call('kick 4 "f00"'), call('say  theName^7 was temp banned for 1 hour^7 f00')])
+        self.console.write.assert_has_calls([call('kick 4 "f00"'), call('say theName^7 was temp banned for 1 hour^7 f00')])
 
 
     def test_getMap(self):
@@ -908,7 +908,7 @@ maps/ut4_ambush.bsp
     @patch('time.sleep')
     def test_rotateMap(self, sleep_mock):
         self.console.rotateMap()
-        self.console.write.assert_has_calls([call('say  ^7Changing to next map'), call('cyclemap')])
+        self.console.write.assert_has_calls([call('say ^7Changing to next map'), call('cyclemap')])
         sleep_mock.assert_called_once_with(1)
 
 
@@ -1096,7 +1096,7 @@ class Test_ban_with_FrozenSand_auth(Iourt42TestCase):
             self.console.ban(self.player, reason="f00")
         # THEN
         write_mock.assert_has_calls([call('auth-ban 4 0 0 0'),
-                                     call('say  theName^7 was banned f00')])
+                                     call('say theName^7 was banned f00')])
 
 
     def test_ban_with_frozensand_no_auth(self, mock_sleep):
@@ -1108,7 +1108,7 @@ class Test_ban_with_FrozenSand_auth(Iourt42TestCase):
         # THEN
         write_mock.assert_has_calls([call('auth-ban 4 0 0 0'),
                                      call('addip 4'),
-                                     call('say  theName^7 was banned f00')])
+                                     call('say theName^7 was banned f00')])
 
 
 
@@ -1121,7 +1121,7 @@ class Test_ban_with_FrozenSand_auth(Iourt42TestCase):
         # THEN
         write_mock.assert_has_calls([call('auth-ban 4 0 0 0'),
                                      call('addip 4'),
-                                     call('say  theName^7 was banned f00')])
+                                     call('say theName^7 was banned f00')])
 
 
     def test_tempban_with_frozensand_1minute(self, mock_sleep):
@@ -1132,7 +1132,7 @@ class Test_ban_with_FrozenSand_auth(Iourt42TestCase):
             self.console.tempban(self.player, duration="1m", reason="f00")
         # THEN
         write_mock.assert_has_calls([call('auth-ban 4 0 0 1'),
-                                     call('say  theName^7 was temp banned for 1 minute^7 f00')])
+                                     call('say theName^7 was temp banned for 1 minute^7 f00')])
 
 
     def test_tempban_with_frozensand_90min(self, mock_sleep):
@@ -1143,7 +1143,7 @@ class Test_ban_with_FrozenSand_auth(Iourt42TestCase):
             self.console.tempban(self.player, duration="90m", reason="f00")
         # THEN
         write_mock.assert_has_calls([call('auth-ban 4 0 1 30'),
-                                     call('say  theName^7 was temp banned for 1.5 hour^7 f00')])
+                                     call('say theName^7 was temp banned for 1.5 hour^7 f00')])
 
 
     def test_tempban_with_frozensand_40days(self, mock_sleep):
@@ -1154,7 +1154,7 @@ class Test_ban_with_FrozenSand_auth(Iourt42TestCase):
             self.console.tempban(self.player, duration="40d", reason="f00")
         # THEN
         write_mock.assert_has_calls([call('auth-ban 4 40 0 0'),
-                                     call('say  theName^7 was temp banned for 5.7 weeks^7 f00')])
+                                     call('say theName^7 was temp banned for 5.7 weeks^7 f00')])
 
 
 
@@ -1167,7 +1167,7 @@ class Test_ban_with_FrozenSand_auth(Iourt42TestCase):
         # THEN
         write_mock.assert_has_calls([call('auth-ban 4 0 0 1'),
                                      call('kick 4 "f00"'),
-                                     call('say  theName^7 was temp banned for 1 minute^7 f00')])
+                                     call('say theName^7 was temp banned for 1 minute^7 f00')])
 
 
 
@@ -1180,7 +1180,7 @@ class Test_ban_with_FrozenSand_auth(Iourt42TestCase):
         # THEN
         write_mock.assert_has_calls([call('auth-ban 4 0 0 1'),
                                      call('kick 4 "f00"'),
-                                     call('say  theName^7 was temp banned for 1 minute^7 f00')])
+                                     call('say theName^7 was temp banned for 1 minute^7 f00')])
 
 
 

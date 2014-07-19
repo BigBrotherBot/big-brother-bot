@@ -14,24 +14,28 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # $Id: q3a.py 103 2006-04-14 16:23:10Z thorn $
 # $Id: q3a/abstractParser.py 103 2010-11-01 10:10:10Z xlr8or $
 #
 # CHANGELOG
-#    2014/07/16 : 1.7.6 - Fenix
+#
+#    2014/07/18 - 1.7.7 - Fenix
+#    * updated abstract parser to comply with the new getWrap implementation
+#    * updated rcon command patterns
+#    2014/07/16 - 1.7.6 - Fenix
 #    * added admin key in EVT_CLIENT_KICK data dict when available
 #    2014/04/14 - 1.7.5 - Fenix
 #    * pep8 coding style guide
 #    2013/03/07 - 1.7.4 - 82ndab-Bravo17
-#    * Add ability to do kick by full name of client not authed correctly
+#    * add ability to do kick by full name of client not authed correctly
 #    2012/07/07 - 1.7.3 - Courgette
 #    * ensures the config file has option 'game_log' in section 'server'
 #    2012/06/17 - 1.7.2 - Courgette
 #    * syntax
 #    18/10/2011 - 1.7.1 - 82ndab-Bravo17
-#    Check slot number go up in order in getplayerlist to weed out data errors
+#    * check slot number go up in order in getplayerlist to weed out data errors
 #    14/06/2011 - 1.7.0 - Courgette
 #    * cvar code changed to han
 #    2011/06/05 - 1.6.0 - Courgette
@@ -51,27 +55,25 @@
 #    2010/08/08 - 1.4.3 - Courgette
 #    * fix minor bug with saybig()
 #    2010/04/10 - 1.4.2 - Bakes
-#    * saybig() function can now be used by plugins. Since basic q3 games (such as CoD)
-#      cannot print to the centre of the screen, it performs the same function as the scream
-#      command.
+#    * saybig() function can now be used by plugins. Since basic q3 games (such as CoD) cannot print to the centre
+#      of the screen, it performs the same function as the scream command.
 #    2010/03/22 - 1.4.1 - Courgette
-#    * fix conflict between 1.3.4 and 1.4. 
+#    * Fix conflict between 1.3.4 and 1.4.
 #    2010/03/21 - 1.4 - Courgette
 #    * now implements methods maprotate and changeMap
 #    21/03/2010 - 1.3.4 - Bakes
 #    * rotateMap() function added to make the admin plugin more BFBC2-compatible.
 #    31/01/2010 - 1.3.3 -  xlr8or
-#    * Fixed a few  typos
+#    * Fixed a few typos
 #    26/01/2010 - 1.3.2 -  xlr8or
-#    * added maxRetries=4 to authorizeClients()
+#    * Added maxRetries=4 to authorizeClients()
 #    * getMap() was moved from iourt to q3a
 #    12/06/2009 - 1.3.1 - Courgette
 #    * getPlayerList can be called with a custom maxRetries value. This can be
-#    useful when a map just changed and the gameserver hangs for a while.
+#      useful when a map just changed and the gameserver hangs for a while.
 #    11/11/2009 - 1.3.0 - Courgette
-#    * New feature: Allow action names to contain spaces. In that case the action
-#      method is built following a CamelCase syntax. IE: action "Flag return" will
-#      call the method named "OnFlagReturn"
+#    * New feature: Allow action names to contain spaces. In that case the action method is built following a
+#      CamelCase syntax. IE: action "Flag return" will call the method named "OnFlagReturn"
 #    2/27/2009 - 1.2.3 - xlr8or
 #    * Removed error message for getPlayerList(), getPlayerPings() and getPlayerScores()
 #    5/6/2008 - 1.2.2 - Anubis
@@ -86,7 +88,7 @@
 #    * Added log message for when ban() decides to do a tempban
 
 __author__ = 'ThorN, xlr8or'
-__version__ = '1.7.6'
+__version__ = '1.7.7'
 
 import re
 import string
@@ -101,11 +103,12 @@ import b3.cvar
 
 from b3.parsers.q3a import rcon
 from b3.parsers.punkbuster import PunkBuster
+from b3.functions import prefixText
 
 
 class AbstractParser(b3.parser.Parser):
-    """\
-    An abstract base class to help with developing q3a parsers 
+    """
+    An abstract base class to help with developing q3a parsers.
     """
     gameName = None
     privateMsg = True
@@ -113,21 +116,18 @@ class AbstractParser(b3.parser.Parser):
     OutputClass = rcon.Rcon
 
     _settings = {
-        'line_length': 65,
-        'min_wrap_length': 100,
+        'line_length': 80,
     }
 
     _commands = {
-        'message': 'tell %s %s ^8[pm]^7 %s',
-        'deadsay': 'tell %s %s [DEAD]^7 %s',
-        'say': 'say %s %s',
-        'set': 'set %s %s',
-        'kick': 'clientkick %s %s',
-        'ban': 'banid %s %s',
-        'tempban': 'clientkick %s %s',
-        'moveToTeam': 'forceteam %s %s',
-        'kickbyfullname': 'kick %s',
-
+        'ban': 'banid %(cid)s %(reason)s',
+        'kick': 'clientkick %(cid)s %(reason)s',
+        'kickbyfullname': 'kick %(name)s',
+        'message': 'tell %(cid)s %(message)s',
+        'moveToTeam': 'forceteam %(cid)s %(team)s',
+        'say': 'say %(message)s',
+        'set': 'set %(name)s "%(value)s"',
+        'tempban': 'clientkick %(cid)s %(reason)s',
     }
 
     _eventMap = {
@@ -422,48 +422,74 @@ class AbstractParser(b3.parser.Parser):
         return result
 
     def message(self, client, text):
-        try:
-            if client is None:
-                self.say(text)
-            elif client.cid is None:
-                pass
-            else:
-                lines = []
-                for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
-                    lines.append(self.getCommand('message', cid=client.cid, prefix=self.msgPrefix, message=line))
-                self.writelines(lines)
-        except Exception:
-            pass
+        """
+        Send a private message to a client.
+        :param client: The client to who send the message.
+        :param text: The message to be sent.
+        """
+        if client is None:
+            # do a normal say
+            self.say(text)
+            return
 
-    def say(self, msg):
+        if client.cid is None:
+            # skip this message
+            return
+
         lines = []
-        for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
-            lines.append(self.getCommand('say', prefix=self.msgPrefix, message=line))
-        if len(lines):        
-            self.writelines(lines)
-    
-    def saybig(self, msg):
-        for c in range(1, 6):
-            self.say('^%i%s' % (c, msg))
+        message = prefixText([self.msgPrefix, self.pmPrefix], text)
+        message = message.strip()
+        for line in self.getWrap(message):
+            lines.append(self.getCommand('message', cid=client.cid, message=line))
+        self.writelines(lines)
 
-    def smartSay(self, client, msg):
+    def say(self, text):
+        """
+        Print a message in the game chat area.
+        :param text: The message to be sent.
+        """
+        lines = []
+        message = prefixText([self.msgPrefix], text)
+        message = message.strip()
+        for line in self.getWrap(message):
+            lines.append(self.getCommand('say', message=line))
+        self.writelines(lines)
+    
+    def saybig(self, text):
+        """
+        Print a noticeable message to the chat area.
+        :param text: The message to be sent.
+        """
+        for c in range(1, 6):
+            self.say('^%i%s' % (c, text))
+
+    def smartSay(self, client, text):
+        """
+        Send a message to the game chat area with visibility regulated by the client dead state.
+        :param client: The client whose state will regulate the message visibility.
+        :param text: The message to be sent.
+        """
         if client and (client.state == b3.STATE_DEAD or client.team == b3.TEAM_SPEC):
             self.verbose('say dead state: %s, team %s', client.state, client.team)
-            self.sayDead(msg)
+            self.sayDead(text)
         else:
             self.verbose('say all')
-            self.say(msg)
+            self.say(text)
 
-    def sayDead(self, msg):
-        wrapped = self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length'])
+    def sayDead(self, text):
+        """
+        Send a private message to all the dead clients.
+        :param text: The message to be sent.
+        """
         lines = []
+        message = prefixText([self.msgPrefix, self.deadPrefix], text)
+        message = message.strip()
+        wrapped = self.getWrap(message)
         for client in self.clients.getClientsByState(b3.STATE_DEAD):
             if client.cid:                
                 for line in wrapped:
-                    lines.append(self.getCommand('deadsay', cid=client.cid, prefix=self.msgPrefix, message=line))
-
-        if len(lines):        
-            self.writelines(lines)
+                    lines.append(self.getCommand('message', cid=client.cid, message=line))
+        self.writelines(lines)
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         if isinstance(client, basestring) and re.match('^[0-9]+$', client):
@@ -494,7 +520,7 @@ class AbstractParser(b3.parser.Parser):
         # This will allow the kicking of non autenticated players
         if 'kickbyfullname' in self._commands.keys():
             self.debug('Trying kick by full name: %s for %s' % (client, reason))
-            result = self.write(self.getCommand('kickbyfullname', cid=client))
+            result = self.write(self.getCommand('kickbyfullname', name=client))
             if result.endswith('is not on the server\n'):
                 admin.message('^7You need to use the full exact name to kick this player')
             elif result.endswith('was kicked.\n'):

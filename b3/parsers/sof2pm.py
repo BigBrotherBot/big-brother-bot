@@ -14,15 +14,19 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
-# 15/01/2014 - 1.1 - Fenix
-# * pep8 coding style guide
+#
+#   15/01/2014 - 1.1 - Fenix
+#   * PEP8 coding style guide
+#   18/07/2014 - 1.2 - Fenix
+#   * updated abstract parser to comply with the new getWrap implementation
+#   * updated rcon command patterns
+from b3.functions import prefixText
 
 __author__ = 'xlr8or, ~cGs*Pr3z, ~cGs*AQUARIUS'
-__version__ = '1.1'
+__version__ = '1.2'
 
 from b3.parsers.sof2 import Sof2Parser
 
@@ -32,27 +36,33 @@ class Sof2PmParser(Sof2Parser):
     gameName = 'sof2pm'
     privateMsg = True
 
-    _commands = dict(
-        message='tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s',
-        deadsay='say %(prefix)s^7 %(message)s',
-        say='say %(prefix)s^7 %(message)s',
-        set='set %(name)s "%(value)s"',
-        kick='clientkick %(cid)s',
-        ban='addip %(cid)s',
-        tempban='clientkick %(cid)s',
-    )
+    _commands = {
+        'ban': 'addip %(cid)s',
+        'kick': 'clientkick %(cid)s',
+        'message': 'tell %(cid)s %(message)s',
+        'say': 'say %(message)s',
+        'set': 'set %(name)s "%(value)s"',
+        'tempban': 'clientkick %(cid)s',
+    }
 
     def message(self, client, text):
-        try:
-            if client is None:
-                self.say(text)
-            elif client.cid is None:
-                pass
-            else:
-                lines = []
-                for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
-                    lines.append(self.getCommand('message', cid=client.cid, prefix=self.msgPrefix, message=line))
+        """
+        Send a private message to a client.
+        :param client: The client to who send the message.
+        :param text: The message to be sent.
+        """
+        if client is None:
+            # do a normal say
+            self.say(text)
+            return
 
-                self.writelines(lines)
-        except Exception:
-            pass
+        if client.cid is None:
+            # skip this message
+            return
+
+        lines = []
+        message = prefixText([self.msgPrefix, self.pmPrefix], text)
+        message = message.strip()
+        for line in self.getWrap(message):
+            lines.append(self.getCommand('message', cid=client.cid, message=line))
+        self.writelines(lines)

@@ -73,6 +73,9 @@
 # * replaced variable names using python built-in names
 # 2014-07-16 - 1.1.6 Fenix
 # * added admin key in EVT_CLIENT_KICK data dict when available
+# 2014-07-18 - 1.1.7 - Fenix
+# * updated parser to comply with the new getWrap implementation
+# * updated rcon command patterns
 
 
 import asyncore
@@ -80,6 +83,7 @@ import b3
 import b3.cron
 import ftplib
 import os
+from b3.functions import prefixText
 import protocol
 import rcon
 import re
@@ -97,8 +101,7 @@ from b3.parsers.homefront.protocol import ChannelType
 
 
 __author__  = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.1.6'
-
+__version__ = '1.1.7'
 
 
 class HomefrontParser(b3.parser.Parser):
@@ -132,9 +135,9 @@ class HomefrontParser(b3.parser.Parser):
     mapgamelist = None
 
     _commands = {
-        'message': 'adminpm %(uid)s %(prefix)s [pm] %(message)s', 
-        'say': 'adminsay %(prefix)s %(message)s',
-        'saybig': 'adminbigsay %(prefix)s %(message)s', 
+        'message': 'adminpm %(uid)s %(message)s',
+        'say': 'adminsay %(message)s',
+        'saybig': 'adminbigsay %(message)s',
         'kick': 'admin kick "%(playerid)s"',
         'ban': 'admin kickban "%(playerid)s" "%(admin)s" "[B3] %(reason)s"',
         'unban': 'admin unban %(playerId)s', 
@@ -142,8 +145,9 @@ class HomefrontParser(b3.parser.Parser):
         'maprotate': 'admin nextmap'
     }
 
-    _settings = {'line_length': 90, 
-                 'min_wrap_length': 100}
+    _settings = {
+        'line_length': 90,
+    }
     
     prefix = '%s: '
     
@@ -199,9 +203,6 @@ class HomefrontParser(b3.parser.Parser):
                 self.game.sv_maxclients = serverinfo['maxplayers']
         except Exception, err:
             self.exception(err)
-
-
-    
     
     def routePacket(self, packet):
         if packet is None:
@@ -697,40 +698,41 @@ class HomefrontParser(b3.parser.Parser):
                 self.info(u"%s last update is too old" % client)
                 client.disconnect()
         return mlist
-        
     
-    def say(self, msg):
-        """\
-        broadcast a message to all players
+    def say(self, text):
         """
-        msg = self.stripColors(msg)
-        for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
-            line = self.stripColors(line)
-            self.write(self.getCommand('say',  prefix=self.msgPrefix, message=line))
+        Broadcast a message to all players.
+        :param text: The message to be sent.
+        """
+        message = self.stripColors(prefixText([self.msgPrefix], text)).strip
+        for line in self.getWrap(message):
+            self.write(self.getCommand('say', message=line))
 
     def saybig(self, msg):
-        """\
-        broadcast a message to all players in a way that will catch their attention.
         """
-        msg = self.stripColors(msg)
-        for line in self.getWrap(msg, self._settings['line_length'], self._settings['min_wrap_length']):
-            line = self.stripColors(line)
-            self.write(self.getCommand('saybig',  prefix=self.msgPrefix, message=line))
+        Broadcast a message to all players in a way that will catch their attention.
+        :param text: The message to be sent.
+        """
+        message = self.stripColors(prefixText([self.msgPrefix], msg)).strip
+        for line in self.getWrap(message):
+            self.write(self.getCommand('saybig', message=line))
 
     ## @todo Change private messages when the rcon protocol will allow us to
     def message(self, client, text):
-        """\
-        display a message to a given player
+        """
+        Send a private message to a client.
+        :param client: The client to who send the message.
+        :param text: The message to be sent.
         """
         # actually send private messages
-        text = self.stripColors(text)
-        for line in self.getWrap(text, self._settings['line_length'], self._settings['min_wrap_length']):
-            line = self.stripColors(line)
-            self.write(self.getCommand('message', uid=client.guid, prefix=self.msgPrefix, message=line))
+        message = prefixText([self.msgPrefix, self.pmPrefix], text)
+        message = self.stripColors(message).strip()
+        for line in self.getWrap(message):
+            self.write(self.getCommand('message', uid=client.guid, message=line))
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
-        """\
-        kick a given player
+        """
+        Kick a given player.
         """
         self.debug('KICK : client: %s, reason: %s', client.cid, reason)
         if admin:
@@ -998,8 +1000,6 @@ class HomefrontParser(b3.parser.Parser):
             if reason:
                 client.message("%s" % reason)
             return True
-
-
     
     # =======================================
     # convenience methods
