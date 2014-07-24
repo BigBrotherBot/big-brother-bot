@@ -34,6 +34,8 @@
 #   - improved plugin startup and configuration file loading
 # 2014/05/02 - 1.4.1 - Fenix
 #   - Make use of the new getCmd function from functions module
+# 2014/07/23 - 1.4.2 - Fenix
+#   - Let the plugin react on EVT_CLIENT_PRIVATE_SAY
 #
 
 import b3
@@ -45,7 +47,7 @@ from b3.functions import getCmd
 from ConfigParser import NoOptionError
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.4.1'
+__version__ = '1.4.2'
 
 
 class SpamcontrolPlugin(b3.plugin.Plugin):
@@ -100,10 +102,12 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
         # register the events needed
         self.registerEvent(self.console.getEventID('EVT_CLIENT_SAY'))
         self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_SAY'))
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_PRIVATE_SAY'))
 
         self.eventHanlders = {
             self.console.getEventID('EVT_CLIENT_SAY'): self.onChat,
             self.console.getEventID('EVT_CLIENT_TEAM_SAY'): self.onChat,
+            self.console.getEventID('EVT_CLIENT_PRIVATE_SAY'): self.onChat,
         }
 
         self._adminPlugin = self.console.getPlugin('admin')
