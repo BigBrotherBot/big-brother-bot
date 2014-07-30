@@ -52,13 +52,14 @@
 #   * Replace attribute names using python built-in ones
 #   * Correctly use self._preMatch instead of self.preMatch in if-else clause
 #   * include Cod7Rcon class declaration in cod7.py module
-#
+#   2014/07/30 - 1.2.4 - Fenix
+#   * Fixes for the new getWrap implementation
 
 ## @file
 #  CoD7 Parser
 
 __author__  = 'Freelander, Courgette, Just a baka, Bravo17'
-__version__ = '1.2.3'
+__version__ = '1.2.4'
 
 import os
 import b3
@@ -90,9 +91,8 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
     _cod7httpplugin = None
 
     _commands = {
-        'message': 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s',
-        'deadsay': 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s',
-        'say': 'say %(prefix)s %(message)s',
+        'message': 'tell %(cid)s %(message)s',
+        'say': 'say %(message)s',
         'set': 'setadmindvar %(name)s "%(value)s"',
         'kick': 'clientkick %(cid)s "%(reason)s"',
         'ban': 'banclient %(cid)s',

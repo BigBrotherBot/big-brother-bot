@@ -31,10 +31,11 @@
 # * pep8 coding style guide
 # * changed bots guid to match other q3a parsers (BOT<slot>)
 # * correctly set client bot flag upon new client connection
-#
+# 2014/07/30 - 0.1.6 - Fenix
+# * Fixes for the new getWrap implementation
 
 __author__ = 'xlr8or, Courgette'
-__version__ = '0.1.5'
+__version__ = '0.1.6'
 
 import b3
 import b3.events
@@ -53,15 +54,13 @@ class SmgParser(AbstractParser):
 
     _settings = dict(
         line_length=65,
-        min_wrap_length=100,
     )
 
     _empty_name_default = 'EmptyNameDefault'
 
     _commands = dict(
-        message='%(cid)s %(prefix)s ^3[pm]^7 %(message)s',
-        deadsay='%(cid)s %(prefix)s [DEAD]^7 %(message)s',
-        say='say %(prefix)s %(message)s',
+        message='%(cid)s %(message)s',
+        say='say %(message)s',
         set='set %(name)s "%(value)s"',
         kick='clientkick %(cid)s',
         ban='banClient %(cid)s',

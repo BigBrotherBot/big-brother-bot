@@ -28,9 +28,11 @@
 # * correctly set the client bot flag upon new client connection
 # 02/05/2014 - 1.2 - Fenix
 # * correctly initialize variable before referencing
+# 2014/07/30 - 1.3 - Fenix
+# * Fixes for the new getWrap implementation
 
 __author__ = 'xlr8or'
-__version__ = '1.1'
+__version__ = '1.3'
 
 import re
 import string
@@ -48,13 +50,11 @@ class WopParser(AbstractParser):
 
     _settings = dict(
         line_length=65,
-        min_wrap_length=100,
     )
 
     _commands = dict(
-        message='%(prefix)s^7 %(message)s',
-        deadsay='%(prefix)s [DEAD]^7 %(message)s',
-        say='say %(prefix)s^7 %(message)s',
+        message='%(message)s',
+        say='say %(message)s',
         set='set %(name)s "%(value)s"',
         kick='clientkick %(cid)s',
         ban='addip %(cid)s',

@@ -58,9 +58,10 @@
 # 05/02/2014 - 1.4.31 - Fenix - fixed empty group in regular expression
 #                             - rewrote dictionary creation as literal
 #                             - correctly initialize variables before usage
+# 2014/07/30 - 1.4.32 - Fenix -  Fixes for the new getWrap implementation
 
 __author__ = 'ThorN, xlr8or'
-__version__ = '1.4.31'
+__version__ = '1.4.32'
 
 import re
 import string
@@ -83,13 +84,11 @@ class CodParser(AbstractParser):
 
     _settings = {
         'line_length': 65,
-        'min_wrap_length': 120
     }
 
     _commands = {
-        'message': 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s',
-        'deadsay': 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s',
-        'say': 'say %(prefix)s %(message)s',
+        'message': 'tell %(cid)s %(message)s',
+        'say': 'say %(message)s',
         'set': 'set %(name)s "%(value)s"',
         'kick': 'clientkick %(cid)s',
         'ban': 'banclient %(cid)s',

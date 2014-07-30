@@ -32,7 +32,8 @@
 #   * updated parser to comply with the new getWrap implementation
 #   * removed _settings dict re-declaration: was the same of the AbstractParser
 #   * updated rcon command patterns
-#
+#   2014/07/30 - 0.0.6 - Fenix
+#   * Fixes for the new getWrap implementation
 #
 # CREDITS
 # Based on the version 0.0.1, thanks ThorN.
@@ -53,7 +54,7 @@ from b3.functions import prefixText
 
 
 __author__ = 'xlr8or, ailmanki'
-__version__ = '0.0.5'
+__version__ = '0.0.6'
 
 import re, string
 import b3
@@ -73,7 +74,7 @@ class EtproParser(AbstractParser):
 
     _commands = {
         'message': 'm %(name)s %(message)s',
-        'say': 'cpmsay %(prefix)s %(message)s',
+        'say': 'cpmsay %(message)s',
         'set': 'set %(name)s "%(value)s"',
         'kick': 'clientkick %(cid)s',
         'ban': 'banid %(cid)s',
