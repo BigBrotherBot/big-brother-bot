@@ -17,6 +17,8 @@
 #
 # CHANGELOG
 #
+# 2014/07/30 - v0.6.2 - Fenix
+#  * Fixes for the new getWrap implementation
 # 10/05/2013 - v0.6.1- 82ndab.Bravo17
 #  * Do not apply cod4 alterations to admin plugin
 # 25/04/2011 - v0.6 - xlr8or
@@ -34,7 +36,7 @@
 
 
 __author__  = 'NTAuthority'
-__version__ = '0.6.1'
+__version__ = '0.6.2'
 
 import b3.parsers.cod4
 import re
@@ -44,9 +46,8 @@ class Cod6Parser(b3.parsers.cod4.Cod4Parser):
     _guidLength = 16
 
     _commands = {}
-    _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
-    _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
-    _commands['say'] = 'say %(prefix)s %(message)s'
+    _commands['message'] = 'tell %(cid)s %(message)s'
+    _commands['say'] = 'say %(message)s'
     _commands['set'] = 'set %(name)s "%(value)s"'
     _commands['kick'] = 'clientkick %(cid)s'
     _commands['ban'] = 'clientkick %(cid)s'

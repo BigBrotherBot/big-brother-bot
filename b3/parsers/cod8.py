@@ -19,11 +19,11 @@
 #
 # 08/01/2012 - v0.1 - NTAuthority (http://fourdeltaone.net/)
 # 02/05/2014 - v0.2 - Fenix : rewrote dictionary creation as literal
-
+# 2014/07/30 - v0.3 - Fenix :Fixes for the new getWrap implementation
 
 
 __author__  = 'NTAuthority'
-__version__ = '0.2'
+__version__ = '0.3'
 
 import b3.parsers.cod6
 import re
@@ -34,9 +34,8 @@ class Cod8Parser(b3.parsers.cod6.Cod6Parser):
     _guidLength = 16
 
     _commands = {
-        'message': 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s',
-        'deadsay': 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s',
-        'say': 'say %(prefix)s %(message)s',
+        'message': 'tell %(cid)s %(message)s',
+        'say': 'say %(message)s',
         'set': 'set %(name)s "%(value)s"',
         'kick': 'dropclient %(cid)s "%(reason)s"',
         'ban': 'banclient %(cid)s', 'unban': 'unban \"%(name)s\"',

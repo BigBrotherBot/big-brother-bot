@@ -54,10 +54,12 @@
 #   * Allow kicking by full name, even if not authed by B3
 #   2014/05/02 - 1.4.1 - Fenix
 #   * Rewrote dictionary creation as literal
+#   2014/07/30 - 1.4.2 - Fenix
+#   * Fixes for the new getWrap implementation
 #
 
 __author__  = 'ThorN, xlr8or'
-__version__ = '1.4.1'
+__version__ = '1.4.2'
 
 import b3.parsers.cod2
 import b3.functions
@@ -72,9 +74,8 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
     _guidLength = 32
     
     _commands = {
-        'message': 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s',
-        'deadsay': 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s',
-        'say': 'say %(prefix)s %(message)s',
+        'message': 'tell %(cid)s %(message)s',
+        'say': 'say %(message)s',
         'set': 'set %(name)s "%(value)s"',
         'kick': 'clientkick %(cid)s',
         'ban': 'banclient %(cid)s',

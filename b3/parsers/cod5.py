@@ -42,9 +42,11 @@
 #  Add fuzzy guid search in sync() from COD4 series
 # 10/03/2013 - 1.3.3 - 82ndab.Bravo17
 #  Allow kicking by full name, even if not authed by B3
+# 2014/07/30 - 1.3.4 - Fenix
+#   Fixes for the new getWrap implementation
 
 __author__  = 'xlr8or'
-__version__ = '1.3.3'
+__version__ = '1.3.4'
 
 import b3.parsers.cod2
 import b3.functions
@@ -59,9 +61,8 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
     _guidLength = 9
     
     _commands = {}
-    _commands['message'] = 'tell %(cid)s %(prefix)s ^3[pm]^7 %(message)s'
-    _commands['deadsay'] = 'tell %(cid)s %(prefix)s [DEAD]^7 %(message)s'
-    _commands['say'] = 'say %(prefix)s %(message)s'
+    _commands['message'] = 'tell %(cid)s %(message)s'
+    _commands['say'] = 'say %(message)s'
     _commands['set'] = 'set %(name)s "%(value)s"'
     _commands['kick'] = 'clientkick %(cid)s'
     _commands['ban'] = 'banclient %(cid)s'
