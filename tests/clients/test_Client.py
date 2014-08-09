@@ -19,18 +19,18 @@
 import operator
 from b3.clients import Client, Group
 from mock import Mock, patch, ANY
-from b3 import TEAM_UNKNOWN
+from b3 import TEAM_UNKNOWN, TEAM_RED, TEAM_BLUE
 from b3.clients import Alias, IpAlias
-from b3.events import Event, EVT_CLIENT_NAME_CHANGE, EVT_CLIENT_TEAM_CHANGE
 import unittest2 as unittest
 from tests import B3TestCase
- 
+
+
 class Test_Client(B3TestCase):
-    
+
     def setUp(self):
         B3TestCase.setUp(self)
         self.client = Client(console=self.console)
-    
+
     def test_construct(self):
         c = Client(name="Courgette", guid="1234567890")
         self.assertEqual(c.name, "Courgette")
@@ -49,25 +49,27 @@ class Test_Client(B3TestCase):
         self.assertEqual(self.client.team, m)
         
     def test_team_change(self):
-        self.console.queueEvent = Mock()
-        self.client.team = 24
-        self.assertEqual(self.client.team, 24)
-        self.console.queueEvent.assert_called()
-        args = self.console.queueEvent.call_args
-        eventraised = args[0][0]
-        self.assertEquals(eventraised.type, EVT_CLIENT_TEAM_CHANGE)
-        self.assertEquals(eventraised.data, 24)
+        # GIVEN
+        self.client._team = TEAM_RED
+        # THEN
+        with self.assertRaiseEvent(event_type='EVT_CLIENT_TEAM_CHANGE', event_client=self.client, event_data=TEAM_BLUE):
+            # WHEN
+            self.client.team = TEAM_BLUE
+        # GIVEN
+        self.client._team = TEAM_RED
+        # THEN
+        with self.assertRaiseEvent(event_type='EVT_CLIENT_TEAM_CHANGE2', event_client=self.client,
+                                   event_data={'previous': TEAM_RED, 'new': TEAM_BLUE}):
+            # WHEN
+            self.client.team = TEAM_BLUE
 
     def test_name_change(self):
-        self.console.queueEvent = Mock()
+        # GIVEN
         self.client.authed = True
-        self.client.name = "cucurb"
-        self.assertEqual(self.client.name, "cucurb")
-        self.console.queueEvent.assert_called()
-        args = self.console.queueEvent.call_args
-        eventraised = args[0][0]
-        self.assertEquals(eventraised.type, EVT_CLIENT_NAME_CHANGE)
-        self.assertEquals(eventraised.data, 'cucurb')
+        # THEN
+        with self.assertRaiseEvent(event_type='EVT_CLIENT_NAME_CHANGE', event_client=self.client, event_data="cucurb"):
+            # WHEN
+            self.client.name = "cucurb"
 
     def test_makeAlias_new(self):
         self.client.id = 123
@@ -222,51 +224,24 @@ class Test_Client_events(B3TestCase):
     def tearDown(self):
         B3TestCase.tearDown(self)
         self.queueEvent_patcher.stop()
-    
-    def assertEvent(self, event_type, event_client=None, event_data=None, event_target=None):
-        """
-        help making assertion on the last event found in the mocked event queue.
-        """
-        if event_type is None:
-            assert not self.queueEvent_mock.called
-            return
-        assert self.queueEvent_mock.called, "No event was fired"
-        args = self.queueEvent_mock.call_args
 
-        if type(event_type) is basestring:
-            event_type_name = event_type
-        else:
-            event_type_name = self.console.getEventName(event_type)
-            self.assertIsNotNone(event_type_name, "could not find event with name '%s'" % event_type)
-
-        eventraised = args[0][0]
-        self.assertIsInstance(eventraised, Event)
-        self.assertEquals(self.console.getEventName(eventraised.type), event_type_name)
-        self.assertEquals(eventraised.data, event_data)
-        self.assertEquals(eventraised.target, event_target)
-        self.assertEquals(eventraised.client, event_client)
-        
     def test_warn(self):
-        # WHEN
-        warning_object = self.client.warn(duration='5h', warning='insulting admin', keyword=None, admin=self.admin, data='foobar')
-        # THEN
-        self.assertEvent(event_type="EVT_CLIENT_WARN", event_client=self.client, event_data={
-            'reason': 'insulting admin', 
-            'duration': 5*60, 
-            'data': 'foobar', 
-            'admin': self.admin, 
+        with self.assertRaiseEvent(event_type="EVT_CLIENT_WARN", event_client=self.client, event_data={
+            'reason': 'insulting admin',
+            'duration': 5*60,
+            'data': 'foobar',
+            'admin': self.admin,
             'timeExpire': ANY
-        }, event_target=None)
-        
+        }, event_target=None):
+            self.client.warn(duration='5h', warning='insulting admin', keyword=None, admin=self.admin, data='foobar')
+
     def test_notice(self):
-        # WHEN
-        self.client.notice(notice="keep a eye on this guy", spare=None, admin=self.admin)
-        # THEN
-        self.assertEvent(event_type="EVT_CLIENT_NOTICE", event_client=self.client, event_data={
+        with self.assertRaiseEvent(event_type="EVT_CLIENT_NOTICE", event_client=self.client, event_data={
             'notice': "keep a eye on this guy", 
             'admin': self.admin,
             'timeAdd': ANY
-        })        
+        }):
+            self.client.notice(notice="keep a eye on this guy", spare=None, admin=self.admin)
         
 if __name__ == '__main__':
     unittest.main()
