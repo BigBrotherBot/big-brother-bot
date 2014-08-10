@@ -28,6 +28,8 @@
 #   Change default messages to new format
 # 31-05-2014 - 3.0.0-beta.7 - Mark Weirath
 #   Fix provisional ranking when both players are below threshold
+# 10-08-2014 - 3.0.0-beta.8 - Thomas LEVEIL
+#   Fix gh-201 - Unkown column 'None' in where clause on player join
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -35,7 +37,7 @@
 # XLRstats Real Time playerstats plugin
 
 __author__ = 'xlr8or & ttlogic'
-__version__ = '3.0.0-beta.7'
+__version__ = '3.0.0-beta.8'
 
 # Version = major.minor.patches(-development.version)
 
@@ -652,9 +654,10 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             return s
 
     def get_MapStats(self, name):
+        assert name is not None
         s = MapStats()
-        q = 'SELECT * from %s WHERE name = "%s" LIMIT 1' % (self.mapstats_table, name)
-        cursor = self.query(q)
+        q = 'SELECT * from %s WHERE name=? LIMIT 1' % self.mapstats_table
+        cursor = self.query(q, (name,))
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
@@ -735,17 +738,20 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def get_PlayerMaps(self, playerid, mapid):
         if not mapid:
-            self.error('Map not recognized, trying to initialise map...')
-            map = self.get_MapStats(self.console.game.mapName)
-            if map:
-                self.verbose('Map %s successfully initialised.' % map.name)
-                mapid = map.id
+            self.info('Map not recognized, trying to initialise map...')
+            _map = self.get_MapStats(self.console.game.mapName)
+            if _map:
+                if hasattr(_map, '_new'):
+                    self.save_Stat(_map)
+                self.verbose('Map %s successfully initialised.' % _map.name)
+                mapid = _map.id
+                assert mapid is not None, "Failed to get mapid from database for %s" % self.console.game.mapName
             else:
                 return None
 
         s = PlayerMaps()
-        q = 'SELECT * from %s WHERE map_id = %s AND player_id = %s LIMIT 1' % (self.playermaps_table, mapid, playerid)
-        cursor = self.query(q)
+        cursor = self.query('SELECT * from %s WHERE map_id=? AND player_id=? LIMIT 1' % self.playermaps_table,
+                            (mapid, playerid))
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
@@ -1385,9 +1391,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                     player.hide = False
             self.save_Stat(player)
 
-            map = self.get_MapStats(self.console.game.mapName)
-            if map:
-                playermap = self.get_PlayerMaps(player.id, map.id)
+            _map = self.get_MapStats(self.console.game.mapName)
+            if _map:
+                playermap = self.get_PlayerMaps(player.id, _map.id)
                 if playermap:
                     playermap.rounds += 1
                     self.save_Stat(playermap)
