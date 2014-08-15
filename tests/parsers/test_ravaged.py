@@ -419,7 +419,7 @@ class Test_gamelog_parsing(RavagedTestCase):
         self.assertFalse(self.queueEvent_mock.called)
 
 
-    def test_connected_remotely(self):
+    def test_connected_remotely2(self):
         # GIVEN
         self.queueEvent_mock.reset_mock()
         # WHEN
