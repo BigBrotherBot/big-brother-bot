@@ -821,7 +821,7 @@ class AbstractParser(b3.parser.Parser):
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         self.debug('kick reason: [%s]' % reason)
         if isinstance(client, str):
-            self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
+            self.write(self.getCommand('kick', cid=client, reason=reason[:80]))
             return
         
         if admin:
@@ -844,7 +844,7 @@ class AbstractParser(b3.parser.Parser):
         duration = b3.functions.time2minutes(duration)
 
         if isinstance(client, str):
-            self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
+            self.write(self.getCommand('tempban', guid=client, duration=duration*60, reason=reason[:80]))
             return
         
         if admin:
