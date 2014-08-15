@@ -35,6 +35,7 @@
 #                  - removed some warnings
 #                  - fixed client retrieval in kick, ban and tempban function
 # 1.7 - 2014-07-18 - updated parser to comply with the new getWrap implementation
+# 1.8 - 2014-08-15 - produce EVT_CLIENT_KICK when a player gets kicked from the server
 
 import logging
 import re
@@ -63,7 +64,7 @@ from Queue import Queue, Full, Empty
 
 
 __author__  = 'Courgette'
-__version__ = '1.7'
+__version__ = '1.8'
 
 ger = Game_event_router()
 
@@ -378,6 +379,9 @@ class RavagedParser(Parser):
 
         if not silent and fullreason != '':
             self.say(fullreason)
+
+        self.queueEvent(self.getEvent('EVT_CLIENT_KICK', data={'reason': reason, 'admin': admin}, client=client))
+        client.disconnect()
 
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):

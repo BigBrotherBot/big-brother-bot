@@ -1,6 +1,6 @@
 #
-# Medal of Honor: Warfighter Parser for BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2010 BigBrotherBot(B3)
+# BigBrotherBot(B3) (www.bigbrotherbot.net)
+# Copyright (C) 2005 Michael "ThorN" Thornton
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -9,30 +9,31 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-#   2014/07/18 - 0.2 - Fenix
-#   * updated parser to comply with the new getWrap implementation
+# 2014/07/18 - 0.2 - Fenix - updated parser to comply with the new get_wrap implementation
+# 2014/08/06 - 0.3 - Fenix - make use of self.getEvent when creating events
+
 
 import b3
 import b3.events
 import traceback
 import sys
-from b3.functions import prefixText
 
+from b3.functions import prefixText
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 from b3.parsers.frostbite2.util import MapListBlockError
 
 __author__  = 'Freelander'
-__version__ = '0.2'
+__version__ = '0.3'
 
 MOHW_REQUIRED_VERSION = 323174
 
@@ -171,7 +172,7 @@ class MohwParser(AbstractParser):
                 name = p['name']
                 self.debug('client %s found on the server' % cid)
                 client = self.clients.newClient(cid, guid=p['name'], name=name, team=p['teamId'], squad=p['squadId'], data=p)
-                self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
+                self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', p, client))
 
 
 
@@ -215,7 +216,7 @@ class MohwParser(AbstractParser):
             elif cmd_name in admin_plugin._commands:
                 text = cmdPrefix + text[1:]
 
-        return b3.events.Event(b3.events.EVT_CLIENT_SAY, text, client)
+        return self.getEvent('EVT_CLIENT_SAY', text, client)
 
     def OnPlayerTeamchange(self, action, data):
         """
@@ -244,7 +245,7 @@ class MohwParser(AbstractParser):
             client.teamId = int(data[1])
             client.team = self.getTeam(data[1]) # .team setter will send team change event
             if client.squad != previous_squad:
-                return b3.events.Event(b3.events.EVT_CLIENT_SQUAD_CHANGE, data[1:], client)
+                return self.getEvent('EVT_CLIENT_SQUAD_CHANGE', data[1:], client)
 
 
     ###############################################################################################
@@ -253,8 +254,9 @@ class MohwParser(AbstractParser):
     #
     ###############################################################################################
 
-    def getPlayerPings(self):
-        """Ask the server for a given client's pings
+    def getPlayerPings(self, filter_client_ids=None):
+        """
+        Ask the server for a given client's pings
         """
         # TODO: implements getPlayerPings when pings available on admin.listPlayers
         return {}
@@ -328,7 +330,7 @@ class MohwParser(AbstractParser):
                     teamId = p['teamId']
                     squadId = p['squadId']
                     client = self.clients.newClient(cid, guid=guid, name=name, team=self.getTeam(teamId), teamId=int(teamId), squad=squadId, data=p)
-                    self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
+                    self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', p, client))
         return client
 
 

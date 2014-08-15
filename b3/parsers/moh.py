@@ -1,5 +1,5 @@
 #
-# Medal of Honor Parser for BigBrotherBot(B3) (www.bigbrotherbot.net)
+# BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2010 James 'Bakes' Baker (bakes@bigbrotherbot.net)
 #
 # This program is free software; you can redistribute it and/or modify
@@ -9,70 +9,53 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-# 2010/11/07 - 0.10 - Courgette
-# * add new maps info
-# 2010/11/08 - 0.9.2 - GrosBedo
-# * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
-# 2010/10/27 - 0.9.1 - GrosBedo
-# * messages now support named $variables instead of %s
-# 2010/10/27 - 0.9 - Courgette
-# * when banning, also kick to take over MoH engine failure to enforce bans. This
-#   will need more test to determine how to make the MoH engine enforce temp bans.
-# 2010/10/24 - 0.8 - Courgette
-# * fix OnServerRoundover and OnServerRoundoverplayers
-# 2010/10/24 - 0.7 - Courgette
-# * add missing getTeam() method
-# 2010/10/24 - 0.6 - Courgette
-# * minor fixes
-# 2010/10/23 - 0.5 - Courgette
-# * create specific events : EVT_GAME_ROUND_PLAYER_SCORES and EVT_GAME_ROUND_TEAM_SCORES
-# * now fires native B3 event EVT_GAME_ROUND_END
-# * manage team changed event correctly
-# 2010/10/23 - 0.4 - Courgette
-# * refactor inheriting from frostbite AbstratParser 
-# * change available server var list
-# 2010/10/10 - 0.3 - Bakes
-# * getEasyName is now implemented and working, getHardName is implemented
-#   but not working.
-# 2010/10/07 - 0.2 - Courgette
-# * add gameName property. Fix SAY_LINE_MAX_LENGTH
-# 2010/09/25 - 0.1 - Bakes
-# * Initial version of MoH parser - hasn't been tested with OnKill events yet
-#   but basic commands seem to work.
-# 2010-11-21 - 1.0 - Courgette
-# * add rotateMap and changeMap to fix !maprotate and !map#
-# 2011-02-01 - 1.1 - xlr8or
-# * adapted to server R9 version 615937 - fixed onPlayerSpawn and vars.noCrosshairs errors
-# 2011-03-05 - 1.2 - xlr8or
-# * admin.kickPlayer after ban now in try/except to avoid error msg when player is already gone
-# 2011-04-09 - 1.2.1 - Courgette
-# * import missing time module
-# 2011-05-22 - 1.2.2 - Courgette
-# * move events EVT_GAME_ROUND_PLAYER_SCORES and EVT_GAME_ROUND_TEAM_SCORES to abstract Frostbite parser 
-#   as they also exist in BFBC2
-# 2011-06-04 - 1.3.0 - Courgette
-# makes use of the new pluginsStarted parser hook
-# 2011-06-05 - 1.4.0 - Courgette
-# * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
-# 2012-10-06 - 1.5 - Courgette
-# * reflect changes in abstract parser 1.6
-# 2014-05-02 - 1.5.1 - Fenix
-# * Replace attribute names using python built-in ones
-#
+# 2010/11/07 - 0.10  - Courgette - add new maps info
+# 2010/11/08 - 0.9.2 - GrosBedo  - messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
+# 2010/10/27 - 0.9.1 - GrosBedo  - messages now support named $variables instead of %s
+# 2010/10/27 - 0.9   - Courgette - when banning, also kick to take over MoH engine failure to enforce bans.
+#                                  this will need more test to determine how to make the MoH engine enforce temp bans
+# 2010/10/24 - 0.8   - Courgette - fix OnServerRoundover and OnServerRoundoverplayers
+# 2010/10/24 - 0.7   - Courgette - add missing get_team() method
+# 2010/10/24 - 0.6   - Courgette - minor fixes
+# 2010/10/23 - 0.5   - Courgette - create specific events : EVT_GAME_ROUND_PLAYER_SCORES and EVT_GAME_ROUND_TEAM_SCORES
+#                                - now fires native B3 event EVT_GAME_ROUND_END
+#                                - manage team changed event correctly
+# 2010/10/23 - 0.4   - Courgette - refactor inheriting from frostbite AbstratParser
+#                                - change available server var list
+# 2010/10/10 - 0.3   - Bakes     - get_easy_name is now implemented and working, get_hard_name is implemented
+#                                  but not working
+# 2010/10/07 - 0.2   - Courgette - add gamename property. Fix SAY_LINE_MAX_LENGTH
+# 2010/09/25 - 0.1   - Bakes     - initial version of MoH parser - hasn't been tested with on_kill events yet
+#                                  but basic commands seem to work.
+# 2010-11-21 - 1.0   - Courgette - add rotate_map and change_map to fix !maprotate and !map#
+# 2011-02-01 - 1.1   - xlr8or    - adapted to server R9 version 615937: fixed onPlayerSpawn and vars.noCrosshairs errors
+# 2011-03-05 - 1.2   - xlr8or    - admin.kickPlayer after ban now in try/except to avoid error msg when player is
+#                                  already gone
+# 2011-04-09 - 1.2.1 - Courgette - import missing time module
+# 2011-05-22 - 1.2.2 - Courgette - move events EVT_GAME_ROUND_PLAYER_SCORES and EVT_GAME_ROUND_TEAM_SCORES to abstract
+#                                  Frostbite parser as they also exist in BFBC2
+# 2011-06-04 - 1.3.0 - Courgette - makes use of the new plugins_started parser hook
+# 2011-06-05 - 1.4.0 - Courgette - change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
+# 2012-10-06 - 1.5   - Courgette - reflect changes in abstract parser 1.6
+# 2014-05-02 - 1.5.1 - Fenix     - replace attribute names using python built-in ones
+# 2014-08-06 - 1.6   - Fenix     - removed line length configuration loading: it's built-in in the parser module now
+#                                - make use of self.getEvent when creating events
+
+
 __author__ = 'Bakes, Courgette'
-__version__ = '1.5.1'
+__version__ = '1.6'
 
 import time
+import b3.clients
 import b3.events
 import b3.functions
 
@@ -118,28 +101,7 @@ class MohParser(AbstractParser):
     
     def startup(self):
         AbstractParser.startup(self)
-        
-        # create the 'Server' client
         self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
-
-        if self.config.has_option('moh', 'max_say_line_length'):
-            try:
-                maxlength = self.config.getint('moh', 'max_say_line_length')
-                if maxlength > SAY_LINE_MAX_LENGTH:
-                    self.warning('max_say_line_length cannot be greater than %s' % SAY_LINE_MAX_LENGTH)
-                    maxlength = SAY_LINE_MAX_LENGTH
-                if maxlength < 20:
-                    self.warning('max_say_line_length is way too short. using default')
-                    maxlength = self._settings['line_length']
-                self._settings['line_length'] = maxlength
-                self._settings['min_wrap_length'] = maxlength
-            except Exception, err:
-                self.error('failed to read max_say_line_length setting "%s" : %s' % (self.config.get('moh', 'max_say_line_length'), err))
-        self.debug('line_length: %s' % self._settings['line_length'])
-            
-            
-        self.verbose('GameType: %s, Map: %s' %(self.game.gameType, self.game.mapName))
-        
 
     def pluginsStarted(self):
         self.info('connecting all players...')
@@ -153,7 +115,7 @@ class MohParser(AbstractParser):
                     name = "[" + p['clanTag'] + "] " + p['name']
                 self.debug('client %s found on the server' % cid)
                 client = self.clients.newClient(cid, guid=p['guid'], name=name, team=p['teamId'], data=p)
-                self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
+                self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', p, client))
                 
         
         
@@ -196,7 +158,7 @@ class MohParser(AbstractParser):
             if 'clanTag' in p and len(p['clanTag']) > 0:
                 name = "[" + p['clanTag'] + "] " + p['name']
             client = self.clients.newClient(cid, guid=guid, name=name, team=self.getTeam(p['teamId']), teamId=int(p['teamId']), data=p)
-            self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
+            self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', p, client))
         
         return client
 
@@ -381,8 +343,7 @@ class MohParser(AbstractParser):
         spec2 = data[4]
         spec3 = data[5]
 
-        event = b3.events.EVT_CLIENT_SPAWN
-        return b3.events.Event(event, (kit, weapon, spec1, spec2, spec3), spawner)
+        return self.getEvent('EVT_CLIENT_SPAWN', (kit, weapon, spec1, spec2, spec3), spawner)
 
 
     def OnPlayerTeamchange(self, action, data):
@@ -427,10 +388,9 @@ class MohParser(AbstractParser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, {'reason': reason, 
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason,
                                                               'duration': duration, 
-                                                              'admin': admin}
-                                        , client))
+                                                              'admin': admin} , client))
 
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -472,7 +432,7 @@ class MohParser(AbstractParser):
         if not silent:
             self.say(reason)
         
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
 
 
     def rotateMap(self):

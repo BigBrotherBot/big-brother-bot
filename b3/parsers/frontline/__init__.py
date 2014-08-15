@@ -1,6 +1,7 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# 
+# Copyright (C) 2005 Michael "ThorN" Thornton
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -8,29 +9,25 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-#   2013-01-20 - 0.4.1 - Courgette
-#   * improve punkbuster event parsing
-#   2014-05-02 - 0.4.2 - Fenix
-#   * syntax cleanup
-#   2014-07-16 : 0.4.3 - Fenix
-#   * added admin key in EVT_CLIENT_KICK data dict when available
-#   2014-07-18 : 0.4.4 - Fenix
-#   * updated parser to comply with the new getWrap implementation
-#
+# 2013-01-20 - 0.4.1 - Courgette - improve punkbuster event parsing
+# 2014-05-02 - 0.4.2 - Fenix     - syntax cleanup
+# 2014-07-16 - 0.4.3 - Fenix     - added admin key in EVT_CLIENT_KICK data dict when available
+# 2014-07-18 - 0.4.4 - Fenix     - updated parser to comply with the new get_wrap implementation
+# 2014-08-12 - 0.4.5 - Fenix     - make use of the Game_event_router decorator
 
 import asyncore
 import b3
 import b3.cron
-from b3.functions import prefixText
+import b3.events
 import protocol
 import rcon
 import re
@@ -38,31 +35,18 @@ import sys
 import time
 
 from b3.clients import Client
+from b3.decorators import Game_event_router
+from b3.functions import prefixText
 from b3.lib.sourcelib import SourceQuery
 from b3.parser import Parser
 from ConfigParser import NoOptionError
 
 
 __author__  = 'Courgette'
-__version__ = '0.4.4'
+__version__ = '0.4.5'
 
-_gameevents_mapping = list()
-def gameEvent(*decorator_param):
-    def wrapper(func):
-        for param in decorator_param:
-            if isinstance(param, type(re.compile(''))):
-                _gameevents_mapping.append((param, func))
-            elif isinstance(param, basestring):
-                _gameevents_mapping.append((re.compile(str(param)), func))
-        return func
-    return wrapper
+ger = Game_event_router()
 
-def getGameEventHandler(line):
-    for regex, hfunc in _gameevents_mapping:
-        match = regex.match(line)
-        if match:
-            return hfunc, match.groupdict()
-    return None, {}
 
 class FrontlineParser(b3.parser.Parser):
     """
@@ -73,6 +57,7 @@ class FrontlineParser(b3.parser.Parser):
     OutputClass = rcon.Rcon
     PunkBuster = None 
     _serverConnection = None
+    _original_connection_handle_close_method = None
     _rconUser = None
 
     # frontline engine does not support color code, so we need this property
@@ -93,17 +78,7 @@ class FrontlineParser(b3.parser.Parser):
     
     def startup(self):
         self.debug("startup()")
-            
-        for regexp, func in _gameevents_mapping:
-            self.debug("%s maps to %s", regexp, func)
-
-        # create the 'Server' client
-        #self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
-
-        # start crontab to trigger playerlist events
-        self.cron + b3.cron.CronTab(self.retrievePlayerList, second='*/%s' % self._playerlistInterval)
-
-        #self.queryServerInfo()
+        self.cron.add(b3.cron.CronTab(self.retrievePlayerList, second='*/%s' % self._playerlistInterval))
     
     def routePacket(self, packet):
         if packet is None:
@@ -111,7 +86,7 @@ class FrontlineParser(b3.parser.Parser):
         else:
             if not packet.startswith('PlayerList:'):
                 self.console("%s" % packet.strip())
-            hfunc, param_dict = getGameEventHandler(packet)
+            hfunc, param_dict = ger.getHandler(packet)
             if hfunc:
                 event = hfunc(self, **param_dict)
                 if event:
@@ -141,7 +116,7 @@ class FrontlineParser(b3.parser.Parser):
             While we are working, connect to the Frontline server
             """
             if self._paused:
-                if self._pauseNotice == False:
+                if not self._pauseNotice:
                     self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
                     self._pauseNotice = True
             else:
@@ -187,7 +162,7 @@ class FrontlineParser(b3.parser.Parser):
     # be queued
     # ================================================
 
-    @gameEvent(r'^DEBUG: ((Script)?Log|Error|(Perf|Script)Warning|SeamlessTravel): .*',
+    @ger.gameEvent(r'^DEBUG: ((Script)?Log|Error|(Perf|Script)Warning|SeamlessTravel): .*',
                r'^DEBUG: (DevOnline|NetComeGo|RendezVous|LoadingScreenLog|Difficulty|LineCheckLog): .*',
                r'^DEBUG: Warning: .*',
                r'^DEBUG: DevNet: .*',
@@ -199,11 +174,11 @@ class FrontlineParser(b3.parser.Parser):
         """do nothing"""
         pass
     
-    @gameEvent(r"^WELCOME! Frontlines: Fuel of War \(RCON\) VER=(?P<version>.+) CHALLENGE=(?P<challenge>.*)$")
+    @ger.gameEvent(r"^WELCOME! Frontlines: Fuel of War \(RCON\) VER=(?P<version>.+) CHALLENGE=(?P<challenge>.*)$")
     def onServerWelcome(self, version, challenge):
         self.info("connected to Frontline server. RCON version %s", version)
        
-    @gameEvent(re.compile(r"^PlayerList: (?P<data>.*)$", re.MULTILINE|re.DOTALL|re.IGNORECASE))
+    @ger.gameEvent(re.compile(r"^PlayerList: (?P<data>.*)$", re.MULTILINE|re.DOTALL|re.IGNORECASE))
     def onServerPlayerlist(self, data):
         """PlayerList: Map=CQ-Gnaw Time=739 Players=0/32 Tickets=500,500 Round=2/3
 ID    Name    Ping    Team    Squad    Score    Kills    Deaths    TK    CP    Time    Idle    Loadout    Role    RoleLvl    Vehicle    Hash    ProfileID    """
@@ -240,23 +215,23 @@ ID    Name    Ping    Team    Squad    Score    Kills    Deaths    TK    CP    T
                     client.data = pdata
                     client.last_update_time = time.time()
 
-    @gameEvent(r"^Login SUCCESS! User:(?P<user>.*)$")
+    @ger.gameEvent(r"^Login SUCCESS! User:(?P<user>.*)$")
     def onServerRconLoginSucess(self, user):
         self.bot("B3 correctly authenticated on game server as user %r.", user)
         self.write("CHATLOGGING TRUE")
         self.write("DebugLogging TRUE")
         self.write("Punkbusterlogging TRUE")
 
-    @gameEvent(r"^DEBUG: RendezVous: Update Gathering .*")
+    @ger.gameEvent(r"^DEBUG: RendezVous: Update Gathering .*")
     def onServerPlayerLogin(self):
         # DEBUG: RendezVous: Update Gathering 1561500: 7/0
         self.retrievePlayerList()
         
-    @gameEvent(r"^(?P<var>ChatLogging) now (?P<data>.*)$", r"^(?P<var>DebugLogging) now (?P<data>.*)$")
+    @ger.gameEvent(r"^(?P<var>ChatLogging) now (?P<data>.*)$", r"^(?P<var>DebugLogging) now (?P<data>.*)$")
     def onServerVarChange(self, var, data):
         self.info("%s is now : %r", var, data)
         
-    @gameEvent(r'^CHAT: PlayerName="(?P<playerName>[^"]+)" Channel="(?P<channel>[^"]+)" Message="(?P<text>.*)"$')
+    @ger.gameEvent(r'^CHAT: PlayerName="(?P<playerName>[^"]+)" Channel="(?P<channel>[^"]+)" Message="(?P<text>.*)"$')
     def onServerChat(self, playerName, channel, text):
         client = self.clients.getByExactName(playerName)
         if client is None:
@@ -269,7 +244,7 @@ ID    Name    Ping    Team    Squad    Score    Kills    Deaths    TK    CP    T
         else:
             self.warning("unknown Chat channel : %s", channel)
 
-    @gameEvent(r"""^.*: Player GUID Computed (?P<pbid>[0-9a-f]+)\(-\) \(slot #(?P<cid>\d+)\) (?P<ip>[0-9.]+):(?P<port>\d+) (?P<name>.+)$""")
+    @ger.gameEvent(r"""^.*: Player GUID Computed (?P<pbid>[0-9a-f]+)\(-\) \(slot #(?P<cid>\d+)\) (?P<ip>[0-9.]+):(?P<port>\d+) (?P<name>.+)$""")
     def onPunkbusterGUID(self, pbid, cid, ip, port, name):
         client = self.clients.getByCID(cid)
         if client:
@@ -278,7 +253,7 @@ ID    Name    Ping    Team    Squad    Score    Kills    Deaths    TK    CP    T
             client.save()
 
 
-    @gameEvent(r"""^.*: (?P<cid>\d+)\s+(?P<pbid>[a-z0-9]+)?\(-\) (?P<ip>[0-9.]+):(?P<port>\d+) (\w+)\s+(\d+)\s+([\d.]+)\s+(\d+)\s+\((.)\) "(?P<name>.+)"$""")
+    @ger.gameEvent(r"""^.*: (?P<cid>\d+)\s+(?P<pbid>[a-z0-9]+)?\(-\) (?P<ip>[0-9.]+):(?P<port>\d+) (\w+)\s+(\d+)\s+([\d.]+)\s+(\d+)\s+\((.)\) "(?P<name>.+)"$""")
     def onPunkbusterPlayerList(self, pbid, cid, ip, port, name):
         client = self.clients.getByCID(cid)
         if client:
@@ -287,7 +262,7 @@ ID    Name    Ping    Team    Squad    Score    Kills    Deaths    TK    CP    T
             client.ip = ip
             client.save()
 
-    @gameEvent(re.compile(r"""^Banned Player: PlayerName="(?P<name>.+)" PlayerID=(?P<cid>(-1|\d+)) ProfileID=(?P<guid>\d+) Hash=(?P<hash>.*) BanDuration=(?P<duration>-?\d+)( Permanently)?$""", re.MULTILINE))
+    @ger.gameEvent(re.compile(r"""^Banned Player: PlayerName="(?P<name>.+)" PlayerID=(?P<cid>(-1|\d+)) ProfileID=(?P<guid>\d+) Hash=(?P<hash>.*) BanDuration=(?P<duration>-?\d+)( Permanently)?$""", re.MULTILINE))
     def onServerBan(self, name, cid, guid, hash, duration):
         """ Kicked Player as part of ban: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDuration=-1
 Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDuration=-1 Permanently
@@ -302,7 +277,7 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
         # update banlist
         self.retrieveBanList()
         
-    @gameEvent(re.compile(r"""^UnBanned Player: PlayerName="(?P<name>.+)" PlayerID=(-1|\d+) ProfileID=(?P<guid>\d+) Hash=(?P<hash>.*)$"""))
+    @ger.gameEvent(re.compile(r"""^UnBanned Player: PlayerName="(?P<name>.+)" PlayerID=(-1|\d+) ProfileID=(?P<guid>\d+) Hash=(?P<hash>.*)$"""))
     def onServerUnBan(self, name, guid, hash):
         """UnBanned Player: PlayerName="" PlayerID=-1 ProfileID=1561500 Hash="""
         # we are using storage instead of self.clients because the player cannot be connected
@@ -314,15 +289,15 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
         # update banlist
         self.retrieveBanList()
         
-    @gameEvent(r"CurrentMap is: (?P<map>.+)")
+    @ger.gameEvent(r"CurrentMap is: (?P<map>.+)")
     def onGetCurrentMapResponse(self, map):
         self._async_responses['GetCurrentMap'] = map
         
-    @gameEvent(r"NextMap is: (?P<map>.+)")
+    @ger.gameEvent(r"NextMap is: (?P<map>.+)")
     def onGetNextMapResponse(self, map):
         self._async_responses['GetNextMap'] = map
         
-    @gameEvent(re.compile(r"^MapList: (?P<data>.+)", re.MULTILINE|re.DOTALL))
+    @ger.gameEvent(re.compile(r"^MapList: (?P<data>.+)", re.MULTILINE|re.DOTALL))
     def onMapListResponse(self, data):
         lines = data.split('\n')
         self.debug("lines: %r", lines)
@@ -335,7 +310,7 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
                     maps.append(mapName)
         self._async_responses['MapList'] = maps
 
-    @gameEvent(r"^Login SUCCESS! User:(?P<user>.*)$")
+    @ger.gameEvent(r"^Login SUCCESS! User:(?P<user>.*)$")
     def onTest(self, data):
         self.debug("TEST %r ", data)
 

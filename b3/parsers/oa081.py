@@ -1,6 +1,7 @@
-# OpenArena 0.8.1 parser for BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2010 Courgette & GrosBedo
-# 
+#
+# BigBrotherBot(B3) (www.bigbrotherbot.net)
+# Copyright (C) 2005 Michael "ThorN" Thornton
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -8,88 +9,71 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
-# 08/08/2010 - 0.1 - Courgette
-# * creation based on smg11 parser
-# 09/08/2010 - 0.2 - Courgette
-# * implement rotatemap()
-# 09/08/2010 - 0.3 - Courgette & GrosBedo
-# * bot now recognize /tell commands correctly
-# 10/08/2010 - 0.4 - Courgette
-# * recognizes MOD_SUICIDE as suicide
-# * get rid of PunkBuster related code
-# * should \rcon dumpuser in cases the ClientUserInfoChanged line does not have
-#   guid while player is not a bot. (untested, cannot reproduce)
-# 11/08/2010 - 0.5 - GrosBedo
-# * minor fix for the /rcon dumpuser when no guid
-# * added !nextmap (with recursive detection !)
-# 11/08/2010 - 0.6 - GrosBedo
-# * fixed the permanent ban command (banClient -> banaddr)
-# 12/08/2010 - 0.7 - GrosBedo
-# * added weapons and means of death. Define what means of death are suicides
-# 17/08/2010 - 0.7.1 - GrosBedo
-# * added say_team recognition
-# 20/08/2010 - 0.7.5 - GrosBedo
-# * added many more regexp to detect ctf events, cvars and awards
-# * implement permban by ip and unbanbyip
-# * implement team recognition
-# 20/08/2010 - 0.8 - Courgette
-# * clean regexp (Item, CTF, Award, fallback)
-# * clean OnItem
-# * remove OnDamage
-# * add OnCtf and OnAward
-# 27/08/2010 - 0.8.1 - GrosBedo
-# * fixed findnextmap underscore bug (maps and vstr cvars with an underscore are now correctly parsed)
-# 28/08/2010 - 0.8.2 - Courgette
-# * fix another findnextmap underscore bug
-# 28/08/2010 - 0.8.3 - Courgette
-# * fix issue with the regexp that match 'Award:' lines
-# 04/09/2010 - 0.8.4 - GrosBedo
-# * fix issue with CTF flag capture events
-# 17/09/2010 - 0.8.5 - GrosBedo
-# * fix crash issue when a player has disconnected at the very time the bot check for the list of players
-# 20/10/2010 - 0.9 - GrosBedo
-# * fix a BIG issue when detecting teams (were always unknown)
-# 20/10/2010 - 0.9.1 - GrosBedo
-# * fix tk issue with DM and other team free gametypes
-# 20/10/2010 - 0.9.2 - GrosBedo
-# * added EVT_GAME_FLAG_RETURNED (move it to q3a or a generic ioquake3 parser?)
-# 23/10/2010 - 0.9.3 - GrosBedo
-# * detect gametype and modname at startup
-# * added flag_taken action
-# * fix a small bug when triggering the flag return event
-# 07/11/2010 - 0.9.4 - GrosBedo
-# * ban and unban messages are now more generic and can be configured from b3.xml
-# * messages now support named $variables instead of %s
-# 08/11/2010 - 0.9.5 - GrosBedo
-# * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
-# 09/04/2011 - 0.9.6 - Courgette
-# * reflect that cid are not converted to int anymore in the clients module
-# 06/06/2011 - 0.10.0 - Courgette
-# * change data format for EVT_CLIENT_BAN events
-# 14/06/2011 - 0.11.0 - Courgette
-# * cvar code moved to q3a AbstractParser
-# 13/01/2014 - 0.11.1 - Fenix
-# * pep8 coding style guide
-# * changed bots giud to match other q3a parsers (BOT<slot>)
-# * correctly set client bot flag upon new client connection
-# 02/05/2014 - 0.11.2 - Fenix
-# * fixed getPlayerPings method declaration not matching the method in Parser class
 #
-__author__ = 'Courgette, GrosBedo'
-__version__ = '0.11.2'
+# 08/08/2010 - 0.1    - Courgette - creation based on smg11 parser
+# 09/08/2010 - 0.2    - Courgette - implement rotatemap()
+# 09/08/2010 - 0.3    - GrosBedo  - bot now recognize /tell commands correctly
+# 10/08/2010 - 0.4    - Courgette - recognizes MOD_SUICIDE as suicide
+#                                 - get rid of PunkBuster related code
+#                                 - should /rcon dumpuser in cases the ClientUserInfoChanged line does not have
+#                                   guid while player is not a bot. (untested, cannot reproduce)
+# 11/08/2010 - 0.5    - GrosBedo  - minor fix for the /rcon dumpuser when no guid
+#                                 - added !nextmap (with recursive detection !)
+# 11/08/2010 - 0.6    - GrosBedo  - fixed the permanent ban command (banClient -> banaddr)
+# 12/08/2010 - 0.7    - GrosBedo  - added weapons and means of death. Define what means of death are suicides
+# 17/08/2010 - 0.7.1  - GrosBedo  - added say_team recognition
+# 20/08/2010 - 0.7.5  - GrosBedo  - added many more regexp to detect ctf events, cvars and awards
+#                                 - implement permban by ip and unbanbyip
+#                                 - implement team recognition
+# 20/08/2010 - 0.8    - Courgette - clean regexp (Item, CTF, Award, fallback)
+#                                 - clean on_item
+#                                 - remove OnDamage
+#                                 - add OnCtf and OnAward
+# 27/08/2010 - 0.8.1  - GrosBedo  - fixed findnextmap underscore bug (maps and vstr cvars with an underscore are
+#                                   now correctly parsed)
+# 28/08/2010 - 0.8.2  - Courgette - fix another findnextmap underscore bug
+# 28/08/2010 - 0.8.3  - Courgette - fix issue with the regexp that match 'Award:' lines
+# 04/09/2010 - 0.8.4  - GrosBedo  - fix issue with CTF flag capture events
+# 17/09/2010 - 0.8.5  - GrosBedo  - fix crash issue when a player has disconnected at the very time the bot check
+#                                   for the list of players
+# 20/10/2010 - 0.9    - GrosBedo  - fix a BIG issue when detecting teams (were always unknown)
+# 20/10/2010 - 0.9.1  - GrosBedo  - fix tk issue with DM and other team free gametypes
+# 20/10/2010 - 0.9.2  - GrosBedo  - added EVT_GAME_FLAG_RETURNED (move it to q3a or a generic ioquake3 parser?)
+# 23/10/2010 - 0.9.3  - GrosBedo  - detect gametype and modname at startup
+#                                 - added flag_taken action
+#                                 - fix a small bug when triggering the flag return event
+# 07/11/2010 - 0.9.4  - GrosBedo  - ban and unban messages are now more generic and can be configured from b3.xml
+#                                 - messages now support named $variables instead of %s
+# 08/11/2010 - 0.9.5  - GrosBedo  - messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
+# 09/04/2011 - 0.9.6  - Courgette - reflect that cid are not converted to int anymore in the clients module
+# 06/06/2011 - 0.10.0 - Courgette - change data format for EVT_CLIENT_BAN events
+# 14/06/2011 - 0.11.0 - Courgette - cvar code moved to q3a AbstractParser
+# 13/01/2014 - 0.11.1 - Fenix     - PEP8 coding standards
+#                                 - changed bots guid to match other q3a parsers (BOT<slot>)
+#                                 - correctly set client bot flag upon new client connection
+# 02/05/2014 - 0.11.2 - Fenix     - fixed get_player_pings method declaration not matching the method in Parser class
+# 11/'8/2014 - 0.12   - Fenix     - reformat changelog
+#                                 - fixes for the new getWrap implementation
+#                                 - make use of self.getEvent() when creating events instead of referencing dynamically
+#                                   created attributes (does nothing new but removes several warnings)
 
+__author__ = 'Courgette, GrosBedo'
+__version__ = '0.12'
+
+import b3
+import b3.clients
+import b3.events
 import re
 import string
-import b3
-import b3.events
+
 from b3.parsers.q3a.abstractParser import AbstractParser
 
 
@@ -98,30 +82,29 @@ class Oa081Parser(AbstractParser):
     gameName = 'oa081'
 
     _connectingSlots = []
-    _maplist = None
-    
-    _settings = dict(
-        line_length=65,
-        min_wrap_length=100
-    )
     _empty_name_default = 'EmptyNameDefault'
+    _maplist = None
 
-    _commands = dict(
-        message='say %(prefix)s ^3[pm]^7 %(message)s',
-        deadsay='say %(prefix)s [DEAD]^7 %(message)s',
-        say='say %(prefix)s %(message)s',
-        set='set %(name)s "%(value)s"',
-        kick='clientkick %(cid)s',
-        ban='banaddr %(cid)s',
-        tempban='clientkick %(cid)s',
-        banByIp='banaddr %(ip)s',
-        unbanByIp='bandel %(cid)s',
-        banlist='listbans',
-    )
+
+    _settings = {
+        'line_length': 65,
+    }
+
+    _commands = {
+        'message': 'say %(message)s',
+        'say': 'say %(message)s',
+        'set': 'set %(name)s "%(value)s"',
+        'kick': 'clientkick %(cid)s',
+        'ban': 'banaddr %(cid)s',
+        'tempban': 'clientkick %(cid)s',
+        'banByIp': 'banaddr %(ip)s',
+        'unbanByIp': 'bandel %(cid)s',
+        'banlist': 'listbans',
+    }
 
     _eventMap = {
-        'warmup' : b3.events.EVT_GAME_WARMUP,
-        'restartgame' : b3.events.EVT_GAME_ROUND_END
+        #'warmup' : b3.events.EVT_GAME_WARMUP,
+        #'restartgame' : b3.events.EVT_GAME_ROUND_END
     }
 
     # remove the time off of the line
@@ -243,6 +226,9 @@ class Oa081Parser(AbstractParser):
         # registering a ioquake3 specific event
         self.Events.createEvent('EVT_GAME_FLAG_RETURNED', 'Flag returned')
 
+        self._eventMap['warmup'] = self.getEventID('EVT_GAME_WARMUP')
+        self._eventMap['restartgame'] = self.getEventID('EVT_GAME_ROUND_END')
+
         # add the world client
         self.clients.newClient('1022', guid='WORLD', name='World', hide=True, pbid='WORLD')
 
@@ -327,7 +313,7 @@ class Oa081Parser(AbstractParser):
     def OnClientconnect(self, action, data, match=None):
         client = self.clients.getByCID(data)
         self.debug('OnClientConnect: %s, %s' % (data, client))
-        return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
+        return self.getEvent('EVT_CLIENT_JOIN', client=client)
 
     # Parse Userinfo
     def OnClientuserinfochanged(self, action, data, match=None):
@@ -423,13 +409,12 @@ class Oa081Parser(AbstractParser):
             self.debug('No damageType, weapon: %s' % weapon)
             return None
 
-        event = b3.events.EVT_CLIENT_KILL
-
+        event_key = 'EVT_CLIENT_KILL'
         # fix event for team change and suicides and tk
         if attacker.cid == victim.cid:
-            event = b3.events.EVT_CLIENT_SUICIDE
+            event_key = 'EVT_CLIENT_SUICIDE'
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team != b3.TEAM_FREE and attacker.team == victim.team:
-            event = b3.events.EVT_CLIENT_KILL_TEAM
+            event_key = 'EVT_CLIENT_KILL_TEAM'
 
         # if not defined we need a general hitloc (for xlrstats)
         if not hasattr(victim, 'hitloc'):
@@ -439,7 +424,7 @@ class Oa081Parser(AbstractParser):
         #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (victim.name,
         #             attacker.name, weapon, victim.hitloc, dType))
         # need to pass some amount of damage for the teamkill plugin - 100 is a kill
-        return b3.events.Event(event, (100, weapon, victim.hitloc, dtype), attacker, victim)
+        return self.getEvent(event_key, (100, weapon, victim.hitloc, dtype), attacker, victim)
 
     def OnClientdisconnect(self, action, data, match=None):
         client = self.clients.getByCID(data)
@@ -469,7 +454,7 @@ class Oa081Parser(AbstractParser):
         self.debug('Synchronizing client info')
         self.clients.sync()
 
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
+        return self.getEvent('EVT_GAME_ROUND_START', data=self.game)
 
     def OnSayteam(self, action, data, match=None):
         # Teaminfo does not exist in the sayteam logline, so we can't know in which team the user is in.
@@ -482,7 +467,7 @@ class Oa081Parser(AbstractParser):
 
         data = match.group('text')
         client.name = match.group('name')
-        return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data, client, -1)
+        return self.getEvent('EVT_CLIENT_TEAM_SAY', data, client, -1)
 
     def OnTell(self, action, data, match=None):
         #5:27 tell: woekele to XLR8or: test
@@ -498,7 +483,7 @@ class Oa081Parser(AbstractParser):
             data = data[1:]
 
         client.name = match.group('name')
-        return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data, client, tclient)
+        return self.getEvent('EVT_CLIENT_PRIVATE_SAY', data, client, tclient)
 
     # Action
     def OnAction(self, cid, actiontype, data, match=None):
@@ -508,12 +493,12 @@ class Oa081Parser(AbstractParser):
             self.debug('No client found')
             return None
         self.verbose('OnAction: %s: %s %s' % (client.name, actiontype, data))
-        return b3.events.Event(b3.events.EVT_CLIENT_ACTION, actiontype, client)
+        return self.getEvent('EVT_CLIENT_ACTION', actiontype, client)
 
     def OnItem(self, action, data, match=None):
         client = self.getByCidOrJoinPlayer(match.group('cid'))
         if client:
-            return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, match.group('data'), client)
+            return self.getEvent('EVT_CLIENT_ITEM_PICKUP', match.group('data'), client)
         return None
 
     def OnCtf(self, action, data, match=None):
@@ -543,7 +528,7 @@ class Oa081Parser(AbstractParser):
 
         self.debug('CTF Event: %s from team %s %s by %s' % (action_id, flagcolor, flagteam, client.name))
         if action_id == 'flag_returned':
-            return b3.events.Event(b3.events.EVT_GAME_FLAG_RETURNED, flagcolor)
+            return self.getEvent('EVT_GAME_FLAG_RETURNED', flagcolor)
         else:
             return self.OnAction(cid, action_id, data)
             #return b3.events.Event(b3.events.EVT_CLIENT_ACTION, action_id, client)
@@ -558,7 +543,7 @@ class Oa081Parser(AbstractParser):
         # 8:36 Award: 10 1: Karamel is a fake gained the EXCELLENT award!
         client = self.getByCidOrJoinPlayer(match.group('cid'))
         action_type = 'award_%s' % match.group('awardname')
-        return b3.events.Event(b3.events.EVT_CLIENT_ACTION, action_type, client)
+        return self.getEvent('EVT_CLIENT_ACTION', action_type, client)
 
 #---------------------------------------------------------------------------------------------------
 
@@ -749,7 +734,7 @@ class Oa081Parser(AbstractParser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
         client.disconnect()
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):

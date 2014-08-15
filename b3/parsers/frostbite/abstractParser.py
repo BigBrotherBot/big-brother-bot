@@ -1,7 +1,7 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -9,56 +9,45 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-#   2010-10-23 - 1.1 - Courgette
-#   * remove bfbc2 names
-#   2010-11-07 - 1.1.1 - GrosBedo
-#   * messages now support named $variables instead of %s
-#   2010-11-08 - 1.1.2 - GrosBedo
-#   * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
-#   2010-11-02 - 1.2 - Courgette
-#   * call getEasyName() in OnServerLoadinglevel
-#   * fix getSupportedMaps()
-#   * OnServerLoadinglevel() now fills game.rounds and game.sv_maxrounds
-#   2010-11-21 - 1.3 - Courgette
-#    * remove rotateMap and changeMap as their implementation differs for MoH 
-#   2011-05-22 - 1.4 - Courgette
-#   * create specific events : EVT_GAME_ROUND_PLAYER_SCORES and EVT_GAME_ROUND_TEAM_SCORES
-#   * handle Frostbite events : OnServerRoundover, OnServerRoundoverplayers and OnServerRoundoverteamscores
-#   2011-05-24 - 1.4.1 - Courgette
-#   * fix getSupportedMaps() so it uses the maplist set for the next round instead of current
-#   2011-05-25 - 1.4.2 - Courgette
-#   * fix bug introduced in 1.4.1
-#   2011-06-05 - 1.5.0 - Courgette
-#   * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
-#   2011-11-05 - 1.5.1 - Courgette
-#   * make sure to release the self.exiting lock
-#   2012-10-06 - 1.6 - Courgette
-#   * isolate the patching code in a module function
-#   2013-01-20 - 1.6.1 - Courgette
-#   * improve punkbuster event parsing
-#   2013-02-17 - 1.7 - Courgette
-#   * add support for B3 event EVT_CLIENT_SQUAD_SAY
-#   2014-05-02 - 1.7.1 - Fenix
-#   * syntax cleanup
-#   * rewrote import statements
-#   * rewrote dictionary creation as literals
-#   * renamed sayqueuelistener() method in sayqueuelistenerworker(): was overwriting an attribute
-#   * correctly initialize variables before usage
-#   2014/07/18 - 1.7.2 - Fenix
-#   * updated abstract parser to comply with the new getWrap implementation
-#
+# 2010-10-23 - 1.1   - Courgette - remove bfbc2 names
+# 2010-11-07 - 1.1.1 - GrosBedo  - messages now support named $variables instead of %s
+# 2010-11-08 - 1.1.2 - GrosBedo  - messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
+# 2010-11-02 - 1.2   - Courgette - call get_easy_name() in OnServerLoadinglevel
+#                                - fix get_supported_maps()
+#                                - OnServerLoadinglevel() now fills game.rounds and game.sv_maxrounds
+# 2010-11-21 - 1.3   - Courgette - remove rotate_map and change_map as their implementation differs for MoH
+# 2011-05-22 - 1.4   - Courgette - create specific events : EVT_GAME_ROUND_PLAYER_SCORES and EVT_GAME_ROUND_TEAM_SCORES
+#                                - handle Frostbite events : OnServerRoundover, OnServerRoundoverplayers and
+#                                  OnServerRoundoverteamscores
+# 2011-05-24 - 1.4.1 - Courgette - fix get_supported_maps() so it uses the maplist set for the next round
+#                                  instead of current
+# 2011-05-25 - 1.4.2 - Courgette - fix bug introduced in 1.4.1
+# 2011-06-05 - 1.5.0 - Courgette - change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
+# 2011-11-05 - 1.5.1 - Courgette - make sure to release the self.exiting lock
+# 2012-10-06 - 1.6   - Courgette - isolate the patching code in a module function
+# 2013-01-20 - 1.6.1 - Courgette - improve punkbuster event parsing
+# 2013-02-17 - 1.7   - Courgette - add support for B3 event EVT_CLIENT_SQUAD_SAY
+# 2014-05-02 - 1.7.1 - Fenix     - syntax cleanup
+#                                - rewrote import statements
+#                                - rewrote dictionary creation as literals
+#                                - renamed sayqueuelistener() method in sayqueuelistenerworker(): was
+#                                  overwriting an attribute
+#                                - correctly initialize variables before usage
+# 2014-07-18 - 1.7.2 - Fenix     - updated abstract parser to comply with the new get_wrap implementation
+# 2014-08-05 - 1.7.3 - Fenix     - make use of self.getEvent when registering events: removes warnings
+#                                - added getEasyName method declaration
 
 __author__  = 'Courgette'
-__version__ = '1.7.2'
+__version__ = '1.7.3'
 
 
 import sys
@@ -68,6 +57,8 @@ import time
 import string
 import Queue
 import threading
+import b3.clients
+import b3.cron
 import b3.parser
 import b3.parsers.frostbite.rcon as rcon
 import b3.events
@@ -116,7 +107,7 @@ class AbstractParser(b3.parser.Parser):
     }
 
     _eventMap = {
-        'player.onKicked': b3.events.EVT_CLIENT_KICK,
+        #'player.onKicked': b3.events.EVT_CLIENT_KICK,
     }
     
     _punkbusterMessageFormats = (
@@ -235,7 +226,7 @@ class AbstractParser(b3.parser.Parser):
                 data = func + ' '
             data += str(eventType) + ': ' + str(eventData)
             self.debug('TODO: %r' % packet)
-            self.queueEvent(b3.events.Event(b3.events.EVT_UNKNOWN, data))
+            self.queueEvent(self.getEvent('EVT_UNKNOWN', data))
 
 
     def startup(self):
@@ -249,7 +240,9 @@ class AbstractParser(b3.parser.Parser):
         self.Events.createEvent('EVT_CLIENT_SPAWN', 'Client Spawn')
         self.Events.createEvent('EVT_GAME_ROUND_PLAYER_SCORES', 'round player scores')
         self.Events.createEvent('EVT_GAME_ROUND_TEAM_SCORES', 'round team scores')
-                
+
+        self._eventMap['player.onKicked'] = self.getEvent('EVT_CLIENT_KICK')
+
         self.getServerVars()
         self.getServerInfo()
         
@@ -277,7 +270,7 @@ class AbstractParser(b3.parser.Parser):
             client = self.clients.getByCID(cid)
             if client:
                 self.debug(' - Joining %s' % cid)
-                self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
+                self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', p, client))
         return None
     
     def sync(self):
@@ -516,14 +509,14 @@ class AbstractParser(b3.parser.Parser):
             # ignore chat events for Server
             return
         if data[2] == 'all':
-            return b3.events.Event(b3.events.EVT_CLIENT_SAY, data[1].lstrip('/'), client, 'all')
+            return self.getEvent('EVT_CLIENT_SAY', data[1].lstrip('/'), client, 'all')
         elif data[2] == 'team':
-            return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data[1].lstrip('/'), client, data[2] + ' ' + data[3])
+            return self.getEvent('EVT_CLIENT_TEAM_SAY', data[1].lstrip('/'), client, data[2] + ' ' + data[3])
         elif 'squad' in data[2]:
-            return b3.events.Event(b3.events.EVT_CLIENT_SQUAD_SAY, data[1].lstrip('/'), client, data[2] + ' ' + data[3])
+            return self.getEvent('EVT_CLIENT_SQUAD_SAY', data[1].lstrip('/'), client, data[2] + ' ' + data[3])
         elif data[2] == 'player':
             target = self.getClient(data[3])
-            return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data[1].lstrip('/'), client, target)
+            return self.getEvent('EVT_CLIENT_PRIVATE_SAY', data[1].lstrip('/'), client, target)
         
 
     def OnPlayerLeave(self, action, data):
@@ -569,8 +562,7 @@ class AbstractParser(b3.parser.Parser):
         spec2 = data[6]
         spec3 = data[7]
 
-        event = b3.events.EVT_CLIENT_SPAWN
-        return b3.events.Event(event, (kit, gadget, pistol, weapon, spec1, spec2, spec3), spawner)
+        return self.getEvent('EVT_CLIENT_SPAWN', (kit, gadget, pistol, weapon, spec1, spec2, spec3), spawner)
 
 
     def OnPlayerKill(self, action, data):
@@ -622,13 +614,12 @@ class AbstractParser(b3.parser.Parser):
             attackerloc.append('None')
             victimloc.append('None')
 
-        event = b3.events.EVT_CLIENT_KILL
+        event_key = 'EVT_CLIENT_KILL'
         if victim == attacker:
-            event = b3.events.EVT_CLIENT_SUICIDE
+            event_key = 'EVT_CLIENT_SUICIDE'
         elif attacker.team == victim.team and attacker.team != b3.TEAM_UNKNOWN and attacker.team != b3.TEAM_SPEC:
-            event = b3.events.EVT_CLIENT_KILL_TEAM
-        return b3.events.Event(event, (100, weapon, hitloc, attackerloc, victimloc), attacker, victim)
-
+            event_key = 'EVT_CLIENT_KILL_TEAM'
+        return self.getEvent(event_key, (100, weapon, hitloc, attackerloc, victimloc), attacker, victim)
 
 
     def OnServerLoadinglevel(self, action, data):
@@ -650,7 +641,7 @@ class AbstractParser(b3.parser.Parser):
         self.getServerInfo()
         # to debug getEasyName()
         self.info('Loading %s [%s]'  % (self.getEasyName(self.game.mapName), self.game.gameType))
-        return b3.events.Event(b3.events.EVT_GAME_WARMUP, data[0])
+        return self.getEvent('EVT_GAME_WARMUP', data[0])
 
     def OnServerLevelstarted(self, action, data):
         """
@@ -666,7 +657,7 @@ class AbstractParser(b3.parser.Parser):
         
         #Players need to be joined (EVT_CLIENT_JOIN) for stats to count rounds
         self.joinPlayers()
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
+        return self.getEvent('EVT_GAME_ROUND_START', self.game)
             
         
     def OnServerRoundover(self, action, data):
@@ -676,7 +667,7 @@ class AbstractParser(b3.parser.Parser):
         Effect: The round has just ended, and <winning team> won
         """
         #['server.onRoundOver', '2']
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_END, data[0])
+        return self.getEvent('EVT_GAME_ROUND_END', data[0])
         
         
     def OnServerRoundoverplayers(self, action, data):
@@ -686,7 +677,7 @@ class AbstractParser(b3.parser.Parser):
         Effect: The round has just ended, and <end-of-round soldier info> is the final detailed player stats
         """
         #['server.onRoundOverPlayers', '8', 'clanTag', 'name', 'guid', 'teamId', 'kills', 'deaths', 'score', 'ping', '17', 'RAID', 'mavzee', 'EA_4444444444444444555555555555C023', '2', '20', '17', '310', '147', 'RAID', 'NUeeE', 'EA_1111111111111555555555555554245A', '2', '30', '18', '445', '146', '', 'Strzaerl', 'EA_88888888888888888888888888869F30', '1', '12', '7', '180', '115', '10tr', 'russsssssssker', 'EA_E123456789461416564796848C26D0CD', '2', '12', '12', '210', '141', '', 'Daezch', 'EA_54567891356479846516496842E17F4D', '1', '25', '14', '1035', '129', '', 'Oldqsdnlesss', 'EA_B78945613465798645134659F3079E5A', '1', '8', '12', '120', '256', '', 'TTETqdfs', 'EA_1321654656546544645798641BB6D563', '1', '11', '16', '180', '209', '', 'bozer', 'EA_E3987979878946546546565465464144', '1', '22', '14', '475', '152', '', 'Asdf 1977', 'EA_C65465413213216656546546546029D6', '2', '13', '16', '180', '212', '', 'adfdasse', 'EA_4F313565464654646446446644664572', '1', '4', '25', '45', '162', 'SG1', 'De56546ess', 'EA_123132165465465465464654C2FC2FBB', '2', '5', '8', '75', '159', 'bsG', 'N06540RZ', 'EA_787897944546565656546546446C9467', '2', '8', '14', '100', '115', '', 'Psfds', 'EA_25654321321321000006546464654B81', '2', '15', '15', '245', '140', '', 'Chezear', 'EA_1FD89876543216548796130EB83E411F', '1', '9', '14', '160', '185', '', 'IxSqsdfOKxI', 'EA_481321313132131313213212313112CE', '1', '21', '12', '625', '236', '', 'Ledfg07', 'EA_1D578987994651615166516516136450', '1', '5', '6', '85', '146', '', '5 56 mm', 'EA_90488E6543216549876543216549877B', '2', '0', '0', '0', '192']
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_PLAYER_SCORES, PlayerInfoBlock(data))
+        return self.getEvent('EVT_GAME_ROUND_PLAYER_SCORES', PlayerInfoBlock(data))
         
         
     def OnServerRoundoverteamscores(self, action, data):
@@ -696,7 +687,7 @@ class AbstractParser(b3.parser.Parser):
         Effect: The round has just ended, and <end-of-round scores> is the final ticket/kill/life count for each team
         """
         #['server.onRoundOverTeamScores', '2', '1180', '1200', '1200']
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_TEAM_SCORES, data[1])
+        return self.getEvent('EVT_GAME_ROUND_TEAM_SCORES', data[1])
 
     def OnPunkbusterMessage(self, action, data):
         """handles all punkbuster related events and 
@@ -717,7 +708,7 @@ class AbstractParser(b3.parser.Parser):
                 if event:
                     self.queueEvent(event)     
             else:
-                return b3.events.Event(b3.events.EVT_UNKNOWN, data)
+                return self.getEvent('EVT_UNKNOWN', data)
                 
     def OnPBVersion(self, match,data):
         """PB notifies us of the version numbers
@@ -743,7 +734,7 @@ class AbstractParser(b3.parser.Parser):
             client.save()
             self.debug('OnPBNewConnection: client updated with %s' % data)
             # This is our first moment where we get a clients IP. Fire this event to accomodate geoIP based plugins like Countryfilter.
-            return b3.events.Event(b3.events.EVT_PUNKBUSTER_NEW_CONNECTION, data, client)
+            return self.getEvent('EVT_PUNKBUSTER_NEW_CONNECTION', data, client)
         else:
             self.warning('OnPBNewConnection: we\'ve been unable to get the client')
 
@@ -778,7 +769,7 @@ class AbstractParser(b3.parser.Parser):
         #     client.ip = dict['ip']
         #     client.save()
         self.verbose('PB lost connection: %s' % data)
-        return b3.events.Event(b3.events.EVT_PUNKBUSTER_LOST_PLAYER, data)
+        return self.getEvent('EVT_PUNKBUSTER_LOST_PLAYER', data)
 
     def OnPBScheduledTask(self, match, data):
         """We get notified the server ran a PB scheduled task
@@ -787,7 +778,7 @@ class AbstractParser(b3.parser.Parser):
         """
         slot = match.group('slot')
         task = match.group('task')
-        return b3.events.Event(b3.events.EVT_PUNKBUSTER_SCHEDULED_TASK, {'slot': slot, 'task': task})
+        return self.getEvent('EVT_PUNKBUSTER_SCHEDULED_TASK', {'slot': slot, 'task': task})
 
     def OnPBMasterQuerySent(self, match, data):
         """We get notified that the server sent a ping to the PB masters"""
@@ -830,7 +821,7 @@ class AbstractParser(b3.parser.Parser):
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         self.debug('kick reason: [%s]' % reason)
         if isinstance(client, str):
-            self.write(self.getCommand('kick', cid=client.cid, reason=reason[:80]))
+            self.write(self.getCommand('kick', cid=client, reason=reason[:80]))
             return
         
         if admin:
@@ -853,7 +844,7 @@ class AbstractParser(b3.parser.Parser):
         duration = b3.functions.time2minutes(duration)
 
         if isinstance(client, str):
-            self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
+            self.write(self.getCommand('tempban', guid=client, duration=duration*60, reason=reason[:80]))
             return
         
         if admin:
@@ -878,10 +869,9 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, {'reason': reason, 
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason,
                                                               'duration': duration, 
-                                                              'admin': admin}
-                                        , client))
+                                                              'admin': admin}, client))
 
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -944,7 +934,7 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
         
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
 
 
     def authorizeClients(self):
@@ -965,6 +955,8 @@ class AbstractParser(b3.parser.Parser):
                 sp.teamId = int(newTeam)
                 sp.auth()
 
+    def getEasyName(self, mapname):
+        pass
 
     def getCvar(self, cvarName):
         """Read a server var"""

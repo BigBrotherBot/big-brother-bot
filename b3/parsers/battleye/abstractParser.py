@@ -1,7 +1,7 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2011 Thomas LEVEIL
-# 
+# Copyright (C) 2011 Thomas LEVEIL <courgette@bigbrotherbot.net>
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -9,79 +9,75 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-#   07/28/2012    0.1     Initial release
-#   08/31/2012    0.12    Various fixes and cleanups
-#   09/01/2012    0.13    Check for non-verified GUIDs in Player List from server
-#   09/01/2012    0.14    Allow for non-ascii names by replacing clients.Client.auth method
-#   09/05/2012    0.15    Change the way events EVT_CLIENT_CONNECT and EVT_CLIENT_AUTH work
-#                         Fix EVT_CLIENT_DISCONNECT
-#   09/10/2012    0.16    Fix UTF-8 encoding issues
-#   09/15/2012    0.17
-#   - reduce code size by moving some network code to the protocol module
-#   - take advantage of new BattleyeServer.command() behaviour which is synchronous since protocol.py v1.1. This makes the parser much easier to write/read
-#   - move all UTF-8 encoding/decoding related code to the protocol module. In the B3 parser code, there is no need to worry about those issues.
-#   - remove unused or unnecessary code
-#   - fix ban (by cid)
-#   - add prefix to say/saybig/message methods
-#   - implements getPlayerPings()
-#   - add method getBanlist()
-#   09/20/1012    0.18
-#   - Make restart method work correctly when called from a plugin
-#   09/25/2012    0.19
-#   - Allow clients with un-verified GUIDs to auth if IP's match the one in the batabase
-#   - or optionally allow clients to always auth using the nonVerified GUID's
-#   07/10/2013    0.19.1
-#   - getBanlist respond with an empty dict if it fails to read the banlist data from the game server
-#   07/13/2013   0.20
-#   - Handle 'bans' command not completing correctly
-#   07/27/2013   1.0
-#   - Sync won't remove clients which are already connected but not yet authed (unverified guid)
-#   09/16/2013   1.1
-#   - add handling of Battleye Script notifications. New Event EVT_BATTLEYE_SCRIPTLOG
-#   10/09/2013   1.1.1
-#   - Add handling of empty player list returned from server
-#   21/12/2013   1.1.2
-#   - Added more commands to the commands list
-#   22/12/2013   1.1.3
-#   - Sync won't remove clients which are already connected but do not get have their GUID calculated
-#   02/05/2014   1.1.4
-#   - rewrote import statements
-#   - correctly declare getPlayerPings() method to match the declaration in Parser class
-#   18/07/2014 - 1.1.5 - Fenix
-#   * updated abstract parser to comply with the new getWrap implementation
+# 07/28/2012 - 0.1    - initial release
+# 08/31/2012 - 0.12   - various fixes and cleanups
+# 09/01/2012 - 0.13   - check for non-verified GUIDs in Player List from server
+# 09/01/2012 - 0.14   - allow for non-ascii names by replacing clients.Client.auth method
+# 09/05/2012 - 0.15   - change the way events EVT_CLIENT_CONNECT and EVT_CLIENT_AUTH work
+#                     - fix EVT_CLIENT_DISCONNECT
+# 09/10/2012 - 0.16   - fix UTF-8 encoding issues
+# 09/15/2012 - 0.17   - reduce code size by moving some network code to the protocol module
+#                     - take advantage of new BattleyeServer.command() behaviour which is synchronous since
+#                       protocol.py v1.1. This makes the parser much easier to write/read
+#                     - move all UTF-8 encoding/decoding related code to the protocol module. In the B3 parser
+#                       code, there is no need to worry about those issues.
+#                     - remove unused or unnecessary code
+#                     - fix ban (by cid)
+#                     - add prefix to say/saybig/message methods
+#                     - implements get_player_pings()
+#                     - add method get_banlist()
+# 09/20/1012 - 0.18   - make restart method work correctly when called from a plugin
+# 09/25/2012 - 0.19   - allow clients with un-verified GUIDs to auth if IP's match the one in the database
+#                     - or optionally allow clients to always auth using the nonVerified GUID's
+# 07/10/2013 - 0.19.1 - get_banlist respond with an empty dict if it fails to read the banlist data from the game server
+# 07/13/2013 - 0.20   - handle 'bans' command not completing correctly
+# 07/27/2013 - 1.0    - sync won't remove clients which are already connected but not yet authed (unverified guid)
+# 09/16/2013 - 1.1    - add handling of Battleye Script notifications. New Event EVT_BATTLEYE_SCRIPTLOG
+# 10/09/2013 - 1.1.1  - add handling of empty player list returned from server
+# 21/12/2013 - 1.1.2  - added more commands to the commands list
+# 22/12/2013 - 1.1.3  - sync won't remove clients which are already connected but do not get have their GUID calculated
+# 02/05/2014 - 1.1.4  - rewrote import statements
+#                     - correctly declare get_player_pings() method to match the declaration in Parser class
+# 18/07/2014 - 1.1.5  - updated abstract parser to comply with the new get_wrap implementation
+# 12/08/2014 - 1.2    - reformat changelog
+#                     - produce EVT_CLIENT_KICK when a player gets kicked form the server
+#                     - make use of self.getEvent() when creating events instead of referencing dynamically created
+#                       attributes (does nothing new but removes several warnings)
+#                     - fixed some BattleEye event handlers not returning proper B3 events
 
-import sys
-import re
-import traceback
-import time
-import Queue
-import threading
-from b3.functions import prefixText
-import b3.parser
-import b3.events
+import b3.cron
 import b3.cvar
+import b3.events
+import b3.parser
+import Queue
+import re
+import sys
+import traceback
+import threading
+import time
 
+from b3.functions import prefixText
 from b3.parsers.battleye.rcon import Rcon as BattleyeRcon
 from b3.parsers.battleye.protocol import BattleyeServer
 from b3.parsers.battleye.protocol import CommandFailedError
 from b3.parsers.battleye.protocol import CommandError
 from b3.parsers.battleye.protocol import BattleyeError
-from b3.parsers.battleye.protocol import NetworkError
-from b3.output import VERBOSE2, VERBOSE
+from b3.output import VERBOSE2
+from b3.output import VERBOSE
 from b3.clients import Clients
 from logging import Formatter
 
 __author__  = '82ndab-Bravo17, Courgette'
-__version__ = '1.1.5'
+__version__ = '1.2'
 
 
 # disable the authorizing timer that come by default with the b3.clients.Clients class
@@ -272,7 +268,7 @@ class AbstractParser(b3.parser.Parser):
         # setup Rcon
         self.output.set_battleye_server(self._serverConnection)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_GAMESERVER_CONNECT, None))
+        self.queueEvent(self.getEvent('EVT_GAMESERVER_CONNECT'))
 
         self.say('%s ^2[ONLINE]' % b3.version)
         #self.getServerInfo()
@@ -527,8 +523,7 @@ class AbstractParser(b3.parser.Parser):
                 # Remove chat source from end of line
                 text = text.rpartition(' ')[0]
 
-        event_type = b3.events.EVT_CLIENT_SAY
-        return b3.events.Event(event_type, text, client)
+        return self.getEvent('EVT_CLIENT_SAY', text, client)
         
 
     def OnPlayerLeave(self, data):
@@ -615,8 +610,8 @@ class AbstractParser(b3.parser.Parser):
         Effect: None, no messages from server are relevant
         """
         self.debug("Server Message")
-        event_type = b3.events.EVT_CLIENT_SAY
-        evt = b3.events.Event(event_type, None, None)
+        #event_type = b3.events.EVT_CLIENT_SAY
+        #evt = b3.events.Event(event_type, None, None)
         #pass
         return
         
@@ -626,18 +621,15 @@ class AbstractParser(b3.parser.Parser):
         Script Log: #6 Playername (bbb6476155852ac2ab30121234567890) - #2 "bp_id") == -9999) then {player setVariable ["x_
         Effect: Allow plugins to react to Battleye Script Logging
         """
-        
-        
         parts = data.partition('#')
         parts = parts[2].partition(' ')
         cid = parts[0]
         parts = parts[2].partition(' (')
         name = parts[0]
         client = self.getClient(name=name, cid=cid)
-        event_type = b3.events.EVT_BATTLEYE_SCRIPTLOG
-        evt = b3.events.Event(event_type, data, client)
+        event = self.getEvent('EVT_BATTLEYE_SCRIPTLOG', data, client)
         self.debug('Script Logged: Slot: %s Name %s Data: %s' % (cid, name, data))
-        return
+        return event
         
     def OnBattleyeKick(self, data):
         """
@@ -825,7 +817,7 @@ class AbstractParser(b3.parser.Parser):
                 if client.cid not in client_cid_list:
                     self.debug('Removing %s from list - left server' % client.name)
                     client.disconnect()
-        self.queueEvent(b3.events.Event(b3.events.EVT_PLAYER_SYNC_COMPLETED, None, None))
+        self.queueEvent(self.getEvent('EVT_PLAYER_SYNC_COMPLETED'))
         
         return mlist
 
@@ -861,6 +853,7 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
+        self.queueEvent(self.getEvent('EVT_CLIENT_KICK', data={'reason': reason, 'admin': admin}, client=client))
 
     def message(self, client, text):
         if client:
@@ -907,7 +900,7 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
         
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
 
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -978,10 +971,9 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, {'reason': reason, 
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason,
                                                               'duration': duration, 
-                                                              'admin': admin}
-                                        , client))
+                                                              'admin': admin} , client))
 
  
     def getMap(self):
@@ -1129,10 +1121,10 @@ class AbstractParser(b3.parser.Parser):
         try:
             if self.working and self.exiting.acquire():
                 self.bot('Shutting down...')
-                self.queueEvent(b3.events.Event(b3.events.EVT_STOP, None))
+                self.queueEvent(self.getEvent('EVT_STOP'))
                 for k,plugin in self._plugins.items():
                     self.debug('Stop event running for plugin %s' % plugin)
-                    plugin.parseEvent(b3.events.Event(b3.events.EVT_STOP, ''))
+                    plugin.parseEvent(self.getEvent('EVT_STOP', data=''))
                 self.bot('Stopping any cron jobs still running....')
                 if self._cron:
                     self._cron.stop()

@@ -1,40 +1,42 @@
+#
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-#   02/05/2014 - 0.0.2 - Fenix
-#   * added missing import statements
-#   * fixed wrong import statement for PunkBuster
-#   * syntax cleanup
-#   18/07/2014 - 0.0.3 - Fenix
-#   * updated parser to comply with the new getWrap implementation
-#   * removed _settings dict re-declaration: was the same of the AbstractParser
-#   * updated rcon command patterns
-from b3.functions import prefixText
+# 02/05/2014 - 0.0.2 - Fenix - added missing import statements
+#                            - fixed wrong import statement for punkbuster
+#                            - syntax cleanup
+# 18/07/2014 - 0.0.3 - Fenix - updated parser to comply with the new get_wrap implementation
+#                            - removed _settings dict re-declaration: was the same of the AbstractParser
+#                            - updated rcon command patterns
+# 04/08/2014 - 0.0.4 - Fenix - fixed world client generation using a non existent method
+#                            - make use of self.getEvent when registering events: removes warnings
 
 __author__  = 'ThorN'
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 import re
 import string
 import b3
+import b3.clients
 import b3.events
 
+from b3.functions import prefixText
 from b3.parsers.punkbuster import PunkBuster
 from b3.parsers.q3a.abstractParser import AbstractParser
 
@@ -53,8 +55,8 @@ class EtParser(AbstractParser):
     }
 
     _eventMap = {
-        'warmup' : b3.events.EVT_GAME_WARMUP,
-        'restartgame' : b3.events.EVT_GAME_ROUND_END
+        #'warmup' : b3.events.EVT_GAME_WARMUP,
+        #'restartgame' : b3.events.EVT_GAME_ROUND_END
     }
 
     # remove the time off of the line
@@ -81,16 +83,13 @@ class EtParser(AbstractParser):
     PunkBuster = None
 
     def startup(self):
-        # add the world client
-        client = self.clients.newBaseClient()
-        client.name = 'World'
-        client.cid  = -1
-        client.guid = self.gameName + ':WORLD'
-        client.maxLevel = -1
-        client.hide = True
-
-        self.clients.update(client)
+        """
+        Called after the parser is created before run().
+        """
+        self.clients.new_client('-1', guid=self.gameName + ':WORLD', name='World', pbid='WORLD', hide=True)
         self.PunkBuster = PunkBuster.PunkBuster(self)
+        self._eventMap['warmup'] = self.getEventID('EVT_GAME_WARMUP')
+        self._eventMap['restartgame'] = self.getEventID('EVT_GAME_ROUND_END')
 
     def message(self, client, text):
         """
@@ -127,7 +126,7 @@ class EtParser(AbstractParser):
                 if client.exactName != match.group('name'):
                     client.exactName = match.group('name')
                     client.setName(self.stripColors(client.exactName))
-                return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
+                return self.getEvent('EVT_CLIENT_JOIN', client=client)
             else:
                 # disconnect the existing client
                 self.verbose('disconnect the existing client %s %s => %s %s', match.group('cid'), guid, client.cid, client)
@@ -167,14 +166,13 @@ class EtParser(AbstractParser):
             self.debug('No attacker')
             return None
 
-        event = b3.events.EVT_CLIENT_GIB
-
+        event_key = 'EVT_CLIENT_GIB'
         if attacker.cid == victim.cid:
-            event = b3.events.EVT_CLIENT_GIB_SELF
+            event_key = 'EVT_CLIENT_GIB_SELF'
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
-            event = b3.events.EVT_CLIENT_GIB_TEAM
+            event_key = 'EVT_CLIENT_GIB_TEAM'
 
-        return b3.events.Event(event, (100, match.group('aweap'), ''), attacker, victim)
+        return self.getEvent(event_key, (100, match.group('aweap'), ''), attacker, victim)
 
     def OnKill(self, action, data, match=None):
         #1536:37Kill: 1 18 9: ^1klaus killed ^1[pura]fox.nl by MOD_MP40
@@ -189,14 +187,13 @@ class EtParser(AbstractParser):
             self.debug('No attacker')
             return None
 
-        event = b3.events.EVT_CLIENT_KILL
-
+        event_key = 'EVT_CLIENT_KILL'
         if attacker.cid == victim.cid:
-            event = b3.events.EVT_CLIENT_SUICIDE
+            event_key = 'EVT_CLIENT_SUICIDE'
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
-            event = b3.events.EVT_CLIENT_KILL_TEAM
+            event_key = 'EVT_CLIENT_KILL_TEAM'
 
-        return b3.events.Event(event, (100, match.group('aweap'), ''), attacker, victim)
+        return self.getEvent(event_key, (100, match.group('aweap'), ''), attacker, victim)
 
     def OnSayteamc(self, action, data, match=None):
         #1536:34sayteamc: 17: ^1[^7DP^1]^4Timekiller: ^4ammo ^2here !!!!!
@@ -208,7 +205,7 @@ class EtParser(AbstractParser):
             #if not client:
             return None
 
-        return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, match.group('text'), client)
+        return self.getEvent('EVT_CLIENT_TEAM_SAY', match.group('text'), client)
 
     def OnSayc(self, action, data, match=None):
         #1536:17sayc: 0: ^w[^2AS^w]^2Lead:  sorry...
@@ -220,4 +217,4 @@ class EtParser(AbstractParser):
             #if not client:
             return None
 
-        return b3.events.Event(b3.events.EVT_CLIENT_SAY, match.group('text'), client)
+        return self.getEvent('EVT_CLIENT_SAY', match.group('text'), client)
