@@ -57,11 +57,13 @@
 # 06/06/2011 - 0.10.0 - Courgette - change data format for EVT_CLIENT_BAN events
 # 14/06/2011 - 0.11.0 - Courgette - cvar code moved to q3a AbstractParser
 # 13/01/2014 - 0.11.1 - Fenix     - PEP8 coding standards
-#                                 - changed bots giud to match other q3a parsers (BOT<slot>)
+#                                 - changed bots guid to match other q3a parsers (BOT<slot>)
 #                                 - correctly set client bot flag upon new client connection
 # 02/05/2014 - 0.11.2 - Fenix     - fixed get_player_pings method declaration not matching the method in Parser class
 # 11/'8/2014 - 0.12   - Fenix     - reformat changelog
 #                                 - fixes for the new getWrap implementation
+#                                 - make use of self.getEvent() when creating events instead of referencing dynamically
+#                                   created attributes (does nothing new but removes several warnings)
 
 __author__ = 'Courgette, GrosBedo'
 __version__ = '0.12'
@@ -101,8 +103,8 @@ class Oa081Parser(AbstractParser):
     }
 
     _eventMap = {
-        'warmup' : b3.events.EVT_GAME_WARMUP,
-        'restartgame' : b3.events.EVT_GAME_ROUND_END
+        #'warmup' : b3.events.EVT_GAME_WARMUP,
+        #'restartgame' : b3.events.EVT_GAME_ROUND_END
     }
 
     # remove the time off of the line
@@ -224,6 +226,9 @@ class Oa081Parser(AbstractParser):
         # registering a ioquake3 specific event
         self.Events.createEvent('EVT_GAME_FLAG_RETURNED', 'Flag returned')
 
+        self._eventMap['warmup'] = self.getEventID('EVT_GAME_WARMUP')
+        self._eventMap['restartgame'] = self.getEventID('EVT_GAME_ROUND_END')
+
         # add the world client
         self.clients.newClient('1022', guid='WORLD', name='World', hide=True, pbid='WORLD')
 
@@ -308,7 +313,7 @@ class Oa081Parser(AbstractParser):
     def OnClientconnect(self, action, data, match=None):
         client = self.clients.getByCID(data)
         self.debug('OnClientConnect: %s, %s' % (data, client))
-        return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
+        return self.getEvent('EVT_CLIENT_JOIN', client=client)
 
     # Parse Userinfo
     def OnClientuserinfochanged(self, action, data, match=None):
@@ -404,13 +409,12 @@ class Oa081Parser(AbstractParser):
             self.debug('No damageType, weapon: %s' % weapon)
             return None
 
-        event = b3.events.EVT_CLIENT_KILL
-
+        event = self.getEventID('EVT_CLIENT_KILL')
         # fix event for team change and suicides and tk
         if attacker.cid == victim.cid:
-            event = b3.events.EVT_CLIENT_SUICIDE
+            event = self.getEventID('EVT_CLIENT_SUICIDE')
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team != b3.TEAM_FREE and attacker.team == victim.team:
-            event = b3.events.EVT_CLIENT_KILL_TEAM
+            event = self.getEventID('EVT_CLIENT_KILL_TEAM')
 
         # if not defined we need a general hitloc (for xlrstats)
         if not hasattr(victim, 'hitloc'):
@@ -420,7 +424,7 @@ class Oa081Parser(AbstractParser):
         #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (victim.name,
         #             attacker.name, weapon, victim.hitloc, dType))
         # need to pass some amount of damage for the teamkill plugin - 100 is a kill
-        return b3.events.Event(event, (100, weapon, victim.hitloc, dtype), attacker, victim)
+        return self.getEvent(event, (100, weapon, victim.hitloc, dtype), attacker, victim)
 
     def OnClientdisconnect(self, action, data, match=None):
         client = self.clients.getByCID(data)
@@ -450,7 +454,7 @@ class Oa081Parser(AbstractParser):
         self.debug('Synchronizing client info')
         self.clients.sync()
 
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
+        return self.getEvent('EVT_GAME_ROUND_START', data=self.game)
 
     def OnSayteam(self, action, data, match=None):
         # Teaminfo does not exist in the sayteam logline, so we can't know in which team the user is in.
@@ -463,7 +467,7 @@ class Oa081Parser(AbstractParser):
 
         data = match.group('text')
         client.name = match.group('name')
-        return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data, client, -1)
+        return self.getEvent('EVT_CLIENT_TEAM_SAY', data, client, -1)
 
     def OnTell(self, action, data, match=None):
         #5:27 tell: woekele to XLR8or: test
@@ -479,7 +483,7 @@ class Oa081Parser(AbstractParser):
             data = data[1:]
 
         client.name = match.group('name')
-        return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data, client, tclient)
+        return self.getEvent('EVT_CLIENT_PRIVATE_SAY', data, client, tclient)
 
     # Action
     def OnAction(self, cid, actiontype, data, match=None):
@@ -489,12 +493,12 @@ class Oa081Parser(AbstractParser):
             self.debug('No client found')
             return None
         self.verbose('OnAction: %s: %s %s' % (client.name, actiontype, data))
-        return b3.events.Event(b3.events.EVT_CLIENT_ACTION, actiontype, client)
+        return self.getEvent('EVT_CLIENT_ACTION', actiontype, client)
 
     def OnItem(self, action, data, match=None):
         client = self.getByCidOrJoinPlayer(match.group('cid'))
         if client:
-            return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, match.group('data'), client)
+            return self.getEvent('EVT_CLIENT_ITEM_PICKUP', match.group('data'), client)
         return None
 
     def OnCtf(self, action, data, match=None):
@@ -524,7 +528,7 @@ class Oa081Parser(AbstractParser):
 
         self.debug('CTF Event: %s from team %s %s by %s' % (action_id, flagcolor, flagteam, client.name))
         if action_id == 'flag_returned':
-            return b3.events.Event(b3.events.EVT_GAME_FLAG_RETURNED, flagcolor)
+            return self.getEvent('EVT_GAME_FLAG_RETURNED', flagcolor)
         else:
             return self.OnAction(cid, action_id, data)
             #return b3.events.Event(b3.events.EVT_CLIENT_ACTION, action_id, client)
@@ -539,7 +543,7 @@ class Oa081Parser(AbstractParser):
         # 8:36 Award: 10 1: Karamel is a fake gained the EXCELLENT award!
         client = self.getByCidOrJoinPlayer(match.group('cid'))
         action_type = 'award_%s' % match.group('awardname')
-        return b3.events.Event(b3.events.EVT_CLIENT_ACTION, action_type, client)
+        return self.getEvent('EVT_CLIENT_ACTION', action_type, client)
 
 #---------------------------------------------------------------------------------------------------
 
@@ -730,7 +734,7 @@ class Oa081Parser(AbstractParser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
         client.disconnect()
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
