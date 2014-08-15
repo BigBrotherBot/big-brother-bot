@@ -48,12 +48,14 @@
 # 2012-10-06 - 1.5   - Courgette - reflect changes in abstract parser 1.6
 # 2014-05-02 - 1.5.1 - Fenix     - replace attribute names using python built-in ones
 # 2014-08-06 - 1.6   - Fenix     - removed line length configuration loading: it's built-in in the parser module now
+#                                - make use of self.getEvent when creating events
 
 
 __author__ = 'Bakes, Courgette'
 __version__ = '1.6'
 
 import time
+import b3.clients
 import b3.events
 import b3.functions
 
@@ -113,7 +115,7 @@ class MohParser(AbstractParser):
                     name = "[" + p['clanTag'] + "] " + p['name']
                 self.debug('client %s found on the server' % cid)
                 client = self.clients.newClient(cid, guid=p['guid'], name=name, team=p['teamId'], data=p)
-                self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
+                self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', p, client))
                 
         
         
@@ -156,7 +158,7 @@ class MohParser(AbstractParser):
             if 'clanTag' in p and len(p['clanTag']) > 0:
                 name = "[" + p['clanTag'] + "] " + p['name']
             client = self.clients.newClient(cid, guid=guid, name=name, team=self.getTeam(p['teamId']), teamId=int(p['teamId']), data=p)
-            self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, p, client))
+            self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', p, client))
         
         return client
 
@@ -341,8 +343,7 @@ class MohParser(AbstractParser):
         spec2 = data[4]
         spec3 = data[5]
 
-        event = b3.events.EVT_CLIENT_SPAWN
-        return b3.events.Event(event, (kit, weapon, spec1, spec2, spec3), spawner)
+        return self.getEvent('EVT_CLIENT_SPAWN', (kit, weapon, spec1, spec2, spec3), spawner)
 
 
     def OnPlayerTeamchange(self, action, data):
@@ -387,10 +388,9 @@ class MohParser(AbstractParser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, {'reason': reason, 
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason,
                                                               'duration': duration, 
-                                                              'admin': admin}
-                                        , client))
+                                                              'admin': admin} , client))
 
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -432,7 +432,7 @@ class MohParser(AbstractParser):
         if not silent:
             self.say(reason)
         
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
 
 
     def rotateMap(self):
