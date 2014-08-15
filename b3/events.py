@@ -34,9 +34,11 @@
 #    * add events EVT_CLIENT_WARN and EVT_CLIENT_NOTICE
 # 15/04/2014 - 1.5.1 - Fenix
 #    * pep8 coding style guide
+# 2014/08/09 - 1.7 - Courgette
+#    * Define new event EVT_CLIENT_TEAM_CHANGE2
 
 __author__ = 'ThorN, xlr8or, Courgette'
-__version__ = '1.5.1'
+__version__ = '1.6'
 
 import re
 import b3
@@ -76,7 +78,8 @@ class Events:
             ('EVT_CLIENT_DAMAGE_TEAM', 'Client Team Damage'),
             ('EVT_CLIENT_JOIN', 'Client Join Team'),
             ('EVT_CLIENT_NAME_CHANGE', 'Client Name Change'),
-            ('EVT_CLIENT_TEAM_CHANGE', 'Client Team Change'),
+            ('EVT_CLIENT_TEAM_CHANGE', 'Client Team Change'),  # provides only the new team. Kept for backward compatibility
+            ('EVT_CLIENT_TEAM_CHANGE2', 'Client Team Change 2'),  # provides the previous and new team
             ('EVT_CLIENT_ITEM_PICKUP', 'Client Item Pickup'),
             ('EVT_CLIENT_ACTION', 'Client Action'),
             ('EVT_CLIENT_KICK', 'Client Kicked'),

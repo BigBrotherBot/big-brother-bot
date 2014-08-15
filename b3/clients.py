@@ -19,6 +19,8 @@
 #
 # CHANGELOG
 #
+#    2014/08/09 - 1.7 - Courgette
+#    * Fire new event EVT_CLIENT_TEAM_CHANGE2
 #    2014/05/09 - 1.6.5 - Fenix
 #    * changed kick.timeExpire = 0 -> kick.timeExpire = -1: fix inability to retrieve kick penalties from the storage
 #    2014/05/05 - 1.6.4 - Fenix
@@ -99,7 +101,7 @@ import time
 import traceback
 
 __author__  = 'ThorN'
-__version__ = '1.6.3'
+__version__ = '1.7'
 
 
 class ClientVar(object):
@@ -427,9 +429,12 @@ class Client(object):
     _team = b3.TEAM_UNKNOWN
     def _set_team(self, team):
         if self._team != team:
+            previous_team = self.team
             self._team = team
             if self.console:
                 self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_TEAM_CHANGE, self.team, self))
+                self.console.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_TEAM_CHANGE2, {'previous': previous_team,
+                                                                                            'new': self.team}, self))
 
     def _get_team(self):
         return self._team

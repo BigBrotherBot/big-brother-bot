@@ -539,6 +539,31 @@ class Test_storage(XlrstatsTestCase):
         self.assertEqual(s.teamkills, s2.teamkills)
         self.assertEqual(s.rounds, s2.rounds)
 
+    def test_PlayerMaps_with_unkown_map(self):
+        # GIVEN
+        playerid = 841
+        mapid = None
+
+        # getting empty stats
+        s = self.p.get_PlayerMaps(playerid, mapid)
+        self.assertIsNotNone(s)
+
+        # saving stats
+        s.kills = 10
+        s.suicides = 12
+        s.teamkills = 13
+        s.rounds = 14
+        self.p.save_Stat(s)
+
+        # checking modified stats
+        s2 = self.p.get_PlayerMaps(playerid, mapid)
+        self.assertIsNotNone(s2)
+
+        self.assertEqual(s.kills, s2.kills)
+        self.assertEqual(s.suicides, s2.suicides)
+        self.assertEqual(s.teamkills, s2.teamkills)
+        self.assertEqual(s.rounds, s2.rounds)
+
     def test_ActionStats(self):
         # GIVEN
         name = "the action name"
