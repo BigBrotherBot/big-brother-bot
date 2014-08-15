@@ -50,6 +50,9 @@
 # 18/07/2014 - 1.1.5  - updated abstract parser to comply with the new get_wrap implementation
 # 12/08/2014 - 1.2    - reformat changelog
 #                     - produce EVT_CLIENT_KICK when a player gets kicked form the server
+#                     - make use of self.getEvent() when creating events instead of referencing dynamically created
+#                       attributes (does nothing new but removes several warnings)
+#                     - fixed some BattleEye event handlers not returning proper B3 events
 
 import b3.cron
 import b3.cvar
@@ -265,7 +268,7 @@ class AbstractParser(b3.parser.Parser):
         # setup Rcon
         self.output.set_battleye_server(self._serverConnection)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_GAMESERVER_CONNECT, None))
+        self.queueEvent(self.getEvent('EVT_GAMESERVER_CONNECT'))
 
         self.say('%s ^2[ONLINE]' % b3.version)
         #self.getServerInfo()
@@ -520,8 +523,7 @@ class AbstractParser(b3.parser.Parser):
                 # Remove chat source from end of line
                 text = text.rpartition(' ')[0]
 
-        event_type = b3.events.EVT_CLIENT_SAY
-        return b3.events.Event(event_type, text, client)
+        return self.getEvent('EVT_CLIENT_SAY', text, client)
         
 
     def OnPlayerLeave(self, data):
@@ -608,8 +610,8 @@ class AbstractParser(b3.parser.Parser):
         Effect: None, no messages from server are relevant
         """
         self.debug("Server Message")
-        event_type = b3.events.EVT_CLIENT_SAY
-        evt = b3.events.Event(event_type, None, None)
+        #event_type = b3.events.EVT_CLIENT_SAY
+        #evt = b3.events.Event(event_type, None, None)
         #pass
         return
         
@@ -619,18 +621,15 @@ class AbstractParser(b3.parser.Parser):
         Script Log: #6 Playername (bbb6476155852ac2ab30121234567890) - #2 "bp_id") == -9999) then {player setVariable ["x_
         Effect: Allow plugins to react to Battleye Script Logging
         """
-        
-        
         parts = data.partition('#')
         parts = parts[2].partition(' ')
         cid = parts[0]
         parts = parts[2].partition(' (')
         name = parts[0]
         client = self.getClient(name=name, cid=cid)
-        event_type = b3.events.EVT_BATTLEYE_SCRIPTLOG
-        evt = b3.events.Event(event_type, data, client)
+        event = self.getEvent('EVT_BATTLEYE_SCRIPTLOG', data, client)
         self.debug('Script Logged: Slot: %s Name %s Data: %s' % (cid, name, data))
-        return
+        return event
         
     def OnBattleyeKick(self, data):
         """
@@ -818,7 +817,7 @@ class AbstractParser(b3.parser.Parser):
                 if client.cid not in client_cid_list:
                     self.debug('Removing %s from list - left server' % client.name)
                     client.disconnect()
-        self.queueEvent(b3.events.Event(b3.events.EVT_PLAYER_SYNC_COMPLETED, None, None))
+        self.queueEvent(self.getEvent('EVT_PLAYER_SYNC_COMPLETED'))
         
         return mlist
 
@@ -901,7 +900,7 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
         
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
 
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -972,10 +971,9 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, {'reason': reason, 
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason,
                                                               'duration': duration, 
-                                                              'admin': admin}
-                                        , client))
+                                                              'admin': admin} , client))
 
  
     def getMap(self):
@@ -1123,10 +1121,10 @@ class AbstractParser(b3.parser.Parser):
         try:
             if self.working and self.exiting.acquire():
                 self.bot('Shutting down...')
-                self.queueEvent(b3.events.Event(b3.events.EVT_STOP, None))
+                self.queueEvent(self.getEvent('EVT_STOP'))
                 for k,plugin in self._plugins.items():
                     self.debug('Stop event running for plugin %s' % plugin)
-                    plugin.parseEvent(b3.events.Event(b3.events.EVT_STOP, ''))
+                    plugin.parseEvent(self.getEvent('EVT_STOP', data=''))
                 self.bot('Stopping any cron jobs still running....')
                 if self._cron:
                     self._cron.stop()
