@@ -49,6 +49,7 @@
 #                     - correctly declare get_player_pings() method to match the declaration in Parser class
 # 18/07/2014 - 1.1.5  - updated abstract parser to comply with the new get_wrap implementation
 # 12/08/2014 - 1.2    - reformat changelog
+#                     - produce EVT_CLIENT_KICK when a player gets kicked form the server
 
 import b3.cron
 import b3.cvar
@@ -853,6 +854,7 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
+        self.queueEvent(self.getEvent('EVT_CLIENT_KICK', data={'reason': reason, 'admin': admin}, client=client))
 
     def message(self, client, text):
         if client:
