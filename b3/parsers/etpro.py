@@ -1,39 +1,35 @@
-# Enemy Territory ETPro parser for BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2009 ailmanki
-# 
+#
+# BigBrotherBot(B3) (www.bigbrotherbot.net)
+# Copyright (C) 2005 Michael "ThorN" Thornton
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-#   05/04/2009: 0.0.1
-#   * updating so that it works for etpro
-#   31/01/2010 - 0.0.2 - Courgette
-#   * getMap() is now inherited from q3a
-#   09/04/2011 - 0.0.3 - Courgette
-#   * Reflect that cid are not converted to int anymore in the clients module
-#   02/05/2014 - 0.0.4 - Fenix
-#   * rewrote dictionary creation as literal
-#   * removed some warnings
-#   * minor syntax changes
-#   * replaced variable named using python built-in names
-#   18/07/2014 - 0.0.5 - Fenix
-#   * updated parser to comply with the new getWrap implementation
-#   * removed _settings dict re-declaration: was the same of the AbstractParser
-#   * updated rcon command patterns
-#   2014/07/30 - 0.0.6 - Fenix
-#   * Fixes for the new getWrap implementation
+# 05/04/2009 - 0.0.1             - updating so that it works for etpro
+# 31/01/2010 - 0.0.2 - Courgette - get_map() is now inherited from q3a
+# 09/04/2011 - 0.0.3 - Courgette - reflect that cid are not converted to int anymore in the clients module
+# 02/05/2014 - 0.0.4 - Fenix     - rewrote dictionary creation as literal
+#                                - removed some warnings
+#                                - minor syntax changes
+#                                - replaced variable named using python built-in names
+# 18/07/2014 - 0.0.5 - Fenix     - updated parser to comply with the new get_wrap implementation
+#                                - removed _settings dict re-declaration: was the same of the AbstractParser
+#                                - updated rcon command patterns
+# 30/07/2014 - 0.0.6 - Fenix     - fixes for the new getWrap implementation
+# 04/08/2014 - 0.0.7 - Fenix     - make use of self.getEvent when registering events: removes warnings
 #
 # CREDITS
 # Based on the version 0.0.1, thanks ThorN.
@@ -50,17 +46,18 @@
 # - cp (center print)
 # - bp (banner print area, top of screen)
 # - say (chat window, with "console: " in front)
-from b3.functions import prefixText
-
 
 __author__ = 'xlr8or, ailmanki'
-__version__ = '0.0.6'
+__version__ = '0.0.7'
 
-import re, string
+import re
+import string
 import b3
+import b3.clients
 import b3.events
 import b3.parsers.punkbuster
 
+from b3.functions import prefixText
 from b3.parsers.q3a.abstractParser import AbstractParser
 
 
@@ -81,8 +78,8 @@ class EtproParser(AbstractParser):
         'tempban': 'clientkick %(cid)s'}
 
     _eventMap = {
-        'warmup' : b3.events.EVT_GAME_WARMUP,
-        'restartgame' : b3.events.EVT_GAME_ROUND_END
+        #'warmup' : b3.events.EVT_GAME_WARMUP,
+        #'restartgame' : b3.events.EVT_GAME_ROUND_END
     }
 
     # remove the time off of the line
@@ -135,71 +132,71 @@ class EtproParser(AbstractParser):
     PunkBuster = None
 
     ## kill mode constants: modNames[meansOfDeath]
-    MOD_UNKNOWN='0'
-    MOD_MACHINEGUN='1'
-    MOD_BROWNING='2'
-    MOD_MG42='3'
-    MOD_GRENADE='4'
-    MOD_ROCKET='5'
-    MOD_KNIFE='6'
-    MOD_LUGER='7'
-    MOD_COLT='8'
-    MOD_MP40='9'
-    MOD_THOMPSON='10'
-    MOD_STEN='11'
-    MOD_GARAND='12'
-    MOD_SNOOPERSCOPE='13'
-    MOD_SILENCER='14'
-    MOD_FG42='15'
-    MOD_FG42SCOPE='16'
-    MOD_PANZERFAUST='17'
-    MOD_GRENADE_LAUNCHER='18'
-    MOD_FLAMETHROWER='19'
-    MOD_GRENADE_PINEAPPLE='20'
-    MOD_CROSS='21'
-    MOD_MAPMORTAR='22'
-    MOD_MAPMORTAR_SPLASH='23'
-    MOD_KICKED='24'
-    MOD_GRABBER='25'
-    MOD_DYNAMITE='26'
-    MOD_AIRSTRIKE='27'
-    MOD_SYRINGE='28'
-    MOD_AMMO='29'
-    MOD_ARTY='30'
-    MOD_WATER='31'
-    MOD_SLIME='32'
-    MOD_LAVA='33'
-    MOD_CRUSH='34'
-    MOD_TELEFRAG='35'
-    MOD_FALLING='36'
-    MOD_SUICIDE='37'
-    MOD_TARGET_LASER='38'
-    MOD_TRIGGER_HURT='39'
-    MOD_EXPLOSIVE='40'
-    MOD_CARBINE='41'
-    MOD_KAR98='42'
-    MOD_GPG40='43'
-    MOD_M7='44'
-    MOD_LANDMINE='45'
-    MOD_SATCHEL='46'
-    MOD_TRIPMINE='47'
-    MOD_SMOKEBOMB='48'
-    MOD_MOBILE_MG42='49'
-    MOD_SILENCED_COLT='50'
-    MOD_GARAND_SCOPE='51'
-    MOD_CRUSH_CONSTRUCTION='52'
-    MOD_CRUSH_CONSTRUCTIONDEATH='53'
-    MOD_CRUSH_CONSTRUCTIONDEATH_NOATTACKER='54'
-    MOD_K43='55'
-    MOD_K43_SCOPE='56'
-    MOD_MORTAR='57'
-    MOD_AKIMBO_COLT='58'
-    MOD_AKIMBO_LUGER='59'
-    MOD_AKIMBO_SILENCEDCOLT='60'
-    MOD_AKIMBO_SILENCEDLUGER='61'
-    MOD_SMOKEGRENADE='62'
-    MOD_SWAP_PLACES='63'
-    MOD_SWITCHTEAM='64'
+    MOD_UNKNOWN = '0'
+    MOD_MACHINEGUN = '1'
+    MOD_BROWNING = '2'
+    MOD_MG42 = '3'
+    MOD_GRENADE = '4'
+    MOD_ROCKET = '5'
+    MOD_KNIFE = '6'
+    MOD_LUGER = '7'
+    MOD_COLT = '8'
+    MOD_MP40 = '9'
+    MOD_THOMPSON = '10'
+    MOD_STEN = '11'
+    MOD_GARAND = '12'
+    MOD_SNOOPERSCOPE = '13'
+    MOD_SILENCER = '14'
+    MOD_FG42 = '15'
+    MOD_FG42SCOPE = '16'
+    MOD_PANZERFAUST = '17'
+    MOD_GRENADE_LAUNCHER = '18'
+    MOD_FLAMETHROWER = '19'
+    MOD_GRENADE_PINEAPPLE = '20'
+    MOD_CROSS = '21'
+    MOD_MAPMORTAR = '22'
+    MOD_MAPMORTAR_SPLASH = '23'
+    MOD_KICKED = '24'
+    MOD_GRABBER = '25'
+    MOD_DYNAMITE = '26'
+    MOD_AIRSTRIKE = '27'
+    MOD_SYRINGE = '28'
+    MOD_AMMO = '29'
+    MOD_ARTY = '30'
+    MOD_WATER = '31'
+    MOD_SLIME = '32'
+    MOD_LAVA = '33'
+    MOD_CRUSH = '34'
+    MOD_TELEFRAG = '35'
+    MOD_FALLING = '36'
+    MOD_SUICIDE = '37'
+    MOD_TARGET_LASER = '38'
+    MOD_TRIGGER_HURT = '39'
+    MOD_EXPLOSIVE = '40'
+    MOD_CARBINE = '41'
+    MOD_KAR98 = '42'
+    MOD_GPG40 = '43'
+    MOD_M7 = '44'
+    MOD_LANDMINE = '45'
+    MOD_SATCHEL = '46'
+    MOD_TRIPMINE = '47'
+    MOD_SMOKEBOMB = '48'
+    MOD_MOBILE_MG42 = '49'
+    MOD_SILENCED_COLT = '50'
+    MOD_GARAND_SCOPE = '51'
+    MOD_CRUSH_CONSTRUCTION = '52'
+    MOD_CRUSH_CONSTRUCTIONDEATH = '53'
+    MOD_CRUSH_CONSTRUCTIONDEATH_NOATTACKER = '54'
+    MOD_K43 = '55'
+    MOD_K43_SCOPE = '56'
+    MOD_MORTAR = '57'
+    MOD_AKIMBO_COLT = '58'
+    MOD_AKIMBO_LUGER = '59'
+    MOD_AKIMBO_SILENCEDCOLT = '60'
+    MOD_AKIMBO_SILENCEDLUGER = '61'
+    MOD_SMOKEGRENADE = '62'
+    MOD_SWAP_PLACES = '63'
+    MOD_SWITCHTEAM = '64'
 
     ## meansOfDeath to be considered suicides
     Suicides = (
@@ -230,6 +227,9 @@ class EtproParser(AbstractParser):
         if mapname:
             self.game.mapName = mapname
             self.info('map is: %s'%self.game.mapName)
+            
+        self._eventMap['warmup'] = self.getEventID('EVT_GAME_WARMUP')
+        self._eventMap['restartgame'] = self.getEventID('EVT_GAME_ROUND_END')
 
 #---------------------------------------------------------------------------------------------------
 
@@ -255,7 +255,7 @@ class EtproParser(AbstractParser):
     def OnClientconnect(self, action, data, match=None):
         self._clientConnectID = data
         client = self.clients.getByCID(data)
-        return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
+        return self.getEvent('EVT_CLIENT_JOIN', client=client)
 
     # Parse Userinfo
     def OnClientuserinfo(self, action, data, match=None):
@@ -337,7 +337,7 @@ class EtproParser(AbstractParser):
             self.debug('No damageType, weapon: %s' % weapon)
             return None
 
-        event = b3.events.EVT_CLIENT_KILL
+        event_key = 'EVT_CLIENT_KILL'
 
         # fix event for team change and suicides and tk
         if attacker.cid == victim.cid:
@@ -347,9 +347,9 @@ class EtproParser(AbstractParser):
                 self.verbose('Team Change Event Caught, exiting')
                 return None
             else:
-                event = b3.events.EVT_CLIENT_SUICIDE
+                event_key = 'EVT_CLIENT_SUICIDE'
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
-            event = b3.events.EVT_CLIENT_KILL_TEAM
+            event_key = 'EVT_CLIENT_KILL_TEAM'
 
         # if not defined we need a general hitloc (for xlrstats)
         if not hasattr(victim, 'hitloc'):
@@ -358,7 +358,7 @@ class EtproParser(AbstractParser):
         victim.state = b3.STATE_DEAD
         #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (victim.name, attacker.name, weapon, victim.hitloc, dType))
         # need to pass some amount of damage for the teamkill plugin - 100 is a kill
-        return b3.events.Event(event, (100, weapon, victim.hitloc, dType), attacker, victim)
+        return self.getEvent(event_key, (100, weapon, victim.hitloc, dType), attacker, victim)
 
     def OnClientbegin(self, action, data, match=None):
         return None
@@ -388,7 +388,7 @@ class EtproParser(AbstractParser):
         self.debug('Synchronizing client info')
         self.clients.sync()
 
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
+        return self.getEvent('EVT_GAME_ROUND_START', self.game)
 
     def OnQmm(self, action, data, match=None):
         #self.verbose('OnQmm: data: %s' %data)
@@ -435,7 +435,7 @@ class EtproParser(AbstractParser):
 
         #client.name = match.group('name')
         self.verbose('text: %s, client: %s - %s, tclient: %s - %s' %(text, client.name, client.id, tclient.name, tclient.id))
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, text, client, tclient))
+        self.queueEvent(self.getEvent('EVT_CLIENT_PRIVATE_SAY', text, client, tclient))
 
 #---------------------------------------------------------------------------------------------------
 
