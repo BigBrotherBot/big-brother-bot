@@ -409,12 +409,12 @@ class Oa081Parser(AbstractParser):
             self.debug('No damageType, weapon: %s' % weapon)
             return None
 
-        event = self.getEventID('EVT_CLIENT_KILL')
+        event_key = 'EVT_CLIENT_KILL'
         # fix event for team change and suicides and tk
         if attacker.cid == victim.cid:
-            event = self.getEventID('EVT_CLIENT_SUICIDE')
+            event_key = 'EVT_CLIENT_SUICIDE'
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team != b3.TEAM_FREE and attacker.team == victim.team:
-            event = self.getEventID('EVT_CLIENT_KILL_TEAM')
+            event_key = 'EVT_CLIENT_KILL_TEAM'
 
         # if not defined we need a general hitloc (for xlrstats)
         if not hasattr(victim, 'hitloc'):
@@ -424,7 +424,7 @@ class Oa081Parser(AbstractParser):
         #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (victim.name,
         #             attacker.name, weapon, victim.hitloc, dType))
         # need to pass some amount of damage for the teamkill plugin - 100 is a kill
-        return self.getEvent(event, (100, weapon, victim.hitloc, dtype), attacker, victim)
+        return self.getEvent(event_key, (100, weapon, victim.hitloc, dtype), attacker, victim)
 
     def OnClientdisconnect(self, action, data, match=None):
         client = self.clients.getByCID(data)

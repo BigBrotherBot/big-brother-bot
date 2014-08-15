@@ -1,7 +1,7 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2011 Thomas LEVEIL
-# 
+# Copyright (C) 2011 Thomas LEVEIL <courgette@bigbrotherbot.net>
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -11,7 +11,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
@@ -28,16 +28,17 @@
 #         other players instead of having to type '/!'
 # 1.4.1 - add a space between the bot name and the message in saybig()
 # 1.4.2 - fixes bug regarding round count on round change events
-# 1.4.3 - 1.4.5 - improves handling of commands prefixed only with '/' instead of usual command prefixes.
-#                 Leading '/' is removed if followed by an existing command name or if followed by a command prefix.
+# 1.4.3 - 1.4.5 - improves handling of commands prefixed only with '/' instead of usual command prefixes. Leading '/'
+#         is removed if followed by an existing command name or if followed by a command prefix.
 # 1.5   - parser can now create EVT_CLIENT_TEAM_SAY events (requires BF3 server R21)
 # 1.5.1 - fixes issue with BF3 failing to provide EA_GUID https://github.com/courgette/big-brother-bot/issues/69
 # 1.5.2 - fixes issue that made B3 fail to ban/tempban a client with empty guid
-# 1.6   - replace admin plugin !map command with a Frostbite2 specific implementation. Now can call !map <map>, <gamemode>
-#       - refactor getMapsSoundingLike
-#       - add getGamemodeSoundingLike
-# 1.7   - replace admin plugin !map command with a Frostbite2 specific implementation.
-#         Now can call !map <map>[, <gamemode>[, <num of rounds>]] when returning map info, provide : map name (gamemode) # rounds
+# 1.6   - replace admin plugin !map command with a Frostbite2 specific implementation. Now can
+#         call !map <map>, <gamemode>
+#       - refactor get_maps_sounding_like
+#       - add get_gamemode_sounding_like
+# 1.7   - replace admin plugin !map command with a Frostbite2 specific implementation. Now can call
+#         !map <map>[, <gamemode>[, <num of rounds>]] when returning map info, provide : map name (gamemode) # rounds
 # 1.8   - isolate the patching code in a module function
 # 1.8.1 - improve punkbuster event parsing
 # 1.9   - fix never ending thread sayqueuelistener_worker (would make B3 process hang on keyboard interrupt)
@@ -46,10 +47,12 @@
 # 1.11  - rewrote import statements
 #       - replaced variable names using python built-in names
 # 1.12  - added admin key in EVT_CLIENT_KICK data dict when available
-# 1.13  - updated abstract parser to comply with the new getWrap implementation
-#
+# 1.13  - updated abstract parser to comply with the new get_wrap implementation
+# 1.14  - make use of self.getEvent when registering events: removes warnings
+#       - added missing import statements
+
 __author__  = 'Courgette'
-__version__ = '1.13'
+__version__ = '1.14'
 
 
 import sys
@@ -60,9 +63,11 @@ import string
 import Queue
 import threading
 import new
+import b3.clients
 import b3.parser
 import b3.events
 import b3.cvar
+import b3.cron
 
 from b3.parsers.frostbite2.rcon import Rcon as FrostbiteRcon
 from b3.parsers.frostbite2.protocol import FrostbiteServer
@@ -412,7 +417,7 @@ class AbstractParser(b3.parser.Parser):
         # setup Rcon
         self.output.set_frostbite_server(self._serverConnection)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_GAMESERVER_CONNECT, None))
+        self.queueEvent(self.getEvent('EVT_GAMESERVER_CONNECT'))
 
         self.checkVersion()
         self.say('%s ^2[ONLINE]' % b3.version)
@@ -481,7 +486,7 @@ class AbstractParser(b3.parser.Parser):
                 data = func + ' '
             data += str(eventType) + ': ' + str(eventData)
             self.warning('TODO : handle \'%r\' frostbite2 events' % packet)
-            self.queueEvent(b3.events.Event(b3.events.EVT_UNKNOWN, data))
+            self.queueEvent(self.getEvent('EVT_UNKNOWN', data))
 
 
     def startup(self):
@@ -509,7 +514,7 @@ class AbstractParser(b3.parser.Parser):
         self.start_sayqueue_worker()
 
         # start crontab to trigger playerlist events
-        self.cron + b3.cron.CronTab(self.clients.sync, minute='*/5')
+        self.cron.add(b3.cron.CronTab(self.clients.sync, minute='*/5'))
 
 
     def pluginsStarted(self):
@@ -621,13 +626,13 @@ class AbstractParser(b3.parser.Parser):
                 text = cmdPrefix + text[1:]
 
         if 'team' in data[2]:
-            event_type = b3.events.EVT_CLIENT_TEAM_SAY
+            event_type = 'EVT_CLIENT_TEAM_SAY'
         elif 'squad' in data[2]:
-            event_type = b3.events.EVT_CLIENT_SQUAD_SAY
+            event_type = 'EVT_CLIENT_SQUAD_SAY'
         else:
-            event_type = b3.events.EVT_CLIENT_SAY
-        return b3.events.Event(event_type, text, client)
+            event_type = 'EVT_CLIENT_SAY'
 
+        return self.getEvent(event_type, text, client)
 
     def OnPlayerLeave(self, action, data):
         #player.onLeave: ['GunnDawg']
@@ -672,7 +677,7 @@ class AbstractParser(b3.parser.Parser):
 
         self._OnServerLevelstarted(action=None, data=None)
 
-        return b3.events.Event(b3.events.EVT_CLIENT_SPAWN, (), spawner)
+        return self.getEvent('EVT_CLIENT_SPAWN', client=spawner)
 
 
     def OnPlayerKill(self, action, data):
@@ -705,12 +710,13 @@ class AbstractParser(b3.parser.Parser):
         else:
             hitloc = 'torso'
 
-        event = b3.events.EVT_CLIENT_KILL
+        event_key = 'EVT_CLIENT_KILL'
         if victim == attacker:
-            event = b3.events.EVT_CLIENT_SUICIDE
+            event_key = 'EVT_CLIENT_SUICIDE'
         elif attacker.team == victim.team and attacker.team != b3.TEAM_UNKNOWN and attacker.team != b3.TEAM_SPEC:
-            event = b3.events.EVT_CLIENT_KILL_TEAM
-        return b3.events.Event(event, (100, weapon, hitloc), attacker, victim)
+            event_key = 'EVT_CLIENT_KILL_TEAM'
+
+        return self.getEvent(event_key, (100, weapon, hitloc), attacker, victim)
 
 
     def OnPlayerKicked(self, action, data):
@@ -722,7 +728,7 @@ class AbstractParser(b3.parser.Parser):
             return None
         client = self.getClient(data[0])
         reason = data[1]
-        return b3.events.Event(b3.events.EVT_CLIENT_KICK, data={'reason': reason, 'admin': None}, client=client)
+        return self.getEvent('EVT_CLIENT_KICK', data={'reason': reason, 'admin': None}, client=client)
 
 
     def OnServerLevelloaded(self, action, data):
@@ -748,7 +754,7 @@ class AbstractParser(b3.parser.Parser):
         self.info('Loading %s [%s]'  % (self.getEasyName(self.game.mapName), self.game.gameType))
         self._waiting_for_round_start = True
 
-        return b3.events.Event(b3.events.EVT_GAME_WARMUP, data[0])
+        return self.getEvent('EVT_GAME_WARMUP', data[0])
 
     def _OnServerLevelstarted(self, action, data):
         """
@@ -767,7 +773,7 @@ class AbstractParser(b3.parser.Parser):
             correct_rounds_value = self.game.rounds
             self.game.startRound()
             self.game.rounds = correct_rounds_value
-            self.queueEvent(b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game))
+            self.queueEvent(self.getEvent('EVT_GAME_ROUND_START', self.game))
 
 
     def OnServerRoundover(self, action, data):
@@ -777,7 +783,7 @@ class AbstractParser(b3.parser.Parser):
         Effect: The round has just ended, and <winning team> won
         """
         #['server.onRoundOver', '2']
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_END, data[0])
+        return self.getEvent('EVT_GAME_ROUND_END', data[0])
 
 
     def OnServerRoundoverplayers(self, action, data):
@@ -787,7 +793,7 @@ class AbstractParser(b3.parser.Parser):
         Effect: The round has just ended, and <end-of-round soldier info> is the final detailed player stats
         """
         #['server.onRoundOverPlayers', '8', 'clanTag', 'name', 'guid', 'teamId', 'kills', 'deaths', 'score', 'ping', '17', 'RAID', 'mavzee', 'EA_4444444444444444555555555555C023', '2', '20', '17', '310', '147', 'RAID', 'NUeeE', 'EA_1111111111111555555555555554245A', '2', '30', '18', '445', '146', '', 'Strzaerl', 'EA_88888888888888888888888888869F30', '1', '12', '7', '180', '115', '10tr', 'russsssssssker', 'EA_E123456789461416564796848C26D0CD', '2', '12', '12', '210', '141', '', 'Daezch', 'EA_54567891356479846516496842E17F4D', '1', '25', '14', '1035', '129', '', 'Oldqsdnlesss', 'EA_B78945613465798645134659F3079E5A', '1', '8', '12', '120', '256', '', 'TTETqdfs', 'EA_1321654656546544645798641BB6D563', '1', '11', '16', '180', '209', '', 'bozer', 'EA_E3987979878946546546565465464144', '1', '22', '14', '475', '152', '', 'Asdf 1977', 'EA_C65465413213216656546546546029D6', '2', '13', '16', '180', '212', '', 'adfdasse', 'EA_4F313565464654646446446644664572', '1', '4', '25', '45', '162', 'SG1', 'De56546ess', 'EA_123132165465465465464654C2FC2FBB', '2', '5', '8', '75', '159', 'bsG', 'N06540RZ', 'EA_787897944546565656546546446C9467', '2', '8', '14', '100', '115', '', 'Psfds', 'EA_25654321321321000006546464654B81', '2', '15', '15', '245', '140', '', 'Chezear', 'EA_1FD89876543216548796130EB83E411F', '1', '9', '14', '160', '185', '', 'IxSqsdfOKxI', 'EA_481321313132131313213212313112CE', '1', '21', '12', '625', '236', '', 'Ledfg07', 'EA_1D578987994651615166516516136450', '1', '5', '6', '85', '146', '', '5 56 mm', 'EA_90488E6543216549876543216549877B', '2', '0', '0', '0', '192']
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_PLAYER_SCORES, PlayerInfoBlock(data))
+        return self.getEvent('EVT_GAME_ROUND_PLAYER_SCORES', PlayerInfoBlock(data))
 
 
     def OnServerRoundoverteamscores(self, action, data):
@@ -797,7 +803,7 @@ class AbstractParser(b3.parser.Parser):
         Effect: The round has just ended, and <end-of-round scores> is the final ticket/kill/life count for each team
         """
         #['server.onRoundOverTeamScores', '2', '1180', '1200', '1200']
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_TEAM_SCORES, data[1])
+        return self.getEvent('EVT_GAME_ROUND_TEAM_SCORES', data[1])
 
     def OnPunkbusterMessage(self, action, data):
         """handles all punkbuster related events and 
@@ -817,16 +823,16 @@ class AbstractParser(b3.parser.Parser):
                     break
             if match:
                 if funcName is None:
-                    return b3.events.Event(b3.events.EVT_PUNKBUSTER_MISC, match)
+                    return self.getEvent('EVT_PUNKBUSTER_MISC', match)
                 if hasattr(self, funcName):
                     func = getattr(self, funcName)
                     return func(match, data[0])
                 else:
                     self.warning("func %s not found, defaulting to EVT_PUNKBUSTER_UNKNOWN" % funcName)
-                    return b3.events.Event(b3.events.EVT_PUNKBUSTER_UNKNOWN, data)
+                    return self.getEvent('EVT_PUNKBUSTER_UNKNOWN', data)
             else:
                 self.debug("no pattern matching \"%s\", defaulting to EVT_PUNKBUSTER_UNKNOWN" % str(data[0]).strip())
-                return b3.events.Event(b3.events.EVT_PUNKBUSTER_UNKNOWN, data)
+                return self.getEvent('EVT_PUNKBUSTER_UNKNOWN', data)
 
     def OnPBVersion(self, match,data):
         """PB notifies us of the version numbers
@@ -853,7 +859,7 @@ class AbstractParser(b3.parser.Parser):
             client.save()
             self.debug('OnPBNewConnection: client updated with %s' % data)
             # This is our first moment where we get a clients IP. Fire this event to accomodate geoIP based plugins like Countryfilter.
-            return b3.events.Event(b3.events.EVT_PUNKBUSTER_NEW_CONNECTION, data, client)
+            return self.getEvent('EVT_PUNKBUSTER_NEW_CONNECTION', data, client)
         else:
             self.warning('OnPBNewConnection: we\'ve been unable to get the client')
 
@@ -872,7 +878,7 @@ class AbstractParser(b3.parser.Parser):
             'name': name
         }
         self.verbose('PB lost connection: %s' % data)
-        return b3.events.Event(b3.events.EVT_PUNKBUSTER_LOST_PLAYER, data)
+        return self.getEvent('EVT_PUNKBUSTER_LOST_PLAYER', data)
 
     def OnPBScheduledTask(self, match, data):
         """We get notified the server ran a PB scheduled task
@@ -881,7 +887,7 @@ class AbstractParser(b3.parser.Parser):
         """
         slot = match.group('slot')
         task = match.group('task')
-        return b3.events.Event(b3.events.EVT_PUNKBUSTER_SCHEDULED_TASK, {'slot': slot, 'task': task})
+        return self.getEvent('EVT_PUNKBUSTER_SCHEDULED_TASK', {'slot': slot, 'task': task})
 
     def OnPBMasterQuerySent(self, match, data):
         """We get notified that the server sent a ping to the PB masters"""
@@ -929,11 +935,11 @@ class AbstractParser(b3.parser.Parser):
         """We get notified of a UCON command
         match groups : from, ip, port, cmd
         """
-        return b3.events.Event(b3.events.EVT_PUNKBUSTER_UCON, match.groupdict())
+        return self.getEvent('EVT_PUNKBUSTER_UCON', match.groupdict())
 
     def OnPBScreenshotReceived(self, match, data):
         """We get notified that a screenshot was successfully received by the server"""
-        return b3.events.Event(b3.events.EVT_PUNKBUSTER_SCREENSHOT_RECEIVED, match.groupdict())
+        return self.getEvent('EVT_PUNKBUSTER_SCREENSHOT_RECEIVED', match.groupdict())
 
 
     ###############################################################################################
@@ -1099,7 +1105,7 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN, {'reason': reason, 'admin': admin}, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
 
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -1200,10 +1206,9 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_BAN_TEMP, {'reason': reason,
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason,
                                                               'duration': duration,
-                                                              'admin': admin}
-                                        , client))
+                                                              'admin': admin} , client))
 
 
     def getMap(self):
@@ -1247,7 +1252,7 @@ class AbstractParser(b3.parser.Parser):
         self.write(('mapList.runNextRound',))
         # we create a EVT_GAME_ROUND_END event as the game server won't make one.
         # https://github.com/courgette/big-brother-bot/issues/52
-        self.queueEvent(b3.events.Event(b3.events.EVT_GAME_ROUND_END, data=None))
+        self.queueEvent(self.getEvent('EVT_GAME_ROUND_END', data=None))
 
 
     def changeMap(self, map_name, gamemode_id=None, number_of_rounds=2):
