@@ -124,6 +124,7 @@
 # 2014-07-18 - 2.6    - Fenix     - updated parser to comply with the new get_wrap implementation
 #                                 - rewritten changelog
 # 2014-08-06 - 2.7    - Fenix     - make use of self.getEvent() when creating events
+#                                 - fixed get_team not being called in plugin_started()
 #
 # ============================ B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER =============================
 #
@@ -251,7 +252,7 @@ class Bfbc2Parser(AbstractParser):
                 if 'clanTag' in p and len(p['clanTag']) > 0:
                     name = "[" + p['clanTag'] + "] " + p['name']
                 self.debug('client %s found on the server' % cid)
-                client = self.clients.newClient(cid, guid=p['guid'], name=name, team=p['teamId'], squad=p['squadId'], data=p)
+                client = self.clients.newClient(cid, guid=p['guid'], name=name, team=self.getTeam(p['teamId']), squad=p['squadId'], data=p)
                 self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', p, client))
 
     def saybigqueuelistenerworker(self):
