@@ -370,8 +370,8 @@ class Parser(object):
         # save screen output to self.screen
         self.screen = sys.stdout
         print('Activating log   : %s' % logfile)
-        sys.stdout = b3.output.stdoutLogger(self.log)
-        sys.stderr = b3.output.stderrLogger(self.log)
+        sys.stdout = b3.output.STDOutLogger(self.log)
+        sys.stderr = b3.output.STDErrLogger(self.log)
 
         # setup ip addresses
         if self.gameName in 'bf3':

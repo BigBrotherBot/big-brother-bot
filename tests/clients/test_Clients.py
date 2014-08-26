@@ -102,4 +102,4 @@ class TestClients(B3TestCase):
         self.assertIsNone(self.clients.getByName('joe'))
 
         # verify that an proper event was fired
-        Event_mock.assert_called_once_with(b3.events.EVT_CLIENT_DISCONNECT, 1, client=joe)
+        Event_mock.assert_called_once_with(b3.events.EVT_CLIENT_DISCONNECT, 1, joe, None)

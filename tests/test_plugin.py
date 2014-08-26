@@ -127,7 +127,7 @@ f00: bar -%s- bar
         with patch.object(p, "error") as error_mock:
             self.assertRaises(TypeError, p.getMessage, 'f00')
         # THEN
-        self.assertListEqual([call('failed to format message %r (%r) with parameters %r. %s', 'f00', 'bar -%s- bar', (),
+        self.assertListEqual([call('failed to format message %r (%r) with parameters %r: %s', 'f00', 'bar -%s- bar', (),
                                    ANY)], error_mock.mock_calls)
 
     def test_with_parameter__too_many(self):
@@ -141,7 +141,7 @@ f00: bar -%s- bar
         with patch.object(p, "error") as error_mock:
             self.assertRaises(TypeError, p.getMessage, 'f00', 'param1', 'param2')
         # THEN
-        self.assertListEqual([call('failed to format message %r (%r) with parameters %r. %s', 'f00', 'bar -%s- bar',
+        self.assertListEqual([call('failed to format message %r (%r) with parameters %r: %s', 'f00', 'bar -%s- bar',
                                    ('param1', 'param2'), ANY)], error_mock.mock_calls)
 
     def test_with_named_parameter__nominal(self):
@@ -167,7 +167,7 @@ f00: bar -%(param1)s- bar
         with patch.object(p, "error") as error_mock:
             self.assertRaises(KeyError, p.getMessage, 'f00', {'param_foo': 'foo'})
         # THEN
-        self.assertListEqual([call('failed to format message %r (%r) with parameters %r. Missing value for %s', 'f00',
+        self.assertListEqual([call('failed to format message %r (%r) with parameters %r: missing value for %s', 'f00',
                                    'bar -%(param1)s- bar', ({'param_foo': 'foo'},), ANY)], error_mock.mock_calls)
 
 

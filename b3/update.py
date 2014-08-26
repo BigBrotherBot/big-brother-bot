@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2011 Thomas "Courgette" LÉVEIL <courgette@bigbrotherbot.net>
+# Copyright (C) 2005 Michael "ThorN" Thornton
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,12 +17,16 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
-from exceptions import ValueError, IOError, Exception, KeyError
+# CHANGELOG
+#
+# 21/07/2014 - Fenix - syntax cleanup
+
 import json
 import re
 import string
 import sys
 import urllib2
+
 from distutils import version
 from types import StringType
 
@@ -53,6 +57,9 @@ class B3version(version.StrictVersion):
             1.9.0dev7.daily21-20121004
         And make sure that any 'dev' prerelease is inferior to any 'alpha' prerelease
         """
+        version = None
+        prerelease = None
+        build_num = None
 
         version_re = re.compile(r'''^
 (?P<major>\d+)\.(?P<minor>\d+)   # 1.2
@@ -68,11 +75,14 @@ class B3version(version.StrictVersion):
 $''', re.VERBOSE)
         prerelease_order = {'dev': 0, 'a': 1, 'b': 2}
 
-
         def parse (self, vstring):
+            """
+            Parse the version number from a string.
+            :param vstring: The version string
+            """
             match = self.version_re.match(vstring)
             if not match:
-                raise ValueError, "invalid version number '%s'" % vstring
+                raise ValueError("invalid version number '%s'" % vstring)
 
             major = match.group('major')
             minor = match.group('minor')
@@ -96,9 +106,11 @@ $''', re.VERBOSE)
             else:
                 self.build_num = None
 
-
-
         def __cmp__ (self, other):
+            """
+            Compare current object with another one.
+            :param other: The other object
+            """
             if isinstance(other, StringType):
                 other = B3version(other)
 
@@ -114,7 +126,6 @@ $''', re.VERBOSE)
             # we have to compare build num
             return self.__cmp_build(other)
 
-
         def __cmp_prerelease(self, other):
             # case 1: neither has prerelease; they're equal
             # case 2: self has prerelease, other doesn't; other is greater
@@ -128,7 +139,7 @@ $''', re.VERBOSE)
                 return 1
             elif self.prerelease and other.prerelease:
                 return cmp((self.prerelease_order[self.prerelease[0]], self.prerelease[1]),
-                    (self.prerelease_order[other.prerelease[0]], other.prerelease[1]))
+                           (self.prerelease_order[other.prerelease[0]], other.prerelease[1]))
 
         def __cmp_build(self, other):
             # case 1: neither has build_num; they're equal
@@ -146,6 +157,10 @@ $''', re.VERBOSE)
 
 
 def getDefaultChannel(currentVersion):
+    """
+    Return an update channel according to the current B3 version.
+    :param currentVersion: The B3 version to use to compute the update channel
+    """
     if currentVersion is None:
         return UPDATE_CHANNEL_STABLE
     m = re.match(r'^\d+\.\d+(\.\d+)?(?i)(?P<prerelease>[ab]|dev)\d*(\.daily\d*)?$', currentVersion)
@@ -159,10 +174,8 @@ def getDefaultChannel(currentVersion):
 
 def checkUpdate(currentVersion, channel=None, singleLine=True, showErrormsg=False, timeout=4):
     """
-    check if an update of B3 is available
-
+    Check if an update of B3 is available.
     """
-
     if channel is None:
         channel = getDefaultChannel(currentVersion)
 
@@ -170,35 +183,36 @@ def checkUpdate(currentVersion, channel=None, singleLine=True, showErrormsg=Fals
         sys.stdout.write("checking for updates... \n")
 
     message = None
-    errorMessage = None
+    errormessage = None
+    
     try:
         json_data = urllib2.urlopen(URL_B3_LATEST_VERSION, timeout=timeout).read()
         version_info = json.loads(json_data)
     except IOError, e:
         if hasattr(e, 'reason'):
-            errorMessage = "%s" % e.reason
+            errormessage = "%s" % e.reason
         elif hasattr(e, 'code'):
-            errorMessage = "error code: %s" % e.code
+            errormessage = "error code: %s" % e.code
         else:
-            errorMessage = "%s" % e
+            errormessage = "%s" % e
     except Exception, e:
-        errorMessage = repr(e)
+        errormessage = repr(e)
     else:
         latestVersion = None
         try:
             channels = version_info['B3']['channels']
         except KeyError, err:
-            errorMessage = repr(err) + ". %s" % version_info
+            errormessage = repr(err) + ". %s" % version_info
         else:
             if channel not in channels:
-                errorMessage = "unknown channel '%s'. Expecting one of '%s'"  % (channel, ", '".join(channels.keys()))
+                errormessage = "unknown channel '%s'. Expecting one of '%s'"  % (channel, ", '".join(channels.keys()))
             else:
                 try:
                     latestVersion = channels[channel]['latest-version']
                 except KeyError, err:
-                    errorMessage = repr(err) + ". %s" % version_info
+                    errormessage = repr(err) + ". %s" % version_info
 
-        if not errorMessage:
+        if not errormessage:
             try:
                 latestUrl = version_info['B3']['channels'][channel]['url']
             except KeyError:
@@ -225,11 +239,9 @@ def checkUpdate(currentVersion, channel=None, singleLine=True, showErrormsg=Fals
 
         """.format(version=latestVersion, url=latestUrl)
 
-    if errorMessage and showErrormsg:
-        return "Could not check updates. %s" % errorMessage
+    if errormessage and showErrormsg:
+        return "Could not check updates: %s" % errormessage
     elif message:
         return message
     else:
         return None
-
-
