@@ -507,6 +507,7 @@ class InsurgencyParser(Parser):
         """\
         broadcast a message to all players
         """
+        msg = self.stripColors(msg)
         if msg and len(msg.strip()):
             template = 'sm_say %s'
             if "B3 Say" in self.sm_plugins:
@@ -520,6 +521,7 @@ class InsurgencyParser(Parser):
         """\
         broadcast a message to all players in a way that will catch their attention.
         """
+        msg = self.stripColors(msg)
         if msg and len(msg.strip()):
             template = 'sm_hsay %s'
             if "B3 Say" in self.sm_plugins:
@@ -533,6 +535,7 @@ class InsurgencyParser(Parser):
         """\
         display a message to a given player
         """
+        msg = self.stripColors(msg)
         if not client.bot:  # do not talk to bots
             if msg and len(msg.strip()):
                 template = 'sm_psay #%(guid)s "%(msg)s"'
