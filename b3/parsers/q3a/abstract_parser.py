@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # $Id: q3a.py 103 2006-04-14 16:23:10Z thorn $
-# $Id: q3a/abstractParser.py 103 2010-11-01 10:10:10Z xlr8or $
+# $Id: q3a/abstract_parser.py 103 2010-11-01 10:10:10Z xlr8or $
 #
 # CHANGELOG
 #
