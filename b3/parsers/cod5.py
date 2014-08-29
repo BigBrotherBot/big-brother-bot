@@ -44,9 +44,12 @@
 #  Allow kicking by full name, even if not authed by B3
 # 2014/07/30 - 1.3.4 - Fenix
 #   Fixes for the new getWrap implementation
+# 2014/08/29 - 1.3.5 - 82ndab.Bravo17
+#   Reduce min guid length to 8
+
 
 __author__  = 'xlr8or'
-__version__ = '1.3.4'
+__version__ = '1.3.5'
 
 import b3.parsers.cod2
 import b3.functions
@@ -58,7 +61,7 @@ from b3 import functions
 class Cod5Parser(b3.parsers.cod2.Cod2Parser):
     gameName = 'cod5'
     IpsOnly = False
-    _guidLength = 9
+    _guidLength = 8
     
     _commands = {}
     _commands['message'] = 'tell %(cid)s %(message)s'

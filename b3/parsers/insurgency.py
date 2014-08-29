@@ -31,6 +31,8 @@
 #   * added admin key in EVT_CLIENT_KICK data dict when available
 #   2014/07/18 - 0.4 - Fenix
 #   * updated abstract parser to comply with the new getWrap implementation
+#   2014/08/29 - 0.5 - 82ndab.Bravo17
+#   Remove color codes from all messages since Insurgency doesn't use them
 #
 
 import re
@@ -49,7 +51,7 @@ from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '0.4'
+__version__ = '0.5'
 
 
 # GAME SETUP
