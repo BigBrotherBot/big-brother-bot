@@ -19,6 +19,8 @@
 #
 # CHANGELOG
 #
+#   2014/08/30 - 1.36.1 - 82ndab-Bravo17
+#   * Restore color codes on wrapped lines
 #   2014/07/18 - 1.36 - Fenix
 #   * new getWrap implementation based on the textwrap.TextWrapper class: the maximum length of each
 #   * message can be customized in the _settings dictionary (_settings['line_length'] for instance)
@@ -1319,7 +1321,19 @@ class Parser(object):
                                        break_long_words=True,
                                        break_on_hyphens=False)
 
-        return self.wrapper.wrap(text)
+        wrapped_text = self.wrapper.wrap(text)
+        lines=[]
+        color='^7'
+        for line in wrapped_text:
+            m = re.findall(self._reColor, line)
+            if m:
+                color = m[-1]
+            if len(lines) > 0:
+                lines.append('^3>%s%s' % (color, line))
+            else:
+                lines.append('%s%s' % (color, line))
+                    
+        return lines
 
     def error(self, msg, *args, **kwargs):
         """
