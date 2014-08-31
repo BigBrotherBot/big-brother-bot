@@ -22,7 +22,8 @@
 # 2014-05-02 - 0.4.2 - Fenix     - syntax cleanup
 # 2014-07-16 - 0.4.3 - Fenix     - added admin key in EVT_CLIENT_KICK data dict when available
 # 2014-07-18 - 0.4.4 - Fenix     - updated parser to comply with the new get_wrap implementation
-# 2014-08-12 - 0.4.5 - Fenix     - make use of the Game_event_router decorator
+# 2014-08-12 - 0.4.5 - Fenix     - make use of the GameEventRouter decorator
+# 2014-08-29 - 0.4.6 - Fenix     - syntax cleanup
 
 import asyncore
 import b3
@@ -35,51 +36,116 @@ import sys
 import time
 
 from b3.clients import Client
-from b3.decorators import Game_event_router
+from b3.decorators import GameEventRouter
 from b3.functions import prefixText
 from b3.lib.sourcelib import SourceQuery
 from b3.parser import Parser
 from ConfigParser import NoOptionError
 
+__author__ = 'Courgette'
+__version__ = '0.4.6'
 
-__author__  = 'Courgette'
-__version__ = '0.4.5'
-
-ger = Game_event_router()
+ger = GameEventRouter()
 
 
 class FrontlineParser(b3.parser.Parser):
     """
-    The Frontline B3 parser class
+    The Frontline B3 parser class.
     """
     gameName = "frontline"
     privateMsg = True
     OutputClass = rcon.Rcon
-    PunkBuster = None 
+    PunkBuster = None
+    prefix = '%s: '
+
+    _async_responses = {}   # dict to hold rcon asynchronous responses
     _serverConnection = None
     _original_connection_handle_close_method = None
     _rconUser = None
 
-    # frontline engine does not support color code, so we need this property
-    # in order to get stripColors working
+    # frontline engine does not support color code, so we
+    # need this property in order to get stripColors working
     _reColor = re.compile(r'(\^[0-9])')
     _connectionTimeout = 30
     _playerlistInterval = 3
     _nbConsecutiveConnFailure = 0
     _server_banlist = {}
 
-    _settings = {'line_length': 200, 
-                 'min_wrap_length': 200}
-    
-    # dict to hold rcon asynchronous responses
-    _async_responses = {}
-    
-    prefix = '%s: '
-    
+    _settings = {
+        'line_length': 200,
+    }
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  PARSER INITIALIZATION                                                                                         ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
     def startup(self):
+        """
+        Called after the parser is created before run().
+        """
         self.debug("startup()")
         self.cron.add(b3.cron.CronTab(self.retrievePlayerList, second='*/%s' % self._playerlistInterval))
-    
+
+    def run(self):
+        """
+        Main worker thread for B3.
+        """
+        try:
+            self._rconUser = self.config.get("server", "rcon_user")
+        except NoOptionError, err:
+            self.error("cannot find rcon_user in B3 main config file. %s", err)
+            raise SystemExit("incomplete config")
+
+        self.screen.write('Startup Complete : B3 is running! Let\'s get to work!\n\n')
+        self.screen.write('(If you run into problems, check %s in the B3 root directory for '
+                          'detailed log info)\n' % self.config.getpath('b3', 'logfile'))
+
+        self.updateDocumentation()
+
+        self.bot('start listening...')
+        while self.working:
+            # While we are working, connect to the Frontline server
+            if self._paused:
+                if not self._pauseNotice:
+                    self.bot('PAUSED - not parsing any lines: B3 will be out of sync')
+                    self._pauseNotice = True
+            else:
+                if self._serverConnection is None:
+                    self.bot('connecting to Frontline server %s:%s with user %s...', self._rconIp, self._rconPort, self._rconUser)
+                    self._serverConnection = protocol.Client(self, self._rconIp, self._rconPort, self._rconUser,
+                                                             self._rconPassword, keepalive=True)
+
+                    # hook on handle_close to protocol.Client
+                    self._original_connection_handle_close_method = self._serverConnection.handle_close
+                    self._serverConnection.handle_close = self._handle_connection_close
+
+                    # listen for incoming HF packets
+                    self._serverConnection.add_listener(self.routePacket)
+
+                    # setup Rcon
+                    self.output.set_frontline_client(self._serverConnection)
+
+                self._nbConsecutiveConnFailure = 0
+
+                while self.working and not self._paused \
+                        and (self._serverConnection.connected or not self._serverConnection.authed):
+                    asyncore.loop(timeout=3, use_poll=True, count=1)
+
+        self.bot('stop listening...')
+
+        with self.exiting:
+            self._serverConnection.close()
+            if self.exitcode:
+                sys.exit(self.exitcode)
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  OTHER METHODS                                                                                                 ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
     def routePacket(self, packet):
         if packet is None:
             self.warning('cannot route empty packet')
@@ -92,60 +158,8 @@ class FrontlineParser(b3.parser.Parser):
                 if event:
                     self.queueEvent(event)
             else:
-                self.warning('TODO handle packet : %s' % packet)
+                self.warning('TODO: handle packet : %s' % packet)
                 self.queueEvent(self.getEvent('EVT_UNKNOWN', packet))
-
-
-    def run(self):
-        """Main worker thread for B3"""
-        try:
-            self._rconUser = self.config.get("server", "rcon_user")
-        except NoOptionError, err:
-            self.error("cannot find rcon_user in B3 main config file. %s", err)
-            raise SystemExit("incomplete config")
-        
-        self.screen.write('Startup Complete : B3 is running! Let\'s get to work!\n\n')
-        self.screen.write('(If you run into problems, check %s for detailed log info)\n' % self.config.getpath('b3', 'logfile'))
-        #self.screen.flush()
-
-        self.updateDocumentation()
-
-        self.bot('Start listening ...')
-        while self.working:
-            """
-            While we are working, connect to the Frontline server
-            """
-            if self._paused:
-                if not self._pauseNotice:
-                    self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
-                    self._pauseNotice = True
-            else:
-                if self._serverConnection is None:
-                    self.bot('Connecting to Frontline server %s:%s with user %s ...', self._rconIp, self._rconPort, self._rconUser)
-                    self._serverConnection = protocol.Client(self, self._rconIp, self._rconPort, self._rconUser, self._rconPassword, keepalive=True)
-                    
-                    # hook on handle_close to protocol.Client
-                    self._original_connection_handle_close_method = self._serverConnection.handle_close
-                    self._serverConnection.handle_close = self._handle_connection_close
-                    
-                    # listen for incoming HF packets
-                    self._serverConnection.add_listener(self.routePacket)
-                    
-                    # setup Rcon
-                    self.output.set_frontline_client(self._serverConnection)
-                
-                self._nbConsecutiveConnFailure = 0
-                
-                while self.working and not self._paused \
-                and (self._serverConnection.connected or not self._serverConnection.authed):
-                    asyncore.loop(timeout=3, use_poll=True, count=1)
-        self.bot('Stop listening.')
-
-        with self.exiting:
-            self._serverConnection.close()
-            if self.exitcode:
-                sys.exit(self.exitcode)
-
 
     def _handle_connection_close(self):
         if len(self.clients.getList()): 
@@ -153,50 +167,125 @@ class FrontlineParser(b3.parser.Parser):
             self.clients.empty()
         self._original_connection_handle_close_method()
 
+    def getClient(self, cid):
+        """
+        Return a already connected client by searching the clients cid index.
+        This method can return None.
+        """
+        client = self.clients.getByCID(cid)
+        if client:
+            return client
+        return None
 
-    # ================================================
-    # handle Game events.
-    #
-    # those methods are called by routePacket() and 
-    # may return a B3 Event object which would then
-    # be queued
-    # ================================================
+    def getClientOrCreate(self, cid, guid, name):
+        """
+        Return a already connected client by searching the clients guid index or create a new client.
+        This method can return None.
+        """
+        client = self.clients.getByCID(cid)
+        if client is None:
+            client = self.clients.newClient(cid, guid=guid, name=name, team=b3.TEAM_UNKNOWN)
+            client.last_update_time = time.time()
+        return client
 
-    @ger.gameEvent(r'^DEBUG: ((Script)?Log|Error|(Perf|Script)Warning|SeamlessTravel): .*',
-               r'^DEBUG: (DevOnline|NetComeGo|RendezVous|LoadingScreenLog|Difficulty|LineCheckLog): .*',
-               r'^DEBUG: Warning: .*',
-               r'^DEBUG: DevNet: .*',
-               r'^UnBan failed! Player ProfileID or Hash is not banned: .*',
-               r'^Forced transition to next map$',
-               r'^.*: Player List: [Slot #] [GUID] [Address] [Status] [Power] [Auth Rate] [Recent SS] [O/S] [Name]$',
-               )
+    def retrievePlayerList(self):
+        """
+        Send RETRIEVE PLAYERLIST to the server.
+        """
+        self.write('PLAYERLIST')
+
+    def retrieveBanList(self):
+        """
+        Send RETRIEVE BANLIST to the server.
+        """
+        self.write('BanList')
+
+    def getTeam(self, teamId):
+        """
+        Convert team id to B3 team numbers.
+        """
+        team = str(teamId).lower()
+        if team == '0':
+            result = b3.TEAM_RED
+        elif team == '1':
+            result = b3.TEAM_BLUE
+        elif team == '2':
+            result = b3.TEAM_SPEC
+        elif team == '255':
+            result = b3.TEAM_UNKNOWN
+        else:
+            self.verbose2("unrecognized team id : %r", team)
+            result = b3.TEAM_UNKNOWN
+        return result
+
+    def queryServerInfo(self):
+        ## read game server info and store as much of it in self.game wich
+        ## is an instance of the b3.game.Game class
+        sq = SourceQuery.SourceQuery(self._publicIp, self._port, timeout=10)
+        try:
+            serverinfo = sq.info()
+            self.debug("server info : %r", serverinfo)
+            if 'map' in serverinfo:
+                self.game.mapName = serverinfo['map'].lower()
+            if 'hostname' in serverinfo:
+                self.game.sv_hostname = serverinfo['hostname']
+            if 'maxplayers' in serverinfo:
+                self.game.sv_maxclients = serverinfo['maxplayers']
+        except Exception, err:
+            self.exception(err)
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  GAME EVENTS HANDLERS                                                                                          ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
+    @ger.gameEvent(
+        r'^DEBUG: ((Script)?Log|Error|(Perf|Script)Warning|SeamlessTravel): .*',
+        r'^DEBUG: (DevOnline|NetComeGo|RendezVous|LoadingScreenLog|Difficulty|LineCheckLog): .*',
+        r'^DEBUG: Warning: .*',
+        r'^DEBUG: DevNet: .*',
+        r'^UnBan failed! Player ProfileID or Hash is not banned: .*',
+        r'^Forced transition to next map$',
+        r'^.*: Player List: [Slot #] [GUID] [Address] [Status] [Power] [Auth Rate] [Recent SS] [O/S] [Name]$',)
     def ignoreGameEvent(self, *args, **kwargs):
-        """do nothing"""
+        """
+        Do nothing.
+        """
         pass
     
     @ger.gameEvent(r"^WELCOME! Frontlines: Fuel of War \(RCON\) VER=(?P<version>.+) CHALLENGE=(?P<challenge>.*)$")
     def onServerWelcome(self, version, challenge):
-        self.info("connected to Frontline server. RCON version %s", version)
+        self.info("connected to Frontline server: RCON version: %s", version)
        
     @ger.gameEvent(re.compile(r"^PlayerList: (?P<data>.*)$", re.MULTILINE|re.DOTALL|re.IGNORECASE))
     def onServerPlayerlist(self, data):
-        """PlayerList: Map=CQ-Gnaw Time=739 Players=0/32 Tickets=500,500 Round=2/3
-ID    Name    Ping    Team    Squad    Score    Kills    Deaths    TK    CP    Time    Idle    Loadout    Role    RoleLvl    Vehicle    Hash    ProfileID    """
-        self.verbose2("PlayerList : %r" % data)
+        """
+        PlayerList: Map=CQ-Gnaw Time=739 Players=0/32 Tickets=500,500 Round=2/3
+        ID    Name    Ping    Team    Squad    Score    Kills    Deaths    TK    CP
+        Time    Idle    Loadout    Role    RoleLvl    Vehicle    Hash    ProfileID
+        """
+        self.verbose2("playerlist : %r" % data)
         lines = data.split('\n')
-        match = re.match(r"PlayerList: Map=(?P<map>.+) Time=(?P<remaining_time>(-1|\d+)) Players=(?P<players>\d+)/(?P<total_slots>\d+) Tickets=(?P<tickets>,\d+) Round=(?P<current_round>\d+)/(?P<total_rounds>\d+)", lines[0])
+        match = re.match(r"PlayerList: "
+                         r"Map=(?P<map>.+) "
+                         r"Time=(?P<remaining_time>(-1|\d+)) "
+                         r"Players=(?P<players>\d+)/(?P<total_slots>\d+) "
+                         r"Tickets=(?P<tickets>,\d+) "
+                         r"Round=(?P<current_round>\d+)/(?P<total_rounds>\d+)", lines[0])
         if match:
             self.game.mapName = match.group('map')
             self.game.sv_maxclients = match.group('total_slots')
-            #self.game.gameType = 
             self.game.rounds = int(match.group('current_round'))
             self.game.g_maxrounds = int(match.group('total_rounds'))
             self.game.remaining_time = int(match.group('remaining_time'))
             self.game.tickets = int(match.group('tickets'))
+
         self.sync()
-        headers = ("ID", "Name", "Ping", "Team", "Squad", "Score", "Kills", "Deaths", 
-                   "TK", "CP", "Time", "Idle", "Loadout", "Role", "RoleLvl", "Vehicle", 
-                   "Hash", "ProfileID")
+
+        headers = ("ID", "Name", "Ping", "Team", "Squad", "Score", "Kills", "Deaths",
+                   "TK", "CP", "Time", "Idle", "Loadout", "Role", "RoleLvl", "Vehicle", "Hash", "ProfileID")
+
         for line in lines[2:]:
             if len(line):
                 data = line.split('\t')
@@ -205,9 +294,9 @@ ID    Name    Ping    Team    Squad    Score    Kills    Deaths    TK    CP    T
                     self.debug("no ProfileID found")
                     continue
                 if pdata['ProfileID'] == 0:
-                    self.debug("Profile id is 0")
+                    self.debug("ProfileID is 0")
                     continue
-                self.debug("player : %r", pdata)
+                self.debug("player: %r", pdata)
                 client = self.getClientOrCreate(pdata['ID'], pdata['ProfileID'], pdata['Name'])
                 if client:
                     client.name = pdata['Name']
@@ -217,7 +306,7 @@ ID    Name    Ping    Team    Squad    Score    Kills    Deaths    TK    CP    T
 
     @ger.gameEvent(r"^Login SUCCESS! User:(?P<user>.*)$")
     def onServerRconLoginSucess(self, user):
-        self.bot("B3 correctly authenticated on game server as user %r.", user)
+        self.bot("B3 correctly authenticated on game server as user %r", user)
         self.write("CHATLOGGING TRUE")
         self.write("DebugLogging TRUE")
         self.write("Punkbusterlogging TRUE")
@@ -229,22 +318,22 @@ ID    Name    Ping    Team    Squad    Score    Kills    Deaths    TK    CP    T
         
     @ger.gameEvent(r"^(?P<var>ChatLogging) now (?P<data>.*)$", r"^(?P<var>DebugLogging) now (?P<data>.*)$")
     def onServerVarChange(self, var, data):
-        self.info("%s is now : %r", var, data)
+        self.info("%s is now: %r", var, data)
         
     @ger.gameEvent(r'^CHAT: PlayerName="(?P<playerName>[^"]+)" Channel="(?P<channel>[^"]+)" Message="(?P<text>.*)"$')
     def onServerChat(self, playerName, channel, text):
         client = self.clients.getByExactName(playerName)
         if client is None:
-            self.debug("Could not find client")
+            self.debug("could not find client")
             return
         if channel == 'TeamSay':
             return self.getEvent('EVT_CLIENT_TEAM_SAY', text, client)
         elif channel == 'Say':
             return self.getEvent('EVT_CLIENT_SAY', text, client)
         else:
-            self.warning("unknown Chat channel : %s", channel)
+            self.warning("unknown chat channel : %s", channel)
 
-    @ger.gameEvent(r"""^.*: Player GUID Computed (?P<pbid>[0-9a-f]+)\(-\) \(slot #(?P<cid>\d+)\) (?P<ip>[0-9.]+):(?P<port>\d+) (?P<name>.+)$""")
+    @ger.gameEvent(r'^.*: Player GUID Computed (?P<pbid>[0-9a-f]+)\(-\) \(slot #(?P<cid>\d+)\) (?P<ip>[0-9.]+):(?P<port>\d+) (?P<name>.+)$')
     def onPunkbusterGUID(self, pbid, cid, ip, port, name):
         client = self.clients.getByCID(cid)
         if client:
@@ -252,8 +341,7 @@ ID    Name    Ping    Team    Squad    Score    Kills    Deaths    TK    CP    T
             client.ip = ip
             client.save()
 
-
-    @ger.gameEvent(r"""^.*: (?P<cid>\d+)\s+(?P<pbid>[a-z0-9]+)?\(-\) (?P<ip>[0-9.]+):(?P<port>\d+) (\w+)\s+(\d+)\s+([\d.]+)\s+(\d+)\s+\((.)\) "(?P<name>.+)"$""")
+    @ger.gameEvent(r'^.*: (?P<cid>\d+)\s+(?P<pbid>[a-z0-9]+)?\(-\) (?P<ip>[0-9.]+):(?P<port>\d+) (\w+)\s+(\d+)\s+([\d.]+)\s+(\d+)\s+\((.)\) "(?P<name>.+)"$')
     def onPunkbusterPlayerList(self, pbid, cid, ip, port, name):
         client = self.clients.getByCID(cid)
         if client:
@@ -262,40 +350,43 @@ ID    Name    Ping    Team    Squad    Score    Kills    Deaths    TK    CP    T
             client.ip = ip
             client.save()
 
-    @ger.gameEvent(re.compile(r"""^Banned Player: PlayerName="(?P<name>.+)" PlayerID=(?P<cid>(-1|\d+)) ProfileID=(?P<guid>\d+) Hash=(?P<hash>.*) BanDuration=(?P<duration>-?\d+)( Permanently)?$""", re.MULTILINE))
-    def onServerBan(self, name, cid, guid, hash, duration):
-        """ Kicked Player as part of ban: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDuration=-1
-Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDuration=-1 Permanently
-"""
-        # we are using storage instead of self.clients because the player might already
-        # have been kick
+    @ger.gameEvent(re.compile(r'^Banned Player: PlayerName="(?P<name>.+)" PlayerID=(?P<cid>(-1|\d+)) ProfileID=(?P<guid>\d+) Hash=(?P<hhash>.*) BanDuration=(?P<duration>-?\d+)( Permanently)?$', re.MULTILINE))
+    def onServerBan(self, name, cid, guid, hhash, duration):
+        """
+        Kicked Player as part of ban: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDuration=-1
+        Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDuration=-1 Permanently
+        """
+        # we are using storage instead of self.clients because the
+        # player might already have been kick
         client = self.storage.getClient(Client(guid=guid))
         if client:
             self.saybig("%s added to server banlist" % client.name)
         else:
-            self.error('Cannot find banned client')
+            self.error('cannot find banned client')
         # update banlist
         self.retrieveBanList()
         
-    @ger.gameEvent(re.compile(r"""^UnBanned Player: PlayerName="(?P<name>.+)" PlayerID=(-1|\d+) ProfileID=(?P<guid>\d+) Hash=(?P<hash>.*)$"""))
-    def onServerUnBan(self, name, guid, hash):
-        """UnBanned Player: PlayerName="" PlayerID=-1 ProfileID=1561500 Hash="""
+    @ger.gameEvent(re.compile(r'^UnBanned Player: PlayerName="(?P<name>.+)" PlayerID=(-1|\d+) ProfileID=(?P<guid>\d+) Hash=(?P<hhash>.*)$'))
+    def onServerUnBan(self, name, guid, hhash):
+        """
+        UnBanned Player: PlayerName="" PlayerID=-1 ProfileID=1561500 Hash=
+        """
         # we are using storage instead of self.clients because the player cannot be connected
         client = self.storage.getClient(Client(guid=guid))
         if client:
             self.saybig("%s removed from server banlist" % client.name)
         else:
-            self.error('Cannot find banned client')
+            self.error('cannot find banned client')
         # update banlist
         self.retrieveBanList()
         
-    @ger.gameEvent(r"CurrentMap is: (?P<map>.+)")
-    def onGetCurrentMapResponse(self, map):
-        self._async_responses['GetCurrentMap'] = map
+    @ger.gameEvent(r"CurrentMap is: (?P<mapname>.+)")
+    def onGetCurrentMapResponse(self, mapname):
+        self._async_responses['GetCurrentMap'] = mapname
         
-    @ger.gameEvent(r"NextMap is: (?P<map>.+)")
-    def onGetNextMapResponse(self, map):
-        self._async_responses['GetNextMap'] = map
+    @ger.gameEvent(r"NextMap is: (?P<mapname>.+)")
+    def onGetNextMapResponse(self, mapname):
+        self._async_responses['GetNextMap'] = mapname
         
     @ger.gameEvent(re.compile(r"^MapList: (?P<data>.+)", re.MULTILINE|re.DOTALL))
     def onMapListResponse(self, data):
@@ -314,20 +405,29 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
     def onTest(self, data):
         self.debug("TEST %r ", data)
 
+    # ------------------------------------- /!\  this one must be the last /!\ --------------------------------------- #
 
+    @ger.gameEvent(r'^(?P<data>.+)$')
+    def on_unknown_line(self, data):
+        """
+        Catch all lines that were not handled.
+        """
+        self.warning("unhandled log line : %s : please report this on the B3 forums" % data)
 
-    # =======================================
-    # implement parser interface
-    # =======================================
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def getPlayerList(self):
-        """\
-        Returns a list of client objects
+        """
+        Returns a list of client objects.
         """
         raise NotImplementedError
 
     def authorizeClients(self):
-        """\
+        """
         For all connected players, fill the client object with properties allowing to find 
         the user in the database (usualy guid, or punkbuster id, ip) and call the 
         Client.auth() method 
@@ -337,7 +437,7 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
         raise NotImplementedError
     
     def sync(self):
-        """\
+        """
         For all connected players returned by self.getPlayerList(), get the matching Client
         object from self.clients (with self.clients.getByCID(cid) or similar methods) and
         look for inconsistencies. If required call the client.disconnect() method to remove
@@ -364,24 +464,28 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
         return mlist
 
     def say(self, msg):
-        """\
-        broadcast a message to all players
+        """
+        Broadcast a message to all players.
+        :param msg: The message to be broadcasted
         """
         msg = prefixText([self.msgPrefix], self.stripColors(msg))
         for line in self.getWrap(msg):
             self.write('SAY %s' % line)
 
     def saybig(self, msg):
-        """\
-        broadcast a message to all players in a way that will catch their attention.
+        """
+        Broadcast a message to all players in a way that will catch their attention.
+        :param msg: The message to be broadcasted
         """
         msg = prefixText(['#' + self.msgPrefix + '#'], self.stripColors(msg))
         for line in self.getWrap(msg):
             self.write('SAY %s' % line)
 
     def message(self, client, text):
-        """\
-        display a message to a given player
+        """
+        Display a message to a given client
+        :param client: The client to who send the message
+        :param text: The message to be sent
         """
         # actually send private messages
         text = self.stripColors(text)
@@ -389,14 +493,21 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
             self.write('PLAYERSAY PlayerID=%(cid)s SayText="%(message)s"' % {'cid':client.cid, 'message':line})
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
-        """\
-        kick a given player
+        """
+        Kick a given client.
+        :param client: The client to kick
+        :param reason: The reason for this kick
+        :param admin: The admin who performed the kick
+        :param silent: Whether or not to announce this kick
         """
         self.debug('KICK : client: %s, reason: %s', client.cid, reason)
         if admin:
-            fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+            variables = self.getMessageVariables(client=client, reason=reason, admin=admin)
+            fullreason = self.getMessage('kicked_by', variables)
         else:
-            fullreason = self.getMessage('kicked', self.getMessageVariables(client=client, reason=reason))
+            variables = self.getMessageVariables(client=client, reason=reason)
+            fullreason = self.getMessage('kicked', variables)
+
         fullreason = self.stripColors(fullreason)
         reason = self.stripColors(reason)
 
@@ -412,16 +523,20 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
         client.disconnect()
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
-        """\
-        ban a given player
+        """
+        Ban a given client.
+        :param client: The client to ban
+        :param reason: The reason for this ban
+        :param admin: The admin who performed the ban
+        :param silent: Whether or not to announce this ban
         """
         self.debug('BAN : client: %s, reason: %s', client.cid, reason)
         if admin:
-            fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+            variables = self.getMessageVariables(client=client, reason=reason, admin=admin)
+            fullreason = self.getMessage('banned_by', variables)
         else:
-            fullreason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
-        fullreason = self.stripColors(fullreason)
-        reason = self.stripColors(reason)
+            variables = self.getMessageVariables(client=client, reason=reason)
+            fullreason = self.getMessage('banned', variables)
 
         if not silent and fullreason != '':
             self.say(fullreason)
@@ -430,28 +545,43 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
             self.write('BAN ProfileID=%s BanTime=0 Reason="%s"' % (client.guid, reason))
         else:
             self.write('BAN ProfileID=%s BanTime=0' % client.guid)
+
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
         client.disconnect()
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
-        """\
-        unban a given player
+        """
+        Unban a client.
+        :param client: The client to unban
+        :param reason: The reason for the unban
+        :param admin: The admin who unbanned this client
+        :param silent: Whether or not to announce this unban
         """
         self.write('UNBAN ProfileID=%s' % client.guid)
         if admin:
-            admin.message('Unbanned: Removed %s from banlist' %client.name)
+            admin.message('Unbanned: removed %s from banlist' % client.name)
         self.queueEvent(self.getEvent('EVT_CLIENT_UNBAN', reason, client))
 
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
-        """\
-        tempban a given player
+        """
+        Tempban a client.
+        :param client: The client to tempban
+        :param reason: The reason for this tempban
+        :param duration: The duration of the tempban
+        :param admin: The admin who performed the tempban
+        :param silent: Whether or not to announce this tempban
         """
         self.debug('TEMPBAN : client: %s, reason: %s', client.cid, reason)
         if admin:
-            fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=b3.functions.minutesStr(duration)))
+            banduration = b3.functions.minutesStr(duration)
+            variables = self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=banduration)
+            fullreason = self.getMessage('temp_banned_by', variables)
         else:
-            fullreason = self.getMessage('temp_banned', self.getMessageVariables(client=client, reason=reason, banduration=b3.functions.minutesStr(duration)))
+            banduration = b3.functions.minutesStr(duration)
+            variables = self.getMessageVariables(client=client, reason=reason, banduration=banduration)
+            fullreason = self.getMessage('temp_banned', variables)
+            
         fullreason = self.stripColors(fullreason)
         reason = self.stripColors(reason)
 
@@ -468,15 +598,15 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
                 self.write('BAN ProfileID=%s BanTime=%s Reason="%s"' % (client.guid, int(duration), reason))
             else:
                 self.write('BAN ProfileID=%s BanTime=%s' % (client.guid, int(duration)))
+
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason, 
                                                               'duration': duration, 
-                                                              'admin': admin}
-                                      , client))
+                                                              'admin': admin}, client))
         client.disconnect()
 
     def getMap(self):
-        """\
-        return the current map/level name
+        """
+        Return the current map/level name.
         """
         self._async_responses['GetCurrentMap'] = None
         self.write('GetCurrentMap')
@@ -486,9 +616,9 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
             count += 1
         return self._async_responses['GetCurrentMap']
 
-
     def getNextMap(self):
-        """Return the name of the next map
+        """
+        Return the name of the next map.
         """
         self._async_responses['GetNextMap'] = None
         self.write('GetNextMap')
@@ -498,10 +628,9 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
             count += 1
         return self._async_responses['GetNextMap']
 
-        
     def getMaps(self):
-        """\
-        return the available maps/levels name
+        """
+        Return the available maps/levels name
         """
         self._async_responses['MapList'] = None
         self.write('MapList')
@@ -511,34 +640,31 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
             count += 1
         return self._async_responses['MapList']
 
-
     def rotateMap(self):
-        """\
-        load the next map/level
+        """
+        Load the next map/level
         """
         self.write('NEXTMAP')
 
-        
-    def changeMap(self, map):
-        """\
-        load a given map/level
-        return a list of suggested map names in cases it fails to recognize the map that was provided
+    def changeMap(self, mapname):
         """
-        self.write('ForceMapChange %s' % map)
-
+        Load a given map/level
+        Return a list of suggested map names in cases it fails to recognize the map that was provided
+        """
+        self.write('ForceMapChange %s' % mapname)
 
     def getEasyName(self, mapname):
-        """ Change levelname to real name """
+        """
+        Change levelname to real name.
+        """
         raise NotImplementedError
 
-  
     def getPlayerPings(self, filter_client_ids=None):
-        """\
-        returns a dict having players' id for keys and players' ping for values
+        """
+        Returns a dict having players' id for keys and players' ping for values.
         """
         pings = {}
         clients = self.clients.getList()
-
         if filter_client_ids:
              clients = filter(lambda client: client.cid in filter_client_ids, clients)
 
@@ -550,8 +676,8 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
         return pings
 
     def getPlayerScores(self):
-        """\
-        returns a dict having players' id for keys and players' scores for values
+        """
+        Returns a dict having players' id for keys and players' scores for values
         """
         pings = {}
         clients = self.clients.getList()
@@ -562,7 +688,6 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
                 pass
         return pings
 
-
     def inflictCustomPenalty(self, type, client, reason=None, duration=None, admin=None, data=None):
         """
         Called if b3.admin.penalizeClient() does not know a given penalty type. 
@@ -571,77 +696,3 @@ Banned Player: PlayerName="Courgette" PlayerID=1 ProfileID=1561500 Hash= BanDura
         /!\ This method must return True if the penalty was inflicted.
         """
         pass
-
-    
-    # =======================================
-    # convenience methods
-    # =======================================
-
-    def getClient(self, cid):
-        """return a already connected client by searching the 
-        clients cid index.
-
-        This method can return None
-        """
-        client = self.clients.getByCID(cid)
-        if client:
-            return client
-        return None
-    
-    
-    def getClientOrCreate(self, cid, guid, name):
-        """return a already connected client by searching the 
-        clients guid index or create a new client
-        
-        This method can return None
-        """
-        client = self.clients.getByCID(cid)
-        if client is None:
-            client = self.clients.newClient(cid, guid=guid, name=name, team=b3.TEAM_UNKNOWN)
-            client.last_update_time = time.time()
-        return client
-    
-
-    def retrievePlayerList(self):
-        self.write('PLAYERLIST')
-
-
-    def retrieveBanList(self):
-        """\
-        Send RETRIEVE BANLIST to the server
-        """
-        self.write('BanList')
-
-
-    def getTeam(self, teamId):
-        team = str(teamId).lower()
-        if team == '0':
-            result = b3.TEAM_RED
-        elif team == '1':
-            result = b3.TEAM_BLUE
-        elif team == '2':
-            result = b3.TEAM_SPEC
-        elif team == '255':
-            result = b3.TEAM_UNKNOWN
-        else:
-            self.verbose2("unrecognized team id : %r", team)
-            result = b3.TEAM_UNKNOWN
-        return result
-
-
-    def queryServerInfo(self):
-        ## read game server info and store as much of it in self.game wich
-        ## is an instance of the b3.game.Game class
-        sq = SourceQuery.SourceQuery(self._publicIp, self._port, timeout=10)
-        try:
-            serverinfo = sq.info()
-            self.debug("server info : %r", serverinfo)
-            if 'map' in serverinfo:
-                self.game.mapName = serverinfo['map'].lower()
-            if 'hostname' in serverinfo:
-                self.game.sv_hostname = serverinfo['hostname']
-            if 'maxplayers' in serverinfo:
-                self.game.sv_maxclients = serverinfo['maxplayers']
-        except Exception, err:
-            self.exception(err)
-

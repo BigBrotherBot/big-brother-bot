@@ -30,6 +30,7 @@
 #                                - updated rcon command patterns
 # 30/07/2014 - 0.0.6 - Fenix     - fixes for the new getWrap implementation
 # 04/08/2014 - 0.0.7 - Fenix     - make use of self.getEvent when registering events: removes warnings
+# 29/08/2014 - 0.0.8 - Fenix     - syntax cleanup
 #
 # CREDITS
 # Based on the version 0.0.1, thanks ThorN.
@@ -48,7 +49,7 @@
 # - say (chat window, with "console: " in front)
 
 __author__ = 'xlr8or, ailmanki'
-__version__ = '0.0.7'
+__version__ = '0.0.8'
 
 import re
 import string
@@ -58,12 +59,13 @@ import b3.events
 import b3.parsers.punkbuster
 
 from b3.functions import prefixText
-from b3.parsers.q3a.abstractParser import AbstractParser
+from b3.parsers.q3a.abstract_parser import AbstractParser
 
 
 class EtproParser(AbstractParser):
 
     gameName = 'etpro'
+    PunkBuster = None
     IpsOnly = False    # Setting True will use ip's only for identification.
     IpCombi = False    # Setting True will replace last part of the guid with 2 segments of the ip.
 
@@ -86,50 +88,76 @@ class EtproParser(AbstractParser):
     _lineClear = re.compile(r'^(?:[0-9:.]+\s?)?')
 
     _lineFormats = (
-        #-------ET Lines----------------------------------------------------------------------------
-        #1579:03 ConnectInfo: 0: E24F9B2702B9E4A1223E905BF597FA92: ^w[^2AS^w]^2Lead: 3: 3: 24.153.180.106:2794
-        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<pbid>[0-9A-Z]{32}):\s*(?P<name>[^:]+):\s*'
-                   r'(?P<num1>[0-9]+):\s*(?P<num2>[0-9]+):\s*(?P<ip>[0-9.]+):(?P<port>[0-9]+))$', re.IGNORECASE),
+        # 1579:03 ConnectInfo: 0: E24F9B2702B9E4A1223E905BF597FA92: ^w[^2AS^w]^2Lead: 3: 3: 24.153.180.106:2794
+        re.compile(r'^(?P<action>[a-z]+):\s*'
+                   r'(?P<data>'
+                   r'(?P<cid>[0-9]+):\s*'
+                   r'(?P<pbid>[0-9A-Z]{32}):\s*'
+                   r'(?P<name>[^:]+):\s*'
+                   r'(?P<num1>[0-9]+):\s*'
+                   r'(?P<num2>[0-9]+):\s*'
+                   r'(?P<ip>[0-9.]+):'
+                   r'(?P<port>[0-9]+))$', re.IGNORECASE),
+
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<name>.+):\s+(?P<text>.*))$', re.IGNORECASE),
-        #
-        #1536:37Kill: 1 18 9: ^1klaus killed ^1[pura]fox.nl by MOD_MP40
-        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s*'
+
+        # 1536:37Kill: 1 18 9: ^1klaus killed ^1[pura]fox.nl by MOD_MP40
+        re.compile(r'^(?P<action>[a-z]+):\s*'
+                   r'(?P<data>'
+                   r'(?P<acid>[0-9]+)\s'
+                   r'(?P<cid>[0-9]+)\s'
+                   r'(?P<aweap>[0-9]+):\s*'
                    r'(?P<text>.*))$', re.IGNORECASE),
-        #
+
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<text>.*))$', re.IGNORECASE),
-        #
+
         # 5:41 Medic_Revive: 3 8
         re.compile(r'^(?P<action>[a-z_]+):\s*(?P<data>(?P<acid>[0-9]+)\s(?P<cid>.*))$', re.IGNORECASE),
-        #
+
         # 5:41 Dynamite_Plant: 3
         re.compile(r'^(?P<action>[a-z_]+):\s*(?P<data>(?P<cid>[0-9]+))$', re.IGNORECASE),
-        #
+
         # Falling through?
         re.compile(r'^(?P<action>[a-z_]+):\s*(?P<data>.*)$', re.IGNORECASE),
-        #
+
         #------ Addon / Mod Lines ------------------------------------------------------------------
-        #[QMM] lines:
+
         #[QMM] Successfully hooked g_log file
         re.compile(r'^\[(?P<action>[a-z]+)]\s(?P<data>.*)$', re.IGNORECASE),
-        # etpro lines:
+
         # 16:33.29 etpro privmsg: xlr8or[*] to xlr8or: hi
-        re.compile(r'^(?P<action>[a-z]+)\s(?P<data>(?P<command>[a-z]+):\s(?P<origin>.*)\sto\s(?P<target>.*):\s(?P<text>.*))$', re.IGNORECASE),
-        re.compile(r'^(?P<action>[a-z]+)\s(?P<data>(?P<command>[a-z]+):\s(?P<origin>.*)\sto\s(?P<target>.*):)$', re.IGNORECASE), # in case there is no privmsg text entered
+        re.compile(r'^(?P<action>[a-z]+)\s'
+                   r'(?P<data>'
+                   r'(?P<command>[a-z]+):\s'
+                   r'(?P<origin>.*)\sto\s'
+                   r'(?P<target>.*):\s'
+                   r'(?P<text>.*))$', re.IGNORECASE),
+
+        re.compile(r'^(?P<action>[a-z]+)\s'
+                   r'(?P<data>'
+                   r'(?P<command>[a-z]+):\s'
+                   r'(?P<origin>.*)\sto\s'
+                   r'(?P<target>.*):)$', re.IGNORECASE),  # in case there is no privmsg text entered
+
         re.compile(r'^(?P<action>[a-z]+)\s(?P<data>(?P<command>[a-z]+):\s(?P<text>.*))$', re.IGNORECASE)
     )
 
-    #15:11:15 map: goldrush
+    # 15:11:15 map: goldrush
     # num score ping name            lastmsg address               qport rate
     # --- ----- ---- --------------- ------- --------------------- ----- -----
     #   2     0   45 xlr8or[*]             0 145.99.135.227:27960  39678 25000
-    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<name>.*?)\s+'
-                            r'(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)\s+'
-                            r'(?P<rate>[0-9]+)$', re.I)
+    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+'
+                            r'(?P<score>[0-9-]+)\s+'
+                            r'(?P<ping>[0-9]+)\s+'
+                            r'(?P<name>.*?)\s+'
+                            r'(?P<last>[0-9]+)\s+'
+                            r'(?P<ip>[0-9.]+):'
+                            r'(?P<port>[0-9-]+)\s+'
+                            r'(?P<qport>[0-9]+)\s+'
+                            r'(?P<rate>[0-9]+)$', re.IGNORECASE)
 
     _reColor = re.compile(r'(\^.)|[\x00-\x20]|[\x7E-\xff]')
-
-    PunkBuster = None
 
     ## kill mode constants: modNames[meansOfDeath]
     MOD_UNKNOWN = '0'
@@ -213,15 +241,17 @@ class EtproParser(AbstractParser):
         MOD_TRIPMINE
     )
 
-#---------------------------------------------------------------------------------------------------
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  PARSER INITIALIZATION                                                                                         ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def startup(self):
-        # add the world client
-        
+        """
+        Called after the parser is created before run().
+        """
         client = self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
-        #if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
-        #    self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
-
         # get map from the status rcon command
         mapname = self.getMap()
         if mapname:
@@ -231,18 +261,23 @@ class EtproParser(AbstractParser):
         self._eventMap['warmup'] = self.getEventID('EVT_GAME_WARMUP')
         self._eventMap['restartgame'] = self.getEventID('EVT_GAME_ROUND_END')
 
-#---------------------------------------------------------------------------------------------------
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  PARSING                                                                                                       ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
-    # Added for debugging and identifying/catching log lineparts
     def getLineParts(self, line):
+        """
+        Parse a log line returning extracted tokens.
+        :param line: The line to be parsed
+        """
         m = None
         line = re.sub(self._lineClear, '', line, 1)
         for f in self._lineFormats:
             m = re.match(f, line)
             if m:
-                #self.debug('XLR--------> line matched %s' % f.pattern)
                 break
-
         if m:
             client = None
             target = None
@@ -250,38 +285,83 @@ class EtproParser(AbstractParser):
         elif '------' not in line:
             self.verbose('XLR--------> line did not match format: %s' % line)
 
-#---------------------------------------------------------------------------------------------------
+    def parseUserInfo(self, info):
+        """
+        Parse an infostring.
+        :param info: The infostring to be parsed.
+        """
+        player_id, info = string.split(info, ' ', 1)
+        if info[:1] != '\\':
+            info = '\\' + info
+
+        options = re.findall(r'\\([^\\]+)\\([^\\]+)', info)
+
+        data = {}
+        for o in options:
+            data[o[0]] = o[1]
+
+        data['cid'] = player_id
+        if 'n' in data:
+            data['name'] = data['n']
+
+        # split port from ip field
+        if 'ip' in data:
+            tip = string.split(data['ip'], ':', 1)
+            data['ip'] = tip[0]
+            data['port'] = tip[1]
+
+        t = 0
+        if 'team' in data:
+            t = data['team']
+        elif 't' in data:
+            t = data['t']
+
+        data['team'] = self.getTeam(t)
+        if 'cl_guid' in data:
+            data['cl_guid'] = data['cl_guid'].lower()
+
+        if 'pbid' in data:
+            data['pbid'] = data['pbid'].lower()
+
+        if 'cl_guid' in data and not 'pbid' in data:
+            data['pbid'] = data['cl_guid']
+
+        return data
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  EVENT HANDLERS                                                                                                ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def OnClientconnect(self, action, data, match=None):
         self._clientConnectID = data
         client = self.clients.getByCID(data)
         return self.getEvent('EVT_CLIENT_JOIN', client=client)
 
-    # Parse Userinfo
     def OnClientuserinfo(self, action, data, match=None):
         bclient = self.parseUserInfo(data)
-        self.verbose('Parsed user info %s' % bclient)
+        self.verbose('parsed user info: %s' % bclient)
         if bclient:
             client = self.clients.getByCID(bclient['cid'])
-
             if client:
                 # update existing client
                 for k, v in bclient.iteritems():
                     setattr(client, k, v)
             else:
-                #make a new client
-                if bclient.has_key('cl_guid'):
+                # make a new client
+                if 'cl_guid' in bclient:
                     guid = bclient['cl_guid']
                 else:
                     guid = 'unknown' 
                 
-                if not bclient.has_key('name'):
+                if not 'name' in bclient:
                     bclient['name'] = self._empty_name_default
 
-                if not bclient.has_key('ip') and guid == 'unknown':
+                if not 'ip' in bclient and guid == 'unknown':
                     # happens when a client is (temp)banned and got kicked so client was destroyed, but
                     # infoline was still waiting to be parsed.
-                    self.debug('Client disconnected. Ignoring.')
+                    self.debug('client disconnected: ignoring...')
                     return None
                 
                 nguid = ''
@@ -291,53 +371,52 @@ class EtproParser(AbstractParser):
                 # replace last part of the guid with two segments of the ip
                 elif self.IpCombi:
                     i = bclient['ip'].split('.')
-                    d = len(i[0])+len(i[1])
-                    nguid = guid[:-d]+i[0]+i[1]
-                # Fallback for clients that don't have a cl_guid, we'll use ip instead
+                    d = len(i[0]) + len(i[1])
+                    nguid = guid[:-d] + i[0] + i[1]
+                # fallback for clients that don't have a cl_guid, we'll use ip instead
                 elif guid == 'unknown':
                     nguid = bclient['ip']
 
                 if nguid != '':
                     guid = nguid
 
-                client = self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid })
+                client = self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'],
+                                                state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid })
 
         return None
 
-    # disconnect
     def OnKill(self, action, data, match=None):
         self.debug('OnKill: %s (%s)'%(match.group('aweap'),match.group('text')))
-        
         victim = self.clients.getByCID(match.group('cid'))
         if not victim:
-            self.debug('No victim')
+            self.debug('no victim')
             #self.OnClientuserinfo(action, data, match)
             return None
 
         weapon = match.group('aweap')
         if not weapon:
-            self.debug('No weapon')
+            self.debug('no weapon')
             return None
 
         ## Fix attacker
         if match.group('aweap') in self.Suicides:
             # those kills should be considered suicides
-            self.debug('OnKill: Fixed attacker, suicide detected: %s' %match.group('text'))
+            self.debug('OnKill: fixed attacker, suicide detected: %s' %match.group('text'))
             attacker = victim
         else:
             attacker = self.clients.getByCID(match.group('acid'))
-        ## end fix attacker
+        ## End fix attacker
           
         if not attacker:
             self.debug('No attacker')
             return None
 
-        dType = match.group('text').split()[-1:][0]
-        if not dType:
-            self.debug('No damageType, weapon: %s' % weapon)
+        damagetype = match.group('text').split()[-1:][0]
+        if not damagetype:
+            self.debug('no damage type, weapon: %s' % weapon)
             return None
 
-        event_key = 'EVT_CLIENT_KILL'
+        eventkey = 'EVT_CLIENT_KILL'
 
         # fix event for team change and suicides and tk
         if attacker.cid == victim.cid:
@@ -347,18 +426,16 @@ class EtproParser(AbstractParser):
                 self.verbose('Team Change Event Caught, exiting')
                 return None
             else:
-                event_key = 'EVT_CLIENT_SUICIDE'
+                eventkey = 'EVT_CLIENT_SUICIDE'
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
-            event_key = 'EVT_CLIENT_KILL_TEAM'
+            eventkey = 'EVT_CLIENT_KILL_TEAM'
 
         # if not defined we need a general hitloc (for xlrstats)
         if not hasattr(victim, 'hitloc'):
             victim.hitloc = 'body'
         
         victim.state = b3.STATE_DEAD
-        #self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' % (victim.name, attacker.name, weapon, victim.hitloc, dType))
-        # need to pass some amount of damage for the teamkill plugin - 100 is a kill
-        return self.getEvent(event_key, (100, weapon, victim.hitloc, dType), attacker, victim)
+        return self.getEvent(eventkey, (100, weapon, victim.hitloc, damagetype), attacker, victim)
 
     def OnClientbegin(self, action, data, match=None):
         return None
@@ -368,10 +445,8 @@ class EtproParser(AbstractParser):
         if client: client.disconnect()
         return None
 
-    # startgame
     def OnInitgame(self, action, data, match=None):
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)
-
         for o in options:
             if o[0] == 'mapname':
                 self.game.mapName = o[1]
@@ -384,8 +459,7 @@ class EtproParser(AbstractParser):
 
         self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
         self.game.startRound()
-
-        self.debug('Synchronizing client info')
+        self.debug('synchronizing client info')
         self.clients.sync()
 
         return self.getEvent('EVT_GAME_ROUND_START', self.game)
@@ -407,7 +481,7 @@ class EtproParser(AbstractParser):
             try:
                 text = match.group('text')
             except:
-                self.verbose('No message entered in privmsg!')
+                self.verbose('no message entered in privmsg!')
                 return None
             self.OnPrivMsg(match.group('origin'), match.group('target'), text)
         # an example on how to catch other etpro events:
@@ -421,7 +495,6 @@ class EtproParser(AbstractParser):
     def OnPrivMsg(self, origin, target, text):
         client = self.clients.getByExactName(origin)
         tclient = self.clients.getClientLikeName(target)
-
         if not client:
             #self.verbose('No Client Found')
             return None
@@ -437,50 +510,57 @@ class EtproParser(AbstractParser):
         self.verbose('text: %s, client: %s - %s, tclient: %s - %s' %(text, client.name, client.id, tclient.name, tclient.id))
         self.queueEvent(self.getEvent('EVT_CLIENT_PRIVATE_SAY', text, client, tclient))
 
-#---------------------------------------------------------------------------------------------------
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  OTHER METHODS                                                                                                 ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
-    def parseUserInfo(self, info):
-        #2 n\peyote\t\3\c\0\r\0\m\0000000\s\0000000\dn\\dr\0\w\0\lw\0\sw\0\mu\0\ref\0\p\0\ss\0\sc\0\tv\0\lc\0
-        #0 \g_password\none\cl_guid\0A337702493AF67BB0B0F8565CE8BC6C\cl_wwwDownload\1\name\thorn\rate\25000\snaps\20\cl_anonymous\0\cl_punkbuster\1\password\test\protocol\83\qport\16735\challenge\-79719899\ip\69.85.205.66:27960
-        playerID, info = string.split(info, ' ', 1)
+    def getTeam(self, team):
+        """
+        Return a B3 team given the team value.
+        :param team: The team value
+        """
+        if team == 'red':
+            team = 1
+        if team == 'blue':
+            team = 2
 
-        if info[:1] != '\\':
-            info = '\\' + info
+        team = int(team)
+        if team == 1:
+            return b3.TEAM_RED
+        elif team == 2:
+            return b3.TEAM_BLUE
+        elif team == 3:
+            return b3.TEAM_SPEC
+        else:
+            return b3.TEAM_UNKNOWN
 
-        options = re.findall(r'\\([^\\]+)\\([^\\]+)', info)
+    def defineGameType(self, gametype_int):
+        """
+        Translate the gametype to a readable format (also for teamkill plugin!)
+        """
+        gametype = str(gametype_int)
+        if gametype_int == '0':
+            gametype = 'sp'        # Single Player
+        elif gametype_int == '1':
+            gametype = 'cp'        # Co-Op
+        elif gametype_int == '2':
+            gametype = 'smo'       # Single Map Objective
+        elif gametype_int == '3':
+            gametype = 'sw'        # Stopwatch
+        elif gametype_int == '4':
+            gametype = 'ca'        # Campaign
+        elif gametype_int == '5':
+            gametype = 'lms'       # Last Man Standing
 
-        data = {}
-        for o in options:
-            data[o[0]] = o[1]
+        return gametype
 
-        data['cid'] = playerID
-
-        if data.has_key('n'):
-            data['name'] = data['n']
-
-        # split port from ip field
-        if data.has_key('ip'):
-            tip = string.split(data['ip'], ':', 1)
-            data['ip'] = tip[0]
-            data['port'] = tip[1]
-
-        t = 0
-        if data.has_key('team'):
-            t = data['team']
-        elif data.has_key('t'):
-            t = data['t']
-
-        data['team'] = self.getTeam(t)
-        if data.has_key('cl_guid'):
-            data['cl_guid'] = data['cl_guid'].lower()
-
-        if data.has_key('pbid'):
-            data['pbid'] = data['pbid'].lower()
-
-        if data.has_key('cl_guid') and not data.has_key('pbid'):
-            data['pbid'] = data['cl_guid']
-        
-        return data
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def message(self, client, text):
         """
@@ -515,46 +595,6 @@ class EtproParser(AbstractParser):
                     lines.append(self.getCommand('message', name=client.name, message=line))
         self.writelines(lines)
 
-    def getTeam(self, team):
-        if team == 'red': team = 1
-        if team == 'blue': team = 2
-        team = int(team)
-        if team == 1:
-            #self.verbose('Team is Red')
-            return b3.TEAM_RED
-        elif team == 2:
-            #self.verbose('Team is Blue')
-            return b3.TEAM_BLUE
-        elif team == 3:
-            #self.verbose('Team is Spec')
-            return b3.TEAM_SPEC
-        else:
-            return b3.TEAM_UNKNOWN
-
-    # Translate the gameType to a readable format (also for teamkill plugin!)
-    def defineGameType(self, gameTypeInt):
-
-        _gameType = ''
-        _gameType = str(gameTypeInt)
-        #self.debug('gameTypeInt: %s' % gameTypeInt)
-        
-        if gameTypeInt == '0':
-            _gameType = 'sp'        # Single Player
-        elif gameTypeInt == '1':
-            _gameType = 'cp'        # Co-Op
-        elif gameTypeInt == '2':
-            _gameType = 'smo'       # Single Map Objective
-        elif gameTypeInt == '3':
-            _gameType = 'sw'        # Stopwatch
-        elif gameTypeInt == '4':
-            _gameType = 'ca'        # Campaign
-        elif gameTypeInt == '5':
-            _gameType = 'lms'       # Last Man Standing
-        
-        #self.debug('_gameType: %s' % _gameType)
-        return _gameType
-
-
     def getMaps(self):
         return ['Command not supported!']
 
@@ -562,9 +602,14 @@ class EtproParser(AbstractParser):
         return 'Command not supported!'
 
     def sync(self):
+        """
+        For all connected players returned by self.get_player_list(), get the matching Client
+        object from self.clients (with self.clients.get_by_cid(cid) or similar methods) and
+        look for inconsistencies. If required call the client.disconnect() method to remove
+        a client from self.clients.
+        """
         plist = self.getPlayerList()
         mlist = {}
-
         for cid, c in plist.iteritems():
             client = self.clients.getByCID(cid)
             if client:
@@ -585,10 +630,9 @@ class EtproParser(AbstractParser):
                         self.debug('no-sync %s <> %s (disconnecting %s from slot %s)', client.ip, c['ip'], client.name, client.cid)
                         client.disconnect()
                 else:
-                    self.debug('no-sync: no guid or ip found.')
+                    self.debug('no-sync: no guid or ip found')
         
         return mlist
-
 
 # ---- Documentation --------------------------------------------------------------------------------
 #

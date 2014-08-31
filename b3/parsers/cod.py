@@ -1,85 +1,97 @@
+#
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-# 7/23/2005 - 1.1.0 - Added damage type to Damage and Kill event data
-# 27/6/2009 - 1.3.1 - xlr8or - Added Action Mechanism (event) for version 1.1.5 
-# 28/8/2009 - 1.3.2 - Bakes - added regexp for CoD4 suicides
-# 17/1/2010 - 1.3.3 - xlr8or - moved sync to InitGame (30 second delay)
-# 25/1/2010 - 1.4.0 - xlr8or - refactored cod parser series
-# 26/1/2010 - 1.4.1 - xlr8or - Added authorizeClients() for IpsOnly
-#                            - minor bugfixes after initial tests
-# 26/1/2010 - 1.4.2 - xlr8or - Added mapEnd() on Exitlevel
-# 27/1/2010 - 1.4.3 - xlr8or - Minor bugfix in sync() for IpsOnly
-# 28/1/2010 - 1.4.4 - xlr8or - Make sure cid is entering Authentication queue only once. 
-# 29/1/2010 - 1.4.5 - xlr8or - Minor rewrite of Auth queue check 
-# 31/1/2010 - 1.4.6 - xlr8or - Added unban for non pb servers
-#                            - Fixed bug: rcon command banid replaced by banclient
-# 28/3/2010 - 1.4.7 - xlr8or - Added PunkBuster activity check on startup
-# 18/4/2010 - 1.4.8 - xlr8or - Trying to prevent key errors in newPlayer()
-# 18/4/2010 - 1.4.9 - xlr8or - Forcing g_logsync to make server write unbuffered gamelogs
-# 01/5/2010 - 1.4.10 - xlr8or - delegate guid length checking to cod parser
-# 24/5/2010 - 1.4.11 - xlr8or - check if guids match on existing client objects when joining after a mapchange
-# 30/5/2010 - 1.4.12 - xlr8or - adding dummy setVersionExceptions() to enable overriding of variables based on the shortversion 
-# 10/8/2010 - 1.4.13 - xlr8or - fixed a bug where clients would be disconnected after mapchange.  
-# 10/9/2010 - 1.4.14 - xlr8or - don't save client.name on say and sayteam when name is the same (sanitization problem)
-# 24/10/2010 - 1.4.15 - xlr8or - some documentation on line formats
-# 07/11/2010 - 1.4.16 - GrosBedo - messages now support named $variables instead of %s
-# 08/11/2010 - 1.4.17 - GrosBedo - messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
-# 02/02/2011 - 1.4.18 - xlr8or - add cod7 suicide _lineformat
-# 16/03/2011 - 1.4.19 - xlr8or - improve PunkBuster check
-# 28/03/2011 - 1.4.20 - Bravo17 - CoD5 JT regexp fix
-# 09/04/2011 - 1.4.21 - Courgette - reflect that cid are not converted to int anymore in the clients module
-# 16/07/2011 - 1.4.22 - Freelander - Minor bugfix to flag disconnecting client properly if found in authentication queue 
-# 03/07/2011 - 1.4.23 - 82ndab.Bravo17 - adjust sync() timing for high slot count servers and login plugin
-#                       Sync now occurs 60 seconds after ExitLevel (map change) rather than 30 seconds after every round start
-# 11/09/2011 - 1.4.24 - 82ndab.Bravo17 - New client will now join Auth queue if slot shows as 'Disconnected' in Auth queue
-# 10/30/2011 - 1.4.25 - xlr8or - Add decoding to data in say, sayTeam and Tell methods
-# 01/28/2012 - 1.4.26 - 82ndab.Bravo17 - Add special case COD7 suicide regex where attacker team and name appear to be swapped in the console output
-# 10/03/2012 - 1.4.27 - 82ndab.Bravo17 - pbid now empty string instead of None if pb disabled
-# 07/07/2012 - 1.4.28 - Courgette - ensures the config file has option 'game_log' in section 'server'
-# 12/31/2012 - 1.4.29 - Courgette - accepts rcon status responses having negative port numbers
-# 01/02/2013 - 1.4.30 - Courgette - improve parsing rcon status status responses that are missing characters
-# 05/02/2014 - 1.4.31 - Fenix - fixed empty group in regular expression
-#                             - rewrote dictionary creation as literal
-#                             - correctly initialize variables before usage
-# 2014/07/30 - 1.4.32 - Fenix -  Fixes for the new getWrap implementation
+# 07/23/2005 - 1.1.0                     - added damage type to Damage and Kill event data
+# 27/06/2009 - 1.3.1    - xlr8or         - added action mechanism (event) for version 1.1.5
+# 28/08/2009 - 1.3.2    - Bakes          - added regexp for CoD4 suicides
+# 17/01/2010 - 1.3.3    - xlr8or         - moved sync to InitGame (30 second delay)
+# 25/01/2010 - 1.4.0    - xlr8or         - refactored cod parser series
+# 26/01/2010 - 1.4.1    - xlr8or         - added authorize_clients() for ipsonly
+#                                        - minor bugfixes after initial tests
+# 26/01/2010 - 1.4.2    - xlr8or         - added mapEnd() on Exitlevel
+# 27/01/2010 - 1.4.3    - xlr8or         - minor bugfix in sync() for ipsonly
+# 28/01/2010 - 1.4.4    - xlr8or         - make sure cid is entering Authentication queue only once.
+# 29/01/2010 - 1.4.5    - xlr8or         - minor rewrite of Auth queue check
+# 31/01/2010 - 1.4.6    - xlr8or         - added unban for non pb servers
+#                                        - fixed bug: rcon command banid replaced by banclient
+# 28/03/2010 - 1.4.7    - xlr8or         - added PunkBuster activity check on startup
+# 18/04/2010 - 1.4.8    - xlr8or         - trying to prevent key errors in new_player()
+# 18/04/2010 - 1.4.9    - xlr8or         - forcing g_logsync to make server write unbuffered gamelogs
+# 01/05/2010 - 1.4.10   - xlr8or         - delegate guid length checking to cod parser
+# 24/05/2010 - 1.4.11   - xlr8or         - check if guids match on existing client objects when joining after
+#                                          a mapchange
+# 30/05/2010 - 1.4.12   - xlr8or         - adding dummy set_version_exceptions() to enable overriding of variables based
+#                                          on the shortversion
+# 10/08/2010 - 1.4.13   - xlr8or         - fixed a bug where clients would be disconnected after mapchange.
+# 10/09/2010 - 1.4.14   - xlr8or         - don't save client.name on say and sayteam when name is the same (sanitization
+#                                          problem)
+# 24/10/2010 - 1.4.15   - xlr8or         - some documentation on line formats
+# 07/11/2010 - 1.4.16   - GrosBedo       - messages now support named $variables instead of %s
+# 08/11/2010 - 1.4.17   - GrosBedo       - messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
+# 02/02/2011 - 1.4.18   - xlr8or         - add cod7 suicide _lineformat
+# 16/03/2011 - 1.4.19   - xlr8or         - improve PunkBuster check
+# 28/03/2011 - 1.4.20   - Bravo17        - CoD5 JT regexp fix
+# 09/04/2011 - 1.4.21   - Courgette      - reflect that cid are not converted to int anymore in the clients module
+# 16/07/2011 - 1.4.22   - Freelander     - minor bugfix to flag disconnecting client properly if found in authentication
+#                                          queue
+# 03/07/2011 - 1.4.23   - 82ndab.Bravo17 - adjust sync() timing for high slot count servers and login plugin.
+#                                          sync now occurs 60 seconds after ExitLevel (map change) rather than 30
+#                                          seconds after every round start
+# 11/09/2011 - 1.4.24   - 82ndab.Bravo17 - new client will now join Auth queue if slot shows as 'Disconnected' in
+#                                          auth queue
+# 10/30/2011 - 1.4.25   - xlr8or         - add decoding to data in say, sayTeam and Tell methods
+# 01/28/2012 - 1.4.26   - 82ndab.Bravo17 - add special case COD7 suicide regex where attacker team and name appear to be
+#                                          swapped in the console output
+# 10/03/2012 - 1.4.27   - 82ndab.Bravo17 - pbid now empty string instead of None if pb disabled
+# 07/07/2012 - 1.4.28   - Courgette      - ensures the config file has option 'game_log' in section 'server'
+# 12/31/2012 - 1.4.29   - Courgette      - accepts rcon status responses having negative port numbers
+# 01/02/2013 - 1.4.30   - Courgette      - improve parsing rcon status status responses that are missing characters
+# 05/02/2014 - 1.4.31   - Fenix          - fixed empty group in regular expression
+#                                        - rewrote dictionary creation as literal
+#                                        - correctly initialize variables before usage
+# 30/07/2014 - 1.4.32   - Fenix          - fixes for the new getWrap implementation
+# 03/08/2014 - 1.5      - Fenix          - syntax cleanup
 
 __author__ = 'ThorN, xlr8or'
-__version__ = '1.4.32'
+__version__ = '1.5'
 
-import re
-import string
-import threading
+
 import b3
 import b3.events
 import b3.parsers.punkbuster
+import re
+import string
 
-from b3.parsers.q3a.abstractParser import AbstractParser
+from b3.parsers.q3a.abstract_parser import AbstractParser
+from threading import Timer
 
 class CodParser(AbstractParser):
 
     gameName = 'cod'
+    PunkBuster = None
     IpsOnly = False
 
-    _guidLength = 6 # (minimum) length of the guid
+    _guidLength = 6                                          # (minimum) length of the guid
+    _reMap = re.compile(r'map ([a-z0-9_-]+)', re.IGNORECASE) # to extract map names
     _pbRegExp = re.compile(r'^[0-9a-f]{32}$', re.IGNORECASE) # RegExp to match a PunkBuster ID
-    _logSync = 3 # Value for unbuffered game logging (append mode)
+    _logSync = 3                                             # Value for unbuffered game logging (append mode)
     _counter = {}
 
     _settings = {
@@ -97,109 +109,189 @@ class CodParser(AbstractParser):
     }
 
     _eventMap = {
-        'warmup': b3.events.EVT_GAME_WARMUP,
-        'restartgame': b3.events.EVT_GAME_ROUND_END
+        #'warmup': b3.events.EVT_GAME_WARMUP,
+        #'restartgame': b3.events.EVT_GAME_ROUND_END
     }
 
     # remove the time off of the line
     _lineClear = re.compile(r'^(?:[0-9:]+\s?)?')
-    #0:00 InitGame: \g_gametype\dm\gamename\Call of Duty
+
     _lineFormats = (
         # server events
         re.compile(r'^(?P<action>[a-z]+):\s?(?P<data>.*)$', re.IGNORECASE),
 
         # world kills
-        re.compile(
-            r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9-]{1,2});(?P<team>[a-z]+);(?P<name>[^;]+);(?P<aguid>[^;]*);(?P<acid>-1);(?P<ateam>world);(?P<aname>[^;]*);(?P<aweap>[a-z0-9_-]+);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$'
-            , re.IGNORECASE),
+        re.compile(r'^(?P<action>[A-Z]);'
+                   r'(?P<data>'
+                   r'(?P<guid>[^;]+);'
+                   r'(?P<cid>[0-9-]{1,2});'
+                   r'(?P<team>[a-z]+);'
+                   r'(?P<name>[^;]+);'
+                   r'(?P<aguid>[^;]*);'
+                   r'(?P<acid>-1);'
+                   r'(?P<ateam>world);'
+                   r'(?P<aname>[^;]*);'
+                   r'(?P<aweap>[a-z0-9_-]+);'
+                   r'(?P<damage>[0-9.]+);'
+                   r'(?P<dtype>[A-Z_]+);'
+                   r'(?P<dlocation>[a-z_]+))$', re.IGNORECASE),
+
         # player kills/damage
-        re.compile(
-            r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]*);(?P<name>[^;]+);(?P<aguid>[^;]+);(?P<acid>[0-9]{1,2});(?P<ateam>[a-z]*);(?P<aname>[^;]+);(?P<aweap>[a-z0-9_-]+);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$'
-            , re.IGNORECASE),
+        re.compile(r'^(?P<action>[A-Z]);'
+                   r'(?P<data>'
+                   r'(?P<guid>[^;]+);'
+                   r'(?P<cid>[0-9]{1,2});'
+                   r'(?P<team>[a-z]*);'
+                   r'(?P<name>[^;]+);'
+                   r'(?P<aguid>[^;]+);'
+                   r'(?P<acid>[0-9]{1,2});'
+                   r'(?P<ateam>[a-z]*);'
+                   r'(?P<aname>[^;]+);'
+                   r'(?P<aweap>[a-z0-9_-]+);'
+                   r'(?P<damage>[0-9.]+);'
+                   r'(?P<dtype>[A-Z_]+);'
+                   r'(?P<dlocation>[a-z_]+))$', re.IGNORECASE),
+
         # suicides (cod4/cod5)
-        re.compile(
-            r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]*);(?P<name>[^;]+);(?P<aguid>[^;]*);(?P<acid>-1);(?P<ateam>[a-z]*);(?P<aname>[^;]+);(?P<aweap>[a-z0-9_-]+);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$'
-            , re.IGNORECASE),
+        re.compile(r'^(?P<action>[A-Z]);'
+                   r'(?P<data>'
+                   r'(?P<guid>[^;]+);'
+                   r'(?P<cid>[0-9]{1,2});'
+                   r'(?P<team>[a-z]*);'
+                   r'(?P<name>[^;]+);'
+                   r'(?P<aguid>[^;]*);'
+                   r'(?P<acid>-1);'
+                   r'(?P<ateam>[a-z]*);'
+                   r'(?P<aname>[^;]+);'
+                   r'(?P<aweap>[a-z0-9_-]+);'
+                   r'(?P<damage>[0-9.]+);'
+                   r'(?P<dtype>[A-Z_]+);'
+                   r'(?P<dlocation>[a-z_]+))$', re.IGNORECASE),
+
         # suicides (cod7)
-        re.compile(
-            r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]*);(?P<name>[^;]+);(?P<aguid>[^;]*);(?P<acid>[0-9]{1,2});(?P<ateam>[a-z]*);(?P<aname>[^;]+);(?P<aweap>[a-z0-9_-]+);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$'
-            , re.IGNORECASE),
-        # For this one they appear to have swapped the attacker team and name in the output, hence the specific entry for attacker name as it is a unique case
-        re.compile(
-            r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]*);(?P<name>[^;]+);(?P<aguid>[^;]*);(?P<acid>[0-9]{1,2});(?P<aname>world);(?P<ateam>[a-z]*);(?P<aweap>none);(?P<damage>[0-9.]+);(?P<dtype>[A-Z_]+);(?P<dlocation>[a-z_]+))$'
-            , re.IGNORECASE),
+        re.compile(r'^(?P<action>[A-Z]);'
+                   r'(?P<data>'
+                   r'(?P<guid>[^;]+);'
+                   r'(?P<cid>[0-9]{1,2});'
+                   r'(?P<team>[a-z]*);'
+                   r'(?P<name>[^;]+);'
+                   r'(?P<aguid>[^;]*);'
+                   r'(?P<acid>[0-9]{1,2});'
+                   r'(?P<ateam>[a-z]*);'
+                   r'(?P<aname>[^;]+);'
+                   r'(?P<aweap>[a-z0-9_-]+);'
+                   r'(?P<damage>[0-9.]+);'
+                   r'(?P<dtype>[A-Z_]+);'
+                   r'(?P<dlocation>[a-z_]+))$', re.IGNORECASE),
 
+        # for this one they appear to have swapped the attacker team and name in the
+        # output, hence the specific entry for attacker name as it is a unique case
+        re.compile(r'^(?P<action>[A-Z]);'
+                   r'(?P<data>'
+                   r'(?P<guid>[^;]+);'
+                   r'(?P<cid>[0-9]{1,2});'
+                   r'(?P<team>[a-z]*);'
+                   r'(?P<name>[^;]+);'
+                   r'(?P<aguid>[^;]*);'
+                   r'(?P<acid>[0-9]{1,2});'
+                   r'(?P<aname>world);'
+                   r'(?P<ateam>[a-z]*);'
+                   r'(?P<aweap>none);'
+                   r'(?P<damage>[0-9.]+);'
+                   r'(?P<dtype>[A-Z_]+);'
+                   r'(?P<dlocation>[a-z_]+))$', re.IGNORECASE),
 
-        #team actions
-        re.compile(
-            r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]+);(?P<name>[^;]+);(?P<type>[a-z_]+))$'
-            , re.IGNORECASE),
+        # team actions
+        re.compile(r'^(?P<action>[A-Z]);'
+                   r'(?P<data>'
+                   r'(?P<guid>[^;]+);'
+                   r'(?P<cid>[0-9]{1,2});'
+                   r'(?P<team>[a-z]+);'
+                   r'(?P<name>[^;]+);'
+                   r'(?P<type>[a-z_]+))$', re.IGNORECASE),
 
         # Join Team (cod5)
-        re.compile(r'^(?P<action>JT);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<team>[a-z]+);(?P<name>[^;]+);)$',
-                   re.IGNORECASE),
+        re.compile(r'^(?P<action>JT);'
+                   r'(?P<data>'
+                   r'(?P<guid>[^;]+);'
+                   r'(?P<cid>[0-9]{1,2});'
+                   r'(?P<team>[a-z]+);'
+                   r'(?P<name>[^;]+);)$', re.IGNORECASE),
 
         # tell like events
-        re.compile(
-            r'^(?P<action>[a-z]+);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<name>[^;]+);(?P<aguid>[^;]+);(?P<acid>[0-9]{1,2});(?P<aname>[^;]+);(?P<text>.*))$'
-            , re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+);'
+                   r'(?P<data>'
+                   r'(?P<guid>[^;]+);'
+                   r'(?P<cid>[0-9]{1,2});'
+                   r'(?P<name>[^;]+);'
+                   r'(?P<aguid>[^;]+);'
+                   r'(?P<acid>[0-9]{1,2});'
+                   r'(?P<aname>[^;]+);'
+                   r'(?P<text>.*))$', re.IGNORECASE),
+
         # say like events
-        re.compile(r'^(?P<action>[a-z]+);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<name>[^;]+);(?P<text>.*))$',
-                   re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+);'
+                   r'(?P<data>'
+                   r'(?P<guid>[^;]+);'
+                   r'(?P<cid>[0-9]{1,2});'
+                   r'(?P<name>[^;]+);'
+                   r'(?P<text>.*))$', re.IGNORECASE),
 
         # all other events
-        re.compile(r'^(?P<action>[A-Z]);(?P<data>(?P<guid>[^;]+);(?P<cid>[0-9]{1,2});(?P<name>[^;]+))$', re.IGNORECASE)
-        )
-    # All Log Line Formats see bottom of File
+        re.compile(r'^(?P<action>[A-Z]);'
+                   r'(?P<data>'
+                   r'(?P<guid>[^;]+);'
+                   r'(?P<cid>[0-9]{1,2});'
+                   r'(?P<name>[^;]+))$', re.IGNORECASE)
+    )
 
-    #num score ping guid   name            lastmsg address               qport rate
-    #--- ----- ---- ------ --------------- ------- --------------------- ----- -----
-    #2     0   29 465030 <-{^4AS^7}-^3ThorN^7->^7       50 68.63.6.62:-32085      6597  5000
-    _regPlayer = re.compile(r"""
-^\s*
-  (?P<slot>[0-9]+)
-\s+
-  (?P<score>[0-9-]+)
-\s+
-  (?P<ping>[0-9]+)
-\s+
-  (?P<guid>[0-9]+)
-\s+
-  (?P<name>.*?)
-\s+
-  (?P<last>[0-9]+?)
-\s*
-  (?P<ip>(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]))
-:?
-  (?P<port>-?[0-9]{1,5})
-\s*
-  (?P<qport>-?[0-9]{1,5})
-\s+
-  (?P<rate>[0-9]+)
-$
-""", re.IGNORECASE | re.VERBOSE)
+    # num score ping guid   name            lastmsg address               qport rate
+    # --- ----- ---- ------ --------------- ------- --------------------- ----- -----
+    # 2       0   29 465030 ThorN                50 68.63.6.62:-32085      6597  5000
+    _regPlayer = re.compile(r'^\s*(?P<slot>[0-9]+)\s+'
+                            r'(?P<score>[0-9-]+)\s+'
+                            r'(?P<ping>[0-9]+)\s+'
+                            r'(?P<guid>[0-9]+)\s+'
+                            r'(?P<name>.*?)\s+'
+                            r'(?P<last>[0-9]+?)\s*'
+                            r'(?P<ip>(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}'
+                            r'(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])):?'
+                            r'(?P<port>-?[0-9]{1,5})\s*'
+                            r'(?P<qport>-?[0-9]{1,5})\s+'
+                            r'(?P<rate>[0-9]+)$', re.IGNORECASE | re.VERBOSE)
 
-    PunkBuster = None
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  PARSER INITIALIZATION                                                                                         ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def startup(self):
+        """
+        Called after the parser is created before run().
+        """
         if not self.config.has_option('server','game_log'):
             self.critical("your main config file is missing the 'game_log' setting in section 'server'")
             raise SystemExit(220)
 
         if self.IpsOnly:
-            self.debug('Authentication Method: Using Ip\'s instead of GUID\'s!')
+            self.debug('authentication method: Using IP instead of GUID!')
             # add the world client
+
         client = self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
 
         if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
-            # test if PunkBuster is active
             result = self.write('PB_SV_Ver')
             if result != '' and result[:7] != 'Unknown':
-                self.info('PunkBuster Active: %s' % result)
+                self.info('punkbuster active: %s' % result)
                 self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
             else:
-                self.warning(
-                    'PunkBuster test FAILED, Check your game server setup and B3 config! Disabling PB support!')
+                self.warning('punkbuster test failed: check your game server setup and B3 config!')
+                self.debug('disabling punkbuster support!')
+
+        # add event mappings
+        self._eventMap['warmup'] = self.getEventID('EVT_GAME_WARMUP')
+        self._eventMap['restartgame'] = self.getEventID('EVT_GAME_ROUND_END')
 
         # get map from the status rcon command
         mapname = self.getMap()
@@ -207,58 +299,53 @@ $
             self.game.mapName = mapname
             self.info('map is: %s' % self.game.mapName)
 
-        # Force g_logsync
-        self.debug('Forcing server cvar g_logsync to %s' % self._logSync)
+        # force g_logsync
+        self.debug('forcing server cvar g_logsync to %s' % self._logSync)
         self.write('set g_logsync %s' % self._logSync)
 
-        # get gamepaths/vars
         try:
             self.game.fs_game = self.getCvar('fs_game').getString()
         except:
             self.game.fs_game = None
-            self.warning('Could not query server for fs_game')
-
+            self.warning('could not query server for fs_game')
         try:
             self.game.fs_basepath = self.getCvar('fs_basepath').getString().rstrip('/')
             self.debug('fs_basepath: %s' % self.game.fs_basepath)
         except:
             self.game.fs_basepath = None
-            self.warning('Could not query server for fs_basepath')
-
+            self.warning('could not query server for fs_basepath')
         try:
             self.game.fs_homepath = self.getCvar('fs_homepath').getString().rstrip('/')
             self.debug('fs_homepath: %s' % self.game.fs_homepath)
         except:
             self.game.fs_homepath = None
-            self.warning('Could not query server for fs_homepath')
+            self.warning('could not query server for fs_homepath')
         try:
             self.game.shortversion = self.getCvar('shortversion').getString()
             self.debug('shortversion: %s' % self.game.shortversion)
         except:
             self.game.shortversion = None
-            self.warning('Could not query server for shortversion')
+            self.warning('could not query server for shortversion')
 
         self.setVersionExceptions()
-        self.debug('Parser started.')
+        self.debug('parser started')
 
-    def setVersionExceptions(self):
-        """\
-        Dummy to enable shortversionexceptions for cod2.
-        Use this function in inheriting parsers to override certain vars based on ie. shortversion
-        """
-        pass
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  EVENT HANDLERS                                                                                                ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
-    # kill
     def OnK(self, action, data, match=None):
         victim = self.getClient(victim=match)
         if not victim:
-            self.debug('No victim')
+            self.debug('no victim')
             self.OnJ(action, data, match)
             return None
 
         attacker = self.getClient(attacker=match)
         if not attacker:
-            self.debug('No attacker')
+            self.debug('no attacker')
             return None
 
         attacker.team = self.getTeam(match.group('ateam'))
@@ -266,29 +353,27 @@ $
         victim.team = self.getTeam(match.group('team'))
         victim.name = match.group('name')
 
-        event = b3.events.EVT_CLIENT_KILL
-
+        event_key = 'EVT_CLIENT_KILL'
         if attacker.cid == victim.cid:
-            event = b3.events.EVT_CLIENT_SUICIDE
+            event_key = 'EVT_CLIENT_SUICIDE'
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
-            event = b3.events.EVT_CLIENT_KILL_TEAM
+            event_key = 'EVT_CLIENT_KILL_TEAM'
 
         victim.state = b3.STATE_DEAD
-        return b3.events.Event(event,
-            (float(match.group('damage')), match.group('aweap'), match.group('dlocation'), match.group('dtype')),
-                               attacker, victim)
+        data = (float(match.group('damage')), match.group('aweap'), match.group('dlocation'), match.group('dtype'))
+        return self.getEvent(event_key, data=data, client=attacker, target=victim)
 
-    # damage
+
     def OnD(self, action, data, match=None):
         victim = self.getClient(victim=match)
         if not victim:
-            self.debug('No victim - attempt join')
+            self.debug('no victim - attempt join')
             self.OnJ(action, data, match)
             return None
 
         attacker = self.getClient(attacker=match)
         if not attacker:
-            self.debug('No attacker')
+            self.debug('no attacker')
             return None
 
         attacker.team = self.getTeam(match.group('ateam'))
@@ -296,107 +381,95 @@ $
         victim.team = self.getTeam(match.group('team'))
         victim.name = match.group('name')
 
-        event = b3.events.EVT_CLIENT_DAMAGE
+        eventkey = 'EVT_CLIENT_DAMAGE'
         if attacker.cid == victim.cid:
-            event = b3.events.EVT_CLIENT_DAMAGE_SELF
+            event = 'EVT_CLIENT_DAMAGE_SELF'
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
-            event = b3.events.EVT_CLIENT_DAMAGE_TEAM
+            event = 'EVT_CLIENT_DAMAGE_TEAM'
 
-        return b3.events.Event(event,
-            (float(match.group('damage')), match.group('aweap'), match.group('dlocation'), match.group('dtype')),
-                               attacker, victim)
+        data = (float(match.group('damage')), match.group('aweap'), match.group('dlocation'), match.group('dtype'))
+        return self.getEvent(eventkey, data=data, client=attacker, target=victim)
 
-    # disconnect
     def OnQ(self, action, data, match=None):
         client = self.getClient(match)
         if client:
             client.disconnect()
         else:
-            # Check if we're in the authentication queue
+            # check if we're in the authentication queue
             if match.group('cid') in self._counter:
                 # Flag it to remove from the queue
                 cid = match.group('cid')
                 self._counter[cid] = 'Disconnected'
-                self.debug(
-                    'slot %s has disconnected or was forwarded to our http download location, removing from authentication queue...' % cid)
+                self.debug('slot %s has disconnected or was forwarded to our http download location: '
+                           'removing from authentication queue...' % cid)
         return None
 
-    # join
     def OnJ(self, action, data, match=None):
         codguid = match.group('guid')
         cid = match.group('cid')
         name = match.group('name')
-
         if len(codguid) < self._guidLength:
             # invalid guid
-            self.verbose2('Invalid GUID: %s' % codguid)
+            self.verbose2('invalid GUID: %s' % codguid)
             codguid = None
 
         client = self.getClient(match)
 
         if client:
-            self.verbose2('ClientObject already exists')
+            self.verbose2('client object already exists')
             # lets see if the name/guids match for this client, prevent player mixups after mapchange (not with PunkBuster enabled)
             if not self.PunkBuster:
                 if self.IpsOnly:
                     # this needs testing since the name cleanup code may interfere with this next condition
                     if name != client.name:
-                        self.debug('This is not the correct client (%s <> %s), disconnecting' % (name, client.name))
+                        self.debug('this is not the correct client (%s <> %s): disconnecting..' % (name, client.name))
                         client.disconnect()
                         return None
                     else:
                         self.verbose2('client.name in sync: %s == %s' % (name, client.name))
                 else:
                     if codguid != client.guid:
-                        self.debug('This is not the correct client (%s <> %s), disconnecting' % (codguid, client.guid))
+                        self.debug('this is not the correct client (%s <> %s): disconnecting...' % (codguid, client.guid))
                         client.disconnect()
                         return None
                     else:
                         self.verbose2('client.guid in sync: %s == %s' % (codguid, client.guid))
-                # update existing client
+
             client.state = b3.STATE_ALIVE
-            # possible name changed
             client.name = name
-            # Join-event for mapcount reasons and so forth
-            return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
+            # join-event for mapcount reasons and so forth
+            return self.getEvent('EVT_CLIENT_JOIN', client=client)
         else:
             if self._counter.get(cid) and self._counter.get(cid) != 'Disconnected':
-                self.verbose('cid: %s already in authentication queue. Aborting Join.' % cid)
+                self.verbose('cid: %s already in authentication queue: aborting join' % cid)
                 return None
+
             self._counter[cid] = 1
-            t = threading.Timer(2, self.newPlayer, (cid, codguid, name))
+            t = Timer(2, self.newPlayer, (cid, codguid, name))
             t.start()
-            self.debug('%s connected, waiting for Authentication...' % name)
-            self.debug('Our Authentication queue: %s' % self._counter)
+            self.debug('%s connected: waiting for authentication...' % name)
+            self.debug('our authentication queue: %s' % self._counter)
 
-
-    # action
     def OnA(self, action, data, match=None):
-        #A;136528;6;allies;{^6AS^7}^6Honey;re_pickup
         client = self.getClient(match)
         if not client:
-            self.debug('No client - attempt join')
+            self.debug('no client - attempt join')
             self.OnJ(action, data, match)
-
             client = self.getClient(match)
-
             if not client:
                 return None
 
         client.name = match.group('name')
         actiontype = match.group('type')
-        self.verbose('OnAction: %s: %s' % (client.name, actiontype))
-        return b3.events.Event(b3.events.EVT_CLIENT_ACTION, actiontype, client)
+        self.verbose('on action: %s: %s' % (client.name, actiontype))
+        return self.getEvent('EVT_CLIENT_ACTION', data=actiontype, client=client)
 
     def OnSay(self, action, data, match=None):
-        #3:12 say: <-{AS}-ThorN->: sfs
         client = self.getClient(match)
         if not client:
-            self.debug('No client - attempt join')
+            self.debug('no client - attempt join')
             self.OnJ(action, data, match)
-
             client = self.getClient(match)
-
             if not client:
                 return None
 
@@ -409,21 +482,19 @@ $
             try:
                 data = data.decode(self.encoding)
             except Exception, msg:
-                self.warning('ERROR Decoding data: %r', msg)
+                self.warning('ERROR: decoding data: %r', msg)
 
         if client.name != match.group('name'):
             client.name = match.group('name')
-        return b3.events.Event(b3.events.EVT_CLIENT_SAY, data, client)
+
+        return self.getEvent('EVT_CLIENT_SAY', data=data, client=client)
 
     def OnSayteam(self, action, data, match=None):
-        #3:12 sayteam: <-{AS}-ThorN->: sfs
         client = self.getClient(match)
         if not client:
-            self.debug('No client - attempt join')
+            self.debug('no client - attempt join')
             self.OnJ(action, data, match)
-
             client = self.getClient(match)
-
             if not client:
                 return None
 
@@ -438,23 +509,20 @@ $
             try:
                 data = data.decode(self.encoding)
             except Exception, msg:
-                self.warning('ERROR Decoding data: %r', msg)
+                self.warning('ERROR: decoding data: %r', msg)
 
         if client.name != match.group('name'):
             client.name = match.group('name')
-        return b3.events.Event(b3.events.EVT_CLIENT_TEAM_SAY, data, client)
+
+        return self.getEvent('EVT_CLIENT_TEAM_SAY', data=data, client=client)
 
     def OnTell(self, action, data, match=None):
-        #4197:48tell;465030;2;ThorN;465030;2;ThorN;testing
         client = self.getClient(match)
         tclient = self.getClient(attacker=match)
-
         if not client:
-            self.debug('No client - attempt join')
+            self.debug('no client - attempt join')
             self.OnJ(action, data, match)
-
             client = self.getClient(match)
-
             if not client:
                 return None
 
@@ -467,14 +535,13 @@ $
             try:
                 data = data.decode(self.encoding)
             except Exception, msg:
-                self.warning('ERROR Decoding data: %r', msg)
+                self.warning('ERROR: decoding data: %r', msg)
 
         client.name = match.group('name')
-        return b3.events.Event(b3.events.EVT_CLIENT_PRIVATE_SAY, data, client, tclient)
+        return self.getEvent('EVT_CLIENT_PRIVATE_SAY', data=data, client=client, target=client)
 
     def OnInitgame(self, action, data, match=None):
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)
-
         for o in options:
             if o[0] == 'mapname':
                 self.game.mapName = o[1]
@@ -484,27 +551,150 @@ $
                 self.game.modName = o[1]
             else:
                 setattr(self.game, o[0], o[1])
-
         self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
         self.game.startRound()
-
-
-        return b3.events.Event(b3.events.EVT_GAME_ROUND_START, self.game)
+        return self.getEvent('EVT_GAME_ROUND_START', data=self.game)
 
     def OnExitlevel(self, action, data, match=None):
-        t = threading.Timer(60, self.clients.sync)
+        t = Timer(60, self.clients.sync)
         t.start()
         self.game.mapEnd()
-        return b3.events.Event(b3.events.EVT_GAME_EXIT, data)
+        return self.getEvent('EVT_GAME_EXIT', data=data)
 
     def OnItem(self, action, data, match=None):
         guid, cid, name, item = string.split(data, ';', 3)
         client = self.clients.getByCID(cid)
         if client:
-            return b3.events.Event(b3.events.EVT_CLIENT_ITEM_PICKUP, item, client)
+            return self.getEvent('EVT_CLIENT_ITEM_PICKUP', data=item, client=client)
         return None
 
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  OTHER METHODS                                                                                                 ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
+    def setVersionExceptions(self):
+        """
+        Dummy to enable shortversionexceptions for cod2.
+        Use this function in inheriting parsers to override certain vars based on ie. shortversion.
+        """
+        pass
+
+    def getTeam(self, team):
+        """
+        Return a B3 team given the team value.
+        :param team: The team value
+        """
+        if team == 'allies':
+            return b3.TEAM_BLUE
+        elif team == 'axis':
+            return b3.TEAM_RED
+        else:
+            return b3.TEAM_UNKNOWN
+
+    def connectClient(self, ccid):
+        """
+        Return the client matchign the given slot number.
+        :param ccid: The client slot number
+        """
+        players = self.getPlayerList()
+        self.verbose('connectClient() = %s' % players)
+        for cid, p in players.iteritems():
+            #self.debug('cid: %s, ccid: %s, p: %s' %(cid, ccid, p))
+            if int(cid) == int(ccid):
+                self.debug('%s found in status/playerList' % p['name'])
+                return p
+
+    def newPlayer(self, cid, codguid, name):
+        """
+        Build a new client using data in the authentication queue.
+        :param cid: The client slot number
+        :param codguid: The client GUID
+        :param name: The client name
+        """
+        if not self._counter.get(cid):
+            self.verbose('newPlayer thread no longer needed: key no longer available')
+            return None
+        if self._counter.get(cid) == 'Disconnected':
+            self.debug('%s disconnected: removing from authentication queue' % name)
+            self._counter.pop(cid)
+            return None
+        self.debug('newClient: %s, %s, %s' % (cid, codguid, name))
+        sp = self.connectClient(cid)
+        # PunkBuster is enabled, using PB guid
+        if sp and self.PunkBuster:
+            self.debug('sp: %s' % sp)
+            # test if pbid is valid, otherwise break off and wait for another cycle to authenticate
+            if not re.match(self._pbRegExp, sp['pbid']):
+                self.debug('PB-id is not valid: giving it another try')
+                self._counter[cid] += 1
+                t = Timer(4, self.newPlayer, (cid, codguid, name))
+                t.start()
+                return None
+            if self.IpsOnly:
+                guid = sp['ip']
+                pbid = sp['pbid']
+            else:
+                guid = sp['pbid']
+                pbid = guid # save pbid in both fields to be consistent with other pb enabled databases
+            ip = sp['ip']
+            if self._counter.get(cid):
+                self._counter.pop(cid)
+            else:
+                return None
+        # PunkBuster is not enabled, using codguid
+        elif sp:
+            if self.IpsOnly:
+                codguid = sp['ip']
+            if not codguid:
+                self.warning('missing or wrong CodGuid and PunkBuster is disabled: cannot authenticate!')
+                if self._counter.get(cid):
+                    self._counter.pop(cid)
+                return None
+            else:
+                guid = codguid
+                pbid = ''
+                ip = sp['ip']
+                if self._counter.get(cid):
+                    self._counter.pop(cid)
+                else:
+                    return None
+        elif self._counter.get(cid) > 10:
+            self.debug('could not auth %s: giving up...' % name)
+            if self._counter.get(cid):
+                self._counter.pop(cid)
+            return None
+        # Player is not in the status response (yet), retry
+        else:
+            if self._counter.get(cid):
+                self.debug('%s not yet fully connected: retrying...#:%s' % (name, self._counter.get(cid)))
+                self._counter[cid] += 1
+                t = Timer(4, self.newPlayer, (cid, codguid, name))
+                t.start()
+            else:
+                self.warning('all authentication attempts failed')
+            return None
+
+        client = self.clients.newClient(cid, name=name, ip=ip, state=b3.STATE_ALIVE,
+                                        guid=guid, pbid=pbid, data={'codguid': codguid})
+
+        self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', client=client))
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
+        """
+        Unban a client.
+        :param client: The client to unban
+        :param reason: The reason for the unban
+        :param admin: The admin who unbanned this client
+        :param silent: Whether or not to announce this unban
+        """
         if self.PunkBuster:
             if client.pbid:
                 result = self.PunkBuster.unBanGUID(client)
@@ -513,51 +703,43 @@ $
                     admin.message('^3Unbanned^7: %s^7: %s' % (client.exactName, result))
 
                 if admin:
-                    fullreason = self.getMessage('unbanned_by',
-                                                 self.getMessageVariables(client=client, reason=reason, admin=admin))
+                    variables = self.getMessageVariables(client=client, reason=reason, admin=admin)
+                    fullreason = self.getMessage('unbanned_by', variables)
                 else:
-                    fullreason = self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason))
+                    variables = self.getMessageVariables(client=client, reason=reason)
+                    fullreason = self.getMessage('unbanned', variables)
 
                 if not silent and fullreason != '':
                     self.say(fullreason)
+
             elif admin:
-                admin.message('%s^7 unbanned but has no punkbuster id' % client.exactName)
+                admin.message('%s ^7unbanned but has no punkbuster id' % client.exactName)
         else:
-            _name = self.stripColors(client.exactName)
-            result = self.write(self.getCommand('unban', name=_name, reason=reason))
+            name = self.stripColors(client.exactName)
+            result = self.write(self.getCommand('unban', name=name, reason=reason))
             if admin:
                 admin.message(result)
 
-    def getTeam(self, team):
-        if team == 'allies':
-            return b3.TEAM_BLUE
-        elif team == 'axis':
-            return b3.TEAM_RED
-        else:
-            return b3.TEAM_UNKNOWN
-
-    _reMap = re.compile(r'map ([a-z0-9_-]+)', re.I)
-
     def getMaps(self):
+        """
+        Return the available maps/levels name
+        """
         maps = self.getCvar('sv_mapRotation')
-
         nmaps = []
         if maps:
             maps = re.findall(self._reMap, maps[0])
-
             for m in maps:
                 if m[:3] == 'mp_':
                     m = m[3:]
-
                 nmaps.append(m.title())
-
         return nmaps
 
     def getNextMap(self):
+        """
+        Return the next map/level name to be played.
+        """
         if not self.game.mapName: return None
-
         maps = self.getCvar('sv_mapRotation')
-
         if maps:
             maps = re.findall(self._reMap, maps[0])
             gmap = self.game.mapName.strip().lower()
@@ -585,7 +767,13 @@ $
             return None
 
     def sync(self):
-        self.debug('Synchronising Clients.')
+        """
+        For all connected players returned by self.get_player_list(), get the matching Client
+        object from self.clients (with self.clients.get_by_cid(cid) or similar methods) and
+        look for inconsistencies. If required call the client.disconnect() method to remove
+        a client from self.clients.
+        """
+        self.debug('synchronising clients...')
         plist = self.getPlayerList(maxRetries=4)
         mlist = {}
 
@@ -609,93 +797,18 @@ $
                         self.debug('no-sync %s <> %s', client.ip, c['ip'])
                         client.disconnect()
                 else:
-                    self.debug('no-sync: no guid or ip found.')
+                    self.debug('no-sync: no guid or ip found')
 
         return mlist
 
-    def connectClient(self, ccid):
-        players = self.getPlayerList()
-        self.verbose('connectClient() = %s' % players)
-
-        for cid, p in players.iteritems():
-            #self.debug('cid: %s, ccid: %s, p: %s' %(cid, ccid, p))
-            if int(cid) == int(ccid):
-                self.debug('%s found in status/playerList' % p['name'])
-                return p
-
-    def newPlayer(self, cid, codguid, name):
-        if not self._counter.get(cid):
-            self.verbose('newPlayer thread no longer needed, Key no longer available')
-            return None
-        if self._counter.get(cid) == 'Disconnected':
-            self.debug('%s disconnected, removing from authentication queue' % name)
-            self._counter.pop(cid)
-            return None
-        self.debug('newClient: %s, %s, %s' % (cid, codguid, name))
-        sp = self.connectClient(cid)
-        # PunkBuster is enabled, using PB guid
-        if sp and self.PunkBuster:
-            self.debug('sp: %s' % sp)
-            # test if pbid is valid, otherwise break off and wait for another cycle to authenticate
-            if not re.match(self._pbRegExp, sp['pbid']):
-                self.debug('PB-id is not valid! Giving it another try.')
-                self._counter[cid] += 1
-                t = threading.Timer(4, self.newPlayer, (cid, codguid, name))
-                t.start()
-                return None
-            if self.IpsOnly:
-                guid = sp['ip']
-                pbid = sp['pbid']
-            else:
-                guid = sp['pbid']
-                pbid = guid # save pbid in both fields to be consistent with other pb enabled databases
-            ip = sp['ip']
-            if self._counter.get(cid):
-                self._counter.pop(cid)
-            else:
-                return None
-        # PunkBuster is not enabled, using codguid
-        elif sp:
-            if self.IpsOnly:
-                codguid = sp['ip']
-            if not codguid:
-                self.warning('Missing or wrong CodGuid and PunkBuster is disabled... cannot authenticate!')
-                if self._counter.get(cid):
-                    self._counter.pop(cid)
-                return None
-            else:
-                guid = codguid
-                pbid = ''
-                ip = sp['ip']
-                if self._counter.get(cid):
-                    self._counter.pop(cid)
-                else:
-                    return None
-        elif self._counter.get(cid) > 10:
-            self.debug('Couldn\'t Auth %s, giving up...' % name)
-            if self._counter.get(cid):
-                self._counter.pop(cid)
-            return None
-        # Player is not in the status response (yet), retry
-        else:
-            if self._counter.get(cid):
-                self.debug('%s not yet fully connected, retrying...#:%s' % (name, self._counter.get(cid)))
-                self._counter[cid] += 1
-                t = threading.Timer(4, self.newPlayer, (cid, codguid, name))
-                t.start()
-            else:
-                #Falling trough
-                self.warning('All authentication attempts failed.')
-            return None
-
-        client = self.clients.newClient(cid, name=name, ip=ip, state=b3.STATE_ALIVE, guid=guid, pbid=pbid,
-                                        data={'codguid': codguid})
-        self.queueEvent(b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client))
-
     def authorizeClients(self):
+        """
+        For all connected players, fill the client object with properties allowing to find
+        the user in the database (usualy guid, or punkbuster id, ip) and call the
+        Client.auth() method.
+        """
         players = self.getPlayerList(maxRetries=4)
         self.verbose('authorizeClients() = %s' % players)
-
         for cid, p in players.iteritems():
             sp = self.clients.getByCID(cid)
             if sp:
