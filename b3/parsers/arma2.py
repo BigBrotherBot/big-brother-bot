@@ -20,7 +20,7 @@
 #
 # 12-08-2014 - 0.3 - Fenix - syntax cleanup
 
-from b3.parsers.battleye.abstract_parser import AbstractParser
+from b3.parsers.battleye.abstractParser import AbstractParser
 
 
 __author__ = '82ndab-Bravo17'

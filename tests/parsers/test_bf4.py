@@ -58,7 +58,7 @@ class BF4TestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        from b3.parsers.frostbite2.abstract_parser import AbstractParser
+        from b3.parsers.frostbite2.abstractParser import AbstractParser
         from b3.fake import FakeConsole
         AbstractParser.__bases__ = (FakeConsole,)
         # Now parser inheritance hierarchy is :

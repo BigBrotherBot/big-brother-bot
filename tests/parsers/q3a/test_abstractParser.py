@@ -16,7 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-from b3.parsers.q3a.abstract_parser import AbstractParser
+from b3.parsers.q3a.abstractParser import AbstractParser
 from mock import Mock
 import unittest2 as unittest
 

@@ -51,7 +51,7 @@ import b3.parser
 import re
 import string
 
-from b3.parsers.q3a.abstract_parser import AbstractParser
+from b3.parsers.q3a.abstractParser import AbstractParser
 
 DEBUG_EVENTS = False
 

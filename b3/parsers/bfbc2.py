@@ -169,7 +169,7 @@ import b3.clients
 import b3.events
 
 from b3.functions import prefixText
-from b3.parsers.frostbite.abstract_parser import AbstractParser
+from b3.parsers.frostbite.abstractParser import AbstractParser
 from b3.parsers.frostbite.util import PlayerInfoBlock
 
 SAY_LINE_MAX_LENGTH = 100

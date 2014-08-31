@@ -25,7 +25,7 @@ from b3.clients import Client
 from b3.plugins.admin import AdminPlugin
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
-from b3.parsers.frostbite2.abstract_parser import AbstractParser
+from b3.parsers.frostbite2.abstractParser import AbstractParser
 
 sleep_patcher = None
 def setUpModule():

@@ -46,7 +46,7 @@ class Cod4TestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        from b3.parsers.q3a.abstract_parser import AbstractParser
+        from b3.parsers.q3a.abstractParser import AbstractParser
         from b3.fake import FakeConsole
         AbstractParser.__bases__ = (FakeConsole,)
         # Now parser inheritance hierarchy is :

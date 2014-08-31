@@ -59,7 +59,7 @@ import b3.events
 import b3.parsers.punkbuster
 
 from b3.functions import prefixText
-from b3.parsers.q3a.abstract_parser import AbstractParser
+from b3.parsers.q3a.abstractParser import AbstractParser
 
 
 class EtproParser(AbstractParser):

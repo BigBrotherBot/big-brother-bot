@@ -42,7 +42,7 @@ import re
 import string
 import threading
 
-from b3.parsers.q3a.abstract_parser import AbstractParser
+from b3.parsers.q3a.abstractParser import AbstractParser
 
 
 class SmgParser(AbstractParser):

@@ -28,7 +28,7 @@ import traceback
 import sys
 
 from b3.functions import prefixText
-from b3.parsers.frostbite2.abstract_parser import AbstractParser
+from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 from b3.parsers.frostbite2.util import MapListBlockError
 

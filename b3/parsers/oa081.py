@@ -75,7 +75,7 @@ import b3.events
 import re
 import string
 
-from b3.parsers.q3a.abstract_parser import AbstractParser
+from b3.parsers.q3a.abstractParser import AbstractParser
 
 
 class Oa081Parser(AbstractParser):
