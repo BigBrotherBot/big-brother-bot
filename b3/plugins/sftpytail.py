@@ -130,21 +130,27 @@ class SftpytailPlugin(b3.plugin.Plugin):
         """
         try:
             self._connectionTimeout = self.config.getint('settings', 'timeout')
+            if self._connectionTimeout < 0:
+                raise ValueError("timeout cannot be negative")
             self.debug('loaded settings/timeout: %s' % self._connectionTimeout)
         except NoOptionError:
             self.warning('could not find settings/timeout in config file, '
                          'using default: %s' % self._connectionTimeout)
         except ValueError, e:
+            self._connectionTimeout = SftpytailPlugin.default_connection_timeout
             self.error('could not load settings/timeout config value: %s' % e)
             self.debug('using default value (%s) for settings/timeout' % self._connectionTimeout)
 
         try:
             self._maxGap = self.config.getint('settings', 'maxGapBytes')
+            if self._maxGap < 0:
+                raise ValueError("maxGapBytes cannot be negative")
             self.debug('loaded settings/maxGapBytes: %s' % self._maxGap)
         except NoOptionError:
             self.warning('could not find settings/maxGapBytes in config file, '
                          'using default: %s' % self._maxGap)
         except ValueError, e:
+            self._maxGap = SftpytailPlugin.default_maxGap
             self.error('could not load settings/maxGapBytes config value: %s' % e)
             self.debug('using default value (%s) for settings/maxGapBytes' % self._maxGap)
 
