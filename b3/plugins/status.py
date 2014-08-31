@@ -1,7 +1,7 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -9,78 +9,56 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA    02110-1301    USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
-# 13/03/2014 - 1.4.18 - Fenix
-# * double check for server and client vars table to exists before attempting to create them
-# * use the correct data type for 'Updated' column
-# * enforce database tables drop->create so we do not have to bother with schema updates
-# * minor bugfixes
-# 28/23/2013 - 1.4.17 - Courgette
-# * close ftp connection
-# 30/11/2013 - 1.4.16 - Courgette
-# * save status info to database by default
-# 24/11/2013 - 1.4.15 - Fenix
-# * improved plugin configuration file loading
-# * fixed plugin syntax to match PEP8 coding style guide
-# 22/02/2013 - 1.4.14 - Courgette
-# * fix the sanitize bug
-# 10/02/2013 - 1.4.13 - Courgette
-# * add log message with more precise info when failing to sanitize data
-# 26/10/2012 - 1.4.12 - Courgette, xlr8or
-# * makes sure 'Client' tags have a 'score' attribute
-# * Better sync of DB and XML saving for XLRstats v3 webfront
-# 12/08/2012 - 1.4.11 - Courgette
-# * will provide more debugging info about errors while generating the XML document
-# 05/05/2012 - 1.4.10 - Courgette
-# * fixes reading config options 'svar_table' and 'client_table'
-# 19/07/2011 - 1.4.9 - Freelander
-# * fix errors during map change
-# 25/04/2011 - 1.4.8 - Courgette
-# * in config file, settings/output_file can now use shortcuts such as @b3 and @conf
-# 17/04/2011 - 1.4.7 - Courgette
-# * XML file generated is now using UTF-8 encoding
-# 17/04/2011 - 1.4.6 - Courgette
-# * unicode compliant
-# 30/03/2011 - 1.4.5 - SGT
-# * bugfix camelCasing timeLimit and fragLimit
-# 06/01/2011 - 1.4.4 - Gammelbob
-# * additionally stores current svars and clients in database
-# 13/08/2010 - 1.4.3 - xlr8or
-# * Added running roundtime and maptime
-# 08/08/2010 - 1.4.2 - xlr8or
-# * Moved 'Game section' before 'Clients section', XLRstats needs gameinfo before it adds clients to the playerlist
-# 21/03/2010 - 1.4.1 - Courgette
-# * does not fail if there is no player score available
-# * make errors more verbose
-# 23/11/2009 - 1.4.0 - Courgette
-# on bot shutdown, write an empty status.xml document.
-# add tests
-# 03/11/2009 - 1.3.1 - Bakes
-# XML code is now produced through xml.dom.minidocument rather than concatenation. This has a number of advantages.
-# 03/11/2009 - 1.3.0 - Bakes
-# Combined statusftp and status. Use syntax ftp://user:password@host/path/to/status.xml
-# 11/02/2009 - 1.2.7 - xlr8or
-# If masked show masked level instead of real level
-# 11/02/2009 - 1.2.6 - xlr8or
-# Sanitized xml data, cleaning ascii < 32 and > 126 (func is in functions.py)
-# 21/11/2008 - 1.2.5 - Anubis
-# Added PlayerScores
-# 12/03/2008 - 1.2.4 - Courgette
-# Properly escape strings to ensure valid xml
-# 11/30/2005 - 1.2.3 - ThorN
-# Use PluginCronTab instead of CronTab
-# 8/29/2005 - 1.2.0 - ThorN
-# Converted to use new event handlers
+#
+# 30/08/2014 - 1.5    - Fenix      - syntax cleanup
+#                                  - make use of the new onStop event handler
+# 13/03/2014 - 1.4.18 - Fenix      - double check for server and client vars table to exists before attempting to create
+#                                  - use the correct data type for 'Updated' column
+#                                  - enforce database tables drop->create so we do not have to bother with schema updates
+#                                  - minor bugfixes
+# 28/23/2013 - 1.4.17 - Courgette  - close ftp connection
+# 30/11/2013 - 1.4.16 - Courgette  - save status info to database by default
+# 24/11/2013 - 1.4.15 - Fenix      - improved plugin configuration file loading
+#                                  - PEP8 coding standards
+# 22/02/2013 - 1.4.14 - Courgette  - fix the sanitize bug
+# 10/02/2013 - 1.4.13 - Courgette  - add log message with more precise info when failing to sanitize data
+# 26/10/2012 - 1.4.12 - Courgette  - makes sure 'Client' tags have a 'score' attribute
+#                                  - better sync of DB and XML saving for XLRstats v3 webfront
+# 12/08/2012 - 1.4.11 - Courgette  - will provide more debugging info about errors while generating the XML document
+# 05/05/2012 - 1.4.10 - Courgette  - fixes reading config options 'svar_table' and 'client_table'
+# 19/07/2011 - 1.4.9  - Freelander - fix errors during map change
+# 25/04/2011 - 1.4.8  - Courgette  - in config file, settings/output_file can now use shortcuts such as @b3 and @conf
+# 17/04/2011 - 1.4.7  - Courgette  - XML file generated is now using UTF-8 encoding
+# 17/04/2011 - 1.4.6  - Courgette  - unicode compliant
+# 30/03/2011 - 1.4.5 - SGT         - bugfix camelCasing timeLimit and fragLimit
+# 06/01/2011 - 1.4.4 - Gammelbob   - additionally stores current svars and clients in database
+# 13/08/2010 - 1.4.3 - xlr8or      - added running roundtime and maptime
+# 08/08/2010 - 1.4.2 - xlr8or      - moved 'Game section' before 'Clients section', XLRstats needs gameinfo before it
+#                                    adds clients to the playerlist
+# 21/03/2010 - 1.4.1 - Courgette   - does not fail if there is no player score available
+#                                  - make errors more verbose
+# 23/11/2009 - 1.4.0 - Courgette   - on bot shutdown, write an empty status.xml document
+#                                  - add tests
+# 03/11/2009 - 1.3.1 - Bakes       - XML code is now produced through xml.dom.minidocument rather than concatenation.
+#                                    This has a number of advantages.
+# 03/11/2009 - 1.3.0 - Bakes       - combined statusftp and status. Use syntax ftp://user:password@host/path/to/status.xml
+# 02/11/2009 - 1.2.7 - xlr8or      - if masked show masked level instead of real level
+# 02/11/2009 - 1.2.6 - xlr8or      - sanitized xml data, cleaning ascii < 32 and > 126 (func is in functions.py)
+# 21/11/2008 - 1.2.5 - Anubis      - added PlayerScores
+# 12/03/2008 - 1.2.4 - Courgette   - properly escape strings to ensure valid xml
+# 30/11/2005 - 1.2.3 - ThorN       - use PluginCronTab instead of CronTab
+# 29/08/2005 - 1.2.0 - ThorN       - converted to use new event handlers
 
 __author__ = 'ThorN'
-__version__ = '1.4.18'
+__version__ = '1.5'
 
 import b3
 import b3.cron
@@ -90,10 +68,11 @@ import os
 import re
 import StringIO
 import time
+
 from b3 import functions
 from b3.functions import sanitizeMe
-from ftplib import FTP
 from ConfigParser import NoOptionError
+from ftplib import FTP
 from xml.dom.minidom import Document
 
 
@@ -109,70 +88,77 @@ class StatusPlugin(b3.plugin.Plugin):
     _enableDBclientSaving = True
     _svarTable = 'current_svars'
     _clientTable = 'current_clients'
-    
-    def onLoadConfig(self):
 
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   STARTUP                                                                                                      ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
+    def onLoadConfig(self):
+        """
+        Load plugin configuration.
+        """
         try:
 
             if self.config.get('settings', 'output_file')[0:6] == 'ftp://':
                 self._ftpstatus = True
                 self._ftpinfo = functions.splitDSN(self.config.get('settings', 'output_file'))
-                self.debug('Using custom remote path for settings/output_file: %s/%s' % (self._ftpinfo['host'],
+                self.debug('using custom remote path for settings/output_file: %s/%s' % (self._ftpinfo['host'],
                                                                                          self._ftpinfo['path']))
             else:
                 self._outputFile = self.config.getpath('settings', 'output_file')
-                self.debug('Using custom local path for settings/output_file: %s' % self._outputFile)
+                self.debug('using custom local path for settings/output_file: %s' % self._outputFile)
 
         except NoOptionError:
             self._outputFile = os.path.normpath(os.path.expanduser(self._outputFile))
-            self.warning('Could not find settings/output_file in config file, using default: %s' % self._outputFile)
+            self.warning('could not find settings/output_file in config file, using default: %s' % self._outputFile)
                 
         self._tkPlugin = self.console.getPlugin('tk')
 
         try:
             self._interval = self.config.getint('settings', 'interval')
-            self.debug('Using custom value for settings/interval: %s' % self._interval)
+            self.debug('using custom value for settings/interval: %s' % self._interval)
         except NoOptionError:
-            self.warning('Could not find settings/interval in config file, using default: %s' % self._interval)
+            self.warning('could not find settings/interval in config file, using default: %s' % self._interval)
         except ValueError, e:
-            self.error('Could not load settings/interval config value: %s' % e)
-            self.debug('Using default value (%s) for settings/interval' % self._interval)
+            self.error('could not load settings/interval config value: %s' % e)
+            self.debug('using default value (%s) for settings/interval' % self._interval)
 
         try:
             self._enableDBsvarSaving = self.config.getboolean('settings', 'enableDBsvarSaving')
-            self.debug('Using custom value for settings/enableDBsvarSaving: %s' % self._enableDBsvarSaving)
+            self.debug('using custom value for settings/enableDBsvarSaving: %s' % self._enableDBsvarSaving)
         except NoOptionError:
-            self.warning('Could not find settings/enableDBsvarSaving in config file, using default: %s' %
-                         self._enableDBsvarSaving)
+            self.warning('could not find settings/enableDBsvarSaving in config file, '
+                         'using default: %s' % self._enableDBsvarSaving)
         except ValueError, e:
-            self.error('Could not load settings/enableDBsvarSaving config value: %s' % e)
-            self.debug('Using default value (%s) for settings/enableDBsvarSaving' % self._enableDBsvarSaving)
+            self.error('could not load settings/enableDBsvarSaving config value: %s' % e)
+            self.debug('using default value (%s) for settings/enableDBsvarSaving' % self._enableDBsvarSaving)
 
         try:
             self._enableDBclientSaving = self.config.getboolean('settings', 'enableDBclientSaving')
-            self.debug('Using custom value for settings/enableDBclientSaving: %s' % self._enableDBclientSaving)
+            self.debug('using custom value for settings/enableDBclientSaving: %s' % self._enableDBclientSaving)
         except NoOptionError:
-            self.warning('Could not find settings/enableDBclientSaving in config file, using default: %s' %
-                         self._enableDBclientSaving)
+            self.warning('could not find settings/enableDBclientSaving in config file, '
+                         'using default: %s' % self._enableDBclientSaving)
         except ValueError, e:
-            self.error('Could not load settings/enableDBclientSaving config value: %s' % e)
-            self.debug('Using default value (%s) for settings/enableDBclientSaving' % self._enableDBclientSaving)
+            self.error('could not load settings/enableDBclientSaving config value: %s' % e)
+            self.debug('using default value (%s) for settings/enableDBclientSaving' % self._enableDBclientSaving)
 
         try:
             self._svarTable = self.config.get('settings', 'svar_table')
-            self.debug('Using custom table for saving server svars: %s' % self._svarTable)
+            self.debug('using custom table for saving server svars: %s' % self._svarTable)
         except NoOptionError:
-            self.debug('Using default table for saving server svars: %s' % self._svarTable)
+            self.debug('using default table for saving server svars: %s' % self._svarTable)
 
         try:
             self._clientTable = self.config.get('settings', 'client_table')
-            self.debug('Using custom table for saving current clients: %s' % self._clientTable)
+            self.debug('using custom table for saving current clients: %s' % self._clientTable)
         except NoOptionError:
-            self.debug('Using default table for saving current clients: %s' % self._clientTable)
+            self.debug('using default table for saving current clients: %s' % self._clientTable)
 
         if self._enableDBsvarSaving or self._enableDBclientSaving:
             tables = self.console.storage.getTables()
-
             # server vars table
             if self._enableDBsvarSaving:
                 if self._svarTable in tables:
@@ -185,6 +171,7 @@ class StatusPlugin(b3.plugin.Plugin):
                                 `value` varchar(255) NOT NULL,
                                 PRIMARY KEY  (`id`), UNIQUE KEY `name` (`name`)
                          ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;""" % self._svarTable
+
                 self.console.storage.query(sql)
 
             # client vars table
@@ -211,6 +198,7 @@ class StatusPlugin(b3.plugin.Plugin):
                                 `ColorName` VARCHAR(32) NOT NULL,
                                 PRIMARY KEY (`id`)
                          ) ENGINE = MYISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;""" % self._clientTable
+
                 self.console.storage.query(sql)
 
         if self._cronTab:
@@ -220,21 +208,35 @@ class StatusPlugin(b3.plugin.Plugin):
         self._cronTab = b3.cron.PluginCronTab(self, self.update, '*/%s' % self._interval)
         self.console.cron + self._cronTab
 
-    def onEvent(self, event):
-        if event.type == b3.events.EVT_STOP:
-            self.info('B3 stop/exit.. updating status')
-            # create an empty status document
-            xml = Document()
-            b3status = xml.createElement("B3Status")
-            b3status.setAttribute("Time", time.asctime())
-            xml.appendChild(b3status)
-            self.writeXML(xml.toprettyxml(indent="        "))
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   EVENTS                                                                                                       ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
+    def onStop(self, event):
+        self.info('B3 stop/exit.. updating status')
+        # create an empty status document
+        xml = Document()
+        b3status = xml.createElement("B3Status")
+        b3status.setAttribute("Time", time.asctime())
+        xml.appendChild(b3status)
+        self.writeXML(xml.toprettyxml(indent="        "))
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   OTHER METHODS                                                                                                ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def update(self):
+        """
+        Update XML/DB status.
+        """
         clients = self.console.clients.getList()
         score_list = self.console.getPlayerScores()
                  
-        self.verbose('Building XML status')
+        self.verbose('building XML status')
         xml = Document()
         # --- Main section
         b3status = xml.createElement("B3Status")
@@ -287,6 +289,7 @@ class StatusPlugin(b3.plugin.Plugin):
         game.setAttribute("MapTime", str(map_time))
         game.setAttribute("OnlinePlayers", str(len(clients)))
         b3status.appendChild(game)
+
         # For DB:
         self.storeServerinfo("Ip", str(self.console._publicIp))
         self.storeServerinfo("Port", str(self.console._port))
@@ -309,12 +312,14 @@ class StatusPlugin(b3.plugin.Plugin):
             self.storeServerinfo(k, v)
 
         if self._enableDBsvarSaving:
-            sql = """INSERT INTO %s (name, value) VALUES ('lastupdate',UNIX_TIMESTAMP())
-                     ON DUPLICATE KEY UPDATE value = VALUES(value);""" % self._svarTable
+            sql = """INSERT INTO %s (name, value)
+                          VALUES ('lastupdate', UNIX_TIMESTAMP())
+                     ON DUPLICATE KEY
+                          UPDATE value = VALUES(value);""" % self._svarTable
             try:
                 self.console.storage.query(sql)
             except Exception, e:
-                self.error('Could not insert svars: %s. sqlqry=%s' % (e, sql))
+                self.error('could not insert svars: %s [ SQL  = %s ] ' % (e, sql))
 
         # --- End Game section        
 
@@ -329,24 +334,28 @@ class StatusPlugin(b3.plugin.Plugin):
             self.console.storage.query(sql)
 
         for c in clients:
+
             if not c.name:
                 c.name = "@" + str(c.id)
+
             if c.exactName == "^7":
                 c.exactName = "@" + str(c.id) + "^7"
 
             if not c.maskedLevel:
-                _level = c.maxLevel
+                level = c.maxLevel
             else:
-                _level = c.maskedLevel
+                level = c.maskedLevel
 
             try:
+
                 client = xml.createElement("Client")
                 client.setAttribute("Name", sanitizeMe(c.name))
                 client.setAttribute("ColorName", sanitizeMe(c.exactName))
                 client.setAttribute("DBID", str(c.id))
                 client.setAttribute("Connections", str(c.connections))
                 client.setAttribute("CID", c.cid)
-                client.setAttribute("Level", str(_level))
+                client.setAttribute("Level", str(level))
+
                 if c.guid:
                     client.setAttribute("GUID", c.guid)
                 else:
@@ -355,15 +364,19 @@ class StatusPlugin(b3.plugin.Plugin):
                     client.setAttribute("PBID", c.pbid)
                 else:
                     client.setAttribute("PBID", '')
+
                 client.setAttribute("IP", c.ip)
                 client.setAttribute("Team", str(c.team))
                 client.setAttribute("Joined", str(time.ctime(c.timeAdd)))
                 client.setAttribute("Updated", str(time.ctime(c.timeEdit)))
+
                 if score_list and c.cid in score_list:
                     client.setAttribute("Score", str(score_list[c.cid]))
                 else:
                     client.setAttribute("Score", "")
+
                 client.setAttribute("State", str(c.state))
+
                 if self._enableDBclientSaving:
                     builder_key = ""
                     builder_value = ""
@@ -376,16 +389,18 @@ class StatusPlugin(b3.plugin.Plugin):
                     builder_key = builder_key[:-1]
                     builder_value = builder_value[:-1]
                     # and insert
-                    sql = """INSERT INTO %s (%s) VALUES (%s) ;""" % (self._clientTable, builder_key, builder_value)
+                    sql = """INSERT INTO %s (%s) VALUES (%s);""" % (self._clientTable, builder_key, builder_value)
                     try:
                         self.console.storage.query(sql)
                     except Exception, e:
-                        self.error('Could not insert clients: %s. sqlqry=%s' % (e, sql))
+                        self.error('could not insert clients: %s [ SQL = %s ]' % (e, sql))
 
                 b3clients.appendChild(client)
+
                 for k, v in c.data.iteritems():
                     data = xml.createElement("Data")
                     data.setAttribute("Name", "%s" % k)
+
                     try:
                         clean_data = sanitizeMe(str(v))
                     except Exception, err:
@@ -393,6 +408,7 @@ class StatusPlugin(b3.plugin.Plugin):
                         data.setAttribute("Value", "")
                     else:
                         data.setAttribute("Value", clean_data)
+
                     client.appendChild(data)
                         
                 if self._tkPlugin:
@@ -409,7 +425,7 @@ class StatusPlugin(b3.plugin.Plugin):
                                     attacker.setAttribute("Points", str(points))
                                     tkplugin.appendChild(attacker)
                                 except Exception, e:
-                                    self.warning('Could not append child node in XML tree: %s' % e)
+                                    self.warning('could not append child node in XML tree: %s' % e)
                                     pass
                                 
             except Exception, err:
@@ -421,20 +437,28 @@ class StatusPlugin(b3.plugin.Plugin):
         self.writeXML(xml.toprettyxml(encoding="UTF-8", indent="        "))
 
     def storeServerinfo(self, k, v):
+        """
+        Store server information in the database.
+        """
         if self._enableDBsvarSaving:
             #remove forbidden sql characters
-            _k = re.sub("'", "", str(k))
-            _v = re.sub("'", "", str(v))[:255]  # length of the database varchar field
-            sql = """INSERT INTO %s (name, value) VALUES ('%s','%s')
-                     ON DUPLICATE KEY UPDATE value = VALUES(value) ;""" % (self._svarTable, _k, _v)
+            k = re.sub("'", "", str(k))
+            v = re.sub("'", "", str(v))[:255]  # length of the database varchar field
+            sql = """INSERT INTO %s (name, value)
+                          VALUES ('%s','%s')
+                     ON DUPLICATE KEY
+                          UPDATE value = VALUES(value) ;""" % (self._svarTable, k, v)
             try:
                 self.console.storage.query(sql)
             except Exception, e:
-                self.error('Could not insert svars: %s. sqlqry=%s' % (e, sql))
+                self.error('could not insert svars: %s [ SQL = %s ]' % (e, sql))
 
     def writeXML(self, xml):
+        """
+        Store server information in the XML file.
+        """
         if self._ftpstatus:
-            self.debug('Uploading XML status to FTP server')
+            self.debug('uploading XML status to FTP server')
             ftp_file = StringIO.StringIO()
             ftp_file.write(xml)
             ftp_file.seek(0)
@@ -443,13 +467,12 @@ class StatusPlugin(b3.plugin.Plugin):
             ftp.storbinary('STOR ' + os.path.basename(self._ftpinfo['path']), ftp_file)
             ftp.quit()
         else:
-            self.debug('Writing XML status to %s', self._outputFile)
+            self.debug('writing XML status to %s', self._outputFile)
             with open(self._outputFile, 'w') as f:
                 f.write(xml)
 
 if __name__ == '__main__':
     from b3.fake import fakeConsole
-
     p = StatusPlugin(fakeConsole, "@b3/conf/plugin_status.xml")
     p.onStartup()
     p.update()

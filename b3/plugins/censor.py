@@ -1,7 +1,7 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -9,38 +9,32 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
-#    2014/04/06 - 3.2 - Fenix
-#       PEP8 coding style guide
-#    2012/07/03 - 3.1 - Courgette
-#       Fixes a bug wich prevented regular expression "\sd[i!1*]ck\s" to match for word "d!ck"
-#    2012/07/03 - 3.0.1 - Courgette
-#       Gives meaningful log messages when loading the config file
-#    2011/12/26 - 3.0 - Courgette
-#       Refactor and make the checks on raw text before checks on cleaned text. Add tests
-#    2/12/2011 - 2.2.2 - Bravo17
-#       Fix for reason keyword not working
-#    1/16/2010 - 2.2.1 - xlr8or
-#       Plugin can now be disabled with !disable censor
-#    1/16/2010 - 2.2.0 - xlr8or
-#       Added ignore_length as an optional configurable option
-#       Started debugging the badname checker
-#    8/13/2005 - 2.0.0 - ThorN
-#       Converted to use XML config
-#       Allow custom penalties for words and names
-#    7/23/2005 - 1.1.0 - ThorN
-#       Added data column to penalties table
-#       Put censored message/name in the warning data
+#
+# 2014/08/31 - 3.3   - Fenix     - syntax cleanup
+#                                - improved plugin configuration file loading
+# 2014/04/06 - 3.2   - Fenix     - PEP8 coding standards
+# 2012/07/03 - 3.1   - Courgette - fixes a bug wich prevented regular expression "\sd[i!1*]ck\s" to match for word "d!ck"
+# 2012/07/03 - 3.0.1 - Courgette - gives meaningful log messages when loading the config file
+# 2011/12/26 - 3.0   - Courgette - refactor and make the checks on raw text before checks on cleaned text. Add tests
+# 2011/12/02 - 2.2.2 - Bravo17   - fix for reason keyword not working
+# 2010/01/16 - 2.2.1 - xlr8or    - plugin can now be disabled with !disable censor
+# 2010/01/16 - 2.2.0 - xlr8or    - added ignore_length as an optional configurable option
+#                                - started debugging the badname checker
+# 2005/08/13 - 2.0.0 - ThorN     - converted to use XML config
+#                                - allow custom penalties for words and names
+# 2005/07/23 - 1.1.0 - ThorN     - added data column to penalties table
+#                                - put censored message/name in the warning data
 
 __author__ = 'ThorN, xlr8or, Bravo17, Courgette'
-__version__ = '3.2'
+__version__ = '3.3'
 
 import b3
 import re
@@ -49,19 +43,22 @@ import sys
 import threading
 import b3.events
 import b3.plugin
+
 from b3.config import XmlConfigParser
 from b3 import functions
+from ConfigParser import NoOptionError
 
 
 class PenaltyData:
-    def __init__(self, **kwargs):
-        for k, v in kwargs.iteritems():
-            setattr(self, k, v)
 
     type = None
     reason = None
     keyword = None
     duration = 0
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.iteritems():
+            setattr(self, k, v)
 
     def __repr__(self):
         return """Penalty(type=%r, reason=%r, keyword=%r, duration=%r)""" % (self.type, self.reason,
@@ -73,19 +70,21 @@ class PenaltyData:
 
 
 class CensorData:
-    def __init__(self, **kwargs):
-        for k, v in kwargs.iteritems():
-            setattr(self, k, v)
 
     name = None
     penalty = None
     regexp = None
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.iteritems():
+            setattr(self, k, v)
 
     def __repr__(self):
         return """CensorData(name=%r, penalty=%r, regexp=%r)""" % (self.name, self.penalty, self.regexp)
 
 
 class CensorPlugin(b3.plugin.Plugin):
+
     _adminPlugin = None
     _reClean = re.compile(r'[^0-9a-z ]+', re.I)
     _defaultBadWordPenalty = PenaltyData(type="warning", keyword="cuss")
@@ -95,8 +94,14 @@ class CensorPlugin(b3.plugin.Plugin):
     _badWords = None
     _badNames = None
 
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   STARTUP                                                                                                      ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
     def onStartup(self):
-        """\
+        """
         Initialize plugin
         """
         self._adminPlugin = self.console.getPlugin('admin')
@@ -110,22 +115,30 @@ class CensorPlugin(b3.plugin.Plugin):
         self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'))
 
     def onLoadConfig(self):
-        """\
-        Load plugin configuration
+        """
+        Load plugin configuration.
         """
         assert isinstance(self.config, XmlConfigParser)
+
         try:
             self._maxLevel = self.config.getint('settings', 'max_level')
-        except Exception, err:
-            self._maxLevel = 0
-            self.warning(err)
-            self.warning('using default value %s for settings:max_level' % self._maxLevel)
+            self.debug('loaded settings/max_level: %s' % self._maxLevel)
+        except NoOptionError:
+            self.warning('could not find settings/max_level in config file, '
+                         'using default: %s' % self._maxLevel)
+        except ValueError, e:
+            self.error('could not load settings/max_level config value: %s' % e)
+            self.debug('using default value (%s) for settings/max_level' % self._maxLevel)
+
         try:
             self._ignoreLength = self.config.getint('settings', 'ignore_length')
-        except Exception, err:
-            self._ignoreLength = 3
-            self.warning(err)
-            self.warning('using default value %s for settings:ignore_length' % self._ignoreLength)
+            self.debug('loaded settings/ignore_length: %s' % self._ignoreLength)
+        except NoOptionError:
+            self.warning('could not find settings/ignore_length in config file, '
+                         'using default: %s' % self._ignoreLength)
+        except ValueError, e:
+            self.error('could not load settings/ignore_length config value: %s' % e)
+            self.debug('using default value (%s) for settings/ignore_length' % self._ignoreLength)
 
         default_badwords_penalty_nodes = self.config.get('badwords/penalty')
         if len(default_badwords_penalty_nodes):
@@ -135,8 +148,8 @@ class CensorPlugin(b3.plugin.Plugin):
                                                       keyword=penalty.get('reasonkeyword'),
                                                       duration=functions.time2minutes(penalty.get('duration')))
         else:
-            self.warning('no default badwords penalty found in config. '
-                         'Using default : %s' % self._defaultBadNamePenalty)
+            self.warning('no default badwords penalty found in configuration file: '
+                         'using default (%s)' % self._defaultBadNamePenalty)
 
         default_badnames_penalty_nodes = self.config.get('badnames/penalty')
         if len(default_badnames_penalty_nodes):
@@ -146,8 +159,8 @@ class CensorPlugin(b3.plugin.Plugin):
                                                       keyword=penalty.get('reasonkeyword'),
                                                       duration=functions.time2minutes(penalty.get('duration')))
         else:
-            self.warning('no default badnames penalty found in config. '
-                         'Using default : %s' % self._defaultBadNamePenalty)
+            self.warning('no default badnames penalty found in configuration file: '
+                         'using default (%s)' % self._defaultBadNamePenalty)
 
         # load bad words into memory
         self._badWords = []
@@ -172,7 +185,14 @@ class CensorPlugin(b3.plugin.Plugin):
                                regexp=regexp_node.text if regexp_node is not None else None)
 
     def _add_bad_word(self, rulename, penalty=None, word=None, regexp=None):
-        if word is regexp is None:
+        """
+        Add a badword to be rule.
+        :param rulename: The name of the badword
+        :param penalty: The penalty to apply
+        :param word: The word to match
+        :param regexp: The regex to match
+        """
+        if word is None and regexp is None:
             self.warning("badword rule [%s] has no word and no regular expression to search for" % rulename)
         elif word is not None and regexp is not None:
             self.warning("badword rule [%s] cannot have both a word and regular expression to search for" % rulename)
@@ -187,7 +207,14 @@ class CensorPlugin(b3.plugin.Plugin):
             self.debug("badword rule '%s' loaded" % rulename)
 
     def _add_bad_name(self, rulename, penalty=None, word=None, regexp=None):
-        if word is regexp is None:
+        """
+        Add a badname to be censored.
+        :param rulename: The name of the rule
+        :param penalty: The penalty to apply
+        :param word: The word to match
+        :param regexp: The regex to match
+        """
+        if word is None and regexp is None:
             self.warning("badname rule [%s] has no word and no regular expression to search for" % rulename)
         elif word is not None and regexp is not None:
             self.warning("badname rule [%s] cannot have both a word and regular expression to search for" % rulename)
@@ -203,9 +230,9 @@ class CensorPlugin(b3.plugin.Plugin):
 
     def _get_censor_data(self, name, regexp, penalty, default):
         try:
-            regexp = re.compile(regexp, re.I)
+            regexp = re.compile(regexp, re.IGNORECASE)
         except re.error:
-            self.error('Invalid regular expression: %s - %s' % (name, regexp))
+            self.error('invalid regular expression: %s - %s' % (name, regexp))
             raise
 
         if penalty is not None:
@@ -218,11 +245,18 @@ class CensorPlugin(b3.plugin.Plugin):
 
         return CensorData(name=name, penalty=pd, regexp=regexp)
 
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   OTHER METHODS                                                                                                ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
     def onEvent(self, event):
-        """\
+        """
         Handle intercepted events
         """
         try:
+
             if not self.isEnabled():
                 return
             elif not event.client:
@@ -246,13 +280,12 @@ class CensorPlugin(b3.plugin.Plugin):
         except b3.events.VetoEvent:
             raise
         except Exception, msg:
-            self.error('Censor plugin error: %s - %s', msg, traceback.extract_tb(sys.exc_info()[2]))
+            self.error('censor plugin error: %s - %s', msg, traceback.extract_tb(sys.exc_info()[2]))
 
     def penalizeClient(self, penalty, client, data=''):
-        """\
-        This is the default penalisation for using bad language in say and teamsay
         """
-        # self.debug("%s"%((penalty.type, penalty.reason, penalty.keyword, penalty.duration),))
+        This is the default penalization for using bad language in say and teamsay
+        """
         # fix for reason keyword not working
         if penalty.keyword is None:
             penalty.keyword = penalty.reason
@@ -260,20 +293,24 @@ class CensorPlugin(b3.plugin.Plugin):
                                          penalty.keyword, penalty.duration, None, data)
 
     def penalizeClientBadname(self, penalty, client, data=''):
-        """\
-        This is the penalisation for bad names
+        """
+        This is the penalization for bad names
         """
         # self.debug("%s"%((penalty.type, penalty.reason, penalty.keyword, penalty.duration),))
         self._adminPlugin.penalizeClient(penalty.type, client, penalty.reason,
                                          penalty.keyword, penalty.duration, None, data)
 
     def checkBadName(self, client):
+        """
+        Check a client for a badname
+        :param client: The client to check
+        """
         if not client.connected:
-            self.debug('Client not connected?')
+            self.debug('client not connected')
             return
 
         cleaned_name = ' ' + self.clean(client.exactName) + ' '
-        self.info("Checking '%s'=>'%s' for badname" % (client.exactName, cleaned_name))
+        self.info("checking '%s'=>'%s' for badname" % (client.exactName, cleaned_name))
 
         was_penalized = False
         for w in self._badNames:
@@ -295,6 +332,11 @@ class CensorPlugin(b3.plugin.Plugin):
             return
 
     def checkBadWord(self, text, client):
+        """
+        Check a if a client said a badword
+        :param text: The said message
+        :param client: The client to check
+        """
         cleaned = ' ' + self.clean(text) + ' '
         text = ' ' + text + ' '
         self.debug("cleaned text: [%s]" % cleaned)
