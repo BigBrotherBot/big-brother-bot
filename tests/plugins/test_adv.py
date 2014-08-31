@@ -202,7 +202,7 @@ class Test_commands(AdvTestCase):
         self.joe.clearMessageHistory()
         self.p.cmd_advlist(data=None, client=self.joe)
         self.assertEqual([], self.p._msg.items)
-        self.assertEqual(['Adv: No ads loaded'], self.joe.message_history)
+        self.assertEqual(['Adv: no ads loaded'], self.joe.message_history)
 
     def test_advlist_one_item(self):
         self.init_plugin("""
@@ -293,7 +293,7 @@ class Test_commands(AdvTestCase):
         self.joe.clearMessageHistory()
         self.p.cmd_advrate(data="20s", client=self.joe)
         self.assertEqual('20s', self.p._rate)
-        self.assertEqual(['Adv: Rate set to 20 seconds'], self.joe.message_history)
+        self.assertEqual(['Adv: rate set to 20 seconds'], self.joe.message_history)
 
     def test_advrate_set_3min(self):
         self.init_plugin("""
@@ -312,7 +312,7 @@ class Test_commands(AdvTestCase):
         self.joe.clearMessageHistory()
         self.p.cmd_advrate(data="3", client=self.joe)
         self.assertEqual('3', self.p._rate)
-        self.assertEqual(['Adv: Rate set to 3 minutes'], self.joe.message_history)
+        self.assertEqual(['Adv: rate set to 3 minutes'], self.joe.message_history)
 
     #################### advrem ####################
 
@@ -333,7 +333,7 @@ class Test_commands(AdvTestCase):
         self.joe.clearMessageHistory()
         self.p.cmd_advrem(data="2", client=self.joe)
         self.assertEqual(['f00', 'test'], self.p._msg.items)
-        self.assertEqual(['Adv: Removed item: bar'], self.joe.message_history)
+        self.assertEqual(['Adv: removed item: bar'], self.joe.message_history)
 
     def test_advrem_no_arg(self):
         self.init_plugin("""

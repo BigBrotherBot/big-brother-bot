@@ -58,7 +58,7 @@ class BF4TestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        from b3.parsers.frostbite2.abstractParser import AbstractParser
+        from b3.parsers.frostbite2.abstract_parser import AbstractParser
         from b3.fake import FakeConsole
         AbstractParser.__bases__ = (FakeConsole,)
         # Now parser inheritance hierarchy is :
@@ -871,7 +871,7 @@ map: 20
             CommandFailedError(["Full"]))
         self.joe.says("!map siege")
         # THEN
-        self.assertListEqual(['Map list maximum size has been reached'], self.joe.message_history)
+        self.assertListEqual(['map list maximum size has been reached'], self.joe.message_history)
 
     def test_map_unknown(self):
         # WHEN

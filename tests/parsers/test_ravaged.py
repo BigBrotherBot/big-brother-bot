@@ -243,7 +243,7 @@ class Test_gamelog_parsing(RavagedTestCase):
         with patch.object(self.parser, 'warning') as warning_mock:
             self.parser.route_game_event('''f00 f00 f00''')
         self.assertFalse(self.queueEvent_mock.called)
-        warning_mock.assert_has_calls([call('unhandled log line : [f00 f00 f00]. Please report this on the B3 forums')])
+        warning_mock.assert_has_calls([call('unhandled log line : f00 f00 f00 : please report this on the B3 forums')])
 
 
     def test_connected(self):

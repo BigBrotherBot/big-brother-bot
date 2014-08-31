@@ -249,7 +249,7 @@ class FunctionalTest(AdminTestCase):
         superadmin.says("!permban bill rule1")
         # THEN
         superadmin.says('!baninfo @%s' % bill.id)
-        self.assertListEqual(['banned: bill (@2) has been added to banlist', 'bill has 1 active bans'],
+        self.assertListEqual(['Banned: bill (@2) has been added to banlist', 'bill has 1 active bans'],
                              superadmin.message_history)
 
 

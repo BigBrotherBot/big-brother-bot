@@ -36,7 +36,7 @@ class Arma3TestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        from b3.parsers.battleye.abstractParser import AbstractParser
+        from b3.parsers.battleye.abstract_parser import AbstractParser
         from b3.fake import FakeConsole
         AbstractParser.__bases__ = (FakeConsole,)
         # Now parser inheritance hierarchy is :

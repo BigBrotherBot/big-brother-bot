@@ -2569,7 +2569,7 @@ class AdminPlugin(b3.plugin.Plugin):
 
         a = a.strip()
         n = '%sPlugin' % data.title()
-        cmd.sayLoudOrPM(client, '%s v ^3%s ^7by ^3%s' % (n, v, a))
+        cmd.sayLoudOrPM(client, '^7%s ^7v^3%s ^7by ^3%s' % (n, v, a))
 
 
 class Command:
