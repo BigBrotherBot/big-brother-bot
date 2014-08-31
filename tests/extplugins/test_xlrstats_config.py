@@ -1591,31 +1591,6 @@ class Test_conf_tables_playerstats(Conf_tables_test_case):
         self.assertFalse(self.p._defaultTableNames)
 
 
-class Test_conf_tables_playerstats(Conf_tables_test_case):
-    DEFAULT_VALUE = 'xlr_playerstats'
-
-    def test_missing(self):
-        # WHEN
-        self.init('')
-        # THEN
-        self.assertEqual(self.DEFAULT_VALUE, self.p.playerstats_table)
-        self.assertTrue(self.p._defaultTableNames)
-
-    def test_empty(self):
-        # WHEN
-        self.init('playerstats: ')
-        # THEN
-        self.assertEqual(self.DEFAULT_VALUE, self.p.playerstats_table)
-        self.assertTrue(self.p._defaultTableNames)
-
-    def test_nominal(self):
-        # WHEN
-        self.init('playerstats: f00')
-        # THEN
-        self.assertEqual('f00', self.p.playerstats_table)
-        self.assertFalse(self.p._defaultTableNames)
-
-
 class Test_conf_tables_weaponstats(Conf_tables_test_case):
     DEFAULT_VALUE = 'xlr_weaponstats'
 

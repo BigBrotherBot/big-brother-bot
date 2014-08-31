@@ -48,7 +48,6 @@ import b3.config
 import b3.events
 import b3.functions
 
-from b3.decorators import deprecated
 from ConfigParser import NoOptionError
 
 
@@ -377,16 +376,16 @@ class Plugin:
     ##                                                                                                                ##
     ####################################################################################################################
 
-    @deprecated
     def handle(self, event):
         """
         Deprecated. Use onEvent().
         """
+        self.warning('use of deprecated method: handle()')
         pass
 
-    @deprecated
     def startup(self):
         """
         Deprecated. Use onStartup().
         """
+        self.warning('use of deprecated method: startup()')
         pass

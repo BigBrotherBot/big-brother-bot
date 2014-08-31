@@ -78,7 +78,6 @@ import b3.functions
 import b3.parser
 import b3.cvar
 
-from b3.decorators import deprecated
 from b3.parsers.q3a import rcon
 from b3.parsers.punkbuster import PunkBuster
 from b3.functions import prefixText
@@ -814,13 +813,13 @@ class AbstractParser(b3.parser.Parser):
         else:
             self.error('%s is not a valid cvar name', cvar_name)
 
-    @deprecated
     def set(self, cvar_name, value):
         """
         Set a CVAR on the server.
         :param cvar_name: The CVAR name
         :param value: The CVAR value
         """
+        self.warning('use of deprecated method: set(): please use: setCvar()')
         self.setCvar(cvar_name, value)
 
     def getMap(self):

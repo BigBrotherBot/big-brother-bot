@@ -18,10 +18,11 @@
 #
 # CHANGELOG
 #
-# 19/07/2014 - 1.2 - Fenix - added @deprecated decorator: mark a callable as deprecated
+# 19/07/2014 - 1.2   - Fenix - added @deprecated decorator: mark a callable as deprecated
+# 30/08/2014 - 1.2.1 - Fenix - removed @deprecated decorator since it's not compatible with python 2.6
 
 __author__ = 'Courgette, Fenix'
-__version__ = '1.2'
+__version__ = '1.2.1'
 
 import re
 import warnings
@@ -167,26 +168,3 @@ class GameEventRouter(object):
             if match:
                 return hfunc, match.groupdict()
         return None, {}
-
-########################################################################################################################
-##                                                                                                                    ##
-##    DEPRECATION WARNING                                                                                             ##
-##                                                                                                                    ##
-########################################################################################################################
-
-warnings.simplefilter('always', DeprecationWarning)
-
-
-def deprecated(func, msg=None):
-    """
-    A decorator which can be used to mark functions
-    as deprecated. It will result in a deprecation warning
-    being shown when the function is used.
-    """
-    message = msg or "use of deprecated function '{}`.".format(func.__name__)
-
-    @functools.wraps(func)
-    def wrapper_func(*args, **kwargs):
-        warnings.warn(message, DeprecationWarning, stacklevel=2)
-        return func(*args, **kwargs)
-    return wrapper_func

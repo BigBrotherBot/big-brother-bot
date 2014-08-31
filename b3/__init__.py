@@ -35,7 +35,6 @@ import signal
 import platform
 import config
 
-from b3.decorators import deprecated
 from b3.functions import main_is_frozen
 from b3.update import checkUpdate
 from b3.setup import Setup
