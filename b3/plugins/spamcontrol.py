@@ -1,7 +1,7 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-# 
+# Copyright (C) 2009 James "Bakes" Baker
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -11,32 +11,25 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-# 2005/08/29 - 1.1.0 - ThorN
-#   - Converted to use new event handlers
-# 2012/08/11 - 1.2 - Courgette
-#   - Can define group for using the !spamins command different than mod_level
-#   - Can define an alias for the !spamins command
-#   - fix bug where the !spamins command would not accept uppercase argument
-#   - refactor the plugin to allow game specific behavior to be injected at runtime
-# 2012/08/11 - 1.3 - Courgette
-#   - improve behavior when a spammer received a warning but continues to spam
-# 2012/12/18 - 1.3.1 - Courgette
-#   - fix regression that prevented the !spamins command to be registered since v1.2
-# 2014/04/07 - 1.4 - Fenix
-#   - PEP8 coding style guide
-#   - improved plugin startup and configuration file loading
-# 2014/05/02 - 1.4.1 - Fenix
-#   - Make use of the new getCmd function from functions module
-# 2014/07/23 - 1.4.2 - Fenix
-#   - Let the plugin react on EVT_CLIENT_PRIVATE_SAY
-#
+# 2005/08/29 - 1.1.0 - ThorN     - converted to use new event handlers
+# 2012/08/11 - 1.2   - Courgette - Can define group for using the !spamins command different than mod_level
+#                                - can define an alias for the !spamins command
+#                                - fix bug where the !spamins command would not accept uppercase argument
+#                                - refactor the plugin to allow game specific behavior to be injected at runtime
+# 2012/08/11 - 1.3   - Courgette - improve behavior when a spammer received a warning but continues to spam
+# 2012/12/18 - 1.3.1 - Courgette - fix regression that prevented the !spamins command to be registered since v1.2
+# 2014/04/07 - 1.4   - Fenix     - PEP8 coding style guide
+#                                - improved plugin startup and configuration file loading
+# 2014/05/02 - 1.4.1 - Fenix     - make use of the new getCmd function from functions module
+# 2014/07/23 - 1.4.2 - Fenix     - let the plugin react on EVT_CLIENT_PRIVATE_SAY
+# 2014/08/31 - 1.4.3 - Fenix     - syntax cleanup
 
 import b3
 import b3.events
@@ -47,7 +40,7 @@ from b3.functions import getCmd
 from ConfigParser import NoOptionError
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.4.2'
+__version__ = '1.4.3'
 
 
 class SpamcontrolPlugin(b3.plugin.Plugin):
@@ -58,10 +51,6 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
     _modLevel = 20
     _falloffRate = 6.5
 
-    # dict of <event type, func> that tell onEvent how to delegate event handling.
-    # This mechanism allows game parsers to add behaviour for game specific events.
-    eventHanlders = {}
-
     ####################################################################################################################
     ##                                                                                                                ##
     ##   STARTUP                                                                                                      ##
@@ -69,7 +58,7 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
     ####################################################################################################################
 
     def onLoadConfig(self):
-        """\
+        """
         Load plugin configuration
         """
         try:
@@ -77,38 +66,38 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
             if self._maxSpamins < 0:
                 self._maxSpamins = 0
             self.debug('loaded settings/max_spamins: %s' % self._maxSpamins)
-        except (NoOptionError, ValueError), e:
+        except NoOptionError:
+            self.warning('could not find settings/max_spamins in config file, using default: %s' % self._maxSpamins)
+        except ValueError, e:
             self.error('could not load settings/max_spamins config value: %s' % e)
             self.debug('using default value (%s) for settings/max_spamins' % self._maxSpamins)
 
         try:
             self._modLevel = self.console.getGroupLevel(self.config.get('settings', 'mod_level'))
             self.debug('loaded settings/mod_level: %s' % self._modLevel)
-        except (NoOptionError, KeyError), e:
+        except NoOptionError:
+            self.warning('could not find settings/mod_level in config file, using default: %s' % self._modLevel)
+        except KeyError, e:
             self.error('could not load settings/mod_level config value: %s' % e)
             self.debug('using default value (%s) for settings/mod_level' % self._modLevel)
 
         try:
             self._falloffRate = self.config.getfloat('settings', 'falloff_rate')
             self.debug('loaded settings/falloff_rate: %s' % self._falloffRate)
-        except (NoOptionError, ValueError), e:
+        except NoOptionError:
+            self.warning('could not find settings/falloff_rate in config file, using default: %s' % self._falloffRate)
+        except ValueError, e:
             self.error('could not load settings/falloff_rate config value: %s' % e)
             self.debug('using default value (%s) for settings/falloff_rate' % self._falloffRate)
 
     def onStartup(self):
-        """\
-        Initialize the plugin
+        """
+        Initialize the plugin.
         """
         # register the events needed
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_SAY'))
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_SAY'))
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_PRIVATE_SAY'))
-
-        self.eventHanlders = {
-            self.console.getEventID('EVT_CLIENT_SAY'): self.onChat,
-            self.console.getEventID('EVT_CLIENT_TEAM_SAY'): self.onChat,
-            self.console.getEventID('EVT_CLIENT_PRIVATE_SAY'): self.onChat,
-        }
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_SAY'), self.onChat)
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_SAY'), self.onChat)
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_PRIVATE_SAY'), self.onChat)
 
         self._adminPlugin = self.console.getPlugin('admin')
         if self._adminPlugin:
@@ -127,19 +116,19 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
 
     ####################################################################################################################
     ##                                                                                                                ##
-    ##   FUNCTIONS                                                                                                    ##
+    ##   OTHER METHODS                                                                                                ##
     ##                                                                                                                ##
     ####################################################################################################################
 
     def getTime(self):
-        """\
-        Just to ease automated tests
+        """
+        Just to ease automated tests.
         """
         return self.console.time()
 
     def add_spam_points(self, client, points, text):
-        """\
-        Add spam points to the given client
+        """
+        Add spam points to the given client.
         """
         now = self.getTime()
         if client.var(self, 'ignore_till', now).value > now:
@@ -179,18 +168,13 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
     ##                                                                                                                ##
     ####################################################################################################################
 
-    def onEvent(self, event):
-        """\
-        Handle intercepted events
+    def onChat(self, event):
+        """
+        Handle EVT_CLIENT_SAY and EVT_CLIENT_TEAM_SAY and EVT_CLIENT_PRIVATE_SAY
         """
         if not event.client or event.client.maxLevel >= self._modLevel:
             return
-        self.eventHanlders[event.type](event)
 
-    def onChat(self, event):
-        """\
-        Handle EVT_CLIENT_SAY and EVT_CLIENT_TEAM_SAY
-        """
         points = 0
         client = event.client
         text = event.data
@@ -219,7 +203,7 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
     ####################################################################################################################
 
     def cmd_spamins(self, data, client, cmd=None):
-        """\
+        """
         [<name>] - display a spamins level
         """
         if data:

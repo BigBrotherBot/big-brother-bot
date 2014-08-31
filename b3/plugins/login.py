@@ -1,8 +1,7 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Plugin for extra authentication of privileged users
-# Copyright (C) 2005 Tim ter Laak (ttlogic@xlr8or.com)
-# 
+# Copyright (C) 2005 Michael "ThorN" Thornton
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -15,31 +14,29 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
+# CHANGELOG
 #
-# 1.0.1 - 23/08/2009 - Courgette
-#     * fix indentation problem
-# 1.0.2 - 28/08/2009 - xlr8or
-#     * minor update
-# 1.0.3 - 17/04/2010 - Bakes
-#     * use hashlib if available instead of the deprecated md5
-# 1.1 - 25/11/2012 - Courgette
-#     * always read password from database to prevent security issues arising from bugged b3 game parsers
-# 1.2 - 06/04/2014 - Fenix
-#     * pep8 coding style guide
-#     * improved plugin startup and configuration file loading
-#
+# 1.0.1 - 23/08/2009 - Courgette - fix indentation problem
+# 1.0.2 - 28/08/2009 - xlr8or    - minor update
+# 1.0.3 - 17/04/2010 - Bakes     - use hashlib if available instead of the deprecated md5
+# 1.1   - 25/11/2012 - Courgette - always read password from database to prevent security issues arising from bugged
+#                                  b3 game parsers
+# 1.2   - 06/04/2014 - Fenix     - PEP8 coding standards
+#                                - improved plugin startup and configuration file loading
+# 1.3   - 31/08/2014 - Fenix     - syntax cleanup
 
 import string
 import b3.events
 import b3.plugin
+
 from b3.functions import hash_password
 from b3.clients import Client
 from ConfigParser import NoOptionError
 
 __author__ = 'Tim ter Laak'
-__version__ = '1.2'
+__version__ = '1.3'
 
 
 class LoginPlugin(b3.plugin.Plugin):
@@ -57,26 +54,30 @@ class LoginPlugin(b3.plugin.Plugin):
     ####################################################################################################################
 
     def onLoadConfig(self):
-        """\
-        Load plugin configuration
+        """
+        Load plugin configuration.
         """
         try:
             self._threshold = self.config.getint('settings', 'thresholdlevel')
             self.debug('loaded settings/thresholdlevel: %s' % self._threshold)
-        except (NoOptionError, ValueError), e:
+        except NoOptionError:
+            self.warning('could not find settings/thresholdlevel in config file, using default: %s' % self._threshold)
+        except ValueError, e:
             self.error('could not load settings/thresholdlevel config value: %s' % e)
             self.debug('using default value (%s) for settings/thresholdlevel' % self._threshold)
 
         try:
             self._passwdlevel = self.config.getint('settings', 'passwdlevel')
             self.debug('loaded settings/passwdlevel: %s' % self._passwdlevel)
-        except (NoOptionError, ValueError), e:
+        except NoOptionError:
+            self.warning('could not find settings/passwdlevel in config file, using default: %s' % self._passwdlevel)
+        except ValueError, e:
             self.error('could not load settings/passwdlevel config value: %s' % e)
             self.debug('using default value (%s) for settings/passwdlevel' % self._passwdlevel)
 
     def onStartup(self):
-        """\
-        Initialize plugin
+        """
+        Plugin startup.
         """
         self._adminPlugin = self.console.getPlugin('admin')
         if not self._adminPlugin:
@@ -101,7 +102,7 @@ class LoginPlugin(b3.plugin.Plugin):
     ####################################################################################################################
 
     def onAuth(self, event):
-        """\
+        """
         Handle EVT_CLIENT_AUTH
         """
         client = event.client
@@ -118,11 +119,24 @@ class LoginPlugin(b3.plugin.Plugin):
                 client.groupBits = 2
 
             if not client_from_db.password:
-                m = 'You need a password to use all your privileges. Ask the administrator to set a password for you.'
+                m = 'You need a password to use all your privileges: ask the administrator to set a password for you'
                 client.message(m)
             else:
                 m = 'Login via console: %s %s !login yourpassword' % (self._pmcomm, client.cid)
                 client.message(m)
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   OTHER METHODS                                                                                                ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
+    def _get_client_from_db(self, client_id):
+        """
+        Retrieve a client from the storage layer.
+        :param client_id: The client database id
+        """
+        return self.console.storage.getClient(Client(id=client_id))
 
     ####################################################################################################################
     ##                                                                                                                ##
@@ -131,15 +145,15 @@ class LoginPlugin(b3.plugin.Plugin):
     ####################################################################################################################
 
     def cmd_login(self, data, client, cmd=None):
-        """\
+        """
         <password> - login a privileged user to his full capabilities
         """
         if client.isvar(self, 'loggedin'):
-            client.message('You are already logged in.')
+            client.message('You are already logged in')
             return
 
         if not client.isvar(self, 'login_groupbits'):
-            client.message('You do not need to log in.')
+            client.message('You do not need to log in')
             return
 
         if data:
@@ -148,7 +162,7 @@ class LoginPlugin(b3.plugin.Plugin):
             if digest == client_from_db.password:
                 client.setvar(self, 'loggedin', 1)
                 client.groupBits = client.var(self, 'login_groupbits').value
-                client.message('You are successfully logged in.')
+                client.message('You are successfully logged in')
             else:
                 client.message('^1***Access denied***^7')
         else:
@@ -156,11 +170,11 @@ class LoginPlugin(b3.plugin.Plugin):
             client.message(message)
         
     def cmd_setpassword(self, data, client, cmd=None):
-        """\
+        """
         <password> [<client>] - set a password for a client
         """
         if not data:
-            client.message('usage: %s%s <new password> [<client>]' % (cmd.prefix, cmd.command))
+            client.message('Usage: %s%s <new password> [<client>]' % (cmd.prefix, cmd.command))
             return
 
         data = string.split(data)
@@ -180,9 +194,3 @@ class LoginPlugin(b3.plugin.Plugin):
             client.message("Your new password has been saved")
         else:
             client.message("New password for %s saved" % sclient.name)
-
-    def _get_client_from_db(self, client_id):
-        """\
-        Retrieve a client from the storage layer
-        """
-        return self.console.storage.getClient(Client(id=client_id))

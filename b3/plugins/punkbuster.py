@@ -1,37 +1,33 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-# 02/05/2014 - 1.2.1 - Fenix
-#    * Make use of the new getCmd function from functions module
-# 06/04/2014 - 1.2 - Fenix
-#    * pep8 coding style guide
-#    * improved plugin startup and configuration file loading
-# 19/07/2011 - 1.1.0 - Freelander
-#    * Support for ftp access to pbbans.dat
-# 27/08/2009 - 1.0.9 - Bakes
-#    * Use command levels set in punkbuster plugin config not admin plugin.
-# 11/30/2005 - 1.0.8 - ThorN
-#    * Use PluginCronTab instead of CronTab
+# 30/08/2014 - 1.3   - Fenix      - syntax cleanup
+# 02/05/2014 - 1.2.1 - Fenix      - make use of the new getCmd function from functions module
+# 06/04/2014 - 1.2   - Fenix      - PEP8 coding standards
+#                                 - improved plugin startup and configuration file loading
+# 19/07/2011 - 1.1.0 - Freelander - support for ftp access to pbbans.dat
+# 27/08/2009 - 1.0.9 - Bakes      - use command levels set in punkbuster plugin config not admin plugin
+# 11/30/2005 - 1.0.8 - ThorN      - use PluginCronTab instead of CronTab
 
 __author__ = 'ThorN'
-__version__ = '1.2.1'
+__version__ = '1.3'
 
 import b3
 import b3.plugin
@@ -61,8 +57,8 @@ class PunkbusterPlugin(b3.plugin.Plugin):
     ####################################################################################################################
 
     def onStartup(self):
-        """\
-        Initialize the plugin
+        """
+        Initialize the plugin.
         """
         self._adminPlugin = self.console.getPlugin('admin')
         if not self._adminPlugin:
@@ -87,7 +83,7 @@ class PunkbusterPlugin(b3.plugin.Plugin):
                     self._adminPlugin.registerCommand(self, cmd, level, func, alias)
 
     def onLoadConfig(self):
-        """\
+        """
         Load plugin configuration
         """
         try:
@@ -127,7 +123,7 @@ class PunkbusterPlugin(b3.plugin.Plugin):
     ####################################################################################################################
 
     def rebuild_bans(self):
-        """\
+        """
         Rebuild pbbans.dat from database
         """
         q = """SELECT DISTINCT(c.id), c.name, c.ip, c.pbid, p.time_add, p.reason
@@ -167,10 +163,10 @@ class PunkbusterPlugin(b3.plugin.Plugin):
             except Exception, err:
                 self.error('ERROR: %s' % err)
             ftp.quit()
-            self.debug('Uploaded pbbans.dat to FTP server successfully.')
+            self.debug('uploaded pbbans.dat to FTP server successfully')
         else:
             f.close()
-            self.debug('Updated pbbans.dat successfully.')
+            self.debug('updated pbbans.dat successfully')
 
         self.console.write('PB_SV_BanEmpty')
         self.console.write('PB_SV_BanLoad')
@@ -184,7 +180,7 @@ class PunkbusterPlugin(b3.plugin.Plugin):
     ####################################################################################################################
 
     def cmd_pbss(self, data, client=None, cmd=None):
-        """\
+        """
         <client> - capture a screenshot from the player
         """
         m = self._adminPlugin.parseUserCmd(data)

@@ -1,8 +1,8 @@
 # encoding: utf-8
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2013
-# 
+# Copyright (C) 2010 Thomas LEVEIL <courgette@bigbrotherbot.net>
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -12,28 +12,29 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-#   1.0 - first working version
-#   1.1 - cosmetics and add a few TODO
-#   1.2 - minor fixes
-#   1.3 - patch admin plugin doList() method: display the client DB id instead of slot
-#         patch admin plugin cmd_find() method: display the client DB id instead of slot
-#   1.4 - add debug messages to expose the RCON communication (when log level is down to 8 in b3.xml)
-#   1.5 - fix bug with kill events when either the attacker or victim was not recognized by B3
-#   1.6 - current map is now the map name only
-#       - improve Packet representation
-#   1.7 - added admin key in EVT_CLIENT_KICK data dict when available
+# 1.0 - first working version
+# 1.1 - cosmetics
+# 1.2 - minor fixes
+# 1.3 - patch admin plugin doList() method: display the client DB id instead of slot
+#       patch admin plugin cmd_find() method: display the client DB id instead of slot
+# 1.4 - add debug messages to expose the RCON communication (when log level is down to 8 in b3.xml)
+# 1.5 - fix bug with kill events when either the attacker or victim was not recognized by B3
+# 1.6 - current map is now the map name only
+#     - improve Packet representation
+# 1.7 - added admin key in EVT_CLIENT_KICK data dict when available
+# 1.8 - syntax cleanup
 
+import b3
 import sys
 import asyncore
 import socket
-import b3
 
 from b3.parser import Parser
 from b3.plugins.admin import AdminPlugin
@@ -42,7 +43,7 @@ from struct import unpack
 from hashlib import sha1
 
 __author__ = 'tliszak'
-__version__ = '1.7'
+__version__ = '1.8'
 
 
 class MessageType:
@@ -82,23 +83,31 @@ class ChivParser(Parser):
     _currentMapIndex = None
     _mapList = None
 
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  PARSER INITIALIZATION                                                                                         ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
     def __new__(cls, *args, **kwargs):
         ChivParser.patch_admin_plugin_doList()
         ChivParser.patch_admin_plugin_cmd_find()
         return Parser.__new__(cls)
 
     def run(self):
-        """Main worker thread for B3"""
+        """
+        Main worker thread for B3.
+        """
         self.screen.write('Startup Complete : B3 is running! Let\'s get to work!\n\n')
-        self.screen.write('(If you run into problems, check %s for detailed log info)\n' % self.config.getpath('b3', 'logfile'))
-        #self.screen.flush()
+        self.screen.write('(If you run into problems, check %s in the B3 root directory for '
+                          'detailed log info)\n' % self.config.getpath('b3', 'logfile'))
 
         self.updateDocumentation()
 
         while self.working:
             if self._paused:
                 if self._pauseNotice is False:
-                    self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
+                    self.bot('PAUSED - not parsing any lines: B3 will be out of sync')
                     self._pauseNotice = True
             else:
                 if self._client is None:
@@ -110,8 +119,18 @@ class ChivParser(Parser):
             self._client.close()
             if self.exitcode:
                 sys.exit(self.exitcode)
-        
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  EVENT HANDLERS                                                                                                ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
     def handlePacket(self, packet):
+        """
+        Handle a received packet.
+        :param packet: The received packet
+        """
         if packet.msgType == MessageType.SERVER_CONNECT:
             challenge = packet.getString()
             self._client.send_password(challenge)
@@ -134,6 +153,7 @@ class ChivParser(Parser):
                 else:
                     event = self.getEvent('EVT_CLIENT_SAY', message, client)
                 self.queueEvent(event)
+
         elif packet.msgType == MessageType.PLAYER_CONNECT:
             playerId = packet.getGUID()
             name = packet.getString()
@@ -141,55 +161,65 @@ class ChivParser(Parser):
             if not client:
                 client = self.clients.newClient(name, guid=playerId, name=name, team=b3.TEAM_UNKNOWN)
                 self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', None, client))
+
         elif packet.msgType == MessageType.PLAYER_DISCONNECT:
             playerId = packet.getGUID()
             client = self.clients.getByGUID(playerId)
             if client:
                 client.disconnect()
+
         elif packet.msgType == MessageType.MAP_CHANGED:
             self._currentMapIndex = packet.getInt()
             currentMap = packet.getString()
             self.game.mapName = currentMap
             event = self.getEvent('EVT_GAME_ROUND_START', currentMap)
             self.queueEvent(event)
+
         elif packet.msgType == MessageType.MAP_LIST:
             mapName = packet.getString().split('?', 1)[0]
             if self._mapList is None:
                 self._mapList = []
             self._mapList.append(mapName)
+
         elif packet.msgType == MessageType.TEAM_CHANGED:
             playerId = packet.getGUID()
             team = packet.getInt()
             client = self.clients.getByGUID(playerId)
             if client:
-                client.team = team  # TODO: map to B3 team ids TEAM_BLUE, TEAM_RED, etc
+                # TODO: map to B3 team ids TEAM_BLUE, TEAM_RED, etc
+                client.team = team
+
         elif packet.msgType == MessageType.NAME_CHANGED:
             playerId = packet.getGUID()
             name = packet.getString()
             client = self.clients.getByGUID(playerId)
             if client:
                 client.name = name            
+
         elif packet.msgType == MessageType.KILL:
             attackerId = packet.getGUID()
             victimId = packet.getGUID()
             weapon = packet.getString()
             attacker = self.clients.getByGUID(attackerId)
             victim = self.clients.getByGUID(victimId)
-            eventName = 'EVT_CLIENT_KILL'
+            eventkey = 'EVT_CLIENT_KILL'
             hitloc = 'body'
 
             if not attacker:
                 self.debug("attacker not found: %s, packet: %r" % (attackerId, packet))
                 return
+
             if not victim:
                 self.debug("victim not found: %s, packet: %r" % (victimId, packet))
                 return
+
             if attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
-                eventName = 'EVT_CLIENT_KILL_TEAM'
+                eventkey = 'EVT_CLIENT_KILL_TEAM'
                 
             if attacker and victim:
-                event = self.getEvent(eventName, (100, weapon, hitloc), attacker, victim)    
+                event = self.getEvent(eventkey, (100, weapon, hitloc), attacker, victim)
                 self.queueEvent(event)            
+
         elif packet.msgType == MessageType.SUICIDE:
             victimId = packet.getGUID()
             victim = self.clients.getByGUID(victimId)
@@ -198,10 +228,12 @@ class ChivParser(Parser):
                 hitloc = None
                 event = self.getEvent('EVT_CLIENT_SUICIDE', (100, weapon, hitloc), victim, victim)    
                 self.queueEvent(event)
+
         elif packet.msgType == MessageType.ROUND_END:
             winningTeam = packet.getInt()
             event = self.getEvent('EVT_GAME_ROUND_END', winningTeam)
             self.queueEvent(event)
+
         elif packet.msgType == MessageType.PING:
             playerId = packet.getGUID()
             ping = packet.getInt()
@@ -209,18 +241,31 @@ class ChivParser(Parser):
             if client:
                 client.ping = ping
         else:
-            self.warning("Unkown RCON message type: %s. REPORT THIS TO THE B3 FORUMS. %r" % (packet.msgType, packet))
+            self.warning("unkown RCON message type: %s. REPORT THIS TO THE B3 FORUMS. %r" % (packet.msgType, packet))
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  OTHER METHODS                                                                                                 ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def sendPacket(self, packet):
         if self._client and self._client.isAuthed:
             self._client.sendPacket(packet)
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def getPlayerList(self):
         """
         Query the game server for connected players.
         return a dict having players' id for keys and players' data as another dict for values
         """
-        clients = self.clients.getList()  # TODO find a way to query the server for the player list
+        # TODO find a way to query the server for the player list
+        clients = self.clients.getList()
         return clients
 
     def authorizeClients(self):
@@ -237,18 +282,15 @@ class ChivParser(Parser):
         object from self.clients (with self.clients.getByCID(cid) or similar methods) and
         look for inconsistencies. If required call the client.disconnect() method to remove
         a client from self.clients.
-        This is mainly useful for games where clients are identified by the slot number they
-        occupy. On map change, a player A on slot 1 can leave making room for player B who
-        connects on slot 1.
         """
         pass
     
     def say(self, msg):
         """
-        Broadcast a message to all players
+        Broadcast a message to all players.
+        :param msg: The message to be broadcasted
         """
         msg = self.stripColors(msg)
-        
         packet = Packet()
         packet.msgType = MessageType.SAY_ALL
         packet.addString(msg)
@@ -257,9 +299,9 @@ class ChivParser(Parser):
     def saybig(self, msg):
         """
         Broadcast a message to all players in a way that will catch their attention.
+        :param msg: The message to be broadcasted
         """
         msg = self.stripColors(msg)
-
         packet = Packet()
         packet.msgType = MessageType.SAY_ALL_BIG
         packet.addString(msg)
@@ -267,10 +309,11 @@ class ChivParser(Parser):
 
     def message(self, client, text):
         """
-        Display a message to a given player
+        Display a message to a given client
+        :param client: The client to who send the message
+        :param text: The message to be sent
         """
         text = self.stripColors(text)
-
         packet = Packet()
         packet.msgType = MessageType.SAY
         packet.addGUID(client.guid)
@@ -279,10 +322,13 @@ class ChivParser(Parser):
         
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         """
-        Kick a given player
+        Kick a given client.
+        :param client: The client to kick
+        :param reason: The reason for this kick
+        :param admin: The admin who performed the kick
+        :param silent: Whether or not to announce this kick
         """
         reason = self.stripColors(reason)
-
         packet = Packet()
         packet.msgType = MessageType.KICK_PLAYER
         packet.addGUID(client.guid)
@@ -292,41 +338,45 @@ class ChivParser(Parser):
         
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
         """
-        Ban a given player on the game server and in case of success
-        fire the event ('EVT_CLIENT_BAN', data={'reason': reason, 
-        'admin': admin}, client=target)
+        Ban a given client.
+        :param client: The client to ban
+        :param reason: The reason for this ban
+        :param admin: The admin who performed the ban
+        :param silent: Whether or not to announce this ban
         """
         reason = self.stripColors(reason)
-
         packet = Packet()
         packet.msgType = MessageType.BAN_PLAYER
         packet.addGUID(client.guid)
         packet.addString(reason)
         self.sendPacket(packet)
-        
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
         """
-        Unban a given player on the game server
+        Unban a client.
+        :param client: The client to unban
+        :param reason: The reason for the unban
+        :param admin: The admin who unbanned this client
+        :param silent: Whether or not to announce this unban
         """
         reason = self.stripColors(reason)
-
         packet = Packet()
         packet.msgType = MessageType.UNBAN_PLAYER
         packet.addGUID(client.guid)
         self.sendPacket(packet)
-        
         self.queueEvent(self.getEvent('EVT_CLIENT_UNBAN', reason, client))
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
         """
-        Tempban a given player on the game server and in case of success
-        fire the event ('EVT_CLIENT_BAN_TEMP', data={'reason': reason, 
-        'duration': duration, 'admin': admin}, client=target)
+        Tempban a client.
+        :param client: The client to tempban
+        :param reason: The reason for this tempban
+        :param duration: The duration of the tempban
+        :param admin: The admin who performed the tempban
+        :param silent: Whether or not to announce this tempban
         """
         reason = self.stripColors(reason)
-
         packet = Packet()
         packet.msgType = MessageType.TEMP_BAN_PLAYER
         packet.addGUID(client.guid)
@@ -340,20 +390,24 @@ class ChivParser(Parser):
             self.debug('using name to ban : %s' % banid)
             # saving banid in the name column in database
             # so we can unban a unconnected player using name
-            client._name = banid  # TODO See if another location than the name column could be better suited for storing the banid
+            # TODO See if another location than the name column could be better suited for storing the banid
+            client._name = banid
             client.save()
         
-        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason, 'duration': duration, 'admin': admin}, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason,
+                                                              'duration': duration,
+                                                              'admin': admin}, client))
 
     def getMap(self):
         """
         Return the current map/level name
         """
-        return self.game.mapName  # TODO handle the case where self._currentMap is not set. Can we query the game server ?
+        # TODO handle the case where self._currentMap is not set. Can we query the game server ?
+        return self.game.mapName
 
     def getNextMap(self):
         """
-        Return the next map/level name to be played
+        Return the next map/level name to be played.
         """
         numMaps = len(self._mapList)
         currentmap = self.getMap()
@@ -375,13 +429,14 @@ class ChivParser(Parser):
 
     def getMaps(self):
         """
-        Return the available maps/levels name
+        Return the available maps/levels name.
         """
-        return self._mapList  # TODO handle the case where self._mapList is not set. Can we query the game server ?
+        # TODO handle the case where self._mapList is not set. Can we query the game server ?
+        return self._mapList
 
     def rotateMap(self):
         """
-        Load the next map/level
+        Load the next map/level.
         """
         packet = Packet()
         packet.msgType = MessageType.ROTATE_MAP
@@ -390,7 +445,7 @@ class ChivParser(Parser):
     def changeMap(self, map_name):
         """
         Load a given map/level
-        Return a list of suggested map names in cases it fails to recognize the map that was provided
+        Return a list of suggested map names in cases it fails to recognize the map that was provided.
         """
         packet = Packet()
         packet.msgType = MessageType.CHANGE_MAP
@@ -399,7 +454,7 @@ class ChivParser(Parser):
 
     def getPlayerPings(self, filter_client_ids=None):
         """
-        Returns a dict having players' id for keys and players' ping for values
+        Returns a dict having players' id for keys and players' ping for values.
         """
         pings = {}
         clients = self.clients.getList()
@@ -412,7 +467,7 @@ class ChivParser(Parser):
 
     def getPlayerScores(self):
         """
-        Returns a dict having players' id for keys and players' scores for values
+        Returns a dict having players' id for keys and players' scores for values.
         """
         scores = {}
         clients = self.clients.getList()

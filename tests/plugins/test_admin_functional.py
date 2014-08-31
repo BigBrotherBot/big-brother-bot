@@ -1,7 +1,7 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2011 Courgette
-# 
+# Copyright (C) 2010 Courgette <courgette@bigbrotherbot.net>
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -9,29 +9,41 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
-import logging
-import threading
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-from mock import Mock, call, patch, ANY
-import sys, os, thread
+import logging
+import sys
+import os
+import thread
 import time
-from mockito import when
 import unittest2 as unittest
 
-from b3 import __file__ as b3_module__file__, TEAM_BLUE, TEAM_RED
-from b3.clients import Group, Client
+from mock import Mock
+from mock import call
+from mock import patch
+from mock import ANY
+from mockito import when
 
-from tests import B3TestCase, InstantTimer
+from b3 import __file__ as b3_module__file__
+from b3 import TEAM_BLUE
+from b3 import TEAM_RED
+from b3.clients import Group
+from b3.clients import Client
+
+from tests import B3TestCase
+from tests import InstantTimer
 from b3.fake import FakeClient
 from b3.config import CfgConfigParser
 from b3.plugins.admin import AdminPlugin
+from b3.plugins.admin import __author__ as admin_author
+from b3.plugins.admin import __version__ as admin_version
+from b3.plugins.adv import __author__ as adv_author
+from b3.plugins.adv import __version__ as adv_version
 
 ADMIN_CONFIG_FILE = os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.ini")
 
@@ -53,6 +65,7 @@ class Admin_functional_test(B3TestCase):
                 self.conf.load(ADMIN_CONFIG_FILE)
         else:
             self.conf.loadFromString(config_content)
+
         self.p._commands = {}
         self.p.onLoadConfig()
         self.p.onStartup()
@@ -271,6 +284,31 @@ class Cmd_tempban(Admin_functional_test):
         self.mike.tempban.assert_called_with('', None, 5*60, self.joe)
 
 
+class Cmd_pluginfo(Admin_functional_test):
+
+    def setUp(self):
+        Admin_functional_test.setUp(self)
+        self.init()
+        self.joe.message = Mock()
+        self.joe.connects(0)
+
+    def test_invalid_parameters(self):
+        self.joe.says("!pluginfo")
+        self.joe.message.assert_called_with('^7Invalid parameters')
+
+    def test_invalid_plugin(self):
+        self.joe.says('!pluginfo foo')
+        self.joe.message.assert_called_with('^7No plugin named ^1foo ^7loaded')
+
+    def test_admin_plugin(self):
+        self.joe.says('!pluginfo admin')
+        self.joe.message.assert_called_with('^7AdminPlugin ^7v^3%s ^7by ^3%s' % (admin_version, admin_author))
+
+    def test_adv_plugin(self):
+        self.joe.says('!pluginfo adv')
+        self.joe.message.assert_called_with('^7AdvPlugin ^7v^3%s ^7by ^3%s' % (adv_version, adv_author))
+
+
 class Cmd_lastbans(Admin_functional_test):
 
     def setUp(self):
@@ -299,8 +337,8 @@ class Cmd_lastbans(Admin_functional_test):
         self.joe.message.assert_called_with('^7There are no active bans')
 
 
-
 class Cmd_help(Admin_functional_test):
+
     def setUp(self):
         Admin_functional_test.setUp(self)
         self.p._commands = {}  # make sure to empty the commands list as _commands is a wrongly a class property
@@ -336,6 +374,7 @@ class Cmd_help(Admin_functional_test):
 
 
 class Cmd_mask(Admin_functional_test):
+
     def setUp(self):
         Admin_functional_test.setUp(self)
         self.init()
@@ -954,14 +993,14 @@ class Cmd_map(Admin_functional_test):
         self.joe.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
         self.joe.connects(0)
         self.joe.says('!map')
-        self.joe.message.assert_called_once_with('^7You must supply a map to change to.')
+        self.joe.message.assert_called_once_with('^7You must supply a map to change to')
 
     def test_suggestions(self):
         self.joe.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
         self.joe.connects(0)
         when(self.console).changeMap('f00').thenReturn(["bar1", "bar2", "bar3", "bar4", "bar5", "bar6", "bar7", "bar8", "bar9", "bar10", "bar11", "bar"])
         self.joe.says('!map f00')
-        self.joe.message.assert_called_once_with('do you mean : bar1, bar2, bar3, bar4, bar5 ?')
+        self.joe.message.assert_called_once_with('do you mean: bar1, bar2, bar3, bar4, bar5?')
 
     def test_nominal(self):
         self.joe.message = Mock(wraps=lambda x: sys.stdout.write("\t\t" + x + "\n"))
@@ -979,11 +1018,11 @@ class spell_checker(Admin_functional_test):
 
     def test_existing_command(self):
         self.joe.says('!map')
-        self.assertEqual(['You must supply a map to change to.'], self.joe.message_history)
+        self.assertEqual(['You must supply a map to change to'], self.joe.message_history)
 
     def test_misspelled_command(self):
         self.joe.says('!mip')
-        self.assertEqual(['Unrecognized command mip. Did you mean !map ?'], self.joe.message_history)
+        self.assertEqual(['Unrecognized command mip. Did you mean !map?'], self.joe.message_history)
 
     def test_unrecognized_command(self):
         self.joe.says('!qfsmlkjazemlrkjazemrlkj')
@@ -991,11 +1030,11 @@ class spell_checker(Admin_functional_test):
 
     def test_existing_command_loud(self):
         self.joe.says('@map')
-        self.assertEqual(['You must supply a map to change to.'], self.joe.message_history)
+        self.assertEqual(['You must supply a map to change to'], self.joe.message_history)
 
     def test_misspelled_command_loud(self):
         self.joe.says('@mip')
-        self.assertEqual(['Unrecognized command mip. Did you mean @map ?'], self.joe.message_history)
+        self.assertEqual(['Unrecognized command mip. Did you mean @map?'], self.joe.message_history)
 
     def test_unrecognized_command_loud(self):
         self.joe.says('@qfsmlkjazemlrkjazemrlkj')
@@ -1003,11 +1042,11 @@ class spell_checker(Admin_functional_test):
 
     def test_existing_command_private(self):
         self.joe.says('/map')
-        self.assertEqual(['You must supply a map to change to.'], self.joe.message_history)
+        self.assertEqual(['You must supply a map to change to'], self.joe.message_history)
 
     def test_misspelled_command_private(self):
         self.joe.says('/mip')
-        self.assertEqual(['Unrecognized command mip. Did you mean /map ?'], self.joe.message_history)
+        self.assertEqual(['Unrecognized command mip. Did you mean /map?'], self.joe.message_history)
 
     def test_unrecognized_command_private(self):
         self.joe.says('/qfsmlkjazemlrkjazemrlkj')
@@ -1107,7 +1146,7 @@ spams: 20
         # WHEN
         self.joe.says('!spams')
         # THEN
-        self.assertListEqual(['no spamage message defined'], self.joe.message_history)
+        self.assertListEqual(['No spamage message defined'], self.joe.message_history)
 
     def test_reconfig_loads_new_spamages(self, sleep_mock):
         # GIVEN
@@ -1266,7 +1305,7 @@ message: ^1WARNING^7 [^3$warnings^7]: $reason
                               call('Joe^7 has cleared Mike^7 of all warnings')], self.say_mock.mock_calls)
         self.assertEqual(0, self.mike.numWarnings)
 
-    def test_clear_player(self, sleep_mock):
+    def test_clear__all_players(self, sleep_mock):
         # GIVEN
         self.joe.says('!warn mike')
         self.assertEqual(1, self.mike.numWarnings)
@@ -1391,7 +1430,7 @@ warn_command_abusers: no
         # WHEN
         self.player.says("!hzlp")
         # THEN
-        self.assertListEqual(['Unrecognized command hzlp. Did you mean !help ?'], self.player.message_history)
+        self.assertListEqual(['Unrecognized command hzlp. Did you mean !help?'], self.player.message_history)
         self.assertFalse(self.player_warn_mock.called)
 
     def test_warn_yes__unknown_cmd(self, sleep_mock):
@@ -1407,7 +1446,7 @@ warn_command_abusers: yes
         # WHEN
         self.player.says("!hzlp")
         # THEN
-        self.assertListEqual(['Unrecognized command hzlp. Did you mean !help ?'], self.player.message_history)
+        self.assertListEqual(['Unrecognized command hzlp. Did you mean !help?'], self.player.message_history)
         self.assertFalse(self.player_warn_mock.called)
 
     def test_warn_yes__unknown_cmd_abuser(self, sleep_mock):
@@ -1428,9 +1467,9 @@ fakecmd: 2h, do not use fake commands
         self.player.says("!hzlp")
         self.player.says("!hzlp")
         # THEN
-        self.assertListEqual(['Unrecognized command hzlp. Did you mean !help ?',
-                              'Unrecognized command hzlp. Did you mean !help ?',
-                              'Unrecognized command hzlp. Did you mean !help ?'], self.player.message_history)
+        self.assertListEqual(['Unrecognized command hzlp. Did you mean !help?',
+                              'Unrecognized command hzlp. Did you mean !help?',
+                              'Unrecognized command hzlp. Did you mean !help?'], self.player.message_history)
         self.assertListEqual([call(120.0, 'do not use fake commands', 'fakecmd', ANY, ANY)],
                              self.player_warn_mock.mock_calls)
 
@@ -1485,6 +1524,7 @@ help: 0
 
 
 class Cmd_kick(Admin_functional_test):
+
     def setUp(self):
         Admin_functional_test.setUp(self)
         self.init()

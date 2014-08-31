@@ -966,7 +966,7 @@ map: 20
             CommandFailedError(["Full"]))
         self.joe.says("!map talah")
         # THEN
-        self.assertListEqual(['Map list maximum size has been reached'], self.joe.message_history)
+        self.assertListEqual(['map list maximum size has been reached'], self.joe.message_history)
 
     def test_map_unknown(self):
         # WHEN

@@ -18,11 +18,12 @@
 #
 # CHANGELOG:
 #
-# 02/05/2014 - 1.0 - Fenix
-#   * committed first built-in release
-#
+# 02/05/2014 - 1.0 - Fenix - committed first built-in release
+# 30/08/2014 - 1.1 - Fenix - syntax cleanup
+#                          - fixed some method doc strings
+
 __author__ = 'Fenix'
-__version__ = '1.0'
+__version__ = '1.1'
 
 import b3
 import b3.plugin
@@ -42,7 +43,9 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
 
     _adminPlugin = None
 
-    _settings = dict(update_config_file=True)
+    _settings = {
+        'update_config_file': True
+    }
 
     ####################################################################################################################
     ##                                                                                                                ##
@@ -105,7 +108,8 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
 
     def command_name_sanitize(self, name):
         """
-        Sanitize the name of a command
+        Sanitize the name of a command.
+        :param name: The command name to sanitize
         """
         name = name.lower().strip()
         name = name.replace(self._adminPlugin.cmdPrefix, '')
@@ -117,6 +121,7 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
     def get_command(self, name):
         """
         Return a Command object given its name
+        :param name: The command name
         """
         try:
             # try to get the command from the dict
@@ -128,6 +133,7 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
     def get_command_level_string(self, command):
         """
         Return a string representation of the given command level
+        :param command: The command object instance
         """
         mingroup = self.console.getGroup(command.level[0])
         message = '^2%s' % mingroup.keyword
@@ -264,9 +270,11 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
             command_level = '%s-%s' % (mingroup.keyword, maxgroup.keyword)
 
         # group necessary data
-        data = dict(command_name=command_name,
-                    command_level=command_level,
-                    plugin_name=plugin_name)
+        data = {
+            'command_name': command_name,
+            'command_level': command_level,
+            'plugin_name': plugin_name
+        }
 
         # write in the plugin specific configuration file
         func = getattr(self, 'write_%s_config_file' % ('xml' if isinstance(plugin.config, XmlConfigParser) else 'ini'))
@@ -281,6 +289,10 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
     def set_command_level(self, command, level, client, cmd):
         """
         Set the level of a command
+        :param command: The command name
+        :param level: The new level for the command
+        :param client: The client who executed the command
+        :param cmd: The instance of the launched command
         """
         # check that the format given matches our constraint
         r = re.compile(r'''^(?P<minlevel>\w+)-*(?P<maxlevel>\w*)$''')
@@ -330,7 +342,11 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
 
     def set_command_alias(self, command, alias, client, cmd):
         """
-        Set the level of a command
+        Set the alias of a command
+        :param command: The command name
+        :param alias: The new alias for the command
+        :param client: The client who executed the command
+        :param cmd: The instance of the launched command
         """
         # check that the format given matches our constraint
         alias = self.command_name_sanitize(alias)

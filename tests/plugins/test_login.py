@@ -144,7 +144,7 @@ class Test_cmd_setpassword(LoginTestCase):
         self.joe.clearMessageHistory()
         self.joe.says("!setpassword")
         # THEN
-        self.assertEqual(['usage: !setpassword <new password> [<client>]'], self.joe.message_history)
+        self.assertEqual(['Usage: !setpassword <new password> [<client>]'], self.joe.message_history)
         self.assertEqual('', self.joe.password)
         joe_db = self.p._get_client_from_db(self.joe.id)
         self.assertEqual('', joe_db.password)
@@ -217,7 +217,7 @@ class Test_auth(LoginTestCase):
         joe.clearMessageHistory()
         joe.connects("0")
         # THEN
-        self.assertEqual(['You need a password to use all your privileges. Ask the administrator to set a password for you.'], joe.message_history)
+        self.assertEqual(['You need a password to use all your privileges: ask the administrator to set a password for you'], joe.message_history)
         self.assertEqual(2, joe.groupBits)
 
     def test_high_level_having_password(self):
@@ -251,7 +251,7 @@ class Test_cmd_login(LoginTestCase):
         joe.clearMessageHistory()
         joe.says("!login")
         # THEN
-        self.assertEqual(['You are already logged in.'], joe.message_history)
+        self.assertEqual(['You are already logged in'], joe.message_history)
 
     def test_low_level(self):
         # GIVEN
@@ -261,7 +261,7 @@ class Test_cmd_login(LoginTestCase):
         joe.clearMessageHistory()
         joe.says("!login")
         # THEN
-        self.assertEqual(['You do not need to log in.'], joe.message_history)
+        self.assertEqual(['You do not need to log in'], joe.message_history)
         self.assertFalse(self.jack.isvar(self.p, 'loggedin'))
 
     def test_high_level_no_parameter(self):
@@ -296,7 +296,7 @@ class Test_cmd_login(LoginTestCase):
         self.jack.clearMessageHistory()
         self.jack.says("!login f00")
         # THEN
-        self.assertEqual(['You are successfully logged in.'], self.jack.message_history)
+        self.assertEqual(['You are successfully logged in'], self.jack.message_history)
         self.assertEqual(128, self.jack.groupBits)
         self.assertTrue(self.jack.isvar(self.p, 'loggedin'))
 
@@ -332,6 +332,6 @@ class Test_cmd_login(LoginTestCase):
         self.jack.clearMessageHistory()
         self.jack.says("!login f00")
         # THEN
-        self.assertEqual(['You are successfully logged in.'], self.jack.message_history)
+        self.assertEqual(['You are successfully logged in'], self.jack.message_history)
         self.assertEqual(128, self.jack.groupBits)
         self.assertTrue(self.jack.isvar(self.p, 'loggedin'))

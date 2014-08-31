@@ -1,5 +1,5 @@
 #
-# ioUrT 4.2 Parser for BigBrotherBot(B3) (www.bigbrotherbot.net)
+# BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2012 Thomas LEVEIL <courgette@bigbrotherbot.net>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -16,111 +16,84 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
-#
 # CHANGELOG
 #
-# 2012/07/24 - 0.0 - Courgette
-#  * parser created
-# 2012/08/08 - 1.0 - Courgette
-#  * new authentication system using the Frozen Sand Account if available
-# 2012/08/08 - 1.1 - Courgette
-#  * fix error when computing Hit damage. Until we got real value, the default value : 15 is returned for all
-#    weapons and all hit locations.
-# 2012/08/09 - 1.2 - Courgette
-#  * make sure the game is UrT 4.2 or fail to start
-# 2012/08/09 - 1.2.1 - Courgette
-#  * disabling authentication using the /rcon auth-whois command response
-# 2012/08/12 - 1.3 - Courgette
-#  * patches the Spamcontrol plugin to make it aware of radio spam
-# 2012/09/14 - 1.4 - Courgette
-#  * change kick and tempban commands so them give the reason
-# 2012/10/04 - 1.5 - Courgette
-#  * update for UrT 4.2.002 new auth system with Frozen Sand Account and auth-key
-# 2012/10/04 - 1.5.1 - Courgette
-#  * fix kick and tempban when used with a reason
-# 2012/10/10 - 1.5.2 - Courgette
-#  * support names with blank characters
-# 2012/10/24 - 1.6 - Courgette
-#  * new: settings to ban with the Frozen Sand auth system
-# 2012/11/09 - 1.7 - Courgette
-#  * new: support new jump game type with code 9
-# 2012/11/15 - 1.7.1 - Courgette
-#  * fix: banning with the Frozen Sand auth system now works with servers set to auth private or notoriety mode
-# 26/11/2012 - 1.8 - Courgette
-#     * protect some of the Client object property
-# 26/11/2012 - 1.9 - Courgette
-#     * fix authentication for connecting player Frosen Sand Account is uniquely known in the B3 database
-# 07/12/2012 - 1.10 - Courgette
-#     * add new events : EVT_CLIENT_JUMP_TIMER_START, EVT_CLIENT_JUMP_TIMER_STOP, EVT_CLIENT_POS_SAVE,
-#       EVT_CLIENT_POS_LOAD and EVT_CLIENT_SURVIVOR_WINNERwhich can be used by plugins
-# 08/12/2012 - 1.10.1 - Courgette
-#     * fix EVT_CLIENT_JUMP_TIMER_START and EVT_CLIENT_JUMP_TIMER_STOP events when no location name is provided
-# 22/12/2012 - 1.11 - Courgette
-#     * update for UrT 4.2.009 release. adds UT_MOD_SMITED, UT_MOD_GLOCK and fix constants values for some of the
-#       UT_MOD_* constants.
-# 08/01/2013 - 1.11.1 - Courgette
-#     * fix EVT_SURVIVOR_WIN event
-# 08/04/2013 - 1.12 - Courgette
-#     * add EVT_BOMB_EXPLODED event
-# 05/07/2012 - 1.13 - Fenix
-#     * added support for new UrT 4.2.013 weapons
-#     * correctly parse ClientJumpRunStarted and ClientJumpRunStopped
-#     * renamed event EVT_CLIENT_JUMP_TIMER_START into EVT_CLIENT_JUMP_RUN_START and add attempt_num and attempt_max
-#       info to the event data
-#     * renamed event EVT_CLIENT_JUMP_TIMER_STOP into EVT_CLIENT_JUMP_RUN_STOP and add attempt_num and attempt_max
-#       info to the event data
-#     * added parsing of ClientJumpRunCanceled (generate EVT_CLIENT_JUMP_RUN_CANCEL)
-#     * fixed Client(Load|Save)Position parsing
-# 14/07/2013 - 1.14 - Courgette
-#     * add hitlocation constants : HL_HEAD, HL_HELMET and HL_TORSO
-# 15/07/2013 - 1.15 - Fenix
-#     * added missing hitlocation constants
-#     * added damage table
-#     * restored function _getDamagePoints
-# 25/07/2013 - 1.16 - Fenix
-#     * fixed means of death ids
-#     * added hit2kill code translation for UT_MOD_KICKED
-# 30/07/2013 - 1.17 - Fenix
-#     * added EVT_CLIENT_GOTO
-# 27/09/2013 - 1.18 - Courgette
-#     * added EVT_VOTE_PASSED and EVT_VOTE_FAILED
-# 09/12/2013 - 1.19 - Fenix
-#     * added EVT_CLIENT_SPAWN and EVT_FLAG_RETURN_TIME
-# 11/12/2013 - 1.20 - Courgette
-#     * fix: players with ':' in their name can't run commands ('UrT bug spotted' showing up in the log)
-# 13/01/2014 - 1.21 - Fenix
-#     * pep8 coding style guide
-#     * correctly set the client bot flag upon new client connection
-# 12/01/2014 - 1.22 - Fenix
-#     * updated Radio call regex: allow to parse log lines with missing radio location
-#     * removed duplicated regular expression (Radio)
-#     * increase parser version (1.22) and updated changelog
-# 2014/02/22 - 1.23 - Courgette
-#     * fix 162 - 'None' string is written to the database client.pbid column
-#     * fix auth-whois rcon response not being parsed properly since it has a newline character
-# 2014/04/14 - 1.24 - Fenix
-#     * use getEventID method to obtain event ids: remove some warnings
-#     * use integer value while calling tempban method: remove another silly warning
-#     * rewritten regular expressions on multiline: respect pep8 constraint of 110 chars per line
-#     * remove duplicate reference of event ids
-# 2014/05/02 - 1.24.1 - Fenix
-#     * correctly initialized spamcontrolPlugin class attribute
-# 2014/06/02 - 1.24.2 - Fenix
-#     * fixed reColor regex stripping whitespaces between words
-#
+# 24/07/2012 - 0.0    - Courgette - parser created
+# 08/08/2012 - 1.0    - Courgette - new authentication system using the Frozen Sand Account if available
+# 08/08/2012 - 1.1    - Courgette - fix error when computing Hit damage. Until we got real value, the default value : 15
+#                                   is returned for all weapons and all hit locations.
+# 09/08/2012 - 1.2    - Courgette - make sure the game is UrT 4.2 or fail to start
+# 09/08/2012 - 1.2.1  - Courgette - disabling authentication using the /rcon auth-whois command response
+# 12/08/2012 - 1.3    - Courgette - patches the Spamcontrol plugin to make it aware of radio spam
+# 14/09/2012 - 1.4    - Courgette - change kick and tempban commands so them give the reason
+# 04/10/2012 - 1.5    - Courgette - update for UrT 4.2.002 new auth system with Frozen Sand Account and auth-key
+# 04/10/2012 - 1.5.1  - Courgette - fix kick and tempban when used with a reason
+# 10/10/2012 - 1.5.2  - Courgette - support names with blank characters
+# 24/10/2012 - 1.6    - Courgette - new: settings to ban with the Frozen Sand auth system
+# 09/11/2012 - 1.7    - Courgette - new: support new jump game type with code 9
+# 15/11/2012 - 1.7.1  - Courgette - fix: banning with the Frozen Sand auth system now works with servers set to auth
+#                                   private or notoriety mode
+# 26/11/2012 - 1.8    - Courgette - protect some of the Client object property
+# 26/11/2012 - 1.9    - Courgette - fix authentication for connecting player Frosen Sand Account is uniquely known
+#                                   in the B3 database
+# 07/12/2012 - 1.10   - Courgette - add new events : EVT_CLIENT_JUMP_TIMER_START, EVT_CLIENT_JUMP_TIMER_STOP,
+#                                   EVT_CLIENT_POS_SAVE, EVT_CLIENT_POS_LOAD and EVT_CLIENT_SURVIVOR_WINNER which can be
+#                                   used by plugins
+# 08/12/2012 - 1.10.1 - Courgette - fix EVT_CLIENT_JUMP_TIMER_START and EVT_CLIENT_JUMP_TIMER_STOP events when no
+#                                   location name is provided
+# 22/12/2012 - 1.11   - Courgette - update for UrT 4.2.009 release. adds UT_MOD_SMITED, UT_MOD_GLOCK and fix constants
+#                                   values for some of the UT_MOD_* constants
+# 08/01/2013 - 1.11.1 - Courgette - fix EVT_SURVIVOR_WIN event
+# 08/04/2013 - 1.12   - Courgette - add EVT_BOMB_EXPLODED event
+# 05/07/2012 - 1.13   - Fenix     - added support for new UrT 4.2.013 weapons
+#                                 - correctly parse ClientJumpRunStarted and ClientJumpRunStopped
+#                                 - renamed event EVT_CLIENT_JUMP_TIMER_START into EVT_CLIENT_JUMP_RUN_START and add
+#                                   attempt_num and attempt_max info to the event data
+#                                 - renamed event EVT_CLIENT_JUMP_TIMER_STOP into EVT_CLIENT_JUMP_RUN_STOP and add
+#                                   attempt_num and attempt_max info to the event data
+#                                 - added parsing of ClientJumpRunCanceled (generate EVT_CLIENT_JUMP_RUN_CANCEL)
+#                                 - fixed Client(Load|Save)Position parsing
+# 14/07/2013 - 1.14   - Courgette - add hitlocation constants : HL_HEAD, HL_HELMET and HL_TORSO
+# 15/07/2013 - 1.15   - Fenix     - added missing hitlocation constants
+#                                 - added damage table
+#                                 - restored function _get_damage_points
+# 25/07/2013 - 1.16   - Fenix     - fixed means of death ids
+#                                 - added hit2kill code translation for UT_MOD_KICKED
+# 30/07/2013 - 1.17   - Fenix     - added EVT_CLIENT_GOTO
+# 27/09/2013 - 1.18   - Courgette - added EVT_VOTE_PASSED and EVT_VOTE_FAILED
+# 09/12/2013 - 1.19   - Fenix     - added EVT_CLIENT_SPAWN and EVT_FLAG_RETURN_TIME
+# 11/12/2013 - 1.20   - Courgette - fix: players with ':' in their name can't run commands ('UrT bug spotted' showing
+#                                   up in the log)
+# 13/01/2014 - 1.21   - Fenix     - PEP8 coding standards
+#                                 - correctly set the client bot flag upon new client connection
+# 12/01/2014 - 1.22   - Fenix     - updated Radio call regex: allow to parse log lines with missing radio location
+#                                 - removed duplicated regular expression (Radio)
+#                                 - increase parser version (1.22) and updated changelog
+# 22/02/2014 - 1.23   - Courgette - fix issue #162 - 'None' string is written to the database client.pbid column
+#                                 - fix auth-whois rcon response not being parsed properly since it has a newline char
+# 14/04/2014 - 1.24   - Fenix     - use getEvent_id method to obtain event ids: remove some warnings
+#                                 - use integer value while calling tempban method: remove another silly warning
+#                                 - rewritten regular expressions on multiline: respect PEP8 line length constraint
+#                                 - remove duplicate reference of event ids
+# 02/05/2014 - 1.24.1 - Fenix     - correctly initialized spamcontrol_plugin class attribute
+# 02/06/2014 - 1.24.2 - Fenix     - fixed reColor regex stripping whitespaces between words
+# 03/08/2014 - 1.25   - Fenix     - syntax cleanup
+#                                 - reformat changelog
 
 import b3
 import re
 import new
 import time
-from b3.functions import time2minutes
-from b3.parsers.iourt41 import Iourt41Parser
+
 from b3.clients import Client
 from b3.events import Event
+from b3.functions import time2minutes
+from b3.parsers.iourt41 import Iourt41Parser
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 
+
 __author__ = 'Courgette, Fenix'
-__version__ = '1.24.2'
+__version__ = '1.25'
 
 
 class Iourt42Client(Client):
@@ -128,62 +101,69 @@ class Iourt42Client(Client):
     notoriety = None
 
     def auth_by_guid(self):
+        """
+        Authorize this client using his GUID.
+        """
         self.console.verbose("auth by guid: %r" % self.guid)
         try:
             return self.console.storage.getClient(self)
         except KeyError, msg:
-            self.console.debug('User not found %s: %s', self.guid, msg)
+            self.console.debug('user not found %s: %s', self.guid, msg)
             return False
 
     def auth_by_pbid(self):
+        """
+        Authorize this client using his PBID.
+        """
         self.console.verbose("auth by FSA: %r" % self.pbid)
         clients_matching_pbid = self.console.storage.getClientsMatching(dict(pbid=self.pbid))
         if len(clients_matching_pbid) > 1:
-            self.console.error("DATA ERROR: found %s client having Frozen Sand Account '%s'" %
-                               (len(clients_matching_pbid), self.pbid))
+            self.console.error("DATA ERROR: found %s client having Frozen Sand "
+                               "account '%s'" % (len(clients_matching_pbid), self.pbid))
             return self.auth_by_pbid_and_guid()
         elif len(clients_matching_pbid) == 1:
             self.id = clients_matching_pbid[0].id
-            # we may have a second client entry in database with current guid. We want to update our current
-            # client guid only if it is not the case.
+            # we may have a second client entry in database with current guid.
+            # we want to update our current client guid only if it is not the case.
             try:
                 client_by_guid = self.console.storage.getClient(Client(guid=self.guid))
             except KeyError:
                 client_by_guid = None
 
             if client_by_guid and client_by_guid.id != self.id:
-                # so storage.getClient is able to overwrite the value which will make it remain
-                # unchanged in database when .save() will be called later on
+                # so storage.get_client is able to overwrite the value which will make
+                # it remain unchanged in database when .save() will be called later on
                 self._guid = None
             return self.console.storage.getClient(self)
         else:
-            self.console.debug('Frozen Sand Account [%s] unknown in database', self.pbid)
+            self.console.debug('Frozen Sand account [%s] unknown in database', self.pbid)
             return False
 
     def auth_by_pbid_and_guid(self):
+        """
+        Authorize this client using both his PBID and GUID.
+        """
         self.console.verbose("auth by both guid and FSA: %r, %r" % (self.guid, self.pbid))
-        clients_matching_pbid = self.console.storage.getClientsMatching(dict(pbid=self.pbid, guid=self.guid))
+        clients_matching_pbid = self.console.storage.getClientsMatching({'pbid': self.pbid, 'guid': self.guid})
         if len(clients_matching_pbid):
             self.id = clients_matching_pbid[0].id
             return self.console.storage.getClient(self)
         else:
-            self.console.debug("Frozen Sand Account [%s] with guid '%s' unknown in database" % (self.pbid, self.guid))
+            self.console.debug("Frozen Sand account [%s] with guid '%s' unknown in database" % (self.pbid, self.guid))
             return False
 
     def auth(self):
-        """\
+        """
         The b3.clients.Client.auth method needs to be changed to fit the UrT4.2 authentication scheme.
         In UrT4.2 :
-         * all connected players have a cl_guid
-         * some have a Frozen Sand Account (FSA)
+           * all connected players have a cl_guid
+           * some have a Frozen Sand account (FSA)
 
         The FSA is a worldwide identifier while the cl_guid only identify a player on a given game server.
-
         See http://forum.bigbrotherbot.net/urban-terror-4-2/urt-4-2-discussion/
         """
         if not self.authed and self.guid and not self.authorizing:
             self.authorizing = True
-
             name = self.name
             ip = self.ip
             pbid = self.pbid
@@ -202,7 +182,7 @@ class Iourt42Client(Client):
                 # auth with cl_guid only
                 try:
                     in_storage = self.auth_by_guid()
-                    # fix up corrupted data due to bug 162
+                    # fix up corrupted data due to bug #162
                     if in_storage and in_storage.pbid == 'None':
                         in_storage.pbid = None
                 except Exception, e:
@@ -228,11 +208,11 @@ class Iourt42Client(Client):
                         return False
 
             if in_storage:
-                self.console.bot('Client found in storage @%s, welcome back %s (FSA: %s)',
-                                 self.id, self.name, self.pbid)
                 self.lastVisit = self.timeEdit
+                self.console.bot('client found in the storage @%s: '
+                                 'welcome back %s (FSA: %s)', self.id, self.name, self.pbid)
             else:
-                self.console.bot('Client not found in the storage %s (FSA: %s), create new', str(self.guid), self.pbid)
+                self.console.bot('client not found in the storage %s (FSA: %s), create new', str(self.guid), self.pbid)
 
             self.connections = int(self.connections) + 1
             self.name = name
@@ -242,7 +222,7 @@ class Iourt42Client(Client):
             self.save()
             self.authed = True
 
-            self.console.debug('Client Authorized: @%s "%s" [%s] (FSA: %s)', self.cid, self.name, self.guid, self.pbid)
+            self.console.debug('client authorized: @%s "%s" [%s] (FSA: %s)', self.cid, self.name, self.guid, self.pbid)
 
             # check for bans
             if self.numBans > 0:
@@ -254,7 +234,7 @@ class Iourt42Client(Client):
 
             self.refreshLevel()
 
-            self.console.queueEvent(b3.events.Event(self.console.getEventID('EVT_CLIENT_AUTH'), self, self))
+            self.console.queueEvent(self.console.getEvent('EVT_CLIENT_AUTH', data=self, client=self))
             self.authorizing = False
 
             return self.authed
@@ -268,6 +248,10 @@ class Iourt42Client(Client):
 class Iourt42Parser(Iourt41Parser):
    
     gameName = 'iourt42'
+    spamcontrolPlugin = None
+
+    _permban_with_frozensand = False
+    _tempban_with_frozensand = False
 
     _commands = {
         'broadcast': '%(message)s',
@@ -296,112 +280,160 @@ class Iourt42Parser(Iourt41Parser):
 
     # remove the time off of the line
     _lineClear = re.compile(r'^(?:[0-9:]+\s?)?')
-    #0:00 ClientUserinfo: 0:
 
     _lineFormats = (
-        #Radio: 0 - 7 - 2 - "New Alley" - "I'm going for the flag"
-        re.compile(r'^(?P<action>Radio): (?P<data>(?P<cid>[0-9]+) - (?P<msg_group>[0-9]+) - (?P<msg_id>[0-9]+) - '
-                   r'"(?P<location>.*)" - "(?P<text>.*)")$'),
+        # Radio: 0 - 7 - 2 - "New Alley" - "I'm going for the flag"
+        re.compile(r'^(?P<action>Radio): '
+                   r'(?P<data>(?P<cid>[0-9]+) - '
+                   r'(?P<msg_group>[0-9]+) - '
+                   r'(?P<msg_id>[0-9]+) - '
+                   r'"(?P<location>.*)" - '
+                   r'"(?P<text>.*)")$', re.IGNORECASE),
 
-        #Callvote: 1 - "map dressingroom"
-        re.compile(r'^(?P<action>Callvote): (?P<data>(?P<cid>[0-9]+) - "(?P<vote_string>.*)")$'),
+        # Callvote: 1 - "map dressingroom"
+        re.compile(r'^(?P<action>Callvote): (?P<data>(?P<cid>[0-9]+) - "(?P<vote_string>.*)")$', re.IGNORECASE),
 
-        #Vote: 0 - 2
-        re.compile(r'^(?P<action>Vote): (?P<data>(?P<cid>[0-9]+) - (?P<value>.*))$'),
+        # Vote: 0 - 2
+        re.compile(r'^(?P<action>Vote): (?P<data>(?P<cid>[0-9]+) - (?P<value>.*))$', re.IGNORECASE),
 
-        #VotePassed: 1 - 0 - "reload"
-        re.compile(r'^(?P<action>VotePassed): (?P<data>(?P<yes>[0-9]+) - (?P<no>[0-9]+) - "(?P<what>.*)")$'),
+        # VotePassed: 1 - 0 - "reload"
+        re.compile(r'^(?P<action>VotePassed): (?P<data>(?P<yes>[0-9]+) - (?P<no>[0-9]+) - "(?P<what>.*)")$', re.I),
 
-        #VoteFailed: 1 - 1 - "restart"
-        re.compile(r'^(?P<action>VoteFailed): (?P<data>(?P<yes>[0-9]+) - (?P<no>[0-9]+) - "(?P<what>.*)")$'),
+        # VoteFailed: 1 - 1 - "restart"
+        re.compile(r'^(?P<action>VoteFailed): (?P<data>(?P<yes>[0-9]+) - (?P<no>[0-9]+) - "(?P<what>.*)")$', re.I),
 
-        #FlagCaptureTime: 0: 1234567890
-        #FlagCaptureTime: 1: 1125480101
+        # FlagCaptureTime: 0: 1234567890
+        # FlagCaptureTime: 1: 1125480101
         re.compile(r'^(?P<action>FlagCaptureTime):\s(?P<cid>[0-9]+):\s(?P<captime>[0-9]+)$', re.IGNORECASE),
 
-        #13:34 ClientJumpRunStarted: 0 - way: 1
-        #13:34 ClientJumpRunStarted: 0 - way: 1 - attempt: 1 of 5
-        re.compile(r'^(?P<action>ClientJumpRunStarted):\s(?P<cid>\d+)\s-\s(?P<data>way:\s(?P<way_id>\d+)'
-                   r'(?:\s-\sattempt:\s(?P<attempt_num>\d+)\sof\s(?P<attempt_max>\d+))?)$', re.IGNORECASE),
-        #13:34 ClientJumpRunStopped: 0 - way: 1 - time: 12345
-        #13:34 ClientJumpRunStopped: 0 - way: 1 - time: 12345 - attempt: 1 of 5
-        re.compile(r'^(?P<action>ClientJumpRunStopped):\s(?P<cid>\d+)\s-\s(?P<data>way:\s(?P<way_id>\d+)'
-                   r'\s-\stime:\s(?P<way_time>\d+)(?:\s-\sattempt:\s(?P<attempt_num>\d+)\sof\s(?P<attempt_max>\d+'
-                   r'))?)$', re.IGNORECASE),
-        #13:34 ClientJumpRunCanceled: 0 - way: 1
-        #13:34 ClientJumpRunCanceled: 0 - way: 1 - attempt: 1 of 5
-        re.compile(r'^(?P<action>ClientJumpRunCanceled):\s(?P<cid>\d+)\s-\s(?P<data>way:\s(?P<way_id>\d+)'
-                   r'(?:\s-\sattempt:\s(?P<attempt_num>\d+)\sof\s(?P<attempt_max>\d+))?)$', re.IGNORECASE),
-        
-        #13:34 ClientSavePosition: 0 - 335.384887 - 67.469154 - -23.875000
-        #13:34 ClientLoadPosition: 0 - 335.384887 - 67.469154 - -23.875000
-        re.compile(r'^(?P<action>Client(Save|Load)Position):\s(?P<cid>\d+)\s-\s(?P<data>(?P<x>-?\d+(?:\.\d+)'
-                   r'?)\s-\s(?P<y>-?\d+(?:\.\d+)?)\s-\s(?P<z>-?\d+(?:\.\d+)?))$', re.IGNORECASE),
-        
-        #13:34 ClientGoto: 0 - 1 - 335.384887 - 67.469154 - -23.875000
-        re.compile(r'^(?P<action>ClientGoto):\s(?P<cid>\d+)\s-\s(?P<tcid>\d+)\s-\s(?P<data>(?P<x>-?\d+(?:\.\d+)'
-                   r'?)\s-\s(?P<y>-?\d+(?:\.\d+)?)\s-\s(?P<z>-?\d+(?:\.\d+)?))$', re.IGNORECASE),
+        # 13:34 ClientJumpRunStarted: 0 - way: 1
+        # 13:34 ClientJumpRunStarted: 0 - way: 1 - attempt: 1 of 5
+        re.compile(r'^(?P<action>ClientJumpRunStarted):\s'
+                   r'(?P<cid>\d+)\s-\s'
+                   r'(?P<data>way:\s'
+                   r'(?P<way_id>\d+)'
+                   r'(?:\s-\sattempt:\s'
+                   r'(?P<attempt_num>\d+)\sof\s'
+                   r'(?P<attempt_max>\d+))?)$', re.IGNORECASE),
 
-        #ClientSpawn: 0
-        #ClientSpawn: 1
+        # 13:34 ClientJumpRunStopped: 0 - way: 1 - time: 12345
+        # 13:34 ClientJumpRunStopped: 0 - way: 1 - time: 12345 - attempt: 1 of 5
+        re.compile(r'^(?P<action>ClientJumpRunStopped):\s'
+                   r'(?P<cid>\d+)\s-\s'
+                   r'(?P<data>way:\s'
+                   r'(?P<way_id>\d+)'
+                   r'\s-\stime:\s'
+                   r'(?P<way_time>\d+)'
+                   r'(?:\s-\sattempt:\s'
+                   r'(?P<attempt_num>\d+)\sof\s'
+                   r'(?P<attempt_max>\d+'
+                   r'))?)$', re.IGNORECASE),
+
+        # 13:34 ClientJumpRunCanceled: 0 - way: 1
+        # 13:34 ClientJumpRunCanceled: 0 - way: 1 - attempt: 1 of 5
+        re.compile(r'^(?P<action>ClientJumpRunCanceled):\s'
+                   r'(?P<cid>\d+)\s-\s'
+                   r'(?P<data>way:\s'
+                   r'(?P<way_id>\d+)'
+                   r'(?:\s-\sattempt:\s'
+                   r'(?P<attempt_num>\d+)\sof\s'
+                   r'(?P<attempt_max>\d+))?)$', re.IGNORECASE),
+
+        # 13:34 ClientSavePosition: 0 - 335.384887 - 67.469154 - -23.875000
+        # 13:34 ClientLoadPosition: 0 - 335.384887 - 67.469154 - -23.875000
+        re.compile(r'^(?P<action>Client(Save|Load)Position):\s'
+                   r'(?P<cid>\d+)\s-\s'
+                   r'(?P<data>'
+                   r'(?P<x>-?\d+(?:\.\d+)?)\s-\s'
+                   r'(?P<y>-?\d+(?:\.\d+)?)\s-\s'
+                   r'(?P<z>-?\d+(?:\.\d+)?))$', re.IGNORECASE),
+
+        # 13:34 ClientGoto: 0 - 1 - 335.384887 - 67.469154 - -23.875000
+        re.compile(r'^(?P<action>ClientGoto):\s'
+                   r'(?P<cid>\d+)\s-\s'
+                   r'(?P<tcid>\d+)\s-\s'
+                   r'(?P<data>'
+                   r'(?P<x>-?\d+(?:\.\d+)?)\s-\s'
+                   r'(?P<y>-?\d+(?:\.\d+)?)\s-\s'
+                   r'(?P<z>-?\d+(?:\.\d+)?))$', re.IGNORECASE),
+
+        # ClientSpawn: 0
+        # ClientSpawn: 1
         re.compile(r'^(?P<action>ClientSpawn):\s(?P<cid>[0-9]+)$', re.IGNORECASE),
 
-        #Generated with ioUrbanTerror v4.1:
-        #Hit: 12 7 1 19: BSTHanzo[FR] hit ercan in the Helmet
-        #Hit: 13 10 0 8: Grover hit jacobdk92 in the Head
-        re.compile(r'^(?P<action>Hit):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<hitloc>[0-9]+)\s'
-                   r'(?P<aweap>[0-9]+):\s+(?P<text>.*))$', re.IGNORECASE),
+        # Generated with ioUrbanTerror v4.1:
+        # Hit: 12 7 1 19: BSTHanzo[FR] hit ercan in the Helmet
+        # Hit: 13 10 0 8: Grover hit jacobdk92 in the Head
+        re.compile(r'^(?P<action>Hit):\s'
+                   r'(?P<data>'
+                   r'(?P<cid>[0-9]+)\s'
+                   r'(?P<acid>[0-9]+)\s'
+                   r'(?P<hitloc>[0-9]+)\s'
+                   r'(?P<aweap>[0-9]+):\s+'
+                   r'(?P<text>.*))$', re.IGNORECASE),
 
-        #6:37 Kill: 0 1 16: XLR8or killed =lvl1=Cheetah by UT_MOD_SPAS
-        #2:56 Kill: 14 4 21: Qst killed Leftovercrack by UT_MOD_PSG1
+        # 6:37 Kill: 0 1 16: XLR8or killed =lvl1=Cheetah by UT_MOD_SPAS
+        # 2:56 Kill: 14 4 21: Qst killed Leftovercrack by UT_MOD_PSG1
         re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s+'
                    r'(?P<text>.*))$', re.IGNORECASE),
 
-        #Processing chats and tell events...
-        #5:39 saytell: 15 16 repelSteeltje: nno
-        #5:39 saytell: 15 15 repelSteeltje: nno
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<name>.+?):\s+(?P<text>.*))$',
-                   re.IGNORECASE),
+        # Processing chats and tell events...
+        # 5:39 saytell: 15 16 repelSteeltje: nno
+        # 5:39 saytell: 15 15 repelSteeltje: nno
+        re.compile(r'^(?P<action>[a-z]+):\s'
+                   r'(?P<data>'
+                   r'(?P<cid>[0-9]+)\s'
+                   r'(?P<acid>[0-9]+)\s'
+                   r'(?P<name>.+?):\s+'
+                   r'(?P<text>.*))$', re.IGNORECASE),
 
-        # SGT: fix issue with OnSay when something like this come and the match could'nt find the name group
+        # SGT: fix issue with on_say when something like this come and the match could'nt find the name group
         # say: 7 -crespino-:
         # say: 6 ^5Marcel ^2[^6CZARMY^2]: !help
         re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<name>.+?): (?P<text>.*))$', re.IGNORECASE),
 
-        #15:42 Flag Return: RED
-        #15:42 Flag Return: BLUE
+        # 15:42 Flag Return: RED
+        # 15:42 Flag Return: BLUE
         re.compile(r'^(?P<action>Flag Return):\s(?P<data>(?P<color>.+))$', re.IGNORECASE),
 
-        #Bombmode actions:
-        #3:06 Bombholder is 2
+        # Bombmode actions:
+        # 3:06 Bombholder is 2
         re.compile(r'^(?P<action>Bombholder)(?P<data>\sis\s(?P<cid>[0-9]))$', re.IGNORECASE),
 
-        #was planted, was defused, was tossed, has been collected (doh, how gramatically correct!)
-        #2:13 Bomb was tossed by 2
-        #2:32 Bomb was planted by 2
-        #3:01 Bomb was defused by 3!
-        #2:17 Bomb has been collected by 2
-        re.compile(r'^(?P<action>Bomb)\s(?P<data>(was|has been)\s(?P<subaction>[a-z]+)\sby\s(?P<cid>[0-9]+).*)$',
-                   re.IGNORECASE),
+        # was planted, was defused, was tossed, has been collected (doh, how gramatically correct!)
+        # 2:13 Bomb was tossed by 2
+        # 2:32 Bomb was planted by 2
+        # 3:01 Bomb was defused by 3!
+        # 2:17 Bomb has been collected by 2
+        re.compile(r'^(?P<action>Bomb)\s'
+                   r'(?P<data>(was|has been)\s'
+                   r'(?P<subaction>[a-z]+)\sby\s'
+                   r'(?P<cid>[0-9]+).*)$', re.IGNORECASE),
 
-        #17:24 Pop!
+        # 17:24 Pop!
         re.compile(r'^(?P<action>Pop)!$', re.IGNORECASE),
 
-        #Falling thru? Item stuff and so forth
+        # Falling thru? Item stuff and so forth
         re.compile(r'^(?P<action>[a-z]+):\s(?P<data>.*)$', re.IGNORECASE),
-        #Shutdowngame and Warmup... the one word lines
+
+        # Shutdowngame and Warmup... the one word lines
         re.compile(r'^(?P<action>[a-z]+):$', re.IGNORECASE)
     )
 
     # map: ut4_casa
     # num score ping name            lastmsg address               qport rate
     # --- ----- ---- --------------- ------- --------------------- ----- -----
-    #   2     0   19 ^1XLR^78^8^9or^7        0 145.99.135.227:27960  41893  8000  # player with a live ping
-    #   4     0 CNCT Dz!k^7                450 83.175.191.27:64459   50308 20000  # connecting player
-    #   9     0 ZMBI ^7                   1900 81.178.80.68:27960    10801  8000  # zombies (need to be disconnected!)
-    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+|CNCT|ZMBI)\s+'
-                            r'(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+'
-                            r'(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.I)
+    #   2     0   19 ^1XLR^78^8^9or        0 145.99.135.227:27960  41893  8000  # player with a live ping
+    #   4     0 CNCT Dz!k^7              450 83.175.191.27:64459   50308 20000  # connecting player
+    #   9     0 ZMBI ^7                 1900 81.178.80.68:27960    10801  8000  # zombies (need to be disconnected!)
+    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+'
+                            r'(?P<score>[0-9-]+)\s+'
+                            r'(?P<ping>[0-9]+|CNCT|ZMBI)\s+'
+                            r'(?P<name>.*?)\s+'
+                            r'(?P<last>[0-9]+)\s+'
+                            r'(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+'
+                            r'(?P<qport>[0-9]+)\s+'
+                            r'(?P<rate>[0-9]+)$', re.IGNORECASE)
 
     _reColor = re.compile(r'(\^\d)')
 
@@ -410,21 +442,23 @@ class Iourt42Parser(Iourt41Parser):
     # Scores: R:97 B:98
     # 0:  FREE k:0 d:0 ping:0
     # 4: yene RED k:16 d:8 ping:50 92.104.110.192:63496
-    _reTeamScores = re.compile(r'^Scores:\s+R:(?P<RedScore>.+)\s+B:(?P<BlueScore>.+)$', re.I)
-    _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): (?P<name>.*) (?P<team>RED|BLUE|SPECTATOR|FREE) '
+    _reTeamScores = re.compile(r'^Scores:\s+'
+                               r'R:(?P<RedScore>.+)\s+'
+                               r'B:(?P<BlueScore>.+)$', re.IGNORECASE)
+
+    _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): '
+                                r'(?P<name>.*) '
+                                r'(?P<team>RED|BLUE|SPECTATOR|FREE) '
                                 r'k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) ping:(?P<ping>[0-9]+|CNCT|ZMBI)( '
-                                r'(?P<ip>[0-9.]+):(?P<port>[0-9-]+))?$', re.I)
+                                r'(?P<ip>[0-9.]+):(?P<port>[0-9-]+))?$', re.IGNORECASE)
 
     # /rcon auth-whois replies patterns
     # 'auth: id: 0 - name: ^7Courgette - login: courgette - notoriety: serious - level: -1  \n'
-    _re_authwhois = re.compile(r'^auth: id: (?P<cid>\d+) - name: \^7(?P<name>.+?) - login: (?P<login>.*?) - '
-                               r'notoriety: (?P<notoriety>.+?) - level: (?P<level>-?\d+?)(?:\s+- (?P<extra>.*))?\s*$',
-                               re.MULTILINE)
-
-    spamcontrolPlugin = None
-
-    _permban_with_frozensand = False
-    _tempban_with_frozensand = False
+    _re_authwhois = re.compile(r'^auth: id: (?P<cid>\d+) - '
+                               r'name: \^7(?P<name>.+?) - '
+                               r'login: (?P<login>.*?) - '
+                               r'notoriety: (?P<notoriety>.+?) - '
+                               r'level: (?P<level>-?\d+?)(?:\s+- (?P<extra>.*))?\s*$', re.MULTILINE)
 
     ## kill modes
     MOD_WATER = '1'
@@ -535,11 +569,20 @@ class Iourt42Parser(Iourt41Parser):
         UT_MOD_GOOMBA: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
     }   
 
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  PARSER INITIALIZATION                                                                                         ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
     def __new__(cls, *args, **kwargs):
         Iourt42Parser.patch_Clients()
         return Iourt41Parser.__new__(cls)
 
     def startup(self):
+        """
+        Called after the parser is created before run().
+        """
         try:
             cvar = self.getCvar('gamename')
             gamename = cvar.getString() if cvar else None
@@ -547,7 +590,7 @@ class Iourt42Parser(Iourt41Parser):
                 self.error("the iourt42 B3 parser cannot be used with a game server other than Urban Terror 4.2")
                 raise SystemExit(220)
         except Exception, e:
-            self.warning("Could not query server for gamename.", exc_info=e)
+            self.warning("could not query server for gamename.", exc_info=e)
 
         Iourt41Parser.startup(self)
 
@@ -569,11 +612,13 @@ class Iourt42Parser(Iourt41Parser):
         self.Events.createEvent('EVT_CLIENT_SURVIVOR_WINNER', 'Event client survivor winner')
 
         self._eventMap['hotpotato'] = self.getEventID('EVT_GAME_FLAG_HOTPOTATO')
+        self._eventMap['shutdowngame'] = self.getEventID('EVT_GAME_ROUND_END')
+        self._eventMap['warmup'] = self.getEventID('EVT_GAME_WARMUP')
 
         self.load_conf_frozensand_ban_settings()
 
     def pluginsStarted(self):
-        """\
+        """
         Called when all plugins are started.
         """
         self.spamcontrolPlugin = self.getPlugin("spamcontrol")
@@ -587,10 +632,13 @@ class Iourt42Parser(Iourt41Parser):
     ####################################################################################################################
 
     def load_conf_frozensand_ban_settings(self):
+        """
+        Load ban settings according to auth system cvars.
+        """
         try:
             frozensand_auth_available = self.is_frozensand_auth_available()
         except Exception, e:
-            self.warning("Could not query server for cvar auth.", exc_info=e)
+            self.warning("could not query server for cvar auth", exc_info=e)
             frozensand_auth_available = False
         self.info("Frozen Sand auth system enabled : %s" % ('yes' if frozensand_auth_available else 'no'))
 
@@ -601,7 +649,7 @@ class Iourt42Parser(Iourt41Parser):
             else:
                 frozensand_auth_owners = None
         except Exception, e:
-            self.warning("Could not query server for cvar auth_owners.", exc_info=e)
+            self.warning("could not query server for cvar auth_owners", exc_info=e)
             frozensand_auth_owners = ""
 
         yn = ('yes - %s' % frozensand_auth_available) if frozensand_auth_owners else 'no'
@@ -621,29 +669,128 @@ class Iourt42Parser(Iourt41Parser):
                       "auth system is not enabled or auth_owners not set")
 
     def load_conf_permban_with_frozensand(self):
+        """
+        Load permban configuration from b3.xml.
+        """
         self._permban_with_frozensand = False
         try:
             self._permban_with_frozensand = self.config.getboolean('server', 'permban_with_frozensand')
         except Exception, err:
             self.warning(err)
 
-        self.info("Send permbans to Frozen Sand : %s" % ('yes' if self._permban_with_frozensand else 'no'))
+        self.info("send permbans to Frozen Sand : %s" % ('yes' if self._permban_with_frozensand else 'no'))
 
     def load_conf_tempban_with_frozensand(self):
+        """
+        Load tempban configuration from b3.xml.
+        """
         self._tempban_with_frozensand = False
         try:
             self._tempban_with_frozensand = self.config.getboolean('server', 'tempban_with_frozensand')
         except Exception, err:
             self.warning(err)
 
-        self.info("Send temporary bans to Frozen Sand : %s" % ('yes' if self._tempban_with_frozensand else 'no'))
+        self.info("send temporary bans to Frozen Sand : %s" % ('yes' if self._tempban_with_frozensand else 'no'))
 
     ####################################################################################################################
     ##                                                                                                                ##
     ##  EVENT HANDLERS                                                                                                ##
     ##                                                                                                                ##
     ####################################################################################################################
+    
+    def OnClientuserinfo(self, action, data, match=None):
+        # 2 \ip\145.99.135.227:27960\challenge\-232198920\qport\2781\protocol\68\battleye\1\name\[SNT]^1XLR^78or..
+        # 0 \gear\GMIORAA\team\blue\skill\5.000000\characterfile\bots/ut_chicken_c.c\color\4\sex\male\race\2\snaps\20\..
+        bclient = self.parseUserInfo(data)
+        bot = False
+        if not 'cl_guid' in bclient and 'skill' in bclient:
+            # must be a bot connecting
+            self.bot('bot Connecting!')
+            bclient['ip'] = '0.0.0.0'
+            bclient['cl_guid'] = 'BOT' + str(bclient['cid'])
+            bot = True
 
+        if 'name' in bclient:
+            # remove spaces from name
+            bclient['name'] = bclient['name'].replace(' ', '')
+
+        # split port from ip field
+        if 'ip' in bclient:
+            ip_port_data = bclient['ip'].split(':', 1)
+            bclient['ip'] = ip_port_data[0]
+            if len(ip_port_data) > 1:
+                bclient['port'] = ip_port_data[1]
+
+        if 'team' in bclient:
+            bclient['team'] = self.getTeam(bclient['team'])
+
+        self.verbose('parsed user info: %s' % bclient)
+
+        if bclient:
+            client = self.clients.getByCID(bclient['cid'])
+
+            if client:
+                # update existing client
+                for k, v in bclient.iteritems():
+                    if hasattr(client, 'gear') and k == 'gear' and client.gear != v:
+                        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_GEAR_CHANGE'), v, client))
+                    if not k.startswith('_') and k not in ('login', 'password', 'groupBits',
+                                                           'maskLevel', 'autoLogin', 'greeting'):
+                        setattr(client, k, v)
+            else:
+                # make a new client
+                # use cl_guid
+                if 'cl_guid' in bclient:
+                    guid = bclient['cl_guid']
+                else:
+                    guid = 'unknown'
+
+                # query FrozenSand Account
+                auth_info = self.queryClientFrozenSandAccount(bclient['cid'])
+                fsa = auth_info.get('login', None)
+
+                # v1.0.17 - mindriot - 02-Nov-2008
+                if 'name' not in bclient:
+                    bclient['name'] = self._empty_name_default
+
+                if 'ip' not in bclient:
+                    if guid == 'unknown':
+                        # happens when a client is (temp)banned and got kicked so client was destroyed,
+                        # but infoline was still waiting to be parsed.
+                        self.debug('client disconnected: ignoring...')
+                        return None
+                    else:
+                        try:
+                            # see issue xlr8or/big-brother-bot#87 - ip can be missing
+                            self.debug("missing ip: trying to get ip with 'status'")
+                            plist = self.getPlayerList()
+                            client_data = plist[bclient['cid']]
+                            bclient['ip'] = client_data['ip']
+                        except Exception, err:
+                            bclient['ip'] = ''
+                            self.warning("failed to get client %s ip address" % bclient['cid'], err)
+
+                nguid = ''
+                # override the guid... use ip's only if self.console.IpsOnly is set True.
+                if self.IpsOnly:
+                    nguid = bclient['ip']
+                # replace last part of the guid with two segments of the ip
+                elif self.IpCombi:
+                    i = bclient['ip'].split('.')
+                    d = len(i[0])+len(i[1])
+                    nguid = guid[:-d]+i[0]+i[1]
+                # Quake clients don't have a cl_guid, we'll use ip instead
+                elif guid == 'unknown':
+                    nguid = bclient['ip']
+
+                if nguid != '':
+                    guid = nguid
+
+                self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'],
+                                       state=b3.STATE_ALIVE, bot=bot, guid=guid, pbid=fsa, data=auth_info)
+
+        return None
+    
     def OnRadio(self, action, data, match=None):
         cid = match.group('cid')
         msg_group = match.group('msg_group')
@@ -652,44 +799,40 @@ class Iourt42Parser(Iourt41Parser):
         text = match.group('text')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('No client found')
+            self.debug('no client found')
             return None
-        return Event(self.getEventID('EVT_CLIENT_RADIO'),
-                     client=client,
-                     data=dict(msg_group=msg_group,
-                               msg_id=msg_id,
-                               location=location,
-                               text=text))
+        return self.getEvent('EVT_CLIENT_RADIO', client=client, data={'msg_group': msg_group, 'msg_id': msg_id,
+                                                                      'location': location, 'text': text})
 
     def OnCallvote(self, action, data, match=None):
         cid = match.group('cid')
         vote_string = match.group('vote_string')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('No client found')
+            self.debug('no client found')
             return None
-        return Event(self.getEventID('EVT_CLIENT_CALLVOTE'), client=client, data=vote_string)
+        return self.getEvent('EVT_CLIENT_CALLVOTE', client=client, data=vote_string)
 
     def OnVote(self, action, data, match=None):
         cid = match.group('cid')
         value = match.group('value')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('No client found')
+            self.debug('no client found')
             return None
-        return Event(self.getEventID('EVT_CLIENT_VOTE'), client=client, data=value)
+        return self.getEvent('EVT_CLIENT_VOTE', client=client, data=value)
 
     def OnVotepassed(self, action, data, match=None):
         yes_count = int(match.group('yes'))
         no_count = int(match.group('no'))
         vote_what = match.group('what')
-        return Event(self.getEventID('EVT_VOTE_PASSED'), data=dict(yes=yes_count, no=no_count, what=vote_what))
+        return self.getEvent('EVT_VOTE_PASSED', data={'yes': yes_count, 'no': no_count, 'what': vote_what})
 
     def OnVotefailed(self, action, data, match=None):
         yes_count = int(match.group('yes'))
         no_count = int(match.group('no'))
         vote_what = match.group('what')
-        return Event(self.getEventID('EVT_VOTE_FAILED'), data=dict(yes=yes_count, no=no_count, what=vote_what))
+        return self.getEvent('EVT_VOTE_FAILED', data={'yes': yes_count, 'no': no_count, 'what': vote_what})
 
     def OnFlagcapturetime(self, action, data, match=None):
         # FlagCaptureTime: 0: 1234567890
@@ -698,9 +841,9 @@ class Iourt42Parser(Iourt41Parser):
         captime = int(match.group('captime'))
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('No client found')
+            self.debug('no client found')
             return None
-        return Event(self.getEventID('EVT_FLAG_CAPTURE_TIME'), client=client, data=captime)
+        return self.getEvent('EVT_FLAG_CAPTURE_TIME', client=client, data=captime)
 
     def OnClientjumprunstarted(self, action, data, match=None):
         cid = match.group('cid')
@@ -709,13 +852,11 @@ class Iourt42Parser(Iourt41Parser):
         attempt_max = match.group('attempt_max')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('No client found')
+            self.debug('no client found')
             return None
-        return Event(self.getEventID('EVT_CLIENT_JUMP_RUN_START'),
-                     client=client,
-                     data=dict(way_id=way_id,
-                               attempt_num=attempt_num,
-                               attempt_max=attempt_max))
+        return self.getEvent('EVT_CLIENT_JUMP_RUN_START', client=client, data={'way_id': way_id,
+                                                                               'attempt_num': attempt_num,
+                                                                               'attempt_max': attempt_max})
 
     def OnClientjumprunstopped(self, action, data, match=None):
         cid = match.group('cid')
@@ -725,14 +866,12 @@ class Iourt42Parser(Iourt41Parser):
         attempt_max = match.group('attempt_max')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('No client found')
+            self.debug('no client found')
             return None
-        return Event(self.getEventID('EVT_CLIENT_JUMP_RUN_STOP'),
-                     client=client,
-                     data=dict(way_id=way_id,
-                               way_time=way_time,
-                               attempt_num=attempt_num,
-                               attempt_max=attempt_max))
+        return self.getEvent('EVT_CLIENT_JUMP_RUN_STOP', client=client, data={'way_id': way_id,
+                                                                              'way_time': way_time,
+                                                                              'attempt_num': attempt_num,
+                                                                              'attempt_max': attempt_max})
     
     def OnClientjumpruncanceled(self, action, data, match=None):
         cid = match.group('cid')
@@ -741,31 +880,29 @@ class Iourt42Parser(Iourt41Parser):
         attempt_max = match.group('attempt_max')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('No client found')
+            self.debug('no client found')
             return None
-        return Event(self.getEventID('EVT_CLIENT_JUMP_RUN_CANCEL'),
-                     client=client,
-                     data=dict(way_id=way_id,
-                               attempt_num=attempt_num,
-                               attempt_max=attempt_max))
+        return self.getEvent('EVT_CLIENT_JUMP_RUN_CANCEL', client=client, data={'way_id': way_id,
+                                                                                'attempt_num': attempt_num,
+                                                                                'attempt_max': attempt_max})
     
     def OnClientsaveposition(self, action, data, match=None):
         cid = match.group('cid')
         position = float(match.group('x')), float(match.group('y')), float(match.group('z'))
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('No client found')
+            self.debug('no client found')
             return None
-        return Event(self.getEventID('EVT_CLIENT_POS_SAVE'), client=client, data=dict(position=position))
+        return self.getEvent('EVT_CLIENT_POS_SAVE', client=client, data={'position': position})
 
     def OnClientloadposition(self, action, data, match=None):
         cid = match.group('cid')
         position = float(match.group('x')), float(match.group('y')), float(match.group('z'))
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('No client found')
+            self.debug('no client found')
             return None
-        return Event(self.getEventID('EVT_CLIENT_POS_LOAD'), client=client, data=dict(position=position))
+        return self.getEvent('EVT_CLIENT_POS_LOAD', client=client, data={'position': position})
     
     def OnClientgoto(self, action, data, match=None):
         cid = match.group('cid')
@@ -773,7 +910,7 @@ class Iourt42Parser(Iourt41Parser):
         position = float(match.group('x')), float(match.group('y')), float(match.group('z'))
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('No client found')
+            self.debug('no client found')
             return None
         
         target = self.getByCidOrJoinPlayer(tcid)
@@ -781,7 +918,7 @@ class Iourt42Parser(Iourt41Parser):
             self.debug('No target client found')
             return None
             
-        return Event(self.getEventID('EVT_CLIENT_GOTO'), client=client, target=target, data=dict(position=position))
+        return self.getEvent('EVT_CLIENT_GOTO', client=client, target=target, data={'position': position})
 
     def OnClientspawn(self, action, data, match=None):
         # ClientSpawn: 0
@@ -789,10 +926,10 @@ class Iourt42Parser(Iourt41Parser):
         cid = match.group('cid')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('No client found')
+            self.debug('no client found')
             return None
 
-        return Event(self.getEventID('EVT_CLIENT_SPAWN'), client=client, data=None)
+        return self.getEvent('EVT_CLIENT_SPAWN', client=client)
 
     def OnSurvivorwinner(self, action, data, match=None):
         # SurvivorWinner: Blue
@@ -803,9 +940,9 @@ class Iourt42Parser(Iourt41Parser):
         else:
             client = self.getByCidOrJoinPlayer(data)
             if not client:
-                self.debug('No client found')
+                self.debug('no client found')
                 return None
-            return Event(self.getEventID('EVT_CLIENT_SURVIVOR_WINNER'), client=client, data=None)
+            return self.getEvent('EVT_CLIENT_SURVIVOR_WINNER', client=client)
 
     ####################################################################################################################
     ##                                                                                                                ##
@@ -814,9 +951,21 @@ class Iourt42Parser(Iourt41Parser):
     ####################################################################################################################
 
     def authorizeClients(self):
+        """
+        For all connected players, fill the client object with properties allowing to find
+        the user in the database (usualy guid, or punkbuster id, ip) and call the
+        Client.auth() method.
+        """
         pass
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
+        """
+        Ban a given client.
+        :param client: The client to ban
+        :param reason: The reason for this ban
+        :param admin: The admin who performed the ban
+        :param silent: Whether or not to announce this ban
+        """
         self.debug('BAN : client: %s, reason: %s', client, reason)
         if isinstance(client, Client) and not client.guid:
             # client has no guid, kick instead
@@ -830,11 +979,11 @@ class Iourt42Parser(Iourt41Parser):
             return self.tempban(client, reason, 1440, admin, silent)
 
         if admin:
-            fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client,
-                                                                               reason=reason,
-                                                                               admin=admin))
+            variables = self.getMessageVariables(client=client, reason=reason, admin=admin)
+            fullreason = self.getMessage('banned_by', variables)
         else:
-            fullreason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
+            variables = self.getMessageVariables(client=client, reason=reason)
+            fullreason = self.getMessage('banned', variables)
 
         if client.cid is None:
             # ban by ip, this happens when we !permban @xx a player that is not connected
@@ -869,15 +1018,22 @@ class Iourt42Parser(Iourt41Parser):
             self.say(fullreason)
 
         if admin:
-            admin.message('^3banned^7: ^1%s^7 (^2@%s^7). His last ip (^1%s^7) has been added to banlist' %
-                          (client.exactName, client.id, client.ip))
+            admin.message('^7Banned^7: ^1%s^7 (^2@%s^7)' % (client.exactname, client.id))
+            admin.message('^7His last ip (^1%s^7) has been added to banlist' % client.ip)
 
-        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_BAN'), {'reason': reason, 'admin': admin}, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', data={'reason': reason, 'admin': admin}, client=client))
         client.disconnect()
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
+        """
+        Tempban a client.
+        :param client: The client to tempban
+        :param reason: The reason for this tempban
+        :param duration: The duration of the tempban
+        :param admin: The admin who performed the tempban
+        :param silent: Whether or not to announce this tempban
+        """
         duration = time2minutes(duration)
-
         if isinstance(client, Client) and not client.guid:
             # client has no guid, kick instead
             return self.kick(client, reason, admin, silent)
@@ -885,16 +1041,13 @@ class Iourt42Parser(Iourt41Parser):
             self.write(self.getCommand('tempban', cid=client, reason=reason))
             return
         elif admin:
-            fullreason = self.getMessage('temp_banned_by',
-                                         self.getMessageVariables(client=client,
-                                                                  reason=reason,
-                                                                  admin=admin,
-                                                                  banduration=b3.functions.minutesStr(duration)))
+            banduration = b3.functions.minutesStr(duration)
+            variables = self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=banduration)
+            fullreason = self.getMessage('temp_banned_by', variables)
         else:
-            fullreason = self.getMessage('temp_banned',
-                                         self.getMessageVariables(client=client,
-                                                                  reason=reason,
-                                                                  banduration=b3.functions.minutesStr(duration)))
+            banduration = b3.functions.minutesStr(duration)
+            variables = self.getMessageVariables(client=client, reason=reason, banduration=banduration)
+            fullreason = self.getMessage('temp_banned', variables)
 
         if self._tempban_with_frozensand:
             minutes = duration
@@ -929,12 +1082,15 @@ class Iourt42Parser(Iourt41Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_BAN_TEMP'), dict(reason=reason,
-                                                                                     duration=duration,
-                                                                                     admin=admin), client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', data={'reason': reason,
+                                                                   'duration': duration,
+                                                                   'admin': admin}, client=client))
         client.disconnect()
 
     def inflictCustomPenalty(self, ptype, client, reason=None, duration=None, admin=None, data=None):
+        """
+        Urban Terror specific punishments.
+        """
         if ptype == 'slap' and client:
             cmd = self.getCommand('slap', cid=client.cid)
             self.write(cmd)
@@ -979,7 +1135,7 @@ class Iourt42Parser(Iourt41Parser):
     ####################################################################################################################
 
     def queryClientFrozenSandAccount(self, cid):
-        """\
+        """
         : auth-whois 0
         auth: id: 0 - name: ^7laCourge - login:  - notoriety: 0 - level: 0  - ^7no account
 
@@ -1000,9 +1156,12 @@ class Iourt42Parser(Iourt41Parser):
         if m:
             return m.groupdict()
         else:
-            return dict()
+            return {}
 
     def queryAllFrozenSandAccount(self, max_retries=None):
+        """
+        Query the accounts of all the online clients.
+        """
         data = self.write('auth-whois all', maxRetries=max_retries)
         if not data:
             return {}
@@ -1012,6 +1171,9 @@ class Iourt42Parser(Iourt41Parser):
         return players
 
     def is_frozensand_auth_available(self):
+        """
+        Check whether the auth system is available.
+        """
         cvar = self.getCvar('auth')
         if cvar:
             auth = cvar.getInt()
@@ -1019,134 +1181,37 @@ class Iourt42Parser(Iourt41Parser):
         else:
             return False
 
-    # Parse Userinfo
-    def OnClientuserinfo(self, action, data, match=None):
-        #2 \ip\145.99.135.227:27960\challenge\-232198920\qport\2781\protocol\68\battleye\1\name\[SNT]^1XLR^78or...
-        #connecting bot:
-        #0 \gear\GMIORAA\team\blue\skill\5.000000\characterfile\bots/ut_chicken_c.c\color\4\sex\male\race\2\snaps\20\...
-        bclient = self.parseUserInfo(data)
-
-        bot = False
-        if not 'cl_guid' in bclient.keys() and 'skill' in bclient.keys():
-            # must be a bot connecting
-            self.bot('Bot Connecting!')
-            bclient['ip'] = '0.0.0.0'
-            bclient['cl_guid'] = 'BOT' + str(bclient['cid'])
-            bot = True
-
-        if 'name' in bclient.keys():
-            # remove spaces from name
-            bclient['name'] = bclient['name'].replace(' ', '')
-
-        # split port from ip field
-        if 'ip' in bclient.keys():
-            ip_port_data = bclient['ip'].split(':', 1)
-            bclient['ip'] = ip_port_data[0]
-            if len(ip_port_data) > 1:
-                bclient['port'] = ip_port_data[1]
-
-        if 'team' in bclient.keys():
-            bclient['team'] = self.getTeam(bclient['team'])
-
-        self.verbose('Parsed user info %s' % bclient)
-
-        if bclient:
-            client = self.clients.getByCID(bclient['cid'])
-
-            if client:
-                # update existing client
-                for k, v in bclient.iteritems():
-                    if hasattr(client, 'gear') and k == 'gear' and client.gear != v:
-                        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_GEAR_CHANGE'), v, client))
-                    if not k.startswith('_') and k not in ('login', 'password', 'groupBits', 'maskLevel',
-                                                           'autoLogin', 'greeting'):
-                        setattr(client, k, v)
-            else:
-                # make a new client
-                # use cl_guid
-                if 'cl_guid' in bclient.keys():
-                    guid = bclient['cl_guid']
-                else:
-                    guid = 'unknown'
-
-                # query FrozenSand Account
-                auth_info = self.queryClientFrozenSandAccount(bclient['cid'])
-                fsa = auth_info.get('login', None)
-
-                # v1.0.17 - mindriot - 02-Nov-2008
-                if 'name' not in bclient.keys():
-                    bclient['name'] = self._empty_name_default
-
-                if 'ip' not in bclient.keys():
-                    if guid == 'unknown':
-                        # happens when a client is (temp)banned and got kicked so client was destroyed, but
-                        # infoline was still waiting to be parsed.
-                        self.debug('Client disconnected. Ignoring.')
-                        return None
-                    else:
-                        # see issue xlr8or/big-brother-bot#87 - ip can be missing
-                        try:
-                            self.debug("missing IP, trying to get ip with 'status'")
-                            plist = self.getPlayerList()
-                            client_data = plist[bclient['cid']]
-                            bclient['ip'] = client_data['ip']
-                        except Exception, err:
-                            bclient['ip'] = ''
-                            self.warning("Failed to get client %s ip address." % bclient['cid'], err)
-
-                nguid = ''
-                # override the guid... use ip's only if self.console.IpsOnly is set True.
-                if self.IpsOnly:
-                    nguid = bclient['ip']
-                # replace last part of the guid with two segments of the ip
-                elif self.IpCombi:
-                    i = bclient['ip'].split('.')
-                    d = len(i[0])+len(i[1])
-                    nguid = guid[:-d]+i[0]+i[1]
-                # Quake clients don't have a cl_guid, we'll use ip instead
-                elif guid == 'unknown':
-                    nguid = bclient['ip']
-
-                if nguid != '':
-                    guid = nguid
-
-                self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'],
-                                       state=b3.STATE_ALIVE, bot=bot, guid=guid, pbid=fsa, data=auth_info)
-
-        return None
-
-    # Translate the gameType to a readable format (also for teamkill plugin!)
-    def defineGameType(self, gametype_int):
-
-        _gametype = str(gametype_int)
-        #self.debug('gameTypeInt: %s' % gameTypeInt)
+    def define_gametype(self, gametype_int):
+        """
+        Translate the gametype to a readable format (also for teamkill plugin!)
+        """
+        gametype = str(gametype_int)
 
         if gametype_int == '0':
-            _gametype = 'ffa'
+            gametype = 'ffa'
         elif gametype_int == '1':  # Last Man Standing
-            _gametype = 'lms'
+            gametype = 'lms'
         elif gametype_int == '2':  # Quake 3 Arena single player
-            _gametype = 'dm'
+            gametype = 'dm'
         elif gametype_int == '3':
-            _gametype = 'tdm'
+            gametype = 'tdm'
         elif gametype_int == '4':
-            _gametype = 'ts'
+            gametype = 'ts'
         elif gametype_int == '5':
-            _gametype = 'ftl'
+            gametype = 'ftl'
         elif gametype_int == '6':
-            _gametype = 'cah'
+            gametype = 'cah'
         elif gametype_int == '7':
-            _gametype = 'ctf'
+            gametype = 'ctf'
         elif gametype_int == '8':
-            _gametype = 'bm'
+            gametype = 'bm'
         elif gametype_int == '9':
-            _gametype = 'jump'
+            gametype = 'jump'
 
-        #self.debug('_gametype: %s' % _gametype)
-        return _gametype
+        return gametype
 
     def _getDamagePoints(self, weapon, hitloc):
-        """\
+        """
         Provide the estimated number of damage points inflicted by
         a hit of a given weapon to a given body location.
         """
@@ -1159,19 +1224,24 @@ class Iourt42Parser(Iourt41Parser):
             return 15
 
     def patch_spamcontrolPlugin(self):
-        """ This method alters the Spamcontrol plugin after it started to make it aware of RADIO spam """
-        self.info("Patching Spamcontrol plugin")
-        # teach the Spamcontrol plugin how to react on such events
+        """
+        This method alters the Spamcontrol plugin after it started to make it aware of RADIO spam.
+        """
+        self.info("patching spamcontrol plugin...")
 
         def onRadio(this, event):
             new_event = Event(type=event.type, client=event.client, target=event.target, data=repr(event.data))
             this.onChat(new_event)
+
         self.spamcontrolPlugin.onRadio = new.instancemethod(onRadio, self.spamcontrolPlugin, SpamcontrolPlugin)
-        self.spamcontrolPlugin.eventHanlders[self.getEventID('EVT_CLIENT_RADIO')] = self.spamcontrolPlugin.onRadio
-        self.spamcontrolPlugin.registerEvent(self.getEventID('EVT_CLIENT_RADIO'))
+        self.spamcontrolPlugin.registerEvent(self.getEventID('EVT_CLIENT_RADIO'), self.spamcontrolPlugin.onRadio)
 
     @staticmethod
     def patch_Clients():
+        """
+        Patch the new_client method in the Client class
+        to handle UrT 4.2 specific client instances.
+        """
         def newClient(self, cid, **kwargs):
             client = Iourt42Client(console=self.console, cid=cid, timeAdd=self.console.time(), **kwargs)
             self[client.cid] = client
@@ -1181,7 +1251,7 @@ class Iourt42Parser(Iourt41Parser):
                                self[client.cid].cid, self[client.cid].name,
                                self[client.cid].guid, self[client.cid].data)
 
-            self.console.queueEvent(b3.events.Event(self.console.getEventID('EVT_CLIENT_CONNECT'), client, client))
+            self.console.queueEvent(self.console.getEvent('EVT_CLIENT_CONNECT', data=client, client=client))
 
             if client.guid:
                 client.auth()

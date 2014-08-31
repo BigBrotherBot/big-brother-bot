@@ -51,7 +51,7 @@ class Test_Storage(B3TestCase):
         self.assertRaises(NotImplementedError, self.storage.getClientAliases, Mock())
 
     def test_setClientIpAddresse(self):
-        self.assertRaises(NotImplementedError, self.storage.setClientIpAddresse, Mock())
+        self.assertRaises(NotImplementedError, self.storage.setClientIpAddress, Mock())
 
     def test_getClientIpAddress(self):
         self.assertRaises(NotImplementedError, self.storage.getClientIpAddress, Mock())

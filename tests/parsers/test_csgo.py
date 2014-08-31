@@ -585,7 +585,7 @@ class Test_gamelog_parsing(CsgoTestCase):
             # THEN
             self.assertEqual([], self.evt_queue)
             self.assertTrue(warning_mock.called)
-            warning_mock.assert_has_calls([call("unexpected world event : 'f00'. Please report this on the B3 forums")])
+            warning_mock.assert_has_calls([call("unexpected world event : 'f00' : please report this on the B3 forums")])
 
 
     def test_client_triggered_event__known(self):
@@ -620,7 +620,7 @@ class Test_gamelog_parsing(CsgoTestCase):
             # THEN
             self.assertEqual([], self.evt_queue)
             self.assertTrue(warning_mock.called)
-            warning_mock.assert_has_calls([call("unknown client event : 'f00'. Please report this on the B3 forums")])
+            warning_mock.assert_has_calls([call("unknown client event : 'f00' : please report this on the B3 forums")])
 
 
     def test_team_triggered_event__known(self):
@@ -633,7 +633,7 @@ class Test_gamelog_parsing(CsgoTestCase):
             self.assertEqual([], self.evt_queue)
             self.assertEqual(expect_unknown, warning_mock.called, warning_mock.mock_calls)
             if expect_unknown:
-                warning_mock.assert_has_calls([call("unexpected team event : '%s'. Please report this on the B3 forums" % event_name)])
+                warning_mock.assert_has_calls([call("unexpected team event : '%s' : please report this on the B3 forums" % event_name)])
 
         assert_unknown_event_warning_called("bar")
         assert_unknown_event_warning_called("SFUI_Notice_Target_Saved", expect_unknown=False)
@@ -770,7 +770,7 @@ class Test_gamelog_parsing(CsgoTestCase):
             # THEN
             self.assertEqual([], self.evt_queue)
             self.assertTrue(warning_mock.called)
-            warning_mock.assert_has_calls([call('unhandled log line : f00. Please report this on the B3 forums')])
+            warning_mock.assert_has_calls([call('unhandled log line : f00 : please report this on the B3 forums')])
 
 
     def test_killed_with_SuperLogs_plugin(self):

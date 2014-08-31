@@ -149,7 +149,7 @@ class Test_misc_cmd(Admin_TestCase):
 
         # no data
         self.p.cmd_map(data=None, client=mock_client, cmd=Mock(spec=Command))
-        mock_client.message.assert_called_once_with('^7You must supply a map to change to.')
+        mock_client.message.assert_called_once_with('^7You must supply a map to change to')
         assert not self.console.changeMap.called
 
         # correct data
@@ -173,7 +173,7 @@ class Test_misc_cmd(Admin_TestCase):
         # None
         self.console.getMaps = Mock(return_value=None)
         self.p.cmd_maps(data=None, client=mock_client, cmd=mock_cmd)
-        mock_client.message.assert_called_once_with('^7Error: could not get map list')
+        mock_client.message.assert_called_once_with('^7ERROR: could not get map list')
 
         # no map
         self.console.getMaps = Mock(return_value=[])
@@ -229,23 +229,23 @@ class Test_misc_cmd(Admin_TestCase):
         mock_command = Mock(spec=Command, name='cmd')
 
         self.p.cmd_enable(data='', client=mock_client, cmd=mock_command)
-        mock_client.message.assert_called_once_with('^7You must supply a plugin name to enable.')
+        mock_client.message.assert_called_once_with('^7You must supply a plugin name to enable')
 
         mock_client.reset_mock()
         self.p.cmd_enable(data='admin', client=mock_client, cmd=mock_command)
-        mock_client.message.assert_called_once_with('^7You cannot disable/enable the admin plugin.')
+        mock_client.message.assert_called_once_with('^7You cannot disable/enable the ^1admin ^7plugin')
 
         mock_client.reset_mock()
         self.p.console.getPlugin = Mock(return_value=None)
         self.p.cmd_enable(data='foo', client=mock_client, cmd=mock_command)
-        mock_client.message.assert_called_once_with('^7No plugin named foo loaded.')
+        mock_client.message.assert_called_once_with('^7No plugin named ^1foo ^7loaded')
 
         mock_client.reset_mock()
         mock_pluginA = Mock(spec=Plugin)
         mock_pluginA.isEnabled = Mock(return_value=True)
         self.p.console.getPlugin = Mock(return_value=mock_pluginA)
         self.p.cmd_enable(data='foo', client=mock_client, cmd=mock_command)
-        mock_client.message.assert_called_once_with('^7Plugin foo is already enabled.')
+        mock_client.message.assert_called_once_with('^7Plugin ^3foo ^7is already enabled')
 
         mock_client.reset_mock()
         mock_pluginA = Mock(spec=Plugin)
@@ -253,7 +253,7 @@ class Test_misc_cmd(Admin_TestCase):
         mock_pluginA.isEnabled = Mock(return_value=False)
         self.p.console.getPlugin = Mock(return_value=mock_pluginA)
         self.p.cmd_enable(data='foo', client=mock_client, cmd=mock_command)
-        self.p.console.say.assert_called_once_with('^7MockPlugin is now ^2ON')
+        mock_command.sayLoudOrPM.assert_called_once_with(mock_client, '^7MockPlugin is now ^2ON')
 
 
     def test_disable(self):
@@ -262,23 +262,23 @@ class Test_misc_cmd(Admin_TestCase):
         mock_command = Mock(spec=Command, name='cmd')
 
         self.p.cmd_disable(data='', client=mock_client, cmd=mock_command)
-        mock_client.message.assert_called_once_with('^7You must supply a plugin name to disable.')
+        mock_client.message.assert_called_once_with('^7You must supply a plugin name to disable')
 
         mock_client.reset_mock()
         self.p.cmd_disable(data='admin', client=mock_client, cmd=mock_command)
-        mock_client.message.assert_called_once_with('^7You cannot disable/enable the admin plugin.')
+        mock_client.message.assert_called_once_with('^7You cannot disable/enable the ^1admin ^7plugin')
 
         mock_client.reset_mock()
         self.p.console.getPlugin = Mock(return_value=None)
         self.p.cmd_disable(data='foo', client=mock_client, cmd=mock_command)
-        mock_client.message.assert_called_once_with('^7No plugin named foo loaded.')
+        mock_client.message.assert_called_once_with('^7No plugin named ^1foo ^7loaded')
 
         mock_client.reset_mock()
         mock_pluginA = Mock(spec=Plugin)
         mock_pluginA.isEnabled = Mock(return_value=False)
         self.p.console.getPlugin = Mock(return_value=mock_pluginA)
         self.p.cmd_disable(data='foo', client=mock_client, cmd=mock_command)
-        mock_client.message.assert_called_once_with('^7Plugin foo is already disabled.')
+        mock_client.message.assert_called_once_with('^7Plugin ^3foo ^7is already disabled')
 
         mock_client.reset_mock()
         mock_pluginA = Mock(spec=Plugin)
@@ -286,7 +286,7 @@ class Test_misc_cmd(Admin_TestCase):
         mock_pluginA.isEnabled = Mock(return_value=True)
         self.p.console.getPlugin = Mock(return_value=mock_pluginA)
         self.p.cmd_disable(data='foo', client=mock_client, cmd=mock_command)
-        self.p.console.say.assert_called_once_with('^7MockPlugin is now ^1OFF')
+        mock_command.sayLoudOrPM.assert_called_once_with(mock_client, '^7MockPlugin is now ^1OFF')
 
 
     def test_rebuild(self):
@@ -348,7 +348,7 @@ class Test_cmd_iamgod(CommandTestCase):
         self.mock_client.groups = [mock_superadmin_group]
 
         self.iamgod()
-        self.mock_client.message.assert_called_once_with('^7You are already a superadmin')
+        self.mock_client.message.assert_called_once_with('^7You are already a ^2superadmin')
 
 
     def test_when_there_is_no_superadmin(self):
@@ -362,7 +362,7 @@ class Test_cmd_iamgod(CommandTestCase):
         self.iamgod()
         self.mock_client.setGroup.assert_called_once_with(mock_superadmin_group)
         self.mock_client.save.assert_called_once_with()
-        self.mock_client.message.assert_called_once_with('^7You are now a %s' % mock_superadmin_group.name)
+        self.mock_client.message.assert_called_once_with('^7You are now a ^2%s' % mock_superadmin_group.name)
 
 
 class Test_cmd_warn(CommandTestCase):
@@ -1001,7 +1001,7 @@ class Test_conf_announce_registration(Config_reading_TestCase):
         self.p.onLoadConfig()
         # THEN
         self.assertTrue(self.p._announce_registration)
-        self.assertIn(call('conf settings\\announce_registration not found, using default : yes'),
+        self.assertIn(call('could not find settings/announce_registration in config file, using default: True'),
                       self.warning_mock.mock_calls)
         self.assertNoErrorMessage()
 
@@ -1063,8 +1063,8 @@ announce_registration:
         # THEN
         self.assertTrue(self.p._announce_registration)
         self.assertNoWarningMessage()
-        self.assertIn(call("invalid value for conf setting\\announce_registration, using default : yes. settings.announ"
-                           "ce_registration : '' is not a boolean value"), self.error_mock.mock_calls)
+        self.assertIn(call("could not load settings/announce_registration config value: settings.announce_registration : "
+                           "'' is not a boolean value"), self.error_mock.mock_calls)
 
     def test_junk(self):
         # GIVEN
@@ -1076,8 +1076,8 @@ announce_registration: xxxxxxxxx
         # THEN
         self.assertTrue(self.p._announce_registration)
         self.assertNoWarningMessage()
-        self.assertIn(call("invalid value for conf setting\\announce_registration, using default : yes. settings.announ"
-                           "ce_registration : 'xxxxxxxxx' is not a boolean value"), self.error_mock.mock_calls)
+        self.assertIn(call("could not load settings/announce_registration config value: settings.announce_registration : "
+                           "'xxxxxxxxx' is not a boolean value"), self.error_mock.mock_calls)
 
 
 class Test_conf_regme_confirmation(Config_reading_TestCase):
@@ -1095,8 +1095,8 @@ class Test_conf_regme_confirmation(Config_reading_TestCase):
         # THEN
         self.assertEqual('^7Thanks for your registration. You are now a member of the group f00',
                          self.p.getMessage('regme_confirmation', 'f00'))
-        self.assertIn(call("missing message 'regme_confirmation' from config file. Using default '^7Thanks for your "
-                           "registration. You are now a member of the group %s'"), self.warning_mock.mock_calls)
+        self.assertIn(call("could not find messages/regme_confirmation in config file, using default: ^7Thanks for your "
+                           "registration. You are now a member of the group %s"), self.warning_mock.mock_calls)
         self.assertNoErrorMessage()
 
     def test_nominal(self):
@@ -1122,8 +1122,8 @@ regme_confirmation: ^7Thanks for your registration
         self.assertEqual('^7Thanks for your registration. You are now a member of the group f00',
                          self.p.getMessage('regme_confirmation', 'f00'))
         self.assertNoWarningMessage()
-        self.assertIn(call("message 'regme_confirmation' from config file is invalid: message regme_confirmation must "
-                           "have a placeholder '%%s' for the group name. Using default"), self.error_mock.mock_calls)
+        self.assertIn(call("could not load messages/regme_confirmation config value: message regme_confirmation must "
+                           "have a placeholder \'%%s\' for the group name"), self.error_mock.mock_calls)
 
 
 if __name__ == '__main__':

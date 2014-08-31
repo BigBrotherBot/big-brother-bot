@@ -1,42 +1,35 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-#    02/05/2014 - 1.3.1 - Fenix
-#       Make use of the new getCmd function from functions module
-#    06/04/2014 - 1.3 - Fenix
-#       PEP8 coding style guide
-#       Improved plugin startup and configuration file loading
-#    04/23/2010 - 1.2.2 - Bakes
-#       Fix to !ci after bug reported by sgt
-#    03/28/2010 - 1.2.1 - xlr8or
-#       Add default _minLevel for !ci if config option is missing
-#    03/21/2010 - 1.2.0 - Bakes
-#       Added the !ci command from the admin plugin.
-#    11/30/2005 - 1.1.3 - ThorN
-#       Use PluginCronTab instead of CronTab
-#    8/29/2005 - 1.1.0 - ThorN
-#       Converted to use new event handlers
+# 08/31/2014 - 1.4   - Fenix  - syntax cleanup
+# 02/05/2014 - 1.3.1 - Fenix  - make use of the new getCmd function from functions module
+# 06/04/2014 - 1.3   - Fenix  - PEP8 coding style guide
+#                             - improved plugin startup and configuration file loading
+# 04/23/2010 - 1.2.2 - Bakes  - fix to !ci after bug reported by sgt
+# 03/28/2010 - 1.2.1 - xlr8or - add default _minLevel for !ci if config option is missing
+# 03/21/2010 - 1.2.0 - Bakes  - added the !ci command from the admin plugin
+# 11/30/2005 - 1.1.3 - ThorN  - use PluginCronTab instead of CronTab
+# 08/29/2005 - 1.1.0 - ThorN  - converted to use new event handlers
 
 __author__ = 'ThorN'
-__version__ = '1.3.1'
-
+__version__ = '1.4'
 
 import b3
 import b3.events
@@ -66,33 +59,40 @@ class PingwatchPlugin(b3.plugin.Plugin):
     ####################################################################################################################
 
     def onLoadConfig(self):
-        """\
-        Load plugin configuration
+        """
+        Load plugin configuration.
         """
         try:
             self._interval = self.config.getint('settings', 'interval')
             self.debug('loaded settings/interval: %s' % self._interval)
-        except (NoOptionError, ValueError), e:
+        except NoOptionError:
+            self.warning('could not find settings/interval in config file, using default: %s' % self._interval)
+        except ValueError, e:
             self.error('could not load settings/interval config value: %s' % e)
             self.debug('using default value (%s) for settings/interval' % self._interval)
 
         try:
             self._maxPing = self.config.getint('settings', 'max_ping')
             self.debug('loaded settings/max_ping: %s' % self._maxPing)
-        except (NoOptionError, ValueError), e:
+        except NoOptionError:
+            self.warning('could not find settings/max_ping in config file, using default: %s' % self._maxPing)
+        except ValueError, e:
             self.error('could not load settings/max_ping config value: %s' % e)
             self.debug('using default value (%s) for settings/max_ping' % self._maxPing)
 
         try:
             self._maxPingDuration = self.config.getint('settings', 'max_ping_duration')
             self.debug('loaded settings/max_ping_duration: %s' % self._maxPingDuration)
-        except (NoOptionError, ValueError), e:
-            self.error('could not load settings/max_ping config value: %s' % e)
+        except NoOptionError:
+            self.warning('could not find settings/max_ping_duration in config file, '
+                         'using default: %s' % self._maxPingDuration)
+        except ValueError, e:
+            self.error('could not load settings/max_ping_duration config value: %s' % e)
             self.debug('using default value (%s) for settings/max_ping_duration' % self._maxPingDuration)
 
     def onStartup(self):
-        """\
-        Initialize plugin
+        """
+        Initialize plugin.
         """
         self._adminPlugin = self.console.getPlugin('admin')
         if not self._adminPlugin:
@@ -131,8 +131,8 @@ class PingwatchPlugin(b3.plugin.Plugin):
     ####################################################################################################################
 
     def onGameExit(self, event):
-        """\
-        Handle intercepted events
+        """
+        Handle EVT_GAME_EXIT
         """
         # ignore ping watching for 2 minutes
         self._ignoreTill = self.console.time() + 120
@@ -144,8 +144,8 @@ class PingwatchPlugin(b3.plugin.Plugin):
     ####################################################################################################################
 
     def check(self):
-        """\
-        Check for clients with high ping
+        """
+        Check for clients with high ping.
         """
         if not self.isEnabled() or self.console.time() <= self._ignoreTill:
             # we are not supposed to check
@@ -180,8 +180,8 @@ class PingwatchPlugin(b3.plugin.Plugin):
     ####################################################################################################################
 
     def cmd_ci(self, data, client=None, cmd=None):
-        """\
-        <client> - Kick a client that has an interrupted connection
+        """
+        <client> - kick a client that has an interrupted connection
         """
         m = self._adminPlugin.parseUserCmd(data)
         if not m:

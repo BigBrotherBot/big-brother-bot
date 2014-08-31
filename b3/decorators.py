@@ -1,6 +1,6 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2012 Courgette
+# Copyright (C) 2012 Thomas Leveil
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,13 +16,23 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
+# CHANGELOG
+#
+# 19/07/2014 - 1.2   - Fenix - added @deprecated decorator: mark a callable as deprecated
+# 30/08/2014 - 1.2.1 - Fenix - removed @deprecated decorator since it's not compatible with python 2.6
 
-__author__    = 'Courgette'
-__version__   = '1.1'
+__author__ = 'Courgette, Fenix'
+__version__ = '1.2.1'
 
 import re
+import warnings
+import functools
 
-from functools import partial
+########################################################################################################################
+##                                                                                                                    ##
+##    CACHING                                                                                                         ##
+##                                                                                                                    ##
+########################################################################################################################
 
 class memoize(object):
     """
@@ -45,14 +55,25 @@ class memoize(object):
     See http://code.activestate.com/recipes/577452-a-memoize-decorator-for-instance-methods/
     """
     def __init__(self, func):
+        """
+        Object constructor.
+        :param func: The decorated callable
+        """
         self.func = func
 
     def __get__(self, obj, objtype=None):
+        """
+        Return cached result (if already computed) or
+        the result returned by the cached function.
+        """
         if obj is None:
             return self.func
-        return partial(self, obj)
+        return functools.partial(self, obj)
 
     def __call__(self, *args, **kw):
+        """
+        Cache function return value.
+        """
         obj = args[0]
         try:
             cache = obj.__cache
@@ -88,9 +109,9 @@ class memoize(object):
 # To make a B3 parser take advantage of the GameEventRouter, the B3 parser needs to redefine the *parseLine* method
 # as follow :
 #
-# from b3.decorators import Game_event_router
+# from b3.decorators import GameEventRouter
 #
-# ger = Game_event_router()
+# ger = GameEventRouter()
 #
 # def parseLine(self, line):
 #     if line is None:
@@ -116,7 +137,7 @@ class memoize(object):
 # The @ger.gameEvent decorator accepts multiple parameters if you need to have one handling function for multiple
 # kind of game events. Note that those regular expressions should all define the same groups.
 
-class Game_event_router(object):
+class GameEventRouter(object):
 
     def __init__(self):
         # will hold mapping between regular expressions and handler functions
@@ -147,4 +168,3 @@ class Game_event_router(object):
             if match:
                 return hfunc, match.groupdict()
         return None, {}
-

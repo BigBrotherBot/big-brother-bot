@@ -1,8 +1,8 @@
 # coding=UTF-8
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2014 <courgette@bigbrotherbot.net>
-# 
+# Copyright (C) 2014 Courgette <courgette@bigbrotherbot.net>
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -10,30 +10,25 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-#   2014-04-01 - 0.1 - Courgette
-#   * copied from csgo
-#   2014-05-02 - 0.2 - Fenix
-#   * rewrote import statements
-#   * initialize missing class attributes
-#   * fixed getPlayerPings method declaration not matching the method in Parser class
-#   * fixed client retrieval in kick, ban and tempban function
-#   2014-07-16 - 0.3 - Fenix:
-#   * added admin key in EVT_CLIENT_KICK data dict when available
-#   2014/07/18 - 0.4 - Fenix
-#   * updated abstract parser to comply with the new getWrap implementation
-#   2014/08/29 - 0.5 - 82ndab.Bravo17
-#   Remove color codes from all messages since Insurgency doesn't use them
-#
+# 2014-04-01 - 0.1 - Courgette      - copied from csgo
+# 2014-05-02 - 0.2 - Fenix          - rewrote import statements
+#                                   - initialize missing class attributes
+#                                   - fixed get_player_pings method declaration not matching the method in Parser class
+#                                   - fixed client retrieval in kick, ban and tempban function
+# 2014-07-16 - 0.3 - Fenix          - added admin key in EVT_CLIENT_KICK data dict when available
+# 2014/07/18 - 0.4 - Fenix          - updated abstract parser to comply with the new get_wrap implementation
+# 2014/08/29 - 0.5 - 82ndab.Bravo17 - remove color codes from aall messages since Insurgency doesn't use them
+# 2014/08/30 - 0.6 - Fenix          - syntax cleanup
+#                                   - let getcvar() method make use of the Cvar class
 
 import re
 import time
@@ -43,8 +38,10 @@ from b3 import TEAM_BLUE
 from b3 import TEAM_RED
 from b3.clients import Client
 from b3.clients import Clients
-from b3.decorators import Game_event_router
-from b3.functions import minutesStr, prefixText
+from b3.cvar import Cvar
+from b3.decorators import GameEventRouter
+from b3.functions import minutesStr
+from b3.functions import prefixText
 from b3.functions import time2minutes
 from b3.functions import getStuffSoundingLike
 from b3.parser import Parser
@@ -57,8 +54,9 @@ __version__ = '0.5'
 # GAME SETUP
 # ==========
 #
-# In order to have a consistent name for the game log file, you need to start the game server with '-condebug' as a
-# command line parameter. The game server log file can then be found in the insurgency folder under the name 'console.log'.
+# In order to have a consistent name for the game log file, you need to start the game server
+# with '-condebug' as a command line parameter. The game server log file can then be found in
+# the insurgency folder under the name 'console.log'.
 #
 # You must have SourceMod installed on the game server. See http://www.sourcemod.net/
 #
@@ -72,8 +70,6 @@ __version__ = '0.5'
 # ## B3 Say
 # If you have the SourceMod plugin B3 Say installed then the messages sent by B3 will better displayed on screen.
 # http://forum.bigbrotherbot.net/counter-strike-global-offensive/sourcemod-plugins-for-b3/
-#
-#
 
 # disable the authorizing timer that comes by default with the b3.clients.Clients class
 Clients.authorizeClients = lambda *args, **kwargs: None
@@ -89,17 +85,19 @@ RE_HL_LOG_PROPERTY = re.compile('''\((?P<key>[^\s\(\)]+)(?P<data>| "(?P<value>[^
 # Regular expression to parse cvar queries responses
 RE_CVAR = re.compile(r'''^"(?P<cvar>\S+?)" = "(?P<value>.*?)" \( def. "(?P<default>.*?)".*$''', re.MULTILINE)
 
-ger = Game_event_router()
+ger = GameEventRouter()
 
 
 class InsurgencyParser(Parser):
-    """\
+    """
     The Insurgency B3 parser class
     """
     gameName = "insurgency"
     privateMsg = True
     OutputClass = Rcon
     PunkBuster = None
+    sm_plugins = None
+    last_killlocation_properties = None
 
     # extract the time from game log line
     _lineTime = re.compile(r"""^L [01]\d/[0-3]\d/\d+ - [0-2]\d:(?P<minutes>[0-5]\d):(?P<seconds>[0-5]\d):\s*""")
@@ -108,21 +106,22 @@ class InsurgencyParser(Parser):
     # in order to get stripColors working
     _reColor = re.compile(r'(\^[0-9])')
 
-    _settings = dict(line_length=200, min_wrap_length=200)
+    _settings = {
+        'line_length': 200,
+    }
 
-    sm_plugins = None
-    last_killlocation_properties = None
-
-    ###############################################################################################
-    #
-    #    B3 parser initialisation steps
-    #
-    ###############################################################################################
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  PARSER INITIALIZATION                                                                                         ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def startup(self):
-
+        """
+        Called after the parser is created before run().
+        """
         if not self.is_sourcemod_installed():
-            self.critical("You need to have SourceMod installed on your game server")
+            self.critical("you need to have SourceMod installed on your game server")
             raise SystemExit(220)
 
         # add game specific events
@@ -149,13 +148,12 @@ class InsurgencyParser(Parser):
         """
         pass
 
-    ###############################################################################################
-    #
-    #    Game events handlers
-    #
-    #    Read HL Log Standard documentation at https://developer.valvesoftware.com/wiki/HL_Log_Standard
-    #
-    ###############################################################################################
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  GAME EVENTS HANDLERS                                                                                          ##
+    ##  READ HL LOG STANDARD DOCUMENTATION AT: https://developer.valvesoftware.com/wiki/HL_Log_Standard               ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     @ger.gameEvent(
         r'''^//''',  # comment log line
@@ -170,33 +168,25 @@ class InsurgencyParser(Parser):
         # L 09/24/2001 - 18:44:50: // This is a comment in the log file. It should not be parsed.
         # L 08/26/2012 - 05:29:47: server cvars start
         # L 08/26/2012 - 05:29:47: server cvars end
-        # L 08/27/2012 - 23:57:45: [basechat.smx] "Console<0><Console><Console>" triggered sm_say (text "courgette put in group User")
-        # L 08/30/2012 - 00:43:10: Log file closed.
-        # L 08/30/2012 - 00:45:42: [META] Loaded 1 plugin.
         pass
 
-    @ger.gameEvent(
-        r'''^"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" killed "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>" with "(?P<weapon>\S*)"(?P<properties>.*)$''',
-        r'''^"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" \[-?\d+ -?\d+ -?\d+\] killed "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>" \[-?\d+ -?\d+ -?\d+\] with "(?P<weapon>\S*)"(?P<properties>.*)$'''
-    )
+    @ger.gameEvent(r'^"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" killed "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>" with "(?P<weapon>\S*)"(?P<properties>.*)$',
+                   r'^"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" \[-?\d+ -?\d+ -?\d+\] killed "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>" \[-?\d+ -?\d+ -?\d+\] with "(?P<weapon>\S*)"(?P<properties>.*)$')
     def on_kill(self, a_name, a_cid, a_guid, a_team, v_name, v_cid, v_guid, v_team, weapon, properties):
         # L 08/26/2012 - 03:46:44: "Pheonix<22><BOT><TERRORIST>" killed "Ringo<17><BOT><CT>" with "glock" (headshot)
         # L 08/26/2012 - 03:46:46: "Shark<19><BOT><CT>" killed "Pheonix<22><BOT><TERRORIST>" with "hkp2000"
         # L 08/26/2012 - 03:47:40: "Stone<18><BOT><TERRORIST>" killed "Steel<13><BOT><CT>" with "glock"
-        # L 08/26/2012 - 05:08:56: "Kurt<76><BOT><TERRORIST>" killed "courgette<2><STEAM_1:0:1487018><CT>" with "galilar"
-        # L 08/26/2012 - 05:08:56: "Orin<3949><BOT><CT>" [280 -133 -223] killed "Dennis<3948><BOT><TERRORIST>" [-216 397 -159] with "aug"
         attacker = self.getClientOrCreate(a_cid, a_guid, a_name, a_team)
         victim = self.getClientOrCreate(v_cid, v_guid, v_name, v_team)
         # victim.state = b3.STATE_DEAD ## do we need that ? is this info used ?
-
         props = self.parseProperties(properties)
         headshot = props.get('headshot', False)
 
-        event_type = "EVT_CLIENT_KILL"
+        eventkey = "EVT_CLIENT_KILL"
         if attacker.cid == victim.cid:
-            event_type = "EVT_CLIENT_SUICIDE"
+            eventkey = "EVT_CLIENT_SUICIDE"
         elif attacker.team in (TEAM_BLUE, TEAM_RED) and attacker.team == victim.team:
-            event_type = "EVT_CLIENT_KILL_TEAM"
+            eventkey = "EVT_CLIENT_KILL_TEAM"
 
         damage_pct = 100
         damage_type = None
@@ -207,11 +197,9 @@ class InsurgencyParser(Parser):
             data.append(self.parseProperties(self.last_killlocation_properties))
             self.last_killlocation_properties = None
 
-        return self.getEvent(event_type, client=attacker, target=victim, data=tuple(data))
+        return self.getEvent(eventkey, client=attacker, target=victim, data=tuple(data))
 
-    @ger.gameEvent(
-        r'''^"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" assisted killing "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>"(?P<properties>.*)$'''
-    )
+    @ger.gameEvent(r'^"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" assisted killing "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>"(?P<properties>.*)$')
     def on_assisted_killing(self, a_name, a_cid, a_guid, a_team, v_name, v_cid, v_guid, v_team, properties):
         # L 08/26/2012 - 03:46:44: "Greg<3946><BOT><CT>" assisted killing "Dennis<3948><BOT><TERRORIST>"
         attacker = self.getClientOrCreate(a_cid, a_guid, a_name, a_team)
@@ -219,7 +207,7 @@ class InsurgencyParser(Parser):
         props = self.parseProperties(properties)
         return self.getEvent("EVT_CLIENT_ACTION", client=attacker, target=victim, data="assisted killing")
 
-    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>"(?: \[-?\d+ -?\d+ -?\d+\])? committed suicide with "(?P<weapon>\S*)"$''')
+    @ger.gameEvent(r'^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>"(?: \[-?\d+ -?\d+ -?\d+\])? committed suicide with "(?P<weapon>\S*)"$')
     def on_suicide(self, name, cid, guid, team, weapon):
         # L 08/26/2012 - 03:38:04: "Pheonix<22><BOT><TERRORIST>" committed suicide with "world"
         client = self.getClientOrCreate(cid, guid, name, team)
@@ -228,39 +216,37 @@ class InsurgencyParser(Parser):
         damage_type = None
         return self.getEvent("EVT_CLIENT_SUICIDE", client=client, target=client, data=(damage_pct, weapon, "body", damage_type))
 
-    @ger.gameEvent(
-        r'''^"(?P<cvar_name>\S+)" = "(?P<cvar_value>\S*)"$''',
-        r'''^server_cvar: "(?P<cvar_name>\S+)" "(?P<cvar_value>\S*)"$'''
-    )
+    @ger.gameEvent(r'^"(?P<cvar_name>\S+)" = "(?P<cvar_value>\S*)"$',
+                   r'^server_cvar: "(?P<cvar_name>\S+)" "(?P<cvar_value>\S*)"$')
     def on_cvar(self, cvar_name, cvar_value):
         # L 08/26/2012 - 03:49:56: "r_JeepViewZHeight" = "10.0"
         # L 08/26/2012 - 03:49:56: "tv_password" = ""
         # L 08/26/2012 - 03:49:56: "sv_specspeed" = "3"
         self.game.cvar[cvar_name] = cvar_value
 
-    @ger.gameEvent(r'''^-------- Mapchange to (?P<new_map>\S+) --------$''')
+    @ger.gameEvent(r'^-------- Mapchange to (?P<new_map>\S+) --------$')
     def on_map_change(self, new_map):
         # L 08/27/2012 - 23:57:14: -------- Mapchange to de_dust --------
         self.game.mapName = new_map
 
-    @ger.gameEvent(r'''^Loading map "(?P<new_map>\S+)"$''')
+    @ger.gameEvent(r'^Loading map "(?P<new_map>\S+)"$')
     def on_started_map(self, new_map):
         # L 08/26/2012 - 03:49:56: Loading map "de_nuke"
         self.game.mapName = new_map
 
-    @ger.gameEvent(r'''^Started map "(?P<new_map>\S+)" \(CRC "-?\d+"\)$''')
+    @ger.gameEvent(r'^Started map "(?P<new_map>\S+)" \(CRC "-?\d+"\)$')
     def on_started_map(self, new_map):
         # L 08/26/2012 - 03:22:35: Started map "de_dust" (CRC "1592693790")
         # L 08/26/2012 - 03:49:58: Started map "de_nuke" (CRC "-568155013")
         self.game.mapName = new_map
         self.game.startMap()
 
-    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>\S*)><(?P<team>\S*)>" STEAM USERID validated$''')
+    @ger.gameEvent(r'^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>\S*)><(?P<team>\S*)>" STEAM USERID validated$')
     def on_userid_validated(self, name, cid, guid, team):
         # L 08/26/2012 - 03:22:36: "courgette<2><STEAM_1:0:1111111><>" STEAM USERID validated
         self.getClientOrCreate(cid, guid, name, team)
 
-    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" connected, address "(?P<ip>.+)"$''')
+    @ger.gameEvent(r'^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" connected, address "(?P<ip>.+)"$')
     def on_client_connected(self, name, cid, guid, team, ip):
         # L 08/26/2012 - 03:22:36: "courgette<2><STEAM_1:0:1111111><>" connected, address "11.222.111.222:27005"
         # L 08/26/2012 - 03:22:36: "Moe<3><BOT><>" connected, address "none"
@@ -269,9 +255,7 @@ class InsurgencyParser(Parser):
             client.ip = ip
             client.save()
 
-    @ger.gameEvent(
-        r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" disconnected \(reason "(?P<reason>.*)"\)$'''
-    )
+    @ger.gameEvent(r'^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" disconnected \(reason "(?P<reason>.*)"\)$')
     def on_client_disconnected(self, name, cid, guid, team, reason):
         # L 08/26/2012 - 04:45:04: "Kyle<63><BOT><CT>" disconnected (reason "Kicked by Console")
         client = self.getClient(cid)
@@ -283,7 +267,7 @@ class InsurgencyParser(Parser):
         if event:
             return event
 
-    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" entered the game$''')
+    @ger.gameEvent(r'^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" entered the game$')
     def on_client_entered(self, name, cid, guid, team):
         # L 08/26/2012 - 05:29:48: "Rip<93><BOT><>" entered the game
         # L 08/26/2012 - 05:38:36: "GrUmPY<105><STEAM_1:0:22222222><>" entered the game
@@ -291,10 +275,8 @@ class InsurgencyParser(Parser):
         client = self.getClientOrCreate(cid, guid, name, team)
         return self.getEvent("EVT_CLIENT_JOIN", client=client)
 
-    @ger.gameEvent(
-        r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<old_team>\S+)>" joined team "(?P<new_team>\S+)"$''',
-        r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)>" switched from team <(?P<old_team>\S+)> to <(?P<new_team>\S+)>$''',
-    )
+    @ger.gameEvent(r'^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<old_team>\S+)>" joined team "(?P<new_team>\S+)"$',
+                   r'^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)>" switched from team <(?P<old_team>\S+)> to <(?P<new_team>\S+)>$')
     def on_client_join_team(self, name, cid, guid, old_team, new_team):
         #L 08/26/2012 - 03:22:36: "Pheonix<11><BOT><Unassigned>" joined team "TERRORIST"
         #L 08/26/2012 - 03:22:36: "Wolf<12><BOT><Unassigned>" joined team "CT"
@@ -307,7 +289,7 @@ class InsurgencyParser(Parser):
         if client:
             client.team = self.getTeam(new_team)
 
-    @ger.gameEvent(r'''^World triggered "(?P<event_name>\S*)"(?P<properties>.*)$''')
+    @ger.gameEvent(r'^World triggered "(?P<event_name>\S*)"(?P<properties>.*)$')
     def on_world_action(self, event_name, properties):
         # L 08/26/2012 - 03:22:36: World triggered "Round_Start"
         # L 08/26/2012 - 03:22:36: World triggered "Game_Commencing"
@@ -329,9 +311,9 @@ class InsurgencyParser(Parser):
             # save the properties for the next kill event to use
             self.last_killlocation_properties = properties
         else:
-            self.warning("unexpected world event : '%s'. Please report this on the B3 forums" % event_name)
+            self.warning("unexpected world event : '%s' : please report this on the B3 forums" % event_name)
 
-    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" triggered "(?P<event_name>\S+)"(?P<properties>.*)$''')
+    @ger.gameEvent(r'^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" triggered "(?P<event_name>\S+)"(?P<properties>.*)$')
     def on_player_action(self, name, cid, guid, team, event_name, properties):
         client = self.getClientOrCreate(cid, guid, name, team)
         props = self.parseProperties(properties)
@@ -347,124 +329,115 @@ class InsurgencyParser(Parser):
             return self.getEvent("EVT_CLIENT_ACTION", client=client, data=event_name)
 
         elif event_name == "clantag":
-            # L 08/26/2012 - 05:43:31: "Ein 1337er M!L[H<106><STEAM_1:0:5280197><Unassigned>" triggered "clantag" (value "")
-            # L 09/18/2012 - 18:26:21: "Spoon<3><STEAM_1:0:11111111><EHD Gaming>" triggered "clantag" (value "EHD")
             client.clantag = props.get("value", "")
 
         elif event_name == "weaponstats":
-            # L 08/28/2012 - 14:58:55: "Gunner<48><BOT><CT>" triggered "weaponstats" (weapon "m4a1") (shots "13") (hits "2") (kills "0") (headshots "0") (tks "0") (damage "42") (deaths "0")
             return self.getEvent("EVT_SUPERLOGS_WEAPONSTATS", client=client, data=props)
 
         elif event_name == "weaponstats2":
-            # L 08/28/2012 - 14:58:55: "Vitaliy<51><BOT><CT>" triggered "weaponstats2" (weapon "famas") (head "0") (chest "0") (stomach "1") (leftarm "0") (rightarm "0") (leftleg "0") (rightleg "0")
             return self.getEvent("EVT_SUPERLOGS_WEAPONSTATS2", client=client, data=props)
 
         else:
-            self.warning("unknown client event : '%s'. Please report this on the B3 forums" % event_name)
+            self.warning("unknown client event : '%s' : please report this on the B3 forums" % event_name)
 
-    @ger.gameEvent(r'''^Team "(?P<team>\S+)" triggered "(?P<event_name>[^"]+)"(?P<properties>.*)$''')
+    @ger.gameEvent(r'^Team "(?P<team>\S+)" triggered "(?P<event_name>[^"]+)"(?P<properties>.*)$')
     def on_team_action(self, team, event_name, properties):
         # L 08/26/2012 - 03:48:09: Team "CT" triggered "SFUI_Notice_Target_Saved" (CT "3") (T "5")
         # L 08/26/2012 - 03:51:50: Team "TERRORIST" triggered "SFUI_Notice_Target_Bombed" (CT "1") (T "1")
         if event_name in ("SFUI_Notice_Target_Saved", "SFUI_Notice_Target_Bombed", "SFUI_Notice_Terrorists_Win",
-            "SFUI_Notice_CTs_Win", "SFUI_Notice_Bomb_Defused"):
+                          "SFUI_Notice_CTs_Win", "SFUI_Notice_Bomb_Defused"):
             pass  # TODO should we do anything with that info ?
         else:
-            self.warning("unexpected team event : '%s'. Please report this on the B3 forums" % event_name)
+            self.warning("unexpected team event : '%s' : please report this on the B3 forums" % event_name)
 
-    @ger.gameEvent(r'''^Team "(?P<team>\S+)" scored "(?P<points>\d+)" with "(?P<num_players>\d+)" players$''')
+    @ger.gameEvent(r'^Team "(?P<team>\S+)" scored "(?P<points>\d+)" with "(?P<num_players>\d+)" players$')
     def on_team_score(self, team, points, num_players):
         # L 08/26/2012 - 03:48:09: Team "CT" scored "3" with "5" players
         # L 08/26/2012 - 03:48:09: Team "TERRORIST" scored "5" with "5" players
         pass  # TODO should we do anything with that info ?
 
-    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*?)>" say "(?P<text>.*)"$''')
+    @ger.gameEvent(r'^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*?)>" say "(?P<text>.*)"$')
     def on_client_say(self, name, cid, guid, team, text):
         # L 08/26/2012 - 05:09:55: "courgette<2><STEAM_1:0:1487018><CT>" say "!iamgod"
         # L 09/16/2012 - 04:55:17: "Spoon<2><STEAM_1:0:11111111><>" say "!h"
         client = self.getClientOrCreate(cid, guid, name, team)
         return self.getEvent("EVT_CLIENT_SAY", client=client, data=text)
 
-    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*?)>" say_team "(?P<text>.*)"$''')
+    @ger.gameEvent(r'^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*?)>" say_team "(?P<text>.*)"$')
     def on_client_teamsay(self, name, cid, guid, team, text):
         # L 08/26/2012 - 05:04:44: "courgette<2><STEAM_1:0:1487018><CT>" say_team "team say"
         client = self.getClientOrCreate(cid, guid, name, team)
         return self.getEvent("EVT_CLIENT_TEAM_SAY", client=client, data=text)
 
-    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>\S+)>" purchased "(?P<item>\S+)"$''')
+    @ger.gameEvent(r'^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>\S+)>" purchased "(?P<item>\S+)"$')
     def on_player_purchased(self, name, cid, guid, team, item):
         client = self.getClientOrCreate(cid, guid, name, team)
         # L 08/26/2012 - 03:22:37: "Calvin<3942><BOT><CT>" purchased "p90"
         # L 08/26/2012 - 03:22:37: "courgette<2><STEAM_1:0:1487018><CT>" purchased "hegrenade"
         return self.getEvent("EVT_CLIENT_ACTION", client=client, data='purchased "%s"' % item)
 
-    @ger.gameEvent(r'''^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>\S+)>" threw (?P<item>.+?)( \[-?\d+ -?\d+ -?\d+\])?$''')
+    @ger.gameEvent(r'^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>\S+)>" threw (?P<item>.+?)( \[-?\d+ -?\d+ -?\d+\])?$')
     def on_player_threw(self, name, cid, guid, team, item):
         client = self.getClientOrCreate(cid, guid, name, team)
         # L 08/26/2012 - 03:22:37: "courgette<2><STEAM_1:0:1111111><CT>" threw molotov [59 386 -225]
         return self.getEvent("EVT_CLIENT_ACTION", client=client, data='threw "%s"' % item)
 
-    @ger.gameEvent(r'''^rcon from "(?P<ip>.+):(?P<port>\d+)":\sBad Password$''')
+    @ger.gameEvent(r'^rcon from "(?P<ip>.+):(?P<port>\d+)":\sBad Password$')
     def on_bad_rcon_password(self, ip, port):
         # L 08/26/2012 - 05:21:23: rcon from "78.207.134.100:15073": Bad Password
         self.error("Bad RCON password, check your b3.xml file")
 
-    @ger.gameEvent(r'''^Molotov projectile spawned at (?P<coord>-?[\d.]+ -?[\d.]+ -?[\d.]+), velocity (?P<velocity>-?[\d.]+ -?[\d.]+ -?[\d.]+)$''')
+    @ger.gameEvent(r'^Molotov projectile spawned at (?P<coord>-?[\d.]+ -?[\d.]+ -?[\d.]+), velocity (?P<velocity>-?[\d.]+ -?[\d.]+ -?[\d.]+)$')
     def on_molotov_spawed(self, coord, velocity):
-        # L 08/26/2012 - 05:21:24: Molotov projectile spawned at 132.012238 -2071.752197 -347.858246, velocity 487.665253 106.295044 121.257591
         pass # Do we care ?
 
-    @ger.gameEvent(r'''^rcon from "(?P<ip>.+):(?P<port>\d+)": command "(?P<cmd>.*)"$''')
+    @ger.gameEvent(r'^rcon from "(?P<ip>.+):(?P<port>\d+)": command "(?P<cmd>.*)"$')
     def on_rcon(self, ip, port, cmd):
         # L 08/26/2012 - 05:37:56: rcon from "11.222.111.122:15349": command "say test"
         pass
 
-    @ger.gameEvent(r'''^Banid: "(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" was banned "for (?P<duration>.+)" by "(?P<admin>.*)"$''')
+    @ger.gameEvent(r'^Banid: "(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" was banned "for (?P<duration>.+)" by "(?P<admin>.*)"$')
     def on_banid(self, name, cid, guid, team, duration, admin):
         # L 08/28/2012 - 00:03:01: Banid: "courgette<91><STEAM_1:0:1111111><>" was banned "for 1.00 minutes" by "Console"
         client = self.storage.getClient(Client(guid=guid))
         if client:
             return self.getEvent("EVT_CLIENT_BAN_TEMP", {"duration": duration, "admin": admin, 'reason': None}, client)
 
-    @ger.gameEvent(r'''^\[basecommands.smx\] ".+<\d+><.+><.*>" kicked "(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>"(?P<properties>.*)$''')
+    @ger.gameEvent(r'^\[basecommands.smx\] ".+<\d+><.+><.*>" kicked "(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>"(?P<properties>.*)$')
     def on_kicked(self, name, cid, guid, team, properties):
-        # L 08/28/2012 - 00:12:07: [basecommands.smx] "Console<0><Console><Console>" kicked "courgette<91><STEAM_1:0:1111111><>" (reason "f00")
         client = self.storage.getClient(Client(guid=guid))
         if client:
             p = self.parseProperties(properties)
             return self.getEvent("EVT_CLIENT_KICK", {'reason': p.get('reason', ''), 'admin': None}, client)
 
-    @ger.gameEvent(r'''^server_message: "(?P<msg>.*)"(?P<properties>.*)$''')
+    @ger.gameEvent(r'^server_message: "(?P<msg>.*)"(?P<properties>.*)$')
     def on_server_message(self, msg, properties):
         # L 08/30/2012 - 00:43:10: server_message: "quit"
         # L 08/30/2012 - 00:43:10: server_message: "restart"
         if msg in ("quit", "restart"):
             pass
         else:
-            self.warning("unexpected server_message : '%s'. Please report this on the B3 forums" % msg)
+            self.warning("unexpected server_message : '%s' : please report this on the B3 forums" % msg)
 
-    @ger.gameEvent(r'''^Log file started (?P<properties>.*)$''')
+    @ger.gameEvent(r'^Log file started (?P<properties>.*)$')
     def on_server_message(self, properties):
-        # Log file started (file "logs/L000_000_000_000_0_201208300045_000.log") (game "/home/steam/steamcmd/cs_go/csgo") (version "5038")
         pass
 
-    @ger.gameEvent(
-        r'''^(?P<data>Your server needs to be restarted.*)$''',
-        r'''^(?P<data>Your server is out of date.*)$'''
-    )
+    @ger.gameEvent(r'^(?P<data>Your server needs to be restarted.*)$',
+                   r'^(?P<data>Your server is out of date.*)$')
     def on_server_restart_request(self, data):
         # L 09/17/2012 - 23:26:45: Your server needs to be restarted in order to receive the latest update.
         # L 09/17/2012 - 23:26:45: Your server is out of date.  Please update and restart.
         return self.getEvent('EVT_SERVER_REQUIRES_RESTART', data)
 
-    # -------------- /!\  this one must be the last /!\ --------------
+    # ------------------------------------- /!\  this one must be the last /!\ --------------------------------------- #
 
     @ger.gameEvent(r'''^(?P<data>.+)$''')
     def on_unknown_line(self, data):
         """
-        catch all lines that were not handled
+        Catch all lines that were not handled.
         """
-        self.warning("unhandled log line : %s. Please report this on the B3 forums" % data)
+        self.warning("unhandled log line : %s : please report this on the B3 forums" % data)
 
     ###############################################################################################
     #
@@ -472,15 +445,21 @@ class InsurgencyParser(Parser):
     #
     ###############################################################################################
 
+     ####################################################################################################################
+    ##                                                                                                                ##
+    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
     def getPlayerList(self):
-        """\
+        """
         Query the game server for connected players.
         return a dict having players' id for keys and players' data as another dict for values
         """
         return self.queryServerInfo()
 
     def authorizeClients(self):
-        """\
+        """
         For all connected players, fill the client object with properties allowing to find
         the user in the database (usualy guid, or punkbuster id, ip) and call the
         Client.auth() method
@@ -488,7 +467,7 @@ class InsurgencyParser(Parser):
         pass  # no need as all game log lines have the client guid
 
     def sync(self):
-        """\
+        """
         For all connected players returned by self.getPlayerList(), get the matching Client
         object from self.clients (with self.clients.getByCID(cid) or similar methods) and
         look for inconsistencies. If required call the client.disconnect() method to remove
@@ -506,8 +485,9 @@ class InsurgencyParser(Parser):
         return mlist
 
     def say(self, msg):
-        """\
-        broadcast a message to all players
+        """
+        Broadcast a message to all players.
+        :param msg: The message to be broadcasted
         """
         msg = self.stripColors(msg)
         if msg and len(msg.strip()):
@@ -520,8 +500,9 @@ class InsurgencyParser(Parser):
                 self.output.write(template % line)
 
     def saybig(self, msg):
-        """\
-        broadcast a message to all players in a way that will catch their attention.
+        """
+        Broadcast a message to all players in a way that will catch their attention.
+        :param msg: The message to be broadcasted
         """
         msg = self.stripColors(msg)
         if msg and len(msg.strip()):
@@ -534,8 +515,10 @@ class InsurgencyParser(Parser):
                 self.output.write(template % line)
 
     def message(self, client, msg):
-        """\
-        display a message to a given player
+        """
+        Display a message to a given client
+        :param client: The client to who send the message
+        :param msg: The message to be sent
         """
         msg = self.stripColors(msg)
         if not client.bot:  # do not talk to bots
@@ -549,8 +532,12 @@ class InsurgencyParser(Parser):
                     self.output.write(template % {'guid': client.guid, 'msg': line})
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
-        """\
-        kick a given player
+        """
+        Kick a given client.
+        :param client: The client to kick
+        :param reason: The reason for this kick
+        :param admin: The admin who performed the kick
+        :param silent: Whether or not to announce this kick
         """
         self.debug('kick reason: [%s]' % reason)
         if isinstance(client, basestring):
@@ -561,12 +548,12 @@ class InsurgencyParser(Parser):
                 client = clients[0]
 
         if admin:
-            fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client,
-                                                                               reason=reason,
-                                                                               admin=admin))
+            variables = self.getMessageVariables(client=client, reason=reason, admin=admin)
+            fullreason = self.getMessage('kicked_by', variables)
         else:
-            fullreason = self.getMessage('kicked', self.getMessageVariables(client=client,
-                                                                            reason=reason))
+            variables = self.getMessageVariables(client=client, reason=reason)
+            fullreason = self.getMessage('kicked', variables)
+
         fullreason = self.stripColors(fullreason)
         reason = self.stripColors(reason)
 
@@ -576,10 +563,12 @@ class InsurgencyParser(Parser):
             self.say(fullreason)
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
-        """\
-        Ban a given player on the game server and in case of success
-        fire the event ('EVT_CLIENT_BAN', data={'reason': reason,
-        'admin': admin}, client=target)
+        """
+        Ban a given client.
+        :param client: The client to ban
+        :param reason: The reason for this ban
+        :param admin: The admin who performed the ban
+        :param silent: Whether or not to announce this ban
         """
         if client.bot:  # exclude bots
             return
@@ -593,18 +582,18 @@ class InsurgencyParser(Parser):
                 client = clients[0]
 
         if admin:
-            fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client,
-                                                                               reason=reason,
-                                                                               admin=admin))
+            variables = self.getMessageVariables(client=client, reason=reason, admin=admin)
+            fullreason = self.getMessage('banned_by', variables)
         else:
-            fullreason = self.getMessage('banned', self.getMessageVariables(client=client,
-                                                                            reason=reason))
+            variables = self.getMessageVariables(client=client, reason=reason)
+            fullreason = self.getMessage('banned', variables)
+
         fullreason = self.stripColors(fullreason)
         reason = self.stripColors(reason)
 
         self.do_ban(client, reason)
         if admin:
-            admin.message('banned: %s (@%s) has been added to banlist' % (client.exactName, client.id))
+            admin.message('Banned: %s (@%s) has been added to banlist' % (client.exactName, client.id))
 
         if not silent and fullreason != '':
             self.say(fullreason)
@@ -612,45 +601,51 @@ class InsurgencyParser(Parser):
         self.queueEvent(self.getEvent("EVT_CLIENT_BAN", {'reason': reason, 'admin': admin}, client))
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
-        """\
-        unban a given player on the game server
+        """
+        Unban a client.
+        :param client: The client to unban
+        :param reason: The reason for the unban
+        :param admin: The admin who unbanned this client
+        :param silent: Whether or not to announce this unban
         """
         if client.bot:  # exclude bots
             return
 
-        self.debug('UNBAN: Name: %s, Ip: %s, Guid: %s' % (client.name, client.ip, client.guid))
+        self.debug('UNBAN: name: %s - ip: %s - guid: %s' % (client.name, client.ip, client.guid))
         if client.ip:
             self.do_unban_by_ip(client)
-            self.verbose('UNBAN: Removed ip (%s) from banlist' % client.ip)
+            self.verbose('UNBAN: removed ip (%s) from banlist' % client.ip)
             if admin:
-                admin.message('Unbanned: %s. His last ip (%s) has been removed from banlist.' %
-                              (client.exactName, client.ip))
+                admin.message('Unbanned: %s. '
+                              'His last ip (%s) has been removed from banlist' % (client.exactName, client.ip))
             if admin:
-                fullreason = self.getMessage('unbanned_by', self.getMessageVariables(client=client,
-                                                                                     reason=reason,
-                                                                                     admin=admin))
+                variables = self.getMessageVariables(client=client, reason=reason, admin=admin)
+                fullreason = self.getMessage('unbanned_by', variables)
             else:
-                fullreason = self.getMessage('unbanned', self.getMessageVariables(client=client,
-                                                                                  reason=reason))
+                variables = self.getMessageVariables(client=client, reason=reason)
+                fullreason = self.getMessage('unbanned', variables)
 
             if not silent and fullreason != '':
                 self.say(fullreason)
 
         self.do_unban_by_steamid(client)
-        self.verbose('UNBAN: Removed guid (%s) from banlist' % client.guid)
+        self.verbose('UNBAN: removed guid (%s) from banlist' % client.guid)
         if admin:
-            admin.message('Unbanned: Removed %s guid from banlist' % client.exactName)
+            admin.message('Unbanned: removed %s guid from banlist' % client.exactName)
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
-        """\
-        tempban a given player on the game server and in case of success
-        fire the event ('EVT_CLIENT_BAN_TEMP', data={'reason': reason,
-        'duration': duration, 'admin': admin}, client=target)
+        """
+        Tempban a client.
+        :param client: The client to tempban
+        :param reason: The reason for this tempban
+        :param duration: The duration of the tempban
+        :param admin: The admin who performed the tempban
+        :param silent: Whether or not to announce this tempban
         """
         if client.bot:  # exclude bots
             return
 
-        self.debug('TEMPBAN : client: %s, duration: %s, reason: %s', client, duration, reason)
+        self.debug('TEMPBAN : client: %s - duration: %s - reason: %s', client, duration, reason)
         if isinstance(client, basestring):
             clients = self.clients.getByMagic(client)
             if len(clients) != 1:
@@ -659,14 +654,13 @@ class InsurgencyParser(Parser):
                 client = clients[0]
 
         if admin:
-            fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client,
-                                                                                    reason=reason,
-                                                                                    admin=admin,
-                                                                                    banduration=minutesStr(duration)))
+            banduration = minutesStr(duration)
+            variables = self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=banduration)
+            fullreason = self.getMessage('temp_banned_by', variables)
         else:
-            fullreason = self.getMessage('temp_banned', self.getMessageVariables(client=client,
-                                                                                 reason=reason,
-                                                                                 banduration=minutesStr(duration)))
+            banduration = minutesStr(duration)
+            variables = self.getMessageVariables(client=client, reason=reason, banduration=banduration)
+            fullreason = self.getMessage('temp_banned', variables)
 
         fullreason = self.stripColors(fullreason)
         reason = self.stripColors(reason)
@@ -676,27 +670,27 @@ class InsurgencyParser(Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(self.getEvent("EVT_CLIENT_BAN_TEMP",
-                                      dict(reason=reason, duration=duration, admin=admin), client))
+        data = {'reason': reason, 'duration': duration, 'admin': admin}
+        self.queueEvent(self.getEvent("EVT_CLIENT_BAN_TEMP", data=data, client=client))
 
     def getMap(self):
-        """\
-        return the current map/level name
+        """
+        Return the current map/level name.
         """
         self.queryServerInfo()
         return self.game.mapName
 
     def getMaps(self):
-        """\
-        return the available maps/levels name
+        """
+        Return the available maps/levels name.
         """
         rv = self.output.write('listmaps')
         if rv:
             return [x for x in rv.split('\n') if x and x != "Map Cycle:" and not x.startswith('L ')]
 
     def rotateMap(self):
-        """\
-        load the next map/level
+        """
+        Load the next map/level
         """
         next_map = self.getNextMap()
         if next_map:
@@ -705,9 +699,9 @@ class InsurgencyParser(Parser):
             self.output.write('map %s' % next_map)
 
     def changeMap(self, map_name):
-        """\
-        load a given map/level
-        return a list of suggested map names in cases it fails to recognize the map that was provided
+        """
+        Load a given map/level
+        Return a list of suggested map names in cases it fails to recognize the map that was provided.
         """
         rv = self.getMapsSoundingLike(map_name)
         if isinstance(rv, basestring):
@@ -716,8 +710,8 @@ class InsurgencyParser(Parser):
             return rv
 
     def getPlayerPings(self, filter_client_ids=None):
-        """\
-        returns a dict having players' id for keys and players' ping for values
+        """
+        Returns a dict having players' id for keys and players' ping for values.
         """
         clients = self.queryServerInfo()
         pings = {}
@@ -726,8 +720,8 @@ class InsurgencyParser(Parser):
         return pings
 
     def getPlayerScores(self):
-        """\
-        returns a dict having players' id for keys and players' scores for values
+        """
+        Returns a dict having players' id for keys and players' scores for values.
         """
         # TODO getPlayerScores if doable
         return dict()
@@ -745,18 +739,21 @@ class InsurgencyParser(Parser):
 
     def getNextMap(self):
         """
-        return the next map in the map rotation list
+        Return the next map in the map rotation list
         """
-        next_map = self.getCvar("sm_nextmap")
-        return next_map
+        cvar = self.getCvar("sm_nextmap")
+        return cvar.value
 
-    ###############################################################################################
-    #
-    #    Other methods
-    #
-    ###############################################################################################
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  PARSING                                                                                                       ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def parseLine(self, line):
+        """
+        Parse a single line from the log file.
+        """
         if line is None:
             return
         if line.startswith("mp\x08 \x08\x08 \x08"):
@@ -773,8 +770,8 @@ class InsurgencyParser(Parser):
                         self.queueEvent(event)
 
     def parseProperties(self, properties):
-        """\
-        parse HL log properties as described at https://developer.valvesoftware.com/wiki/HL_Log_Standard#Notes
+        """
+        Parse HL log properties as described at https://developer.valvesoftware.com/wiki/HL_Log_Standard#Notes
         :param properties: string representing HL log properties
         :return: a dict representing all the property key:value parsed
         """
@@ -788,9 +785,15 @@ class InsurgencyParser(Parser):
                     rv[match.group('key')] = match.group('value')
         return rv
 
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  OTHER METHODS                                                                                                 ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
     def getClient(self, cid):
-        """\
-        return an already connected client by searching the clients cid index.
+        """
+        Return an already connected client by searching the clients cid index.
         May return None
         """
         client = self.clients.getByCID(cid)
@@ -799,10 +802,8 @@ class InsurgencyParser(Parser):
         return None
 
     def getClientOrCreate(self, cid, guid, name, team=None):
-        """\
-        return an already connected client by searching the clients cid index
-        or create a new client.
-        
+        """
+        Return an already connected client by searching the clients cid index or create a new client.
         May return None
         """
         bot = False
@@ -825,7 +826,7 @@ class InsurgencyParser(Parser):
 
     def getTeam(self, team):
         """
-        convert Insurgency team id to B3 team numbers
+        Convert Insurgency team id to B3 team numbers
         """
         if not team or team == "#Team_Unassigned":
             return TEAM_UNKNOWN
@@ -833,15 +834,15 @@ class InsurgencyParser(Parser):
             return TEAM_BLUE
         elif team == "#Team_Security":
             return TEAM_RED
-#        elif team = "???": # TODO find out what the spec team is
-#            return TEAM_SPEC
+        #elif team = "???": # TODO find out what the spec team is
+        #    return TEAM_SPEC
         else:
             self.debug("unexpected team id : %s" % team)
             return TEAM_UNKNOWN
 
     def queryServerInfo(self):
         """
-        query the server for its status and refresh local data :
+        Query the server for its status and refresh local data :
           self.game.sv_hostname
           self.game.mapName
         furthermore, discover connected players, refresh their ping and ip info
@@ -850,7 +851,9 @@ class InsurgencyParser(Parser):
         clients = dict()
         rv = self.output.write("status")
         if rv:
-            re_player = re.compile(r'''^#\s*(?P<cid>\d+) (?:\d+) "(?P<name>.+)" (?P<guid>\S+) (?P<duration>\d+:\d+) (?P<ping>\d+) (?P<loss>\S+) (?P<state>\S+) (?P<rate>\d+) (?P<ip>\d+\.\d+\.\d+\.\d+):(?P<port>\d+)$''')
+            re_player = re.compile(r'^#\s*(?P<cid>\d+) (?:\d+) "(?P<name>.+)" (?P<guid>\S+) '
+                                   r'(?P<duration>\d+:\d+) (?P<ping>\d+) (?P<loss>\S+) (?P<state>\S+) '
+                                   r'(?P<rate>\d+) (?P<ip>\d+\.\d+\.\d+\.\d+):(?P<port>\d+)$')
             for line in rv.split('\n'):
                 if not line or line.startswith('L '):
                     continue
@@ -870,7 +873,7 @@ class InsurgencyParser(Parser):
 
     def getAvailableMaps(self):
         """
-        return the available maps on the server, even if not in the map rotation list
+        Return the available maps on the server, even if not in the map rotation list
         """
         re_maps = re.compile(r"^PENDING:\s+\(fs\)\s+(?P<map_name>.+)\.bsp$")
         response = []
@@ -880,18 +883,26 @@ class InsurgencyParser(Parser):
                 response.append(m.group('map_name'))
         return response
 
-    def getCvar(self, cvar_name):
-        if not cvar_name:
-            self.warning('trying to query empty cvar %r' % cvar_name)
+    def getCvar(self, cvarName):
+        """
+        Return a CVAR from the game server.
+        :param cvarName: The CVAR name
+        """
+        if not cvarName:
+            self.warning('trying to query empty cvar %r' % cvarName)
             return None
-        rv = self.output.write(cvar_name)
+        rv = self.output.write(cvarName)
         m = re.search(RE_CVAR, rv)
         if m:
-            return m.group('value')
+            return Cvar(cvarName, value=m.group('value'), default=m.group('default'))
+        else:
+            return None
 
     def setCvar(self, cvarName, value):
         """
-        set a cvar on the game server
+        Set a CVAR on the game server.
+        :param cvarName: The CVAR name
+        :param value: The CVAR value
         """
         if re.match('^[a-z0-9_.]+$', cvarName, re.I):
             self.debug('Set cvar %s = [%s]', cvarName, value)
@@ -900,8 +911,13 @@ class InsurgencyParser(Parser):
             self.error('%s is not a valid cvar name', cvarName)
 
     def do_kick(self, client, reason=None):
+        """
+        Kick a client.
+        :param client: The client to kick
+        :param reason: The reason for the kick
+        """
         if not client.cid:
-            self.warning("Trying to kick %s which has no slot id" % client)
+            self.warning("trying to kick %s which has no slot id" % client)
         else:
             if reason:
                 self.output.write('sm_kick #%s %s' % (client.cid, reason))
@@ -909,6 +925,11 @@ class InsurgencyParser(Parser):
                 self.output.write("sm_kick #%s" % client.cid)
 
     def do_ban(self, client, reason=None):
+        """
+        Ban a client.
+        :param client: The client to ban
+        :param reason: The reason for the ban
+        """
         # sm_addban <time> <steamid> [reason]
         if reason:
             self.output.write('sm_addban %s "%s" %s' % (0, client.guid, reason))
@@ -917,6 +938,12 @@ class InsurgencyParser(Parser):
         self.do_kick(client, reason)
 
     def do_tempban(self, client, duration=2, reason=None):
+        """
+        Tempban a client.
+        :param client: The client to tempban
+        :param duration: The tempban duration
+        :param reason: The reason for the tempban
+        """
         # sm_addban <time> <steamid> [reason]
         if reason:
             self.output.write('sm_addban %s "%s" %s' % (int(time2minutes(duration)), client.guid, reason))
@@ -925,16 +952,24 @@ class InsurgencyParser(Parser):
         self.do_kick(client, reason)
 
     def do_unban_by_steamid(self, client):
+        """
+        Unban a client using his GUID.
+        :param client: The client to unban
+        """
         # sm_unban <steamid|ip>
         self.output.write('sm_unban "%s"' % client.guid)
 
     def do_unban_by_ip(self, client):
+        """
+        Unban a client using his IP address.
+        :param client: The client to unban
+        """
         # sm_unban <steamid|ip>
         self.output.write('sm_unban %s' % client.ip)
 
     def is_sourcemod_installed(self):
-        """\
-        return a True if Source Mod is installed on the game server
+        """
+        Return a True if Source Mod is installed on the game server
         """
         data = self.output.write("sm version")
         if data:
@@ -947,11 +982,10 @@ class InsurgencyParser(Parser):
             return False
 
     def get_loaded_sm_plugins(self):
-        """\
-        return a dict with SourceMod plugins' name as keys and value is a tuple (index, version, author)
         """
-        re_sm_plugin = re.compile(r'''^(?P<index>.+) "(?P<name>.+)" \((?P<version>.+)\) by (?P<author>.+)$''',
-                                  re.MULTILINE)
+        Return a dict with SourceMod plugins' name as keys and value is a tuple (index, version, author)
+        """
+        re_sm_plugin = re.compile(r'^(?P<index>.+) "(?P<name>.+)" \((?P<version>.+)\) by (?P<author>.+)$', re.MULTILINE)
 
         response = dict()
         data = self.output.write("sm plugins list")
@@ -961,8 +995,8 @@ class InsurgencyParser(Parser):
         return response
 
     def getMapsSoundingLike(self, mapname):
-        """\
-        return a valid mapname.
+        """
+        Return a valid mapname.
         If no exact match is found, then return close candidates as a list
         """
         supported_maps = [m.lower() for m in self.getAvailableMaps()]

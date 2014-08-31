@@ -165,22 +165,22 @@ class StorageAPITest(object):
         self.assertEquals((), self.storage.getClientAliases(client))
 
     def test_setClientIpAddresse(self):
-        ipalias_id1 = self.storage.setClientIpAddresse(IpAlias(ip='1.2.3.4', clientId=1))
+        ipalias_id1 = self.storage.setClientIpAddress(IpAlias(ip='1.2.3.4', clientId=1))
         self.assertIsNotNone(ipalias_id1)
-        ipalias_id2 = self.storage.setClientIpAddresse(IpAlias(ip='127.0.0.1', clientId=1))
+        ipalias_id2 = self.storage.setClientIpAddress(IpAlias(ip='127.0.0.1', clientId=1))
         self.assertEqual(ipalias_id1 + 1, ipalias_id2)
-        ipalias_id3 = self.storage.setClientIpAddresse(IpAlias(id=ipalias_id1, ip='0.0.0.0', clientId=1))
+        ipalias_id3 = self.storage.setClientIpAddress(IpAlias(id=ipalias_id1, ip='0.0.0.0', clientId=1))
         self.assertEqual(ipalias_id1, ipalias_id3)
     
     def test_setClientIpAddresse_no_db(self):
         self.storage.query = Mock(return_value=None)
         ipalias = Mock()
         ipalias.id = None
-        self.assertIsNone(self.storage.setClientIpAddresse(ipalias))
+        self.assertIsNone(self.storage.setClientIpAddress(ipalias))
 
     def test_getClientIpAddress(self):
         ipalias = IpAlias(ip='88.44.55.22', timeAdd=12, timeEdit=654, numUsed=7, clientId=54)
-        ipalias_id = self.storage.setClientIpAddresse(ipalias)
+        ipalias_id = self.storage.setClientIpAddress(ipalias)
         ipalias = self.storage.getClientIpAddress(IpAlias(id=ipalias_id))
         self.assertIsInstance(ipalias, IpAlias)
         self.assertEqual(ipalias.ip, '88.44.55.22')
@@ -200,9 +200,9 @@ class StorageAPITest(object):
     def test_getClientIpAddresses(self):
         client = Mock()
         client.id = 15
-        self.storage.setClientIpAddresse(IpAlias(ip='44.44.44.44', clientId=client.id))
-        self.storage.setClientIpAddresse(IpAlias(ip='55.55.55.55', clientId=client.id))
-        self.storage.setClientIpAddresse(IpAlias(ip='66.66.66.66', clientId=0))
+        self.storage.setClientIpAddress(IpAlias(ip='44.44.44.44', clientId=client.id))
+        self.storage.setClientIpAddress(IpAlias(ip='55.55.55.55', clientId=client.id))
+        self.storage.setClientIpAddress(IpAlias(ip='66.66.66.66', clientId=0))
         ipaliases = self.storage.getClientIpAddresses(client)
         self.assertIsInstance(ipaliases, list)
         self.assertEqual(len(ipaliases), 2)

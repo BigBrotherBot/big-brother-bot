@@ -1,7 +1,7 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -9,35 +9,35 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
-# CHANGELOG:
+# CHANGELOG
 #
-# 2010/02/24 - 1.2 - Courgette
-#    * uniformize SystemExit and uncatched exception handling between
-#      bot running as a win32 standalone and running as a python script
-# 2010/03/20 - 1.3 -  xlr8or
-#    * finished options -s --setup and -n, --nosetup
-#      where setup launches setup procedure and nosetup prevents bot from entering setup procedure.
-# 2010/08/05 - 1.3.1 -  xlr8or
-#    * Fixing broken --restart mode
-# 2010/10/22 - 1.3.3 -  xlr8or
-#    * Restart counter
-# 2011/05/19 - 1.4.0 -  xlr8or
-#    * Added --update -u arg
-# 2011/12/03 - 1.4.1 -  courgette
-#    * fix crash at bot start in restart mode when installed from egg
+# 2010/02/24 - 1.2   - Courgette - uniformize SystemExit and uncatched exception handling between bot running
+#                                  as a win32 standalone and running as a python script
+# 2010/03/20 - 1.3   - xlr8or    - finished options -s --setup and -n, --nosetup where setup launches setup
+#                                  procedure and nosetup prevents bot from entering setup procedure.
+# 2010/08/05 - 1.3.1 - xlr8or    - fixing broken --restart mode
+# 2010/10/22 - 1.3.3 - xlr8or    - restart counter
+# 2011/05/19 - 1.4.0 - xlr8or    - added --update -u arg
+# 2011/12/03 - 1.4.1 - Courgette - fix crash at bot start in restart mode when installed from egg
+# 2014/07/21 - 1.5   - Fenix     - syntax cleanup
 
 __author__  = 'ThorN'
-__version__ = '1.4.1'
+__version__ = '1.5'
 
-import b3, sys, os, time
+import b3
+import os
+import sys
+import pkg_handler
+import time
 import traceback
+
 from b3.functions import main_is_frozen
 from b3.setup import Setup
 from b3.setup import Update
@@ -47,12 +47,13 @@ try:
 except ImportError:
     import b3.lib.argparse as argparse
 
-import pkg_handler
-
-
 modulePath = pkg_handler.resource_directory(__name__)
 
+
 def run_autorestart(args=None):
+    """
+    Run B3 in auto-restart mode.
+    """
     _restarts = 0
 
     if main_is_frozen():
@@ -81,9 +82,9 @@ def run_autorestart(args=None):
                 import subprocess
                 status = subprocess.call(script, shell=True)
             except ImportError:
-                #for Python versions < 2.5
-                #status = os.system(script)
-                print 'Restart mode not fully supported!\nUse B3 without the -r (--restart) option or update your python installation!'
+                subprocess = None  # just to remove warnings
+                print 'Restart mode not fully supported!\n' \
+                      'Use B3 without the -r (--restart) option or update your python installation!'
                 break
 
             print 'Exited with status %s' % status
@@ -128,13 +129,20 @@ def run_autorestart(args=None):
             print 'Quit'
             break
 
+
 def run(config=None, nosetup=False):
+    """
+    Run B3.
+    :param config: The B3 configuration file instance
+    :param nosetup: Whther to execute the B3 setup or not
+    """
     if config:
         config = b3.getAbsolutePath(config)
     else:
         # search for the config file
         config = None
-        for p in ('b3.xml', 'conf/b3.xml', 'b3/conf/b3.xml', '~/b3.xml', '~/conf/b3.xml', '~/b3/conf/b3.xml', '@b3/conf/b3.xml'):
+        for p in ('b3.xml', 'conf/b3.xml', 'b3/conf/b3.xml', '~/b3.xml',
+                  '~/conf/b3.xml', '~/b3/conf/b3.xml', '@b3/conf/b3.xml'):
             path = b3.getAbsolutePath(p)
             print 'Searching for config file: %s' % path
             if os.path.isfile(path):
@@ -142,18 +150,27 @@ def run(config=None, nosetup=False):
                 break
 
     if not config:
-        # This happens when no config was specified on the commandline and the default configs are missing! 
+        # This happens when no config was specified on the
+        # commandline and the default configs are missing!
         if nosetup:
-            raise SystemExit('ERROR: Could not find config file, Please run B3 with option: --setup or -s')
+            raise SystemExit('ERROR: could not find config file: please run B3 with option: --setup or -s')
         else:
             Setup(config)
 
     b3.start(config, nosetup)
 
 def run_setup(config=None):
+    """
+    Run the B3 setup.
+    :param config: The B3 configuration file instance
+    """
     Setup(config)
 
 def run_update(config=None):
+    """
+    Run the B3 update.
+    :param config: The B3 configuration file instance
+    """
     Update(config)
 
 
@@ -167,6 +184,9 @@ def _check_arg_configfile(parser, x):
 
 
 def main():
+    """
+    Main execution.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', dest='config', default=None, metavar='b3.xml',
                         help='B3 config file. Example: -c b3.xml',
