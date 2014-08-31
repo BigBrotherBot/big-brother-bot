@@ -37,9 +37,9 @@
 # 1.13 - 2014/08/05 - syntax cleanup
 
 """
-    This module make plugin testing simple. It provides you
-    with fakeConsole and joe which can be used to say commands
-    as if it where a player.
+This module make plugin testing simple. It provides you
+with fakeConsole and joe which can be used to say commands
+as if it where a player.
 """
 
 __version__ = '1.13'

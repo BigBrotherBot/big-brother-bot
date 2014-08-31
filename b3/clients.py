@@ -21,8 +21,6 @@
 #
 # 2014/08/09 - 1.7.1  - Courgette   - fire new event EVT_CLIENT_TEAM_CHANGE2
 # 2014/07/26 - 1.7    - Fenix       - syntax cleanup
-#                                   - update client public attributes to match database field names
-#                                   - added support for deprecated attributes and methods
 #                                   - reformat changelog
 # 2014/05/09 - 1.6.5  - Fenix       - changed kick.time_expire = 0 -> kick.time_expire = -1: fix inability to
 #                                     retrieve kick penalties from the storage
@@ -1239,7 +1237,7 @@ class IpAlias(Struct):
         self.timeEdit = console.time()
         if not self.id:
             self.timeAdd = console.time()
-        return console.storage.setClientIpAddresse(self)
+        return console.storage.setClientIpAddress(self)
     
     def __str__(self):
         return "IpAlias(id=%s, ip=\"%s\", clientId=%s, numUsed=%s)" % (self.id, self.ip, self.clientId, self.numUsed)
