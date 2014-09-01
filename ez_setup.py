@@ -1,5 +1,23 @@
-#!python
-"""Bootstrap setuptools installation
+#
+# BigBrotherBot(B3) (www.bigbrotherbot.net)
+# Copyright (C) 2005 Michael "ThorN" Thornton
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+
+"""
+Bootstrap setuptools installation
 
 If you want to use setuptools in your package's setup.py, just include this
 file in the same directory with it, and add this to the top of your setup.py::
@@ -13,7 +31,6 @@ the appropriate options to ``use_setuptools()``.
 
 This file can also be run as a script to install or upgrade setuptools.
 """
-import sys
 DEFAULT_VERSION = "0.6a8"
 DEFAULT_URL     = "http://cheeseshop.python.org/packages/%s/s/setuptools/" % sys.version[:3]
 
@@ -42,22 +59,17 @@ import sys, os
 
 def _validate_md5(egg_name, data):
     if egg_name in md5_data:
-        from md5 import md5
+        from hashlib import md5
         digest = md5(data).hexdigest()
         if digest != md5_data[egg_name]:
-            print >>sys.stderr, (
-                "md5 validation of %s failed!  (Possible download problem?)"
-                % egg_name
-            )
+            print >>sys.stderr, ("md5 validation of %s failed!  (Possible download problem?)" % egg_name)
             sys.exit(2)
     return data    
 
 
-def use_setuptools(
-    version=DEFAULT_VERSION, download_base=DEFAULT_URL, to_dir=os.curdir,
-    download_delay=15
-):
-    """Automatically find/download setuptools and make it available on sys.path
+def use_setuptools(version=DEFAULT_VERSION, download_base=DEFAULT_URL, to_dir=os.curdir,download_delay=15):
+    """
+    Automatically find/download setuptools and make it available on sys.path.
 
     `version` should be a valid setuptools version number that is available
     as an egg for download under the `download_base` URL (which should end with
@@ -71,15 +83,14 @@ def use_setuptools(
     try:
         import setuptools
         if setuptools.__version__ == '0.0.1':
-            print >>sys.stderr, (
-            "You have an obsolete version of setuptools installed.  Please\n"
-            "remove it from your system entirely before rerunning this script."
-            )
+            print >>sys.stderr, ("You have an obsolete version of setuptools installed. Please\n"
+                                 "remove it from your system entirely before rerunning this script.")
             sys.exit(2)
     except ImportError:
         egg = download_setuptools(version, download_base, to_dir, download_delay)
         sys.path.insert(0, egg)
-        import setuptools; setuptools.bootstrap_install_from = egg
+        import setuptools
+        setuptools.bootstrap_install_from = egg
 
     import pkg_resources
     try:
@@ -94,18 +105,16 @@ def use_setuptools(
         ) % version
         sys.exit(2)
 
-def download_setuptools(
-    version=DEFAULT_VERSION, download_base=DEFAULT_URL, to_dir=os.curdir,
-    delay = 15
-):
-    """Download setuptools from a specified location and return its filename
+def download_setuptools(version=DEFAULT_VERSION, download_base=DEFAULT_URL, to_dir=os.curdir, delay = 15):
+    """
+    Download setuptools from a specified location and return its filename.
 
     `version` should be a valid setuptools version number that is available
     as an egg for download under the `download_base` URL (which should end
     with a '/'). `to_dir` is the directory where the egg will be downloaded.
     `delay` is the number of seconds to pause before an actual download attempt.
     """
-    import urllib2, shutil
+    import urllib2
     egg_name = "setuptools-%s-py%s.egg" % (version,sys.version[:3])
     url = download_base + egg_name
     saveto = os.path.join(to_dir, egg_name)
@@ -123,7 +132,10 @@ you may need to enable firewall access for this script first.
 I will start the download in %d seconds.
 ---------------------------------------------------------------------------""",
                     version, download_base, delay
-                ); from time import sleep; sleep(delay)
+                )
+                from time import sleep
+                sleep(delay)
+
             log.warn("Downloading %s", url)
             src = urllib2.urlopen(url)
             # Read/write all in one block, so we don't create a corrupt file
@@ -136,12 +148,15 @@ I will start the download in %d seconds.
     return os.path.realpath(saveto)
 
 def main(argv, version=DEFAULT_VERSION):
-    """Install or upgrade setuptools and EasyInstall"""
-
+    """
+    Install or upgrade setuptools and EasyInstall.
+    """
     try:
         import setuptools
     except ImportError:
-        import tempfile, shutil
+        setuptools = None
+        import tempfile
+        import shutil
         tmpdir = tempfile.mkdtemp(prefix="easy_install-")
         try:
             egg = download_setuptools(version, to_dir=tmpdir, delay=0)
@@ -155,7 +170,7 @@ def main(argv, version=DEFAULT_VERSION):
             # tell the user to uninstall obsolete version
             use_setuptools(version)
 
-    req = "setuptools>="+version
+    req = "setuptools>=" + version
     import pkg_resources
     try:
         pkg_resources.require(req)
@@ -174,13 +189,13 @@ def main(argv, version=DEFAULT_VERSION):
             print "Setuptools version",version,"or greater has been installed."
             print '(Run "ez_setup.py -U setuptools" to reinstall or upgrade.)'
 
-
             
 def update_md5(filenames):
-    """Update our built-in md5 registry"""
-
+    """
+    Update our built-in md5 registry.
+    """
     import re
-    from md5 import md5
+    from hashlib import md5
 
     for name in filenames:
         base = os.path.basename(name)
@@ -212,8 +227,3 @@ if __name__=='__main__':
         update_md5(sys.argv[2:])
     else:
         main(sys.argv[1:])
-
-
-
-
-
