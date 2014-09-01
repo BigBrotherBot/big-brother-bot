@@ -19,16 +19,17 @@
 #
 # CHANGELOG
 #
-# 2014-04-01 - 0.1 - Courgette      - copied from csgo
-# 2014-05-02 - 0.2 - Fenix          - rewrote import statements
-#                                   - initialize missing class attributes
-#                                   - fixed get_player_pings method declaration not matching the method in Parser class
-#                                   - fixed client retrieval in kick, ban and tempban function
-# 2014-07-16 - 0.3 - Fenix          - added admin key in EVT_CLIENT_KICK data dict when available
-# 2014/07/18 - 0.4 - Fenix          - updated abstract parser to comply with the new get_wrap implementation
-# 2014/08/29 - 0.5 - 82ndab.Bravo17 - remove color codes from aall messages since Insurgency doesn't use them
-# 2014/08/30 - 0.6 - Fenix          - syntax cleanup
-#                                   - let getcvar() method make use of the Cvar class
+# 2014-04-01 - 0.1   - Courgette      - copied from csgo
+# 2014-05-02 - 0.2   - Fenix          - rewrote import statements
+#                                     - initialize missing class attributes
+#                                     - fixed get_player_pings method declaration not matching the method in Parser class
+#                                     - fixed client retrieval in kick, ban and tempban function
+# 2014-07-16 - 0.3   - Fenix          - added admin key in EVT_CLIENT_KICK data dict when available
+# 2014/07/18 - 0.4   - Fenix          - updated abstract parser to comply with the new get_wrap implementation
+# 2014/08/29 - 0.5   - 82ndab.Bravo17 - remove color codes from all messages since Insurgency doesn't use them
+# 2014/08/30 - 0.6   - Fenix          - syntax cleanup
+#                                     - let getcvar() method make use of the Cvar class
+# 2014/09/01 - 0.6.1 - 82ndab-Bravo17 - Add color code options for new getWrap method
 
 import re
 import time
@@ -48,7 +49,7 @@ from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '0.5'
+__version__ = '0.6.1'
 
 
 # GAME SETUP
@@ -110,6 +111,7 @@ class InsurgencyParser(Parser):
         'line_length': 200,
     }
 
+    _use_color_codes = False
     ####################################################################################################################
     ##                                                                                                                ##
     ##  PARSER INITIALIZATION                                                                                         ##

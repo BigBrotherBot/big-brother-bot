@@ -54,6 +54,7 @@
 #                       attributes (does nothing new but removes several warnings)
 #                     - fixed some BattleEye event handlers not returning proper B3 events
 # 29/08/2014 - 1.3    - syntax cleanup
+# 01/09/2014 - 1.3.1  - Add color code options for new getWrap method
 
 import b3.cron
 import b3.cvar
@@ -78,7 +79,7 @@ from b3.clients import Clients
 from logging import Formatter
 
 __author__  = '82ndab-Bravo17, Courgette'
-__version__ = '1.3'
+__version__ = '1.3.1'
 
 
 # disable the authorizing timer that come by default with the b3.clients.Clients class
@@ -119,6 +120,7 @@ class AbstractParser(b3.parser.Parser):
         'message_delay': .8,
     }
 
+    _use_Color_codes = False
     # list available cvar
     _gameServerVars = ()
 

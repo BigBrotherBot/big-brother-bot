@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2014/09/01 - 1.37.1 - 82ndab-Bravo17  - Add color code options for new getWrap method
 # 2014/07/27 - 1.37   - Fenix           - syntax cleanup
 #                                       - reformat changelog
 # 2014/07/18 - 1.36   - Fenix           - new getWrap implementation based on the textwrap.TextWrapper class: the
@@ -129,7 +130,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.37'
+__version__ = '1.37.1'
 
 import os
 import sys
@@ -235,6 +236,9 @@ class Parser(object):
         'message_delay': 0
     }
 
+    _use_color_codes = True
+    _first_line_code = ''
+    
     _eventsStats_cronTab = None
     _reColor = re.compile(r'\^[0-9a-z]')
     _cron = None
@@ -1257,7 +1261,21 @@ class Parser(object):
             self.wrapper = TextWrapper(width=self._settings['line_length'], drop_whitespace=True,
                                        break_long_words=True, break_on_hyphens=False)
 
-        return self.wrapper.wrap(text)
+        if self._use_color_codes:
+            wrapped_text = self.wrapper.wrap(text)
+            lines = []
+            color = self._first_line_code
+            for line in wrapped_text:
+                if len(lines) > 0:
+                    lines.append('^3>%s%s' % (color, line))
+                else:
+                    lines.append('%s%s' % (color, line))
+                m = re.findall(self._reColor, line)
+                if m:
+                    color = m[-1]
+            return lines
+        else:
+            return self.wrapper.wrap(text)
 
     def error(self, msg, *args, **kwargs):
         """

@@ -50,9 +50,10 @@
 # 1.13  - updated abstract parser to comply with the new get_wrap implementation
 # 1.14  - syntax cleanup
 #       - reformat changelog
+# 1.14.1 - Add color code options for new getWrap method
 
 __author__ = 'Courgette'
-__version__ = '1.14'
+__version__ = '1.14.1'
 
 
 import re
@@ -116,6 +117,7 @@ class AbstractParser(b3.parser.Parser):
         'big_msg_repeat': 'off',
     }
 
+    _use_color_codes = False
     _gameServerVars = () # list available cvar
 
     _commands = {
