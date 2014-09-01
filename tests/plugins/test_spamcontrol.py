@@ -21,7 +21,7 @@ import new
 import os
 from textwrap import dedent
 from mockito import when
-from mock import Mock, call, patch
+from mock import Mock, patch
 import unittest2 as unittest
 from b3.events import Event
 from b3.fake import FakeClient
@@ -268,11 +268,12 @@ class Test_game_specific_spam(SpamcontrolTestCase):
         EVT_CLIENT_RADIO = self.console.Events.createEvent('EVT_CLIENT_RADIO', 'Event client radio')
 
         # teach the Spamcontrol plugin how to react on such events
-        def onRadio(event):
+        def onRadio(this, event):
             new_event = Event(type=event.type, client=event.client, target=event.target, data=event.data['text'])
-            self.p.onChat(new_event)
-        self.p.eventHanlders[EVT_CLIENT_RADIO] = onRadio
-        self.p.registerEvent(EVT_CLIENT_RADIO)
+            this.onChat(new_event)
+
+        self.p.onRadio = new.instancemethod(onRadio, self.p, SpamcontrolPlugin)
+        self.p.registerEvent(self.p.console.getEventID('EVT_CLIENT_RADIO'), self.p.onRadio)
 
         # patch joe to make him able to send radio messages
         def radios(me, text):

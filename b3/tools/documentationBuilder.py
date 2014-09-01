@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2010 BigBrotherBot
-# 
+# Copyright (C) 2005 Michael "ThorN" Thornton
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -12,34 +12,27 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
-# CHANGELOG:
-# 2010/02/20 - 1.1 - Courgette
-#    * fix convertion from level to group name for unexpected level numbers
-#    * cosmetics to the html export
-#    * add maxlevel setting to hide commands reserved to high levels
-# 2010/02/23 - 1.2 - Courgette
-#    * make the html export validate the W3C test
-#    * hide the maxLevel column on the html export
-# 2010/02/25 - 1.2.1 - Courgette
-#    * fix Internet Explorer issues with logo in html export
-#    * remove any use the sets module
-# 2010/02/26 - 1.2.2 - Courgette
-#    * fix bug making commands with alias appear twice in the results
-# 2010/03/07 - 1.2.3 - Courgette
-#   * make the html export pass the W3C tests
-# 2010/08/25 - 1.2.4 - Courgette
-#   * do not fail if 'destination' is found in config but empty
-# 2011/05/11 - 1.2.5 - Courgette
-#   * update B3 website URL
-# 2014/01/20 - 1.2.6 - ozon
-#   * add json output
-# 2014/05/25 - 1.2.7 - Courgette
-#   * fix crash when command description is an empty string
+# CHANGELOG
+#
+# 2010/02/20 - 1.1   - Courgette - fix convertion from level to group name for unexpected level numbers
+#                                - cosmetics to the html export
+#                                - add maxlevel setting to hide commands reserved to high levels
+# 2010/02/23 - 1.2   - Courgette - make the html export validate the W3C test
+#                                - hide the maxLevel column on the html export
+# 2010/02/25 - 1.2.1 - Courgette - fix Internet Explorer issues with logo in html export
+#                                - remove any use the sets module
+# 2010/02/26 - 1.2.2 - Courgette - fix bug making commands with alias appear twice in the results
+# 2010/03/07 - 1.2.3 - Courgette - make the html export pass the W3C tests
+# 2010/08/25 - 1.2.4 - Courgette - do not fail if 'destination' is found in config but empty
+# 2011/05/11 - 1.2.5 - Courgette - update B3 website URL
+# 2014/01/20 - 1.2.6 - ozon      - add json output
+# 2014/05/25 - 1.2.7 - Courgette - fix crash when command description is an empty string
+# 2014/08/31 - 1.2.8 - Fenix     - syntax cleanup
 
 """ 
 This module will generate a user documentation depending
@@ -47,22 +40,23 @@ on current config
 """
 
 __author__ = 'Courgette, ozon'
-__version__ = '1.2.7'
+__version__ = '1.2.8'
 
-import time
-import os
-import StringIO
-import string
-import re
-from xml.dom.minidom import Document
-from ftplib import FTP
-from cgi import escape
 import datetime
+import os
+import re
+import StringIO
+import time
+
 from b3 import getConfPath, getB3Path
 from b3.functions import splitDSN
+from cgi import escape
+from ftplib import FTP
+from xml.dom.minidom import Document
 
 
 class DocBuilder:
+
     _supportedExportType = ['xml', 'html', 'oldhtml', 'htmltable', 'json']
     _console = None
     _adminPlugin = None
@@ -71,6 +65,10 @@ class DocBuilder:
     _maxlevel = None
     
     def __init__(self, console):
+        """
+        Object constructor.
+        :param console: The console instance
+        """
         self._console = console
         self._outputDir = getConfPath()
         self._adminPlugin = self._console.getPlugin('admin')
@@ -81,7 +79,7 @@ class DocBuilder:
             if self._console.config.has_option('autodoc', 'destination'):
                 dest = self._console.config.get('autodoc', 'destination')
                 if dest is None:
-                    self._console.warning('AUTODOC: destination found but empty. using default')
+                    self._console.warning('AUTODOC: destination found but empty: using default')
                 else:
                     if dest.startswith('ftp://') or dest.startswith('file://'):
                         self._outputUrl = dest
@@ -96,6 +94,9 @@ class DocBuilder:
                 self._maxlevel = self._console.config.getint('autodoc', 'maxlevel')
 
     def save(self):
+        """
+        Save the documentation.
+        """
         if self._outputType not in self._supportedExportType:
             self._console.error('AUTODOC: %s type of doc unsupported' % self._outputType)
             self._console.info('AUTODOC: supported doc types are : %s' % ", ".join(self._supportedExportType))
@@ -106,32 +107,29 @@ class DocBuilder:
             elif self._outputType == 'html':
                 from string import Template
                 doc_template = Template(self.load_html_template(template='b3doc-ng_template.html'))
-                self._write(doc_template.safe_substitute(
-                    json_data=self.get_json()
-                ))
+                self._write(doc_template.safe_substitute(json_data=self.get_json()))
             elif self._outputType == 'oldhtml':
                 from string import Template
                 doc_template = Template(self.load_html_template(template='b3doc_template.html'))
                 self._write(doc_template.safe_substitute(
                     commandsTable=self.getHtmlTable(),
                     dateUpdated=time.asctime(),
-                    server=self._console._publicIp + ':' + str(self._console._port)
-                ))
+                    server=self._console._publicIp + ':' + str(self._console._port)))
             elif self._outputType == 'htmltable':
                 self._write(self.getHtmlTable())
             elif self._outputType == 'json':
                 self._write(self.get_json(indent=4))
 
     def load_html_template(self, template):
-        """Loads template file from the file system"""
-
+        """
+        Loads template file from the file system.
+        """
         # build template file path
         _template_path = os.path.join(getConfPath(), 'conf/templates/autodoc/')
         if not os.path.isfile(_template_path):
             _template_path = os.path.join(getB3Path(), 'conf/templates/autodoc/')
 
         _template_file = _template_path + template
-
         # open template
         with open(_template_file, 'r') as template_file:
                     template_data = template_file.read()
@@ -140,7 +138,6 @@ class DocBuilder:
 
     def get_json(self, indent=None):
         import json
-
         output = {
             'commands': self._getCommandsDict(),
             'updated': datetime.datetime.now().isoformat(),
@@ -256,9 +253,7 @@ class DocBuilder:
                 continue
             
             #self._console.debug('AUTODOC: making command doc for %s'%cmd.command)
-            tmp = {}
-            tmp['name'] = cmd.prefix + cmd.command
-            tmp['alias'] = ""
+            tmp = {'name': cmd.prefix + cmd.command, 'alias': ""}
             if cmd.alias is not None and cmd.alias != '' :
                 tmp['alias'] = cmd.prefix + cmd.alias
             tmp['plugin'] = re.sub('Plugin$', '', cmd.plugin.__class__.__name__) 
@@ -289,22 +284,20 @@ class DocBuilder:
         return listCommands
     
     def _write(self, text):
-        
         if text.strip() == '':
             self._console.warning('AUTODOC: nothing to write')
             
         dsn = splitDSN(self._outputUrl)
-        
         if dsn['protocol'] == 'ftp':
-            self._console.debug('Uploading to FTP server %s' % dsn['host'])
+            self._console.debug('uploading to FTP server %s' % dsn['host'])
             ftp = FTP(dsn['host'], dsn['user'], passwd=dsn['password'])
             ftp.cwd(os.path.dirname(dsn['path']))
             ftpfile = StringIO.StringIO()
             ftpfile.write(text)
             ftpfile.seek(0)
-            ftp.storbinary('STOR '+os.path.basename(dsn['path']), ftpfile)
+            ftp.storbinary('STOR ' + os.path.basename(dsn['path']), ftpfile)
         elif dsn['protocol'] == 'file':
-            self._console.debug('Writing to %s', dsn['path'])
+            self._console.debug('writing to %s', dsn['path'])
             f = file(dsn['path'], 'w')
             f.write(text)
             f.close()

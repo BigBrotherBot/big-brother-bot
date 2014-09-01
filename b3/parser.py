@@ -1,7 +1,7 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -11,176 +11,125 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
-#
 # CHANGELOG
 #
-#   2014/07/18 - 1.36 - Fenix
-#   * new getWrap implementation based on the textwrap.TextWrapper class: the maximum length of each
-#   * message can be customized in the _settings dictionary (_settings['line_length'] for instance)
-#   2014/06/02 - 1.35.3 - Courgette
-#   * prevent the same plugin to register multiple times for the same event
-#   2014/06/02 - 1.35.2 - Fenix
-#   * moved back event mapping logic into Plugin class: Parser should be aware only of Plugins listening for incoming
-#    events and not how to dispatch them: for more info see https://github.com/BigBrotherBot/big-brother-bot/pull/193
-#   2014/05/21 - 1.35.1 - Fenix
-#   * moved plugin event mapping function into Parser class
-#   2014/04/14 - 1.35 - Fenix
-#   * pep8 coding style guide
-#   2014/01/19 - 1.34 - Ozon
-#   * improve plugin config file search
-#   2013/10/24 - 1.33 - courgette
-#   * fix httpytail, ftpytail and sftpytail plugins that would be loaded twice if found in the plugins section
-#     of the b3.xml file
-#   * fix onLoadConfig hook is now called by the parser instead of at plugin instantiation
-#   2013/10/23 - 1.32 - courgette
-#   * onLoadConfig hook is now called by the parser instead of at plugin instantiation
-#   2013/02/15 - 1.31.1 - courgette
-#   * fix reloadConfigs() which would not reload the config for the admin plugin
-#   2012/10/19 - 1.31 - courgette
-#   * add method getNextMap() to the list of method all B3 parsers should implement
-#   2012/09/14 - 1.30.1 - courgette
-#   * fix variable substitution in default message templates
-#   2012/08/27 - 1.30 - courgette
-#   * better feedback when an error occurs while setting up Rcon
-#   * add getEventKey method
-#   2012/08/12 - 1.29 - courgette
-#   * gracefully fallback on default message templates if missing from main config file
-#   2012/08/11 - 1.28 - courgette
-#   * add two methods : getGroup and getGroupLevel meant to ease the reading of a valid group or group level from
-#     a config file. Conveniently raises KeyError if level or group keyword provided does not match any existing group.
-#   2012/07/20 - 1.27.5 - courgette
-#   * better error message when expected self.input attribute is missing
-#   2012/06/17 - 1.27.4 - courgette
-#   * log traceback when an exception occurs while loading a plugin
-#   * detect missing 'name' attribute in plugin element from the plugins section of the config file
-#   2012/06/17 - 1.27.3 - courgette
-#   * more explicit error message when failing to load a plugin from a specified path
-#   2012/06/17 - 1.27.2 - courgette
-#   * syntax and code cleanup
-#   2012/05/06 - 1.27.1 - courgette
-#   * increases default b3 event queue size to 50
-#   2011/06/05 - 1.27 - xlr8or
-#   * implementation of game server encoding/decoding
-#   2011/09/12 - 1.26.2 - Courgette
-#   * start the admin plugin first as many plugins relie on it (does not affect
-#     plugin priority in regard to B3 events dispatching)
-#   2011/06/05 - 1.26.1 - Courgette
-#   * fix periodic events stats dumping blocking B3 restart/shutdown
-#   2011/05/03 - 1.24.8 - Courgette
-#   * event queue size can be set in b3.xml in section 'b3/event_queue_size'
-#   2011/05/03 - 1.24.7 - Courgette
-#   * add periodic events stats dumping to detect slow plugins
-#   2011/05/03 - 1.24.6 - Courgette
-#   * do not run update sql queries on startup
-#   2011/05/03 - 1.24.5 - Courgette
-#   * fix bug regarding rcon_ip introduced in 1.24.4
-#   2011/04/31 - 1.24.4 - Courgette
-#   * add missing b3.timezones import
-#   2011/04/30 - 1.24.3 - Courgette
-#   * move the B3 start announcement that is broadcasted on the game server after
-#     the parser startup() method has been called to give a change to parsers to
-#     set up their rcon before it is used.
-#   * rcon_ip, rcon_password not mandatory anymore to suport games that have rcon
-#     working through files
-#   2011/04/27 - 1.24.2 - 82ndab-Bravo17
-#   * Auto assign of unique local games_mp log file
-#   2011/04/20 - 1.24.1 - Courgette
-#   * fix auto detection of locale timezone offset
-#   2011/03/30 - 1.24 - Courgette
-#   * remove output option log2both and changed the behavior of log2console so
-#     that the console log steam is not replacing the stream going to the log file
-#   2011/02/03 - 1.23 - Bravo17
-#   * allow local log to be appended to instead of overwritten for games with remote logs
-#   2010/11/25 - 1.22 - Courgette
-#   * at start, can load a plugin in 'disabled' state. Use the 'disabled' as follow :
-#         <plugin name="adv" config="@conf/plugin_adv.xml" disabled="Yes"/>
-#   2010/11/18 - 1.21 - Courgette
-#   * do not resolve eventual domain name found in public_ip
-#   2010/11/07 - 1.20.2 - GrosBedo
-#   * edited default values of lines_per_second and delay
-#   2010/11/07 - 1.20.1 - GrosBedo
-#   * added a new dynamical function getMessageVariables to parse messages
-#   2010/10/28 - 1.20.0 - Courgette
-#   * support an new optional syntax for loading plugins in b3.xml which enable
-#     to specify a directory where to find the plugin with the 'path' attribute.
-#     This overrides the default and extplugins folders. Example :
-#     <plugin name="pluginname" config="@conf/plugin.xml" path="C:\Users\me\myPlugin\"/>
-#   2010/10/22 - 1.19.4 - xlr8or
-#   * output option log2both writes to logfile AND stderr simultaneously
-#   2010/10/06 - 1.19.3 - xlr8or
-#   * reintroduced rcontesting on startup, but for q3a based only (rconTest var in parser)
-#   2010/09/04 - 1.19.2 - GrosBedo
-#   * fixed some typos
-#   * moved delay and lines_per_second settings to server category
-#   2010/09/04 - 1.19.1 - Grosbedo
-#   * added b3/local_game_log option for several remote log reading at once
-#   * added http remote log support
-#   * delay2 -> lines_per_second
-#   2010/09/01 - 1.19 - Grosbedo
-#   * reduce disk access costs by reading multiple lines at once from the game log file
-#   2010/09/01 - 1.18 - Grosbedo
-#   * detect game log file rotation
-#   2010/09/01 - 1.17 - Courgette
-#   * add beta support for sftp protocol for reading remote game log file
-#   2010/08/14 - 1.16.1 - Courgette
-#   * fallback on UTC timezone in case the timezone name is not valid
-#   2010/04/17 - 1.16 - Courgette
-#   * plugin priority is defined by their order in the b3.xml file 
-#   * fix bug in getEventName()
-#   2010/04/10 - 1.15.1 - Courgette
-#   * write the parser version to log file
-#   2010/04/10 - 1.15 - Courgette
-#   * public_ip and rcon_ip can now be domain names
-#   2010/04/10 - 1.14.3 - Bakes
-#   * added saybig() to method stubs for inheriting classes.
-#   2010/03/23 - 1.14.2 - Bakes
-#   * add message_delay for better BFBC2 interoperability.
-#   2010/03/22 - 1.14.1 - Courgette
-#   * change maprotate() to rotateMap()
-#   2010/03/21 - 1.14 - Courgette
-#   * create method stubs for inheriting classes to implement
-#   10/03/2010 - v1.13 - Courgette
-#   * add rconPort for games which have a different rcon port than the game port
-#   * server.game_log option is not mandatory anymore. This makes B3 able to work
-#     with game servers having no game log file
-#   * do not test rcon anymore as the test process differs depending on the game
-#   12/12/2009 - v1.12.3 - Courgette
-#   * when working in remote mode, does not download the remote log file.
-#   06/12/2009 - v1.12.2 - Courgette
-#   * write() can specify a custom maxRetries value
-#   22/11/2009 - v1.12.1 - Courgette
-#   * b3.xml can have option ('server','rcon_timeout') to specify a custom delay (secondes) to use for the rcon socket
-#   17/11/2009 - v1.12.0 - Courgette
-#   * b3.xml can now have an optional section named 'devmode'
-#   * move 'replay' option to section 'devmode'
-#   * move 'delay' option to section 'b3'
-#   * add option 'log2console' to section 'devmode'. This will make the bot
-#     write to stderr instead of b3.log (useful if using eclipse or such IDE)
-#   * fix replay mode when bot detected time reset from game log
-#   09/10/2009 - v1.11.2 - xlr8or
-#   * Saved original sys.stdout to console.screen to aid communications to b3 screen
-#   12/09/2009 - v1.11.1 - xlr8or
-#   * Added few functions and prevent spamming b3.log on pause
-#   28/08/2009 - v1.11.0 - Bakes
-#   * adds Remote B3 thru FTP functionality.
-#   19/08/2009 - v1.10.0 - courgette
-#   * adds the inflictCustomPenalty() that allows to define game specific penalties.
-#     requires admin.py v1.4+
-#   10/7/2009 - added code to load publist by default - xlr8or
-#   29/4/2009 - fixed ignored exit code (for restarts/shutdowns) - arbscht
-#   10/20/2008 - 1.9.1b0 - mindriot
-#   * fixed slight typo of b3.events.EVT_UNKOWN to b3.events.EVT_UNKNOWN
-#   11/29/2005 - 1.7.0 - ThorN
-#   * added atexit handlers
-#   * added warning, info, exception, and critical log handlers
+# 2014/07/27 - 1.37   - Fenix           - syntax cleanup
+#                                       - reformat changelog
+# 2014/07/18 - 1.36   - Fenix           - new getWrap implementation based on the textwrap.TextWrapper class: the
+#                                         maximum length of each message can be customized in the _settings dictionary
+#                                         (_settings['line_length'] for instance)
+# 2014/06/02 - 1.35.3 - Courgette       - prevent the same plugin to register multiple times for the same event
+# 2014/06/02 - 1.35.2 - Fenix           - moved back event mapping logic into Plugin class: Parser should be aware only
+#                                         of Plugins listening for incoming events and not how to dispatch them: for
+#                                         more info see https://github.com/BigBrotherBot/big-brother-bot/pull/193
+# 2014/05/21 - 1.35.1 - Fenix           - moved plugin event mapping function into Parser class
+# 2014/04/14 - 1.35   - Fenix           - PEP8 coding style guide
+# 2014/01/19 - 1.34   - Ozon            - improve plugin config file search
+# 2013/10/24 - 1.33   - Courgette       - fix httpytail, ftpytail and sftpytail plugins that would be loaded twice if
+#                                         found in the plugins section of the b3.xml file
+#                                       - fix on_load_config hook is now called by the parser instead of at plugin
+#                                         instantiation
+# 2013/10/23 - 1.32   - Courgette       - on_load_config hook is now called by the parser instead of
+#                                         at plugin instantiation
+# 2013/02/15 - 1.31.1 - Courgette       - fix reload_configs() which would not reload the config for the admin plugin
+# 2012/10/19 - 1.31   - Courgette       - add method get_nextmap() to the list of method all B3 parsers should implement
+# 2012/09/14 - 1.30.1 - Courgette       - fix variable substitution in default message templates
+# 2012/08/27 - 1.30   - Courgette       - better feedback when an error occurs while setting up Rcon
+#                                       - add getEventKey method
+# 2012/08/12 - 1.29   - Courgette       - gracefully fallback on default message templates if missing from main
+#                                         config file
+# 2012/08/11 - 1.28   - Courgette       - add two methods: getGroup and getGroupLevel meant to ease the reading of a
+#                                         valid group or group level from a config file. Conveniently raises KeyError
+#                                         if level or group keyword provided does not match any existing group.
+# 2012/07/20 - 1.27.5 - Courgette       - better error message when expected self.input attribute is missing
+# 2012/06/17 - 1.27.4 - Courgette       - log traceback when an exception occurs while loading a plugin
+#                                         detect missing 'name' attribute in plugin element from the plugins
+#                                         section of the config file
+# 2012/06/17 - 1.27.3 - Courgette       - more explicit message when failing to load a plugin from a specified path
+# 2012/06/17 - 1.27.2 - Courgette       - syntax and code cleanup
+# 2012/05/06 - 1.27.1 - Courgette       - increases default b3 event queue size to 50
+# 2011/06/05 - 1.27   - xlr8or          - implementation of game server encoding/decoding
+# 2011/09/12 - 1.26.2 - Courgette       - start the admin plugin first as many plugins relie on it (does not affect
+#                                         plugin priority in regard to B3 events dispatching)
+# 2011/06/05 - 1.26.1 - Courgette       - fix periodic events stats dumping blocking B3 restart/shutdown
+# 2011/05/03 - 1.24.8 - Courgette       - event queue size can be set in b3.xml in section 'b3/event_queue_size'
+# 2011/05/03 - 1.24.7 - Courgette       - add periodic events stats dumping to detect slow plugins
+# 2011/05/03 - 1.24.6 - Courgette       - do not run update sql queries on startup
+# 2011/05/03 - 1.24.5 - Courgette       - fix bug regarding rcon_ip introduced in 1.24.4
+# 2011/04/31 - 1.24.4 - Courgette       - add missing b3.timezones import
+# 2011/04/30 - 1.24.3 - Courgette       - move the B3 start announcement that is broadcasted on the game server after
+#                                         the parser startup() method has been called to give a change to parsers to
+#                                         set up their rcon before it is used.
+#                                       - rcon_ip, rcon_password not mandatory anymore to suport games that have rcon
+#                                         working through files
+# 2011/04/27 - 1.24.2 - 82ndab-Bravo17  - auto assign of unique local games_mp log file
+# 2011/04/20 - 1.24.1 - Courgette       - fix auto detection of locale timezone offset
+# 2011/03/30 - 1.24   - Courgette       - remove output option log2both and changed the behavior of log2console so
+#                                         that the console log steam is not replacing the stream going to the log file
+# 2011/02/03 - 1.23   - 82ndab-Bravo17  - allow local log to be appended to instead of overwritten for games with
+#                                         remote logs
+# 2010/11/25 - 1.22   - Courgette       - at start, can load a plugin in 'disabled' state. Use the 'disabled' as follow:
+#                                         <plugin name="adv" config="@conf/plugin_adv.xml" disabled="Yes"/>
+# 2010/11/18 - 1.21   - Courgette       - do not resolve eventual domain name found in public_ip
+# 2010/11/07 - 1.20.2 - GrosBedo        - edited default values of lines_per_second and delay
+# 2010/11/07 - 1.20.1 - GrosBedo        - added a new dynamical function get_message_variables to parse messages
+# 2010/10/28 - 1.20.0 - Courgette       - support an new optional syntax for loading plugins in b3.xml which enable
+#                                         to specify a directory where to find the plugin with the 'path' attribute.
+#                                         this overrides the default and extplugins folders. Example :
+#                                         <plugin name="pluginname" config="@conf/plugin.xml" \
+#                                                                                        path="C:\Users\me\myPlugin\"/>
+# 2010/10/22 - 1.19.4 - xlr8or          - output option log2both writes to logfile AND stderr simultaneously
+# 2010/10/06 - 1.19.3 - xlr8or          - reintroduced rcontesting on startup, but for q3a based only
+# 2010/09/04 - 1.19.2 - GrosBedo        - fixed some typos
+#                                       - moved delay and lines_per_second settings to server category
+# 2010/09/04 - 1.19.1 - Grosbedo        - added b3/local_game_log option for several remote log reading at once
+#                                       - added http remote log support
+#                                       - delay2 -> lines_per_second
+# 2010/09/01 - 1.19   - Grosbedo        - reduce disk access costs by reading multiple lines at once from the
+#                                         game log file
+# 2010/09/01 - 1.18   - Grosbedo        - detect game log file rotation
+# 2010/09/01 - 1.17   - Courgette       - add beta support for sftp protocol for reading remote game log file
+# 2010/08/14 - 1.16.1 - Courgette       - fallback on UTC timezone in case the timezone name is not valid
+# 2010/04/17 - 1.16   - Courgette       - plugin priority is defined by their order in the b3.xml file
+#                                       - fix bug in get_event_name()
+# 2010/04/10 - 1.15.1 - Courgette       - write the parser version to log file
+# 2010/04/10 - 1.15   - Courgette       - public_ip and rcon_ip can now be domain names
+# 2010/04/10 - 1.14.3 - Bakes           - added saybig() to method stubs for inheriting classes
+# 2010/03/23 - 1.14.2 - Bakes           - add message_delay for better BFBC2 interoperability.
+# 2010/03/22 - 1.14.1 - Courgette       - change maprotate() to rotate_map()
+# 2010/03/21 - 1.14   - Courgette       - create method stubs for inheriting classes to implement
+# 10/03/2010 - v1.13  - Courgette       - add rconPort for games which have a different rcon port than the game port
+#                                       - server.game_log option is not mandatory anymore. This makes B3 able to work
+#                                         with game servers having no game log file
+#                                       - do not test rcon anymore as the test process differs depending on the game
+# 12/12/2009 - v1.12.3 - Courgette      - when working in remote mode, does not download the remote log file.
+# 06/12/2009 - v1.12.2 - Courgette      - write() can specify a custom max_retries value
+# 22/11/2009 - v1.12.1 - Courgette      - b3.xml can have option ('server','rcon_timeout') to specify a custom delay
+#                                         (secondes) to use for the rcon socket
+# 17/11/2009 - v1.12.0 - Courgette      - b3.xml can now have an optional section named 'devmode'
+#                                       - move 'replay' option to section 'devmode'
+#                                       - move 'delay' option to section 'b3'
+#                                       - add option 'log2console' to section 'devmode'. This will make the bot
+#                                         write to stderr instead of b3.log (useful if using eclipse or such IDE)
+#                                       - fix replay mode when bot detected time reset from game log
+# 09/10/2009 - v1.11.2 - xlr8or         - saved original sys.stdout to console.screen to aid communications to b3 screen
+# 12/09/2009 - v1.11.1 - xlr8or         - added few functions and prevent spamming b3.log on pause
+# 28/08/2009 - v1.11.0 - Bakes          - adds Remote B3 thru FTP functionality.
+# 19/08/2009 - v1.10.0 - Courgette      - adds the inflict_custom_penalty() that allows to define game specific
+#                                         penalties: requires admin.py v1.4+
+# 10/7/2009  -         - xlr8or         - added code to load publist by default -
+# 29/4/2009  -         - xlr8or         - fixed ignored exit code (for restarts/shutdowns)
+# 10/20/2008 - 1.9.1b0 - mindriot       - fixed slight typo of b3.events.EVT_UNKOWN to b3.events.EVT_UNKNOWN
+# 11/29/2005 - 1.7.0   - ThorN          - added atexit handlers
+#                                       - added warning, info, exception, and critical log handlers
 
-__author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon'
-__version__ = '1.36'
+__author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
+__version__ = '1.37'
 
 import os
 import sys
@@ -204,8 +153,10 @@ import b3.parsers.q3a.rcon
 import b3.timezones
 
 from ConfigParser import NoOptionError
-from b3.clients import Clients, Group
-from b3.functions import getModule, vars2printf
+from b3.clients import Clients
+from b3.clients import Group
+from b3.functions import getModule
+from b3.functions import vars2printf
 from b3.decorators import memoize
 from textwrap import TextWrapper
 
@@ -230,6 +181,7 @@ class Parser(object):
     _commands = {}
 
     _messages = {}  # message template cache
+
     # default messages in case one is missing from config file
     _messages_default = {
         "kicked_by": "$clientname^7 was kicked by $adminname^7 $reason",
@@ -299,56 +251,46 @@ class Parser(object):
     _port = 0
     _rconPassword = ''
 
-    """
-    === Exiting ===
+    # === Exiting ===
+    #
+    # The parser runs two threads: main and handler.  The main thread is
+    # responsible for the main loop parsing and queuing events, and process
+    # termination. The handler thread is responsible for processing queued events
+    # including raising ``SystemExit'' when a user-requested exit is needed.
+    #
+    # The ``SystemExit'' exception bubbles up only as far as the top of the handler
+    # thread -- the ``handle_events'' method.  To expose the exit status to the
+    # ``run'' method in the main thread, we store the value in ``exitcode''.
+    #
+    # Since the teardown steps in ``run'' and ``handle_events'' would occur in
+    # parallel, we use a lock (``exiting'') to ensure that ``run'' waits for
+    # ``handle_events'' to finish before proceeding.
+    #
+    # How exiting works, in detail:
+    #
+    #   - the parallel loops in run() and handle_events() are terminated only when working==False.
+    #   - die() or restart() invokes shutdown() from the handler thread.
+    #   - the exiting lock is acquired by shutdown() in the handler thread before it sets working=False to
+    #     end both loops.
+    #   - die() or restart() raises SystemExit in the handler thread after shutdown() and a few seconds delay.
+    #   - when SystemExit is caught by handle_events(), its exit status is pushed to the main context via exitcode.
+    #   - handle_events() ensures the exiting lock is released when it finishes.
+    #   - run() waits to acquire the lock in the main thread before proceeding with teardown, repeating
+    #     sys.exit(exitcode) from the main thread if set.
+    #
+    #   In the case of an abnormal exception in the handler thread, ``exitcode''
+    #   will be None and the ``exiting'' lock will be released when``handle_events''
+    #   finishes so the main thread can still continue.
+    #
+    #   Exits occurring in the main thread do not need to be synchronised.
 
-    The parser runs two threads: main and handler.  The main thread is
-    responsible for the main loop parsing and queuing events, and process
-    termination. The handler thread is responsible for processing queued events
-    including raising ``SystemExit'' when a user-requested exit is needed.
-
-    The ``SystemExit'' exception bubbles up only as far as the top of the handler
-    thread -- the ``handleEvents'' method.  To expose the exit status to the
-    ``run'' method in the main thread, we store the value in ``exitcode''.
-
-    Since the teardown steps in ``run'' and ``handleEvents'' would occur in
-    parallel, we use a lock (``exiting'') to ensure that ``run'' waits for
-    ``handleEvents'' to finish before proceeding.
-
-    How exiting works, in detail:
-
-      - the parallel loops in run() and handleEvents() are terminated only when
-          working==False.
-
-      - die() or restart() invokes shutdown() from the handler thread.
-
-      - the exiting lock is acquired by shutdown() in the handler thread before
-          it sets working=False to end both loops.
-
-      - die() or restart() raises SystemExit in the handler thread after
-          shutdown() and a few seconds delay.
-
-      - when SystemExit is caught by handleEvents(), its exit status is pushed to
-          the main context via exitcode.
-
-      - handleEvents() ensures the exiting lock is released when it finishes.
-
-      - run() waits to acquire the lock in the main thread before proceeding
-          with teardown, repeating sys.exit(exitcode) from the main thread if set.
-
-      In the case of an abnormal exception in the handler thread, ``exitcode''
-      will be None and the ``exiting'' lock will be released when``handleEvents''
-      finishes so the main thread can still continue.
-
-      Exits occurring in the main thread do not need to be synchronised.
-
-    """
     exiting = thread.allocate_lock()
     exitcode = None
 
     def __init__(self, conf):
         """
-        Object contructor
+        Object contructor.
+        :param conf: The B3 configuration file
         """
         self._timeStart = self.time()
 
@@ -370,8 +312,8 @@ class Parser(object):
         # save screen output to self.screen
         self.screen = sys.stdout
         print('Activating log   : %s' % logfile)
-        sys.stdout = b3.output.stdoutLogger(self.log)
-        sys.stderr = b3.output.stderrLogger(self.log)
+        sys.stdout = b3.output.STDOutLogger(self.log)
+        sys.stderr = b3.output.STDErrLogger(self.log)
 
         # setup ip addresses
         if self.gameName in 'bf3':
@@ -414,13 +356,11 @@ class Parser(object):
             pass
 
         self.bot('%s', b3.getB3versionString())
-        self.bot('Python: %s', sys.version)
-        self.bot('Default encoding: %s', sys.getdefaultencoding())
-        self.bot('Starting %s v%s for server %s:%s',
-                 self.__class__.__name__,
-                 getattr(getModule(self.__module__), '__version__', ' Unknown'),
-                 self._rconIp,
-                 self._port)
+        self.bot('python: %s', sys.version)
+        self.bot('default encoding: %s', sys.getdefaultencoding())
+        self.bot('starting %s v%s for server %s:%s', self.__class__.__name__,
+                                                     getattr(getModule(self.__module__), '__version__', ' Unknown'),
+                                                     self._rconIp, self._port)
 
         # get events
         self.Events = b3.events.eventManager
@@ -458,7 +398,7 @@ class Parser(object):
             self.replay = self.config.getboolean('devmode', 'replay')
             if self.replay:
                 self._timeStart = 0
-                self.bot('Replay mode enabled')
+                self.bot('replay mode enabled')
 
         self.storage = b3.storage.getStorage('database', self.config.get('b3', 'database'), self)
 
@@ -467,7 +407,7 @@ class Parser(object):
             game_log = self.config.get('server', 'game_log')
             if game_log[0:6] == 'ftp://' or game_log[0:7] == 'sftp://' or game_log[0:7] == 'http://':
                 self.remoteLog = True
-                self.bot('Working in Remote-Log-Mode : %s' % game_log)
+                self.bot('working in remote-log mode : %s' % game_log)
                 
                 if self.config.has_option('server', 'local_game_log'):
                     f = self.config.getpath('server', 'local_game_log')
@@ -489,10 +429,10 @@ class Parser(object):
                     ftptempfile.close()
                     
             else:
-                self.bot('Game log %s', game_log)
+                self.bot('game log %s', game_log)
                 f = self.config.getpath('server', 'game_log')
 
-            self.bot('Starting bot reading file %s', f)
+            self.bot('starting bot reading file %s', f)
             self.screen.write('Using Gamelog    : %s\n' % f)
 
             if os.path.isfile(f):
@@ -508,7 +448,7 @@ class Parser(object):
                 else:
                     self.input.seek(0, os.SEEK_END)
             else:
-                self.error('Error reading file %s', f)
+                self.error('error reading file %s', f)
                 raise SystemExit('Error reading file %s\n' % f)
 
         # setup rcon
@@ -517,12 +457,12 @@ class Parser(object):
         except Exception, err:
             self.screen.write(">>> Cannot setup RCON. %s" % err)
             self.screen.flush()
-            self.critical("Cannot setup RCON. %s" % err, exc_info=err)
+            self.critical("cannot setup RCON: %s" % err, exc_info=err)
         
         if self.config.has_option('server', 'rcon_timeout'):
             custom_socket_timeout = self.config.getfloat('server', 'rcon_timeout')
             self.output.socket_timeout = custom_socket_timeout
-            self.bot('Setting Rcon socket timeout to %0.3f sec' % custom_socket_timeout)
+            self.bot('setting Rcon socket timeout to %0.3f sec' % custom_socket_timeout)
         
         # testing rcon
         if self.rconTest:
@@ -584,14 +524,14 @@ class Parser(object):
         """
         Start B3
         """
-        self.bot("Starting parser")
+        self.bot("starting parser..")
         self.startup()
         self.say('%s ^2[ONLINE]' % b3.version)
         self.call_plugins_onLoadConfig()
-        self.bot("Starting plugins")
+        self.bot("starting plugins")
         self.startPlugins()
         self._eventsStats_cronTab = b3.cron.CronTab(self._dumpEventsStats)
-        self.cron + self._eventsStats_cronTab
+        self.cron.add(self._eventsStats_cronTab)
         self.bot("all plugins started")
         self.pluginsStarted()
         self.bot("starting event dispatching thread")
@@ -613,7 +553,7 @@ class Parser(object):
         """
         self.shutdown()
         time.sleep(5)
-        self.bot('Restarting...')
+        self.bot('restarting...')
         sys.exit(221)
 
     def upTime(self):
@@ -636,7 +576,7 @@ class Parser(object):
         """
         Save configration changes
         """
-        self.bot('Saving config %s', self.config.fileName)
+        self.bot('saving config: %s', self.config.fileName)
         return self.config.save()
 
     def startup(self):
@@ -723,7 +663,7 @@ class Parser(object):
         self.config.load(self.config.fileName)
         for k in self._plugins:
             p = self._plugins[k]
-            self.bot('Reload plugin config for %s', k)
+            self.bot('reload plugin config for %s', k)
             p.loadConfig()
 
         self.updateDocumentation()
@@ -736,7 +676,7 @@ class Parser(object):
         self.screen.flush()
         
         extplugins_dir = self.config.getpath('plugins', 'external_dir')
-        self.bot('Loading Plugins (external plugin directory: %s)' % extplugins_dir)
+        self.bot('loading plugins (external plugin directory: %s)' % extplugins_dir)
 
         def _get_config_path(_plugin):
             """
@@ -750,9 +690,9 @@ class Parser(object):
             else:
                 # warn the users
                 if cfg is None:
-                    self.warning('No configuration file specified for plugin %s.' % p.get('name'))
+                    self.warning('no configuration file specified for plugin %s' % p.get('name'))
                 else:
-                    self.warning('The specified configuration file %s for the plugin %s does not exist.'
+                    self.warning('the specified configuration file %s for the plugin %s does not exist'
                                  % (cfg, p.get('name')))
 
                 # try to find a config file
@@ -764,7 +704,7 @@ class Parser(object):
                     # return none if no file found or file already loaded
                     return cfg
                 else:
-                    self.warning('Using %s as configuration file for %s' % (_cfg_path[0], p.get('name')))
+                    self.warning('using %s as configuration file for %s' % (_cfg_path[0], p.get('name')))
                     return _cfg_path[0]
 
         plugins = {}
@@ -774,11 +714,11 @@ class Parser(object):
         for p in self.config.get('plugins/plugin'):
             name = p.get('name')
             if not name:
-                self.critical("Config Error in the plugins section. "
-                              "No plugin name found in [%s]" % ElementTree.tostring(p).strip())
+                self.critical("config error in the plugins section: "
+                              "no plugin name found in [%s]" % ElementTree.tostring(p).strip())
                 raise SystemExit(220)
             if name in [plugins[i]['name'] for i in plugins if plugins[i]['name'] == name]:
-                self.warning('Plugin %s already loaded. Avoid multiple entries of the same plugin.' % name)
+                self.warning('plugin %s already loaded: avoid multiple entries of the same plugin' % name)
             else:
                 conf = _get_config_path(p)
                 #if conf is None:
@@ -800,7 +740,7 @@ class Parser(object):
             plugin_name = plugins[s]['name']
             plugin_conf = plugins[s]['conf']
             self._pluginOrder.append(plugin_name)
-            self.bot('Loading Plugin #%s %s [%s]', s, plugin_name, plugin_conf)
+            self.bot('loading plugin #%s %s [%s]', s, plugin_name, plugin_conf)
             try:
                 plugin_module = self.pluginImport(plugin_name, plugins[s]['path'])
                 self._plugins[plugin_name] = getattr(plugin_module, '%sPlugin' % plugin_name.title())(self, plugin_conf)
@@ -808,7 +748,7 @@ class Parser(object):
                     self.info("disabling plugin %s" % plugin_name)
                     self._plugins[plugin_name].disable()
             except Exception, err:
-                self.error('Error loading plugin %s' % plugin_name, exc_info=err)
+                self.error('error loading plugin %s' % plugin_name, exc_info=err)
             else:
                 version = getattr(plugin_module, '__version__', 'Unknown Version')
                 author = getattr(plugin_module, '__author__', 'Unknown Author')
@@ -829,13 +769,13 @@ class Parser(object):
         Load must have plugins and check for admin plugin
         """
         def loadPlugin(parser_mod, plugin_id):
-            parser_mod.bot('Loading Plugin %s', plugin_id)
+            parser_mod.bot('loading plugin %s', plugin_id)
             plugin_module = parser_mod.pluginImport(plugin_id)
             parser_mod._plugins[plugin_id] = getattr(plugin_module, '%sPlugin' % plugin_id.title())(parser_mod)
             parser_mod._pluginOrder.append(plugin_id)
             version = getattr(plugin_module, '__version__', 'Unknown Version')
             author = getattr(plugin_module, '__author__', 'Unknown Author')
-            parser_mod.bot('Plugin %s (%s - %s) loaded', plugin_id, version, author)
+            parser_mod.bot('plugin %s (%s - %s) loaded', plugin_id, version, author)
             parser_mod.screen.write('.')
             parser_mod.screen.flush()
 
@@ -844,7 +784,7 @@ class Parser(object):
             try:
                 loadPlugin(self, 'publist')
             except Exception, err:
-                self.verbose('Error loading plugin publist', exc_info=err)
+                self.verbose('error loading plugin publist', exc_info=err)
 
         if self.config.has_option('server', 'game_log'):
             game_log = self.config.get('server', 'game_log')
@@ -860,12 +800,12 @@ class Parser(object):
                 try:
                     loadPlugin(self, remote_log_plugin)
                 except Exception, err:
-                    self.critical('Error loading plugin %s' % remote_log_plugin, exc_info=err)
+                    self.critical('error loading plugin %s' % remote_log_plugin, exc_info=err)
                     raise SystemExit('error while loading %s' % remote_log_plugin)
 
         if 'admin' not in self._pluginOrder:
             # critical will exit, admin plugin must be loaded!
-            self.critical('AdminPlugin is essential and MUST be loaded! Cannot continue without admin plugin.')
+            self.critical('AdminPlugin is essential and MUST be loaded! Cannot continue without admin plugin')
 
         self.screen.write(' (%s)\n' % len(self._pluginOrder))
         self.screen.flush()
@@ -904,14 +844,14 @@ class Parser(object):
 
     def startPlugins(self):
         """
-        Start all loaded plugins
+        Start all loaded plugins.
         """
         self.screen.write('Starting Plugins : ')
         self.screen.flush()
 
         def start_plugin(p_name):
             p = self._plugins[p_name]
-            self.bot('Starting Plugin %s', p_name)
+            self.bot('starting plugin %s', p_name)
             p.onStartup()
             p.start()
             #time.sleep(1)    # give plugin time to crash, er...start
@@ -926,12 +866,12 @@ class Parser(object):
         # start other plugins
         for plugin_name in self._pluginOrder:
             if plugin_name not in self._plugins:
-                self.warning("Not starting plugin %s as it was not loaded" % plugin_name)
+                self.warning("not starting plugin %s as it was not loaded" % plugin_name)
             else:
                 try:
                     start_plugin(plugin_name)
                 except Exception, err:
-                    self.error("Could not start plugin %s" % plugin_name, exc_info=err)
+                    self.error("could not start plugin %s" % plugin_name, exc_info=err)
 
         self.screen.write(' (%s)\n' % (len(self._pluginOrder)+1))
 
@@ -942,7 +882,7 @@ class Parser(object):
         for k in self._pluginOrder:
             if k not in ('admin', 'publist', 'ftpytail'):
                 p = self._plugins[k]
-                self.bot('Disabling Plugin %s', k)
+                self.bot('disabling plugin %s', k)
                 p.disable()
 
     def enablePlugins(self):
@@ -952,7 +892,7 @@ class Parser(object):
         for k in self._pluginOrder:
             if k not in ('admin', 'publist', 'ftpytail'):
                 p = self._plugins[k]
-                self.bot('Enabling Plugin %s', k)
+                self.bot('enabling plugin %s', k)
                 p.enable()
 
     def getMessage(self, msg, *args):
@@ -965,7 +905,7 @@ class Parser(object):
             try:
                 msg = self._messages[msg] = self.config.getTextTemplate('messages', msg)
             except Exception, err:
-                self.warning("Falling back on default message for '%s'. %s" % (msg, err))
+                self.warning("falling back on default message for '%s'. %s" % (msg, err))
                 msg = vars2printf(self._messages_default.get(msg, '')).strip()
 
         if len(args):
@@ -978,7 +918,7 @@ class Parser(object):
 
     def getMessageVariables(self, *args, **kwargs):
         """
-        Dynamically generate a dictionary of fields available for messages in config file
+        Dynamically generate a dictionary of fields available for messages in config file.
         """
         variables = {}
         for obj in args:
@@ -1054,7 +994,7 @@ class Parser(object):
             tz_offset = b3.timezones.timezones[tz_name] * 3600
         except KeyError:
             try:
-                self.warning("Unknown timezone name [%s]. Valid timezone codes can be found on "
+                self.warning("unknown timezone name [%s]: valid timezone codes can be found on "
                              "http://wiki.bigbrotherbot.net/doku.php/usage:available_timezones" % tz_name)
                 tz_offset = time.timezone
                 if tz_offset < 0:
@@ -1063,7 +1003,7 @@ class Parser(object):
                     tz_name = 'UTC+%s' % (tz_offset/3600)
                 self.info("using system offset [%s]", tz_offset)
             except KeyError:
-                self.error("Unknown timezone name [%s]. Valid timezone codes can be found on "
+                self.error("unknown timezone name [%s]: valid timezone codes can be found on "
                            "http://wiki.bigbrotherbot.net/doku.php/usage:available_timezones" % tz_name)
                 tz_name = 'UTC'
                 tz_offset = 0
@@ -1103,7 +1043,7 @@ class Parser(object):
         while self.working:
             if self._paused:
                 if not self._pauseNotice:
-                    self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
+                    self.bot('PAUSED - not parsing any lines: B3 will be out of sync')
                     self._pauseNotice = True
             else:
                 lines = self.read()
@@ -1121,7 +1061,7 @@ class Parser(object):
                                     # Time in log has reset
                                     log_time_start = log_time_current
                                     log_time_last = 0
-                                    self.debug('Log time reset %d' % log_time_current)
+                                    self.debug('log time reset %d' % log_time_current)
                                 elif not log_time_start:
                                     log_time_start = log_time_current
 
@@ -1131,7 +1071,7 @@ class Parser(object):
                                 log_time_last = log_time_current
 
                             if self.replay:                    
-                                self.debug('Log time %d' % self.logTime)
+                                self.debug('log time %d' % self.logTime)
 
                             self.console(line)
 
@@ -1146,7 +1086,7 @@ class Parser(object):
 
             time.sleep(self.delay)
 
-        self.bot('Stop reading.')
+        self.bot('stop reading')
 
         with self.exiting:
             self.input.close()
@@ -1165,9 +1105,9 @@ class Parser(object):
 
     def registerHandler(self, event_name, event_handler):
         """
-        Register an event handler
+        Register an event handler.
         """
-        self.debug('%s: Register event <%s>', event_handler.__class__.__name__, self.Events.getName(event_name))
+        self.debug('%s: register event <%s>', event_handler.__class__.__name__, self.Events.getName(event_name))
         if not event_name in self._handlers.keys():
             self._handlers[event_name] = []
         if event_handler not in self._handlers[event_name]:
@@ -1175,12 +1115,12 @@ class Parser(object):
 
     def queueEvent(self, event, expire=10):
         """
-        Queue an event for processing
+        Queue an event for processing.
         """
         if not hasattr(event, 'type'):
             return False
         elif event.type in self._handlers.keys():  # queue only if there are handlers to listen for this event
-            self.verbose('Queueing event %s %s', self.Events.getName(event.type), event.data)
+            self.verbose('queueing event %s %s', self.Events.getName(event.type), event.data)
             try:
                 time.sleep(0.001)  # wait a bit so event doesnt get jumbled
                 self.queue.put((self.time(), self.time() + expire, event), True, 2)
@@ -1193,7 +1133,7 @@ class Parser(object):
 
     def handleEvents(self):
         """
-        Event handler thread
+        Event handler thread.
         """
         while self.working:
             added, expire, event = self.queue.get(True)
@@ -1212,25 +1152,25 @@ class Parser(object):
                     elif nomore:
                         break
 
-                    self.verbose('Parsing Event: %s: %s', event_name, hfunc.__class__.__name__)
+                    self.verbose('parsing event: %s: %s', event_name, hfunc.__class__.__name__)
                     timer_plugin_begin = time.clock()
                     try:
                         hfunc.parseEvent(event)
                         time.sleep(0.001)
                     except b3.events.VetoEvent:
                         # plugin called for event hault, do not continue processing
-                        self.bot('Event %s vetoed by %s', event_name, str(hfunc))
+                        self.bot('event %s vetoed by %s', event_name, str(hfunc))
                         nomore = True
                     except SystemExit, e:
                         self.exitcode = e.code
                     except Exception, msg:
-                        self.error('Handler %s could not handle event %s: %s: %s %s', hfunc.__class__.__name__,
+                        self.error('handler %s could not handle event %s: %s: %s %s', hfunc.__class__.__name__,
                                    event_name, msg.__class__.__name__, msg, traceback.extract_tb(sys.exc_info()[2]))
                     finally:
                         elapsed = time.clock() - timer_plugin_begin
                         self._eventsStats.add_event_handled(hfunc.__class__.__name__, event_name, elapsed*1000)
                     
-        self.bot('Shutting down event handler')
+        self.bot('shutting down event handler')
 
         # releasing lock if it was set by self.shutdown() for instance
         if self.exiting.locked():
@@ -1241,7 +1181,7 @@ class Parser(object):
         Write a message to Rcon/Console
         """
         if self.replay:
-            self.bot('Sent rcon message: %s' % msg)
+            self.bot('sent rcon message: %s' % msg)
         elif self.output is None:
             pass
         else:
@@ -1255,7 +1195,7 @@ class Parser(object):
         :param msg: The message to be sent to Rcon/Console.
         """
         if self.replay:
-            self.bot('Sent rcon message: %s' % msg)
+            self.bot('sent rcon message: %s' % msg)
         elif self.output is None:
             pass
         elif not msg:
@@ -1280,26 +1220,26 @@ class Parser(object):
         # if the cursor is at a number higher than the game log size, then
         # there's a problem
         if self.input.tell() > filestats.st_size:   
-            self.debug('Parser: Game log is suddenly smaller than it was before (%s bytes, now %s), '
+            self.debug('parser: game log is suddenly smaller than it was before (%s bytes, now %s), '
                        'the log was probably either rotated or emptied. B3 will now re-adjust to the new '
-                       'size of the log.' % (str(self.input.tell()), str(filestats.st_size)))
+                       'size of the log' % (str(self.input.tell()), str(filestats.st_size)))
             self.input.seek(0, os.SEEK_END)  
         return self.input.readlines() 
 
     def shutdown(self):
         """
-        Shutdown B3
+        Shutdown B3.
         """
         try:
             if self.working and self.exiting.acquire():
-                self.bot('Shutting down...')
+                self.bot('shutting down...')
                 self.working = False
                 for k, plugin in self._plugins.items():
                     plugin.parseEvent(b3.events.Event(self.getEventID('EVT_STOP'), ''))
                 if self._cron:
                     self._cron.stop()
 
-                self.bot('Shutting down database connections...')
+                self.bot('shutting down database connections...')
                 self.storage.shutdown()
         except Exception, e:
             self.error(e)
@@ -1313,86 +1253,83 @@ class Parser(object):
             return []
 
         if not self.wrapper:
-            # initialize the wrapper if needed
-            self.wrapper = TextWrapper(width=self._settings['line_length'],
-                                       drop_whitespace=True,
-                                       break_long_words=True,
-                                       break_on_hyphens=False)
+            # initialize the text wrapper if not already instantiated
+            self.wrapper = TextWrapper(width=self._settings['line_length'], drop_whitespace=True,
+                                       break_long_words=True, break_on_hyphens=False)
 
         return self.wrapper.wrap(text)
 
     def error(self, msg, *args, **kwargs):
         """
-        Log an error
+        Log an ERROR message.
         """
         self.log.error(msg, *args, **kwargs)
 
     def debug(self, msg, *args, **kwargs):
         """
-        Log a debug message
+        Log a DEBUG message.
         """
         self.log.debug(msg, *args, **kwargs)
 
     def bot(self, msg, *args, **kwargs):
         """
-        Log a bot message
+        Log a BOT message.
         """
         self.log.bot(msg, *args, **kwargs)
 
     def verbose(self, msg, *args, **kwargs):
         """
-        Log a verbose message
+        Log a VERBOSE message.
         """
         self.log.verbose(msg, *args, **kwargs)
 
     def verbose2(self, msg, *args, **kwargs):
         """
-        Log an extra verbose message
+        Log an EXTRA VERBOSE message.
         """
         self.log.verbose2(msg, *args, **kwargs)
 
     def console(self, msg, *args, **kwargs):
         """
-        Log a message from the console
+        Log a CONSOLE message.
         """
         self.log.console(msg, *args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
         """
-        Log a message from the console
+        Log a WARNING message.
         """
         self.log.warning(msg, *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
         """
-        Log a message from the console
+        Log an INFO message.
         """
         self.log.info(msg, *args, **kwargs)
 
     def exception(self, msg, *args, **kwargs):
         """
-        Log a message from the console
+        Log an EXCEPTION message.
         """
         self.log.exception(msg, *args, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
         """
-        Log a message from the console
+        Log a CRITICAL message.
         """
         self.log.critical(msg, *args, **kwargs)
 
     def time(self):
         """
-        Return the current time in GMT/UTC
+        Return the current time in GMT/UTC.
         """
         if self.replay:
             return self.logTime
-
         return int(time.time())
 
     def _get_cron(self):
         """
-        Instantiate the main Cron object
+        Instantiate the main Cron object.
         """
         if not self._cron:
             self._cron = b3.cron.Cron(self)
@@ -1406,7 +1343,7 @@ class Parser(object):
 
     def updateDocumentation(self):
         """
-        Create a documentation for all available commands
+        Create a documentation for all available commands.
         """
         if self.config.has_section('autodoc'):
             try:
@@ -1414,17 +1351,17 @@ class Parser(object):
                 docbuilder = DocBuilder(self)
                 docbuilder.save()
             except Exception, err:
-                self.error("Failed to generate user documentation")
+                self.error("failed to generate user documentation")
                 self.exception(err)
         else:
-            self.info('No user documentation generated. To enable update your configuration file.')
+            self.info('no user documentation generated: to enable update your configuration file')
 
-    ###############################################################################
-    ##                                                                           ##
-    ##     Inheriting classes must implements the following methods.             ##
-    ##     Plugins that are game independant assume those methods exist          ##
-    ##                                                                           ##
-    ###############################################################################
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##     INHERITING CLASSES MUST IMPLEMENTS THE FOLLOWING METHODS                                                   ##
+    ##     PLUGINS THAT ARE GAME INDEPENDANT ASSUME THOSE METHODS EXIST                                               ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def getPlayerList(self):
         """

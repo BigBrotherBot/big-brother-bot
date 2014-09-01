@@ -1,94 +1,71 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
-# $Id: q3a.py 103 2006-04-14 16:23:10Z thorn $
-# $Id: q3a/abstractParser.py 103 2010-11-01 10:10:10Z xlr8or $
-#
 # CHANGELOG
 #
-#    2014/07/18 - 1.7.7 - Fenix
-#    * updated abstract parser to comply with the new getWrap implementation
-#    * updated rcon command patterns
-#    2014/07/16 - 1.7.6 - Fenix
-#    * added admin key in EVT_CLIENT_KICK data dict when available
-#    2014/04/14 - 1.7.5 - Fenix
-#    * pep8 coding style guide
-#    2013/03/07 - 1.7.4 - 82ndab-Bravo17
-#    * add ability to do kick by full name of client not authed correctly
-#    2012/07/07 - 1.7.3 - Courgette
-#    * ensures the config file has option 'game_log' in section 'server'
-#    2012/06/17 - 1.7.2 - Courgette
-#    * syntax
-#    18/10/2011 - 1.7.1 - 82ndab-Bravo17
-#    * check slot number go up in order in getplayerlist to weed out data errors
-#    14/06/2011 - 1.7.0 - Courgette
-#    * cvar code changed to han
-#    2011/06/05 - 1.6.0 - Courgette
-#    * change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
-#    2011/04/09 - 1.5.3 - Courgette
-#    * reflect that cid are not converted to int anymore in the clients module
-#    2010/11/08 - 1.5.2 - GrosBedo
-#    * messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
-#    2010/11/07 - 1.5.1 - GrosBedo
-#    * added moveToTeam default command
-#    * fixed getTeam (missed team_free and would crash with q3a and oa081 because of int conversion of strings)
-#    * messages now support named $variables instead of %s
-#    2010/11/01 - 1.5.0 - xlr8or
-#    * Refactored to an abstract parser class
-#    2010/10/06 - 1.4.4 - xlr8or
-#    * reintroduced rcontesting on startup, but for q3a based only (rconTest var in parser)
-#    2010/08/08 - 1.4.3 - Courgette
-#    * fix minor bug with saybig()
-#    2010/04/10 - 1.4.2 - Bakes
-#    * saybig() function can now be used by plugins. Since basic q3 games (such as CoD) cannot print to the centre
-#      of the screen, it performs the same function as the scream command.
-#    2010/03/22 - 1.4.1 - Courgette
-#    * Fix conflict between 1.3.4 and 1.4.
-#    2010/03/21 - 1.4 - Courgette
-#    * now implements methods maprotate and changeMap
-#    21/03/2010 - 1.3.4 - Bakes
-#    * rotateMap() function added to make the admin plugin more BFBC2-compatible.
-#    31/01/2010 - 1.3.3 -  xlr8or
-#    * Fixed a few typos
-#    26/01/2010 - 1.3.2 -  xlr8or
-#    * Added maxRetries=4 to authorizeClients()
-#    * getMap() was moved from iourt to q3a
-#    12/06/2009 - 1.3.1 - Courgette
-#    * getPlayerList can be called with a custom maxRetries value. This can be
-#      useful when a map just changed and the gameserver hangs for a while.
-#    11/11/2009 - 1.3.0 - Courgette
-#    * New feature: Allow action names to contain spaces. In that case the action method is built following a
-#      CamelCase syntax. IE: action "Flag return" will call the method named "OnFlagReturn"
-#    2/27/2009 - 1.2.3 - xlr8or
-#    * Removed error message for getPlayerList(), getPlayerPings() and getPlayerScores()
-#    5/6/2008 - 1.2.2 - Anubis
-#    * Added OnShutdowngame()
-#    5/6/2008 - 1.2.1 - xlr8or
-#    * Modified _reColor to strip Ascii > 127 also
-#    12/2/2005 - 1.1.0 - ThorN
-#    * Fixed getCvar() regular expression
-#    11/29/2005 - 1.1.0 - ThorN
-#    * Added setCvar() and fixed getCvar()
-#    7/23/2005 - 1.0.1 - ThorN
-#    * Added log message for when ban() decides to do a tempban
+# 2014/08/02 - 1.8   - Fenix          - syntax cleanup
+#                                     - reformat changelog
+#                                     - added missing documentation to Parser methods
+#                                     - make use of self.getEvent() when producing events
+# 2014/07/18 - 1.7.7 - Fenix          - updated abstract parser to comply with the new get_wrap implementation
+#                                     - updated rcon command patterns
+# 2014/07/16 - 1.7.6 - Fenix          - added admin key in EVT_CLIENT_KICK data dict when available
+# 2014/04/14 - 1.7.5 - Fenix          - PEP8 coding standards
+# 2013/03/07 - 1.7.4 - 82ndab-Bravo17 - add ability to do kick by full name of client not authed correctly
+# 2012/07/07 - 1.7.3 - Courgette      - ensures the config file has option 'game_log' in section 'server'
+# 2012/06/17 - 1.7.2 - Courgette      - syntax
+# 18/10/2011 - 1.7.1 - 82ndab-Bravo17 - check slot number go up in order in getplayerlist to weed out data errors
+# 14/06/2011 - 1.7.0 - Courgette      - cvar code changed to han
+# 2011/06/05 - 1.6.0 - Courgette      - change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
+# 2011/04/09 - 1.5.3 - Courgette      - reflect that cid are not converted to int anymore in the clients module
+# 2010/11/08 - 1.5.2 - GrosBedo       - messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
+# 2010/11/07 - 1.5.1 - GrosBedo       - added moveToTeam default command
+#                                     - fixed get_team (missed team_free and would crash with q3a and oa081 because of
+#                                       int conversion of strings)
+#                                     - messages now support named $variables instead of %s
+# 2010/11/01 - 1.5.0 - xlr8or         - refactored to an abstract parser class
+# 2010/10/06 - 1.4.4 - xlr8or         - reintroduced rcontesting on startup, but for q3a based only (rcon_test var)
+# 2010/08/08 - 1.4.3 - Courgette      - fix minor bug with saybig()
+# 2010/04/10 - 1.4.2 - Bakes          - saybig() function can now be used by plugins: since basic q3 games (such as CoD)
+#                                       cannot print to the center of the screen, it performs the same function as the
+#                                       scream command.
+# 2010/03/22 - 1.4.1 - Courgette      - fix conflict between 1.3.4 and 1.4.
+# 2010/03/21 - 1.4   - Courgette      - now implements methods maprotate and change_map
+# 21/03/2010 - 1.3.4 - Bakes          - rotate_map() function added to make the admin plugin more BFBC2-compatible.
+# 31/01/2010 - 1.3.3 - xlr8or         - fixed a few typos
+# 26/01/2010 - 1.3.2 - xlr8or         - added max_retries=4 to authorize_clients()
+#                                     - get_map() was moved from iourt to q3a
+# 12/06/2009 - 1.3.1 - Courgette      - get_player_list can be called with a custom max_retries value. This can be
+#                                       useful when a map just changed and the gameserver hangs for a while
+# 11/11/2009 - 1.3.0 - Courgette      - new feature: allow action names to contain spaces. In that case the action
+#                                       method is built following a CamelCase syntax. IE: action "Flag return" will
+#                                       call the method named "OnFlagReturn"
+# 27/02/2009 - 1.2.3 - xlr8or         - removed error message for get_player_list(), get_player_pings() and
+#                                       get_player_scores()
+# 06/05/2008 - 1.2.2 - Anubis         - added on_shutdowngame()
+# 06/05/2008 - 1.2.1 - xlr8or         - modified _recolor to strip Ascii > 127 also
+# 02/12/2005 - 1.1.0 - ThorN          - fixed getCvar() regular expression
+# 29/11/2005 - 1.1.0 - ThorN          - added setCvar() and fixed getCvar()
+# 23/07/2005 - 1.0.1 - ThorN          - added log message for when ban() decides to do a tempban
 
 __author__ = 'ThorN, xlr8or'
-__version__ = '1.7.7'
+__version__ = '1.8'
+
 
 import re
 import string
@@ -114,6 +91,9 @@ class AbstractParser(b3.parser.Parser):
     privateMsg = True
     rconTest = True
     OutputClass = rcon.Rcon
+    PunkBuster = None
+
+    _clientConnectID = None
 
     _settings = {
         'line_length': 80,
@@ -131,79 +111,124 @@ class AbstractParser(b3.parser.Parser):
     }
 
     _eventMap = {
-        'warmup': b3.events.EVT_GAME_WARMUP,
-        'shutdowngame': b3.events.EVT_GAME_ROUND_END
+        #'warmup': b3.events.EVT_GAME_WARMUP,
+        #'shutdowngame': b3.events.EVT_GAME_ROUND_END
     }
 
     # remove the time off of the line
-    _lineClear = re.compile(r'^(?:[0-9:]+\s?)?')
     _lineTime = re.compile(r'^(?P<minutes>[0-9]+):(?P<seconds>[0-9]+).*')
+    _lineClear = re.compile(r'^(?:[0-9:]+\s?)?')
 
     _lineFormats = (
-        #1579:03ConnectInfo: 0: E24F9B2702B9E4A1223E905BF597FA92: ^w[^2AS^w]^2Lead: 3: 3: 24.153.180.106:2794
-        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<pbid>[0-9A-Z]{32}):\s*(?P<name>[^:]+):\s*'
-                   r'(?P<num1>[0-9]+):\s*(?P<num2>[0-9]+):\s*(?P<ip>[0-9.]+):(?P<port>[0-9]+))$', re.IGNORECASE),
-        #1536:17sayc: 0: ^w[^2AS^w]^2Lead:  sorry...
-        #1536:34sayteamc: 17: ^1[^7DP^1]^4Timekiller: ^4ammo ^2here !!!!!
-        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<name>.+):\s+(?P<text>.*))$', re.IGNORECASE),
-        #1536:37Kill: 1 18 9: ^1klaus killed ^1[pura]fox.nl by MOD_MP40
-        re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<acid>[0-9]+)\s(?P<aweap>[0-9]+):\s*'
+        # 1579:03ConnectInfo: 0: E24F9B2702B9E4A1223E905BF597FA92: ^w[^2AS^w]^2Lead: 3: 3: 24.153.180.106:2794
+        re.compile(r'^(?P<action>[a-z]+):\s*'
+                   r'(?P<data>(?P<cid>[0-9]+):\s*'
+                   r'(?P<pbid>[0-9A-Z]{32}):\s*'
+                   r'(?P<name>[^:]+):\s*'
+                   r'(?P<num1>[0-9]+):\s*'
+                   r'(?P<num2>[0-9]+):\s*'
+                   r'(?P<ip>[0-9.]+):(?P<port>[0-9]+))$', re.IGNORECASE),
+
+        # 1536:17sayc: 0: ^w[^2AS^w]^2Lead:  sorry...
+        # 1536:34sayteamc: 17: ^1[^7DP^1]^4Timekiller: ^4ammo ^2here !!!!!
+        re.compile(r'^(?P<action>[a-z]+):\s*'
+                   r'(?P<data>'
+                   r'(?P<cid>[0-9]+):\s*'
+                   r'(?P<name>.+):\s+'
                    r'(?P<text>.*))$', re.IGNORECASE),
+
+        # 1536:37Kill: 1 18 9: ^1klaus killed ^1[pura]fox.nl by MOD_MP40
+        re.compile(r'^(?P<action>[a-z]+):\s*'
+                   r'(?P<data>'
+                   r'(?P<cid>[0-9]+)\s'
+                   r'(?P<acid>[0-9]+)\s'
+                   r'(?P<aweap>[0-9]+):\s*'
+                   r'(?P<text>.*))$', re.IGNORECASE),
+
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<text>.*))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>.*)$', re.IGNORECASE)
     )
     
-    #num score ping guid   name            lastmsg address               qport rate
-    #--- ----- ---- ------ --------------- ------- --------------------- ----- -----
-    #2     0   29 465030 <-{^4AS^7}-^3ThorN^7->^7       50 68.63.6.62:-32085      6597  5000
-    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+(?P<ping>[0-9]+)\s+(?P<guid>[0-9a-zA-Z]+)\s+'
-                            r'(?P<name>.*?)\s+(?P<last>[0-9]+)\s+(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+(?P<qport>[0-9]+)'
-                            r'\s+(?P<rate>[0-9]+)$', re.I)
+    # num score ping guid   name            lastmsg address               qport rate
+    # --- ----- ---- ------ --------------- ------- --------------------- ----- -----
+    # 2     0   29 465030   ThorN                50 68.63.6.62:-32085      6597  5000
+    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+'
+                            r'(?P<score>[0-9-]+)\s+'
+                            r'(?P<ping>[0-9]+)\s+'
+                            r'(?P<guid>[0-9a-zA-Z]+)\s+'
+                            r'(?P<name>.*?)\s+'
+                            r'(?P<last>[0-9]+)\s+'
+                            r'(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+'
+                            r'(?P<qport>[0-9]+)'
+                            r'\s+(?P<rate>[0-9]+)$', re.IGNORECASE)
 
-    _regPlayerShort = re.compile(r'\s+(?P<slot>[0-9]+)\s+(?P<score>[0-9]+)\s+'
-                                 r'(?P<ping>[0-9]+)\s+(?P<name>.*)\^7\s+', re.I)
+    _regPlayerShort = re.compile(r'\s+(?P<slot>[0-9]+)\s+'
+                                 r'(?P<score>[0-9]+)\s+'
+                                 r'(?P<ping>[0-9]+)\s+'
+                                 r'(?P<name>.*)\^7\s+', re.IGNORECASE)
 
     _reColor = re.compile(r'(\^[0-9a-z])|[\x80-\xff]')
-    _reCvarName = re.compile(r'^[a-z0-9_.]+$', re.I)
-    _reCvar = (
-        #"sv_maxclients" is:"16^7" default:"8^7"
-        #latched: "12"
-        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?'
-                   r'"\s+default:\s*"(?P<default>.*?)(\^7)?"$', re.I | re.M),
-        #"g_maxGameClients" is:"0^7", the default
-        #latched: "1"
-        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<default>(?P<value>'
-                   r'.*?))(\^7)?",\s+the\sdefault$', re.I | re.M),
-        #"mapname" is:"ut4_abbey^7"
-        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?"$', re.I | re.M),
-    )
-    _reMapNameFromStatus = re.compile(r'^map:\s+(?P<map>.+)$', re.I)
+    _reCvarName = re.compile(r'^[a-z0-9_.]+$', re.IGNORECASE)
 
-    PunkBuster = None
-    _clientConnectID = None
+    _reCvar = (
+        # "sv_maxclients" is:"16^7" default:"8^7"
+        # latched: "12"
+        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*'
+                   r'"(?P<value>.*?)(\^7)?"\s+default:\s*'
+                   r'"(?P<default>.*?)(\^7)?"$', re.IGNORECASE | re.MULTILINE),
+
+        # "g_maxGameClients" is:"0^7", the default
+        # latched: "1"
+        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*'
+                   r'"(?P<default>(?P<value>.*?))(\^7)?",\s+the\sdefault$', re.IGNORECASE | re.MULTILINE),
+
+        # "mapname" is:"ut4_abbey^7"
+        re.compile(r'^"(?P<cvar>[a-z0-9_.]+)"\s+is:\s*"(?P<value>.*?)(\^7)?"$', re.IGNORECASE | re.MULTILINE),
+    )
+
+    _reMapNameFromStatus = re.compile(r'^map:\s+(?P<map>.+)$', re.IGNORECASE)
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  PARSER INITIALIZATION                                                                                         ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def startup(self):
+        """
+        Called after the parser is created before run().
+        """
         if not self.config.has_option('server', 'game_log'):
             self.critical("your main config file is missing the 'game_log' setting in section 'server'")
             raise SystemExit(220)
 
         # add the world client
         self.clients.newClient('1022', guid='WORLD', name='World', hide=True, pbid='WORLD')
-
         if self.config.has_option('server', 'punkbuster') and self.config.getboolean('server', 'punkbuster'):
             self.PunkBuster = PunkBuster(self)
 
-    def getLineParts(self, line):
-        line = re.sub(self._lineClear, '', line, 1)
+        self._eventMap['warmup'] = self.getEventID('EVT_GAME_WARMUP')
+        self._eventMap['shutdowngame'] = self.getEventID('EVT_GAME_ROUND_END')
 
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  PARSING                                                                                                       ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
+    def getLineParts(self, line):
+        """
+        Parse a log line returning extracted tokens.
+        :param line: The line to be parsed
+        """
+        line = re.sub(self._lineClear, '', line, 1)
         m = None
         for f in self._lineFormats:
             m = re.match(f, line)
             if m:
                 #self.debug('line matched %s' % f.pattern)
                 break
-
         if m:
             client = None
             target = None
@@ -211,14 +236,17 @@ class AbstractParser(b3.parser.Parser):
         elif '------' not in line:
             self.verbose('line did not match format: %s' % line)
 
-    def parseLine(self, line):           
+    def parseLine(self, line):
+        """
+        Parse a log line creating necessary events.
+        :param line: The log line to be parsed
+        """
         m = self.getLineParts(line)
         if not m:
             return False
 
         match, action, data, client, target = m
         func = 'On%s' % string.capwords(action).replace(' ', '')
-        #self.debug("-==== FUNC!!: " + func)
         
         if hasattr(self, func):
             func = getattr(self, func)
@@ -226,43 +254,62 @@ class AbstractParser(b3.parser.Parser):
             if event:
                 self.queueEvent(event)
         elif action in self._eventMap:
-            self.queueEvent(b3.events.Event(self._eventMap[action], data, client, target))
-        else:
-            self.queueEvent(b3.events.Event(self.getEventID('EVT_UNKNOWN'),
-                                            str(action) + ': ' + str(data),
-                                            client, target))
+            self.queueEvent(self.getEvent(self._eventMap[action], data=data, client=client, target=target))
 
-    def getClient(self, match=None, attacker=None, victim=None):
-        """\
-        Get a client object using the best availible data
+        else:
+            data = str(action) + ': ' + str(data)
+            self.queueEvent(self.getEvent('EVT_UNKNOWN', data=data, client=client, target=target))
+
+    def parseUserInfo(self, info):
         """
-        if attacker:
-            return self.clients.getByCID(attacker.group('acid'))
-        elif victim:
-            return self.clients.getByCID(victim.group('cid'))
-        elif match:
-            return self.clients.getByCID(match.group('cid'))
+        Parse an infostring.
+        :param info: The infostring to be parsed.
+        """
+        # 0 \g_password\none\cl_guid\0A337702493AF67BB0B0F8565CE8BC6C\cl_wwwDownload\1\name\thorn\rate\25000...
+        cid, info = string.split(info, ' ', 1)
+        if info[:1] != '\\':
+            info = '\\' + info
+
+        options = re.findall(r'\\([^\\]+)\\([^\\]+)', info)
+
+        data = {}
+        for o in options:
+            data[o[0]] = o[1]
+
+        if 'n' in data:
+            data['name'] = data['n']
+
+        t = None
+        if 'team' in data:
+            t = data['team']
+        elif 't' in data:
+            t = data['t']
+
+        data['team'] = self.getTeam(t)
+
+        if 'cl_guid' in data and 'pbid' not in data:
+            data['pbid'] = data['cl_guid']
+
+        return data
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  EVENT HANDLERS                                                                                                ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def OnSay(self, action, data, match=None):
-        #if self.type == b3.COMMAND:
-        #    # we really need the second line
-        #    text = self.read()
-        #    if text:
-        #        msg = string.split(text[:-1], '^7: ', 1)
-        #        if not len(msg) == 2:
-        #            return None
-        #else:
         msg = string.split(data, ': ', 1)
         if not len(msg) == 2:
             return None
 
         client = self.clients.getByExactName(msg[0])
-        return b3.events.Event(self.getEventID('EVT_CLIENT_SAY'), msg[1], client)
+        return self.getEvent('EVT_CLIENT_SAY', msg[1], client)
 
     def OnShutdowngame(self, action, data, match=None):
         #self.game.mapEnd()
         #self.clients.sync()
-        return b3.events.Event(self.getEventID('EVT_GAME_ROUND_END'), data)
+        return self.getEvent('EVT_GAME_ROUND_END', data)
 
     def OnClientdisconnect(self, action, data, match=None):
         client = self.getClient(match)
@@ -277,18 +324,17 @@ class AbstractParser(b3.parser.Parser):
 
         client = self.clients.getByName(msg[0])
         if client:
-            return b3.events.Event(self.getEventID('EVT_CLIENT_TEAM_SAY'), msg[1], client, client.team)
-        else:
-            return None
+            return self.getEvent('EVT_CLIENT_TEAM_SAY', msg[1], client, client.team)
+        return None
 
     def OnExit(self, action, data, match=None):
         self.game.mapEnd()
-        return b3.events.Event(self.getEventID('EVT_GAME_EXIT'), None)
+        return self.getEvent('EVT_GAME_EXIT', None)
 
     def OnItem(self, action, data, match=None):
         client = self.getClient(match)
         if client:
-            return b3.events.Event(self.getEventID('EVT_CLIENT_ITEM_PICKUP'), match.group('text'), client)
+            return self.getEvent('EVT_CLIENT_ITEM_PICKUP', match.group('text'), client)
         return None
 
     def OnClientbegin(self, action, data, match=None):
@@ -309,7 +355,7 @@ class AbstractParser(b3.parser.Parser):
 
     def OnClientuserinfo(self, action, data, match=None):
         bclient = self.parseUserInfo(data)
-        self.verbose('Parsed user info %s' % bclient)
+        self.verbose('parsed user info: %s' % bclient)
         if bclient:
             client = self.clients.getByCID(bclient['cid'])
 
@@ -326,12 +372,6 @@ class AbstractParser(b3.parser.Parser):
         return self.OnClientuserinfo(action, data, match)
 
     def OnUserinfo(self, action, data, match=None):
-        #f = re.findall(r'\\name\\([^\\]+)', data)
-
-        #if f:
-        #    client = self.clients.getByExactName(f[0])
-        #    if client:
-
         _id = self._clientConnectID
         self._clientConnectID = None
 
@@ -342,20 +382,20 @@ class AbstractParser(b3.parser.Parser):
         return self.OnClientuserinfo(action, '%s %s' % (_id, data), match)
 
     def OnKill(self, action, data, match=None):
-        #Kill: 1022 0 6: <world> killed <-NoX-ThorN-> by MOD_FALLING
-        #20:26.59 Kill: 3 2 9: ^9n^2@^9ps killed [^0BsD^7:^0Und^7erKo^0ver^7] by MOD_MP40
-        #m = re.match(r'^([0-9]+)\s([0-9]+)\s([0-9]+): (.*?) killed (.*?) by ([A-Z_]+)$', data)
+        # Kill: 1022 0 6: <world> killed <-NoX-ThorN-> by MOD_FALLING
+        # 20:26.59 Kill: 3 2 9: ^9n^2@^9ps killed [^0BsD^7:^0Und^7erKo^0ver^7] by MOD_MP40
+        # m = re.match(r'^([0-9]+)\s([0-9]+)\s([0-9]+): (.*?) killed (.*?) by ([A-Z_]+)$', data)
         attacker = self.getClient(attacker=match)
         if not attacker:
-            self.bot('No attacker')
+            self.bot('no attacker')
             return None
 
         victim = self.getClient(victim=match)
         if not victim:
-            self.bot('No victim')
+            self.bot('no victim')
             return None
 
-        return b3.events.Event(self.getEventID('EVT_CLIENT_KILL'), (100, match.group('aweap'), None), attacker, victim)
+        return self.getEvent('EVT_CLIENT_KILL', (100, match.group('aweap'), None), attacker, victim)
 
     def OnInitgame(self, action, data, match=None):
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)
@@ -371,55 +411,49 @@ class AbstractParser(b3.parser.Parser):
                 setattr(self.game, o[0], o[1])
 
         self.game.startRound()
-        return b3.events.Event(self.getEventID('EVT_GAME_ROUND_START'), self.game)
+        return self.getEvent('EVT_GAME_ROUND_START', self.game)
 
-    def parseUserInfo(self, info):
-        """\
-        Parse the userinfo string
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  OTHER METHODS                                                                                                 ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
+    def getClient(self, match=None, attacker=None, victim=None):
         """
-        #0 \g_password\none\cl_guid\0A337702493AF67BB0B0F8565CE8BC6C\cl_wwwDownload\1\name\thorn\rate\25000...
-        cid, info = string.split(info, ' ', 1)
-
-        if info[:1] != '\\':
-            info = '\\' + info
-
-        options = re.findall(r'\\([^\\]+)\\([^\\]+)', info)
-
-        data = {}
-        for o in options:
-            data[o[0]] = o[1]
-
-        if 'n' in data.keys():
-            data['name'] = data['n']
-
-        t = None
-        if 'team' in data.keys():
-            t = data['team']
-        elif 't' in data.keys():
-            t = data['t']
-
-        data['team'] = self.getTeam(t)
-
-        if 'cl_guid' in data.keys() and 'pbid' not in data.keys():
-            data['pbid'] = data['cl_guid']
-
-        return data
+        Get a client object using the best availible data.
+        :param match: The match group extracted from the log line parsing
+        :param attacker: The attacker group extracted from the log line parsing
+        :param victim: The victim group extracted from the log line parsing
+        """
+        if attacker:
+            return self.clients.getByCID(attacker.group('acid'))
+        elif victim:
+            return self.clients.getByCID(victim.group('cid'))
+        elif match:
+            return self.clients.getByCID(match.group('cid'))
 
     def getTeam(self, team):
-         # We convert to a string and lower the case because
-         # there is a problem when trying to detect numbers if it's not a string (weird)
+        """
+        Return a B3 team given the team value.
+        :param team: The team value
+        """
         team = str(team).lower()
         if team == 'free' or team == '0':
-            result = b3.TEAM_FREE
+            return b3.TEAM_FREE
         elif team == 'red' or team == '1':
-            result = b3.TEAM_RED
+            return b3.TEAM_RED
         elif team == 'blue' or team == '2':
-            result = b3.TEAM_BLUE
+            return b3.TEAM_BLUE
         elif team == 'spectator' or team == '3':
-            result = b3.TEAM_SPEC
-        else:
-            result = b3.TEAM_UNKNOWN
-        return result
+            return b3.TEAM_SPEC
+        return b3.TEAM_UNKNOWN
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def message(self, client, text):
         """
@@ -445,8 +479,8 @@ class AbstractParser(b3.parser.Parser):
 
     def say(self, text):
         """
-        Print a message in the game chat area.
-        :param text: The message to be sent.
+        Broadcast a message to all players.
+        :param text: The message to be broadcasted
         """
         lines = []
         message = prefixText([self.msgPrefix], text)
@@ -457,8 +491,8 @@ class AbstractParser(b3.parser.Parser):
     
     def saybig(self, text):
         """
-        Print a noticeable message to the chat area.
-        :param text: The message to be sent.
+        Broadcast a message to all players in a way that will catch their attention.
+        :param text: The message to be broadcasted
         """
         for c in range(1, 6):
             self.say('^%i%s' % (c, text))
@@ -492,6 +526,13 @@ class AbstractParser(b3.parser.Parser):
         self.writelines(lines)
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
+        """
+        Kick a given client.
+        :param client: The client to kick
+        :param reason: The reason for this kick
+        :param admin: The admin who performed the kick
+        :param silent: Whether or not to announce this kick
+        """
         if isinstance(client, basestring) and re.match('^[0-9]+$', client):
             self.write(self.getCommand('kick', cid=client, reason=reason))
             return
@@ -502,20 +543,28 @@ class AbstractParser(b3.parser.Parser):
             self.write(self.getCommand('kick', cid=client.cid, reason=reason))
 
         if admin:
-            fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client,
-                                                                               reason=reason,
-                                                                               admin=admin))
+            variables = self.getMessageVariables(client=client, reason=reason, admin=admin)
+            fullreason = self.getMessage('kicked_by', variables)
         else:
-            fullreason = self.getMessage('kicked', self.getMessageVariables(client=client,
-                                                                            reason=reason))
+            variables = self.getMessageVariables(client=client, reason=reason)
+            fullreason = self.getMessage('kicked', variables)
 
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_KICK'), {'reason': reason, 'admin': admin}, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_KICK', {'reason': reason, 'admin': admin}, client))
         client.disconnect()
 
     def kickbyfullname(self, client, reason='', admin=None, silent=False, *kwargs):
+        """
+        Kick the client matching the given name.
+        We get here if a name was given, and the name was not found as
+        a client: this will allow the kicking of non autenticated players
+        :param client: The client name
+        :param reason: The reason for this kick
+        :param admin: The admin who performed the kick
+        :param silent: Whether or not to announce this kick
+        """
         # We get here if a name was given, and the name was not found as a client
         # This will allow the kicking of non autenticated players
         if 'kickbyfullname' in self._commands.keys():
@@ -527,6 +576,13 @@ class AbstractParser(b3.parser.Parser):
                 admin.message('^7Player kicked using full exact name')
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
+        """
+        Ban a given client.
+        :param client: The client to ban
+        :param reason: The reason for this ban
+        :param admin: The admin who performed the ban
+        :param silent: Whether or not to announce this ban
+        """
         if isinstance(client, b3.clients.Client) and not client.guid:
             # client has no guid, kick instead
             return self.kick(client, reason, admin, silent)
@@ -547,20 +603,26 @@ class AbstractParser(b3.parser.Parser):
             self.write(self.getCommand('ban', cid=client.cid, reason=reason))
 
         if admin:
-            fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client,
-                                                                               reason=reason,
-                                                                               admin=admin))
+            variables = self.getMessageVariables(client=client, reason=reason, admin=admin)
+            fullreason = self.getMessage('banned_by', variables)
         else:
-            fullreason = self.getMessage('banned', self.getMessageVariables(client=client,
-                                                                            reason=reason))
+            variables = self.getMessageVariables(client=client, reason=reason)
+            fullreason = self.getMessage('banned', variables)
 
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_BAN'), {'reason': reason, 'admin': admin}, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
         client.disconnect()
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
+        """
+        Unban a client.
+        :param client: The client to unban
+        :param reason: The reason for the unban
+        :param admin: The admin who unbanned this client
+        :param silent: Whether or not to announce this unban
+        """
         if self.PunkBuster:
             if client.pbid:
                 result = self.PunkBuster.unBanGUID(client)
@@ -569,12 +631,11 @@ class AbstractParser(b3.parser.Parser):
                     admin.message('^3Unbanned^7: %s^7: %s' % (client.exactName, result))
                 
                 if admin:
-                    fullreason = self.getMessage('unbanned_by', self.getMessageVariables(client=client,
-                                                                                         reason=reason,
-                                                                                         admin=admin))
+                    variables = self.getMessageVariables(client=client, reason=reason, admin=admin)
+                    fullreason = self.getMessage('unbanned_by', variables)
                 else:
-                    fullreason = self.getMessage('unbanned', self.getMessageVariables(client=client,
-                                                                                      reason=reason))
+                    variables = self.getMessageVariables(client=client, reason=reason)
+                    fullreason = self.getMessage('unbanned', variables)
 
                 if not silent and fullreason != '':
                     self.say(fullreason)
@@ -585,6 +646,14 @@ class AbstractParser(b3.parser.Parser):
                           'from the game\'s ban file.' % client.exactName)
 
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
+        """
+        Tempban a client.
+        :param client: The client to tempban
+        :param reason: The reason for this tempban
+        :param duration: The duration of the tempban
+        :param admin: The admin who performed the tempban
+        :param silent: Whether or not to announce this tempban
+        """
         duration = b3.functions.time2minutes(duration)
         if isinstance(client, b3.clients.Client) and not client.guid:
             # client has no guid, kick instead
@@ -593,16 +662,13 @@ class AbstractParser(b3.parser.Parser):
             self.write(self.getCommand('tempban', cid=client, reason=reason))
             return
         elif admin:
-            fullreason = self.getMessage('temp_banned_by',
-                                         self.getMessageVariables(client=client,
-                                                                  reason=reason,
-                                                                  admin=admin,
-                                                                  banduration=b3.functions.minutesStr(duration)))
+            banduration = b3.functions.minutesStr(duration)
+            variables = self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=banduration)
+            fullreason = self.getMessage('temp_banned_by', variables)
         else:
-            fullreason = self.getMessage('temp_banned',
-                                         self.getMessageVariables(client=client,
-                                                                  reason=reason,
-                                                                  banduration=b3.functions.minutesStr(duration)))
+            banduration = b3.functions.minutesStr(duration)
+            variables = self.getMessageVariables(client=client, reason=reason, banduration=banduration)
+            fullreason = self.getMessage('temp_banned', variables)
 
         if self.PunkBuster:
             # punkbuster acts odd if you ban for more than a day
@@ -618,40 +684,51 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_BAN_TEMP'),
-                                        {'reason': reason, 'duration': duration, 'admin': admin}, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason,
+                                                              'duration': duration,
+                                                              'admin': admin}, client))
         client.disconnect()
 
     def rotateMap(self):
+        """
+        Load the next map/level.
+        """
         self.say('^7Changing map to next map')
         time.sleep(1)
         self.write('map_rotate 0')
         
     def changeMap(self, mapname):
+        """
+        Load a given map/level.
+        """
         self.say('^7Changing map to %s' % mapname)
         time.sleep(1)
         self.write('map %s' % mapname)
 
     def getPlayerPings(self, filter_client_ids=None):
+        """
+        Returns a dict having players' id for keys and players' ping for values.
+        :param filter_client_ids: If filter_client_id is an iterable, only return values for the given client ids.
+        """
         data = self.write('status')
         if not data:
             return {}
 
         players = {}
         for line in data.split('\n'):
-            #self.debug('Line: ' + line + "-")
             m = re.match(self._regPlayerShort, line)
             if not m:
                 m = re.match(self._regPlayer, line.strip())
             
             if m:
                 players[str(m.group('slot'))] = int(m.group('ping'))
-            #elif '------' not in line and 'map: ' not in line and 'num score ping' not in line:
-                #self.verbose('getPlayerScores() = Line did not match format: %s' % line)
         
         return players
         
     def getPlayerScores(self):
+        """
+        Returns a dict having players' id for keys and players' scores for values.
+        """
         data = self.write('status')
         if not data:
             return {}
@@ -671,6 +748,10 @@ class AbstractParser(b3.parser.Parser):
         return players
 
     def getPlayerList(self, maxRetries=None):
+        """
+        Query the game server for connected players.
+        Return a dict having players' id for keys and players' data as another dict for values.
+        """
         if self.PunkBuster:
             return self.PunkBuster.getPlayerList()
         else:
@@ -690,29 +771,27 @@ class AbstractParser(b3.parser.Parser):
                         players[str(m.group('slot'))] = d
                         
                     else:
-                        self.debug('Duplicate or Incorrect slot number - '
-                                   'client ignored %s lastslot %s' % (m.group('slot'), lastslot))
+                        self.debug('duplicate or incorrect slot number - '
+                                   'client ignored %s last slot %s' % (m.group('slot'), lastslot))
 
         return players
 
     def getCvar(self, cvar_name):
+        """
+        Return a CVAR from the server.
+        :param cvar_name: The CVAR name.
+        """
         if self._reCvarName.match(cvar_name):
-            #"g_password" is:"^7" default:"scrim^7"
             val = self.write(cvar_name)
-            self.debug('Get cvar %s = [%s]', cvar_name, val)
-            #sv_mapRotation is:gametype sd map mp_brecourt map mp_carentan map mp_dawnville map mp_depot
-            # map mp_harbor map mp_hurtgen map mp_neuville map mp_pavlov map mp_powcamp map mp_railyard
-            # map mp_rocket map mp_stalingrad^7 default:^7
+            self.debug('get cvar %s = [%s]', cvar_name, val)
 
             m = None
             for f in self._reCvar:
                 m = re.match(f, val)
                 if m:
-                    #self.debug('line matched %s' % f.pattern)
                     break
 
             if m:
-                #self.debug('m.lastindex %s' % m.lastindex)
                 if m.group('cvar').lower() == cvar_name.lower():
                     try:
                         default_value = m.group('default')
@@ -722,24 +801,36 @@ class AbstractParser(b3.parser.Parser):
             else:
                 return None
 
-    def set(self, cvar_name, value):
-        self.warning('Parser.set() is depreciated, use Parser.setCvar() instead')
-        self.setCvar(cvar_name, value)
-
     def setCvar(self, cvar_name, value):
-        if re.match('^[a-z0-9_.]+$', cvar_name, re.I):
-            self.debug('Set cvar %s = [%s]', cvar_name, value)
+        """
+        Set a CVAR on the server.
+        :param cvar_name: The CVAR name
+        :param value: The CVAR value
+        """
+        if re.match('^[a-z0-9_.]+$', cvar_name, re.IGNORECASE):
+            self.debug('set cvar %s = [%s]', cvar_name, value)
             self.write(self.getCommand('set', name=cvar_name, value=value))
         else:
             self.error('%s is not a valid cvar name', cvar_name)
 
+    def set(self, cvar_name, value):
+        """
+        Set a CVAR on the server.
+        :param cvar_name: The CVAR name
+        :param value: The CVAR value
+        """
+        self.warning('use of deprecated method: set(): please use: setCvar()')
+        self.setCvar(cvar_name, value)
+
     def getMap(self):
+        """
+        Return the current map/level name.
+        """
         data = self.write('status')
         if not data:
             return None
 
         line = data.split('\n')[0]
-        #self.debug('[%s]'%line.strip())
         m = re.match(self._reMapNameFromStatus, line.strip())
         if m:
             return str(m.group('map'))
@@ -747,9 +838,21 @@ class AbstractParser(b3.parser.Parser):
         return None
 
     def getMaps(self):
+        """
+        Return the available maps/levels name
+        """
         return None
 
     def sync(self):
+        """
+        For all connected players returned by self.get_player_list(), get the matching Client
+        object from self.clients (with self.clients.get_by_cid(cid) or similar methods) and
+        look for inconsistencies. If required call the client.disconnect() method to remove
+        a client from self.clients.
+        This is mainly useful for games where clients are identified by the slot number they
+        occupy. On map change, a player A on slot 1 can leave making room for player B who
+        connects on slot 1.
+        """
         plist = self.getPlayerList()
         mlist = {}
 
@@ -773,11 +876,16 @@ class AbstractParser(b3.parser.Parser):
                         self.debug('no-sync %s <> %s', client.ip, c['ip'])
                         client.disconnect()
                 else:
-                    self.debug('no-sync: no guid or ip found.')
+                    self.debug('no-sync: no guid or ip found')
         
         return mlist
 
     def authorizeClients(self):
+        """
+        For all connected players, fill the client object with properties allowing to find
+        the user in the database (usualy guid, or punkbuster id, ip) and call the
+        Client.auth() method.
+        """
         players = self.getPlayerList(maxRetries=4)
         self.verbose('authorizeClients() = %s' % players)
 
@@ -791,55 +899,55 @@ class AbstractParser(b3.parser.Parser):
                 sp.data = p
                 sp.auth()
 
-###################################################################
-# ALTER THE WAY admin.py work for some q3a based games
-###################################################################
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  ALTER THE WAY ADMIN.PY WORKS FOR SOME Q3A BASED GAMES                                                         ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def patch_b3_admin_plugin(self):
         """
         Monkey patches the admin plugin
         """
-        def new_cmd_kick(self, data, client=None, cmd=None):
-            """\
+        def new_cmd_kick(this, data, client=None, cmd=None):
+            """
             <name> [<reason>] - kick a player
             <fullexactname> [<reason>] - kick an incompletely authed player
             """
-            m = self.parseUserCmd(data)
+            m = this.parseUserCmd(data)
             if not m:
                 client.message('^7Invalid parameters')
                 return False
 
             cid, keyword = m
-            reason = self.getReason(keyword)
+            reason = this.getReason(keyword)
 
-            if not reason and client.maxLevel < self._noreason_level:
+            if not reason and client.maxLevel < this._noreason_level:
                 client.message('^1ERROR: ^7You must supply a reason')
                 return False
 
-            sclient = self.findClientPrompt(cid, client)
+            sclient = this.findClientPrompt(cid, client)
             if sclient:
                 if sclient.cid == client.cid:
-                    self.console.say(self.getMessage('kick_self', client.exactName))
+                    this.console.say(self.getMessage('kick_self', client.exactName))
                     return True
                 elif sclient.maxLevel >= client.maxLevel:
                     if sclient.maskGroup:
                         client.message('^7%s ^7is a masked higher level player, can\'t kick' % sclient.exactName)
                     else:
-                        self.console.say(self.getMessage('kick_denied',
-                                                         sclient.exactName,
-                                                         client.exactName,
-                                                         sclient.exactName))
+                        message = this.getMessage('kick_denied', sclient.exactName, client.exactName, sclient.exactName)
+                        this.console.say(message)
                     return True
                 else:
                     sclient.kick(reason, keyword, client)
                     return True
             elif re.match('^[0-9]+$', cid):
                 # failsafe, do a manual client id kick
-                self.console.kick(cid, reason, client)
+                this.console.kick(cid, reason, client)
             else:
-                self.console.kickbyfullname(cid, reason, client)
+                this.console.kickbyfullname(cid, reason, client)
 
         admin_plugin = self.getPlugin('admin')
-        cmd = admin_plugin._commands['kick']
-        cmd.func = new.instancemethod(new_cmd_kick, admin_plugin)
-        cmd.help = new_cmd_kick.__doc__.strip()
+        command = admin_plugin._commands['kick']
+        command.func = new.instancemethod(new_cmd_kick, admin_plugin)
+        command.help = new_cmd_kick.__doc__.strip()

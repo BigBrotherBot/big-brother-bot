@@ -1,7 +1,8 @@
 # -*- coding: cp1252 -*-
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# 
+# Copyright (C) 2005 Michael "ThorN" Thornton
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -9,36 +10,32 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-#
-import asyncore
-from sys import version_info
-from hashlib import md5
+# 12/08/2014 - 1.2 - Fenix - syntax cleanup
 
+import asyncore
 import re
 import socket
 import time
-"""
-module implementing the Frontline protocol. Provide the Client class which
-creates a connection to a Frontline gameserver
-"""
 
-__author__  = 'Courgette'
-__version__ = '1.1'
+from hashlib import md5
+
+__author__ = 'Courgette'
+__version__ = '1.2'
 
 RE_CHALLENGE = re.compile(r'WELCOME! Frontlines: Fuel of War \(RCON\) VER=\d+ CHALLENGE=(?P<challenge>.+)')
 CMD_TERMINATOR = '\x04'
 
-class FrontlineConnectionError(Exception): pass
+class FrontlineConnectionError(Exception):
+    pass
 
 class Client(asyncore.dispatcher_with_send):
 
@@ -59,17 +56,17 @@ class Client(asyncore.dispatcher_with_send):
         self.connect( (self._host, self._port) )
         
     def handle_connect(self):
-        self.console.info('Now connected to Frontline gameserver, waiting for challenge')
+        self.console.info('now connected to Frontline gameserver: waiting for challenge')
         self.authed = False
 
     def handle_close(self):
-        self.console.info('Connection to Frontline gameserver closed')
+        self.console.info('connection to Frontline gameserver closed')
         self._auth_failures += 1
         self.close()
         self.authed = False
         if self.keepalive:
             if self._auth_failures > 500:
-                self.console.error("Too many failures. Could not connect to Frontline server")
+                self.console.error("too many failures: could not connect to Frontline server")
                 self.keepalive = False
             else:
                 self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -97,11 +94,12 @@ class Client(asyncore.dispatcher_with_send):
         try:
             self._handlers.remove(handler_func)
         except:
-            raise ValueError("Handler is not handling this event, so cannot unhandle it.")
+            raise ValueError("handler is not handling this event, so cannot unhandle it")
         return self            
             
     def login(self, challenge):
-        """authenticate to the server
+        """
+        Authenticate to the server
         from Frontline documentation : 
         
             Open a TCP/IP streaming socket to the remote console port of the server
@@ -127,7 +125,7 @@ class Client(asyncore.dispatcher_with_send):
             Once the client is logged in commands can be sent to be run and responses can come back
 
         """
-        self.console.info("Logging to Frontline server with username %r" % self._username)
+        self.console.info("logging to Frontline server with username %r" % self._username)
         hashed_password = md5.new("%s%s" % (challenge, self._password)).hexdigest()
         try:
             self.send('RESPONSE %s %s' % (self._username, hashed_password))
@@ -135,17 +133,22 @@ class Client(asyncore.dispatcher_with_send):
             self.console.error(repr(e))
 
     def ping(self):
-        """used to keep the connection alive. After 10 seconds of inactivity
-        the server will drop the connection"""
+        """
+        Used to keep the connection alive.
+        After 10 seconds of inactivity the server will drop the connection.
+        """
         self.command("ECHONET PING")
     
     def command(self, text):
-        """send command to server"""
+        """
+        Send command to server.
+        """
         if not self.connected:
             return
         if not self.authed:
-            self.console.warning("not authenticated, cannot send command")
+            self.console.warning("not authenticated: cannot send command")
             return
+
         #self.console.verbose("sending RCON %s" % text)
         packet = "%s%s" % (text.strip(), CMD_TERMINATOR)
         try:
@@ -171,54 +174,51 @@ class Client(asyncore.dispatcher_with_send):
             if match:
                 self.login(match.group('challenge'))
             
-            
-            
-###################################################################################
-# Example program
-
-if __name__ == '__main__':
-    import sys, logging
-    from b3.output import OutputHandler
-    
-#    if len(sys.argv) != 5:
-#        host = raw_input('Enter game server host IP/name: ')
-#        port = int(raw_input('Enter host port: '))
-#        user = raw_input('Enter username: ')
-#        pw = raw_input('Enter password: ')
-#    else:
-#        host = sys.argv[1]
-#        port = int(sys.argv[2])
-#        user = sys.argv[3]
-#        pw = sys.argv[4]
-   
-    host = '127.0.0.1'
-    port = 14507
-    user = 'admin'
-    pw = 'pass'
-    
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter("%(levelname)s\t%(message)s")
-    handler.setFormatter(formatter)
-    
-    myConsole = OutputHandler('console')
-    myConsole.addHandler(handler)
-    myConsole.setLevel(8)
-    
-    
-    def packetListener(packet):
-        myConsole.console(">>> %s" % packet)    
-    
-    myConsole.info('start client')
-    frontlineClient = Client(myConsole, host, port, user, pw, keepalive=True)
-    frontlineClient.add_listener(packetListener)
-    
-    try:
-        while frontlineClient.connected or not frontlineClient.authed:
-            frontlineClient.command("PLAYERLIST")
-            asyncore.loop(timeout=3, count=1)
-    except EOFError, KeyboardInterrupt:
-        frontlineClient.close()
-    
-    myConsole.info('end')
-    
-    
+########################################################################################################################
+# EXAMPLE PROGRAM                                                                                                      #
+########################################################################################################################
+#
+# if __name__ == '__main__':
+#     import sys, logging
+#     from b3.output import OutputHandler
+#
+# #    if len(sys.argv) != 5:
+# #        host = raw_input('Enter game server host IP/name: ')
+# #        port = int(raw_input('Enter host port: '))
+# #        user = raw_input('Enter username: ')
+# #        pw = raw_input('Enter password: ')
+# #    else:
+# #        host = sys.argv[1]
+# #        port = int(sys.argv[2])
+# #        user = sys.argv[3]
+# #        pw = sys.argv[4]
+#
+#     host = '127.0.0.1'
+#     port = 14507
+#     user = 'admin'
+#     pw = 'pass'
+#
+#     handler = logging.StreamHandler()
+#     formatter = logging.Formatter("%(levelname)s\t%(message)s")
+#     handler.setFormatter(formatter)
+#
+#     myConsole = OutputHandler('console')
+#     myConsole.addHandler(handler)
+#     myConsole.setLevel(8)
+#
+#
+#     def packetListener(packet):
+#         myConsole.console(">>> %s" % packet)
+#
+#     myConsole.info('start client')
+#     frontlineClient = Client(myConsole, host, port, user, pw, keepalive=True)
+#     frontlineClient.add_listener(packetListener)
+#
+#     try:
+#         while frontlineClient.connected or not frontlineClient.authed:
+#             frontlineClient.command("PLAYERLIST")
+#             asyncore.loop(timeout=3, count=1)
+#     except EOFError, KeyboardInterrupt:
+#         frontlineClient.close()
+#
+#     myConsole.info('end')

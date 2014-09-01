@@ -82,7 +82,7 @@ class Test_MySQL(B3TestCase, StorageAPITest):
         self.storage = self.console.storage = DatabaseStorage(
             "mysql://%s:%s@%s/%s" % (MYSQL_TEST_USER, MYSQL_TEST_PASSWORD, MYSQL_TEST_HOST, MYSQL_TEST_DB),
             self.console)
-        self.storage.executeSql("@b3/sql/b3.sql")
+        self.storage.queryFromFile("@b3/sql/b3.sql")
 
     def tearDown(self):
         """this method is called after each test"""

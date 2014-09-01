@@ -35,7 +35,7 @@ class Test_sqlite(B3TestCase, StorageAPITest):
         """this method is called before each test"""
         B3TestCase.setUp(self)
         self.storage = self.console.storage = DatabaseStorage('sqlite://'+SQLITE_DB, self.console)
-        self.storage.executeSql("@b3/sql/sqlite/b3.sql")
+        self.storage.queryFromFile("@b3/sql/sqlite/b3.sql")
 
     def tearDown(self):
         """this method is called after each test"""

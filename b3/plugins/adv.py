@@ -1,7 +1,7 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -11,46 +11,33 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-# 03/04/2014 - 1.5 - Fenix
-#    pep8 coding style guide
-# 29/09/2012 - 1.4 - Courgette
-#    new message keyword @regulars will run the Admin plugin !regulars command
-# 19/08/2012 - 1.3.3 - Courgette
-#    give user feedback on command misuse
-# 07/17/2011 - 1.3.2 - Freelander
-#    prevent error if next map is not returned
-# 04/18/2011 - 1.3.1 - Courgette
-#    makes @admins show admins' level as well
-# 04/18/2011 - 1.3.0 - Courgette
-#    add the @admins keyword that displays the connected admins
-#    when the ad is @topstats or @admins but no message is to be shown, then try next ad
-# 10/24/2010 - 1.2.2 - Courgette
-#    prevent crash when no feed is specified in config
-# 08/20/2010 - 1.2.1 - xlr8or
-#    add @topstats for xlrstats
-# 08/06/2010 - 1.2 - xlr8or
-#    add feedparser (@feed or @feed <nr>)
-# 08/06/2010 - 1.1.5 - xlr8or
-#    remove save() errors and !advsave when XML adds are used
-#    this needs to be re-enabled when saving to XML is supported
-# 11/22/2009 - 1.1.4 - Courgette
-#    fix bug when using external text ads file which is empty
-# 2/27/2009 - 1.1.3 - xlr8or
-#    added Anubis suggestion @nextmap to ads and also @time to show time.
-# 11/30/2005 - 1.1.2 - ThorN
-#    use PluginCronTab instead of CronTab
-# 8/29/2005 - 1.1.0 - ThorN
-#    donverted to use XML config
+# 31/08/2014 - 1.6   - Fenix      - syntax cleanup
+# 03/04/2014 - 1.5   - Fenix      - PEP8 coding standards
+# 29/09/2012 - 1.4   - Courgette  - new message keyword @regulars will run the Admin plugin !regulars command
+# 19/08/2012 - 1.3.3 - Courgette  - give user feedback on command misuse
+# 07/17/2011 - 1.3.2 - Freelander - prevent error if next map is not returned
+# 04/18/2011 - 1.3.1 - Courgette  - makes @admins show admins' level as well
+# 04/18/2011 - 1.3.0 - Courgette  - add the @admins keyword that displays the connected admins
+#                                 - when the ad is @topstats or @admins but no message is to be shown, then try next ad
+# 24/10/2010 - 1.2.2 - Courgette  - prevent crash when no feed is specified in config
+# 20/08/2010 - 1.2.1 - xlr8or     - add @topstats for xlrstats
+# 06/08/2010 - 1.2   - xlr8or     - add feedparser (@feed or @feed <nr>)
+# 06/08/2010 - 1.1.5 - xlr8or     - remove save() errors and !advsave when XML adds are used: this needs to be re-enabled
+#                                   when saving to XML is supported
+# 22/11/2009 - 1.1.4 - Courgette  - fix bug when using external text ads file which is empty
+# 27/02/2009 - 1.1.3 - xlr8or     - added Anubis suggestion @nextmap to ads and also @time to show time.
+# 30/11/2005 - 1.1.2 - ThorN      - use PluginCronTab instead of CronTab
+# 29/08/2005 - 1.1.0 - ThorN      - converted to use XML config
 
 __author__ = 'ThorN'
-__version__ = '1.5'
+__version__ = '1.6'
 
 import b3
 import os
@@ -63,6 +50,7 @@ from ConfigParser import NoOptionError
 
 
 class MessageLoop:
+
     items = None
 
     def __init__(self):
@@ -70,14 +58,14 @@ class MessageLoop:
         self.index = 0
 
     def put(self, item):
-        """\
-        Add an element to the list
+        """
+        Add an element to the list.
         """
         self.items.append(item)
 
     def getnext(self):
-        """\
-        Get the next item in the list
+        """
+        Get the next item in the list.
         """
         try:
             item = self.items[self.index]
@@ -93,8 +81,9 @@ class MessageLoop:
         return item
 
     def getitem(self, index):
-        """\
-        Get a specific element from the list
+        """
+        Get a specific element from the list.
+        :param index: The element index
         """
         try:
             return self.items[index]
@@ -102,8 +91,9 @@ class MessageLoop:
             return None
 
     def remove(self, index):
-        """\
-        Remove an element from the list
+        """
+        Remove an element from the list.
+        :param index: The element index
         """
         i = 0
         items = []
@@ -115,13 +105,14 @@ class MessageLoop:
         self.items = items
 
     def clear(self):
-        """\
+        """
         Empty the list
         """
         self.items = []
 
 
 class AdvPlugin(b3.plugin.Plugin):
+
     _adminPlugin = None
     _xlrstatsPlugin = None
     _cronTab = None
@@ -134,8 +125,14 @@ class AdvPlugin(b3.plugin.Plugin):
     _feeditemnr = 0
     _replay = 0
 
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   STARTUP                                                                                                      ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
     def onStartup(self):
-        """\
+        """
         Initialize the plugin
         """
         if self._adminPlugin:
@@ -149,12 +146,12 @@ class AdvPlugin(b3.plugin.Plugin):
 
         self._xlrstatsPlugin = self.console.getPlugin('xlrstats')
         if not self._xlrstatsPlugin:
-            self.debug('XLRstats not installed, @topstats not available!')
+            self.debug('XLRstats not installed: @topstats not available!')
         else:
-            self.debug('XLRstats found, @topstats available!')
+            self.debug('XLRstats found: @topstats available!')
 
     def onLoadConfig(self):
-        """\
+        """
         Load plugin configuration
         """
         self._adminPlugin = self.console.getPlugin('admin')
@@ -162,9 +159,9 @@ class AdvPlugin(b3.plugin.Plugin):
 
         try:
             self._rate = self.config.get('settings', 'rate')
-            self.info('adv rate is %s' % self._rate)
+            self.debug('loaded settings/rate: %s' % self._rate)
         except NoOptionError:
-            self.error('config missing [settings].rate')
+            self.warning('could not find settings/max_level in config file')
             return False
 
         if self.config.has_option('settings', 'ads'):
@@ -201,7 +198,7 @@ class AdvPlugin(b3.plugin.Plugin):
                 f = feedparser.parse(self._feed)
                 if not f or f['bozo'] == 1:
                     self._feed = None
-                    self.warning('Error reading feed at %s' % self._feed)
+                    self.warning('error reading feed at %s' % self._feed)
                     self.debug(f['bozo_exception'])
 
         if self._cronTab:
@@ -212,7 +209,16 @@ class AdvPlugin(b3.plugin.Plugin):
         self._cronTab = b3.cron.PluginCronTab(self, self.adv, second=s, minute=m)
         self.console.cron + self._cronTab
 
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   OTHER METHODS                                                                                                ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
     def save(self):
+        """
+        Save the current advertisements list.
+        """
         if self._fileName:
             f = file(self._fileName, 'w')
             for msg in self._msg.items:
@@ -220,12 +226,15 @@ class AdvPlugin(b3.plugin.Plugin):
                     f.write(msg + "\n")
             f.close()
         else:
-            self.verbose('Save to XML config not supported')
-            raise Exception('Save to XML config not supported')
+            self.verbose('save to XML config not supported')
+            raise Exception('save to XML config not supported')
 
     def load_from_file(self, filename):
+        """
+        Load advertisements from a file.
+        """
         if not os.path.isfile(filename):
-            self.error('Ad file %s does not exist', filename)
+            self.error('advertisement file %s does not exist', filename)
             return False
 
         f = file(filename, 'r')
@@ -233,6 +242,9 @@ class AdvPlugin(b3.plugin.Plugin):
         f.close()
 
     def load_from_config(self):
+        """
+        Load advertisement from the plugin configuration file.
+        """
         items = []
         for e in self.config.get('ads/ad'):
             items.append(e.text)
@@ -240,6 +252,9 @@ class AdvPlugin(b3.plugin.Plugin):
         self.load(items)
 
     def load(self, items=None):
+        """
+        Load an advertisement message.
+        """
         if items is None:
             items = []
 
@@ -252,13 +267,17 @@ class AdvPlugin(b3.plugin.Plugin):
                 self._msg.put(w)
 
     def adv(self, first_try=True):
+        """
+        Display an advertisement message.
+        :param first_try: Whether or not it's the first time we try to display this ad
+        """
         ad = self._msg.getnext()
         if ad:
             if ad == "@nextmap":
                 if self.console.getNextMap():
                     ad = "^2Next map: ^3" + self.console.getNextMap()
                 else:
-                    self.debug('Cannot get map rotation')
+                    self.debug('could not get nextmap')
                     ad = None
             elif ad == "@time":
                 ad = "^2Time: ^3" + self.console.formatTime(time.time())
@@ -271,7 +290,7 @@ class AdvPlugin(b3.plugin.Plugin):
                     if self._replay < 10:
                         self.adv()
                     else:
-                        self.debug('Something wrong with the newsfeed, disabling it. Fix the feed and do !advload')
+                        self.debug('something wrong with the newsfeed: disabling it. Fix the feed and do !advload')
                         self._feed = None
                     return
             elif ad == "@topstats":
@@ -285,7 +304,7 @@ class AdvPlugin(b3.plugin.Plugin):
                         ad = None
                 else:
                     self.error('XLRstats not installed! Cannot use @topstats in adv plugin!')
-                    ad = '@topstats not available, XLRstats is not installed!'
+                    ad = '@topstats not available: XLRstats is not installed!'
             elif ad == "@admins":
                 try:
                     command = self._adminPlugin._commands['admins']
@@ -318,6 +337,9 @@ class AdvPlugin(b3.plugin.Plugin):
             self._replay = 0
 
     def get_feed(self, ad):
+        """
+        Get a feed item to display.
+        """
         i = ad.split()
         if len(i) == 2 and isinstance(i, list):
             i = i[1]
@@ -330,33 +352,33 @@ class AdvPlugin(b3.plugin.Plugin):
         try:
             f = feedparser.parse(self._feed)
         except Exception:
-            self.debug('Not able to retrieve feed')
+            self.debug('not able to retrieve feed')
             return None
         try:
             _item = f['entries'][i]['title']
             self._feeditemnr += 1
             return self._feedpre + _item
         except Exception:
-            self.debug('Feeditem %s out of range' % i)
+            self.debug('feeditem %s out of range' % i)
             self._feeditemnr = 0
             return None
 
     def _get_rate_minsec(self):
-        """\
-        allow to define the rate in second by adding 's' at the end
         """
-        _sec = 0
-        _min = '*'
+        Allow to define the rate in second by adding 's' at the end
+        """
+        seconds = 0
+        minutes = '*'
         if self._rate[-1] == 's':
             # rate is in seconds
             s = self._rate[:-1]
             if int(s) > 59:
                 s = 59
-            _sec = '*/%s' % s
+            seconds = '*/%s' % s
         else:
-            _min = '*/%s' % self._rate
-        self.debug('%s -> (%s,%s)' % (self._rate, _min, _sec))
-        return _min, _sec
+            minutes = '*/%s' % self._rate
+        self.debug('%s -> (%s,%s)' % (self._rate, minutes, seconds))
+        return minutes, seconds
 
     ####################################################################################################################
     ##                                                                                                                ##
@@ -365,7 +387,7 @@ class AdvPlugin(b3.plugin.Plugin):
     ####################################################################################################################
 
     def cmd_advadd(self, data, client=None, cmd=None):
-        """\
+        """
         <add> - add a new advertisement message
         """
         if not data:
@@ -378,21 +400,21 @@ class AdvPlugin(b3.plugin.Plugin):
             self.save()
 
     def cmd_advsave(self, data, client=None, cmd=None):
-        """\
-        Save thje current advertisement list
+        """
+        - save the current advertisement list
         """
         try:
             self.save()
-            client.message('^3Adv: ^7Saved %s messages' % len(self._msg.items))
+            client.message('^3Adv: ^7saved %s messages' % len(self._msg.items))
         except Exception, e:
-            client.message('^3Adv: ^7Error saving: %s' % e)
+            client.message('^3Adv: ^7error saving: %s' % e)
 
     def cmd_advload(self, data, client=None, cmd=None):
-        """\
-        Reload adv plugin configuration
+        """
+        Reload adv plugin configuration.
         """
         self.onLoadConfig()
-        client.message('^3Adv: ^7Loaded %s messages' % len(self._msg.items))
+        client.message('^3Adv: ^7loaded %s messages' % len(self._msg.items))
 
     def cmd_advrate(self, data, client=None, cmd=None):
         """
@@ -409,12 +431,12 @@ class AdvPlugin(b3.plugin.Plugin):
             self._cronTab.minute = m
             self._cronTab.second = s
             if self._rate[-1] == 's':
-                client.message('^3Adv: ^7Rate set to %s seconds' % self._rate[:-1])
+                client.message('^3Adv: ^7rate set to %s seconds' % self._rate[:-1])
             else:
-                client.message('^3Adv: ^7Rate set to %s minutes' % self._rate)
+                client.message('^3Adv: ^7rate set to %s minutes' % self._rate)
 
     def cmd_advrem(self, data, client=None, cmd=None):
-        """\
+        """
         <index> - removes an advertisement message
         """
         if not data:
@@ -437,12 +459,12 @@ class AdvPlugin(b3.plugin.Plugin):
             self._msg.remove(int(data) - 1)
             if self._fileName:
                 self.save()
-            client.message('^3Adv: ^7Removed item: %s' % item)
+            client.message('^3Adv: ^7removed item: %s' % item)
         else:
-            client.message('^3Adv: ^7Item %s not found' % data)
+            client.message('^3Adv: ^7item %s not found' % data)
 
     def cmd_advlist(self, data, client=None, cmd=None):
-        """\
+        """
         List advertisement messages
         """
         if len(self._msg.items) > 0:
@@ -451,4 +473,4 @@ class AdvPlugin(b3.plugin.Plugin):
                 i += 1
                 client.message('^3Adv: ^7[^2%s^7] %s' % (i, msg))
         else:
-            client.message('^3Adv: ^7No ads loaded')
+            client.message('^3Adv: ^7no ads loaded')

@@ -6,7 +6,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
@@ -16,63 +16,47 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
-# CHANGELOG:
-# 16/04/2014 - 1.7.2 - Courgette
-#   * fix regression from 1.7.1
-# 14/04/2014 - 1.7.1 - Fenix
-#   * pep8 coding style guide
-# 03/01/2014 - 1.7 - 82ndab.Bravo17
-#   * allow plugin to optionally perform a dummy read of the log file in order to update
-#     the filesize in Windows Server 2008
-# 27/11/2012 - 1.6 - Courgette
-#   * remove the first '/' from the url-path to respect RFC 1738
-#   * fix issue when public_ip and rcon_ip are different in b3.xml
-# 22/05/2012 - 1.5.8 - Courgette
-#   * local_game_log config option can now use the @conf and @b3 shortcuts
-# 11/05/2011 - 1.5.7 - 82ndab-Bravo17
-#   *  Append to local log implemented
-# 27/04/2011 - 1.5.6 - 82ndab-Bravo17
-#   *  Auto assign of unique local games_mp log file
-# 29/10/2010 - 1.5.5 - Courgette
-#   * Do not stop thread on FTP permanent error (2nd trial)
-#   * add 3 new settings in optional config file : short_delay, long_delay, 
-#     max_consecutive_failures to tune how aggressive is B3 at retrying to 
-#     connect.
-#   * update config file example in test section at the bottom of this file
-# 29/10/2010 - 1.5.4 - Courgette
-#   * Do not stop thread on FTP permanent error
-# 04/10/2010 - 1.5.3 - Courgette
-#   * stop thread on FTP permanent error
-#   * can activate FTP debug messages with _ftplib_debug_level
-#   * display exact error message whenever the ftp connection fails
-# 04/09/2010 - 1.5.2 - GrosBedo
-#   * b3/delay option now specify the delay between each ftp log fetching
-#   * b3/local_game_log option to specify the temporary local log name (permits to manage
-#     remotely several servers at once)
-# 02/09/2010 - 1.5.1 - Courgette
-#    * fix bug in 1.5. Dectect FTP permanent error and give up in such cases
-# 02/09/2010 - 1.5 - Courgette
-#    * allow to connect on non standard FTP port
-# 06/02/2010 - 1.4 - Courgette
-#    * force FTP binary mode
-# 13/12/2009 - 1.3 - Courgette
-#    * default timeout is 30 secondes (as I had a user reporting the FTP server he uses 
-#      lags 15 sec before accepting connections).
-#    * Can optionnaly read a config file to customize timeout and max allowed gap between
-#      remote and local gamelog
-#    * add a test to validate config reading
-# 12/12/2009 - 1.2 - Courgette
-#     does not download huge amount of log in case local file is too far behind remote file (prevents memory errors)
-#     In case of connection failure, try to reconnect every second for the first 30 seconds
-# 12/12/2009 - 1.1.1 - Courgette
-#     Gracefully stop thread when B3 is shutting down
-#     Add tests
-# 28/08/2009 - 1.1 - Bakes
-#     Connects with parser.py to provide real remote b3.
-# 17/06/2009 - 1.0 - Bakes
-#     Initial Plugin, basic functionality.
+# CHANGELOG
+#
+# 30/08/2014 - 1.7.3 - Fenix          - syntax cleanup
+#                                     - highly improved plugin configuration file loading
+# 16/04/2014 - 1.7.2 - Courgette      - fix regression from 1.7.1
+# 14/04/2014 - 1.7.1 - Fenix          - PEP8 coding standards
+# 03/01/2014 - 1.7   - 82ndab.Bravo17 - allow plugin to optionally perform a dummy read of the log file
+#                                       in order to update the filesize in Windows Server 2008
+# 27/11/2012 - 1.6   - Courgette      - remove the first '/' from the url-path to respect RFC 1738
+#                                     - fix issue when public_ip and rcon_ip are different in b3.xml
+# 22/05/2012 - 1.5.8 - Courgette      - local_game_log config option can now use the @conf and @b3 shortcuts
+# 11/05/2011 - 1.5.7 - 82ndab-Bravo17 - append to local log implemented
+# 27/04/2011 - 1.5.6 - 82ndab-Bravo17 - auto assign of unique local games_mp log file
+# 29/10/2010 - 1.5.5 - Courgette      - do not stop thread on FTP permanent error (2nd trial)
+#                                     - add 3 new settings in optional config file : short_delay, long_delay,
+#                                       max_consecutive_failures to tune how aggressive is B3 at retrying to connect
+#                                     - update config file example in test section at the bottom of this file
+# 29/10/2010 - 1.5.4 - Courgette      - do not stop thread on FTP permanent error
+# 04/10/2010 - 1.5.3 - Courgette      - stop thread on FTP permanent error
+#                                     - can activate FTP debug messages with _ftplib_debug_level
+#                                     - display exact error message whenever the ftp connection fails
+# 04/09/2010 - 1.5.2 - GrosBedo       - b3/delay option now specify the delay between each ftp log fetching
+#                                     - b3/local_game_log option to specify the temporary local log name (permits
+#                                       to manage remotely several servers at once)
+# 02/09/2010 - 1.5.1 - Courgette      - fix bug in 1.5. Dectect FTP permanent error and give up in such cases
+# 02/09/2010 - 1.5   - Courgette      - allow to connect on non standard FTP port
+# 06/02/2010 - 1.4   - Courgette      - force FTP binary mode
+# 13/12/2009 - 1.3   - Courgette      - default timeout is 30 secondes (as I had a user reporting the FTP server he uses
+#                                       lags 15 sec before accepting connections).
+#                                     - can optionnaly read a config file to customize timeout and max allowed gap
+#                                       between remote and local gamelog
+#                                     - add a test to validate config reading
+# 12/12/2009 - 1.2   - Courgette      - does not download huge amount of log in case local file is too far behind
+#                                       remote file (prevents memory errors)
+#                                     - in case of connection failure, try to reconnect every second for the first 30s
+# 12/12/2009 - 1.1.1 - Courgette      - gracefully stop thread when B3 is shutting down
+#                                     - add tests
+# 28/08/2009 - 1.1 - Bakes            - connects with parser.py to provide real remote b3.
+# 17/06/2009 - 1.0 - Bakes            - initial Plugin, basic functionality.
  
-__version__ = '1.7.2'
+__version__ = '1.7.3'
 __author__ = 'Bakes, Courgette'
 
 import b3
@@ -90,8 +74,16 @@ from b3 import functions
 
 
 class FtpytailPlugin(b3.plugin.Plugin):
+
+    requiresConfigFile = False
+    ftpconfig = None
+    buffer = None
+    file = None
+    lgame_log = None
+    url_path = None
+
     ### settings
-    _maxGap = 20480  # max gap in bytes between remote file and local file
+    _maxGap = 20480                  # max gap in bytes between remote file and local file
     _maxConsecutiveConnFailure = 30  # after that amount of consecutive failure, pause the bot for _long_delay seconds
 
     # time (in sec) to wait before reconnecting after loosing
@@ -101,35 +93,31 @@ class FtpytailPlugin(b3.plugin.Plugin):
     # time (in sec) to wait before reconnecting after loosing
     # FTP connection (if _nbConsecutiveConnFailure > _maxConsecutiveConnFailure)
     _long_delay = 15
-
     _connectionTimeout = 30
-    
-    requiresConfigFile = False
-    ftpconfig = None
-    buffer = None
     _remoteFileOffset = None
     _nbConsecutiveConnFailure = 0
     _logAppend = False
-    
-    _ftplib_debug_level = 0  # 0: no debug, 1: normal debug, 2: extended debug
+    _ftplib_debug_level = 0         # 0: no debug, 1: normal debug, 2: extended debug
     
     _gamelog_read_delay = 0.150
     _use_windows_cache_fix = False
     _cache_refresh_delay = 1
 
-    file = None
-    lgame_log = None
-    url_path = None
-    
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   STARTUP                                                                                                      ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
     def onStartup(self):
-        """\
+        """
         Initialize plugin
         """
         versionsearch = re.search("^((?P<mainversion>[0-9]).(?P<lowerversion>[0-9]+)?)", sys.version)
         version = int(versionsearch.group(3))
         if version < 6:
-            self.error('Python Version %s, this is not supported and may lead to hangs. '
-                       'Please update Python to 2.6' % versionsearch.group(1))
+            self.error('python version %s is not supported and may lead to hangs: '
+                       'please update python to 2.6' % versionsearch.group(1))
             self.console.die()
 
         if self.console.config.has_option('server', 'delay'):
@@ -140,7 +128,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
         else:
             # get B3 actual locally opened game log
             self.lgame_log = os.path.normpath(os.path.expanduser(self.console.input.name))
-            self.debug('Local Game Log is %s' % self.lgame_log)
+            self.debug('local game log is: %s' % self.lgame_log)
 
         if self.console.config.get('server', 'game_log')[0:6] == 'ftp://':
             self.init_thread(self.console.config.get('server', 'game_log'))
@@ -151,67 +139,104 @@ class FtpytailPlugin(b3.plugin.Plugin):
             self._logAppend = False
     
     def onLoadConfig(self):
-        """\
-        Load plugin configuration
+        """
+        Load plugin configuration.
         """
         if self.config is None:
             return
 
         try:
             self._connectionTimeout = self.config.getint('settings', 'timeout')
-        except (NoOptionError, ValueError):
-            self.warning("Error reading timeout from config file. Using default value")
-        self.info("FTP connection timeout: %s" % self._connectionTimeout)
+            self.debug('loaded settings/timeout: %s' % self._connectionTimeout)
+        except NoOptionError:
+            self.warning('could not find settings/timeout in config file, '
+                         'using default: %s' % self._connectionTimeout)
+        except ValueError, e:
+            self.error('could not load settings/timeout config value: %s' % e)
+            self.debug('using default value (%s) for settings/timeout' % self._connectionTimeout)
 
         try:
             self._maxGap = self.config.getint('settings', 'maxGapBytes')
-        except (NoOptionError, ValueError):
-            self.warning("Error reading maxGapBytes from config file. Using default value")
-        self.info("Maximum gap allowed between remote and local gamelog: %s bytes" % self._maxGap)
+            self.debug('loaded settings/maxGapBytes: %s' % self._maxGap)
+        except NoOptionError:
+            self.warning('could not find settings/maxGapBytes in config file, '
+                         'using default: %s' % self._maxGap)
+        except ValueError, e:
+            self.error('could not load settings/maxGapBytes config value: %s' % e)
+            self.debug('using default value (%s) for settings/maxGapBytes' % self._maxGap)
 
         try:
             self._maxConsecutiveConnFailure = self.config.getint('settings', 'max_consecutive_failures')
-        except (NoOptionError, ValueError):
-            self.warning("Error reading max_consecutive_failures from config file. Using default value")
-        self.info("max_consecutive_failures: %s" % self._maxConsecutiveConnFailure)
+            self.debug('loaded settings/max_consecutive_failures: %s' % self._maxConsecutiveConnFailure)
+        except NoOptionError:
+            self.warning('could not find settings/max_consecutive_failures in config file, '
+                         'using default: %s' % self._maxConsecutiveConnFailure)
+        except ValueError, e:
+            self.error('could not load settings/max_consecutive_failures config value: %s' % e)
+            self.debug('using default value (%s) for settings/max_consecutive_failures' % self._maxConsecutiveConnFailure)
 
         try:
             self._short_delay = self.config.getfloat('settings', 'short_delay')
-        except (NoOptionError, ValueError):
-            self.warning("Error reading short_delay from config file. Using default value")
-        self.info("short_delay: %s seconds" % self._short_delay)
+            self.debug('loaded settings/short_delay: %s' % self._short_delay)
+        except NoOptionError:
+            self.warning('could not find settings/short_delay in config file, '
+                         'using default: %s' % self._short_delay)
+        except ValueError, e:
+            self.error('could not load settings/short_delay config value: %s' % e)
+            self.debug('using default value (%s) for settings/short_delay' % self._short_delay)
 
         try:
             self._long_delay = self.config.getint('settings', 'long_delay')
-        except (NoOptionError, ValueError):
-            self.warning("Error reading maxGapBytes from config file. Using default value")
-        self.info("long_delay: %s seconds" % self._long_delay)
+            self.debug('loaded settings/long_delay: %s' % self._long_delay)
+        except NoOptionError:
+            self.warning('could not find settings/long_delay in config file, '
+                         'using default: %s' % self._long_delay)
+        except ValueError, e:
+            self.error('could not load settings/long_delay config value: %s' % e)
+            self.debug('using default value (%s) for settings/long_delay' % self._long_delay)
+
+        try:
+            self._use_windows_cache_fix = self.config.getboolean('settings', 'use_windows_cache_fix')
+            self.debug('loaded settings/use_windows_cache_fix: %s' % self._use_windows_cache_fix)
+        except NoOptionError:
+            self.warning('could not find settings/use_windows_cache_fix in config file, '
+                         'using default: %s' % self._use_windows_cache_fix)
+        except ValueError, e:
+            self.error('could not load settings/use_windows_cache_fix config value: %s' % e)
+            self.debug('using default value (%s) for settings/use_windows_cache_fix' % self._use_windows_cache_fix)
+
+        try:
+            self._cache_refresh_delay = self.config.getint('settings', 'cache_refresh_delay')
+            self.debug('loaded settings/cache_refresh_delay: %s' % self._cache_refresh_delay)
+        except NoOptionError:
+            self.warning('could not find settings/cache_refresh_delay in config file, '
+                         'using default: %s' % self._cache_refresh_delay)
+        except ValueError, e:
+            self.error('could not load settings/cache_refresh_delay config value: %s' % e)
+            self.debug('using default value (%s) for settings/cache_refresh_delay' % self._cache_refresh_delay)
 
         self.info("until %s consecutive errors are met, the bot will wait for %s seconds (short_delay), "
                   "then it will wait for %s seconds (long_delay)" % (self._maxConsecutiveConnFailure,
                                                                      self._short_delay, self._long_delay))
-            
-        try:
-            self._use_windows_cache_fix = self.console.config.getboolean('server', 'use_windows_cache_fix')
-        except (NoOptionError, ValueError):
-            self.warning("Error reading setting for Windows Cache Fix from config file. Using default value")
-        self.info("Use the Windows Cache Fix: %s" % self._use_windows_cache_fix)
-
-        try:
-            self._cache_refresh_delay = self.console.config.getint('server', 'cache_refresh_delay')
-        except (NoOptionError, ValueError):
-            self.warning("Error reading cache_refresh_delay from config file. Using default value")
-        self.info("cache_refresh_delay: %s seconds" % self._cache_refresh_delay)
 
     def init_thread(self, ftpfiledsn):
         self.ftpconfig = functions.splitDSN(ftpfiledsn)
         # the '/' is not part of the uri-path according to RFC 1738 3.1. Common Internet Scheme Syntax
         self.url_path = self.ftpconfig['path'][1:]
         thread1 = threading.Thread(target=self.update)
-        self.info("Starting ftpytail thread")
+        self.info("starting ftpytail thread")
         thread1.start()
-    
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##   OTHER METHODS                                                                                                ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
     def update(self):
+        """
+        Update the local log file.
+        """
         def handle_download(block):
             #self.debug('received %s bytes' % len(block))
             self._remoteFileOffset += len(block)
@@ -230,12 +255,13 @@ class FtpytailPlugin(b3.plugin.Plugin):
         self.file.write('B3 has been restarted\r\n')
         self.file.write('\r\n')
         while self.console.working:
+
             try:
                 if not ftp:
                     ftp = self.ftpconnect()
                     self._nbConsecutiveConnFailure = 0
                     remotesize = ftp.size(os.path.basename(self.url_path))
-                    self.verbose("Connection successful. Remote file size is %s" % remotesize)
+                    self.verbose("connection successful: remote file size is %s" % remotesize)
                     if self._remoteFileOffset is None:
                         self._remoteFileOffset = remotesize
                         
@@ -276,7 +302,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
                 if self.console._paused is False:
                     self.console.pause()
                 self.file.close()
-                self.debug('ftp error: resetting local log file?')
+                self.debug('FTP error: resetting local log file?')
                 if self._logAppend:
                     try:
                         self.file = open(self.lgame_log, 'ab')
@@ -293,7 +319,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
 
                 try:
                     ftp.close()
-                    self.debug('FTP Connection Closed')
+                    self.debug('FTP connection closed')
                 except IOError:
                     pass
 
@@ -302,9 +328,10 @@ class FtpytailPlugin(b3.plugin.Plugin):
                 if self._nbConsecutiveConnFailure <= self._maxConsecutiveConnFailure:
                     time.sleep(self._short_delay)
                 else:
-                    self.debug('too many failures, sleeping %s sec' % self._long_delay)
+                    self.debug('too many failures: sleeping %s sec' % self._long_delay)
                     time.sleep(self._long_delay)
             time.sleep(self._gamelog_read_delay)
+
         self.verbose("stopping Ftpytail update thread")
 
         try:
@@ -317,9 +344,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
             pass
     
     def ftpconnect(self):
-        #self.debug('Python Version %s.%s, so setting timeout of 10 seconds' % (versionsearch.group(2),
-        #           versionsearch.group(3)))
-        self.verbose('Connecting to %s:%s ...' % (self.ftpconfig["host"], self.ftpconfig["port"]))
+        self.verbose('connecting to %s:%s ...' % (self.ftpconfig["host"], self.ftpconfig["port"]))
         ftp = FTP()
         ftp.set_debuglevel(self._ftplib_debug_level)
         ftp.connect(self.ftpconfig['host'], self.ftpconfig['port'], self._connectionTimeout)

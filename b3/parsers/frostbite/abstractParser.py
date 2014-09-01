@@ -36,8 +36,7 @@
 # 2012-10-06 - 1.6   - Courgette - isolate the patching code in a module function
 # 2013-01-20 - 1.6.1 - Courgette - improve punkbuster event parsing
 # 2013-02-17 - 1.7   - Courgette - add support for B3 event EVT_CLIENT_SQUAD_SAY
-# 2014-05-02 - 1.7.1 - Fenix     - syntax cleanup
-#                                - rewrote import statements
+# 2014-05-02 - 1.7.1 - Fenix     - rewrote import statements
 #                                - rewrote dictionary creation as literals
 #                                - renamed sayqueuelistener() method in sayqueuelistenerworker(): was
 #                                  overwriting an attribute
@@ -45,9 +44,11 @@
 # 2014-07-18 - 1.7.2 - Fenix     - updated abstract parser to comply with the new get_wrap implementation
 # 2014-08-05 - 1.7.3 - Fenix     - make use of self.getEvent when registering events: removes warnings
 #                                - added getEasyName method declaration
+# 2014-08-27 - 1.8 - Fenix       - syntax cleanup
+#                                - major fixes in B3 parser interface methods
 
 __author__  = 'Courgette'
-__version__ = '1.7.3'
+__version__ = '1.8'
 
 
 import sys
@@ -64,7 +65,9 @@ import b3.parsers.frostbite.rcon as rcon
 import b3.events
 import b3.cvar
 
-from b3.functions import soundex, levenshteinDistance, prefixText
+from b3.functions import soundex
+from b3.functions import levenshteinDistance
+from b3.functions import prefixText
 from b3.parsers.frostbite.connection import FrostbiteConnection
 from b3.parsers.frostbite.connection import FrostbiteException
 from b3.parsers.frostbite.connection import FrostbiteCommandFailedError
@@ -78,6 +81,8 @@ class AbstractParser(b3.parser.Parser):
     gameName = None
     privateMsg = True
     OutputClass = rcon.Rcon
+    PunkBuster = None
+
     _serverConnection = None
     _nbConsecutiveConnFailure = 0
     
@@ -117,36 +122,69 @@ class AbstractParser(b3.parser.Parser):
         (re.compile(r'^.*: Master Query Sent to \((?P<pbmaster>[^\s]+)\) (?P<ip>[^:]+)$'), 'OnPBMasterQuerySent'),
         (re.compile(r'^.*: Player GUID Computed (?P<pbid>[0-9a-fA-F]+)\(-\) \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+)\s(?P<name>.+)$'), 'OnPBPlayerGuid'),
         (re.compile(r'^.*: New Connection \(slot #(?P<slot>\d+)\) (?P<ip>[^:]+):(?P<port>\d+) \[(?P<something>[^\s]+)\]\s"(?P<name>.+)".*$'), 'OnPBNewConnection')
-     )
+    )
 
-    PunkBuster = None
-
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  PARSER INITIALIZATION                                                                                         ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def __new__(cls, *args, **kwargs):
         patch_b3_clients()
         return b3.parser.Parser.__new__(cls)
            
-           
+    def startup(self):
+        """
+        Called after the parser is created before run().
+        """
+        self.checkVersion()
+
+        # add specific events
+        self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
+        self.Events.createEvent('EVT_PUNKBUSTER_SCHEDULED_TASK', 'PunkBuster scheduled task')
+        self.Events.createEvent('EVT_PUNKBUSTER_LOST_PLAYER', 'PunkBuster client connection lost')
+        self.Events.createEvent('EVT_PUNKBUSTER_NEW_CONNECTION', 'PunkBuster client received IP')
+        self.Events.createEvent('EVT_CLIENT_SPAWN', 'Client Spawn')
+        self.Events.createEvent('EVT_GAME_ROUND_PLAYER_SCORES', 'round player scores')
+        self.Events.createEvent('EVT_GAME_ROUND_TEAM_SCORES', 'round team scores')
+
+        self._eventMap['player.onKicked'] = self.getEventID('EVT_CLIENT_KICK')
+
+        self.getServerVars()
+        self.getServerInfo()
+
+        if self.config.has_option('server', 'punkbuster') and self.config.getboolean('server', 'punkbuster'):
+            self.info('kick/ban by punkbuster is unsupported yet')
+            #self.debug('punkbuster enabled in config')
+            #self.PunkBuster = Bfbc2PunkBuster(self)
+
+        self.sayqueuelistener = threading.Thread(target=self.sayqueuelistenerworker)
+        self.sayqueuelistener.setDaemon(True)
+        self.sayqueuelistener.start()
+
     def run(self):
-        """Main worker thread for B3"""
-        self.bot('Start listening ...')
+        """
+        Main worker thread for B3.
+        """
+        self.bot('start listening ...')
         self.screen.write('Startup Complete : B3 is running! Let\'s get to work!\n\n')
-        self.screen.write('(If you run into problems, check %s for detailed log info)\n' % self.config.getpath('b3', 'logfile'))
-        #self.screen.flush()
+        self.screen.write('(If you run into problems, check %s in the B3 root directory for '
+                          'detailed log info)\n' % self.config.getpath('b3', 'logfile'))
 
         self.updateDocumentation()
 
         while self.working:
-            # While we are working, connect to the frostbite server
+            # while we are working, connect to the frostbite server
             if self._paused:
                 if self._pauseNotice is False:
-                    self.bot('PAUSED - Not parsing any lines, B3 will be out of sync.')
+                    self.bot('PAUSED - not parsing any lines: B3 will be out of sync')
                     self._pauseNotice = True
             else:
                 
                 try:                
                     if self._serverConnection is None:
-                        self.verbose('Connecting to frostbite server ...')
+                        self.verbose('connecting to frostbite server...')
                         self._serverConnection = FrostbiteConnection(self, self._rconIp, self._rconPort, self._rconPassword)
 
                     self._serverConnection.subscribeToEvents()
@@ -155,7 +193,7 @@ class AbstractParser(b3.parser.Parser):
                         
                     nbConsecutiveReadFailure = 0
                     while self.working:
-                        # While we are working and connected, read a packet
+                        # while we are working and connected, read a packet
                         if not self._paused:
                             try:
                                 packet = self._serverConnection.readEvent()
@@ -167,7 +205,6 @@ class AbstractParser(b3.parser.Parser):
                                 except Exception, msg:
                                     self.error('%s: %s', msg, traceback.extract_tb(sys.exc_info()[2]))
                             except FrostbiteException, e:
-                                #self.debug(e)
                                 nbConsecutiveReadFailure += 1
                                 if nbConsecutiveReadFailure > 5:
                                     raise e
@@ -185,7 +222,7 @@ class AbstractParser(b3.parser.Parser):
                         self.debug('sleeping 30 sec...')
                         time.sleep(30)
                     
-        self.bot('Stop listening.')
+        self.bot('stop listening...')
 
         with self.exiting:
             #self.input.close()
@@ -194,8 +231,16 @@ class AbstractParser(b3.parser.Parser):
             if self.exitcode:
                 sys.exit(self.exitcode)
 
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  OTHER METHODS                                                                                                 ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def routeFrostbitePacket(self, packet):
+        """
+        Route a Frostbite packet.
+        """
         if packet is None:
             self.warning('cannot route empty packet : %s' % traceback.extract_tb(sys.exc_info()[2]))
         
@@ -210,50 +255,20 @@ class AbstractParser(b3.parser.Parser):
             #self.debug("-==== FUNC!!: " + func)
             
         if match and hasattr(self, func):
-            #self.debug('routing ----> %s' % func)
             func = getattr(self, func)
             event = func(eventType, eventData)
-            #self.debug('event : %s' % event)
             if event:
                 self.queueEvent(event)
             
         elif eventType in self._eventMap:
-            self.queueEvent(b3.events.Event(
-                    self._eventMap[eventType],
-                    eventData))
+            self.queueEvent(b3.events.Event(self._eventMap[eventType], eventData))
         else:
             if func:
                 data = func + ' '
+
             data += str(eventType) + ': ' + str(eventData)
             self.debug('TODO: %r' % packet)
             self.queueEvent(self.getEvent('EVT_UNKNOWN', data))
-
-
-    def startup(self):
-        self.checkVersion()
-        
-        # add specific events
-        self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
-        self.Events.createEvent('EVT_PUNKBUSTER_SCHEDULED_TASK', 'PunkBuster scheduled task')
-        self.Events.createEvent('EVT_PUNKBUSTER_LOST_PLAYER', 'PunkBuster client connection lost')
-        self.Events.createEvent('EVT_PUNKBUSTER_NEW_CONNECTION', 'PunkBuster client received IP')
-        self.Events.createEvent('EVT_CLIENT_SPAWN', 'Client Spawn')
-        self.Events.createEvent('EVT_GAME_ROUND_PLAYER_SCORES', 'round player scores')
-        self.Events.createEvent('EVT_GAME_ROUND_TEAM_SCORES', 'round team scores')
-
-        self._eventMap['player.onKicked'] = self.getEvent('EVT_CLIENT_KICK')
-
-        self.getServerVars()
-        self.getServerInfo()
-        
-        if self.config.has_option('server', 'punkbuster') and self.config.getboolean('server', 'punkbuster'):
-            self.info('kick/ban by punkbuster is unsupported yet')
-            #self.debug('punkbuster enabled in config')
-            #self.PunkBuster = Bfbc2PunkBuster(self)
-        
-        self.sayqueuelistener = threading.Thread(target=self.sayqueuelistenerworker)
-        self.sayqueuelistener.setDaemon(True)
-        self.sayqueuelistener.start()
     
     def sayqueuelistenerworker(self):
         while self.working:
@@ -264,31 +279,19 @@ class AbstractParser(b3.parser.Parser):
                 time.sleep(self._settings['message_delay'])
 
     def joinPlayers(self):
-        self.info('Joining players...')
+        self.info('joining players...')
         plist = self.getPlayerList()
         for cid, p in plist.iteritems():
             client = self.clients.getByCID(cid)
             if client:
-                self.debug(' - Joining %s' % cid)
+                self.debug(' - joining %s' % cid)
                 self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', p, client))
         return None
-    
-    def sync(self):
-        plist = self.getPlayerList()
-        mlist = {}
-
-        for cid, c in plist.iteritems():
-            client = self.clients.getByCID(cid)
-            if client:
-                mlist[cid] = client
-                newTeam = c.get('teamId', None)
-                if newTeam is not None:
-                    client.team = self.getTeam(newTeam)
-                client.teamId = int(newTeam)
-        return mlist
 
     def getCommand(self, cmd, **kwargs):
-        """Return a reference to a loaded command"""
+        """
+        Return a reference to a loaded command.
+        """
         try:
             cmd = self._commands[cmd]
         except KeyError:
@@ -306,9 +309,9 @@ class AbstractParser(b3.parser.Parser):
         return result
     
     def write(self, msg, maxRetries=1, needConfirmation=False):
-        """Write a message to Rcon/Console
-        Unfortunaltely this has been abused all over B3 
-        and B3 plugins to broadcast text :(
+        """
+        Write a message to Rcon/Console.
+        Unfortunaltely this has been abused all over B3 and B3 plugins to broadcast text :(
         """
         if type(msg) == str:
             # console abuse to broadcast text
@@ -323,30 +326,18 @@ class AbstractParser(b3.parser.Parser):
                 res = self.output.write(msg, maxRetries=maxRetries, needConfirmation=needConfirmation)
                 self.output.flush()
                 return res
-        
-    ##########################################################################
- 
+
     def checkVersion(self):
         raise NotImplemented('checkVersion must be implemented in concrete classes')
         
     def getServerVars(self):
         raise NotImplemented('getServerVars must be implemented in concrete classes')
 
-    def getClient(self, cid, _guid=None):
-        """Get a connected client from storage or create it
-        B3 CID   <--> ingame character name
-        B3 GUID  <--> EA_guid
-        """
-        raise NotImplemented('getClient must be implemented in concrete classes')
-    
-    def getTeam(self, team):
-        """convert frostbite team numbers to B3 team numbers"""
-        raise NotImplemented('getTeam must be implemented in concrete classes')
-        
     def getServerInfo(self):
-        """query server info, update self.game and return query results
+        """
+        Query server info, update self.game and return query results
         Response: OK <pb prefix: string> <current playercount: integer> <max playercount: integer>
-        <current gamemode: string> <current map: string> <roundsPlayed: integer> 
+        <current gamemode: string> <current map: string> <roundsPlayed: integer>
         <roundsTotal: string> <scores: team scores> <onlineState: online state>
         """
         data = self.write(('serverInfo',))
@@ -359,131 +350,31 @@ class AbstractParser(b3.parser.Parser):
         self.game.g_maxrounds = int(data[6])
         return data
 
-    def getPlayerList(self, maxRetries=None):
-        """return a dict which keys are cid and values a dict of player properties
-        as returned by admin.listPlayers.
-        Does not return client objects"""
-        data = self.write(('admin.listPlayers', 'all'))
-        if not data:
-            return {}
-        players = {}
-        pib = PlayerInfoBlock(data)
-        for p in pib:
-            players[p['name']] = p
-        return players
-        
-    def getPlayerScores(self):
-        """Ask the server for a given client's team
+    def getClient(self, cid, _guid=None):
         """
-        scores = {}
-        try:
-            pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
-            for p in pib:
-                scores[p['name']] = int(p['score'])
-        except:
-            self.debug('Unable to retrieve scores from playerlist')
-        return scores
+        Get a connected client from storage or create it
+        B3 CID   <--> ingame character name
+        B3 GUID  <--> EA_guid
+        """
+        raise NotImplemented('getClient must be implemented in concrete classes')
     
-    def getPlayerPings(self, filter_client_ids=None):
-        """Ask the server for a given client's pings
+    def getTeam(self, team):
         """
-        pings = {}
-        try:
-            pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
-            for p in pib:
-                pings[p['name']] = int(p['ping'])
-        except:
-            self.debug('Unable to retrieve pings from playerlist')
-        return pings
-        
-    def getNextMap(self):
-        """Return the name of the next map
+        Convert frostbite team numbers to B3 team numbers.
         """
-        nextLevelIndex = self.getNextMapIndex()
-        if nextLevelIndex == -1:
-            return 'none'
-        levelnames = self.write(('mapList.list',))
-        return self.getEasyName(levelnames[nextLevelIndex])
-    
-    def getNextMapIndex(self):
-        [nextLevelIndex] = self.write(('mapList.nextLevelIndex',))
-        nextLevelIndex = int(nextLevelIndex)
-        if nextLevelIndex == -1:
-            return -1
-        levelnames = self.write(('mapList.list',))
-        if levelnames[nextLevelIndex] == self.getMap():
-            nextLevelIndex = (nextLevelIndex+1)%len(levelnames)
-        return nextLevelIndex
-    
-    def getMaps(self):
-        """Return the map list for the current rotation. (as easy map names)
-        This does not return all available maps
-        """
-        levelnames = self.write(('mapList.list',))
-        mapList = []
-        for l in levelnames:
-            mapList.append(self.getEasyName(l))
-        return mapList
+        raise NotImplemented('getTeam must be implemented in concrete classes')
 
-    def getMap(self):
-        """Return the current level name (not easy map name)"""
-        self.getServerInfo()
-        return self.game.mapName
-    
-
-    def getSupportedMaps(self):
-        """return a list of supported levels for the current game mod"""
-        [currentMode] = self.write(('admin.getPlaylist',))
-        supportedMaps = self.write(('admin.supportedMaps', currentMode))
-        return supportedMaps
-
-    def getMapsSoundingLike(self, mapname):
-        """found matching level names for the given mapname (which can either
-        be a level name or map name)
-        If no exact match is found, then return close candidates using soundex
-        and then LevenshteinDistance algoritms
+    def getEasyName(self, mapname):
         """
-        supportedMaps = self.getSupportedMaps()
-        supportedEasyNames = {}
-        for m in supportedMaps:
-            supportedEasyNames[self.getEasyName(m)] = m
-            
-        data = mapname.strip()
-        soundex1 = soundex(data)
-        #self.debug('soundex %s : %s' % (data, soundex1))
-        
-        match = []
-        if data in supportedMaps:
-            match = [data]
-        elif data in supportedEasyNames:
-            match = [supportedEasyNames[data]]
-        else:
-            for m in supportedEasyNames:
-                s = soundex(m)
-                #self.debug('soundex %s : %s' % (m, s))
-                if s == soundex1:
-                    #self.debug('probable map : %s', m)
-                    match.append(supportedEasyNames[m])
-        
-        if len(match) == 0:
-            # suggest closest spellings
-            shortmaplist = []
-            for m in supportedEasyNames:
-                if m.find(data) != -1:
-                    shortmaplist.append(m)
-            if len(shortmaplist) > 0:
-                shortmaplist.sort(key=lambda mapname: levenshteinDistance(data, mapname.strip()))
-                self.debug("shortmaplist sorted by distance : %s" % shortmaplist)
-                match = shortmaplist[:3]
-            else:
-                easyNames = supportedEasyNames.keys()
-                easyNames.sort(key=lambda mapname: levenshteinDistance(data, mapname.strip()))
-                self.debug("maplist sorted by distance : %s" % easyNames)
-                match = easyNames[:3]
-        return match
-    
-    
-    ###########################################################################
+        Change levelname to real name.
+        """
+        raise NotImplemented('get_easy_name must be implemented in concrete classes')
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  EVENT HANDLERS                                                                                                ##
+    ##                                                                                                                ##
+    ####################################################################################################################
     
     def OnPlayerChat(self, action, data):
         """
@@ -503,7 +394,7 @@ class AbstractParser(b3.parser.Parser):
         #['envex', 'gg', 'player', 'Courgette']
         client = self.getClient(data[0])
         if client is None:
-            self.warning("Could not get client :( %s" % traceback.extract_tb(sys.exc_info()[2]))
+            self.warning("could not get client: %s" % traceback.extract_tb(sys.exc_info()[2]))
             return
         if client.cid == 'Server':
             # ignore chat events for Server
@@ -517,10 +408,9 @@ class AbstractParser(b3.parser.Parser):
         elif data[2] == 'player':
             target = self.getClient(data[3])
             return self.getEvent('EVT_CLIENT_PRIVATE_SAY', data[1].lstrip('/'), client, target)
-        
 
     def OnPlayerLeave(self, action, data):
-        #player.onLeave: ['GunnDawg']
+        # player.onLeave: ['GunnDawg']
         client = self.getClient(data[0])
         if client: 
             client.endMessageThreads = True
@@ -529,26 +419,25 @@ class AbstractParser(b3.parser.Parser):
 
     def OnPlayerJoin(self, action, data):
         """
-        we don't have guid at this point. Wait for player.onAuthenticated
+        We don't have guid at this point.
+        Wait for player.onAuthenticated.
         """
         pass
-        
 
     def OnPlayerAuthenticated(self, action, data):
         """
         player.onAuthenticated <soldier name: string> <player GUID: guid>
-        
         Effect: Player with name <soldier name> has been authenticated, and has the given GUID
         """
-        #player.onJoin: ['OrasiK']
+        # player.onJoin: ['OrasiK']
         client = self.getClient(data[0], data[1])
         # No need to queue a client join event, that is done by clients.newClient() already
         # return b3.events.Event(b3.events.EVT_CLIENT_CONNECT, data, client)
 
-
     def OnPlayerSpawn(self, action, data):
         """
-        Request: player.onSpawn <spawning soldier name: string> <kit type: string> <gadget: string> <pistol: string> <primary weapon: string> <specialization 1: string> <specialization 2: string> <specialization 3: string>
+        Request: player.onSpawn <spawning soldier name: string> <kit type: string> <gadget: string> <pistol: string>
+               <primary weapon: string> <specialization 1: string> <specialization 2: string> <specialization 3: string>
         """
         if len(data) < 2:
             return None
@@ -564,25 +453,28 @@ class AbstractParser(b3.parser.Parser):
 
         return self.getEvent('EVT_CLIENT_SPAWN', (kit, gadget, pistol, weapon, spec1, spec2, spec3), spawner)
 
-
     def OnPlayerKill(self, action, data):
         """
-        Request: player.onKill <killing soldier name: string> <killed soldier name: string> <weapon: string> <headshot: boolean> <killer location: 3 x integer> <killed location: 3 x integes>
+        Request: player.onKill <killing soldier name: string> <killed soldier name: string> <weapon: string>
+                               <headshot: boolean> <killer location: 3 x integer> <killed location: 3 x integes>
 
-        Effect: Player with name <killing soldier name> has killed <killed soldier name> Suicide is indicated with the same soldier name for killer and victim. If the server kills the player (through admin.killPlayer), it is indicated by showing the killing soldier name as Server. The locations of the killer and the killed have a random error of up to 10 meters in each direction.
+        Effect: Player with name <killing soldier name> has killed <killed soldier name> Suicide is indicated with
+        the same soldier name for killer and victim. If the server kills the player (through admin.killPlayer),
+        it is indicated by showing the killing soldier name as Server. The locations of the killer and the
+        killed have a random error of up to 10 meters in each direction.
         """
-        #R15: player.onKill: ['Brou88', 'kubulina', 'S20K', 'true', '-77', '68', '-195', '-76', '62', '-209']
+        # R15: player.onKill: ['Brou88', 'kubulina', 'S20K', 'true', '-77', '68', '-195', '-76', '62', '-209']
         if len(data) < 2:
             return None
 
         attacker = self.getClient(data[0])
         if not attacker:
-            self.debug('No attacker')
+            self.debug('no attacker')
             return None
 
         victim = self.getClient(data[1])
         if not victim:
-            self.debug('No victim')
+            self.debug('no victim')
             return None
         
         if data[2]:
@@ -621,11 +513,9 @@ class AbstractParser(b3.parser.Parser):
             event_key = 'EVT_CLIENT_KILL_TEAM'
         return self.getEvent(event_key, (100, weapon, hitloc, attackerloc, victimloc), attacker, victim)
 
-
     def OnServerLoadinglevel(self, action, data):
         """
         server.onLoadingLevel <level name: string> <roundsPlayed: int> <roundsTotal: int>
-        
         Effect: Level is loading
         """
         #['server.onLoadingLevel', 'levels/mp_04', '0', '2']
@@ -640,14 +530,10 @@ class AbstractParser(b3.parser.Parser):
         self.game.g_maxrounds = int(data[2])
         self.getServerInfo()
         # to debug getEasyName()
-        self.info('Loading %s [%s]'  % (self.getEasyName(self.game.mapName), self.game.gameType))
+        self.info('loading %s [%s]'  % (self.getEasyName(self.game.mapName), self.game.gameType))
         return self.getEvent('EVT_GAME_WARMUP', data[0])
 
     def OnServerLevelstarted(self, action, data):
-        """
-        server.onLevelStarted
-        
-        Effect: Level is started"""
         # next function call will increase roundcount by one, this is not wanted
         # as the game server provides us the exact round number in OnServerLoadinglevel()
         # hence we need to deduct one to compensate?
@@ -655,44 +541,55 @@ class AbstractParser(b3.parser.Parser):
         self.game.startRound()
         self.game.rounds -= 1
         
-        #Players need to be joined (EVT_CLIENT_JOIN) for stats to count rounds
+        # players need to be joined (EVT_CLIENT_JOIN) for stats to count rounds
         self.joinPlayers()
         return self.getEvent('EVT_GAME_ROUND_START', self.game)
-            
-        
+
     def OnServerRoundover(self, action, data):
         """
         server.onRoundOver <winning team: Team ID>
-        
         Effect: The round has just ended, and <winning team> won
         """
         #['server.onRoundOver', '2']
         return self.getEvent('EVT_GAME_ROUND_END', data[0])
-        
-        
+
     def OnServerRoundoverplayers(self, action, data):
         """
         server.onRoundOverPlayers <end-of-round soldier info : player info block>
-        
         Effect: The round has just ended, and <end-of-round soldier info> is the final detailed player stats
         """
-        #['server.onRoundOverPlayers', '8', 'clanTag', 'name', 'guid', 'teamId', 'kills', 'deaths', 'score', 'ping', '17', 'RAID', 'mavzee', 'EA_4444444444444444555555555555C023', '2', '20', '17', '310', '147', 'RAID', 'NUeeE', 'EA_1111111111111555555555555554245A', '2', '30', '18', '445', '146', '', 'Strzaerl', 'EA_88888888888888888888888888869F30', '1', '12', '7', '180', '115', '10tr', 'russsssssssker', 'EA_E123456789461416564796848C26D0CD', '2', '12', '12', '210', '141', '', 'Daezch', 'EA_54567891356479846516496842E17F4D', '1', '25', '14', '1035', '129', '', 'Oldqsdnlesss', 'EA_B78945613465798645134659F3079E5A', '1', '8', '12', '120', '256', '', 'TTETqdfs', 'EA_1321654656546544645798641BB6D563', '1', '11', '16', '180', '209', '', 'bozer', 'EA_E3987979878946546546565465464144', '1', '22', '14', '475', '152', '', 'Asdf 1977', 'EA_C65465413213216656546546546029D6', '2', '13', '16', '180', '212', '', 'adfdasse', 'EA_4F313565464654646446446644664572', '1', '4', '25', '45', '162', 'SG1', 'De56546ess', 'EA_123132165465465465464654C2FC2FBB', '2', '5', '8', '75', '159', 'bsG', 'N06540RZ', 'EA_787897944546565656546546446C9467', '2', '8', '14', '100', '115', '', 'Psfds', 'EA_25654321321321000006546464654B81', '2', '15', '15', '245', '140', '', 'Chezear', 'EA_1FD89876543216548796130EB83E411F', '1', '9', '14', '160', '185', '', 'IxSqsdfOKxI', 'EA_481321313132131313213212313112CE', '1', '21', '12', '625', '236', '', 'Ledfg07', 'EA_1D578987994651615166516516136450', '1', '5', '6', '85', '146', '', '5 56 mm', 'EA_90488E6543216549876543216549877B', '2', '0', '0', '0', '192']
+        #['server.onRoundOverPlayers', '8', 'clanTag', 'name', 'guid', 'teamId', 'kills', 'deaths', 'score', 'ping',
+        # '17', 'RAID', 'mavzee', 'EA_4444444444444444555555555555C023', '2', '20', '17', '310', '147', 'RAID', 'NUeeE',
+        # 'EA_1111111111111555555555555554245A', '2', '30', '18', '445', '146', '', 'Strzaerl',
+        # 'EA_88888888888888888888888888869F30', '1', '12', '7', '180', '115', '10tr', 'russsssssssker',
+        # 'EA_E123456789461416564796848C26D0CD', '2', '12', '12', '210', '141', '', 'Daezch',
+        # 'EA_54567891356479846516496842E17F4D', '1', '25', '14', '1035', '129', '', 'Oldqsdnlesss',
+        # 'EA_B78945613465798645134659F3079E5A', '1', '8', '12', '120', '256', '', 'TTETqdfs',
+        # 'EA_1321654656546544645798641BB6D563', '1', '11', '16', '180', '209', '', 'bozer',
+        # 'EA_E3987979878946546546565465464144', '1', '22', '14', '475', '152', '', 'Asdf 1977',
+        # 'EA_C65465413213216656546546546029D6', '2', '13', '16', '180', '212', '', 'adfdasse',
+        # 'EA_4F313565464654646446446644664572', '1', '4', '25', '45', '162', 'SG1', 'De56546ess',
+        # 'EA_123132165465465465464654C2FC2FBB', '2', '5', '8', '75', '159', 'bsG', 'N06540RZ',
+        # 'EA_787897944546565656546546446C9467', '2', '8', '14', '100', '115', '', 'Psfds',
+        # 'EA_25654321321321000006546464654B81', '2', '15', '15', '245', '140', '', 'Chezear',
+        # 'EA_1FD89876543216548796130EB83E411F', '1', '9', '14', '160', '185', '', 'IxSqsdfOKxI',
+        # 'EA_481321313132131313213212313112CE', '1', '21', '12', '625', '236', '', 'Ledfg07',
+        # 'EA_1D578987994651615166516516136450', '1', '5', '6', '85', '146', '', '5 56 mm',
+        # 'EA_90488E6543216549876543216549877B', '2', '0', '0', '0', '192']
         return self.getEvent('EVT_GAME_ROUND_PLAYER_SCORES', PlayerInfoBlock(data))
-        
-        
+
     def OnServerRoundoverteamscores(self, action, data):
         """
         server.onRoundOverTeamScores <end-of-round scores: team scores>
-        
         Effect: The round has just ended, and <end-of-round scores> is the final ticket/kill/life count for each team
         """
         #['server.onRoundOverTeamScores', '2', '1180', '1200', '1200']
         return self.getEvent('EVT_GAME_ROUND_TEAM_SCORES', data[1])
 
     def OnPunkbusterMessage(self, action, data):
-        """handles all punkbuster related events and 
-        route them to the appropriate method depending
-        on the type of PB message.
+        """
+        Handles all punkbuster related events and route them to the appropriate
+        method depending on the type of PB message.
         """
         #self.debug("PB> %s" % data)
         match = None
@@ -711,40 +608,42 @@ class AbstractParser(b3.parser.Parser):
                 return self.getEvent('EVT_UNKNOWN', data)
                 
     def OnPBVersion(self, match,data):
-        """PB notifies us of the version numbers
-        version = match.group('version')"""
+        """
+        PB notifies us of the version numbers version = match.group('version').
+        """
         #self.debug('PunkBuster Server version: %s' %( match.group('version') ) )
         pass
 
     def OnPBNewConnection(self, match, data):
-        """PunkBuster tells us a new player identified. The player is
-        normally already connected and authenticated by B3 by ea_guid
-        
-        This is our first moment where we receive the clients IP address
-        so we also fire the custom event EVT_PUNKBUSTER_NEW_CONNECTION here"""
+        """
+        PunkBuster tells us a new player identified. The player is normally already connected and authenticated
+        by B3 by ea_guid. This is our first moment where we receive the clients IP address so we also fire the custom
+        event EVT_PUNKBUSTER_NEW_CONNECTION here.
+        """
         name = match.group('name')
         client = self.getClient(name)
         if client:
-            #slot = match.group('slot')
+            # slot = match.group('slot')
             ip = match.group('ip')
             port = match.group('port')
-            #something = match.group('something')
+            # something = match.group('something')
             client.ip = ip
             client.port = port
             client.save()
             self.debug('OnPBNewConnection: client updated with %s' % data)
-            # This is our first moment where we get a clients IP. Fire this event to accomodate geoIP based plugins like Countryfilter.
+            # This is our first moment where we get a clients IP.
+            # Fire this event to accomodate geoIP based plugins like Countryfilter.
             return self.getEvent('EVT_PUNKBUSTER_NEW_CONNECTION', data, client)
         else:
             self.warning('OnPBNewConnection: we\'ve been unable to get the client')
 
     def OnPBLostConnection(self, match, data):
-        """PB notifies us it lost track of a player. This is the only change
+        """
+        PB notifies us it lost track of a player. This is the only change
         we have to save the ip of clients.
         This event is triggered after the OnPlayerLeave, so normaly the client
         is not connected. Anyway our task here is to save data into db not to 
         connect/disconnect the client.
-        
         Part of this code is obsolete since R15, IP is saved to DB on OnPBNewConnection()
         """
         name = match.group('name')
@@ -772,7 +671,8 @@ class AbstractParser(b3.parser.Parser):
         return self.getEvent('EVT_PUNKBUSTER_LOST_PLAYER', data)
 
     def OnPBScheduledTask(self, match, data):
-        """We get notified the server ran a PB scheduled task
+        """
+        We get notified the server ran a PB scheduled task
         Nothing much to do but it can be interresting to have
         this information logged
         """
@@ -781,13 +681,17 @@ class AbstractParser(b3.parser.Parser):
         return self.getEvent('EVT_PUNKBUSTER_SCHEDULED_TASK', {'slot': slot, 'task': task})
 
     def OnPBMasterQuerySent(self, match, data):
-        """We get notified that the server sent a ping to the PB masters"""
+        """
+        We get notified that the server sent a ping to the PB masters.
+        """
         #pbmaster = match.group('pbmaster')
         #ip = match.group('ip')
         pass
 
     def OnPBPlayerGuid(self, match, data):
-        """We get notified of a player punkbuster GUID"""
+        """
+        We get notified of a player punkbuster GUID.
+        """
         pbid = match.group('pbid')
         #slot = match.group('slot')
         ip = match.group('ip')
@@ -798,11 +702,18 @@ class AbstractParser(b3.parser.Parser):
         client.pbid = pbid
         client.save()
         
-        
-    ###########################################################################
-    
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def message(self, client, text):
+        """
+        Display a message to a given client
+        :param client: The client to who send the message
+        :param text: The message to be sent
+        """
         try:
             if client is None:
                 self.say(text)
@@ -813,21 +724,33 @@ class AbstractParser(b3.parser.Parser):
         except:
             pass
 
-
     def say(self, msg):
+        """
+        Broadcast a message to all players.
+        :param msg: The message to be broadcasted
+        """
         self.sayqueue.put(msg)
-        
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
+        """
+        Kick a given client.
+        :param client: The client to kick
+        :param reason: The reason for this kick
+        :param admin: The admin who performed the kick
+        :param silent: Whether or not to announce this kick
+        """
         self.debug('kick reason: [%s]' % reason)
         if isinstance(client, str):
             self.write(self.getCommand('kick', cid=client, reason=reason[:80]))
             return
         
         if admin:
-            fullreason = self.getMessage('kicked_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+            variables = self.getMessageVariables(client=client, reason=reason, admin=admin)
+            fullreason = self.getMessage('kicked_by', variables)
         else:
-            fullreason = self.getMessage('kicked', self.getMessageVariables(client=client, reason=reason))
+            variables = self.getMessageVariables(client=client, reason=reason)
+            fullreason = self.getMessage('kicked', variables)
+
         fullreason = self.stripColors(fullreason)
         reason = self.stripColors(reason)
 
@@ -839,18 +762,29 @@ class AbstractParser(b3.parser.Parser):
         if not silent and fullreason != '':
             self.say(fullreason)
             
-            
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
+        """
+        Tempban a client.
+        :param client: The client to tempban
+        :param reason: The reason for this tempban
+        :param duration: The duration of the tempban
+        :param admin: The admin who performed the tempban
+        :param silent: Whether or not to announce this tempban
+        """
         duration = b3.functions.time2minutes(duration)
-
         if isinstance(client, str):
             self.write(self.getCommand('tempban', guid=client, duration=duration*60, reason=reason[:80]))
             return
         
         if admin:
-            fullreason = self.getMessage('temp_banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=b3.functions.minutesStr(duration)))
+            banduration = b3.functions.minutesStr(duration)
+            variables = self.getMessageVariables(client=client, reason=reason, admin=admin, banduration=banduration)
+            fullreason = self.getMessage('temp_banned_by', variables)
         else:
-            fullreason = self.getMessage('temp_banned', self.getMessageVariables(client=client, reason=reason, banduration=b3.functions.minutesStr(duration)))
+            banduration = b3.functions.minutesStr(duration)
+            variables = self.getMessageVariables(client=client, reason=reason, banduration=banduration)
+            fullreason = self.getMessage('temp_banned', variables)
+            
         fullreason = self.stripColors(fullreason)
         reason = self.stripColors(reason)
 
@@ -865,53 +799,70 @@ class AbstractParser(b3.parser.Parser):
         
         self.write(self.getCommand('tempban', guid=client.guid, duration=duration*60, reason=reason[:80]))
         
-        
         if not silent and fullreason != '':
             self.say(fullreason)
 
-        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason,
-                                                              'duration': duration, 
-                                                              'admin': admin}, client))
+        data = {'reason': reason, 'duration': duration, 'admin': admin}
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', data=data, client=client))
+        client.disconnect()
 
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):
+        """
+        Unban a client.
+        :param client: The client to unban
+        :param reason: The reason for the unban
+        :param admin: The admin who unbanned this client
+        :param silent: Whether or not to announce this unban
+        """
         self.debug('UNBAN: Name: %s, Ip: %s, Guid: %s' %(client.name, client.ip, client.guid))
         if client.ip:
             response = self.write(self.getCommand('unbanByIp', ip=client.ip, reason=reason), needConfirmation=True)
-            #self.verbose(response)
             if response == "OK":
-                self.verbose('UNBAN: Removed ip (%s) from banlist' %client.ip)
+                self.verbose('UNBAN: removed ip (%s) from banlist' %client.ip)
                 if admin:
-                    admin.message('Unbanned: %s. His last ip (%s) has been removed from banlist.' % (client.exactName, client.ip))
+                    admin.message('Unbanned: %s. '
+                                  'His last ip (%s) has been removed from banlist.' % (client.exactName, client.ip))
                 if admin:
-                    fullreason = self.getMessage('unbanned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+                    variables = self.getMessageVariables(client=client, reason=reason, admin=admin)
+                    fullreason = self.getMessage('unbanned_by', variables)
                 else:
-                    fullreason = self.getMessage('unbanned', self.getMessageVariables(client=client, reason=reason))
+                    variables = self.getMessageVariables(client=client, reason=reason)
+                    fullreason = self.getMessage('unbanned', variables)
+                
                 if not silent and fullreason != '':
                     self.say(fullreason)
         
         response = self.write(self.getCommand('unban', guid=client.guid, reason=reason), needConfirmation=True)
-        #self.verbose(response)
+
         if response == "OK":
-            self.verbose('UNBAN: Removed guid (%s) from banlist' %client.guid)
+            self.verbose('UNBAN: removed guid (%s) from banlist' %client.guid)
             if admin:
-                admin.message('Unbanned: Removed %s guid from banlist' % client.exactName)
+                admin.message('Unbanned: removed %s guid from banlist' % client.exactName)
         
         if self.PunkBuster:
             self.PunkBuster.unBanGUID(client)
-        
 
     def ban(self, client, reason='', admin=None, silent=False, *kwargs):
-        """Permanent ban"""
+        """
+        Ban a given client.
+        :param client: The client to ban
+        :param reason: The reason for this ban
+        :param admin: The admin who performed the ban
+        :param silent: Whether or not to announce this ban
+        """
         self.debug('BAN : client: %s, reason: %s', client, reason)
         if isinstance(client, b3.clients.Client):
             self.write(self.getCommand('ban', guid=client.guid, reason=reason[:80]))
             return
 
         if admin:
-            fullreason = self.getMessage('banned_by', self.getMessageVariables(client=client, reason=reason, admin=admin))
+            variables = self.getMessageVariables(client=client, reason=reason, admin=admin)
+            fullreason = self.getMessage('banned_by', variables)
         else:
-            fullreason = self.getMessage('banned', self.getMessageVariables(client=client, reason=reason))
+            variables = self.getMessageVariables(client=client, reason=reason)
+            fullreason = self.getMessage('banned', variables)
+            
         fullreason = self.stripColors(fullreason)
         reason = self.stripColors(reason)
 
@@ -920,13 +871,14 @@ class AbstractParser(b3.parser.Parser):
             self.debug('EFFECTIVE BAN : %s',self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
             self.write(self.getCommand('banByIp', ip=client.ip, reason=reason[:80]))
             if admin:
-                admin.message('banned: %s (@%s). His last ip (%s) has been added to banlist'%(client.exactName, client.id, client.ip))
+                admin.message('Banned: %s (@%s). '
+                              'His last ip (%s) has been added to banlist' % (client.exactName, client.id, client.ip))
         else:
             # ban by cid
             self.debug('EFFECTIVE BAN : %s',self.getCommand('ban', guid=client.guid, reason=reason[:80]))
             self.write(self.getCommand('ban', cid=client.cid, reason=reason[:80]))
             if admin:
-                admin.message('banned: %s (@%s) has been added to banlist'%(client.exactName, client.id))
+                admin.message('Banned: %s (@%s) has been added to banlist' % (client.exactName, client.id))
 
         if self.PunkBuster:
             self.PunkBuster.banGUID(client, reason)
@@ -936,16 +888,42 @@ class AbstractParser(b3.parser.Parser):
         
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
 
+    def sync(self):
+        """
+        For all connected players returned by self.getPlayerList(), get the matching Client
+        object from self.clients (with self.clients.getByCID(cid) or similar methods) and
+        look for inconsistencies. If required call the client.disconnect() method to remove
+        a client from self.clients.
+        This is mainly useful for games where clients are identified by the slot number they
+        occupy. On map change, a player A on slot 1 can leave making room for player B who
+        connects on slot 1.
+        """
+        plist = self.getPlayerList()
+        mlist = {}
+        for cid, c in plist.iteritems():
+            client = self.clients.getByCID(cid)
+            if client:
+                mlist[cid] = client
+                newTeam = c.get('teamId', None)
+                if newTeam is not None:
+                    client.team = self.getTeam(newTeam)
+                client.teamId = int(newTeam)
+        return mlist
 
     def authorizeClients(self):
+        """
+        For all connected players, fill the client object with properties allowing to find
+        the user in the database (usualy guid, or punkbuster id, ip) and call the
+        Client.auth() method.
+        """
         players = self.getPlayerList()
         self.verbose('authorizeClients() = %s' % players)
-
         for cid, p in players.iteritems():
             sp = self.clients.getByCID(cid)
             if sp:
-                # Only set provided data, otherwise use the currently set data
-                sp.ip   = p.get('ip', sp.ip)
+                # only set provided data,
+                # otherwise use the currently set data
+                sp.ip = p.get('ip', sp.ip)
                 sp.pbid = p.get('pbid', sp.pbid)
                 sp.guid = p.get('guid', sp.guid)
                 sp.data = p
@@ -955,13 +933,142 @@ class AbstractParser(b3.parser.Parser):
                 sp.teamId = int(newTeam)
                 sp.auth()
 
-    def getEasyName(self, mapname):
-        pass
+    def getPlayerList(self, maxRetries=None):
+        """
+        Return a dict which keys are cid and values a dict of player properties
+        as returned by admin.listPlayers. Does not return client objects.
+        """
+        data = self.write(('admin.listPlayers', 'all'))
+        if not data:
+            return {}
+        players = {}
+        pib = PlayerInfoBlock(data)
+        for p in pib:
+            players[p['name']] = p
+        return players
+
+    def getPlayerScores(self):
+        """Ask the server for a given client's team
+        """
+        scores = {}
+        try:
+            pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
+            for p in pib:
+                scores[p['name']] = int(p['score'])
+        except:
+            self.debug('Unable to retrieve scores from playerlist')
+        return scores
+
+    def getPlayerPings(self, filter_client_ids=None):
+        """
+        Ask the server for a given client's team.
+        """
+        pings = {}
+        try:
+            pib = PlayerInfoBlock(self.write(('admin.listPlayers', 'all')))
+            for p in pib:
+                pings[p['name']] = int(p['ping'])
+        except:
+            self.debug('Unable to retrieve pings from playerlist')
+        return pings
+
+    def getNextMap(self):
+        """
+        Return the name of the next map
+        """
+        nextLevelIndex = self.getNextMapIndex()
+        if nextLevelIndex == -1:
+            return 'none'
+        levelnames = self.write(('mapList.list',))
+        return self.getEasyName(levelnames[nextLevelIndex])
+
+    def getNextMapIndex(self):
+        [nextLevelIndex] = self.write(('mapList.nextLevelIndex',))
+        nextLevelIndex = int(nextLevelIndex)
+        if nextLevelIndex == -1:
+            return -1
+        levelnames = self.write(('mapList.list',))
+        if levelnames[nextLevelIndex] == self.getMap():
+            nextLevelIndex = (nextLevelIndex+1)%len(levelnames)
+        return nextLevelIndex
+
+    def getMaps(self):
+        """
+        Return the map list for the current rotation. (as easy map names)
+        This does not return all available maps.
+        """
+        levelnames = self.write(('mapList.list',))
+        mapList = []
+        for l in levelnames:
+            mapList.append(self.getEasyName(l))
+        return mapList
+
+    def getMap(self):
+        """
+        Return the current level name (not easy map name).
+        """
+        self.getServerInfo()
+        return self.game.mapName
+
+    def getSupportedMaps(self):
+        """
+        Return a list of supported levels for the current game mod.
+        """
+        [currentMode] = self.write(('admin.getPlaylist',))
+        supportedMaps = self.write(('admin.supportedMaps', currentMode))
+        return supportedMaps
+
+    def getMapsSoundingLike(self, mapname):
+        """
+        Found matching level names for the given mapname (which can either be a level name or map name).
+        If no exact match is found, then return close candidates using soundex and then LevenshteinDistance algoritms.
+        """
+        supportedMaps = self.getSupportedMaps()
+        supportedEasyNames = {}
+        for m in supportedMaps:
+            supportedEasyNames[self.getEasyName(m)] = m
+
+        data = mapname.strip()
+        soundex1 = soundex(data)
+        #self.debug('soundex %s : %s' % (data, soundex1))
+
+        match = []
+        if data in supportedMaps:
+            match = [data]
+        elif data in supportedEasyNames:
+            match = [supportedEasyNames[data]]
+        else:
+            for m in supportedEasyNames:
+                s = soundex(m)
+                #self.debug('soundex %s : %s' % (m, s))
+                if s == soundex1:
+                    #self.debug('probable map : %s', m)
+                    match.append(supportedEasyNames[m])
+
+        if len(match) == 0:
+            # suggest closest spellings
+            shortmaplist = []
+            for m in supportedEasyNames:
+                if m.find(data) != -1:
+                    shortmaplist.append(m)
+            if len(shortmaplist) > 0:
+                shortmaplist.sort(key=lambda mn: levenshteinDistance(data, mn.strip()))
+                self.debug("shortmaplist sorted by distance : %s" % shortmaplist)
+                match = shortmaplist[:3]
+            else:
+                easyNames = supportedEasyNames.keys()
+                easyNames.sort(key=lambda mn: levenshteinDistance(data, mn.strip()))
+                self.debug("maplist sorted by distance : %s" % easyNames)
+                match = easyNames[:3]
+        return match
 
     def getCvar(self, cvarName):
-        """Read a server var"""
+        """
+        Return a CVAR from the server.
+        :param cvarName: The CVAR name.
+        """
         if cvarName not in self._gameServerVars:
-            self.warning('unknown cvar \'%s\'' % cvarName)
+            self.warning('unknown cvar: %s' % cvarName)
             return None
         
         try:
@@ -969,7 +1076,7 @@ class AbstractParser(b3.parser.Parser):
         except FrostbiteCommandFailedError, err:
             self.error(err)
             return
-        self.debug('Get cvar %s = %s', cvarName, words)
+        self.debug('get cvar %s = %s', cvarName, words)
         
         if words:
             if len(words) == 0:
@@ -978,30 +1085,28 @@ class AbstractParser(b3.parser.Parser):
                 return b3.cvar.Cvar(cvarName, value=words[0])
         return None
 
-
     def setCvar(self, cvarName, value):
-        """Set a server var"""
+        """
+        Set a CVAR on the server.
+        :param cvarName: The CVAR name
+        :param value: The CVAR value
+        """
         if cvarName not in self._gameServerVars:
-            self.warning('cannot set unknown cvar \'%s\'' % cvarName)
+            self.warning('cannot set unknown cvar: %s' % cvarName)
             return
-        self.debug('Set cvar %s = \'%s\'', cvarName, value)
+        self.debug('set cvar %s = \'%s\'', cvarName, value)
         try:
             self.write(('vars.%s' % cvarName, value))
         except FrostbiteCommandFailedError, err:
             self.error(err)
 
+########################################################################################################################
+##                                                                                                                    ##
+##  APPLY SPECIFIC PARSER PATCHES TO B3 CORE MODULES                                                                  ##
+##                                                                                                                    ##
+########################################################################################################################
 
 def patch_b3_clients():
-    #############################################################
-    # Below is the code that change a bit the b3.clients.Client
-    # class at runtime. What the point of coding in python if we
-    # cannot play with its dynamic nature ;)
-    #
-    # why ?
-    # because doing so make sure we're not broking any other
-    # working and long tested parser. The change we make here
-    # are only applied when the frostbite parser is loaded.
-    #############################################################
 
     ## add a new method to the Client class
     def frostbiteClientMessageQueueWorker(self):
@@ -1014,7 +1119,6 @@ def patch_b3_clients():
             if msg:
                 self.console.message(self, msg)
                 time.sleep(float(self.console._settings.get('message_delay', 1)))
-    b3.clients.Client.messagequeueworker = frostbiteClientMessageQueueWorker
 
     ## override the Client.message() method at runtime
     def frostbiteClientMessageMethod(self, msg):
@@ -1033,4 +1137,6 @@ def patch_b3_clients():
                 self.messagehandler.start()
             else:
                 self.console.verbose('messagehandler for %s isAlive' %self.name)
+
+    b3.clients.Client.messagequeueworker = frostbiteClientMessageQueueWorker
     b3.clients.Client.message = frostbiteClientMessageMethod

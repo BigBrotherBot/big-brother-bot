@@ -270,7 +270,7 @@ class Test_gameevent_parsing(ChivTestCase):
         # THEN
         self.assertListEqual([], self.evt_queue)
         self.assertListEqual([
-             call("Unkown RCON message type: 99. REPORT THIS TO THE B3 FORUMS. Packet.decode('\\x00c\\x00\\x00\\x00\\x0f\\x00\\x00\\x00\\x00I\\x96\\x02\\xd2\\x00\\x00\\x00\\x03f00')  # {'msgType': 99, 'dataLength': 15, 'data': '\\x00\\x00\\x00\\x00I\\x96\\x02\\xd2\\x00\\x00\\x00\\x03f00'}")
+             call("unkown RCON message type: 99. REPORT THIS TO THE B3 FORUMS. Packet.decode('\\x00c\\x00\\x00\\x00\\x0f\\x00\\x00\\x00\\x00I\\x96\\x02\\xd2\\x00\\x00\\x00\\x03f00')  # {'msgType': 99, 'dataLength': 15, 'data': '\\x00\\x00\\x00\\x00I\\x96\\x02\\xd2\\x00\\x00\\x00\\x03f00'}")
                              ], warning_mock.mock_calls)
 
 

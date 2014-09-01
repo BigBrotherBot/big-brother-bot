@@ -1,7 +1,7 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -11,158 +11,118 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-#   2014/06/21 - 1.30 - Courgette
-#   * fix spam command not considering the loud command prefix (ie: &spam instead of !spam)
-#   2014/05/16 - 1.29 - Courgette
-#   * Add an optional parameter to the !spam command to allow to send a message to a given player in private
-#   2014/05/03 - 1.28.1 - Fenix
-#   * Tell player why he is not allowed to use a certain command (issue #183)
-#   2014/05/02 - 1.28 - Fenix
-#   * Make use of the new getCmd function from functions module
-#   * Minor syntax fixes
-#   2014/04/21 - 1.27 - 82ndab-Bravo17
-#   * Change default messages to new format
-#   2014/03/20 - 1.26 - Fenix
-#   * make use of self._admins_level in acquireCmdLock() method instead of constant value
-#   * refactored plugin syntax: get close to PEP8
-#   * let the plugin use the new event dispatcher
-#   2014/02/26 - 1.25.2 - Fenix
-#   * changed findClientPrompt to return None instead of False when it finds multiple matches
-#   * correctly initialize superadmins list: fix code unpredictability
-#   2014/01/11 - 1.25.1 - Courgette
-#   * fix maskLevel is set with group id while it should be group level
-#   2014/01/07 - 1.25 - Courgette
-#   * removed the 'peeing in the gene pool' reason for tempbans with durations between 5 and 10 min
-#   2013/11/16 - 1.24 - Fenix
-#   * added command !pluginfo (display plugin information)
-#   2013/09/06 - 1.23.1 - Fenix
-#   * make conf pm_global accept yes/no
-#   2013/03/02 - 1.23 - Courgette
-#   * command !admins message when no admin is online can be customised in the config file -> no_admins
-#   2013/02/17 - 1.22 - Courgette
-#   * warn_command_abusers default value is no False
-#   * suggest command spelling correction in aa many situations as we can
-#   * refactor code for detecting fakeCommands and unprivileged access to commands
-#   * recognize commands in all chat types (all, team, squad, private)
-#   2013/02/16 - 1.21.1 - Courgette
-#   * add default messages
-#   2013/02/10 - 1.21 - Ozon
-#   * add announce_registration option to config to (de)activate public announcement of player using the !register
-#     command
-#   * !register command feedback message is now configurable in config. See regme_confirmation
-#   2013/02/10 - 1.20 - Ozon
-#   * add spell corrector for commands
-#   2012/10/27 - 1.19 - Courgette
-#   * change: !map command will give at most 5 suggestions
-#   2012/10/03 - 1.18 - Courgette
-#   * add command !lastbans
-#   2012/09/29 - 1.17 - Courgette
-#   * add command !regulars
-#   2012/08/11 - 1.16 - Courgette
-#   * config file can refer to group levels by their group keyword
-#   2012/07/31 - 1.15.1 - Courgette
-#   * fix command !maps when map rotation list is empty
-#   2012/07/28 - 1.15 - Courgette
-#   * add command !unreg (danger89's idea)
-#   2012/07/14 - 1.14.1 - Courgette
-#   * log more detail when failing to register a command
-#   2012/07/07 - 1.14 - Courgette
-#   * better error log messages when registering a command with incorrect level or group keyword
-#   2012/07/05 - 1.13 - Courgette
-#   * provides default values for warn_reason keywords 'default' and 'generic' if missing from config file
-#   * refactors the loading and parsing of warn_reasons from the config file to provide meaningful messages when
-#   * errors are detected
-#   2012/07/02 - 1.12.2 - Courgette
-#   * fix bug un cmd_mask when no player name was given
-#   2012/06/17 - 1.12.1 - Courgette
-#   * syntax
-#   2012/04/15 - 1.12 - Courgette
-#   * removes magic command shortcut that would transform the command '!1 blah' into '!say blah'
-#   2011/11/15 - 1.11.4 - Courgette
-#   * fix bug where command &rules was acting like !rules
-#   2011/11/15 - 1.11.3 - Courgette
-#   * fix bug xlr8or/big-brother-bot#54 - Plugin Admin: parseUserCommand issue
-#   2011/11/15 - 1.11.2 - Courgette
-#   * cmd_pause now uses console pause() and unpause() methods instead of sleep()
-#   2011/11/05 - 1.11.1 - Courgette
-#   * do not tell "There was an error processing your command" to the player if catch a SystemExit
-#   2011/05/31 - 1.11.0 - Courgette
-#   * refactoring
-#   2011/04/30 - 1.10.3 - Courgette
-#   * !help response won't include !register if already registered
-#   2011/02/26 - 1.10.2 - Courgette
-#   * fix doc for !spam command
-#   2010/12/12 - 1.10.1 - Courgette
-#   * registering a command can use group keywords instead of groups levels
-#   2010/11/25 - 1.9.1 - Courgette
-#   * calling a command of a disabled plugin now sends a message back to the user
-#   2010/11/21 - 1.9 - Courgette
-#   * cmd_map now suggests map names if provided by parser
-#   2010/10/28 - 1.8.2 - Courgette
-#   * make sure to disable the !iamgod command when used while there is already 
-#     a superadmin in db.
-#   2010/08/25 - 1.8.1 - Courgette
-#   * do not fail if warn_command_abusers is missing in config
-#   2010/08/24 - 1.8 - kikker916 & Courgette
-#   * add warn_command_abusers setting what defines if player should get warned 
-#     for trying to use non existing or privileged commands
-#   * add documentation into the xml config file
-#   * fix a few things with the config file
-#   2010/08/14 - 1.7.1 - Courgette
-#   * fix _parseUserCmdRE regexp for cases where the player's name start with a digit
-#   2010/04/10 - 1.7 - Bakes
-#   * new '&' command prefix can be used to say messages in the middle of the screen.
-#     has the same settings as '@', this may change in the future.
-#   2010/03/22 - 1.6.1 - Courgette
-#   * resolve conflict regarding maprotate/rotateMap
-#   2010/03/21 - 1.6 - Courgette
-#    * make this plugin game independant by delegating the work to the parser for 
-#      commands !map and !maprotate
-#   2010/03/21 - 1.5 - Courgette
-#    * removed commands : greeting, about, groups, cmdlevel, newgroup, delgroup, editgroup
-#   3/21/2010 - 1.4.7 - Bakes
-#    * moved the !ci command to the pingwatch plugin
-#    * moved part of cmd_maprotate to the parser.
-#   3/7/2010 - 1.4.6 - Courgette
-#    * fix crash on bot startup when loading a plugin which does not requires any config
-#      file but still registers commands
-#   1/27/2010 - 1.4.5 - Courgette
-#    * the iamgod check warns if the command is explicitly enabled by config file but
-#      superadmins are found in database
-#   1/27/2010 - 1.4.4 - xlr8or
-#    * added some verbose info to startup()
-#   9/1/2009 - 1.4.3 - xlr8or
-#    * check database connection before checking groups
-#   8/24/2009 - 1.4.2 - courgette
-#    * warning messages are also sent by pm to the admin that give them
-#   8/22/2009 - 1.4.1 - courgette
-#    * warning messages are shown only to the warned player. This is to prevent the bot from spaming the console.
-#   8/19/2009 - 1.4.0 - courgette
-#    * penalizeClient() will try to delegate unknown penalty types to inflictCustomPenalty() of the current parser.
-#      Requires parser.py v1.10+
-#   7/22/2009 - 1.3.5 - xlr8or
-#    Generate better documented error when groupstable is empty
-#   10/05/2008 - 1.3.4b0 - mindriot
-#      * Removed hard code of 1 day for long_tempban_level - now controlled with new setting 'long_tempban_max_duration'
-#   8/29/2005 - 1.2.2 - ThorN
-#    Moved pbss command to punkbuster plugin
-#   8/13/2005 - 1.2.1 - ThorN
-#    Added penalizeClient()
-#    Moved greeting to welcome plugin
-#   7/23/2005 - 1.1.0 - ThorN
-#    Made it so registerCommand() will check a plugins config "commands" section for command level overrides
-#    Added ci command
-#    Added data field to warnClient(), warnKick(), and checkWarnKick()
-#
+# 2014/08/30 - 1.31    - Fenix          - syntax cleanup
+#                                       - improved debug messages in plugin configuration file loading
+#                                       - moved 'warn_command_abusers' config value loading into proper method
+#                                       - moved 'long_tempban_max_duration' config value loading into proper method
+#                                       - make use of cmd.sayLoudOrPM in cmd_enable and cmd_disable
+#                                       - added missing %s placeholder in cmd_unban faliure notification
+# 2014/06/21 - 1.30    - Courgette      - fix spam command not considering the loud command prefix
+# 2014/05/16 - 1.29    - Courgette      - add an optional parameter to the !spam command to allow to send a message to
+#                                         a given player in private
+# 2014/05/03 - 1.28.1  - Fenix          - tell player why he is not allowed to use a certain command (issue #183)
+# 2014/05/02 - 1.28    - Fenix          - make use of the new getCmd function from functions module
+#                                       - minor syntax fixes
+# 2014/04/21 - 1.27    - 82ndab-Bravo17 - change default messages to new format
+# 2014/03/20 - 1.26    - Fenix          - make use of self._admins_level in acquireCmdLock() method instead of constant
+#                                         value
+#                                       - refactored plugin syntax: get close to PEP8
+#                                       - let the plugin use the new event dispatcher
+# 2014/02/26 - 1.25.2  - Fenix          - changed findClientPrompt to return None instead of False when it finds multiple
+#                                         matches
+#                                       - correctly initialize superadmins list: fix code unpredictability
+# 2014/01/11 - 1.25.1  - Courgette      - fix maskLevel is set with group id while it should be group level
+# 2014/01/07 - 1.25    - Courgette      - removed the 'peeing in the gene pool' reason for tempbans with durations
+#                                         between 5 and 10 min
+# 2013/11/16 - 1.24    - Fenix          - added command !pluginfo (display plugin information)
+# 2013/09/06 - 1.23.1  - Fenix          - make conf pm_global accept yes/no
+# 2013/03/02 - 1.23    - Courgette      - command !admins message when no admin is online can be customised in the config
+#                                         file -> no_admins
+# 2013/02/17 - 1.22    - Courgette      - warn_command_abusers default value is no False
+#                                       - suggest command spelling correction in aa many situations as we can
+#                                       - refactor code for detecting fakeCommands and unprivileged access to commands
+#                                       - recognize commands in all chat types (all, team, squad, private)
+# 2013/02/16 - 1.21.1  - Courgette      - add default messages
+# 2013/02/10 - 1.21    - Ozon           - add announce_registration option to config to (de)activate public announcement
+#                                         of player using the !register command
+#                                       - !register command feedback message is now configurable in config
+# 2013/02/10 - 1.20    - Ozon           - add spell corrector for commands
+# 2012/10/27 - 1.19    - Courgette      - change: !map command will give at most 5 suggestions
+# 2012/10/03 - 1.18    - Courgette      - add command !lastbans
+# 2012/09/29 - 1.17    - Courgette      - add command !regulars
+# 2012/08/11 - 1.16    - Courgette      - config file can refer to group levels by their group keyword
+# 2012/07/31 - 1.15.1  - Courgette      - fix command !maps when map rotation list is empty
+# 2012/07/28 - 1.15    - Courgette      - add command !unreg (danger89's idea)
+# 2012/07/14 - 1.14.1  - Courgette      - log more detail when failing to register a command
+# 2012/07/07 - 1.14    - Courgette      - better error log messages when registering a command with incorrect level or
+#                                         group keyword
+# 2012/07/05 - 1.13    - Courgette      - provides default values for warn_reason keywords 'default' and 'generic' if
+#                                         missing from config file
+#                                       - refactors the loading and parsing of warn_reasons from the config file to
+#                                         provide meaningful messages when
+#                                       - errors are detected
+# 2012/07/02 - 1.12.2  - Courgette      - fix bug un cmd_mask when no player name was given
+# 2012/06/17 - 1.12.1  - Courgette      - syntax
+# 2012/04/15 - 1.12    - Courgette      - removes magic command shortcut that would transform the command '!1 blah'
+#                                         into '!say blah'
+# 2011/11/15 - 1.11.4  - Courgette      - fix bug where command &rules was acting like !rules
+# 2011/11/15 - 1.11.3  - Courgette      - fix bug xlr8or/big-brother-bot#54 - Plugin Admin: parseUserCommand issue
+# 2011/11/15 - 1.11.2  - Courgette      - cmd_pause now uses console pause() and unpause() methods instead of sleep()
+# 2011/11/05 - 1.11.1  - Courgette      - do not tell "There was an error processing your command" to the player if
+#                                         catch a SystemExit
+# 2011/05/31 - 1.11.0  - Courgette      - refactoring
+# 2011/04/30 - 1.10.3  - Courgette      - !help response won't include !register if already registered
+# 2011/02/26 - 1.10.2  - Courgette      - fix doc for !spam command
+# 2010/12/12 - 1.10.1  - Courgette      - registering a command can use group keywords instead of groups levels
+# 2010/11/25 - 1.9.1   - Courgette      - calling a command of a disabled plugin now sends a message back to the user
+# 2010/11/21 - 1.9     - Courgette      - cmd_map now suggests map names if provided by parser
+# 2010/10/28 - 1.8.2   - Courgette      - make sure to disable the !iamgod command when used while there is already
+#                                         a superadmin in db
+# 2010/08/25 - 1.8.1   - Courgette      - do not fail if warn_command_abusers is missing in config
+# 2010/08/24 - 1.8     - Courgette      - add warn_command_abusers setting what defines if player should get warned
+#                                         for trying to use non existing or privileged commands
+#                                       - add documentation into the xml config file
+#                                       - fix a few things with the config file
+# 2010/08/14 - 1.7.1   - Courgette      - fix _parseUserCmdRE regexp for cases where the player's name start with a digit
+# 2010/04/10 - 1.7     - Bakes          - new '&' command prefix can be used to say messages in the middle of the screen:
+#                                         has the same settings as '@', this may change in the future
+# 2010/03/22 - 1.6.1   - Courgette      - resolve conflict regarding maprotate/rotateMap
+# 2010/03/21 - 1.6     - Courgette      - make this plugin game independant by delegating the work to the parser for
+#                                         commands !map and !maprotate
+# 2010/03/21 - 1.5     - Courgette      - removed commands : greeting, about, groups, cmdlevel, newgroup,
+#                                         delgroup, editgroup
+# 2010/03/21 - 1.4.7   - Bakes          - moved the !ci command to the pingwatch plugin
+#                                       - moved part of cmd_maprotate to the parser
+# 2010/03/07 - 1.4.6   - Courgette      - fix crash on bot startup when loading a plugin which does not requires any config
+#                                         file but still registers commands
+# 2010/01/27 - 1.4.5   - Courgette      - the iamgod check warns if the command is explicitly enabled by config file but
+#                                         superadmins are found in database
+# 2010/01/27 - 1.4.4   - xlr8or         - added some verbose info to startup()
+# 2009/09/01 - 1.4.3   - xlr8or         - check database connection before checking groups
+# 2009/08/24 - 1.4.2   - Courgette      - warning messages are also sent by pm to the admin that give them
+# 2009/08/22 - 1.4.1   - Courgette      - warning messages are shown only to the warned player. This is to prevent the bot
+#                                         from spaming the console
+# 2009/08/19 - 1.4.0   - Courgette      - penalizeClient() will try to delegate unknown penalty types to
+#                                         inflictCustomPenalty() of the current parser: requires parser.py v1.10+
+# 2009/07/22 - 1.3.5   - xlr8or         - generate better documented error when groupstable is empty
+# 2008/10/05 - 1.3.4b0 - mindriot       - removed hard code of 1 day for long_tempban_level - now controlled with new
+#                                         setting 'long_tempban_max_duration'
+# 2005/08/29 - 1.2.2   - ThorN          - moved pbss command to punkbuster plugin
+# 2005/08/13 - 1.2.1   - ThorN          - added penalizeClient()
+#                                       - moved greeting to welcome plugin
+# 2005/07/23 - 1.1.0   - ThorN          - made it so registerCommand() will check a plugins config "commands" section
+#                                         for command level overrides
+#                                       - added ci command
+#                                       - added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.30'
+__version__ = '1.31'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon, Fenix'
 
 import re
@@ -177,11 +137,11 @@ import copy
 import b3.plugin
 
 from b3 import functions
-from b3.clients import Client, Group
+from b3.clients import Client
+from b3.clients import Group
 from b3.functions import minutesStr
 from b3.functions import getCmd
 from ConfigParser import NoOptionError
-
 
 # pylint: disable-msg=E1103
 class AdminPlugin(b3.plugin.Plugin):
@@ -190,8 +150,8 @@ class AdminPlugin(b3.plugin.Plugin):
 
     _tkPlugin = None
     _parseUserCmdRE = re.compile(r"^(?P<cid>'[^']{2,}'|[0-9]+|[^\s]{2,}|@[0-9]+)(\s+(?P<parms>.*))?$")
-    _long_tempban_max_duration = 1440  # 60m/h x 24h = 1440m = 1d
-    _warn_command_abusers = None
+    _long_tempban_max_duration = 1440   # 60m/h x 24h = 1440m = 1d
+    _warn_command_abusers = False
     _announce_registration = True
 
     cmdPrefix = '!'
@@ -207,7 +167,7 @@ class AdminPlugin(b3.plugin.Plugin):
     warn_delay = 15
     warn_instant_kick_num = 5
     warn_alert_kick_num = 3
-    warn_reasons = {}  # dict<warning keyword, tuple(warning duration in minute, warning reason)>
+    warn_reasons = {}                   # dict<warning keyword, tuple(warning duration in minute, warning reason)>
 
     _noreason_level = 80
     _long_tempban_level = 80
@@ -275,8 +235,8 @@ class AdminPlugin(b3.plugin.Plugin):
     ####################################################################################################################
 
     def onLoadConfig(self):
-        """\
-        Load plugin configuration
+        """
+        Load plugin configuration.
         """
         self.load_config_warn_reasons()
         self.load_config_messages()
@@ -284,59 +244,85 @@ class AdminPlugin(b3.plugin.Plugin):
 
         try:
             self._noreason_level = self.console.getGroupLevel(self.config.get('settings', 'noreason_level'))
-        except (NoOptionError, KeyError), err:
-            self.warning("Using default value %s for 'noreason_level'. %s" % (self._noreason_level, err))
+            self.debug('loaded settings/noreason_level: %s' % self._noreason_level)
+        except NoOptionError:
+            self.warning('could not find settings/noreason_level in config file, '
+                         'using default: %s' % self._noreason_level)
+        except KeyError, e:
+            self.error('could not load settings/noreason_level config value: %s' % e)
+            self.debug('using default value (%s) for settings/noreason_level' % self._noreason_level)
 
         try:
             self._long_tempban_level = self.console.getGroupLevel(self.config.get('settings', 'long_tempban_level'))
-        except (NoOptionError, KeyError), err:
-            self.warning("Using default value %s for 'long_tempban_level'. %s" % (self._long_tempban_level, err))
+            self.debug('loaded settings/long_tempban_level: %s' % self._long_tempban_level)
+        except NoOptionError:
+            self.warning('could not find settings/long_tempban_level in config file, '
+                         'using default: %s' % self._long_tempban_level)
+        except KeyError, e:
+            self.error('could not load settings/long_tempban_level config value: %s' % e)
+            self.debug('using default value (%s) for settings/long_tempban_level' % self._long_tempban_level)
+
+        try:
+            self._long_tempban_max_duration = self.config.getDuration('settings', 'long_tempban_max_duration')
+            self.debug('loaded settings/long_tempban_max_duration: %s' % self._long_tempban_level)
+        except NoOptionError:
+            self.warning('could not find settings/long_tempban_max_duration in config file, '
+                         'using default: %s' % self._long_tempban_max_duration)
 
         try:
             self._hidecmd_level = self.console.getGroupLevel(self.config.get('settings', 'hidecmd_level'))
-        except (NoOptionError, KeyError), err:
-            self.warning("Using default value %s for 'hidecmd_level'. %s" % (self._hidecmd_level, err))
+            self.debug('loaded settings/hidecmd_level: %s' % self._hidecmd_level)
+        except NoOptionError:
+            self.warning('could not find settings/hidecmd_level in config file, '
+                         'using default: %s' % self._hidecmd_level)
+        except KeyError, e:
+            self.error('could not load settings/hidecmd_level config value: %s' % e)
+            self.debug('using default value (%s) for settings/hidecmd_level' % self._hidecmd_level)
 
         try:
             self._admins_level = self.console.getGroupLevel(self.config.get('settings', 'admins_level'))
-        except (NoOptionError, KeyError), err:
-            self.warning("Using default value %s for 'admins_level'. %s" % (self._admins_level, err))
+            self.debug('loaded settings/admins_level: %s' % self._admins_level)
+        except NoOptionError:
+            self.warning('could not find settings/admins_level in config file, '
+                         'using default: %s' % self._admins_level)
+        except KeyError, e:
+            self.error('could not load settings/admins_level config value: %s' % e)
+            self.debug('using default value (%s) for settings/admins_level' % self._admins_level)
 
         try:
             self._announce_registration = self.config.getboolean('settings', 'announce_registration')
+            self.debug('loaded settings/announce_registration: %s' % self._announce_registration)
         except NoOptionError:
-            self.warning(r'conf settings\announce_registration not found, using default : %s' %
-                         'yes' if self._announce_registration else 'no')
-        except ValueError, err:
-            self.error(r'invalid value for conf setting\announce_registration, using default : %s. %s' %
-                       ('yes' if self._announce_registration else 'no', err))
-        except Exception, err:
-            self.error(r'unexpected error while reading value for conf setting\announce_registration, using default : '
-                       r'%s. %s' % ('yes' if self._announce_registration else 'no', err), exc_info=err)
+            self.warning('could not find settings/announce_registration in config file, '
+                         'using default: %s' % self._announce_registration)
+        except ValueError, e:
+            self.error('could not load settings/announce_registration config value: %s' % e)
+            self.debug('using default value (%s) for settings/announce_registration' % self._announce_registration)
 
     def load_config_messages(self):
-        """\
-        Load section 'messages' from config and put the messages in local cache.
-        Optionally apply validation rules
         """
-        self._messages = dict()
+        Load section 'messages' from config and put the messages in local cache.
+        Optionally apply validation rules.
+        """
+        self._messages = {
+            # regme_confirmation
+            'regme_confirmation': "^7Thanks for your registration. You are now a member of the group %s"
+        }
 
-        # regme_confirmation
-        self._messages['regme_confirmation'] = "^7Thanks for your registration. You are now a member of the group %s"
         try:
             msg = self.config.getTextTemplate('messages', 'regme_confirmation')
             if not '%s' in msg:
                 raise ValueError("message regme_confirmation must have a placeholder '%%s' for the group name")
             self._messages['regme_confirmation'] = msg
         except NoOptionError:
-            self.warning("missing message 'regme_confirmation' from config file. "
-                         "Using default %r" % self._messages['regme_confirmation'])
-        except ValueError, err:
-            self.error("message 'regme_confirmation' from config file is invalid: %s. "
-                       "Using default" % err)
+            self.warning('could not find messages/regme_confirmation in config file, '
+                         'using default: %s' % self._messages['regme_confirmation'])
+        except ValueError, e:
+            self.error('could not load messages/regme_confirmation config value: %s' % e)
+            self.debug('using default value (%s) for messages/regme_confirmation' % self._messages['regme_confirmation'])
 
     def load_config_warn(self):
-        """\
+        """
         Load section 'warn' from config.
         """
         try:
@@ -344,40 +330,53 @@ class AdminPlugin(b3.plugin.Plugin):
             if raw_data < 0:
                 raise ValueError("can't be less than 0")
             self.warn_delay = raw_data
+            self.debug('loaded warn/warn_delay: %s' % self.warn_delay)
         except NoOptionError:
-            self.warning("missing 'warn_delay' in section 'warn' from config file. "
-                         "Using default %r" % self.warn_delay)
-        except ValueError, err:
-            self.error("setting 'warn_delay' in section 'warn' from config file is invalid: %s. "
-                       "Using default" % err)
+            self.warning('could not find warn/warn_delay in config file, '
+                         'using default: %s' % self.warn_delay)
+        except ValueError, e:
+            self.error('could not load warn/warn_delay config value: %s' % e)
+            self.debug('using default value (%s) for warn/warn_delay' % self.warn_delay)
 
         try:
             raw_data = self.config.getint('warn', 'instant_kick_num')
             if raw_data < 0:
                 raise ValueError("can't be less than 0")
             self.warn_instant_kick_num = raw_data
+            self.debug('loaded warn/instant_kick_num: %s' % self.warn_instant_kick_num)
         except NoOptionError:
-            self.warning("missing 'instant_kick_num' in section 'warn' from config file. "
-                         "Using default %r" % self.warn_instant_kick_num)
-        except ValueError, err:
-            self.error("setting 'instant_kick_num' in section 'warn' from config file is invalid: %s. "
-                       "Using default" % err)
+            self.warning('could not find warn/instant_kick_num in config file, '
+                         'using default: %s' % self.warn_instant_kick_num)
+        except ValueError, e:
+            self.error('could not load warn/instant_kick_num config value: %s' % e)
+            self.debug('using default value (%s) for warn/instant_kick_num' % self.warn_instant_kick_num)
 
         try:
             raw_data = self.config.getint('warn', 'alert_kick_num')
             if raw_data < 0:
                 raise ValueError("can't be less than 0")
             self.warn_alert_kick_num = raw_data
+            self.debug('loaded warn/alert_kick_num: %s' % self.warn_alert_kick_num)
         except NoOptionError:
-            self.warning("missing 'alert_kick_num' in section 'warn' from config file. "
-                         "Using default %r" % self.warn_alert_kick_num)
-        except ValueError, err:
-            self.error("setting 'alert_kick_num' in section 'warn' from config file is invalid: %s. "
-                       "Using default" % err)
+            self.warning('could not find warn/alert_kick_num in config file, '
+                         'using default: %s' % self.warn_alert_kick_num)
+        except ValueError, e:
+            self.error('could not load warn/alert_kick_num config value: %s' % e)
+            self.debug('using default value (%s) for warn/alert_kick_num' % self.warn_alert_kick_num)
+
+        try:
+            self._warn_command_abusers = self.config.getboolean('warn', 'warn_command_abusers')
+            self.debug('loaded warn/warn_command_abusers: %s' % self._warn_command_abusers)
+        except NoOptionError:
+            self.warning('could not find warn/warn_command_abusers in config file, '
+                         'using default: %s' % self._warn_command_abusers)
+        except ValueError, e:
+            self.error('could not load warn/warn_command_abusers config value: %s' % e)
+            self.debug('using default value (%s) for warn/warn_command_abusers' % self._warn_command_abusers)
 
     def load_config_warn_reasons(self):
-        """\
-        Load section 'warn_reasons' from config
+        """
+        Load section 'warn_reasons' from config.
         """
         re_valid_warn_reason_value_from_config = re.compile(r"""
                 ^
@@ -411,28 +410,27 @@ class AdminPlugin(b3.plugin.Plugin):
                 try:
                     r = self.config.getTextTemplate('warn_reasons', reason_from_config[1:])
                 except NoOptionError:
-                    self.warning("warn_reason '%s' refers to '/%s' but warn_reason '%s' cannot be found" % (
-                        key, reason_from_config[1:], reason_from_config[1:]))
+                    self.warning("warn_reason '%s' refers to '/%s' but warn_reason '%s' cannot "
+                                 "be found" % (key, reason_from_config[1:], reason_from_config[1:]))
                     return
                 except Exception, err:
-                    self.error("warn_reason '%s' refers to '/%s' but '%s' could not be read : %s" % (
-                        key, reason_from_config[1:], reason_from_config[1:], err), err)
+                    self.error("warn_reason '%s' refers to '/%s' but '%s' could not be read: "
+                               "%s" % (key, reason_from_config[1:], reason_from_config[1:], err), err)
                     return
 
                 if r[:1] == '/':
-                    self.warning("warn_reason '%s': Possible recursion %s, %s" % (key, r, reason_from_config[1:]))
+                    self.warning("warn_reason '%s': possible recursion %s, %s" % (key, r, reason_from_config[1:]))
                     return
             else:
                 r = reason_from_config
 
             expire, r = r.split(',', 1)
             r = r.strip()
-
             if r[:6] == '/spam#':
                 spam_reason = self.getSpam(r[6:])
                 if spam_reason is None:
-                    self.warning("warn_reason '%s' refers to '/spam#%s' but spamage '%s' cannot be found" % (
-                        key, r[6:], r[6:]))
+                    self.warning("warn_reason '%s' refers to '/spam#%s' but spamage '%s' cannot be "
+                                 "found" % (key, r[6:], r[6:]))
                     return
                 else:
                     r = spam_reason
@@ -443,26 +441,29 @@ class AdminPlugin(b3.plugin.Plugin):
             if self.config.has_option('warn_reasons', key):
                 self.warn_reasons[key] = load_warn_reason(key, self.config.getTextTemplate('warn_reasons', key))
             if not key in self.warn_reasons or self.warn_reasons[key] is None:
-                self.warning("No valid option '%s' in section 'warn_reasons'. Falling back on default value" % key)
+                self.warning("no valid option '%s' in section 'warn_reasons': falling back on default value" % key)
                 self.warn_reasons[key] = functions.time2minutes(default_duration), default_reason
-            self.info("warn reason '%s' : %s" % (key, self.warn_reasons[key]))
+            self.info("warn reason '%s': %s" % (key, self.warn_reasons[key]))
 
         self.info("------ loading warn_reasons from config file ------")
+
         self.warn_reasons = {}
         load_mandatory_warn_reason('default', "1h", "^7behave yourself")
         load_mandatory_warn_reason('generic', "1h", "^7")
         if self.config.has_section('warn_reasons'):
-            for key, value in self.config.items('warn_reasons'):
-                rv = load_warn_reason(key, value)
+            for k, v in self.config.items('warn_reasons'):
+                rv = load_warn_reason(k, v)
                 if rv is not None:
-                    self.warn_reasons[key] = rv
-        for key, (duration, reason) in self.warn_reasons.items():
-            self.info("""{0:<10s} {1:<10s}\t"{2}" """.format(key, functions.minutesStr(duration), reason))
+                    self.warn_reasons[k] = rv
+
+        for k, (duration, reason) in self.warn_reasons.items():
+            self.info("""{0:<10s} {1:<10s}\t"{2}" """.format(k, functions.minutesStr(duration), reason))
+
         self.info("-------------- warn_reasons loaded ----------------")
 
     def onStartup(self):
-        """\
-        Plugin startup
+        """
+        Plugin startup.
         """
         self.registerEvent(self.console.getEventID('EVT_CLIENT_SAY'), self.OnSay)
         self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_SAY'), self.OnSay)
@@ -474,39 +475,39 @@ class AdminPlugin(b3.plugin.Plugin):
             cmdPrefix = self.config.get('settings', 'command_prefix')
             if cmdPrefix:
                 self.cmdPrefix = cmdPrefix
+            self.debug('loaded settings/command_prefix: %s' % self.cmdPrefix)
         except NoOptionError:
-            self.warning('could not get command_prefix, using default')
+            self.warning('could not find settings/command_prefix in config file, '
+                         'using default: %s' % self.cmdPrefix)
 
         try:
             cmdPrefixLoud = self.config.get('settings', 'command_prefix_loud')
             if cmdPrefixLoud:
                 self.cmdPrefixLoud = cmdPrefixLoud
+            self.debug('loaded settings/command_prefix_loud: %s' % self.cmdPrefixLoud)
         except NoOptionError:
-            self.warning('could not get command_prefix_loud, using default')
+            self.warning('could not find settings/command_prefix_loud in config file, '
+                         'using default: %s' % self.cmdPrefixLoud)
 
         try:
             cmdPrefixBig = self.config.get('settings', 'command_prefix_big')
             if cmdPrefixBig:
                 self.cmdPrefixBig = cmdPrefixBig
+            self.debug('loaded settings/command_prefix_big: %s' % self.cmdPrefixBig)
         except NoOptionError:
-            self.warning('could not get command_prefix_big, using default')
+            self.warning('could not find settings/command_prefix_big in config file, '
+                         'using default: %s' % self.cmdPrefixBig)
 
         try:
             cmdPrefixPrivate = self.config.get('settings', 'command_prefix_private')
             if cmdPrefixPrivate:
                 self.cmdPrefixPrivate = cmdPrefixPrivate
+            self.debug('loaded settings/command_prefix_private: %s' % self.cmdPrefixPrivate)
         except NoOptionError:
-            self.warning('could not get command_prefix_private, using default')
+            self.warning('could not find settings/command_prefix_private in config file, '
+                         'using default: %s' % self.cmdPrefixPrivate)
 
-        try:
-            self._warn_command_abusers = self.config.getboolean('warn', 'warn_command_abusers')
-        except NoOptionError:
-            self.warning('conf warn\warn_command_abusers not found, using default : no')
-            self._warn_command_abusers = False
-        except ValueError:
-            self.warning('invalid value for conf warn\warn_command_abusers, using default : no')
-            self._warn_command_abusers = False
-
+        # register commands
         if 'commands' in self.config.sections():
             for cmd in self.config.options('commands'):
                 level = self.config.get('commands', cmd)
@@ -520,44 +521,45 @@ class AdminPlugin(b3.plugin.Plugin):
                     self.registerCommand(self, cmd, level, func, alias)
 
         if not self.console.storage.db:
-            self.error('There is no database connection! '
-                       'Cannot store or retrieve any information. '
-                       'Fix the database connection first!')
+            self.error('could not retrieve database connection: unable to store or retrieve any information!')
         else:
-
             superadmins = []
-
             try:
                 superadmins = self.console.clients.lookupSuperAdmins()
                 self.debug('%s superadmins found in database' % len(superadmins))
             except Exception, msg:
                 # no proper groups available, cannot continue
-                self.critical('Seems your groupstable in the database is empty. '
-                              'Please recreate your database using the proper sql syntax. '
-                              'Use b3/docs/b3.sql - (%s)' % msg)
+                self.critical('seems your groups table in the database is empty: please recreate your database using '
+                              'the proper sql syntax. Use b3/docs/b3.sql - (%s)' % msg)
 
-            if 'iamgod' in self._commands.keys() and \
+            if 'iamgod' in self._commands and \
                 self._commands['iamgod'].level is not None and \
                     self._commands['iamgod'].level[0] >= 0:
                 ## here the config file for the admin plugin explicitly enables the iamgod command
                 if len(superadmins) == 0:
-                    self.verbose('!iamgod command enabled by config file. Be sure to disable it after typing !iamgod.')
+                    self.verbose('!iamgod command enabled by config file: be sure to disable it after typing !iamgod.')
                 else:
-                    self.warning('!iamgod command enabled by config file but %s superadmin are already registered. ' +
-                                 'Make sure to disable the iamgod command in the admin plugin', len(superadmins))
+                    self.warning('!iamgod command enabled by config file but %s superadmin are already registered: ' +
+                                 'make sure to disable the iamgod command in the admin plugin', len(superadmins))
             elif len(superadmins) == 0:
-                self.verbose('No SuperAdmins found, enabling !iamgod')
+                self.verbose('no superadmin found: enabling !iamgod')
                 # There are no superadmins, enable the !iamgod command
                 self.registerCommand(self, 'iamgod', 0, getCmd(self, 'iamgod'))
             else:
-                self.verbose('SuperAdmin(s) found, no need for !iamgod')
+                self.verbose('superadmin(s) found: no need for !iamgod')
 
     def registerCommand(self, plugin, command, level, handler, alias=None, secretLevel=None):
-        """\
-        Register a command
+        """
+        Register a command.
+        :param plugin: The plugin registering the command
+        :param command: The command name
+        :param level: The min(-max) level to execute the command
+        :param handler: The method to execute when the command is launched
+        :param alias: The command alias
+        :param secretLevel: The command secret level
         """
         if not handler:
-            self.error('Command "%s" registration failed, no handler' % command)
+            self.error('command "%s" registration failed: no handler specified' % command)
             return False
 
         if plugin.config and plugin != self and plugin.config.has_option('commands', command):
@@ -567,8 +569,8 @@ class AdminPlugin(b3.plugin.Plugin):
         clean_level = self.getGroupLevel(level)
         if clean_level is False:
             groups = self.console.storage.getGroups()
-            self.error("Cannot register command '%s'. Bad level/group : '%s'. "
-                       "Expecting a level (%s) or group keyword (%s)" % (command, level,
+            self.error("could not register command '%s': bad level/group ('%s'): "
+                       "expecting a level (%s) or group keyword (%s)" % (command, level,
                                                                          ', '.join([str(x.level) for x in groups]),
                                                                          ', '.join([x.keyword for x in groups])))
             return
@@ -587,12 +589,12 @@ class AdminPlugin(b3.plugin.Plugin):
             self._commands[command].prefixLoud = self.cmdPrefixLoud
             self._commands[command].prefixPrivate = self.cmdPrefixPrivate
 
-            self.debug('Command "%s (%s)" registered with %s for level %s' % (command, alias,
+            self.debug('command "%s (%s)" registered with %s for level %s' % (command, alias,
                                                                               self._commands[command].func.__name__,
                                                                               self._commands[command].level))
             return True
         except Exception, msg:
-            self.error('Command "%s" registration failed. %s' % (command, msg))
+            self.error('command "%s" registration failed: %s' % (command, msg))
             self.exception(msg)
             return False
 
@@ -603,31 +605,35 @@ class AdminPlugin(b3.plugin.Plugin):
     ####################################################################################################################
 
     def OnPrivateSay(self, event):
-        """\
-        Handle private say events
+        """
+        Handle EVT_CLIENT_PRIVATE_SAY
         """
         if event.target and event.client.id == event.target.id:
             self.OnSay(event, True)
 
     def OnSay(self, event, private=False):
-        """\
-        Handle say events
+        """
+        Handle EVT_CLIENT_SAY
         """
         self.debug('OnSay handle %s:"%s"', event.type, event.data)
 
         if len(event.data) >= 3 and event.data[:1] == '#':
             if self.console.debug:
                 if event.data[1:] == 'clients':
-                    self.debug('Clients:')
+
+                    self.debug('clients:')
                     for k, c in self.console.clients.items():
                         self.debug('client %s (#%i id: %s cid: %s level: %s group: %s) obj: %s',
                                    c.name, id(c), c.id, c.cid, c.maxLevel, c.groupBits, c)
+
                 elif event.data[1:] == 'groups':
-                    self.debug('Groups for %s:', event.client.name)
+
+                    self.debug('groups for %s:', event.client.name)
                     for g in event.client.groups:
                         self.debug('group (id: %s, name: %s, level: %s)', g.id, g.name, g.level)
 
                 elif event.data[1:5] == 'vars':
+
                     try:
                         data = event.data[7:].strip()
                         if data:
@@ -639,7 +645,7 @@ class AdminPlugin(b3.plugin.Plugin):
                     except Exception:
                         sclient = event.client
 
-                    self.debug('Vars for %s:', sclient.name)
+                    self.debug('vars for %s:', sclient.name)
 
                     try:
                         for k, v in sclient._pluginData.items():
@@ -647,10 +653,12 @@ class AdminPlugin(b3.plugin.Plugin):
                             for kk, vv in v.items():
                                 self.debug('\t\t%s = %s', kk, str(vv.value))
                     except Exception, e:
-                        self.debug('Error getting vars: %s', e)
-                    self.debug('End of vars')
+                        self.debug('error getting vars: %s', e)
+
+                    self.debug('end of vars')
 
                 elif event.data[1:7] == 'tkinfo':
+
                     try:
                         data = event.data[9:].strip()
                         if data:
@@ -662,7 +670,7 @@ class AdminPlugin(b3.plugin.Plugin):
                     except Exception:
                         sclient = event.client
 
-                    self.debug('Tkinfo for %s:', sclient.name)
+                    self.debug('teamkill info for %s:', sclient.name)
 
                     try:
                         for k, v in sclient._pluginData.items():
@@ -678,8 +686,9 @@ class AdminPlugin(b3.plugin.Plugin):
                                     self.debug('\t\t_grudged = %s', str(tkinfo._grudged))
                                     self.debug('\t\tlastAttacker = %s', tkinfo.lastAttacker)
                     except Exception, e:
-                        self.debug('Error getting Tkinfo: %s', e)
-                    self.debug('End of Tkinfo')
+                        self.debug('error getting teamkill info: %s', e)
+
+                    self.debug('end of teamkill info')
 
         elif len(event.data) >= 2 and event.data[:1] in (self.cmdPrefix, self.cmdPrefixLoud,
                                                          self.cmdPrefixBig, self.cmdPrefixPrivate):
@@ -690,7 +699,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 self.console.say(functions.confirm(event.client))
                 return
             else:
-                self.debug('Handle command %s' % event.data)
+                self.debug('handle command %s' % event.data)
 
             if event.data[1:2] in (self.cmdPrefix, self.cmdPrefixLoud, self.cmdPrefixBig, self.cmdPrefixPrivate):
                 # self.is the alias for say
@@ -711,7 +720,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 spell_check = self.get_cmdSoundingLike(cmd, event.client)
                 _msg = self.getMessage('unknown_command', cmd)
                 if spell_check:
-                    _msg += '. Did you mean %s%s ?' % (event.data[:1], spell_check)
+                    _msg += '. Did you mean %s%s?' % (event.data[:1], spell_check)
                 event.client.message(_msg)
                 if event.client.maxLevel < self._admins_level and self._warn_command_abusers and event.client.authed:
                     event.client.var(self, 'fakeCommand', 0).value += 1
@@ -770,6 +779,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 if command.level is None:
                     event.client.message('^7%s%s command is disabled' % (self.cmdPrefix, cmd))
                 else:
+
                     self.info("%s does not have sufficient rights to use %s%s. "
                               "Required level: %s" % (event.client.name, self.cmdPrefix, cmd, command.level[0]))
                     try:
@@ -791,6 +801,12 @@ class AdminPlugin(b3.plugin.Plugin):
     ####################################################################################################################
 
     def aquireCmdLock(self, cmd, client, delay, all=True):
+        """
+        Check whether a client can acquire a lock on a given command.
+        :param cmd: The command to execute
+        :param client: The client executing the command
+        :param delay: The delay between command executions
+        """
         if client.maxLevel >= self._admins_level:
             return True
         elif cmd.time + delay <= self.console.time():
@@ -799,6 +815,11 @@ class AdminPlugin(b3.plugin.Plugin):
             return False
 
     def get_cmdSoundingLike(self, c_word, client):
+        """
+        Return a list of commands sounding like the spelled one.
+        :param c_word: The spelled command
+        :param client: The client who executed the command
+        """
         c_list = []
         for c, cmd in self._commands.iteritems():
             if cmd.canUse(client):
@@ -808,43 +829,45 @@ class AdminPlugin(b3.plugin.Plugin):
         return result
 
     def getAdmins(self):
-        """\
-        Return a list of online admins
+        """
+        Return a list of online admins.
         """
         return self.console.clients.getClientsByLevel(self._admins_level)
 
     def getRegulars(self):
-        """\
-        Return a list of online regular players
+        """
+        Return a list of online regular players.
         """
         return self.console.clients.getClientsByLevel(min=2, max=2)
 
-    def findClientPrompt(self, client_id, client=None):
-        """\
-        Find a client matching the given input
+    def findClientPrompt(self, handle, client=None):
         """
-        matches = self.console.clients.getByMagic(client_id)
+        Find a client matching the given input.
+        :param handle: The search handle
+        :param client: The client who to notify search results
+        """
+        matches = self.console.clients.getByMagic(handle)
         if matches:
             if len(matches) > 1:
                 names = []
-                for _p in matches:
-                    if _p.name == _p.cid:
-                        names.append('^7%s' % _p.name)
+                for c in matches:
+                    if c.name == c.cid:
+                        names.append('^7%s' % c.name)
                     else:
-                        names.append('^7%s [^2%s^7]' % (_p.name, _p.cid))
+                        names.append('^7%s [^2%s^7]' % (c.name, c.cid))
 
                 if client:
-                    client.message(self.getMessage('players_matched', client_id, ', '.join(names)))
+                    client.message(self.getMessage('players_matched', handle, ', '.join(names)))
                 return None
             else:
                 return matches[0]
         else:
             if client:
-                client.message(self.getMessage('no_players', client_id))
+                client.message(self.getMessage('no_players', handle))
             return None
 
     def parseUserCmd(self, cmd, req=False):
-        """\
+        """
         Return a tuple of two elements extracted from cmd :
          - a player identifier
          - optional parameters
@@ -868,9 +891,9 @@ class AdminPlugin(b3.plugin.Plugin):
             return None
 
     def getGroupLevel(self, level):
-        """\
-        Return a group level from group keyword or group level
-        understand level ranges (ie: 20-40 or mod-admin)
+        """
+        Return a group level from group keyword or group level understand level ranges (ie: 20-40 or mod-admin).
+        :param level: The group keyword/level
         """
         level = str(level)
         if level.lower() == 'none':
@@ -906,8 +929,9 @@ class AdminPlugin(b3.plugin.Plugin):
         return level
 
     def getReason(self, kword):
-        """\
-        Return a reason according to the given keyword
+        """
+        Return a reason according to the given keyword.
+        :param kword: The keyword to use to lookup the reason
         """
         if not kword:
             return ''
@@ -919,30 +943,30 @@ class AdminPlugin(b3.plugin.Plugin):
             return kword
 
     def getSpam(self, kword):
-        """\
-        Return a spam message according to the given keyword
+        """
+        Return a spam message according to the given keyword.
+        :param kword: The keyword to use to lookup the spam message
         """
         if not kword:
             return ''
 
         try:
             s = self.config.getTextTemplate('spamages', kword)
-
             if s[:1] == '/':
                 s = self.config.getTextTemplate('spamages', s[1:])
                 if s[:1] == '/':
-                    self.error('getSpam: Possible spam recursion %s, %s', kword, s)
+                    self.error('getSpam: possible spam recursion %s: %s', kword, s)
                     return None
 
             return s
         except NoOptionError:
             return None
         except Exception, msg:
-            self.error('getSpam: Could not get spam "%s": %s\n%s', kword, msg, traceback.extract_tb(sys.exc_info()[2]))
+            self.error('getSpam: could not get spam "%s": %s\n%s', kword, msg, traceback.extract_tb(sys.exc_info()[2]))
             return None
 
     def getWarning(self, kword):
-        """\
+        """
         Return a warning message according to the given keyword
         """
         if not kword:
@@ -958,8 +982,10 @@ class AdminPlugin(b3.plugin.Plugin):
             return data[0]
 
     def clearAll(self, sclient, client=None):
-        """\
-        Clear a client of all warnings
+        """
+        Clear a client of all warnings.
+        :param sclient: The client whose warnings needs to be cleared
+        :param client: The client removing the warnings
         """
         for w in sclient.warnings:
             admin = None
@@ -982,8 +1008,10 @@ class AdminPlugin(b3.plugin.Plugin):
         sclient.save()
 
     def doList(self, client, cmd):
-        """\
-        List online players
+        """
+        List online players.
+        :param client: The client who launched the !list command
+        :param cmd: The command object instance for sayLoudOrPM method invoke
         """
         names = []
         for c in self.console.clients.getClientsByLevel():
@@ -993,16 +1021,26 @@ class AdminPlugin(b3.plugin.Plugin):
         return True
 
     def sayMany(self, msg, times=5, delay=1):
-        """\
-        Print a message to all the players
+        """
+        Print a message to all the players.
+        :param msg: The message to be printed
+        :param times: How many times the message should be printed
+        :param delay: Amount of time between prints
         """
         for c in range(1, times + 1):
             self.console.say('^%i%s' % (c, msg))
             time.sleep(delay)
 
     def penalizeClient(self, type, client, reason, keyword=None, duration=0, admin=None, data=''):
-        """\
-        Inflict a penalty to the given client
+        """
+        Inflict a penalty to the given client.
+        :param type: The penalty type
+        :param client: The client to punish
+        :param reason: The reason for this punishment
+        :param keyword: The keyword used for this punishment
+        :param duration: The punishment duration
+        :param admin: The client who issued the punishment
+        :param data: Extra data
         """
         if reason is None:
             reason = self.getReason(keyword)
@@ -1023,8 +1061,14 @@ class AdminPlugin(b3.plugin.Plugin):
                 self.error('penalizeClient(): type %s not found', type)
 
     def warnClient(self, sclient, keyword, admin=None, timer=True, data='', newDuration=None):
-        """\
-        Warn a client
+        """
+        Warn a client.
+        :param sclient: The client to warn
+        :param keyword: The keyword used for this warning
+        :param admin: The admin who issued the warn
+        :param timer: Whether or not to track the warn time
+        :param data: Extra data
+        :param newDuration: A custom duration for this warning
         """
         try:
             duration, warning = self.getWarning(keyword)
@@ -1062,8 +1106,8 @@ class AdminPlugin(b3.plugin.Plugin):
 
             warn = sclient.lastWarning
             if warn:
-                self.console.say(self.config.getTextTemplate('warn', 'alert', name=sclient.exactName, warnings=warnings,
-                                                             duration=duration, reason=warn.reason))
+                self.console.say(self.config.getTextTemplate('warn', 'alert', name=sclient.exactName,
+                                                             warnings=warnings, duration=duration, reason=warn.reason))
             else:
                 self.console.say(self.config.getTextTemplate('warn', 'alert', name=sclient.exactName, warnings=warnings,
                                                              duration=duration, reason='Too many warnings'))
@@ -1075,8 +1119,11 @@ class AdminPlugin(b3.plugin.Plugin):
         return warnrecord
 
     def checkWarnKick(self, sclient, client=None, data=''):
-        """\
-        Check if a client needs to be kicked for too many warnings
+        """
+        Check if a client needs to be kicked for too many warnings.
+        :param sclient: The client on who perform the check
+        :param client: The client who issued the last warning
+        :param data: Extra data
         """
         if not sclient.var(self, 'checkWarn').value:
             return
@@ -1089,9 +1136,9 @@ class AdminPlugin(b3.plugin.Plugin):
             self.warnKick(sclient, client, data)
 
     def warnKickDuration(self, sclient):
-        """\
-        Retrieve the duration for a tempban penalty
-        due too many warnings
+        """
+        Retrieve the duration for a tempban penalty due too many warnings.
+        :param sclient: The client who has been warned
         """
         if sclient.numWarnings > self.config.getint('warn', 'tempban_num'):
             duration = self.config.getDuration('warn', 'tempban_duration')
@@ -1108,8 +1155,11 @@ class AdminPlugin(b3.plugin.Plugin):
         return duration
 
     def warnKick(self, sclient, client=None, data=''):
-        """\
-        Tempban a client for too many warnings
+        """
+        Tempban a client for too many warnings.
+        :param sclient: The client to tempban
+        :param client: The client who issued the last warning
+        :param data: Extra data
         """
         msg = sclient.numWarnings
         keyword = ''
@@ -1119,14 +1169,15 @@ class AdminPlugin(b3.plugin.Plugin):
             keyword = warn.keyword
 
         duration = self.warnKickDuration(sclient)
-
         if duration > 0:
             sclient.tempban(self.config.getTextTemplate('warn', 'reason', reason=msg), keyword,
                             duration, client, False, data)
 
     def _sendRules(self, sclient, big=False):
-        """\
+        """
         Send rules to the given client
+        :param sclient: The client who to notice rules (may be None)
+        :param big: Whether or not to print a BIG message
         """
         rules = []
 
@@ -1160,28 +1211,28 @@ class AdminPlugin(b3.plugin.Plugin):
     ####################################################################################################################
 
     def cmd_die(self, data, client, cmd=None):
-        """\
+        """
         - shutdown b3
         """
         cmd.sayLoudOrPM(client, '^7Shutting down ^3%s' % data)
         self.console.die()
 
     def cmd_restart(self, data, client, cmd=None):
-        """\
+        """
         - restart b3
         """
         cmd.sayLoudOrPM(client, '^7Shutting down for restart...')
         self.console.restart()
 
     def cmd_reconfig(self, data, client, cmd=None):
-        """\
+        """
         - re-load all configs
         """
         self.console.reloadConfigs()
         cmd.sayLoudOrPM(client, '^7Re-loaded configs')
 
     def cmd_mask(self, data, client, cmd=None):
-        """\
+        """
         <group> [<name>] - hide level
         """
         m = self.parseUserCmd(data)
@@ -1213,7 +1264,7 @@ class AdminPlugin(b3.plugin.Plugin):
         sclient.message('^7Masked as %s' % group.name)
 
     def cmd_unmask(self, data, client, cmd=None):
-        """\
+        """
         [<name>] - un-hide level
         """
         m = self.parseUserCmd(data)
@@ -1232,7 +1283,7 @@ class AdminPlugin(b3.plugin.Plugin):
             sclient.message('^7Un-Masked')
 
     def cmd_clear(self, data, client, cmd=None):
-        """\
+        """
         [<player>] - clear all tk points and warnings
         """
         if data:
@@ -1248,24 +1299,24 @@ class AdminPlugin(b3.plugin.Plugin):
             self.console.say(self.getMessage('cleared_warnings_for_all', {'admin': client.exactName}))
 
     def cmd_map(self, data, client, cmd=None):
-        """\
+        """
         <map> - switch current map
         """
         if not data:
-            client.message('^7You must supply a map to change to.')
+            client.message('^7You must supply a map to change to')
             return
         suggestions = self.console.changeMap(data)
         if type(suggestions) == list:
-            client.message('do you mean : %s ?' % ', '.join(suggestions[:5]))
+            client.message('do you mean: %s?' % ', '.join(suggestions[:5]))
 
     def cmd_maprotate(self, data, client, cmd=None):
-        """\
+        """
         - switch to the next map in rotation
         """
         self.console.rotateMap()
 
     def cmd_b3(self, data, client, cmd=None):
-        """\
+        """
         - say b3's version info
         """
         if len(data) > 0 and client.maxLevel >= self._admins_level:
@@ -1277,93 +1328,93 @@ class AdminPlugin(b3.plugin.Plugin):
             elif data == 'stare':
                 self.console.say('^7Do not stare at b3 %s^7!' % client.exactName)
             elif data == 'stab':
-                self.console.say('^7b3 is invincible, %s^7 could not penetrate he hide of b3.' % client.exactName)
+                self.console.say('^7b3 is invincible, %s^7 could not penetrate he hide of b3' % client.exactName)
             elif data == 'bite':
-                self.console.say('^7b3 breaks %s^7\'s teeth with its metalic frame.' % client.exactName)
+                self.console.say('^7b3 breaks %s^7\'s teeth with its metalic frame' % client.exactName)
             elif data == 'fuck':
-                self.console.say('^7b3 doesn\'t need your hand me out %s^7.' % client.exactName)
+                self.console.say('^7b3 doesn\'t need your hand me out %s^7' % client.exactName)
             elif data == 'slap':
-                self.console.say('^7%s^7 is not Rick James.' % client.exactName)
+                self.console.say('^7%s^7 is not Rick James' % client.exactName)
             elif data == 'fight':
-                self.console.say('^7%s^7 is knocked out by b3.' % client.exactName)
+                self.console.say('^7%s^7 is knocked out by b3' % client.exactName)
             elif data == 'feed':
-                self.console.say('^7b3 enjoys your nourishment %s^7.' % client.exactName)
+                self.console.say('^7b3 enjoys your nourishment %s^7' % client.exactName)
             elif data == 'throw':
-                self.console.say('^7b3 can fly %s^7, and you throw like a sissy.' % client.exactName)
+                self.console.say('^7b3 can fly %s^7, and you throw like a sissy' % client.exactName)
             elif data == 'furniture':
-                self.console.say('^7b3 does make a lovely lamp %s^7.' % client.exactName)
+                self.console.say('^7b3 does make a lovely lamp %s^7' % client.exactName)
             elif data == 'indeed':
-                self.console.say('^7You WOULD say that %s^7.' % client.exactName)
+                self.console.say('^7You WOULD say that %s^7' % client.exactName)
             elif data == 'flog':
-                self.console.say('^7You are so kinky %s^7.' % client.exactName)
+                self.console.say('^7You are so kinky %s^7' % client.exactName)
             elif data == 'sexor':
-                self.console.say('^7Mmmmm %s^7.' % client.exactName)
+                self.console.say('^7Mmmmm %s^7' % client.exactName)
             elif data == 'hate':
-                self.console.say('^7Don\'t hate the player, %s^7, hate the game.' % client.exactName)
+                self.console.say('^7Don\'t hate the player, %s^7, hate the game' % client.exactName)
             elif data == 'smoke':
-                self.console.say('^7b3 has been known to cause lung cancer when smoked %s^7.' % client.exactName)
+                self.console.say('^7b3 has been known to cause lung cancer when smoked %s^7' % client.exactName)
             elif data == 'maul':
-                self.console.say('^7b3 casts a spell of invisibility, you can\'t find  %s^7.' % client.exactName)
+                self.console.say('^7b3 casts a spell of invisibility, you can\'t find  %s^7' % client.exactName)
             elif data == 'procreate':
-                self.console.say('^7b3 2.0 will soon be on the way %s^7.' % client.exactName)
+                self.console.say('^7b3 2.0 will soon be on the way %s^7' % client.exactName)
             elif data == 'shoot':
-                self.console.say('^7Your hit detection is off %s^7, b3 is unharmed.' % client.exactName)
+                self.console.say('^7Your hit detection is off %s^7, b3 is unharmed' % client.exactName)
             elif data == 'kick':
                 client.kick('^7as requested', '', None)
             elif data == 'triangulate':
-                self.console.say('^7b3 is at %s.' % self.console._publicIp)
+                self.console.say('^7b3 is at %s' % self.console._publicIp)
         else:
             cmd.sayLoudOrPM(client, '%s ^7- uptime: [^2%s^7]' % (
                 b3.version, functions.minutesStr(self.console.upTime() / 60.0)))
 
     def cmd_enable(self, data, client, cmd=None):
-        """\
-        <plugin> - enable a disabled plugin
+        """
+        <plugin> - enable a plugin
         """
         data = data.strip().lower()
 
         if not data:
-            client.message('^7You must supply a plugin name to enable.')
+            client.message('^7You must supply a plugin name to enable')
             return
         elif data == 'admin':
-            client.message('^7You cannot disable/enable the admin plugin.')
+            client.message('^7You cannot disable/enable the ^1admin ^7plugin')
             return
 
         plugin = self.console.getPlugin(data)
         if plugin:
             if plugin.isEnabled():
-                client.message('^7Plugin %s is already enabled.' % data)
+                client.message('^7Plugin ^3%s ^7is already enabled' % data)
             else:
                 plugin.enable()
-                self.console.say('^7%s is now ^2ON' % plugin.__class__.__name__)
+                cmd.sayLoudOrPM(client, '^7%s is now ^2ON' % plugin.__class__.__name__)
         else:
-            client.message('^7No plugin named %s loaded.' % data)
+            client.message('^7No plugin named ^1%s ^7loaded' % data)
 
     def cmd_disable(self, data, client, cmd=None):
-        """\
+        """
         <plugin> - disable a plugin
         """
         data = data.strip().lower()
 
         if not data:
-            client.message('^7You must supply a plugin name to disable.')
+            client.message('^7You must supply a plugin name to disable')
             return
         elif data == 'admin':
-            client.message('^7You cannot disable/enable the admin plugin.')
+            client.message('^7You cannot disable/enable the ^1admin ^7plugin')
             return
 
         plugin = self.console.getPlugin(data)
         if plugin:
             if not plugin.isEnabled():
-                client.message('^7Plugin %s is already disabled.' % data)
+                client.message('^7Plugin ^3%s ^7is already disabled' % data)
             else:
                 plugin.disable()
-                self.console.say('^7%s is now ^1OFF' % plugin.__class__.__name__)
+                cmd.sayLoudOrPM(client, '^7%s is now ^1OFF' % plugin.__class__.__name__)
         else:
-            client.message('^7No plugin named %s loaded.' % data)
+            client.message('^7No plugin named ^1%s ^7loaded' % data)
 
     def cmd_register(self, data, client, cmd=None):
-        """\
+        """
         - register yourself as a basic user
         """
         try:
@@ -1386,7 +1437,7 @@ class AdminPlugin(b3.plugin.Plugin):
             return True
 
     def cmd_help(self, data, client, cmd=None):
-        """\
+        """
         [<command|level>] - get info on how to use a command, you can use *<command> for partial matches
         """
         commands = []
@@ -1426,17 +1477,16 @@ class AdminPlugin(b3.plugin.Plugin):
             cmd.sayLoudOrPM(client, self.getMessage('help_available', ', '.join(commands)))
 
     def cmd_list(self, data, client, cmd=None):
-        """\
+        """
         - list all connected players
         """
         thread.start_new_thread(self.doList, (client, cmd))
 
     def cmd_regulars(self, data, client, cmd=None):
-        """\
+        """
         - lists all the online regular players
         """
         clist = self.getRegulars()
-
         if len(clist) > 0:
             nlist = []
             for c in clist:
@@ -1446,12 +1496,11 @@ class AdminPlugin(b3.plugin.Plugin):
             cmd.sayLoudOrPM(client, self.getMessage('no_regulars'))
 
     def cmd_admins(self, data, client, cmd=None):
-        """\
+        """
         - lists all the online admins
         """
         self.debug('trying to get admins')
         clist = self.getAdmins()
-
         if len(clist) > 0:
             nlist = []
             for c in clist:
@@ -1459,7 +1508,6 @@ class AdminPlugin(b3.plugin.Plugin):
                     nlist.append('%s^7 [^3%s^7]' % (c.exactName, c.maskGroup.level))
                 else:
                     nlist.append('%s^7 [^3%s^7]' % (c.exactName, c.maxLevel))
-
             cmd.sayLoudOrPM(client, self.getMessage('admins', ', '.join(nlist)))
         else:
             msg = self.getMessage('no_admins')
@@ -1467,14 +1515,14 @@ class AdminPlugin(b3.plugin.Plugin):
                 cmd.sayLoudOrPM(client, self.getMessage('no_admins'))
 
     def cmd_rebuild(self, data, client, cmd=None):
-        """\
+        """
         - sync up connected players
         """
         self.console.clients.sync()
-        client.message('Synchronizing client info')
+        client.message('synchronizing client info')
 
     def cmd_regtest(self, cid, client, cmd=None):
-        """\
+        """
         - display your current user status
         """
         if client and client.maskGroup:
@@ -1490,13 +1538,13 @@ class AdminPlugin(b3.plugin.Plugin):
         return True
 
     def cmd_admintest(self, cid, client, cmd=None):
-        """\
+        """
         - display your current user status
         """
         return self.cmd_regtest(cid, client, cmd)
 
     def cmd_leveltest(self, data, client, cmd=None):
-        """\
+        """
         [<name>] - display a user's status
         """
         m = self.parseUserCmd(data)
@@ -1518,8 +1566,8 @@ class AdminPlugin(b3.plugin.Plugin):
         return True
 
     def cmd_makereg(self, data, client, cmd=None):
-        """\
-        <name> - make a name a regular
+        """
+        <name> - add a player in the 'regular' group
         """
         m = self.parseUserCmd(data)
         if not m:
@@ -1532,7 +1580,7 @@ class AdminPlugin(b3.plugin.Plugin):
             group = Group(keyword='reg')
             group = self.console.storage.getGroup(group)
         except Exception:
-            client.message('^7Group reg does not exist')
+            client.message('^7Group ^1reg ^7does not exist')
             return False
 
         sclient = self.findClientPrompt(cid, client)
@@ -1540,7 +1588,7 @@ class AdminPlugin(b3.plugin.Plugin):
             if sclient.inGroup(group):
                 client.message(self.getMessage('groups_already_in', sclient.exactName, group.name))
             elif sclient.maxLevel >= group.level:
-                client.message('^7%s ^7is already in a higher level group' % sclient.exactName)
+                client.message('^7%s^7 is already in a higher level group' % sclient.exactName)
             else:
                 sclient.setGroup(group)
                 sclient.save()
@@ -1548,7 +1596,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 return True
 
     def cmd_unreg(self, data, client, cmd=None):
-        """\
+        """
         <name> - remove a player from the 'regular' group
         """
         m = self.parseUserCmd(data)
@@ -1562,14 +1610,14 @@ class AdminPlugin(b3.plugin.Plugin):
             group_reg = self.console.storage.getGroup(Group(keyword='reg'))
         except Exception, err:
             self.debug(err)
-            client.message("^7Group 'regular' does not exist")
+            client.message("^7Group ^1regular ^7does not exist")
             return
 
         try:
             group_user = self.console.storage.getGroup(Group(keyword='user'))
         except Exception, err:
             self.debug(err)
-            client.message("^7Group 'user' does not exist")
+            client.message("^7Group ^1user ^7does not exist")
             return
 
         sclient = self.findClientPrompt(cid, client)
@@ -1583,8 +1631,8 @@ class AdminPlugin(b3.plugin.Plugin):
                 client.message('^7%s^7 is not in group %s' % (sclient.exactName, group_reg.name))
 
     def cmd_putgroup(self, data, client, cmd=None):
-        """\
-        <client> <group> - add a client to a grou
+        """
+        <client> <group> - add a client to a group
         """
         m = re.match('^(.{2,}) ([a-z][a-z0-9]+)$', data, re.I)
         if not m:
@@ -1616,14 +1664,14 @@ class AdminPlugin(b3.plugin.Plugin):
                 return True
 
     def cmd_say(self, data, client, cmd=None):
-        """\
+        """
         - say a message to all players
         """
         self.console.say(self.getMessage('say', client.exactName, data))
         return True
 
     def cmd_ungroup(self, cid, client, cmd=None):
-        """\
+        """
         <client> <group> - remove a client from a group
         """
         m = re.match('^([^ ]{2,}) ([a-z]+)$', cid)
@@ -1646,20 +1694,20 @@ class AdminPlugin(b3.plugin.Plugin):
                 sclient.remGroup(group)
                 sclient.save()
 
-                cmd.sayLoudOrPM(client, '^7%s^7 removed from group %s' % (sclient.exactName, group.name))
+                cmd.sayLoudOrPM(client, '^7%s ^7removed from group %s' % (sclient.exactName, group.name))
                 return True
             else:
-                client.message('^7%s^7 is not in group %s' % (sclient.exactName, group.name))
+                client.message('^7%s ^7is not in group %s' % (sclient.exactName, group.name))
 
     def cmd_iamgod(self, data, client, cmd=None):
-        """\
+        """
         - register yourself as the super admin
         """
         superadmins = self.console.clients.lookupSuperAdmins()
         if len(superadmins) > 0:
             # There are already superadmins, disable this command
-            self.warning('%s superadmin(s) found in db. Disabling command' % len(superadmins))
-            if 'iamgod' in self._commands.keys():
+            self.warning('%s superadmin(s) found in db: disabling command' % len(superadmins))
+            if 'iamgod' in self._commands:
                 self._commands.pop('iamgod')
             return
 
@@ -1667,7 +1715,7 @@ class AdminPlugin(b3.plugin.Plugin):
             group = Group(keyword='superadmin')
             group = self.console.storage.getGroup(group)
         except Exception, e:
-            self.error('^7Could not get superadmin group: %s', e)
+            self.error('could not get superadmin group: %s', e)
             return False
 
         try:
@@ -1677,28 +1725,26 @@ class AdminPlugin(b3.plugin.Plugin):
             return False
         else:
             command.level = 'none'
-
             if group in client.groups:
-                client.message('^7You are already a %s' % group.exactName)
+                client.message('^7You are already a ^2%s' % group.exactName)
                 return True
 
             client.setGroup(group)
             client.save()
 
-            client.message('^7You are now a %s' % group.name)
+            client.message('^7You are now a ^2%s' % group.name)
             self.bot('created %s %s - %s', group.name, client.name, client.guid)
-
             return True
 
     def cmd_time(self, data, client=None, cmd=None):
-        """\
+        """
         [<timezone/offset>] - display the servers current time
         """
         cmd.sayLoudOrPM(client, self.getMessage('time', self.console.formatTime(time.time(), data)))
         return True
 
     def cmd_seen(self, data, client=None, cmd=None):
-        """\
+        """
         <name> - when was a player last seen?
         """
         m = self.parseUserCmd(data)
@@ -1722,7 +1768,7 @@ class AdminPlugin(b3.plugin.Plugin):
         <name> - lookup a player in the database
         """
         if not self.console.storage.status():
-            cmd.sayLoudOrPM(client, '^7Cannot lookup, database appears to be ^1DOWN')
+            cmd.sayLoudOrPM(client, '^7Cannot lookup: database appears to be ^1DOWN')
             return
 
         m = re.match('^(.+)$', data)
@@ -1742,7 +1788,7 @@ class AdminPlugin(b3.plugin.Plugin):
         return True
 
     def cmd_status(self, data, client=None, cmd=None):
-        """\
+        """
         - report status of bot
         """
         if self.console.storage.status():
@@ -1751,13 +1797,13 @@ class AdminPlugin(b3.plugin.Plugin):
             cmd.sayLoudOrPM(client, '^7Database appears to be ^1DOWN')
 
     def cmd_scream(self, data, client=None, cmd=None):
-        """\
+        """
         <message> - yell a message to all player
         """
         thread.start_new_thread(self.sayMany, (data, 5, 1))
 
     def cmd_find(self, data, client=None, cmd=None):
-        """\
+        """
         <name> - test to find a connected player
         """
         m = self.parseUserCmd(data)
@@ -1772,7 +1818,7 @@ class AdminPlugin(b3.plugin.Plugin):
             cmd.sayLoudOrPM(client, '^7Found player matching %s [^2%s^7] %s' % (cid, sclient.cid, sclient.exactName))
 
     def cmd_clientinfo(self, data, client=None, cmd=None):
-        """\
+        """
         <name> <field> - get info about a client
         """
         m = self.parseUserCmd(data, True)
@@ -1790,7 +1836,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 client.message('^7Unrecognized field %s' % field)
 
     def cmd_kick(self, data, client=None, cmd=None):
-        """\
+        """
         <name> [<reason>] - kick a player
         """
         m = self.parseUserCmd(data)
@@ -1826,7 +1872,7 @@ class AdminPlugin(b3.plugin.Plugin):
             self.console.kick(cid, reason, client)
 
     def cmd_kickall(self, data, client=None, cmd=None):
-        """\
+        """
         <pattern> [<reason>] - kick all players matching <pattern>
         """
         m = self.parseUserCmd(data)
@@ -1851,7 +1897,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 sclient.kick(reason, keyword, client)
 
     def cmd_spank(self, data, client=None, cmd=None):
-        """\
+        """
         <name> [<reason>] - spank a player, naughty boy!
         """
         m = self.parseUserCmd(data)
@@ -1890,7 +1936,7 @@ class AdminPlugin(b3.plugin.Plugin):
             self.console.kick(cid, reason, client)
 
     def cmd_spankall(self, data, client=None, cmd=None):
-        """\
+        """
         <pattern> [<reason>] - kick all players matching <pattern>
         """
         m = self.parseUserCmd(data)
@@ -1919,7 +1965,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 sclient.kick(reason, keyword, client, silent=True)
 
     def cmd_permban(self, data, client=None, cmd=None):
-        """\
+        """
         <name> [<reason>] - ban a player permanently
         """
         m = self.parseUserCmd(data)
@@ -1956,7 +2002,7 @@ class AdminPlugin(b3.plugin.Plugin):
             self.console.ban(cid, reason, client)
 
     def cmd_ban(self, data, client=None, cmd=None):
-        """\
+        """
         <name> [<reason>] - ban a player
         """
         m = self.parseUserCmd(data)
@@ -1995,7 +2041,7 @@ class AdminPlugin(b3.plugin.Plugin):
             self.console.tempban(cid, reason, duration, client)
 
     def cmd_banall(self, data, client=None, cmd=None):
-        """\
+        """
         <pattern> [<reason>] - ban all players matching <pattern>
         """
         m = self.parseUserCmd(data)
@@ -2021,8 +2067,8 @@ class AdminPlugin(b3.plugin.Plugin):
                 sclient.tempban(reason, keyword, duration, client)
 
     def cmd_lastbans(self, data, client=None, cmd=None):
-        """\
-        list the 5 last bans
+        """
+        - list the 5 last bans
         """
         def format_ban(penalty):
             c = self.console.storage.getClient(Client(_id=penalty.clientId))
@@ -2032,7 +2078,7 @@ class AdminPlugin(b3.plugin.Plugin):
             elif penalty.type == 'TempBan':
                 txt += ' (%s remaining)' % minutesStr((penalty.timeExpire - self.console.time()) / 60.0)
             else:
-                raise AssertionError("unexpected penalty type : %r" % penalty.type)
+                raise AssertionError("unexpected penalty type: %r" % penalty.type)
             if penalty.reason:
                 txt += ' %s' % penalty.reason
             return txt
@@ -2045,7 +2091,7 @@ class AdminPlugin(b3.plugin.Plugin):
             cmd.sayLoudOrPM(client, '^7There are no active bans')
 
     def cmd_baninfo(self, data, client=None, cmd=None):
-        """\
+        """
         <name> - display how many bans a user has
         """
         m = self.parseUserCmd(data)
@@ -2062,7 +2108,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 cmd.sayLoudOrPM(client, self.getMessage('baninfo_no_bans', {'name': sclient.exactName}))
 
     def cmd_runas(self, data, client=None, cmd=None):
-        """\
+        """
         <name> <command> - run a command as a different user
         """
         m = self.parseUserCmd(data)
@@ -2075,7 +2121,7 @@ class AdminPlugin(b3.plugin.Plugin):
             self.OnSay(self.console.getEvent('EVT_CLIENT_SAY', m[1], sclient))
 
     def cmd_unban(self, data, client=None, cmd=None):
-        """\
+        """
         <name> - un-ban a player
         """
         m = self.parseUserCmd(data)
@@ -2093,7 +2139,7 @@ class AdminPlugin(b3.plugin.Plugin):
                     try:
                         admin = self.console.storage.getClient(Client(id=w.adminId))
                         if admin.maxLevel > client.maxLevel:
-                            client.message('^7You can not clear a ban from ' % admin.exactName)
+                            client.message('^7You cannot clear a ban from %s' % admin.exactName)
                             return
                     except Exception:
                         pass
@@ -2101,7 +2147,7 @@ class AdminPlugin(b3.plugin.Plugin):
             sclient.unban(reason, client)
 
     def cmd_aliases(self, data, client=None, cmd=None):
-        """\
+        """
         <name> - list a players aliases
         """
         m = self.parseUserCmd(data)
@@ -2129,14 +2175,14 @@ class AdminPlugin(b3.plugin.Plugin):
                     cmd.sayLoudOrPM(client, self.getMessage('no_aliases', sclient.exactName))
 
     def cmd_warns(self, data, client=None, cmd=None):
-        """\
+        """
         - list warnings
         """
         client.message('^7Warnings: %s' % ', '.join(
             sorted([x for x in self.warn_reasons.keys() if x not in ('default', 'generic')])))
 
     def cmd_notice(self, data, client=None, cmd=None):
-        """\
+        """
         <name> <notice> - add a good/bad behavior note for the player
         """
         m = self.parseUserCmd(data)
@@ -2148,13 +2194,13 @@ class AdminPlugin(b3.plugin.Plugin):
         sclient = self.findClientPrompt(cid, client)
         if sclient:
             if sclient.maxLevel >= client.maxLevel:
-                client.message('^7Can not add notice to higher level admin %s' % sclient.exactName)
+                client.message('^7Cannot add notice to higher level admin %s' % sclient.exactName)
             else:
                 sclient.notice(notice, None, client)
-                client.message('^7Notice %s added to %s' % (notice, sclient.exactName))
+                client.message('^7Notice added to %s: %s' % (sclient.exactName, notice))
 
     def cmd_warn(self, data, client=None, cmd=None):
-        """\
+        """
         <name> [<warning>] - warn user
         """
         m = self.parseUserCmd(data)
@@ -2177,7 +2223,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 self.warnClient(sclient, keyword, client)
 
     def cmd_warntest(self, data, client=None, cmd=None):
-        """\
+        """
         <warning> - test a warning
         """
         try:
@@ -2191,7 +2237,7 @@ class AdminPlugin(b3.plugin.Plugin):
         return True
 
     def cmd_warnremove(self, data, client=None, cmd=None):
-        """\
+        """
         <name> - remove a users last warning
         """
         m = self.parseUserCmd(data)
@@ -2210,7 +2256,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 try:
                     admin = self.console.storage.getClient(Client(id=w.adminId))
                     if admin.maxLevel > client.maxLevel:
-                        client.message('^7You can not clear a warning from %s' % admin.exactName)
+                        client.message('^7You cannot clear a warning from %s' % admin.exactName)
                     return
                 except Exception:
                     pass
@@ -2221,7 +2267,7 @@ class AdminPlugin(b3.plugin.Plugin):
             cmd.sayLoudOrPM(client, '%s ^7last warning cleared: ^3%s' % (sclient.exactName, w.reason))
 
     def cmd_warnclear(self, data, client=None, cmd=None):
-        """\
+        """
         <name> - clear all of a users warnings
         """
         m = self.parseUserCmd(data)
@@ -2260,7 +2306,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 self.console.say('^7All warnings cleared for %s' % sclient.exactName)
 
     def cmd_warninfo(self, data, client=None, cmd=None):
-        """\
+        """
         <name> - display how many warning points a user has
         """
         m = self.parseUserCmd(data)
@@ -2290,7 +2336,7 @@ class AdminPlugin(b3.plugin.Plugin):
             cmd.sayLoudOrPM(client, message)
 
     def cmd_maps(self, data, client=None, cmd=None):
-        """\
+        """
         - list the server's map rotation
         """
         if not self.aquireCmdLock(cmd, client, 60, True):
@@ -2299,14 +2345,14 @@ class AdminPlugin(b3.plugin.Plugin):
 
         maps = self.console.getMaps()
         if maps is None:
-            client.message('^7Error: could not get map list')
+            client.message('^7ERROR: could not get map list')
         elif len(maps):
             cmd.sayLoudOrPM(client, '^7Map Rotation: ^2%s' % '^7, ^2'.join(maps))
         else:
             cmd.sayLoudOrPM(client, '^7Map Rotation list is empty')
 
     def cmd_nextmap(self, data, client=None, cmd=None):
-        """\
+        """
         - list the next map in rotation
         """
         if not self.aquireCmdLock(cmd, client, 60, True):
@@ -2317,10 +2363,10 @@ class AdminPlugin(b3.plugin.Plugin):
         if mapname:
             cmd.sayLoudOrPM(client, '^7Next Map: ^2%s' % mapname)
         else:
-            client.message('^7Error: could not get map list')
+            client.message('^7ERROR: could not get nextmap')
 
     def cmd_pause(self, data, client=None, cmd=None):
-        """\
+        """
         <duration> - pause the bot from parsing
         """
         m = re.match('^([0-9]+[a-z]*)$', data)
@@ -2336,7 +2382,7 @@ class AdminPlugin(b3.plugin.Plugin):
         unpause_task.start()
 
     def cmd_spam(self, data, client=None, cmd=None):
-        """\
+        """
         [player] <message> - spam a predefined message to all players or a given player
         """
         m = re.match('^((?P<player>\w+)\s+)?(?P<keyword>\w{2,})$', data)
@@ -2346,7 +2392,7 @@ class AdminPlugin(b3.plugin.Plugin):
         keyword = m.group("keyword")
         msg = self.getSpam(keyword)
         if not msg:
-            client.message('^7Could not find spam message %s' % keyword)
+            client.message('^7Could not find spam message ^1%s' % keyword)
             return
         player_name = m.group("player")
         if not player_name:
@@ -2392,17 +2438,17 @@ class AdminPlugin(b3.plugin.Plugin):
         thread.start_new_thread(self._sendRules, (), {'sclient': sclient})
 
     def cmd_spams(self, data, client=None, cmd=None):
-        """\
+        """
         - list spam messages
         """
         ws = sorted(self.config.options('spamages'))
         if len(ws):
             client.message('^7Spamages: %s' % ', '.join(ws))
         else:
-            client.message('^7no spamage message defined')
+            client.message('^7No spamage message defined')
 
     def cmd_tempban(self, data, client=None, cmd=None):
-        """\
+        """
         <name> <duration> [<reason>] - temporarily ban a player
         """
         m = self.parseUserCmd(data)
@@ -2420,18 +2466,9 @@ class AdminPlugin(b3.plugin.Plugin):
         duration, keyword = m.groups()
         duration = functions.time2minutes(duration)
 
-        #    10/05/2008 - 1.3.4b0 - mindriot
-        #      * Removed hard code of 1 day for long_tempban_level - now controlled with new
-        #        setting 'long_tempban_max_duration'
-        try:
-            long_tempban_max_duration = self.config.getDuration('settings', 'long_tempban_max_duration')
-        except NoOptionError:
-            long_tempban_max_duration = self._long_tempban_max_duration
-            self.debug('Using default value (%s) for long_tempban_max_duration', self._long_tempban_max_duration)
-
-        if client.maxLevel < self._long_tempban_level and duration > long_tempban_max_duration:
+        if client.maxLevel < self._long_tempban_level and duration > self._long_tempban_max_duration:
             # temp ban for maximum specified in settings
-            duration = long_tempban_max_duration
+            duration = self._long_tempban_max_duration
 
         reason = self.getReason(keyword)
 
@@ -2439,7 +2476,7 @@ class AdminPlugin(b3.plugin.Plugin):
             client.message(self.getMessage('error_no_reason'))
             return False
         elif not duration:
-            client.message('^7You must supply a duration to ban for')
+            client.message('^7You must supply a duration for this ban')
             return False
 
         sclient = self.findClientPrompt(cid, client)
@@ -2461,8 +2498,8 @@ class AdminPlugin(b3.plugin.Plugin):
             self.console.tempban(cid, reason, duration, client)
 
     def cmd_poke(self, data, client=None, cmd=None):
-        """\
-        <player> - Notify a player that he needs to move
+        """
+        <player> - notify a player that he needs to move
         """
         m = self.parseUserCmd(data)
         if not m:
@@ -2478,7 +2515,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 self.console.say('^7%s %s^7!' % (message, sclient.exactName))
 
     def cmd_pluginfo(self, data, client=None, cmd=None):
-        """\
+        """
         <plugin> - display information on the specified plugin
         """
         if not data:
@@ -2491,7 +2528,6 @@ class AdminPlugin(b3.plugin.Plugin):
             a = __author__
             v = __version__
         else:
-
             try:
                 # check if it's a standard plugin
                 package = 'b3.plugins.%s' % data
@@ -2506,8 +2542,9 @@ class AdminPlugin(b3.plugin.Plugin):
                     fp, path, desc = imp.find_module(data, [self.console.config.getpath('plugins', 'external_dir')])
                     module = imp.load_module(data, fp, path, desc)
                 except (ImportError, NoOptionError):
-                    fp = None
+                    # plugin doesn't seems to be loaded
                     module = None
+                    fp = None
                 finally:
                     if fp:
                         fp.close()
@@ -2521,32 +2558,29 @@ class AdminPlugin(b3.plugin.Plugin):
 
         # cleanup a bit the author
         # some people put also website and/or email address in it
-        r1 = re.compile(r'(?:http[s]?://|www.)[^\s]*')  # web
-        r2 = re.compile(r'[a-zA-Z0-9._%-+]+@[a-zA-Z0-9._%-]+.[a-zA-Z]{2,6}')  # email
+        cleanregex = [
+            re.compile(r'(?:http[s]?://|www.)[^\s]*'),                      # website
+            re.compile(r'[a-zA-Z0-9._%-+]+@[a-zA-Z0-9._%-]+.[a-zA-Z]{2,6}') # email
+        ]
 
-        if re.search(r1, a):
-            a = re.sub(r1, '', a)
-            a = re.sub(re.compile(r'-|\|'), '', a)
-
-        if re.search(r2, a):
-            a = re.sub(r2, '', a)
+        for r in cleanregex:
+            a = re.sub(r, '', a)
             a = re.sub(re.compile(r'-|\|'), '', a)
 
         a = a.strip()
         n = '%sPlugin' % data.title()
-        cmd.sayLoudOrPM(client, '%s v ^3%s ^7by ^3%s' % (n, v, a))
+        cmd.sayLoudOrPM(client, '^7%s ^7v^3%s ^7by ^3%s' % (n, v, a))
 
 
-#commandstxt = file('commands.txt', 'w')
 class Command:
     command = ''
+    alias = ''
     help = ''
     level = 0
     secretLevel = 0
-    func = None
-    alias = ''
-    plugin = None
     time = 0
+    func = None
+    plugin = None
     prefix = '!'
     prefixLoud = '@'
     prefixBig = '&'
@@ -2555,8 +2589,15 @@ class Command:
     _reType = type(re.compile('.*'))
 
     def __init__(self, plugin, cmd, level, func, help=None, alias=None, secretLevel=100):
-        """\
-        Build a new command object
+        """
+        Build a new command object.
+        :param plugin: The plugin registering the command
+        :param cmd: The command name
+        :param level: The min(-max) level to execute the command
+        :param func: The method to execute when the command is launched
+        :param help: The command help text
+        :param alias: The command alias
+        :param secretLevel: The command secret level
         """
         self.command = cmd.strip()
         self.func = func
@@ -2582,14 +2623,10 @@ class Command:
         if secretLevel is None:
             self.secretLevel = 100
 
-            # global commandstxt
-            # commandstxt.write('%s (%s) %s, levels %s - %s\n' % (self.command, self.alias,
-            #                                                     self.help, self.level[0], self.level[1]))
-            # commandstxt.flush()
-
     def canUse(self, client):
-        """\
-        Check whether a client can use such command
+        """
+        Check whether a client can use such command:
+        :param client: The client on who to perform the check
         """
         if self.level is None:
             return False
@@ -2597,15 +2634,19 @@ class Command:
             return self.level[0] <= int(client.maxLevel) <= self.level[1]
 
     def execute(self, data, client):
-        """\
-        Execute a command
+        """
+        Execute a command.
+        :param data: The command parameters
+        :param client: The client executing the command
         """
         self.func(data, client, copy.copy(self))
         self.time = self.plugin.console.time()
 
     def executeLoud(self, data, client):
-        """\
-        Execute a command a redirect the output to console say
+        """
+        Execute a command a redirect the output to console say.
+        :param data: The command parameters
+        :param client: The client executing the command
         """
         cmd = copy.copy(self)
         cmd.loud = True
@@ -2613,8 +2654,10 @@ class Command:
         self.time = self.plugin.console.time()
 
     def executeBig(self, data, client):
-        """\
+        """
         Execute a command and redirect the output to console saybig
+        :param data: The command parameters
+        :param client: The client executing the command
         """
         cmd = copy.copy(self)
         cmd.big = True
@@ -2622,8 +2665,10 @@ class Command:
         self.time = self.plugin.console.time()
 
     def executePrivate(self, data, client):
-        """\
-        Execute a command and redirect the output to console saytell
+        """
+        Execute a command and redirect the output to console saytell.
+        :param data: The command parameters
+        :param client: The client executing the command
         """
         cmd = copy.copy(self)
         cmd.private = True
@@ -2631,8 +2676,10 @@ class Command:
         self.time = self.plugin.console.time()
 
     def sayLoudOrPM(self, client, message):
-        """\
-        Display a message with visibility regulated by the command prefix
+        """
+        Display a message with visibility regulated by the command prefix.
+        :param client: The client on who to send the message
+        :param message: The message to be sent
         """
         if self.loud:
             self.plugin.console.say(message)
@@ -2642,22 +2689,21 @@ class Command:
             client.message(message)
 
     def parseData(self, data, *args):
-        """\
-        Parse command data
         """
-        _p = self.splitData(data)
-
+        Parse command data.
+        """
+        splitdata = self.splitData(data)
         if not len(args):
-            return _p
+            return splitdata
 
         params = {}
 
         i = 0
-        for i in range(0, min(len(args), len(_p))):
-            params[args[i][0]] = _p[i]
+        for i in range(0, min(len(args), len(splitdata))):
+            params[args[i][0]] = splitdata[i]
 
-        if len(_p) > i:
-            params[args[i][0]] = ' '.join(_p[i:])
+        if len(splitdata) > i:
+            params[args[i][0]] = ' '.join(splitdata[i:])
 
         badfield = None
         valid = True
@@ -2710,8 +2756,9 @@ class Command:
             return None, ' '.join(h)
 
     def splitData(self, data):
-        """\
-        Split command parameters
+        """
+        Split command parameters.
+        :param data: The parameters to be split
         """
         params = []
         buf = ''
