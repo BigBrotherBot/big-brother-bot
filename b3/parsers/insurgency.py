@@ -489,6 +489,7 @@ class InsurgencyParser(Parser):
         Broadcast a message to all players.
         :param msg: The message to be broadcasted
         """
+        msg = self.stripColors(msg)
         if msg and len(msg.strip()):
             template = 'sm_say %s'
             if "B3 Say" in self.sm_plugins:
@@ -496,7 +497,6 @@ class InsurgencyParser(Parser):
             else:
                 msg = prefixText([self.msgPrefix], msg)
             for line in self.getWrap(msg):
-                line = self.stripColors(line)
                 self.output.write(template % line)
 
     def saybig(self, msg):
@@ -504,6 +504,7 @@ class InsurgencyParser(Parser):
         Broadcast a message to all players in a way that will catch their attention.
         :param msg: The message to be broadcasted
         """
+        msg = self.stripColors(msg)
         if msg and len(msg.strip()):
             template = 'sm_hsay %s'
             if "B3 Say" in self.sm_plugins:
@@ -511,11 +512,11 @@ class InsurgencyParser(Parser):
             else:
                 msg = prefixText([self.msgPrefix], msg)
             for line in self.getWrap(msg):
-                line = self.stripColors(line)
                 self.output.write(template % line)
 
     def message(self, client, msg):
         """
+        msg = self.stripColors(msg)
         Display a message to a given client
         :param client: The client to who send the message
         :param msg: The message to be sent
@@ -528,7 +529,6 @@ class InsurgencyParser(Parser):
                 else:
                     msg = prefixText([self.msgPrefix], msg)
                 for line in self.getWrap(msg):
-                    line = self.stripColors(line)
                     self.output.write(template % {'guid': client.guid, 'msg': line})
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
