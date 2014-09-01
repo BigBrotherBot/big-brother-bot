@@ -1321,19 +1321,7 @@ class Parser(object):
                                        break_long_words=True,
                                        break_on_hyphens=False)
 
-        wrapped_text = self.wrapper.wrap(text)
-        lines=[]
-        color='^7'
-        for line in wrapped_text:
-            m = re.findall(self._reColor, line)
-            if m:
-                color = m[-1]
-            if len(lines) > 0:
-                lines.append('^3>%s%s' % (color, line))
-            else:
-                lines.append('%s%s' % (color, line))
-                    
-        return lines
+        return self.wrapper.wrap(text)
 
     def error(self, msg, *args, **kwargs):
         """
