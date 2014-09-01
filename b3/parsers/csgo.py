@@ -549,6 +549,7 @@ class CsgoParser(Parser):
             else:
                 msg = prefixText([self.msgPrefix], msg)
             for line in self.getWrap(msg):
+                line = self.stripColors(line)
                 self.output.write(template % line)
 
     def saybig(self, msg):
@@ -563,6 +564,7 @@ class CsgoParser(Parser):
             else:
                 msg = prefixText([self.msgPrefix], msg)
             for line in self.getWrap(msg):
+                line = self.stripColors(line)
                 self.output.write(template % line)
 
     def message(self, client, msg):
@@ -579,6 +581,7 @@ class CsgoParser(Parser):
                 else:
                     msg = prefixText([self.msgPrefix], msg)
                 for line in self.getWrap(msg):
+                    line = self.stripColors(line)
                     self.output.write(template % {'guid': client.guid, 'msg': line})
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):

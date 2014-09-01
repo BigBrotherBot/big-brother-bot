@@ -717,7 +717,8 @@ class AbstractParser(b3.parser.Parser):
     ####################################################################################################################
 
     def _say(self, msg):
-        for line in self.getWrap(self.stripColors(prefixText([self.msgPrefix], msg))):
+        for line in self.getWrap(prefixText([self.msgPrefix], msg)):
+            line = self.stripColors(line)
             self.write(self.getCommand('say', message=line))
             time.sleep(self._settings['message_delay'])
 
@@ -897,6 +898,7 @@ class AbstractParser(b3.parser.Parser):
         """
         if client:
             for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + text)):
+                line = self.stripColors(line)
                 self.write(self.getCommand('message', cid=client.cid, message=line))
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):

@@ -417,7 +417,8 @@ class AbstractParser(b3.parser.Parser):
         while self.working:
             try:
                 msg = self.sayqueue.get(timeout=self.sayqueue_get_timeout)
-                for line in self.getWrap(self.stripColors(prefixText([self.msgPrefix], msg))):
+                for line in self.getWrap(prefixText([self.msgPrefix], msg)):
+                    line = self.stripColors(line)
                     self.write(self.getCommand('say', message=line))
                     if self.working:
                         time.sleep(self._settings['message_delay'])
@@ -912,6 +913,7 @@ class AbstractParser(b3.parser.Parser):
         if msg and len(msg.strip())>0:
             text = self.stripColors(prefixText([self.msgPrefix], msg))
             for line in self.getWrap(text):
+                line = self.stripColors(line)
                 self.write(self.getCommand('yell', message=line,
                                            big_msg_duration=int(float(self._settings['big_msg_duration']))))
 
@@ -1801,6 +1803,7 @@ def patch_b3_clients():
             # fill the queue
             text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
             for line in self.console.getWrap(text):
+                line = self.stripColors(line)
                 self.messagequeue.put(line)
             # create a thread that executes the worker and pushes out the queue
             if not hasattr(self, 'messagehandler') or not self.messagehandler.isAlive():
@@ -1826,6 +1829,7 @@ def patch_b3_clients():
         if msg and len(msg.strip())>0:
             text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
             for line in self.console.getWrap(text):
+                line = self.stripColors(line)
                 self.console.write(self.console.getCommand('bigmessage', message=line, cid=self.cid,
                                                            big_msg_duration=int(float(self.console._settings['big_msg_duration']))))
 
