@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2014/09/01 - 1.371  - 82ndab-Bravo17  - re-add color code handling in new textwrap method
 # 2014/07/27 - 1.37   - Fenix           - syntax cleanup
 #                                       - reformat changelog
 # 2014/07/18 - 1.36   - Fenix           - new getWrap implementation based on the textwrap.TextWrapper class: the
@@ -1257,7 +1258,18 @@ class Parser(object):
             self.wrapper = TextWrapper(width=self._settings['line_length'], drop_whitespace=True,
                                        break_long_words=True, break_on_hyphens=False)
 
-        return self.wrapper.wrap(text)
+        wrapped_text = self.wrapper.wrap(text)
+        lines=[]
+        color='^7'
+        for line in wrapped_text:
+            if len(lines) > 0:
+                lines.append('^3>%s%s' % (color, line))
+            else:
+                lines.append('%s%s' % (color, line))
+            m = re.findall(self._reColor, line)
+            if m:
+                color = m[-1]
+        return lines
 
     def error(self, msg, *args, **kwargs):
         """
