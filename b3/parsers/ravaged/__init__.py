@@ -104,6 +104,7 @@ class RavagedParser(Parser):
         'saybig_color': 'FC00E2',
     }
 
+    _use_color_codes = False
     _serverConnection = None
     _nbConsecutiveConnFailure = 0
 
