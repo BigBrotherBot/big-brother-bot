@@ -126,7 +126,8 @@ class MohParser(AbstractParser):
             raise Exception("the moh parser can only work with Medal of Honor")
 
     def getClient(self, cid, _guid=None):
-        """Get a connected client from storage or create it
+        """
+        Get a connected client from storage or create it
         B3 CID   <--> MoH character name
         B3 GUID  <--> MoH EA_guid
         """

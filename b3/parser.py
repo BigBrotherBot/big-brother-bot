@@ -18,6 +18,10 @@
 #
 # CHANGELOG
 #
+# 2014/09/02 - 1.37.2 - Fenix           - moved _first_line_code attribute in _settings['line_color_prefix']
+#                                       - allow customization of _settings['line_color_prefix'] from b3.xml:
+#                                         setting 'line_color_prefix' in section 'server'
+#                                       - slightly changed getWrap method to use a more pythonic approach
 # 2014/09/01 - 1.37.1 - 82ndab-Bravo17  - Add color code options for new getWrap method
 # 2014/07/27 - 1.37   - Fenix           - syntax cleanup
 #                                       - reformat changelog
@@ -231,13 +235,13 @@ class Parser(object):
     # default outputclass set to the q3a rcon class
     OutputClass = b3.parsers.q3a.rcon.Rcon
 
+    _use_color_codes = True
+
     _settings = {
         'line_length': 80,
+        'line_color_prefix': '',
         'message_delay': 0
     }
-
-    _use_color_codes = True
-    _first_line_code = ''
     
     _eventsStats_cronTab = None
     _reColor = re.compile(r'\^[0-9a-z]')
@@ -499,7 +503,12 @@ class Parser(object):
         if self.config.has_option('server', 'max_line_length'):
             self._settings['line_length'] = self.config.getint('server', 'max_line_length')
 
+        # allow configurable line color prefix
+        if self.config.has_option('server', 'line_color_prefix'):
+            self._settings['line_color_prefix'] = self.config.get('server', 'line_color_prefix')
+
         self.debug('line_length: %s' % self._settings['line_length'])
+        self.debug('line_color_prefix: "%s"' % self._settings['line_color_prefix'])
 
         self.game = b3.game.Game(self, self.gameName)
         
@@ -1261,21 +1270,21 @@ class Parser(object):
             self.wrapper = TextWrapper(width=self._settings['line_length'], drop_whitespace=True,
                                        break_long_words=True, break_on_hyphens=False)
 
+        wrapped_text = self.wrapper.wrap(text)
         if self._use_color_codes:
-            wrapped_text = self.wrapper.wrap(text)
             lines = []
-            color = self._first_line_code
+            color = self._settings['line_color_prefix']
             for line in wrapped_text:
-                if len(lines) > 0:
-                    lines.append('^3>%s%s' % (color, line))
-                else:
+                if not lines:
                     lines.append('%s%s' % (color, line))
-                m = re.findall(self._reColor, line)
-                if m:
-                    color = m[-1]
+                else:
+                    lines.append('^3>%s%s' % (color, line))
+                match = re.findall(self._reColor, line)
+                if match:
+                    color = match[-1]
             return lines
         else:
-            return self.wrapper.wrap(text)
+            return wrapped_text
 
     def error(self, msg, *args, **kwargs):
         """

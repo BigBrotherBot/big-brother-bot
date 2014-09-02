@@ -80,6 +80,7 @@ GAME_MODES_BY_MAP_ID = {
     }
 
 class MohwParser(AbstractParser):
+
     gameName = 'mohw'
 
     _commands = {
@@ -154,10 +155,8 @@ class MohwParser(AbstractParser):
 
     def startup(self):
         AbstractParser.startup(self)
-
         # create the 'Server' client
         self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN, squad=None)
-
         self.verbose('GameType: %s, Map: %s' %(self.game.gameType, self.game.mapName))
 
 

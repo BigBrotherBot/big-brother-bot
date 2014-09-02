@@ -97,6 +97,7 @@ class AbstractParser(b3.parser.Parser):
 
     _settings = {
         'line_length': 80,
+        'line_color_prefix': '',
     }
 
     _commands = {

@@ -117,6 +117,7 @@ class AbstractParser(b3.parser.Parser):
 
     _settings = {
         'line_length': 128,
+        'line_color_prefix': '',
         'message_delay': .8,
     }
 

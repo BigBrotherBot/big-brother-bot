@@ -99,6 +99,7 @@ class RavagedParser(Parser):
 
     _settings = {
         'line_length': 180,
+        'line_color_prefix': '',
         'private_message_color': '00FC48',
         'say_color': 'F2C880',
         'saybig_color': 'FC00E2',

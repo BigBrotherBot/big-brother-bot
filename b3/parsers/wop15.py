@@ -100,6 +100,7 @@ class Wop15Parser(AbstractParser):
 
     _settings = {
         'line_length': 65,
+        'line_color_prefix': '',
     }
 
     _commands = {

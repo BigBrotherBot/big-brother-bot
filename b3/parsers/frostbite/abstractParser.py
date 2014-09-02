@@ -95,7 +95,8 @@ class AbstractParser(b3.parser.Parser):
     
     _settings = {
         'line_length': 100,
-        'message_delay': 2
+        'message_delay': 2,
+        'line_color_prefix': '',
     }
 
     _gameServerVars = () # list available cvars

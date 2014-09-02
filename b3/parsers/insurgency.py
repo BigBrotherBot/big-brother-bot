@@ -106,12 +106,13 @@ class InsurgencyParser(Parser):
     # game engine does not support color code, so we need this property
     # in order to get stripColors working
     _reColor = re.compile(r'(\^[0-9])')
+    _use_color_codes = False
 
     _settings = {
         'line_length': 200,
+        'line_color_prefix': '',
     }
 
-    _use_color_codes = False
     ####################################################################################################################
     ##                                                                                                                ##
     ##  PARSER INITIALIZATION                                                                                         ##

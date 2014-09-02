@@ -169,6 +169,7 @@ class CsgoParser(Parser):
 
     _settings = {
         'line_length': 200,
+        'line_color_prefix': '',
     }
 
     _use_color_codes= False
