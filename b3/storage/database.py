@@ -221,10 +221,10 @@ class DatabaseStorage(Storage):
             try:
                 # validate dsnDict
                 if not self.dsnDict['host']:
-                    self.console.critical("invalid MySQL host in "
+                    self.console.critical("Invalid MySQL host in "
                                           "%(protocol)s://%(user)s:******@%(host)s:%(port)s%(path)s" % self.dsnDict)
                 elif not self.dsnDict['path'] or not self.dsnDict['path'][1:]:
-                    self.console.critical("missing MySQL database name in "
+                    self.console.critical("Missing MySQL database name in "
                                           "%(protocol)s://%(user)s:******@%(host)s:%(port)s%(path)s" % self.dsnDict)
                 else:
                     import MySQLdb
@@ -244,12 +244,12 @@ class DatabaseStorage(Storage):
             import sqlite3
             path = self.dsn[9:]
             filepath = b3.getAbsolutePath(path)
-            self.console.info("using database file: %s" % filepath)
+            self.console.info("Using database file: %s" % filepath)
             is_new_database = not os.path.isfile(filepath)
             conn = sqlite3.connect(filepath, check_same_thread=False)
             conn.isolation_level = None  # set autocommit mode
             if path == ':memory:' or is_new_database:
-                self.console.info("creating tables...")
+                self.console.info("Creating tables...")
                 sql_file = b3.getAbsolutePath("@b3/sql/sqlite/b3.sql")
                 with open(sql_file) as f:
                     conn.executescript(f.read())
@@ -290,11 +290,11 @@ class DatabaseStorage(Storage):
         :return The connection instance.
         """
         if self.dsnDict['protocol'] == 'mysql':
-            self.console.bot('attempting to connect to database: %s://%s:******@%s%s...',
+            self.console.bot('Attempting to connect to database: %s://%s:******@%s%s...',
                              self.dsnDict['protocol'], self.dsnDict['user'],
                              self.dsnDict['host'], self.dsnDict['path'])
         else:
-            self.console.bot('attempting to connect to database: %s...', self.dsn)
+            self.console.bot('Attempting to connect to database: %s...', self.dsn)
 
         self._count += 1
         self.closeConnection()
@@ -308,11 +308,11 @@ class DatabaseStorage(Storage):
             self.db = self.getConnection()
             self._connections.append(self.db)
             self._lastConnectAttempt = 0
-            self.console.bot('connected to database [%s times]' % self._count)
+            self.console.bot('Connected to database [%s times]' % self._count)
             if self._count == 1:
                 self.console.screen.write('Connecting to DB : OK\n')
         except Exception, e:
-            self.console.error('database connection failed: working in remote mode: %s - %s',
+            self.console.error('Database connection failed: working in remote mode: %s - %s',
                                e, traceback.extract_tb(sys.exc_info()[2]))
             if self._count == 1:
                 self.console.screen.write('Connecting to DB : FAILED!\n')
@@ -394,7 +394,7 @@ class DatabaseStorage(Storage):
                 self.console.error('[%s] %r' % (query, bindata))
 
                 if e[0] == 2013 or e[0] == 2006:
-                    self.console.warning('query failed: trying to reconnect - %s: %s' % (type(e), e))
+                    self.console.warning('Query failed: trying to reconnect - %s: %s' % (type(e), e))
                     # query failed, try to reconnect
                     if self.connect():
                         try:
@@ -434,7 +434,7 @@ class DatabaseStorage(Storage):
         Return a client object fetching data from the storage.
         :param client: The client object to fill with fetch data.
         """
-        self.console.debug('storage: getClient %s' % client)
+        self.console.debug('Storage: getClient %s' % client)
 
         if client.id > 0:
             cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'clients', dict(id=client.id), None, 1))
@@ -479,7 +479,7 @@ class DatabaseStorage(Storage):
         Return a list of clients matching the given data:
         :param match: The data to match clients against.
         """
-        self.console.debug('storage: getClientsMatching %s' % match)
+        self.console.debug('Storage: getClientsMatching %s' % match)
         cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'clients', match, 'time_edit DESC', 5))
 
         if not cursor:
@@ -502,7 +502,7 @@ class DatabaseStorage(Storage):
         Insert/update a client in the storage.
         :param client: The client to be saved.
         """
-        self.console.debug('storage: setClient %s' % client)
+        self.console.debug('Storage: setClient %s' % client)
         fields = ('ip', 'greeting', 'connections', 'time_edit', 'guid', 'pbid', 'name',
                   'time_add', 'auto_login', 'mask_level', 'group_bits', 'login', 'password')
 
@@ -515,7 +515,7 @@ class DatabaseStorage(Storage):
             if hasattr(client, self.getVar(f)):
                 data[f] = getattr(client, self.getVar(f))
 
-        self.console.debug('storage: setClient data %s' % data)
+        self.console.debug('Storage: setClient data %s' % data)
         if client.id > 0:
             self.query(QueryBuilder(self.db).UpdateQuery(data, 'clients', dict(id=client.id)))
         else:
@@ -532,7 +532,7 @@ class DatabaseStorage(Storage):
         Insert/update an alias in the storage.
         :param alias: The alias to be saved.
         """
-        self.console.debug('storage: setClientAlias %s' % alias)
+        self.console.debug('Storage: setClientAlias %s' % alias)
         fields = ('num_used', 'alias', 'client_id', 'time_add', 'time_edit')
         data = dict(id=alias.id) if alias.id else dict()
 
@@ -540,7 +540,7 @@ class DatabaseStorage(Storage):
             if hasattr(alias, self.getVar(f)):
                 data[f] = getattr(alias, self.getVar(f))
 
-        self.console.debug('storage: setClientAlias data %s' % data)
+        self.console.debug('Storage: setClientAlias data %s' % data)
         if alias.id:
             self.query(QueryBuilder(self.db).UpdateQuery(data, 'aliases', dict(id=alias.id)))
         else:
@@ -554,7 +554,7 @@ class DatabaseStorage(Storage):
         Return an alias object fetching data from the storage.
         :param alias: The alias object to fill with fetch data.
         """
-        self.console.debug('storage: getClientAlias %s' % alias)
+        self.console.debug('Storage: getClientAlias %s' % alias)
         cursor = None
         if hasattr(alias, 'id') and alias.id > 0:
             cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'aliases', dict(id=alias.id), None, 1))
@@ -581,7 +581,7 @@ class DatabaseStorage(Storage):
         Return the aliases of the given client
         :param client: The client whose aliases we want to retrieve.
         """
-        self.console.debug('storage: getClientAliases %s' % client)
+        self.console.debug('Storage: getClientAliases %s' % client)
         cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'aliases', dict(client_id=client.id), 'id'))
 
         if not cursor:
@@ -609,7 +609,7 @@ class DatabaseStorage(Storage):
         Insert/update an ipalias in the storage.
         :param ipalias: The ipalias to be saved.
         """
-        self.console.debug('storage: setClientIpAddress %s' % ipalias)
+        self.console.debug('Storage: setClientIpAddress %s' % ipalias)
         fields = ('num_used', 'ip', 'client_id', 'time_add', 'time_edit' )
         data = dict(id=ipalias.id) if ipalias.id else dict()
 
@@ -617,7 +617,7 @@ class DatabaseStorage(Storage):
             if hasattr(ipalias, self.getVar(f)):
                 data[f] = getattr(ipalias, self.getVar(f))
 
-        self.console.debug('storage: setClientIpAddress data %s' % data)
+        self.console.debug('Storage: setClientIpAddress data %s' % data)
         if ipalias.id:
             self.query(QueryBuilder(self.db).UpdateQuery(data, 'ipaliases', dict(id=ipalias.id)))
         else:
@@ -631,7 +631,7 @@ class DatabaseStorage(Storage):
         Return an ipalias object fetching data from the storage.
         :param ipalias: The ipalias object to fill with fetch data.
         """
-        self.console.debug('storage: getClientIpAddress %s' % ipalias)
+        self.console.debug('Storage: getClientIpAddress %s' % ipalias)
 
         cursor = None
         if hasattr(ipalias, 'id') and ipalias.id > 0:
@@ -659,7 +659,7 @@ class DatabaseStorage(Storage):
         Return the ip aliases of the given client.
         :param client: The client whose ip aliases we want to retrieve.
         """
-        self.console.debug('storage: getClientIpAddresses %s' % client)
+        self.console.debug('Storage: getClientIpAddresses %s' % client)
         cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'ipaliases', dict(client_id=client.id), 'id'))
 
         if not cursor:
@@ -731,7 +731,7 @@ class DatabaseStorage(Storage):
             if hasattr(penalty, self.getVar(f)):
                 data[f] = getattr(penalty, self.getVar(f))
 
-        self.console.debug('storage: setClientPenalty data %s' % data)
+        self.console.debug('Storage: setClientPenalty data %s' % data)
         if penalty.id:
             self.query(QueryBuilder(self.db).UpdateQuery(data, 'penalties', dict(id=penalty.id)))
         else:
@@ -773,7 +773,7 @@ class DatabaseStorage(Storage):
         Return a penalty object fetching data from the storage.
         :param penalty: The penalty object to fill with fetch data.
         """
-        self.console.debug('storage: getClientPenalty %s' % penalty)
+        self.console.debug('Storage: getClientPenalty %s' % penalty)
 
         cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'penalties', dict(id=penalty.id), None, 1))
         g = cursor.getOneRow()
@@ -788,7 +788,7 @@ class DatabaseStorage(Storage):
         :param client: The client whose penalties we want to retrieve.
         :param type: The type of the penalties we want to retrieve.
         """
-        self.console.debug('storage: getClientPenalties %s' % client)
+        self.console.debug('Storage: getClientPenalties %s' % client)
         where = QueryBuilder(self.db).WhereClause(dict(type=type, client_id=client.id, inactive=0))
         where += ' and (time_expire = -1 or time_expire > %s)' % int(time.time())
         cursor = self.query(QueryBuilder(self.db).SelectQuery('*', 'penalties', where, 'time_add DESC'))

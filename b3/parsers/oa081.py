@@ -293,31 +293,31 @@ class Oa081Parser(AbstractParser):
         except Exception:
             self.game.fs_game = None
             self.game.modName = None
-            self.warning("could not query server for fs_game")
+            self.warning("Could not query server for fs_game")
 
         try:
             self.game.fs_basepath = self.getCvar('fs_basepath').getString().rstrip('/')
             self.debug('fs_basepath: %s' % self.game.fs_basepath)
         except Exception:
             self.game.fs_basepath = None
-            self.warning("could not query server for fs_basepath")
+            self.warning("Could not query server for fs_basepath")
 
         try:
             self.game.fs_homepath = self.getCvar('fs_homepath').getString().rstrip('/')
             self.debug('fs_homepath: %s' % self.game.fs_homepath)
         except Exception:
             self.game.fs_homepath = None
-            self.warning("could not query server for fs_homepath")
+            self.warning("Could not query server for fs_homepath")
 
         try:
             self.game.gameType = self.defineGameType(self.getCvar('g_gametype').getString())
             self.debug('g_gametype: %s' % self.game.gameType)
         except Exception:
             self.game.gameType = None
-            self.warning("could not query server for g_gametype")
+            self.warning("Could not query server for g_gametype")
 
         # initialize connected clients
-        self.info('discover connected clients')
+        self.info('Discover connected clients')
         plist = self.getPlayerList()
         for cid, c in plist.iteritems():
             userinfostring = self.queryClientUserInfoByCid(cid)
@@ -410,12 +410,12 @@ class Oa081Parser(AbstractParser):
             return
 
         bclient = self.parseUserInfo(data)
-        self.verbose('parsed user info %s' % bclient)
+        self.verbose('Parsed user info: %s' % bclient)
         if bclient:
             cid = bclient['cid']
             
             if cid in self._connectingSlots:
-                self.debug('client on slot %s is already being connected' % cid)
+                self.debug('Client on slot %s is already being connected' % cid)
                 return
             
             self._connectingSlots.append(cid)
@@ -440,7 +440,7 @@ class Oa081Parser(AbstractParser):
                         self._connectingSlots.remove(cid)
                         return None
                     else:
-                        self.info('we are missing the guid but this is not a bot either, dumpuser')
+                        self.info('We are missing the guid but this is not a bot either, dumpuser')
                         self._connectingSlots.remove(cid)
                         self.OnClientuserinfochanged(None, self.queryClientUserInfoByCid(cid))
                         return
@@ -450,13 +450,13 @@ class Oa081Parser(AbstractParser):
                     if 'ip' in infoclient:
                         bclient['ip'] = infoclient['ip']
                     else:
-                        self.warning('failed to get client ip')
+                        self.warning('Failed to get client ip')
                 
                 if 'ip' in bclient:
                     self.clients.newClient(cid, name=bclient['name'], ip=bclient['ip'], state=b3.STATE_ALIVE,
                                            guid=guid, data={'guid': guid}, team=bclient['team'], bot=False, money=20)
                 else:
-                    self.warning('failed to get connect client')
+                    self.warning('Failed to get connect client')
                     
             self._connectingSlots.remove(cid)
                 
@@ -466,13 +466,13 @@ class Oa081Parser(AbstractParser):
         self.debug('OnKill: %s (%s)' % (match.group('aweap'), match.group('text')))
         victim = self.getByCidOrJoinPlayer(match.group('cid'))
         if not victim:
-            self.debug('no victim')
+            self.debug('No victim')
             #self.OnClientuserinfochanged(action, data, match)
             return None
 
         weapon = match.group('aweap')
         if not weapon:
-            self.debug('no weapon')
+            self.debug('No weapon')
             return None
 
         ## Fix attacker
@@ -485,12 +485,12 @@ class Oa081Parser(AbstractParser):
         ## End fix attacker
           
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return None
 
         damagetype = match.group('text').split()[-1:][0]
         if not damagetype:
-            self.debug('no damage type, weapon: %s' % weapon)
+            self.debug('No damage type, weapon: %s' % weapon)
             return None
 
         eventkey = 'EVT_CLIENT_KILL'
@@ -530,7 +530,7 @@ class Oa081Parser(AbstractParser):
 
         self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
         self.game.startRound()
-        self.debug('synchronizing client info...')
+        self.debug('Synchronizing client info...')
         self.clients.sync()
 
         return self.getEvent('EVT_GAME_ROUND_START', data=self.game)
@@ -541,7 +541,7 @@ class Oa081Parser(AbstractParser):
         client = self.clients.getByExactName(match.group('name'))
 
         if not client:
-            self.verbose('no client found')
+            self.verbose('No client found')
             return None
 
         data = match.group('text')
@@ -554,7 +554,7 @@ class Oa081Parser(AbstractParser):
         tclient = self.clients.getByExactName(match.group('aname'))
 
         if not client:
-            self.verbose('no client found')
+            self.verbose('No client found')
             return None
 
         data = match.group('text')
@@ -568,7 +568,7 @@ class Oa081Parser(AbstractParser):
         #Need example
         client = self.clients.getByCID(cid)
         if not client:
-            self.debug('no client found')
+            self.debug('No client found')
             return None
         self.verbose('OnAction: %s: %s %s' % (client.name, actiontype, data))
         return self.getEvent('EVT_CLIENT_ACTION', actiontype, client)
@@ -601,7 +601,7 @@ class Oa081Parser(AbstractParser):
             action_id = action_types[match.group('type')]
         except KeyError:
             action_id = 'flag_action_' + match.group('type')
-            self.debug('unknown CTF action type: %s (%s)' % (match.group('type'), match.group('data')))
+            self.debug('Unknown CTF action type: %s (%s)' % (match.group('type'), match.group('data')))
 
         self.debug('CTF Event: %s from team %s %s by %s' % (action_id, flagcolor, flagteam, client.name))
         if action_id == 'flag_returned':
@@ -679,7 +679,7 @@ class Oa081Parser(AbstractParser):
         self.verbose('connectClient() = %s' % players)
         for cid, p in players.iteritems():
             if int(cid) == int(ccid):
-                self.debug('Ccient found in status/playerList')
+                self.debug('Client found in status/playerList')
                 return p
 
     def getByCidOrJoinPlayer(self, cid):

@@ -168,7 +168,7 @@ class AbstractParser(b3.parser.Parser):
         """
         Main worker thread for B3.
         """
-        self.bot('start listening ...')
+        self.bot('Start listening ...')
         self.screen.write('Startup Complete : B3 is running! Let\'s get to work!\n\n')
         self.screen.write('(If you run into problems, check %s in the B3 root directory for '
                           'detailed log info)\n' % self.config.getpath('b3', 'logfile'))
@@ -185,7 +185,7 @@ class AbstractParser(b3.parser.Parser):
                 
                 try:                
                     if self._serverConnection is None:
-                        self.verbose('connecting to frostbite server...')
+                        self.verbose('Connecting to frostbite server...')
                         self._serverConnection = FrostbiteConnection(self, self._rconIp, self._rconPort, self._rconPassword)
 
                     self._serverConnection.subscribeToEvents()
@@ -223,7 +223,7 @@ class AbstractParser(b3.parser.Parser):
                         self.debug('sleeping 30 sec...')
                         time.sleep(30)
                     
-        self.bot('stop listening...')
+        self.bot('Stop listening...')
 
         with self.exiting:
             #self.input.close()
@@ -243,7 +243,7 @@ class AbstractParser(b3.parser.Parser):
         Route a Frostbite packet.
         """
         if packet is None:
-            self.warning('cannot route empty packet : %s' % traceback.extract_tb(sys.exc_info()[2]))
+            self.warning('Cannot route empty packet : %s' % traceback.extract_tb(sys.exc_info()[2]))
         
         eventType = packet[0]
         eventData = packet[1:]
@@ -280,7 +280,7 @@ class AbstractParser(b3.parser.Parser):
                 time.sleep(self._settings['message_delay'])
 
     def joinPlayers(self):
-        self.info('joining players...')
+        self.info('Joining players...')
         plist = self.getPlayerList()
         for cid, p in plist.iteritems():
             client = self.clients.getByCID(cid)
@@ -395,7 +395,7 @@ class AbstractParser(b3.parser.Parser):
         #['envex', 'gg', 'player', 'Courgette']
         client = self.getClient(data[0])
         if client is None:
-            self.warning("could not get client: %s" % traceback.extract_tb(sys.exc_info()[2]))
+            self.warning("Could not get client: %s" % traceback.extract_tb(sys.exc_info()[2]))
             return
         if client.cid == 'Server':
             # ignore chat events for Server
@@ -470,12 +470,12 @@ class AbstractParser(b3.parser.Parser):
 
         attacker = self.getClient(data[0])
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return None
 
         victim = self.getClient(data[1])
         if not victim:
-            self.debug('no victim')
+            self.debug('No victim')
             return None
         
         if data[2]:
@@ -531,7 +531,7 @@ class AbstractParser(b3.parser.Parser):
         self.game.g_maxrounds = int(data[2])
         self.getServerInfo()
         # to debug getEasyName()
-        self.info('loading %s [%s]'  % (self.getEasyName(self.game.mapName), self.game.gameType))
+        self.info('Loading %s [%s]'  % (self.getEasyName(self.game.mapName), self.game.gameType))
         return self.getEvent('EVT_GAME_WARMUP', data[0])
 
     def OnServerLevelstarted(self, action, data):
@@ -740,7 +740,7 @@ class AbstractParser(b3.parser.Parser):
         :param admin: The admin who performed the kick
         :param silent: Whether or not to announce this kick
         """
-        self.debug('kick reason: [%s]' % reason)
+        self.debug('Kick reason: [%s]' % reason)
         if isinstance(client, str):
             self.write(self.getCommand('kick', cid=client, reason=reason[:80]))
             return
@@ -1054,12 +1054,12 @@ class AbstractParser(b3.parser.Parser):
                     shortmaplist.append(m)
             if len(shortmaplist) > 0:
                 shortmaplist.sort(key=lambda mn: levenshteinDistance(data, mn.strip()))
-                self.debug("shortmaplist sorted by distance : %s" % shortmaplist)
+                self.debug("Shortmaplist sorted by distance : %s" % shortmaplist)
                 match = shortmaplist[:3]
             else:
                 easyNames = supportedEasyNames.keys()
                 easyNames.sort(key=lambda mn: levenshteinDistance(data, mn.strip()))
-                self.debug("maplist sorted by distance : %s" % easyNames)
+                self.debug("Maplist sorted by distance : %s" % easyNames)
                 match = easyNames[:3]
         return match
 
@@ -1069,7 +1069,7 @@ class AbstractParser(b3.parser.Parser):
         :param cvarName: The CVAR name.
         """
         if cvarName not in self._gameServerVars:
-            self.warning('unknown cvar: %s' % cvarName)
+            self.warning('Unknown cvar: %s' % cvarName)
             return None
         
         try:
@@ -1077,7 +1077,7 @@ class AbstractParser(b3.parser.Parser):
         except FrostbiteCommandFailedError, err:
             self.error(err)
             return
-        self.debug('get cvar %s = %s', cvarName, words)
+        self.debug('Get cvar %s = %s', cvarName, words)
         
         if words:
             if len(words) == 0:
@@ -1093,9 +1093,9 @@ class AbstractParser(b3.parser.Parser):
         :param value: The CVAR value
         """
         if cvarName not in self._gameServerVars:
-            self.warning('cannot set unknown cvar: %s' % cvarName)
+            self.warning('Cannot set unknown cvar: %s' % cvarName)
             return
-        self.debug('set cvar %s = \'%s\'', cvarName, value)
+        self.debug('Set cvar %s = \'%s\'', cvarName, value)
         try:
             self.write(('vars.%s' % cvarName, value))
         except FrostbiteCommandFailedError, err:

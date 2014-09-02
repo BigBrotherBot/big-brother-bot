@@ -139,7 +139,7 @@ class RavagedParser(Parser):
             self.warning("server/public_ip not set in the main config file: cannot query the game server for info")
         else:
             ## read game server info and store as much of it in self.game which is an instance of the b3.game.Game class
-            self.info("querying game server Source Query at %s:%s" % (self._publicIp, self._port))
+            self.info("Querying game server Source Query at %s:%s" % (self._publicIp, self._port))
             try:
                 sq = SourceQuery.SourceQuery(self._publicIp, self._port, timeout=10)
                 serverinfo = sq.info()
@@ -580,12 +580,12 @@ class RavagedParser(Parser):
         elif team == "1":
             return TEAM_RESISTANCE
         else:
-            self.debug("unexpected team id : %s" % team)
+            self.debug("Unexpected team id : %s" % team)
             return TEAM_UNKNOWN
 
     def do_kick(self, client, reason=None):
         if not client.cid:
-            self.warning("trying to kick %s which has no cid" % client)
+            self.warning("Trying to kick %s which has no cid" % client)
         else:
             if reason:
                 self.output.write('kick %s "%s"' % (client.cid, reason))
@@ -687,7 +687,7 @@ class RavagedParser(Parser):
         """
         Main worker thread for B3.
         """
-        self.bot('start listening...')
+        self.bot('Start listening...')
 
         self.screen.write('Startup Complete : B3 is running! Let\'s get to work!\n\n')
         self.screen.write('(If you run into problems, check %s in the B3 root directory for '
@@ -738,13 +738,13 @@ class RavagedParser(Parser):
                 self.warning(e)
                 self.close_game_connection()
             except Exception, e:
-                self.error("unexpected error: please report this on the B3 forums")
+                self.error("Unexpected error: please report this on the B3 forums")
                 self.error(e)
                 self.error('%s: %s', e, traceback.extract_tb(sys.exc_info()[2]))
                 # unexpected exception, better close the frostbite connection
                 self.close_game_connection()
 
-        self.info("stop listening for Ravaged events")
+        self.info("Stop listening for Ravaged events")
         # exiting B3
         with self.exiting:
             # If !die or !restart was called, then  we have the lock only after parser.handleevent Thread releases it
@@ -765,7 +765,7 @@ class RavagedParser(Parser):
                 sys.exit(self.exitcode)
 
     def setup_game_connection(self):
-        self.info('connecting to Ravaged server ...')
+        self.info('Connecting to Ravaged server ...')
         if self._serverConnection:
             self.close_game_connection()
         try:
@@ -778,14 +778,14 @@ class RavagedParser(Parser):
         while time.time() < timeout and (not self._serverConnection or not self._serverConnection.connected):
             self.close_game_connection()
             time.sleep(10)
-            self.info("retrying to connect to game server...")
+            self.info("Retrying to connect to game server...")
             try:
                 self._serverConnection = RavagedServer(self._rconIp, self._rconPort, self._rconPassword)
             except RavagedServerNetworkError, err:
                 self.error(err)
 
         if self._serverConnection is None:
-            self.error("could not connect to Ravaged server")
+            self.error("Could not connect to Ravaged server")
             self.close_game_connection()
             self.shutdown()
             raise SystemExit()
@@ -823,7 +823,7 @@ class RavagedParser(Parser):
 
     def handle_game_event(self, ravaged_event):
         if not self.working:
-            self.verbose("dropping Ravaged event %r" % ravaged_event)
+            self.verbose("Dropping Ravaged event %r" % ravaged_event)
         self.console(ravaged_event)
         try:
             self.game_event_queue.put((self.time(), self.time() + 10, ravaged_event), timeout=2)
@@ -833,7 +833,7 @@ class RavagedParser(Parser):
     def route_game_event(self, game_event):
         hfunc, param_dict = ger.getHandler(game_event)
         if hfunc:
-            self.verbose2("calling %s%r" % (hfunc.func_name, param_dict))
+            self.verbose2("Calling %s%r" % (hfunc.func_name, param_dict))
             event = hfunc(self, **param_dict)
             if event:
                 self.queueEvent(event)

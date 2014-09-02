@@ -238,7 +238,7 @@ class EventsStats(object):
         if self.console.log.isEnabledFor(DEBUG):
             mean, stdv = meanstdv(self._queue_wait)
             if len(self._queue_wait):
-                self.console.debug("events waiting in queue stats : (ms) min(%0.1f), max(%0.1f), mean(%0.1f), "
+                self.console.debug("Events waiting in queue stats : (ms) min(%0.1f), max(%0.1f), mean(%0.1f), "
                                    "stddev(%0.1f)", min(self._queue_wait), max(self._queue_wait), mean, stdv)
     
 

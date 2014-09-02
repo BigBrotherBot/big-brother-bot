@@ -100,7 +100,7 @@ class Rcon(object):
             if self.status_cache_expire_time > 5:
                 self.status_cache_expire_time = 5
 
-        self.console.bot('rcon status cache expire time: [%s sec] Type: [%s]' % (self.status_cache_expire_time,
+        self.console.bot('Rcon status cache expire time: [%s sec] Type: [%s]' % (self.status_cache_expire_time,
                                                                                  self.status_cache_type))
 
         self.socket = socket.socket(type=socket.SOCK_DGRAM)
@@ -123,7 +123,7 @@ class Rcon(object):
                 data = unicode(data, errors='ignore')
             data = data.encode(self.console.encoding, 'replace')
         except Exception, msg:
-            self.console.warning('%s: ERROR encoding data: %r', source, msg)
+            self.console.warning('%s: error encoding data: %r', source, msg)
             data = 'Encoding error'
             
         return data
@@ -172,7 +172,7 @@ class Rcon(object):
             retries += 1
 
             if retries >= maxRetries:
-                self.console.error('QSERVER: too much tries: aborting (%r)', data.strip())
+                self.console.error('QSERVER: too many tries: aborting (%r)', data.strip())
                 break
 
             self.console.verbose('QSERVER: retry sending %r (%s/%s)...', data.strip(), retries, maxRetries)
@@ -232,7 +232,7 @@ class Rcon(object):
             retries += 1
 
             if retries >= maxRetries:
-                self.console.error('RCON: too much tries: aborting (%r)', data.strip())
+                self.console.error('RCON: too many tries: aborting (%r)', data.strip())
                 break
 
             self.console.verbose('RCON: retry sending %r (%s/%s)...', data.strip(), retries, maxRetries)
@@ -332,7 +332,7 @@ class Rcon(object):
         readables, writeables, errors = select.select([sock], [], [sock], socketTimeout)
 
         if not len(readables):
-            self.console.verbose('no readable socket')
+            self.console.verbose('No readable socket')
             return ''
 
         while len(readables):

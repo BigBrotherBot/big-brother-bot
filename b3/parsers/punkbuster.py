@@ -181,7 +181,7 @@ class PunkBuster(object):
                     players[str(lastslot - 1)] = d
                     
                 else:
-                    self.console.debug('duplicate or incorrect PB slot number - client ignored %s '
+                    self.console.debug('Duplicate or incorrect PB slot number - client ignored %s '
                                        'lastslot %s' % (m.group('slot'), lastslot))
             elif 'Player List:' not in line:
                 self.console.verbose2("PB player info cannot be extracted of %r" % line)

@@ -220,7 +220,7 @@ class AbstractParser(b3.parser.Parser):
         """
         Main worker thread for B3.
         """
-        self.bot('start listening ...')
+        self.bot('Start listening ...')
         self.screen.write('Startup Complete : B3 is running! Let\'s get to work!\n\n')
         self.screen.write('(If you run into problems, check %s in the B3 root directory for '
                           'detailed log info)\n' % self.config.getpath('b3', 'logfile'))
@@ -240,7 +240,7 @@ class AbstractParser(b3.parser.Parser):
                     self.setup_frostbite_connection()
                 except CommandError, err:
                     if err.message[0] == 'InvalidPasswordHash':
-                        self.error("your rcon password is incorrect: "
+                        self.error("Your rcon password is incorrect: "
                                    "check setting 'rcon_password' in your main config file")
                         self.exitcode = 220
                         break
@@ -257,7 +257,7 @@ class AbstractParser(b3.parser.Parser):
                 added, expire, packet = self.frostbite_event_queue.get(timeout=5)
                 self.routeFrostbitePacket(packet)
             except Queue.Empty:
-                self.verbose2("no game server event to treat in the last 5s")
+                self.verbose2("No game server event to treat in the last 5s")
             except CommandError, err:
                 # it does not matter from the parser perspective if Frostbite command failed
                 # (timeout or bad reply)
@@ -267,13 +267,13 @@ class AbstractParser(b3.parser.Parser):
                 self.warning(e)
                 self.close_frostbite_connection()
             except Exception, e:
-                self.error("unexpected error: please report this on the B3 forums")
+                self.error("Unexpected error: please report this on the B3 forums")
                 self.error(e)
                 self.error('%s: %s', e, traceback.extract_tb(sys.exc_info()[2]))
                 # unexpected exception, better close the frostbite connection
                 self.close_frostbite_connection()
 
-        self.info("stop listening for Frostbite2 events")
+        self.info("Stop listening for Frostbite2 events")
 
         # exiting B3
         with self.exiting:
@@ -307,7 +307,7 @@ class AbstractParser(b3.parser.Parser):
         """
         Initialize the connection with the Frostbite2 server.
         """
-        self.info('connecting to frostbite2 server ...')
+        self.info('Connecting to frostbite2 server ...')
         if self._serverConnection:
             self.close_frostbite_connection()
 
@@ -315,13 +315,13 @@ class AbstractParser(b3.parser.Parser):
 
         timeout = GAMESERVER_CONNECTION_WAIT_TIMEOUT + time.time()
         while time.time() < timeout and not self._serverConnection.connected:
-            self.info("retrying to connect to game server...")
+            self.info("Retrying to connect to game server...")
             time.sleep(2)
             self.close_frostbite_connection()
             self._serverConnection = FrostbiteServer(self._rconIp, self._rconPort, self._rconPassword)
 
         if self._serverConnection is None or not self._serverConnection.connected:
-            self.error("could not connect to Frostbite2 server")
+            self.error("Could not connect to Frostbite2 server")
             self.close_frostbite_connection()
             self.shutdown()
             raise SystemExit()
@@ -346,7 +346,7 @@ class AbstractParser(b3.parser.Parser):
             # checkout punkbuster support
             result = self._serverConnection.command('punkBuster.isActive')
         except CommandError, e:
-            self.error("could not get punkbuster status : %r" % e)
+            self.error("Could not get punkbuster status : %r" % e)
             self.PunkBuster = None
             self.ban_with_server = True
         else:
@@ -355,7 +355,7 @@ class AbstractParser(b3.parser.Parser):
                 self.write(('punkBuster.pb_sv_command', 'pb_sv_plist'))
             elif not self.ban_with_server:
                 self.ban_with_server = True
-                self.warning("forcing ban agent to 'server' as we failed to verify that punkbuster is active on the server")
+                self.warning("Forcing ban agent to 'server' as we failed to verify that punkbuster is active on the server")
 
     def close_frostbite_connection(self):
         """
@@ -372,19 +372,19 @@ class AbstractParser(b3.parser.Parser):
         Handle Froostbite events.
         """
         if not self.working:
-            self.verbose("dropping Frostbite event %r" % packet)
+            self.verbose("Dropping Frostbite event %r" % packet)
         self.console(repr(packet))
         try:
             self.frostbite_event_queue.put((self.time(), self.time() + 10, packet), timeout=2)
         except Queue.Full:
-            self.error("Frostbite event queue full: dropping event %r" % packet)
+            self.error("Frostbite2 event queue full: dropping event %r" % packet)
 
     def routeFrostbitePacket(self, packet):
         """
         Route a frostbite packet.
         """
         if packet is None:
-            self.warning('cannot route empty packet: %s' % traceback.extract_tb(sys.exc_info()[2]))
+            self.warning('Cannot route empty packet: %s' % traceback.extract_tb(sys.exc_info()[2]))
         eventType = packet[0]
         eventData = packet[1:]
 
@@ -393,7 +393,7 @@ class AbstractParser(b3.parser.Parser):
         if match:
             func = 'On%s%s' % (string.capitalize(match.group('actor')),
                                string.capitalize(match.group('event')))
-            self.verbose2("looking for event handling method called : " + func)
+            self.verbose2("Looking for event handling method called : " + func)
 
         if match and hasattr(self, func):
             #self.verbose2('routing ----> %s(%r)' % (func,eventData))
@@ -500,7 +500,7 @@ class AbstractParser(b3.parser.Parser):
         """
         client = self.getClient(data[0])
         if client is None:
-            self.warning("could not get client: %s" % traceback.extract_tb(sys.exc_info()[2]))
+            self.warning("Could not get client: %s" % traceback.extract_tb(sys.exc_info()[2]))
             return
         if client.cid == 'Server':
             # ignore chat events for Server
@@ -590,12 +590,12 @@ class AbstractParser(b3.parser.Parser):
             data[0] = 'Server'
         attacker = self.getClient(data[0])
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return None
 
         victim = self.getClient(data[1])
         if not victim:
-            self.debug('no victim')
+            self.debug('No victim')
             return None
 
         weapon = data[2]
@@ -814,9 +814,9 @@ class AbstractParser(b3.parser.Parser):
                         client.guid = matching_clients[0].guid
                         client.auth()
                 except Exception, err:
-                    self.warning("failed to try to auth %s by pbid. %r" % (name, err))
+                    self.warning("Failed to try to auth %s by pbid. %r" % (name, err))
             if not client.guid:
-                self.error("game server failed to provide a EA_guid for player %s: cannot auth player!" % name)
+                self.error("Game server failed to provide a EA_guid for player %s: cannot auth player!" % name)
             else:
                 client.save()
 
@@ -1279,7 +1279,7 @@ class AbstractParser(b3.parser.Parser):
             for p in pib:
                 scores[p['name']] = int(p['score'])
         except Exception, e:
-            self.debug('unable to retrieve scores from playerlist (%r)' % e)
+            self.debug('Unable to retrieve scores from playerlist (%r)' % e)
         return scores
 
     ####################################################################################################################
@@ -1385,7 +1385,7 @@ class AbstractParser(b3.parser.Parser):
             self.warning('unable to retrieve cvar: %s : error: %s' % (cvarName, err))
             return None
 
-        self.debug('get cvar: %s = %s', cvarName, words)
+        self.debug('Get cvar: %s = %s', cvarName, words)
 
         if words:
             if len(words) == 0:
@@ -1401,7 +1401,7 @@ class AbstractParser(b3.parser.Parser):
         if cvarName not in self._gameServerVars:
             self.warning('cannot set unknown cvar: %s' % cvarName)
             return
-        self.debug('set cvar: %s = %s', cvarName, value)
+        self.debug('Set cvar: %s = %s', cvarName, value)
         try:
             self.write(('vars.%s' % cvarName, value))
         except CommandFailedError, err:
@@ -1523,7 +1523,7 @@ class AbstractParser(b3.parser.Parser):
         if self.config.has_option('server', 'ban_agent'):
             ban_agent = self.config.get('server', 'ban_agent')
             if ban_agent is None or ban_agent.lower() not in ('server', 'punkbuster', 'both'):
-                self.warning("unexpected value '%s' for ban_agent config option: expecting one of 'server', "
+                self.warning("Unexpected value '%s' for ban_agent config option: expecting one of 'server', "
                              "'punkbuster', 'both'." % ban_agent)
             else:
                 if ban_agent.lower() == 'server':
@@ -1543,8 +1543,8 @@ class AbstractParser(b3.parser.Parser):
                 else:
                     self.error("unexpected value '%s' for ban_agent" % ban_agent)
 
-        self.info("ban agent 'server' : %s" % ('activated' if self.ban_with_server else 'deactivated'))
-        self.info("ban agent 'punkbuster' : %s" % ('activated' if self.PunkBuster else 'deactivated'))
+        self.info("Ban agent 'server' : %s" % ('activated' if self.ban_with_server else 'deactivated'))
+        self.info("Ban agent 'punkbuster' : %s" % ('activated' if self.PunkBuster else 'deactivated'))
 
     def load_conf_big_b3_private_responses(self):
         """
@@ -1558,7 +1558,7 @@ class AbstractParser(b3.parser.Parser):
                     'ON' if self._settings['big_b3_private_responses'] else 'OFF'))
             except ValueError, err:
                 self._settings['big_b3_private_responses'] = default_value
-                self.warning("Invalid value. %s. Using default value '%s'" % (err, default_value))
+                self.warning("Invalid value: %s: using default value '%s'" % (err, default_value))
         else:
             self._settings['big_b3_private_responses'] = default_value
 
@@ -1573,7 +1573,7 @@ class AbstractParser(b3.parser.Parser):
                 self.info("value for setting %s.big_msg_duration is %s" % (self.gameName, self._settings['big_msg_duration']))
             except ValueError, err:
                 self._settings['big_msg_duration'] = default_value
-                self.warning("invalid value: %s: using default value '%s'" % (err, default_value))
+                self.warning("Invalid value: %s: using default value '%s'" % (err, default_value))
         else:
             self._settings['big_msg_duration'] = default_value
 
@@ -1592,7 +1592,7 @@ class AbstractParser(b3.parser.Parser):
                     delay_sec = .5
                 self._settings['message_delay'] = delay_sec
             except Exception, err:
-                self.error('failed to read message_delay setting "%s" : '
+                self.error('Failed to read message_delay setting "%s" : '
                            '%s' % (self.config.get(self.gameName, 'message_delay'), err))
 
         self.debug('message_delay: %s' % self._settings['message_delay'])
@@ -1629,7 +1629,7 @@ class AbstractParser(b3.parser.Parser):
             except ValueError, err:
                 # Houston - We have a problem.
                 # We give an error message and use the default value.
-                self.error('failed to read big_msg_repeat setting: use default: %s' % err)
+                self.error('Failed to read big_msg_repeat setting: use default: %s' % err)
 
         # if _settings['big_b3_private_responses']:set self._settings['big_msg_repeat'] from config or use default
         self._settings['big_msg_repeat'] = _default_value if self._settings['big_b3_private_responses'] else 'off'
@@ -1697,7 +1697,7 @@ class AbstractParser(b3.parser.Parser):
                 try:
                     num_rounds = int(this.console.game.serverinfo['roundsTotal'])
                 except Exception, err:
-                    this.warning("could not get current number of rounds", exc_info=err)
+                    this.warning("Could not get current number of rounds", exc_info=err)
                     client.message("please specify the number of rounds you want")
                     return
             else:
@@ -1705,7 +1705,7 @@ class AbstractParser(b3.parser.Parser):
                 try:
                     num_rounds = int(num_rounds)
                 except Exception, err:
-                    this.warning("could not read the number of rounds of '%s'" % num_rounds, exc_info=err)
+                    this.warning("Could not read the number of rounds of '%s'" % num_rounds, exc_info=err)
                     client.message("could not read the number of rounds of '%s'" % num_rounds)
                     return
 

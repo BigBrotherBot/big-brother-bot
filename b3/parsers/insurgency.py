@@ -124,7 +124,7 @@ class InsurgencyParser(Parser):
         Called after the parser is created before run().
         """
         if not self.is_sourcemod_installed():
-            self.critical("you need to have SourceMod installed on your game server")
+            self.critical("You need to have SourceMod installed on your game server")
             raise SystemExit(220)
 
         # add game specific events

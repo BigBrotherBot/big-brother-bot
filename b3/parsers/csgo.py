@@ -184,7 +184,7 @@ class CsgoParser(Parser):
         Called after the parser is created before run().
         """
         if not self.is_sourcemod_installed():
-            self.critical("you need to have SourceMod installed on your game server for B3 to work")
+            self.critical("You need to have SourceMod installed on your game server for B3 to work")
             raise SystemExit(220)
 
         # add game specific events

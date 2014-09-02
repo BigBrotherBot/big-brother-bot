@@ -272,11 +272,11 @@ class CodParser(AbstractParser):
         Called after the parser is created before run().
         """
         if not self.config.has_option('server','game_log'):
-            self.critical("your main config file is missing the 'game_log' setting in section 'server'")
+            self.critical("Your main config file is missing the 'game_log' setting in section 'server'")
             raise SystemExit(220)
 
         if self.IpsOnly:
-            self.debug('authentication method: Using IP instead of GUID!')
+            self.debug('Authentication method: Using IP instead of GUID!')
             # add the world client
 
         client = self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
@@ -287,8 +287,8 @@ class CodParser(AbstractParser):
                 self.info('punkbuster active: %s' % result)
                 self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
             else:
-                self.warning('punkbuster test failed: check your game server setup and B3 config!')
-                self.debug('disabling punkbuster support!')
+                self.warning('Punkbuster test failed: check your game server setup and B3 config!')
+                self.debug('Disabling punkbuster support!')
 
         # add event mappings
         self._eventMap['warmup'] = self.getEventID('EVT_GAME_WARMUP')
@@ -301,14 +301,14 @@ class CodParser(AbstractParser):
             self.info('map is: %s' % self.game.mapName)
 
         # force g_logsync
-        self.debug('forcing server cvar g_logsync to %s' % self._logSync)
+        self.debug('Forcing server cvar g_logsync to %s' % self._logSync)
         self.write('set g_logsync %s' % self._logSync)
 
         try:
             self.game.fs_game = self.getCvar('fs_game').getString()
         except:
             self.game.fs_game = None
-            self.warning('could not query server for fs_game')
+            self.warning('Could not query server for fs_game')
         try:
             self.game.fs_basepath = self.getCvar('fs_basepath').getString().rstrip('/')
             self.debug('fs_basepath: %s' % self.game.fs_basepath)
@@ -326,10 +326,10 @@ class CodParser(AbstractParser):
             self.debug('shortversion: %s' % self.game.shortversion)
         except:
             self.game.shortversion = None
-            self.warning('could not query server for shortversion')
+            self.warning('Could not query server for shortversion')
 
         self.setVersionExceptions()
-        self.debug('parser started')
+        self.debug('Parser started')
 
     ####################################################################################################################
     ##                                                                                                                ##
@@ -340,13 +340,13 @@ class CodParser(AbstractParser):
     def OnK(self, action, data, match=None):
         victim = self.getClient(victim=match)
         if not victim:
-            self.debug('no victim')
+            self.debug('No victim')
             self.OnJ(action, data, match)
             return None
 
         attacker = self.getClient(attacker=match)
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return None
 
         attacker.team = self.getTeam(match.group('ateam'))
@@ -368,13 +368,13 @@ class CodParser(AbstractParser):
     def OnD(self, action, data, match=None):
         victim = self.getClient(victim=match)
         if not victim:
-            self.debug('no victim - attempt join')
+            self.debug('No victim - attempt join')
             self.OnJ(action, data, match)
             return None
 
         attacker = self.getClient(attacker=match)
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return None
 
         attacker.team = self.getTeam(match.group('ateam'))
@@ -401,7 +401,7 @@ class CodParser(AbstractParser):
                 # Flag it to remove from the queue
                 cid = match.group('cid')
                 self._counter[cid] = 'Disconnected'
-                self.debug('slot %s has disconnected or was forwarded to our http download location: '
+                self.debug('Slot %s has disconnected or was forwarded to our http download location: '
                            'removing from authentication queue...' % cid)
         return None
 
@@ -411,26 +411,26 @@ class CodParser(AbstractParser):
         name = match.group('name')
         if len(codguid) < self._guidLength:
             # invalid guid
-            self.verbose2('invalid GUID: %s' % codguid)
+            self.verbose2('Invalid GUID: %s' % codguid)
             codguid = None
 
         client = self.getClient(match)
 
         if client:
-            self.verbose2('client object already exists')
+            self.verbose2('Client object already exists')
             # lets see if the name/guids match for this client, prevent player mixups after mapchange (not with PunkBuster enabled)
             if not self.PunkBuster:
                 if self.IpsOnly:
                     # this needs testing since the name cleanup code may interfere with this next condition
                     if name != client.name:
-                        self.debug('this is not the correct client (%s <> %s): disconnecting..' % (name, client.name))
+                        self.debug('This is not the correct client (%s <> %s): disconnecting..' % (name, client.name))
                         client.disconnect()
                         return None
                     else:
                         self.verbose2('client.name in sync: %s == %s' % (name, client.name))
                 else:
                     if codguid != client.guid:
-                        self.debug('this is not the correct client (%s <> %s): disconnecting...' % (codguid, client.guid))
+                        self.debug('This is not the correct client (%s <> %s): disconnecting...' % (codguid, client.guid))
                         client.disconnect()
                         return None
                     else:
@@ -449,12 +449,12 @@ class CodParser(AbstractParser):
             t = Timer(2, self.newPlayer, (cid, codguid, name))
             t.start()
             self.debug('%s connected: waiting for authentication...' % name)
-            self.debug('our authentication queue: %s' % self._counter)
+            self.debug('Our authentication queue: %s' % self._counter)
 
     def OnA(self, action, data, match=None):
         client = self.getClient(match)
         if not client:
-            self.debug('no client - attempt join')
+            self.debug('No client - attempt join')
             self.OnJ(action, data, match)
             client = self.getClient(match)
             if not client:
@@ -462,13 +462,13 @@ class CodParser(AbstractParser):
 
         client.name = match.group('name')
         actiontype = match.group('type')
-        self.verbose('on action: %s: %s' % (client.name, actiontype))
+        self.verbose('On action: %s: %s' % (client.name, actiontype))
         return self.getEvent('EVT_CLIENT_ACTION', data=actiontype, client=client)
 
     def OnSay(self, action, data, match=None):
         client = self.getClient(match)
         if not client:
-            self.debug('no client - attempt join')
+            self.debug('No client - attempt join')
             self.OnJ(action, data, match)
             client = self.getClient(match)
             if not client:
@@ -493,7 +493,7 @@ class CodParser(AbstractParser):
     def OnSayteam(self, action, data, match=None):
         client = self.getClient(match)
         if not client:
-            self.debug('no client - attempt join')
+            self.debug('No client - attempt join')
             self.OnJ(action, data, match)
             client = self.getClient(match)
             if not client:
@@ -521,7 +521,7 @@ class CodParser(AbstractParser):
         client = self.getClient(match)
         tclient = self.getClient(attacker=match)
         if not client:
-            self.debug('no client - attempt join')
+            self.debug('No client - attempt join')
             self.OnJ(action, data, match)
             client = self.getClient(match)
             if not client:
@@ -649,7 +649,7 @@ class CodParser(AbstractParser):
             if self.IpsOnly:
                 codguid = sp['ip']
             if not codguid:
-                self.warning('missing or wrong CodGuid and PunkBuster is disabled: cannot authenticate!')
+                self.warning('Missing or wrong CodGuid and PunkBuster is disabled: cannot authenticate!')
                 if self._counter.get(cid):
                     self._counter.pop(cid)
                 return None
@@ -662,7 +662,7 @@ class CodParser(AbstractParser):
                 else:
                     return None
         elif self._counter.get(cid) > 10:
-            self.debug('could not auth %s: giving up...' % name)
+            self.debug('Could not auth %s: giving up...' % name)
             if self._counter.get(cid):
                 self._counter.pop(cid)
             return None
@@ -674,7 +674,7 @@ class CodParser(AbstractParser):
                 t = Timer(4, self.newPlayer, (cid, codguid, name))
                 t.start()
             else:
-                self.warning('all authentication attempts failed')
+                self.warning('All authentication attempts failed')
             return None
 
         client = self.clients.newClient(cid, name=name, ip=ip, state=b3.STATE_ALIVE,

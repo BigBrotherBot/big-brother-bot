@@ -190,7 +190,7 @@ class AbstractParser(b3.parser.Parser):
         """
         Called after the parser is created before run().
         """
-        self.bot('starting Battleye AbstractParser v%s', __version__)
+        self.bot('Starting Battleye AbstractParser v%s', __version__)
         # add specific events
         self.Events.createEvent('EVT_GAMESERVER_CONNECT', 'connected to game server')
         self.Events.createEvent('EVT_CLIENT_SPAWN', 'Client Spawn')
@@ -264,7 +264,7 @@ class AbstractParser(b3.parser.Parser):
                 added, expire, event = self.battleye_event_queue.get(timeout=5)
                 self.routeBattleyeEvent(event)
             except Queue.Empty:
-                self.verbose2("no game server event to treat in the last 5s")
+                self.verbose2("No game server event to treat in the last 5s")
             except CommandError, err:
                 # it does not matter from the parser perspective if Battleye command failed
                 # (timeout or bad reply)
@@ -274,7 +274,7 @@ class AbstractParser(b3.parser.Parser):
                 self.warning(e)
                 self.close_battleye_connection()
             except Exception, e:
-                self.error("unexpected error: please report this on the B3 forums")
+                self.error("Unexpected error: please report this on the B3 forums")
                 self.error(e)
                 # unexpected exception, better close the battleye connection
                 self.close_battleye_connection()
@@ -282,7 +282,7 @@ class AbstractParser(b3.parser.Parser):
         # the Battleye connection is running its own thread to communicate
         # with the game server. We need to tell this thread to stop.
         self.close_battleye_connection()
-        self.info("stop listening for Battleye events")
+        self.info("Stop listening for Battleye events")
         self.output.battleye_server = None
         
         # exiting B3
@@ -296,7 +296,7 @@ class AbstractParser(b3.parser.Parser):
             # In both cases, the SystemExit exception that triggered exitcode to be filled with an exit value was
             # caught. Now that we are sure that everything was gracefully stopped, we can re-raise the SystemExit
             # exception.
-            self.debug('exiting with exitcode: %s' % self.exitcode)
+            self.debug('Exiting with exitcode: %s' % self.exitcode)
             time.sleep(5)
             if self.exitcode:
                 sys.exit(self.exitcode)
@@ -305,7 +305,7 @@ class AbstractParser(b3.parser.Parser):
         """
         Setup the Connection to the Battleye server.
         """
-        self.info('connecting to Battleye server on %s:%s...' % (self._rconIp, self._rconPort))
+        self.info('Connecting to Battleye server on %s:%s...' % (self._rconIp, self._rconPort))
         if self._serverConnection:
             self.close_battleye_connection()
 
@@ -313,13 +313,13 @@ class AbstractParser(b3.parser.Parser):
         self.info("server connection is %s" % repr(self._serverConnection))
         timeout = GAMESERVER_CONNECTION_WAIT_TIMEOUT + time.time()
         while time.time() < timeout and not self._serverConnection.connected:
-            self.info("retrying to connect to game server...")
+            self.info("Retrying to connect to game server...")
             time.sleep(2)
             self.close_battleye_connection()
             self._serverConnection = BattleyeServer(self._rconIp, self._rconPort, self._rconPassword)
 
         if self._serverConnection is None or not self._serverConnection.connected:
-            self.error("could not connect to Battleye server")
+            self.error("Could not connect to Battleye server")
             self.close_battleye_connection()
             self.shutdown()
             raise SystemExit()
@@ -382,7 +382,7 @@ class AbstractParser(b3.parser.Parser):
     def load_use_unverified_guid(self):
         if self.config.has_option('b3', 'use_unverified_guid'):
             self._useunverifiedguid = self.config.getboolean('b3', 'use_unverified_guid')
-        self.debug('use unverified GUID %s' % self._useunverifiedguid)
+        self.debug('Use unverified GUID %s' % self._useunverifiedguid)
 
     ####################################################################################################################
     ##                                                                                                                ##
@@ -395,9 +395,9 @@ class AbstractParser(b3.parser.Parser):
         Decide what to do with the event received from the BattlEye server
         """
         if message is None:
-            self.warning('cannot route empty event')
+            self.warning('Cannot route empty event')
 
-        self.info('server message is %s' % message)
+        self.info('Server message is: %s' % message)
 
         if message.startswith('RCon admin #'):
             func = self.OnServerMessage
@@ -416,7 +416,7 @@ class AbstractParser(b3.parser.Parser):
                 func = self.OnBattleyeKick
                 eventData = message[8:]
             else:
-                self.debug('unhandled server message: %s' % message)
+                self.debug('Unhandled server message: %s' % message)
                 eventData = None
                 func = self.OnUnknownEvent
         elif message.startswith('Verified GUID'):
@@ -541,7 +541,7 @@ class AbstractParser(b3.parser.Parser):
         """
         if not self.working:
             try:
-                self.verbose("dropping Battleye event %r" % event)
+                self.verbose("Dropping Battleye event %r" % event)
             except:
                 pass
 
@@ -562,11 +562,11 @@ class AbstractParser(b3.parser.Parser):
         name, sep, message = data.partition(': ')
         self.debug('name = %s, message = %s, name length = %s' % (name, message, len(name)))
 
-        self.debug('looking for client [%s]' % name)
+        self.debug('Looking for client [%s]' % name)
         client = self.getClient(name.lower(), auth=False)
 
         if client is None:
-            self.warning("could not get client: %s" % traceback.extract_tb(sys.exc_info()[2]))
+            self.warning("Could not get client: %s" % traceback.extract_tb(sys.exc_info()[2]))
             return
         if client.cid == 'Server':
             # ignore chat events for Server
@@ -631,7 +631,7 @@ class AbstractParser(b3.parser.Parser):
         cid, sep, data = data.partition(' ')
         name, sep, guid = data.rpartition(' - GUID: ')
         name = name.strip()
-        self.debug('CID: %s Name %s Guid %s' % (cid, name, guid))
+        self.debug('CID: %s, Name %s, Guid %s' % (cid, name, guid))
 
         client = self.getClient(name=name, cid=cid, guid=guid)
         if client:
@@ -644,7 +644,7 @@ class AbstractParser(b3.parser.Parser):
             # make sure client is now authenticated as we know its guid
             client.auth()
         else:
-            self.warning("could not create client")
+            self.warning("Could not create client")
 
     def OnVerifiedGUID(self, data):
         """
@@ -668,7 +668,7 @@ class AbstractParser(b3.parser.Parser):
             # make sure client is now authenticated as we know its guid
             client.auth()
         else:
-            self.warning("could not create client")
+            self.warning("Could not create client")
 
     def OnServerMessage(self, data):
         """
@@ -693,7 +693,7 @@ class AbstractParser(b3.parser.Parser):
         name = parts[0]
         client = self.getClient(name=name, cid=cid)
         event = self.getEvent('EVT_BATTLEYE_SCRIPTLOG', data, client)
-        self.debug('script logged: slot: %s name %s data: %s' % (cid, name, data))
+        self.debug('Script logged: slot: %s name %s data: %s' % (cid, name, data))
         return event
 
     def OnBattleyeKick(self, data):
@@ -705,7 +705,7 @@ class AbstractParser(b3.parser.Parser):
         cid = player.partition(' ')[0]
         guid = player.rpartition('(')[2]
         name = data[len(cid)+1:-len(guid)-len(reason)-33]
-        self.debug('looking for client %s with GUID %s' % (name, guid))
+        self.debug('Looking for client %s with GUID %s' % (name, guid))
         client = self.getClient(name, guid=guid, auth=False)
         if client:
             client.disconnect() # this triggers the EVT_CLIENT_DISCONNECT event
@@ -762,8 +762,8 @@ class AbstractParser(b3.parser.Parser):
                 raise
         except:
             raise
-        self.debug('playerlist is %s' % player_list)
-        self.debug('playerlist is %s long' % (len(player_list) - 4))
+        self.debug('Playerlist is %s' % player_list)
+        self.debug('Playerlist is %s long' % (len(player_list) - 4))
         for i in range(3, len(player_list)-1):
             p = re.match(self._regPlayer_lobby, player_list[i])
             if p:
@@ -773,11 +773,11 @@ class AbstractParser(b3.parser.Parser):
                     pl['lobby'] = True
                     players[pl['cid']] = pl
                 elif pl['verified'] =='?':
-                    self.debug('player in lobby GUID not yet verified: %s' % pl)
+                    self.debug('Player in lobby GUID not yet verified: %s' % pl)
                     pl['lobby'] = True
                     players[pl['cid']] = pl
                 else:
-                    self.debug('player in lobby GUID status unknown: %s' % pl)
+                    self.debug('Player in lobby GUID status unknown: %s' % pl)
             else:
         
                 p = re.match(self._regPlayer, player_list[i])
@@ -788,23 +788,23 @@ class AbstractParser(b3.parser.Parser):
                         pl['lobby'] = False
                         players[pl['cid']] = pl
                     elif pl['verified'] =='?':
-                        self.debug('player GUID not yet verified: %s' % pl)
+                        self.debug('Player GUID not yet verified: %s' % pl)
                         pl['lobby'] = False
                         players[pl['cid']] = pl
                     else:
-                        self.debug('player GUID status unknown: %s' % pl)
+                        self.debug('Player GUID status unknown: %s' % pl)
 
                 else:
                     p = re.match(self._regPlayer_noguidyet, player_list[i])
                     if p:
                         pl = p.groupdict()
-                        self.debug('player GUID not yet known: %s' % pl)
+                        self.debug('Player GUID not yet known: %s' % pl)
                         pl['lobby'] = True
                         players[pl['cid']] = pl
                     else:
-                        self.debug('not matched: %s ' % player_list[i])
+                        self.debug('Not matched: %s ' % player_list[i])
 
-        self.debug('players on server: %s' % players)
+        self.debug('Players on server: %s' % players)
         return players
 
     def authorizeClients(self):
@@ -829,21 +829,21 @@ class AbstractParser(b3.parser.Parser):
                 if ((client.authed and c.get('verified') == 'OK' and c_guid == client.guid) or
                     (not client.authed and c.get('verified') == '?') or
                     (not client.authed and c.get('verified') == '-')) and c.get('name') == client.name:
-                    self.debug('client found on server: %s' % client.name)
+                    self.debug('Client found on server: %s' % client.name)
                     mlist[cid] = client
-                    self.debug('lobby is %s ' % c['lobby'])
+                    self.debug('Lobby is %s ' % c['lobby'])
                     if c['lobby'] and client.team != self.getTeam('lobby'):
-                        self.debug('putting in Lobby')
+                        self.debug('Putting in Lobby')
                         client.team = self.getTeam('lobby')
                     elif client.team == self.getTeam('lobby') and not c['lobby']:
                         self.debug('removing from lobby')
                         client.team = self.getTeam('unknown')
                 else:
                     # Wrong client in slot
-                    self.debug('removing %s from list - wrong client' % client.name)
+                    self.debug('Removing %s from list - wrong client' % client.name)
                     client.disconnect()
             else:
-                self.debug('look for client in storage')
+                self.debug('Look for client in storage')
                 cl = None
                 if c_guid:
                     c_verified = c.get('verified', None)
@@ -872,7 +872,7 @@ class AbstractParser(b3.parser.Parser):
 
             for client in self.clients.getList():
                 if client.cid not in client_cid_list:
-                    self.debug('removing %s from list - left server' % client.name)
+                    self.debug('Removing %s from list - left server' % client.name)
                     client.disconnect()
 
         self.queueEvent(self.getEvent('EVT_PLAYER_SYNC_COMPLETED'))

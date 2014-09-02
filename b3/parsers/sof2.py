@@ -243,7 +243,7 @@ class Sof2Parser(AbstractParser):
             target = None
             return m, m.group('action').lower(), m.group('data').strip(), client, target
         else:
-            self.verbose('line did not match format: %s' % line)
+            self.verbose('Line did not match format: %s' % line)
 
     def parseUserInfo(self, info):
         """
@@ -298,10 +298,10 @@ class Sof2Parser(AbstractParser):
                 self._clientConnectID = match.group('bcid')
                 self._clientConnectGuid = 'BOT' + str(match.group('bcid'))
                 self._clientConnectIp = '0.0.0.0'
-                self.bot('bot connected!')
+                self.bot('Bot connected!')
                 return None
             except IndexError:
-                self.error('parser could not connect client')
+                self.error('Parser could not connect client')
                 return None
 
         try:
@@ -311,7 +311,7 @@ class Sof2Parser(AbstractParser):
             self._clientConnectGuid = match.group('ip')
 
         self._clientConnectIp = match.group('ip')
-        self.verbose('client connected - cid: %s, guid: %s, ip: %s' % (self._clientConnectID,
+        self.verbose('Client connected - cid: %s, guid: %s, ip: %s' % (self._clientConnectID,
                                                                        self._clientConnectGuid,
                                                                        self._clientConnectIp))
 
@@ -327,7 +327,7 @@ class Sof2Parser(AbstractParser):
         if 'ip' in bclient:
             if bclient['ip'] == 'bot':
                 # not sure if this one works...
-                self.bot('bot connected!')
+                self.bot('Bot connected!')
                 bclient['ip'] = '0.0.0.0'
                 bclient['cl_guid'] = 'BOT' + str(bclient['cid'])
                 bot = True
@@ -343,7 +343,7 @@ class Sof2Parser(AbstractParser):
         if 'cl_guid' in bclient and not 'pbid' in bclient and self.PunkBuster:
             bclient['pbid'] = bclient['cl_guid']
 
-        self.verbose('parsed user info: %s' % bclient)
+        self.verbose('Parsed user info: %s' % bclient)
 
         if bclient:
             client = self.clients.getByCID(bclient['cid'])
@@ -369,7 +369,7 @@ class Sof2Parser(AbstractParser):
                 if not 'ip' in bclient and guid == 'unknown':
                     # happens when a client is (temp)banned and got kicked so client was destroyed, but
                     # infoline was still waiting to be parsed.
-                    self.debug('client disconnected: ignoring...')
+                    self.debug('Client disconnected: ignoring...')
                     return None
 
                 nguid = ''
@@ -406,7 +406,7 @@ class Sof2Parser(AbstractParser):
         self._clientConnectID = None
 
         bclient = self.parseUserInfo(data)
-        self.verbose('parsed user info: %s' % bclient)
+        self.verbose('Parsed user info: %s' % bclient)
         if bclient:
             client = self.clients.getByCID(bclient['cid'])
 
@@ -450,7 +450,7 @@ class Sof2Parser(AbstractParser):
             else:
                 setattr(self.game, o[0], o[1])
 
-        self.verbose('current gametype: %s' % self.game.gameType)
+        self.verbose('Current gametype: %s' % self.game.gameType)
         self.game.startRound()
 
         return self.getEvent('EVT_GAME_ROUND_START', self.game)
@@ -490,13 +490,13 @@ class Sof2Parser(AbstractParser):
         # Hit: cid acid hitloc damage aweap: text
         victim = self.clients.getByCID(match.group('cid'))
         if not victim:
-            self.debug('no victim')
+            self.debug('No victim')
             #self.OnClientuserinfo(action, data, match)
             return None
 
         attacker = self.clients.getByCID(match.group('acid'))
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return None
 
         eventkey = 'EVT_CLIENT_DAMAGE'
@@ -561,12 +561,12 @@ class Sof2Parser(AbstractParser):
 
         victim = self.clients.getByCID(match.group('cid'))
         if not victim:
-            self.debug('no victim')
+            self.debug('No victim')
             return None
 
         weapon = match.group('aweap')
         if not weapon:
-            self.debug('no weapon')
+            self.debug('No weapon')
             return None
 
         ## Fix attacker
@@ -586,7 +586,7 @@ class Sof2Parser(AbstractParser):
          ## End fix attacker
 
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return None
 
         damagetype = match.group('text').split()[-1:][0]
@@ -700,7 +700,7 @@ class Sof2Parser(AbstractParser):
         for cid, c in plist.iteritems():
             client = self.clients.getByCID(cid)
             if client:
-                self.debug('joining %s' % client.name)
+                self.debug('Joining client: %s' % client.name)
                 self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', client=client))
 
         return None
@@ -734,8 +734,8 @@ class Sof2Parser(AbstractParser):
             return None
 
         if data.split('\n')[0] != "userinfo":
-            self.debug("dumpuser %s returned : %s" % (name, data))
-            self.debug('client probably disconnected but its character is still hanging in game...')
+            self.debug("Dumpuser %s returned : %s" % (name, data))
+            self.debug('Client probably disconnected but its character is still hanging in game...')
             return None
 
         datatransformed = "%s " % cid

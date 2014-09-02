@@ -225,7 +225,7 @@ class MohParser(AbstractParser):
         elif mapname.startswith('garmzir town'):
             return 'levels/mp_10'
         else:
-            self.warning('Unknown level name : \'%s\' : please make sure you have entered a valid mapname' % mapname)
+            self.warning('unknown level name : \'%s\' : please make sure you have entered a valid mapname' % mapname)
             return mapname
 
     def getEasyName(self, mapname):
@@ -259,7 +259,7 @@ class MohParser(AbstractParser):
         elif mapname.startswith('levels/mp_10'):
             return 'Garmzir Town'
         else:
-            self.warning('Unknown level name : \'%s\' : please report this on B3 forums' % mapname)
+            self.warning('unknown level name : \'%s\' : please report this on B3 forums' % mapname)
             return mapname
 
     def getServerVars(self):

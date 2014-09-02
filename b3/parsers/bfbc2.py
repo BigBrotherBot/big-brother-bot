@@ -261,7 +261,7 @@ class Bfbc2Parser(AbstractParser):
                 name = p['name']
                 if 'clanTag' in p and len(p['clanTag']) > 0:
                     name = "[" + p['clanTag'] + "] " + p['name']
-                self.debug('client %s found on the server' % cid)
+                self.debug('Client %s found on the server' % cid)
                 client = self.clients.newClient(cid, guid=p['guid'], name=name,
                                                 team=self.getTeam(p['teamId']),
                                                 squad=p['squadId'], data=p)
@@ -408,7 +408,7 @@ class Bfbc2Parser(AbstractParser):
             words = self.write(('admin.listPlayers', 'player', cid))
             pib = PlayerInfoBlock(words)
             if len(pib) == 0:
-                self.debug('no such client found')
+                self.debug('No such client found')
                 return None
             p = pib[0]
             cid = p['name']
@@ -422,7 +422,7 @@ class Bfbc2Parser(AbstractParser):
                 guid = _guid
             else:
                 # If we still don't have a guid, we cannot create a newclient without the guid!
-                self.debug('no guid for %s, waiting for next event' %name)
+                self.debug('No guid for %s, waiting for next event' %name)
                 return None
 
             if 'clanTag' in p and len(p['clanTag']) > 0:

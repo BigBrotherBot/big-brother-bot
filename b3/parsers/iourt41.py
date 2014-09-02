@@ -425,7 +425,7 @@ class Iourt41Parser(AbstractParser):
         Called after the parser is created before run().
         """
         if not self.config.has_option('server', 'game_log'):
-            self.critical("your main config file is missing the 'game_log' setting in section 'server'")
+            self.critical("Your main config file is missing the 'game_log' setting in section 'server'")
             raise SystemExit(220)
 
 
@@ -453,20 +453,20 @@ class Iourt41Parser(AbstractParser):
 
         self.game.fs_game = cvarlist.get('fs_game')
         if not self.game.fs_game:
-            self.warning("could not query server for fs_game")
+            self.warning("Could not query server for fs_game")
         else:
             self.debug("fs_game: %s" % self.game.fs_game)
 
         self.game.fs_basepath = cvarlist.get('fs_basepath')
         if not self.game.fs_basepath:
-            self.warning("could not query server for fs_basepath")
+            self.warning("Could not query server for fs_basepath")
         else:
             self.game.fs_basepath = self.game.fs_basepath.rstrip('/')
             self.debug('fs_basepath: %s' % self.game.fs_basepath)
 
         self.game.fs_homepath = cvarlist.get('fs_homepath')
         if not self.game.fs_homepath:
-            self.warning("could not query server for fs_homepath")
+            self.warning("Could not query server for fs_homepath")
         else:
             self.game.fs_homepath = self.game.fs_homepath.rstrip('/')
             self.debug('fs_homepath: %s' % self.game.fs_homepath)
@@ -494,14 +494,14 @@ class Iourt41Parser(AbstractParser):
                 if tries < 3:
                     self.warning(err)
                 else:
-                    self.error("cannot fix players teams: %s" % err)
+                    self.error("Cannot fix players teams: %s" % err)
 
         for cid in plist.keys():
             client = self.clients.getByCID(cid)
             if client and client.cid in player_teams:
                 newteam = player_teams[client.cid]
                 if newteam != client.team:
-                    self.debug('fixing client team for %s : %s is now %s' % (client.name, client.team, newteam))
+                    self.debug('Fixing client team for %s : %s is now %s' % (client.name, client.team, newteam))
                     setattr(client, 'team', newteam)
             
     def unpause(self):
@@ -539,7 +539,7 @@ class Iourt41Parser(AbstractParser):
                 data = None
             return m, m.group('action').lower(), data, client, target
         elif '------' not in line:
-            self.verbose('line did not match format: %s' % line)
+            self.verbose('Line did not match format: %s' % line)
 
     def parseUserInfo(self, info):
         """
@@ -569,7 +569,7 @@ class Iourt41Parser(AbstractParser):
     ####################################################################################################################
 
     def OnClientconnect(self, action, data, match=None):
-        self.debug('client connected: ready to parse userinfo line')
+        self.debug('Client connected: ready to parse userinfo line')
         #client = self.clients.getByCID(data)
         #return b3.events.Event(b3.events.EVT_CLIENT_JOIN, None, client)
 
@@ -589,7 +589,7 @@ class Iourt41Parser(AbstractParser):
         bot = False
         if 'cl_guid' not in bclient and 'skill' in bclient:
             # must be a bot connecting
-            self.bot('bot connecting!')
+            self.bot('Bot connecting!')
             bclient['ip'] = '0.0.0.0'
             bclient['cl_guid'] = 'BOT' + str(bclient['cid'])
             bot = True
@@ -611,7 +611,7 @@ class Iourt41Parser(AbstractParser):
         if 'cl_guid' in bclient and not 'pbid' in bclient and self.PunkBuster:
             bclient['pbid'] = bclient['cl_guid']
 
-        self.verbose('parsed user info: %s' % bclient)
+        self.verbose('Parsed user info: %s' % bclient)
         
         if bclient:
             client = self.clients.getByCID(bclient['cid'])
@@ -643,18 +643,18 @@ class Iourt41Parser(AbstractParser):
                     if guid == 'unknown':
                         # happens when a client is (temp)banned and got kicked so client
                         # was destroyed, but infoline was still waiting to be parsed.
-                        self.debug('client disconnected: ignoring...')
+                        self.debug('Client disconnected: ignoring...')
                         return None
                     else:
                         try:
                             # see issue xlr8or/big-brother-bot#87 - ip can be missing
-                            self.debug("missing IP, trying to get ip with 'status'")
+                            self.debug("Missing IP, trying to get ip with 'status'")
                             plist = self.getPlayerList()
                             client_data = plist[bclient['cid']]
                             bclient['ip'] = client_data['ip']
                         except Exception, err:
                             bclient['ip'] = ''
-                            self.warning("failed to get client %s ip address" % bclient['cid'], err)
+                            self.warning("Failed to get client %s ip address" % bclient['cid'], err)
 
                 nguid = ''
                 # override the guid... use ip's only if self.console.IpsOnly is set True.
@@ -717,13 +717,13 @@ class Iourt41Parser(AbstractParser):
         # Hit: cid acid hitloc aweap: text
         victim = self.clients.getByCID(match.group('cid'))
         if not victim:
-            self.debug('no victim')
+            self.debug('No victim')
             #self.on_clientuserinfo(action, data, match)
             return None
 
         attacker = self.clients.getByCID(match.group('acid'))
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return None
 
         event = self.getEventID('EVT_CLIENT_DAMAGE')
@@ -779,13 +779,13 @@ class Iourt41Parser(AbstractParser):
         self.debug('OnKill: %s (%s)' % (match.group('aweap'), match.group('text')))
         victim = self.getByCidOrJoinPlayer(match.group('cid'))
         if not victim:
-            self.debug('no victim')
+            self.debug('No victim')
             #self.OnClientuserinfo(action, data, match)
             return None
 
         weapon = match.group('aweap')
         if not weapon:
-            self.debug('no weapon')
+            self.debug('No weapon')
             return None
 
         ## Fix attacker
@@ -802,7 +802,7 @@ class Iourt41Parser(AbstractParser):
         ## End fix attacker
 
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return None
 
         d_type = match.group('text').split()[-1:][0]
@@ -893,7 +893,7 @@ class Iourt41Parser(AbstractParser):
     def OnAction(self, cid, actiontype, data, match=None):
         client = self.clients.getByCID(cid)
         if not client:
-            self.debug('no client found')
+            self.debug('No client found')
             return None
         self.verbose('on_action: %s: %s %s' % (client.name, actiontype, data))
         return self.getEvent('EVT_CLIENT_ACTION', data=actiontype, client=client)
@@ -906,7 +906,7 @@ class Iourt41Parser(AbstractParser):
         if client:
             # correct flag/bomb-pickups
             if 'flag' in item or 'bomb' in item:
-                self.verbose('item pickup corrected to action: %s' % item)
+                self.verbose('Item pickup corrected to action: %s' % item)
                 return self.OnAction(cid, item, data)
             # self.verbose('on_item: %s picked up %s' % (client.name, item) )
             return self.getEvent('EVT_CLIENT_ITEM_PICKUP', data=item, client=client)
@@ -927,14 +927,14 @@ class Iourt41Parser(AbstractParser):
         client = self.getByCidOrJoinPlayer(match.group('cid'))
 
         if not client or client.name != name:
-            self.debug('urban terror bug spotted: trying to get client by name')
+            self.debug('Urban Terror bug spotted: trying to get client by name')
             client = self.clients.get_by_name(name)
 
         if not client:
-            self.verbose('no client found!')
+            self.verbose('No client found')
             return None
 
-        self.verbose('client found: %s on slot %s' % (client.name, client.cid))
+        self.verbose('Client found: %s on slot %s' % (client.name, client.cid))
 
         data = match.group('text')
 
@@ -953,14 +953,14 @@ class Iourt41Parser(AbstractParser):
         client = self.getByCidOrJoinPlayer(match.group('cid'))
 
         if not client or client.name != name:
-            self.debug('urban terror bug spotted: trying to get client by name')
+            self.debug('Urban Terror bug spotted: trying to get client by name')
             client = self.clients.get_by_name(name)
 
         if not client:
             self.verbose('no client found!')
             return None
 
-        self.verbose('client found: %s on slot %s' % (client.name, client.cid))
+        self.verbose('Client found: %s on slot %s' % (client.name, client.cid))
 
         data = match.group('text')
         if data and ord(data[:1]) == 21:
@@ -979,11 +979,11 @@ class Iourt41Parser(AbstractParser):
         target = self.clients.getByCID(match.group('acid'))
 
         if not client or client.name != name:
-            self.debug('urban terror bug spotted: trying to get client by name')
+            self.debug('Urban Terror bug spotted: trying to get client by name')
             client = self.clients.get_by_name(name)
 
         if not client:
-            self.verbose('no client found!')
+            self.verbose('No client found')
             return None
 
         self.verbose('client found: %s on slot %s' % (client.name, client.cid))
@@ -1490,7 +1490,7 @@ class Iourt41Parser(AbstractParser):
         
         if data.split('\n')[0] != "userinfo":
             self.debug("dumpuser %s returned : %s" % (cid, data))
-            self.debug('client %s probably disconnected, but its character is still hanging in game...' % cid)
+            self.debug('Client %s probably disconnected, but its character is still hanging in game...' % cid)
             return None
 
         datatransformed = "%s " % cid
@@ -1590,7 +1590,7 @@ class Iourt41Parser(AbstractParser):
         try:
             return self.hitweapon2killweapon[int(hitweapon_id)]
         except KeyError, err:
-            self.warning("unknown weapon id on Hit line: %s", err)
+            self.warning("Unknown weapon ID on Hit line: %s", err)
             return None
 
     def cvarList(self, cvar_filter=None):

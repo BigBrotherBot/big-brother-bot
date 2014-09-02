@@ -171,7 +171,7 @@ class Ro2Parser(b3.parser.Parser):
                     self._ini_file = f
 
         if not self._ini_file:
-            self.debug('incorrect ini file or no ini file specified: map commands other than nextmap not available')
+            self.debug('Incorrect ini file or no ini file specified: map commands other than nextmap not available')
 
         self.cron.add(b3.cron.CronTab(self.retrievePlayerList, second='*/%s' % self._playerlistInterval))
     
@@ -193,7 +193,7 @@ class Ro2Parser(b3.parser.Parser):
         """
         Main worker thread for B3.
         """
-        self.bot('start listening ...')
+        self.bot('Start listening ...')
         self.screen.write('Startup Complete : B3 is running! Let\'s get to work!\n\n')
         self.screen.write('(If you run into problems, check %s in the B3 root directory for '
                           'detailed log info)\n' % self.config.getpath('b3', 'logfile'))
@@ -202,7 +202,7 @@ class Ro2Parser(b3.parser.Parser):
 
         web_auth = self.webconnect()
         if web_auth:
-            self.bot('authenticated on web server')
+            self.bot('Authenticated on web server')
 
         self.working = True
 
@@ -235,7 +235,7 @@ class Ro2Parser(b3.parser.Parser):
                 counter = 0
                 time.sleep(.5)
                 
-        self.bot('stop listening...')
+        self.bot('Stop listening...')
 
         if self.exiting.acquire(1) and self.exitcode:
             sys.exit(self.exitcode)
@@ -296,10 +296,10 @@ class Ro2Parser(b3.parser.Parser):
         client = self.clients.getByName(name)
         if client is None:
             self.retrievePlayerList()
-            self.debug("trying to auth client")
+            self.debug("Trying to auth client")
             client = self.clients.getByName(name)
             if client is None:
-                self.debug("unable to auth client")
+                self.debug("Unable to auth client")
                 return 'unable to auth client'
 
         if team:
@@ -331,7 +331,7 @@ class Ro2Parser(b3.parser.Parser):
             console_data = console_read.read()
             return console_data
         except Exception:
-            self.debug('failed to open URL')
+            self.debug('Failed to open URL')
             self.webconnect()
             return 
 
@@ -358,12 +358,12 @@ class Ro2Parser(b3.parser.Parser):
             except Exception:
                 findpage_attempt += 1
                 if findpage_attempt > 10:
-                    self.debug('failed to find web page - wait 10 seconds')
+                    self.debug('Failed to find web page - wait 10 seconds')
                     time.sleep(10)
                     findpage_attempt = 1
                 else:
                     time.sleep(1)
-                    self.debug('failed to find Web page %s - wait 1 second' % findpage_attempt)
+                    self.debug('Failed to find Web page %s - wait 1 second' % findpage_attempt)
                     
         #<input type="hidden" name="token" value="3309899D" />
         token_start = response.partition('<input type="hidden" name="token" value="')
@@ -382,13 +382,13 @@ class Ro2Parser(b3.parser.Parser):
         login_attempt = 1
         while login_attempt < 11:
             try:
-                self.debug('login attempt %s' % login_attempt)
+                self.debug('Login attempt %s' % login_attempt)
                 request_console = urllib2.Request(login_url, data, self.headers)
                 console_read = self.opener.open(request_console)
                 self._paused = False
                 return True
             except Exception:
-                self.debug('failed to login %s' % login_attempt)
+                self.debug('Failed to login %s' % login_attempt)
                 self._paused = True
                 login_attempt += 1
                 if login_attempt > 11:
@@ -650,7 +650,7 @@ class Ro2Parser(b3.parser.Parser):
             ftp = self.ftpconnect()
             self._nbConsecutiveConnFailure = 0
             remoteSize = ftp.size(os.path.basename(self.ftpconfig['path']))
-            self.verbose("connection successful: remote file size is %s" % remoteSize)
+            self.verbose("Connection successful: remote file size is %s" % remoteSize)
             ftp.retrlines('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload)
 
         except ftplib.all_errors, e:
@@ -668,14 +668,14 @@ class Ro2Parser(b3.parser.Parser):
             pass
 
     def ftpconnect(self):
-        self.verbose('connecting to %s:%s ...' % (self.ftpconfig["host"], self.ftpconfig["port"]))
+        self.verbose('Connecting to %s:%s ...' % (self.ftpconfig["host"], self.ftpconfig["port"]))
         ftp = FTP()
         ftp.set_debuglevel(self._ftplib_debug_level)
         ftp.connect(self.ftpconfig['host'], self.ftpconfig['port'], self._ftpconnectionTimeout)
         ftp.login(self.ftpconfig['user'], self.ftpconfig['password'])
         ftp.voidcmd('TYPE I')
         d = os.path.dirname(self.ftpconfig['path'])
-        self.debug('trying to cwd to [%s]' % d)
+        self.debug('Trying to cwd to [%s]' % d)
         ftp.cwd(dir)
         return ftp
 
@@ -698,7 +698,7 @@ class Ro2Parser(b3.parser.Parser):
         Write a message to Console via Ajax.
         """
         if self.replay:
-            self.bot('sent rcon message: %s' % msg)
+            self.bot('Sent rcon message: %s' % msg)
         elif self.output is None:
             pass
         else:
@@ -711,7 +711,7 @@ class Ro2Parser(b3.parser.Parser):
         Write a sequence of messages to Console via Ajax.
         """
         if self.replay:
-            self.bot('sent rcon message: %s' % msg)
+            self.bot('Sent rcon message: %s' % msg)
         elif self.output is None:
             pass
         else:
@@ -775,7 +775,7 @@ class Ro2Parser(b3.parser.Parser):
             # try to get the client by guid
             client = self.clients.getByGUID(uid)
             if not client:
-                self.debug('adding client')
+                self.debug('Adding client')
                 self.debug(cl)
                 client = self.clients.newClient(cl['playerid'],
                                                 guid=uid,
@@ -789,7 +789,7 @@ class Ro2Parser(b3.parser.Parser):
                 client.ip = cl['ip']
             else:
                 if client.team != cl['team']:
-                    self.verbose2('team change detected for %s' % client.name)
+                    self.verbose2('Team change detected for %s' % client.name)
                     client.team = cl['team']
 
             self.verbose2('onServerPlayer: name: %s, team: %s' %( client.name, client.team ))
@@ -805,7 +805,7 @@ class Ro2Parser(b3.parser.Parser):
 
         for client in self.clients.getList():
             if client.cid not in client_cid_list:
-                self.debug('removing %s from list' % client.name)
+                self.debug('Removing %s from list' % client.name)
                 client.disconnect()
 
     def sync(self, connected_clients=None):
@@ -818,7 +818,7 @@ class Ro2Parser(b3.parser.Parser):
         if connected_clients is None:
             connected_clients = self.getPlayerList()
             
-        self.debug("synchronizing clients")
+        self.debug("Synchronizing clients")
         mlist = {}
 
         for client in connected_clients:
@@ -920,7 +920,7 @@ class Ro2Parser(b3.parser.Parser):
         :param silent: Whether or not to announce this unban
         """
         ban_list = self.retrieveBanlist()
-        self.debug('using guid to unban')
+        self.debug('Using guid to unban')
         banid = client.guid
         ban_no = None
         try:
@@ -1033,11 +1033,11 @@ class Ro2Parser(b3.parser.Parser):
         data = None
         current_data = self.readwriteweb(data, referer, current_url)
         if current_data.find('<dt>Map</dt>') == -1:
-            self.debug('map error')
+            self.debug('Map error')
             return None
         current_data = current_data.partition('<dt>Map</dt>')[2]
         if current_data.find('<dd><code>') == -1:
-            self.debug('map error')
+            self.debug('Map error')
             return None
         current_data = current_data.partition('<dd><code>')[2]
         mapname = current_data.partition('</code>')[0]

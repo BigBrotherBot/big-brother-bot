@@ -96,7 +96,7 @@ class FrontlineParser(b3.parser.Parser):
         try:
             self._rconUser = self.config.get("server", "rcon_user")
         except NoOptionError, err:
-            self.error("cannot find rcon_user in B3 main config file. %s", err)
+            self.error("Cannot find rcon_user in B3 main config file. %s", err)
             raise SystemExit("incomplete config")
 
         self.screen.write('Startup Complete : B3 is running! Let\'s get to work!\n\n')
@@ -105,7 +105,7 @@ class FrontlineParser(b3.parser.Parser):
 
         self.updateDocumentation()
 
-        self.bot('start listening...')
+        self.bot('Start listening...')
         while self.working:
             # While we are working, connect to the Frontline server
             if self._paused:
@@ -134,7 +134,7 @@ class FrontlineParser(b3.parser.Parser):
                         and (self._serverConnection.connected or not self._serverConnection.authed):
                     asyncore.loop(timeout=3, use_poll=True, count=1)
 
-        self.bot('stop listening...')
+        self.bot('Stop listening...')
 
         with self.exiting:
             self._serverConnection.close()
@@ -149,7 +149,7 @@ class FrontlineParser(b3.parser.Parser):
 
     def routePacket(self, packet):
         if packet is None:
-            self.warning('cannot route empty packet')
+            self.warning('Cannot route empty packet')
         else:
             if not packet.startswith('PlayerList:'):
                 self.console("%s" % packet.strip())
@@ -164,7 +164,7 @@ class FrontlineParser(b3.parser.Parser):
 
     def _handle_connection_close(self):
         if len(self.clients.getList()): 
-            self.debug("clearing player list")
+            self.debug("Clearing player list")
             self.clients.empty()
         self._original_connection_handle_close_method()
 
@@ -215,7 +215,7 @@ class FrontlineParser(b3.parser.Parser):
         elif team == '255':
             result = b3.TEAM_UNKNOWN
         else:
-            self.verbose2("unrecognized team id : %r", team)
+            self.verbose2("Unrecognized team id : %r", team)
             result = b3.TEAM_UNKNOWN
         return result
 
@@ -257,7 +257,7 @@ class FrontlineParser(b3.parser.Parser):
     
     @ger.gameEvent(r"^WELCOME! Frontlines: Fuel of War \(RCON\) VER=(?P<version>.+) CHALLENGE=(?P<challenge>.*)$")
     def onServerWelcome(self, version, challenge):
-        self.info("connected to Frontline server: RCON version: %s", version)
+        self.info("Connected to Frontline server: RCON version: %s", version)
        
     @ger.gameEvent(re.compile(r"^PlayerList: (?P<data>.*)$", re.MULTILINE|re.DOTALL|re.IGNORECASE))
     def onServerPlayerlist(self, data):
@@ -266,7 +266,7 @@ class FrontlineParser(b3.parser.Parser):
         ID    Name    Ping    Team    Squad    Score    Kills    Deaths    TK    CP
         Time    Idle    Loadout    Role    RoleLvl    Vehicle    Hash    ProfileID
         """
-        self.verbose2("playerlist : %r" % data)
+        self.verbose2("Playerlist : %r" % data)
         lines = data.split('\n')
         match = re.match(r"PlayerList: "
                          r"Map=(?P<map>.+) "
@@ -363,7 +363,7 @@ class FrontlineParser(b3.parser.Parser):
         if client:
             self.saybig("%s added to server banlist" % client.name)
         else:
-            self.error('cannot find banned client')
+            self.error('Cannot find banned client')
         # update banlist
         self.retrieveBanList()
         
@@ -377,7 +377,7 @@ class FrontlineParser(b3.parser.Parser):
         if client:
             self.saybig("%s removed from server banlist" % client.name)
         else:
-            self.error('cannot find banned client')
+            self.error('Cannot find banned client')
         # update banlist
         self.retrieveBanList()
         
@@ -450,7 +450,7 @@ class FrontlineParser(b3.parser.Parser):
         ## we are unable to get the exact list of connected players in a synchronous
         ## way. So we use .last_update_time timestamp to detect player we still
         ## have in self.clients but that are no longer on the game server
-        self.debug("synchronizing clients")
+        self.debug("Synchronizing clients")
         mlist = {}
         now = time.time()
         # disconnect clients that have left

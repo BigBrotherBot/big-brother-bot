@@ -230,13 +230,13 @@ class Wop15Parser(AbstractParser):
         # ClientConnect: 0
         try:
             cid = match.group('cid')  # Normal client connected
-            self.verbose('client connected cid: %s' % cid)
+            self.verbose('Client connected cid: %s' % cid)
         except IndexError:
             pass
 
     def OnClientuserinfochanged(self, action, data, match=None):
         bclient = self.parseUserInfo(data)
-        self.verbose('parsed user info %s' % bclient)
+        self.verbose('Parsed user info: %s' % bclient)
         if bclient:
             client = self.clients.getByCID(bclient['cid'])
             if client:
@@ -263,9 +263,9 @@ class Wop15Parser(AbstractParser):
             else:
                 setattr(self.game, o[0], o[1])
 
-        self.verbose('current gametype: %s' % self.game.gameType)
+        self.verbose('Current gametype: %s' % self.game.gameType)
         self.game.startRound()
-        self.debug('joining players')
+        self.debug('Joining players')
         self.joinPlayers()
 
         return self.getEvent('EVT_GAME_ROUND_START', self.game)
@@ -283,10 +283,10 @@ class Wop15Parser(AbstractParser):
         client = self.getByCidOrJoinPlayer(msg[0])
 
         if client:
-            self.verbose('client found: %s' % client.name)
+            self.verbose('Client found: %s' % client.name)
             return self.getEvent('EVT_CLIENT_SAY', msg[1], client)
         else:
-            self.verbose('no client found')
+            self.verbose('No client found')
             return None
 
     def OnSayteam(self, action, data, match=None):
@@ -298,10 +298,10 @@ class Wop15Parser(AbstractParser):
         client = self.getByCidOrJoinPlayer(msg[0])
 
         if client:
-            self.verbose('client found: %s' % client.name)
+            self.verbose('Client found: %s' % client.name)
             return self.getEvent('EVT_CLIENT_TEAM_SAY', msg[1], client, client.team)
         else:
-            self.verbose('no client found')
+            self.verbose('No client found')
             return None
 
     def OnTell(self, action, data, match=None):
@@ -322,7 +322,7 @@ class Wop15Parser(AbstractParser):
             cid = '1022'
         victim = self.clients.getByCID(cid)
         if not victim:
-            self.debug('no victim')
+            self.debug('No victim')
             return None
 
         acid = match.group('acid')
@@ -330,7 +330,7 @@ class Wop15Parser(AbstractParser):
             acid = '1022'
         attacker = self.clients.getByCID(acid)
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return None
 
         # ignore kills involving no player (world killing world)
@@ -392,7 +392,7 @@ class Wop15Parser(AbstractParser):
             cid = '1022'
         victim = self.clients.getByCID(cid)
         if not victim:
-            self.debug('no victim')
+            self.debug('No victim')
             #self.OnClientuserinfo(action, data, match)
             return None
 
@@ -401,17 +401,17 @@ class Wop15Parser(AbstractParser):
             acid = '1022'
         attacker = self.clients.getByCID(acid)
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return None
 
         # ignore kills involving no player (world killing world)
         if attacker.cid == victim.cid == '1022':
-            self.debug("world damaging world -> ignoring")
+            self.debug("World damaging world -> ignoring")
             return
 
         weapon = match.group('aweap')
         if not weapon:
-            self.debug('no weapon')
+            self.debug('No weapon')
             return None
         
         eventkey = 'EVT_CLIENT_KILL'
@@ -443,10 +443,10 @@ class Wop15Parser(AbstractParser):
     def OnClientuserinfo(self, action, data, match=None):
         bot = False
         bclient = self.parseUserInfo(data)
-        self.verbose('parsed user info: %s' % bclient)
+        self.verbose('Parsed user info: %s' % bclient)
         if not 'cl_guid' in bclient and 'skill' in bclient:
             # must be a bot connecting
-            self.bot('bot connecting')
+            self.bot('Bot connecting')
             bclient['ip'] = '0.0.0.0'
             bot = True
             
@@ -463,7 +463,7 @@ class Wop15Parser(AbstractParser):
                 del bclient['cid']
                 client = self.clients.newClient(cid, state=b3.STATE_ALIVE, bot=bot, **bclient)
                 
-            self.debug("client is now: %s" % client)
+            self.debug("Client is now: %s" % client)
 
     ####################################################################################################################
     ##                                                                                                                ##
@@ -487,7 +487,7 @@ class Wop15Parser(AbstractParser):
             target = None
             return m, m.group('action').lower(), m.group('data').strip(), client, target
         else:
-            self.verbose('line did not match format: %s' % line)
+            self.verbose('Line did not match format: %s' % line)
 
     def parseUserInfo(self, info):
         """
@@ -565,7 +565,7 @@ class Wop15Parser(AbstractParser):
         for cid, c in plist.iteritems():
             client = self.clients.getByCID(cid)
             if client:
-                self.debug('joining %s' % client.name)
+                self.debug('Joining client: %s' % client.name)
                 self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', None, client))
 
         return None
@@ -601,8 +601,8 @@ class Wop15Parser(AbstractParser):
             return None
         
         if data.split('\n')[0] != "userinfo":
-            self.debug("dumpuser %s returned : %s" % (cid, data))
-            self.debug('client %s probably disconnected but its character is still hanging in game...' % cid)
+            self.debug("Dumpuser %s returned : %s" % (cid, data))
+            self.debug('Client %s probably disconnected but its character is still hanging in game...' % cid)
             return None
 
         datatransformed = "%s " % cid
@@ -618,11 +618,11 @@ class Wop15Parser(AbstractParser):
 
     def getByCidOrJoinPlayer(self, cid):
         if int(cid) > 63:
-            self.debug("a client cid cannot be over 63 ! received : %s" % cid)
+            self.debug("A client cid cannot be over 63 ! received : %s" % cid)
             return None
         client = self.clients.getByCID(cid)
         if client is None:
-            self.debug('cannot find client by cid %r' % cid)
+            self.debug('Cannot find client by cid %r' % cid)
             self.debug(repr(self.clients))
             userinfostring = self.queryClientUserInfoByCid(cid)
             if userinfostring:

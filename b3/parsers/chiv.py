@@ -206,11 +206,11 @@ class ChivParser(Parser):
             hitloc = 'body'
 
             if not attacker:
-                self.debug("attacker not found: %s, packet: %r" % (attackerId, packet))
+                self.debug("Attacker not found: %s, packet: %r" % (attackerId, packet))
                 return
 
             if not victim:
-                self.debug("victim not found: %s, packet: %r" % (victimId, packet))
+                self.debug("Victim not found: %s, packet: %r" % (victimId, packet))
                 return
 
             if attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
@@ -601,7 +601,7 @@ class Client(asyncore.dispatcher_with_send):
         self.isAuthed = False
         self.keepalive = True
         self.readBuffer = ""
-        self.console.info("starting RCON for game server %s:%s" % (host, port))
+        self.console.info("Starting RCON for game server %s:%s" % (host, port))
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connect((self._host, self._port))
 
@@ -638,7 +638,7 @@ class Client(asyncore.dispatcher_with_send):
                 try:
                     self._packetListener(packet)
                 except Exception as e:
-                    self.error("failed to handle game server %r" % packet, exc_info=e)
+                    self.error("Failed to handle game server %r" % packet, exc_info=e)
                 self.readBuffer = self.readBuffer[packetSize:]
        
     def sendPacket(self, packet):

@@ -355,7 +355,7 @@ class MohwParser(AbstractParser):
         try:
             return MAP_ID_BY_NAME[mapname]
         except KeyError:
-            self.warning('Unknown level name : \'%s\' : please make sure you have entered a valid mapname' % mapname)
+            self.warning('unknown level name : \'%s\' : please make sure you have entered a valid mapname' % mapname)
             return mapname
 
     def getEasyName(self, mapname):
@@ -365,7 +365,7 @@ class MohwParser(AbstractParser):
         try:
             return MAP_NAME_BY_ID[mapname]
         except KeyError:
-            self.warning('Unknown level name : \'%s\' : please report this on B3 forums' % mapname)
+            self.warning('unknown level name : \'%s\' : please report this on B3 forums' % mapname)
             return mapname
 
     def getGameMode(self, gamemode_id):

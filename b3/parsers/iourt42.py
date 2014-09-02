@@ -104,18 +104,18 @@ class Iourt42Client(Client):
         """
         Authorize this client using his GUID.
         """
-        self.console.verbose("auth by guid: %r" % self.guid)
+        self.console.verbose("Auth by guid: %r" % self.guid)
         try:
             return self.console.storage.getClient(self)
         except KeyError, msg:
-            self.console.debug('user not found %s: %s', self.guid, msg)
+            self.console.debug('User not found %s: %s', self.guid, msg)
             return False
 
     def auth_by_pbid(self):
         """
         Authorize this client using his PBID.
         """
-        self.console.verbose("auth by FSA: %r" % self.pbid)
+        self.console.verbose("Auth by FSA: %r" % self.pbid)
         clients_matching_pbid = self.console.storage.getClientsMatching(dict(pbid=self.pbid))
         if len(clients_matching_pbid) > 1:
             self.console.error("DATA ERROR: found %s client having Frozen Sand "
@@ -143,7 +143,7 @@ class Iourt42Client(Client):
         """
         Authorize this client using both his PBID and GUID.
         """
-        self.console.verbose("auth by both guid and FSA: %r, %r" % (self.guid, self.pbid))
+        self.console.verbose("Auth by both guid and FSA: %r, %r" % (self.guid, self.pbid))
         clients_matching_pbid = self.console.storage.getClientsMatching({'pbid': self.pbid, 'guid': self.guid})
         if len(clients_matching_pbid):
             self.id = clients_matching_pbid[0].id
@@ -167,7 +167,7 @@ class Iourt42Client(Client):
             name = self.name
             ip = self.ip
             pbid = self.pbid
-            self.console.verbose2("auth with %r" % {'name': name, 'ip': ip, 'pbid': pbid})
+            self.console.verbose2("Auth with %r" % {'name': name, 'ip': ip, 'pbid': pbid})
 
             if not pbid and self.cid:
                 fsa_info = self.console.queryClientFrozenSandAccount(self.cid)
@@ -186,7 +186,7 @@ class Iourt42Client(Client):
                     if in_storage and in_storage.pbid == 'None':
                         in_storage.pbid = None
                 except Exception, e:
-                    self.console.error("auth by guid failed", exc_info=e)
+                    self.console.error("Auth by guid failed", exc_info=e)
                     self.authorizing = False
                     return False
             else:
@@ -194,7 +194,7 @@ class Iourt42Client(Client):
                 try:
                     in_storage = self.auth_by_pbid()
                 except Exception, e:
-                    self.console.error("auth by FSA failed", exc_info=e)
+                    self.console.error("Auth by FSA failed", exc_info=e)
                     self.authorizing = False
                     return False
 
@@ -203,16 +203,16 @@ class Iourt42Client(Client):
                     try:
                         in_storage = self.auth_by_guid()
                     except Exception, e:
-                        self.console.error("auth by guid failed (when no known FSA)", exc_info=e)
+                        self.console.error("Auth by guid failed (when no known FSA)", exc_info=e)
                         self.authorizing = False
                         return False
 
             if in_storage:
                 self.lastVisit = self.timeEdit
-                self.console.bot('client found in the storage @%s: '
+                self.console.bot('Alient found in the storage @%s: '
                                  'welcome back %s (FSA: %s)', self.id, self.name, self.pbid)
             else:
-                self.console.bot('client not found in the storage %s (FSA: %s), create new', str(self.guid), self.pbid)
+                self.console.bot('Client not found in the storage %s (FSA: %s), create new', str(self.guid), self.pbid)
 
             self.connections = int(self.connections) + 1
             self.name = name
@@ -222,7 +222,7 @@ class Iourt42Client(Client):
             self.save()
             self.authed = True
 
-            self.console.debug('client authorized: @%s "%s" [%s] (FSA: %s)', self.cid, self.name, self.guid, self.pbid)
+            self.console.debug('Client authorized: @%s "%s" [%s] (FSA: %s)', self.cid, self.name, self.guid, self.pbid)
 
             # check for bans
             if self.numBans > 0:
@@ -587,10 +587,10 @@ class Iourt42Parser(Iourt41Parser):
             cvar = self.getCvar('gamename')
             gamename = cvar.getString() if cvar else None
             if gamename != 'q3urt42':
-                self.error("the iourt42 B3 parser cannot be used with a game server other than Urban Terror 4.2")
+                self.error("The iourt42 B3 parser cannot be used with a game server other than Urban Terror 4.2")
                 raise SystemExit(220)
         except Exception, e:
-            self.warning("could not query server for gamename.", exc_info=e)
+            self.warning("Could not query server for gamename.", exc_info=e)
 
         Iourt41Parser.startup(self)
 
@@ -638,7 +638,7 @@ class Iourt42Parser(Iourt41Parser):
         try:
             frozensand_auth_available = self.is_frozensand_auth_available()
         except Exception, e:
-            self.warning("could not query server for cvar auth", exc_info=e)
+            self.warning("Could not query server for cvar auth", exc_info=e)
             frozensand_auth_available = False
         self.info("Frozen Sand auth system enabled : %s" % ('yes' if frozensand_auth_available else 'no'))
 
@@ -649,7 +649,7 @@ class Iourt42Parser(Iourt41Parser):
             else:
                 frozensand_auth_owners = None
         except Exception, e:
-            self.warning("could not query server for cvar auth_owners", exc_info=e)
+            self.warning("Could not query server for cvar auth_owners", exc_info=e)
             frozensand_auth_owners = ""
 
         yn = ('yes - %s' % frozensand_auth_available) if frozensand_auth_owners else 'no'
@@ -665,7 +665,7 @@ class Iourt42Parser(Iourt41Parser):
                           "website : http://www.urbanterror.info/groups/list/all/?search=%s" % frozensand_auth_owners)
 
         else:
-            self.info("ignoring settings about banning with Frozen Sand auth system as the "
+            self.info("Ignoring settings about banning with Frozen Sand auth system as the "
                       "auth system is not enabled or auth_owners not set")
 
     def load_conf_permban_with_frozensand(self):
@@ -678,7 +678,7 @@ class Iourt42Parser(Iourt41Parser):
         except Exception, err:
             self.warning(err)
 
-        self.info("send permbans to Frozen Sand : %s" % ('yes' if self._permban_with_frozensand else 'no'))
+        self.info("Send permbans to Frozen Sand : %s" % ('yes' if self._permban_with_frozensand else 'no'))
 
     def load_conf_tempban_with_frozensand(self):
         """
@@ -690,7 +690,7 @@ class Iourt42Parser(Iourt41Parser):
         except Exception, err:
             self.warning(err)
 
-        self.info("send temporary bans to Frozen Sand : %s" % ('yes' if self._tempban_with_frozensand else 'no'))
+        self.info("Send temporary bans to Frozen Sand : %s" % ('yes' if self._tempban_with_frozensand else 'no'))
 
     ####################################################################################################################
     ##                                                                                                                ##
@@ -705,7 +705,7 @@ class Iourt42Parser(Iourt41Parser):
         bot = False
         if not 'cl_guid' in bclient and 'skill' in bclient:
             # must be a bot connecting
-            self.bot('bot Connecting!')
+            self.bot('Bot connecting!')
             bclient['ip'] = '0.0.0.0'
             bclient['cl_guid'] = 'BOT' + str(bclient['cid'])
             bot = True
@@ -724,7 +724,7 @@ class Iourt42Parser(Iourt41Parser):
         if 'team' in bclient:
             bclient['team'] = self.getTeam(bclient['team'])
 
-        self.verbose('parsed user info: %s' % bclient)
+        self.verbose('Parsed user info: %s' % bclient)
 
         if bclient:
             client = self.clients.getByCID(bclient['cid'])
@@ -757,12 +757,12 @@ class Iourt42Parser(Iourt41Parser):
                     if guid == 'unknown':
                         # happens when a client is (temp)banned and got kicked so client was destroyed,
                         # but infoline was still waiting to be parsed.
-                        self.debug('client disconnected: ignoring...')
+                        self.debug('Client disconnected: ignoring...')
                         return None
                     else:
                         try:
                             # see issue xlr8or/big-brother-bot#87 - ip can be missing
-                            self.debug("missing ip: trying to get ip with 'status'")
+                            self.debug("Missing ip: trying to get ip with 'status'")
                             plist = self.getPlayerList()
                             client_data = plist[bclient['cid']]
                             bclient['ip'] = client_data['ip']
@@ -799,7 +799,7 @@ class Iourt42Parser(Iourt41Parser):
         text = match.group('text')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('no client found')
+            self.debug('No client found')
             return None
         return self.getEvent('EVT_CLIENT_RADIO', client=client, data={'msg_group': msg_group, 'msg_id': msg_id,
                                                                       'location': location, 'text': text})
@@ -809,7 +809,7 @@ class Iourt42Parser(Iourt41Parser):
         vote_string = match.group('vote_string')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('no client found')
+            self.debug('No client found')
             return None
         return self.getEvent('EVT_CLIENT_CALLVOTE', client=client, data=vote_string)
 
@@ -818,7 +818,7 @@ class Iourt42Parser(Iourt41Parser):
         value = match.group('value')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('no client found')
+            self.debug('No client found')
             return None
         return self.getEvent('EVT_CLIENT_VOTE', client=client, data=value)
 
@@ -841,7 +841,7 @@ class Iourt42Parser(Iourt41Parser):
         captime = int(match.group('captime'))
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('no client found')
+            self.debug('No client found')
             return None
         return self.getEvent('EVT_FLAG_CAPTURE_TIME', client=client, data=captime)
 
@@ -852,7 +852,7 @@ class Iourt42Parser(Iourt41Parser):
         attempt_max = match.group('attempt_max')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('no client found')
+            self.debug('No client found')
             return None
         return self.getEvent('EVT_CLIENT_JUMP_RUN_START', client=client, data={'way_id': way_id,
                                                                                'attempt_num': attempt_num,
@@ -866,7 +866,7 @@ class Iourt42Parser(Iourt41Parser):
         attempt_max = match.group('attempt_max')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('no client found')
+            self.debug('No client found')
             return None
         return self.getEvent('EVT_CLIENT_JUMP_RUN_STOP', client=client, data={'way_id': way_id,
                                                                               'way_time': way_time,
@@ -880,7 +880,7 @@ class Iourt42Parser(Iourt41Parser):
         attempt_max = match.group('attempt_max')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('no client found')
+            self.debug('No client found')
             return None
         return self.getEvent('EVT_CLIENT_JUMP_RUN_CANCEL', client=client, data={'way_id': way_id,
                                                                                 'attempt_num': attempt_num,
@@ -891,7 +891,7 @@ class Iourt42Parser(Iourt41Parser):
         position = float(match.group('x')), float(match.group('y')), float(match.group('z'))
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('no client found')
+            self.debug('No client found')
             return None
         return self.getEvent('EVT_CLIENT_POS_SAVE', client=client, data={'position': position})
 
@@ -900,7 +900,7 @@ class Iourt42Parser(Iourt41Parser):
         position = float(match.group('x')), float(match.group('y')), float(match.group('z'))
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('no client found')
+            self.debug('No client found')
             return None
         return self.getEvent('EVT_CLIENT_POS_LOAD', client=client, data={'position': position})
     
@@ -910,7 +910,7 @@ class Iourt42Parser(Iourt41Parser):
         position = float(match.group('x')), float(match.group('y')), float(match.group('z'))
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('no client found')
+            self.debug('No client found')
             return None
         
         target = self.getByCidOrJoinPlayer(tcid)
@@ -926,7 +926,7 @@ class Iourt42Parser(Iourt41Parser):
         cid = match.group('cid')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
-            self.debug('no client found')
+            self.debug('No client found')
             return None
 
         return self.getEvent('EVT_CLIENT_SPAWN', client=client)
@@ -940,7 +940,7 @@ class Iourt42Parser(Iourt41Parser):
         else:
             client = self.getByCidOrJoinPlayer(data)
             if not client:
-                self.debug('no client found')
+                self.debug('No client found')
                 return None
             return self.getEvent('EVT_CLIENT_SURVIVOR_WINNER', client=client)
 
@@ -995,7 +995,7 @@ class Iourt42Parser(Iourt41Parser):
 
             if self._permban_with_frozensand:
                 cmd = self.getCommand('auth-permban', cid=client.cid)
-                self.info('sending ban to Frozen Sand : %s' % cmd)
+                self.info('Sending ban to Frozen Sand : %s' % cmd)
                 rv = self.write(cmd)
                 if rv:
                     if rv == "Auth services disabled" or rv.startswith("auth: not banlist available."):
@@ -1009,7 +1009,7 @@ class Iourt42Parser(Iourt41Parser):
 
             if client.connected:
                 cmd = self.getCommand('ban', cid=client.cid, reason=reason)
-                self.info('sending ban to server : %s' % cmd)
+                self.info('Sending ban to server : %s' % cmd)
                 rv = self.write(cmd)
                 if rv:
                     self.info(rv)
@@ -1060,7 +1060,7 @@ class Iourt42Parser(Iourt41Parser):
                 hours -= 24
 
             cmd = self.getCommand('auth-tempban', cid=client.cid, days=days, hours=hours, minutes=int(minutes))
-            self.info('sending ban to Frozen Sand : %s' % cmd)
+            self.info('Sending ban to Frozen Sand : %s' % cmd)
             rv = self.write(cmd)
             if rv:
                 if rv == "Auth services disabled" or rv.startswith("auth: not banlist available."):
@@ -1074,7 +1074,7 @@ class Iourt42Parser(Iourt41Parser):
 
         if client.connected:
             cmd = self.getCommand('tempban', cid=client.cid, reason=reason)
-            self.info('sending ban to server : %s' % cmd)
+            self.info('Sending ban to server : %s' % cmd)
             rv = self.write(cmd)
             if rv:
                 self.info(rv)
@@ -1227,7 +1227,7 @@ class Iourt42Parser(Iourt41Parser):
         """
         This method alters the Spamcontrol plugin after it started to make it aware of RADIO spam.
         """
-        self.info("patching spamcontrol plugin...")
+        self.info("Patching spamcontrol plugin...")
 
         def onRadio(this, event):
             new_event = Event(type=event.type, client=event.client, target=event.target, data=repr(event.data))

@@ -138,7 +138,7 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
 
         self._cod7httpplugin = self.getPlugin('cod7http')
         if self._cod7httpplugin is None:
-            self.critical("cannot find cod7http plugin")
+            self.critical("Cannot find cod7http plugin")
             raise SystemExit(220)
 
         # get map from the status rcon command
@@ -169,7 +169,7 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
             self._preMatch = False
 
         # Force g_logsync
-        self.debug('forcing server cvar g_logsync to %s and turning UNIX timestamp log timers off' % self._logSync)
+        self.debug('Forcing server cvar g_logsync to %s and turning UNIX timestamp log timers off' % self._logSync)
         self.write('g_logsync %s' % self._logSync)
         self.write('g_logTimeStampInSeconds 0')
         self.setVersionExceptions()
@@ -179,7 +179,7 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
         """
         Called after the parser loaded and started all plugins.
         """
-        self.debug('admin plugin not patched')
+        self.debug('Admin plugin not patched')
 
     ####################################################################################################################
     ##                                                                                                                ##
@@ -292,7 +292,7 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
         # there's a problem
 
         if self.input.tell() > filestats.st_size:
-            self.debug('parser: game log is suddenly smaller than it was before (%s bytes, now %s), '
+            self.debug('Parser: game log is suddenly smaller than it was before (%s bytes, now %s), '
                        'the log was probably either rotated or emptied. B3 will now re-adjust to the '
                        'new size of the log.' % (str(self.input.tell()), str(filestats.st_size)) )
             self.input.seek(0, os.SEEK_END)
@@ -309,31 +309,31 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
         cid = match.group('cid')
         name = match.group('name')
         if codguid == '0' and cid == '0' and name == '[3arc]democlient':
-            self.verbose('authentication not required for [3arc]democlient: aborting join...')
+            self.verbose('Authentication not required for [3arc]democlient: aborting join...')
             self._preMatch = 0
             return None
         
         if len(codguid) < self._guidLength:
             # invalid guid
-            self.verbose2('invalid GUID: %s' %codguid)
+            self.verbose2('Invalid GUID: %s' %codguid)
             codguid = None
 
         client = self.getClient(match)
         if client:
-            self.verbose2('client object already exists')
+            self.verbose2('Client object already exists')
             # lets see if the name/guids match for this client, prevent player mixups after mapchange (not with PunkBuster enabled)
             if not self.PunkBuster:
                 if self.IpsOnly:
                     # this needs testing since the name cleanup code may interfere with this next condition
                     if name != client.name:
-                        self.debug('this is not the correct client (%s <> %s): disconnecting' %(name, client.name))
+                        self.debug('This is not the correct client (%s <> %s): disconnecting' %(name, client.name))
                         client.disconnect()
                         return None
                     else:
                         self.verbose2('client.name in sync: %s == %s' %(name, client.name))
                 else:
                     if codguid != client.guid:
-                        self.debug('this is not the correct client (%s <> %s): disconnecting' %(codguid, client.guid))
+                        self.debug('This is not the correct client (%s <> %s): disconnecting' %(codguid, client.guid))
                         client.disconnect()
                         return None
                     else:
@@ -354,22 +354,22 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
             t = Timer(2, self.newPlayer, (cid, codguid, name))
             t.start()
             self.debug('%s connected: waiting for authentication...' %name)
-            self.debug('our authentication queue: %s' % self._counter.__str__())
+            self.debug('Our authentication queue: %s' % self._counter.__str__())
 
     def OnK(self, action, data, match=None):
         victim = self.clients.getByGUID(match.group('guid'))
         if not victim:
-            self.debug('no victim %s' % match.groupdict())
+            self.debug('No victim %s' % match.groupdict())
             self.OnJ(action, data, match)
             return None
 
         attacker = self.clients.getByGUID(match.group('aguid'))
         if not attacker:
             if match.group('acid') == '-1' or match.group('aname') == 'world':
-                self.verbose('world kill')
+                self.verbose('World kill')
                 attacker = self.getClient(attacker=match)
             else:
-                self.debug('no attacker %s' % match.groupdict())
+                self.debug('No attacker %s' % match.groupdict())
                 return None
 
         # COD5 first version doesn't report the team on kill, only use it if it's set
@@ -382,10 +382,10 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
 
         eventkey = 'EVT_CLIENT_KILL'
         if attacker == victim or attacker.cid == '-1':
-            self.verbose('suicide detected: attacker.cid: %s, victim.cid: %s' % (attacker.cid, victim.cid))
+            self.verbose('Suicide detected: attacker.cid: %s, victim.cid: %s' % (attacker.cid, victim.cid))
             eventkey = 'EVT_CLIENT_SUICIDE'
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team and victim.team and attacker.team == victim.team:
-            self.verbose('team kill detected: %s team killed %s' % (attacker.name, victim.name))
+            self.verbose('Team kill detected: %s team killed %s' % (attacker.name, victim.name))
             eventkey = 'EVT_CLIENT_KILL_TEAM'
 
         victim.state = b3.STATE_DEAD
@@ -424,19 +424,19 @@ def newLoadArbPlugins(self):
 
         # load cod7http        
         p = 'cod7http'
-        self.bot('loading %s', p)
+        self.bot('Loading %s', p)
         try:
             pluginModule = self.pluginImport(p)
             self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title()) (self)
             self._pluginOrder.append(p)
             version = getattr(pluginModule, '__version__', 'Unknown Version')
             author  = getattr(pluginModule, '__author__', 'Unknown Author')
-            self.bot('plugin %s (%s - %s) loaded', p, version, author)
+            self.bot('Plugin %s (%s - %s) loaded', p, version, author)
             self.screen.write('Loading          : COD7 http Plugin\n')
             self.screen.flush()
         except Exception, msg:
-            self.critical('error loading plugin: %s', msg)
-            raise SystemExit('error while loading %s' % p)
+            self.critical('Error loading plugin: %s', msg)
+            raise SystemExit('ERROR while loading %s' % p)
 
 # make newLoadArbPlugins the default
 Parser.loadArbPlugins = newLoadArbPlugins

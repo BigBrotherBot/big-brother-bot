@@ -478,7 +478,7 @@ class Client(object):
     def _set_guid(self, guid):
         if guid and len(guid) > 2:
             if self._guid and self._guid != guid:
-                self.console.error('client has guid but its not the same %s <> %s', self._guid, guid)
+                self.console.error('Client has guid but its not the same %s <> %s', self._guid, guid)
                 self.authed = False
             elif not self._guid:
                 self._guid = guid
@@ -541,7 +541,7 @@ class Client(object):
             try:
                 group = self.console.storage.getGroup(Group(level=self.maskLevel))
             except Exception, err:
-                self.console.error("could not find group with level %r" % self.maskLevel, exc_info=err)
+                self.console.error("Could not find group with level %r" % self.maskLevel, exc_info=err)
                 self.maskLevel = 0
                 return None
             else:
@@ -590,11 +590,11 @@ class Client(object):
 
         if self._name == newName:
             if self.console:
-                self.console.verbose2('aborted making alias for cid %s: name is the same' % self.cid)
+                self.console.verbose2('Aborted making alias for cid %s: name is the same' % self.cid)
             return
         if self.cid == '-1' or self.cid == 'Server': # bfbc2 addition
             if self.console:
-                self.console.verbose2('aborted making alias for cid %s: must be B3' % self.cid)
+                self.console.verbose2('Aborted making alias for cid %s: must be B3' % self.cid)
             return
 
         self.makeAlias(self._name)
@@ -627,7 +627,7 @@ class Client(object):
 
     def _set_pbid(self, pbid):
         if self.getattr('_pbid') and self._pbid != pbid:
-            self.console.error('client has pbid but its not the same %s <> %s', self._pbid, pbid)
+            self.console.error('Client has pbid but its not the same %s <> %s', self._pbid, pbid)
         self._pbid = pbid
 
     def _get_pbid(self):
@@ -870,7 +870,7 @@ class Client(object):
             alias = Alias(clientId=self.id, alias=name)
 
         alias.save(self.console)
-        self.console.bot('new alias for %s: %s', str(self.id), alias.alias)
+        self.console.bot('New alias for %s: %s', str(self.id), alias.alias)
 
     def makeIpAlias(self, ip):
         """
@@ -894,7 +894,7 @@ class Client(object):
             alias = IpAlias(clientId=self.id, ip=ip)
 
         alias.save(self.console)
-        self.console.bot('new alias for %s: %s', str(self.id), alias.ip)
+        self.console.bot('New alias for %s: %s', str(self.id), alias.ip)
 
     def save(self, console=None):
         """
@@ -925,19 +925,19 @@ class Client(object):
             try:
                 inStorage = self.console.storage.getClient(self)
             except KeyError, msg:
-                self.console.debug('client not found %s: %s', self.guid, msg)
+                self.console.debug('Client not found %s: %s', self.guid, msg)
                 inStorage = False
             except Exception, e:
-                self.console.error('auth self.console.storage.getClient(client) - %s\n%s', e,
+                self.console.error('Auth self.console.storage.getClient(client) - %s\n%s', e,
                                    traceback.extract_tb(sys.exc_info()[2]))
                 self.authorizing = False
                 return False
 
             if inStorage:
-                self.console.bot('client found in storage %s: welcome back %s', str(self.id), self.name)
+                self.console.bot('Client found in storage %s: welcome back %s', str(self.id), self.name)
                 self.lastVisit = self.timeEdit
             else:
-                self.console.bot('client not found in the storage %s: create new', str(self.guid))
+                self.console.bot('Client not found in the storage %s: create new', str(self.guid))
 
             self.connections = int(self.connections) + 1
             self.name = name
@@ -945,7 +945,7 @@ class Client(object):
             self.save()
             self.authed = True
 
-            self.console.debug('client authorized: [%s] %s - %s', self.cid, self.name, self.guid)
+            self.console.debug('Client authorized: [%s] %s - %s', self.cid, self.name, self.guid)
 
             # check for bans
             if self.numBans > 0:
@@ -1522,7 +1522,7 @@ class Clients(dict):
         except KeyError:
             return None
         except Exception, e:
-            self.console.error('unexpected error getByCID(%s) - %s', cid, e)
+            self.console.error('Unexpected error getByCID(%s) - %s', cid, e)
         else:
             # self.console.debug('found client by CID %s = %s', cid, c.name)
             if c.cid == cid:
@@ -1567,7 +1567,7 @@ class Clients(dict):
             group = Group(keyword='superadmin')
             group = self.console.storage.getGroup(group)
         except Exception, e:
-            self.console.error('could not get superadmin group: %s', e)
+            self.console.error('Could not get superadmin group: %s', e)
             return False
 
         sclient = self.console.storage.getClientsMatching({'&group_bits': group.id})

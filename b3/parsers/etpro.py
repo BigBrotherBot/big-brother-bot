@@ -341,7 +341,7 @@ class EtproParser(AbstractParser):
 
     def OnClientuserinfo(self, action, data, match=None):
         bclient = self.parseUserInfo(data)
-        self.verbose('parsed user info: %s' % bclient)
+        self.verbose('Parsed user info: %s' % bclient)
         if bclient:
             client = self.clients.getByCID(bclient['cid'])
             if client:
@@ -361,7 +361,7 @@ class EtproParser(AbstractParser):
                 if not 'ip' in bclient and guid == 'unknown':
                     # happens when a client is (temp)banned and got kicked so client was destroyed, but
                     # infoline was still waiting to be parsed.
-                    self.debug('client disconnected: ignoring...')
+                    self.debug('Client disconnected: ignoring...')
                     return None
                 
                 nguid = ''
@@ -389,13 +389,13 @@ class EtproParser(AbstractParser):
         self.debug('OnKill: %s (%s)'%(match.group('aweap'),match.group('text')))
         victim = self.clients.getByCID(match.group('cid'))
         if not victim:
-            self.debug('no victim')
+            self.debug('No victim')
             #self.OnClientuserinfo(action, data, match)
             return None
 
         weapon = match.group('aweap')
         if not weapon:
-            self.debug('no weapon')
+            self.debug('No weapon')
             return None
 
         ## Fix attacker
@@ -413,7 +413,7 @@ class EtproParser(AbstractParser):
 
         damagetype = match.group('text').split()[-1:][0]
         if not damagetype:
-            self.debug('no damage type, weapon: %s' % weapon)
+            self.debug('No damage type, weapon: %s' % weapon)
             return None
 
         eventkey = 'EVT_CLIENT_KILL'
@@ -423,7 +423,7 @@ class EtproParser(AbstractParser):
             if weapon == self.MOD_SWITCHTEAM:
                 # Do not pass a teamchange event here. That event is passed
                 # shortly after the kill (in clients.py by adjusting the client object).
-                self.verbose('Team Change Event Caught, exiting')
+                self.verbose('Team change event caught: exiting')
                 return None
             else:
                 eventkey = 'EVT_CLIENT_SUICIDE'
@@ -459,7 +459,7 @@ class EtproParser(AbstractParser):
 
         self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
         self.game.startRound()
-        self.debug('synchronizing client info')
+        self.debug('Synchronizing client info')
         self.clients.sync()
 
         return self.getEvent('EVT_GAME_ROUND_START', self.game)
@@ -481,7 +481,7 @@ class EtproParser(AbstractParser):
             try:
                 text = match.group('text')
             except:
-                self.verbose('no message entered in privmsg!')
+                self.verbose('No message entered in privmsg!')
                 return None
             self.OnPrivMsg(match.group('origin'), match.group('target'), text)
         # an example on how to catch other etpro events:

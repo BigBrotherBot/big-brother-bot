@@ -253,7 +253,7 @@ class AltitudeParser(Parser):
         # NOTE: there is no team kill in that game
         attacker = self.clients.getByCID(altitude_event['player'])
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return
 
         if 'xp' in altitude_event:
@@ -264,12 +264,12 @@ class AltitudeParser(Parser):
 
         victim = self.clients.getByCID(altitude_event['victim'])
         if not victim:
-            self.debug('no victim')
+            self.debug('No victim')
             return
 
         weapon = altitude_event['source']
         if not weapon:
-            self.debug('no weapon')
+            self.debug('No weapon')
             return
 
         event = 'EVT_CLIENT_KILL'
@@ -286,7 +286,7 @@ class AltitudeParser(Parser):
         """
         attacker = self.clients.getByCID(altitude_event['player'])
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return
 
         if 'xp' in altitude_event:
@@ -294,7 +294,7 @@ class AltitudeParser(Parser):
 
         victim = self.clients.getByCID(altitude_event['victim'])
         if not victim:
-            self.debug('no victim')
+            self.debug('No victim')
             return
 
         return self.getEvent("EVT_CLIENT_ACTION", data="assist", client=attacker, target=victim)
@@ -441,7 +441,7 @@ class AltitudeParser(Parser):
         """
         attacker = self.clients.getByCID(altitude_event['player'])
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return
         if 'xp' in altitude_event:
             attacker.currentXP = int(altitude_event['xp'])
