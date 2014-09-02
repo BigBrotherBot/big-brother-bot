@@ -22,6 +22,9 @@
 #                                       - allow customization of _settings['line_color_prefix'] from b3.xml:
 #                                         setting 'line_color_prefix' in section 'server'
 #                                       - slightly changed getWrap method to use a more pythonic approach
+#                                       - make sure to have '>' prefix in getWrap method result (also when color codes
+#                                         are not being used by the parser) when the result line is not the first of the
+#                                         list
 # 2014/09/01 - 1.37.1 - 82ndab-Bravo17  - Add color code options for new getWrap method
 # 2014/07/27 - 1.37   - Fenix           - syntax cleanup
 #                                       - reformat changelog
@@ -1284,7 +1287,13 @@ class Parser(object):
                     color = match[-1]
             return lines
         else:
-            return wrapped_text
+            # we still need to add the > prefix w/o color codes
+            # to all the lines except the first one
+            lines = [wrapped_text[0]]
+            if len(wrapped_text) > 1:
+                for line in wrapped_text[1:]:
+                    lines.append('>%s' % line)
+            return lines
 
     def error(self, msg, *args, **kwargs):
         """
