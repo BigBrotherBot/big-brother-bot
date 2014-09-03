@@ -547,14 +547,14 @@ class Bf4Parser(AbstractParser):
         self.clients.newClient('Server', guid='Server', name='Server', hide=True,
                                pbid='Server', team=b3.TEAM_UNKNOWN, squad=None)
 
-        self.verbose('gametype: %s, map: %s' %(self.game.gameType, self.game.mapName))
+        self.verbose('Gametype: %s, Map: %s' %(self.game.gameType, self.game.mapName))
 
     def pluginsStarted(self):
         """
         Called after the parser loaded and started all plugins.
         """
         AbstractParser.pluginsStarted(self)
-        self.info('connecting all players...')
+        self.info('Connecting all players...')
         plist = self.getPlayerList()
         for cid, p in plist.iteritems():
             self.getClient(cid)
@@ -577,7 +577,7 @@ class Bf4Parser(AbstractParser):
         """
         client = self.getClient(data[0])
         if client is None:
-            self.warning("could not get client: %s" % traceback.extract_tb(sys.exc_info()[2]))
+            self.warning("Could not get client: %s" % traceback.extract_tb(sys.exc_info()[2]))
             return
         if client.cid == 'Server':
             # ignore chat events for Server
@@ -704,7 +704,7 @@ class Bf4Parser(AbstractParser):
         except (ValueError, TypeError):
             pass  # continue if the ping value is empty
         except Exception, err:
-            self.error('unable to retrieve pings from player list', exc_info=err)
+            self.error('Unable to retrieve pings from player list', exc_info=err)
         return pings
 
     ####################################################################################################################
@@ -715,7 +715,7 @@ class Bf4Parser(AbstractParser):
 
     def checkVersion(self):
         version = self.output.write('version')
-        self.info('server version : %s' % version)
+        self.info('Server version : %s' % version)
         if version[0] != 'BF4':
             raise Exception('the BF4 parser can only work with Battlefield 4')
         if int(version[1]) < BF4_REQUIRED_VERSION:
@@ -896,7 +896,7 @@ class Bf4Parser(AbstractParser):
         """
         data = self.write(('serverInfo',))
         data2 = Bf4Parser.decodeServerinfo(data)
-        self.debug("decoded server info : %r" % data2)
+        self.debug("Decoded server info : %r" % data2)
         self.game.sv_hostname = data2['serverName']
         self.game.sv_maxclients = int(data2['maxPlayers'])
         self.game.mapName = data2['level']
@@ -1053,7 +1053,7 @@ class Bf4Parser(AbstractParser):
                 else:
                     raise Exception(err)
             except Exception, err:
-                self.console.error("could not get player state for player %s: %s" % (_player_name, err), exc_info=err)
+                self.console.error("Could not get player state for player %s: %s" % (_player_name, err), exc_info=err)
 
         def getPlayerState(self):
             _state = b3.STATE_UNKNOWN
@@ -1079,7 +1079,7 @@ class Bf4Parser(AbstractParser):
                 _player_info_block = PlayerInfoBlock(self.console.write(('admin.listPlayers', 'player', _player_name)))
                 return int(_player_info_block[0]['type'])
             except Exception, err:
-                self.console.error("could not get player_type for player %s: %s" % (self.name, err), exc_info=err)
+                self.console.error("Could not get player_type for player %s: %s" % (self.name, err), exc_info=err)
 
         def get_player_type(self):
             return self._get_player_type()

@@ -148,13 +148,13 @@ class EtParser(AbstractParser):
     def OnGib(self, action, data, match=None):
         victim = self.clients.getByCID(match.group('cid'))
         if not victim:
-            self.debug('no victim')
+            self.debug('No victim')
             #self.OnJ(action, data, match)
             return None
 
         attacker = self.clients.getByCID(match.group('acid'))
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return None
 
         event_key = 'EVT_CLIENT_GIB'
@@ -174,7 +174,7 @@ class EtParser(AbstractParser):
 
         attacker = self.clients.getByCID(match.group('acid'))
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return None
 
         event_key = 'EVT_CLIENT_KILL'

@@ -53,6 +53,7 @@ class WopParser(AbstractParser):
 
     _settings = {
         'line_length': 65,
+        'line_color_prefix': '',
     }
 
     _commands = {
@@ -202,7 +203,7 @@ class WopParser(AbstractParser):
             target = None
             return m, m.group('action').lower(), m.group('data').strip(), client, target
         else:
-            self.verbose('line did not match format: %s' % line)
+            self.verbose('Line did not match format: %s' % line)
 
     def parseUserInfo(self, info):
         """
@@ -262,10 +263,10 @@ class WopParser(AbstractParser):
                 self._clientConnectID = match.group('bcid')
                 self._clientConnectGuid = 'BOT' + str(match.group('bcid'))
                 self._clientConnectIp = '0.0.0.0'
-                self.bot('bot connected!')
+                self.bot('Bot connected!')
                 return None
             except IndexError:
-                self.error('parser could not connect client')
+                self.error('Parser could not connect client')
                 return None
 
         try:
@@ -275,7 +276,7 @@ class WopParser(AbstractParser):
             self._clientConnectGuid = match.group('ip')
 
         self._clientConnectIp = match.group('ip')
-        self.verbose('client connected cid: %s, guid: %s, ip: %s' % (self._clientConnectID,
+        self.verbose('Client connected cid: %s, guid: %s, ip: %s' % (self._clientConnectID,
                                                                      self._clientConnectGuid,
                                                                      self._clientConnectIp))
 
@@ -288,7 +289,7 @@ class WopParser(AbstractParser):
         self._clientConnectID = None
 
         bclient = self.parseUserInfo(data)
-        self.verbose('parsed user info %s' % bclient)
+        self.verbose('Parsed user info %s' % bclient)
         if bclient:
             client = self.clients.getByCID(bclient['cid'])
             if client_id:
@@ -343,10 +344,10 @@ class WopParser(AbstractParser):
 
         client = self.clients.getByExactName(msg[0])
         if client:
-            self.verbose('client found: %s' % client.name)
+            self.verbose('Client found: %s' % client.name)
             return self.getEvent('EVT_CLIENT_SAY', msg[1], client)
         else:
-            self.verbose('no client found!')
+            self.verbose('No client found!')
             return None
 
     def OnSayteam(self, action, data, match=None):
@@ -358,10 +359,10 @@ class WopParser(AbstractParser):
         client = self.clients.getByExactName(msg[0])
 
         if client:
-            self.verbose('client found: %s' % client.name)
+            self.verbose('Client found: %s' % client.name)
             return self.getEvent('EVT_CLIENT_TEAM_SAY', msg[1], client, client.team)
         else:
-            self.verbose('no client found!')
+            self.verbose('No client found!')
             return None
 
     def OnKill(self, action, data, match=None):
@@ -396,13 +397,13 @@ class WopParser(AbstractParser):
         
         victim = self.clients.getByCID(match.group('cid'))
         if not victim:
-            self.debug('no victim')
+            self.debug('No victim')
             #self.OnClientuserinfo(action, data, match)
             return None
 
         weapon = match.group('aweap')
         if not weapon:
-            self.debug('no weapon')
+            self.debug('No weapon')
             return None
 
         ## Fix attacker
@@ -415,12 +416,12 @@ class WopParser(AbstractParser):
         ## end fix attacker
           
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return None
 
         damagetype = match.group('text').split()[-1:][0]
         if not damagetype:
-            self.debug('no damage type, weapon: %s' % weapon)
+            self.debug('No damage type, weapon: %s' % weapon)
             return None
 
         eventkey = 'EVT_CLIENT_KILL'

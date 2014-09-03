@@ -521,19 +521,19 @@ class Bf3Parser(AbstractParser):
         self.clients.newClient('Server', guid='Server', name='Server', hide=True,
                                pbid='Server', team=b3.TEAM_UNKNOWN, squad=None)
 
-        self.verbose('gametype: %s, map: %s' %(self.game.gameType, self.game.mapName))
+        self.verbose('Gametype: %s, Map: %s' %(self.game.gameType, self.game.mapName))
 
     def pluginsStarted(self):
         """
         Called after the parser loaded and started all plugins.
         """
         AbstractParser.pluginsStarted(self)
-        self.info('connecting all players...')
+        self.info('Connecting all players...')
         plist = self.getPlayerList()
         for cid, p in plist.iteritems():
             client = self.clients.getByCID(cid)
             if not client:
-                self.debug('client %s found on the server' % cid)
+                self.debug('Client %s found on the server' % cid)
                 client = self.clients.newClient(cid, guid=p['name'], name=p['name'], team=p['teamId'], squad=p['squadId'], data=p)
                 self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', data=p, client=client))
 
@@ -624,7 +624,7 @@ class Bf3Parser(AbstractParser):
             except ValueError:
                 pass
             except Exception, err:
-                self.error("could not get ping info for player %s: %s" % (cid, err), exc_info=err)
+                self.error("Could not get ping info for player %s: %s" % (cid, err), exc_info=err)
         return pings
 
     ####################################################################################################################
@@ -666,7 +666,7 @@ class Bf3Parser(AbstractParser):
                 words = self.write(('admin.listPlayers', 'player', cid))
                 pib = PlayerInfoBlock(words)
                 if not len(pib):
-                    self.debug('no such client found')
+                    self.debug('No such client found')
                     return None
                 p = pib[0]
                 if 'guid' in p:
@@ -929,7 +929,7 @@ class Bf3Parser(AbstractParser):
                 else:
                     raise Exception(err)
             except Exception, err:
-                self.console.error("could not get player state for player %s: %s" % (_player_name, err), exc_info=err)
+                self.console.error("Could not get player state for player %s: %s" % (_player_name, err), exc_info=err)
 
         def getPlayerState(self):
             _state = b3.STATE_UNKNOWN

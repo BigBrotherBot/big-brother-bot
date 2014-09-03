@@ -127,6 +127,7 @@ class HomefrontParser(b3.parser.Parser):
 
     _settings = {
         'line_length': 90,
+        'line_color_prefix': '',
     }
 
     ####################################################################################################################
@@ -139,7 +140,7 @@ class HomefrontParser(b3.parser.Parser):
         """
         Called after the parser is created before run().
         """
-        self.debug("startup()")
+        self.debug("starting parser...")
         
         # create the 'Server' client
         self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
@@ -161,7 +162,7 @@ class HomefrontParser(b3.parser.Parser):
                     self._ini_file = f
 
         if not self._ini_file:
-            self.debug('incorrect ini file or no ini file specified: map commands other than nextmap not available')
+            self.debug('Incorrect ini file or no ini file specified: map commands other than nextmap not available')
             
         # start crontab to trigger playerlist events
         self.cron.add(b3.cron.CronTab(self.retrievePlayerList, second='*/%s' % self._playerlistInterval))
@@ -195,7 +196,7 @@ class HomefrontParser(b3.parser.Parser):
         """
         Main worker thread for B3.
         """
-        self.bot('start listening ...')
+        self.bot('Start listening ...')
 
         self.screen.write('Startup Complete : B3 is running! Let\'s get to work!\n\n')
         self.screen.write('(If you run into problems, check %s in the B3 root directory for '
@@ -212,7 +213,7 @@ class HomefrontParser(b3.parser.Parser):
                     self._pauseNotice = True
             else:
                 if self._serverConnection is None:
-                    self.bot('connecting to Homefront server ...')
+                    self.bot('Connecting to Homefront server ...')
                     self._serverConnection = protocol.Client(self, self._rconIp, self._rconPort,
                                                              self._rconPassword, keepalive=True)
 
@@ -236,7 +237,7 @@ class HomefrontParser(b3.parser.Parser):
                         self._serverConnection.ping()
                     asyncore.loop(timeout=3, use_poll=True, count=1)
 
-        self.bot('stop listening...')
+        self.bot('Stop listening...')
 
         with self.exiting:
             self._serverConnection.close()
@@ -251,7 +252,7 @@ class HomefrontParser(b3.parser.Parser):
 
     def routePacket(self, packet):
         if packet is None:
-            self.warning('cannot route empty packet')
+            self.warning('Cannot route empty packet')
         if packet.message == MessageType.SERVER_TRANSMISSION \
             and packet.data == "PONG":
             self.verbose2("%s" % packet)
@@ -363,7 +364,7 @@ class HomefrontParser(b3.parser.Parser):
             ftp = self.ftpconnect()
             self._nbConsecutiveConnFailure = 0
             remoteSize = ftp.size(os.path.basename(self.ftpconfig['path']))
-            self.verbose("connection successfull: remote file size is %s" % remoteSize)
+            self.verbose("Connection successfull: remote file size is %s" % remoteSize)
             ftp.retrlines('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload)
         except ftplib.all_errors, e:
             self.debug(str(e))
@@ -381,14 +382,14 @@ class HomefrontParser(b3.parser.Parser):
 
     def ftpconnect(self):
         #self.debug('Python Version %s.%s, so setting timeout of 10 seconds' % (versionsearch.group(2), versionsearch.group(3)))
-        self.verbose('connecting to %s:%s ...' % (self.ftpconfig["host"], self.ftpconfig["port"]))
+        self.verbose('Connecting to %s:%s ...' % (self.ftpconfig["host"], self.ftpconfig["port"]))
         ftp = FTP()
         ftp.set_debuglevel(self._ftplib_debug_level)
         ftp.connect(self.ftpconfig['host'], self.ftpconfig['port'], self._connectionTimeout)
         ftp.login(self.ftpconfig['user'], self.ftpconfig['password'])
         ftp.voidcmd('TYPE I')
         d = os.path.dirname(self.ftpconfig['path'])
-        self.debug('trying to cwd to [%s]' % d)
+        self.debug('Trying to cwd to [%s]' % d)
         ftp.cwd(d)
         return ftp
 
@@ -431,10 +432,10 @@ class HomefrontParser(b3.parser.Parser):
         # example : cou"rgette\u3010\u30c4\u3011 76561197963239764
         match = re.search(r"^(?P<name>.+) (?P<uid>[0-9]+)$", data)
         if not match:
-            self.error("could not parse LOGIN event [%s]" % data)
+            self.error("Could not parse LOGIN event [%s]" % data)
             return None
         if match.group('uid') == '00':
-            self.info("banned player connecting")
+            self.info("Banned player connecting")
             return
         client = self.getClientByUidOrCreate(match.group('uid'), match.group('name'))
         if client :
@@ -446,10 +447,10 @@ class HomefrontParser(b3.parser.Parser):
         # example : courgette 1100012402D1245
         match = re.search(r"^(?P<name>.+) (?P<uid>[0-9]+)$", data)
         if not match:
-            self.error("could not get UID in [%s]" % data)
+            self.error("Could not get UID in [%s]" % data)
             return None
         if match.group('uid') == '00':
-            self.info("banned player connecting")
+            self.info("Banned player connecting")
             return
         self.getClientByUidOrCreate(match.group('uid'), match.group('name'))
     
@@ -469,7 +470,7 @@ class HomefrontParser(b3.parser.Parser):
             return
         client = self.clients.getByGUID(match.group('uid'))
         if client is None:
-            self.debug("could not find client")
+            self.debug("Could not find client")
             return
         # This next line will also raise the EVT_CLIENT_TEAM_CHANGE event
         client.team = self.getTeam(match.group('team'))
@@ -483,7 +484,7 @@ class HomefrontParser(b3.parser.Parser):
             return
         client = self.clients.getByGUID(match.group('uid'))
         if client is None:
-            self.debug("could not find client")
+            self.debug("Could not find client")
             return
         client.clan = match.group('clan')
         return self.getEvent('EVT_CLIENT_CLAN_CHANGE', client.clan, client)
@@ -498,7 +499,7 @@ class HomefrontParser(b3.parser.Parser):
         ## [int: Killer SteamID] [string: DamageType] [int: Victim SteamID]
         #match = re.search(r"^(?P<data>(?P<auid>.*)\s+(?P<aweap>[A-z0-9_-]+)\s+(?P<vuid>.*))$", data)
         if not match:
-            self.error("can't parse kill line: %s" % data)
+            self.error("Can't parse kill line: %s" % data)
             return
         else:
             attackerid = match.group('attacker')
@@ -508,7 +509,7 @@ class HomefrontParser(b3.parser.Parser):
                 # not a SteamID ? must be a player name
                 attacker = self.getClient(attackerid)
             if not attacker:
-                self.debug('no attacker!')
+                self.debug('No attacker!')
                 return
 
             victimid = match.group('victim')
@@ -518,12 +519,12 @@ class HomefrontParser(b3.parser.Parser):
                 # not a SteamID ? must be a player name
                 victim = self.getClient(victimid)
             if not victim:
-                self.debug('no victim')
+                self.debug('No victim')
                 return
 
             weapon = match.group('aweap')
             if not weapon:
-                self.debug('no weapon')
+                self.debug('No weapon')
                 return
 
             if not hasattr(victim, 'hitloc'):
@@ -535,7 +536,7 @@ class HomefrontParser(b3.parser.Parser):
             self.verbose('%s suicided' % attacker.name)
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
             eventkey = 'EVT_CLIENT_KILL_TEAM'
-            self.verbose('team kill: attacker: %s, victim: %s' % (attacker.name, victim.name))
+            self.verbose('Team kill: attacker: %s, victim: %s' % (attacker.name, victim.name))
         else:
             self.verbose('%s killed %s using %s' % (attacker.name, victim.name, weapon))
 
@@ -592,7 +593,7 @@ class HomefrontParser(b3.parser.Parser):
         # example : courgette says: !register
         match = re.search(r"^(?P<name>.+) (\((?P<type>team|squad)\))?says: (?P<text>.*)$", data)
         if not match:
-            self.error("could not understand broadcast format [%s]" % data)
+            self.error("Could not understand broadcast format [%s]" % data)
             raise 
         else:
             typo = match.group('type')
@@ -615,7 +616,7 @@ class HomefrontParser(b3.parser.Parser):
         All onChatterBroadcast messages also reappear here.
         """
         # [string: Text]
-        self.verbose2('received chatter: %s' % data )
+        self.verbose2('Received chatter: %s' % data )
         return self.getEvent('EVT_SERVER_SAY', data)
 
     def onServerBan_remove(self, data):

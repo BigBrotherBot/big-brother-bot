@@ -97,6 +97,7 @@ class AbstractParser(b3.parser.Parser):
 
     _settings = {
         'line_length': 80,
+        'line_color_prefix': '',
     }
 
     _commands = {
@@ -200,7 +201,7 @@ class AbstractParser(b3.parser.Parser):
         Called after the parser is created before run().
         """
         if not self.config.has_option('server', 'game_log'):
-            self.critical("your main config file is missing the 'game_log' setting in section 'server'")
+            self.critical("Your main config file is missing the 'game_log' setting in section 'server'")
             raise SystemExit(220)
 
         # add the world client
@@ -234,7 +235,7 @@ class AbstractParser(b3.parser.Parser):
             target = None
             return m, m.group('action').lower(), m.group('data').strip(), client, target
         elif '------' not in line:
-            self.verbose('line did not match format: %s' % line)
+            self.verbose('Line did not match format: %s' % line)
 
     def parseLine(self, line):
         """
@@ -355,7 +356,7 @@ class AbstractParser(b3.parser.Parser):
 
     def OnClientuserinfo(self, action, data, match=None):
         bclient = self.parseUserInfo(data)
-        self.verbose('parsed user info: %s' % bclient)
+        self.verbose('Parsed user info: %s' % bclient)
         if bclient:
             client = self.clients.getByCID(bclient['cid'])
 
@@ -387,12 +388,12 @@ class AbstractParser(b3.parser.Parser):
         # m = re.match(r'^([0-9]+)\s([0-9]+)\s([0-9]+): (.*?) killed (.*?) by ([A-Z_]+)$', data)
         attacker = self.getClient(attacker=match)
         if not attacker:
-            self.bot('no attacker')
+            self.bot('No attacker')
             return None
 
         victim = self.getClient(victim=match)
         if not victim:
-            self.bot('no victim')
+            self.bot('No victim')
             return None
 
         return self.getEvent('EVT_CLIENT_KILL', (100, match.group('aweap'), None), attacker, victim)
@@ -504,10 +505,10 @@ class AbstractParser(b3.parser.Parser):
         :param text: The message to be sent.
         """
         if client and (client.state == b3.STATE_DEAD or client.team == b3.TEAM_SPEC):
-            self.verbose('say dead state: %s, team %s', client.state, client.team)
+            self.verbose('Say dead state: %s, team %s', client.state, client.team)
             self.sayDead(text)
         else:
-            self.verbose('say all')
+            self.verbose('Say all')
             self.say(text)
 
     def sayDead(self, text):
@@ -771,7 +772,7 @@ class AbstractParser(b3.parser.Parser):
                         players[str(m.group('slot'))] = d
                         
                     else:
-                        self.debug('duplicate or incorrect slot number - '
+                        self.debug('Duplicate or incorrect slot number - '
                                    'client ignored %s last slot %s' % (m.group('slot'), lastslot))
 
         return players
@@ -783,7 +784,7 @@ class AbstractParser(b3.parser.Parser):
         """
         if self._reCvarName.match(cvar_name):
             val = self.write(cvar_name)
-            self.debug('get cvar %s = [%s]', cvar_name, val)
+            self.debug('Get cvar %s = [%s]', cvar_name, val)
 
             m = None
             for f in self._reCvar:
@@ -808,7 +809,7 @@ class AbstractParser(b3.parser.Parser):
         :param value: The CVAR value
         """
         if re.match('^[a-z0-9_.]+$', cvar_name, re.IGNORECASE):
-            self.debug('set cvar %s = [%s]', cvar_name, value)
+            self.debug('Set cvar %s = [%s]', cvar_name, value)
             self.write(self.getCommand('set', name=cvar_name, value=value))
         else:
             self.error('%s is not a valid cvar name', cvar_name)
@@ -819,7 +820,7 @@ class AbstractParser(b3.parser.Parser):
         :param cvar_name: The CVAR name
         :param value: The CVAR value
         """
-        self.warning('use of deprecated method: set(): please use: setCvar()')
+        self.warning('Use of deprecated method: set(): please use: setCvar()')
         self.setCvar(cvar_name, value)
 
     def getMap(self):

@@ -123,5 +123,5 @@ class Test_cod4ClientAuthMethod(Cod4TestCase):
         with patch.object(self.console, "error") as error_mock:
             joe.auth()
         # THEN
-        error_mock.assert_called_with('auth self.console.storage.getClient(client) - Client<@0:joe_guid|:"Joe":None>',
+        error_mock.assert_called_with('Auth self.console.storage.getClient(client) - Client<@0:joe_guid|:"Joe":None>',
                                    exc_info=ANY)

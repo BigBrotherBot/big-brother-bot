@@ -10,17 +10,18 @@
  For any change made in this config file, you have to restart the bot.
  Whenever you can specify a file/directory path, the following shortcuts
  can be used :
-  @b3 : the folder where B3 code is installed in
-  @conf : the folder containing this config file
+    @b3 : the folder where B3 code is installed in
+    @conf : the folder containing this config file
  -->
 	<settings name="b3">
 		<!--
 			Next line: the parser defines the game:
+			    arma2/arma3
+			    bfbc2/bf3/bf4/moh/mohw
                 cod/cod2/cod4/cod5/cod6/cod7/cod8
                 iourt41/iourt42
-                bfbc2/bf3/moh
-                etpro/altitude/oa081/smg/sof2/wop/wop15
-                homefront/ro2/csgo/ravaged/arma2/insurgency
+                et/etpro/altitude/oa081/smg/smg11/sof2/sof2pm/wop/wop15
+                chiv/csgo/homefront/insurgency/ravaged/ro2/
             (it should NOT be 'changeme')
 		-->
 		<set name="parser">changeme</set>
@@ -30,6 +31,7 @@
 		<set name="bot_name">b3</set>
 		<!-- Ingame messages are prefixed with this code, you can use colorcodes -->
 		<set name="bot_prefix">^0(^2b3^0)^7:</set>
+        <!-- Time format to use to format time strings (also used by the !time command of the Admin Plugin -->
 		<set name="time_format">%I:%M%p %Z %m/%d/%y</set>
 		<!-- The timezone your bot is in -->
 		<set name="time_zone">CST</set>
@@ -45,10 +47,11 @@
 		<set name="port">27960</set>
 		<!-- The gameserver generates a logfile, put the path and name here (very important !) -->
 		<set name="game_log">games_mp.log</set>
-		<!-- If you want to run b3 on a different computer than where your server reside (remote access to the gamelog), you can connect via ftp or http by using the following syntax:
+		<!-- If you want to run b3 on a different computer than where your server reside (remote access to the gamelog),
+		     you can connect via ftp or http by using the following syntax:
 		<set name="game_log">ftp://username:password@serverhost/path/to/games_mp.log</set>
 		<set name="game_log">http://serverhost/path/to/games_mp.log</set>
-		Note: you can protect your http access with a .htaccess, b3 can authenticate itself.
+		    Note: you can protect your http access with a .htaccess, b3 can authenticate itself.
 		-->
 		<!-- The public IP your gameserver is residing on -->
 		<set name="public_ip">127.0.0.1</set>
@@ -56,7 +59,8 @@
 		<set name="rcon_ip">127.0.0.1</set>
 		<!-- Is the gameserver running PunkBuster Anticheat: on/off -->
 		<set name="punkbuster">on</set>
-		<!-- Delay between each log reading. Set a higher value to consume less disk ressources or bandwidth if you remotely connect (ftp or http remote log access) -->
+		<!-- Delay between each log reading. Set a higher value to consume less disk ressources or bandwidth if you
+		     remotely connect (ftp or http remote log access) -->
 		<set name="delay">0.33</set>
 		<!-- Number of lines to process per second. Set a lower value to consume less CPU ressources -->
 		<set name="lines_per_second">50</set>
@@ -115,17 +119,17 @@
                 <plugin name="adv" config="@conf/plugin_adv.xml" path="c:/somewhere/else/"/>
             
             -->
-		<plugin name="censor" config="@conf/plugin_censor.xml" />
-		<plugin name="spamcontrol" config="@conf/plugin_spamcontrol.ini" />
         <plugin name="admin" config="@conf/plugin_admin.ini" />
-		<plugin name="tk" config="@conf/plugin_tk.ini" />
-		<plugin name="stats" config="@conf/plugin_stats.ini" />
-		<plugin name="pingwatch" config="@conf/plugin_pingwatch.ini" />
-		<plugin name="adv" config="@conf/plugin_adv.xml" />
-		<plugin name="status" config="@conf/plugin_status.ini" />
-		<plugin name="welcome" config="@conf/plugin_welcome.ini" />
-		<plugin name="punkbuster" config="@conf/plugin_punkbuster.ini" />
+        <plugin name="adv" config="@conf/plugin_adv.xml" />
+		<plugin name="censor" config="@conf/plugin_censor.xml" />
         <plugin name="cmdmanager" config="@conf/plugin_cmdmanager.ini" />
+        <plugin name="pingwatch" config="@conf/plugin_pingwatch.ini" />
+        <plugin name="punkbuster" config="@conf/plugin_punkbuster.ini" />
+		<plugin name="spamcontrol" config="@conf/plugin_spamcontrol.ini" />
+        <plugin name="stats" config="@conf/plugin_stats.ini" />
+        <plugin name="status" config="@conf/plugin_status.ini" />
+		<plugin name="tk" config="@conf/plugin_tk.ini" />
+		<plugin name="welcome" config="@conf/plugin_welcome.ini" />
 
 		<!-- The next plugins are external, 3rd party plugins and should reside in the external_dir. Example: -->
 		<!-- plugin config="@b3/extplugins/conf/newplugin.xml" name="newplugin" -->

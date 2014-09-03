@@ -19,61 +19,62 @@
 #
 # CHANGELOG
 #
-# 2012-08-28 - 0.4   - Courgette - fix sync()
-# 2012-08-28 - 0.5   - Courgette - fix SourceRconError: RCON message too large to send
-#                                - should fix UnicodeDecodeError in Rcon class when sending a command
-#                                - refactors the regular expressions for game events to make them easier to read
-#                                - add method parse_properties which helps extracting extended game log format
-#                                - add SourceMod SuperLogs CS:S specific events : EVT_SUPERLOGS_WEAPONSTATS and
-#                                  EVT_SUPERLOGS_WEAPONSTATS2
-# 2012-08-29 - 0.6   - Courgette - fix Courgette/big-brother-bot#84 - SourceRconError: RCON message too large to send
-#                                - fix Courgette/big-brother-bot#85 - rcon write() does is missing the max_retries param
-#                                - fix Courgette/big-brother-bot#86 - UnicodeDecodeError
-#                                - add kill location as a 5th element to data for events EVT_CLIENT_KILL,
-#                                  EVT_CLIENT_SUICIDE, EVT_CLIENT_KILL_TEAM if the SourceMod SuperLogs plugin is active
-#                                  and provides kill locations
-#                                - fire EVT_CLIENT_ACTION events for game events Got_The_Bomb, Dropped_The_Bomb,
-#                                  Planted_The_Bomb, Begin_Bomb_Defuse_Without_Kit, Defused_The_Bomb, headshot,
-#                                  round_mvp
-# 2012-09-11 - 0.7   - Courgette - tweak say lines max length
-# 2012-09-11 - 0.8   - Courgette - full unicode support
-# 2012-09-13 - 1.0   - Courgette - split long messages into lines and add B3 prefixes to them
-# 2012-09-13 - 1.1   - Courgette - add support for SourceMod plugin "B3 Say"
-# 2012-09-17 - 1.2   - Courgette - fix say event when player has no team
-#                                - fix ban/tempban/unban
-#                                - add event EVT_SERVER_REQUIRES_RESTART which is triggered when the server requires a
-#                                  restart. This can be useful for a plugin could act upon such event by send an email
-#                                  to admin, restarting the server, ...
-#                                - implement rotate_map() => the admin plugin !mapcycle command now works
-#                                - the admin plugin !map command is now able to provide suggestions if map name
-#                                  is incorrect
-# 2012-09-19 - 1.3   - Courgette - fix issue #88 (https://github.com/courgette/big-brother-bot/issues/88) regarding
-#                                  clan name appearing in some of the game log lines in place of the player team.
-# 2012-10-08 - 1.4   - Courgette   - better detection of EVT_SERVER_REQUIRES_RESTART
-#                                - now detect client action Begin_Bomb_Defuse_With_Kit
-#                                - fix #90 - check that SourceMod is installed at startup
-# 2012-10-19 - 1.4.1 - Courgette - fix ban that was queuing a EVT_CLIENT_BAN_TEMP event instead of EVT_CLIENT_BAN
-# 2013-08-17 - 1.5   - Courgette - can parse "switched team" game log lines
-#                                - can parse "purchased" game log lines and fires a EVT_CLIENT_ACTION event
-#                                - can parse "threw" game log lines and fires a EVT_CLIENT_ACTION event
-#                                - can parse "killed" game log lines which have player locations in
-#                                - can parse "committed suicide" game log lines which have player location in
-#                                - can parse "assisted killing" game log lines
-#                                - BOT won't make it to the database clients table anymore
-# 2013-08-19 - 1.5.1 - Courgette - do not reconnect players leaving the game server (regression from v1.5 - parsing
-#                                  of "switched team" lines)
-# 2014-01-10 - 1.6   - Courgette - add missing B3 event EVT_GAME_ROUND_START
-# 2014-01-13 - 1.6.1 - Courgette - add missing B3 event EVT_CLIENT_JOIN at round start. See #148
-# 2014-01-13 - 1.7   - Fenix     - code cleanup
-#                                - correctly set bot flag in get_client_or_create
-# 2014-05-02 - 1.7.1 - Fenix     - ewrote import statements
-#                                - initialize missing class attributes
-#                                - fixed get_player_pings method declaration not matching the method in Parser class
-#                                - fixed client retrieval in kick, ban and tempban function
-# 2014-07-16 - 1.7.2 - Fenix     - added admin key in EVT_CLIENT_KICK data dict when available
-# 2014-07-18 - 1.7.3 - Fenix     - updated abstract parser to comply with the new get_wrap implementation
-# 2014-08-04 - 1.7.4 - Fenix     - PEP8 coding standards
-#                                - let getcvar() method make use of the Cvar class
+# 2012-08-28 - 0.4   - Courgette        - fix sync()
+# 2012-08-28 - 0.5   - Courgette        - fix SourceRconError: RCON message too large to send
+#                                       - should fix UnicodeDecodeError in Rcon class when sending a command
+#                                       - refactors the regular expressions for game events to make them easier to read
+#                                       - add method parse_properties which helps extracting extended game log format
+#                                       - add SourceMod SuperLogs CS:S specific events : EVT_SUPERLOGS_WEAPONSTATS and
+#                                         EVT_SUPERLOGS_WEAPONSTATS2
+# 2012-08-29 - 0.6   - Courgette        - fix Courgette/big-brother-bot#84 - SourceRconError: RCON message too large to send
+#                                       - fix Courgette/big-brother-bot#85 - rcon write() does is missing the max_retries param
+#                                       - fix Courgette/big-brother-bot#86 - UnicodeDecodeError
+#                                       - add kill location as a 5th element to data for events EVT_CLIENT_KILL,
+#                                         EVT_CLIENT_SUICIDE, EVT_CLIENT_KILL_TEAM if the SourceMod SuperLogs plugin is active
+#                                         and provides kill locations
+#                                       - fire EVT_CLIENT_ACTION events for game events Got_The_Bomb, Dropped_The_Bomb,
+#                                         Planted_The_Bomb, Begin_Bomb_Defuse_Without_Kit, Defused_The_Bomb, headshot,
+#                                         round_mvp
+# 2012-09-11 - 0.7   - Courgette        - tweak say lines max length
+# 2012-09-11 - 0.8   - Courgette        - full unicode support
+# 2012-09-13 - 1.0   - Courgette        - split long messages into lines and add B3 prefixes to them
+# 2012-09-13 - 1.1   - Courgette        - add support for SourceMod plugin "B3 Say"
+# 2012-09-17 - 1.2   - Courgette        - fix say event when player has no team
+#                                       - fix ban/tempban/unban
+#                                       - add event EVT_SERVER_REQUIRES_RESTART which is triggered when the server requires a
+#                                         restart. This can be useful for a plugin could act upon such event by send an email
+#                                         to admin, restarting the server, ...
+#                                       - implement rotate_map() => the admin plugin !mapcycle command now works
+#                                       - the admin plugin !map command is now able to provide suggestions if map name
+#                                         is incorrect
+# 2012-09-19 - 1.3   - Courgette        - fix issue #88 (https://github.com/courgette/big-brother-bot/issues/88) regarding
+#                                         clan name appearing in some of the game log lines in place of the player team.
+# 2012-10-08 - 1.4   - Courgette          - better detection of EVT_SERVER_REQUIRES_RESTART
+#                                       - now detect client action Begin_Bomb_Defuse_With_Kit
+#                                       - fix #90 - check that SourceMod is installed at startup
+# 2012-10-19 - 1.4.1 - Courgette        - fix ban that was queuing a EVT_CLIENT_BAN_TEMP event instead of EVT_CLIENT_BAN
+# 2013-08-17 - 1.5   - Courgette        - can parse "switched team" game log lines
+#                                       - can parse "purchased" game log lines and fires a EVT_CLIENT_ACTION event
+#                                       - can parse "threw" game log lines and fires a EVT_CLIENT_ACTION event
+#                                       - can parse "killed" game log lines which have player locations in
+#                                       - can parse "committed suicide" game log lines which have player location in
+#                                       - can parse "assisted killing" game log lines
+#                                       - BOT won't make it to the database clients table anymore
+# 2013-08-19 - 1.5.1 - Courgette        - do not reconnect players leaving the game server (regression from v1.5 - parsing
+#                                         of "switched team" lines)
+# 2014-01-10 - 1.6   - Courgette        - add missing B3 event EVT_GAME_ROUND_START
+# 2014-01-13 - 1.6.1 - Courgette        - add missing B3 event EVT_CLIENT_JOIN at round start. See #148
+# 2014-01-13 - 1.7   - Fenix            - code cleanup
+#                                       - correctly set bot flag in get_client_or_create
+# 2014-05-02 - 1.7.1 - Fenix            - ewrote import statements
+#                                       - initialize missing class attributes
+#                                       - fixed get_player_pings method declaration not matching the method in Parser class
+#                                       - fixed client retrieval in kick, ban and tempban function
+# 2014-07-16 - 1.7.2 - Fenix            - added admin key in EVT_CLIENT_KICK data dict when available
+# 2014-07-18 - 1.7.3 - Fenix            - updated abstract parser to comply with the new get_wrap implementation
+# 2014-08-04 - 1.7.4 - Fenix            - PEP8 coding standards
+#                                       - let getcvar() method make use of the Cvar class
+# 2014-09-01 - 1.7.5 - 82ndab-Bravo17   - Add color code options for new getWrap method
 
 import re
 import time
@@ -93,7 +94,7 @@ from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '1.7.4'
+__version__ = '1.7.5'
 
 
 # GAME SETUP
@@ -168,8 +169,10 @@ class CsgoParser(Parser):
 
     _settings = {
         'line_length': 200,
+        'line_color_prefix': '',
     }
 
+    _use_color_codes= False
     ####################################################################################################################
     ##                                                                                                                ##
     ##  PARSER INITIALIZATION                                                                                         ##
@@ -181,7 +184,7 @@ class CsgoParser(Parser):
         Called after the parser is created before run().
         """
         if not self.is_sourcemod_installed():
-            self.critical("you need to have SourceMod installed on your game server for B3 to work")
+            self.critical("You need to have SourceMod installed on your game server for B3 to work")
             raise SystemExit(220)
 
         # add game specific events

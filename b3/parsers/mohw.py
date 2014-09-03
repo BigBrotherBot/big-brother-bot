@@ -20,6 +20,7 @@
 #
 # 2014/07/18 - 0.2 - Fenix - updated parser to comply with the new get_wrap implementation
 # 2014/08/06 - 0.3 - Fenix - make use of self.getEvent when creating events
+# 2014/09/02 - 0.4 - Fenix - syntax clenaup
 
 
 import b3
@@ -43,7 +44,7 @@ GAME_MODES_NAMES = {
     "SectorControl": "Sector Control",
     "TeamDeathMatch": "Team Death Match",
     "BombSquad": "Hot Spot",
-    }
+}
 
 GAMEMODES_IDS_BY_NAME = dict()
 for _id, name in GAME_MODES_NAMES.items():
@@ -60,7 +61,7 @@ MAP_NAME_BY_ID = {
     'MP_19': 'Tungunan Jungle',
     'MP_20': 'Darra Gun Market',
     'MP_21': 'Chitrail Compound'
-    }
+}
 
 MAP_ID_BY_NAME = dict()
 for _id, name in MAP_NAME_BY_ID.items():
@@ -77,10 +78,13 @@ GAME_MODES_BY_MAP_ID = {
     "MP_19": ("CombatMission", "Sport", "SectorControl", "TeamDeathMatch", "BombSquad"),
     "MP_20": ("CombatMission", "Sport", "SectorControl", "TeamDeathMatch", "BombSquad"),
     "MP_21": ("CombatMission", "Sport", "SectorControl", "TeamDeathMatch", "BombSquad")
-    }
+}
 
 class MohwParser(AbstractParser):
+
     gameName = 'mohw'
+
+    _gamePort = None
 
     _commands = {
         'message': ('admin.say', '%(message)s', 'team', '%(teamId)s'),
@@ -97,7 +101,7 @@ class MohwParser(AbstractParser):
         'unbanByIp': ('banList.remove', 'ip', '%(ip)s'),
         'tempban': ('banList.add', 'guid', '%(guid)s', 'seconds', '%(duration)d', '%(reason)s'),
         'tempbanByName': ('banList.add', 'name', '%(name)s', 'seconds', '%(duration)d', '%(reason)s'),
-        }
+    }
 
     _gameServerVars = (
         '3pCam',
@@ -140,7 +144,7 @@ class MohwParser(AbstractParser):
         'teamKillValueDecreasePerSecond',
         'teamKillValueForKick',
         'teamKillValueIncrease',
-        )
+    )
 
     # gamemodes aliases {alias: actual game mode name}
     _gamemode_aliases = {
@@ -152,36 +156,41 @@ class MohwParser(AbstractParser):
         'bomb': 'Hot Spot',
     }
 
-    def startup(self):
-        AbstractParser.startup(self)
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  PARSER INITIALIZATION                                                                                         ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
+    def startup(self):
+        """
+        Called after the parser is created before run().
+        """
+        AbstractParser.startup(self)
         # create the 'Server' client
         self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN, squad=None)
-
         self.verbose('GameType: %s, Map: %s' %(self.game.gameType, self.game.mapName))
 
-
     def pluginsStarted(self):
+        """
+        Called after the parser loaded and started all plugins.
+        Overwrite this in parsers to take actions once plugins are ready
+        """
         AbstractParser.pluginsStarted(self)
-        self.info('connecting all players...')
+        self.info('Connecting all players...')
         plist = self.getPlayerList()
         for cid, p in plist.iteritems():
             client = self.clients.getByCID(cid)
             if not client:
-                #self.clients.newClient(playerdata['cid'], guid=playerdata['guid'], name=playerdata['name'], team=playerdata['team'], squad=playerdata['squad'])
-                name = p['name']
-                self.debug('client %s found on the server' % cid)
-                client = self.clients.newClient(cid, guid=p['name'], name=name, team=p['teamId'], squad=p['squadId'], data=p)
+                self.debug('Client %s found on the server' % cid)
+                client = self.clients.newClient(cid, guid=p['name'], name=p['name'], team=p['teamId'], squad=p['squadId'], data=p)
                 self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', p, client))
 
-
-
-
-    ###############################################################################################
-    #
-    #    Frostbite2 events handlers
-    #
-    ###############################################################################################
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  EVENT HANDLERS                                                                                                ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def OnPlayerChat(self, action, data):
         """
@@ -195,7 +204,7 @@ class MohwParser(AbstractParser):
         """
         client = self.getClient(data[0])
         if client is None:
-            self.warning("Could not get client : %s" % traceback.extract_tb(sys.exc_info()[2]))
+            self.warning("Could not get client: %s" % traceback.extract_tb(sys.exc_info()[2]))
             return
         if client.cid == 'Server':
             # ignore chat events for Server
@@ -247,12 +256,11 @@ class MohwParser(AbstractParser):
             if client.squad != previous_squad:
                 return self.getEvent('EVT_CLIENT_SQUAD_CHANGE', data[1:], client)
 
-
-    ###############################################################################################
-    #
-    #    B3 Parser interface implementation
-    #
-    ###############################################################################################
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def getPlayerPings(self, filter_client_ids=None):
         """
@@ -262,15 +270,20 @@ class MohwParser(AbstractParser):
         return {}
 
     def saybig(self, msg):
-        """\
-        broadcast a message to all players in a way that will catch their attention.
         """
-        if msg and len(msg.strip())>0:
+        Broadcast a message to all players in a way that will catch their attention.
+        """
+        if msg and len(msg.strip()) > 0:
             text = self.stripColors(prefixText([self.msgPrefix], msg))
             for line in self.getWrap(text):
                 self.write(self.getCommand('yell', message=line))
 
     def message(self, client, text):
+        """
+        Display a message to a given client
+        :param client: The client to who send the message
+        :param text: The message to be sent
+        """
         try:
             if client is None:
                 self.say(text)
@@ -282,11 +295,11 @@ class MohwParser(AbstractParser):
         except Exception, err:
             self.warning(err)
 
-    ###############################################################################################
-    #
-    #    Other methods
-    #
-    ###############################################################################################
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  OTHER METHODS                                                                                                 ##
+    ##                                                                                                                ##
+    ####################################################################################################################
 
     def checkVersion(self):
         version = self.output.write('version')
@@ -294,11 +307,12 @@ class MohwParser(AbstractParser):
         if version[0] != 'MOHW':
             raise Exception("the MOHW parser can only work with a Medal of Honor Warfighter server")
         if int(version[1]) < MOHW_REQUIRED_VERSION:
-            raise Exception("the MOHW parser can only work with Medal of Honor Warfighter server version %s and above. You are tr"
-                            "ying to connect to %s v%s" % (MOHW_REQUIRED_VERSION, version[0], version[1]))
+            raise Exception("the MOHW parser can only work with Medal of Honor Warfighter server version %s and above. "
+                            "You are trying to connect to %s v%s" % (MOHW_REQUIRED_VERSION, version[0], version[1]))
 
     def getClient(self, cid, guid=None):
-        """Get a connected client from storage or create it
+        """
+        Get a connected client from storage or create it
         B3 CID   <--> character name
         B3 GUID  <--> EA_guid
         """
@@ -311,50 +325,53 @@ class MohwParser(AbstractParser):
             client = self.clients.getByCID(cid)
         if not client:
             if cid == 'Server':
-                return self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN, teamId=None, squadId=None)
+                return self.clients.newClient('Server', guid='Server', name='Server',
+                                              hide=True, pbid='Server', team=b3.TEAM_UNKNOWN,
+                                              teamId=None, squadId=None)
             if guid:
-                client = self.clients.newClient(cid, guid=guid, name=cid, team=b3.TEAM_UNKNOWN, teamId=None, squad=None)
+                client = self.clients.newClient(cid, guid=guid, name=cid, team=b3.TEAM_UNKNOWN,
+                                                teamId=None, squad=None)
             else:
                 # must be the first time we see this client
                 # query client info
                 words = self.write(('admin.listPlayers', 'player', cid))
                 pib = PlayerInfoBlock(words)
                 if not len(pib):
-                    self.debug('no such client found')
+                    self.debug('No such client found')
                     return None
                 p = pib[0]
                 if 'guid' in p:
-                    cid = p['name']
-                    name = p['name']
-                    guid = p['guid']
-                    teamId = p['teamId']
-                    squadId = p['squadId']
-                    client = self.clients.newClient(cid, guid=guid, name=name, team=self.getTeam(teamId), teamId=int(teamId), squad=squadId, data=p)
+                    client = self.clients.newClient(p['name'], guid=p['guid'], name=p['name'],
+                                                    team=self.getTeam(p['teamId']), teamId=int(p['teamId']),
+                                                    squad=p['squadId'], data=p)
                     self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', p, client))
         return client
 
-
     def getHardName(self, mapname):
-        """ Change real name to level name """
+        """
+        Change real name to level name.
+        """
         mapname = mapname.lower()
         try:
             return MAP_ID_BY_NAME[mapname]
         except KeyError:
-            self.warning('unknown level name \'%s\'. Please make sure you have entered a valid mapname' % mapname)
+            self.warning('unknown level name : \'%s\' : please make sure you have entered a valid mapname' % mapname)
             return mapname
 
-
     def getEasyName(self, mapname):
-        """ Change levelname to real name """
+        """
+        Change levelname to real name.
+        """
         try:
             return MAP_NAME_BY_ID[mapname]
         except KeyError:
-            self.warning('unknown level name \'%s\'. Please report this on B3 forums' % mapname)
+            self.warning('unknown level name : \'%s\' : please report this on B3 forums' % mapname)
             return mapname
 
-
     def getGameMode(self, gamemode_id):
-        """ Convert game mode ID into human friendly name """
+        """
+        Convert game mode ID into human friendly name.
+        """
         if gamemode_id in GAME_MODES_NAMES:
             return GAME_MODES_NAMES[gamemode_id]
         else:
@@ -362,28 +379,35 @@ class MohwParser(AbstractParser):
             # fallback by sending gamemode id
             return gamemode_id
 
-
     def getGameModeId(self, gamemode_name):
-        """ Get gamemode id by name """
-        name = gamemode_name.lower()
-        if name in GAMEMODES_IDS_BY_NAME:
-            return GAMEMODES_IDS_BY_NAME[name]
+        """
+        Get gamemode id by name.
+        """
+        n = gamemode_name.lower()
+        if n in GAMEMODES_IDS_BY_NAME:
+            return GAMEMODES_IDS_BY_NAME[n]
         else:
             self.warning("unknown gamemode name \"%s\"" % gamemode_name)
             # fallback by sending gamemode id
             return gamemode_name
 
     def getSupportedMapIds(self):
-        """return a list of supported levels for the current game mod"""
+        """
+        Return a list of supported levels for the current game mod.
+        """
         # TODO : remove this method once the method on from AbstractParser is working
         return MAP_NAME_BY_ID.keys()
 
     def getSupportedGameModesByMapId(self, map_id):
-        """return a list of supported game modes for the given map id"""
+        """
+        Return a list of supported game modes for the given map id.
+        """
         return GAME_MODES_BY_MAP_ID[map_id]
 
     def getServerVars(self):
-        """Update the game property from server fresh data"""
+        """
+        Update the game property from server fresh data.
+        """
         def getCvar(cvar):
             try:
                 return self.getCvar(cvar).getString()
@@ -448,9 +472,9 @@ class MohwParser(AbstractParser):
         self.game.fragLimit = self.game.gameModeCounter
         self.game.captureLimit = self.game.gameModeCounter
 
-
     def getServerInfo(self):
-        """query server info, update self.game and return query results
+        """
+        Query server info, update self.game and return query results
         Response: serverName,numPlayers,maxPlayers,gamemode,level,roundsPlayed,roundsTotal,numTeams,team1score,
                   team2score,targetScore,onlineState,isRanked,hasPunkbuster,hasPassword,serverUptime,roundTime,
                   gameIpAndPort,punkBusterVersion,joinQueueEnabled,region,closestPingSite,country
@@ -471,7 +495,9 @@ class MohwParser(AbstractParser):
         return data
 
     def getTeam(self, team):
-        """convert team numbers to B3 team numbers"""
+        """
+        Convert team numbers to B3 team numbers.
+        """
         team = int(team)
         if team == 1:
             return b3.TEAM_RED
@@ -495,7 +521,6 @@ class MohwParser(AbstractParser):
         ['BigBrotherBot #1 MOHW', '0', '20', 'TeamDeathMatch', 'MP_10', '0', '1', '2', '0', '0', '75', '', 'true',
         'true', 'false', '143035', '49895', '', '', '', 'EU', 'i3d-ams', 'GB']
         """
-
         response = {
             'serverName': data[0],
             'numPlayers': data[1],
@@ -525,8 +550,9 @@ class MohwParser(AbstractParser):
         return response
 
     def getFullMapRotationList(self):
-        """query the Frostbite2 game server and return a MapListBlock containing all maps of the current
-         map rotation list.
+        """
+        Query the Frostbite2 game server and return a MapListBlock containing all maps of the current
+        map rotation list.
         """
         response = NewMapListBlock()
         tmp = self.write(('mapList.list',))
@@ -534,40 +560,41 @@ class MohwParser(AbstractParser):
         return response
 
 class NewMapListBlock(b3.parsers.frostbite2.util.MapListBlock):
-    """Alters MapListBlock class since mapList.list raw data includes playlist information in MOHW
+    """
+    Alters MapListBlock class since mapList.list raw data includes playlist information in MOHW
     Example raw data for MOHW: [ "2" "CustomPL" "3" "MP_03" "CombatMission" "1" "MP_05" "BombSquad" "1" ]
     """
-
     def append(self, data):
-        """Parses and appends the maps from raw_data.
+        """
+        Parses and appends the maps from raw_data.
         data : words as received from the Frostbite2 mapList.list command
         """
         # validation
-
         if type(data) not in (tuple, list):
-            raise MapListBlockError("invalid data. Expecting data as a tuple or as a list. Received '%s' instead" % type(data))
+            raise MapListBlockError("invalid data: expecting data as a tuple or as a list, received '%s' instead" % type(data))
 
         if len(data) < 3:
-            raise MapListBlockError("invalid data. Data should have at least 3 elements. %r", data)
+            raise MapListBlockError("invalid data: data should have at least 3 elements. %r", data)
 
         try:
             num_maps = int(data[0])
         except ValueError, err:
-            raise MapListBlockError("invalid data. First element should be a integer, got %r" % data[0], err)
+            raise MapListBlockError("invalid data: first element should be a integer, got %r" % data[0], err)
 
         try:
             num_words = int(data[2])
         except ValueError, err:
-            raise MapListBlockError("invalid data. Second element should be a integer, got %r" % data[1], err)
+            raise MapListBlockError("invalid data: second element should be a integer, got %r" % data[1], err)
 
         if len(data) != (3 + (num_maps * num_words)):
-            raise MapListBlockError("invalid data. The total number of elements is not coherent with the number of maps declared. %s != (2 + %s * %s)" % (len(data), num_maps, num_words))
+            raise MapListBlockError("invalid data: the total number of elements is not coherent with the "
+                                    "number of maps declared. %s != (2 + %s * %s)" % (len(data), num_maps, num_words))
 
         if num_words < 3:
             raise MapListBlockError("invalid data. Expecting at least 3 words of data per map")
 
         if self._num_words is not None and self._num_words != num_words:
-            raise MapListBlockError("cannot append data. nums_words are different from existing data.")
+            raise MapListBlockError("cannot append data: nums_words are different from existing data")
 
         # parse data
         map_data = []
@@ -576,8 +603,9 @@ class NewMapListBlock(b3.parsers.frostbite2.util.MapListBlock):
             try:
                 num_rounds = int(data[base_index+2])
             except ValueError:
-                raise MapListBlockError("invalid data. %sth element should be a integer, got %r" % (base_index + 2, data[base_index + 2]))
-            map_data.append({'name': data[base_index+0], 'gamemode': data[base_index+1], 'num_of_rounds': num_rounds})
+                raise MapListBlockError("invalid data: %sth element should be a integer, "
+                                        "got %r" % (base_index + 2, data[base_index + 2]))
+            map_data.append({'name': data[base_index + 0], 'gamemode': data[base_index + 1], 'num_of_rounds': num_rounds})
 
         # append data
         self._map_data += tuple(map_data)

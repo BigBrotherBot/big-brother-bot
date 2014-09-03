@@ -60,6 +60,7 @@ class SmgParser(AbstractParser):
 
     _settings = {
         'line_length': 65,
+        'line_color_prefix': '',
     }
 
     _commands = {
@@ -295,7 +296,7 @@ class SmgParser(AbstractParser):
 
     def OnClientuserinfo(self, action, data, match=None):
         bclient = self.parseUserInfo(data)
-        self.verbose('parsed user info: %s' % bclient)
+        self.verbose('Parsed user info: %s' % bclient)
         if bclient:
             cid = bclient['cid']
             client = self.clients.getByCID(cid)
@@ -330,13 +331,13 @@ class SmgParser(AbstractParser):
         self.debug('OnKill: %s (%s)' % (match.group('aweap'), match.group('text')))
         victim = self.clients.getByCID(match.group('cid'))
         if not victim:
-            self.debug('no victim')
+            self.debug('No victim')
             #self.OnClientuserinfo(action, data, match)
             return None
 
         weapon = match.group('aweap')
         if not weapon:
-            self.debug('no weapon')
+            self.debug('No weapon')
             return None
 
         ## Fix attacker
@@ -349,7 +350,7 @@ class SmgParser(AbstractParser):
         ## end fix attacker
           
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return None
 
         damagetype = match.group('text').split()[-1:][0]

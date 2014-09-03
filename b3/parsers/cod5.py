@@ -95,7 +95,7 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
         Called after the parser loaded and started all plugins.
         """
         self.patch_b3_admin_plugin()
-        self.debug('admin plugin has been patched')
+        self.debug('Admin plugin has been patched')
     
     ####################################################################################################################
     ##                                                                                                                ##
@@ -131,12 +131,12 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
     def translateAction(self, action, data, match=None):
         client = self.getClient(match)
         if not client:
-            self.debug('no client - attempt join')
+            self.debug('No client - attempt join')
             self.OnJ(action, data, match)
             client = self.getClient(match)
             if not client:
                 return None
-        self.debug('queueing action (translated) for %s: %s' % (client.name, action) )
+        self.debug('Queueing action (translated) for %s: %s' % (client.name, action) )
         self.queueEvent(self.getEvent('EVT_CLIENT_ACTION', data=action, client=client))
 
     ####################################################################################################################
@@ -148,13 +148,13 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
     def OnK(self, action, data, match=None):
         victim = self.getClient(victim=match)
         if not victim:
-            self.debug('no victim %s' % match.groupdict())
+            self.debug('No victim %s' % match.groupdict())
             self.OnJ(action, data, match)
             return None
 
         attacker = self.getClient(attacker=match)
         if not attacker:
-            self.debug('no attacker %s' % match.groupdict())
+            self.debug('No attacker %s' % match.groupdict())
             return None
 
         # COD5 first version doesn't report the team on kill, only use it if it's set
@@ -183,7 +183,7 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
     def OnJt(self, action, data, match=None):
         client = self.getClient(match)
         if not client:
-            self.debug('no client - attempt join')
+            self.debug('No client - attempt join')
             self.OnJ(action, data, match)
             client = self.getClient(match)
             if not client:
@@ -203,7 +203,7 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
         look for inconsistencies. If required call the client.disconnect() method to remove
         a client from self.clients.
         """
-        self.debug('synchronising clients')
+        self.debug('Synchronizing clients')
         plist = self.getPlayerList(maxRetries=4)
         mlist = {}
 

@@ -65,7 +65,7 @@ class Test_DatabaseStorage(unittest.TestCase):
             console_mock = Mock()
             storage = DatabaseStorage("mysql://someuser:somepasswd@somehost:3446/", console_mock)
             assert console_mock.critical.called
-            self.assertIn("missing MySQL database name", console_mock.critical.call_args[0][0])
+            self.assertIn("Missing MySQL database name", console_mock.critical.call_args[0][0])
             assert not mock_MySQLdb.connect.called, "expecting MySQLdb.connect not to be called"
             self.assertIsNone(storage.db)
 
@@ -74,6 +74,6 @@ class Test_DatabaseStorage(unittest.TestCase):
             console_mock = Mock()
             storage = DatabaseStorage("mysql://someuser:somepasswd@/database", console_mock)
             assert console_mock.critical.called
-            self.assertIn("invalid MySQL host", console_mock.critical.call_args[0][0])
+            self.assertIn("Invalid MySQL host", console_mock.critical.call_args[0][0])
             assert not mock_MySQLdb.connect.called, "expecting MySQLdb.connect not to be called"
             self.assertIsNone(storage.db)

@@ -204,7 +204,7 @@ class Plugin:
         # create the mapping
         if hook not in self.eventmap[name]:
             self.eventmap[name].append(hook)
-        self.debug('created event mapping: %s:%s' % (readable_name, hook.__name__))
+        self.debug('created event mapping: <%s:%s>' % (readable_name, hook.__name__))
 
     def registerEvent(self, name, *args):
         """

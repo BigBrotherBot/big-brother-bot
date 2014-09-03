@@ -70,6 +70,7 @@ class Smg11Parser(AbstractParser):
     
     _settings = {
         'line_length': 65,
+        'line_color_prefix': '',
     }
 
     _commands = {
@@ -229,7 +230,7 @@ class Smg11Parser(AbstractParser):
             self.info('map is: %s' % self.game.mapName)
 
         # initialize connected clients
-        self.info('discover connected clients')
+        self.info('Discover connected clients')
         plist = self.getPlayerList()
         for cid, c in plist.iteritems():
             userinfostring = self.queryClientUserInfoByCid(cid)
@@ -320,11 +321,11 @@ class Smg11Parser(AbstractParser):
 
     def OnClientuserinfochanged(self, action, data, match=None):
         bclient = self.parseUserInfo(data)
-        self.verbose('parsed user info: %s' % bclient)
+        self.verbose('Parsed user info: %s' % bclient)
         if bclient:
             cid = bclient['cid']
             if cid in self._connectingSlots:
-                self.debug('client on slot %s is already being connected' % cid)
+                self.debug('Client on slot %s is already being connected' % cid)
                 return
             
             self._connectingSlots.append(cid)
@@ -346,11 +347,11 @@ class Smg11Parser(AbstractParser):
                 else:
                     if 'skill' in bclient:
                         guid = 'BOT' + str(cid)
-                        self.verbose('bot connected!')
+                        self.verbose('Bot connected!')
                         self.clients.newClient(cid, name=bclient['name'], ip='0.0.0.0', state=b3.STATE_ALIVE,
                                                guid=guid, data={'guid': guid}, bot=True, money=20)
                     else:
-                        self.warning('cannot connect player because he has no guid and is not a bot either')
+                        self.warning('Cannot connect player because he has no guid and is not a bot either')
 
                     self._connectingSlots.remove(cid)
                     return None
@@ -360,14 +361,14 @@ class Smg11Parser(AbstractParser):
                     if 'ip' in infoclient:
                         bclient['ip'] = infoclient['ip']
                     else:
-                        self.warning('failed to get client ip')
+                        self.warning('Failed to get client ip')
                 
                 if 'ip' in bclient:
                     self.clients.newClient(cid, name=bclient['name'], ip=bclient['ip'],
                                            state=b3.STATE_ALIVE, guid=guid, data={'guid': guid},
                                            bot=False, money=20)
                 else:
-                    self.warning('failed to get connect client')
+                    self.warning('Failed to get connect client')
                     
             self._connectingSlots.remove(cid)
                 
@@ -377,13 +378,13 @@ class Smg11Parser(AbstractParser):
         self.debug('OnKill: %s (%s)' % (match.group('aweap'), match.group('text')))
         victim = self.getByCidOrJoinPlayer(match.group('cid'))
         if not victim:
-            self.debug('no victim')
+            self.debug('No victim')
             #self.OnClientuserinfochanged(action, data, match)
             return None
 
         weapon = match.group('aweap')
         if not weapon:
-            self.debug('no weapon')
+            self.debug('No weapon')
             return None
 
         ## Fix attacker
@@ -396,12 +397,12 @@ class Smg11Parser(AbstractParser):
         ## End fix attacker
           
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return None
 
         damagetype = match.group('text').split()[-1:][0]
         if not damagetype:
-            self.debug('no damage type, weapon: %s' % weapon)
+            self.debug('No damage type, weapon: %s' % weapon)
             return None
 
         eventkey = 'EVT_CLIENT_KILL'
@@ -441,7 +442,7 @@ class Smg11Parser(AbstractParser):
 
         self.verbose('...self.console.game.gameType: %s' % self.game.gameType)
         self.game.startRound()
-        self.debug('synchronizing client info')
+        self.debug('Synchronizing client info')
         self.clients.sync()
 
         return self.getEvent('EVT_GAME_ROUND_START', self.game)
@@ -489,12 +490,12 @@ class Smg11Parser(AbstractParser):
     def OnDamage(self, action, data, match=None):
         victim = self.clients.getByCID(match.group('cid'))
         if not victim:
-            self.debug('no victim')
+            self.debug('No victim')
             return None
 
         attacker = self.clients.getByCID(match.group('acid'))
         if not attacker:
-            self.debug('no attacker')
+            self.debug('No attacker')
             return None
 
         eventkey = 'EVT_CLIENT_DAMAGE'
@@ -557,17 +558,17 @@ class Smg11Parser(AbstractParser):
         # in a case like : map oasago2; echo test; vstr nextmap6; vstr nextmap3
         # the parser will recursively look each last vstr var, and if it can't find a map,
         # fallback to the last map command
-        self.debug('extracting nextmap name from: %s' % data)
+        self.debug('Extracting nextmap name from: %s' % data)
         nextmapregex = re.compile(r'.*("|;)\s*('
                                   r'(?P<vstr>vstr (?P<vstrnextmap>[a-z0-9_]+))|'
                                   r'(?P<map>map (?P<mapnextmap>[a-z0-9_]+)))', re.IGNORECASE)
         m = re.match(nextmapregex, data)
         if m:
             if m.group('map'):
-                self.debug('found nextmap: %s' % (m.group('mapnextmap')))
+                self.debug('Found nextmap: %s' % (m.group('mapnextmap')))
                 return m.group('mapnextmap')
             elif m.group('vstr'):
-                self.debug('nextmap is redirecting to var: %s' % (m.group('vstrnextmap')))
+                self.debug('Nextmap is redirecting to var: %s' % (m.group('vstrnextmap')))
                 data = self.write(m.group('vstrnextmap'))
                 result = self.findNextMap(data)  # recursively dig into the vstr vars to find the last map called
                 if result:
@@ -580,14 +581,14 @@ class Smg11Parser(AbstractParser):
                     nextmapregex = re.compile(r'.*("|;)\s*(?P<map>map (?P<mapnextmap>[a-z0-9_]+))"', re.IGNORECASE)
                     m = re.match(nextmapregex, data)
                     if m.group('map'):
-                        self.debug('found nextmap: %s' % (m.group('mapnextmap')))
+                        self.debug('Found nextmap: %s' % (m.group('mapnextmap')))
                         return m.group('mapnextmap')
                     else:
                     # if none could be found, we go up a level by returning None (remember this is done recursively)
-                        self.debug('no nextmap found in this string')
+                        self.debug('No nextmap found in this string')
                         return None
         else:
-            self.debug('no nextmap found in this string')
+            self.debug('No nextmap found in this string')
             return None
 
     def connectClient(self, ccid):
@@ -595,14 +596,14 @@ class Smg11Parser(AbstractParser):
         if self.PunkBuster:
             s = 'punkbuster'
 
-        self.debug('getting the (%s) playerlist' % s)
+        self.debug('Getting the (%s) playerlist' % s)
         players = self.getPlayerList()
         self.verbose('connectClient() = %s' % players)
 
         for cid, p in players.iteritems():
             #self.debug('cid: %s, ccid: %s, p: %s' %(cid, ccid, p))
             if int(cid) == int(ccid):
-                self.debug('client found in status/playerList')
+                self.debug('Client found in status/playerList')
                 return p
 
     def getByCidOrJoinPlayer(self, cid):
@@ -657,7 +658,7 @@ class Smg11Parser(AbstractParser):
             return None
 
         if data.split('\n')[0] != "userinfo":
-            self.debug("dumpuser %s returned : %s" % (cid, data))
+            self.debug("Dumpuser %s returned : %s" % (cid, data))
             return None
 
         datatransformed = "%s " % cid

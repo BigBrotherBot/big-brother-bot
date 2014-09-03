@@ -18,6 +18,14 @@
 #
 # CHANGELOG
 #
+# 2014/09/02 - 1.37.2 - Fenix           - moved _first_line_code attribute in _settings['line_color_prefix']
+#                                       - allow customization of _settings['line_color_prefix'] from b3.xml:
+#                                         setting 'line_color_prefix' in section 'server'
+#                                       - slightly changed getWrap method to use a more pythonic approach
+#                                       - make sure to have '>' prefix in getWrap method result (also when color codes
+#                                         are not being used by the parser) when the result line is not the first of the
+#                                         list
+# 2014/09/01 - 1.37.1 - 82ndab-Bravo17  - Add color code options for new getWrap method
 # 2014/07/27 - 1.37   - Fenix           - syntax cleanup
 #                                       - reformat changelog
 # 2014/07/18 - 1.36   - Fenix           - new getWrap implementation based on the textwrap.TextWrapper class: the
@@ -129,7 +137,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.37'
+__version__ = '1.37.1'
 
 import os
 import sys
@@ -230,11 +238,14 @@ class Parser(object):
     # default outputclass set to the q3a rcon class
     OutputClass = b3.parsers.q3a.rcon.Rcon
 
+    _use_color_codes = True
+
     _settings = {
         'line_length': 80,
+        'line_color_prefix': '',
         'message_delay': 0
     }
-
+    
     _eventsStats_cronTab = None
     _reColor = re.compile(r'\^[0-9a-z]')
     _cron = None
@@ -356,9 +367,9 @@ class Parser(object):
             pass
 
         self.bot('%s', b3.getB3versionString())
-        self.bot('python: %s', sys.version)
-        self.bot('default encoding: %s', sys.getdefaultencoding())
-        self.bot('starting %s v%s for server %s:%s', self.__class__.__name__,
+        self.bot('Python: %s', sys.version)
+        self.bot('Default encoding: %s', sys.getdefaultencoding())
+        self.bot('Starting %s v%s for server %s:%s', self.__class__.__name__,
                                                      getattr(getModule(self.__module__), '__version__', ' Unknown'),
                                                      self._rconIp, self._port)
 
@@ -398,7 +409,7 @@ class Parser(object):
             self.replay = self.config.getboolean('devmode', 'replay')
             if self.replay:
                 self._timeStart = 0
-                self.bot('replay mode enabled')
+                self.bot('Replay mode enabled')
 
         self.storage = b3.storage.getStorage('database', self.config.get('b3', 'database'), self)
 
@@ -407,7 +418,7 @@ class Parser(object):
             game_log = self.config.get('server', 'game_log')
             if game_log[0:6] == 'ftp://' or game_log[0:7] == 'sftp://' or game_log[0:7] == 'http://':
                 self.remoteLog = True
-                self.bot('working in remote-log mode : %s' % game_log)
+                self.bot('Working in remote-log mode : %s' % game_log)
                 
                 if self.config.has_option('server', 'local_game_log'):
                     f = self.config.getpath('server', 'local_game_log')
@@ -432,7 +443,7 @@ class Parser(object):
                 self.bot('game log %s', game_log)
                 f = self.config.getpath('server', 'game_log')
 
-            self.bot('starting bot reading file %s', f)
+            self.bot('Starting bot reading file: %s', f)
             self.screen.write('Using Gamelog    : %s\n' % f)
 
             if os.path.isfile(f):
@@ -448,8 +459,8 @@ class Parser(object):
                 else:
                     self.input.seek(0, os.SEEK_END)
             else:
-                self.error('error reading file %s', f)
-                raise SystemExit('Error reading file %s\n' % f)
+                self.error('Error reading file: %s', f)
+                raise SystemExit('ERROR reading file %s\n' % f)
 
         # setup rcon
         try:
@@ -457,12 +468,12 @@ class Parser(object):
         except Exception, err:
             self.screen.write(">>> Cannot setup RCON. %s" % err)
             self.screen.flush()
-            self.critical("cannot setup RCON: %s" % err, exc_info=err)
+            self.critical("Cannot setup RCON: %s" % err, exc_info=err)
         
         if self.config.has_option('server', 'rcon_timeout'):
             custom_socket_timeout = self.config.getfloat('server', 'rcon_timeout')
             self.output.socket_timeout = custom_socket_timeout
-            self.bot('setting Rcon socket timeout to %0.3f sec' % custom_socket_timeout)
+            self.bot('Setting Rcon socket timeout to: %0.3f sec' % custom_socket_timeout)
         
         # testing rcon
         if self.rconTest:
@@ -495,7 +506,12 @@ class Parser(object):
         if self.config.has_option('server', 'max_line_length'):
             self._settings['line_length'] = self.config.getint('server', 'max_line_length')
 
-        self.debug('line_length: %s' % self._settings['line_length'])
+        # allow configurable line color prefix
+        if self.config.has_option('server', 'line_color_prefix'):
+            self._settings['line_color_prefix'] = self.config.get('server', 'line_color_prefix')
+
+        self.bot('Setting line_length to: %s' % self._settings['line_length'])
+        self.bot('Setting line_color_prefix to: "%s"' % self._settings['line_color_prefix'])
 
         self.game = b3.game.Game(self, self.gameName)
         
@@ -506,7 +522,7 @@ class Parser(object):
         except Exception, err:
             self.warning(err)
             queuesize = 50
-        self.debug("creating the event queue with size %s", queuesize)
+        self.debug("Creating the event queue with size %s", queuesize)
         self.queue = Queue.Queue(queuesize)    # event queue
 
         atexit.register(self.shutdown)
@@ -524,19 +540,19 @@ class Parser(object):
         """
         Start B3
         """
-        self.bot("starting parser..")
+        self.bot("Starting parser..")
         self.startup()
         self.say('%s ^2[ONLINE]' % b3.version)
         self.call_plugins_onLoadConfig()
-        self.bot("starting plugins")
+        self.bot("Starting plugins")
         self.startPlugins()
         self._eventsStats_cronTab = b3.cron.CronTab(self._dumpEventsStats)
         self.cron.add(self._eventsStats_cronTab)
-        self.bot("all plugins started")
+        self.bot("All plugins started")
         self.pluginsStarted()
-        self.bot("starting event dispatching thread")
+        self.bot("Starting event dispatching thread")
         thread.start_new_thread(self.handleEvents, ())
-        self.bot("start reading game events")
+        self.bot("Start reading game events")
         self.run()
 
     def die(self):
@@ -553,7 +569,7 @@ class Parser(object):
         """
         self.shutdown()
         time.sleep(5)
-        self.bot('restarting...')
+        self.bot('Restarting...')
         sys.exit(221)
 
     def upTime(self):
@@ -576,7 +592,7 @@ class Parser(object):
         """
         Save configration changes
         """
-        self.bot('saving config: %s', self.config.fileName)
+        self.bot('Saving config: %s', self.config.fileName)
         return self.config.save()
 
     def startup(self):
@@ -663,7 +679,7 @@ class Parser(object):
         self.config.load(self.config.fileName)
         for k in self._plugins:
             p = self._plugins[k]
-            self.bot('reload plugin config for %s', k)
+            self.bot('Reload plugin config for %s', k)
             p.loadConfig()
 
         self.updateDocumentation()
@@ -676,7 +692,7 @@ class Parser(object):
         self.screen.flush()
         
         extplugins_dir = self.config.getpath('plugins', 'external_dir')
-        self.bot('loading plugins (external plugin directory: %s)' % extplugins_dir)
+        self.bot('Loading plugins (external plugin directory: %s)' % extplugins_dir)
 
         def _get_config_path(_plugin):
             """
@@ -690,9 +706,9 @@ class Parser(object):
             else:
                 # warn the users
                 if cfg is None:
-                    self.warning('no configuration file specified for plugin %s' % p.get('name'))
+                    self.warning('No configuration file specified for plugin %s' % p.get('name'))
                 else:
-                    self.warning('the specified configuration file %s for the plugin %s does not exist'
+                    self.warning('The specified configuration file %s for the plugin %s does not exist'
                                  % (cfg, p.get('name')))
 
                 # try to find a config file
@@ -704,7 +720,7 @@ class Parser(object):
                     # return none if no file found or file already loaded
                     return cfg
                 else:
-                    self.warning('using %s as configuration file for %s' % (_cfg_path[0], p.get('name')))
+                    self.warning('Using %s as configuration file for %s' % (_cfg_path[0], p.get('name')))
                     return _cfg_path[0]
 
         plugins = {}
@@ -714,11 +730,11 @@ class Parser(object):
         for p in self.config.get('plugins/plugin'):
             name = p.get('name')
             if not name:
-                self.critical("config error in the plugins section: "
+                self.critical("Config error in the plugins section: "
                               "no plugin name found in [%s]" % ElementTree.tostring(p).strip())
                 raise SystemExit(220)
             if name in [plugins[i]['name'] for i in plugins if plugins[i]['name'] == name]:
-                self.warning('plugin %s already loaded: avoid multiple entries of the same plugin' % name)
+                self.warning('Plugin %s already loaded: avoid multiple entries of the same plugin' % name)
             else:
                 conf = _get_config_path(p)
                 #if conf is None:
@@ -740,15 +756,15 @@ class Parser(object):
             plugin_name = plugins[s]['name']
             plugin_conf = plugins[s]['conf']
             self._pluginOrder.append(plugin_name)
-            self.bot('loading plugin #%s %s [%s]', s, plugin_name, plugin_conf)
+            self.bot('Loading plugin #%s %s [%s]', s, plugin_name, plugin_conf)
             try:
                 plugin_module = self.pluginImport(plugin_name, plugins[s]['path'])
                 self._plugins[plugin_name] = getattr(plugin_module, '%sPlugin' % plugin_name.title())(self, plugin_conf)
                 if plugins[s]['disabled']:
-                    self.info("disabling plugin %s" % plugin_name)
+                    self.info("Disabling plugin %s" % plugin_name)
                     self._plugins[plugin_name].disable()
             except Exception, err:
-                self.error('error loading plugin %s' % plugin_name, exc_info=err)
+                self.error('Error loading plugin %s' % plugin_name, exc_info=err)
             else:
                 version = getattr(plugin_module, '__version__', 'Unknown Version')
                 author = getattr(plugin_module, '__author__', 'Unknown Author')
@@ -769,13 +785,13 @@ class Parser(object):
         Load must have plugins and check for admin plugin
         """
         def loadPlugin(parser_mod, plugin_id):
-            parser_mod.bot('loading plugin %s', plugin_id)
+            parser_mod.bot('Loading plugin %s', plugin_id)
             plugin_module = parser_mod.pluginImport(plugin_id)
             parser_mod._plugins[plugin_id] = getattr(plugin_module, '%sPlugin' % plugin_id.title())(parser_mod)
             parser_mod._pluginOrder.append(plugin_id)
             version = getattr(plugin_module, '__version__', 'Unknown Version')
             author = getattr(plugin_module, '__author__', 'Unknown Author')
-            parser_mod.bot('plugin %s (%s - %s) loaded', plugin_id, version, author)
+            parser_mod.bot('Plugin %s (%s - %s) loaded', plugin_id, version, author)
             parser_mod.screen.write('.')
             parser_mod.screen.flush()
 
@@ -784,7 +800,7 @@ class Parser(object):
             try:
                 loadPlugin(self, 'publist')
             except Exception, err:
-                self.verbose('error loading plugin publist', exc_info=err)
+                self.verbose('Error loading plugin publist', exc_info=err)
 
         if self.config.has_option('server', 'game_log'):
             game_log = self.config.get('server', 'game_log')
@@ -800,8 +816,8 @@ class Parser(object):
                 try:
                     loadPlugin(self, remote_log_plugin)
                 except Exception, err:
-                    self.critical('error loading plugin %s' % remote_log_plugin, exc_info=err)
-                    raise SystemExit('error while loading %s' % remote_log_plugin)
+                    self.critical('Error loading plugin %s' % remote_log_plugin, exc_info=err)
+                    raise SystemExit('ERROR while loading %s' % remote_log_plugin)
 
         if 'admin' not in self._pluginOrder:
             # critical will exit, admin plugin must be loaded!
@@ -816,7 +832,7 @@ class Parser(object):
         """
         if path is not None:
             try:
-                self.info('loading plugin from specified path : %s', path)
+                self.info('Loading plugin from specified path: %s', path)
                 fp, pathname, description = imp.find_module(name, [path])
                 try:
                     return imp.load_module(name, fp, pathname, description)
@@ -834,7 +850,7 @@ class Parser(object):
             return mod
         except ImportError, m:
             self.info('%s is not a built-in plugin (%s)', name, m)
-            self.info('trying external plugin directory : %s', self.config.getpath('plugins', 'external_dir'))
+            self.info('Trying external plugin directory : %s', self.config.getpath('plugins', 'external_dir'))
             fp, pathname, description = imp.find_module(name, [self.config.getpath('plugins', 'external_dir')])
             try:
                 return imp.load_module(name, fp, pathname, description)
@@ -851,7 +867,7 @@ class Parser(object):
 
         def start_plugin(p_name):
             p = self._plugins[p_name]
-            self.bot('starting plugin %s', p_name)
+            self.bot('Starting plugin %s', p_name)
             p.onStartup()
             p.start()
             #time.sleep(1)    # give plugin time to crash, er...start
@@ -866,12 +882,12 @@ class Parser(object):
         # start other plugins
         for plugin_name in self._pluginOrder:
             if plugin_name not in self._plugins:
-                self.warning("not starting plugin %s as it was not loaded" % plugin_name)
+                self.warning("Not starting plugin %s as it was not loaded" % plugin_name)
             else:
                 try:
                     start_plugin(plugin_name)
                 except Exception, err:
-                    self.error("could not start plugin %s" % plugin_name, exc_info=err)
+                    self.error("Could not start plugin %s" % plugin_name, exc_info=err)
 
         self.screen.write(' (%s)\n' % (len(self._pluginOrder)+1))
 
@@ -882,7 +898,7 @@ class Parser(object):
         for k in self._pluginOrder:
             if k not in ('admin', 'publist', 'ftpytail'):
                 p = self._plugins[k]
-                self.bot('disabling plugin %s', k)
+                self.bot('Disabling plugin: %s', k)
                 p.disable()
 
     def enablePlugins(self):
@@ -892,7 +908,7 @@ class Parser(object):
         for k in self._pluginOrder:
             if k not in ('admin', 'publist', 'ftpytail'):
                 p = self._plugins[k]
-                self.bot('enabling plugin %s', k)
+                self.bot('Enabling plugin: %s', k)
                 p.enable()
 
     def getMessage(self, msg, *args):
@@ -905,7 +921,7 @@ class Parser(object):
             try:
                 msg = self._messages[msg] = self.config.getTextTemplate('messages', msg)
             except Exception, err:
-                self.warning("falling back on default message for '%s'. %s" % (msg, err))
+                self.warning("Falling back on default message for '%s': %s" % (msg, err))
                 msg = vars2printf(self._messages_default.get(msg, '')).strip()
 
         if len(args):
@@ -994,16 +1010,16 @@ class Parser(object):
             tz_offset = b3.timezones.timezones[tz_name] * 3600
         except KeyError:
             try:
-                self.warning("unknown timezone name [%s]: valid timezone codes can be found on "
+                self.warning("Unknown timezone name [%s]: valid timezone codes can be found on "
                              "http://wiki.bigbrotherbot.net/doku.php/usage:available_timezones" % tz_name)
                 tz_offset = time.timezone
                 if tz_offset < 0:
                     tz_name = 'UTC%s' % (tz_offset/3600)
                 else:
                     tz_name = 'UTC+%s' % (tz_offset/3600)
-                self.info("using system offset [%s]", tz_offset)
+                self.info("Using system offset [%s]", tz_offset)
             except KeyError:
-                self.error("unknown timezone name [%s]: valid timezone codes can be found on "
+                self.error("Unknown timezone name [%s]: valid timezone codes can be found on "
                            "http://wiki.bigbrotherbot.net/doku.php/usage:available_timezones" % tz_name)
                 tz_name = 'UTC'
                 tz_offset = 0
@@ -1024,7 +1040,7 @@ class Parser(object):
             tz_offset, tz_name = self.getTzOffsetFromName(tz_name)
 
         time_format = self.config.get('b3', 'time_format').replace('%Z', tz_name).replace('%z', tz_name)
-        self.debug('formatting time with timezone [%s], tzOffset : %s' % (tz_name, tz_offset))
+        self.debug('Formatting time with timezone [%s], tzOffset : %s' % (tz_name, tz_offset))
         return time.strftime(time_format, time.gmtime(gmttime + tz_offset))
 
     def run(self):
@@ -1080,13 +1096,13 @@ class Parser(object):
                             except SystemExit:
                                 raise
                             except Exception, msg:
-                                self.error('could not parse line %s: %s', msg, traceback.extract_tb(sys.exc_info()[2]))
+                                self.error('Could not parse line %s: %s', msg, traceback.extract_tb(sys.exc_info()[2]))
                             
                             time.sleep(self.delay2)
 
             time.sleep(self.delay)
 
-        self.bot('stop reading')
+        self.bot('Stop reading')
 
         with self.exiting:
             self.input.close()
@@ -1120,7 +1136,7 @@ class Parser(object):
         if not hasattr(event, 'type'):
             return False
         elif event.type in self._handlers.keys():  # queue only if there are handlers to listen for this event
-            self.verbose('queueing event %s %s', self.Events.getName(event.type), event.data)
+            self.verbose('Queueing event %s %s', self.Events.getName(event.type), event.data)
             try:
                 time.sleep(0.001)  # wait a bit so event doesnt get jumbled
                 self.queue.put((self.time(), self.time() + expire, event), True, 2)
@@ -1152,25 +1168,25 @@ class Parser(object):
                     elif nomore:
                         break
 
-                    self.verbose('parsing event: %s: %s', event_name, hfunc.__class__.__name__)
+                    self.verbose('Parsing event: %s: %s', event_name, hfunc.__class__.__name__)
                     timer_plugin_begin = time.clock()
                     try:
                         hfunc.parseEvent(event)
                         time.sleep(0.001)
                     except b3.events.VetoEvent:
                         # plugin called for event hault, do not continue processing
-                        self.bot('event %s vetoed by %s', event_name, str(hfunc))
+                        self.bot('Event %s vetoed by %s', event_name, str(hfunc))
                         nomore = True
                     except SystemExit, e:
                         self.exitcode = e.code
                     except Exception, msg:
-                        self.error('handler %s could not handle event %s: %s: %s %s', hfunc.__class__.__name__,
+                        self.error('Handler %s could not handle event %s: %s: %s %s', hfunc.__class__.__name__,
                                    event_name, msg.__class__.__name__, msg, traceback.extract_tb(sys.exc_info()[2]))
                     finally:
                         elapsed = time.clock() - timer_plugin_begin
                         self._eventsStats.add_event_handled(hfunc.__class__.__name__, event_name, elapsed*1000)
                     
-        self.bot('shutting down event handler')
+        self.bot('Shutting down event handler')
 
         # releasing lock if it was set by self.shutdown() for instance
         if self.exiting.locked():
@@ -1181,7 +1197,7 @@ class Parser(object):
         Write a message to Rcon/Console
         """
         if self.replay:
-            self.bot('sent rcon message: %s' % msg)
+            self.bot('Sent rcon message: %s' % msg)
         elif self.output is None:
             pass
         else:
@@ -1195,7 +1211,7 @@ class Parser(object):
         :param msg: The message to be sent to Rcon/Console.
         """
         if self.replay:
-            self.bot('sent rcon message: %s' % msg)
+            self.bot('Sent rcon message: %s' % msg)
         elif self.output is None:
             pass
         elif not msg:
@@ -1210,7 +1226,7 @@ class Parser(object):
         Read from game server log file
         """
         if not hasattr(self, 'input'):
-            self.critical("cannot read game log file: check that you have a correct "
+            self.critical("Cannot read game log file: check that you have a correct "
                           "value for the 'game_log' setting in your main config file.")
             raise SystemExit(220)
 
@@ -1220,7 +1236,7 @@ class Parser(object):
         # if the cursor is at a number higher than the game log size, then
         # there's a problem
         if self.input.tell() > filestats.st_size:   
-            self.debug('parser: game log is suddenly smaller than it was before (%s bytes, now %s), '
+            self.debug('Parser: game log is suddenly smaller than it was before (%s bytes, now %s), '
                        'the log was probably either rotated or emptied. B3 will now re-adjust to the new '
                        'size of the log' % (str(self.input.tell()), str(filestats.st_size)))
             self.input.seek(0, os.SEEK_END)  
@@ -1232,14 +1248,14 @@ class Parser(object):
         """
         try:
             if self.working and self.exiting.acquire():
-                self.bot('shutting down...')
+                self.bot('Shutting down...')
                 self.working = False
                 for k, plugin in self._plugins.items():
                     plugin.parseEvent(b3.events.Event(self.getEventID('EVT_STOP'), ''))
                 if self._cron:
                     self._cron.stop()
 
-                self.bot('shutting down database connections...')
+                self.bot('Shutting down database connections...')
                 self.storage.shutdown()
         except Exception, e:
             self.error(e)
@@ -1257,7 +1273,27 @@ class Parser(object):
             self.wrapper = TextWrapper(width=self._settings['line_length'], drop_whitespace=True,
                                        break_long_words=True, break_on_hyphens=False)
 
-        return self.wrapper.wrap(text)
+        wrapped_text = self.wrapper.wrap(text)
+        if self._use_color_codes:
+            lines = []
+            color = self._settings['line_color_prefix']
+            for line in wrapped_text:
+                if not lines:
+                    lines.append('%s%s' % (color, line))
+                else:
+                    lines.append('^3>%s%s' % (color, line))
+                match = re.findall(self._reColor, line)
+                if match:
+                    color = match[-1]
+            return lines
+        else:
+            # we still need to add the > prefix w/o color codes
+            # to all the lines except the first one
+            lines = [wrapped_text[0]]
+            if len(wrapped_text) > 1:
+                for line in wrapped_text[1:]:
+                    lines.append('>%s' % line)
+            return lines
 
     def error(self, msg, *args, **kwargs):
         """
@@ -1351,10 +1387,10 @@ class Parser(object):
                 docbuilder = DocBuilder(self)
                 docbuilder.save()
             except Exception, err:
-                self.error("failed to generate user documentation")
+                self.error("Failed to generate user documentation")
                 self.exception(err)
         else:
-            self.info('no user documentation generated: to enable update your configuration file')
+            self.info('No user documentation generated: to enable update your configuration file')
 
     ####################################################################################################################
     ##                                                                                                                ##

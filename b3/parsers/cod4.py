@@ -111,7 +111,7 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
         Called after the parser loaded and started all plugins.
         """
         self.patch_b3_admin_plugin()
-        self.debug('admin plugin has been patched')
+        self.debug('Admin plugin has been patched')
 
     ####################################################################################################################
     ##                                                                                                                ##
@@ -122,7 +122,7 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
     def OnJt(self, action, data, match=None):
         client = self.getClient(match)
         if not client:
-            self.debug('no client - attempt join')
+            self.debug('No client - attempt join')
             self.OnJ(action, data, match)
             client = self.getClient(match)
             if not client:
@@ -133,13 +133,13 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
     def OnK(self, action, data, match=None):
         victim = self.getClient(victim=match)
         if not victim:
-            self.debug('no victim %s' % match.groupdict())
+            self.debug('No victim %s' % match.groupdict())
             self.OnJ(action, data, match)
             return None
 
         attacker = self.getClient(attacker=match)
         if not attacker:
-            self.debug('no attacker %s' % match.groupdict())
+            self.debug('No attacker %s' % match.groupdict())
             return None
 
         # COD4 doesn't report the team on kill, only use it if it's set
@@ -155,12 +155,12 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
 
         eventkey = 'EVT_CLIENT_KILL'
         if attacker.cid == victim.cid or attacker.cid == '-1':
-            self.verbose2('suicide detected')
+            self.verbose2('Suicide detected')
             eventkey = 'EVT_CLIENT_SUICIDE'
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team and \
                 victim.team and attacker.team == victim.team and \
                 match.group('aweap') != 'briefcase_bomb_mp':
-            self.verbose2('teamkill detected')
+            self.verbose2('Teamkill detected')
             eventkey = 'EVT_CLIENT_KILL_TEAM'
 
         victim.state = b3.STATE_DEAD
@@ -213,7 +213,7 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
         look for inconsistencies. If required call the client.disconnect() method to remove
         a client from self.clients.
         """
-        self.debug('synchronising clients')
+        self.debug('Synchronizing clients')
         plist = self.getPlayerList(maxRetries=4)
         self.verbose2('plist: %s' % plist)
         mlist = {}
@@ -295,21 +295,21 @@ def patch_b3_clients():
             try:
                 inStorage = self.console.storage.getClient(self)
             except KeyError, msg:
-                self.console.debug('user not found %s: %s', self.guid, msg)
+                self.console.debug('User not found %s: %s', self.guid, msg)
                 inStorage = False
             except Exception, e:
-                self.console.error('auth self.console.storage.getClient(client) - %s' % self, exc_info=e)
+                self.console.error('Auth self.console.storage.getClient(client) - %s' % self, exc_info=e)
                 self.authorizing = False
                 return False
 
             #lastVisit = None
             if inStorage:
-                self.console.bot('client found in storage %s: welcome back %s', str(self.id), self.name)
+                self.console.bot('Client found in storage %s: welcome back %s', str(self.id), self.name)
                 self.lastVisit = self.timeEdit
                 if self.pbid == '':
                     self.pbid = pbid
             else:
-                self.console.bot('client not found in the storage %s: create new', str(self.guid))
+                self.console.bot('Client not found in the storage %s: create new', str(self.guid))
 
             self.connections = int(self.connections) + 1
             self.name = name
@@ -317,7 +317,7 @@ def patch_b3_clients():
             self.save()
             self.authed = True
 
-            self.console.debug('client authorized: [%s] %s - %s', self.cid, self.name, self.guid)
+            self.console.debug('Client authorized: [%s] %s - %s', self.cid, self.name, self.guid)
 
             # check for bans
             if self.numBans > 0:

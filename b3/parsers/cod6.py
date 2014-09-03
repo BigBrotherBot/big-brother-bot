@@ -77,13 +77,13 @@ class Cod6Parser(b3.parsers.cod4.Cod4Parser):
             self.debug('sv_hostname: %s' % self.game.sv_hostname)
         except:
             self.game.sv_hostname = None
-            self.warning('could not query server for sv_hostname')
+            self.warning('Could not query server for sv_hostname')
 
     def pluginsStarted(self):
         """
         Called after the parser loaded and started all plugins.
         """
-        self.debug('admin plugin not patched')
+        self.debug('Admin plugin not patched')
         
     ####################################################################################################################
     ##                                                                                                                ##
