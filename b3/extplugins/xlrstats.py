@@ -46,6 +46,9 @@
 #                                             - added missing call to super constructor in CtimePlugin
 #                                             - added missing call to super constructor in BattlestatsPlugin
 # 04-09-2014 - 3.0.0-beta.10 - Fenix          - make use of data binding in SQL queries: fix issue #151
+#                                             - make use of the client 'bot' attribute to identify BOT clients: do not
+#                                               mess with GUIDs since that's already done in parsers (where it should be)
+
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -1489,11 +1492,6 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         """
         if client is None:
             return
-
-        # test if it is a bot and flag it
-        if client.guid[:3] == 'BOT':
-            self.verbose('bot found')
-            client.bot = True
 
         player = self.get_PlayerStats(client)
         if player:
