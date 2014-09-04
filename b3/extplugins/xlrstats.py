@@ -19,32 +19,36 @@
 #
 # CHANGELOG (see xlrstats-v2-changelog.txt for v1 and v2 history and credits)
 #
-# 22-11-2012 - 3.0.0b1      - Mark Weirath   - preparations for version 3.0 of XLRstats
-# 11-08-2013 - 3.0.0b2      - Mark Weirath   - purging of the history tables added, compatibility fixes for v2-v3, draft
-#                                              of BattleLog subPlugin, comment headers
-# 16-02-2014 - 3.0.0-beta.3 - Mark Weirath -   moved min_players checking to XLRstats plugin, obsoleted the subPlugin:
-#                                              XLRstatsControllerPlugin
-#                                            - switched to semantic versioning (http://semver.org/)
-# 23-02-2014 - 3.0.0-beta.4 - Mark Weirath   - added provisional ranking, auto correction of stat pool and auto purge
-#                                              ability
-#                                            - added cmd_xlrstatus
-# 02-03-2014 - 3.0.0-beta.5 - Mark Weirath   - protect world client in auto correction, minor improvements
-# 21-04-2014 - 3.0.0-beta.6 - 82ndab-Bravo17 - change default messages to new format
-# 31-05-2014 - 3.0.0-beta.7 - Mark Weirath   - fix provisional ranking when both players are below threshold
-# 10-08-2014 - 3.0.0-beta.8 - Thomas LEVEIL  - fix gh-201 - unkown column 'None' in where clause on player join
-# 31-08-2014 - 3.0.0-beta.9 - Fenix          - syntax cleanup
-#                                            - make use of the new getCmd function defined in b3.functions
-#                                            - make use of self.getEventID() to retrieve events ids
-#                                            - make use of the new event handler system in XLRstatsPlugin
-#                                            - make use of the new event handler system in CtimePlugin
-#                                            - make use of the new event handler system in BattlestatsPlugin
-#                                            - added debug information on plugin configuration file loading
-#                                            - correctly declare Kfactor attribute in PlayerStats class
-#                                            - replaced variables names using python built-in keywords
-#                                            - match also 'yes' and 'no' keywords in !xlrhide command
-#                                            - added missing call to super constructor in XlrstatshistoryPlugin
-#                                            - added missing call to super constructor in CtimePlugin
-#                                            - added missing call to super constructor in BattlestatsPlugin
+# 22-11-2012 - 3.0.0b1       - Mark Weirath   - preparations for version 3.0 of XLRstats
+# 11-08-2013 - 3.0.0b2       - Mark Weirath   - purging of the history tables added, compatibility fixes for v2-v3, draft
+#                                               of BattleLog subPlugin, comment headers
+# 16-02-2014 - 3.0.0-beta.3  - Mark Weirath -   moved min_players checking to XLRstats plugin, obsoleted the subPlugin:
+#                                               XLRstatsControllerPlugin
+#                                             - switched to semantic versioning (http://semver.org/)
+# 23-02-2014 - 3.0.0-beta.4  - Mark Weirath   - added provisional ranking, auto correction of stat pool and auto purge
+#                                               ability
+#                                             - added cmd_xlrstatus
+# 02-03-2014 - 3.0.0-beta.5  - Mark Weirath   - protect world client in auto correction, minor improvements
+# 21-04-2014 - 3.0.0-beta.6  - 82ndab-Bravo17 - change default messages to new format
+# 31-05-2014 - 3.0.0-beta.7  - Mark Weirath   - fix provisional ranking when both players are below threshold
+# 10-08-2014 - 3.0.0-beta.8  - Thomas LEVEIL  - fix gh-201 - unkown column 'None' in where clause on player join
+# 31-08-2014 - 3.0.0-beta.9  - Fenix          - syntax cleanup
+#                                             - make use of the new getCmd function defined in b3.functions
+#                                             - make use of self.getEventID() to retrieve events ids
+#                                             - make use of the new event handler system in XLRstatsPlugin
+#                                             - make use of the new event handler system in CtimePlugin
+#                                             - make use of the new event handler system in BattlestatsPlugin
+#                                             - added debug information on plugin configuration file loading
+#                                             - correctly declare Kfactor attribute in PlayerStats class
+#                                             - replaced variables names using python built-in keywords
+#                                             - match also 'yes' and 'no' keywords in !xlrhide command
+#                                             - added missing call to super constructor in XlrstatshistoryPlugin
+#                                             - added missing call to super constructor in CtimePlugin
+#                                             - added missing call to super constructor in BattlestatsPlugin
+# 04-09-2014 - 3.0.0-beta.10 - Fenix          - make use of data binding in SQL queries: fix issue #151
+#                                             - make use of the client 'bot' attribute to identify BOT clients: do not
+#                                               mess with GUIDs since that's already done in parsers (where it should be)
+
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -53,7 +57,7 @@
 # XLRstats Real Time playerstats plugin
 
 __author__ = 'xlr8or & ttlogic'
-__version__ = '3.0.0-beta.9'
+__version__ = '3.0.0-beta.10'
 
 # Version = major.minor.patches(-development.version)
 
@@ -679,8 +683,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         else:
             client_id = client.id
 
-        q = """SELECT * from %s WHERE client_id = %s LIMIT 1""" % (self.playerstats_table, client_id)
-        cursor = self.query(q)
+        q = """SELECT * from %s WHERE client_id = ? LIMIT 1""" % self.playerstats_table
+        cursor = self.query(q, (client_id,))
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s = PlayerStats()
@@ -722,8 +726,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def get_WeaponStats(self, name):
         s = WeaponStats()
-        q = """SELECT * from %s WHERE name = "%s" LIMIT 1""" % (self.weaponstats_table, name)
-        cursor = self.query(q)
+        q = """SELECT * from %s WHERE name = ? LIMIT 1""" % self.weaponstats_table
+        cursor = self.query(q, (name,))
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
@@ -739,8 +743,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def get_Bodypart(self, name):
         s = Bodyparts()
-        q = """SELECT * from %s WHERE name = "%s" LIMIT 1""" % (self.bodyparts_table, name)
-        cursor = self.query(q)
+        q = """SELECT * from %s WHERE name = ? LIMIT 1""" % self.bodyparts_table
+        cursor = self.query(q, (name,))
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
@@ -775,9 +779,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def get_WeaponUsage(self, weaponid, playerid):
         s = WeaponUsage()
-        q = """SELECT * from %s WHERE weapon_id = %s AND player_id = %s LIMIT 1""" % (
-            self.weaponusage_table, weaponid, playerid)
-        cursor = self.query(q)
+        q = """SELECT * from %s WHERE weapon_id = ? AND player_id = ? LIMIT 1""" % self.weaponusage_table
+        cursor = self.query(q, (weaponid, playerid))
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
@@ -797,9 +800,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def get_Opponent(self, killerid, targetid):
         s = Opponents()
-        q = """SELECT * from %s WHERE killer_id = %s AND target_id = %s LIMIT 1""" % (
-            self.opponents_table, killerid, targetid)
-        cursor = self.query(q)
+        q = """SELECT * from %s WHERE killer_id = ? AND target_id = ? LIMIT 1""" % self.opponents_table
+        cursor = self.query(q, (killerid, targetid))
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
@@ -816,9 +818,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def get_PlayerBody(self, playerid, bodypartid):
         s = PlayerBody()
-        q = """SELECT * from %s WHERE bodypart_id = %s AND player_id = %s LIMIT 1""" % (
-            self.playerbody_table, bodypartid, playerid)
-        cursor = self.query(q)
+        q = """SELECT * from %s WHERE bodypart_id = ? AND player_id = ? LIMIT 1""" % self.playerbody_table
+        cursor = self.query(q, (bodypartid, playerid))
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
@@ -850,8 +851,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 return None
 
         s = PlayerMaps()
-        cursor = self.query("""SELECT * from %s WHERE map_id=? AND player_id=? LIMIT 1""" % self.playermaps_table,
-                            (mapid, playerid))
+        q = """SELECT * from %s WHERE map_id = ? AND player_id = ? LIMIT 1""" % self.playermaps_table
+        cursor = self.query(q, (mapid, playerid))
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
@@ -872,8 +873,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def get_ActionStats(self, name):
         s = ActionStats()
-        q = """SELECT * from %s WHERE name = "%s" LIMIT 1""" % (self.actionstats_table, name)
-        cursor = self.query(q)
+        q = """SELECT * from %s WHERE name = ? LIMIT 1""" % self.actionstats_table
+        cursor = self.query(q, (name,))
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
@@ -887,9 +888,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def get_PlayerActions(self, playerid, actionid):
         s = PlayerActions()
-        q = """SELECT * from %s WHERE action_id = %s AND player_id = %s LIMIT 1""" % (
-            self.playeractions_table, actionid, playerid)
-        cursor = self.query(q)
+        q = """SELECT * from %s WHERE action_id = ? AND player_id = ? LIMIT 1""" % self.playeractions_table
+        cursor = self.query(q, (actionid, playerid))
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
@@ -1492,11 +1492,6 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         """
         if client is None:
             return
-
-        # test if it is a bot and flag it
-        if client.guid[:3] == 'BOT':
-            self.verbose('bot found')
-            client.bot = True
 
         player = self.get_PlayerStats(client)
         if player:

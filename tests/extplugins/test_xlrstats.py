@@ -19,7 +19,9 @@
 import logging
 import os
 from textwrap import dedent
+from mock import Mock
 from mock import patch
+from mock import call
 from mockito import when, mock
 from b3 import __file__ as b3_module__file__, TEAM_RED, TEAM_BLUE
 from b3.config import CfgConfigParser
@@ -307,6 +309,17 @@ class Test_kill(XlrstatsTestCase):
         self.p1.says("!xlrstats")
         # THEN
         self.assertEqual(['XLR Stats: P1 : K 1 D 1 TK 0 Ratio 1.00 Skill 1015.63'], self.p1.message_history)
+
+
+    def test_p1_kills_bot(self):
+        # GIVEN
+        self.p2.bot = True
+        self.p.exclude_bots = True
+        self.console.verbose = Mock()
+        # WHEN
+        self.p1.kills(self.p2)
+        # THEN
+        self.console.verbose.assert_called_with("XlrstatsPlugin: bot involved: do not process!")
 
 
 class Test_storage(XlrstatsTestCase):
