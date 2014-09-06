@@ -147,6 +147,7 @@ import time
 import thread
 import traceback
 import Queue
+import imp
 import atexit
 import socket
 import glob
@@ -500,14 +501,7 @@ class Parser(object):
         self.screen.write('Loading events   : %s events loaded\n' % len(self._events))
         self.clients = Clients(self)
 
-        # retrieve the list of plugins to load but not to start on b3 main run
-        disabled_plugins = []
-        if self.config.has_option('b3', 'disabled_plugins'):
-            collection = self.config.get('b3', 'disabled_plugins')
-            if collection:
-                disabled_plugins = collection.split(',')
-
-        self.loadPlugins(disabled_plugins)
+        self.loadPlugins()
         self.loadArbPlugins()
 
         # allow configurable max line length
@@ -594,6 +588,7 @@ class Parser(object):
             return False
 
         self.config = conf
+        """:type : MainConfig"""
         return True
 
     def saveConfig(self):
@@ -692,10 +687,9 @@ class Parser(object):
 
         self.updateDocumentation()
 
-    def loadPlugins(self, disabled_plugins):
+    def loadPlugins(self, path=None):
         """
         Load plugins specified in the config.
-        :param disabled_plugins: A list of plugins to load in disabled state.
         """
         self.bot('Loading plugins...')
         self.screen.write('Loading plugins  : ')
@@ -735,14 +729,17 @@ class Parser(object):
         plugin_sort = []
 
         priority = 1
-        for name in self.config.options('plugins'):
+        for plugin_info in self.config.get_plugins():
+            name = plugin_info['name']
+            config_file = plugin_info['conf']
+            disabled = plugin_info['disabled']
+            path = plugin_info['path']
 
             if name in [plugins[i]['name'] for i in plugins if plugins[i]['name'] == name]:
                 self.warning('Plugin %s already loaded: avoid multiple entries of the same plugin' % name)
             else:
-                conf = _get_config_path(name, self.config.get('plugins', name))
-                disabled = name in disabled_plugins
-                plugins[priority] = {'name': name, 'conf': conf, 'disabled': disabled}
+                conf = _get_config_path(name, config_file)
+                plugins[priority] = {'name': name, 'conf': conf, 'disabled': disabled, 'path': path}
                 plugin_sort.append(priority)
                 priority += 1
 
@@ -755,7 +752,7 @@ class Parser(object):
             self._pluginOrder.append(plugin_name)
             self.bot('Loading plugin #%s %s [%s]', s, plugin_name, plugin_conf)
             try:
-                plugin_module = self.pluginImport(plugin_name)
+                plugin_module = self.pluginImport(plugin_name, plugins[s]['path'])
                 self._plugins[plugin_name] = getattr(plugin_module, '%sPlugin' % plugin_name.title())(self, plugin_conf)
                 if plugins[s]['disabled']:
                     self.info("Disabling plugin %s" % plugin_name)
@@ -823,11 +820,22 @@ class Parser(object):
         self.screen.write(' (%s)\n' % len(self._pluginOrder))
         self.screen.flush()
 
-    def pluginImport(self, name):
+    def pluginImport(self, name, path=None):
         """
         Import a single plugin.
         :param name: The plugin name
         """
+        if path is not None:
+            try:
+                self.info('Loading plugin from specified path: %s', path)
+                fp, pathname, description = imp.find_module(name, [path])
+                try:
+                    return imp.load_module(name, fp, pathname, description)
+                finally:
+                    if fp:
+                        fp.close()
+            except ImportError, err:
+                self.error(err)
         try:
             module = 'b3.plugins.%s' % name
             mod = __import__(module)

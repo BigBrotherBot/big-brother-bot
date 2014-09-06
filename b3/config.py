@@ -36,6 +36,7 @@
 #                                - added stub constructor in XmlConfigParser
 # 06/09/2014 - 1.6   - Fenix     - added 'allow_no_value' keyword to CfgConfigParser constructor so we can load
 #                                  plugins which don't specify a configuration file
+import re
 
 __author__  = 'ThorN, Courgette, Fenix'
 __version__ = '1.6'
@@ -392,3 +393,105 @@ class ConfigFileNotValid(Exception):
         
     def __str__(self):
         return repr(self.message)
+
+
+class MainConfig(B3ConfigParserMixin):
+    """
+    Class to use to parse the B3 main config file.
+
+    Responsible for reading the file either in xml or ini format.
+    """
+
+    def __init__(self, config_parser):
+        self._config_parser = config_parser
+        self._plugins = []
+        if isinstance(self._config_parser, XmlConfigParser):
+            self._init_plugins_from_xml()
+        elif isinstance(self._config_parser, CfgConfigParser):
+            self._init_plugins_from_cfg()
+        else:
+            raise NotImplemented("unexpected config type: %r" % self._config_parser.__class__)
+
+    def _init_plugins_from_xml(self):
+        self._plugins = []
+        for p in self._config_parser.get('plugins/plugin'):
+            self._plugins.append({
+                'name': p.get('name'),
+                'conf': p.get('config'),
+                'path': p.get('path'),
+                'disabled': p.get('disabled') is not None and p.get('disabled').lower() in ('yes', '1', 'on', 'true')
+            })
+
+    def _init_plugins_from_cfg(self):
+        ## Load the list of disabled plugins
+        try:
+            disabled_plugins_raw = self._config_parser.get('b3', 'disabled_plugins')
+        except ConfigParser.NoOptionError:
+            disabled_plugins = []
+        else:
+            disabled_plugins = re.split('\W+', disabled_plugins_raw.lower())
+
+        def get_custom_plugin_path(plugin_name):
+            try:
+                return self._config_parser.get('plugins_custom_path', plugin_name)
+            except ConfigParser.NoOptionError:
+                return None
+
+        self._plugins = []
+        if self._config_parser.has_section('plugins'):
+            for name in self._config_parser.options('plugins'):
+                self._plugins.append({
+                    'name': name,
+                    'conf': self._config_parser.get('plugins', name),
+                    'path': get_custom_plugin_path(name),
+                    'disabled': name.lower() in disabled_plugins
+                })
+
+    def get_plugins(self):
+        """
+        :return: list[dict] A list of plugin settings as a dict.
+            I.E.:
+            [
+                {'name': 'admin', 'config': @conf/plugin_admin.ini, 'path': None, 'disabled': False},
+                {'name': 'adv', 'config': @conf/plugin_adv.xml, 'path': None, 'disabled': False},
+            ]
+        """
+        return self._plugins
+
+    def get_external_plugins_dir(self):
+        """
+        the directory path (as a string) where additional plugin modules can be found
+        :return: str or ConfigParser.NoOptionError
+        """
+        if isinstance(self._config_parser, XmlConfigParser):
+            return self._config_parser.getpath("plugins", "external_dir")
+        elif isinstance(self._config_parser, CfgConfigParser):
+            return self._config_parser.getpath("b3", "external_plugins_dir")
+        else:
+            raise NotImplemented("unexpected config type: %r" % self._config_parser.__class__)
+
+    def get(self, *args, **kwargs):
+        """
+        Override the get method defined in the B3ConfigParserMixin
+        """
+        return self._config_parser.get(*args, **kwargs)
+
+    def __getattr__(self, name):
+        """
+        Act as a proxy in front of self._config_parser.
+        Any attribute or method call which does not exists in this object (MainConfig) is then tryied on
+        the self._config_parser
+
+        :param name: str Attribute or method name
+        """
+        if hasattr(self._config_parser, name):
+            attr = getattr(self._config_parser, name)
+            if hasattr(attr, '__call__'):
+                def newfunc(*args, **kwargs):
+                    return attr(*args, **kwargs)
+                return newfunc
+            else:
+                return attr
+        else:
+            raise AttributeError(name)
+
