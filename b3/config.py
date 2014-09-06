@@ -34,10 +34,11 @@
 # 19/07/2014 - 1.5   - Fenix     - syntax cleanup
 #                                - declared get method in B3ConfigParserMixin for design consistency
 #                                - added stub constructor in XmlConfigParser
+# 07/09/2014 - 1.5.1 - Courgette - remove duplicated code by using b3.getAbsolutePath
 #
 
 __author__  = 'ThorN, Courgette, Fenix'
-__version__ = '1.5'
+__version__ = '1.5.1'
 
 import os
 import time
@@ -92,12 +93,7 @@ class B3ConfigParserMixin:
         :param section: The configuration file section.
         :param setting: The configuration file setting.
         """
-        path = self.get(section, setting)
-        if path[0:3] == '@b3':
-            path = "%s/%s" % (b3.getB3Path(), path[3:])
-        elif path[0:6] == '@conf/' or path[0:6] == '@conf\\':
-            path = os.path.join(b3.getConfPath(), path[6:])
-        return os.path.normpath(os.path.expanduser(path))
+        return b3.getAbsolutePath(self.get(section, setting))
 
     def getTextTemplate(self, section, setting=None, **kwargs):
         """
@@ -353,11 +349,7 @@ def load(filename):
     else:
         config = CfgConfigParser()
 
-    filename = os.path.normpath(filename)
-    if filename[0:4] == '@b3\\' or filename[0:4] == '@b3/':
-        filename = os.path.normpath("%s/%s" % (b3.getB3Path(), filename[3:]))
-    elif filename[0:6] == '@conf\\' or filename[0:6] == '@conf/':
-        filename = os.path.normpath("%s/%s" % (b3.getConfPath(), filename[5:]))
+    filename = b3.getAbsolutePath(filename)
 
     # return the config if it can be loaded
     return config if config.load(filename) else None

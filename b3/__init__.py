@@ -24,6 +24,7 @@
 # 2010/09/16 - 1.1.1    - GrosBedo  - can now run in a thread (functions profiler mode)
 # 2010/10/20 - 1.1.2    - GrosBedo  - added TEAM_FREE for non team based gametypes (eg: deathmatch)
 # 2014/07/20 - 1.2      - Fenix     - syntax cleanup
+# 2014/09/07 - 1.2.1    - Courgette - fix getAbsolutePath @b3 and @conf expansion on path using windows style separators
 
 import os
 import re
@@ -85,6 +86,7 @@ def loadParser(pname, configFile, nosetup=False):
         mod = getattr(mod, comp)
     return mod
 
+
 def getB3versionString():
     """
     Return the B3 version as a string.
@@ -94,6 +96,7 @@ def getB3versionString():
         sversion = "%s [Win32 standalone]" % sversion
     return sversion
 
+
 def getB3Path():
     """
     Return the path to the main B3 directory.
@@ -102,6 +105,7 @@ def getB3Path():
         # which happens when running from the py2exe build
         return os.path.dirname(sys.executable)
     return modulePath
+
 
 def getConfPath():
     """
@@ -118,12 +122,12 @@ def getAbsolutePath(path):
     """
     Return an absolute path name and expand the user prefix (~).
     """
-    if path[0:4] == '@b3/':
-        #print "B3 path: %s" % getB3Path()
+    if path[0:4] == '@b3\\' or path[0:4] == '@b3/':
         path = os.path.join(getB3Path(), path[4:])
-    elif path[0:6] == '@conf/':
+    elif path[0:6] == '@conf\\' or path[0:6] == '@conf/':
         path = os.path.join(getConfPath(), path[6:])
     return os.path.normpath(os.path.expanduser(path))
+
 
 def start(configFile, nosetup=False):
     """
@@ -219,6 +223,7 @@ def start(configFile, nosetup=False):
         print 'Error: %s' % msg
         traceback.print_exc()
         sys.exit(223)
+
 
 def clearScreen():
     """
