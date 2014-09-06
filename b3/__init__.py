@@ -24,6 +24,8 @@
 # 2010/09/16 - 1.1.1    - GrosBedo  - can now run in a thread (functions profiler mode)
 # 2010/10/20 - 1.1.2    - GrosBedo  - added TEAM_FREE for non team based gametypes (eg: deathmatch)
 # 2014/07/20 - 1.2      - Fenix     - syntax cleanup
+# 2014/09/06 - 1.2.1    - Fenix     - removed external_dir configuration value loading from b3 main configuration file
+#                                     as it is not needed anymore
 
 import os
 import re
@@ -179,9 +181,6 @@ def start(configFile, nosetup=False):
         except ImportError, err:
             raise SystemExit("CRITICAL: could not find parser '%s': check you main config file (b3.xml)\n"
                              "B3 failed to start.\n%r" % (parserType, err))
-    
-        extplugins_dir = conf.getpath('plugins', 'external_dir')
-        print "Using external plugin directory: %s" % extplugins_dir
         
         global console
         console = parser(conf)

@@ -577,7 +577,7 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
         _dflttemplate = self._configpath + 'conf/templates/b3.' + self._set_parser + '.tpl'
         self._templatevar = 'template'
         if not os.path.exists(_dflttemplate):
-            _dflttemplate = self._configpath + 'conf/b3.distribution.xml'
+            _dflttemplate = self._configpath + 'conf/b3.distribution.ini'
             self._templatevar = 'distribution'
 
         if self._template != '':

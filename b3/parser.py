@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2014/09/06 - 1.38   - Fenix           - updated parser to load configuration from the new .ini format
 # 2014/09/02 - 1.37.2 - Fenix           - moved _first_line_code attribute in _settings['line_color_prefix']
 #                                       - allow customization of _settings['line_color_prefix'] from b3.xml:
 #                                         setting 'line_color_prefix' in section 'server'
@@ -137,7 +138,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.37.1'
+__version__ = '1.38'
 
 import os
 import sys
@@ -146,7 +147,6 @@ import time
 import thread
 import traceback
 import Queue
-import imp
 import atexit
 import socket
 import glob
@@ -429,22 +429,22 @@ class Parser(object):
 
                 if self.config.has_option('server', 'log_append'):
                     if not (self.config.getboolean('server', 'log_append') and os.path.isfile(f)):
-                        self.screen.write('Creating Gamelog : %s\n' % f)
+                        self.screen.write('Creating gamelog : %s\n' % f)
                         ftptempfile = open(f, "w")
                         ftptempfile.close()
                     else:
-                        self.screen.write('Append to Gamelog: %s\n' % f)
+                        self.screen.write('Append to gamelog: %s\n' % f)
                 else:
-                    self.screen.write('Creating Gamelog : %s\n' % f)
+                    self.screen.write('Creating gamelog : %s\n' % f)
                     ftptempfile = open(f, "w")
                     ftptempfile.close()
                     
             else:
-                self.bot('game log %s', game_log)
+                self.bot('Game log %s', game_log)
                 f = self.config.getpath('server', 'game_log')
 
             self.bot('Starting bot reading file: %s', f)
-            self.screen.write('Using Gamelog    : %s\n' % f)
+            self.screen.write('Using gamelog    : %s\n' % f)
 
             if os.path.isfile(f):
                 self.input = file(f, 'r')
@@ -473,7 +473,7 @@ class Parser(object):
         if self.config.has_option('server', 'rcon_timeout'):
             custom_socket_timeout = self.config.getfloat('server', 'rcon_timeout')
             self.output.socket_timeout = custom_socket_timeout
-            self.bot('Setting Rcon socket timeout to: %0.3f sec' % custom_socket_timeout)
+            self.bot('Setting rcon socket timeout to: %0.3f sec' % custom_socket_timeout)
         
         # testing rcon
         if self.rconTest:
@@ -481,8 +481,8 @@ class Parser(object):
             self.output.flush()
             self.screen.write('Testing RCON     : ')
             self.screen.flush()
-            _badRconReplies = ['Bad rconpassword.', 'Invalid password.']
-            if res in _badRconReplies:
+            badRconReplies = ['Bad rconpassword.', 'Invalid password.']
+            if res in badRconReplies:
                 self.screen.write('>>> Oops: Bad RCON password\n>>> Hint: This will lead to errors and '
                                   'render B3 without any power to interact!\n')
                 self.screen.flush()
@@ -497,9 +497,17 @@ class Parser(object):
                 self.screen.write('OK\n')
 
         self.loadEvents()
-        self.screen.write('Loading Events   : %s events loaded\n' % len(self._events))
+        self.screen.write('Loading events   : %s events loaded\n' % len(self._events))
         self.clients = Clients(self)
-        self.loadPlugins()
+
+        # retrieve the list of plugins to load but not to start on b3 main run
+        disabled_plugins = []
+        if self.config.has_option('b3', 'disabled_plugins'):
+            collection = self.config.get('b3', 'disabled_plugins')
+            if collection:
+                disabled_plugins = collection.split(',')
+
+        self.loadPlugins(disabled_plugins)
         self.loadArbPlugins()
 
         # allow configurable max line length
@@ -684,68 +692,57 @@ class Parser(object):
 
         self.updateDocumentation()
 
-    def loadPlugins(self):
+    def loadPlugins(self, disabled_plugins):
         """
-        Load plugins specified in the config
+        Load plugins specified in the config.
+        :param disabled_plugins: A list of plugins to load in disabled state.
         """
-        self.screen.write('Loading Plugins  : ')
+        self.bot('Loading plugins...')
+        self.screen.write('Loading plugins  : ')
         self.screen.flush()
-        
-        extplugins_dir = self.config.getpath('plugins', 'external_dir')
-        self.bot('Loading plugins (external plugin directory: %s)' % extplugins_dir)
 
-        def _get_config_path(_plugin):
+        def _get_config_path(_name, _path):
             """
             Helper that return a config path for the given Plugin
             """
-            # read config path from b3 configuration
-            cfg = _plugin.get('config')
-            # check if the configuration file exists - if not, attempts to find the configuration file
-            if cfg is not None and os.path.exists(self.getAbsolutePath(cfg)):
-                return self.getAbsolutePath(cfg)
+            # check if the configuration file exists
+            # if not, attempts to find the configuration file
+            if not _path:
+                # do not warn users here since it's possible that the plugin doesn't need a configuration file
+                self.debug('No configuration file specified for plugin %s' % _name)
+                return
+
+            if os.path.exists(self.getAbsolutePath(_path)):
+                return self.getAbsolutePath(_path)
             else:
                 # warn the users
-                if cfg is None:
-                    self.warning('No configuration file specified for plugin %s' % p.get('name'))
-                else:
-                    self.warning('The specified configuration file %s for the plugin %s does not exist'
-                                 % (cfg, p.get('name')))
+                self.warning('The specified configuration file %s for the plugin %s does not exist' % (_path, _name))
 
-                # try to find a config file
-                _cfg_path = glob.glob(self.getAbsolutePath('@b3\\conf\\') + '*%s*' % p.get('name'))
-                if len(_cfg_path) == 0:
-                    _cfg_path = glob.glob(self.getAbsolutePath(extplugins_dir) + '\\conf\\' + '*%s*' % p.get('name'))
+                # try to find a config file: using built-in plugins directory at first
+                _path = glob.glob(self.getAbsolutePath('@b3\\conf\\') + '*%s*' % _name)
+                if len(_path) == 0:
+                    # try in the extplugins directory
+                    _path = glob.glob(self.getAbsolutePath('@b3\\extplugins\\') + '\\conf\\' + '*%s*' % _name)
 
-                if len(_cfg_path) != 1 or _cfg_path[0] in [c.get('conf', '') for c in plugins.values()]:
+                if len(_path) != 1 or _path[0] in [c.get('conf', '') for c in plugins.values()]:
                     # return none if no file found or file already loaded
-                    return cfg
+                    return None
                 else:
-                    self.warning('Using %s as configuration file for %s' % (_cfg_path[0], p.get('name')))
-                    return _cfg_path[0]
+                    self.warning('Using %s as configuration file for %s' % (_path[0], _name))
+                    return _path[0]
 
         plugins = {}
         plugin_sort = []
 
         priority = 1
-        for p in self.config.get('plugins/plugin'):
-            name = p.get('name')
-            if not name:
-                self.critical("Config error in the plugins section: "
-                              "no plugin name found in [%s]" % ElementTree.tostring(p).strip())
-                raise SystemExit(220)
+        for name in self.config.options('plugins'):
+
             if name in [plugins[i]['name'] for i in plugins if plugins[i]['name'] == name]:
                 self.warning('Plugin %s already loaded: avoid multiple entries of the same plugin' % name)
             else:
-                conf = _get_config_path(p)
-                #if conf is None:
-                #    conf = '@b3/conf/plugin_%s.xml' % name
-                disabledconf = p.get('disabled')
-                disabled = disabledconf is not None and disabledconf.lower() in ('yes', '1', 'on', 'true')
-                plugins[priority] = {'name': name,
-                                     'conf': conf,
-                                     'path': p.get('path'),
-                                     'disabled': disabled}
-
+                conf = _get_config_path(name, self.config.get('plugins', name))
+                disabled = name in disabled_plugins
+                plugins[priority] = {'name': name, 'conf': conf, 'disabled': disabled}
                 plugin_sort.append(priority)
                 priority += 1
 
@@ -758,13 +755,13 @@ class Parser(object):
             self._pluginOrder.append(plugin_name)
             self.bot('Loading plugin #%s %s [%s]', s, plugin_name, plugin_conf)
             try:
-                plugin_module = self.pluginImport(plugin_name, plugins[s]['path'])
+                plugin_module = self.pluginImport(plugin_name)
                 self._plugins[plugin_name] = getattr(plugin_module, '%sPlugin' % plugin_name.title())(self, plugin_conf)
                 if plugins[s]['disabled']:
                     self.info("Disabling plugin %s" % plugin_name)
                     self._plugins[plugin_name].disable()
             except Exception, err:
-                self.error('Error loading plugin %s' % plugin_name, exc_info=err)
+                self.error('Could not load plugin: %s' % plugin_name, exc_info=err)
             else:
                 version = getattr(plugin_module, '__version__', 'Unknown Version')
                 author = getattr(plugin_module, '__author__', 'Unknown Author')
@@ -782,7 +779,7 @@ class Parser(object):
 
     def loadArbPlugins(self):
         """
-        Load must have plugins and check for admin plugin
+        Load must have plugins and check for admin plugin.
         """
         def loadPlugin(parser_mod, plugin_id):
             parser_mod.bot('Loading plugin %s', plugin_id)
@@ -826,21 +823,11 @@ class Parser(object):
         self.screen.write(' (%s)\n' % len(self._pluginOrder))
         self.screen.flush()
 
-    def pluginImport(self, name, path=None):
+    def pluginImport(self, name):
         """
-        Import a single plugin
+        Import a single plugin.
+        :param name: The plugin name
         """
-        if path is not None:
-            try:
-                self.info('Loading plugin from specified path: %s', path)
-                fp, pathname, description = imp.find_module(name, [path])
-                try:
-                    return imp.load_module(name, fp, pathname, description)
-                finally:
-                    if fp:
-                        fp.close()
-            except ImportError, err:
-                self.error(err)
         try:
             module = 'b3.plugins.%s' % name
             mod = __import__(module)
@@ -850,19 +837,19 @@ class Parser(object):
             return mod
         except ImportError, m:
             self.info('%s is not a built-in plugin (%s)', name, m)
-            self.info('Trying external plugin directory : %s', self.config.getpath('plugins', 'external_dir'))
-            fp, pathname, description = imp.find_module(name, [self.config.getpath('plugins', 'external_dir')])
-            try:
-                return imp.load_module(name, fp, pathname, description)
-            finally:
-                if fp:
-                    fp.close()
+            self.info('Trying external plugin directory...')
+            module = 'b3.extplugins.%s' % name
+            mod = __import__(module)
+            components = module.split('.')
+            for comp in components[1:]:
+                mod = getattr(mod, comp)
+            return mod
 
     def startPlugins(self):
         """
         Start all loaded plugins.
         """
-        self.screen.write('Starting Plugins : ')
+        self.screen.write('Starting plugins : ')
         self.screen.flush()
 
         def start_plugin(p_name):
@@ -1047,7 +1034,7 @@ class Parser(object):
         """
         Main worker thread for B3
         """
-        self.screen.write('Startup Complete : B3 is running! Let\'s get to work!\n\n')
+        self.screen.write('Startup complete : B3 is running! Let\'s get to work!\n\n')
         self.screen.write('(If you run into problems, check %s in the B3 root directory for '
                           'detailed log info)\n' % self.config.getpath('b3', 'logfile'))
         

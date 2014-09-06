@@ -34,10 +34,11 @@
 # 19/07/2014 - 1.5   - Fenix     - syntax cleanup
 #                                - declared get method in B3ConfigParserMixin for design consistency
 #                                - added stub constructor in XmlConfigParser
-#
+# 06/09/2014 - 1.6   - Fenix     - added 'allow_no_value' keyword to CfgConfigParser constructor so we can load
+#                                  plugins which don't specify a configuration file
 
 __author__  = 'ThorN, Courgette, Fenix'
-__version__ = '1.5'
+__version__ = '1.6'
 
 import os
 import time
@@ -300,6 +301,13 @@ class CfgConfigParser(B3ConfigParserMixin, ConfigParser.ConfigParser):
     fileName = ''
     fileMtime = 0
 
+    def __init__(self, allow_no_value=False):
+        """
+        Object constructor.
+        :param allow_no_value: Whether or not to allow empty values in configuration sections
+        """
+        ConfigParser.ConfigParser.__init__(self, allow_no_value=allow_no_value)
+
     def get(self, section, option, *args, **kwargs):
         """
         Return a configuration value as a string.
@@ -346,12 +354,13 @@ class CfgConfigParser(B3ConfigParserMixin, ConfigParser.ConfigParser):
 def load(filename):
     """
     Load a configuration file.
-    Will instantiate the correct configuration oject parser.
+    Will instantiate the correct configuration object parser.
     """
     if os.path.splitext(filename)[1].lower() == '.xml':
         config = XmlConfigParser()
     else:
-        config = CfgConfigParser()
+        # allow the use of empty keys to support the new b3.ini configuration file
+        config = CfgConfigParser(allow_no_value=True)
 
     filename = os.path.normpath(filename)
     if filename[0:4] == '@b3\\' or filename[0:4] == '@b3/':

@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2014/09/06 - 1.31.1  - Fenix          - updated cmd_pluginfo to work with the new b3.ini configuration file format
 # 2014/08/30 - 1.31    - Fenix          - syntax cleanup
 #                                       - improved debug messages in plugin configuration file loading
 #                                       - moved 'warn_command_abusers' config value loading into proper method
@@ -122,11 +123,10 @@
 #                                       - added ci command
 #                                       - added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.31'
+__version__ = '1.31.1'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon, Fenix'
 
 import re
-import imp
 import time
 import threading
 import sys
@@ -2536,18 +2536,16 @@ class AdminPlugin(b3.plugin.Plugin):
                 for comp in components[1:]:
                     module = getattr(module, comp)
             except ImportError:
-                fp = None
                 try:
                     # check if it's an external plugin
-                    fp, path, desc = imp.find_module(data, [self.console.config.getpath('plugins', 'external_dir')])
-                    module = imp.load_module(data, fp, path, desc)
-                except (ImportError, NoOptionError):
+                    package = 'b3.extplugins.%s' % data
+                    module = __import__(package)
+                    components = package.split('.')
+                    for comp in components[1:]:
+                        module = getattr(module, comp)
+                except ImportError:
                     # plugin doesn't seems to be loaded
                     module = None
-                    fp = None
-                finally:
-                    if fp:
-                        fp.close()
 
             if not module:
                 client.message('^7No plugin named ^1%s ^7loaded' % data)
