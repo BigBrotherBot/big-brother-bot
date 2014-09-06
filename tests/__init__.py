@@ -16,11 +16,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-from contextlib import contextmanager
 import logging
 import threading
 import sys
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
+from contextlib import contextmanager
 logging.raiseExceptions = False  # get rid of 'No handlers could be found for logger output' message
 import b3.output # do not remove, needed because the module alters some defaults of the logging module
 log = logging.getLogger('output')
@@ -72,8 +72,8 @@ class B3TestCase(unittest.TestCase):
         flush_console_streams()
 
         # create a FakeConsole parser
-        self.parser_conf = XmlConfigParser()
-        self.parser_conf.loadFromString(r"""<configuration/>""")
+        self.parser_conf = CfgConfigParser(allow_no_value=True)
+        self.parser_conf.loadFromString(r"""""")
         with logging_disabled():
             from b3.fake import FakeConsole
             self.console = FakeConsole(self.parser_conf)

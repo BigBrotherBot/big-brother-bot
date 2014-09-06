@@ -520,7 +520,10 @@ class Test_welcome(Welcome_functional_test):
         self.say_patcher.stop()
 
     def Test_get_client_info(self):
-        self.parser_conf._settings["b3"] = {"time_zone": "CET", "time_format": "%I:%M%p %Z %m/%d/%y"}
+
+        self.parser_conf.add_section('b3')
+        self.parser_conf.set('b3', 'time_zone', 'CET')
+        self.parser_conf.set('b3', 'time_format', '%I:%M%p %Z %m/%d/%y')
         self.assertDictEqual({'connections': '1',
                               'group': 'Super Admin',
                               'id': '2',

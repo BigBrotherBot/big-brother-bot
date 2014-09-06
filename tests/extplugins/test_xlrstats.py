@@ -53,7 +53,9 @@ class XlrstatsTestCase(B3TestCase):
 
             # set additional B3 console stuff that will be used by the XLRstats plugin
             self.console.gameName = "MyGame"
-            self.parser_conf._settings.update({'b3': {'time_zone': 'GMT'}})
+            self.parser_conf.add_section('b3')
+            self.parser_conf.set('b3', 'time_zone', 'GMT')
+
 
             # we make our own AdminPlugin and make sure it is the one return in any case
             self.adminPlugin = AdminPlugin(self.console, DEFAULT_ADMIN_CONFIG_FILE)
