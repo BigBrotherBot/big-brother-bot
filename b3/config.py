@@ -37,16 +37,24 @@
 # 06/09/2014 - 1.6   - Fenix     - added 'allow_no_value' keyword to CfgConfigParser constructor so we can load
 #                                  plugins which don't specify a configuration file
 # 07/09/2014 - 1.7   - Courgette - added MainConfig class to parser B3 main configuration file from .xml and .ini format
+# 07/09/2014 - 1.7.1 - Fenix     - patch the RawConfigParser class when python 2.6 is used to run b3: this allows
+#                                  python 2.6 to make use of the new feature of the RawConfigParser class that load
+#                                  keys from configuration files with non specified values
 
 __author__  = 'ThorN, Courgette, Fenix'
-__version__ = '1.7'
+__version__ = '1.7.1'
 
 import os
 import re
+import sys
 import time
 import b3
 import b3.functions
-import ConfigParser
+
+if sys.version_info < (2,7):
+    import b3.lib.configparser as ConfigParser
+else:
+    import ConfigParser
 
 try:
     from xml.etree import cElementTree as ElementTree
@@ -495,4 +503,3 @@ class MainConfig(B3ConfigParserMixin):
                 return attr
         else:
             raise AttributeError(name)
-
