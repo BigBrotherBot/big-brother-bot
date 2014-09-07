@@ -143,7 +143,7 @@ def start(configFile, nosetup=False):
         print 'Using config file: %s' % configFile
         global _confDir
         _confDir = os.path.dirname(configFile)
-        conf = config.load(configFile)
+        conf = config.MainConfig(config.load(configFile))
     else:
         # this happens when a config was entered on
         # the commandline, but it does not exist
