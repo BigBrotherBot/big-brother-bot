@@ -134,6 +134,7 @@ import traceback
 import thread
 import random
 import copy
+import imp
 import b3.plugin
 
 from b3 import functions
@@ -2536,23 +2537,34 @@ class AdminPlugin(b3.plugin.Plugin):
                 for comp in components[1:]:
                     module = getattr(module, comp)
             except ImportError:
+                fp = None
                 try:
+                    try:
+                        # old b3.xml configuration file
+                        external_dir = self.console.config.getpath('plugins', 'external_dir')
+                    except NoOptionError:
+                        # new b3.ini configuration file: if this raise again NoOptionError
+                        # then we won't have any information on where the external plugins
+                        # are stored and thus we can't continue with execution
+                        external_dir = self.console.config.getpath('b3', 'external_plugins_dir')
+
                     # check if it's an external plugin
-                    package = 'b3.extplugins.%s' % data
-                    module = __import__(package)
-                    components = package.split('.')
-                    for comp in components[1:]:
-                        module = getattr(module, comp)
-                except ImportError:
+                    fp, path, desc = imp.find_module(data, [external_dir])
+                    module = imp.load_module(data, fp, path, desc)
+                except (ImportError, NoOptionError):
                     # plugin doesn't seems to be loaded
                     module = None
+                    fp = None
+                finally:
+                    if fp:
+                        fp.close()
 
             if not module:
                 client.message('^7No plugin named ^1%s ^7loaded' % data)
                 return
 
-            a = getattr(module, '__author__', 'Unknown Author')
-            v = getattr(module, '__version__', 'Unknown Version')
+            a = getattr(module, '__author__', 'unknown')
+            v = getattr(module, '__version__', 'unknown')
 
         # cleanup a bit the author
         # some people put also website and/or email address in it
