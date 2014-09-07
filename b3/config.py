@@ -461,8 +461,8 @@ class MainConfig(B3ConfigParserMixin):
         :return: list[dict] A list of plugin settings as a dict.
             I.E.:
             [
-                {'name': 'admin', 'config': @conf/plugin_admin.ini, 'path': None, 'disabled': False},
-                {'name': 'adv', 'config': @conf/plugin_adv.xml, 'path': None, 'disabled': False},
+                {'name': 'admin', 'conf': @conf/plugin_admin.ini, 'path': None, 'disabled': False},
+                {'name': 'adv', 'conf': @conf/plugin_adv.xml, 'path': None, 'disabled': False},
             ]
         """
         return self._plugins
