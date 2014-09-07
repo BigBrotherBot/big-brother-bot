@@ -24,7 +24,6 @@ from textwrap import dedent
 import unittest2 as unittest
 from b3 import getAbsolutePath
 from b3.config import CfgConfigParser, MainConfig, load, XmlConfigParser
-from tests import B3TestCase
 
 
 DEFAULT_MAIN_CONFIG_FILE_XML = os.path.normpath(os.path.join(os.path.dirname(__file__),
@@ -109,6 +108,14 @@ class Test_XmlMainConfigParser(CommonDefaultTestMethodsMixin, unittest.TestCase)
         log = logging.getLogger('output')
         log.setLevel(logging.DEBUG)
 
+    def test_plugins_order(self):
+        """
+        Vefify that the plugins are return in the same order as found in the config file
+        """
+        self.assertListEqual(['admin', 'adv', 'censor', 'cmdmanager', 'pingwatch', 'punkbuster', 'spamcontrol', 'stats',
+                              'status', 'tk', 'welcome'],
+                             map(lambda x: x.get('name'), self.conf._config_parser.get('plugins/plugin')))
+
 
 @unittest.skipUnless(os.path.exists(DEFAULT_MAIN_CONFIG_FILE_CFG),
                      reason="cannot get default main config file at %s" % DEFAULT_MAIN_CONFIG_FILE_CFG)
@@ -117,6 +124,14 @@ class Test_CfgMainConfigParser(CommonDefaultTestMethodsMixin, unittest.TestCase)
         self.conf = MainConfig(load(DEFAULT_MAIN_CONFIG_FILE_CFG))
         log = logging.getLogger('output')
         log.setLevel(logging.DEBUG)
+
+    def test_plugins_order(self):
+        """
+        Vefify that the plugins are return in the same order as found in the config file
+        """
+        self.assertListEqual(['admin', 'adv', 'censor', 'cmdmanager', 'pingwatch', 'punkbuster', 'spamcontrol', 'stats',
+                              'status', 'tk', 'welcome'],
+                             self.conf._config_parser.options('plugins'))
 
 
 class TestConfig(unittest.TestCase):
