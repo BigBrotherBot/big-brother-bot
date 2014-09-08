@@ -40,6 +40,8 @@
 # 07/09/2014 - 1.7.1 - Fenix     - patch the RawConfigParser class when python 2.6 is used to run b3: this allows
 #                                  python 2.6 to make use of the new feature of the RawConfigParser class that load
 #                                  keys from configuration files with non specified values
+#                                - return empty string instead of None in get() method: this fixes possible failures in
+#                                  string replacements when we retrieve empty option from a .ini configuration file
 
 __author__  = 'ThorN, Courgette, Fenix'
 __version__ = '1.7.1'
@@ -323,7 +325,10 @@ class CfgConfigParser(B3ConfigParserMixin, ConfigParser.ConfigParser):
         Return a configuration value as a string.
         """
         try:
-            return ConfigParser.ConfigParser.get(self, section, option, *args, **kwargs)
+            value = ConfigParser.ConfigParser.get(self, section, option, *args, **kwargs)
+            if value is None:
+                return ""
+            return value
         except ConfigParser.NoSectionError:
             # plugins are used to only catch NoOptionError
             raise ConfigParser.NoOptionError(option, section)
