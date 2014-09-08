@@ -97,12 +97,7 @@ from ConfigParser import MissingSectionHeaderError
 from ConfigParser import NoSectionError
 from ConfigParser import NoOptionError
 from ConfigParser import ParsingError
-
-try:
-    from collections import OrderedDict as _default_dict
-except ImportError:
-    # fallback for setup.py which hasn't yet built _collections
-    _default_dict = dict
+from b3.lib.ordereddict import OrderedDict as _default_dict
 
 import re
 
