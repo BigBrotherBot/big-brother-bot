@@ -495,6 +495,7 @@ class Iourt41Parser(AbstractParser):
                     self.warning(err)
                 else:
                     self.error("Cannot fix players teams: %s" % err)
+                    return
 
         for cid in plist.keys():
             client = self.clients.getByCID(cid)
@@ -805,9 +806,9 @@ class Iourt41Parser(AbstractParser):
             self.debug('No attacker')
             return None
 
-        d_type = match.group('text').split()[-1:][0]
-        if not d_type:
-            self.debug('no damage type, weapon: %s' % weapon)
+        damagetype = match.group('text').split()[-1:][0]
+        if not damagetype:
+            self.debug('No damage type, weapon: %s' % weapon)
             return None
 
         event = self.getEventID('EVT_CLIENT_KILL')
@@ -817,7 +818,7 @@ class Iourt41Parser(AbstractParser):
             if weapon == self.MOD_CHANGE_TEAM:
                 # do not pass a teamchange event here
                 # that event is passed shortly after the kill
-                self.verbose('team change event caught: exiting...')
+                self.verbose('Team change event caught: exiting...')
                 return None
             else:
                 event = self.getEventID('EVT_CLIENT_SUICIDE')
@@ -835,7 +836,7 @@ class Iourt41Parser(AbstractParser):
         # self.verbose('OnKill Victim: %s, Attacker: %s, Weapon: %s, Hitloc: %s, dType: %s' %
         #              (victim.name, attacker.name, weapon, victim.hitloc, dType))
         # need to pass some amount of damage for the teamkill plugin - 100 is a kill
-        return self.getEvent(event, (last_damage_data[0], weapon, last_damage_data[2], d_type), attacker, victim)
+        return self.getEvent(event, (last_damage_data[0], weapon, last_damage_data[2], damagetype), attacker, victim)
 
     def OnClientdisconnect(self, action, data, match=None):
         client = self.clients.getByCID(data)
@@ -895,7 +896,7 @@ class Iourt41Parser(AbstractParser):
         if not client:
             self.debug('No client found')
             return None
-        self.verbose('on_action: %s: %s %s' % (client.name, actiontype, data))
+        self.verbose('onAction: %s: %s %s' % (client.name, actiontype, data))
         return self.getEvent('EVT_CLIENT_ACTION', data=actiontype, client=client)
 
     def OnItem(self, action, data, match=None):
