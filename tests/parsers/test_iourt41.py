@@ -651,6 +651,13 @@ class Test_OnKill(Iourt41TestCase):
             event_target=self.joe,
             event_data=(100, self.console.MOD_LAVA, 'body', 'MOD_LAVA'))
 
+    def test_mr_sentry(self):
+        self.assertEvent('5:19 Kill: 1022 0 14: <world> killed Joe by UT_MOD_BERETTA',
+                         event_type='EVT_SENTRY_KILL',
+                         event_client=None,
+                         event_target=self.joe,
+                         event_data=None)
+
     def test_constants(self):
         def assert_mod(kill_mod_number, kill_mod_name):
             self.assertTrue(hasattr(self.console, kill_mod_name), "expecting parser to have a constant named %s" % kill_mod_name)

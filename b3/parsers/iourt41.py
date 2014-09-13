@@ -146,10 +146,11 @@
 #                                  - updated rcon command patterns
 # 03/08/2014 - 1.22   - Fenix      - syntax cleanup
 #                                  - reformat changelog
+# 13/09/2014 - 1.23   - Fenix      - added new event: EVT_SENTRY_KILL
 
 
 __author__ = 'xlr8or, Courgette, Fenix'
-__version__ = '1.22'
+__version__ = '1.23'
 
 import b3
 import b3.events
@@ -345,6 +346,9 @@ class Iourt41Parser(AbstractParser):
     HL_HELMET = '1'
     HL_TORSO = '2'
 
+    # WORLD CID (used for Mr. Sentry detection)
+    WORLD = '1022'
+
     ## weapons id on Hit: lines are different than the one
     ## on the Kill: lines. Here the translation table
     hitweapon2killweapon = {
@@ -434,6 +438,7 @@ class Iourt41Parser(AbstractParser):
         self.Events.createEvent('EVT_CLIENT_GEAR_CHANGE', 'Client gear change')
         self.Events.createEvent('EVT_SURVIVOR_WIN', 'Survivor Winner')
         self.Events.createEvent('EVT_BOMB_EXPLODED', 'Bomb exploded')
+        self.Events.createEvent('EVT_SENTRY_KILL', 'Mr Sentry kill')
 
         # add event mappings
         self._eventMap['warmup'] = self.getEventID('EVT_GAME_WARMUP')
@@ -803,8 +808,12 @@ class Iourt41Parser(AbstractParser):
         ## End fix attacker
 
         if not attacker:
-            self.debug('No attacker')
-            return None
+            # handle the case where Mr.Sentry killed a player
+            if match.group('aweap') == self.UT_MOD_BERETTA and match.group('acid') == self.WORLD:
+                return self.getEvent('EVT_SENTRY_KILL', target=victim)
+            else:
+                self.debug('No attacker')
+                return None
 
         damagetype = match.group('text').split()[-1:][0]
         if not damagetype:
