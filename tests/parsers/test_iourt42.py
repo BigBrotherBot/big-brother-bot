@@ -17,9 +17,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 import logging
+import unittest2 as unittest
+
 from mock import Mock, call, patch
 from mockito import mock, when, any as anything
-import unittest2 as unittest
 from b3.clients import Clients, Client
 from b3.config import XmlConfigParser
 from b3.events import Event
@@ -310,6 +311,42 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_type='EVT_CLIENT_SPAWN',
             event_client=patate,
             event_data=None)
+
+    def test_client_freeze(self):
+        alice = FakeClient(self.console, name="Alice", guid="aliceguid")
+        alice.connects('0')
+        bob = FakeClient(self.console, name="Bob", guid="bobguid")
+        bob.connects('1')
+        self.assertEvent(r'''Freeze: 0 1 16: Alice froze Bob by UT_MOD_SPAS''',
+                         event_type='EVT_CLIENT_FREEZE',
+                         event_client=alice,
+                         event_target=bob,
+                         event_data=Iourt42Parser.UT_MOD_SPAS)
+
+    def test_client_thawout_started(self):
+        alice = FakeClient(self.console, name="Alice", guid="aliceguid")
+        alice.connects('0')
+        bob = FakeClient(self.console, name="Bob", guid="bobguid")
+        bob.connects('1')
+        self.assertEvent(r'''ThawOutStarted: 0 1: Alice started thawing out Biddle''',
+                         event_type='EVT_CLIENT_THAWOUT_STARTED',
+                         event_client=alice,
+                         event_target=bob)
+
+    def test_client_thawout_finished(self):
+        alice = FakeClient(self.console, name="Alice", guid="aliceguid")
+        alice.connects('0')
+        bob = FakeClient(self.console, name="Bob", guid="bobguid")
+        bob.connects('1')
+        self.assertEvent(r'''ThawOutFinished: 0 1: Fenix thawed out Biddle''',
+                         event_type='EVT_CLIENT_THAWOUT_FINISHED',
+                         event_client=alice,
+                         event_target=bob)
+
+    def test_client_melted(self):
+        alice = FakeClient(self.console, name="Alice", guid="aliceguid")
+        alice.connects('0')
+        self.assertEvent(r'''ClientMelted: 0''', event_type='EVT_CLIENT_MELTED', event_client=alice)
 
     def test_SurvivorWinner_player(self):
         marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
