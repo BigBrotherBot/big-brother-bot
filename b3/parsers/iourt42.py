@@ -81,6 +81,7 @@
 #                                 - reformat changelog
 # 14/09/2014 - 1.26   - Fenix     - added FreezeTag events: EVT_CLIENT_FREEZE, EVT_CLIENT_THAWOUT_STARTED,
 #                                   EVT_CLIENT_THAWOUT_FINISHED, EVT_CLIENT_MELTED
+#                                 - set client.state to b3.STATE_ALIVE on Client Spawn
 
 import b3
 import re
@@ -947,6 +948,7 @@ class Iourt42Parser(Iourt41Parser):
             self.debug('No client found')
             return None
 
+        client.state = b3.STATE_ALIVE
         return self.getEvent('EVT_CLIENT_SPAWN', client=client)
 
     def OnClientmelted(self, action, data, match=None):
