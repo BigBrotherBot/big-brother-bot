@@ -79,6 +79,8 @@
 # 02/06/2014 - 1.24.2 - Fenix     - fixed reColor regex stripping whitespaces between words
 # 03/08/2014 - 1.25   - Fenix     - syntax cleanup
 #                                 - reformat changelog
+# 14/09/2014 - 1.26   - Fenix     - added FreezeTag events: EVT_CLIENT_FREEZE, EVT_CLIENT_THAWOUT_STARTED,
+#                                   EVT_CLIENT_THAWOUT_FINISHED, EVT_CLIENT_MELTED
 
 import b3
 import re
@@ -93,7 +95,7 @@ from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 
 __author__ = 'Courgette, Fenix'
-__version__ = '1.25'
+__version__ = '1.26'
 
 
 class Iourt42Client(Client):
@@ -358,8 +360,8 @@ class Iourt42Parser(Iourt41Parser):
                    r'(?P<z>-?\d+(?:\.\d+)?))$', re.IGNORECASE),
 
         # ClientSpawn: 0
-        # ClientSpawn: 1
-        re.compile(r'^(?P<action>ClientSpawn):\s(?P<cid>[0-9]+)$', re.IGNORECASE),
+        # ClientMelted: 1
+        re.compile(r'^(?P<action>Client(Melted|Spawn)):\s(?P<cid>[0-9]+)$', re.IGNORECASE),
 
         # Generated with ioUrbanTerror v4.1:
         # Hit: 12 7 1 19: BSTHanzo[FR] hit ercan in the Helmet
@@ -374,7 +376,20 @@ class Iourt42Parser(Iourt41Parser):
 
         # 6:37 Kill: 0 1 16: XLR8or killed =lvl1=Cheetah by UT_MOD_SPAS
         # 2:56 Kill: 14 4 21: Qst killed Leftovercrack by UT_MOD_PSG1
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<acid>[0-9]+)\s(?P<cid>[0-9]+)\s(?P<aweap>[0-9]+):\s+'
+        # 6:37 Freeze: 0 1 16: Fenix froze Biddle by UT_MOD_SPAS
+        re.compile(r'^(?P<action>[a-z]+):\s'
+                   r'(?P<data>'
+                   r'(?P<acid>[0-9]+)\s'
+                   r'(?P<cid>[0-9]+)\s'
+                   r'(?P<aweap>[0-9]+):\s+'
+                   r'(?P<text>.*))$', re.IGNORECASE),
+
+        # ThawOutStarted: 0 1: Fenix started thawing out Biddle
+        # ThawOutFinished: 0 1: Fenix thawed out Biddle
+        re.compile(r'^(?P<action>ThawOut(Started|Finished)):\s'
+                   r'(?P<data>'
+                   r'(?P<cid>[0-9]+)\s'
+                   r'(?P<tcid>[0-9]+):\s+'
                    r'(?P<text>.*))$', re.IGNORECASE),
 
         # Processing chats and tell events...
@@ -610,6 +625,10 @@ class Iourt42Parser(Iourt41Parser):
         self.Events.createEvent('EVT_CLIENT_GOTO', 'Event client goto')
         self.Events.createEvent('EVT_CLIENT_SPAWN', 'Event client spawn')
         self.Events.createEvent('EVT_CLIENT_SURVIVOR_WINNER', 'Event client survivor winner')
+        self.Events.createEvent('EVT_CLIENT_FREEZE', 'Event client freeze')
+        self.Events.createEvent('EVT_CLIENT_THAWOUT_STARTED', 'Event client thawout started')
+        self.Events.createEvent('EVT_CLIENT_THAWOUT_FINISHED', 'Event client thawout finished')
+        self.Events.createEvent('EVT_CLIENT_MELTED', 'Event client melted')
 
         self._eventMap['hotpotato'] = self.getEventID('EVT_GAME_FLAG_HOTPOTATO')
         self._eventMap['shutdowngame'] = self.getEventID('EVT_GAME_ROUND_END')
@@ -922,7 +941,6 @@ class Iourt42Parser(Iourt41Parser):
 
     def OnClientspawn(self, action, data, match=None):
         # ClientSpawn: 0
-        # ClientSpawn: 1
         cid = match.group('cid')
         client = self.getByCidOrJoinPlayer(cid)
         if not client:
@@ -930,6 +948,17 @@ class Iourt42Parser(Iourt41Parser):
             return None
 
         return self.getEvent('EVT_CLIENT_SPAWN', client=client)
+
+    def OnClientmelted(self, action, data, match=None):
+        # ClientMelted: 0
+        cid = match.group('cid')
+        client = self.getByCidOrJoinPlayer(cid)
+        if not client:
+            self.debug('No client found')
+            return None
+
+        client.state = b3.STATE_ALIVE
+        return self.getEvent('EVT_CLIENT_MELTED', client=client)
 
     def OnSurvivorwinner(self, action, data, match=None):
         # SurvivorWinner: Blue
@@ -943,6 +972,55 @@ class Iourt42Parser(Iourt41Parser):
                 self.debug('No client found')
                 return None
             return self.getEvent('EVT_CLIENT_SURVIVOR_WINNER', client=client)
+
+    def OnFreeze(self, action, data, match=None):
+        # 6:37 Freeze: 0 1 16: Fenix froze Biddle by UT_MOD_SPAS
+        victim = self.getByCidOrJoinPlayer(match.group('cid'))
+        if not victim:
+            self.debug('No victim')
+            return None
+
+        attacker = self.getByCidOrJoinPlayer(match.group('acid'))
+        if not attacker:
+            self.debug('No attacker')
+            return None
+
+        weapon = match.group('aweap')
+        if not weapon:
+            self.debug('No weapon')
+            return None
+
+        victim.state = b3.STATE_DEAD
+        return self.getEvent('EVT_CLIENT_FREEZE', data=weapon, client=attacker, target=victim)
+
+    def OnThawoutstarted(self, action, data, match=None):
+        # ThawOutStarted: 0 1: Fenix started thawing out Biddle
+        client = self.getByCidOrJoinPlayer(match.group('cid'))
+        if not client:
+            self.debug('No client')
+            return None
+
+        target = self.getByCidOrJoinPlayer(match.group('tcid'))
+        if not target:
+            self.debug('No target')
+            return None
+
+        return self.getEvent('EVT_CLIENT_THAWOUT_STARTED', client=client, target=target)
+
+    def OnThawoutfinished(self, action, data, match=None):
+        # ThawOutFinished: 0 1: Fenix thawed out Biddle
+        client = self.getByCidOrJoinPlayer(match.group('cid'))
+        if not client:
+            self.debug('No client')
+            return None
+
+        target = self.getByCidOrJoinPlayer(match.group('tcid'))
+        if not target:
+            self.debug('No target')
+            return None
+
+        target.state = b3.STATE_ALIVE
+        return self.getEvent('EVT_CLIENT_THAWOUT_FINISHED', client=client, target=target)
 
     ####################################################################################################################
     ##                                                                                                                ##
