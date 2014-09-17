@@ -82,6 +82,7 @@
 # 14/09/2014 - 1.26   - Fenix     - added FreezeTag events: EVT_CLIENT_FREEZE, EVT_CLIENT_THAWOUT_STARTED,
 #                                   EVT_CLIENT_THAWOUT_FINISHED, EVT_CLIENT_MELTED
 #                                 - set client.state to b3.STATE_ALIVE on Client Spawn
+# 17/09/2014 - 1.26.1 - Fenix     - added missing Freeze Tag gametype declaration (10) in defineGametype()
 
 import b3
 import re
@@ -96,7 +97,7 @@ from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 
 __author__ = 'Courgette, Fenix'
-__version__ = '1.26'
+__version__ = '1.26.1'
 
 
 class Iourt42Client(Client):
@@ -1287,6 +1288,8 @@ class Iourt42Parser(Iourt41Parser):
             gametype = 'bm'
         elif gametype_int == '9':
             gametype = 'jump'
+        elif gametype_int == '10':
+            gametype = 'freeze'
 
         return gametype
 
