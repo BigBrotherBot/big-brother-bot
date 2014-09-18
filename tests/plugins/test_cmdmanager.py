@@ -56,6 +56,8 @@ class Cmdmanager_TestCase(B3TestCase):
             [commands]
             cmdlevel: fulladmin
             cmdalias: fulladmin
+            cmdgrant: superadmin
+            cmdrevoke: superadmin
         """))
 
         self.p = CmdmanagerPlugin(self.console, self.conf)
@@ -293,3 +295,140 @@ class Test_commands(Cmdmanager_TestCase):
         # THEN
         self.assertListEqual(['updated alias for command !help: !newhelp'], superadmin.message_history)
         self.assert_cmd_alias("help", "newhelp")
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ## CMD GRANT                                                                                                      ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
+    def test_cmdgrant_with_invalid_command(self):
+        # GIVEN
+        superadmin = FakeClient(self.console, name="superadmin", guid="superadminguid", groupBits=128)
+        superadmin.connects("1")
+        mike = FakeClient(self.console, name="mike", guid="mikeguid", groupBits=1)
+        mike.connects("2")
+        # WHEN
+        superadmin.clearMessageHistory()
+        superadmin.says("!cmdgrant mike fakecommand")
+        # THEN
+        self.assertListEqual(['could not find command !fakecommand'], superadmin.message_history)
+
+    def test_cmdgrant_with_lower_group_level(self):
+        # GIVEN
+        superadmin = FakeClient(self.console, name="superadmin", guid="superadminguid", groupBits=128)
+        superadmin.connects("1")
+        mike = FakeClient(self.console, name="mike", guid="mikeguid", groupBits=1)
+        mike.connects("2")
+        # WHEN
+        superadmin.clearMessageHistory()
+        mike.clearMessageHistory()
+        mike.says("!cmdlevel cmdlevel")
+        superadmin.says("!cmdgrant mike cmdlevel")
+        mike.says("!cmdlevel cmdlevel")
+        # THEN
+        self.assertIsNotNone(getattr(mike, 'cmdgrant_set', None))
+        self.assertIn('cmdlevel', getattr(mike, 'cmdgrant_set'))
+        self.assertLess(mike.maxLevel, self.adminPlugin._commands['cmdlevel'].level[0])
+        self.assertListEqual(['mike has now a grant for command !cmdlevel'], superadmin.message_history)
+        self.assertListEqual(['You need to be in group Full Admin to use !cmdlevel',
+                              'command !cmdlevel level: fulladmin'], mike.message_history)
+
+    def test_cmdgrant_with_higher_group_level(self):
+        # GIVEN
+        superadmin = FakeClient(self.console, name="superadmin", guid="superadminguid", groupBits=128)
+        superadmin.connects("1")
+        mike = FakeClient(self.console, name="mike", guid="mikeguid", groupBits=64)
+        mike.connects("2")
+        # WHEN
+        superadmin.clearMessageHistory()
+        superadmin.says("!cmdgrant mike cmdlevel")
+        # THEN
+        self.assertIsNone(getattr(mike, 'cmdgrant_set', None))
+        self.assertListEqual(['mike can already use command !cmdlevel'], superadmin.message_history)
+
+    def test_cmdgrant_with_client_reconnection(self):
+        # GIVEN
+        superadmin = FakeClient(self.console, name="superadmin", guid="superadminguid", groupBits=128)
+        superadmin.connects("1")
+        mike = FakeClient(self.console, id="10", name="mike", guid="mikeguid", groupBits=1)
+        mike.connects("2")
+        # WHEN
+        superadmin.clearMessageHistory()
+        superadmin.says("!cmdgrant mike cmdlevel")
+        mike.disconnects()
+        del mike # totally destroy the object
+        mike = FakeClient(self.console, id="10", name="mike", guid="mikeguid", groupBits=1)
+        mike.connects("2")
+        # THEN
+        grant_set = getattr(mike, 'cmdgrant_set', None)
+        self.assertIsNotNone(grant_set)
+        self.assertIsInstance(grant_set, set)
+        self.assertEqual(1, len(grant_set))
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ## CMD REVOKE                                                                                                     ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
+    def test_cmdrevoke_with_no_grant_given(self):
+        # GIVEN
+        superadmin = FakeClient(self.console, name="superadmin", guid="superadminguid", groupBits=128)
+        superadmin.connects("1")
+        mike = FakeClient(self.console, name="mike", guid="mikeguid", groupBits=64)
+        mike.connects("2")
+        # WHEN
+        superadmin.clearMessageHistory()
+        superadmin.says("!cmdrevoke mike cmdlevel")
+        # THEN
+        self.assertListEqual(['mike has no grant for command !cmdlevel'], superadmin.message_history)
+
+    def test_cmdrevoke_with_previously_given_grant(self):
+        # GIVEN
+        superadmin = FakeClient(self.console, name="superadmin", guid="superadminguid", groupBits=128)
+        superadmin.connects("1")
+        mike = FakeClient(self.console, name="mike", guid="mikeguid", groupBits=1)
+        mike.connects("2")
+        # WHEN
+        superadmin.says("!cmdgrant mike cmdlevel")
+        superadmin.clearMessageHistory()
+        superadmin.says("!cmdrevoke mike cmdlevel")
+        # THEN
+        self.assertListEqual(['mike\'s grant for command !cmdlevel has been removed'], superadmin.message_history)
+
+    def test_cmdrevoke_with_previously_given_grant_and_high_group_level(self):
+        # GIVEN
+        superadmin = FakeClient(self.console, name="superadmin", guid="superadminguid", groupBits=128)
+        superadmin.connects("1")
+        mike = FakeClient(self.console, name="mike", guid="mikeguid", groupBits=1)
+        mike.connects("2")
+        # WHEN
+        superadmin.says("!cmdgrant mike cmdlevel")
+        mike.groupBits = 64     # this 2 lines simulate mike being added has superadmin
+        mike._maxLevel = 80      # after he obtained a grant for command !cmdlevel he couldn't access before
+        superadmin.clearMessageHistory()
+        superadmin.says("!cmdrevoke mike cmdlevel")
+        # THEN
+        self.assertListEqual(['mike\'s grant for command !cmdlevel has been removed',
+                              'but his group level is high enough to access the command'], superadmin.message_history)
+
+    def test_cmdrevoke_with_client_reconnection(self):
+        # GIVEN
+        superadmin = FakeClient(self.console, name="superadmin", guid="superadminguid", groupBits=128)
+        superadmin.connects("1")
+        mike = FakeClient(self.console, id="10", name="mike", guid="mikeguid", groupBits=1)
+        mike.connects("2")
+        # WHEN
+        superadmin.clearMessageHistory()
+        superadmin.says("!cmdgrant mike cmdlevel")
+        superadmin.says("!cmdrevoke mike cmdlevel")
+        mike.disconnects()
+        del mike # totally destroy the object
+        mike = FakeClient(self.console, id="10", name="mike", guid="mikeguid", groupBits=1)
+        mike.connects("2")
+        # THEN
+        grant_set = getattr(mike, 'cmdgrant_set', None)
+        self.assertIsNotNone(grant_set)
+        self.assertIsInstance(grant_set, set)
+        self.assertEqual(0, len(grant_set))
