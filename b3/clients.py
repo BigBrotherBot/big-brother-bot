@@ -626,8 +626,6 @@ class Client(object):
     # -----------------------
 
     def _set_pbid(self, pbid):
-        if self.getattr('_pbid') and self._pbid != pbid:
-            self.console.error('Client has pbid but its not the same %s <> %s', self._pbid, pbid)
         self._pbid = pbid
 
     def _get_pbid(self):
