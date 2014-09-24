@@ -34,7 +34,8 @@
 # 19/07/2014 - 1.5   - Fenix     - syntax cleanup
 #                                - declared get method in B3ConfigParserMixin for design consistency
 #                                - added stub constructor in XmlConfigParser
-# 06/09/2014 - 1.6   - Fenix     - added 'allow_no_value' keyword to CfgConfigParser constructor so we can load
+# 06/09/2014 - 1.5.1 - Courgette - remove duplicated code by using b3.getAbsolutePath
+# 07/09/2014 - 1.6   - Fenix     - added 'allow_no_value' keyword to CfgConfigParser constructor so we can load
 #                                  plugins which don't specify a configuration file
 # 07/09/2014 - 1.7   - Courgette - added MainConfig class to parser B3 main configuration file from .xml and .ini format
 # 07/09/2014 - 1.7.1 - Fenix     - patch the RawConfigParser class when python 2.6 is used to run b3: this allows
@@ -105,12 +106,7 @@ class B3ConfigParserMixin:
         :param section: The configuration file section.
         :param setting: The configuration file setting.
         """
-        path = self.get(section, setting)
-        if path[0:3] == '@b3':
-            path = "%s/%s" % (b3.getB3Path(), path[3:])
-        elif path[0:6] == '@conf/' or path[0:6] == '@conf\\':
-            path = os.path.join(b3.getConfPath(), path[6:])
-        return os.path.normpath(os.path.expanduser(path))
+        return b3.getAbsolutePath(self.get(section, setting))
 
     def getTextTemplate(self, section, setting=None, **kwargs):
         """
@@ -377,11 +373,7 @@ def load(filename):
         # allow the use of empty keys to support the new b3.ini configuration file
         config = CfgConfigParser(allow_no_value=True)
 
-    filename = os.path.normpath(filename)
-    if filename[0:4] == '@b3\\' or filename[0:4] == '@b3/':
-        filename = os.path.normpath("%s/%s" % (b3.getB3Path(), filename[3:]))
-    elif filename[0:6] == '@conf\\' or filename[0:6] == '@conf/':
-        filename = os.path.normpath("%s/%s" % (b3.getConfPath(), filename[5:]))
+    filename = b3.getAbsolutePath(filename)
 
     # return the config if it can be loaded
     return config if config.load(filename) else None
