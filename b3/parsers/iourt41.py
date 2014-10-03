@@ -147,10 +147,11 @@
 # 03/08/2014 - 1.22   - Fenix      - syntax cleanup
 #                                  - reformat changelog
 # 13/09/2014 - 1.23   - Fenix      - added new event: EVT_SENTRY_KILL
+# 02/10/2014 - 1.24   - Fenix      - fixes regression introduced in 1.22
 
 
 __author__ = 'xlr8or, Courgette, Fenix'
-__version__ = '1.23'
+__version__ = '1.24'
 
 import b3
 import b3.events
@@ -1155,7 +1156,7 @@ class Iourt41Parser(AbstractParser):
             self.say(fullreason)
 
         if admin:
-            admin.message('^7Banned^7: ^1%s^7 (^2@%s^7)' % (client.exactname, client.id))
+            admin.message('^7Banned^7: ^1%s^7 (^2@%s^7)' % (client.exactName, client.id))
             admin.message('^7His last ip (^1%s^7) has been added to banlist' % client.ip)
 
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN', data={'reason': reason, 'admin': admin}, client=client))
@@ -1175,7 +1176,7 @@ class Iourt41Parser(AbstractParser):
         # Make sure we remove up to 5 duplicates in a separate thread
         self.writelines([cmd, cmd, cmd, cmd, cmd])
         if admin:
-            admin.message('^7Unbanned^7: ^1%s^7 (^2@%s^7)' % (client.exactname, client.id))
+            admin.message('^7Unbanned^7: ^1%s^7 (^2@%s^7)' % (client.exactName, client.id))
             admin.message('^7His last ip (^1%s^7) has been removed from banlist' % client.ip)
             admin.message('^7Trying to remove duplicates...')
 
