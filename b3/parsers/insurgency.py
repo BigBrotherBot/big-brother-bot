@@ -992,7 +992,7 @@ class InsurgencyParser(Parser):
             return TEAM_BLUE
         elif team == "#Team_Security":
             return TEAM_RED
-        #elif team == "#Team_Spectators":
+        elif team == "#Team_Spectators":
             return TEAM_SPEC
         else:
             self.debug("unexpected team id : %s" % team)
