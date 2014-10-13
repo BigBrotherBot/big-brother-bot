@@ -31,16 +31,24 @@
 #                                     - let getcvar() method make use of the Cvar class
 # 2014/09/01 - 0.6.1 - 82ndab-Bravo17 - Add color code options for new getWrap method
 # 2014/09/02 - 0.7   - 82ndab-Bravo17 - Changed getMaps to get the name and gametypes from the mapcycle file for !maps
-#                                     - Get available maps now retrieves the map list from the GAME_MODES_FOR_MAP dict, to which non-stock maps can be added in the xml as well as
+#                                     - Get available maps now retrieves the map list from the GAME_MODES_FOR_MAP dict,
+#                                       to which non-stock maps can be added in the xml as well as
 #                                       the maps * command to provide crash resistant changing to map/gametype pairings
-#                                     - Changed map so that it accepts gametype as a required argument, and won't try and rotate to an invalid map/gametype combo unless the optional -force parameter
-#                                       is used to override the check. Also adds _coop or _hunt to the mapname if it has been omitted and is needed.
-#                                     - Sourcemod nextmap plugin breaks the default in-game map-voting, which is superior to the SM version, so disabled !nextmap unless sm nextmap is loaded
+#                                     - Changed map so that it accepts gametype as a required argument, and won't try
+#                                       and rotate to an invalid map/gametype combo unless the optional -force parameter
+#                                       is used to override the check. Also adds _coop or _hunt to the mapname if it has
+#                                       been omitted and is needed.
+#                                     - Sourcemod nextmap plugin breaks the default in-game map-voting, which is superior
+#                                       to the SM version, so disabled !nextmap unless sm nextmap is loaded
+# 2014/10/12 - 0.7.1 - Fenix          - removed unused imports
+#                                     - respect PEP8 line length constraints
+#                                     - fixed changeMap method declaration so it respect Parser's method inheritence
+#                                     - fixed suggestion list not being printed when !map command is not able to select
+#                                       a valid mapname through getMapsSoundingLike
 
 import re
 import time
 import new
-import string
 
 from b3 import TEAM_UNKNOWN
 from b3 import TEAM_BLUE
@@ -58,7 +66,7 @@ from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '0.7'
+__version__ = '0.7.1'
 
 
 # GAME SETUP
@@ -114,7 +122,9 @@ GAME_MODES_FOR_MAP = {
     'uprising': ('firefight', 'occupy', 'hunt')
 }
 
-class InvalidmapgamecomboError(Exception): pass
+class InvalidmapgamecomboError(Exception):
+    pass
+
 
 class InsurgencyParser(Parser):
     """
@@ -126,6 +136,8 @@ class InsurgencyParser(Parser):
     PunkBuster = None
     sm_plugins = None
     last_killlocation_properties = None
+    map_cycles = {}
+    map_cycle_no = 0
 
     # extract the time from game log line
     _lineTime = re.compile(r"""^L [01]\d/[0-3]\d/\d+ - [0-2]\d:(?P<minutes>[0-5]\d):(?P<seconds>[0-5]\d):\s*""")
@@ -145,6 +157,7 @@ class InsurgencyParser(Parser):
     ##  PARSER INITIALIZATION                                                                                         ##
     ##                                                                                                                ##
     ####################################################################################################################
+
     def __new__(cls, *args, **kwargs):
         return Parser.__new__(cls)
 
@@ -152,84 +165,75 @@ class InsurgencyParser(Parser):
         """
         Monkey patches the admin plugin
         """
-
-
-        def parse_map_parameters(self, data, client):
+        def parse_map_parameters(this, data, client):
             """
-
             Method that parses a command parameters of extract map and gamemode.
             Expecting two parameters separated by a comma.
-            <map> , <gamemode>
+            <map> <gamemode>
             Note gamemode is needed since we cannot get the current gamemode from the server, and therefore
             cannot confirm that a new map/gamemode combination is valid if only mapname is supplied.
             """
             gamemode_data = None
-
-            if ' ' in data:
-                parts = [x.strip() for x in data.split(' ')]
-                if len(parts) == 3 and parts[2] == '-force':
-                    force = True
-                elif len(parts) != 2:
-                    client.message("Invalid parameters. 2 parameters are required, name and gametype, with an optional -force parameter if map/gametype pairing is not known. Note that an invalid pairing will require a server restart.")
-                    return
-                else:
-                    force = False
-                gamemode_data = parts[1]
-                map_data = parts[0]
-            else:
-                client.message("Invalid parameters. 2 parameters are required, name and gametype, with an optional -force parameter if map/gametype pairing is not known. Note that an invalid pairing will require a server restart.")
+            parts = data.split()
+            if len(parts) < 2:
+                client.message("Invalid parameters. 2 parameters are required, name and gametype, "
+                               "with an optional -force parameter if map/gametype pairing is not known. "
+                               "Note that an invalid pairing will require a server restart.")
                 return
+
+            force = False
+            if len(parts) == 3 and parts[2] == '-force':
+                force = True
+
+            gamemode_data = parts[1]
+            map_data = parts[0]
 
             return map_data, gamemode_data, force
 
-        # Monkey patch the cmd_map method of the loaded AdminPlugin instance to require 2nd parameter
-        # which is the game mode
-        def new_cmd_map(self, data, client, cmd=None):
-            """\
-            <map> , <gamemode> [,<-force>] - switch current map. Specify a gamemode by separating them from the map name with a space(required), optional parameter -force to ignore map/gamemode checking
+        # Monkey patch the cmd_map method of the loaded AdminPlugin instance
+        # to require 2nd parameter which is the game mode
+        def new_cmd_map(this, data, client, cmd=None):
+            """
+            <map> <gamemode> [-force] - switch current map. Specify a gamemode by separating
+            them from the map name with a space(required), optional parameter -force to ignore map/gamemode checking
             """
             if not data:
-                client.message("Fully supported Map names are : " + ', '.join(mapname for mapname in GAME_MODES_FOR_MAP.keys()))
-                allavailablemaps = self.console.getAllAvailableMaps()
+                client.message("Fully supported map names are : " + ', '.join(m for m in GAME_MODES_FOR_MAP.keys()))
+                allavailablemaps = this.console.getAllAvailableMaps()
                 maplist = ''
-                for map in allavailablemaps:
-                    mapshort = map
-                    if map.endswith(('_coop', '_hunt')):
-                        mapshort = map[0:len(map)-5]
+                for m in allavailablemaps:
+                    mapshort = m
+                    if m.endswith(('_coop', '_hunt')):
+                        mapshort = m[0:len(m) - 5]
                     if mapshort not in GAME_MODES_FOR_MAP.keys():
-                        maplist = maplist + ', ' + map
-                client.message("You can use these with the optional '-force' parameter, which will disable map/gamemode pair checking and will need a server restart if an invalid pairing is given:" + maplist)
+                        maplist = maplist + ', ' + m
+                client.message("You can use these with the optional '-force' parameter, "
+                               "which will disable map/gamemode pair checking and will need a server "
+                               "restart if an invalid pairing is given:" + maplist)
                 client.message('For more help, type !help map')
                 return
 
-            parsed_data = self.parse_map_parameters(data, client)
+            parsed_data = this.parse_map_parameters(data, client)
             if not parsed_data:
                 return
 
             map_id, gamemode_id, force = parsed_data
 
-
             try:
-                suggestions = self.console.changeMap(map_id, gamemode_id, force)
-            except InvalidmapgamecomboError, err:
+                suggestions = this.console.changeMap(map_id, gamemode_id, force)
+                if type(suggestions) == list:
+                    client.message('do you mean : %s ?' % ', '.join(suggestions))
+            except InvalidmapgamecomboError:
                 client.message("%s cannot be played with gamemode %s" % (map_id, gamemode_id))
-                client.message("supported gamemodes are : " + ', '.join(mode_id for mode_id in GAME_MODES_FOR_MAP[map_id]))
-                return
+                client.message("supported gamemodes are : " + ', '.join(g for g in GAME_MODES_FOR_MAP[map_id]))
             except:
                 raise
-            else:
-                if type(suggestions) == list:
-                    client.message('do you mean : %s ?' % ', '.join(map_id))
-                    return
 
         adminPlugin = self.getPlugin('admin')
-
         adminPlugin.parse_map_parameters = new.instancemethod(parse_map_parameters, adminPlugin)
-
-        cmd = adminPlugin._commands['map']
-        cmd.func = new.instancemethod(new_cmd_map, adminPlugin)
-        cmd.help = new_cmd_map.__doc__.strip()
-
+        command = adminPlugin._commands['map']
+        command.func = new.instancemethod(new_cmd_map, adminPlugin)
+        command.help = new_cmd_map.__doc__.strip()
 
     def startup(self):
         """
@@ -262,11 +266,10 @@ class InsurgencyParser(Parser):
                 gamemode_list = ()
                 gamemodes_sep = gamemodes.split(',')
                 for gamemode in gamemodes_sep:
-                    gamemode_list = gamemode_list +(gamemode.strip(),)
+                    gamemode_list = gamemode_list + (gamemode.strip(),)
                 GAME_MODES_FOR_MAP[mapname] = gamemode_list
             self.info("-------------- custom map details loaded ----------------")
         self.debug(GAME_MODES_FOR_MAP)
-
 
     def pluginsStarted(self):
         """
@@ -820,11 +823,11 @@ class InsurgencyParser(Parser):
         map_rotation = []
         self.map_cycles = {}
         self.map_cycle_no = 0
-        input = open(mapcyclefile, 'r')
-        for line in input:
+        f = open(mapcyclefile, 'r')
+        for line in f:
             if len(line):
                 map_rotation.append(line)
-        input.close()
+        f.close()
         return map_rotation
 
     def rotateMap(self):
@@ -837,7 +840,7 @@ class InsurgencyParser(Parser):
             time.sleep(1)
             self.output.write('map %s' % next_map)
 
-    def changeMap(self, map_name, gamemode_name, force):
+    def changeMap(self, map_name, gamemode_name='', force=False):
         """
         Load a given map/level
         Return a list of suggested map names in cases it fails to recognize the map that was provided.
@@ -849,19 +852,18 @@ class InsurgencyParser(Parser):
             map_name = self.checkGameMode(map_name, gamemode_name)
             self.output.write('changelevel %s %s' % (map_name, gamemode_name))
         else:
-            if gamemode_name in GAME_MODES_FOR_MAP[map_name]:
-                map_name = self.checkGameMode(map_name, gamemode_name)
-                self.output.write('changelevel %s %s' % (map_name, gamemode_name))
-            else:
-                raise InvalidmapgamecomboError('Please try again')
+            if not map_name in GAME_MODES_FOR_MAP or not gamemode_name in GAME_MODES_FOR_MAP[map_name]:
+                raise InvalidmapgamecomboError
+            map_name = self.checkGameMode(map_name, gamemode_name)
+            self.output.write('changelevel %s %s' % (map_name, gamemode_name))
 
     def checkGameMode(self, map_name, gamemode_name):
-        if gamemode_name in (('hunt',)):
+        if gamemode_name in ('hunt',):
             if not map_name.endswith('_hunt'):
-                map_name = map_name + '_hunt'
-        elif gamemode_name in (('checkpoint', 'outpost')):
+                map_name += '_hunt'
+        elif gamemode_name in ('checkpoint', 'outpost'):
             if not map_name.endswith('_coop'):
-                map_name = map_name + '_coop'
+                map_name += '_coop'
         return map_name
 
     def getPlayerPings(self, filter_client_ids=None):
@@ -1030,7 +1032,6 @@ class InsurgencyParser(Parser):
             return clients
 
     def getSafeAvailableMaps(self):
-
         """
         Return the available maps for the server, even if not in the map rotation list
         Non stock maps must be added to the xml file to be found
