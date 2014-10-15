@@ -39,9 +39,10 @@
 # 30/07/2014 - 1.3.4 - Fenix          - fixes for the new getWrap implementation
 # 29/08/2014 - 1.3.5 - 82ndab.Bravo17 - reduce min guid length to 8
 # 04/08/2014 - 1.4   - Fenix          - syntax cleanup
+# 15/10/2014 - 1.4.1 - 82ndab.Bravo17 - allow minimum guid length to be set in b3 xml, guid_length in b3 section
 
 __author__ = 'xlr8or'
-__version__ = '1.4'
+__version__ = '1.4.1'
 
 import b3.functions
 import b3.parsers.cod2
@@ -96,6 +97,11 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
         """
         self.patch_b3_admin_plugin()
         self.debug('Admin plugin has been patched')
+
+        if self.config.has_option('b3', 'guid_length'):
+            self._guidLength = self.config.getint('b3', 'guid_length')
+            self.info('Min guid length has been set to %s', self._guidLength)
+
     
     ####################################################################################################################
     ##                                                                                                                ##
