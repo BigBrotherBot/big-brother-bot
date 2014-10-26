@@ -18,6 +18,8 @@
 #
 # CHANGELOG
 #
+# 1.1.1 - update to server version R43
+#       - new server vars for "player ready" feature
 # 1.1   - syntax cleanup
 # 1.0.3 - rewrote import statements
 # 1.0.2 - forward server event player.onDisconnect to EVT_CLIENT_DISCONNECT_REASON
@@ -39,7 +41,7 @@ from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 
 __author__ = 'Courgette, ozon, Dwarfer'
-__version__ = '1.1'
+__version__ = '1.1.1'
 
 BF4_REQUIRED_VERSION = 150767
 
