@@ -167,6 +167,10 @@ MAP_NAME_BY_ID = {
     'XP3_Prpganda': 'Propaganda',
     'XP3_UrbanGdn': 'Lumphini Garden',
     'XP3_WtrFront': 'Sunken Dragon',
+    'XP4_Arctic': 'Operation Whiteout',
+    'XP4_SubBase': 'Hammerhead',
+    'XP4_Titan': 'Hangar 21',
+    'XP4_Wlkrftry': 'Giants Of Karelia',
 }
 
 MAP_ID_BY_NAME = dict()
@@ -436,6 +440,46 @@ GAME_MODES_BY_MAP_ID = {
         'Domination0',
         'CaptureTheFlag0',
         'Chainlink0'),
+    'XP4_Arctic': (
+        'ConquestLarge0',
+        'ConquestSmall0',
+        'Elimination0',
+        'Obliteration',
+        'RushLarge0',
+        'TeamDeathMatch0',
+        'SquadDeathMatch0',
+        'Domination0',
+        'CaptureTheFlag0'),
+    'XP4_SubBase': (
+        'ConquestLarge0',
+        'ConquestSmall0',
+        'Elimination0',
+        'Obliteration',
+        'RushLarge0',
+        'TeamDeathMatch0',
+        'SquadDeathMatch0',
+        'Domination0',
+        'CaptureTheFlag0'),
+    'XP4_Titan': (
+        'ConquestLarge0',
+        'ConquestSmall0',
+        'Elimination0',
+        'Obliteration',
+        'RushLarge0',
+        'TeamDeathMatch0',
+        'SquadDeathMatch0',
+        'Domination0',
+        'CaptureTheFlag0'),
+    'XP4_Wlkrftry': (
+        'ConquestLarge0',
+        'ConquestSmall0',
+        'Elimination0',
+        'Obliteration',
+        'RushLarge0',
+        'TeamDeathMatch0',
+        'SquadDeathMatch0',
+        'Domination0',
+        'CaptureTheFlag0'),
 }
 
 COMROSE_CHAT_NAME_BY_ID = {
