@@ -18,6 +18,8 @@
 #
 # CHANGELOG
 #
+# 03/11/2014 - 1.6.1 - Fenix      - updated plugin to use a default rate vale of 2mins is not specified in the
+#                                   plugin configuration file (previously plugin was not loading at all)
 # 31/08/2014 - 1.6   - Fenix      - syntax cleanup
 # 03/04/2014 - 1.5   - Fenix      - PEP8 coding standards
 # 29/09/2012 - 1.4   - Courgette  - new message keyword @regulars will run the Admin plugin !regulars command
@@ -37,7 +39,7 @@
 # 29/08/2005 - 1.1.0 - ThorN      - converted to use XML config
 
 __author__ = 'ThorN'
-__version__ = '1.6'
+__version__ = '1.6.1'
 
 import b3
 import os
