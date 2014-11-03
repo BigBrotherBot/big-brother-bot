@@ -204,7 +204,7 @@ class AdvPlugin(b3.plugin.Plugin):
             # remove existing crontab
             self.console.cron - self._cronTab
 
-        (m, s) = self._get_rate_minsec()
+        (m, s) = self._get_rate_minsec(self._rate)
         self._cronTab = b3.cron.PluginCronTab(self, self.adv, second=s, minute=m)
         self.console.cron + self._cronTab
 
@@ -362,21 +362,22 @@ class AdvPlugin(b3.plugin.Plugin):
             self._feeditemnr = 0
             return None
 
-    def _get_rate_minsec(self):
+    def _get_rate_minsec(self, rate):
         """
         Allow to define the rate in second by adding 's' at the end
+        :param rate: The rate string representation
         """
         seconds = 0
         minutes = '*'
-        if self._rate[-1] == 's':
+        if rate[-1] == 's':
             # rate is in seconds
-            s = self._rate[:-1]
+            s = rate[:-1]
             if int(s) > 59:
                 s = 59
             seconds = '*/%s' % s
         else:
-            minutes = '*/%s' % self._rate
-        self.debug('%s -> (%s,%s)' % (self._rate, minutes, seconds))
+            minutes = '*/%s' % rate
+        self.debug('%s -> (%s,%s)' % (rate, minutes, seconds))
         return minutes, seconds
 
     ####################################################################################################################
@@ -426,7 +427,7 @@ class AdvPlugin(b3.plugin.Plugin):
                 client.message('Current rate is every %s minutes' % self._rate)
         else:
             self._rate = data
-            (m, s) = self._get_rate_minsec()
+            (m, s) = self._get_rate_minsec(self._rate)
             self._cronTab.minute = m
             self._cronTab.second = s
             if self._rate[-1] == 's':
