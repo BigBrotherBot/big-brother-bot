@@ -10,24 +10,32 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
+
 import os
-from mock import Mock, patch
-from mockito import when
 import sys
 import unittest2 as unittest
-from b3 import TEAM_BLUE, TEAM_RED, TEAM_UNKNOWN, TEAM_SPEC
-from b3.config import XmlConfigParser, CfgConfigParser
+
+from mock import Mock
+from mock import patch
+from mock import call
+from mockito import when
+from b3 import TEAM_BLUE
+from b3 import TEAM_RED
+from b3 import TEAM_UNKNOWN
+from b3 import TEAM_SPEC
+from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 from b3.fake import FakeClient
 from b3.parsers.insurgency import InsurgencyParser
+from b3.parsers.insurgency import GAME_MODES_FOR_MAP
 from b3.plugins.admin import AdminPlugin
-
 from b3 import __file__ as b3_module__file__
 
 ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.ini"))
@@ -57,7 +65,6 @@ players : 1 humans, 10 bots (20/20 max) (not hibernating)
 L 08/28/2012 - 01:28:40: rcon from "11.222.111.222:4181": command "status"
 '''
 
-
 def client_equal(client_a, client_b):
     if client_a is None and client_b is not None:
         return False
@@ -69,11 +76,9 @@ def client_equal(client_a, client_b):
     return all(
         map(lambda x: getattr(client_a, x, None) == getattr(client_b, x, None), ('cid', 'guid', 'name', 'ip', 'ping')))
 
-#    return True
-
+    #return True
 
 WHATEVER = object()  # sentinel used in InsurgencyTestCase.assert_has_event
-
 
 class InsurgencyTestCase(unittest.TestCase):
     """
@@ -83,7 +88,6 @@ class InsurgencyTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         from b3.fake import FakeConsole
-
         InsurgencyParser.__bases__ = (FakeConsole,)
         # Now parser inheritance hierarchy is :
         # InsurgencyParser -> FakeConsole -> Parser
@@ -104,7 +108,6 @@ class InsurgencyTestCase(unittest.TestCase):
 
         self.queueEvent_patcher = patch.object(self.parser, "queueEvent", wraps=queue_event)
         self.queueEvent_mock = self.queueEvent_patcher.start()
-
         self.parser.startup()
 
     def tearDown(self):
@@ -169,8 +172,10 @@ class InsurgencyTestCase(unittest.TestCase):
                 self.fail("not expecting event %s" % (filter(event_match, self.evt_queue)))
 
     def output_write(self, *args, **kwargs):
-        """Used to override parser self.output.write method so we can control the response given to the 'status'
-        rcon command"""
+        """
+        Used to override parser self.output.write method so we can control the
+        response given to the 'status' rcon command
+        """
         if len(args) and args[0] == "status":
             if self.status_response is not None:
                 return self.status_response
@@ -186,11 +191,9 @@ class AdminTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         from b3.fake import FakeConsole
-
         InsurgencyParser.__bases__ = (FakeConsole,)
         # Now parser inheritance hierarchy is :
         # InsurgencyParser -> FakeConsole -> Parser
-
 
     def setUp(self):
         self.status_response = None  # defaults to STATUS_RESPONSE module attribute
@@ -200,16 +203,15 @@ class AdminTestCase(unittest.TestCase):
         self.parser.output = Mock()
         self.parser.output.write = Mock(wraps=sys.stdout.write)
         when(self.parser).is_sourcemod_installed().thenReturn(True)
-
         adminPlugin_conf = CfgConfigParser()
         adminPlugin_conf.load(ADMIN_CONFIG_FILE)
         adminPlugin = AdminPlugin(self.parser, adminPlugin_conf)
         adminPlugin.onLoadConfig()
         adminPlugin.onStartup()
         when(self.parser).getPlugin('admin').thenReturn(adminPlugin)
-
+        when(self.parser).getAllAvailableMaps().thenReturn(GAME_MODES_FOR_MAP.keys())
         self.parser.startup()
-
+        self.parser.patch_b3_admin_plugin() # seems that without this the test module doesn't patch the admin plugin
 
     def tearDown(self):
         if hasattr(self, "parser"):
@@ -218,30 +220,31 @@ class AdminTestCase(unittest.TestCase):
 
 
 class Test_gamelog_parsing(InsurgencyTestCase):
+
     def test_client_say(self):
         # GIVEN
         player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_BLUE)
         player.connects("3")
         # WHEN
         self.clear_events()
-        self.parser.parseLine(
-            '''L 04/01/2014 - 12:56:51: "courgette<3><STEAM_1:0:1111111><#Team_Security>" say "!pb @531 rule1"''')
+        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<3><STEAM_1:0:1111111><#Team_Security>" say "!pb @531 rule1"''')
         # THEN
         self.assert_has_event("EVT_CLIENT_SAY", "!pb @531 rule1", player)
 
 
 class Test_parser_other(InsurgencyTestCase):
+
     def test_getTeam(self):
         self.assertEqual(TEAM_RED, self.parser.getTeam('#Team_Security'))
         self.assertEqual(TEAM_BLUE, self.parser.getTeam('#Team_Insurgent'))
+        self.assertEqual(TEAM_SPEC, self.parser.getTeam('#Team_Spectators'))
         self.assertEqual(TEAM_UNKNOWN, self.parser.getTeam('#Team_Unassigned'))
 
-
 class FunctionalTest(AdminTestCase):
+
     def test_permban(self):
         # GIVEN
-        superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128,
-                                team=TEAM_UNKNOWN)
+        superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128, team=TEAM_UNKNOWN)
         superadmin.connects("1")
         bill = FakeClient(self.parser, name="bill", guid="guid_bill", team=TEAM_UNKNOWN)
         bill.connects("2")
@@ -249,15 +252,74 @@ class FunctionalTest(AdminTestCase):
         superadmin.says("!permban bill rule1")
         # THEN
         superadmin.says('!baninfo @%s' % bill.id)
-        self.assertListEqual(['Banned: bill (@2) has been added to banlist', 'bill has 1 active bans'],
+        self.assertListEqual(['Banned: bill (@2) has been added to banlist', 'bill has 1 active bans',], superadmin.message_history)
+
+    def test_map_with_no_parameters(self):
+        # GIVEN
+        superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128, team=TEAM_UNKNOWN)
+        superadmin.connects("1")
+        # WHEN
+        superadmin.says("!map")
+        # THEN
+        self.assertListEqual(["Fully supported map names are : " + ', '.join(m for m in GAME_MODES_FOR_MAP.keys()),
+                              "You can use these with the optional '-force' parameter, which will disable map/gamemode "
+                              "pair checking and will need a server restart if an invalid pairing is given:",
+                              "For more help, type !help map"],
                              superadmin.message_history)
 
+    def test_map_with_invalid_map_name(self):
+        # GIVEN
+        superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128, team=TEAM_UNKNOWN)
+        superadmin.connects("1")
+        # WHEN
+        superadmin.says("!map blargh blub")
+        # THEN
+        self.assertListEqual(["do you mean : buhriz, district, sinjar, siege, uprising, ministry, revolt, heights, "
+                              "contact, peak, panj, market ?"], superadmin.message_history)
+
+    def test_map_with_correct_parameters(self):
+         # GIVEN
+         superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128, team=TEAM_UNKNOWN)
+         superadmin.connects("1")
+         # WHEN
+         superadmin.says("!map market push")
+         # THEN
+         self.parser.output.write.assert_has_calls([call('changelevel market push')])
+
+    def test_map_with_invalid_map_gamemode_combo(self):
+         # GIVEN
+         superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128, team=TEAM_UNKNOWN)
+         superadmin.connects("1")
+         # WHEN
+         superadmin.says("!map buhriz ambush")
+         # THEN
+         self.assertListEqual(["buhriz cannot be played with gamemode ambush",
+                               "supported gamemodes are : " + ', '.join(g for g in GAME_MODES_FOR_MAP['buhriz'])],
+                               superadmin.message_history)
+
+    def test_map_with_invalid_map_gamemode_comboand_force(self):
+         # GIVEN
+         superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128, team=TEAM_UNKNOWN)
+         superadmin.connects("1")
+         # WHEN
+         superadmin.says("!map buhriz ambush -force")
+         # THEN
+         self.parser.output.write.assert_has_calls([call('changelevel buhriz ambush')])
+
+    def test_map_with_correct_parameters_and_added_suffix(self):
+         # GIVEN
+         superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128, team=TEAM_UNKNOWN)
+         superadmin.connects("1")
+         # WHEN
+         superadmin.says("!map district hunt")
+         # THEN
+         self.parser.output.write.assert_has_calls([call('changelevel district_hunt hunt')])
 
 class Test_getClientOrCreate(InsurgencyTestCase):
+
     def test_changing_team(self):
         # GIVEN
-        client = self.parser.getClientOrCreate(cid="2", guid="AAAAAAAAAAAA000000000000000", name="theName",
-                                               team="#Team_Security")
+        client = self.parser.getClientOrCreate(cid="2", guid="AAAAAAAAAAAA000000000000000", name="theName", team="#Team_Security")
         self.assertEqual(TEAM_RED, client.team)
 
         def assertTeam(excepted_team, new_team):
@@ -272,4 +334,3 @@ class Test_getClientOrCreate(InsurgencyTestCase):
         assertTeam(TEAM_RED, "f00")
         assertTeam(TEAM_RED, "#Team_Unassigned")
         assertTeam(TEAM_BLUE, "#Team_Insurgent")
-

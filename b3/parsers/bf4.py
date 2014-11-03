@@ -18,6 +18,8 @@
 #
 # CHANGELOG
 #
+# 1.1.1 - update to server version R43
+#       - new server vars for "player ready" feature
 # 1.1   - syntax cleanup
 # 1.0.3 - rewrote import statements
 # 1.0.2 - forward server event player.onDisconnect to EVT_CLIENT_DISCONNECT_REASON
@@ -39,9 +41,9 @@ from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 
 __author__ = 'Courgette, ozon, Dwarfer'
-__version__ = '1.1'
+__version__ = '1.1.1'
 
-BF4_REQUIRED_VERSION = 135082
+BF4_REQUIRED_VERSION = 150767
 
 BF4_PLAYER = 0              # normal player
 BF4_SPECTATOR = 1           # spectator which is not visible in the game for other player but visible as player for b3
@@ -505,6 +507,9 @@ class Bf4Parser(AbstractParser):
         'preset',                   # allows you to set the server to either normal, hardcore infantry or custom
         'unlockMode'                # which set of unlocks is available on an unranked server (all/common/stats/none)
         'ticketBleedRate'           # controls the rate of tickets drop
+        'roundPlayersReadyBypassTimer'  # <time> amount of seconds after which the ready screen is bypassed
+        'roundPlayersReadyMinCount'     # <count> minimum number of players per team which have to confirm ready state
+        'roundPlayersReadyPercent'  # <modifier:percent>
     )
 
     # gamemodes aliases {alias: actual game mode name}

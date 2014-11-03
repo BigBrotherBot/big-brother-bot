@@ -83,6 +83,7 @@
 #                                   EVT_CLIENT_THAWOUT_FINISHED, EVT_CLIENT_MELTED
 #                                 - set client.state to b3.STATE_ALIVE on Client Spawn
 # 17/09/2014 - 1.26.1 - Fenix     - added missing Freeze Tag gametype declaration (10) in defineGametype()
+# 02/10/2014 - 1.27   - Fenix     - fixed regression introduced in 1.25
 
 import b3
 import re
@@ -97,7 +98,7 @@ from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 
 __author__ = 'Courgette, Fenix'
-__version__ = '1.26.1'
+__version__ = '1.27'
 
 
 class Iourt42Client(Client):
@@ -1099,7 +1100,7 @@ class Iourt42Parser(Iourt41Parser):
             self.say(fullreason)
 
         if admin:
-            admin.message('^7Banned^7: ^1%s^7 (^2@%s^7)' % (client.exactname, client.id))
+            admin.message('^7Banned^7: ^1%s^7 (^2@%s^7)' % (client.exactName, client.id))
             admin.message('^7His last ip (^1%s^7) has been added to banlist' % client.ip)
 
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN', data={'reason': reason, 'admin': admin}, client=client))

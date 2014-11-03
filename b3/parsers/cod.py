@@ -68,9 +68,10 @@
 #                                        - correctly initialize variables before usage
 # 30/07/2014 - 1.4.32   - Fenix          - fixes for the new getWrap implementation
 # 03/08/2014 - 1.5      - Fenix          - syntax cleanup
+# 15/10/2014 - 1.5.1    - 82ndab.Bravo17 - show current minimum guid length if one that is too short is found
 
 __author__ = 'ThorN, xlr8or'
-__version__ = '1.5'
+__version__ = '1.5.1'
 
 
 import b3
@@ -411,7 +412,7 @@ class CodParser(AbstractParser):
         name = match.group('name')
         if len(codguid) < self._guidLength:
             # invalid guid
-            self.verbose2('Invalid GUID: %s' % codguid)
+            self.verbose2('Invalid GUID: %s. GUID length set to %s' % (codguid, self._guidLength))
             codguid = None
 
         client = self.getClient(match)
