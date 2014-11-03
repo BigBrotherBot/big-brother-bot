@@ -118,7 +118,7 @@ class AdvPlugin(b3.plugin.Plugin):
     _cronTab = None
     _msg = None
     _fileName = None
-    _rate = None
+    _rate = '2'
     _feed = 'http://forum.bigbrotherbot.net/news-2/?type=rss;action=.xml'
     _feedpre = u'News: '
     _feedmaxitems = 5
@@ -161,8 +161,7 @@ class AdvPlugin(b3.plugin.Plugin):
             self._rate = self.config.get('settings', 'rate')
             self.debug('loaded settings/rate: %s' % self._rate)
         except NoOptionError:
-            self.warning('could not find settings/max_level in config file')
-            return False
+            self.warning('could not find settings/max_level in config file, using default: 2')
 
         if self.config.has_option('settings', 'ads'):
             self._fileName = self.console.getAbsolutePath(self.config.get('settings', 'ads'))
