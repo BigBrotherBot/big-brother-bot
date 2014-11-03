@@ -124,14 +124,14 @@ class Test_default_config(AdvTestCase):
 
     def test_empty(self):
         self.init_plugin("""<configuration plugin="adv" />""")
-        self.assertIsNone(self.p._rate)
+        self.assertEqual(self.p._rate, '2')
         self.assertIsNone(self.p._fileName)
         self.assertEqual(0, len(self.p._msg.items))
         self.assertEqual("http://forum.bigbrotherbot.net/news-2/?type=rss;action=.xml", self.p._feed)
         self.assertEqual("News: ", self.p._feedpre)
-        self.assertEqual(5, self.p._feedmaxitems)
-        self.assertEqual('News: ', self.p._feedpre)
-        self.assertIsNone(self.p._cronTab)
+        self.assertEqual(4, self.p._feedmaxitems)   # changed to 4 since plugin configuration loading is not stopped
+        self.assertEqual('News: ', self.p._feedpre) # by empty rate anymore, so maxfeed is reduced by 1 unit
+        self.assertIsNotNone(self.p._cronTab)
 
     def test_rate_nominal(self):
         self.init_plugin("""\
