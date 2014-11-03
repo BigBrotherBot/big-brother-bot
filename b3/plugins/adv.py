@@ -18,6 +18,8 @@
 #
 # CHANGELOG
 #
+# 03/11/2014 - 1.6.1 - Fenix      - updated plugin to use a default rate vale of 2mins is not specified in the
+#                                   plugin configuration file (previously plugin was not loading at all)
 # 31/08/2014 - 1.6   - Fenix      - syntax cleanup
 # 03/04/2014 - 1.5   - Fenix      - PEP8 coding standards
 # 29/09/2012 - 1.4   - Courgette  - new message keyword @regulars will run the Admin plugin !regulars command
@@ -37,7 +39,7 @@
 # 29/08/2005 - 1.1.0 - ThorN      - converted to use XML config
 
 __author__ = 'ThorN'
-__version__ = '1.6'
+__version__ = '1.6.1'
 
 import b3
 import os
@@ -118,7 +120,7 @@ class AdvPlugin(b3.plugin.Plugin):
     _cronTab = None
     _msg = None
     _fileName = None
-    _rate = None
+    _rate = '2'
     _feed = 'http://forum.bigbrotherbot.net/news-2/?type=rss;action=.xml'
     _feedpre = u'News: '
     _feedmaxitems = 5
@@ -161,8 +163,7 @@ class AdvPlugin(b3.plugin.Plugin):
             self._rate = self.config.get('settings', 'rate')
             self.debug('loaded settings/rate: %s' % self._rate)
         except NoOptionError:
-            self.warning('could not find settings/max_level in config file')
-            return False
+            self.warning('could not find settings/max_level in config file, using default: 2')
 
         if self.config.has_option('settings', 'ads'):
             self._fileName = self.console.getAbsolutePath(self.config.get('settings', 'ads'))
@@ -205,7 +206,7 @@ class AdvPlugin(b3.plugin.Plugin):
             # remove existing crontab
             self.console.cron - self._cronTab
 
-        (m, s) = self._get_rate_minsec()
+        (m, s) = self._get_rate_minsec(self._rate)
         self._cronTab = b3.cron.PluginCronTab(self, self.adv, second=s, minute=m)
         self.console.cron + self._cronTab
 
@@ -363,21 +364,22 @@ class AdvPlugin(b3.plugin.Plugin):
             self._feeditemnr = 0
             return None
 
-    def _get_rate_minsec(self):
+    def _get_rate_minsec(self, rate):
         """
         Allow to define the rate in second by adding 's' at the end
+        :param rate: The rate string representation
         """
         seconds = 0
         minutes = '*'
-        if self._rate[-1] == 's':
+        if rate[-1] == 's':
             # rate is in seconds
-            s = self._rate[:-1]
+            s = rate[:-1]
             if int(s) > 59:
                 s = 59
             seconds = '*/%s' % s
         else:
-            minutes = '*/%s' % self._rate
-        self.debug('%s -> (%s,%s)' % (self._rate, minutes, seconds))
+            minutes = '*/%s' % rate
+        self.debug('%s -> (%s,%s)' % (rate, minutes, seconds))
         return minutes, seconds
 
     ####################################################################################################################
@@ -427,7 +429,7 @@ class AdvPlugin(b3.plugin.Plugin):
                 client.message('Current rate is every %s minutes' % self._rate)
         else:
             self._rate = data
-            (m, s) = self._get_rate_minsec()
+            (m, s) = self._get_rate_minsec(self._rate)
             self._cronTab.minute = m
             self._cronTab.second = s
             if self._rate[-1] == 's':
