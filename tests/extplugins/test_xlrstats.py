@@ -21,18 +21,21 @@ import os
 from textwrap import dedent
 from mock import Mock
 from mock import patch
-from mock import call
-from mockito import when, mock
-from b3 import __file__ as b3_module__file__, TEAM_RED, TEAM_BLUE
+from mockito import when
+from mockito import mock
+from b3 import __file__ as b3_module__file__
+from b3 import TEAM_RED
+from b3 import TEAM_BLUE
 from b3.config import CfgConfigParser
-from b3.extplugins.xlrstats import XlrstatsPlugin, __file__ as xlrstats__file__
-from b3.plugins.admin import AdminPlugin, Command
-from tests import B3TestCase, logging_disabled
+from b3.extplugins.xlrstats import XlrstatsPlugin
+from b3.extplugins.xlrstats import __file__ as xlrstats__file__
 from b3.fake import FakeClient
+from b3.plugins.admin import AdminPlugin
+from tests import B3TestCase
+from tests import logging_disabled
 
 DEFAULT_XLRSTATS_CONFIG_FILE = os.path.join(os.path.dirname(xlrstats__file__), 'conf/plugin_xlrstats.ini')
 DEFAULT_ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.ini"))
-
 
 # Setup the logging level we'd like to be spammed with during the tests
 LOGGER = logging.getLogger('output')
@@ -248,6 +251,30 @@ class Test_cmd_xlrstats(XlrstatsTestCase):
         self.p1.says("!xlrstats P2")
         # THEN
         self.assertEqual(['XLR Stats: P2 : K 0 D 0 TK 0 Ratio 0.00 Skill 1000.00'], self.p1.message_history)
+
+
+class Test_cmd_xlrid(XlrstatsTestCase):
+
+    def setUp(self):
+        XlrstatsTestCase.setUp(self)
+        with logging_disabled():
+            self.init()
+            self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID", groupBits=1)
+            self.p1.connects("1")
+
+    def test_no_parameters(self):
+        # WHEN
+        self.p1.says("!xlrid")
+        # THEN
+        self.assertEqual(['Invalid/missing data, try !help xlrid'], self.p1.message_history)
+
+    def test_with_parameters(self):
+        # WHEN
+        self.p1.says("!xlrid 12345")
+        pstats = self.p.get_PlayerStats(self.p1)
+        # THEN
+        self.assertEqual('12345', pstats.id_token)
+        self.assertEqual(['Token saved!'], self.p1.message_history)
 
 
 class Test_kill(XlrstatsTestCase):
