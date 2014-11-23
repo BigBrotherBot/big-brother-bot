@@ -48,6 +48,7 @@
 # 04-09-2014 - 3.0.0-beta.10 - Fenix          - make use of data binding in SQL queries: fix issue #151
 #                                             - make use of the client 'bot' attribute to identify BOT clients: do not
 #                                               mess with GUIDs since that's already done in parsers (where it should be)
+# 23-11-2014 - 3.0.0-beta.11 - Fenix          - added requiresConfigFile = False attribute to Ctime and XlrstatsHistory subplugins
 
 
 # This section is DoxuGen information. More information on how to comment your code
@@ -57,7 +58,7 @@
 # XLRstats Real Time playerstats plugin
 
 __author__ = 'xlr8or & ttlogic'
-__version__ = '3.0.0-beta.10'
+__version__ = '3.0.0-beta.11'
 
 # Version = major.minor.patches(-development.version)
 
@@ -2062,6 +2063,7 @@ class XlrstatshistoryPlugin(b3.plugin.Plugin):
     This is a helper class/plugin that saves history snapshots
     It can not be called directly or separately from the XLRstats plugin!
     """
+    requiresConfigFile = False
     _cronTab = None
     _cronTabMonth = None
     _cronTabWeek = None
@@ -2222,6 +2224,7 @@ class CtimePlugin(b3.plugin.Plugin):
     This is a helper class/plugin that saves client join and disconnect time info
     It can not be called directly or separately from the XLRstats plugin!
     """
+    requiresConfigFile = False
     _clients = {}
     _cronTab = None
     _max_age_in_days = 31
