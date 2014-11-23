@@ -2062,6 +2062,7 @@ class XlrstatshistoryPlugin(b3.plugin.Plugin):
     This is a helper class/plugin that saves history snapshots
     It can not be called directly or separately from the XLRstats plugin!
     """
+    requiresConfigFile = False
     _cronTab = None
     _cronTabMonth = None
     _cronTabWeek = None
@@ -2222,6 +2223,7 @@ class CtimePlugin(b3.plugin.Plugin):
     This is a helper class/plugin that saves client join and disconnect time info
     It can not be called directly or separately from the XLRstats plugin!
     """
+    requiresConfigFile = False
     _clients = {}
     _cronTab = None
     _max_age_in_days = 31
