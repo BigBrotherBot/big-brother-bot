@@ -45,6 +45,11 @@
 #                                     - fixed changeMap method declaration so it respect Parser's method inheritence
 #                                     - fixed suggestion list not being printed when !map command is not able to select
 #                                       a valid mapname through getMapsSoundingLike
+# 2014/12/11 - 0.7.2 - 82ndab-Bravo17 - Changed handling of coop and hunt map names to allow for non-standardized ones -
+#                                     - eg mapname_coop_v2
+#                                     - use suggested map name when only one suggestion is given on map change
+#                                     - show map and gametype being changed to for 5 seconds before change
+#                                     - don't show BOTs in !list for coop games
 
 import re
 import time
@@ -66,7 +71,7 @@ from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '0.7.1'
+__version__ = '0.7.2'
 
 
 # GAME SETUP
@@ -845,24 +850,28 @@ class InsurgencyParser(Parser):
         Load a given map/level
         Return a list of suggested map names in cases it fails to recognize the map that was provided.
         """
-        rv = self.getMapsSoundingLike(map_name, force)
-        if not isinstance(rv, basestring):
-            return rv
+        map_name = self.getMapsSoundingLike(map_name, force)
+        if not isinstance(map_name, basestring):
+            return map_name
         elif force:
             map_name = self.checkGameMode(map_name, gamemode_name)
+            self.saybig('Changing map to: %s - %s' % (map_name, gamemode_name))
+            time.sleep(5)
             self.output.write('changelevel %s %s' % (map_name, gamemode_name))
         else:
             if not map_name in GAME_MODES_FOR_MAP or not gamemode_name in GAME_MODES_FOR_MAP[map_name]:
                 raise InvalidmapgamecomboError
             map_name = self.checkGameMode(map_name, gamemode_name)
+            self.saybig('Changing map to: %s - %s' % (map_name, gamemode_name))
+            time.sleep(5)
             self.output.write('changelevel %s %s' % (map_name, gamemode_name))
 
     def checkGameMode(self, map_name, gamemode_name):
         if gamemode_name in ('hunt',):
-            if not map_name.endswith('_hunt'):
+            if map_name.find ('_hunt') == -1:
                 map_name += '_hunt'
         elif gamemode_name in ('checkpoint', 'outpost'):
-            if not map_name.endswith('_coop'):
+            if map_name.find ('_coop') == -1:
                 map_name += '_coop'
         return map_name
 
@@ -967,13 +976,15 @@ class InsurgencyParser(Parser):
         May return None
         """
         bot = False
+        hide = False
         if guid == 'BOT':
             guid += str(cid)
             bot = True
+            hide = True
 
         client = self.clients.getByCID(cid)
         if client is None:
-            client = self.clients.newClient(cid, guid=guid, name=name, bot=bot, team=TEAM_UNKNOWN)
+            client = self.clients.newClient(cid, guid=guid, name=name, bot=bot, hide=hide, team=TEAM_UNKNOWN)
             client.last_update_time = time.time()
         else:
             if name:
