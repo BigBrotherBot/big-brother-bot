@@ -18,6 +18,9 @@
 #
 # CHANGELOG
 #
+# 2014/11/15 - 1.32    - 82ndab-Bravo17 - Added new command longlist that does a list with one player per line
+#                                       - and cid first. Allows you to see players with clever unicode names that
+#                                       - otherwise mess up the normal list command.
 # 2014/09/06 - 1.31.1  - Fenix          - updated cmd_pluginfo to work with the new b3.ini configuration file format
 # 2014/08/30 - 1.31    - Fenix          - syntax cleanup
 #                                       - improved debug messages in plugin configuration file loading
@@ -123,7 +126,7 @@
 #                                       - added ci command
 #                                       - added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.31.1'
+__version__ = '1.32'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon, Fenix'
 
 import re
@@ -192,6 +195,7 @@ class AdminPlugin(b3.plugin.Plugin):
         "groups_in": "^7%s^7 is in groups %s",
         "say": "^7%s^7: %s",
         "player_id": "^7%s [^2%s^7]",
+        "player_id_reverse":  "[^2%s^7] ^7%s^7",
         "seen": "^7%s ^7was last seen on %s",
         "help_no_command": "^7Command not found %s",
         "lookup_found": "^7[^2@%s^7] %s^7 [^3%s^7]",
@@ -1021,6 +1025,19 @@ class AdminPlugin(b3.plugin.Plugin):
         cmd.sayLoudOrPM(client, ', '.join(names))
         return True
 
+
+    def doLonglist(self, client, cmd):
+        """
+        List online players one line at a time.
+        :param client: The client who launched the !list command
+        :param cmd: The command object instance for sayLoudOrPM method invoke
+        """
+        names = []
+        for c in self.console.clients.getClientsByLevel():
+            clientinfo = self.getMessage('player_id_reverse', c.cid, c.name)
+            cmd.sayLoudOrPM(client, clientinfo)
+        return True
+
     def sayMany(self, msg, times=5, delay=1):
         """
         Print a message to all the players.
@@ -1482,6 +1499,12 @@ class AdminPlugin(b3.plugin.Plugin):
         - list all connected players
         """
         thread.start_new_thread(self.doList, (client, cmd))
+
+    def cmd_longlist(self, data, client, cmd=None):
+        """
+        - list all connected players one line at a time, helps find 'funny' unicode names
+        """
+        thread.start_new_thread(self.doLonglist, (client, cmd))
 
     def cmd_regulars(self, data, client, cmd=None):
         """

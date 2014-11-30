@@ -48,6 +48,7 @@
 # 04-09-2014 - 3.0.0-beta.10 - Fenix          - make use of data binding in SQL queries: fix issue #151
 #                                             - make use of the client 'bot' attribute to identify BOT clients: do not
 #                                               mess with GUIDs since that's already done in parsers (where it should be)
+# 23-11-2014 - 3.0.0-beta.11 - Fenix          - added requiresConfigFile = False attribute to Ctime and XlrstatsHistory subplugins
 
 
 # This section is DoxuGen information. More information on how to comment your code
@@ -57,7 +58,7 @@
 # XLRstats Real Time playerstats plugin
 
 __author__ = 'xlr8or & ttlogic'
-__version__ = '3.0.0-beta.10'
+__version__ = '3.0.0-beta.11'
 
 # Version = major.minor.patches(-development.version)
 
@@ -683,8 +684,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         else:
             client_id = client.id
 
-        q = """SELECT * from %s WHERE client_id = ? LIMIT 1""" % self.playerstats_table
-        cursor = self.query(q, (client_id,))
+        q = """SELECT * from %s WHERE client_id = %s LIMIT 1""" % (self.playerstats_table, client_id)
+        cursor = self.query(q)
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s = PlayerStats()
@@ -726,8 +727,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def get_WeaponStats(self, name):
         s = WeaponStats()
-        q = """SELECT * from %s WHERE name = ? LIMIT 1""" % self.weaponstats_table
-        cursor = self.query(q, (name,))
+        q = """SELECT * from %s WHERE name = '%s' LIMIT 1""" % (self.weaponstats_table, name)
+        cursor = self.query(q)
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
@@ -743,8 +744,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def get_Bodypart(self, name):
         s = Bodyparts()
-        q = """SELECT * from %s WHERE name = ? LIMIT 1""" % self.bodyparts_table
-        cursor = self.query(q, (name,))
+        q = """SELECT * from %s WHERE name = '%s' LIMIT 1""" % (self.bodyparts_table, name)
+        cursor = self.query(q)
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
@@ -761,8 +762,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     def get_MapStats(self, name):
         assert name is not None
         s = MapStats()
-        q = """SELECT * from %s WHERE name = ? LIMIT 1""" % self.mapstats_table
-        cursor = self.query(q, (name,))
+        q = """SELECT * from %s WHERE name = '%s' LIMIT 1""" % (self.mapstats_table, name)
+        cursor = self.query(q)
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
@@ -779,8 +780,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def get_WeaponUsage(self, weaponid, playerid):
         s = WeaponUsage()
-        q = """SELECT * from %s WHERE weapon_id = ? AND player_id = ? LIMIT 1""" % self.weaponusage_table
-        cursor = self.query(q, (weaponid, playerid))
+        q = """SELECT * from %s WHERE weapon_id = %s AND player_id = %s LIMIT 1""" % (self.weaponusage_table, weaponid, playerid)
+        cursor = self.query(q)
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
@@ -800,8 +801,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def get_Opponent(self, killerid, targetid):
         s = Opponents()
-        q = """SELECT * from %s WHERE killer_id = ? AND target_id = ? LIMIT 1""" % self.opponents_table
-        cursor = self.query(q, (killerid, targetid))
+        q = """SELECT * from %s WHERE killer_id = %s AND target_id = %s LIMIT 1""" % (self.opponents_table, killerid, targetid)
+        cursor = self.query(q)
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
@@ -818,8 +819,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def get_PlayerBody(self, playerid, bodypartid):
         s = PlayerBody()
-        q = """SELECT * from %s WHERE bodypart_id = ? AND player_id = ? LIMIT 1""" % self.playerbody_table
-        cursor = self.query(q, (bodypartid, playerid))
+        q = """SELECT * from %s WHERE bodypart_id = %s AND player_id = %s LIMIT 1""" % (self.playerbody_table, bodypartid, playerid)
+        cursor = self.query(q)
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
@@ -851,8 +852,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 return None
 
         s = PlayerMaps()
-        q = """SELECT * from %s WHERE map_id = ? AND player_id = ? LIMIT 1""" % self.playermaps_table
-        cursor = self.query(q, (mapid, playerid))
+        q = """SELECT * from %s WHERE map_id = %s AND player_id = %s LIMIT 1""" % (self.playermaps_table, mapid, playerid)
+        cursor = self.query(q)
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
@@ -873,8 +874,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def get_ActionStats(self, name):
         s = ActionStats()
-        q = """SELECT * from %s WHERE name = ? LIMIT 1""" % self.actionstats_table
-        cursor = self.query(q, (name,))
+        q = """SELECT * from %s WHERE name = '%s' LIMIT 1""" % (self.actionstats_table, name)
+        cursor = self.query(q)
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
@@ -888,8 +889,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
     def get_PlayerActions(self, playerid, actionid):
         s = PlayerActions()
-        q = """SELECT * from %s WHERE action_id = ? AND player_id = ? LIMIT 1""" % self.playeractions_table
-        cursor = self.query(q, (actionid, playerid))
+        q = """SELECT * from %s WHERE action_id = %s AND player_id = %s LIMIT 1""" % (self.playeractions_table, actionid, playerid)
+        cursor = self.query(q)
         if cursor and not cursor.EOF:
             r = cursor.getRow()
             s.id = r['id']
@@ -2062,6 +2063,7 @@ class XlrstatshistoryPlugin(b3.plugin.Plugin):
     This is a helper class/plugin that saves history snapshots
     It can not be called directly or separately from the XLRstats plugin!
     """
+    requiresConfigFile = False
     _cronTab = None
     _cronTabMonth = None
     _cronTabWeek = None
@@ -2222,6 +2224,7 @@ class CtimePlugin(b3.plugin.Plugin):
     This is a helper class/plugin that saves client join and disconnect time info
     It can not be called directly or separately from the XLRstats plugin!
     """
+    requiresConfigFile = False
     _clients = {}
     _cronTab = None
     _max_age_in_days = 31

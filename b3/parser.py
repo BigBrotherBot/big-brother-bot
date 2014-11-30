@@ -19,6 +19,7 @@
 # CHANGELOG
 #
 # 2014/09/06 - 1.38   - Fenix           - updated parser to load configuration from the new .ini format
+# 2014/11/30 - 1.37.3 - Fenix           - correctly remove B3 PID file upon parser shutdown (Linux systems only)
 # 2014/09/02 - 1.37.2 - Fenix           - moved _first_line_code attribute in _settings['line_color_prefix']
 #                                       - allow customization of _settings['line_color_prefix'] from b3.xml:
 #                                         setting 'line_color_prefix' in section 'server'
@@ -1252,8 +1253,36 @@ class Parser(object):
 
                 self.bot('Shutting down database connections...')
                 self.storage.shutdown()
+                self.finalize()
         except Exception, e:
             self.error(e)
+
+    def finalize(self):
+        """
+        Commons operation to be done on B3 shutdown.
+        Called internally by b3.parser.shutdown()
+        """
+        if os.name == 'posix':
+
+            def right_cut(string, cut):
+                if string.endswith(cut):
+                    return string[:-len(cut)]
+                return string
+
+            b3_name = os.path.basename(self.config.fileName)
+            for val in ('.xml', '.ini'):
+                b3_name = right_cut(b3_name, val)
+
+            pid_path = os.path.join(right_cut(sys.path[0], '/b3'), 'scripts', 'pid', '%s.pid' % b3_name)
+            self.bot('Looking for PID file: %s ...' % pid_path)
+            if os.path.isfile(pid_path):
+                try:
+                    self.bot('Removing PID file: %s ...' % pid_path)
+                    os.unlink(pid_path)
+                except Exception, e:
+                    self.error('Unable to not remove PID file: %s' % e)
+            else:
+                self.bot('PID file not found')
 
     def getWrap(self, text):
         """
