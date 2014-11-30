@@ -18,12 +18,13 @@ The script provides a set of tools that will allow you to:
 
 * Linux system (tested on Debian, Ubuntu)
 * Bash shell
+* [Screen](http://linux.die.net/man/1/screen) window manager
 
 In order for B3 to work correctly using this script you need to setup a Linux system user that will run B3. Such user
 will have to be proprietory of all the B3 files. If for example your system user is **b3** and belongs to the group **users** 
 you can then change ownership of all the B3 files to belong to the **b3** user by typing the following in the Linux console: 
-`chown -R b3:users /path-to.main-b3-directory`. For information on how to add a Linux system user, please refer to
-the [man page](http://www.linuxcommand.org/man_pages/useradd8.html)
+`chown -R b3:users /path/to/main/b3/directory`. For information on how to add a Linux system user, please refer to
+the [man page](http://linux.die.net/man/8/useradd)
 
 ### How to use
 
@@ -71,10 +72,10 @@ start both the **tdm** and **ctf** B3 instances.
 
 * You can enable logging by setting the `LOG_ENABLED` variable to `1`: log will be available in `b3/scripts/log/b3_init.log`
   and will contain the console output produced by this very script
-* You can turn off bash colors setting the `USE_COLORS` variable to `0`: while their usage is adviced for a faster reading
-  and undesrstanding of the console output, some people may not like them and thus I left in the possibility to turn them off
+* You can turn off bash colors setting the `USE_COLORS` variable to `0`: while the usage is adviced for a fast reading
+  and understanding of the console output, some people may not like them and thus I left in the possibility to turn them off
 * If you want to be able to control all your B3 instances no matter the current working directory you can setup an alias
-  in your user `.bash_profile` file: `alias b3='/path-to-main-b3-directory/scripts/b3.sh'`. You can then, as an example,
+  in your user `.bash_profile` file: `alias b3='/path/to/main/b3/directory/scripts/b3.sh'`. You can then, as an example,
   check the status of all your B3 instances by typing `b3 status` no matter the directory you are in
 
 _[www.bigbrotherbot.net](http://www.bigbrotherbot.net/) (2005-2011)_

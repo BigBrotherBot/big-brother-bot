@@ -2,8 +2,8 @@
 
 # Big Brother Bot (B3) Management - http://www.bigbrotherbot.net
 # Maintainer: Daniele Pantaleone <fenix@bigbrotherbot.net>
-# App Version: 0.1
-# Last Edit: 09/11/2014
+# App Version: 0.2
+# Last Edit: 30/11/2014
 
 ### BEGIN INIT INFO
 # Provides:          b3
@@ -22,13 +22,14 @@
 # -------------------------------------------------------------------------------------------------------------------- #
 #                                                                                                                      #
 #  2014-11-09 - 0.1 - initial version                                                                                  #
+#  2014-11-30 - 0.2 - changed some file paths used for PID storage and B3 autodiscover                                 #
 #                                                                                                                      #
 ########################################################################################################################
 
 ### SETUP
 DATE_FORMAT="%a, %b %d %Y - %r"
 LOG_ENABLED="0"
-LOG_PATH="../scripts/log/b3_init.log"
+LOG_PATH="log/b3_init.log"
 USE_COLORS="1"
 
 ### DO NOT MODIFY!!!
@@ -36,7 +37,7 @@ B3_RUN="../b3_run.py"
 COMMON_PREFIX="b3_"
 CONFIG_PATH="../b3/conf"
 CONFIG_EXT=(".ini" ".xml")
-PID_PATH="../scripts/pid"
+PID_PATH="pid"
 PID_EXT=".pid"
 
 ########################################################################################################################
@@ -84,9 +85,9 @@ function p_log()  {
 #               join / var local tmp    # var/local/tmp
 #               join , "${FOO[@]}"      # a,b,c
 function join() { 
-    local IFS="$1"; 
+    local IFS="${1}";
     shift; 
-    echo "$*"; 
+    echo "${*}";
 }
 
 # @name b3_conf_path
