@@ -33,6 +33,7 @@
 # 2014/01/20 - 1.2.6 - ozon      - add json output
 # 2014/05/25 - 1.2.7 - Courgette - fix crash when command description is an empty string
 # 2014/08/31 - 1.2.8 - Fenix     - syntax cleanup
+# 2014/11/30 - 1.2.9 - xlr8or    - fix template checking in load_html_template()
 
 """ 
 This module will generate a user documentation depending
@@ -40,7 +41,7 @@ on current config
 """
 
 __author__ = 'Courgette, ozon'
-__version__ = '1.2.8'
+__version__ = '1.2.9'
 
 import datetime
 import os
@@ -125,11 +126,15 @@ class DocBuilder:
         Loads template file from the file system.
         """
         # build template file path
-        _template_path = os.path.join(getConfPath(), 'conf/templates/autodoc/')
-        if not os.path.isfile(_template_path):
-            _template_path = os.path.join(getB3Path(), 'conf/templates/autodoc/')
-
+        _template_path = os.path.join(getConfPath(), 'templates/autodoc/')
         _template_file = _template_path + template
+        self._console.verbose('AUTODOC: looking for %s' % _template_file)
+        if not os.path.isfile(_template_file):
+            _template_path = os.path.join(getB3Path(), 'conf/templates/autodoc/')
+            _template_file = _template_path + template
+            self._console.verbose('AUTODOC: looking for %s' % _template_file)
+
+        self._console.debug('AUTODOC: Template = %s' % _template_file)
         # open template
         with open(_template_file, 'r') as template_file:
                     template_data = template_file.read()
