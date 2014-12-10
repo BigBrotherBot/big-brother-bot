@@ -1724,7 +1724,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         _acceptable_average = self.defaultskill + 100
         _factor_decimals = 6
-        # self.verbose('%s; %s; %s' % (r['sum_skill'], _acceptable_average, r['count']))
+        # self.verbose('%s; %s; %s' % (r['sum_skill'], _acceptable_average, r['cnt']))
         _surplus = r['sum_skill'] - (r['cnt'] * _acceptable_average)
         _correction = _surplus / r['cnt']
         _correction_factor = (r['cnt'] * _acceptable_average) / r['sum_skill']
@@ -1734,7 +1734,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         self.verbose('-   Players of last %d days' % self._auto_correct_ignore_days)
         self.verbose('-   Players with minimal %d confrontations' % self.Kswitch_confrontations)
         self.verbose('------------------------------------------')
-        self.verbose('- Total players participating: %d' % r['count'])
+        self.verbose('- Total players participating: %d' % r['cnt'])
         self.verbose('- Total skill points in pool: %.2f' % r['sum_skill'])
         self.verbose('------------------------------------------')
         self.verbose('- Highest skill in pool: %.2f' % r['max_skill'])
