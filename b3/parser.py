@@ -18,6 +18,8 @@
 #
 # CHANGELOG
 #
+# 2014/12/11 - 1.38   - Fenix           - added plugin updater loading in loadArbPlugins
+#                                       - make use of the newly declared function b3.functions.right_cut instead
 # 2014/11/30 - 1.37.3 - Fenix           - correctly remove B3 PID file upon parser shutdown (Linux systems only)
 # 2014/09/02 - 1.37.2 - Fenix           - moved _first_line_code attribute in _settings['line_color_prefix']
 #                                       - allow customization of _settings['line_color_prefix'] from b3.xml:
@@ -138,7 +140,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.37.3'
+__version__ = '1.38'
 
 import os
 import sys
@@ -162,11 +164,14 @@ import b3.parsers.q3a.rcon
 import b3.timezones
 
 from ConfigParser import NoOptionError
+from ConfigParser import NoSectionError
 from b3.clients import Clients
 from b3.clients import Group
 from b3.functions import getModule
 from b3.functions import vars2printf
+from b3.functions import main_is_frozen
 from b3.decorators import memoize
+from b3.functions import right_cut
 from textwrap import TextWrapper
 
 try:
@@ -797,11 +802,25 @@ class Parser(object):
             parser_mod.screen.flush()
 
         if 'publist' not in self._pluginOrder:
-            #self.debug('publist not found!')
             try:
                 loadPlugin(self, 'publist')
             except Exception, err:
-                self.verbose('Error loading plugin publist', exc_info=err)
+                self.error('Could not load plugin publist', exc_info=err)
+
+        if not main_is_frozen():
+            # load the updater plugin if we are running B3 from sources
+            if 'updater' not in self._pluginOrder:
+                try:
+                    update_channel = self.config.get('update', 'channel')
+                    if update_channel == 'skip':
+                        self.debug('Not loading plugin updater: update channel not specified in B3 configuration file')
+                    else:
+                        try:
+                            loadPlugin(self, 'updater')
+                        except Exception, err:
+                            self.error('Could not load plugin updater', exc_info=err)
+                except (NoSectionError, NoOptionError):
+                    self.debug('Not loading plugin updater: update section missing in B3 main configuration file')
 
         if self.config.has_option('server', 'game_log'):
             game_log = self.config.get('server', 'game_log')
@@ -1269,11 +1288,6 @@ class Parser(object):
         """
         if os.name == 'posix':
 
-            def right_cut(string, cut):
-                if string.endswith(cut):
-                    return string[:-len(cut)]
-                return string
-
             b3_name = os.path.basename(self.config.fileName)
             for val in ('.xml', '.ini'):
                 b3_name = right_cut(b3_name, val)
@@ -1285,7 +1299,7 @@ class Parser(object):
                     self.bot('Removing PID file: %s ...' % pid_path)
                     os.unlink(pid_path)
                 except Exception, e:
-                    self.error('Unable to not remove PID file: %s' % e)
+                    self.error('UCould not remove PID file: %s' % e)
             else:
                 self.bot('PID file not found')
 
