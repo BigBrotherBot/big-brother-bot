@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2014/12/13 - 1.38.1 - Fenix           - moved b3.parser.finalize() call in b3.parser.die() from b3.parser.shutdown()
 # 2014/12/11 - 1.38   - Fenix           - added plugin updater loading in loadArbPlugins
 #                                       - make use of the newly declared function b3.functions.right_cut instead
 # 2014/11/30 - 1.37.3 - Fenix           - correctly remove B3 PID file upon parser shutdown (Linux systems only)
@@ -566,6 +567,7 @@ class Parser(object):
         Stop B3 with the die exit status (222)
         """
         self.shutdown()
+        self.finalize()
         time.sleep(5)
         sys.exit(222)
 
@@ -1277,14 +1279,13 @@ class Parser(object):
 
                 self.bot('Shutting down database connections...')
                 self.storage.shutdown()
-                self.finalize()
         except Exception, e:
             self.error(e)
 
     def finalize(self):
         """
         Commons operation to be done on B3 shutdown.
-        Called internally by b3.parser.shutdown()
+        Called internally by b3.parser.die()
         """
         if os.name == 'posix':
 
@@ -1299,7 +1300,7 @@ class Parser(object):
                     self.bot('Removing PID file: %s ...' % pid_path)
                     os.unlink(pid_path)
                 except Exception, e:
-                    self.error('UCould not remove PID file: %s' % e)
+                    self.error('Could not remove PID file: %s' % e)
             else:
                 self.bot('PID file not found')
 
