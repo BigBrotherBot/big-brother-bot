@@ -178,14 +178,12 @@ def getDefaultChannel(currentVersion):
 $''', re.VERBOSE)
 
     m = version_re.match(currentVersion)
-    if not m:
+    if not m or m.group('tag') is None:
         return UPDATE_CHANNEL_STABLE
     elif m.group('tag').lower() in ('dev', 'a'):
         return UPDATE_CHANNEL_DEV
     elif m.group('tag').lower() == 'b':
         return UPDATE_CHANNEL_BETA
-    else:
-        return UPDATE_CHANNEL_STABLE
 
 
 def checkUpdate(currentVersion, channel=None, singleLine=True, showErrormsg=False, timeout=4):
