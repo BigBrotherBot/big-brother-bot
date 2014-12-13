@@ -20,6 +20,7 @@
 # CHANGELOG
 #
 # 21/07/2014 - Fenix - syntax cleanup
+# 13/12/2014 - Fenix - updated regular expression in getDefaultChannel to correctly match daily builds
 
 import json
 import re
@@ -162,13 +163,29 @@ def getDefaultChannel(currentVersion):
     """
     if currentVersion is None:
         return UPDATE_CHANNEL_STABLE
-    m = re.match(r'^\d+\.\d+(\.\d+)?(?i)(?P<prerelease>[ab]|dev)\d*(\.daily\d*)?$', currentVersion)
+
+    version_re = re.compile(r'''^
+(?P<major>\d+)\.(?P<minor>\d+)   # 1.2
+(?:\. (?P<patch>\d+))?           # 1.2.45
+(?P<prerelease>                  # 1.2.45b2
+  (?P<tag>a|b|dev)
+  (?P<tag_num>\d+)?
+)?
+(?P<daily>                       # 1.2.45b2.daily4-20120901
+    \.daily(?P<build_num>\d+?)
+    (?:-20\d\d\d\d\d\d)?
+)?
+$''', re.VERBOSE)
+
+    m = version_re.match(currentVersion)
     if not m:
         return UPDATE_CHANNEL_STABLE
-    elif m.group('prerelease').lower() in ('dev', 'a'):
+    elif m.group('tag').lower() in ('dev', 'a'):
         return UPDATE_CHANNEL_DEV
-    elif m.group('prerelease').lower() == 'b':
+    elif m.group('tag').lower() == 'b':
         return UPDATE_CHANNEL_BETA
+    else:
+        return UPDATE_CHANNEL_STABLE
 
 
 def checkUpdate(currentVersion, channel=None, singleLine=True, showErrormsg=False, timeout=4):
