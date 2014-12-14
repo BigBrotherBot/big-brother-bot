@@ -215,7 +215,7 @@ class Iourt42Client(Client):
 
             if in_storage:
                 self.lastVisit = self.timeEdit
-                self.console.bot('Alient found in the storage @%s: '
+                self.console.bot('Client found in the storage @%s: '
                                  'welcome back %s (FSA: %s)', self.id, self.name, self.pbid)
             else:
                 self.console.bot('Client not found in the storage %s (FSA: %s), create new', str(self.guid), self.pbid)

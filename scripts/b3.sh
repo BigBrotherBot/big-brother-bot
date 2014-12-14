@@ -2,7 +2,7 @@
 
 # Big Brother Bot (B3) Management - http://www.bigbrotherbot.net
 # Maintainer: Daniele Pantaleone <fenix@bigbrotherbot.net>
-# App Version: 0.2
+# App Version: 0.3
 # Last Edit: 30/11/2014
 
 ### BEGIN INIT INFO
@@ -23,10 +23,12 @@
 #                                                                                                                      #
 #  2014-11-09 - 0.1 - initial version                                                                                  #
 #  2014-11-30 - 0.2 - changed some file paths used for PID storage and B3 autodiscover                                 #
+#  2014-12-13 - 0.3 - added support for auto-restart mode                                                              #
 #                                                                                                                      #
 ########################################################################################################################
 
 ### SETUP
+AUTO_RESTART="1"
 DATE_FORMAT="%a, %b %d %Y - %r"
 LOG_ENABLED="0"
 LOG_PATH="log/b3_init.log"
@@ -223,9 +225,13 @@ function b3_start() {
     local PROCESS="$(readlink -f "${B3_RUN}")"
     local PID_FILE="$(readlink -f "${PID_PATH}/${COMMON_PREFIX}${B3}${PID_EXT}")"
 
-    screen -DmS "${SCREEN}" python "${PROCESS}" -c "${CONFIG_FILE}" &
-    echo "${!}" > "${PID_FILE}"
+    if [ ${AUTO_RESTART} -eq 1 ]; then
+        screen -DmS "${SCREEN}" python "${PROCESS}" --restart --config "${CONFIG_FILE}" &
+    else
+        screen -DmS "${SCREEN}" python "${PROCESS}" --config "${CONFIG_FILE}" &
+    fi
 
+    echo "${!}" > "${PID_FILE}"
     sleep 1
 
     # check for proper B3 startup

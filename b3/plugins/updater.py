@@ -19,9 +19,14 @@
 # CHANGELOG:
 #
 # 11/12/2014 - 1.0 - Fenix - initial release
+# 13/12/2014 - 1.1 - Fenix - minor fixes to version compare
+#                          - removed crontab: contacting the update server is not so much expensive in terms of
+#                            performances, thus is better to check for an update in real time whenever a superadmin
+#                            connects to the server.
+#                          - increased _update_check_connect_delay to 30 seconds
 
 __author__ = 'Fenix'
-__version__ = '1.0'
+__version__ = '1.1'
 
 import b3
 import b3.cron
@@ -33,7 +38,7 @@ import os
 import re
 import sys
 
-from b3 import __version__ as current_version
+from b3 import __version__ as b3_version
 from b3.update import B3version
 from b3.update import getDefaultChannel
 from b3.update import URL_B3_LATEST_VERSION
@@ -63,13 +68,10 @@ class UpdateError(Exception):
 class UpdaterPlugin(b3.plugin.Plugin):
 
     _adminPlugin = None
-    _crontab_interval = 60
-    _crontab = None
     _re_filename = re.compile(r'''.+/(?P<archive_name>.+)''')
     _re_sql = re.compile(r'''^(?P<script>b3-update-(?P<version>.+)\.sql)$''')
     _socket_timeout = 4
-    _update_available = None
-    _update_available_warn_delay = 20
+    _update_check_connect_delay = 30
     _updating = False
 
     ####################################################################################################################
@@ -96,11 +98,8 @@ class UpdaterPlugin(b3.plugin.Plugin):
         self._adminPlugin.registerCommand(self, 'checkupdate', 100, self.cmd_checkupdate)
 
         # register events needed
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_CONNECT'), self.onConnect)
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.onAuth)
         self.registerEvent(self.console.getEventID('EVT_SHUTDOWN_REQUEST'), self.onShutdownRequest)
-
-        # install crontab
-        self.install_crontab()
 
         # notice plugin started
         self.debug('plugin started')
@@ -119,40 +118,16 @@ class UpdaterPlugin(b3.plugin.Plugin):
         event.client.message('^7Shutting down...')
         self.console.die()
 
-    def onConnect(self, event):
+    def onAuth(self, event):
         """
-        Handle new client connections
+        Handle new client authentications
         :param event: The event to be handled
         """
         client = event.client
-        if self._update_available and client.maxGroup.id >= 128 and not client.isVar(self, 'update_available'):
-            wthread = Timer(self._update_available_warn_delay, self.announce_update, (client,))
+        if client.maxGroup.id >= 128 and not client.isvar(self, 'check_update'):
+            self.debug('superadmin connected: starting update check routine...')
+            wthread = Timer(self._update_check_connect_delay, self.check_update, (client,))
             wthread.start()
-
-    ####################################################################################################################
-    ##                                                                                                                ##
-    ##   CRON EXECUTION                                                                                               ##
-    ##                                                                                                                ##
-    ####################################################################################################################
-
-    def install_crontab(self):
-        """
-        Intall a crontab for this plugin.
-        """
-        self.debug('installing crontab')
-        self.console.cron.cancel(id(self._crontab))
-        self._crontab = b3.cron.PluginCronTab(self, self.do_cron, 0, '*/%s' % self._crontab_interval)
-        self.console.cron.add(self._crontab)
-
-    def do_cron(self):
-        """
-        Scheduled execution.
-        """
-        try:
-            self._update_available = self.check_update()
-        except UpdateError, err:
-            self.warning('%r' % err)
-            self._update_available = None
 
     ####################################################################################################################
     ##                                                                                                                ##
@@ -160,28 +135,25 @@ class UpdaterPlugin(b3.plugin.Plugin):
     ##                                                                                                                ##
     ####################################################################################################################
 
-    def announce_update(self, client):
+    def check_update(self, client):
         """
         Announce that a B3 update is available to the given client.
         :param client: The client to notice the update to
         """
-        # just for consistency sake
-        if not self._update_available:
-            return
+        update_data = self.get_update_data(getDefaultChannel(b3_version))
+        if update_data:
+            client.message('^7Hello %s, a B3 update is available: ^4%s' % (client.name, update_data['latest_version']))
+            client.message('^7You are currently running version ^1%s' % update_data['current_version'])
+            client.message('^7Type ^3%s^7update in chat to install it' % self._adminPlugin.cmdPrefix)
+            client.setvar(self, 'check_update', True)  # do not inform again
 
-        update = self._update_available
-        client.message('^7Hello ^3%s^7, a new B3 version is available: ^4%s' % (client.name, update['latest_version']))
-        client.message('^7You are currently running version ^1%s' % update['current_version'])
-        client.message('^7Type ^3%s^7update in chat to install the update' % self._adminPlugin.cmdPrefix)
-        client.setVar(self, 'update_available', True)  # do not inform again
-
-    def check_update(self):
+    def get_update_data(self, channel):
         """
-        Check whether a new B3 version is available.
+        Get update data from the update server.
+        :param channel: The channel for which to get update data
         :raise UpdateError: If an error occurs while dealing with update information
         :return: A Dict filled with update information if a new B3 version is available, otherwise None
         """
-        channel = getDefaultChannel(current_version)
         self.debug('checking for available update on channel %s' % channel)
 
         try:
@@ -200,39 +172,34 @@ class UpdaterPlugin(b3.plugin.Plugin):
             raise UpdateError('unknown channel: %s - expecting %s' % (channel, ', '.join(channels.keys())))
 
         try:
-            latest_version = channels[channel]['latest-version']
+            lt_version = channels[channel]['latest-version']
         except KeyError, err:
             raise UpdateError('could not retrieve latest version number from %s channel' % channel, err)
 
-        L_version = B3version(latest_version)
-        C_version = B3version(current_version)
+        C_version = B3version(b3_version)
+        L_version = B3version(lt_version)
 
-        if C_version < L_version:
+        if C_version >= L_version:
+            self.debug('B3 is up to date: current version = [%s] - latest version = [%s]' % (b3_version, lt_version))
+            return None
 
-            try:
+        try:
 
-                match = self._re_filename.match(channels[channel]['src-dl'])
-                if not match:
-                    raise UpdateError('could not parse B3 package name from retrieved information')
+            match = self._re_filename.match(channels[channel]['src-dl'])
+            if not match:
+                raise UpdateError('could not parse B3 package name from retrieved information')
 
-                # while we are here lets also update the self._update_available variable
-                # so a connecting superadmin doesn't have to wait (in the worst case) 60 minutes to get
-                # the update available notice
-                self._update_available = {
-                    'channel': channel,
-                    'current_version': current_version,
-                    'latest_version': latest_version,
-                    'package_name': match.group('archive_name'),
-                    'source_url': channels[channel]['src-dl'],
-                    'url': channels[channel]['url'] }
+            self.debug('a new B3 update is available:  current version = [%s] - latest version = [%s]' % (b3_version, lt_version))
 
-                return self._update_available
+            return { 'channel': channel,
+                     'current_version': b3_version,
+                     'latest_version': lt_version,
+                     'package_name': match.group('archive_name'),
+                     'source_url': channels[channel]['src-dl'],
+                     'url': channels[channel]['url'] }
 
-            except KeyError, err:
-                self._update_available = None
-                raise UpdateError('could not retrieve download url from %s channel' % channel, err)
-
-        return None
+        except KeyError, err:
+            raise UpdateError('could not retrieve download url from %s channel' % channel, err)
 
     def download_update(self, update_data):
         """
@@ -351,7 +318,6 @@ class UpdaterPlugin(b3.plugin.Plugin):
             b3_sql_files = [m.group("script") for f in os.listdir(b3_sql_path) for m in [self._re_sql.search(f)] if m]
 
             def sql_cmp(x, y):
-                # FIXME: duplicated code to be removed
                 re_sql = re.compile(r'''^(?P<script>b3-update-(?P<version>.+)\.sql)$''')
                 x_version = B3version(re_sql.match(x).group('version'))
                 y_version = B3version(re_sql.match(y).group('version'))
@@ -362,11 +328,11 @@ class UpdaterPlugin(b3.plugin.Plugin):
                 return 0
 
             b3_sql_files.sort(cmp=sql_cmp)
-            b3_version = B3version(update_data['current_version'])
+            b3_current_version = B3version(update_data['current_version'])
 
             for b3_sql_file in b3_sql_files:
                 b3_sql_version = B3version(self._re_sql.match(b3_sql_file).group('version'))
-                if b3_sql_version > b3_version:
+                if b3_sql_version > b3_current_version:
                     b3_sql_filepath = os.path.join(b3_sql_path, b3_sql_file)
                     self.verbose('executing SQL file: %s' % b3_sql_filepath)
                     self.console.storage.queryFromFile(b3_sql_filepath)
@@ -383,10 +349,10 @@ class UpdaterPlugin(b3.plugin.Plugin):
         try:
 
             self._updating = True
-            update_data = self.check_update()
+            update_data = self.get_update_data(getDefaultChannel(b3_version))
             if not update_data:
                 client.message('^7B3 is up to date')
-                client.message('^7you are currently running B3 version ^2%s' % current_version)
+                client.message('^7you are currently running B3 version ^2%s' % b3_version)
             else:
                 client.message('^7B3 update available: ^1%s' % update_data['latest_version'])
                 client.message('^7[1/3] downloading update...')
@@ -407,11 +373,6 @@ class UpdaterPlugin(b3.plugin.Plugin):
 
                 client.message('^7B3 updated successfully to version ^2%s' % update_data['latest_version'])
                 client.message('^7Please reboot your B3 manually')
-
-                # we installed so there is not a new one available: this is actually
-                # useless since B3 is going offline in a few, but I'll leave it here just in case
-                # the event processor fails in handling the event
-                self._update_available = None
 
                 self.console.queueEvent(self.console.getEvent('EVT_SHUTDOWN_REQUEST', client=client))
 
@@ -443,10 +404,10 @@ class UpdaterPlugin(b3.plugin.Plugin):
         """
         - checks whether there is a new B3 version available
         """
-        update_data = self.check_update()
+        update_data = self.get_update_data(getDefaultChannel(b3_version))
         if not update_data:
             client.message('^7B3 is up to date')
-            client.message('^7you are currently running B3 version ^2%s' % current_version)
+            client.message('^7you are currently running B3 version ^2%s' % b3_version)
         else:
-            client.message('^7A new B3 version is available: ^1%s' % update_data['latest_version'])
-            client.message('^7type ^3%s^7update in chat to install the update' % self._adminPlugin.cmdPrefix)
+            client.message('^7A B3 update is available: ^4%s' % update_data['latest_version'])
+            client.message('^7Type ^3%s^7update in chat to install it' % self._adminPlugin.cmdPrefix)
