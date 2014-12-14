@@ -18,6 +18,10 @@
 #
 # CHANGELOG
 #
+# 2014/12/14 - 1.38.2 - Fenix           - correctly set exitcode variable in b3.parser.die() and b3.parser.restart(): B3
+#                                         was calling sys.exit(*) in both methods but the main thread was expecting to
+#                                         find the exit code in the exitcode (so the main thread was defaulting exit
+#                                         code to 0). This fixes auto-restart mode not working.
 # 2014/12/13 - 1.38.1 - Fenix           - moved b3.parser.finalize() call in b3.parser.die() from b3.parser.shutdown()
 # 2014/12/11 - 1.38   - Fenix           - added plugin updater loading in loadArbPlugins
 #                                       - make use of the newly declared function b3.functions.right_cut instead
@@ -141,7 +145,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.38'
+__version__ = '1.38.2'
 
 import os
 import sys
@@ -447,7 +451,7 @@ class Parser(object):
                     ftptempfile.close()
                     
             else:
-                self.bot('game log %s', game_log)
+                self.bot('Game log %s', game_log)
                 f = self.config.getpath('server', 'game_log')
 
             self.bot('Starting bot reading file: %s', f)
@@ -569,7 +573,7 @@ class Parser(object):
         self.shutdown()
         self.finalize()
         time.sleep(5)
-        sys.exit(222)
+        self.exitcode = 222
 
     def restart(self):
         """
@@ -578,7 +582,7 @@ class Parser(object):
         self.shutdown()
         time.sleep(5)
         self.bot('Restarting...')
-        sys.exit(221)
+        self.exitcode = 221
 
     def upTime(self):
         """
