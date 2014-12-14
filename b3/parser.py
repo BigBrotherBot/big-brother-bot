@@ -22,6 +22,7 @@
 #                                         was calling sys.exit(*) in both methods but the main thread was expecting to
 #                                         find the exit code in the exitcode (so the main thread was defaulting exit
 #                                         code to 0). This fixes auto-restart mode not working.
+#                                       - let the parser know if we are running B3 in auto-restart mode or not
 # 2014/12/13 - 1.38.1 - Fenix           - moved b3.parser.finalize() call in b3.parser.die() from b3.parser.shutdown()
 # 2014/12/11 - 1.38   - Fenix           - added plugin updater loading in loadArbPlugins
 #                                       - make use of the newly declared function b3.functions.right_cut instead
@@ -231,6 +232,7 @@ class Parser(object):
     log = None
     replay = False
     remoteLog = False
+    autorestart = False
     screen = None
     rconTest = False
     privateMsg = False
@@ -309,12 +311,17 @@ class Parser(object):
     exiting = thread.allocate_lock()
     exitcode = None
 
-    def __init__(self, conf):
+    def __init__(self, conf, autorestart=False):
         """
         Object contructor.
         :param conf: The B3 configuration file
+        :param autorestart: Whether B3 is running in autorestart mode or not
         """
         self._timeStart = self.time()
+
+        # store in the parser whether we are running B3 in autorestart mode so
+        # plugins can react on this and perform different operations
+        self.autorestart = autorestart
 
         if not self.loadConfig(conf):
             print('CRITICAL ERROR : COULD NOT LOAD CONFIG')
