@@ -18,15 +18,16 @@
 #
 # CHANGELOG:
 #
-# 11/12/2014 - 1.0 - Fenix - initial release
-# 13/12/2014 - 1.1 - Fenix - minor fixes to version compare
-#                          - removed crontab: contacting the update server is not so much expensive in terms of
-#                            performances, thus is better to check for an update in real time whenever a superadmin
-#                            connects to the server.
-#                          - increased _update_check_connect_delay to 30 seconds
+# 11/12/2014 - 1.0   - Fenix - initial release
+# 13/12/2014 - 1.1   - Fenix - minor fixes to version compare
+#                            - removed crontab: contacting the update server is not so much expensive in terms of
+#                              performances, thus is better to check for an update in real time whenever a superadmin
+#                              connects to the server.
+#                            - increased _update_check_connect_delay to 30 seconds
+# 14/12/2014 - 1.1.1 - Fenix - use B3 autorestart mode to reboot B3 after a successfull B3 update install
 
 __author__ = 'Fenix'
-__version__ = '1.1'
+__version__ = '1.1.1'
 
 import b3
 import b3.cron
@@ -115,8 +116,15 @@ class UpdaterPlugin(b3.plugin.Plugin):
         Handle the request of a B3 shutdown
         :param event: The event to be handled
         """
-        event.client.message('^7Shutting down...')
-        self.console.die()
+        client = event.client
+        if self.console.autorestart:
+            # running autorestart mode, so do not shutdown B3
+            client.message("^7Shutting down for restart")
+            self.console.restart()
+        else:
+            client.message('^7Please reboot your B3 manually')
+            client.message('^7Shutting down...')
+            self.console.die()
 
     def onAuth(self, event):
         """
@@ -372,8 +380,6 @@ class UpdaterPlugin(b3.plugin.Plugin):
                     pass
 
                 client.message('^7B3 updated successfully to version ^2%s' % update_data['latest_version'])
-                client.message('^7Please reboot your B3 manually')
-
                 self.console.queueEvent(self.console.getEvent('EVT_SHUTDOWN_REQUEST', client=client))
 
         except UpdateError, err:
