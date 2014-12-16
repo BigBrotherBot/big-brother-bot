@@ -25,6 +25,7 @@
 # 2010/10/20 - 1.1.2    - GrosBedo  - added TEAM_FREE for non team based gametypes (eg: deathmatch)
 # 2014/07/20 - 1.2      - Fenix     - syntax cleanup
 # 2014/09/07 - 1.2.1    - Courgette - fix getAbsolutePath @b3 and @conf expansion on path using windows style separators
+# 2014/12/14 - 1.3      - Fenix     - let the parser know if we are running B3 in auto-restart mode or not
 
 import os
 import re
@@ -129,11 +130,12 @@ def getAbsolutePath(path):
     return os.path.normpath(os.path.expanduser(path))
 
 
-def start(configFile, nosetup=False):
+def start(configFile, nosetup=False, autorestart=False):
     """
     Main B3 startup.
     :param configFile: The B3 configuration file
     :param nosetup: Whether or not to run the B3 setup
+    :param autorestart: If the bot is running in auto-restart mode
     """
     configFile = getAbsolutePath(configFile)
     clearScreen()
@@ -185,7 +187,7 @@ def start(configFile, nosetup=False):
                              "B3 failed to start.\n%r" % (parserType, err))
         
         global console
-        console = parser(conf)
+        console = parser(conf, autorestart)
 
     except NoOptionError, err:
         raise SystemExit("CRITICAL: option %r not found in section %r: "

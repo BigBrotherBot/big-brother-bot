@@ -2,7 +2,7 @@
 
 # Big Brother Bot (B3) Management - http://www.bigbrotherbot.net
 # Maintainer: Daniele Pantaleone <fenix@bigbrotherbot.net>
-# App Version: 0.2
+# App Version: 0.4
 # Last Edit: 30/11/2014
 
 ### BEGIN INIT INFO
@@ -23,10 +23,16 @@
 #                                                                                                                      #
 #  2014-11-09 - 0.1 - initial version                                                                                  #
 #  2014-11-30 - 0.2 - changed some file paths used for PID storage and B3 autodiscover                                 #
+#  2014-12-13 - 0.3 - added support for auto-restart mode                                                              #
+#  2014-12-14 - 0.4 - correctly match number of subprocess in b3_is_running when auto-restart mode is being used       #
+#                     auto-restart mode uses 4 processes (the screen, the main loop in b3/run.py, a new shell used     #
+#                     by subprocess, and the command to actually start the B3 instance inside this new shell), while   #
+#                     a normal B3 startup uses only 2 processes (screen and B3 process running inside the screen)      #
 #                                                                                                                      #
 ########################################################################################################################
 
 ### SETUP
+AUTO_RESTART="1"
 DATE_FORMAT="%a, %b %d %Y - %r"
 LOG_ENABLED="0"
 LOG_PATH="log/b3_init.log"
@@ -128,7 +134,11 @@ function b3_is_running() {
     local SCREEN="${COMMON_PREFIX}${B3}"
     local PROCESS="$(readlink -f "${B3_RUN}")"
     local NUMPROC=$(ps ax | grep ${SCREEN} | grep ${PROCESS} | grep ${CONFIG} | grep -v grep | wc -l)
-    if [ ${NUMPROC} -eq 2 ]; then
+
+    if ([ ${AUTO_RESTART} -eq 1 ] && [ ${NUMPROC} -eq 4 ]); then
+        # screen is running with B3 process inside and auto-restart mode (using subprocess)
+        return 0
+    elif ([ ! ${AUTO_RESTART} -eq 1 ] && [ ${NUMPROC} -eq 2 ]); then
         # both screen and process running => B3 running
         return 0
     else
@@ -223,10 +233,19 @@ function b3_start() {
     local PROCESS="$(readlink -f "${B3_RUN}")"
     local PID_FILE="$(readlink -f "${PID_PATH}/${COMMON_PREFIX}${B3}${PID_EXT}")"
 
-    screen -DmS "${SCREEN}" python "${PROCESS}" -c "${CONFIG_FILE}" &
+    if [ ${AUTO_RESTART} -eq 1 ]; then
+        screen -DmS "${SCREEN}" python "${PROCESS}" --restart --config "${CONFIG_FILE}" &
+    else
+        screen -DmS "${SCREEN}" python "${PROCESS}" --config "${CONFIG_FILE}" &
+    fi
+
     echo "${!}" > "${PID_FILE}"
 
-    sleep 1
+    if [ ${AUTO_RESTART} -eq 1 ]; then
+        sleep 4
+    else
+        sleep 1
+    fi
 
     # check for proper B3 startup
     b3_is_running "${B3}" "${CONFIG_FILE}"

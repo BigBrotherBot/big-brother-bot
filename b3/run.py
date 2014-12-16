@@ -27,9 +27,10 @@
 # 2011/05/19 - 1.4.0 - xlr8or    - added --update -u arg
 # 2011/12/03 - 1.4.1 - Courgette - fix crash at bot start in restart mode when installed from egg
 # 2014/07/21 - 1.5   - Fenix     - syntax cleanup
+# 2014/12/15 - 1.5.1 - Fenix     - let the parser know if we are running B3 in auto-restart mode or not
 
 __author__  = 'ThorN'
-__version__ = '1.5'
+__version__ = '1.5.1'
 
 import b3
 import os
@@ -67,9 +68,9 @@ def run_autorestart(args=None):
             script += 'c'
 
     if args:
-        script = '%s %s %s' % (sys.executable, script, ' '.join(args))
+        script = '%s %s %s --autorestart' % (sys.executable, script, ' '.join(args))
     else:
-        script = '%s %s' % (sys.executable, script)
+        script = '%s %s --autorestart' % (sys.executable, script)
 
     while True:
         try:
@@ -130,7 +131,7 @@ def run_autorestart(args=None):
             break
 
 
-def run(config=None, nosetup=False):
+def run(config=None, nosetup=False, autorestart=False):
     """
     Run B3.
     :param config: The B3 configuration file instance
@@ -157,7 +158,7 @@ def run(config=None, nosetup=False):
         else:
             Setup(config)
 
-    b3.start(config, nosetup)
+    b3.start(config, nosetup, autorestart)
 
 def run_setup(config=None):
     """
@@ -188,24 +189,13 @@ def main():
     Main execution.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', dest='config', default=None, metavar='b3.xml',
-                        help='B3 config file. Example: -c b3.xml',
-                        type=lambda x: _check_arg_configfile(parser, x))
-    parser.add_argument('-r', '--restart',
-                        action='store_true', dest='restart', default=False,
-                        help='Auto-restart B3 on crash')
-    parser.add_argument('-s', '--setup',
-                        action='store_true', dest='setup', default=False,
-                        help='Setup main b3.xml config file')
-    parser.add_argument('-u', '--update',
-                        action='store_true', dest='update', default=False,
-                        help='Update B3 database to latest version')
-    parser.add_argument('-n', '--nosetup',
-                        action="store_true", dest='nosetup', default=False,
-                        help='Do not enter setup mode when config is missing')
-    parser.add_argument('-v', '--version',
-                        action='version', default=False, version=b3.getB3versionString(),
-                        help='Show Version and exit')
+    parser.add_argument('-c', '--config', dest='config', default=None, metavar='b3.xml', help='B3 config file. Example: -c b3.xml', type=lambda x: _check_arg_configfile(parser, x))
+    parser.add_argument('-r', '--restart', action='store_true', dest='restart', default=False, help='Auto-restart B3 on crash')
+    parser.add_argument('-s', '--setup',  action='store_true', dest='setup', default=False, help='Setup main b3.xml config file')
+    parser.add_argument('-u', '--update', action='store_true', dest='update', default=False, help='Update B3 database to latest version')
+    parser.add_argument('-n', '--nosetup', action="store_true", dest='nosetup', default=False, help='Do not enter setup mode when config is missing')
+    parser.add_argument('-v', '--version', action='version', default=False, version=b3.getB3versionString(), help='Show Version and exit')
+    parser.add_argument('-a', '--autorestart', action='store_true', dest='autorestart', default=False, help=argparse.SUPPRESS)
 
     (options, args) = parser.parse_known_args()
 
@@ -225,7 +215,7 @@ def main():
             run_autorestart([])
     else:
         try:
-            run(config=options.config, nosetup=options.nosetup)
+            run(config=options.config, nosetup=options.nosetup, autorestart=options.autorestart)
         except SystemExit, msg:
             # This needs some work, is ugly a.t.m. but works... kinda
             if main_is_frozen():

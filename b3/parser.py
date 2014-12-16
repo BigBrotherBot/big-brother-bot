@@ -18,7 +18,15 @@
 #
 # CHANGELOG
 #
-# 2014/09/06 - 1.38   - Fenix           - updated parser to load configuration from the new .ini format
+# 2014/12/14 - 1.38.2 - Fenix           - correctly set exitcode variable in b3.parser.die() and b3.parser.restart(): B3
+#                                         was calling sys.exit(*) in both methods but the main thread was expecting to
+#                                         find the exit code in the exitcode (so the main thread was defaulting exit
+#                                         code to 0). This fixes auto-restart mode not working.
+#                                       - let the parser know if we are running B3 in auto-restart mode or not
+# 2014/12/13 - 1.38.1 - Fenix           - moved b3.parser.finalize() call in b3.parser.die() from b3.parser.shutdown()
+# 2014/12/11 - 1.38   - Fenix           - added plugin updater loading in loadArbPlugins
+#                                       - make use of the newly declared function b3.functions.right_cut instead
+# 2014/09/06 - 1.37.4 - Fenix           - updated parser to load configuration from the new .ini format
 # 2014/11/30 - 1.37.3 - Fenix           - correctly remove B3 PID file upon parser shutdown (Linux systems only)
 # 2014/09/02 - 1.37.2 - Fenix           - moved _first_line_code attribute in _settings['line_color_prefix']
 #                                       - allow customization of _settings['line_color_prefix'] from b3.xml:
@@ -139,7 +147,8 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.38'
+__version__ = '1.38.2'
+
 
 import os
 import sys
@@ -163,11 +172,14 @@ import b3.parsers.q3a.rcon
 import b3.timezones
 
 from ConfigParser import NoOptionError
+from ConfigParser import NoSectionError
 from b3.clients import Clients
 from b3.clients import Group
 from b3.functions import getModule
 from b3.functions import vars2printf
+from b3.functions import main_is_frozen
 from b3.decorators import memoize
+from b3.functions import right_cut
 from textwrap import TextWrapper
 
 try:
@@ -222,6 +234,7 @@ class Parser(object):
     log = None
     replay = False
     remoteLog = False
+    autorestart = False
     screen = None
     rconTest = False
     privateMsg = False
@@ -300,12 +313,17 @@ class Parser(object):
     exiting = thread.allocate_lock()
     exitcode = None
 
-    def __init__(self, conf):
+    def __init__(self, conf, autorestart=False):
         """
         Object contructor.
         :param conf: The B3 configuration file
+        :param autorestart: Whether B3 is running in autorestart mode or not
         """
         self._timeStart = self.time()
+
+        # store in the parser whether we are running B3 in autorestart mode so
+        # plugins can react on this and perform different operations
+        self.autorestart = autorestart
 
         if not self.loadConfig(conf):
             print('CRITICAL ERROR : COULD NOT LOAD CONFIG')
@@ -563,8 +581,9 @@ class Parser(object):
         Stop B3 with the die exit status (222)
         """
         self.shutdown()
+        self.finalize()
         time.sleep(5)
-        sys.exit(222)
+        self.exitcode = 222
 
     def restart(self):
         """
@@ -573,7 +592,7 @@ class Parser(object):
         self.shutdown()
         time.sleep(5)
         self.bot('Restarting...')
-        sys.exit(221)
+        self.exitcode = 221
 
     def upTime(self):
         """
@@ -791,11 +810,25 @@ class Parser(object):
             parser_mod.screen.flush()
 
         if 'publist' not in self._pluginOrder:
-            #self.debug('publist not found!')
             try:
                 loadPlugin(self, 'publist')
             except Exception, err:
-                self.verbose('Error loading plugin publist', exc_info=err)
+                self.error('Could not load plugin publist', exc_info=err)
+
+        if not main_is_frozen():
+            # load the updater plugin if we are running B3 from sources
+            if 'updater' not in self._pluginOrder:
+                try:
+                    update_channel = self.config.get('update', 'channel')
+                    if update_channel == 'skip':
+                        self.debug('Not loading plugin updater: update channel not specified in B3 configuration file')
+                    else:
+                        try:
+                            loadPlugin(self, 'updater')
+                        except Exception, err:
+                            self.error('Could not load plugin updater', exc_info=err)
+                except (NoSectionError, NoOptionError):
+                    self.debug('Not loading plugin updater: update section missing in B3 main configuration file')
 
         if self.config.has_option('server', 'game_log'):
             game_log = self.config.get('server', 'game_log')
@@ -1253,21 +1286,15 @@ class Parser(object):
 
                 self.bot('Shutting down database connections...')
                 self.storage.shutdown()
-                self.finalize()
         except Exception, e:
             self.error(e)
 
     def finalize(self):
         """
         Commons operation to be done on B3 shutdown.
-        Called internally by b3.parser.shutdown()
+        Called internally by b3.parser.die()
         """
         if os.name == 'posix':
-
-            def right_cut(string, cut):
-                if string.endswith(cut):
-                    return string[:-len(cut)]
-                return string
 
             b3_name = os.path.basename(self.config.fileName)
             for val in ('.xml', '.ini'):
@@ -1280,7 +1307,7 @@ class Parser(object):
                     self.bot('Removing PID file: %s ...' % pid_path)
                     os.unlink(pid_path)
                 except Exception, e:
-                    self.error('Unable to not remove PID file: %s' % e)
+                    self.error('Could not remove PID file: %s' % e)
             else:
                 self.bot('PID file not found')
 

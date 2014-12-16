@@ -1159,7 +1159,6 @@ class AbstractParser(b3.parser.Parser):
                     self._cron.stop()
                 self.bot('shutting down database connections...')
                 self.storage.shutdown()
-                self.finalize()
         except Exception, e:
             self.error(e)
 

@@ -18,6 +18,8 @@
 #
 # CHANGELOG
 #
+# 12/12/2014 - 1.17   - Fenix          - added some more processing in queryFromFile(): strip out comment lines and
+#                                        handle correctly new lines and carriage return
 # 25/07/2014 - 1.16   - Fenix          - syntax cleanup
 #                                      - removed executeSql() method: using only queryFromFile() which does the same
 #                                      - reformat changelog
@@ -54,7 +56,7 @@
 # 07/23/2005 - 1.1.0  - ThorN          - added data column to penalties table
 
 __author__ = 'ThorN'
-__version__ = '1.16'
+__version__ = '1.17'
 
 
 import os
@@ -366,10 +368,14 @@ class DatabaseStorage(Storage):
                 f = open(sql_file, 'r')
                 sql_text = f.read()
                 f.close()
-                sql_statements = sql_text.split(';')
+                # Fenix: added some more processing in order to remove
+                # command lines and correctly handle new line and carriage return
+                sp = sql_text.splitlines()
+                lines = [l for l in sp if not l.startswith('#') and not l.startswith("--")]
+                sql_statements = ' '.join(lines).split(';')
                 for s in sql_statements:
                     try:
-                        self.query(s)
+                        self.query(s.strip())
                     except Exception:
                         pass
             else:
@@ -391,7 +397,7 @@ class DatabaseStorage(Storage):
             except Exception, e:
                 # (2013, 'Lost connection to MySQL server during query')
                 # (2006, 'MySQL server has gone away')
-                self.console.error('[%s] %r' % (query, bindata))
+                self.console.error('[%s] %r: %s' % (query, bindata, e))
 
                 if e[0] == 2013 or e[0] == 2006:
                     self.console.warning('Query failed: trying to reconnect - %s: %s' % (type(e), e))

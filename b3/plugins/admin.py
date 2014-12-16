@@ -18,7 +18,8 @@
 #
 # CHANGELOG
 #
-# 2014/11/15 - 1.32    - 82ndab-Bravo17 - Added new command longlist that does a list with one player per line
+# 2014/12/15 - 1.33    - Fenix          - unregister !restart command if B3 is not running in auto-restart mode
+# 2014/11/15 - 1.32    - 82ndab-Bravo17 - added new command longlist that does a list with one player per line
 #                                       - and cid first. Allows you to see players with clever unicode names that
 #                                       - otherwise mess up the normal list command.
 # 2014/09/06 - 1.31.1  - Fenix          - updated cmd_pluginfo to work with the new b3.ini configuration file format
@@ -524,6 +525,13 @@ class AdminPlugin(b3.plugin.Plugin):
                 func = getCmd(self, cmd)
                 if func:
                     self.registerCommand(self, cmd, level, func, alias)
+
+        if not self.console.autorestart:
+            if 'restart' in self._commands:
+                self.debug('unregistering !restart command: B3 is not running in autorestart mode')
+                if self._commands['restart'].alias:
+                    del self._commands[self._commands['restart'].alias]
+                del self._commands['restart']
 
         if not self.console.storage.db:
             self.error('could not retrieve database connection: unable to store or retrieve any information!')
