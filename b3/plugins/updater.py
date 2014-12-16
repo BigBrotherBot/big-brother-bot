@@ -25,9 +25,10 @@
 #                              connects to the server.
 #                            - increased _update_check_connect_delay to 30 seconds
 # 14/12/2014 - 1.1.1 - Fenix - use B3 autorestart mode to reboot B3 after a successfull B3 update install
+# 16/12/2014 - 1.1.2 - Fenix - use EVT_PUNKBUSTER_NEW_CONNECTION instead of EVT_CLIENT_AUTH in Frostbite games
 
 __author__ = 'Fenix'
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 import b3
 import b3.cron
@@ -69,6 +70,7 @@ class UpdateError(Exception):
 class UpdaterPlugin(b3.plugin.Plugin):
 
     _adminPlugin = None
+    _frostBiteGameNames = ['bfbc2', 'moh', 'bf3', 'bf4']
     _re_filename = re.compile(r'''.+/(?P<archive_name>.+)''')
     _re_sql = re.compile(r'''^(?P<script>b3-update-(?P<version>.+)\.sql)$''')
     _socket_timeout = 4
@@ -92,15 +94,19 @@ class UpdaterPlugin(b3.plugin.Plugin):
 
         # create an events for a proper B3 shutdown: the updating thread fails to shutdown B3 properly when
         # invoking self.console.die() from whithin the thread itself so we need to to handle this from outside
-        self.console.Events.createEvent('EVT_SHUTDOWN_REQUEST', 'Shutdown request')
+
 
         # register commands
         self._adminPlugin.registerCommand(self, 'update', 100, self.cmd_update)
         self._adminPlugin.registerCommand(self, 'checkupdate', 100, self.cmd_checkupdate)
 
         # register events needed
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.onAuth)
         self.registerEvent(self.console.getEventID('EVT_SHUTDOWN_REQUEST'), self.onShutdownRequest)
+
+        if self.console.gameName in self._frostBiteGameNames:
+            self.registerEvent(self.console.getEventID('EVT_PUNKBUSTER_NEW_CONNECTION'), self.onAuth)
+        else:
+            self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.onAuth)
 
         # notice plugin started
         self.debug('plugin started')
