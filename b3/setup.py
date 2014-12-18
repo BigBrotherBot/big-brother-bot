@@ -19,36 +19,37 @@
 #
 # CHANGELOG
 #
-# 2010/03/21 - 0.2.1 - Courgette    - fix bug on config path which showed up only when run as a .exe
-# 2010/03/27 - 0.2.2 - xlr8or       - minor improvements, added port to db-conn, default value for yes/no in add_plugin
-# 2010/04/17 - 0.3   - Courgette    - remove plugin priority related code to follow with parser.py v1.16 changes
-# 2010/04/27 - 0.4   - Bakes        - added proper BC2 support to the setup wizard
-#                                   - changed censor and spamcontrol plugins to be added before admin. This means that
-#                                     people who spam or swear in admin commands are warned, rather than the event just
-#                                     being handled in the admin plugin and veto'd elsewhere
-# 2010/10/11 - 0.5   - xlr8or       - added MOH support
-# 2010/11/07 - 0.5.1 - GrosBedo     - edited default messages settings
-# 2010/11/07 - 0.5.2 - GrosBedo     - added default values of lines_per_second and delay
-#                                   - added more infos about the http access for gamelog
-# 2011/02/06 - 0.6   - xlr8or       - setup now reads values from an existing config or a distribution example
-#                                   - added COD7 support
-# 2011/03/10 - 0.7   - xlr8or       - don't let setup fail when SQL file cannot be opened
-# 2011/03/12 - 0.8   - xlr8or       - better handling of execution of b3.sql
-#                                   - bugfix in message section
-#                                   - use tempfile until setup is completed
-# 2011/05/19 - 1.0   - xlr8or       - added Update class
-#                                   - version 1.0 merged into master branch (for B3 v1.6.0 release)
-# 2011/11/12 - 1.1   - courgette    - can install external plugins having a module defined as a directory instead
-#                                     as as a python file
-# 2012/01/08 - 1.2   - xlr8or       - added: xlrstats-update-2.6.1.sql
-#                                   - fixed bug that would not update the xlrstats tables
-# 2012/10/19 - 1.3 - Courgette      - added: Ravaged game
-# 2012/10/24 - 1.4 - Courgette      - added: iourt42 custom settings
-# 2012/10/31 - 1.5 - Courgette      - added: arma2 support
-# 2013/07/17 - 1.6 - 82ndAB.Bravo17 - added: arma3 support
-# 2013/08/03 - 1.7 - 82ndAB.Bravo17 - added: Chivalry Medieval Warfare support
-# 2014/04/01 - 1.8 - Courgette      - added: Insurgency support
-# 2014/07/21 - 1.9 - Fenix          - syntax cleanup
+# 2010/03/21 - 0.2.1 - Courgette      - fix bug on config path which showed up only when run as a .exe
+# 2010/03/27 - 0.2.2 - xlr8or         - minor improvements, added port to db-conn, default value for yes/no in add_plugin
+# 2010/04/17 - 0.3   - Courgette      - remove plugin priority related code to follow with parser.py v1.16 changes
+# 2010/04/27 - 0.4   - Bakes          - added proper BC2 support to the setup wizard
+#                                     - changed censor and spamcontrol plugins to be added before admin. This means that
+#                                       people who spam or swear in admin commands are warned, rather than the event just
+#                                       being handled in the admin plugin and veto'd elsewhere
+# 2010/10/11 - 0.5   - xlr8or         - added MOH support
+# 2010/11/07 - 0.5.1 - GrosBedo       - edited default messages settings
+# 2010/11/07 - 0.5.2 - GrosBedo       - added default values of lines_per_second and delay
+#                                     - added more infos about the http access for gamelog
+# 2011/02/06 - 0.6   - xlr8or         - setup now reads values from an existing config or a distribution example
+#                                     - added COD7 support
+# 2011/03/10 - 0.7   - xlr8or         - don't let setup fail when SQL file cannot be opened
+# 2011/03/12 - 0.8   - xlr8or         - better handling of execution of b3.sql
+#                                     - bugfix in message section
+#                                     - use tempfile until setup is completed
+# 2011/05/19 - 1.0   - xlr8or         - added Update class
+#                                     - version 1.0 merged into master branch (for B3 v1.6.0 release)
+# 2011/11/12 - 1.1   - courgette      - can install external plugins having a module defined as a directory instead
+#                                       as as a python file
+# 2012/01/08 - 1.2   - xlr8or         - added: xlrstats-update-2.6.1.sql
+#                                     - fixed bug that would not update the xlrstats tables
+# 2012/10/19 - 1.3   - Courgette      - added: Ravaged game
+# 2012/10/24 - 1.4   - Courgette      - added: iourt42 custom settings
+# 2012/10/31 - 1.5   - Courgette      - added: arma2 support
+# 2013/07/17 - 1.6   - 82ndAB.Bravo17 - added: arma3 support
+# 2013/08/03 - 1.7   - 82ndAB.Bravo17 - added: Chivalry Medieval Warfare support
+# 2014/04/01 - 1.8   - Courgette      - added: Insurgency support
+# 2014/07/21 - 1.9   - Fenix          - syntax cleanup
+# 2014/12/18 - 1.9.1 - Fenix          - switched from MySQLdb to pymysql
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -859,12 +860,17 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
         _dsndict = functions.splitDSN(dbstring)
         if _dsndict['protocol'] == 'mysql':
             try:
-                import MySQLdb
-                _db = MySQLdb.connect(host=_dsndict['host'], port=_dsndict['port'], user=_dsndict['user'],
-                                      passwd=_dsndict['password'], db=_dsndict['path'][1:])
+                import pymysql
+                _db = pymysql.connect(host=_dsndict['host'],
+                                      port=_dsndict['port'],
+                                      user=_dsndict['user'],
+                                      password=_dsndict['password'],
+                                      database=_dsndict['path'][1:],
+                                      charset="utf8",
+                                      use_unicode=True)
             except ImportError:
-                MySQLdb = None # just to remove a warning
-                self.add_buffer("You need to install python-mysqldb: look for 'dependencies' in B3 documentation.\n")
+                pymysql = None # just to remove a warning
+                self.add_buffer("You need to install 'pymysql': look for 'dependencies' in B3 documentation.\n")
                 raise SystemExit()
             except Exception:
                 try:

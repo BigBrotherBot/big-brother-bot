@@ -63,30 +63,30 @@ class Test_DatabaseStorage(unittest.TestCase):
 
 
     def test_getConnection_mysql(self):
-        # mock the MySQLdb module so we can test in an environement which does not have this module installed
-        mock_MySQLdb = Mock()
-        mock_MySQLdb.connect = Mock(return_value=sentinel)
-        with patch.dict('sys.modules', {'MySQLdb': mock_MySQLdb}):
+        # mock the pymysql module so we can test in an environement which does not have this module installed
+        mock_pymysql = Mock()
+        mock_pymysql.connect = Mock(return_value=sentinel)
+        with patch.dict('sys.modules', {'pymysql': mock_pymysql}):
 
             # verify that a correct dsn does work as expected
-            mock_MySQLdb.connect.reset_mock()
+            mock_pymysql.connect.reset_mock()
             storage = DatabaseStorage("mysql://someuser:somepasswd@somehost:someport/somedbname", Mock())
             when(storage).getTables().thenReturn(B3_DEFAULT_TABLES)
             storage.connect()
-            assert mock_MySQLdb.connect.called, "expecting MySQLdb.connect to be called"
+            assert mock_pymysql.connect.called, "expecting pymysql.connect to be called"
             self.assertEqual(sentinel, storage.db)
 
             # verify that B3 creates necessary tables when they are missing
-            mock_MySQLdb.connect.reset_mock()
+            mock_pymysql.connect.reset_mock()
             storage = DatabaseStorage("mysql://someuser:somepasswd@somehost:someport/somedbname", Mock())
             when(storage).getTables().thenReturn([])
             storage.queryFromFile = Mock()
             storage.connect()
-            assert storage.queryFromFile.called, "expecting MySQLdb.queryFromFile to be called"
+            assert storage.queryFromFile.called, "expecting DatabaseStorage.queryFromFile to be called"
             self.assertEqual(sentinel, storage.db)
 
             # verify that whenever B3 is not able to create necessary tables, it stops
-            mock_MySQLdb.connect.reset_mock()
+            mock_pymysql.connect.reset_mock()
             console_mock = Mock()
             storage = DatabaseStorage("mysql://someuser:somepasswd@somehost:someport/somedbname", console_mock)
             when(storage).getTables().thenReturn([])
@@ -97,23 +97,23 @@ class Test_DatabaseStorage(unittest.TestCase):
             self.assertIsNone(storage.db)
 
             # verify that an incorrect dsn does fail an stops the bot with a nice error message
-            mock_MySQLdb.connect.reset_mock()
+            mock_pymysql.connect.reset_mock()
             console_mock = Mock()
             storage = DatabaseStorage("mysql://someuser:somepasswd@somehost:3446/", console_mock)
             storage.connect()
             assert console_mock.critical.called
             self.assertIn("Missing MySQL database name", console_mock.critical.call_args[0][0])
-            assert not mock_MySQLdb.connect.called, "expecting MySQLdb.connect not to be called"
+            assert not mock_pymysql.connect.called, "expecting pymysql.connect not to be called"
             self.assertIsNone(storage.db)
 
             # verify that an incorrect dsn does fail an stops the bot with a nice error message
-            mock_MySQLdb.connect.reset_mock()
+            mock_pymysql.connect.reset_mock()
             console_mock = Mock()
             storage = DatabaseStorage("mysql://someuser:somepasswd@/database", console_mock)
             storage.connect()
             assert console_mock.critical.called
             self.assertIn("Invalid MySQL host", console_mock.critical.call_args[0][0])
-            assert not mock_MySQLdb.connect.called, "expecting MySQLdb.connect not to be called"
+            assert not mock_pymysql.connect.called, "expecting pymysql.connect not to be called"
             self.assertIsNone(storage.db)
 
     @unittest.skipUnless(B3_SQL_FILE_AVAILABLE, "B3 SQL script not found @ %s" % b3.getAbsolutePath("@b3/sql/b3.sql"))
