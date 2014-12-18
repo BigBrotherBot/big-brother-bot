@@ -78,6 +78,7 @@ class Test_PostgreSQL(B3TestCase, StorageAPITest):
         cursor.execute("DROP DATABASE IF EXISTS b3_test;")
         cursor.execute("CREATE DATABASE b3_test WITH OWNER = b3test ENCODING = 'UTF8';")
         self.storage = self.console.storage = DatabaseStorage(POSTGRESQL_DB, self.console)
+        self.storage.connect()
         self.storage.queryFromFile("@b3/sql/postgresql/b3.sql")
 
     def tearDown(self):
