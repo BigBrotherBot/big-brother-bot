@@ -20,6 +20,8 @@
 #
 # 18/12/2014 - 1.18   - Fenix          - added _parse_statements method: internally called by queryFromFile(), will
 #                                        return a list of SQL statements given an open file pointer with a SQL file
+#                                      - removed exception catching in queryFromFile so it propagates back and we can
+#                                        intercept it a parser/plugin level
 # 12/12/2014 - 1.17   - Fenix          - added some more processing in queryFromFile(): strip out comment lines and
 #                                        handle correctly new lines and carriage return
 # 25/07/2014 - 1.16   - Fenix          - syntax cleanup
@@ -380,10 +382,9 @@ class DatabaseStorage(Storage):
                 with open(path, 'r') as sql_file:
                     statements = self._parse_statements(sql_file)
                 for stmt in statements:
-                     try:
-                        self.query(stmt)
-                     except Exception:
-                        pass
+                    # Fenix: removed exception catching so it propagate
+                    # back and we can intercept it at parser/plugin level
+                    self.query(stmt)
             else:
                 raise Exception('SQL file does not exist: %s' % path)
             # reset standard error output
