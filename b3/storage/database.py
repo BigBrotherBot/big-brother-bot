@@ -22,6 +22,7 @@
 #                                        return a list of SQL statements given an open file pointer with a SQL file
 #                                      - removed exception catching in queryFromFile so it propagates back and we can
 #                                        intercept it a parser/plugin level
+#                                      - do not implicitly call DatabaseStorage.connect() in DatabaseStorage __init__
 # 12/12/2014 - 1.17   - Fenix          - added some more processing in queryFromFile(): strip out comment lines and
 #                                        handle correctly new lines and carriage return
 # 25/07/2014 - 1.16   - Fenix          - syntax cleanup
@@ -184,7 +185,6 @@ class DatabaseStorage(Storage):
         self.db = None
         self.dsn = dsn
         self.dsnDict = functions.splitDSN(self.dsn)
-        self.connect()
 
     def getTables(self):
         """

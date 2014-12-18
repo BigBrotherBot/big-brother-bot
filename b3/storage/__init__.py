@@ -95,4 +95,6 @@ from database import DatabaseStorage
 
 def getStorage(stype, *args):
     construct = globals()['%sStorage' % stype.title()]
-    return construct(*args)
+    instance = construct(*args)
+    instance.connect()
+    return instance
