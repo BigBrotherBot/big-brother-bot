@@ -9,25 +9,35 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
+
+import b3
+import os
+import unittest2 as unittest
+
 from b3.clients import Client
 from b3.storage.database import DatabaseStorage
-from mock import Mock, patch, sentinel
-import unittest2 as unittest
+from mock import Mock
+from mock import patch
+from mock import sentinel
+
+# checks whether we can perform tests on SQL script file parsing
+B3_SQL_FILE_AVAILABLE = os.path.exists(b3.getAbsolutePath("@b3/sql/b3.sql"))
+B3_DB_SQL_FILE_AVAILABLE = os.path.exists(b3.getAbsolutePath("@b3/sql/b3-db.sql"))
+
 
 class Test_DatabaseStorage(unittest.TestCase):
 
     def test_construct(self):
         storage = DatabaseStorage('foo://bar', Mock())
         self.assertRaises(Exception, storage.getConnection)
-        
-        
+
     def test_getClient_connectionfailed(self):
         mock_storage = Mock(spec=DatabaseStorage)
         mock_storage.getClient = DatabaseStorage.getClient
@@ -77,3 +87,15 @@ class Test_DatabaseStorage(unittest.TestCase):
             self.assertIn("Invalid MySQL host", console_mock.critical.call_args[0][0])
             assert not mock_MySQLdb.connect.called, "expecting MySQLdb.connect not to be called"
             self.assertIsNone(storage.db)
+
+    @unittest.skipUnless(B3_SQL_FILE_AVAILABLE, "B3 SQL script not found @ %s" % b3.getAbsolutePath("@b3/sql/b3.sql"))
+    def test_b3_sql_file_parsing(self):
+        with open(b3.getAbsolutePath("@b3/sql/b3.sql"), 'r') as sql_file:
+            statements = DatabaseStorage._parse_statements(sql_file)
+            self.assertEqual(27, len(statements))
+
+    @unittest.skipUnless(B3_DB_SQL_FILE_AVAILABLE, "B3 DB SQL script not found @ %s" % b3.getAbsolutePath("@b3/sql/b3-db.sql"))
+    def test_b3_db_sql_file_parsing(self):
+        with open(b3.getAbsolutePath("@b3/sql/b3-db.sql"), 'r') as sql_file:
+            statements = DatabaseStorage._parse_statements(sql_file)
+            self.assertEqual(2, len(statements))
