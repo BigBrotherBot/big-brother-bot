@@ -7,7 +7,7 @@ REQUIREMENTS:
     Environment :
         * a Windows OS
         * with python2.6+
-        * with mysqldb
+        * with pymysql
     Tools:
         * py2exe2.6+
         * InnoSetup

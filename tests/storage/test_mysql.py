@@ -47,14 +47,15 @@ is_mysql_ready = True
 no_mysql_reason = ''
 
 try:
-    import MySQLdb
+    import pymysql
 except ImportError:
+    pymysql = None
     is_mysql_ready = False
-    no_mysql_reason = "no MySQLdb module available"
+    no_mysql_reason = "no pymysql module available"
 else:
     try:
-        MySQLdb.connect(host=MYSQL_TEST_HOST, user=MYSQL_TEST_USER, passwd=MYSQL_TEST_PASSWORD)
-    except MySQLdb.Error, err:
+        pymysql.connect(host=MYSQL_TEST_HOST, user=MYSQL_TEST_USER, passwd=MYSQL_TEST_PASSWORD)
+    except pymysql.Error, err:
         is_mysql_ready = False
         no_mysql_reason = "%s" % err[1]
     except Exception, err:
@@ -74,8 +75,8 @@ class Test_MySQL(B3TestCase, StorageAPITest):
         """this method is called before each test"""
         B3TestCase.setUp(self)
         try:
-            db = MySQLdb.connect(host=MYSQL_TEST_HOST, user=MYSQL_TEST_USER, passwd=MYSQL_TEST_PASSWORD)
-        except MySQLdb.OperationalError, message:
+            db = pymysql.connect(host=MYSQL_TEST_HOST, user=MYSQL_TEST_USER, password=MYSQL_TEST_PASSWORD)
+        except pymysql.OperationalError, message:
             self.fail("Error %d:\n%s" % (message[0], message[1]))
         db.query("DROP DATABASE IF EXISTS `%s`" % MYSQL_TEST_DB)
         db.query("CREATE DATABASE `%s` CHARACTER SET utf8;" % MYSQL_TEST_DB)
