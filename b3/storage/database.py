@@ -22,7 +22,9 @@
 #                                        return a list of SQL statements given an open file pointer with a SQL file
 #                                      - removed exception catching in queryFromFile so it propagates back and we can
 #                                        intercept it a parser/plugin level
-#                                      - do not implicitly call DatabaseStorage.connect() in DatabaseStorage __init__
+#                                      - do not implicitly call DatabaseStorage.connect() in DatabaseStorage __init__4
+#                                      - on database connection (mysql) attempt to create the necessary tables if B3
+#                                        database is empty
 # 12/12/2014 - 1.17   - Fenix          - added some more processing in queryFromFile(): strip out comment lines and
 #                                        handle correctly new lines and carriage return
 # 25/07/2014 - 1.16   - Fenix          - syntax cleanup
@@ -317,6 +319,22 @@ class DatabaseStorage(Storage):
             self.console.bot('Connected to database [%s times]' % self._count)
             if self._count == 1:
                 self.console.screen.write('Connecting to DB : OK\n')
+
+            # additional code to check if B3 database is empty (which will result in the AdminPlugin to raise
+            # and exception upon loading and thus B3 won't be operational). This is needed only for MySQL protocol
+            # because SQLite already create tables in getConnection(); the snippet is placed here because we need
+            # self.db to be set for getTables() and queryFromFile() methods to work properly.
+            if self.dsnDict['protocol'] == 'mysql':
+                if not self.getTables():
+                    try:
+                        self.console.info("Creating tables...")
+                        self.queryFromFile("@b3/sql/b3.sql")
+                    except Exception, e:
+                        self.shutdown()
+                        self.console.critical("Missing MySQL database tables. You need to create the necessary tables for "
+                                              "B3 to work. You can do so by importing the following SQL script into your "
+                                              "database: %s. An attempt of creating tables automatically just failed: %s" %
+                                              (b3.getAbsolutePath("@b3/sql/b3.sql"), e))
         except Exception, e:
             self.console.error('Database connection failed: working in remote mode: %s - %s',
                                e, traceback.extract_tb(sys.exc_info()[2]))
