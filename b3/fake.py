@@ -86,6 +86,7 @@ class FakeConsole(b3.parser.Parser):
             self.config = b3.config.load(config)
         
         self.storage = DatabaseStorage("sqlite://:memory:", self)
+        self.storage.connect()
         self.clients = b3.clients.Clients(self)
         self.game = b3.game.Game(self, "fakeGame")
         self.game.mapName = 'ut4_turnpike'

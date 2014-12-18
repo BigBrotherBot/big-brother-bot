@@ -18,6 +18,13 @@
 #
 # CHANGELOG
 #
+# 18/12/2014 - 1.18   - Fenix          - added _parse_statements method: internally called by queryFromFile(), will
+#                                        return a list of SQL statements given an open file pointer with a SQL file
+#                                      - removed exception catching in queryFromFile so it propagates back and we can
+#                                        intercept it a parser/plugin level
+#                                      - do not implicitly call DatabaseStorage.connect() in DatabaseStorage __init__4
+#                                      - on database connection (mysql) attempt to create the necessary tables if B3
+#                                        database is empty
 # 12/12/2014 - 1.17   - Fenix          - added some more processing in queryFromFile(): strip out comment lines and
 #                                        handle correctly new lines and carriage return
 # 25/07/2014 - 1.16   - Fenix          - syntax cleanup
@@ -56,7 +63,7 @@
 # 07/23/2005 - 1.1.0  - ThorN          - added data column to penalties table
 
 __author__ = 'ThorN'
-__version__ = '1.17'
+__version__ = '1.18'
 
 
 import os
@@ -180,7 +187,6 @@ class DatabaseStorage(Storage):
         self.db = None
         self.dsn = dsn
         self.dsnDict = functions.splitDSN(self.dsn)
-        self.connect()
 
     def getTables(self):
         """
@@ -313,6 +319,22 @@ class DatabaseStorage(Storage):
             self.console.bot('Connected to database [%s times]' % self._count)
             if self._count == 1:
                 self.console.screen.write('Connecting to DB : OK\n')
+
+            # additional code to check if B3 database is empty (which will result in the AdminPlugin to raise
+            # and exception upon loading and thus B3 won't be operational). This is needed only for MySQL protocol
+            # because SQLite already create tables in getConnection(); the snippet is placed here because we need
+            # self.db to be set for getTables() and queryFromFile() methods to work properly.
+            if self.dsnDict['protocol'] == 'mysql':
+                if not self.getTables():
+                    try:
+                        self.console.info("Creating tables...")
+                        self.queryFromFile("@b3/sql/b3.sql")
+                    except Exception, e:
+                        self.shutdown()
+                        self.console.critical("Missing MySQL database tables. You need to create the necessary tables for "
+                                              "B3 to work. You can do so by importing the following SQL script into your "
+                                              "database: %s. An attempt of creating tables automatically just failed: %s" %
+                                              (b3.getAbsolutePath("@b3/sql/b3.sql"), e))
         except Exception, e:
             self.console.error('Database connection failed: working in remote mode: %s - %s',
                                e, traceback.extract_tb(sys.exc_info()[2]))
@@ -351,6 +373,16 @@ class DatabaseStorage(Storage):
             self._lock.release()
         return c
 
+    @staticmethod
+    def _parse_statements(sql_file):
+        """
+        Return a list of SQL queries given an open file pointer.
+        :param sql_file: An open file pointer to a SQL script file
+        :return: list of strings
+        """
+        lines = [x.strip() for x in sql_file if x and not x.startswith('#') and not x.startswith('--')]
+        return [x.strip() for x in ' '.join(lines).split(';') if x]
+
     def queryFromFile(self, fp, silent=False):
         """
         This method executes an external sql file on the current database.
@@ -361,25 +393,18 @@ class DatabaseStorage(Storage):
             # save standard error output
             orig_stderr = sys.stderr
             if silent:
-                # silence the mysql warnings for existing tables and such
+                # silence mysql warnings anbd such
                 sys.stderr = open(os.devnull, 'w')
-            sql_file = b3.getAbsolutePath(fp)
-            if os.path.exists(sql_file):
-                f = open(sql_file, 'r')
-                sql_text = f.read()
-                f.close()
-                # Fenix: added some more processing in order to remove
-                # command lines and correctly handle new line and carriage return
-                sp = sql_text.splitlines()
-                lines = [l for l in sp if not l.startswith('#') and not l.startswith("--")]
-                sql_statements = ' '.join(lines).split(';')
-                for s in sql_statements:
-                    try:
-                        self.query(s.strip())
-                    except Exception:
-                        pass
+            path = b3.getAbsolutePath(fp)
+            if os.path.exists(path):
+                with open(path, 'r') as sql_file:
+                    statements = self._parse_statements(sql_file)
+                for stmt in statements:
+                    # Fenix: removed exception catching so it propagate
+                    # back and we can intercept it at parser/plugin level
+                    self.query(stmt)
             else:
-                raise Exception('SQL file does not exist: %s' % sql_file)
+                raise Exception('SQL file does not exist: %s' % path)
             # reset standard error output
             sys.stderr = orig_stderr
         return None

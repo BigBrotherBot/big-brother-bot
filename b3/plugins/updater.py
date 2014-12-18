@@ -26,9 +26,11 @@
 #                            - increased _update_check_connect_delay to 30 seconds
 # 14/12/2014 - 1.1.1 - Fenix - use B3 autorestart mode to reboot B3 after a successfull B3 update install
 # 16/12/2014 - 1.1.2 - Fenix - use EVT_PUNKBUSTER_NEW_CONNECTION instead of EVT_CLIENT_AUTH in Frostbite games
+# 18/12/2014 - 1.1.3 - Fenix - catch exceptions when upgrading B3 database and warn users if some errors are generated
+#                              while upgrading the B3 database
 
 __author__ = 'Fenix'
-__version__ = '1.1.2'
+__version__ = '1.1.3'
 
 import b3
 import b3.cron
@@ -74,6 +76,7 @@ class UpdaterPlugin(b3.plugin.Plugin):
     _re_filename = re.compile(r'''.+/(?P<archive_name>.+)''')
     _re_sql = re.compile(r'''^(?P<script>b3-update-(?P<version>.+)\.sql)$''')
     _socket_timeout = 4
+    _sql_error_count = 0
     _update_check_connect_delay = 30
     _updating = False
 
@@ -344,12 +347,17 @@ class UpdaterPlugin(b3.plugin.Plugin):
             b3_sql_files.sort(cmp=sql_cmp)
             b3_current_version = B3version(update_data['current_version'])
 
+            self._sql_error_count = 0
             for b3_sql_file in b3_sql_files:
                 b3_sql_version = B3version(self._re_sql.match(b3_sql_file).group('version'))
                 if b3_sql_version > b3_current_version:
                     b3_sql_filepath = os.path.join(b3_sql_path, b3_sql_file)
                     self.verbose('executing SQL file: %s' % b3_sql_filepath)
-                    self.console.storage.queryFromFile(b3_sql_filepath)
+                    try:
+                        self.console.storage.queryFromFile(b3_sql_filepath)
+                    except Exception, e:
+                        self.error('could not execute SQL file [%s]: %s' % (b3_sql_filepath, e))
+                        self._sql_error_count += 1
 
         except Exception, err:
             # stop processing the archive whenever an exception is raised
@@ -376,6 +384,11 @@ class UpdaterPlugin(b3.plugin.Plugin):
                 self.install_update(update_data, update_basepath)
 
                 client.message('^7[3/3] completing installation...')
+
+                if self._sql_error_count > 0:
+                    client.message('^3WARNING^7: some errors (^1%s^7) have been generated while upgrading '
+                                   'your B3 database. You can find more information about the errors in the '
+                                   'B3 log file' % self._sql_error_count)
 
                 try:
                     b3.functions.rm_file(update_archive)

@@ -79,10 +79,10 @@ class Test_MySQL(B3TestCase, StorageAPITest):
             self.fail("Error %d:\n%s" % (message[0], message[1]))
         db.query("DROP DATABASE IF EXISTS `%s`" % MYSQL_TEST_DB)
         db.query("CREATE DATABASE `%s` CHARACTER SET utf8;" % MYSQL_TEST_DB)
-        self.storage = self.console.storage = DatabaseStorage(
-            "mysql://%s:%s@%s/%s" % (MYSQL_TEST_USER, MYSQL_TEST_PASSWORD, MYSQL_TEST_HOST, MYSQL_TEST_DB),
-            self.console)
-        self.storage.queryFromFile("@b3/sql/b3.sql")
+        self.storage = self.console.storage = DatabaseStorage("mysql://%s:%s@%s/%s" % (MYSQL_TEST_USER, MYSQL_TEST_PASSWORD, MYSQL_TEST_HOST, MYSQL_TEST_DB), self.console)
+        self.storage.connect()
+        # Fenix: we dont need this anymore since B3 already pupulate the database if no table is found
+        #self.storage.queryFromFile("@b3/sql/b3.sql")
 
     def tearDown(self):
         """this method is called after each test"""
