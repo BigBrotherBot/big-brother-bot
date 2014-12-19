@@ -228,17 +228,27 @@ class DatabaseStorage(Storage):
 
         if protocol == 'mysql':
 
-            try:
-                # validate dsnDict
-                if not self.dsnDict['host']:
-                    self.console.critical("Invalid MySQL host in "
-                                          "%(protocol)s://%(user)s:******@%(host)s:%(port)s%(path)s" % self.dsnDict)
-                elif not self.dsnDict['path'] or not self.dsnDict['path'][1:]:
-                    self.console.critical("Missing MySQL database name in "
-                                          "%(protocol)s://%(user)s:******@%(host)s:%(port)s%(path)s" % self.dsnDict)
-                else:
+            # validate dsnDict
+            if not self.dsnDict['host']:
+                self.console.critical("Invalid MySQL host in "
+                                      "%(protocol)s://%(user)s:******@%(host)s:%(port)s%(path)s" % self.dsnDict)
+            elif not self.dsnDict['path'] or not self.dsnDict['path'][1:]:
+                self.console.critical("Missing MySQL database name in "
+                                      "%(protocol)s://%(user)s:******@%(host)s:%(port)s%(path)s" % self.dsnDict)
+            else:
+                try:
+                    import pymysql
+                    return pymysql.connect(host=self.dsnDict['host'],
+                                           port=self.dsnDict['port'],
+                                           user=self.dsnDict['user'],
+                                           password=self.dsnDict['password'],
+                                           database=self.dsnDict['path'][1:],
+                                           charset="utf8",
+                                           use_unicode=True)
+                except ImportError:
+                    # debian wheezy has python-mysql.connector instead of pymysql
                     try:
-                        import pymysql
+                        import mysql.connector as pymysql
                         return pymysql.connect(host=self.dsnDict['host'],
                                                port=self.dsnDict['port'],
                                                user=self.dsnDict['user'],
@@ -246,20 +256,9 @@ class DatabaseStorage(Storage):
                                                database=self.dsnDict['path'][1:],
                                                charset="utf8",
                                                use_unicode=True)
-                    except ImportError:
-                        # debian wheezy has python-mysql.connector instead of pymysql
-                        try:
-                            import mysql.connector as pymysql
-                            return pymysql.connect(host=self.dsnDict['host'],
-                                                   port=self.dsnDict['port'],
-                                                   user=self.dsnDict['user'],
-                                                   password=self.dsnDict['password'],
-                                                   database=self.dsnDict['path'][1:],
-                                                   charset="utf8",
-                                                   use_unicode=True)
-                        except ImportError, e:
-                            pymysql = None # just to remove a warning
-                            self.console.critical("%s. You need to install 'pymysql' or 'python-mysql.connector': look for 'dependencies' in B3 documentation.", e)
+                    except ImportError, e:
+                        pymysql = None # just to remove a warning
+                        self.console.critical("%s. You need to install 'pymysql' or 'python-mysql.connector': look for 'dependencies' in B3 documentation.", e)
 
         elif protocol == 'sqlite':
             import sqlite3
