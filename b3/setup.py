@@ -50,6 +50,7 @@
 # 2014/04/01 - 1.8   - Courgette      - added: Insurgency support
 # 2014/07/21 - 1.9   - Fenix          - syntax cleanup
 # 2014/12/18 - 1.9.1 - Fenix          - switched from MySQLdb to pymysql
+# 2014/12/19 - 1.9.2 - Ansa89         - allow use of python-mysql.connector instead of pymysql for debian wheezy
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -861,6 +862,15 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
         if _dsndict['protocol'] == 'mysql':
             try:
                 import pymysql
+            except ImportError:
+                # debian wheezy has python-mysql.connector instead of pymysql
+                try:
+                    import mysql.connector as pymysql
+                except ImportError:
+                    pymysql = None # just to remove a warning
+                    self.add_buffer("You need to install 'pymysql' or 'python-mysql.connector': look for 'dependencies' in B3 documentation.\n")
+                    raise SystemExit()
+            try:
                 _db = pymysql.connect(host=_dsndict['host'],
                                       port=_dsndict['port'],
                                       user=_dsndict['user'],
@@ -868,10 +878,6 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
                                       database=_dsndict['path'][1:],
                                       charset="utf8",
                                       use_unicode=True)
-            except ImportError:
-                pymysql = None # just to remove a warning
-                self.add_buffer("You need to install 'pymysql': look for 'dependencies' in B3 documentation.\n")
-                raise SystemExit()
             except Exception:
                 try:
                     _db.close()
