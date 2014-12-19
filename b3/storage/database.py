@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 19/12/2014 - 1.18.2 - Ansa89         - allow use of python-mysql.connector instead of pymysql for debian wheezy
 # 18/12/2014 - 1.18.1 - Fenix          - switched from MySQLdb to pymysql
 # 18/12/2014 - 1.18   - Fenix          - added _parse_statements method: internally called by queryFromFile(), will
 #                                        return a list of SQL statements given an open file pointer with a SQL file
@@ -64,7 +65,7 @@
 # 07/23/2005 - 1.1.0  - ThorN          - added data column to penalties table
 
 __author__ = 'ThorN'
-__version__ = '1.18.1'
+__version__ = '1.18.2'
 
 
 import os
@@ -236,17 +237,29 @@ class DatabaseStorage(Storage):
                     self.console.critical("Missing MySQL database name in "
                                           "%(protocol)s://%(user)s:******@%(host)s:%(port)s%(path)s" % self.dsnDict)
                 else:
-                    import pymysql
-                    return pymysql.connect(host=self.dsnDict['host'],
-                                           port=self.dsnDict['port'],
-                                           user=self.dsnDict['user'],
-                                           password=self.dsnDict['password'],
-                                           database=self.dsnDict['path'][1:],
-                                           charset="utf8",
-                                           use_unicode=True)
-            except ImportError, e:
-                pymysql = None # just to remove a warning
-                self.console.critical("%s. You need to install 'pymysql: look for 'dependencies' in B3 documentation.", e)
+                    try:
+                        import pymysql
+                        return pymysql.connect(host=self.dsnDict['host'],
+                                               port=self.dsnDict['port'],
+                                               user=self.dsnDict['user'],
+                                               password=self.dsnDict['password'],
+                                               database=self.dsnDict['path'][1:],
+                                               charset="utf8",
+                                               use_unicode=True)
+                    except ImportError:
+                        # debian wheezy has python-mysql.connector instead of pymysql
+                        try:
+                            import mysql.connector as pymysql
+                            return pymysql.connect(host=self.dsnDict['host'],
+                                                   port=self.dsnDict['port'],
+                                                   user=self.dsnDict['user'],
+                                                   password=self.dsnDict['password'],
+                                                   database=self.dsnDict['path'][1:],
+                                                   charset="utf8",
+                                                   use_unicode=True)
+                        except ImportError, e:
+                            pymysql = None # just to remove a warning
+                            self.console.critical("%s. You need to install 'pymysql' or 'python-mysql.connector': look for 'dependencies' in B3 documentation.", e)
 
         elif protocol == 'sqlite':
             import sqlite3

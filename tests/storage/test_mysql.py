@@ -49,10 +49,14 @@ no_mysql_reason = ''
 try:
     import pymysql
 except ImportError:
-    pymysql = None
-    is_mysql_ready = False
-    no_mysql_reason = "no pymysql module available"
-else:
+    # debian wheezy has python-mysql.connector instead of pymysql
+    try:
+        import mysql.connector as pymysql
+    except ImportError:
+        pymysql = None
+        is_mysql_ready = False
+        no_mysql_reason = "no pymysql or mysql.connector module available"
+if is_mysql_ready:
     try:
         pymysql.connect(host=MYSQL_TEST_HOST, user=MYSQL_TEST_USER, passwd=MYSQL_TEST_PASSWORD)
     except pymysql.Error, err:
