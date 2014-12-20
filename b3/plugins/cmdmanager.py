@@ -23,6 +23,7 @@
 # 18/09/2014 - 1.2 - Fenix - added command !cmdgrant: allow the execution of a command to a specific client
 #                          - added command !cmdrevoke: revoke a previously given command grant
 #                          - added command !cmduse: check whether a client can execute the given command
+# 20/12/2014 - 1.3 - Fenix - fixed invalid placeholder in mysql related SQL statements
 
 __author__ = 'Fenix'
 __version__ = '1.2'
@@ -55,8 +56,8 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
 
     _sql = {
         'mysql': {
-            'upsert': """REPLACE INTO cmdgrants (id, commands) VALUES (?, ?);""",
-            'select': """SELECT id, commands FROM cmdgrants WHERE id = ?""",
+            'upsert': """REPLACE INTO cmdgrants (id, commands) VALUES (%s, %s);""",
+            'select': """SELECT id, commands FROM cmdgrants WHERE id = %s""",
             'schema': """CREATE TABLE IF NOT EXISTS cmdgrants (
                              id int(11) NOT NULL,
                              commands TEXT NOT NULL,
