@@ -2,7 +2,7 @@
 
 # Big Brother Bot (B3) Management - http://www.bigbrotherbot.net
 # Maintainer: Daniele Pantaleone <fenix@bigbrotherbot.net>
-# App Version: 0.4
+# App Version: 0.5
 # Last Edit: 30/11/2014
 
 ### BEGIN INIT INFO
@@ -28,6 +28,7 @@
 #                     auto-restart mode uses 4 processes (the screen, the main loop in b3/run.py, a new shell used     #
 #                     by subprocess, and the command to actually start the B3 instance inside this new shell), while   #
 #                     a normal B3 startup uses only 2 processes (screen and B3 process running inside the screen)      #
+#  2014-12-20 - 0.5 - fixed b3_clean not restarting all previously running B3 instances                                #
 #                                                                                                                      #
 ########################################################################################################################
 
@@ -359,6 +360,7 @@ function b3_clean() {
         fi
     done
 
+    local B3_RUNNING_LIST=$(join ' ' "${B3_RUNNING[@]}")
     find "$(readlink -f "../")" -type f \( -name "*.pyc" -o -name "*${PID_EXT}" \) \
                                 -exec rm {} \; \
                                 -exec printf "." \; \
@@ -366,7 +368,7 @@ function b3_clean() {
     echo " DONE!"
 
     # restart all the B3 which were running 
-    for i in ${B3_RUNNING}; do
+    for i in ${B3_RUNNING_LIST}; do
         b3_start "${i}"
     done
 
