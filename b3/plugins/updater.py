@@ -28,9 +28,11 @@
 # 16/12/2014 - 1.1.2 - Fenix - use EVT_PUNKBUSTER_NEW_CONNECTION instead of EVT_CLIENT_AUTH in Frostbite games
 # 18/12/2014 - 1.1.3 - Fenix - catch exceptions when upgrading B3 database and warn users if some errors are generated
 #                              while upgrading the B3 database
+# 20/12/2014 - 1.1.4 - Fenix - added missing requiresConfigFile = False
+#                            - removed useless debug message
 
 __author__ = 'Fenix'
-__version__ = '1.1.3'
+__version__ = '1.1.4'
 
 import b3
 import b3.cron
@@ -70,6 +72,8 @@ class UpdateError(Exception):
 
 
 class UpdaterPlugin(b3.plugin.Plugin):
+
+    requiresConfigFile = False
 
     _adminPlugin = None
     _frostBiteGameNames = ['bfbc2', 'moh', 'bf3', 'bf4']
@@ -292,7 +296,6 @@ class UpdaterPlugin(b3.plugin.Plugin):
 
                 # this will hold the path in which we are going to copy files over
                 b3_current_path = os.path.join(b3_basepath, b3.functions.left_cut(root, update_basepath))
-                self.verbose('current b3 path: %s' % b3_current_path)
 
                 # create necessary directories in case there are new: those will be iterated
                 # later in the loop when a new root directory will be processed

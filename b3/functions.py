@@ -42,9 +42,10 @@
 #                                     - added left_cut function: remove the given prefix from a string
 #                                     - added right_cut function: remove the given suffix from a string
 #                                     - added hash_file function: calculate the MD5 digest of the given file
+# 20/12/2014 - 1.15  - Fenix          - fixed hash_file returning None
 
 __author__    = 'ThorN, xlr8or, courgette'
-__version__   = '1.14'
+__version__   = '1.15'
 
 import collections
 import os
@@ -410,7 +411,8 @@ def hash_file(filepath):
     Calculate the MD5 digest of a given file.
     """
     with open(filepath, 'rb') as afile:
-        md5(afile.read()).hexdigest()
+        digest = md5(afile.read()).hexdigest()
+    return digest
 
 
 def corrent_spell(c_word, wordbook):
