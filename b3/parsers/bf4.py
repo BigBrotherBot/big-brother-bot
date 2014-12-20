@@ -43,7 +43,7 @@ from b3.parsers.frostbite2.util import PlayerInfoBlock
 __author__ = 'Courgette, ozon, Dwarfer'
 __version__ = '1.1.1'
 
-BF4_REQUIRED_VERSION = 150767
+BF4_REQUIRED_VERSION = 155011
 
 BF4_PLAYER = 0              # normal player
 BF4_SPECTATOR = 1           # spectator which is not visible in the game for other player but visible as player for b3
