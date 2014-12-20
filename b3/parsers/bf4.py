@@ -18,6 +18,8 @@
 #
 # CHANGELOG
 #
+# 1.1.2 - update to server version R46
+#       - add DLC4 (Final Stand) map pack
 # 1.1.1 - update to server version R43
 #       - new server vars for "player ready" feature
 # 1.1   - syntax cleanup
@@ -41,9 +43,9 @@ from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 
 __author__ = 'Courgette, ozon, Dwarfer'
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
-BF4_REQUIRED_VERSION = 150767
+BF4_REQUIRED_VERSION = 155011
 
 BF4_PLAYER = 0              # normal player
 BF4_SPECTATOR = 1           # spectator which is not visible in the game for other player but visible as player for b3
@@ -167,6 +169,10 @@ MAP_NAME_BY_ID = {
     'XP3_Prpganda': 'Propaganda',
     'XP3_UrbanGdn': 'Lumphini Garden',
     'XP3_WtrFront': 'Sunken Dragon',
+    'XP4_Arctic': 'Operation Whiteout',
+    'XP4_SubBase': 'Hammerhead',
+    'XP4_Titan': 'Hangar 21',
+    'XP4_WlkrFtry': 'Giants Of Karelia',
 }
 
 MAP_ID_BY_NAME = dict()
@@ -436,6 +442,46 @@ GAME_MODES_BY_MAP_ID = {
         'Domination0',
         'CaptureTheFlag0',
         'Chainlink0'),
+    'XP4_Arctic': (
+        'ConquestLarge0',
+        'ConquestSmall0',
+        'Elimination0',
+        'Obliteration',
+        'RushLarge0',
+        'TeamDeathMatch0',
+        'SquadDeathMatch0',
+        'Domination0',
+        'CaptureTheFlag0'),
+    'XP4_SubBase': (
+        'ConquestLarge0',
+        'ConquestSmall0',
+        'Elimination0',
+        'Obliteration',
+        'RushLarge0',
+        'TeamDeathMatch0',
+        'SquadDeathMatch0',
+        'Domination0',
+        'CaptureTheFlag0'),
+    'XP4_Titan': (
+        'ConquestLarge0',
+        'ConquestSmall0',
+        'Elimination0',
+        'Obliteration',
+        'RushLarge0',
+        'TeamDeathMatch0',
+        'SquadDeathMatch0',
+        'Domination0',
+        'CaptureTheFlag0'),
+    'XP4_WlkrFtry': (
+        'ConquestLarge0',
+        'ConquestSmall0',
+        'Elimination0',
+        'Obliteration',
+        'RushLarge0',
+        'TeamDeathMatch0',
+        'SquadDeathMatch0',
+        'Domination0',
+        'CaptureTheFlag0'),
 }
 
 COMROSE_CHAT_NAME_BY_ID = {

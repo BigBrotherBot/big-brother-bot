@@ -23,7 +23,7 @@
 # 2014/09/01 - 2.6 - Fenix - syntax cleanup
 
 __author__  = 'ThorN, xlr8or, courgette'
-__version__ = '2.6'
+__version__ = '2.7'
 
 
 import re
@@ -72,6 +72,7 @@ py2exe_dataFiles = [
     ('', ['README.md']),
     ('', ['b3/PKG-INFO']),
     ('docs', listdirectory('b3/docs/')),
+    ('scripts', listdirectory('scripts/')),
     ('sql', listdirectory('b3/sql/')),
     ('sql/sqlite', listdirectory('b3/sql/sqlite')),
     ('conf', listdirectory('b3/conf/')),
@@ -123,7 +124,6 @@ setup(cmdclass=cmdclass,
       version=b3version,
       tests_require=['nose>=1.0', 'nose-exclude', 'mockito', 'pysqlite'],
       packages=find_packages(),
-      extras_require={ 'mysql' : 'MySQL-python' },
       package_data={'': ['conf/*.xml',
                          'conf/*.ini',
                          'conf/templates/*.tpl',
@@ -133,6 +133,7 @@ setup(cmdclass=cmdclass,
                          'extplugins/conf/*.ini',
                          'sql/*.*',
                          'sql/sqlite/*',
+                         '../scripts/*.*',
                          'docs/*.txt',
                          'docs/*.pdf',
                          'README.md']
