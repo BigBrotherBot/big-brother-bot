@@ -8,9 +8,8 @@ Big Brother Bot
 ### Requirements
 
 1. Python 2.6+ - http://www.python.org
-2. MySQL-python (Tested with 0.9.2 and 1.0) - http://sourceforge.net/project/showfiles.php?group_id=22307&package_id=15775
-3. MySQL (Tested with 3.23) - http://www.mysql.com/
-4. setuptools - http://peak.telecommunity.com/dist/ez_setup.py (download and run)
+2. MySQL (Tested with 3.23) - http://www.mysql.com/
+3. setuptools - http://peak.telecommunity.com/dist/ez_setup.py (download and run)
 
 ### Assumptions
 
@@ -33,12 +32,7 @@ Python Egg or the source distribution.
 1. Download and run the setup tools installer if you haven't already.
 2. Run `easy_install -U b3`.
 
-   *Note 1*: MySQL-python does not seem to download and install correctly as a
-   easy_install package. You should instead install it directly by getting
-   the latest install link of the Source Forge page and run easy_install on it.
-   The same goes for the Elementtree library.
-
-   *Note 2*: easy_install needs to write into Python's "site-packages"
+   *Note 1*: easy_install needs to write into Python's "site-packages"
    directory. You may need root/administrator privileges to do this. For
    advanced users, easy_install can use alternative destinations as well.
 
