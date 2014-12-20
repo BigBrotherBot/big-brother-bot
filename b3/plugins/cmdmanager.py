@@ -24,9 +24,11 @@
 #                          - added command !cmdrevoke: revoke a previously given command grant
 #                          - added command !cmduse: check whether a client can execute the given command
 # 20/12/2014 - 1.3 - Fenix - fixed invalid placeholder in mysql related SQL statements
+#                          - use client auth event instead of client connect: in client auth, client.id is not set
+#                            and so we can't load command grants from the storage
 
 __author__ = 'Fenix'
-__version__ = '1.2'
+__version__ = '1.3'
 
 import b3
 import b3.plugin
@@ -49,6 +51,7 @@ GRANT_SET_ATTR = 'cmdgrantset'
 class CmdmanagerPlugin(b3.plugin.Plugin):
 
     _adminPlugin = None
+    _frostBiteGameNames = ['bfbc2', 'moh', 'bf3', 'bf4']
 
     _settings = {
         'update_config_file': True
@@ -126,8 +129,11 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
             protocol = self.console.storage.dsnDict['protocol']
             self.console.storage.query(self._sql[protocol]['schema'])
 
-        # register the events needed
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_CONNECT'), self.onConnect)
+        # register events needed
+        if self.console.gameName in self._frostBiteGameNames:
+            self.registerEvent(self.console.getEventID('EVT_PUNKBUSTER_NEW_CONNECTION'), self.onAuth)
+        else:
+            self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.onAuth)
 
         # notice plugin started
         self.debug('plugin started')
@@ -138,9 +144,9 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
     ##                                                                                                                ##
     ####################################################################################################################
 
-    def onConnect(self, event):
+    def onAuth(self, event):
         """
-        Handle EVT_CLIENT_CONNECT events.
+        Handle EVT_CLIENT_AUTH events.
         :param event: The Event to be handled
         """
         self.load_command_grants(event.client)
