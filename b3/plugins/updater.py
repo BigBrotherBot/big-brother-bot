@@ -30,9 +30,11 @@
 #                              while upgrading the B3 database
 # 20/12/2014 - 1.1.4 - Fenix - added missing requiresConfigFile = False
 #                            - removed useless debug message
+# 24/12/2014 - 1.1.5 - Fenix - use only EVT_CLIENT_AUTH: this event is fired in all the parser and behaves exactly in
+#                              the same way no matter the game we are running
 
 __author__ = 'Fenix'
-__version__ = '1.1.4'
+__version__ = '1.1.5'
 
 import b3
 import b3.cron
@@ -76,7 +78,6 @@ class UpdaterPlugin(b3.plugin.Plugin):
     requiresConfigFile = False
 
     _adminPlugin = None
-    _frostBiteGameNames = ['bfbc2', 'moh', 'bf3', 'bf4']
     _re_filename = re.compile(r'''.+/(?P<archive_name>.+)''')
     _re_sql = re.compile(r'''^(?P<script>b3-update-(?P<version>.+)\.sql)$''')
     _socket_timeout = 4
@@ -109,11 +110,7 @@ class UpdaterPlugin(b3.plugin.Plugin):
 
         # register events needed
         self.registerEvent(self.console.getEventID('EVT_SHUTDOWN_REQUEST'), self.onShutdownRequest)
-
-        if self.console.gameName in self._frostBiteGameNames:
-            self.registerEvent(self.console.getEventID('EVT_PUNKBUSTER_NEW_CONNECTION'), self.onAuth)
-        else:
-            self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.onAuth)
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.onAuth)
 
         # notice plugin started
         self.debug('plugin started')
