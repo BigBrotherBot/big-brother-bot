@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2014/12/25 - 1.39   - Fenix           - new storage module initialization
 # 2014/12/14 - 1.38.2 - Fenix           - correctly set exitcode variable in b3.parser.die() and b3.parser.restart(): B3
 #                                         was calling sys.exit(*) in both methods but the main thread was expecting to
 #                                         find the exit code in the exitcode (so the main thread was defaulting exit
@@ -146,7 +147,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.38.2'
+__version__ = '1.39'
 
 import os
 import sys
@@ -173,10 +174,11 @@ from ConfigParser import NoOptionError
 from ConfigParser import NoSectionError
 from b3.clients import Clients
 from b3.clients import Group
+from b3.decorators import memoize
 from b3.functions import getModule
 from b3.functions import vars2printf
 from b3.functions import main_is_frozen
-from b3.decorators import memoize
+from b3.functions import splitDSN
 from b3.functions import right_cut
 from textwrap import TextWrapper
 
@@ -429,7 +431,17 @@ class Parser(object):
                 self._timeStart = 0
                 self.bot('Replay mode enabled')
 
-        self.storage = b3.storage.getStorage('database', self.config.get('b3', 'database'), self)
+        try:
+            # setup storage module
+            dsn = self.config.get('b3', 'database')
+            self.storage = b3.storage.getStorage(dsn=dsn, dsnDict=splitDSN(dsn), console=self)
+        except (AttributeError, ImportError), e:
+            # exit if we don't manage to setup the storage module: B3 will stop working upon Admin
+            # Plugin loading so it makes no sense to keep going with the console initialization
+            self.critical('Could not setup storage module: %s' % e)
+
+        # establish a connection with the database
+        self.storage.connect()
 
         if self.config.has_option('server', 'game_log'):
             # open log file

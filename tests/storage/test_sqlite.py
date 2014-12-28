@@ -16,27 +16,25 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-from b3.storage.database import DatabaseStorage
+
+import nose
+
+from b3.functions import splitDSN
+from b3.storage.sqlite import SqliteStorage
 from tests import B3TestCase
 from tests.storage.common import StorageAPITest
-import nose
 
 SQLITE_DB = ":memory:"
 #SQLITE_DB = "c:/Users/Thomas/b3.db"
 
 class Test_sqlite(B3TestCase, StorageAPITest):
-    """
-    NOTE: to work properly you must be running a MySQL database on localhost
-    which must have a user named 'b3test' with password 'test' which has 
-    all privileges over a table (already created or not) named 'b3_test'
-    """
 
     def setUp(self):
         """this method is called before each test"""
         B3TestCase.setUp(self)
-        self.storage = self.console.storage = DatabaseStorage('sqlite://'+SQLITE_DB, self.console)
+        self.storage = self.console.storage = SqliteStorage('sqlite://' + SQLITE_DB, splitDSN('sqlite://' + SQLITE_DB), self.console)
         self.storage.connect()
-        self.storage.queryFromFile("@b3/sql/sqlite/b3.sql")
+        #self.storage.queryFromFile("@b3/sql/sqlite/b3.sql")
 
     def tearDown(self):
         """this method is called after each test"""
