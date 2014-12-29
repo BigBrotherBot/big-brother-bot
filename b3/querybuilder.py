@@ -22,27 +22,26 @@
 # 2011-04-17 - 1.0.3 / 1.0.4 - Courgette - fix bug introduced in 1.0.2
 # 2011-05-31 - 1.1.0         - Courgette - sqlite compatible
 # 2014-07-25 - 1.2.0         - Fenix     - syntax cleanup
+# 2014-12-28 - 1.3.0         - Fenix     - postgresql support
 
 __author__  = 'ThorN'
-__version__ = '1.2.0'
+__version__ = '1.3.0'
 
 class QueryBuilder(object):
 
     def __init__(self, db=None):
         """
         Object constructor.
-        db parameter is not used yet
-        The intention is for the class to use the db's escape method
+        :param db: The current database connection.
         """
-        pass
+        self.db = db
 
     def escape(self, word):
         """
         Escape quotes from a given string.
         :param word: The string on which to perform the escape
         """
-        if isinstance(word, int) or isinstance(word, long) \
-                or isinstance(word, complex) or isinstance(word, float):
+        if isinstance(word, int) or isinstance(word, long) or isinstance(word, complex) or isinstance(word, float):
             return str(word)
         elif word is None:
             return '"None"'
@@ -67,12 +66,12 @@ class QueryBuilder(object):
         :param fields: The list of fields to format.
         """
         if isinstance(fields, tuple) or isinstance(fields, list):
-            return '`%s`' % '`, `'.join(fields)
+            return "`%s`" % "`, `".join(fields)
         elif isinstance(fields, str):
-            if fields == '*':
+            if fields == "*":
                 return fields
             else:
-                return '`%s`' % fields
+                return "`%s`" % fields
         else:
             raise TypeError('field must be a tuple, list, or string')
 
@@ -88,35 +87,35 @@ class QueryBuilder(object):
             values = []
             for v in value:
                 values.append(self.escape(v))
-            return '`' + field + '` IN(' + ','.join(values) + ')'
+            return "`" + field + "` IN(" + ",".join(values) + ")"
         elif value is None:
             value = self.escape('')
         else:
             value = self.escape(value)
 
         if len(field) >= 2:
-            if field[-2] == '>=':
-                return '`' + field[:-2].strip() + '` >= ' + value
-            elif field[-2] == '<=':
-                return '`' + field[:-2].strip() + '` <= ' + value
-            elif field[-1] == '<':
-                return '`' + field[:-1].strip() + '` < ' + value
-            elif field[-1] == '>':
-                return '`' + field[:-1].strip() + '` > ' + value
-            elif field[-1] == '=':
-                return '`' + field[:-1].strip() + '` = ' + value
-            elif field[-1] == '%' and field[0] == '%':
-                return '`' + field[1:-1].strip() + '` LIKE "%' + value[1:-1] + '%"'
-            elif field[-1] == '%':
-                return '`' + field[:-1].strip() + '` LIKE "' + value[1:-1] + '%"'
+            if field[-2] == ">=":
+                return "`" + field[:-2].strip() + "` >= " + value
+            elif field[-2] == "<=":
+                return "`" + field[:-2].strip() + "` <= " + value
+            elif field[-1] == "<":
+                return "`" + field[:-1].strip() + "` < " + value
+            elif field[-1] == ">":
+                return "`" + field[:-1].strip() + "` > " + value
+            elif field[-1] == "=":
+                return "`" + field[:-1].strip() + "` = " + value
+            elif field[-1] == "%" and field[0] == "%":
+                return "`" + field[1:-1].strip() + "` LIKE '%" + value[1:-1] + "%'"
+            elif field[-1] == "%":
+                return "`" + field[:-1].strip() + "` LIKE '" + value[1:-1] + "%'"
             elif field[0] == '%':
-                return '`' + field[1:].strip() + '` LIKE "%' + value[1:-1] + '"'
+                return "`" + field[1:].strip() + "` LIKE '%" + value[1:-1] + "'"
             elif field[0] == '&':
-                return '`' + field[1:].strip() + '` & ' + value
+                return "`" + field[1:].strip() + "` & " + value
             elif field[0] == '|':
-                return '`' + field[1:].strip() + '` | ' + value
+                return "`" + field[1:].strip() + "` | " + value
 
-        return '`' + field + '` = ' + value
+        return "`" + field + "` = " + value
 
     def WhereClause(self, fields=None, values=None, concat=' and '):
         """
@@ -195,21 +194,21 @@ class QueryBuilder(object):
         sql = ['SELECT %s FROM %s' % (self.fieldStr(fields), table)]
 
         if where:
-            sql.append('WHERE %s' % self.WhereClause(where))
+            sql.append("WHERE %s" % self.WhereClause(where))
         if groupby:
-            sql.append('GROUP BY %s' % orderby)
+            sql.append("GROUP BY %s" % orderby)
         if having:
-            sql.append('HAVING %s' % having)
+            sql.append("HAVING %s" % having)
         if orderby:
-            sql.append('ORDER BY %s' % orderby)
+            sql.append("ORDER BY %s" % orderby)
         if limit:
-            sql.append('LIMIT')
+            sql.append("LIMIT")
         if offset:
-            sql.append(offset + ',')
+            sql.append(offset + ",")
         if limit:
             sql.append(str(limit))
 
-        return ' '.join(sql)
+        return " ".join(sql)
 
     def UpdateQuery(self, data, table, where, delayed=None): 
         """
@@ -219,19 +218,19 @@ class QueryBuilder(object):
         :param where: A WHERE clause for this select statement.
         :param delayed: Whether to add the DELAYED clause to the query.
         """
-        sql = 'UPDATE '
+        sql = "UPDATE "
 
         if delayed:
-            sql += 'DELAYED '
+            sql += "DELAYED "
 
-        sql += table + ' SET '
+        sql += table + " SET "
 
         sets = []
         for k, v in data.iteritems():
             sets.append(self.FieldClause(k, v))
 
-        sql += ', '.join(sets)
-        sql += ' WHERE ' + self.WhereClause(where)
+        sql += ", ".join(sets)
+        sql += " WHERE " + self.WhereClause(where)
 
         return sql
 
@@ -242,12 +241,12 @@ class QueryBuilder(object):
         :param table: The table from where to fetch data.
         :param delayed: Whether to add the DELAYED clause to the query.
         """
-        sql = 'INSERT '
+        sql = "INSERT "
 
         if delayed:
-            sql += 'DELAYED '
+            sql += "DELAYED "
 
-        sql += 'INTO ' + table
+        sql += "INTO " + table
 
         keys = []
         values = []
@@ -255,7 +254,7 @@ class QueryBuilder(object):
             keys.append(k)
             values.append(self.escape(v))
 
-        sql += '(' + self.fieldStr(keys) + ') VALUES (' + ', '.join(values) + ')'
+        sql += "(" + self.fieldStr(keys) + ") VALUES (" + ", ".join(values) + ")"
 
         return sql
 
@@ -266,12 +265,12 @@ class QueryBuilder(object):
         :param table: The table from where to fetch data.
         :param delayed: Whether to add the DELAYED clause to the query.
         """
-        sql = 'REPLACE '
+        sql = "REPLACE "
 
         if delayed:
-            sql += 'DELAYED '
+            sql += "DELAYED "
 
-        sql += 'INTO ' + table
+        sql += "INTO " + table
 
         keys = []
         values = []
@@ -279,6 +278,6 @@ class QueryBuilder(object):
             keys.append(k)
             values.append(self.escape(v))
 
-        sql += '(' + self.fieldStr(keys) + ') VALUES (' + ', '.join(values) + ')'
+        sql += "(" + self.fieldStr(keys) + ") VALUES (" + ", ".join(values) + ")"
 
         return sql

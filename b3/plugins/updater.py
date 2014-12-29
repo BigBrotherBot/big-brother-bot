@@ -26,9 +26,15 @@
 #                            - increased _update_check_connect_delay to 30 seconds
 # 14/12/2014 - 1.1.1 - Fenix - use B3 autorestart mode to reboot B3 after a successfull B3 update install
 # 16/12/2014 - 1.1.2 - Fenix - use EVT_PUNKBUSTER_NEW_CONNECTION instead of EVT_CLIENT_AUTH in Frostbite games
+# 18/12/2014 - 1.1.3 - Fenix - catch exceptions when upgrading B3 database and warn users if some errors are generated
+#                              while upgrading the B3 database
+# 20/12/2014 - 1.1.4 - Fenix - added missing requiresConfigFile = False
+#                            - removed useless debug message
+# 24/12/2014 - 1.1.5 - Fenix - use only EVT_CLIENT_AUTH: this event is fired in all the parser and behaves exactly in
+#                              the same way no matter the game we are running
 
 __author__ = 'Fenix'
-__version__ = '1.1.2'
+__version__ = '1.1.5'
 
 import b3
 import b3.cron
@@ -69,11 +75,13 @@ class UpdateError(Exception):
 
 class UpdaterPlugin(b3.plugin.Plugin):
 
+    requiresConfigFile = False
+
     _adminPlugin = None
-    _frostBiteGameNames = ['bfbc2', 'moh', 'bf3', 'bf4']
     _re_filename = re.compile(r'''.+/(?P<archive_name>.+)''')
     _re_sql = re.compile(r'''^(?P<script>b3-update-(?P<version>.+)\.sql)$''')
     _socket_timeout = 4
+    _sql_error_count = 0
     _update_check_connect_delay = 30
     _updating = False
 
@@ -94,7 +102,7 @@ class UpdaterPlugin(b3.plugin.Plugin):
 
         # create an events for a proper B3 shutdown: the updating thread fails to shutdown B3 properly when
         # invoking self.console.die() from whithin the thread itself so we need to to handle this from outside
-
+        self.console.Events.createEvent('EVT_SHUTDOWN_REQUEST', 'Shutdown request')
 
         # register commands
         self._adminPlugin.registerCommand(self, 'update', 100, self.cmd_update)
@@ -102,11 +110,7 @@ class UpdaterPlugin(b3.plugin.Plugin):
 
         # register events needed
         self.registerEvent(self.console.getEventID('EVT_SHUTDOWN_REQUEST'), self.onShutdownRequest)
-
-        if self.console.gameName in self._frostBiteGameNames:
-            self.registerEvent(self.console.getEventID('EVT_PUNKBUSTER_NEW_CONNECTION'), self.onAuth)
-        else:
-            self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.onAuth)
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.onAuth)
 
         # notice plugin started
         self.debug('plugin started')
@@ -289,7 +293,6 @@ class UpdaterPlugin(b3.plugin.Plugin):
 
                 # this will hold the path in which we are going to copy files over
                 b3_current_path = os.path.join(b3_basepath, b3.functions.left_cut(root, update_basepath))
-                self.verbose('current b3 path: %s' % b3_current_path)
 
                 # create necessary directories in case there are new: those will be iterated
                 # later in the loop when a new root directory will be processed
@@ -344,12 +347,17 @@ class UpdaterPlugin(b3.plugin.Plugin):
             b3_sql_files.sort(cmp=sql_cmp)
             b3_current_version = B3version(update_data['current_version'])
 
+            self._sql_error_count = 0
             for b3_sql_file in b3_sql_files:
                 b3_sql_version = B3version(self._re_sql.match(b3_sql_file).group('version'))
                 if b3_sql_version > b3_current_version:
                     b3_sql_filepath = os.path.join(b3_sql_path, b3_sql_file)
                     self.verbose('executing SQL file: %s' % b3_sql_filepath)
-                    self.console.storage.queryFromFile(b3_sql_filepath)
+                    try:
+                        self.console.storage.queryFromFile(b3_sql_filepath)
+                    except Exception, e:
+                        self.error('could not execute SQL file [%s]: %s' % (b3_sql_filepath, e))
+                        self._sql_error_count += 1
 
         except Exception, err:
             # stop processing the archive whenever an exception is raised
@@ -376,6 +384,11 @@ class UpdaterPlugin(b3.plugin.Plugin):
                 self.install_update(update_data, update_basepath)
 
                 client.message('^7[3/3] completing installation...')
+
+                if self._sql_error_count > 0:
+                    client.message('^3WARNING^7: some errors (^1%s^7) have been generated while upgrading '
+                                   'your B3 database. You can find more information about the errors in the '
+                                   'B3 log file' % self._sql_error_count)
 
                 try:
                     b3.functions.rm_file(update_archive)

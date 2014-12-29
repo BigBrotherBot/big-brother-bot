@@ -18,14 +18,19 @@
 #
 # CHANGELOG:
 #
-# 02/05/2014 - 1.0 - Fenix - committed first built-in release
-# 30/08/2014 - 1.1 - Fenix - syntax cleanup
-# 18/09/2014 - 1.2 - Fenix - added command !cmdgrant: allow the execution of a command to a specific client
-#                          - added command !cmdrevoke: revoke a previously given command grant
-#                          - added command !cmduse: check whether a client can execute the given command
+# 02/05/2014 - 1.0   - Fenix - committed first built-in release
+# 30/08/2014 - 1.1   - Fenix - syntax cleanup
+# 18/09/2014 - 1.2   - Fenix - added command !cmdgrant: allow the execution of a command to a specific client
+#                            - added command !cmdrevoke: revoke a previously given command grant
+#                            - added command !cmduse: check whether a client can execute the given command
+# 20/12/2014 - 1.3   - Fenix - fixed invalid placeholder in mysql related SQL statements
+#                            - use client auth event instead of client connect: in client connect, client.id is not set
+#                              and so we can't load command grants from the storage
+# 24/12/2014 - 1.3.1 - Fenix - use only EVT_CLIENT_AUTH: this event is fired in all the parser and behaves exactly in
+#                              the same way no matter the game we are running
 
 __author__ = 'Fenix'
-__version__ = '1.2'
+__version__ = '1.3.1'
 
 import b3
 import b3.plugin
@@ -55,8 +60,8 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
 
     _sql = {
         'mysql': {
-            'upsert': """REPLACE INTO cmdgrants (id, commands) VALUES (?, ?);""",
-            'select': """SELECT id, commands FROM cmdgrants WHERE id = ?""",
+            'upsert': """REPLACE INTO cmdgrants (id, commands) VALUES (%s, %s);""",
+            'select': """SELECT id, commands FROM cmdgrants WHERE id = %s""",
             'schema': """CREATE TABLE IF NOT EXISTS cmdgrants (
                              id int(11) NOT NULL,
                              commands TEXT NOT NULL,
@@ -125,8 +130,8 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
             protocol = self.console.storage.dsnDict['protocol']
             self.console.storage.query(self._sql[protocol]['schema'])
 
-        # register the events needed
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_CONNECT'), self.onConnect)
+        # register events needed
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.onAuth)
 
         # notice plugin started
         self.debug('plugin started')
@@ -137,9 +142,9 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
     ##                                                                                                                ##
     ####################################################################################################################
 
-    def onConnect(self, event):
+    def onAuth(self, event):
         """
-        Handle EVT_CLIENT_CONNECT events.
+        Handle EVT_CLIENT_AUTH events.
         :param event: The Event to be handled
         """
         self.load_command_grants(event.client)

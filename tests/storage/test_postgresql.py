@@ -1,7 +1,7 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2011 Courgette
-# 
+# Copyright (C) 2014 Daniele Pantaleone <fenix@bigbrotherbot.net>
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -11,30 +11,41 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
-from b3.storage.database import DatabaseStorage
-from tests import B3TestCase
-from tests.storage.common import StorageAPITest
+
+import os
 import nose
 import unittest2 as unittest
 
+from b3.functions import splitDSN
+from b3.storage.postgresql import PostgresqlStorage
+from tests import B3TestCase
+from tests.storage.common import StorageAPITest
+
 """
-    NOTE: to work properly you must be running a PostgreSQL database on localhost
-    which must have a user named 'b3test' with password 'test' which has 
-    all privileges over a table (already created or not) named 'b3_test'
+    NOTE: you can customize the PostgreSQL host, database and credential using the following
+    environment variables :
+        POSTGRESQL_TEST_HOST
+        POSTGRESQL_TEST_USER
+        POSTGRESQL_TEST_PASSWORD
+        POSTGRESQL_TEST_DB
+
+    Make sure to execute this query (with adjusted parameters) before running tests:
+        >>> CREATE ROLE b3test WITH PASSWORD 'test' LOGIN CREATEDB;
 """
-POSTGRESQL_DB = 'postgresql://b3test:test@localhost/b3_test'
-POSTGRESQL_HOST = 'localhost'
-POSTGRESQL_USER = 'b3test'
-POSTGRESQL_PASSWORD = 'test'
+
+POSTGRESQL_TEST_HOST = os.environ.get('POSTGRESQL_TEST_HOST', 'localhost')
+POSTGRESQL_TEST_USER = os.environ.get('POSTGRESQL_TEST_USER', 'b3test')
+POSTGRESQL_TEST_PASSWORD = os.environ.get('POSTGRESQL_TEST_PASSWORD', 'test')
+POSTGRESQL_TEST_DB = os.environ.get('POSTGRESQL_TEST_DB', 'b3_test')
 
 #===============================================================================
-# 
-# Test if we can run the MySQL tests
+#
+# Test if we can run the PostgreSQL tests
 #
 #===============================================================================
 
@@ -44,11 +55,15 @@ no_postgresql_reason = ''
 try:
     import psycopg2
 except ImportError:
+    psycopg2 = None
     is_postgresql_ready = False
     no_postgresql_reason = "no psycopg2 module available"
 else:
     try:
-        psycopg2.connect(host=POSTGRESQL_HOST, user=POSTGRESQL_USER, password=POSTGRESQL_PASSWORD, database='postgres')
+        psycopg2.connect(host=POSTGRESQL_TEST_HOST,
+                         user=POSTGRESQL_TEST_USER,
+                         password=POSTGRESQL_TEST_PASSWORD,
+                         database='postgres')
     except psycopg2.Error, err:
         is_postgresql_ready = False
         no_postgresql_reason = "%r" % err
@@ -56,38 +71,38 @@ else:
         is_postgresql_ready = False
         no_postgresql_reason = "%r" % err
 
-
 #===============================================================================
-# 
+#
 # Load the tests
-# 
+#
 #===============================================================================
-@unittest.skip('work in progress')
+
 @unittest.skipIf(not is_postgresql_ready, no_postgresql_reason)
 class Test_PostgreSQL(B3TestCase, StorageAPITest):
 
     def setUp(self):
         """this method is called before each test"""
         B3TestCase.setUp(self)
+
         try:
-            conn = psycopg2.connect(host='localhost', user='b3test', password='test', database='postgres')
-        except psycopg2.OperationalError, message:
-            self.fail("Error %d:\n%s" % (message[0], message[1]))
-        conn.set_isolation_level(0)
-        cursor = conn.cursor()
-        cursor.execute("DROP DATABASE IF EXISTS b3_test;")
-        cursor.execute("CREATE DATABASE b3_test WITH OWNER = b3test ENCODING = 'UTF8';")
-        self.storage = self.console.storage = DatabaseStorage(POSTGRESQL_DB, self.console)
-        self.storage.queryFromFile("@b3/sql/postgresql/b3.sql")
+            dsn = "postgresql://%s:%s@%s/%s" % (POSTGRESQL_TEST_USER, POSTGRESQL_TEST_PASSWORD, POSTGRESQL_TEST_HOST, POSTGRESQL_TEST_DB)
+            self.storage = self.console.storage = PostgresqlStorage(dsn, splitDSN(dsn), self.console)
+            self.storage.connect()
+
+            tables = self.storage.getTables()
+            if tables:
+                # dont remove the groups table since we would need it in next tests
+                tables.remove('groups')
+                self.storage.query("TRUNCATE %s RESTART IDENTITY;" % ', '.join(tables))
+
+        except Exception, e:
+            self.fail("Error: %s" % e)
 
     def tearDown(self):
         """this method is called after each test"""
         B3TestCase.tearDown(self)
-        self.storage.query("DROP DATABASE b3_test")
         self.storage.shutdown()
-
 
 if __name__ == '__main__':
     nose.main()
-    
-    
+

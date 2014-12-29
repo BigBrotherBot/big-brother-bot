@@ -17,11 +17,13 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 import os
-from b3.storage.database import DatabaseStorage
-from tests import B3TestCase
-from tests.storage.common import StorageAPITest
 import nose
 import unittest2 as unittest
+
+from b3.functions import splitDSN
+from b3.storage.mysql import MysqlStorage
+from tests import B3TestCase
+from tests.storage.common import StorageAPITest
 
 
 """
@@ -47,42 +49,49 @@ is_mysql_ready = True
 no_mysql_reason = ''
 
 try:
-    import MySQLdb
+    import pymysql as driver
 except ImportError:
-    is_mysql_ready = False
-    no_mysql_reason = "no MySQLdb module available"
-else:
     try:
-        MySQLdb.connect(host=MYSQL_TEST_HOST, user=MYSQL_TEST_USER, passwd=MYSQL_TEST_PASSWORD)
-    except MySQLdb.Error, err:
+        import mysql.connector as driver
+    except ImportError:
+        driver = None
+        is_mysql_ready = False
+        no_mysql_reason = "no pymysql or mysql.connector module available"
+if is_mysql_ready:
+    try:
+        driver.connect(host=MYSQL_TEST_HOST, user=MYSQL_TEST_USER, passwd=MYSQL_TEST_PASSWORD)
+    except driver.Error, err:
         is_mysql_ready = False
         no_mysql_reason = "%s" % err[1]
     except Exception, err:
         is_mysql_ready = False
         no_mysql_reason = "%s" % err
 
-
 #===============================================================================
 # 
 # Load the tests
 # 
 #===============================================================================
+
 @unittest.skipIf(not is_mysql_ready, no_mysql_reason)
 class Test_MySQL(B3TestCase, StorageAPITest):
 
     def setUp(self):
         """this method is called before each test"""
+
         B3TestCase.setUp(self)
+
         try:
-            db = MySQLdb.connect(host=MYSQL_TEST_HOST, user=MYSQL_TEST_USER, passwd=MYSQL_TEST_PASSWORD)
-        except MySQLdb.OperationalError, message:
+            db = driver.connect(host=MYSQL_TEST_HOST, user=MYSQL_TEST_USER, password=MYSQL_TEST_PASSWORD)
+        except driver.OperationalError, message:
             self.fail("Error %d:\n%s" % (message[0], message[1]))
+
         db.query("DROP DATABASE IF EXISTS `%s`" % MYSQL_TEST_DB)
         db.query("CREATE DATABASE `%s` CHARACTER SET utf8;" % MYSQL_TEST_DB)
-        self.storage = self.console.storage = DatabaseStorage(
-            "mysql://%s:%s@%s/%s" % (MYSQL_TEST_USER, MYSQL_TEST_PASSWORD, MYSQL_TEST_HOST, MYSQL_TEST_DB),
-            self.console)
-        self.storage.queryFromFile("@b3/sql/b3.sql")
+
+        dsn = "mysql://%s:%s@%s/%s" % (MYSQL_TEST_USER, MYSQL_TEST_PASSWORD, MYSQL_TEST_HOST, MYSQL_TEST_DB)
+        self.storage = self.console.storage = MysqlStorage(dsn, splitDSN(dsn), self.console)
+        self.storage.connect()
 
     def tearDown(self):
         """this method is called after each test"""
