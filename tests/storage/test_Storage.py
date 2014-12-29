@@ -24,6 +24,7 @@ from b3.storage import Storage
 from b3.storage import getStorage
 from b3.storage.sqlite import SqliteStorage
 from b3.storage.mysql import MysqlStorage
+from b3.storage.postgresql import PostgresqlStorage
 from mock import Mock
 from tests import B3TestCase
 
@@ -120,6 +121,11 @@ class Test_getStorage(unittest.TestCase):
     def test_mysql(self):
         storage = getStorage('mysql://b3:password@localhost/b3', splitDSN('mysql://b3:password@localhost/b3'), Mock())
         self.assertIsInstance(storage, MysqlStorage)
+
+    @unittest.skipIf(not is_postgresql_ready, no_postgresql_reason)
+    def test_postgresql(self):
+        storage = getStorage('postgresql://b3:password@localhost/b3', splitDSN('postgresql://b3:password@localhost/b3'), Mock())
+        self.assertIsInstance(storage, PostgresqlStorage)
 
     def test_sqlite(self):
         storage = getStorage('sqlite://:memory:', splitDSN('sqlite://:memory:'), Mock())
