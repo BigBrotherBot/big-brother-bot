@@ -17,9 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__ = 'Courgette'
-__version__ = '1.1'
+__version__ = '1.2'
 
-PROTOCOLS = ('mysql', 'sqlite')
+PROTOCOLS = ('mysql', 'sqlite', 'postgresql')
 
 class Storage(object):
 
