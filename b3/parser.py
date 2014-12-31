@@ -19,6 +19,8 @@
 # CHANGELOG
 #
 # 2014/12/31 - 1.39.1 - Fenix           - loadArbPlugins: don't bother loading arb plugins if admin plugin is not loaded
+#                                       - prevent plugins from crashing B3 if they fails in loading: Admin plugin will
+#                                         be still checked in loadArbPlugins since it's strictly needed
 # 2014/12/25 - 1.39   - Fenix           - new storage module initialization
 # 2014/12/14 - 1.38.2 - Fenix           - correctly set exitcode variable in b3.parser.die() and b3.parser.restart(): B3
 #                                         was calling sys.exit(*) in both methods but the main thread was expecting to
@@ -148,7 +150,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.39'
+__version__ = '1.39.1'
 
 import os
 import sys
@@ -726,34 +728,33 @@ class Parser(object):
         extplugins_dir = self.config.getpath('plugins', 'external_dir')
         self.bot('Loading plugins (external plugin directory: %s)' % extplugins_dir)
 
-        def _get_config_path(_plugin):
+        def _get_config_path(plug):
             """
             Helper that return a config path for the given Plugin
             """
             # read config path from b3 configuration
-            cfg = _plugin.get('config')
+            cfg = plug.get('config')
             # check if the configuration file exists - if not, attempts to find the configuration file
             if cfg is not None and os.path.exists(self.getAbsolutePath(cfg)):
                 return self.getAbsolutePath(cfg)
+
+            # warn the users
+            if cfg is None:
+                self.warning('No configuration file specified for plugin %s' % p.get('name'))
             else:
-                # warn the users
-                if cfg is None:
-                    self.warning('No configuration file specified for plugin %s' % p.get('name'))
-                else:
-                    self.warning('The specified configuration file %s for the plugin %s does not exist'
-                                 % (cfg, p.get('name')))
+                self.warning('The specified configuration file %s for the plugin %s does not exist' % (cfg, p.get('name')))
 
-                # try to find a config file
-                _cfg_path = glob.glob(self.getAbsolutePath('@b3\\conf\\') + '*%s*' % p.get('name'))
-                if len(_cfg_path) == 0:
-                    _cfg_path = glob.glob(self.getAbsolutePath(extplugins_dir) + '\\conf\\' + '*%s*' % p.get('name'))
+            # try to find a config file
+            cfgpath = glob.glob(self.getAbsolutePath('@b3\\conf\\') + '*%s*' % p.get('name'))
+            if len(cfgpath) == 0:
+                cfgpath = glob.glob(self.getAbsolutePath(extplugins_dir) + '\\conf\\' + '*%s*' % p.get('name'))
 
-                if len(_cfg_path) != 1 or _cfg_path[0] in [c.get('conf', '') for c in plugins.values()]:
-                    # return none if no file found or file already loaded
-                    return cfg
-                else:
-                    self.warning('Using %s as configuration file for %s' % (_cfg_path[0], p.get('name')))
-                    return _cfg_path[0]
+            if len(cfgpath) != 1 or cfgpath[0] in [c.get('conf', '') for c in plugins.values()]:
+                # return none if no file found or file already loaded
+                return cfg
+            else:
+                self.warning('Using %s as configuration file for %s' % (cfgpath[0], p.get('name')))
+                return cfgpath[0]
 
         plugins = {}
         plugin_sort = []
@@ -762,22 +763,16 @@ class Parser(object):
         for p in self.config.get('plugins/plugin'):
             name = p.get('name')
             if not name:
-                self.critical("Config error in the plugins section: "
-                              "no plugin name found in [%s]" % ElementTree.tostring(p).strip())
+                val = ElementTree.tostring(p).strip()
+                self.critical("Config error in the plugins section: no plugin name found in [%s]" % val)
                 raise SystemExit(220)
             if name in [plugins[i]['name'] for i in plugins if plugins[i]['name'] == name]:
                 self.warning('Plugin %s already loaded: avoid multiple entries of the same plugin' % name)
             else:
                 conf = _get_config_path(p)
-                #if conf is None:
-                #    conf = '@b3/conf/plugin_%s.xml' % name
                 disabledconf = p.get('disabled')
                 disabled = disabledconf is not None and disabledconf.lower() in ('yes', '1', 'on', 'true')
-                plugins[priority] = {'name': name,
-                                     'conf': conf,
-                                     'path': p.get('path'),
-                                     'disabled': disabled}
-
+                plugins[priority] = {'name': name, 'conf': conf, 'path': p.get('path'), 'disabled': disabled}
                 plugin_sort.append(priority)
                 priority += 1
 
@@ -796,7 +791,11 @@ class Parser(object):
                     self.info("Disabling plugin %s" % plugin_name)
                     self._plugins[plugin_name].disable()
             except Exception, err:
-                self.error('Error loading plugin %s' % plugin_name, exc_info=err)
+                self.error('Could not load plugin %s' % plugin_name, exc_info=err)
+                # here the plugin will still be in 'self._pluginOrder': we need to remove it from there
+                # otherwise B3 will crash when executing 'call_plugins_onLoadConfig' since it will get a value
+                # from the 'self._pluginOrder' list which will not match a key of the 'self._plugins' dict
+                self._pluginOrder.remove(plugin_name)
             else:
                 version = getattr(plugin_module, '__version__', 'Unknown Version')
                 author = getattr(plugin_module, '__author__', 'Unknown Author')
