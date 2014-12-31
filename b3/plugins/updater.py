@@ -32,9 +32,10 @@
 #                            - removed useless debug message
 # 24/12/2014 - 1.1.5 - Fenix - use only EVT_CLIENT_AUTH: this event is fired in all the parser and behaves exactly in
 #                              the same way no matter the game we are running
+# 31/12/2014 - 1.1.6 - Fenix - updated path to SQL update script
 
 __author__ = 'Fenix'
-__version__ = '1.1.5'
+__version__ = '1.1.6'
 
 import b3
 import b3.cron
@@ -331,7 +332,7 @@ class UpdaterPlugin(b3.plugin.Plugin):
             self.debug('updating B3 database...')
 
             # we need to execute all the SQL scripts to update from current version
-            b3_sql_path = os.path.join(b3_basepath, 'b3', 'sql')
+            b3_sql_path = os.path.join(b3_basepath, 'b3', 'sql', self.console.storage.dsnDict['protocol'])
             b3_sql_files = [m.group("script") for f in os.listdir(b3_sql_path) for m in [self._re_sql.search(f)] if m]
 
             def sql_cmp(x, y):
