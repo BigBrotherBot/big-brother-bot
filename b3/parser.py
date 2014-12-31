@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2014/12/31 - 1.39.1 - Fenix           - loadArbPlugins: don't bother loading arb plugins if admin plugin is not loaded
 # 2014/12/25 - 1.39   - Fenix           - new storage module initialization
 # 2014/12/14 - 1.38.2 - Fenix           - correctly set exitcode variable in b3.parser.die() and b3.parser.restart(): B3
 #                                         was calling sys.exit(*) in both methods but the main thread was expecting to
@@ -826,6 +827,10 @@ class Parser(object):
             parser_mod.screen.write('.')
             parser_mod.screen.flush()
 
+        if 'admin' not in self._pluginOrder:
+            # critical will exit, admin plugin must be loaded!
+            self.critical('AdminPlugin is essential and MUST be loaded! Cannot continue without admin plugin')
+
         if 'publist' not in self._pluginOrder:
             try:
                 loadPlugin(self, 'publist')
@@ -863,10 +868,6 @@ class Parser(object):
                 except Exception, err:
                     self.critical('Error loading plugin %s' % remote_log_plugin, exc_info=err)
                     raise SystemExit('ERROR while loading %s' % remote_log_plugin)
-
-        if 'admin' not in self._pluginOrder:
-            # critical will exit, admin plugin must be loaded!
-            self.critical('AdminPlugin is essential and MUST be loaded! Cannot continue without admin plugin')
 
         self.screen.write(' (%s)\n' % len(self._pluginOrder))
         self.screen.flush()
