@@ -104,6 +104,7 @@ class Test_MySQL(B3TestCase, StorageAPITest):
             ['aliases',
              'ipaliases',
              'clients',
+             'cmdgrants',
              'groups',
              'penalties',
              'data',
