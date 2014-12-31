@@ -29,6 +29,7 @@
 # 24/12/2014 - 1.3.1 - Fenix - use only EVT_CLIENT_AUTH: this event is fired in all the parser and behaves exactly in
 #                              the same way no matter the game we are running
 # 31/12/2014 - 1.3.2 - Fenix - moved hardcoded SQL code for creating tables in B3 sql scripts
+#                            - make use of QueryBuilder to generate SQL queries
 
 __author__ = 'Fenix'
 __version__ = '1.3.2'
@@ -46,6 +47,7 @@ from ConfigParser import NoOptionError
 from ConfigParser import NoSectionError
 from b3.config import XmlConfigParser
 from b3.functions import getCmd
+from b3.querybuilder import QueryBuilder
 from xml.dom import minidom
 
 GRANT_SET_JOIN = ','
@@ -57,17 +59,6 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
 
     _settings = {
         'update_config_file': True
-    }
-
-    _sql = {
-        'mysql': {
-            'upsert': """REPLACE INTO cmdgrants (id, commands) VALUES (%s, %s);""",
-            'select': """SELECT id, commands FROM cmdgrants WHERE id = %s""",
-        },
-        'sqlite': {
-            'upsert': """INSERT OR REPLACE INTO cmdgrants (id, commands) VALUES (?, ?);""",
-            'select': """SELECT id, commands FROM cmdgrants WHERE id = ?""",
-        }
     }
 
     ####################################################################################################################
@@ -147,15 +138,15 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         :param client: The client whose command grants needs to be loaded
         """
         self.debug('checking command grants for client @%s...' % client.id)
-        protocol = self.console.storage.dsnDict['protocol']
 
         try:
-            cursor = self.console.storage.query(self._sql[protocol]['select'], (client.id,))
-            if not cursor or cursor.EOF:
+            query = QueryBuilder(self.console.storage.db).SelectQuery(('id', 'commands'), 'cmdgrants', {'id': client.id})
+            cursor = self.console.storage.query(query)
+            if cursor.EOF:
                 self.debug('no command grant found for client @%s' % client.id)
                 return
 
-            row = cursor.getRow()
+            row = cursor.getOneRow()
             # this is to prevent to have empty strings in our set: may happen when we remove all
             # the command grants from a client and the storage layer will save an empty string
             grantlist = set([x for x in row['commands'].split(GRANT_SET_JOIN) if x != ''])
@@ -173,15 +164,25 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
             self.debug('not storing command grants for client @%s: no command grant found in client object' % client.id)
             return
 
+        cursor = None
+
         try:
             grantlist = GRANT_SET_JOIN.join(getattr(client, GRANT_SET_ATTR))
-            protocol = self.console.storage.dsnDict['protocol']
-            self.console.storage.query(self._sql[protocol]['upsert'], (client.id, grantlist))
+            data = {'id': client.id, 'commands': grantlist}
+            query = QueryBuilder(self.console.storage.db).SelectQuery(('id', 'commands'), 'cmdgrants', {'id': client.id})
+            cursor = self.console.storage.query(query)
+            if cursor.EOF:
+                self.console.storage.query(QueryBuilder(self.console.storage.db).InsertQuery(data, 'cmdgrants'))
+            else:
+                self.console.storage.query(QueryBuilder(self.console.storage.db).UpdateQuery(data, 'cmdgrants', {'id': client.id}))
             self.debug('stored command grants for client @%s' % client.id)
         except Exception, e:
             self.error('could not store command grants for client @%s: %s' % (client.id, e))
+        finally:
+            if cursor:
+                cursor.close()
 
-    def write_ini_config_file(self, command, data, client):
+    def write_ini_config_file(self, command, data):
         """
         Write the new command configuration in the plugin configuration file
         """
@@ -210,7 +211,7 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         with open(command.plugin.config.fileName, 'wb') as configfile:
             config.write(configfile)
 
-    def write_xml_config_file(self, command, data, client):
+    def write_xml_config_file(self, command, data):
         """
         Write the new command configuration in the plugin configuration file
         """
@@ -293,7 +294,7 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         try:
             # write in the plugin specific configuration file
             func = getattr(self, 'write_%s_config_file' % ('xml' if isinstance(plugin.config, XmlConfigParser) else 'ini'))
-            func(command, data, client)
+            func(command, data)
         except (AttributeError, TypeError, IOError, NoSectionError), e:
             self.warning('could not change plugin <%s> config file: %s' % (data['plugin_name'], e))
             client.message('^7could not change plugin ^1%s ^7configuration file' % data['plugin_name'])
@@ -304,7 +305,8 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
     ##                                                                                                                ##
     ####################################################################################################################
 
-    def command_name_sanitize(self, name):
+    @staticmethod
+    def command_name_sanitize(name):
         """
         Sanitize the name of a command.
         :param name: The command name to sanitize
