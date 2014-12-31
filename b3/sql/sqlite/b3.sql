@@ -10,11 +10,11 @@ CREATE TABLE IF NOT EXISTS aliases (
 
 CREATE TABLE IF NOT EXISTS ipaliases (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  num_used int(10) 	 NOT NULL default '0',
+  num_used int(10) NOT NULL default '0',
   ip varchar(16) NOT NULL,
-  client_id INTEGER 	 NOT NULL default '0',
-  time_add int(10) 	 NOT NULL default '0',
-  time_edit int(10) 	 NOT NULL default '0',
+  client_id INTEGER NOT NULL default '0',
+  time_add int(10) NOT NULL default '0',
+  time_edit int(10) NOT NULL default '0',
   CONSTRAINT ipalias UNIQUE (ip,client_id)
 );
 
@@ -34,6 +34,11 @@ CREATE TABLE IF NOT EXISTS clients (
   password varchar(32) default NULL,
   login varchar(16) default NULL,
   CONSTRAINT guid UNIQUE (guid)
+);
+
+CREATE TABLE IF NOT EXISTS cmdgrants (
+  id INTEGER PRIMARY KEY,
+  commands TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS groups (

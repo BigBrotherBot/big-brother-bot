@@ -43,6 +43,12 @@ CREATE TABLE IF NOT EXISTS clients (
   KEY name (name)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS cmdgrants (
+   id int(11) NOT NULL,
+   commands TEXT NOT NULL,
+   PRIMARY KEY (id)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
 CREATE TABLE IF NOT EXISTS groups (
   id int(10) unsigned NOT NULL,
   name varchar(32) NOT NULL default '',

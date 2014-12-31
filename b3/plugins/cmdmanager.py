@@ -28,9 +28,10 @@
 #                              and so we can't load command grants from the storage
 # 24/12/2014 - 1.3.1 - Fenix - use only EVT_CLIENT_AUTH: this event is fired in all the parser and behaves exactly in
 #                              the same way no matter the game we are running
+# 31/12/2014 - 1.3.2 - Fenix - moved hardcoded SQL code for creating tables in B3 sql scripts
 
 __author__ = 'Fenix'
-__version__ = '1.3.1'
+__version__ = '1.3.2'
 
 import b3
 import b3.plugin
@@ -62,18 +63,10 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         'mysql': {
             'upsert': """REPLACE INTO cmdgrants (id, commands) VALUES (%s, %s);""",
             'select': """SELECT id, commands FROM cmdgrants WHERE id = %s""",
-            'schema': """CREATE TABLE IF NOT EXISTS cmdgrants (
-                             id int(11) NOT NULL,
-                             commands TEXT NOT NULL,
-                             PRIMARY KEY (id)
-                         ) ENGINE=MyISAM DEFAULT CHARSET=utf8;""",
         },
         'sqlite': {
             'upsert': """INSERT OR REPLACE INTO cmdgrants (id, commands) VALUES (?, ?);""",
             'select': """SELECT id, commands FROM cmdgrants WHERE id = ?""",
-            'schema': """CREATE TABLE IF NOT EXISTS cmdgrants (
-                             id INTEGER PRIMARY KEY,
-                             commands TEXT NOT NULL);""",
         }
     }
 
@@ -122,13 +115,6 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
                 func = getCmd(self, cmd)
                 if func:
                     self._adminPlugin.registerCommand(self, cmd, level, func, alias)
-
-        # create database tables if needed
-        tables = self.console.storage.getTables()
-        if not 'cmdgrants' in tables:
-            self.debug('creating database tables...')
-            protocol = self.console.storage.dsnDict['protocol']
-            self.console.storage.query(self._sql[protocol]['schema'])
 
         # register events needed
         self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.onAuth)
