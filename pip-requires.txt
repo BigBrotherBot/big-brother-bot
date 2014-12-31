@@ -8,3 +8,4 @@ nosexcover
 nose-exclude
 mock>=0.8
 pylint
+psycopg2

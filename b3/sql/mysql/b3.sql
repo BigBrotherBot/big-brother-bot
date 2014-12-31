@@ -1,14 +1,3 @@
--- phpMyAdmin SQL Dump
--- 
--- Database: `b3`
--- 
-
--- --------------------------------------------------------
-
--- 
--- Table structure for table `aliases`
--- 
-
 CREATE TABLE IF NOT EXISTS aliases (
   id int(10) unsigned NOT NULL auto_increment,
   num_used int(10) unsigned NOT NULL default '0',
@@ -21,12 +10,6 @@ CREATE TABLE IF NOT EXISTS aliases (
   KEY client_id (client_id)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
--- --------------------------------------------------------
-
--- 
--- Table structure for table `ipaliases`
--- 
-
 CREATE TABLE IF NOT EXISTS ipaliases (
   id int(10) unsigned NOT NULL auto_increment,
   num_used int(10) unsigned NOT NULL default '0',
@@ -38,12 +21,6 @@ CREATE TABLE IF NOT EXISTS ipaliases (
   UNIQUE KEY ipalias (ip,client_id),
   KEY client_id (client_id)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-
--- --------------------------------------------------------
-
--- 
--- Table structure for table `clients`
--- 
 
 CREATE TABLE IF NOT EXISTS clients (
   id int(11) unsigned NOT NULL auto_increment,
@@ -66,12 +43,6 @@ CREATE TABLE IF NOT EXISTS clients (
   KEY name (name)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
--- --------------------------------------------------------
-
--- 
--- Table structure for table `groups`
--- 
-
 CREATE TABLE IF NOT EXISTS groups (
   id int(10) unsigned NOT NULL,
   name varchar(32) NOT NULL default '',
@@ -84,10 +55,6 @@ CREATE TABLE IF NOT EXISTS groups (
   KEY level (level)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
--- 
--- Dumping data for table `groups`
--- 
-
 INSERT INTO `groups` (id, time_edit, name, keyword, time_add, level) VALUES (128, 0, 'Super Admin', 'superadmin', UNIX_TIMESTAMP(), 100);
 INSERT INTO `groups` (id, time_edit, name, keyword, time_add, level) VALUES (64, 0, 'Senior Admin', 'senioradmin', UNIX_TIMESTAMP(), 80);
 INSERT INTO `groups` (id, time_edit, name, keyword, time_add, level) VALUES (32, 0, 'Full Admin', 'fulladmin', UNIX_TIMESTAMP(), 60);
@@ -96,12 +63,6 @@ INSERT INTO `groups` (id, time_edit, name, keyword, time_add, level) VALUES (8, 
 INSERT INTO `groups` (id, time_edit, name, keyword, time_add, level) VALUES (2, 0, 'Regular', 'reg', UNIX_TIMESTAMP(), 2);
 INSERT INTO `groups` (id, time_edit, name, keyword, time_add, level) VALUES (1, 0, 'User', 'user', UNIX_TIMESTAMP(), 1);
 INSERT INTO `groups` (id, time_edit, name, keyword, time_add, level) VALUES (0, 0, 'Guest', 'guest', UNIX_TIMESTAMP(), 0);
-
--- --------------------------------------------------------
-
--- 
--- Table structure for table `penalties`
--- 
 
 CREATE TABLE IF NOT EXISTS penalties (
   id int(10) unsigned NOT NULL auto_increment,
@@ -126,23 +87,11 @@ CREATE TABLE IF NOT EXISTS penalties (
   KEY client_id (client_id)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
--- --------------------------------------------------------
-
---
--- Table structure for table `data`
---
-
 CREATE TABLE IF NOT EXISTS `data` (
   `data_key` varchar(255) NOT NULL,
   `data_value` varchar(255) NOT NULL,
   PRIMARY KEY  (`data_key`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `bodyparts`
---
 
 CREATE TABLE IF NOT EXISTS `xlr_bodyparts` (
   `id` tinyint(3) unsigned NOT NULL auto_increment,
@@ -153,12 +102,6 @@ CREATE TABLE IF NOT EXISTS `xlr_bodyparts` (
   PRIMARY KEY  (`id`),
   UNIQUE KEY `name` (`name`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `mapstats`
---
 
 CREATE TABLE IF NOT EXISTS `xlr_mapstats` (
   `id` smallint(5) unsigned NOT NULL auto_increment,
@@ -171,12 +114,6 @@ CREATE TABLE IF NOT EXISTS `xlr_mapstats` (
   UNIQUE KEY `name` (`name`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
--- --------------------------------------------------------
-
---
--- Table structure for table `opponents`
---
-
 CREATE TABLE IF NOT EXISTS `xlr_opponents` (
   `id` mediumint(8) unsigned NOT NULL auto_increment,
   `target_id` smallint(5) unsigned NOT NULL default '0',
@@ -187,12 +124,6 @@ CREATE TABLE IF NOT EXISTS `xlr_opponents` (
   KEY `target_id` (`target_id`),
   KEY `killer_id` (`killer_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `playerbody`
---
 
 CREATE TABLE IF NOT EXISTS `xlr_playerbody` (
   `id` mediumint(8) unsigned NOT NULL auto_increment,
@@ -208,12 +139,6 @@ CREATE TABLE IF NOT EXISTS `xlr_playerbody` (
   KEY `player_id` (`player_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
--- --------------------------------------------------------
-
---
--- Table structure for table `playermaps`
---
-
 CREATE TABLE IF NOT EXISTS `xlr_playermaps` (
   `id` mediumint(8) unsigned NOT NULL auto_increment,
   `map_id` smallint(5) unsigned NOT NULL default '0',
@@ -228,12 +153,6 @@ CREATE TABLE IF NOT EXISTS `xlr_playermaps` (
   KEY `map_id` (`map_id`),
   KEY `player_id` (`player_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `playerstats`
---
 
 CREATE TABLE IF NOT EXISTS `xlr_playerstats` (
   `id` int(11) unsigned NOT NULL auto_increment,
@@ -257,12 +176,6 @@ CREATE TABLE IF NOT EXISTS `xlr_playerstats` (
   UNIQUE KEY `client_id` (`client_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
--- --------------------------------------------------------
-
---
--- Table structure for table `weaponstats`
---
-
 CREATE TABLE IF NOT EXISTS `xlr_weaponstats` (
   `id` smallint(5) unsigned NOT NULL auto_increment,
   `name` varchar(64) NOT NULL default '',
@@ -272,12 +185,6 @@ CREATE TABLE IF NOT EXISTS `xlr_weaponstats` (
   PRIMARY KEY  (`id`),
   UNIQUE KEY `name` (`name`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `weaponusage`
---
 
 CREATE TABLE IF NOT EXISTS `xlr_weaponusage` (
   `id` mediumint(8) unsigned NOT NULL auto_increment,
@@ -293,12 +200,6 @@ CREATE TABLE IF NOT EXISTS `xlr_weaponusage` (
   KEY `player_id` (`player_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
--- --------------------------------------------------------
-
---
--- Table structure for table `xlr_actionstats`
---
-
 CREATE TABLE IF NOT EXISTS `xlr_actionstats` (
   `id` tinyint(3) unsigned NOT NULL auto_increment,
   `name` varchar(25) NOT NULL default '',
@@ -306,12 +207,6 @@ CREATE TABLE IF NOT EXISTS `xlr_actionstats` (
   PRIMARY KEY  (`id`),
   UNIQUE KEY `name` (`name`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `xlr_playeractions`
---
 
 CREATE TABLE IF NOT EXISTS `xlr_playeractions` (
   `id` mediumint(8) unsigned NOT NULL auto_increment,
@@ -322,12 +217,6 @@ CREATE TABLE IF NOT EXISTS `xlr_playeractions` (
   KEY `action_id` (`action_id`),
   KEY `player_id` (`player_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `xlr_history_monthly`
---
 
 CREATE TABLE IF NOT EXISTS `xlr_history_monthly` (
   `id` int(11) unsigned NOT NULL auto_increment,
@@ -351,12 +240,6 @@ CREATE TABLE IF NOT EXISTS `xlr_history_monthly` (
   PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
--- --------------------------------------------------------
-
---
--- Table structure for table `xlr_history_weekly`
---
-
 CREATE TABLE IF NOT EXISTS `xlr_history_weekly` (
   `id` int(11) unsigned NOT NULL auto_increment,
   `client_id` int(11) unsigned NOT NULL default '0',
@@ -378,12 +261,6 @@ CREATE TABLE IF NOT EXISTS `xlr_history_weekly` (
   `day` int(2) NOT NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `ctime`
---
 
 CREATE TABLE IF NOT EXISTS `ctime` (
   `id` int(11) unsigned NOT NULL auto_increment,

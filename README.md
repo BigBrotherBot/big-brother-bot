@@ -11,6 +11,7 @@ type of behavior is not allowed on your server, and ultimately kick, and or ban 
 * [Official website](http://www.bigbrotherbot.net)
 * [Forums](http://forum.bigbrotherbot.net)
 * [Documentation](http://wiki.bigbrotherbot.net/)
+* [Wikipedia](http://en.wikipedia.org/wiki/Big_Brother_Bot)
 
 ### For developers:
 
@@ -18,12 +19,31 @@ type of behavior is not allowed on your server, and ultimately kick, and or ban 
 
 ### Installation, configuration and usage
 
-A quick and dirty rundown can be found in the b3/docs/README.txt but this is not the preferred documentation, it covers just global steps to take. Please refer to our documentation wiki as linked above for a full manual.
+A quick and dirty rundown can be found in the _b3/docs/README.txt_ but this is not the preferred documentation, it covers 
+just global steps to take. Please refer to our documentation wiki as linked above for a full manual.
 
 ### Previous and Current Developers (Hall of Fame)
 
-_ThorN, xlr8or, ttlogic, Courgette, Bakes, spacepig, Durzo, eire.32, grosbedo, Freelander, 82ndAB.Bravo17, Just a baka, Ozon, Fenix_ and a big thanks to you, who has offered us snippets of code and improvements on an incidental basis. Without you B3 wouldn't be this intelligent!
+_[ThorN], [xlr8or], ttlogic, [Courgette], [Bakes], [spacepig], [Durzo], eire.32, [grosbedo], [Freelander], [82ndAB.Bravo17], 
+[Just a baka], [Fenix], [Ozon]_ and a big thanks to you, who has offered us snippets of code and improvements on an 
+incidental basis. Without you B3 wouldn't be this intelligent!
 
-[![Build Status](https://travis-ci.org/BigBrotherBot/big-brother-bot.svg?branch=release-1.10)](https://travis-ci.org/BigBrotherBot/big-brother-bot)
+[![Build Status](https://travis-ci.org/BigBrotherBot/big-brother-bot.svg?branch=release-1.10)](https://travis-ci.org/BigBrotherBot/big-brother-bot) 
+[![Latest Version](https://pypip.in/version/b3/badge.svg?style=flat)](https://pypi.python.org/pypi/b3/)
+[![Egg Status](https://pypip.in/egg/b3/badge.svg?style=flat)](https://pypi.python.org/pypi/b3/)
+[![Downloads](https://pypip.in/download/b3/badge.svg?style=flat)](https://pypi.python.org/pypi/b3/)
+[![Supported Python versions](https://pypip.in/py_versions/b3/badge.svg?style=flat)](https://pypi.python.org/pypi/b3/)
+[![License](https://pypip.in/license/b3/badge.svg?style=flat)](https://pypi.python.org/pypi/b3/)
 
-_[www.bigbrotherbot.net](http://www.bigbrotherbot.net/) (2005-2011)_
+[ThorN]: https://github.com/six8
+[xlr8or]: https://github.com/markweirath
+[Courgette]: https://github.com/thomasleveil
+[Bakes]: https://github.com/j-baker
+[spacepig]: https://github.com/spacepig
+[Durzo]: https://github.com/durzo
+[grosbedo]: https://github.com/grosbedo
+[Freelander]: https://github.com/ozguruysal
+[82ndAB.Bravo17]: https://github.com/82ndab-Bravo17
+[Just a baka]: https://github.com/justabaka
+[Fenix]: https://github.com/danielepantaleone
+[Ozon]: https://github.com/ozon
