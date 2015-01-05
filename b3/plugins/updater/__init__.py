@@ -33,9 +33,10 @@
 # 24/12/2014 - 1.1.5 - Fenix - use only EVT_CLIENT_AUTH: this event is fired in all the parser and behaves exactly in
 #                              the same way no matter the game we are running
 # 31/12/2014 - 1.1.6 - Fenix - updated path to SQL update script
+# 05/01/2014 - 1.1.7 - Fenix - added routine to perform B3 directory cleaning after successful update install
 
 __author__ = 'Fenix'
-__version__ = '1.1.6'
+__version__ = '1.1.7'
 
 import b3
 import b3.cron
@@ -364,6 +365,33 @@ class UpdaterPlugin(b3.plugin.Plugin):
             # stop processing the archive whenever an exception is raised
             raise UpdateError('could not install B3 update archive', err)
 
+    def clean_garbage(self, update_basepath):
+        """
+        Removes non-necessary files left from a B3 update install
+        :param update_basepath: The update basepath
+        :raise UpdateError: Whenever is not possible to remove garbage files
+        """
+        b3_basepath = b3.functions.right_cut(b3.functions.right_cut(sys.path[0], 'b3'), os.path.sep)
+
+        self.debug('cleaning B3 directory from garbage files...')
+        for root, directories, files in os.walk(b3_basepath):
+            for directory in directories:
+                b3_current_path = os.path.join(b3_basepath, b3.functions.left_cut(root, update_basepath))
+                directory_path = os.path.join(b3_current_path, directory)
+                # check whether the current directory is the root folder of a python module: if so, check
+                # that there is not a file with the same right beside the module directory: when this happens,
+                # delete the python file and keep the module directory (this has been added after plugin stucture
+                # change, from single python files to python modules composed of directories...it will however not
+                # delete python files that do not  have a directory module as replacement >>> backwards compatibility)
+                if os.path.isfile(os.path.join(directory_path, '__init__.py')):
+                    modulepath = os.path.join(b3_current_path, '%s.py' % directory)
+                    if os.path.isfile(modulepath):
+                        try:
+                            self.debug('removing outdated python module: %s' % modulepath)
+                            b3.functions.rm_file(modulepath)
+                        except OSError, err:
+                            raise UpdateError('could not remove file: %s' % modulepath, err)
+
     def do_update(self, client):
         """
         Threaded code.
@@ -385,6 +413,7 @@ class UpdaterPlugin(b3.plugin.Plugin):
                 self.install_update(update_data, update_basepath)
 
                 client.message('^7[3/3] completing installation...')
+                self.clean_garbage(update_basepath)
 
                 if self._sql_error_count > 0:
                     client.message('^3WARNING^7: some errors (^1%s^7) have been generated while upgrading '
