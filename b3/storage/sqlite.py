@@ -113,12 +113,12 @@ class SqliteStorage(DatabaseStorage):
                 if not v in current_tables:
                     raise KeyError("could not find table '%s' in the database" % v)
                 self.query("DELETE FROM %s;" % v)
+                self.query("DELETE FROM sqlite_sequence WHERE name='%s';" % v)
         else:
             if not table in current_tables:
                  raise KeyError("could not find table '%s' in the database" % table)
             self.query("DELETE FROM %s;" % table)
-        # rebuild identity and clean unused space
-        self.query("VACUUM;")
+            self.query("DELETE FROM sqlite_sequence WHERE name='%s';" % table)
 
     ####################################################################################################################
     ##                                                                                                                ##
