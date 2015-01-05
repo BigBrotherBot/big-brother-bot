@@ -15,20 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2014/07/25 - 1.1.0 - Fenix - syntax cleanup
-#
 
 __author__ = 'Courgette'
-__version__ = '1.1.0'
+__version__ = '1.2'
 
+PROTOCOLS = ('mysql', 'sqlite', 'postgresql')
 
 class Storage(object):
 
     console = None
-        
+
+    def connect(self):
+        raise NotImplementedError
+
+    def shutdown(self):
+        raise NotImplementedError
+
+    def getConnection(self):
+        raise NotImplementedError
+
     def getCounts(self):
         raise NotImplementedError
     
@@ -88,13 +93,34 @@ class Storage(object):
 
     def getGroup(self, group):
         raise NotImplementedError
-        
-        
-from database import DatabaseStorage
 
+    def getTables(self):
+        raise NotImplementedError
 
-def getStorage(stype, *args):
-    construct = globals()['%sStorage' % stype.title()]
-    instance = construct(*args)
-    instance.connect()
-    return instance
+    def status(self):
+        raise NotImplementedError
+
+from mysql import MysqlStorage
+from sqlite import SqliteStorage
+from postgresql import PostgresqlStorage
+
+def getStorage(dsn, dsnDict, console):
+    """
+    Return an initialized storage module instance (not connected with the underlying storage layer).
+    Every exception raised by this function should make B3 non-operational since we won't have storage support.
+    :param dsn: The database connection string.
+    :param dsnDict: The database connection string parsed into a dict.
+    :param console: The console instance.
+    :raise AttributeError: If we don't manage to setup a valid storage module.
+    :raise ImportError: If the system misses the necessary libraries needed to setup the storage module.
+    :return: The storage module object instance connected with the underlying storage layer.
+    """
+    if not dsnDict:
+        raise AttributeError('invalid database configuration specified: %s' % dsn)
+
+    if not dsnDict['protocol'] in PROTOCOLS:
+        raise AttributeError('invalid storage protocol specified: %s: supported storage '
+                             'protocols are: %s' % (dsnDict['protocol'], ','.join(PROTOCOLS)))
+
+    construct = globals()['%sStorage' % dsnDict['protocol'].title()]
+    return construct(dsn, dsnDict, console)

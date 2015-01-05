@@ -43,9 +43,10 @@
 #                                     - added right_cut function: remove the given suffix from a string
 #                                     - added hash_file function: calculate the MD5 digest of the given file
 # 20/12/2014 - 1.15  - Fenix          - fixed hash_file returning None
+# 27/12/2014 - 1.16  - Fenix          - adapted splitDSN to support postgresql databases
 
 __author__    = 'ThorN, xlr8or, courgette'
-__version__   = '1.15'
+__version__   = '1.16'
 
 import collections
 import os
@@ -131,6 +132,9 @@ def splitDSN(url):
     elif g['protocol'] == 'mysql':
         if g['password'] is None:
             g['password'] = ''
+    elif g['protocol'] == 'postgresql':
+        if g['password'] is None:
+            g['password'] = ''
 
     if g['port']:
         g['port'] = int(g['port'])
@@ -140,7 +144,8 @@ def splitDSN(url):
         g['port'] = 22
     elif g['protocol'] == 'mysql':
         g['port'] = 3306
-
+    elif g['protocol'] == 'postgresql':
+        g['port'] = 5432
     return g
 
 
