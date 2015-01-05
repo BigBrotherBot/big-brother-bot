@@ -188,11 +188,11 @@ class PostgresqlStorage(DatabaseStorage):
             for v in table:
                 if not v in current_tables:
                     raise KeyError("could not find table '%s' in the database" % v)
-            self.query("TRUNCATE %s RESTART IDENTITY;" % ', '.join(table))
+            self.query("TRUNCATE %s RESTART IDENTITY CASCADE;" % ', '.join(table))
         else:
             if not table in current_tables:
                  raise KeyError("could not find table '%s' in the database" % table)
-            self.query("TRUNCATE %s RESTART IDENTITY;" % table)
+            self.query("TRUNCATE %s RESTART IDENTITY CASCADE;" % table)
 
     ####################################################################################################################
     ##                                                                                                                ##
