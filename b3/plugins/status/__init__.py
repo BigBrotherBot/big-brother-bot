@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 05/01/2014 - 1.6    - Fenix      - PostgreSQl support
 # 30/08/2014 - 1.5    - Fenix      - syntax cleanup
 #                                  - make use of the new onStop event handler
 # 13/03/2014 - 1.4.18 - Fenix      - double check for server and client vars table to exists before attempting to create
@@ -58,7 +59,7 @@
 # 29/08/2005 - 1.2.0 - ThorN       - converted to use new event handlers
 
 __author__ = 'ThorN'
-__version__ = '1.5'
+__version__ = '1.6'
 
 import b3
 import b3.cron
