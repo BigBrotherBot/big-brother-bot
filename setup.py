@@ -128,7 +128,8 @@ setup(cmdclass=cmdclass,
                          'conf/*.ini',
                          'conf/templates/*.tpl',
                          'conf/templates/autodoc/*.html',
-                         'extplugins/xlrstats/*',
+                         'extplugins/xlrstats/*.py',
+                         'extplugins/xlrstats/doc/*',
                          'extplugins/conf/*.xml',
                          'extplugins/conf/*.ini',
                          'sql/*.*',
@@ -193,7 +194,7 @@ setup(cmdclass=cmdclass,
                 "b3.parsers.homefront",
                 "b3.parsers.ravaged",
                 "b3.parsers.frostbite.*",
-                "b3.extplugins.__init__",
+                "b3.extplugins.*",
                 ### additional modules for popular/useful 3rd party plugins ###
                 "smtplib", "email.*", "calendar", "email.mime.*", # contact plugin
                 "telnetlib", # teamspeak* plugins
