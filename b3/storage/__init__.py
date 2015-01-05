@@ -97,6 +97,9 @@ class Storage(object):
     def getTables(self):
         raise NotImplementedError
 
+    def truncateTable(self, table):
+        raise NotImplementedError
+
     def status(self):
         raise NotImplementedError
 

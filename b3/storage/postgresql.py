@@ -21,6 +21,7 @@
 # 28/12/2014 - Fenix - initial release
 # 29/12/2014 - Fenix - overridden _query() method in order to correctly compute lastrowid value in INSERT queries
 #                    - patch QueryBuilder.escape in order to have a valid escape for postgresql
+# 05/01/2015 - Fenix - added truncateTable() method: empty a database table (or multiple tables) and reset identity
 
 import b3
 import re
@@ -166,10 +167,6 @@ class PostgresqlStorage(DatabaseStorage):
         List the tables of the current database.
         :return: List of strings.
         """
-        """
-        List the tables of the current database.
-        :return: list of strings.
-        """
         tables = []
         cursor = self.query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
         if cursor and not cursor.EOF:
@@ -179,6 +176,23 @@ class PostgresqlStorage(DatabaseStorage):
                 cursor.moveNext()
         cursor.close()
         return tables
+
+    def truncateTable(self, table):
+        """
+        Empty a database table (or a collection of tables)
+        :param table: The database table or a collection of tables
+        :raise KeyError: If the table is not present in the database
+        """
+        current_tables = self.getTables()
+        if isinstance(table, tuple) or isinstance(table, list):
+            for v in table:
+                if not v in current_tables:
+                    raise KeyError("could not find table '%s' in the database" % v)
+            self.query("TRUNCATE %s RESTART IDENTITY;" % ', '.join(table))
+        else:
+            if not table in current_tables:
+                 raise KeyError("could not find table '%s' in the database" % table)
+            self.query("TRUNCATE %s RESTART IDENTITY;" % table)
 
     ####################################################################################################################
     ##                                                                                                                ##

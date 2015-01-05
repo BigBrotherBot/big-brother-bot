@@ -19,6 +19,7 @@
 # CHANGELOG
 #
 # 26/12/2014 - Fenix - moved into separate module
+# 05/01/2015 - Fenix - added truncateTable() method: empty a database table (or multiple tables) and reset identity
 
 import b3
 import os
@@ -99,6 +100,25 @@ class SqliteStorage(DatabaseStorage):
                 cursor.moveNext()
         cursor.close()
         return tables
+
+    def truncateTable(self, table):
+        """
+        Empty a database table (or a collection of tables)
+        :param table: The database table or a collection of tables
+        :raise KeyError: If the table is not present in the database
+        """
+        current_tables = self.getTables()
+        if isinstance(table, tuple) or isinstance(table, list):
+            for v in table:
+                if not v in current_tables:
+                    raise KeyError("could not find table '%s' in the database" % v)
+                self.query("DELETE FROM %s;" % v)
+        else:
+            if not table in current_tables:
+                 raise KeyError("could not find table '%s' in the database" % table)
+            self.query("DELETE FROM %s;" % table)
+        # rebuild identity and clean unused space
+        self.query("VACUUM;")
 
     ####################################################################################################################
     ##                                                                                                                ##

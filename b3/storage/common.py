@@ -572,6 +572,14 @@ class DatabaseStorage(Storage):
 
         return group
 
+    def truncateTable(self, table):
+        """
+        Empty a database table (or a collection of tables)
+        :param table: The database table or a collection of tables
+        :raise KeyError: If the table is not present in the database
+        """
+        raise NotImplementedError
+
     def getTables(self):
         """
         List the tables of the current database.
