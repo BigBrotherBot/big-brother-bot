@@ -28,14 +28,13 @@ from b3 import TEAM_RED
 from b3 import TEAM_BLUE
 from b3.config import CfgConfigParser
 from b3.extplugins.xlrstats import XlrstatsPlugin
-from b3.extplugins.xlrstats import __file__ as xlrstats__file__
 from b3.fake import FakeClient
 from b3.plugins.admin import AdminPlugin
 from tests import B3TestCase
 from tests import logging_disabled
 
-DEFAULT_XLRSTATS_CONFIG_FILE = os.path.join(os.path.dirname(xlrstats__file__), 'conf/plugin_xlrstats.ini')
-DEFAULT_ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.ini"))
+DEFAULT_XLRSTATS_CONFIG_FILE = os.path.join(os.path.dirname(b3_module__file__), 'extplugins', 'conf', 'plugin_xlrstats.ini')
+DEFAULT_ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf", "plugin_admin.ini"))
 
 # Setup the logging level we'd like to be spammed with during the tests
 LOGGER = logging.getLogger('output')

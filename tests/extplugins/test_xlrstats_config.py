@@ -19,10 +19,11 @@
 import logging
 import os
 from b3.config import CfgConfigParser
-from b3.extplugins.xlrstats import XlrstatsPlugin, __file__ as xlrstats__file__
+from b3.extplugins.xlrstats import XlrstatsPlugin
+from b3 import __file__ as b3_module__file__
 from tests import B3TestCase
 
-DEFAULT_XLRSTATS_CONFIG_FILE = os.path.join(os.path.dirname(xlrstats__file__), 'conf/plugin_xlrstats.ini')
+DEFAULT_XLRSTATS_CONFIG_FILE = os.path.join(os.path.dirname(b3_module__file__), 'extplugins', 'conf', 'plugin_xlrstats.ini')
 
 
 class XlrstatsTestCase(B3TestCase):
