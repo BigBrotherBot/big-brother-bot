@@ -93,8 +93,7 @@ class Test_PostgreSQL(B3TestCase, StorageAPITest):
             if tables:
                 # dont remove the groups table since we would need it in next tests
                 tables.remove('groups')
-                self.storage.query("TRUNCATE %s RESTART IDENTITY;" % ', '.join(tables))
-
+                self.storage.truncateTable(tables)
         except Exception, e:
             self.fail("Error: %s" % e)
 

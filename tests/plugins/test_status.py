@@ -37,8 +37,9 @@ class Test_config(B3TestCase):
             enableDBclientSaving: no
             """))
         self.p = StatusPlugin(self.console, conf)
+        self.p._tables = { 'svars': 'current_svars', 'cvars': 'current_clients' }
         self.p.onLoadConfig()
-        self.assertEqual("current_svars", self.p._svarTable)
+        self.assertEqual("current_svars", self.p._tables['svars'])
 
 
     @patch("b3.cron.PluginCronTab")
@@ -53,8 +54,9 @@ class Test_config(B3TestCase):
             svar_table: alternate_svar_table
             """))
         self.p = StatusPlugin(self.console, conf)
+        self.p._tables = { 'svars': 'current_svars', 'cvars': 'current_clients' }
         self.p.onLoadConfig()
-        self.assertEqual("alternate_svar_table", self.p._svarTable)
+        self.assertEqual("alternate_svar_table", self.p._tables['svars'])
 
 
     @patch("b3.cron.PluginCronTab")
@@ -68,8 +70,9 @@ class Test_config(B3TestCase):
             enableDBclientSaving: no
             """))
         self.p = StatusPlugin(self.console, conf)
+        self.p._tables = { 'svars': 'current_svars', 'cvars': 'current_clients' }
         self.p.onLoadConfig()
-        self.assertEqual("current_clients", self.p._clientTable)
+        self.assertEqual("current_clients", self.p._tables['cvars'])
 
 
     @patch("b3.cron.PluginCronTab")
@@ -84,5 +87,6 @@ class Test_config(B3TestCase):
             client_table: alternate_client_table
             """))
         self.p = StatusPlugin(self.console, conf)
+        self.p._tables = { 'svars': 'current_svars', 'cvars': 'current_clients' }
         self.p.onLoadConfig()
-        self.assertEqual("alternate_client_table", self.p._clientTable)
+        self.assertEqual("alternate_client_table", self.p._tables['cvars'])

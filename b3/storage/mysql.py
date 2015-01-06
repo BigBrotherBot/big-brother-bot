@@ -19,6 +19,7 @@
 # CHANGELOG
 #
 # 26/12/2014 - Fenix - moved into separate module
+# 05/01/2015 - Fenix - added truncateTable() method: empty a database table (or multiple tables) and reset identity
 
 import b3
 import sys
@@ -267,3 +268,24 @@ class MysqlStorage(DatabaseStorage):
                 cursor.moveNext()
         cursor.close()
         return tables
+
+    def truncateTable(self, table):
+        """
+        Empty a database table (or a collection of tables)
+        :param table: The database table or a collection of tables
+        :raise KeyError: If the table is not present in the database
+        """
+        try:
+            self.query("""SET FOREIGN_KEY_CHECKS=0;""")
+            current_tables = self.getTables()
+            if isinstance(table, tuple) or isinstance(table, list):
+                for v in table:
+                    if not v in current_tables:
+                        raise KeyError("could not find table '%s' in the database" % v)
+                    self.query("TRUNCATE TABLE %s;" % v)
+            else:
+                if not table in current_tables:
+                     raise KeyError("could not find table '%s' in the database" % table)
+                self.query("TRUNCATE TABLE %s;" % table)
+        finally:
+            self.query("""SET FOREIGN_KEY_CHECKS=1;""")

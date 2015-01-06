@@ -510,3 +510,33 @@ class StorageAPITest(object):
         self.assertEqual({'Kicks': 1, 'TempBans': 1, 'clients': 2, 'Bans': 2, 'Warnings': 0}, self.storage.getCounts())
         Penalty(clientId=c1.id, adminId=0, type='Warning').save(self.console)
         self.assertEqual({'Kicks': 1, 'TempBans': 1, 'clients': 2, 'Bans': 2, 'Warnings': 1}, self.storage.getCounts())
+
+    def test_truncateTables_single_table(self):
+        self.storage.setClient(Client(guid="aaaaaaaaa"))
+        self.storage.setClient(Client(guid="bbbbbbbbb"))
+        cursor = self.storage.query("SELECT * FROM clients")
+        self.assertFalse(cursor.EOF)
+        self.storage.truncateTable('clients')
+        cursor = self.storage.query("SELECT * FROM clients")
+        self.assertTrue(cursor.EOF)
+
+    def test_truncateTables_multiple_tables(self):
+        c1 = Client(guid="aaaaaaaaa")
+        c2 = Client(guid="bbbbbbbbb")
+        self.storage.setClient(c1)
+        self.storage.setClient(c2)
+        self.storage.setClientPenalty(Penalty(clientId=c1.id, adminId=0, type='Kick'))
+        self.storage.setClientPenalty(Penalty(clientId=c2.id, adminId=0, type='Kick'))
+        cursor = self.storage.query("SELECT * FROM clients")
+        self.assertFalse(cursor.EOF)
+        cursor = self.storage.query("SELECT * FROM penalties")
+        self.assertFalse(cursor.EOF)
+        self.storage.truncateTable(['clients', 'penalties'])
+        cursor = self.storage.query("SELECT * FROM clients")
+        self.assertTrue(cursor.EOF)
+        cursor = self.storage.query("SELECT * FROM penalties")
+        self.assertTrue(cursor.EOF)
+
+    def test_truncateTables_invalid_table_name(self):
+        self.assertRaises(KeyError, self.storage.truncateTable, 'invalid_table')
+        self.assertRaises(KeyError, self.storage.truncateTable, ['invalid_table1', ['invalid_table2']])
