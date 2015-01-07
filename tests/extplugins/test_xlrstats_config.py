@@ -23,7 +23,7 @@ from b3.extplugins.xlrstats import XlrstatsPlugin
 from b3 import __file__ as b3_module__file__
 from tests import B3TestCase
 
-DEFAULT_XLRSTATS_CONFIG_FILE = os.path.join(os.path.dirname(b3_module__file__), 'extplugins', 'conf', 'plugin_xlrstats.ini')
+DEFAULT_XLRSTATS_CONFIG_FILE = os.path.join(os.path.dirname(b3_module__file__), 'extplugins', 'xlrstats', 'conf', 'plugin_xlrstats.ini')
 
 
 class XlrstatsTestCase(B3TestCase):
