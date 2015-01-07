@@ -18,6 +18,8 @@
 #
 # CHANGELOG
 #
+# 2015/01/07 - 1.39.2 - Fenix           - updated loadPlugins() to search inside extplugins module directories
+#                                       - fixed some invalid references in _get_config_path()
 # 2014/12/31 - 1.39.1 - Fenix           - loadArbPlugins: don't bother loading arb plugins if admin plugin is not loaded
 #                                       - prevent plugins from crashing B3 if they fails in loading: Admin plugin will
 #                                         be still checked in loadArbPlugins since it's strictly needed
@@ -150,7 +152,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.39.1'
+__version__ = '1.39.2'
 
 import os
 import sys
@@ -728,33 +730,41 @@ class Parser(object):
         extplugins_dir = self.config.getpath('plugins', 'external_dir')
         self.bot('Loading plugins (external plugin directory: %s)' % extplugins_dir)
 
-        def _get_config_path(plug):
+        def _get_config_path(p_name, p_config):
             """
             Helper that return a config path for the given Plugin
+            :param p_name: The plugin name
+            :param p_config: The plugin configuration file path
             """
-            # read config path from b3 configuration
-            cfg = plug.get('config')
-            # check if the configuration file exists - if not, attempts to find the configuration file
-            if cfg is not None and os.path.exists(self.getAbsolutePath(cfg)):
-                return self.getAbsolutePath(cfg)
+            # check if the configuration file exists - if not, attempts to find the configuration file.
+            if p_config is not None and os.path.exists(self.getAbsolutePath(p_config)):
+                return self.getAbsolutePath(p_config)
 
             # warn the users
-            if cfg is None:
-                self.warning('No configuration file specified for plugin %s' % p.get('name'))
+            if p_config is None:
+                # print as a debug line since the plugin may not need a configuration file.
+                self.debug('No configuration file specified for plugin %s' % p.get('name'))
             else:
-                self.warning('The specified configuration file %s for the plugin %s does not exist' % (cfg, p.get('name')))
+                # notice as a warning: the user specified a configuration file which has not been resolved in the
+                # file system: still the plugin may work without the configuration file but probably it will
+                # behave differently from what the user is expecting.
+                self.warning('The specified configuration file %s for plugin %s does not exist: trying to find '
+                             'a valid configuration file instead...' % (p_config, p_name))
 
-            # try to find a config file
-            cfgpath = glob.glob(self.getAbsolutePath('@b3\\conf\\') + '*%s*' % p.get('name'))
-            if len(cfgpath) == 0:
-                cfgpath = glob.glob(self.getAbsolutePath(extplugins_dir) + '\\conf\\' + '*%s*' % p.get('name'))
+            # try to find a config file: first look in the built-in plugins directory
+            p_lookup_path = glob.glob(self.getAbsolutePath('@b3\\conf\\') + '*%s*' % p_name)
+            if len(p_lookup_path) == 0:
+                # if none is found, then search in the extplugins directory: starting from B3 1.10dev version, extplugins
+                # are composed of directories so we would need to look for a 'conf' directory inside the extplugins
+                # module directory, i.e: @b3/extplugins/xlrstats/conf/plugin_xlrstats.ini
+                p_lookup_path = glob.glob(self.getAbsolutePath(extplugins_dir) + '\\%s\\conf\\*%s*' % (p_name, p_name))
 
-            if len(cfgpath) != 1 or cfgpath[0] in [c.get('conf', '') for c in plugins.values()]:
+            if len(p_lookup_path) != 1 or p_lookup_path[0] in [c.get('conf', '') for c in plugins.values()]:
                 # return none if no file found or file already loaded
-                return cfg
+                return p_config
             else:
-                self.warning('Using %s as configuration file for %s' % (cfgpath[0], p.get('name')))
-                return cfgpath[0]
+                self.warning('Using %s as configuration file for %s' % (p_lookup_path[0], p_name))
+                return p_lookup_path[0]
 
         plugins = {}
         plugin_sort = []
@@ -769,7 +779,7 @@ class Parser(object):
             if name in [plugins[i]['name'] for i in plugins if plugins[i]['name'] == name]:
                 self.warning('Plugin %s already loaded: avoid multiple entries of the same plugin' % name)
             else:
-                conf = _get_config_path(p)
+                conf = _get_config_path(name, p.get('config'))
                 disabledconf = p.get('disabled')
                 disabled = disabledconf is not None and disabledconf.lower() in ('yes', '1', 'on', 'true')
                 plugins[priority] = {'name': name, 'conf': conf, 'path': p.get('path'), 'disabled': disabled}
