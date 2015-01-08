@@ -74,16 +74,17 @@ class Plugin:
         self.console = console
         self.eventmanager = b3.events.eventManager
         self.eventmap = dict()
-        if isinstance(config, b3.config.XmlConfigParser) \
-           or isinstance(config, b3.config.CfgConfigParser):
+        if isinstance(config, b3.config.XmlConfigParser) or isinstance(config, b3.config.CfgConfigParser):
+            # this will be used by default from the Parser class since B3 1.10dev
             self.config = config
         else:
+            # this is mostly used by automated tests which are loading plugins manually
             try:
                 self.loadConfig(config)
             except b3.config.ConfigFileNotValid, e:
                 self.critical("The config file XML syntax is broken: %s" % e)
                 self.critical("Use a XML editor to modify your config files: it makes easy to spot errors")
-                raise 
+                raise
 
         self.registerEvent(self.console.getEventID('EVT_STOP'), self.onStop)
         self.registerEvent(self.console.getEventID('EVT_EXIT'), self.onExit)
@@ -168,7 +169,7 @@ class Plugin:
             else:
                 self.bot('no config file found for %s: was not required either' % self.__class__.__name__)
                 return True
-            
+
         # empty message cache
         self._messages = {}
 

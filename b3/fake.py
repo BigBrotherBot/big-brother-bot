@@ -80,8 +80,8 @@ class FakeConsole(b3.parser.Parser):
         self._timeStart = self.time()
         logging.basicConfig(level=b3.output.VERBOSE2, format='%(asctime)s\t%(levelname)s\t%(message)s')
         self.log = logging.getLogger('output')
-        
-        
+
+
         if isinstance(config, b3.config.XmlConfigParser) or isinstance(config, b3.config.CfgConfigParser):
             self.config = config
         else:
