@@ -40,6 +40,7 @@
 #                                - added possibility to register multiple event hooks for the same event inside a plugin
 # 28/07/2014 - 1.9   - Fenix     - syntax cleanup
 #                                - added default event mapping hooks for EVT_EXIT and EVT_STOP
+# 08/01/2015 - 1.9.1 - Fenix     - make sure not to load 'None' object as configuration file
 
 __author__ = 'ThorN, Courgette'
 __version__ = '1.9'
@@ -78,13 +79,14 @@ class Plugin:
             # this will be used by default from the Parser class since B3 1.10dev
             self.config = config
         else:
-            # this is mostly used by automated tests which are loading plugins manually
-            try:
-                self.loadConfig(config)
-            except b3.config.ConfigFileNotValid, e:
-                self.critical("The config file XML syntax is broken: %s" % e)
-                self.critical("Use a XML editor to modify your config files: it makes easy to spot errors")
-                raise
+            if config is not None:
+                # this is mostly used by automated tests which are loading plugins manually
+                try:
+                    self.loadConfig(config)
+                except b3.config.ConfigFileNotValid, e:
+                    self.critical("The config file XML syntax is broken: %s" % e)
+                    self.critical("Use a XML editor to modify your config files: it makes easy to spot errors")
+                    raise
 
         self.registerEvent(self.console.getEventID('EVT_STOP'), self.onStop)
         self.registerEvent(self.console.getEventID('EVT_EXIT'), self.onExit)
