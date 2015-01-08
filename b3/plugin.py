@@ -43,7 +43,7 @@
 # 08/01/2015 - 1.9.1 - Fenix     - make sure not to load 'None' object as configuration file
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.9'
+__version__ = '1.9.1'
 
 import b3.config
 import b3.events
