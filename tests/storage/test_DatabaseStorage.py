@@ -32,8 +32,8 @@ from mockito import when
 from mockito import any as ANY
 
 # checks whether we can perform tests on SQL script file parsing
-B3_SQL_FILE_AVAILABLE = os.path.exists(b3.getAbsolutePath("@b3/sql/b3.sql"))
-B3_DB_SQL_FILE_AVAILABLE = os.path.exists(b3.getAbsolutePath("@b3/sql/b3-db.sql"))
+B3_SQL_FILE_AVAILABLE = os.path.exists(b3.getAbsolutePath("@b3/sql/mysql/b3.sql"))
+B3_DB_SQL_FILE_AVAILABLE = os.path.exists(b3.getAbsolutePath("@b3/sql/mysql/b3-db.sql"))
 B3_DEFAULT_TABLES = ['aliases' ,'clients', 'data', 'groups', 'ipaliases', 'penalties']
 
 class Test_DatabaseStorage(unittest.TestCase):
@@ -101,12 +101,12 @@ class Test_DatabaseStorage(unittest.TestCase):
 
     @unittest.skipUnless(B3_SQL_FILE_AVAILABLE, "B3 SQL script not found @ %s" % b3.getAbsolutePath("@b3/sql/b3.sql"))
     def test_b3_sql_file_parsing(self):
-        with open(b3.getAbsolutePath("@b3/sql/b3.sql"), 'r') as sql_file:
+        with open(b3.getAbsolutePath("@b3/sql/mysql/b3.sql"), 'r') as sql_file:
             statements = DatabaseStorage.getQueriesFromFile(sql_file)
-            self.assertEqual(27, len(statements))
+            self.assertEqual(28, len(statements))
 
     @unittest.skipUnless(B3_DB_SQL_FILE_AVAILABLE, "B3 DB SQL script not found @ %s" % b3.getAbsolutePath("@b3/sql/b3-db.sql"))
     def test_b3_db_sql_file_parsing(self):
-        with open(b3.getAbsolutePath("@b3/sql/b3-db.sql"), 'r') as sql_file:
+        with open(b3.getAbsolutePath("@b3/sql/mysql/b3-db.sql"), 'r') as sql_file:
             statements = DatabaseStorage.getQueriesFromFile(sql_file)
             self.assertEqual(2, len(statements))
