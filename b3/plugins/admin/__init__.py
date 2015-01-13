@@ -162,7 +162,7 @@ class AdminPlugin(b3.plugin.Plugin):
     _announce_registration = True
     _past_bans_check_rate = 10
     _past_bans_crontab = None
-    _past_bans_count = 0
+    _past_bans_counts = {'Bans': 0, 'TempBans': 0}
 
     cmdPrefix = '!'
     cmdPrefixLoud = '@'
@@ -1066,15 +1066,19 @@ class AdminPlugin(b3.plugin.Plugin):
         connected to the server and kick them if needed.
         """
         counts = self.console.storage.getCounts()
-        if counts['Bans'] + counts['TempBans'] != self._past_bans_count:
-            self._past_bans_count = counts['Bans'] + counts['TempBans']
-            self.debug('checking for banned clients still connected to the server...')
-            for client in self.console.clients.getList():
-                if client.numBans > 0:
-                    ban = client.lastBan
-                    if ban:
-                        self.debug('banned client still online %s: re-applying penalty (%s)' % (client, ban.type))
-                        client.reBan(ban)
+        for k1 in self._past_bans_counts:
+            if self._past_bans_counts[k1] != counts[k1]:
+                # update counts for next check
+                for k2 in self._past_bans_counts:
+                    self._past_bans_counts[k2] = counts[k2]
+                self.debug('checking for banned clients still connected to the server...')
+                for client in self.console.clients.getList():
+                    if client.numBans > 0:
+                        ban = client.lastBan
+                        if ban:
+                            self.debug('banned client still online %s: re-applying penalty (%s)' % (client, ban.type))
+                            client.reBan(ban)
+                break
 
     def doLonglist(self, client, cmd):
         """
