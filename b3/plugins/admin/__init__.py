@@ -19,6 +19,7 @@
 # CHANGELOG
 #
 # 2015/01/09 - 1.34    - Fenix          - added past bans check cronjob
+#                                       - adjusted b3.sql script path in debug message: make use of the correct protocol
 # 2014/12/15 - 1.33    - Fenix          - unregister !restart command if B3 is not running in auto-restart mode
 # 2014/11/15 - 1.32    - 82ndab-Bravo17 - added new command longlist that does a list with one player per line
 #                                       - and cid first. Allows you to see players with clever unicode names that
@@ -561,7 +562,8 @@ class AdminPlugin(b3.plugin.Plugin):
             except Exception, msg:
                 # no proper groups available, cannot continue
                 self.critical('seems your groups table in the database is empty: please recreate your database using '
-                              'the proper sql syntax. Use b3/docs/b3.sql - (%s)' % msg)
+                              'the proper sql syntax. To do so you can import in your database the following SQL '
+                              'script: %s - (%s)' % (b3.getAbsolutePath("@b3/sql/%s/b3.sql" % self.console.storage.dsnDict['protocol']), msg))
 
             if 'iamgod' in self._commands and \
                 self._commands['iamgod'].level is not None and \
