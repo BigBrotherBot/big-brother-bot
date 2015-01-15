@@ -43,9 +43,11 @@
 #                                  keys from configuration files with non specified values
 #                                - return empty string instead of None in get() method: this fixes possible failures in
 #                                  string replacements when we retrieve empty option from a .ini configuration file
+# 15/01/2015 - 1.7.2 - Fenix     - Make sure users can't load 'admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail'
+#                                  as disabled from main B3 configuration file
 
 __author__  = 'ThorN, Courgette, Fenix'
-__version__ = '1.7.1'
+__version__ = '1.7.2'
 
 import os
 import re
@@ -64,6 +66,8 @@ try:
 except ImportError:
     from xml.etree import ElementTree
 
+# list of plugins that cannot be loaded as disabled from configuration file
+MUST_HAVE_PLUGINS = ('admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail')
 
 class B3ConfigParserMixin:
     """
@@ -421,11 +425,12 @@ class MainConfig(B3ConfigParserMixin):
     def _init_plugins_from_xml(self):
         self._plugins = []
         for p in self._config_parser.get('plugins/plugin'):
+            x = p.get('disabled')
             self._plugins.append({
                 'name': p.get('name'),
                 'conf': p.get('config'),
                 'path': p.get('path'),
-                'disabled': p.get('disabled') is not None and p.get('disabled').lower() in ('yes', '1', 'on', 'true')
+                'disabled':  x is not None and x not in MUST_HAVE_PLUGINS and x.lower() in ('yes', '1', 'on', 'true')
             })
 
     def _init_plugins_from_cfg(self):
@@ -450,7 +455,7 @@ class MainConfig(B3ConfigParserMixin):
                     'name': name,
                     'conf': self._config_parser.get('plugins', name),
                     'path': get_custom_plugin_path(name),
-                    'disabled': name.lower() in disabled_plugins
+                    'disabled': name.lower() in disabled_plugins and name.lower() not in MUST_HAVE_PLUGINS
                 })
 
     def get_plugins(self):
@@ -485,9 +490,8 @@ class MainConfig(B3ConfigParserMixin):
     def __getattr__(self, name):
         """
         Act as a proxy in front of self._config_parser.
-        Any attribute or method call which does not exists in this object (MainConfig) is then tryied on
+        Any attribute or method call which does not exists in this object (MainConfig) is then tried on
         the self._config_parser
-
         :param name: str Attribute or method name
         """
         if hasattr(self._config_parser, name):
