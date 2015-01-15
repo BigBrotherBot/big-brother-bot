@@ -42,10 +42,11 @@
 #                                            - include Cod7Rcon class declaration in cod7.py module
 # 30/07/2014 - 1.2.4 - Fenix                 - fixes for the new getWrap implementation
 # 04/08/2014 - 1.3   - Fenix                 - syntax cleanup
+# 15/01/2015 - 1.3.1 - Fenix                 - unload httpytail plugin only if it was actually loaded
 
 
 __author__ = 'Freelander, Courgette, Just a baka, Bravo17'
-__version__ = '1.3'
+__version__ = '1.3.1'
 
 import os
 import b3
@@ -414,13 +415,12 @@ def newLoadArbPlugins(self):
     ## first, run usual loadArbPlugins
     originalLoadArbPlugins(self)
     
-    if self.config.has_option('server','game_log') \
-        and self.config.get('server','game_log')[0:7] == 'http://' :
-        
-        # undo httpytail load
-        self.screen.write('Unloading        : http Plugin\n')
-        self._pluginOrder.remove('httpytail')
-        del self._plugins['httpytail']
+    if self.config.has_option('server','game_log') and self.config.get('server','game_log')[0:7] == 'http://':
+
+        if 'httpytail' in self._pluginOrder:
+            self.screen.write('Unloading        : http Plugin\n')
+            self._pluginOrder.remove('httpytail')
+            del self._plugins['httpytail']
 
         # load cod7http        
         p = 'cod7http'

@@ -20,16 +20,17 @@
 import ConfigParser
 import logging
 import os
-from textwrap import dedent
 import unittest2 as unittest
 from b3 import getAbsolutePath
-from b3.config import CfgConfigParser, MainConfig, load, XmlConfigParser
+from b3.config import CfgConfigParser
+from b3.config import MainConfig
+from b3.config import load
+from b3.config import XmlConfigParser
+from textwrap import dedent
 
 
-DEFAULT_MAIN_CONFIG_FILE_XML = os.path.normpath(os.path.join(os.path.dirname(__file__),
-                                                             '../b3/conf/b3.distribution.xml'))
-DEFAULT_MAIN_CONFIG_FILE_CFG = os.path.normpath(os.path.join(os.path.dirname(__file__),
-                                                             '../b3/conf/b3.distribution.ini'))
+DEFAULT_MAIN_CONFIG_FILE_XML = os.path.normpath(os.path.join(os.path.dirname(__file__), '../b3/conf/b3.distribution.xml'))
+DEFAULT_MAIN_CONFIG_FILE_CFG = os.path.normpath(os.path.join(os.path.dirname(__file__), '../b3/conf/b3.distribution.ini'))
 
 
 class CommonDefaultTestMethodsMixin:
@@ -64,22 +65,14 @@ class CommonDefaultTestMethodsMixin:
         self.assertEqual('stable', self.conf.get('update', 'channel'))
 
     def test_messages_section(self):
-        self.assertEqual("""$clientname^7 was kicked by $adminname^7 $reason""",
-                          self.conf.get("messages", "kicked_by"))
-        self.assertEqual("""$clientname^7 was kicked $reason""",
-                          self.conf.get("messages", "kicked"))
-        self.assertEqual("""$clientname^7 was banned by $adminname^7 $reason""",
-                          self.conf.get("messages", "banned_by"))
-        self.assertEqual("""$clientname^7 was banned $reason""",
-                          self.conf.get("messages", "banned"))
-        self.assertEqual("""$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason""",
-                          self.conf.get("messages", "temp_banned_by"))
-        self.assertEqual("""$clientname^7 was temp banned for $banduration^7 $reason""",
-                          self.conf.get("messages", "temp_banned"))
-        self.assertEqual("""$clientname^7 was un-banned by $adminname^7 $reason""",
-                          self.conf.get("messages", "unbanned_by"))
-        self.assertEqual("""$clientname^7 was un-banned $reason""",
-                          self.conf.get("messages", "unbanned"))
+        self.assertEqual("""$clientname^7 was kicked by $adminname^7 $reason""", self.conf.get("messages", "kicked_by"))
+        self.assertEqual("""$clientname^7 was kicked $reason""", self.conf.get("messages", "kicked"))
+        self.assertEqual("""$clientname^7 was banned by $adminname^7 $reason""", self.conf.get("messages", "banned_by"))
+        self.assertEqual("""$clientname^7 was banned $reason""", self.conf.get("messages", "banned"))
+        self.assertEqual("""$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason""", self.conf.get("messages", "temp_banned_by"))
+        self.assertEqual("""$clientname^7 was temp banned for $banduration^7 $reason""", self.conf.get("messages", "temp_banned"))
+        self.assertEqual("""$clientname^7 was un-banned by $adminname^7 $reason""", self.conf.get("messages", "unbanned_by"))
+        self.assertEqual("""$clientname^7 was un-banned^7 $reason""", self.conf.get("messages", "unbanned"))
 
     def test_get_external_plugins_dir(self):
         self.assertEqual(getAbsolutePath("@b3/extplugins"), self.conf.get_external_plugins_dir())
@@ -100,8 +93,7 @@ class CommonDefaultTestMethodsMixin:
         ], self.conf.get_plugins())
 
 
-@unittest.skipUnless(os.path.exists(DEFAULT_MAIN_CONFIG_FILE_XML),
-                     reason="cannot get default main config file at %s" % DEFAULT_MAIN_CONFIG_FILE_XML)
+@unittest.skipUnless(os.path.exists(DEFAULT_MAIN_CONFIG_FILE_XML), reason="cannot get default main config file at %s" % DEFAULT_MAIN_CONFIG_FILE_XML)
 class Test_XmlMainConfigParser(CommonDefaultTestMethodsMixin, unittest.TestCase):
     def setUp(self):
         self.conf = MainConfig(load(DEFAULT_MAIN_CONFIG_FILE_XML))
@@ -117,8 +109,8 @@ class Test_XmlMainConfigParser(CommonDefaultTestMethodsMixin, unittest.TestCase)
                              map(lambda x: x.get('name'), self.conf._config_parser.get('plugins/plugin')))
 
 
-@unittest.skipUnless(os.path.exists(DEFAULT_MAIN_CONFIG_FILE_CFG),
-                     reason="cannot get default main config file at %s" % DEFAULT_MAIN_CONFIG_FILE_CFG)
+@unittest.skipUnless(os.path.exists(DEFAULT_MAIN_CONFIG_FILE_CFG), reason="cannot get default main config file at %s" % DEFAULT_MAIN_CONFIG_FILE_CFG)\
+
 class Test_CfgMainConfigParser(CommonDefaultTestMethodsMixin, unittest.TestCase):
     def setUp(self):
         self.conf = MainConfig(load(DEFAULT_MAIN_CONFIG_FILE_CFG))
@@ -130,8 +122,7 @@ class Test_CfgMainConfigParser(CommonDefaultTestMethodsMixin, unittest.TestCase)
         Vefify that the plugins are return in the same order as found in the config file
         """
         self.assertListEqual(['admin', 'adv', 'censor', 'cmdmanager', 'pingwatch', 'punkbuster', 'spamcontrol', 'stats',
-                              'status', 'tk', 'welcome'],
-                             self.conf._config_parser.options('plugins'))
+                              'status', 'tk', 'welcome'], self.conf._config_parser.options('plugins'))
 
 
 class TestConfig(unittest.TestCase):
@@ -139,7 +130,6 @@ class TestConfig(unittest.TestCase):
         xml_parser = XmlConfigParser()
         xml_parser.loadFromString(xml_content)
         conf_xml = MainConfig(xml_parser)
-
         cfg_parser = CfgConfigParser(allow_no_value=True)
         cfg_parser.loadFromString(cfg_content)
         conf_cfg = MainConfig(cfg_parser)
