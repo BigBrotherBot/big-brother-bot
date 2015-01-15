@@ -617,7 +617,7 @@ class Test_bf4_maps(BF4TestCase):
         self.assertEqual('MP_Naval', self.parser.getMapsSoundingLike('paracel'))
         self.assertEqual(['paracel storm', 'firestorm 2014'], self.parser.getMapsSoundingLike('storm'))
         self.assertEqual('MP_Naval', self.parser.getMapsSoundingLike('Paracel Storm'))
-        self.assertEqual(['operation locker', 'operation mortar', 'operation metro 2014'], self.parser.getMapsSoundingLike('operation'))
+        self.assertEqual(['operation locker', 'operation whiteout', 'operation mortar'], self.parser.getMapsSoundingLike('operation'))
         self.assertEqual('MP_Prison', self.parser.getMapsSoundingLike('locker'))
         self.assertEqual('MP_Prison', self.parser.getMapsSoundingLike('Operation Locker'))
         self.assertEqual('MP_Resort', self.parser.getMapsSoundingLike('hainan'))

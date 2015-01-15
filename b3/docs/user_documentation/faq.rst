@@ -111,7 +111,7 @@ file, just set the `url` of your game log file for setting `game_log`.
 Can I run B3 from a webhosting server?
 --------------------------------------
 
-No, B3 needs more than just a webserver. B3 depends also on Python, MySQL and MySQL-Python. Generally (some of) those
+No, B3 needs more than just a webserver. B3 depends also on Python and MySQL. Generally (some of) those
 packages are not available on a webhosting environment.
 
 
@@ -233,7 +233,7 @@ after that you can do:
 
 .. code-block:: none
 
-     yum install python26 mod_python26 MySQL-python26
+     yum install python26 mod_python26
 
 
 Will B3 run with python on Windows 2k3 server 64-bit?

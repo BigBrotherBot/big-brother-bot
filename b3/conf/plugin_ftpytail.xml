@@ -1,6 +1,0 @@
-<configuration plugin="ftpytail">
-    <settings name="settings">
-        <set name="use_windows_cache_fix">True</set>
-        <set name="cache_refresh_delay">1</set>
-    </settings>
-</configuration>

@@ -16,13 +16,41 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-from b3.storage import Storage, getStorage
-from b3.storage.database import DatabaseStorage
-from mock import Mock, patch
-from tests import B3TestCase
+
 import unittest2 as unittest
 
+from b3.functions import splitDSN
+from b3.storage import Storage
+from b3.storage import getStorage
+from b3.storage.sqlite import SqliteStorage
+from b3.storage.mysql import MysqlStorage
+from b3.storage.postgresql import PostgresqlStorage
+from mock import Mock
+from tests import B3TestCase
+
+is_mysql_ready = True
+no_mysql_reason = ''
+
+is_postgresql_ready = True
+no_postgresql_reason = ''
+
+try:
+    import pymysql
+except ImportError:
+    try:
+        import mysql.connector
+    except ImportError:
+        is_mysql_ready = False
+        no_mysql_reason = "no pymysql or mysql.connector module available"
+
+try:
+    import psycopg2
+except ImportError:
+    is_postgresql_ready = False
+    no_postgresql_reason = "no psycopg2 module available"
+
 class Test_Storage(B3TestCase):
+
     storage = None
 
     def setUp(self):
@@ -89,13 +117,17 @@ class Test_Storage(B3TestCase):
 
 class Test_getStorage(unittest.TestCase):
 
-    @patch("b3.storage.DatabaseStorage")
-    def test_Database(self, mock_DatabaseStorage):
-        getStorage('database')
-        mock_DatabaseStorage.assert_called_once()
+    @unittest.skipIf(not is_mysql_ready, no_mysql_reason)
+    def test_mysql(self):
+        storage = getStorage('mysql://b3:password@localhost/b3', splitDSN('mysql://b3:password@localhost/b3'), Mock())
+        self.assertIsInstance(storage, MysqlStorage)
 
-    @patch("b3.storage.Storage")
-    def test_empty(self, mock_Storage):
-        getStorage('')
-        mock_Storage.assert_called_once()
+    @unittest.skipIf(not is_postgresql_ready, no_postgresql_reason)
+    def test_postgresql(self):
+        storage = getStorage('postgresql://b3:password@localhost/b3', splitDSN('postgresql://b3:password@localhost/b3'), Mock())
+        self.assertIsInstance(storage, PostgresqlStorage)
+
+    def test_sqlite(self):
+        storage = getStorage('sqlite://:memory:', splitDSN('sqlite://:memory:'), Mock())
+        self.assertIsInstance(storage, SqliteStorage)
 

@@ -36,6 +36,7 @@
 # 1.12 - 2014/07/16 - added admin key in EVT_CLIENT_KICK data dict when available
 # 1.13 - 2014/08/05 - syntax cleanup
 # 1.14 - 2014/09/06 - adapted FakeConsole to work with the new b3.ini configuration file format
+# 1.15 - 2014/12/27 - new storage module initialization
 
 """
 This module make plugin testing simple. It provides you
@@ -43,7 +44,7 @@ with fakeConsole and joe which can be used to say commands
 as if it where a player.
 """
 
-__version__ = '1.13'
+__version__ = '1.15'
 
 import b3.events
 import b3.output
@@ -58,9 +59,10 @@ import traceback
 
 from b3.clients import Clients
 from b3.cvar import Cvar
+from b3.functions import splitDSN
 from b3.game import Game
 from b3.plugins.admin import AdminPlugin
-from b3.storage.database import DatabaseStorage
+from b3.storage.sqlite import SqliteStorage
 from sys import stdout
 
 class FakeConsole(b3.parser.Parser):
@@ -79,14 +81,15 @@ class FakeConsole(b3.parser.Parser):
         self._timeStart = self.time()
         logging.basicConfig(level=b3.output.VERBOSE2, format='%(asctime)s\t%(levelname)s\t%(message)s')
         self.log = logging.getLogger('output')
-        
-        
+
+
         if isinstance(config, b3.config.XmlConfigParser) or isinstance(config, b3.config.CfgConfigParser):
             self.config = config
         else:
             self.config = b3.config.load(config)
-        
-        self.storage = DatabaseStorage("sqlite://:memory:", self)
+
+        self.storage = SqliteStorage("sqlite://:memory:", splitDSN("sqlite://:memory:"), self)
+        self.storage.connect()
         self.clients = b3.clients.Clients(self)
         self.game = b3.game.Game(self, "fakeGame")
         self.game.mapName = 'ut4_turnpike'
