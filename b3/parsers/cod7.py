@@ -43,10 +43,11 @@
 # 30/07/2014 - 1.2.4 - Fenix                 - fixes for the new getWrap implementation
 # 04/08/2014 - 1.3   - Fenix                 - syntax cleanup
 # 15/01/2015 - 1.3.1 - Fenix                 - unload httpytail plugin only if it was actually loaded
+# 15/01/2015 - 1.3.2 - Fenix                 - removed outdated reference to Parser._pluginOrder
 
 
 __author__ = 'Freelander, Courgette, Just a baka, Bravo17'
-__version__ = '1.3.1'
+__version__ = '1.3.2'
 
 import os
 import b3
@@ -417,9 +418,8 @@ def newLoadArbPlugins(self):
     
     if self.config.has_option('server','game_log') and self.config.get('server','game_log')[0:7] == 'http://':
 
-        if 'httpytail' in self._pluginOrder:
+        if 'httpytail' in self._plugins:
             self.screen.write('Unloading        : http Plugin\n')
-            self._pluginOrder.remove('httpytail')
             del self._plugins['httpytail']
 
         # load cod7http        
@@ -428,7 +428,6 @@ def newLoadArbPlugins(self):
         try:
             pluginModule = self.pluginImport(p)
             self._plugins[p] = getattr(pluginModule, '%sPlugin' % p.title()) (self)
-            self._pluginOrder.append(p)
             version = getattr(pluginModule, '__version__', 'Unknown Version')
             author  = getattr(pluginModule, '__author__', 'Unknown Author')
             self.bot('Plugin %s (%s - %s) loaded', p, version, author)

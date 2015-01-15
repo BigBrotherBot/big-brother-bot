@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/01/15 - 1.40.2 - Fenix           - removed redundant code: plugins now are held only by the _plugins OrderedDict()
 # 2015/01/15 - 1.40.1 - Fenix           - fixed invalid reference to None object upon plugin loading
 # 2015/01/08 - 1.40   - Fenix           - new plugin loading algorithm: check the comments of the following issue for
 #                                         details: https://github.com/BigBrotherBot/big-brother-bot/pull/250
@@ -210,8 +211,7 @@ class Parser(object):
     _lineFormat = re.compile('^([a-z ]+): (.*?)', re.IGNORECASE)
 
     _handlers = {}
-    _plugins = {}
-    _pluginOrder = []
+    _plugins = OrderedDict()
     _debug = True
     _paused = False
     _pauseNotice = False
@@ -841,7 +841,7 @@ class Parser(object):
             plugins_list.append(plugin)
 
         plugin_num = 1
-        self._pluginOrder = []
+        self._plugins = OrderedDict()
         for plugin_dict in plugins_list:
             plugin_name = plugin_dict['name']
             plugin_conf = plugin_dict['conf']
@@ -851,10 +851,7 @@ class Parser(object):
             if plugin_dict['disabled']:
                 self.info("Disabling plugin %s" % plugin_name)
                 self._plugins[plugin_name].disable()
-
-            self._pluginOrder.append(plugin_name)
             plugin_num += 1
-
             version = getattr(plugin_dict['module'], '__version__', 'Unknown Version')
             author = getattr(plugin_dict['module'], '__author__', 'Unknown Author')
             self.bot('Plugin %s (%s - %s) loaded', plugin_name, version, author)
@@ -865,7 +862,7 @@ class Parser(object):
         """
         For each loaded plugin, call the onLoadConfig hook.
         """
-        for plugin_name in self._pluginOrder:
+        for plugin_name in self._plugins:
             p = self._plugins[plugin_name]
             p.onLoadConfig()
 
@@ -882,14 +879,13 @@ class Parser(object):
             console.bot('Loading plugin %s', plugin_name)
             plugin_module = console.pluginImport(plugin_name)
             console._plugins[plugin_name] = getattr(plugin_module, '%sPlugin' % plugin_name.title())(console)
-            console._pluginOrder.append(plugin_name)
             version = getattr(plugin_module, '__version__', 'Unknown Version')
             author = getattr(plugin_module, '__author__', 'Unknown Author')
             console.bot('Plugin %s (%s - %s) loaded', plugin_name, version, author)
             console.screen.write('.')
             console.screen.flush()
 
-        if 'publist' not in self._pluginOrder:
+        if 'publist' not in self._plugins:
             try:
                 _load_plugin(self, 'publist')
             except Exception, err:
@@ -897,7 +893,7 @@ class Parser(object):
 
         if not main_is_frozen():
             # load the updater plugin if we are running B3 from sources
-            if 'updater' not in self._pluginOrder:
+            if 'updater' not in self._plugins:
                 try:
                     update_channel = self.config.get('update', 'channel')
                     if update_channel == 'skip':
@@ -920,14 +916,14 @@ class Parser(object):
             elif game_log.startswith('http://'):
                 remote_log_plugin = 'httpytail'
 
-            if remote_log_plugin and remote_log_plugin not in self._pluginOrder:
+            if remote_log_plugin and remote_log_plugin not in self._plugins:
                 try:
                     _load_plugin(self, remote_log_plugin)
                 except Exception, err:
                     self.critical('Error loading plugin %s' % remote_log_plugin, exc_info=err)
                     raise SystemExit('ERROR while loading %s' % remote_log_plugin)
 
-        self.screen.write(' (%s)\n' % len(self._pluginOrder))
+        self.screen.write(' (%s)\n' % len(self._plugins.keys()))
         self.screen.flush()
 
     def pluginImport(self, name, path=None):
@@ -975,28 +971,24 @@ class Parser(object):
             self.bot('Starting plugin %s', p_name)
             p.onStartup()
             p.start()
-            #time.sleep(1)    # give plugin time to crash, er...start
             self.screen.write('.')
             self.screen.flush()
 
         # we made sure to have the admin plugin as first plugin to start in
         # loadPlugins: no need to pop it from the _pluginOrder list anymore
-        for plugin_name in self._pluginOrder:
-            if plugin_name not in self._plugins:
-                self.warning("Not starting plugin %s as it was not loaded" % plugin_name)
-            else:
-                try:
-                    start_plugin(plugin_name)
-                except Exception, err:
-                    self.error("Could not start plugin %s" % plugin_name, exc_info=err)
+        for plugin_name in self._plugins:
+            try:
+                start_plugin(plugin_name)
+            except Exception, err:
+                self.error("Could not start plugin %s" % plugin_name, exc_info=err)
 
-        self.screen.write(' (%s)\n' % (len(self._pluginOrder)+1))
+        self.screen.write(' (%s)\n' % (len(self._plugins) + 1))
 
     def disablePlugins(self):
         """
         Disable all plugins except for 'admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail'
         """
-        for k in self._pluginOrder:
+        for k in self._plugins:
             if k not in ('admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail'):
                 p = self._plugins[k]
                 self.bot('Disabling plugin: %s', k)
@@ -1006,7 +998,7 @@ class Parser(object):
         """
         Enable all plugins except for 'admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail'
         """
-        for k in self._pluginOrder:
+        for k in self._plugins:
             if k not in ('admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail'):
                 p = self._plugins[k]
                 self.bot('Enabling plugin: %s', k)
