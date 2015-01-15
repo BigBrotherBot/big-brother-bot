@@ -977,12 +977,8 @@ class Parser(object):
             self.screen.write('.')
             self.screen.flush()
 
-        # handle admin plugin first as many plugins rely on it
-        if 'admin' in self._pluginOrder:
-            start_plugin('admin')
-            self._pluginOrder.remove('admin')
-
-        # start other plugins
+        # we made sure to have the admin plugin as first plugin to start in
+        # loadPlugins: no need to pop it from the _pluginOrder list anymore
         for plugin_name in self._pluginOrder:
             if plugin_name not in self._plugins:
                 self.warning("Not starting plugin %s as it was not loaded" % plugin_name)
@@ -996,20 +992,20 @@ class Parser(object):
 
     def disablePlugins(self):
         """
-        Disable all plugins except for publist, ftpytail and admin
+        Disable all plugins except for 'admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail'
         """
         for k in self._pluginOrder:
-            if k not in ('admin', 'publist', 'ftpytail'):
+            if k not in ('admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail'):
                 p = self._plugins[k]
                 self.bot('Disabling plugin: %s', k)
                 p.disable()
 
     def enablePlugins(self):
         """
-        Enable all plugins except for publist, ftpytail and admin
+        Enable all plugins except for 'admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail'
         """
         for k in self._pluginOrder:
-            if k not in ('admin', 'publist', 'ftpytail'):
+            if k not in ('admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail'):
                 p = self._plugins[k]
                 self.bot('Enabling plugin: %s', k)
                 p.enable()
