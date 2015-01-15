@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/01/15 - 1.40.1 - Fenix           - fixed invalid reference to None object upon plugin loading
 # 2015/01/08 - 1.40   - Fenix           - new plugin loading algorithm: check the comments of the following issue for
 #                                         details: https://github.com/BigBrotherBot/big-brother-bot/pull/250
 # 2015/01/07 - 1.39.2 - Fenix           - updated loadPlugins() to search inside extplugins module directories
@@ -155,7 +156,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.40'
+__version__ = '1.40.1'
 
 
 import os
@@ -844,7 +845,8 @@ class Parser(object):
         for plugin_dict in plugins_list:
             plugin_name = plugin_dict['name']
             plugin_conf = plugin_dict['conf']
-            self.bot('Loading plugin #%s %s [%s]', plugin_num, plugin_name, plugin_conf.fileName)
+            plugin_conf_path = '--' if plugin_conf is None else plugin_conf.fileName
+            self.bot('Loading plugin #%s %s [%s]', plugin_num, plugin_name, plugin_conf_path)
             self._plugins[plugin_name] = plugin_dict['class'](self, plugin_conf)
             if plugin_dict['disabled']:
                 self.info("Disabling plugin %s" % plugin_name)
