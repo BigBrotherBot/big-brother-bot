@@ -1,69 +1,56 @@
-<configuration>
-	<settings name="b3">
-		<set name="parser">cod6</set>
-		<set name="database">mysql://b3:password@localhost/b3</set>
-		<set name="bot_name">b3</set>
-		<set name="bot_prefix">^0(^2b3^0)^7:</set>
-		<set name="time_format">%I:%M%p %Z %m/%d/%y</set>
-		<set name="time_zone">CST</set>
-		<set name="log_level">9</set>
-		<set name="logfile">b3.log</set>
-	</settings>
-	<settings name="server">
-		<set name="rcon_password"></set>
-		<set name="port">27960</set>
-		<set name="game_log">games_mp.log</set>
-		<set name="public_ip">127.0.0.1</set>
-		<set name="rcon_ip">127.0.0.1</set>
-		<set name="punkbuster">on</set>
-		<set name="delay">0.33</set>
-		<set name="lines_per_second">50</set>
-	</settings>
-	<settings name="autodoc">
-		<set name="type">html</set>
-		<set name="maxlevel">100</set>
-		<set name="destination">b3_doc.htm</set>
-	</settings>
-    <settings name="update">
-        <!-- B3 checks if a new version is available at startup. Choose here what channel you want to check against.
-            Available channels are :
-                stable : will only show stable releases of B3
-                beta : will also check if a beta release is available
-                dev : will also check if a development release is available
-            If you don't know what channel to use, use 'stable'
-        -->
-        <set name="channel">stable</set>
-    </settings>
-	<settings name="messages">
-		<set name="kicked_by">$clientname^7 was kicked by $adminname^7 $reason</set>
-		<set name="kicked">$clientname^7 was kicked $reason</set>
-		<set name="banned_by">$clientname^7 was banned by $adminname^7 $reason</set>
-		<set name="banned">$clientname^7 was banned $reason</set>
-		<set name="temp_banned_by">$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason</set>
-		<set name="temp_banned">$clientname^7 was temp banned for $banduration^7 $reason</set>
-		<set name="unbanned_by">$clientname^7 was un-banned by $adminname^7 $reason</set>
-		<set name="unbanned">$clientname^7 was un-banned $reason</set>
-	</settings>
-	<settings name="plugins">
-		<set name="external_dir">@b3/extplugins</set>
-	</settings>
-	<plugins>
-		<plugin name="censor" config="@conf/plugin_censor.xml" />
-		<plugin name="spamcontrol" config="@conf/plugin_spamcontrol.xml" />
-        <plugin name="admin" config="@conf/plugin_admin.ini" />
-		<plugin name="tk" config="@conf/plugin_tk.xml" />
-		<plugin name="stats" config="@conf/plugin_stats.xml" />
-		<plugin name="pingwatch" config="@conf/plugin_pingwatch.xml" />
-		<plugin name="adv" config="@conf/plugin_adv.xml" />
-		<plugin name="status" config="@conf/plugin_status.xml" />
-		<plugin name="welcome" config="@conf/plugin_welcome.xml" />
-		<plugin name="punkbuster" config="@conf/plugin_punkbuster.xml" />
-	</plugins>
-    <extplugins>
-        <plugin name="banlist" config="external_dir/conf/banlist.xml"
-                dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=6"/>
-        <plugin name="chatlogger" config="external_dir/conf/plugin_chatlogger.xml"
-                dlocation="http://forum.bigbrotherbot.net/downloads/?sa=downfile&amp;id=7" sql="chatlogger.sql"/>
-        <plugin name="xlrstats" config="external_dir/conf/plugin_xlrstats.ini"/>
-    </extplugins>
-</configuration>
+[b3]
+parser: cod6
+database: mysql://b3:password@localhost/b3
+bot_name: b3
+bot_prefix: ^0[^2b3^0]^7:
+time_format: %I:%M%p %Z %m/%d/%y
+time_zone: CST
+log_level: 9
+logfile: @conf/b3.log
+disabled_plugins:
+external_plugins_dir: @b3/extplugins
+
+[server]
+rcon_password: password
+port: 27960
+game_log: games_mp.log
+public_ip: 127.0.0.1
+rcon_ip: 127.0.0.1
+punkbuster: on
+delay: 0.33
+lines_per_second: 50
+
+[autodoc]
+type: html
+maxlevel: 100
+@conf/b3_doc.html
+
+[update]
+channel: stable
+
+[messages]
+kicked_by: $clientname^7 was kicked by $adminname^7 $reason
+kicked: $clientname^7 was kicked $reason
+banned_by: $clientname^7 was banned by $adminname^7 $reason
+banned: $clientname^7 was banned $reason
+temp_banned_by: $clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason
+temp_banned: $clientname^7 was temp banned for $banduration^7 $reason
+unbanned_by: $clientname^7 was un-banned by $adminname^7 $reason
+unbanned: $clientname^7 was un-banned^7 $reason
+
+[plugins]
+admin: @conf/plugin_admin.ini
+adv: @conf/plugin_adv.xml
+censor: @conf/plugin_censor.xml
+cmdmanager: @conf/plugin_cmdmanager.ini
+pingwatch: @conf/plugin_pingwatch.ini
+punkbuster: @conf/plugin_punkbuster.ini
+spamcontrol: @conf/plugin_spamcontrol.ini
+stats: @conf/plugin_stats.ini
+status: @conf/plugin_status.ini
+tk: @conf/plugin_tk.ini
+welcome: @conf/plugin_welcome.ini
+
+# This is a non-standard plugin, and quite resource heavy. Please take a look in the B3 forums (look for
+# XLR Extensions) for more information before enabling this. Extra database tables are necessary.
+xlrstats: @b3/extplugins/conf/plugin_xlrstats.ini
