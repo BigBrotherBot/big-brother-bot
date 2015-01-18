@@ -18,7 +18,7 @@
 #
 # CHANGELOG
 #
-# 2014/11/15 - 1.32    - 82ndab-Bravo17 - Added new command longlist that does a list with one player per line
+# 2014/11/15 - 1.32    - 82ndab-Bravo17 - added new command longlist that does a list with one player per line
 #                                       - and cid first. Allows you to see players with clever unicode names that
 #                                       - otherwise mess up the normal list command.
 # 2014/08/30 - 1.31    - Fenix          - syntax cleanup
@@ -1031,7 +1031,6 @@ class AdminPlugin(b3.plugin.Plugin):
         :param client: The client who launched the !list command
         :param cmd: The command object instance for sayLoudOrPM method invoke
         """
-        names = []
         for c in self.console.clients.getClientsByLevel():
             clientinfo = self.getMessage('player_id_reverse', c.cid, c.name)
             cmd.sayLoudOrPM(client, clientinfo)
