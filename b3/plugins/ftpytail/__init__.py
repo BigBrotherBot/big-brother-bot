@@ -142,6 +142,28 @@ class FtpytailPlugin(b3.plugin.Plugin):
         """
         Load plugin configuration.
         """
+        # These values go in b3 xml, so check them first
+        try:
+            self._use_windows_cache_fix = self.console.config.getboolean('settings', 'use_windows_cache_fix')
+            self.debug('loaded settings/use_windows_cache_fix: %s' % self._use_windows_cache_fix)
+        except NoOptionError:
+            self.warning('could not find settings/use_windows_cache_fix in config file, '
+                         'using default: %s' % self._use_windows_cache_fix)
+        except ValueError, e:
+            self.error('could not load settings/use_windows_cache_fix config value: %s' % e)
+            self.debug('using default value (%s) for settings/use_windows_cache_fix' % self._use_windows_cache_fix)
+
+        try:
+            self._cache_refresh_delay = self.console.config.getint('settings', 'cache_refresh_delay')
+            self.debug('loaded settings/cache_refresh_delay: %s' % self._cache_refresh_delay)
+        except NoOptionError:
+            self.warning('could not find settings/cache_refresh_delay in config file, '
+                         'using default: %s' % self._cache_refresh_delay)
+        except ValueError, e:
+            self.error('could not load settings/cache_refresh_delay config value: %s' % e)
+            self.debug('using default value (%s) for settings/cache_refresh_delay' % self._cache_refresh_delay)
+
+        #Then see if ftpytail has a config file before trying to load the rest of the values
         if self.config is None:
             return
 
@@ -194,26 +216,6 @@ class FtpytailPlugin(b3.plugin.Plugin):
         except ValueError, e:
             self.error('could not load settings/long_delay config value: %s' % e)
             self.debug('using default value (%s) for settings/long_delay' % self._long_delay)
-
-        try:
-            self._use_windows_cache_fix = self.config.getboolean('settings', 'use_windows_cache_fix')
-            self.debug('loaded settings/use_windows_cache_fix: %s' % self._use_windows_cache_fix)
-        except NoOptionError:
-            self.warning('could not find settings/use_windows_cache_fix in config file, '
-                         'using default: %s' % self._use_windows_cache_fix)
-        except ValueError, e:
-            self.error('could not load settings/use_windows_cache_fix config value: %s' % e)
-            self.debug('using default value (%s) for settings/use_windows_cache_fix' % self._use_windows_cache_fix)
-
-        try:
-            self._cache_refresh_delay = self.config.getint('settings', 'cache_refresh_delay')
-            self.debug('loaded settings/cache_refresh_delay: %s' % self._cache_refresh_delay)
-        except NoOptionError:
-            self.warning('could not find settings/cache_refresh_delay in config file, '
-                         'using default: %s' % self._cache_refresh_delay)
-        except ValueError, e:
-            self.error('could not load settings/cache_refresh_delay config value: %s' % e)
-            self.debug('using default value (%s) for settings/cache_refresh_delay' % self._cache_refresh_delay)
 
         self.info("until %s consecutive errors are met, the bot will wait for %s seconds (short_delay), "
                   "then it will wait for %s seconds (long_delay)" % (self._maxConsecutiveConnFailure,
