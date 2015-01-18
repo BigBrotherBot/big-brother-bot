@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 18/01/2015 - 1.7.4 - 82ndab.Bravo17 - move windows 2008 fix config settings back to B3 xml file
 # 30/08/2014 - 1.7.3 - Fenix          - syntax cleanup
 #                                     - highly improved plugin configuration file loading
 # 16/04/2014 - 1.7.2 - Courgette      - fix regression from 1.7.1
@@ -56,7 +57,7 @@
 # 28/08/2009 - 1.1 - Bakes            - connects with parser.py to provide real remote b3.
 # 17/06/2009 - 1.0 - Bakes            - initial Plugin, basic functionality.
  
-__version__ = '1.7.3'
+__version__ = '1.7.4'
 __author__ = 'Bakes, Courgette'
 
 import b3
@@ -144,7 +145,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
         """
         # These values go in b3 xml, so check them first
         try:
-            self._use_windows_cache_fix = self.console.config.getboolean('settings', 'use_windows_cache_fix')
+            self._use_windows_cache_fix = self.console.config.getboolean('server', 'use_windows_cache_fix')
             self.debug('loaded settings/use_windows_cache_fix: %s' % self._use_windows_cache_fix)
         except NoOptionError:
             self.warning('could not find settings/use_windows_cache_fix in config file, '
@@ -154,7 +155,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
             self.debug('using default value (%s) for settings/use_windows_cache_fix' % self._use_windows_cache_fix)
 
         try:
-            self._cache_refresh_delay = self.console.config.getint('settings', 'cache_refresh_delay')
+            self._cache_refresh_delay = self.console.config.getint('server', 'cache_refresh_delay')
             self.debug('loaded settings/cache_refresh_delay: %s' % self._cache_refresh_delay)
         except NoOptionError:
             self.warning('could not find settings/cache_refresh_delay in config file, '
