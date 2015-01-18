@@ -84,6 +84,7 @@
 #                                 - set client.state to b3.STATE_ALIVE on Client Spawn
 # 17/09/2014 - 1.26.1 - Fenix     - added missing Freeze Tag gametype declaration (10) in defineGametype()
 # 02/10/2014 - 1.27   - Fenix     - fixed regression introduced in 1.25
+# 12/12/2014 - 1.28   - Fenix     - increased chat line length to comply with the new HUD setting (4.2.021)
 
 import b3
 import re
@@ -98,7 +99,7 @@ from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 
 __author__ = 'Courgette, Fenix'
-__version__ = '1.27'
+__version__ = '1.28'
 
 
 class Iourt42Client(Client):
@@ -214,7 +215,7 @@ class Iourt42Client(Client):
 
             if in_storage:
                 self.lastVisit = self.timeEdit
-                self.console.bot('Alient found in the storage @%s: '
+                self.console.bot('Client found in the storage @%s: '
                                  'welcome back %s (FSA: %s)', self.id, self.name, self.pbid)
             else:
                 self.console.bot('Client not found in the storage %s (FSA: %s), create new', str(self.guid), self.pbid)
@@ -611,6 +612,9 @@ class Iourt42Parser(Iourt41Parser):
             self.warning("Could not query server for gamename.", exc_info=e)
 
         Iourt41Parser.startup(self)
+
+        # change chat line default setting
+        self._settings['line_length'] = 90
 
         # add UrT 4.2 specific events
         self.Events.createEvent('EVT_CLIENT_RADIO', 'Event client radio')

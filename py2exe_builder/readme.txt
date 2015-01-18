@@ -7,7 +7,7 @@ REQUIREMENTS:
     Environment :
         * a Windows OS
         * with python2.6+
-        * with mysqldb
+        * with pymysql
     Tools:
         * py2exe2.6+
         * InnoSetup
@@ -32,7 +32,6 @@ choco install firefox jre8 DotNet3.5 console2
 
 # install python 2.7 32bit and python modules
 https://www.python.org/ftp/python/2.7.8/python-2.7.8.msi
-http://www.lfd.uci.edu/~gohlke/pythonlibs/wyxyx8e9/MySQL-python-1.2.5.win32-py2.7.exe
 http://www.lfd.uci.edu/~gohlke/pythonlibs/wyxyx8e9/pysqlite-2.6.3.win32-py2.7.exe
 http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win32-py2.7.exe
 http://freefr.dl.sourceforge.net/project/py2exe/py2exe/0.6.9/py2exe-0.6.9.win32-py2.7.exe

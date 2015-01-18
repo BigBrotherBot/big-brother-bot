@@ -1,4 +1,4 @@
-MySQL-python
+pymysql
 pysqlite
 paramiko
 unittest2
@@ -8,3 +8,4 @@ nosexcover
 nose-exclude
 mock>=0.8
 pylint
+psycopg2

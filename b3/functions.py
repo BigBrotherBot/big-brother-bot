@@ -38,18 +38,27 @@
 # 21/04/2014 - 1.11  - 82ndab_Bravo17 - allow _ char in vars2printf replacements
 # 02/05/2014 - 1.12  - Fenix          - added getCmd method: return a command reference given the name and the plugin
 # 19/07/2014 - 1.13  - Fenix          - syntax cleanup
+# 12/12/2014 - 1.14  - Fenix          - added some file system utilities
+#                                     - added left_cut function: remove the given prefix from a string
+#                                     - added right_cut function: remove the given suffix from a string
+#                                     - added hash_file function: calculate the MD5 digest of the given file
+# 20/12/2014 - 1.15  - Fenix          - fixed hash_file returning None
+# 27/12/2014 - 1.16  - Fenix          - adapted splitDSN to support postgresql databases
 
 __author__    = 'ThorN, xlr8or, courgette'
-__version__   = '1.13'
+__version__   = '1.16'
 
+import collections
+import os
 import re
 import sys
 import imp
+import shutil
 import string
 import urllib2
-from hashlib import md5
+import zipfile
 
-import collections
+from hashlib import md5
 
 
 def getModule(name):
@@ -123,6 +132,9 @@ def splitDSN(url):
     elif g['protocol'] == 'mysql':
         if g['password'] is None:
             g['password'] = ''
+    elif g['protocol'] == 'postgresql':
+        if g['password'] is None:
+            g['password'] = ''
 
     if g['port']:
         g['port'] = int(g['port'])
@@ -132,7 +144,8 @@ def splitDSN(url):
         g['port'] = 22
     elif g['protocol'] == 'mysql':
         g['port'] = 3306
-
+    elif g['protocol'] == 'postgresql':
+        g['port'] = 5432
     return g
 
 
@@ -398,6 +411,15 @@ def hash_password(password):
     return md5(password).hexdigest()
 
 
+def hash_file(filepath):
+    """
+    Calculate the MD5 digest of a given file.
+    """
+    with open(filepath, 'rb') as afile:
+        digest = md5(afile.read()).hexdigest()
+    return digest
+
+
 def corrent_spell(c_word, wordbook):
     """
     Simplified spell checker from Peter Norvig.
@@ -470,3 +492,84 @@ def prefixText(prefixes, text):
                     buff += prefix + ' '
         buff += text
     return buff
+
+
+def right_cut(text, cut):
+    """
+    Remove 'cut' from 'text' if found as ending suffix
+    :param text: The string we want to clean
+    :param cut: The suffix of the string
+    :return: A string with the given suffix removed
+    """
+    if text.endswith(cut):
+        return text[:-len(cut)]
+    return text
+
+
+def left_cut(text, cut):
+    """
+    Remove 'cut' from 'text' if found as starting prefix
+    :param text: The string we want to clean
+    :param cut: The prefix of the string
+    :return: A string with the given prefix removed
+    """
+    if text.startswith(cut):
+        return text[len(cut)+1:]
+    return text
+
+
+def copy_file(src, dst):
+    """
+    Copy the file src to the file or directory dst.
+    If dst is a directory, a file with the same basename as src is created (or overwritten) in the directory specified.
+    """
+    if os.path.isfile(src):
+        shutil.copy2(src, dst)
+
+
+def rm_file(filepath):
+    """
+    Remove a file from the filesystem.
+    :raise: OSError if the file can't be removed.
+    """
+    if os.path.isfile(filepath):
+        os.remove(filepath)
+
+
+def rm_dir(directory):
+    """
+    Delete an entire directory tree.
+    :raise: OSError if the directory can't be removed.
+    """
+    if os.path.isdir(directory):
+        shutil.rmtree(directory, False)
+
+
+def mkdir(directory):
+    """
+    Create a directory (if it doesn't exists).
+    """
+    if not os.path.isdir(directory):
+        os.mkdir(directory)
+
+
+def split_extension(filename):
+    """
+    Remove the extension from the given filename and construct a Tuple containing
+    the filename (without the extension) and the file extension itself.
+    :return: A Tuple with filename and file extension separated
+    """
+    r = re.compile(r'''^(?P<filename>.+)\.(?P<extension>.*)$''')
+    m = r.match(filename)
+    return m.group('filename'), m.group('extension') if m else filename, None
+
+
+def unzip(filepath, directory):
+    """
+    Unzip a file in the specified directory. Will create the directory where to store zip content.
+    :raise: OSError if the directory can't be created.
+    """
+    if os.path.isfile(filepath):
+        mkdir(directory)
+        with zipfile.ZipFile(filepath, 'r') as z:
+            z.extractall(directory)

@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 05/01/2014 - 1.6    - Fenix      - PostgreSQl support
 # 30/08/2014 - 1.5    - Fenix      - syntax cleanup
 #                                  - make use of the new onStop event handler
 # 13/03/2014 - 1.4.18 - Fenix      - double check for server and client vars table to exists before attempting to create
@@ -58,7 +59,7 @@
 # 29/08/2005 - 1.2.0 - ThorN       - converted to use new event handlers
 
 __author__ = 'ThorN'
-__version__ = '1.5'
+__version__ = '1.6'
 
 import b3
 import b3.cron
@@ -86,8 +87,94 @@ class StatusPlugin(b3.plugin.Plugin):
     _outputFile = '~/status.xml'
     _enableDBsvarSaving = True
     _enableDBclientSaving = True
-    _svarTable = 'current_svars'
-    _clientTable = 'current_clients'
+
+    _tables = {
+        'svars': 'current_svars',
+        'cvars': 'current_clients',
+    }
+
+    _schema = {
+
+        'mysql': {
+
+            'svars': """CREATE TABLE IF NOT EXISTS `%(svars)s` (
+                            `id` INT(11) NOT NULL AUTO_INCREMENT,
+                            `name` VARCHAR(255) NOT NULL,
+                            `value` VARCHAR(255) NOT NULL,
+                            PRIMARY KEY (`id`), UNIQUE KEY `name` (`name`)
+                         ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;""",
+
+            'cvars': """CREATE TABLE IF NOT EXISTS `%(cvars)s` (
+                            `id` INT(3) NOT NULL AUTO_INCREMENT,
+                            `Updated` VARCHAR(25) NOT NULL ,
+                            `Name` VARCHAR(32) NOT NULL ,
+                            `Level` INT(10) NOT NULL ,
+                            `DBID` INT(10) NOT NULL ,
+                            `CID` INT(3) NOT NULL ,
+                            `Joined` VARCHAR(25) NOT NULL ,
+                            `Connections` INT(11) NOT NULL ,
+                            `State` INT(1) NOT NULL ,
+                            `Score` INT(10) NOT NULL ,
+                            `IP` VARCHAR(16) NOT NULL ,
+                            `GUID` VARCHAR(36) NOT NULL ,
+                            `PBID` VARCHAR(32) NOT NULL ,
+                            `Team` INT(1) NOT NULL ,
+                            `ColorName` VARCHAR(32) NOT NULL,
+                            PRIMARY KEY (`id`)
+                         ) ENGINE = MYISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;"""
+        },
+        'postgresql': {
+
+            'svars': """CREATE TABLE IF NOT EXISTS %(svars)s (
+                            id SERIAL PRIMARY KEY,
+                            name VARCHAR(255) NOT NULL,
+                            value VARCHAR(255) NOT NULL,
+                            CONSTRAINT %(svars)s_name UNIQUE (name));""",
+
+            'cvars': """CREATE TABLE IF NOT EXISTS %(cvars)s (
+                            id SERIAL PRIMARY KEY,
+                            Updated VARCHAR(25) NOT NULL,
+                            Name VARCHAR(32) NOT NULL,
+                            Level INTEGER NOT NULL,
+                            DBID INTEGER NOT NULL,
+                            CID SMALLINT NOT NULL,
+                            Joined VARCHAR(25) NOT NULL,
+                            Connections INTEGER NOT NULL,
+                            State SMALLINT NOT NULL,
+                            Score INTEGER NOT NULL,
+                            IP VARCHAR(16) NOT NULL,
+                            GUID VARCHAR(36) NOT NULL,
+                            PBID VARCHAR(32) NOT NULL,
+                            Team SMALLINT NOT NULL,
+                            ColorName VARCHAR(32) NOT NULL);""",
+        },
+        'sqlite': {
+
+            'svars': """CREATE TABLE IF NOT EXISTS `%(svars)s` (
+                            `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+                            `name` VARCHAR(255) NOT NULL,
+                            `value` VARCHAR(255) NOT NULL,
+                            CONSTRAINT %(svars)s_name UNIQUE (name));""",
+
+            'cvars': """CREATE TABLE IF NOT EXISTS `%(cvars)s` (
+                            `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+                            `Updated` VARCHAR(25) NOT NULL ,
+                            `Name` VARCHAR(32) NOT NULL ,
+                            `Level` INTEGER NOT NULL ,
+                            `DBID` INTEGER NOT NULL ,
+                            `CID` SMALLINT NOT NULL ,
+                            `Joined` VARCHAR(25) NOT NULL ,
+                            `Connections` INTEGER NOT NULL ,
+                            `State` SMALLINT NOT NULL ,
+                            `Score` INTEGER NOT NULL ,
+                            `IP` VARCHAR(16) NOT NULL ,
+                            `GUID` VARCHAR(36) NOT NULL ,
+                            `PBID` VARCHAR(32) NOT NULL ,
+                            `Team` SMALLINT NOT NULL ,
+                            `ColorName` VARCHAR(32) NOT NULL);""",
+        }
+
+    }
 
     ####################################################################################################################
     ##                                                                                                                ##
@@ -104,8 +191,7 @@ class StatusPlugin(b3.plugin.Plugin):
             if self.config.get('settings', 'output_file')[0:6] == 'ftp://':
                 self._ftpstatus = True
                 self._ftpinfo = functions.splitDSN(self.config.get('settings', 'output_file'))
-                self.debug('using custom remote path for settings/output_file: %s/%s' % (self._ftpinfo['host'],
-                                                                                         self._ftpinfo['path']))
+                self.debug('using custom remote path for settings/output_file: %s/%s' % (self._ftpinfo['host'], self._ftpinfo['path']))
             else:
                 self._outputFile = self.config.getpath('settings', 'output_file')
                 self.debug('using custom local path for settings/output_file: %s' % self._outputFile)
@@ -129,8 +215,7 @@ class StatusPlugin(b3.plugin.Plugin):
             self._enableDBsvarSaving = self.config.getboolean('settings', 'enableDBsvarSaving')
             self.debug('using custom value for settings/enableDBsvarSaving: %s' % self._enableDBsvarSaving)
         except NoOptionError:
-            self.warning('could not find settings/enableDBsvarSaving in config file, '
-                         'using default: %s' % self._enableDBsvarSaving)
+            self.warning('could not find settings/enableDBsvarSaving in config file, using default: %s' % self._enableDBsvarSaving)
         except ValueError, e:
             self.error('could not load settings/enableDBsvarSaving config value: %s' % e)
             self.debug('using default value (%s) for settings/enableDBsvarSaving' % self._enableDBsvarSaving)
@@ -139,67 +224,24 @@ class StatusPlugin(b3.plugin.Plugin):
             self._enableDBclientSaving = self.config.getboolean('settings', 'enableDBclientSaving')
             self.debug('using custom value for settings/enableDBclientSaving: %s' % self._enableDBclientSaving)
         except NoOptionError:
-            self.warning('could not find settings/enableDBclientSaving in config file, '
-                         'using default: %s' % self._enableDBclientSaving)
+            self.warning('could not find settings/enableDBclientSaving in config file, using default: %s' % self._enableDBclientSaving)
         except ValueError, e:
             self.error('could not load settings/enableDBclientSaving config value: %s' % e)
             self.debug('using default value (%s) for settings/enableDBclientSaving' % self._enableDBclientSaving)
 
         try:
-            self._svarTable = self.config.get('settings', 'svar_table')
-            self.debug('using custom table for saving server svars: %s' % self._svarTable)
+            self._tables['svars'] = self.config.get('settings', 'svar_table')
+            self.debug('using custom table for saving server svars: %s' % self._tables['svars'])
         except NoOptionError:
-            self.debug('using default table for saving server svars: %s' % self._svarTable)
+            self.debug('using default table for saving server svars: %s' % self._tables['svars'])
 
         try:
-            self._clientTable = self.config.get('settings', 'client_table')
-            self.debug('using custom table for saving current clients: %s' % self._clientTable)
+            self._tables['cvars'] = self.config.get('settings', 'client_table')
+            self.debug('using custom table for saving current clients: %s' % self._tables['cvars'])
         except NoOptionError:
-            self.debug('using default table for saving current clients: %s' % self._clientTable)
+            self.debug('using default table for saving current clients: %s' % self._tables['cvars'])
 
-        if self._enableDBsvarSaving or self._enableDBclientSaving:
-            tables = self.console.storage.getTables()
-            # server vars table
-            if self._enableDBsvarSaving:
-                if self._svarTable in tables:
-                    # enforce table drop so we do not have to bother with schema updates
-                    self.console.storage.query("""DROP TABLE IF EXISTS `%s`""" % self._svarTable)
-
-                sql = """CREATE TABLE IF NOT EXISTS `%s` (
-                                `id` int(11) NOT NULL auto_increment,
-                                `name` varchar(255) NOT NULL,
-                                `value` varchar(255) NOT NULL,
-                                PRIMARY KEY  (`id`), UNIQUE KEY `name` (`name`)
-                         ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;""" % self._svarTable
-
-                self.console.storage.query(sql)
-
-            # client vars table
-            if self._enableDBclientSaving:
-                if self._clientTable in tables:
-                    # enforce table drop so we do not have to bother with schema updates
-                    self.console.storage.query("""DROP TABLE IF EXISTS `%s`""" % self._clientTable)
-
-                sql = """CREATE TABLE IF NOT EXISTS `%s` (
-                                `id` INT(3) NOT NULL AUTO_INCREMENT,
-                                `Updated` VARCHAR(25) NOT NULL ,
-                                `Name` VARCHAR(32) NOT NULL ,
-                                `Level` INT(10) NOT NULL ,
-                                `DBID` INT(10) NOT NULL ,
-                                `CID` INT(3) NOT NULL ,
-                                `Joined` VARCHAR(25) NOT NULL ,
-                                `Connections` INT(11) NOT NULL ,
-                                `State` INT(1) NOT NULL ,
-                                `Score` INT(10) NOT NULL ,
-                                `IP` VARCHAR(16) NOT NULL ,
-                                `GUID` VARCHAR(36) NOT NULL ,
-                                `PBID` VARCHAR(32) NOT NULL ,
-                                `Team` INT(1) NOT NULL ,
-                                `ColorName` VARCHAR(32) NOT NULL,
-                                PRIMARY KEY (`id`)
-                         ) ENGINE = MYISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;""" % self._clientTable
-
-                self.console.storage.query(sql)
+        self.build_schema()
 
         if self._cronTab:
             # remove existing crontab
@@ -229,6 +271,32 @@ class StatusPlugin(b3.plugin.Plugin):
     ##                                                                                                                ##
     ####################################################################################################################
 
+    def build_schema(self):
+        """
+        Create the necessary tables for storing status information in the database
+        """
+        if not self._enableDBsvarSaving and not self._enableDBclientSaving:
+            self.debug('not building database schema')
+            return
+
+        current_tables = self.console.storage.getTables()
+
+        if self._enableDBsvarSaving:
+            if self._tables['svars'] in current_tables:
+                self.bot('removing outdated %s database table...' % self._tables['svars'])
+                self.console.storage.query("""DROP TABLE IF EXISTS %s""" % self._tables['svars'])
+
+            self.bot('creating table to store server information: %s' % self._tables['svars'])
+            self.console.storage.query(self._schema[self.console.storage.dsnDict['protocol']]['svars'] % self._tables)
+
+        if self._enableDBclientSaving:
+            if self._tables['cvars'] in current_tables:
+                self.bot('removing outdated %s database table...' % self._tables['cvars'])
+                self.console.storage.query("""DROP TABLE IF EXISTS %s""" % self._tables['cvars'])
+
+            self.bot('creating table to store client information: %s' % self._tables['cvars'])
+            self.console.storage.query(self._schema[self.console.storage.dsnDict['protocol']]['cvars'] % self._tables)
+
     def update(self):
         """
         Update XML/DB status.
@@ -238,6 +306,7 @@ class StatusPlugin(b3.plugin.Plugin):
                  
         self.verbose('building XML status')
         xml = Document()
+
         # --- Main section
         b3status = xml.createElement("B3Status")
         b3status.setAttribute("Time", time.asctime())
@@ -290,6 +359,10 @@ class StatusPlugin(b3.plugin.Plugin):
         game.setAttribute("OnlinePlayers", str(len(clients)))
         b3status.appendChild(game)
 
+        # EMPTY DB SVARS TABLE
+        self.verbose('cleaning database table: %s...' % self._tables['svars'])
+        self.console.storage.truncateTable(self._tables['svars'])
+
         # For DB:
         self.storeServerinfo("Ip", str(self.console._publicIp))
         self.storeServerinfo("Port", str(self.console._port))
@@ -303,6 +376,7 @@ class StatusPlugin(b3.plugin.Plugin):
         self.storeServerinfo("RoundTime", str(round_time))
         self.storeServerinfo("MapTime", str(map_time))
         self.storeServerinfo("OnlinePlayers", str(len(clients)))
+        self.storeServerinfo("lastupdate", str(int(time.time())))
 
         for k, v in self.console.game.__dict__.items():
             data = xml.createElement("Data")
@@ -310,16 +384,6 @@ class StatusPlugin(b3.plugin.Plugin):
             data.setAttribute("Value", str(v))
             game.appendChild(data)
             self.storeServerinfo(k, v)
-
-        if self._enableDBsvarSaving:
-            sql = """INSERT INTO %s (name, value)
-                          VALUES ('lastupdate', UNIX_TIMESTAMP())
-                     ON DUPLICATE KEY
-                          UPDATE value = VALUES(value);""" % self._svarTable
-            try:
-                self.console.storage.query(sql)
-            except Exception, e:
-                self.error('could not insert svars: %s [ SQL  = %s ] ' % (e, sql))
 
         # --- End Game section        
 
@@ -329,9 +393,9 @@ class StatusPlugin(b3.plugin.Plugin):
         b3status.appendChild(b3clients)
 
         if self._enableDBclientSaving:
-            # empty table current_clients
-            sql = """TRUNCATE TABLE `%s`;""" % self._clientTable
-            self.console.storage.query(sql)
+            # EMPTY DB CVARS TABLE
+            self.verbose('cleaning database table: %s...' % self._tables['cvars'])
+            self.console.storage.truncateTable(self._tables['cvars'])
 
         for c in clients:
 
@@ -388,12 +452,13 @@ class StatusPlugin(b3.plugin.Plugin):
                     # cut last ,
                     builder_key = builder_key[:-1]
                     builder_value = builder_value[:-1]
-                    # and insert
-                    sql = """INSERT INTO %s (%s) VALUES (%s);""" % (self._clientTable, builder_key, builder_value)
+
                     try:
-                        self.console.storage.query(sql)
-                    except Exception, e:
-                        self.error('could not insert clients: %s [ SQL = %s ]' % (e, sql))
+                        self.console.storage.query("""INSERT INTO %s (%s) VALUES (%s);""" % (self._tables['cvars'],
+                                                                                             builder_key, builder_value))
+                    except Exception:
+                        # exception is already logged, just don't raise it again
+                        pass
 
                 b3clients.appendChild(client)
 
@@ -441,17 +506,21 @@ class StatusPlugin(b3.plugin.Plugin):
         Store server information in the database.
         """
         if self._enableDBsvarSaving:
-            #remove forbidden sql characters
+            # remove forbidden sql characters
             k = re.sub("'", "", str(k))
             v = re.sub("'", "", str(v))[:255]  # length of the database varchar field
-            sql = """INSERT INTO %s (name, value)
-                          VALUES ('%s','%s')
-                     ON DUPLICATE KEY
-                          UPDATE value = VALUES(value) ;""" % (self._svarTable, k, v)
             try:
-                self.console.storage.query(sql)
-            except Exception, e:
-                self.error('could not insert svars: %s [ SQL = %s ]' % (e, sql))
+                if self.console.storage.dsnDict['protocol'] == 'postgresql':
+                    self.console.storage.query("""UPDATE %s SET value='%s' WHERE name='%s';""" % (self._tables['svars'], v, k))
+                    self.console.storage.query("""INSERT INTO %s (name, value) SELECT '%s', '%s' WHERE NOT EXISTS (
+                                                  SELECT 1 FROM %s WHERE name='%s');""" % (self._tables['svars'], k, v,
+                                                                                           self._tables['svars'], k))
+                else:
+                    self.console.storage.query("""INSERT INTO %s (name, value) VALUES ('%s','%s') ON DUPLICATE KEY
+                                                  UPDATE value = VALUES(value);""" % (self._tables['svars'], k, v))
+            except Exception:
+                # exception is already logged, just don't raise it again
+                pass
 
     def writeXML(self, xml):
         """

@@ -23,7 +23,7 @@
 # 2014/09/01 - 2.6 - Fenix - syntax cleanup
 
 __author__  = 'ThorN, xlr8or, courgette'
-__version__ = '2.6'
+__version__ = '2.7'
 
 
 import re
@@ -72,11 +72,12 @@ py2exe_dataFiles = [
     ('', ['README.md']),
     ('', ['b3/PKG-INFO']),
     ('docs', listdirectory('b3/docs/')),
+    ('scripts', listdirectory('scripts/')),
     ('sql', listdirectory('b3/sql/')),
     ('sql/sqlite', listdirectory('b3/sql/sqlite')),
     ('conf', listdirectory('b3/conf/')),
     ('conf/templates', listdirectory('b3/conf/templates/')),
-    ('extplugins', ['b3/extplugins/xlrstats.py']),
+    ('extplugins', listdirectory('b3/extplugins/')),
     ('extplugins/conf', listdirectory('b3/extplugins/conf/')),
     ('conf/templates/autodoc', listdirectory('b3/conf/templates/autodoc/')),
 ]
@@ -123,16 +124,17 @@ setup(cmdclass=cmdclass,
       version=b3version,
       tests_require=['nose>=1.0', 'nose-exclude', 'mockito', 'pysqlite'],
       packages=find_packages(),
-      extras_require={ 'mysql' : 'MySQL-python' },
       package_data={'': ['conf/*.xml',
                          'conf/*.ini',
                          'conf/templates/*.tpl',
                          'conf/templates/autodoc/*.html',
-                         'extplugins/xlrstats.py',
+                         'extplugins/xlrstats/*.py',
+                         'extplugins/xlrstats/doc/*',
                          'extplugins/conf/*.xml',
                          'extplugins/conf/*.ini',
                          'sql/*.*',
                          'sql/sqlite/*',
+                         '../scripts/*.*',
                          'docs/*.txt',
                          'docs/*.pdf',
                          'README.md']
@@ -192,7 +194,7 @@ setup(cmdclass=cmdclass,
                 "b3.parsers.homefront",
                 "b3.parsers.ravaged",
                 "b3.parsers.frostbite.*",
-                "b3.extplugins.__init__",
+                "b3.extplugins.*",
                 ### additional modules for popular/useful 3rd party plugins ###
                 "smtplib", "email.*", "calendar", "email.mime.*", # contact plugin
                 "telnetlib", # teamspeak* plugins

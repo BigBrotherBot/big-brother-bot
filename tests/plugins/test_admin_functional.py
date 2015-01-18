@@ -358,9 +358,9 @@ class Cmd_help(Admin_functional_test):
         self.joe.says('!help')
         self.joe.message.assert_called_with('^7Available commands: admins, admintest, aliases, b3, ban, banall, baninfo'
                                             ', clear, clientinfo, die, disable, enable, find, help, iamgod, kick, kicka'
-                                            'll, lastbans, leveltest, list, lookup, makereg, map, maprotate, maps, mask'
-                                            ', nextmap, notice, pause, permban, pluginfo, poke, putgroup, rebuild, reco'
-                                            'nfig, regtest, regulars, restart, rules, runas, say, scream, seen, spam, s'
+                                            'll, lastbans, leveltest, list, longlist, lookup, makereg, map, maprotate, maps, '
+                                            'mask, nextmap, notice, pause, permban, pluginfo, poke, putgroup, rebuild, reco'
+                                            'nfig, regtest, regulars, rules, runas, say, scream, seen, spam, s'
                                             'pams, spank, spankall, status, tempban, time, unban, ungroup, unmask, unre'
                                             'g, warn, warnclear, warninfo, warnremove, warns, warntest')
         self.mike.message = Mock()

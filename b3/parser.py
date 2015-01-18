@@ -18,6 +18,24 @@
 #
 # CHANGELOG
 #
+# 2015/01/15 - 1.40.1 - Fenix           - fixed invalid reference to None object upon plugin loading
+# 2015/01/08 - 1.40   - Fenix           - new plugin loading algorithm: check the comments of the following issue for
+#                                         details: https://github.com/BigBrotherBot/big-brother-bot/pull/250
+# 2015/01/07 - 1.39.2 - Fenix           - updated loadPlugins() to search inside extplugins module directories
+#                                       - fixed some invalid references in _get_config_path()
+# 2014/12/31 - 1.39.1 - Fenix           - loadArbPlugins: don't bother loading arb plugins if admin plugin is not loaded
+#                                       - prevent plugins from crashing B3 if they fails in loading: Admin plugin will
+#                                         be still checked in loadArbPlugins since it's strictly needed
+# 2014/12/25 - 1.39   - Fenix           - new storage module initialization
+# 2014/12/14 - 1.38.2 - Fenix           - correctly set exitcode variable in b3.parser.die() and b3.parser.restart(): B3
+#                                         was calling sys.exit(*) in both methods but the main thread was expecting to
+#                                         find the exit code in the exitcode (so the main thread was defaulting exit
+#                                         code to 0). This fixes auto-restart mode not working.
+#                                       - let the parser know if we are running B3 in auto-restart mode or not
+# 2014/12/13 - 1.38.1 - Fenix           - moved b3.parser.finalize() call in b3.parser.die() from b3.parser.shutdown()
+# 2014/12/11 - 1.38   - Fenix           - added plugin updater loading in loadArbPlugins
+#                                       - make use of the newly declared function b3.functions.right_cut instead
+# 2014/11/30 - 1.37.3 - Fenix           - correctly remove B3 PID file upon parser shutdown (Linux systems only)
 # 2014/09/02 - 1.37.2 - Fenix           - moved _first_line_code attribute in _settings['line_color_prefix']
 #                                       - allow customization of _settings['line_color_prefix'] from b3.xml:
 #                                         setting 'line_color_prefix' in section 'server'
@@ -111,33 +129,33 @@
 # 2010/03/23 - 1.14.2 - Bakes           - add message_delay for better BFBC2 interoperability.
 # 2010/03/22 - 1.14.1 - Courgette       - change maprotate() to rotate_map()
 # 2010/03/21 - 1.14   - Courgette       - create method stubs for inheriting classes to implement
-# 10/03/2010 - v1.13  - Courgette       - add rconPort for games which have a different rcon port than the game port
+# 10/03/2010 - 1.13   - Courgette       - add rconPort for games which have a different rcon port than the game port
 #                                       - server.game_log option is not mandatory anymore. This makes B3 able to work
 #                                         with game servers having no game log file
 #                                       - do not test rcon anymore as the test process differs depending on the game
-# 12/12/2009 - v1.12.3 - Courgette      - when working in remote mode, does not download the remote log file.
-# 06/12/2009 - v1.12.2 - Courgette      - write() can specify a custom max_retries value
-# 22/11/2009 - v1.12.1 - Courgette      - b3.xml can have option ('server','rcon_timeout') to specify a custom delay
-#                                         (secondes) to use for the rcon socket
-# 17/11/2009 - v1.12.0 - Courgette      - b3.xml can now have an optional section named 'devmode'
+# 12/12/2009 - 1.12.3 - Courgette       - when working in remote mode, does not download the remote log file.
+# 06/12/2009 - 1.12.2 - Courgette       - write() can specify a custom max_retries value
+# 22/11/2009 - 1.12.1 - Courgette       - b3.xml can have option ('server','rcon_timeout') to specify a custom delay
+#                                        (secondes) to use for the rcon socket
+# 17/11/2009 - 1.12.0 - Courgette       - b3.xml can now have an optional section named 'devmode'
 #                                       - move 'replay' option to section 'devmode'
 #                                       - move 'delay' option to section 'b3'
 #                                       - add option 'log2console' to section 'devmode'. This will make the bot
 #                                         write to stderr instead of b3.log (useful if using eclipse or such IDE)
 #                                       - fix replay mode when bot detected time reset from game log
-# 09/10/2009 - v1.11.2 - xlr8or         - saved original sys.stdout to console.screen to aid communications to b3 screen
-# 12/09/2009 - v1.11.1 - xlr8or         - added few functions and prevent spamming b3.log on pause
-# 28/08/2009 - v1.11.0 - Bakes          - adds Remote B3 thru FTP functionality.
-# 19/08/2009 - v1.10.0 - Courgette      - adds the inflict_custom_penalty() that allows to define game specific
+# 09/10/2009 - 1.11.2 - xlr8or          - saved original sys.stdout to console.screen to aid communications to b3 screen
+# 12/09/2009 - 1.11.1 - xlr8or          - added few functions and prevent spamming b3.log on pause
+# 28/08/2009 - 1.11.0 - Bakes           - adds Remote B3 thru FTP functionality.
+# 19/08/2009 - 1.10.0 - Courgette       - adds the inflict_custom_penalty() that allows to define game specific
 #                                         penalties: requires admin.py v1.4+
-# 10/7/2009  -         - xlr8or         - added code to load publist by default -
-# 29/4/2009  -         - xlr8or         - fixed ignored exit code (for restarts/shutdowns)
-# 10/20/2008 - 1.9.1b0 - mindriot       - fixed slight typo of b3.events.EVT_UNKOWN to b3.events.EVT_UNKNOWN
-# 11/29/2005 - 1.7.0   - ThorN          - added atexit handlers
+# 10/7/2009  -        - xlr8or          - added code to load publist by default -
+# 29/4/2009  -        - xlr8or          - fixed ignored exit code (for restarts/shutdowns)
+# 10/20/2008 - 1.9.1b - mindriot        - fixed slight typo of b3.events.EVT_UNKOWN to b3.events.EVT_UNKNOWN
+# 11/29/2005 - 1.7.0  - ThorN           - added atexit handlers
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.37.1'
+__version__ = '1.40.1'
 
 import os
 import sys
@@ -152,6 +170,7 @@ import socket
 import glob
 
 import b3
+import b3.config
 import b3.storage
 import b3.events
 import b3.output
@@ -161,17 +180,27 @@ import b3.parsers.q3a.rcon
 import b3.timezones
 
 from ConfigParser import NoOptionError
+from ConfigParser import NoSectionError
 from b3.clients import Clients
 from b3.clients import Group
+from b3.decorators import memoize
 from b3.functions import getModule
 from b3.functions import vars2printf
-from b3.decorators import memoize
+from b3.functions import main_is_frozen
+from b3.functions import splitDSN
+from b3.functions import right_cut
 from textwrap import TextWrapper
+
 
 try:
     from xml.etree import cElementTree as ElementTree
 except ImportError:
     from xml.etree import ElementTree
+
+try:
+    from collections import OrderedDict
+except ImportError:
+    from b3.lib.ordereddict import OrderedDict
 
 
 class Parser(object):
@@ -220,6 +249,7 @@ class Parser(object):
     log = None
     replay = False
     remoteLog = False
+    autorestart = False
     screen = None
     rconTest = False
     privateMsg = False
@@ -298,12 +328,17 @@ class Parser(object):
     exiting = thread.allocate_lock()
     exitcode = None
 
-    def __init__(self, conf):
+    def __init__(self, conf, autorestart=False):
         """
         Object contructor.
         :param conf: The B3 configuration file
+        :param autorestart: Whether B3 is running in autorestart mode or not
         """
         self._timeStart = self.time()
+
+        # store in the parser whether we are running B3 in autorestart mode so
+        # plugins can react on this and perform different operations
+        self.autorestart = autorestart
 
         if not self.loadConfig(conf):
             print('CRITICAL ERROR : COULD NOT LOAD CONFIG')
@@ -411,7 +446,17 @@ class Parser(object):
                 self._timeStart = 0
                 self.bot('Replay mode enabled')
 
-        self.storage = b3.storage.getStorage('database', self.config.get('b3', 'database'), self)
+        try:
+            # setup storage module
+            dsn = self.config.get('b3', 'database')
+            self.storage = b3.storage.getStorage(dsn=dsn, dsnDict=splitDSN(dsn), console=self)
+        except (AttributeError, ImportError), e:
+            # exit if we don't manage to setup the storage module: B3 will stop working upon Admin
+            # Plugin loading so it makes no sense to keep going with the console initialization
+            self.critical('Could not setup storage module: %s' % e)
+
+        # establish a connection with the database
+        self.storage.connect()
 
         if self.config.has_option('server', 'game_log'):
             # open log file
@@ -440,7 +485,7 @@ class Parser(object):
                     ftptempfile.close()
                     
             else:
-                self.bot('game log %s', game_log)
+                self.bot('Game log %s', game_log)
                 f = self.config.getpath('server', 'game_log')
 
             self.bot('Starting bot reading file: %s', f)
@@ -527,7 +572,8 @@ class Parser(object):
 
         atexit.register(self.shutdown)
 
-    def getAbsolutePath(self, path):
+    @staticmethod
+    def getAbsolutePath(path):
         """
         Return an absolute path name and expand the user prefix (~)
         """
@@ -560,8 +606,9 @@ class Parser(object):
         Stop B3 with the die exit status (222)
         """
         self.shutdown()
+        self.finalize()
         time.sleep(5)
-        sys.exit(222)
+        self.exitcode = 222
 
     def restart(self):
         """
@@ -570,7 +617,7 @@ class Parser(object):
         self.shutdown()
         time.sleep(5)
         self.bot('Restarting...')
-        sys.exit(221)
+        self.exitcode = 221
 
     def upTime(self):
         """
@@ -678,10 +725,8 @@ class Parser(object):
         # reload main config
         self.config.load(self.config.fileName)
         for k in self._plugins:
-            p = self._plugins[k]
             self.bot('Reload plugin config for %s', k)
-            p.loadConfig()
-
+            self._plugins[k].loadConfig()
         self.updateDocumentation()
 
     def loadPlugins(self):
@@ -690,91 +735,136 @@ class Parser(object):
         """
         self.screen.write('Loading Plugins  : ')
         self.screen.flush()
-        
+
         extplugins_dir = self.config.getpath('plugins', 'external_dir')
         self.bot('Loading plugins (external plugin directory: %s)' % extplugins_dir)
 
-        def _get_config_path(_plugin):
+        def _get_plugin_config(p_name, p_clazz, p_config_path):
             """
-            Helper that return a config path for the given Plugin
+            Helper that load and return a configuration file for the given Plugin
+            :param p_name: The plugin name
+            :param p_clazz: The class implementing the plugin
+            :param p_config_path: The plugin configuration file path
             """
-            # read config path from b3 configuration
-            cfg = _plugin.get('config')
-            # check if the configuration file exists - if not, attempts to find the configuration file
-            if cfg is not None and os.path.exists(self.getAbsolutePath(cfg)):
-                return self.getAbsolutePath(cfg)
+
+            def _search_config_file(match):
+                """
+                Helper that returns a list of configuration files.
+                :param match: The plugin name
+                """
+                # first look in the built-in plugins directory
+                search = '%s%s*%s*' % (self.getAbsolutePath('@b3\\conf'), os.path.sep, match)
+                self.debug('Searching for configuration file(s) matching: %s' % search)
+                collection = glob.glob(search)
+                if len(collection) > 0:
+                    return collection
+                # if none is found, then search in the extplugins directory
+                search = '%s%s*%s*' % (os.path.join(self.getAbsolutePath(extplugins_dir), match, 'conf'), os.path.sep, match)
+                self.debug('Searching for configuration file(s) matching: %s' % search)
+                collection = glob.glob(search)
+                return collection
+
+            if p_config_path is None:
+                # no plugin configuration file path specified: we can still load the plugin
+                # if there is non need for a configuration file, otherwise we will lookup one
+                if not p_clazz.requiresConfigFile:
+                    self.debug('No configuration file specified for plugin %s: is not required either' % p_name)
+                    return None
+
+                # lookup a configuration file for this plugin
+                self.warning('No configuration file specified for plugin %s: searching a valid configuration file...' % p_name)
+
+                search_path = _search_config_file(p_name)
+                if len(search_path) == 0:
+                    # raise an exception so the plugin will not be loaded (since we miss the needed config file)
+                    raise b3.config.ConfigFileNotFound('could not find any configuration file for plugin %s' % p_name)
+                if len(search_path) > 1:
+                    # log all the configuration files found so users can decide to remove some of them on the next B3 startup
+                    self.warning('Multiple configuration files found for plugin %s: %s', p_name, ', '.join(search_path))
+
+                # if the load fails, an exception is raised and the plugin won't be loaded
+                self.warning('Using %s as configuration file for plugin %s', search_path[0], p_name)
+                self.bot('Loading configuration file %s for plugin %s', search_path[0], p_name)
+                return b3.config.load(search_path[0])
             else:
-                # warn the users
-                if cfg is None:
-                    self.warning('No configuration file specified for plugin %s' % p.get('name'))
-                else:
-                    self.warning('The specified configuration file %s for the plugin %s does not exist'
-                                 % (cfg, p.get('name')))
+                # configuration file specified: load it if it's found. If we are not able to find the configuration
+                # file, then keep loading the plugin if such a plugin doesn't require a configuration file (optional)
+                # otherwise stop loading the plugin and loag an error message.
+                p_config_absolute_path = self.getAbsolutePath(p_config_path)
+                if os.path.exists(p_config_absolute_path):
+                    self.bot('Loading configuration file %s for plugin %s', p_config_absolute_path, p_name)
+                    return b3.config.load(p_config_absolute_path)
 
-                # try to find a config file
-                _cfg_path = glob.glob(self.getAbsolutePath('@b3\\conf\\') + '*%s*' % p.get('name'))
-                if len(_cfg_path) == 0:
-                    _cfg_path = glob.glob(self.getAbsolutePath(extplugins_dir) + '\\conf\\' + '*%s*' % p.get('name'))
+                # notice missing configuration file
+                self.warning('Could not find specified configuration file %s for plugin %s', p_config_absolute_path, p_name)
 
-                if len(_cfg_path) != 1 or _cfg_path[0] in [c.get('conf', '') for c in plugins.values()]:
-                    # return none if no file found or file already loaded
-                    return cfg
-                else:
-                    self.warning('Using %s as configuration file for %s' % (_cfg_path[0], p.get('name')))
-                    return _cfg_path[0]
+                if p_clazz.requiresConfigFile:
+                    # stop loading the plugin
+                    raise b3.config.ConfigFileNotFound('plugin %s cannot be loaded without a configuration file' % p_name)
 
-        plugins = {}
-        plugin_sort = []
+                self.warning('Not loading a configuration file for plugin %s: plugin %s can work also without a configuration file.', p_name, p_name)
+                self.info('NOTE: plugin %s may behave differently from what expected since no user configuration file has been loaded', p_name)
+                return None
 
-        priority = 1
+        plugins = OrderedDict()
+        plugins_list = []
+
+        # here beload we will parse the plugins section of b3.xml, looking for plugins to be loaded.
+        # we will import needed python classes and generate configuration file instances for plugins.
         for p in self.config.get('plugins/plugin'):
             name = p.get('name')
             if not name:
-                self.critical("Config error in the plugins section: "
-                              "no plugin name found in [%s]" % ElementTree.tostring(p).strip())
-                raise SystemExit(220)
-            if name in [plugins[i]['name'] for i in plugins if plugins[i]['name'] == name]:
-                self.warning('Plugin %s already loaded: avoid multiple entries of the same plugin' % name)
+                # if there is no name specified just do not load the plugin and log the issue
+                self.error("Configuration error in plugins section: missing plugin name in [%s]" % ElementTree.tostring(p))
             else:
-                conf = _get_config_path(p)
-                #if conf is None:
-                #    conf = '@b3/conf/plugin_%s.xml' % name
-                disabledconf = p.get('disabled')
-                disabled = disabledconf is not None and disabledconf.lower() in ('yes', '1', 'on', 'true')
-                plugins[priority] = {'name': name,
-                                     'conf': conf,
-                                     'path': p.get('path'),
-                                     'disabled': disabled}
+                if name in [plugins[i]['name'] for i in plugins if plugins[i]['name'] == name]:
+                    # do not load a plugin multiple times
+                    self.warning('Plugin %s already loaded: avoid multiple entries of the same plugin' % name)
+                else:
+                    try:
+                        module = self.pluginImport(name, p.get('path'))
+                        clazz = getattr(module, '%sPlugin' % name.title())
+                        conf = _get_plugin_config(name, clazz, p.get('config'))
+                        disabled = p.get('disabled') is not None and p.get('disabled').lower() in ('yes', '1', 'on', 'true')
+                        plugins[name] = {'name': name, 'module': module, 'class': clazz, 'conf': conf, 'disabled': disabled}
+                    except Exception, err:
+                         self.error('Could not load plugin %s' % name, exc_info=err)
 
-                plugin_sort.append(priority)
-                priority += 1
+        # check for AdminPlugin
+        if not 'admin' in plugins:
+            # critical will exit, admin plugin must be loaded!
+            self.critical('AdminPlugin is essential and MUST be loaded! Cannot continue without admin plugin')
 
-        plugin_sort.sort()
+        # make sure that the admin plugin is loaded as first plugin
+        # then follow the order specified by the user in B3 configuration file
+        plugins_list.append(plugins.pop('admin'))
+        for plugin in plugins.values():
+            plugins_list.append(plugin)
 
+        plugin_num = 1
         self._pluginOrder = []
-        for s in plugin_sort:
-            plugin_name = plugins[s]['name']
-            plugin_conf = plugins[s]['conf']
+        for plugin_dict in plugins_list:
+            plugin_name = plugin_dict['name']
+            plugin_conf = plugin_dict['conf']
+            plugin_conf_path = '--' if plugin_conf is None else plugin_conf.fileName
+            self.bot('Loading plugin #%s %s [%s]', plugin_num, plugin_name, plugin_conf_path)
+            self._plugins[plugin_name] = plugin_dict['class'](self, plugin_conf)
+            if plugin_dict['disabled']:
+                self.info("Disabling plugin %s" % plugin_name)
+                self._plugins[plugin_name].disable()
+
             self._pluginOrder.append(plugin_name)
-            self.bot('Loading plugin #%s %s [%s]', s, plugin_name, plugin_conf)
-            try:
-                plugin_module = self.pluginImport(plugin_name, plugins[s]['path'])
-                self._plugins[plugin_name] = getattr(plugin_module, '%sPlugin' % plugin_name.title())(self, plugin_conf)
-                if plugins[s]['disabled']:
-                    self.info("Disabling plugin %s" % plugin_name)
-                    self._plugins[plugin_name].disable()
-            except Exception, err:
-                self.error('Error loading plugin %s' % plugin_name, exc_info=err)
-            else:
-                version = getattr(plugin_module, '__version__', 'Unknown Version')
-                author = getattr(plugin_module, '__author__', 'Unknown Author')
-                self.bot('Plugin %s (%s - %s) loaded', plugin_name, version, author)
-                self.screen.write('.')
-                self.screen.flush()
+            plugin_num += 1
+
+            version = getattr(plugin_dict['module'], '__version__', 'Unknown Version')
+            author = getattr(plugin_dict['module'], '__author__', 'Unknown Author')
+            self.bot('Plugin %s (%s - %s) loaded', plugin_name, version, author)
+            self.screen.write('.')
+            self.screen.flush()
 
     def call_plugins_onLoadConfig(self):
         """
-        For each loaded plugin, call the onLoadConfig hook
+        For each loaded plugin, call the onLoadConfig hook.
         """
         for plugin_name in self._pluginOrder:
             p = self._plugins[plugin_name]
@@ -782,25 +872,44 @@ class Parser(object):
 
     def loadArbPlugins(self):
         """
-        Load must have plugins and check for admin plugin
+        Load must have plugins.
         """
-        def loadPlugin(parser_mod, plugin_id):
-            parser_mod.bot('Loading plugin %s', plugin_id)
-            plugin_module = parser_mod.pluginImport(plugin_id)
-            parser_mod._plugins[plugin_id] = getattr(plugin_module, '%sPlugin' % plugin_id.title())(parser_mod)
-            parser_mod._pluginOrder.append(plugin_id)
+        def _load_plugin(console, plugin_name):
+            """
+            Helper which takes care of loading a single plugin.
+            :param console: The current console instance
+            :param plugin_name: The name of the plugin to load
+            """
+            console.bot('Loading plugin %s', plugin_name)
+            plugin_module = console.pluginImport(plugin_name)
+            console._plugins[plugin_name] = getattr(plugin_module, '%sPlugin' % plugin_name.title())(console)
+            console._pluginOrder.append(plugin_name)
             version = getattr(plugin_module, '__version__', 'Unknown Version')
             author = getattr(plugin_module, '__author__', 'Unknown Author')
-            parser_mod.bot('Plugin %s (%s - %s) loaded', plugin_id, version, author)
-            parser_mod.screen.write('.')
-            parser_mod.screen.flush()
+            console.bot('Plugin %s (%s - %s) loaded', plugin_name, version, author)
+            console.screen.write('.')
+            console.screen.flush()
 
         if 'publist' not in self._pluginOrder:
-            #self.debug('publist not found!')
             try:
-                loadPlugin(self, 'publist')
+                _load_plugin(self, 'publist')
             except Exception, err:
-                self.verbose('Error loading plugin publist', exc_info=err)
+                self.error('Could not load plugin publist', exc_info=err)
+
+        if not main_is_frozen():
+            # load the updater plugin if we are running B3 from sources
+            if 'updater' not in self._pluginOrder:
+                try:
+                    update_channel = self.config.get('update', 'channel')
+                    if update_channel == 'skip':
+                        self.debug('Not loading plugin updater: update channel not specified in B3 configuration file')
+                    else:
+                        try:
+                            _load_plugin(self, 'updater')
+                        except Exception, err:
+                            self.error('Could not load plugin updater', exc_info=err)
+                except (NoSectionError, NoOptionError):
+                    self.debug('Not loading plugin updater: update section missing in B3 main configuration file')
 
         if self.config.has_option('server', 'game_log'):
             game_log = self.config.get('server', 'game_log')
@@ -814,14 +923,10 @@ class Parser(object):
 
             if remote_log_plugin and remote_log_plugin not in self._pluginOrder:
                 try:
-                    loadPlugin(self, remote_log_plugin)
+                    _load_plugin(self, remote_log_plugin)
                 except Exception, err:
                     self.critical('Error loading plugin %s' % remote_log_plugin, exc_info=err)
                     raise SystemExit('ERROR while loading %s' % remote_log_plugin)
-
-        if 'admin' not in self._pluginOrder:
-            # critical will exit, admin plugin must be loaded!
-            self.critical('AdminPlugin is essential and MUST be loaded! Cannot continue without admin plugin')
 
         self.screen.write(' (%s)\n' % len(self._pluginOrder))
         self.screen.flush()
@@ -932,7 +1037,8 @@ class Parser(object):
         else:
             return msg
 
-    def getMessageVariables(self, *args, **kwargs):
+    @staticmethod
+    def getMessageVariables(*args, **kwargs):
         """
         Dynamically generate a dictionary of fields available for messages in config file.
         """
@@ -1259,6 +1365,28 @@ class Parser(object):
                 self.storage.shutdown()
         except Exception, e:
             self.error(e)
+
+    def finalize(self):
+        """
+        Commons operation to be done on B3 shutdown.
+        Called internally by b3.parser.die()
+        """
+        if os.name == 'posix':
+
+            b3_name = os.path.basename(self.config.fileName)
+            for val in ('.xml', '.ini'):
+                b3_name = right_cut(b3_name, val)
+
+            pid_path = os.path.join(right_cut(sys.path[0], '/b3'), 'scripts', 'pid', '%s.pid' % b3_name)
+            self.bot('Looking for PID file: %s ...' % pid_path)
+            if os.path.isfile(pid_path):
+                try:
+                    self.bot('Removing PID file: %s ...' % pid_path)
+                    os.unlink(pid_path)
+                except Exception, e:
+                    self.error('Could not remove PID file: %s' % e)
+            else:
+                self.bot('PID file not found')
 
     def getWrap(self, text):
         """
