@@ -18,6 +18,9 @@
 #
 # CHANGELOG
 #
+# 2015/01/09 - 1.34    - Fenix          - added past bans check cronjob
+#                                       - adjusted b3.sql script path in debug message: make use of the correct protocol
+# 2014/12/15 - 1.33    - Fenix          - unregister !restart command if B3 is not running in auto-restart mode
 # 2014/11/15 - 1.32    - 82ndab-Bravo17 - added new command longlist that does a list with one player per line
 #                                       - and cid first. Allows you to see players with clever unicode names that
 #                                       - otherwise mess up the normal list command.
@@ -125,7 +128,7 @@
 #                                       - added ci command
 #                                       - added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.32'
+__version__ = '1.34'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon, Fenix'
 
 import re
@@ -1024,6 +1027,25 @@ class AdminPlugin(b3.plugin.Plugin):
         cmd.sayLoudOrPM(client, ', '.join(names))
         return True
 
+    def doPastBansCheck(self):
+        """
+        Scheduled execution: will check for banned players still
+        connected to the server and kick them if needed.
+        """
+        counts = self.console.storage.getCounts()
+        for k1 in self._past_bans_counts:
+            if self._past_bans_counts[k1] != counts[k1]:
+                # update counts for next check
+                for k2 in self._past_bans_counts:
+                    self._past_bans_counts[k2] = counts[k2]
+                self.debug('checking for banned clients still connected to the server...')
+                for client in self.console.clients.getList():
+                    if client.numBans > 0:
+                        ban = client.lastBan
+                        if ban:
+                            self.debug('banned client still online %s: re-applying penalty (%s)' % (client, ban.type))
+                            client.reBan(ban)
+                break
 
     def doLonglist(self, client, cmd):
         """
