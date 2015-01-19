@@ -146,23 +146,24 @@ class FtpytailPlugin(b3.plugin.Plugin):
         # These values go in b3 xml, so check them first
         try:
             self._use_windows_cache_fix = self.console.config.getboolean('server', 'use_windows_cache_fix')
-            self.debug('loaded settings/use_windows_cache_fix: %s' % self._use_windows_cache_fix)
+            self.debug('loaded server/use_windows_cache_fix: %s' % self._use_windows_cache_fix)
         except NoOptionError:
-            self.warning('could not find settings/use_windows_cache_fix in config file, '
+            self.debug('could not find server/use_windows_cache_fix in B3 config file, '
                          'using default: %s' % self._use_windows_cache_fix)
         except ValueError, e:
-            self.error('could not load settings/use_windows_cache_fix config value: %s' % e)
-            self.debug('using default value (%s) for settings/use_windows_cache_fix' % self._use_windows_cache_fix)
+            self.error('could not load server/use_windows_cache_fix config value from B3 config file: %s' % e)
+            self.debug('using default value (%s) for use_windows_cache_fix' % self._use_windows_cache_fix)
 
-        try:
-            self._cache_refresh_delay = self.console.config.getint('server', 'cache_refresh_delay')
-            self.debug('loaded settings/cache_refresh_delay: %s' % self._cache_refresh_delay)
-        except NoOptionError:
-            self.warning('could not find settings/cache_refresh_delay in config file, '
+        if self._use_windows_cache_fix:
+            try:
+                self._cache_refresh_delay = self.console.config.getint('server', 'cache_refresh_delay')
+                self.debug('loaded server/cache_refresh_delay: %s' % self._cache_refresh_delay)
+            except NoOptionError:
+                self.debug('could not find server/cache_refresh_delay in B3 config file, '
                          'using default: %s' % self._cache_refresh_delay)
-        except ValueError, e:
-            self.error('could not load settings/cache_refresh_delay config value: %s' % e)
-            self.debug('using default value (%s) for settings/cache_refresh_delay' % self._cache_refresh_delay)
+            except ValueError, e:
+                self.error('could not load server/cache_refresh_delay config value from B3 config file: %s' % e)
+                self.debug('using default value (%s) for server/cache_refresh_delay' % self._cache_refresh_delay)
 
         #Then see if ftpytail has a config file before trying to load the rest of the values
         if self.config is None:
