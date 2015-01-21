@@ -937,10 +937,10 @@ class Update(Setup):
         # update to v1.3.0
         if _currentversion >= '1.3.0':
             # update only if SQL file exists (some protocols do not have to update since they are new)
-            if os.path.isfile(self.getAbsolutePath('@b3/%s/sql/b3-update-1.3.0.sql' % dsndict['protocol'])):
+            if os.path.isfile(self.getAbsolutePath('@b3/sql/%s/b3-update-1.3.0.sql' % dsndict['protocol'])):
                 try:
                     print 'Updating database to version 1.3.0...'
-                    database.queryFromFile('@b3/%s/sql/b3-update-1.3.0.sql' % dsndict['protocol'])
+                    database.queryFromFile('@b3/sql/%s/b3-update-1.3.0.sql' % dsndict['protocol'])
                 except Exception, msg:
                     print "WARNING: could not update database to version 1.3.0 properly: %s" % str(msg)
                     self.test_exit("[Enter] to continue update procedure, \'abort\' to quit")
@@ -948,10 +948,10 @@ class Update(Setup):
         # update to v1.6.0
         if _currentversion >= '1.6.0':
             # update only if SQL file exists (some protocols do not have to update since they are new)
-            if os.path.isfile(self.getAbsolutePath('@b3/%s/sql/b3-update-1.6.0.sql' % dsndict['protocol'])):
+            if os.path.isfile(self.getAbsolutePath('@b3/sql/%s/b3-update-1.6.0.sql' % dsndict['protocol'])):
                 try:
                     print 'Updating database to version 1.6.0...'
-                    database.queryFromFile('@b3/%s/sql/b3-update-1.6.0.sql' % dsndict['protocol'])
+                    database.queryFromFile('@b3/sql/%s/b3-update-1.6.0.sql' % dsndict['protocol'])
                 except Exception, msg:
                     print "WARNING: could not update database to version 1.6.0 properly: %s" % str(msg)
                     self.test_exit("[Enter] to continue update procedure, \'abort\' to quit")
@@ -959,10 +959,10 @@ class Update(Setup):
         # update to v1.7.0
         if _currentversion >= '1.7.0':
             # update only if SQL file exists (some protocols do not have to update since they are new)
-            if os.path.isfile(self.getAbsolutePath('@b3/%s/sql/b3-update-1.7.0.sql' % dsndict['protocol'])):
+            if os.path.isfile(self.getAbsolutePath('@b3/sql/%s/b3-update-1.7.0.sql' % dsndict['protocol'])):
                 try:
                     print 'Updating database to version 1.7.0...'
-                    database.queryFromFile('@b3/%s/sql/b3-update-1.7.0.sql' % dsndict['protocol'])
+                    database.queryFromFile('@b3/sql/%s/b3-update-1.7.0.sql' % dsndict['protocol'])
                 except Exception, msg:
                     print "WARNING: could not update database to version 1.7.0 properly: %s" % str(msg)
                     self.test_exit("[Enter] to continue update procedure, \'abort\' to quit")
@@ -970,10 +970,10 @@ class Update(Setup):
         # update to v1.8.1
         if _currentversion >= '1.8.1':
             # update only if SQL file exists (some protocols do not have to update since they are new)
-            if os.path.isfile(self.getAbsolutePath('@b3/%s/sql/b3-update-1.8.1.sql' % dsndict['protocol'])):
+            if os.path.isfile(self.getAbsolutePath('@b3/sql/%s/b3-update-1.8.1.sql' % dsndict['protocol'])):
                 try:
                     print 'Updating database to version 1.8.1...'
-                    database.queryFromFile('@b3/%s/sql/b3-update-1.8.1.sql' % dsndict['protocol'])
+                    database.queryFromFile('@b3/sql/%s/b3-update-1.8.1.sql' % dsndict['protocol'])
                 except Exception, msg:
                     print "WARNING: could not update database to version 1.8.1 properly: %s" % str(msg)
                     self.test_exit("[Enter] to continue update procedure, \'abort\' to quit")
@@ -981,20 +981,20 @@ class Update(Setup):
         # update to v1.9.0
         if _currentversion >= '1.9.0':
             # update only if SQL file exists (some protocols do not have to update since they are new)
-            if os.path.isfile(self.getAbsolutePath('@b3/%s/sql/b3-update-1.9.0.sql' % dsndict['protocol'])):
+            if os.path.isfile(self.getAbsolutePath('@b3/sql/%s/b3-update-1.9.0.sql' % dsndict['protocol'])):
                 try:
                     print 'Updating database to version 1.9.0...'
-                    database.queryFromFile('@b3/%s/sql/b3-update-1.9.0.sql' % dsndict['protocol'])
+                    database.queryFromFile('@b3/sql/%s/b3-update-1.9.0.sql' % dsndict['protocol'])
                 except Exception, msg:
                     print "WARNING: could not update database to version 1.9.0 properly: %s" % str(msg)
                     self.test_exit("[Enter] to continue update procedure, \'abort\' to quit")
 
         if _currentversion >= '1.10.0':
             # update only if SQL file exists (some protocols do not have to update since they are new)
-            if os.path.isfile(self.getAbsolutePath('@b3/%s/sql/b3-update-1.10.0.sql' % dsndict['protocol'])):
+            if os.path.isfile(self.getAbsolutePath('@b3/sql/%s/b3-update-1.10.0.sql' % dsndict['protocol'])):
                 try:
                     print 'Updating database to version 1.10.0...'
-                    database.queryFromFile('@b3/%s/sql/b3-update-1.10.0.sql' % dsndict['protocol'])
+                    database.queryFromFile('@b3/sql/%s/b3-update-1.10.0.sql' % dsndict['protocol'])
                 except Exception, msg:
                     print "WARNING: could not update database to version 1.10.0 properly: %s" % str(msg)
                     self.test_exit("[Enter] to continue update procedure, \'abort\' to quit")
