@@ -22,7 +22,7 @@
 # 2010/03/21 - 0.2.1 - Courgette      - fix bug on config path which showed up only when run as a .exe
 # 2010/03/27 - 0.2.2 - xlr8or         - minor improvements, added port to db-conn, default value for yes/no in add_plugin
 # 2010/04/17 - 0.3   - Courgette      - remove plugin priority related code to follow with parser.py v1.16 changes
-# 2010/04/27 - 0.4   - Bakes          - added proper BC2 support to the setup wizard
+# 2010/04/27 - 0.4   - Bakes          - added proper BFBC2 support to the setup wizard
 #                                     - changed censor and spamcontrol plugins to be added before admin. This means that
 #                                       people who spam or swear in admin commands are warned, rather than the event just
 #                                       being handled in the admin plugin and veto'd elsewhere
@@ -51,30 +51,43 @@
 # 2014/07/21 - 1.9   - Fenix          - syntax cleanup
 # 2014/12/18 - 1.9.1 - Fenix          - switched from MySQLdb to pymysql
 # 2014/12/19 - 1.9.2 - Ansa89         - allow use of python-mysql.connector instead of pymysql for debian wheezy
+# 2015/01/20 - 1.10  - Fenix          - removed SQL file import: storage module already provides database table generation
+#                                       when they are found to be missing
+#                                     - changed add_set and raw_default to accept a reference to a function used to validate
+#                                       input data (return True when the value is accepted, false otherwise): raw_default
+#                                       will also keep asking for the same value until an acceptable one is inserted by
+#                                       the user (also for allow_blank)
+#                                     - removed extplugins download: will make a B3 plugin to install third party plugins
+#                                     - make use of the shipped storage module to execute SQL queries in Update class
+#                                     - revamped setup layout
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
 
+# FIXME: UGLY HACK WHICH LET US USE THE STORAGE MODULE SHIPPED WITH B3 INSTEAD OF ADDING DUPLICATED CODE
+import b3
+b3.TEAM_UNKNOWN = -1
+
+import storage
 import functions
-import glob
 import os
 import pkg_handler
 import platform
-import shutil
 import sys
 import tempfile
 import time
-import urllib2
-import zipfile
+
+from b3.storage import PROTOCOLS as DB_PROTOCOLS
+from b3.lib.SimpleXMLWriter import XMLWriter
+from distutils import version
+from functions import splitDSN
+from timezones import timezones
+from urlparse import urlsplit
 
 try:
     from xml.etree import cElementTree as ElementTree
 except ImportError:
     from xml.etree import ElementTree
-
-from b3.lib.SimpleXMLWriter import XMLWriter
-from distutils import version
-from urlparse import urlsplit
 
 __author__ = 'xlr8or'
 __version__ = pkg_handler.version(__name__)
@@ -94,48 +107,51 @@ class Setup(object):
     _template = ''
     _templatevar = ''
     _buffer = ''
-    _equalength = 15
+    _equalength = 16
+
+    _supported_parsers = ['arma2', 'arma3', 'bfbc2', 'bf3', 'bf4', 'moh', 'mohw', 'cod', 'cod2', 'cod4', 'cod5', 'cod6',
+                          'cod7', 'cod8', 'iourt41', 'iourt42', 'et', 'etpro', 'altitude', 'oa081', 'smg', 'smg11',
+                          'sof2', 'wop', 'wop15', 'chiv', 'csgo', 'homefront', 'insurgency', 'ravaged', 'ro2']
 
     _pb_supported_parsers = ['cod', 'cod2', 'cod4', 'cod5', 'cod6', 'cod7', 'cod8']
     _frostbite = ['bfbc2', 'moh', 'bf3', 'bf4']
 
     # those will be set later when using 'add_set'
-    _set_database = ''
-    _set_external_dir = ''
-    _set_parser = ''
-    _set_punkbuster = ''
+    _set = {}
 
-    db = None
     tree = None
     autoinstallplugins = 'yes'
     installextplugins = 'yes'
 
-    def __init__(self, config=None):
+    def __init__(self, conf=None):
         """
         Object constructor.
-        :param config: The B3 configuration file instance
+        :param conf: The B3 configuration file instance
         """
-        if config:
-            self._config = config
-        elif self.get_b3_path() != "":
-            self._config = self.get_b3_path() + r'/conf/b3.xml'
+        if conf:
+            self._config = os.path.normpath(conf)
+        elif self.getB3Path() != "":
+            self._config = os.path.join(self.getB3Path(), 'conf', 'b3.xml')
 
-        print self._config
         self.introduction()
         self.clearscreen()
-        self._output_file = self.raw_default("Location and name of the new configfile", self._config)
+
+        self._output_file = self.raw_default("Location of the new configuration file", self._config)
         self._output_tempfile = tempfile.NamedTemporaryFile(delete=False)
-        # creating backup
+
+        # creating backup if needed
         self.backup_file(self._output_file)
         self.run_setup()
+
         # copy the config to it's final version
-        shutil.copy(self._output_tempfile.name, self._output_file)
+        functions.copy_file(self._output_tempfile.name, self._output_file)
 
         try:
             # try to delete the tempfile: this fails on Windows in some cases
-            os.unlink(self._output_tempfile.name)
+            functions.rm_file(self._output_tempfile.name)
         except:
             pass
+
         raise SystemExit('Restart B3 or reconfigure B3 using option: -s')
 
     def run_setup(self):
@@ -147,463 +163,468 @@ class Setup(object):
 
         # write appropriate header
         xml.declaration()
-        xml.comment("""\n This file is generated by the B3 setup Procedure.\n
- If you want to regenerate this file and make sure the format is\n
- correct, you can invoke the setup procedure with the\n
- command : b3_run -s b3.xml\n\n
- This is B3 main config file (the one you specify when you run B3 with the\n
- command : b3_run -c b3.xml)\n\n
- For any change made in this config file, you have to restart the bot.\n
- Whenever you can specify a file/directory path, the following shortcuts\n
- can be used :\n
-  @b3 : the folder where B3 code is installed in\n
-  @conf : the folder containing this config file\n""")
+        xml.comment("""
+This file is generated by the B3 setup procedure.
+If you want to regenerate this file and make sure the format is correct,
+you can invoke the setup procedure with the command : b3_run -s b3.xml\n
+This is B3 main config file (the one you specify when you run B3 with the
+command : b3_run.py -c b3.xml)\n
+For any change made in this config file, you have to restart B3.
+Whenever you can specify a file/directory path, the following shortcuts
+can be used :\n
+    @b3 : the folder where B3 code is installed in
+    @conf : the folder containing this config file\n""")
 
         # first level
         configuration = xml.start("configuration")
         xml.data("\n\t")
 
         # B3 settings
-        self.add_buffer('--B3 SETTINGS---------------------------------------------------\n')
+        self.add_buffer("""-------------------------- B3 SPECIFIC SETTINGS -------------------------------\n""")
+
         xml.start("settings", name="b3")
-        self.add_set("parser", "", """
-Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
-                  iourt41/iourt42
-                  bfbc2/bf3/moh/bf4
-                  chiv
-                  etpro/altitude/oa081/smg/sof2/wop/wop15
-                  homefront/ro2/csgo/ravaged/arma2/arma3/insurgency""")
+        self.add_set("parser", "", explanation="""Define your game:
+                arma2/arma3
+                bfbc2/bf3/bf4/moh/mohw
+                cod/cod2/cod4/cod5/cod6/cod7/cod8
+                iourt41/iourt42
+                et/etpro/altitude/oa081/smg/smg11/sof2/sof2pm/wop/wop15
+                chiv/csgo/homefront/insurgency/ravaged/ro2/""",
+                allow_blank=False,
+                validate=lambda x: x in self._supported_parsers)
 
         # set a template xml file to read existing settings from
-        _result = False
-        while not _result:
-            _result = self.load_template()
-            if _result:
-                self.add_buffer('Configuration values from [%s] loaded successfully\n' % self._template)
+        result = False
+        while not result:
+            result = self.load_template(self._set['parser'])
+            if result:
+                #self.add_buffer('Configuration values loaded successfully: %s\n' % self._template)
                 break
 
         # getting database info, test it and set up the tables
         self.add_set("database", self.read_element('b3', 'database', 'mysql://b3:password@localhost/b3'),
-                     "Your database info: [mysql]://[db-user]:[db-password]@[db-server[:port]]/[db-name]")
+                     explanation= "Your database info: [protocol]://[db-user]:[db-password]@[db-server[:port]]/[db-name]",
+                     allow_blank=False,
+                     validate=lambda x: splitDSN(x)['protocol'] in DB_PROTOCOLS)
 
-        self.add_buffer('Testing and Setting Up Database...\n')
-        # try to install the tables if they do not exist
-        _sqlfiles = ['@b3/sql/b3.sql', 'b3/sql/b3.sql', 'sql/b3.sql']
-        _sqlc = 0
-        _sqlresult = 'notfound'
-        while _sqlresult == 'notfound' and _sqlc < len(_sqlfiles):
-            _sqlresult = self.execute_sql(_sqlfiles[_sqlc], self._set_database)
-            _sqlc += 1
+        self.add_set("bot_name", self.read_element('b3', 'bot_name', 'b3'),
+                     explanation="Name of the bot",
+                     allow_blank=False)
 
-        if _sqlresult == 'notfound':
-            # still not found? prompt for the complete path and filename
-            _sqlfile = self.raw_default('I could not find b3/sql/b3.sql: please provide the full path and filename.')
-            _sqlresult = self.execute_sql(_sqlfile, self._set_database)
-
-        if _sqlresult in ['notfound', 'couldnotopen']:
-            # still no luck? giving up...
-            self.add_buffer('I give up, I could not find or open SQL file, '
-                            'you will need to import the database tables manually')
-
-        self.add_set("bot_name", self.read_element('b3', 'bot_name', 'b3'), "Name of the bot")
         self.add_set("bot_prefix", self.read_element('b3', 'bot_prefix', '^0(^2b3^0)^7:'),
-                     "Ingame messages are prefixed with this code, you can use colorcodes", allow_blank=True)
-        self.add_set("time_format", self.read_element('b3', 'time_format', '%I:%M%p %Z %m/%d/%y'))
+                     explanation="Ingame messages are prefixed with this code, you can use colorcodes",
+                     allow_blank=True)
+
+        self.add_set("time_format", self.read_element('b3', 'time_format', '%I:%M%p %Z %m/%d/%y'),
+                     explanation="Time format to use to format time strings (also used by the !time command of the Admin Plugin",
+                     allow_blank=False)
+
         self.add_set("time_zone", self.read_element('b3', 'time_zone', 'CST'),
-                     "The timezone your bot is in")
+                     explanation="The timezone your bot is in (see: http://wiki.bigbrotherbot.net/usage:available_timezones)",
+                     allow_blank=False,
+                     validate=lambda x: x in timezones)
+
         self.add_set("log_level", self.read_element('b3', 'log_level', '9'),
-                     "How much detail in the logfile: 9 = verbose, 10 = debug, 21 = bot, 22 = console")
+                     explanation="How much detail in the log file: 9 = verbose, 10 = debug, 21 = bot, 22 = console",
+                     allow_blank=False)
+
         self.add_set("logfile", self.read_element('b3', 'logfile', 'b3.log'),
-                     "Name of the logfile the bot will generate")
+                     explanation="Name of the log file B3 will generate",
+                     allow_blank=False)
 
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
 
-        # BFBC2 specific settings
-        if self._set_parser == 'bfbc2':
-            self.add_buffer('\n--BFBC2 SPECIFIC SETTINGS---------------------------------------\n')
-            xml.start("settings", name="bfbc2")
-            self.add_set("max_say_line_length", self.read_element('bfbc2', 'max_say_line_length', '100'),
-                         "how long do you want the lines to be restricted to in the chat zone. (maximum length is 100)")
-            xml.data("\n\t")
-            xml.end()
-            xml.data("\n\t")
-
-        # MOH specific settings
-        if self._set_parser == 'moh':
-            self.add_buffer('\n--MOH SPECIFIC SETTINGS-----------------------------------------\n')
-            xml.start("settings", name="moh")
-            self.add_set("max_say_line_length", self.read_element('moh', 'max_say_line_length', '100'),
-                         "how long do you want the lines to be restricted to in the chat zone. (maximum length is 100)")
-            xml.data("\n\t")
-            xml.end()
-            xml.data("\n\t")
-
         # server settings
-        self.add_buffer('\n--GAME SERVER SETTINGS------------------------------------------\n')
+        self.add_buffer("""\n-------------------------- GAME SERVER SETTINGS -------------------------------\n""")
+
         xml.start("settings", name="server")
 
         # Frostbite specific
-        if self._set_parser in self._frostbite:
+        if self._set['parser'] in self._frostbite:
             self.add_set("public_ip", self.read_element('server', 'public_ip'),
-                         "The IP address of your gameserver")
+                         explanation="The IP address of your gameserver",
+                         allow_blank=False)
             self.add_set("port", self.read_element('server', 'port'),
-                         "The port people use to connect to your gameserver")
+                         explanation="The port people use to connect to your gameserver",
+                         allow_blank=False,
+                         validate=lambda x: 1 <= int(x) <= 65535)
             self.add_set("rcon_ip", self.read_element('server', 'rcon_ip'),
-                         "The IP of your gameserver B3 will connect to in order to send RCON commands. "
-                         "Usually the same as the public_ip")
+                         explanation="The IP of your gameserver B3 will use to send RCON commands (usually the same as public_ip)",
+                         allow_blank=False)
             self.add_set("rcon_port", self.read_element('server', 'rcon_port'),
-                         "The port of your gameserver that B3 will connect to in order to send RCON commands. "
-                         "NOT the same as the normal port.")
+                         explanation="The port of your gameserver B3 will use to send RCON commands (not the same as the normal port)",
+                         allow_blank=False,
+                         validate=lambda x: 1 <= int(x) <= 65535)
             self.add_set("rcon_password", self.read_element('server', 'rcon_password'),
-                         "The RCON password of your gameserver.")
+                         explanation="The RCON password of your gameserver",
+                         allow_blank=False)
             self.add_set("timeout", self.read_element('server', 'timeout', '3'),
-                         "RCON timeout", silent=True)
+                         explanation="RCON timeout",
+                         silent=True)
 
         # Ravaged specific
-        elif self._set_parser == 'ravaged':
+        elif self._set['parser'] == 'ravaged':
             self.add_set("public_ip", self.read_element('server', 'public_ip'),
-                         "The IP address of your gameserver")
-            self.add_set("port", self.read_element('server', 'port', '27015'),
-                         "The query port of your gameserver (see SteamQueryPort in your Ravaged server config file)")
+                         explanation="The IP address of your gameserver",
+                         allow_blank=False)
+            self.add_set("port", self.read_element('server', 'port'),
+                         explanation="The query port of your gameserver (see SteamQueryPort in your Ravaged server config file)",
+                         allow_blank=False,
+                         validate=lambda x: 1 <= int(x) <= 65535)
             self.add_set("rcon_ip", self.read_element('server', 'rcon_ip'),
-                         "The IP of your gameserver B3 will connect to in order to send RCON commands. "
-                         "Usually the same as the public_ip")
-            self.add_set("rcon_port", self.read_element('server', 'rcon_port', '13550'),
-                         "The port of your gameserver that B3 will connect to in order to send RCON commands. "
-                         "(see RConPort in your Ravaged server config file)")
+                         explanation="The IP of your gameserver B3 will use to send RCON commands (usually the same as public_ip)",
+                         allow_blank=False)
+            self.add_set("rcon_port", self.read_element('server', 'rcon_port'),
+                         explanation="The port of your gameserver B3 will use to send RCON commands (see RConPort in your Ravaged server config file)",
+                         allow_blank=False,
+                         validate=lambda x: 1 <= int(x) <= 65535)
             self.add_set("rcon_password", self.read_element('server', 'rcon_password'),
-                         "The RCON password of your gameserver. (see AdminPassword in your Ravaged server config file)")
+                         explanation="The RCON password of your gameserver (see AdminPassword in your Ravaged server config file)",
+                         allow_blank=False)
 
         # Chivalry specific
-        elif self._set_parser == 'chiv':
+        elif self._set['parser'] == 'chiv':
             self.add_set("public_ip", self.read_element('server', 'public_ip'),
-                         "The IP address of your gameserver")
+                         explanation="The IP address of your gameserver",
+                         allow_blank=False)
             self.add_set("port", self.read_element('server', 'port', '27015'),
-                         "The query port of your gameserver (see SteamQueryPort in your Ravaged server config file)")
+                         explanation="The query port of your gameserver (see SteamQueryPort in your Chivalry server config file)",
+                         allow_blank=False,
+                         validate=lambda x: 1 <= int(x) <= 65535)
             self.add_set("rcon_ip", self.read_element('server', 'rcon_ip'),
-                         "The IP of your gameserver B3 will connect to in order to send RCON commands. "
-                         "Usually the same as the public_ip")
-            self.add_set("rcon_port", self.read_element('server', 'rcon_port', '27960'),
-                         "The port of your gameserver that B3 will connect to in order to send RCON commands. "
-                         "(see 'RConPort' in section '[AOC.AOCRCon]' of your PCServer-UDKGame.ini server config file)")
+                         explanation="The IP of your gameserver B3 will use to send RCON commands (usually the same as public_ip)",
+                         allow_blank=False)
+            self.add_set("rcon_port", self.read_element('server', 'rcon_port'),
+                         explanation="The port of your gameserver B3 will use to send RCON commands (see 'RConPort' in section '[AOC.AOCRCon]' of your PCServer-UDKGame.ini server config file)",
+                         allow_blank=False,
+                         validate=lambda x: 1 <= int(x) <= 65535)
             self.add_set("rcon_password", self.read_element('server', 'rcon_password'),
-                         "The RCON password of your gameserver. (see AdminPassword in your game server config file)")
+                         explanation="The RCON password of your gameserver (see AdminPassword in your gameserver config file)",
+                         allow_blank=False)
 
         # Homefront specific
-        elif self._set_parser == 'homefront':
+        elif self._set['parser'] == 'homefront':
             self.add_set("public_ip", self.read_element('server', 'public_ip'),
-                         "The IP address of your gameserver")
+                         explanation="The IP address of your gameserver",
+                         allow_blank=False)
             self.add_set("port", self.read_element('server', 'port'),
-                         "The port people use to connect to your gameserver")
+                         explanation="The port people use to connect to your gameserver",
+                         allow_blank=False,
+                         validate=lambda x: 1 <= int(x) <= 65535)
             self.add_set("rcon_ip", self.read_element('server', 'rcon_ip'),
-                         "The IP of your gameserver B3 will connect to in order to send RCON commands. "
-                         "Usually the same as the public_ip")
+                         explanation="The IP of your gameserver B3 will use to send RCON commands (usually the same as public_ip)",
+                         allow_blank=False)
             self.add_set("rcon_port", self.read_element('server', 'rcon_port'),
-                         "The port of your gameserver that B3 will connect to in order to send RCON commands. "
-                         "NOT the same as the normal port.")
+                         explanation="The port of your gameserver B3 will use to send RCON commands (not the same as the normal port)",
+                         allow_blank=False,
+                         validate=lambda x: 1 <= int(x) <= 65535)
             self.add_set("rcon_password", self.read_element('server', 'rcon_password'),
-                         "The RCON password of your gameserver.")
+                         explanation="The RCON password of your gameserver (see AdminPassword in your Ravaged server config file)",
+                         allow_blank=False)
 
         # Arma2 specific
-        elif self._set_parser == 'arma2':
+        elif self._set['parser'] == 'arma2':
             self.add_set("public_ip", self.read_element('server', 'public_ip'),
-                         "The IP address of your gameserver")
+                         explanation="The IP address of your gameserver",
+                         allow_blank=False)
             self.add_set("port", self.read_element('server', 'port'),
-                         "The ArmA2 game network communication port")
+                         explanation="The ArmA2 game network communication port",
+                         allow_blank=False,
+                         validate=lambda x: 1 <= int(x) <= 65535)
             self.add_set("rcon_ip", self.read_element('server', 'rcon_ip'),
-                         "The IP of your gameserver B3 will connect to in order to send RCON commands. "
-                         "Usually the same as the public_ip")
+                         explanation="The IP of your gameserver B3 will use to send RCON commands (usually the same as public_ip)",
+                         allow_blank=False)
             self.add_set("rcon_password", self.read_element('server', 'rcon_password'),
-                         "The RCON password of your gameserver.")
+                         explanation="The RCON password of your gameserver",
+                         allow_blank=False)
 
         # Arma3 specific
-        elif self._set_parser == 'arma3':
+        elif self._set['parser'] == 'arma3':
             self.add_set("public_ip", self.read_element('server', 'public_ip'),
-                         "The IP address of your gameserver")
+                         explanation="The IP address of your gameserver",
+                         allow_blank=False)
             self.add_set("port", self.read_element('server', 'port'),
-                         "The ArmA3 game network communication port")
+                         explanation="The ArmA3 game network communication port",
+                         allow_blank=False,
+                         validate=lambda x: 1 <= int(x) <= 65535)
             self.add_set("rcon_ip", self.read_element('server', 'rcon_ip'),
-                         "The IP of your gameserver B3 will connect to in order to send RCON commands. "
-                         "Usually the same as the public_ip")
+                         explanation="The IP of your gameserver B3 will use to send RCON commands (usually the same as public_ip)",
+                         allow_blank=False)
             self.add_set("rcon_password", self.read_element('server', 'rcon_password'),
-                         "The RCON password of your gameserver.")
-
-        # Urban Terror specific
-        elif self._set_parser == 'iourt42':
-            self.add_set("game_log", self.read_element('server', 'game_log'),
-                         "The gameserver generates a logfile, put the path and name here")
-            self.add_set("public_ip", self.read_element('server', 'public_ip'),
-                         "The public IP your gameserver is residing on")
-            self.add_set("port", self.read_element('server', 'port'),
-                         "The port the server is running on")
-            self.add_set("rcon_ip", self.read_element('server', 'rcon_ip'),
-                         "The IP the bot can use to send RCON commands to (127.0.0.1 when on the same box)")
-            self.add_set("rcon_password", self.read_element('server', 'rcon_password'),
-                         "The RCON pass of your gameserver")
-            self.add_set("permban_with_frozensand", self.read_element('server', 'permban_with_frozensand', 'no'),
-                         "Permban with Frozen Sand auth system")
-            self.add_set("tempban_with_frozensand", self.read_element('server', 'tempban_with_frozensand', 'no'),
-                         "Tempban with Frozen Sand auth system")
+                         explanation="The RCON password of your gameserver",
+                         allow_blank=False)
 
         # Q3A specific
         else:
-            self.add_set("rcon_password", self.read_element('server', 'rcon_password'),
-                         "The RCON pass of your gameserver")
-            self.add_set("port", self.read_element('server', 'port'),
-                         "The port the server is running on")
-            # check if we can run cod7 remote gamelog retrieval
-            if version.LooseVersion(self._pver) < version.LooseVersion('2.6.0') and self._set_parser == 'cod7':
-                self.add_buffer('\nERROR:\n  You are running python ' + self._pver + ', remote log functionality\n  is '
-                                'not available prior to python version 2.6.0\nYou need to update to python version '
-                                '2.6+ before you can run B3 for CoD7!')
-                self.test_exit()
-            elif self._set_parser == 'cod7':
-                self.add_buffer('\nNOTE: You\'re gamelog must be set to this format:\n'
-                                'http://logs.gameservers.com/127.0.0.1:1024/xxxxx-1234-5678-9012-xxxxx')
-            # determine if ftp functionality is available
-            elif version.LooseVersion(self._pver) < version.LooseVersion('2.6.0'):
-                self.add_buffer('\n  NOTE for game_log:\n  You are running python ' + self._pver +
-                                ', ftp functionality\n  is not available prior to python version 2.6.0\n')
-            else:
-                self.add_buffer('\n  NOTE for game_log:\n  You are running python ' + self._pver + ', the gamelog may '
-                                'also be\n  ftp-ed or http-ed in.\n  Define game_log like this:\n   '
-                                'ftp://[ftp-user]:[ftp-password]@[ftp-server]/path/to/games_mp.log\n  '
-                                'Or for web access (you can use htaccess to secure):\n   '
-                                'http://serverhost/path/to/games_mp.log\n')
-            self.add_set("game_log", self.read_element('server', 'game_log'),
-                         "The gameserver generates a logfile, put the path and name here")
             self.add_set("public_ip", self.read_element('server', 'public_ip'),
-                         "The public IP your gameserver is residing on")
+                         explanation="The IP address of your gameserver",
+                         allow_blank=False)
             self.add_set("rcon_ip", self.read_element('server', 'rcon_ip'),
-                         "The IP the bot can use to send RCON commands to (127.0.0.1 when on the same box)")
+                         explanation="The IP of your gameserver B3 will use to send RCON commands (127.0.0.1 when on the same box)",
+                         allow_blank=False)
+            self.add_set("port", self.read_element('server', 'port'),
+                         explanation="The port the server is running on",
+                         allow_blank=False,
+                         validate=lambda x: 1 <= int(x) <= 65535)
+            self.add_set("rcon_password", self.read_element('server', 'rcon_password'),
+                         explanation="The RCON password of your gameserver",
+                         allow_blank=False)
+
+            # Urban Terror 4.2 specific
+            if self._set['parser'] == 'iourt42':
+                self.add_set("permban_with_frozensand", self.read_element('server', 'permban_with_frozensand', 'no'),
+                             explanation="Permban with Frozen Sand auth system",
+                             allow_blank=True,
+                             validate=lambda x: x.lower() in ('yes', '1', 'on', 'true', 'no', '0', 'off', 'false'))
+                self.add_set("tempban_with_frozensand", self.read_element('server', 'tempban_with_frozensand', 'no'),
+                             explanation="Tempban with Frozen Sand auth system",
+                             allow_blank=True,
+                             validate=lambda x: x.lower() in ('yes', '1', 'on', 'true', 'no', '0', 'off', 'false'))
+
+            # CoD7 game log specific
+            if self._set['parser'] == 'cod7':
+                self.add_set("game_log", self.read_element('server', 'game_log'),
+                             allow_blank=False,
+                             explanation="The gameserver generates a logfile, put the path here.\n"
+                                         "NOTE: must be of this format: http://logs.gameservers.com/127.0.0.1:1024/xxxxx-1234-5678-9012-xxxxx)")
+            else:
+                self.add_set("game_log", self.read_element('server', 'game_log'),
+                             explanation="""The gameserver generates a logfile, put the path and name here
+             The logfile logfile may also be accessed using HTTP, SFTP or FTP:
+                 HTTP: http://serverhost/path/to/games_mp.log
+                 SFTP: sftp://[sftp-user]:[sftp-password]@[sftp-server]/path/to/games_mp.log
+                 FTP: ftp://[ftp-user]:[ftp-password]@[ftp-server]/path/to/games_mp.log
+             For HTTP access you can use .htaccess to secure the connection""", allow_blank=False)
 
             # configure default performances parameters
-            self.add_set("delay", self.read_element('server', 'delay', '0.33'),
-                         "Delay between each log reading. Set a higher value to consume less disk resources or "
-                         "bandwidth if you remotely connect (ftp or http remote log access)", silent=True)
-            self.add_set("lines_per_second", self.read_element('server', 'lines_per_second', '50'),
-                         "Number of lines to process per second. Set a lower value to consume less CPU resources",
-                         silent=True)
+            self.add_set("delay", self.read_element('server', 'delay', '0.33'), silent=True,
+                         explanation="Delay between each log reading (set a higher value to consume less disk resources or bandwidth if you remotely connect)")
+            self.add_set("lines_per_second", self.read_element('server', 'lines_per_second', '50'), silent=True,
+                         explanation="Number of lines to process per second. Set a lower value to consume less CPU resources")
 
         # determine if PunkBuster is supported
-        if self._set_parser in self._pb_supported_parsers:
-            self.add_set("punkbuster", "on", "Is the gameserver running PunkBuster Anticheat: on/off")
+        if self._set['parser'] in self._pb_supported_parsers:
+            self.add_set("punkbuster", "on",
+                         explanation="Is the gameserver running PunkBuster Anticheat: on/off",
+                         allow_blank=False,
+                         validate=lambda x: x.lower() in ('yes', '1', 'on', 'true', 'no', '0', 'off', 'false'))
         else:
-            self.add_set("punkbuster", "off", "Is the gameserver running PunkBuster Anticheat: on/off", silent=True)
+            self.add_set("punkbuster", "off", silent=True,
+                         explanation="Is the gameserver running PunkBuster Anticheat: on/off")
 
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
 
         # update channel settings
-        self.add_buffer('\n--UPDATE CHANNEL-------------------------------------------------\n')
-        self.add_buffer("""
-          B3 checks if a new version is available at startup against 3 different channels. Choose the
-          channel you want to check against.
+        self.add_buffer("""\n----------------------------- UPDATE CHANNEL ----------------------------------\n""")
 
-          Available channels are :
-            stable : will only show stable releases of B3
-            beta : will also check if a beta release is available
-            dev : will also check if a development release is available
-
-        """)
         xml.start("settings", name="update")
-        xml.data("\n\t\t")
-        xml.comment("""
-        B3 checks if a new version is available at startup. Choose here what channel you want to check against.
-            Available channels are :
-                stable : will only show stable releases of B3
-                beta   : will also check if a beta release is available
-                dev    : will also check if a development release is available
-            If you don't know what channel to use, use 'stable'
-        """)
-        xml.data("\t\t")
-        self.add_set("channel", self.read_element('update', 'channel', 'stable'), "stable, beta or dev")
+        self.add_set("channel", self.read_element('update', 'channel', 'stable'),
+                     explanation="""B3 checks if a new version is available at startup against 3 different channels
+            Choose the channel you want to check against. Available channels are :
+                    stable : will only show stable releases of B3
+                    beta : will also check if a beta release is available
+                    dev : will also check if a development release is available
+                    skip: will skip the update check""",
+                     allow_blank=False,
+                     validate=lambda x: x in ('stable', 'beta', 'dev', 'skip'))
+
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
 
         # autodoc settings
-        self.add_buffer('\n--AUTODOC-------------------------------------------------------\n')
+        self.add_buffer("""\n---------------------------- AUTODOC SETTINGS ---------------------------------\n""")
+
         xml.start("settings", name="autodoc")
-        xml.data("\n\t\t")
-        xml.comment("Autodoc will generate a user documentation for all B3 commands")
-        xml.data("\t\t")
-        xml.comment("by default, a html documentation is created in your conf folder")
-        self.add_set("type", self.read_element('autodoc', 'type', 'html'), "html, htmltable, json or xml")
+
+        self.add_set("type", self.read_element('autodoc', 'type', 'html'),
+                     explanation="The type of B3 user documentation to generate: html, htmltable, json, xml",
+                     allow_blank=False,
+                     validate=lambda x: x in ('html', 'htmltable', 'json', 'xml'))
         self.add_set("maxlevel", self.read_element('autodoc', 'maxlevel', '100'),
-                     "if you want to exclude commands reserved for higher levels")
+                     explanation="If you want to exclude commands reserved for higher levels",
+                     allow_blank=True)
         self.add_set("destination", self.read_element('autodoc', 'destination'),
-                     "Destination can be a file or a ftp url")
+                     explanation="Where to store the B3 documentation file: you can use a filepath or an FTP url",
+                     allow_blank=True)
+
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
 
         # messages settings
-        self.add_buffer('\n--MESSAGES------------------------------------------------------\n')
+        self.add_buffer("""\n-------------------------------- MESSAGES -------------------------------------\n""")
+
         xml.start("settings", name="messages")
+
         # in this section we also need to check if we have old version messages! they contain: %s
         if '%s' in self.read_element('messages', 'kicked_by', '%s'):
-            self.add_set("kicked_by", "$clientname^7 was kicked by $adminname^7 $reason")
+            self.add_set("kicked_by", "$clientname^7 was kicked by $adminname^7 $reason", allow_blank=False)
         else:
-            self.add_set("kicked_by",
-                         self.read_element('messages', 'kicked_by', '$clientname^7 was kicked by $adminname^7 $reason'))
+            self.add_set("kicked_by", self.read_element('messages', 'kicked_by', '$clientname^7 was kicked by $adminname^7 $reason'), allow_blank=False)
 
         if '%s' in self.read_element('messages', 'kicked', '%s'):
-            self.add_set("kicked", "$clientname^7 was kicked $reason")
+            self.add_set("kicked", "$clientname^7 was kicked $reason", allow_blank=False)
         else:
-            self.add_set("kicked", self.read_element('messages', 'kicked', '$clientname^7 was kicked $reason'))
+            self.add_set("kicked", self.read_element('messages', 'kicked', '$clientname^7 was kicked $reason'), allow_blank=False)
 
         if '%s' in self.read_element('messages', 'banned_by', '%s'):
-            self.add_set("banned_by", "$clientname^7 was banned by $adminname^7 $reason")
+            self.add_set("banned_by", "$clientname^7 was banned by $adminname^7 $reason", allow_blank=False)
         else:
-            self.add_set("banned_by",
-                         self.read_element('messages', 'banned_by', '$clientname^7 was banned by $adminname^7 $reason'))
+            self.add_set("banned_by", self.read_element('messages', 'banned_by', '$clientname^7 was banned by $adminname^7 $reason'), allow_blank=False)
 
         if '%s' in self.read_element('messages', 'banned', '%s'):
-            self.add_set("banned", "$clientname^7 was banned $reason")
+            self.add_set("banned", "$clientname^7 was banned $reason", allow_blank=False)
         else:
-            self.add_set("banned", self.read_element('messages', 'banned', '$clientname^7 was banned $reason'))
+            self.add_set("banned", self.read_element('messages', 'banned', '$clientname^7 was banned $reason'), allow_blank=False)
 
         if '%s' in self.read_element('messages', 'temp_banned_by', '%s'):
-            self.add_set("temp_banned_by", "$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason")
+            self.add_set("temp_banned_by", "$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason", allow_blank=False)
         else:
-            self.add_set("temp_banned_by",
-                         self.read_element('messages',
-                                           'temp_banned_by',
-                                           '$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason'))
+            self.add_set("temp_banned_by", self.read_element('messages', 'temp_banned_by', '$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason'), allow_blank=False)
 
         if '%s' in self.read_element('messages', 'temp_banned', '%s'):
-            self.add_set("temp_banned", "$clientname^7 was temp banned for $banduration^7 $reason")
+            self.add_set("temp_banned", "$clientname^7 was temp banned for $banduration^7 $reason", allow_blank=False)
         else:
-            self.add_set("temp_banned", self.read_element('messages', 'temp_banned',
-                                                          '$clientname^7 was temp banned for $banduration^7 $reason'))
+            self.add_set("temp_banned", self.read_element('messages', 'temp_banned', '$clientname^7 was temp banned for $banduration^7 $reason'), allow_blank=False)
 
         if '%s' in self.read_element('messages', 'unbanned_by', '%s'):
-            self.add_set("unbanned_by", "$clientname^7 was un-banned by $adminname^7 $reason")
+            self.add_set("unbanned_by", "$clientname^7 was un-banned by $adminname^7 $reason", allow_blank=False)
         else:
-            self.add_set("unbanned_by", self.read_element('messages', 'unbanned_by',
-                                                          '$clientname^7 was un-banned by $adminname^7 $reason'))
+            self.add_set("unbanned_by", self.read_element('messages', 'unbanned_by', '$clientname^7 was un-banned by $adminname^7 $reason'), allow_blank=False)
 
         if '%s' in self.read_element('messages', 'unbanned', '%s'):
-            self.add_set("unbanned", "$clientname^7 was un-banned $reason")
+            self.add_set("unbanned", "$clientname^7 was un-banned $reason", allow_blank=False)
         else:
-            self.add_set("unbanned", self.read_element('messages', 'unbanned', '$clientname^7 was un-banned $reason'))
+            self.add_set("unbanned", self.read_element('messages', 'unbanned', '$clientname^7 was un-banned $reason'), allow_blank=False)
 
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
 
         # plugins settings
-        self.add_buffer('\n--PLUGIN CONFIG PATH--------------------------------------------\n')
+        self.add_buffer("""\n--------------------------- PLUGIN CONFIG PATH --------------------------------\n""")
+
         xml.start("settings", name="plugins")
-        self.add_set("external_dir", self.read_element('plugins', 'external_dir', '@b3/extplugins'))
+        self.add_set("external_dir", self.read_element('plugins', 'external_dir', '@b3/extplugins'),
+                     explanation="The directory where external plugins may be found",
+                     allow_blank=False,
+                     validate=lambda x: os.path.isdir(self.getAbsolutePath(x)))
         xml.data("\n\t")
         xml.end()
         xml.data("\n\t")
 
         # plugins
-        self.add_buffer('\n--INSTALLING PLUGINS--------------------------------------------\n')
+        self.add_buffer("""\n--------------------------- INSTALLING PLUGINS --------------------------------\n""")
+
         xml.start("plugins")
         xml.data("\n\t\t")
-        xml.comment("Plugin order is important: plugins that add new in-game commands all depend on the admin plugin. "
-                    "Make sure to have the admin plugin before them.")
+        xml.comment("""
+            You can load a plugin but having it disabled by default. This
+            allows to later enabled it ingame with the !enable command. To do so use the following syntax:\n
+                plugin name=\"adv\" config=\"@conf/plugin_adv.xml\" disabled=\"yes\"\n
+            You can override the plugin path (official plugins and extplugins folders)
+            by specifying the exact location of the plugin file with the 'path' attribute:\n
+                plugin name=\"adv\" config=\"@conf/plugin_adv.xml\" path=\"C:/somewhere/else/\"
+        """)
+
         self.autoinstallplugins = self.raw_default("Do you want to (auto)install all plugins?", "yes")
         if self.autoinstallplugins == 'yes':
             self.read_plugins()
-            # check if we are using a template
-            if self._templatevar == 'template':
-                self.installextplugins = self.raw_default(
-                    "Would you like me to download and install extra, game specific plugins?", "no")
-                if self.installextplugins == 'yes':
-                    self.read_plugins('extplugins')
         else:
-            self.add_plugin("censor", "@conf/plugin_censor.xml")
-            self.add_plugin("spamcontrol", "@conf/plugin_spamcontrol.xml")
-            self.add_plugin("admin", "@conf/plugin_admin.ini",
-                            explanation="the admin plugin is compulsory.",
-                            prompt=False)
-            self.add_plugin("tk", "@conf/plugin_tk.xml")
-            self.add_plugin("stats", "@conf/plugin_stats.xml")
-            self.add_plugin("pingwatch", "@conf/plugin_pingwatch.xml")
+            self.add_plugin("admin", "@conf/plugin_admin.ini", prompt=False)
             self.add_plugin("adv", "@conf/plugin_adv.xml")
-            self.add_plugin("status", "@conf/plugin_status.xml")
-            self.add_plugin("welcome", "@conf/plugin_welcome.xml")
-            if self._set_punkbuster == "on":
-                self.add_plugin("punkbuster", "@conf/plugin_punkbuster.xml")
+            self.add_plugin("censor", "@conf/plugin_censor.xml")
+            self.add_plugin("cmdmanager", "@conf/plugin_cmdmanager.ini")
+            self.add_plugin("pingwatch", "@conf/plugin_pingwatch.ini")
+            self.add_plugin("spamcontrol", "@conf/plugin_spamcontrol.ini")
+            self.add_plugin("stats", "@conf/plugin_stats.ini")
+            self.add_plugin("status", "@conf/plugin_status.ini")
+            self.add_plugin("tk", "@conf/plugin_tk.ini")
+            self.add_plugin("welcome", "@conf/plugin_welcome.ini")
+
+            if self._set['punkbuster'] == "on":
+                self.add_plugin("punkbuster", "@conf/plugin_punkbuster.ini")
                 xml.data("\n\t\t")
             else:
                 xml.data("\n\t\t")
-                xml.comment("The punkbuster plugin was not installed since punkbuster is not supported or disabled.")
+                xml.comment("The punkbuster plugin was not installed since punkbuster is not supported or disabled")
                 xml.data("\t\t")
 
-            # ext plugins
-            xml.comment("The next plugins are external, 3rd party plugins and should reside "
-                        "in the external_dir. Example:")
-            xml.data("\t\t")
-            xml.comment("plugin config=\"@b3/extplugins/conf/newplugin.xml\" name=\"newplugin\"")
-            _result = self.add_plugin("xlrstats", self._set_external_dir + "/conf/xlrstats.xml", default="no")
-            if _result:
-                self.execute_sql('@b3/sql/xlrstats.sql', self._set_database)
+        # install the plugin
+        xml.comment("""
+            The next plugins are external, 3rd party plugins and should reside in the external_dir. Example:
+                plugin name=\"newplugin\" config=\"@b3/extplugins/newplugin/conf/pluigin_newplugin.ini\"
+            You can add new/custom plugins to this list using the same form as above
+        """)
 
-        # final comments
-        xml.data("\n\t\t")
-        xml.comment("You can add new/custom plugins to this list using the same form as above.")
-        xml.data("\t")
+        test = self.raw_default("Install xlrstats plugin? (yes/no)", 'no', allow_blank=False, validate=lambda x: x.lower() in ('yes', 'y', 'no', 'n'))
+        if test.lower() in ('yes', 'y'):
+            self.add_plugin("xlrstats", "@b3/extplugins/xlrstats/conf/plugin_xlrstats.ini", prompt=False)
+
+        xml.data("\n\t")
         xml.end()
-
         xml.data("\n")
         xml.close(configuration)
         xml.flush()
-        self.add_buffer('\n--FINISHED CONFIGURATION----------------------------------------\n')
-        self.test_exit(_question='Done, [Enter] to finish setup')
 
-    def load_template(self):
+        self.add_buffer("""\n------------------------- FINISHED CONFIGURATION ------------------------------\n""")
+        self.test_exit(question='Press [Enter] to finish setup')
+
+    def load_template(self, parser):
         """
         Load an existing config file or use the packaged examples.
+        :param parser: The parser being used.
+        :return True if we loaded a template, False otherwise
         """
-        if os.path.exists('b3/conf'):
-            self._configpath = 'b3/'
-        # perhaps setup is executed directly
-        elif os.path.exists('conf/'):
-            self._configpath = ''
+        if os.path.isdir(os.path.join(self.getB3Path(), 'conf')):
+            self._configpath = self.getB3Path()
         elif functions.main_is_frozen():
-            self._configpath = os.environ['ALLUSERSPROFILE'] + '/BigBrotherBot/'
+            self._configpath = os.path.join(os.environ['ALLUSERSPROFILE'], 'BigBrotherBot')
         else:
-            self._configpath = self.raw_default(
-                "Could not locate the config folder, please provide the full path (using /)").rstrip('/') + '/'
+            # we cannot identify the configuration folder so we can't use a template
+            self._configpath = self.raw_default("Could not locate the config folder, please provide the full system path")
+            self.writebuffer()
 
-        # load the template based on the parser the user just chose
-        _dflttemplate = self._configpath + 'conf/templates/b3.' + self._set_parser + '.tpl'
+        self._configpath = functions.right_cut(self._configpath, os.path.sep)
+
+        # load the template based on the parser the user just selected
+        default_tpl = os.path.join(self._configpath, 'conf', 'templates', 'b3.%s.tpl' % parser)
         self._templatevar = 'template'
-        if not os.path.exists(_dflttemplate):
-            _dflttemplate = self._configpath + 'conf/b3.distribution.xml'
+        if not os.path.isfile(default_tpl):
+            # if there is not a template available, use the distribution xml file
+            default_tpl = os.path.join(self._configpath, 'conf', 'b3.distribution.xml')
             self._templatevar = 'distribution'
 
         if self._template != '':
             # means we just backed-up an old config with the same name
-            _result = self.raw_default("Do you want to use the values from the backed-up config (%s)?"
-                                       % self._template, "yes")
-            if _result != 'yes':
-                self._template = self.raw_default("Load values from a template", _dflttemplate)
+            result = self.raw_default("Load values from the backed-up config (%s)?" % self._template, "yes", validate=lambda x: x.lower() in ('yes', 'y', 'no', 'n'))
+            if result.lower() != 'yes' and result.lower() != 'y':
+                self._template = self.raw_default("Load values from a template", default_tpl)
+                self.writebuffer()
             else:
                 self._templatevar = 'backup'
+                self.writebuffer()
         else:
-            self._template = self.raw_default("Load values from a template", _dflttemplate)
+            self._template = self.raw_default("Load values from a template", default_tpl)
+            self.writebuffer()
 
         self._template = self.getAbsolutePath(self._template)
+
         try:
             self.tree = ElementTree.parse(self._template)
-            return True
         except Exception, msg:
-            self.add_buffer('Could not parse xml file: %s\n' % msg)
+            self.add_buffer('Could not parse XML file: %s\n' % str(msg))
             # backed up config file must be corrupt or not completed last setup, reset it to the default
-            self.add_buffer('Your previous config file was either empty, corrupt or not finished.\
-             I Suggest we load the default...\n')
+            self.add_buffer('If you have troubles loading a backup configuration file, try to load the default...\n')
             self._template = ''
             return False
+        else:
+            return True
 
     def read_element(self, _set, _value, _default=''):
         """
@@ -618,40 +639,32 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
                         return v.text
         return _default
 
-    def read_plugins(self, _psection='plugins'):
+    def read_plugins(self):
         """
         Writes plugins to the config read from a template.
         """
-        l = list(self.tree.findall(_psection))
+        l = list(self.tree.findall('plugins'))
         for s in l:
             plugins = list(s.findall('plugin'))
             for p in plugins:
-                _name = p.attrib['name']
+                name = p.attrib['name']
                 try:
-                    _config = p.attrib['config']
-                    if _config[:12] == 'external_dir':
-                        _config = ''.join((self._set_external_dir, _config[12:]))
+                    config = p.attrib['config']
+                    if config[:12] == 'external_dir':
+                        config = ''.join((self._set['external_dir'], config[12:]))
                 except:
-                    _config = None
-                try:
-                    # do we need to install database tables?
-                    _sql = p.attrib['sql']
-                except:
-                    _sql = None
-                try:
-                    # lets see if there is a plugin to download
-                    _dl = p.attrib['dlocation']
-                except:
-                    _dl = None
-                self.add_plugin(_name, _config, down_url=_dl, sql=_sql, prompt=False)
+                    config = None
+                self.add_plugin(name, config, prompt=False)
         return None
 
-    def add_explanation(self, etext):
+    @staticmethod
+    def add_explanation(etext):
         """
         Add an explanation to the question asked by the setup procedure.
         """
-        _prechar = "> "
-        print _prechar + etext
+        # fix XML formatting which looks weird in console sys.out
+        for line in ('%s\n' % etext).split('\n'):
+            print line.strip()
 
     def add_buffer(self, addition, autowrite=True):
         """
@@ -674,10 +687,15 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
         """
         return (self._equalength - len(unicode(_string))) * " "
 
-    def add_set(self, sname, sdflt, explanation="", silent=False, allow_blank=None):
+    def add_set(self, sname, sdflt, explanation="", silent=False, allow_blank=None, validate=None):
         """
         A routine to add a setting with a textnode to the config
-        Usage: self.add_set(name, default value optional-explanation)
+        :param sname: The set name.
+        :param sdflt: The set default value
+        :param explanation: An help text to prompt to the user
+        :param silent: Whether we have to hide the value entered from the buffer
+        :param allow_blank: Whether we can accept an empty value for this set or not
+        :param validate: The reference to a function that will validate the correctness of the input value
         """
         xml.data("\n\t\t")
         if explanation != "":
@@ -685,86 +703,159 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
             xml.comment(explanation)
             xml.data("\t\t")
         if not silent:
-            _value = self.raw_default(sname, sdflt, allow_blank)
+            _value = self.raw_default(prompt=sname, dflt=sdflt, allow_blank=allow_blank, validate=validate)
         else:
             _value = sdflt
 
         xml.element("set", _value, name=sname)
-        # store values into a variable for later use ie. enabling the punkbuster plugin.
-        exec("self._set_" + str(sname) + " = \"" + unicode(_value) + "\"")
+
+        # store values for later use ie. enabling the punkbuster plugin
+        self._set[str(sname)] = str(_value)
+
         if not silent:
             self.add_buffer(str(sname) + self.equalize(sname) + ": " + unicode(_value) + "\n")
 
-    def add_plugin(self, sname, sconfig=None, explanation=None, default="yes", down_url=None, sql=None, prompt=True):
+    def add_plugin(self, sname, sconfig=None, default="yes", prompt=True):
         """
         A routine to add a plugin to the config
-        Usage: self.add_plugin(pluginname, default-configfile, optional-explanation, default-entry,
-                               optional-downloadlocation, optional-prompt)
         """
         if prompt:
-            _q = "Install %s plugin? (yes/no)" % sname
-            _test = self.raw_default(_q, default)
-            if _test != "yes":
+            test = self.raw_default("Install %s plugin? (yes/no)" % sname, default, allow_blank=False, validate=lambda x: x.lower() in ('yes', 'y', 'no', 'n'))
+            if test.lower() not in ('yes', 'y'):
                 return False
 
-        if down_url:
-            self.add_buffer('  ... getting external plugin %s:\n' % sname)
-            try:
-                self.download(sname, down_url)
-            except:
-                self.add_buffer("Couldn't get remote plugin %s, please install it manually.\n" % sname)
-
-        if sql:
-            self.add_buffer('  ... installing databasetables (%s)\n' % sql)
-            _result = self.execute_sql('@b3/sql/%s' % sql, self._set_database)
-            if _result == 'notfound':
-                self.add_buffer('  ... %s not found! Install database tables manually!\n' % sql)
-            elif _result == 'couldnotopen':
-                self.add_buffer('  ... unable to open %s! Install database tables manually!\n' % sql)
-            elif not _result:
-                self.add_buffer('  ... cannot execute %s! Install database tables manually!\n' % sql)
-
-        if explanation:
-            self.add_explanation(explanation)
-
         if self.autoinstallplugins:
-            _config = sconfig
+            config = sconfig
         else:
-            _config = self.raw_default("config", sconfig)
+            config = self.raw_default("Enter plugin %s configuration file path" % sname, sconfig)
 
         xml.data("\n\t\t")
-        if not _config:
+        if not config:
             xml.element("plugin", name=sname)
             self.add_buffer("plugin: " + str(sname) + "\n")
         else:
-            xml.element("plugin", name=sname, config=_config)
-            self.add_buffer("plugin: " + str(sname) + ", config: " + str(_config) + "\n")
+            xml.element("plugin", name=sname, config=config)
+            self.add_buffer("plugin: " + str(sname) + ", config: " + str(config) + "\n")
         return True
 
-    def raw_default(self, prompt, dflt=None, allow_blank=None):
+    def raw_default(self, prompt, dflt=None, allow_blank=None, validate=None):
         """
         Prompt user for input and don't accept an empty value.
+        :param prompt: The value to be entered
+        :param dflt: An optional default value
+        :param allow_blank: Whether to accept blank values or not
+        :param validate: The reference to a function that will validate the correctness of the input value
         """
         if dflt:
-            prompt = "%s [%s]" % (prompt, dflt)
+            newprompt = "%s [%s]" % (prompt, dflt)
         else:
-            prompt = "%s" % prompt
-        res = raw_input(prompt + self.equalize(prompt) + ": ")
-        if not res and dflt:
+            newprompt = "%s" % prompt
+
+        res = raw_input(newprompt + self.equalize(newprompt) + ": ")
+
+        # backup using default if necessary
+        if self.is_empty(res) and dflt:
             res = dflt
-        if res == "":
-            if allow_blank:
-                _yntest = self.raw_default("No value was entered! Would you leave this value blank?", "no")
-                if _yntest != 'yes':
-                    res = self.raw_default(prompt, dflt, allow_blank=True)
+
+        if self.is_empty(res):
+            # if we have an empty value check if we actually can accept it
+            if not allow_blank:
+                # if we can't accept it, keep prompting the same question
+                res = self.raw_default(prompt=prompt, dflt=dflt, allow_blank=allow_blank, validate=validate)
             else:
-                print "ERROR: No value was entered! Give it another try!"
-                res = self.raw_default(prompt, dflt)
-        if not allow_blank:
-            self.test_exit(res)
+                res = ''
+        else:
+            if validate and callable(validate):
+                if not validate(res):
+                    # if we can't accept it, keep prompting the same question
+                    res = self.raw_default(prompt=prompt, dflt=dflt, allow_blank=allow_blank, validate=validate)
         return res
 
-    def clearscreen(self):
+    def backup_file(self, _file):
+        """
+        Create a backup of an existing config file.
+        :param _file: The configuration file to backup
+        """
+        if os.path.isfile(_file):
+            print "File " + _file + " already exists : creating backup..."
+            try:
+                stamp = time.strftime("-%d_%m_%Y_%H.%M.%S", time.gmtime())
+                fname = functions.right_cut(_file, '.xml') + stamp + ".xml"
+                functions.copy_file(_file, fname)
+                print "Successfully created backup file : " + fname
+                print "If you need to abort the setup procedure, you can restore by renaming the backup file."
+                self._template = fname
+                self.test_exit()
+            except Exception, e:
+                print "Could not create backup file: %s\n" % str(e)
+                self.test_exit()
+
+
+    def introduction(self):
+        """
+        Display the setup introduction.
+        """
+        def print_head():
+            self.clearscreen()
+            print """
+                        _\|/_
+                        (o o)    {:>32}
+                +----oOO---OOo----------------------------------+
+                |                                               |
+                |      WELCOME TO THE B3 SETUP PROCEDURE        |
+                |                                               |
+                +-----------------------------------------------+
+
+            """.format('B3 : %s' % __version__)
+
+        print_head()
+        print "We're about to generate a main configuration file for BigBrotherBot (B3).\n" \
+              "This procedure is initiated when:\n\n" \
+              "  1. You run B3 with the option --setup or -s\n" \
+              "  2. The configuration file you're trying to run does not exist\n" \
+              "  3. You did not modify the distributed b3.xml prior starting B3"
+        self.test_exit()
+        print_head()
+        print "We will prompt you for each setting.\n" \
+              "We'll also provide default values inside [...] if applicable.\n" \
+              "When you want to accept default value you will only need to press [Enter].\n" \
+              "If you make an error at any stage, you can abort the setup procedure by\n" \
+              "typing 'abort' at the prompt. You can start over by running B3 with the\n" \
+              "setup option: python b3_run.py --setup"
+        self.test_exit()
+        print_head()
+        print "First you will be prompted for a location and name for this configuration file.\n" \
+              "This is for multiple server setups, or if you want to run B3 from a different\n" \
+              "setup file for your own reasons. In a basic single instance install you will\n" \
+              "not have to change this location and/or name. If a configuration file exists\n" \
+              "we will make a backup first and tag it with date and time, so you can always\n" \
+              "revert to a previous version of the config file.\n\n" \
+              "Bugs and suggestions may be reported on our forums at www.bigbrotherbot.net"
+        self.test_exit(question='[Enter] to continue to generate the configuration file...')
+
+    @staticmethod
+    def test_exit(key='',
+                  question='[Enter] to continue, \'abort\' to abort Setup: ',
+                  exitmessage='Setup aborted, run python b3_run.py -s to restart the procedure.'):
+        """
+        Test the input for an exit code, give the user an option to abort setup.
+        """
+        if key == '':
+            key = raw_input('\n' + question)
+        if key != 'abort':
+            print "\n"
+            return
+        else:
+            raise SystemExit(exitmessage)
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  UTILITIES                                                                                                     ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
+    @staticmethod
+    def clearscreen():
         """
         Clear the shell screen
         """
@@ -773,158 +864,16 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
         else:
             os.system('clear')
 
-    def backup_file(self, _file):
+    @staticmethod
+    def is_empty(value):
         """
-        Create a backup of an existing config file.
-        :param _file: The configuration file to backup
+        Test whether an input value is empty
+        :param value: The value to test
         """
-        print "\n--BACKUP/CREATE CONFIGFILE--------------------------------------"
-        print "    Trying to backup the original " + _file + "..."
-        if not os.path.exists(_file):
-            print "    No backup needed."
-            print "    A file with this location/name does not yet exist,"
-            print "    I'm about to generate a new config file!"
-            self.test_exit()
-        else:
-            try:
-                _stamp = time.strftime("-%d_%b_%Y_%H.%M.%S", time.gmtime())
-                _fname = _file.rstrip(".xml") + _stamp + ".xml"
-                shutil.copy(_file, _fname)
-                print "    Backup success, " + _file + " copied to : %s" % _fname
-                print "    If you need to abort setup, you can restore by renaming the backup file."
-                # a config with this name already exists, use it as a template
-                self._template = _fname
-                self.test_exit()
-            except OSError, why:
-                print "\n    Error : %s\n" % str(why)
-                self.test_exit()
+        return not value or not value.strip()
 
-    def introduction(self):
-        """
-        Display the setup introduction.
-        """
-        try:
-            _uname = platform.uname()[1] + ", "
-        except:
-            _uname = "admin, "
-
-        self.clearscreen()
-        print "    WELCOME " + _uname + "TO THE B3 SETUP PROCEDURE"
-        print "----------------------------------------------------------------"
-        print "We're about to generate a main configuration file for "
-        print "BigBrotherBot. This procedure is initiated when:\n"
-        print " 1. you run B3 with the option --setup or -s"
-        print " 2. the config you're trying to run does not exist"
-        print "    (" + self._config + ")"
-        print " 3. you did not modify the distributed b3.xml prior to"
-        print "    starting B3."
-        self.test_exit()
-        print "We will prompt you for each setting. We'll also provide default"
-        print "values inside [] if applicable. When you want to accept a"
-        print "default value you will only need to press Enter."
-        print ""
-        print "If you make an error at any stage, you can abort the setup"
-        print "procedure by typing \'abort\' at the prompt. You can start"
-        print "over by running B3 with the setup option: python b3_run.py -s"
-        self.test_exit()
-        print "First you will be prompted for a location and name for this"
-        print "configuration file. This is for multiple server setups, or"
-        print "if you want to run B3 from a different setup file for your own"
-        print "reasons. In a basic single instance install you will not have to"
-        print "change this location and/or name. If a configuration file exists"
-        print "we will make a backup first and tag it with date and time, so"
-        print "you can always revert to a previous version of the config file."
-        print ""
-        print "This procedure is new, bugs may be reported on our forums at"
-        print "www.bigbrotherbot.net"
-        self.test_exit(_question='[Enter] to continue to generate the configfile...')
-
-    def test_exit(self, _key='', _question='[Enter] to continue, \'abort\' to abort Setup: ',
-                  _exitmessage='Setup aborted, run python b3_run.py -s to restart the procedure.'):
-        """
-        Test the input for an exit code, give the user an option to abort setup.
-        """
-        if _key == '':
-            _key = raw_input('\n' + _question)
-        if _key != 'abort':
-            print "\n"
-            return
-        else:
-            raise SystemExit(_exitmessage)
-
-    def connect_to_database(self, dbstring):
-        """
-        Establish a connection with the database.
-        :param dbstring: The database connection string
-        """
-        _db = None
-        _dsndict = functions.splitDSN(dbstring)
-        if _dsndict['protocol'] == 'mysql':
-            try:
-                import pymysql
-            except ImportError:
-                # debian wheezy has python-mysql.connector instead of pymysql
-                try:
-                    import mysql.connector as pymysql
-                except ImportError:
-                    pymysql = None # just to remove a warning
-                    self.add_buffer("You need to install 'pymysql' or 'python-mysql.connector': look for 'dependencies' in B3 documentation.\n")
-                    raise SystemExit()
-            try:
-                _db = pymysql.connect(host=_dsndict['host'],
-                                      port=_dsndict['port'],
-                                      user=_dsndict['user'],
-                                      password=_dsndict['password'],
-                                      database=_dsndict['path'][1:],
-                                      charset="utf8",
-                                      use_unicode=True)
-            except Exception:
-                try:
-                    _db.close()
-                except Exception:
-                    pass
-        else:
-            self.add_buffer("%s protocol is not supported: use mysql instead.\n" % _dsndict['protocol'])
-            self.test_exit(_question='Do you still want to continue? [Enter] to continue, \'abort\' to abort Setup: ')
-        return _db
-
-    def execute_sql(self, filepath, dbstring):
-        """
-        This method executes an external sql file on the current database.
-        :param filepath: The path of the file to execute
-        :param dbstring: The database connection string
-        """
-        self.db = self.connect_to_database(dbstring)
-        sqlfile = file
-        if self.db:
-            self.add_buffer('Connected to the database: executing sql file %s\n' % filepath)
-            sqlfile = self.getAbsolutePath(filepath)
-            if os.path.exists(sqlfile):
-                try:
-                    f = open(sqlfile)
-                except Exception:
-                    self.db.close()
-                    return 'couldnotopen'
-                sql_text = f.read()
-                f.close()
-                sql_statements = sql_text.split(';')
-                for s in sql_statements:
-                    try:
-                        self.db.query(s)
-                    except Exception:
-                        pass
-                self.db.close()
-            else:
-                self.db.close()
-                return 'notfound'
-        else:
-            self.add_buffer('Connection to the database failed. '
-                            'Check the documentation how to add the database tables from %s manually.\n' % sqlfile)
-            self.test_exit(_question='Do you still want to continue? [Enter] to continue, \'abort\' to abort Setup: ')
-
-        return 'success'
-
-    def get_b3_path(self):
+    @staticmethod
+    def getB3Path():
         """
         Return the B3 absolute path.
         """
@@ -938,194 +887,155 @@ Define your game: cod/cod2/cod4/cod5/cod6/cod7/cod8
         Return an absolute path name and expand the user prefix (~).
         """
         if path[0:4] == '@b3/':
-            path = os.path.join(self.get_b3_path(), path[4:])
+            path = os.path.join(self.getB3Path(), path[4:])
         return os.path.normpath(os.path.expanduser(path))
 
-    def url2name(self, url):
+    @staticmethod
+    def url2name(url):
         return os.path.basename(urlsplit(url)[2])
-
-    def download(self, plugin_name, url, local_file_name=None):
-        abspath = self.getAbsolutePath(self._set_external_dir)
-        localname = self.url2name(url)
-        req = urllib2.Request(url)
-        try:
-            r = urllib2.urlopen(req)
-            self.add_buffer('  ... downloading %s ...\n' % url)
-        except Exception, msg:
-            self.add_buffer('  ... download failed: %s\n' % msg)
-            return None
-
-        if 'Content-Disposition' in r.info():
-            # If the response has Content-Disposition, we take file name from it
-            localname = r.info()['Content-Disposition'].split('filename=')[1]
-            if localname[0] == '"' or localname[0] == "'":
-                localname = localname[1:-1]
-        elif r.url != url:
-        # if we were redirected, the real file name we take from the final URL
-            localname = self.url2name(r.url)
-        if local_file_name:
-        # we can force to save the file as specified name
-            localname = local_file_name
-
-        packagelocation = abspath + "/packages/"
-        localname = packagelocation + localname
-        if not os.path.isdir(packagelocation):
-            os.mkdir(packagelocation)
-        f = open(localname, 'wb')
-        f.write(r.read())
-        f.close()
-        tempextractdir = packagelocation + "/temp/"
-        self.extract(localname, tempextractdir)
-        # move the appropriate files to the correct folders
-        for root, dirs, files in os.walk(tempextractdir):
-            # move all available .py files to the extplugins folder
-            if root[-10:] == 'extplugins':
-                for data in glob.glob(root + '/*.py'):
-                    shutil.copy2(data, abspath)
-            if root.endswith(os.path.join('extplugins', plugin_name)):
-                # some plugin have a directory as the plugin module
-                os.mkdir(os.path.join(abspath, plugin_name))
-                for data in glob.glob(root + '/*.py'):
-                    shutil.copy2(data, os.path.join(abspath, plugin_name))
-            # move the config files to the extplugins/conf folder
-            if root[-4:] == 'conf':
-                for data in glob.glob(root + '/*.xml'):
-                    ## @TODO: downloading an extplugin for the second time will overwrite the existing extplugins config
-                    shutil.copy2(data, abspath + '/conf/')
-            # check for .sql files and move them to the global sql folder
-            for data in glob.glob(root + '/*.sql'):
-                shutil.copy2(data, self.getAbsolutePath('@b3/sql/'))
-        # remove the tempdir and its content
-        shutil.rmtree(tempextractdir)
-        # os.remove(localname)
-
-    def extract(self, _file, _dir):
-        if not _dir.endswith(':') and not os.path.exists(_dir):
-            os.mkdir(_dir)
-        zf = zipfile.ZipFile(_file)
-        zf.extractall(path=_dir)
 
 
 class Update(Setup):
     """
     This class holds all update methods for the database.
     """
-    def __init__(self, config=None):
+    def __init__(self, conf=None):
         """
         Object constructor.
-        :param config: The B3 configuration file instance
+        :param conf: The B3 configuration file instance
         """
-        self.add_buffer('Updating the B3 database\n')
-        self.add_buffer('------------------------\n')
-        if config:
-            self._config = config
-        elif self.get_b3_path() != "":
-            self._config = self.get_b3_path() + r'/conf/b3.xml'
-        if os.path.exists(self._config):
-            self.add_buffer('Using configfile: %s\n' % self._config)
-            import config
-            _conf = config.load(self._config)
-        else:
-            raise SystemExit('Configfile not found, create one first (run setup) or correct the startup parameter.')
+        print """
+                        _\|/_
+                        (o o)    {:>32}
+                +----oOO---OOo----------------------------------+
+                |                                               |
+                |             UPDATING B3 DATABASE              |
+                |                                               |
+                +-----------------------------------------------+
 
-        _dbstring = _conf.get('b3', 'database')
+        """.format('B3 : %s' % __version__)
+
+        if conf:
+            self._config = os.path.normpath(conf)
+        elif self.getB3Path() != "":
+            self._config = os.path.join(self.getB3Path(), 'conf', 'b3.xml')
+
+        if os.path.exists(self._config):
+            import config
+            cfg = config.load(self._config)
+            print 'Using configuration file: %s\n' % self._config
+        else:
+            raise SystemExit('Configuration file not found: please start B3 using "python b3_run.py --setup" to create one')
+
+        dsn = cfg.get('b3', 'database')
+        dsndict = splitDSN(dsn)
+        database = storage.getStorage(dsn, dsndict, StubConsole())
+
         _currentversion = version.LooseVersion(__version__)
-        self.add_buffer('Current B3 version: %s\n' % _currentversion)
+        print 'Current B3 version: %s\n' % _currentversion
 
         # update to v1.3.0
         if _currentversion >= '1.3.0':
-            self.execute_sql('@b3/sql/b3-update-1.3.0.sql', _dbstring)
-            self.add_buffer('Updating database to version 1.3.0...\n')
-        else:
-            self.add_buffer('Version older than 1.3.0...\n')
+            # update only if SQL file exists (some protocols do not have to update since they are new)
+            if os.path.isfile(self.getAbsolutePath('@b3/sql/%s/b3-update-1.3.0.sql' % dsndict['protocol'])):
+                try:
+                    print 'Updating database to version 1.3.0...'
+                    database.queryFromFile('@b3/sql/%s/b3-update-1.3.0.sql' % dsndict['protocol'])
+                except Exception, msg:
+                    print "WARNING: could not update database to version 1.3.0 properly: %s" % str(msg)
+                    self.test_exit("[Enter] to continue update procedure, \'abort\' to quit")
 
         # update to v1.6.0
         if _currentversion >= '1.6.0':
-            self.execute_sql('@b3/sql/b3-update-1.6.0.sql', _dbstring)
-            self.add_buffer('Updating database to version 1.6.0...\n')
-        else:
-            self.add_buffer('Version older than 1.6.0...\n')
+            # update only if SQL file exists (some protocols do not have to update since they are new)
+            if os.path.isfile(self.getAbsolutePath('@b3/sql/%s/b3-update-1.6.0.sql' % dsndict['protocol'])):
+                try:
+                    print 'Updating database to version 1.6.0...'
+                    database.queryFromFile('@b3/sql/%s/b3-update-1.6.0.sql' % dsndict['protocol'])
+                except Exception, msg:
+                    print "WARNING: could not update database to version 1.6.0 properly: %s" % str(msg)
+                    self.test_exit("[Enter] to continue update procedure, \'abort\' to quit")
 
         # update to v1.7.0
         if _currentversion >= '1.7.0':
-            self.execute_sql('@b3/sql/b3-update-1.7.0.sql', _dbstring)
-            self.add_buffer('Updating database to version 1.7.0...\n')
-        else:
-            self.add_buffer('Version older than 1.7.0...\n')
+            # update only if SQL file exists (some protocols do not have to update since they are new)
+            if os.path.isfile(self.getAbsolutePath('@b3/sql/%s/b3-update-1.7.0.sql' % dsndict['protocol'])):
+                try:
+                    print 'Updating database to version 1.7.0...'
+                    database.queryFromFile('@b3/sql/%s/b3-update-1.7.0.sql' % dsndict['protocol'])
+                except Exception, msg:
+                    print "WARNING: could not update database to version 1.7.0 properly: %s" % str(msg)
+                    self.test_exit("[Enter] to continue update procedure, \'abort\' to quit")
 
         # update to v1.8.1
         if _currentversion >= '1.8.1':
-            self.execute_sql('@b3/sql/b3-update-1.8.1.sql', _dbstring)
-            self.add_buffer('Updating database to version 1.8.1...\n')
-        else:
-            self.add_buffer('Version older than 1.8.1...\n')
+            # update only if SQL file exists (some protocols do not have to update since they are new)
+            if os.path.isfile(self.getAbsolutePath('@b3/sql/%s/b3-update-1.8.1.sql' % dsndict['protocol'])):
+                try:
+                    print 'Updating database to version 1.8.1...'
+                    database.queryFromFile('@b3/sql/%s/b3-update-1.8.1.sql' % dsndict['protocol'])
+                except Exception, msg:
+                    print "WARNING: could not update database to version 1.8.1 properly: %s" % str(msg)
+                    self.test_exit("[Enter] to continue update procedure, \'abort\' to quit")
 
         # update to v1.9.0
         if _currentversion >= '1.9.0':
-            self.execute_sql('@b3/sql/b3-update-1.9.0.sql', _dbstring)
-            self.add_buffer('Updating database to version 1.9.0...\n')
-        else:
-            self.add_buffer('Version older than 1.9.0...\n')
+            # update only if SQL file exists (some protocols do not have to update since they are new)
+            if os.path.isfile(self.getAbsolutePath('@b3/sql/%s/b3-update-1.9.0.sql' % dsndict['protocol'])):
+                try:
+                    print 'Updating database to version 1.9.0...'
+                    database.queryFromFile('@b3/sql/%s/b3-update-1.9.0.sql' % dsndict['protocol'])
+                except Exception, msg:
+                    print "WARNING: could not update database to version 1.9.0 properly: %s" % str(msg)
+                    self.test_exit("[Enter] to continue update procedure, \'abort\' to quit")
 
-        # update to v1.10.0
         if _currentversion >= '1.10.0':
-            self.execute_sql('@b3/sql/b3-update-1.10.0.sql', _dbstring)
-            self.add_buffer('Updating database to version 1.10.0...\n')
-        else:
-            self.add_buffer('Version older than 1.10.0...\n')
+            # update only if SQL file exists (some protocols do not have to update since they are new)
+            if os.path.isfile(self.getAbsolutePath('@b3/sql/%s/b3-update-1.10.0.sql' % dsndict['protocol'])):
+                try:
+                    print 'Updating database to version 1.10.0...'
+                    database.queryFromFile('@b3/sql/%s/b3-update-1.10.0.sql' % dsndict['protocol'])
+                except Exception, msg:
+                    print "WARNING: could not update database to version 1.10.0 properly: %s" % str(msg)
+                    self.test_exit("[Enter] to continue update procedure, \'abort\' to quit")
 
-        # need to update xlrstats?
-        #_result = self.raw_default('Do you have xlrstats installed (with default table names)?', 'yes')
-        #if _result == 'yes':
-        #    self.execute_sql('@b3/sql/xlrstats-update-2.0.0.sql', _dbstring)
-        #    self.execute_sql('@b3/sql/xlrstats-update-2.4.0.sql', _dbstring)
-        #    self.execute_sql('@b3/sql/xlrstats-update-2.6.1.sql', _dbstring)
+        raise SystemExit('Update finished: restart B3 to continue')
 
-        #self.db = self.connect_to_database(_dbstring)
-        #self.optimize_tables()
-        #self.db.close()
 
-        raise SystemExit('Update finished: restart B3 to continue.')
+class StubConsole(object):
+    """
+    This class is needed to we can make use of the storage module which usually accepts a console in input.
+    Since the console object is being used just for logging facilities, we'll create a stub one which fakes log methods
+    """
+    @staticmethod
+    def bot(self, msg, *args, **kwargs):
+        pass
 
-    def show_tables(self):
-        _tables = []
-        q = 'SHOW TABLES'
-        cursor = self.db.query(q)
-        if cursor and cursor.rowcount > 0:
-            while not cursor.EOF:
-                r = cursor.get_row()
-                n = str(r.values()[0])
-                print r
-                _tables.append(r.values()[0])
-                cursor.movenext()
-        self.add_buffer('Available tables in this database: %s\n' % _tables)
-        return _tables
+    @staticmethod
+    def info(self, msg, *args, **kwargs):
+        pass
 
-    def optimize_tables(self, t=None):
-        if not t:
-            t = self.show_tables()
-        if isinstance(t, basestring):
-            _tables = str(t)
-        else:
-            _tables = ', '.join(t)
-        self.add_buffer('Optimizing table(s): %s\n' % _tables)
-        try:
-            self.db.query('OPTIMIZE TABLE %s' % _tables)
-            self.add_buffer('Optimize success\n')
-        except Exception, msg:
-            self.add_buffer('Optimizing table(s) failed: %s, trying to repair...\n' % msg)
-            self.repair_tables(t)
+    @staticmethod
+    def debug(self, msg, *args, **kwargs):
+        pass
 
-    def repair_tables(self, t=None):
-        if not t:
-            t = self.show_tables()
-        if isinstance(t, basestring):
-            _tables = str(t)
-        else:
-            _tables = ', '.join(t)
-        self.add_buffer('Repairing table(s): %s\n' % _tables)
-        try:
-            self.db.query('REPAIR TABLE %s' % _tables)
-            self.add_buffer('Repair success\n')
-        except Exception, msg:
-            self.add_buffer('Repairing table(s) failed: %s\n' % msg)
+    @staticmethod
+    def error(self, msg, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def warning(self, msg, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def verbose(self, msg, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def verbose2(self, msg, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def critical(msg, *args, **kwargs):
+        raise SystemExit(msg)
+
