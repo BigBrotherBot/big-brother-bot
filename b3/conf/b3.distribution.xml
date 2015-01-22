@@ -25,7 +25,7 @@
             (it should NOT be 'changeme')
         -->
         <set name="parser">changeme</set>
-        <!-- Your database info: [mysql]://[db-user]:[db-password]@[db-server[:port]]/[db-name] -->
+        <!-- Your database info: [protocol]://[db-user]:[db-password]@[db-server[:port]]/[db-name] -->
         <set name="database">mysql://b3:password@localhost/b3</set>
         <!-- Name of the bot -->
         <set name="bot_name">b3</set>

@@ -45,9 +45,11 @@
 #                                  string replacements when we retrieve empty option from a .ini configuration file
 # 15/01/2015 - 1.7.2 - Fenix     - Make sure users can't load 'admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail'
 #                                  as disabled from main B3 configuration file
+# 22/01/2015 - 1.7.3 - Fenix     - added add_comment method to CfgConfigParser and overridden write() method
+#                                  to properly write comments in a newly generated configuration file
 
 __author__  = 'ThorN, Courgette, Fenix'
-__version__ = '1.7.2'
+__version__ = '1.7.3'
 
 import os
 import re
@@ -320,6 +322,21 @@ class CfgConfigParser(B3ConfigParserMixin, ConfigParser.ConfigParser):
         """
         ConfigParser.ConfigParser.__init__(self, allow_no_value=allow_no_value)
 
+    def add_comment(self, section, comment):
+        """
+        Add a comment
+        :param section: The section where to place the comment
+        :param comment: The comment to add
+        """
+        if not section or section == "DEFAULT":
+            sectdict = self._defaults
+        else:
+            try:
+                sectdict = self._sections[section]
+            except KeyError:
+                raise ConfigParser.NoSectionError(section)
+        sectdict['; %s' % (comment,)] = None
+
     def get(self, section, option, *args, **kwargs):
         """
         Return a configuration value as a string.
@@ -365,6 +382,34 @@ class CfgConfigParser(B3ConfigParserMixin, ConfigParser.ConfigParser):
         f.close()
         return True
 
+    def write(self, fp):
+        """
+        Write an .ini-format representation of the configuration state.
+        """
+        if self._defaults:
+            fp.write("[%s]\n" % ConfigParser.DEFAULTSECT)
+            for (key, value) in self._defaults.items():
+                self._write_item(fp, key, value)
+            fp.write("\n")
+        for section in self._sections:
+            fp.write("[%s]\n" % section)
+            for (key, value) in self._sections[section].items():
+                self._write_item(fp, key, value)
+            fp.write("\n")
+
+    @staticmethod
+    def _write_item(fp, key, value):
+        if (key.startswith(';') or key.startswith('#')) and value is None:
+            # consider multiline comments
+            for line in key.split('\n'):
+                line = b3.functions.left_cut(line, ';')
+                line = b3.functions.left_cut(line, '#')
+                fp.write("; %s\n" % (line.strip(),))
+        else:
+            if value is not None and str(value).strip() != '':
+                fp.write("%s: %s\n" % (key, str(value).replace('\n', '\n\t')))
+            else:
+                fp.write("%s: \n" % key)
 
 def load(filename):
     """
