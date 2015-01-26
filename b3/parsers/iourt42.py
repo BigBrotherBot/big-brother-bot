@@ -85,6 +85,8 @@
 # 17/09/2014 - 1.26.1 - Fenix     - added missing Freeze Tag gametype declaration (10) in defineGametype()
 # 02/10/2014 - 1.27   - Fenix     - fixed regression introduced in 1.25
 # 12/12/2014 - 1.28   - Fenix     - increased chat line length to comply with the new HUD setting (4.2.021)
+# 25/01/2015 - 1.29   - Fenix     - patch the b3.clients.getByMagic method so it's possible to lookup players using their
+#                                   auth login
 
 import b3
 import re
@@ -99,7 +101,7 @@ from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 
 __author__ = 'Courgette, Fenix'
-__version__ = '1.28'
+__version__ = '1.29'
 
 
 class Iourt42Client(Client):
@@ -1326,18 +1328,17 @@ class Iourt42Parser(Iourt41Parser):
 
     @staticmethod
     def patch_Clients():
-        """
-        Patch the new_client method in the Client class
-        to handle UrT 4.2 specific client instances.
-        """
+
         def newClient(self, cid, **kwargs):
+            """
+            Patch the newClient method in the Clients class to handle UrT 4.2 specific client instances.
+            """
             client = Iourt42Client(console=self.console, cid=cid, timeAdd=self.console.time(), **kwargs)
             self[client.cid] = client
             self.resetIndex()
 
-            self.console.debug('Urt42 Client Connected: [%s] %s - %s (%s)',
-                               self[client.cid].cid, self[client.cid].name,
-                               self[client.cid].guid, self[client.cid].data)
+            self.console.debug('Urt42 Client Connected: [%s] %s - %s (%s)',  self[client.cid].cid, self[client.cid].name,
+                                                                             self[client.cid].guid, self[client.cid].data)
 
             self.console.queueEvent(self.console.getEvent('EVT_CLIENT_CONNECT', data=client, client=client))
 
@@ -1347,4 +1348,31 @@ class Iourt42Parser(Iourt41Parser):
                 self.authorizeClients()
             return client
 
+        def newGetByMagic(self, handle):
+            """
+            Patch the getByMagic method in the Clients class so it's possible to lookup players using the auth login.
+            """
+            handle = handle.strip()
+            if re.match(r'^[0-9]+$', handle):
+                client = self.getByCID(handle)
+                if client:
+                    return [client]
+                return []
+            elif re.match(r'^@([0-9]+)$', handle):
+                return self.getByDB(handle)
+            elif handle[:1] == '\\':
+                c = self.getByName(handle[1:])
+                if c and not c.hide:
+                    return [c]
+                return []
+            else:
+                clients = []
+                needle = re.sub(r'\s', '', handle.lower())
+                for cid, c in self.items():
+                    cleanname = re.sub(r'\s', '', c.name.lower())
+                    if not c.hide and (needle in cleanname or needle in c.pbid) and not c in clients:
+                        clients.append(c)
+                return clients
+
         b3.clients.Clients.newClient = newClient
+        b3.clients.Clients.getByMagic = newGetByMagic
