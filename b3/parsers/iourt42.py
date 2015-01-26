@@ -101,7 +101,7 @@ from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 
 __author__ = 'Courgette, Fenix'
-__version__ = '1.28'
+__version__ = '1.29'
 
 
 class Iourt42Client(Client):
