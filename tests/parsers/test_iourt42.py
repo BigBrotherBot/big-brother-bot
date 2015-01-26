@@ -1419,3 +1419,40 @@ class Test_load_conf_tempban_with_frozensand(Test_config):
         self.assertFalse(self.console._tempban_with_frozensand)
 
 
+class Test_newGetByMagic(Iourt42TestCase):
+
+    def setUp(self):
+        Iourt42TestCase.setUp(self)
+        self.console.startup()
+        self.mike = FakeClient(self.console, name="Mike", guid="000000000000000", pbid="wizard")
+        self.john = FakeClient(self.console, name="John", guid="111111111111111", pbid="miles")
+        self.matt = FakeClient(self.console, name="Matt", guid="222222222222222", pbid="johndoe")
+        self.mark = FakeClient(self.console, name="Mark", guid="333333333333333", pbid="markus")
+        self.mike.connects("1")
+        self.john.connects("2")
+        self.matt.connects("3")
+        self.mark.connects("4")
+
+    def test_get_by_name(self):
+        # WHEN
+        clients = self.console.clients.getByMagic("mike")
+        # THEN
+        self.assertListEqual(clients, [self.mike])
+
+    def test_get_by_pbid(self):
+        # WHEN
+        clients = self.console.clients.getByMagic("miles")
+        # THEN
+        self.assertListEqual(clients, [self.john])
+
+    def test_get_by_name_and_pbid(self):
+        # WHEN
+        clients = self.console.clients.getByMagic("jo")
+        # THEN
+        self.assertListEqual(clients, [self.matt, self.john])
+
+    def test_empty_set(self):
+        # WHEN
+        clients = self.console.clients.getByMagic("asd")
+        # THEN
+        self.assertListEqual(clients, [])
