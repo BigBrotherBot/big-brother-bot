@@ -39,9 +39,10 @@
 # 2014/04/14 - 1.8.1  - Fenix           - PEP8 coding standards
 # 2014/08/02 - 1.9    - Fenix           - syntax cleanup
 #                                       - uniform log message format
+# 2015/01/27 - 1.10   - Thomas LEVEIL   - fix `write` not making any use of its `socketTimeout` optional parameter
 #
 __author__ = 'ThorN'
-__version__ = '1.9'
+__version__ = '1.10'
 
 import re
 import socket
@@ -280,7 +281,7 @@ class Rcon(object):
             return status_cache.get(key='status', createfunc=self._requestStatusCached)
 
         with self.lock:
-            data = self.sendRcon(cmd, maxRetries=maxRetries)
+            data = self.sendRcon(cmd, maxRetries=maxRetries, socketTimeout=socketTimeout)
 
         return data if data else ''
 
