@@ -217,10 +217,9 @@ class Iourt42Client(Client):
 
             if in_storage:
                 self.lastVisit = self.timeEdit
-                self.console.bot('Client found in the storage @%s: '
-                                 'welcome back %s (FSA: %s)', self.id, self.name, self.pbid)
+                self.console.bot("Client found in the storage @%s: welcome back %s [FSA: '%s']", self.id, self.name, self.pbid)
             else:
-                self.console.bot('Client not found in the storage %s (FSA: %s), create new', str(self.guid), self.pbid)
+                self.console.bot("Client not found in the storage %s [FSA: '%s'], create new", str(self.guid), self.pbid)
 
             self.connections = int(self.connections) + 1
             self.name = name
@@ -230,7 +229,7 @@ class Iourt42Client(Client):
             self.save()
             self.authed = True
 
-            self.console.debug('Client authorized: @%s "%s" [%s] (FSA: %s)', self.cid, self.name, self.guid, self.pbid)
+            self.console.debug("Client authorized: %s [@%s] [GUID: '%s'] [FSA: '%s']", self.name, self.cid, self.guid, self.pbid)
 
             # check for bans
             if self.numBans > 0:

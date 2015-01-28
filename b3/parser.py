@@ -18,6 +18,9 @@
 #
 # CHANGELOG
 #
+# 2015/01/28 - 1.41.1 - Fenix           - changed some log messages to be verbose only: debug log file was too messy
+#                                       - fixed pluginImport not raising ImportError when B3 is not able to load
+#                                         a plugin from a specific path
 # 2015/01/27 - 1.41   - Thomas LEVEIL   - allow specifying a custom timeout for `write` (if the rcon implementation
 #                                         supports it)
 # 2015/01/15 - 1.40.2 - Fenix           - removed redundant code: plugins now are held only by the _plugins OrderedDict()
@@ -159,7 +162,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.41'
+__version__ = '1.41.1'
 
 
 import os
@@ -934,16 +937,14 @@ class Parser(object):
         :param name: The plugin name
         """
         if path is not None:
+            # import error is being handled in loadPlugins already
+            self.info('Loading plugin from specified path: %s', path)
+            fp, pathname, description = imp.find_module(name, [path])
             try:
-                self.info('Loading plugin from specified path: %s', path)
-                fp, pathname, description = imp.find_module(name, [path])
-                try:
-                    return imp.load_module(name, fp, pathname, description)
-                finally:
-                    if fp:
-                        fp.close()
-            except ImportError, err:
-                self.error(err)
+                return imp.load_module(name, fp, pathname, description)
+            finally:
+                if fp:
+                    fp.close()
         try:
             module = 'b3.plugins.%s' % name
             mod = __import__(module)
@@ -952,14 +953,15 @@ class Parser(object):
                 mod = getattr(mod, comp)
             return mod
         except ImportError, m:
-            self.info('%s is not a built-in plugin (%s)', name, m)
-            self.info('Trying external plugin directory...')
-            module = 'b3.extplugins.%s' % name
-            mod = __import__(module)
-            components = module.split('.')
-            for comp in components[1:]:
-                mod = getattr(mod, comp)
-            return mod
+            # print as verbose since such information are rather useless
+            self.verbose('%s is not a built-in plugin (%s)' % (name.title(), m))
+            self.verbose('Trying external plugin directory : %s', self.config.get_external_plugins_dir())
+            fp, pathname, description = imp.find_module(name, [self.config.get_external_plugins_dir()])
+            try:
+                return imp.load_module(name, fp, pathname, description)
+            finally:
+                if fp:
+                    fp.close()
 
     def startPlugins(self):
         """
@@ -1232,7 +1234,7 @@ class Parser(object):
         if not hasattr(event, 'type'):
             return False
         elif event.type in self._handlers.keys():  # queue only if there are handlers to listen for this event
-            self.verbose('Queueing event %s %s', self.Events.getName(event.type), event.data)
+            self.verbose('Queueing event %s : %s', self.Events.getName(event.type), event.data)
             try:
                 time.sleep(0.001)  # wait a bit so event doesnt get jumbled
                 self.queue.put((self.time(), self.time() + expire, event), True, 2)

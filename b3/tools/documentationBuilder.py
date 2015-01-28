@@ -294,7 +294,7 @@ class DocBuilder:
             
         dsn = splitDSN(self._outputUrl)
         if dsn['protocol'] == 'ftp':
-            self._console.debug('uploading to FTP server %s' % dsn['host'])
+            self._console.debug('AUTODOC: uploading to FTP server %s' % dsn['host'])
             ftp = FTP(dsn['host'], dsn['user'], passwd=dsn['password'])
             ftp.cwd(os.path.dirname(dsn['path']))
             ftpfile = StringIO.StringIO()
@@ -302,7 +302,7 @@ class DocBuilder:
             ftpfile.seek(0)
             ftp.storbinary('STOR ' + os.path.basename(dsn['path']), ftpfile)
         elif dsn['protocol'] == 'file':
-            self._console.debug('writing to %s', dsn['path'])
+            self._console.debug('AUTODOC: writing to %s', dsn['path'])
             f = file(dsn['path'], 'w')
             f.write(text)
             f.close()
