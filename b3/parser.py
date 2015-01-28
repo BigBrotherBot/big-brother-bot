@@ -1246,7 +1246,7 @@ class Parser(object):
         if not hasattr(event, 'type'):
             return False
         elif event.type in self._handlers.keys():  # queue only if there are handlers to listen for this event
-            self.verbose('Queueing event %s %s', self.Events.getName(event.type), event.data)
+            self.verbose('Queueing event %s : %s', self.Events.getName(event.type), event.data)
             try:
                 time.sleep(0.001)  # wait a bit so event doesnt get jumbled
                 self.queue.put((self.time(), self.time() + expire, event), True, 2)
