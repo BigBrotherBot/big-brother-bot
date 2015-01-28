@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/01/28 - 1.41.3 - Fenix           - fixed external plugins directory retrieval in loadPlugins()
 # 2015/01/28 - 1.41.2 - Fenix           - prevent enabling/disabling of cod7http plugin
 # 2015/01/28 - 1.41.1 - Fenix           - changed some log messages to be verbose only: debug log file was too messy
 #                                       - fixed pluginImport not raising ImportError when B3 is not able to load
@@ -163,7 +164,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.41.2'
+__version__ = '1.41.3'
 
 
 import os
@@ -746,7 +747,7 @@ class Parser(object):
         self.screen.write('Loading Plugins  : ')
         self.screen.flush()
 
-        extplugins_dir = self.config.getpath('b3', 'external_plugins_dir')
+        extplugins_dir = self.config.get_external_plugins_dir()
         self.bot('Loading plugins (external plugin directory: %s)' % extplugins_dir)
 
         def _get_plugin_config(p_name, p_clazz, p_config_path):
@@ -979,8 +980,6 @@ class Parser(object):
             self.screen.write('.')
             self.screen.flush()
 
-        # we made sure to have the admin plugin as first plugin to start in
-        # loadPlugins: no need to pop it from the _pluginOrder list anymore
         for plugin_name in self._plugins:
             try:
                 start_plugin(plugin_name)
@@ -1001,7 +1000,7 @@ class Parser(object):
 
     def enablePlugins(self):
         """
-        Enable all plugins except for 'admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail', 'cod7http
+        Enable all plugins except for 'admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail', 'cod7http'
         """
         for k in self._plugins:
             if k not in ('admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail', 'cod7http'):
@@ -1040,7 +1039,7 @@ class Parser(object):
             if obj is None:
                 continue
             if type(obj).__name__ in ('str', 'unicode'):
-                if obj not in variables.keys():
+                if obj not in variables:
                     variables[obj] = obj
             else:
                 for attr in vars(obj):
@@ -1053,7 +1052,7 @@ class Parser(object):
             if obj is None:
                 continue
             if type(obj).__name__ in ('str', 'unicode'):
-                if key not in variables.keys():
+                if key not in variables:
                     variables[key] = obj
             #elif type(obj).__name__ == 'instance':
                 #self.debug('Classname of object %s: %s' % (key, obj.__class__.__name__))
@@ -1064,11 +1063,6 @@ class Parser(object):
                     currkey = ''.join([key, cleanattr])
                     variables[currkey] = getattr(obj, attr)
 
-        # For debug purposes, uncomment to see in the log a list of the available fields
-        # allkeys = variables.keys()
-        # allkeys.sort()
-        # for key in allkeys:
-        #     self.debug('%s has value %s' % (key, variables[key]))
         return variables
 
     def getCommand(self, cmd, **kwargs):
@@ -1223,7 +1217,7 @@ class Parser(object):
         Register an event handler.
         """
         self.debug('%s: register event <%s>', event_handler.__class__.__name__, self.Events.getName(event_name))
-        if not event_name in self._handlers.keys():
+        if not event_name in self._handlers:
             self._handlers[event_name] = []
         if event_handler not in self._handlers[event_name]:
             self._handlers[event_name].append(event_handler)
@@ -1234,7 +1228,7 @@ class Parser(object):
         """
         if not hasattr(event, 'type'):
             return False
-        elif event.type in self._handlers.keys():  # queue only if there are handlers to listen for this event
+        elif event.type in self._handlers:  # queue only if there are handlers to listen for this event
             self.verbose('Queueing event %s : %s', self.Events.getName(event.type), event.data)
             try:
                 time.sleep(0.001)  # wait a bit so event doesnt get jumbled
