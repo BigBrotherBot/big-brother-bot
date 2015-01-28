@@ -18,6 +18,9 @@
 #
 # CHANGELOG
 #
+# 2015/01/28 - 1.41.1 - Fenix           - changed some log messages to be verbose only: debug log file was too messy
+#                                       - fixed pluginImport not raising ImportError when B3 is not able to load
+#                                         a plugin from a specific path
 # 2015/01/27 - 1.41   - Thomas LEVEIL   - allow specifying a custom timeout for `write` (if the rcon implementation
 #                                         supports it)
 # 2015/01/15 - 1.40.1 - Fenix           - fixed invalid reference to None object upon plugin loading
@@ -157,7 +160,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.41'
+__version__ = '1.41.1'
 
 import os
 import sys
@@ -938,16 +941,14 @@ class Parser(object):
         Import a single plugin
         """
         if path is not None:
+            # import error is being handled in loadPlugins already
+            self.info('Loading plugin from specified path: %s', path)
+            fp, pathname, description = imp.find_module(name, [path])
             try:
-                self.info('Loading plugin from specified path: %s', path)
-                fp, pathname, description = imp.find_module(name, [path])
-                try:
-                    return imp.load_module(name, fp, pathname, description)
-                finally:
-                    if fp:
-                        fp.close()
-            except ImportError, err:
-                self.error(err)
+                return imp.load_module(name, fp, pathname, description)
+            finally:
+                if fp:
+                    fp.close()
         try:
             module = 'b3.plugins.%s' % name
             mod = __import__(module)
@@ -956,8 +957,9 @@ class Parser(object):
                 mod = getattr(mod, comp)
             return mod
         except ImportError, m:
-            self.info('%s is not a built-in plugin (%s)', name, m)
-            self.info('Trying external plugin directory : %s', self.config.getpath('plugins', 'external_dir'))
+            # print as verbose since such information are rather useless
+            self.verbose('%s is not a built-in plugin (%s)' % (name.title(), m))
+            self.verbose('Trying external plugin directory : %s', self.config.getpath('plugins', 'external_dir'))
             fp, pathname, description = imp.find_module(name, [self.config.getpath('plugins', 'external_dir')])
             try:
                 return imp.load_module(name, fp, pathname, description)
