@@ -929,7 +929,7 @@ num score ping name            lastmsg address               qport rate
 
     def test_getMaps(self):
         # GIVEN
-        when(self.console).write('fdir *.bsp').thenReturn('''\
+        when(self.console).write('fdir *.bsp', socketTimeout=anything()).thenReturn('''\
 ---------------
 maps/ut4_abbey.bsp
 maps/ut4_algiers.bsp
@@ -952,7 +952,7 @@ maps/ut4_ambush.bsp
     @patch('time.sleep')
     def test_changeMap(self, sleep_mock):
         # GIVEN
-        when(self.output_mock).write('fdir *.bsp').thenReturn("""\
+        when(self.output_mock).write('fdir *.bsp', socketTimeout=anything()).thenReturn("""\
 ---------------
 maps/ut4_foo.bsp
 1 files listed
