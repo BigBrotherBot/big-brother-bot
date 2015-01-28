@@ -18,11 +18,14 @@
 #
 # CHANGELOG
 #
+# 2015/01/28 - 1.41.3 - Fenix           - fixed external plugins directory retrieval in loadPlugins()
+# 2015/01/28 - 1.41.2 - Fenix           - prevent enabling/disabling of cod7http plugin
 # 2015/01/28 - 1.41.1 - Fenix           - changed some log messages to be verbose only: debug log file was too messy
 #                                       - fixed pluginImport not raising ImportError when B3 is not able to load
 #                                         a plugin from a specific path
 # 2015/01/27 - 1.41   - Thomas LEVEIL   - allow specifying a custom timeout for `write` (if the rcon implementation
 #                                         supports it)
+# 2015/01/15 - 1.40.2 - Fenix           - removed redundant code: plugins now are held only by the _plugins OrderedDict()
 # 2015/01/15 - 1.40.1 - Fenix           - fixed invalid reference to None object upon plugin loading
 # 2015/01/08 - 1.40   - Fenix           - new plugin loading algorithm: check the comments of the following issue for
 #                                         details: https://github.com/BigBrotherBot/big-brother-bot/pull/250
@@ -40,6 +43,7 @@
 # 2014/12/13 - 1.38.1 - Fenix           - moved b3.parser.finalize() call in b3.parser.die() from b3.parser.shutdown()
 # 2014/12/11 - 1.38   - Fenix           - added plugin updater loading in loadArbPlugins
 #                                       - make use of the newly declared function b3.functions.right_cut instead
+# 2014/09/06 - 1.37.4 - Fenix           - updated parser to load configuration from the new .ini format
 # 2014/11/30 - 1.37.3 - Fenix           - correctly remove B3 PID file upon parser shutdown (Linux systems only)
 # 2014/09/02 - 1.37.2 - Fenix           - moved _first_line_code attribute in _settings['line_color_prefix']
 #                                       - allow customization of _settings['line_color_prefix'] from b3.xml:
@@ -160,7 +164,8 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.41.1'
+__version__ = '1.41.3'
+
 
 import os
 import sys
@@ -213,8 +218,7 @@ class Parser(object):
     _lineFormat = re.compile('^([a-z ]+): (.*?)', re.IGNORECASE)
 
     _handlers = {}
-    _plugins = {}
-    _pluginOrder = []
+    _plugins = OrderedDict()
     _debug = True
     _paused = False
     _pauseNotice = False
@@ -479,13 +483,13 @@ class Parser(object):
 
                 if self.config.has_option('server', 'log_append'):
                     if not (self.config.getboolean('server', 'log_append') and os.path.isfile(f)):
-                        self.screen.write('Creating Gamelog : %s\n' % f)
+                        self.screen.write('Creating gamelog : %s\n' % f)
                         ftptempfile = open(f, "w")
                         ftptempfile.close()
                     else:
-                        self.screen.write('Append to Gamelog: %s\n' % f)
+                        self.screen.write('Append to gamelog: %s\n' % f)
                 else:
-                    self.screen.write('Creating Gamelog : %s\n' % f)
+                    self.screen.write('Creating gamelog : %s\n' % f)
                     ftptempfile = open(f, "w")
                     ftptempfile.close()
                     
@@ -494,7 +498,7 @@ class Parser(object):
                 f = self.config.getpath('server', 'game_log')
 
             self.bot('Starting bot reading file: %s', f)
-            self.screen.write('Using Gamelog    : %s\n' % f)
+            self.screen.write('Using gamelog    : %s\n' % f)
 
             if os.path.isfile(f):
                 self.input = file(f, 'r')
@@ -523,7 +527,7 @@ class Parser(object):
         if self.config.has_option('server', 'rcon_timeout'):
             custom_socket_timeout = self.config.getfloat('server', 'rcon_timeout')
             self.output.socket_timeout = custom_socket_timeout
-            self.bot('Setting Rcon socket timeout to: %0.3f sec' % custom_socket_timeout)
+            self.bot('Setting rcon socket timeout to: %0.3f sec' % custom_socket_timeout)
         
         # testing rcon
         if self.rconTest:
@@ -531,8 +535,8 @@ class Parser(object):
             self.output.flush()
             self.screen.write('Testing RCON     : ')
             self.screen.flush()
-            _badRconReplies = ['Bad rconpassword.', 'Invalid password.']
-            if res in _badRconReplies:
+            badRconReplies = ['Bad rconpassword.', 'Invalid password.']
+            if res in badRconReplies:
                 self.screen.write('>>> Oops: Bad RCON password\n>>> Hint: This will lead to errors and '
                                   'render B3 without any power to interact!\n')
                 self.screen.flush()
@@ -547,8 +551,9 @@ class Parser(object):
                 self.screen.write('OK\n')
 
         self.loadEvents()
-        self.screen.write('Loading Events   : %s events loaded\n' % len(self._events))
+        self.screen.write('Loading events   : %s events loaded\n' % len(self._events))
         self.clients = Clients(self)
+
         self.loadPlugins()
         self.loadArbPlugins()
 
@@ -638,6 +643,7 @@ class Parser(object):
             return False
 
         self.config = conf
+        """:type : MainConfig"""
         return True
 
     def saveConfig(self):
@@ -741,7 +747,7 @@ class Parser(object):
         self.screen.write('Loading Plugins  : ')
         self.screen.flush()
 
-        extplugins_dir = self.config.getpath('plugins', 'external_dir')
+        extplugins_dir = self.config.get_external_plugins_dir()
         self.bot('Loading plugins (external plugin directory: %s)' % extplugins_dir)
 
         def _get_plugin_config(p_name, p_clazz, p_config_path):
@@ -751,7 +757,6 @@ class Parser(object):
             :param p_clazz: The class implementing the plugin
             :param p_config_path: The plugin configuration file path
             """
-
             def _search_config_file(match):
                 """
                 Helper that returns a list of configuration files.
@@ -807,33 +812,29 @@ class Parser(object):
                     # stop loading the plugin
                     raise b3.config.ConfigFileNotFound('plugin %s cannot be loaded without a configuration file' % p_name)
 
-                self.warning('Not loading a configuration file for plugin %s: plugin %s can work also without a configuration file.', p_name, p_name)
+                self.warning('Not loading a configuration file for plugin %s: plugin %s can work also without a configuration file', p_name, p_name)
                 self.info('NOTE: plugin %s may behave differently from what expected since no user configuration file has been loaded', p_name)
                 return None
 
         plugins = OrderedDict()
         plugins_list = []
 
-        # here beload we will parse the plugins section of b3.xml, looking for plugins to be loaded.
+        # here below we will parse the plugins section of b3.ini, looking for plugins to be loaded.
         # we will import needed python classes and generate configuration file instances for plugins.
-        for p in self.config.get('plugins/plugin'):
-            name = p.get('name')
-            if not name:
-                # if there is no name specified just do not load the plugin and log the issue
-                self.error("Configuration error in plugins section: missing plugin name in [%s]" % ElementTree.tostring(p))
+        for p in self.config.get_plugins():
+            name = p['name']
+            if name in [plugins[i]['name'] for i in plugins if plugins[i]['name'] == name]:
+                # do not load a plugin multiple times
+                self.warning('Plugin %s already loaded: avoid multiple entries of the same plugin' % name)
             else:
-                if name in [plugins[i]['name'] for i in plugins if plugins[i]['name'] == name]:
-                    # do not load a plugin multiple times
-                    self.warning('Plugin %s already loaded: avoid multiple entries of the same plugin' % name)
-                else:
-                    try:
-                        module = self.pluginImport(name, p.get('path'))
-                        clazz = getattr(module, '%sPlugin' % name.title())
-                        conf = _get_plugin_config(name, clazz, p.get('config'))
-                        disabled = p.get('disabled') is not None and p.get('disabled').lower() in ('yes', '1', 'on', 'true')
-                        plugins[name] = {'name': name, 'module': module, 'class': clazz, 'conf': conf, 'disabled': disabled}
-                    except Exception, err:
-                         self.error('Could not load plugin %s' % name, exc_info=err)
+                try:
+                    module = self.pluginImport(name, p['path'])
+                    clazz = getattr(module, '%sPlugin' % name.title())
+                    conf = _get_plugin_config(name, clazz, p['config'])
+                    disabled = p['disabled']
+                    plugins[name] = {'name': name, 'module': module, 'class': clazz, 'conf': conf, 'disabled': disabled}
+                except Exception, err:
+                     self.error('Could not load plugin %s' % name, exc_info=err)
 
         # check for AdminPlugin
         if not 'admin' in plugins:
@@ -847,7 +848,7 @@ class Parser(object):
             plugins_list.append(plugin)
 
         plugin_num = 1
-        self._pluginOrder = []
+        self._plugins = OrderedDict()
         for plugin_dict in plugins_list:
             plugin_name = plugin_dict['name']
             plugin_conf = plugin_dict['conf']
@@ -857,10 +858,7 @@ class Parser(object):
             if plugin_dict['disabled']:
                 self.info("Disabling plugin %s" % plugin_name)
                 self._plugins[plugin_name].disable()
-
-            self._pluginOrder.append(plugin_name)
             plugin_num += 1
-
             version = getattr(plugin_dict['module'], '__version__', 'Unknown Version')
             author = getattr(plugin_dict['module'], '__author__', 'Unknown Author')
             self.bot('Plugin %s (%s - %s) loaded', plugin_name, version, author)
@@ -871,7 +869,7 @@ class Parser(object):
         """
         For each loaded plugin, call the onLoadConfig hook.
         """
-        for plugin_name in self._pluginOrder:
+        for plugin_name in self._plugins:
             p = self._plugins[plugin_name]
             p.onLoadConfig()
 
@@ -888,14 +886,13 @@ class Parser(object):
             console.bot('Loading plugin %s', plugin_name)
             plugin_module = console.pluginImport(plugin_name)
             console._plugins[plugin_name] = getattr(plugin_module, '%sPlugin' % plugin_name.title())(console)
-            console._pluginOrder.append(plugin_name)
             version = getattr(plugin_module, '__version__', 'Unknown Version')
             author = getattr(plugin_module, '__author__', 'Unknown Author')
             console.bot('Plugin %s (%s - %s) loaded', plugin_name, version, author)
             console.screen.write('.')
             console.screen.flush()
 
-        if 'publist' not in self._pluginOrder:
+        if 'publist' not in self._plugins:
             try:
                 _load_plugin(self, 'publist')
             except Exception, err:
@@ -903,7 +900,7 @@ class Parser(object):
 
         if not main_is_frozen():
             # load the updater plugin if we are running B3 from sources
-            if 'updater' not in self._pluginOrder:
+            if 'updater' not in self._plugins:
                 try:
                     update_channel = self.config.get('update', 'channel')
                     if update_channel == 'skip':
@@ -926,19 +923,20 @@ class Parser(object):
             elif game_log.startswith('http://'):
                 remote_log_plugin = 'httpytail'
 
-            if remote_log_plugin and remote_log_plugin not in self._pluginOrder:
+            if remote_log_plugin and remote_log_plugin not in self._plugins:
                 try:
                     _load_plugin(self, remote_log_plugin)
                 except Exception, err:
                     self.critical('Error loading plugin %s' % remote_log_plugin, exc_info=err)
                     raise SystemExit('ERROR while loading %s' % remote_log_plugin)
 
-        self.screen.write(' (%s)\n' % len(self._pluginOrder))
+        self.screen.write(' (%s)\n' % len(self._plugins.keys()))
         self.screen.flush()
 
     def pluginImport(self, name, path=None):
         """
-        Import a single plugin
+        Import a single plugin.
+        :param name: The plugin name
         """
         if path is not None:
             # import error is being handled in loadPlugins already
@@ -959,8 +957,8 @@ class Parser(object):
         except ImportError, m:
             # print as verbose since such information are rather useless
             self.verbose('%s is not a built-in plugin (%s)' % (name.title(), m))
-            self.verbose('Trying external plugin directory : %s', self.config.getpath('plugins', 'external_dir'))
-            fp, pathname, description = imp.find_module(name, [self.config.getpath('plugins', 'external_dir')])
+            self.verbose('Trying external plugin directory : %s', self.config.get_external_plugins_dir())
+            fp, pathname, description = imp.find_module(name, [self.config.get_external_plugins_dir()])
             try:
                 return imp.load_module(name, fp, pathname, description)
             finally:
@@ -971,7 +969,7 @@ class Parser(object):
         """
         Start all loaded plugins.
         """
-        self.screen.write('Starting Plugins : ')
+        self.screen.write('Starting plugins : ')
         self.screen.flush()
 
         def start_plugin(p_name):
@@ -979,43 +977,33 @@ class Parser(object):
             self.bot('Starting plugin %s', p_name)
             p.onStartup()
             p.start()
-            #time.sleep(1)    # give plugin time to crash, er...start
             self.screen.write('.')
             self.screen.flush()
 
-        # handle admin plugin first as many plugins rely on it
-        if 'admin' in self._pluginOrder:
-            start_plugin('admin')
-            self._pluginOrder.remove('admin')
+        for plugin_name in self._plugins:
+            try:
+                start_plugin(plugin_name)
+            except Exception, err:
+                self.error("Could not start plugin %s" % plugin_name, exc_info=err)
 
-        # start other plugins
-        for plugin_name in self._pluginOrder:
-            if plugin_name not in self._plugins:
-                self.warning("Not starting plugin %s as it was not loaded" % plugin_name)
-            else:
-                try:
-                    start_plugin(plugin_name)
-                except Exception, err:
-                    self.error("Could not start plugin %s" % plugin_name, exc_info=err)
-
-        self.screen.write(' (%s)\n' % (len(self._pluginOrder)+1))
+        self.screen.write(' (%s)\n' % (len(self._plugins) + 1))
 
     def disablePlugins(self):
         """
-        Disable all plugins except for publist, ftpytail and admin
+        Disable all plugins except for 'admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail', 'cod7http'
         """
-        for k in self._pluginOrder:
-            if k not in ('admin', 'publist', 'ftpytail'):
+        for k in self._plugins:
+            if k not in ('admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail', 'cod7http'):
                 p = self._plugins[k]
                 self.bot('Disabling plugin: %s', k)
                 p.disable()
 
     def enablePlugins(self):
         """
-        Enable all plugins except for publist, ftpytail and admin
+        Enable all plugins except for 'admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail', 'cod7http'
         """
-        for k in self._pluginOrder:
-            if k not in ('admin', 'publist', 'ftpytail'):
+        for k in self._plugins:
+            if k not in ('admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail', 'cod7http'):
                 p = self._plugins[k]
                 self.bot('Enabling plugin: %s', k)
                 p.enable()
@@ -1051,7 +1039,7 @@ class Parser(object):
             if obj is None:
                 continue
             if type(obj).__name__ in ('str', 'unicode'):
-                if obj not in variables.keys():
+                if obj not in variables:
                     variables[obj] = obj
             else:
                 for attr in vars(obj):
@@ -1064,7 +1052,7 @@ class Parser(object):
             if obj is None:
                 continue
             if type(obj).__name__ in ('str', 'unicode'):
-                if key not in variables.keys():
+                if key not in variables:
                     variables[key] = obj
             #elif type(obj).__name__ == 'instance':
                 #self.debug('Classname of object %s: %s' % (key, obj.__class__.__name__))
@@ -1075,11 +1063,6 @@ class Parser(object):
                     currkey = ''.join([key, cleanattr])
                     variables[currkey] = getattr(obj, attr)
 
-        # For debug purposes, uncomment to see in the log a list of the available fields
-        # allkeys = variables.keys()
-        # allkeys.sort()
-        # for key in allkeys:
-        #     self.debug('%s has value %s' % (key, variables[key]))
         return variables
 
     def getCommand(self, cmd, **kwargs):
@@ -1157,7 +1140,7 @@ class Parser(object):
         """
         Main worker thread for B3
         """
-        self.screen.write('Startup Complete : B3 is running! Let\'s get to work!\n\n')
+        self.screen.write('Startup complete : B3 is running! Let\'s get to work!\n\n')
         self.screen.write('(If you run into problems, check %s in the B3 root directory for '
                           'detailed log info)\n' % self.config.getpath('b3', 'logfile'))
         
@@ -1234,7 +1217,7 @@ class Parser(object):
         Register an event handler.
         """
         self.debug('%s: register event <%s>', event_handler.__class__.__name__, self.Events.getName(event_name))
-        if not event_name in self._handlers.keys():
+        if not event_name in self._handlers:
             self._handlers[event_name] = []
         if event_handler not in self._handlers[event_name]:
             self._handlers[event_name].append(event_handler)
@@ -1245,7 +1228,7 @@ class Parser(object):
         """
         if not hasattr(event, 'type'):
             return False
-        elif event.type in self._handlers.keys():  # queue only if there are handlers to listen for this event
+        elif event.type in self._handlers:  # queue only if there are handlers to listen for this event
             self.verbose('Queueing event %s : %s', self.Events.getName(event.type), event.data)
             try:
                 time.sleep(0.001)  # wait a bit so event doesnt get jumbled

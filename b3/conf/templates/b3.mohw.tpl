@@ -1,5 +1,5 @@
 [b3]
-parser: moh
+parser: mohw
 database: mysql://b3:password@localhost/b3
 bot_name: b3
 bot_prefix: [b3]:
@@ -17,7 +17,13 @@ rcon_ip: 11.22.33.44
 rcon_port: 48888
 rcon_password: myrconpassword
 timeout: 3
-punkbuster: off
+# ban_agent : choose how to ban players
+# available agents are : 'server' or 'punkbuster'
+# available options are :
+#   'server' : to save bans in the BF4 server banlist only
+#   'punkbuster' : to save bans in punkbuster only
+#   'both' : to save bans in both the BF4 server and punkbuster banlists
+ban_agent: server
 
 [autodoc]
 type: html
@@ -43,6 +49,7 @@ adv: @conf/plugin_adv.xml
 censor: @conf/plugin_censor.xml
 cmdmanager: @conf/plugin_cmdmanager.ini
 pingwatch: @conf/plugin_pingwatch.ini
+#punkbuster: @conf/plugin_punkbuster.ini
 spamcontrol: @conf/plugin_spamcontrol.ini
 stats: @conf/plugin_stats.ini
 status: @conf/plugin_status.ini

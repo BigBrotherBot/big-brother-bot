@@ -99,7 +99,7 @@ class FrontlineParser(b3.parser.Parser):
             self.error("Cannot find rcon_user in B3 main config file. %s", err)
             raise SystemExit("incomplete config")
 
-        self.screen.write('Startup Complete : B3 is running! Let\'s get to work!\n\n')
+        self.screen.write('Startup complete : B3 is running! Let\'s get to work!\n\n')
         self.screen.write('(If you run into problems, check %s in the B3 root directory for '
                           'detailed log info)\n' % self.config.getpath('b3', 'logfile'))
 

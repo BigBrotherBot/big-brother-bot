@@ -34,23 +34,42 @@
 # 19/07/2014 - 1.5   - Fenix     - syntax cleanup
 #                                - declared get method in B3ConfigParserMixin for design consistency
 #                                - added stub constructor in XmlConfigParser
-# 07/09/2014 - 1.5.1 - Courgette - remove duplicated code by using b3.getAbsolutePath
-#
+# 06/09/2014 - 1.5.1 - Courgette - remove duplicated code by using b3.getAbsolutePath
+# 07/09/2014 - 1.6   - Fenix     - added 'allow_no_value' keyword to CfgConfigParser constructor so we can load
+#                                  plugins which don't specify a configuration file
+# 07/09/2014 - 1.7   - Courgette - added MainConfig class to parser B3 main configuration file from .xml and .ini format
+# 07/09/2014 - 1.7.1 - Fenix     - patch the RawConfigParser class when python 2.6 is used to run b3: this allows
+#                                  python 2.6 to make use of the new feature of the RawConfigParser class that load
+#                                  keys from configuration files with non specified values
+#                                - return empty string instead of None in get() method: this fixes possible failures in
+#                                  string replacements when we retrieve empty option from a .ini configuration file
+# 15/01/2015 - 1.7.2 - Fenix     - Make sure users can't load 'admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail'
+#                                  as disabled from main B3 configuration file
+# 22/01/2015 - 1.7.3 - Fenix     - added add_comment method to CfgConfigParser and overridden write() method
+#                                  to properly write comments in a newly generated configuration file
 
 __author__  = 'ThorN, Courgette, Fenix'
-__version__ = '1.5.1'
+__version__ = '1.7.3'
 
 import os
+import re
+import sys
 import time
 import b3
 import b3.functions
-import ConfigParser
+
+if sys.version_info < (2,7):
+    import b3.lib.configparser as ConfigParser
+else:
+    import ConfigParser
 
 try:
     from xml.etree import cElementTree as ElementTree
 except ImportError:
     from xml.etree import ElementTree
 
+# list of plugins that cannot be loaded as disabled from configuration file
+MUST_HAVE_PLUGINS = ('admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail')
 
 class B3ConfigParserMixin:
     """
@@ -296,12 +315,37 @@ class CfgConfigParser(B3ConfigParserMixin, ConfigParser.ConfigParser):
     fileName = ''
     fileMtime = 0
 
+    def __init__(self, allow_no_value=False):
+        """
+        Object constructor.
+        :param allow_no_value: Whether or not to allow empty values in configuration sections
+        """
+        ConfigParser.ConfigParser.__init__(self, allow_no_value=allow_no_value)
+
+    def add_comment(self, section, comment):
+        """
+        Add a comment
+        :param section: The section where to place the comment
+        :param comment: The comment to add
+        """
+        if not section or section == "DEFAULT":
+            sectdict = self._defaults
+        else:
+            try:
+                sectdict = self._sections[section]
+            except KeyError:
+                raise ConfigParser.NoSectionError(section)
+        sectdict['; %s' % (comment,)] = None
+
     def get(self, section, option, *args, **kwargs):
         """
         Return a configuration value as a string.
         """
         try:
-            return ConfigParser.ConfigParser.get(self, section, option, *args, **kwargs)
+            value = ConfigParser.ConfigParser.get(self, section, option, *args, **kwargs)
+            if value is None:
+                return ""
+            return value
         except ConfigParser.NoSectionError:
             # plugins are used to only catch NoOptionError
             raise ConfigParser.NoOptionError(option, section)
@@ -338,16 +382,45 @@ class CfgConfigParser(B3ConfigParserMixin, ConfigParser.ConfigParser):
         f.close()
         return True
 
+    def write(self, fp):
+        """
+        Write an .ini-format representation of the configuration state.
+        """
+        if self._defaults:
+            fp.write("[%s]\n" % ConfigParser.DEFAULTSECT)
+            for (key, value) in self._defaults.items():
+                self._write_item(fp, key, value)
+            fp.write("\n")
+        for section in self._sections:
+            fp.write("[%s]\n" % section)
+            for (key, value) in self._sections[section].items():
+                self._write_item(fp, key, value)
+            fp.write("\n")
+
+    @staticmethod
+    def _write_item(fp, key, value):
+        if (key.startswith(';') or key.startswith('#')) and value is None:
+            # consider multiline comments
+            for line in key.split('\n'):
+                line = b3.functions.left_cut(line, ';')
+                line = b3.functions.left_cut(line, '#')
+                fp.write("; %s\n" % (line.strip(),))
+        else:
+            if value is not None and str(value).strip() != '':
+                fp.write("%s: %s\n" % (key, str(value).replace('\n', '\n\t')))
+            else:
+                fp.write("%s: \n" % key)
 
 def load(filename):
     """
     Load a configuration file.
-    Will instantiate the correct configuration oject parser.
+    Will instantiate the correct configuration object parser.
     """
     if os.path.splitext(filename)[1].lower() == '.xml':
         config = XmlConfigParser()
     else:
-        config = CfgConfigParser()
+        # allow the use of empty keys to support the new b3.ini configuration file
+        config = CfgConfigParser(allow_no_value=True)
 
     filename = b3.getAbsolutePath(filename)
 
@@ -375,3 +448,104 @@ class ConfigFileNotValid(Exception):
         
     def __str__(self):
         return repr(self.message)
+
+
+class MainConfig(B3ConfigParserMixin):
+    """
+    Class to use to parse the B3 main config file.
+
+    Responsible for reading the file either in xml or ini format.
+    """
+
+    def __init__(self, config_parser):
+        self._config_parser = config_parser
+        self._plugins = []
+        if isinstance(self._config_parser, XmlConfigParser):
+            self._init_plugins_from_xml()
+        elif isinstance(self._config_parser, CfgConfigParser):
+            self._init_plugins_from_cfg()
+        else:
+            raise NotImplemented("unexpected config type: %r" % self._config_parser.__class__)
+
+    def _init_plugins_from_xml(self):
+        self._plugins = []
+        for p in self._config_parser.get('plugins/plugin'):
+            x = p.get('disabled')
+            self._plugins.append({
+                'name': p.get('name'),
+                'conf': p.get('config'),
+                'path': p.get('path'),
+                'disabled':  x is not None and x not in MUST_HAVE_PLUGINS and x.lower() in ('yes', '1', 'on', 'true')
+            })
+
+    def _init_plugins_from_cfg(self):
+        ## Load the list of disabled plugins
+        try:
+            disabled_plugins_raw = self._config_parser.get('b3', 'disabled_plugins')
+        except ConfigParser.NoOptionError:
+            disabled_plugins = []
+        else:
+            disabled_plugins = re.split('\W+', disabled_plugins_raw.lower())
+
+        def get_custom_plugin_path(plugin_name):
+            try:
+                return self._config_parser.get('plugins_custom_path', plugin_name)
+            except ConfigParser.NoOptionError:
+                return None
+
+        self._plugins = []
+        if self._config_parser.has_section('plugins'):
+            for name in self._config_parser.options('plugins'):
+                self._plugins.append({
+                    'name': name,
+                    'conf': self._config_parser.get('plugins', name),
+                    'path': get_custom_plugin_path(name),
+                    'disabled': name.lower() in disabled_plugins and name.lower() not in MUST_HAVE_PLUGINS
+                })
+
+    def get_plugins(self):
+        """
+        :return: list[dict] A list of plugin settings as a dict.
+            I.E.:
+            [
+                {'name': 'admin', 'conf': @conf/plugin_admin.ini, 'path': None, 'disabled': False},
+                {'name': 'adv', 'conf': @conf/plugin_adv.xml, 'path': None, 'disabled': False},
+            ]
+        """
+        return self._plugins
+
+    def get_external_plugins_dir(self):
+        """
+        the directory path (as a string) where additional plugin modules can be found
+        :return: str or ConfigParser.NoOptionError
+        """
+        if isinstance(self._config_parser, XmlConfigParser):
+            return self._config_parser.getpath("plugins", "external_dir")
+        elif isinstance(self._config_parser, CfgConfigParser):
+            return self._config_parser.getpath("b3", "external_plugins_dir")
+        else:
+            raise NotImplemented("unexpected config type: %r" % self._config_parser.__class__)
+
+    def get(self, *args, **kwargs):
+        """
+        Override the get method defined in the B3ConfigParserMixin
+        """
+        return self._config_parser.get(*args, **kwargs)
+
+    def __getattr__(self, name):
+        """
+        Act as a proxy in front of self._config_parser.
+        Any attribute or method call which does not exists in this object (MainConfig) is then tried on
+        the self._config_parser
+        :param name: str Attribute or method name
+        """
+        if hasattr(self._config_parser, name):
+            attr = getattr(self._config_parser, name)
+            if hasattr(attr, '__call__'):
+                def newfunc(*args, **kwargs):
+                    return attr(*args, **kwargs)
+                return newfunc
+            else:
+                return attr
+        else:
+            raise AttributeError(name)

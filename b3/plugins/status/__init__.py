@@ -199,7 +199,7 @@ class StatusPlugin(b3.plugin.Plugin):
         except NoOptionError:
             self._outputFile = os.path.normpath(os.path.expanduser(self._outputFile))
             self.warning('could not find settings/output_file in config file, using default: %s' % self._outputFile)
-                
+
         self._tkPlugin = self.console.getPlugin('tk')
 
         try:

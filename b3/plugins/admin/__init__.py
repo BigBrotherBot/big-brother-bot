@@ -24,6 +24,7 @@
 # 2014/11/15 - 1.32    - 82ndab-Bravo17 - added new command longlist that does a list with one player per line
 #                                       - and cid first. Allows you to see players with clever unicode names that
 #                                       - otherwise mess up the normal list command.
+# 2014/09/06 - 1.31.1  - Fenix          - updated cmd_pluginfo to work with the new b3.ini configuration file format
 # 2014/08/30 - 1.31    - Fenix          - syntax cleanup
 #                                       - improved debug messages in plugin configuration file loading
 #                                       - moved 'warn_command_abusers' config value loading into proper method
@@ -132,7 +133,6 @@ __version__ = '1.34'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon, Fenix'
 
 import re
-import imp
 import time
 import threading
 import sys
@@ -140,6 +140,7 @@ import traceback
 import thread
 import random
 import copy
+import imp
 import b3.cron
 import b3.plugin
 
@@ -2615,8 +2616,17 @@ class AdminPlugin(b3.plugin.Plugin):
             except ImportError:
                 fp = None
                 try:
+                    try:
+                        # old b3.xml configuration file
+                        external_dir = self.console.config.getpath('plugins', 'external_dir')
+                    except NoOptionError:
+                        # new b3.ini configuration file: if this raise again NoOptionError
+                        # then we won't have any information on where the external plugins
+                        # are stored and thus we can't continue with execution
+                        external_dir = self.console.config.getpath('b3', 'external_plugins_dir')
+
                     # check if it's an external plugin
-                    fp, path, desc = imp.find_module(data, [self.console.config.getpath('plugins', 'external_dir')])
+                    fp, path, desc = imp.find_module(data, [external_dir])
                     module = imp.load_module(data, fp, path, desc)
                 except (ImportError, NoOptionError):
                     # plugin doesn't seems to be loaded
@@ -2630,8 +2640,8 @@ class AdminPlugin(b3.plugin.Plugin):
                 client.message('^7No plugin named ^1%s ^7loaded' % data)
                 return
 
-            a = getattr(module, '__author__', 'Unknown Author')
-            v = getattr(module, '__version__', 'Unknown Version')
+            a = getattr(module, '__author__', 'unknown')
+            v = getattr(module, '__version__', 'unknown')
 
         # cleanup a bit the author
         # some people put also website and/or email address in it

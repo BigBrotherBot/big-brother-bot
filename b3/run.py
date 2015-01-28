@@ -135,15 +135,15 @@ def run(config=None, nosetup=False, autorestart=False):
     """
     Run B3.
     :param config: The B3 configuration file instance
-    :param nosetup: Whther to execute the B3 setup or not
+    :param nosetup: Whether to execute the B3 setup or not
     """
     if config:
         config = b3.getAbsolutePath(config)
     else:
         # search for the config file
         config = None
-        for p in ('b3.xml', 'conf/b3.xml', 'b3/conf/b3.xml', '~/b3.xml',
-                  '~/conf/b3.xml', '~/b3/conf/b3.xml', '@b3/conf/b3.xml'):
+        for p in ('b3.ini', 'conf/b3.ini', 'b3/conf/b3.ini', '~/b3.ini',
+                  '~/conf/b3.ini', '~/b3/conf/b3.ini', '@b3/conf/b3.ini'):
             path = b3.getAbsolutePath(p)
             print 'Searching for config file: %s' % path
             if os.path.isfile(path):

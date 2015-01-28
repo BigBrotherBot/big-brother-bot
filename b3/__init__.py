@@ -147,7 +147,7 @@ def start(configFile, nosetup=False, autorestart=False):
         print 'Using config file: %s' % configFile
         global _confDir
         _confDir = os.path.dirname(configFile)
-        conf = config.load(configFile)
+        conf = config.MainConfig(config.load(configFile))
     else:
         # this happens when a config was entered on
         # the commandline, but it does not exist
@@ -185,9 +185,6 @@ def start(configFile, nosetup=False, autorestart=False):
         except ImportError, err:
             raise SystemExit("CRITICAL: could not find parser '%s': check you main config file (b3.xml)\n"
                              "B3 failed to start.\n%r" % (parserType, err))
-    
-        extplugins_dir = conf.getpath('plugins', 'external_dir')
-        print "Using external plugin directory: %s" % extplugins_dir
         
         global console
         console = parser(conf, autorestart)

@@ -25,7 +25,7 @@
             (it should NOT be 'changeme')
         -->
         <set name="parser">changeme</set>
-        <!-- Your database info: [mysql]://[db-user]:[db-password]@[db-server[:port]]/[db-name] -->
+        <!-- Your database info: [protocol]://[db-user]:[db-password]@[db-server[:port]]/[db-name] -->
         <set name="database">mysql://b3:password@localhost/b3</set>
         <!-- Name of the bot -->
         <set name="bot_name">b3</set>
@@ -97,7 +97,7 @@
         <set name="temp_banned_by">$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason</set>
         <set name="temp_banned">$clientname^7 was temp banned for $banduration^7 $reason</set>
         <set name="unbanned_by">$clientname^7 was un-banned by $adminname^7 $reason</set>
-        <set name="unbanned">$clientname^7 was un-banned $reason</set>
+        <set name="unbanned">$clientname^7 was un-banned^7 $reason</set>
     </settings>
     <settings name="plugins">
         <set name="external_dir">@b3/extplugins</set>

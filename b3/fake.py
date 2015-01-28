@@ -35,7 +35,8 @@
 # 1.11 - 2012/04/15 - fix issue with message_history of FakeClient which was shared between instances
 # 1.12 - 2014/07/16 - added admin key in EVT_CLIENT_KICK data dict when available
 # 1.13 - 2014/08/05 - syntax cleanup
-# 1.14 - 2014/12/27 - new storage module initialization
+# 1.14 - 2014/09/06 - adapted FakeConsole to work with the new b3.ini configuration file format
+# 1.15 - 2014/12/27 - new storage module initialization
 
 """
 This module make plugin testing simple. It provides you
@@ -43,7 +44,7 @@ with fakeConsole and joe which can be used to say commands
 as if it where a player.
 """
 
-__version__ = '1.14'
+__version__ = '1.15'
 
 import b3.events
 import b3.output
@@ -390,8 +391,8 @@ class FakeClient(b3.clients.Client):
 
 #####################################################################################
 
-print "creating fakeConsole with @b3/conf/b3.distribution.xml"
-fakeConsole = FakeConsole('@b3/conf/b3.distribution.xml')
+print "creating fakeConsole with @b3/conf/b3.distribution.ini"
+fakeConsole = FakeConsole('@b3/conf/b3.distribution.ini')
 
 print "creating fakeAdminPlugin with @b3/conf/plugin_admin.ini"
 fakeAdminPlugin = AdminPlugin(fakeConsole, '@b3/conf/plugin_admin.ini')
