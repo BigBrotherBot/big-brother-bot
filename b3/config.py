@@ -43,9 +43,13 @@
 #                                  keys from configuration files with non specified values
 #                                - return empty string instead of None in get() method: this fixes possible failures in
 #                                  string replacements when we retrieve empty option from a .ini configuration file
+# 15/01/2015 - 1.7.2 - Fenix     - Make sure users can't load 'admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail'
+#                                  as disabled from main B3 configuration file
+# 22/01/2015 - 1.7.3 - Fenix     - added add_comment method to CfgConfigParser and overridden write() method
+#                                  to properly write comments in a newly generated configuration file
 
 __author__  = 'ThorN, Courgette, Fenix'
-__version__ = '1.7.1'
+__version__ = '1.7.3'
 
 import os
 import re
@@ -64,6 +68,8 @@ try:
 except ImportError:
     from xml.etree import ElementTree
 
+# list of plugins that cannot be loaded as disabled from configuration file
+MUST_HAVE_PLUGINS = ('admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail')
 
 class B3ConfigParserMixin:
     """
@@ -316,6 +322,21 @@ class CfgConfigParser(B3ConfigParserMixin, ConfigParser.ConfigParser):
         """
         ConfigParser.ConfigParser.__init__(self, allow_no_value=allow_no_value)
 
+    def add_comment(self, section, comment):
+        """
+        Add a comment
+        :param section: The section where to place the comment
+        :param comment: The comment to add
+        """
+        if not section or section == "DEFAULT":
+            sectdict = self._defaults
+        else:
+            try:
+                sectdict = self._sections[section]
+            except KeyError:
+                raise ConfigParser.NoSectionError(section)
+        sectdict['; %s' % (comment,)] = None
+
     def get(self, section, option, *args, **kwargs):
         """
         Return a configuration value as a string.
@@ -361,6 +382,34 @@ class CfgConfigParser(B3ConfigParserMixin, ConfigParser.ConfigParser):
         f.close()
         return True
 
+    def write(self, fp):
+        """
+        Write an .ini-format representation of the configuration state.
+        """
+        if self._defaults:
+            fp.write("[%s]\n" % ConfigParser.DEFAULTSECT)
+            for (key, value) in self._defaults.items():
+                self._write_item(fp, key, value)
+            fp.write("\n")
+        for section in self._sections:
+            fp.write("[%s]\n" % section)
+            for (key, value) in self._sections[section].items():
+                self._write_item(fp, key, value)
+            fp.write("\n")
+
+    @staticmethod
+    def _write_item(fp, key, value):
+        if (key.startswith(';') or key.startswith('#')) and value is None:
+            # consider multiline comments
+            for line in key.split('\n'):
+                line = b3.functions.left_cut(line, ';')
+                line = b3.functions.left_cut(line, '#')
+                fp.write("; %s\n" % (line.strip(),))
+        else:
+            if value is not None and str(value).strip() != '':
+                fp.write("%s: %s\n" % (key, str(value).replace('\n', '\n\t')))
+            else:
+                fp.write("%s: \n" % key)
 
 def load(filename):
     """
@@ -421,11 +470,12 @@ class MainConfig(B3ConfigParserMixin):
     def _init_plugins_from_xml(self):
         self._plugins = []
         for p in self._config_parser.get('plugins/plugin'):
+            x = p.get('disabled')
             self._plugins.append({
                 'name': p.get('name'),
                 'conf': p.get('config'),
                 'path': p.get('path'),
-                'disabled': p.get('disabled') is not None and p.get('disabled').lower() in ('yes', '1', 'on', 'true')
+                'disabled':  x is not None and x not in MUST_HAVE_PLUGINS and x.lower() in ('yes', '1', 'on', 'true')
             })
 
     def _init_plugins_from_cfg(self):
@@ -450,7 +500,7 @@ class MainConfig(B3ConfigParserMixin):
                     'name': name,
                     'conf': self._config_parser.get('plugins', name),
                     'path': get_custom_plugin_path(name),
-                    'disabled': name.lower() in disabled_plugins
+                    'disabled': name.lower() in disabled_plugins and name.lower() not in MUST_HAVE_PLUGINS
                 })
 
     def get_plugins(self):
@@ -485,9 +535,8 @@ class MainConfig(B3ConfigParserMixin):
     def __getattr__(self, name):
         """
         Act as a proxy in front of self._config_parser.
-        Any attribute or method call which does not exists in this object (MainConfig) is then tryied on
+        Any attribute or method call which does not exists in this object (MainConfig) is then tried on
         the self._config_parser
-
         :param name: str Attribute or method name
         """
         if hasattr(self._config_parser, name):

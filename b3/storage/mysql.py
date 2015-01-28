@@ -19,6 +19,8 @@
 # CHANGELOG
 #
 # 26/12/2014 - Fenix - moved into separate module
+# 05/01/2015 - Fenix - added truncateTable() method: empty a database table (or multiple tables) and reset identity
+# 07/01/2015 - Fenix - reintroduced MySQLdb support: backup as 3rd driver option
 
 import b3
 import sys
@@ -136,6 +138,62 @@ class MysqlConnectorStorage(DatabaseStorage):
             return True
         return False
 
+
+class MySQLdbStorage(DatabaseStorage):
+    """
+    Base inheritance class for MysqlStorage when using MySQLdb driver.
+    """
+    def __init__(self, dsn, dsnDict, console):
+        """
+        Object constructor.
+        Every exception raised from here should make B3 non-operational since we won't have storage support.
+        :param dsn: The database connection string.
+        :param dsnDict: The database connection string parsed into a dict.
+        :param console: The console instance.
+        """
+        super(MySQLdbStorage, self).__init__(dsn, dsnDict, console)
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  CONNECTION INITIALIZATION/TERMINATION/RETRIEVAL                                                               ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
+    def getConnection(self):
+        """
+        Return the database connection. If the connection has not been established yet, will establish a new one.
+        :return The connection instance, or None if no connection can be established.
+        """
+        if self.db and self.db.open:
+            return self.db
+        return self.connect()
+
+    def shutdown(self):
+        """
+        Close the current active database connection.
+        """
+        if self.db and self.db.open:
+            # checking 'open' will prevent exception raising
+            self.console.bot('Closing connection with MySQL database...')
+            self.db.close()
+        self.db = None
+
+    ####################################################################################################################
+    ##                                                                                                                ##
+    ##  UTILITY METHODS                                                                                               ##
+    ##                                                                                                                ##
+    ####################################################################################################################
+
+    def status(self):
+        """
+        Check whether the connection with the storage layer is active or not.
+        :return True if the connection is active, False otherwise.
+        """
+        if self.db and self.db.open:
+           return True
+        return False
+
+
 class MysqlStorage(DatabaseStorage):
 
     _reconnectDelay = 60
@@ -147,23 +205,34 @@ class MysqlStorage(DatabaseStorage):
         """
         try:
 
-            # prefer pymysql
+            # PREFER PYMYSQL
             import pymysql as mysqldriver
             cls.__bases__ = (PymysqlStorage,)
             cls.__driver = mysqldriver
             # new inheritance: MysqlStorage -> PymysqlStorage -> DatabaseStorage -> Storage
         except ImportError:
+
             try:
+                # BACKUP USING MYSQL.CONNECTOR
                 import mysql.connector as mysqldriver
                 cls.__bases__ = (MysqlConnectorStorage,)
                 cls.__driver = mysqldriver
                 # new inheritance: MysqlStorage -> MysqlConnectorStorage -> DatabaseStorage -> Storage
             except ImportError:
-                mysqldriver = None
-                # re-raise ImportError with a custom message since it will be logged and it may
-                # help end users in fixing the problem by themselves (installing libraries)
-                raise ImportError("missing MySQL connector driver. You need to install 'pymysql' or "
-                                  "'python-mysql.connector': look for 'dependencies' in B3 documentation.")
+
+                try:
+                    # USE MYSQLDB AS LAST OPTION
+                    import MySQLdb as mysqldriver
+                    cls.__bases__ = (MySQLdbStorage,)
+                    cls.__driver = mysqldriver
+                    # new inheritance: MysqlStorage -> MySQLdbStorage -> DatabaseStorage -> Storage
+                except ImportError:
+                    mysqldriver = None
+                    # re-raise ImportError with a custom message since it will be logged and it may
+                    # help end users in fixing the problem by themselves (installing libraries)
+                    raise ImportError("missing MySQL connector driver. You need to install one of the following MySQL "
+                                      "connectors: 'pymysql', 'python-mysql.connector', 'MySQL-python': look for "
+                                      "'dependencies' in B3 documentation.")
 
         return super(MysqlStorage, cls).__new__(cls)
 
@@ -212,8 +281,8 @@ class MysqlStorage(DatabaseStorage):
                 self.db = self.__driver.connect(host=self.dsnDict['host'],
                                                 port=self.dsnDict['port'],
                                                 user=self.dsnDict['user'],
-                                                password=self.dsnDict['password'],
-                                                database=self.dsnDict['path'][1:],
+                                                passwd=self.dsnDict['password'],
+                                                db=self.dsnDict['path'][1:],
                                                 charset="utf8")
 
                 self.console.bot('Successfully established a connection with MySQL database')
@@ -267,3 +336,24 @@ class MysqlStorage(DatabaseStorage):
                 cursor.moveNext()
         cursor.close()
         return tables
+
+    def truncateTable(self, table):
+        """
+        Empty a database table (or a collection of tables)
+        :param table: The database table or a collection of tables
+        :raise KeyError: If the table is not present in the database
+        """
+        try:
+            self.query("""SET FOREIGN_KEY_CHECKS=0;""")
+            current_tables = self.getTables()
+            if isinstance(table, tuple) or isinstance(table, list):
+                for v in table:
+                    if not v in current_tables:
+                        raise KeyError("could not find table '%s' in the database" % v)
+                    self.query("TRUNCATE TABLE %s;" % v)
+            else:
+                if not table in current_tables:
+                     raise KeyError("could not find table '%s' in the database" % table)
+                self.query("TRUNCATE TABLE %s;" % table)
+        finally:
+            self.query("""SET FOREIGN_KEY_CHECKS=1;""")

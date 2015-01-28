@@ -18,6 +18,8 @@
 #
 # CHANGELOG
 #
+# 2015/01/09 - 1.34    - Fenix          - added past bans check cronjob
+#                                       - adjusted b3.sql script path in debug message: make use of the correct protocol
 # 2014/12/15 - 1.33    - Fenix          - unregister !restart command if B3 is not running in auto-restart mode
 # 2014/11/15 - 1.32    - 82ndab-Bravo17 - added new command longlist that does a list with one player per line
 #                                       - and cid first. Allows you to see players with clever unicode names that
@@ -127,7 +129,7 @@
 #                                       - added ci command
 #                                       - added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.32'
+__version__ = '1.34'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon, Fenix'
 
 import re
@@ -139,6 +141,7 @@ import thread
 import random
 import copy
 import imp
+import b3.cron
 import b3.plugin
 
 from b3 import functions
@@ -158,6 +161,9 @@ class AdminPlugin(b3.plugin.Plugin):
     _long_tempban_max_duration = 1440   # 60m/h x 24h = 1440m = 1d
     _warn_command_abusers = False
     _announce_registration = True
+    _past_bans_check_rate = 10
+    _past_bans_crontab = None
+    _past_bans_counts = {'Bans': 0, 'TempBans': 0}
 
     cmdPrefix = '!'
     cmdPrefixLoud = '@'
@@ -304,6 +310,20 @@ class AdminPlugin(b3.plugin.Plugin):
         except ValueError, e:
             self.error('could not load settings/announce_registration config value: %s' % e)
             self.debug('using default value (%s) for settings/announce_registration' % self._announce_registration)
+
+        try:
+            # be sure to clamp at 59 seconds else the cronjob won't work properly
+            past_bans_check_rate = self.config.getint('settings', 'past_bans_check_rate')
+            if past_bans_check_rate > 59:
+                past_bans_check_rate = 59
+            self._past_bans_check_rate = past_bans_check_rate
+            self.debug('loaded settings/past_bans_check_rate: %s' % self._past_bans_check_rate)
+        except NoOptionError:
+            self.warning('could not find settings/past_bans_check_rate in config file, '
+                         'using default: %s' % self._past_bans_check_rate)
+        except ValueError, e:
+            self.error('could not load settings/past_bans_check_rate config value: %s' % e)
+            self.debug('using default value (%s) for settings/past_bans_check_rate' % self._past_bans_check_rate)
 
     def load_config_messages(self):
         """
@@ -543,7 +563,8 @@ class AdminPlugin(b3.plugin.Plugin):
             except Exception, msg:
                 # no proper groups available, cannot continue
                 self.critical('seems your groups table in the database is empty: please recreate your database using '
-                              'the proper sql syntax. Use b3/docs/b3.sql - (%s)' % msg)
+                              'the proper sql syntax. To do so you can import in your database the following SQL '
+                              'script: %s - (%s)' % (b3.getAbsolutePath("@b3/sql/%s/b3.sql" % self.console.storage.dsnDict['protocol']), msg))
 
             if 'iamgod' in self._commands and \
                 self._commands['iamgod'].level is not None and \
@@ -560,6 +581,13 @@ class AdminPlugin(b3.plugin.Plugin):
                 self.registerCommand(self, 'iamgod', 0, getCmd(self, 'iamgod'))
             else:
                 self.verbose('superadmin(s) found: no need for !iamgod')
+
+        # install past bans check crontab
+        if self._past_bans_check_rate > 0:
+            self.debug('installing past bans check crontab: B3 will check for banned players every %s seconds' % self._past_bans_check_rate)
+            self.console.cron.cancel(id(self._past_bans_crontab))
+            self._past_bans_crontab = b3.cron.PluginCronTab(self, self.doPastBansCheck, minute='*', second= '*/%s' % self._past_bans_check_rate)
+            self.console.cron.add(self._past_bans_crontab)
 
     def registerCommand(self, plugin, command, level, handler, alias=None, secretLevel=None):
         """
@@ -1033,6 +1061,25 @@ class AdminPlugin(b3.plugin.Plugin):
         cmd.sayLoudOrPM(client, ', '.join(names))
         return True
 
+    def doPastBansCheck(self):
+        """
+        Scheduled execution: will check for banned players still
+        connected to the server and kick them if needed.
+        """
+        counts = self.console.storage.getCounts()
+        for k1 in self._past_bans_counts:
+            if self._past_bans_counts[k1] != counts[k1]:
+                # update counts for next check
+                for k2 in self._past_bans_counts:
+                    self._past_bans_counts[k2] = counts[k2]
+                self.debug('checking for banned clients still connected to the server...')
+                for client in self.console.clients.getList():
+                    if client.numBans > 0:
+                        ban = client.lastBan
+                        if ban:
+                            self.debug('banned client still online %s: re-applying penalty (%s)' % (client, ban.type))
+                            client.reBan(ban)
+                break
 
     def doLonglist(self, client, cmd):
         """
@@ -1040,7 +1087,6 @@ class AdminPlugin(b3.plugin.Plugin):
         :param client: The client who launched the !list command
         :param cmd: The command object instance for sayLoudOrPM method invoke
         """
-        names = []
         for c in self.console.clients.getClientsByLevel():
             clientinfo = self.getMessage('player_id_reverse', c.cid, c.name)
             cmd.sayLoudOrPM(client, clientinfo)

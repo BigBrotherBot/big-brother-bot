@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 27/01/2015 - 1.2.4 - Thomas LEVEIL  - better handling of errors
 # 30/08/2014 - 1.2.3 - Fenix          - syntax cleanup
 # 15/04/2014 - 1.2.2 - Fenix          - PEP8 coding standards
 # 24/10/2013 - 1.2.1 - Courgette      - fix issue when public_ip and rcon_ip are different in b3.xml or when a domain
@@ -58,7 +59,7 @@ except ImportError, ee:
                  "paramiko from http://www.lag.net/paramiko/")
     raise ee
 
-__version__ = '1.2.3'
+__version__ = '1.2.4'
 __author__ = 'Courgette'
 
 
@@ -128,6 +129,8 @@ class SftpytailPlugin(b3.plugin.Plugin):
         """
         Load configuration file.
         """
+        if self.config is None:
+            return
         try:
             self._connectionTimeout = self.config.getint('settings', 'timeout')
             if self._connectionTimeout < 0:
@@ -267,8 +270,10 @@ class SftpytailPlugin(b3.plugin.Plugin):
                 self.file.close()
                 self.file = open(self.lgame_log, 'ab')
                 try:
-                    rfile.close()
-                    transport.close()
+                    if rfile is not None:
+                        rfile.close()
+                    if transport is not None:
+                        transport.close()
                     self.debug('sFTP connection closed')
                 except IOError:
                     pass

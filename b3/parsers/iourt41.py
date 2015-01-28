@@ -147,11 +147,13 @@
 # 03/08/2014 - 1.22   - Fenix      - syntax cleanup
 #                                  - reformat changelog
 # 13/09/2014 - 1.23   - Fenix      - added new event: EVT_SENTRY_KILL
-# 02/10/2014 - 1.24   - Fenix      - fixes regression introduced in 1.22
+# 02/10/2014 - 1.24   - Fenix      - fixed regression introduced in 1.22
+# 15/01/2015 - 1.25   - Fenix      - fixed another regression introduced in 1.22
+# 27/01/2015 - 1.26   - Thomas LEVEIL  - `fdir *.bsp` waits for a game server response for 15s
 
 
 __author__ = 'xlr8or, Courgette, Fenix'
-__version__ = '1.24'
+__version__ = '1.26'
 
 import b3
 import b3.events
@@ -939,7 +941,7 @@ class Iourt41Parser(AbstractParser):
 
         if not client or client.name != name:
             self.debug('Urban Terror bug spotted: trying to get client by name')
-            client = self.clients.get_by_name(name)
+            client = self.clients.getByName(name)
 
         if not client:
             self.verbose('No client found')
@@ -965,7 +967,7 @@ class Iourt41Parser(AbstractParser):
 
         if not client or client.name != name:
             self.debug('Urban Terror bug spotted: trying to get client by name')
-            client = self.clients.get_by_name(name)
+            client = self.clients.getByName(name)
 
         if not client:
             self.verbose('no client found!')
@@ -991,7 +993,7 @@ class Iourt41Parser(AbstractParser):
 
         if not client or client.name != name:
             self.debug('Urban Terror bug spotted: trying to get client by name')
-            client = self.clients.get_by_name(name)
+            client = self.clients.getByName(name)
 
         if not client:
             self.verbose('No client found')
@@ -1272,7 +1274,7 @@ class Iourt41Parser(AbstractParser):
         if self._maplist is not None:
             return self._maplist
 
-        data = self.write('fdir *.bsp')
+        data = self.write('fdir *.bsp', socketTimeout=15)
         if not data:
             return []
 

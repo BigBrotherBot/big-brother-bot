@@ -59,9 +59,10 @@
 #                                   Q3 game engine (i.e. Arma)
 # 30/08/2014 - 1.12   - Fenix     - syntax cleanup
 #                                 - make use of the new onStop() event handler
+# 15/01/2015 - 1.13   - Fenix     - removed outdated reference to Parser._pluginOrder
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.12'
+__version__ = '1.13'
 
 import b3
 import b3.cron
@@ -201,7 +202,7 @@ class PublistPlugin(b3.plugin.Plugin):
         socket.setdefaulttimeout(10)
         
         plugins = []
-        for pname in self.console._pluginOrder:
+        for pname in self.console._plugins:
             try:
                 pl = self.console.getPlugin(pname)
                 p_module = getModule(pl.__module__)

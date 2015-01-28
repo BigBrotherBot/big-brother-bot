@@ -37,7 +37,7 @@ import traceback
 import sys
 
 
-class ReMatcher:
+class ReMatcher(object):
 
     _re = None
 
@@ -162,8 +162,9 @@ class CronTab(object):
             return int(rate)
 
         raise TypeError('"%s" is not a known cron rate type' % rate)
-    
-    def _getRateFromFragment(self, rate, maxrate):
+
+    @staticmethod
+    def _getRateFromFragment(rate, maxrate):
         r = ReMatcher()
         if rate == '*':
             return -1
@@ -195,8 +196,9 @@ class CronTab(object):
             return range(lmin, lmax + 1, step)
 
         raise TypeError('"%s" is not a known cron rate type' % rate)
-    
-    def _match(self, unit, value):
+
+    @staticmethod
+    def _match(unit, value):
         if type(unit) == int:
             if unit == -1 or unit == value:
                 return True
@@ -281,7 +283,7 @@ class Cron(object):
         Add a CronTab to the list of active cron tabs.
         """
         self._tabs[id(tab)] = tab
-        self.console.verbose('added crontab %s (%s) - %ss %sm %sh %sd %sM %sDOW' % (tab.command, id(tab), tab.second,
+        self.console.verbose('Added crontab %s (%s) - %ss %sm %sh %sd %sM %sDOW' % (tab.command, id(tab), tab.second,
                                                                                     tab.minute, tab.hour, tab.day,
                                                                                     tab.month, tab.dow))
         return id(tab)
@@ -292,9 +294,9 @@ class Cron(object):
         """
         try:
             del self._tabs[tab_id]
-            self.console.verbose('removed crontab %s' % tab_id)
+            self.console.verbose('Removed crontab %s' % tab_id)
         except KeyError:
-            self.console.verbose('crontab %s not found' % tab_id)
+            self.console.verbose('Crontab %s not found' % tab_id)
 
     def __add__(self, tab):
         self.add(tab)
@@ -308,7 +310,8 @@ class Cron(object):
         """
         thread.start_new_thread(self.run, ())
 
-    def time(self):
+    @staticmethod
+    def time():
         """
         Return the current timestamp.
         """
@@ -325,7 +328,7 @@ class Cron(object):
         Main cron loop.
         Will terminate when stop event is set.
         """
-        self.console.info("cron scheduler started")
+        self.console.info("Cron scheduler started")
         nexttime = self.getNextTime()
         while not self._stopEvent.isSet():
             now = self.time()
@@ -348,13 +351,14 @@ class Cron(object):
                         try:
                             c.run()
                         except Exception, msg:
-                            self.console.error('exception raised while executing crontab %s: %s\n%s', c.command,
+                            self.console.error('Exception raised while executing crontab %s: %s\n%s', c.command,
                                                msg, traceback.extract_tb(sys.exc_info()[2]))
             nexttime += 1
 
-        self.console.info("cron scheduler ended")
+        self.console.info("Cron scheduler ended")
 
-    def getNextTime(self):
+    @staticmethod
+    def getNextTime():
         # store the time first, we don't want it to change on us
         t = time.time()
         # current time, minus it's 1 second remainder, plus 1 seconds
