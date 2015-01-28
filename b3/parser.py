@@ -18,6 +18,8 @@
 #
 # CHANGELOG
 #
+# 2015/01/27 - 1.41   - Thomas LEVEIL   - allow specifying a custom timeout for `write` (if the rcon implementation
+#                                         supports it)
 # 2015/01/15 - 1.40.2 - Fenix           - removed redundant code: plugins now are held only by the _plugins OrderedDict()
 # 2015/01/15 - 1.40.1 - Fenix           - fixed invalid reference to None object upon plugin loading
 # 2015/01/08 - 1.40   - Fenix           - new plugin loading algorithm: check the comments of the following issue for
@@ -157,7 +159,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.40.1'
+__version__ = '1.41'
 
 
 import os
@@ -1286,7 +1288,7 @@ class Parser(object):
         if self.exiting.locked():
             self.exiting.release()
 
-    def write(self, msg, maxRetries=None):
+    def write(self, msg, maxRetries=None, socketTimeout=None):
         """
         Write a message to Rcon/Console
         """
@@ -1295,7 +1297,7 @@ class Parser(object):
         elif self.output is None:
             pass
         else:
-            res = self.output.write(msg, maxRetries=maxRetries)
+            res = self.output.write(msg, maxRetries=maxRetries, socketTimeout=socketTimeout)
             self.output.flush()
             return res
 
