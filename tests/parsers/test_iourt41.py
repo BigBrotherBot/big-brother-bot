@@ -17,8 +17,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 import logging
-from mockito import mock, when, any, verify
+from mockito import mock, when, any as anything, verify
 from mock import Mock, patch, ANY
+from pip._vendor.distlib.util import socket_timeout
 import unittest2 as unittest
 import b3
 from b3.clients import Client
@@ -79,7 +80,7 @@ class Test_parser_API_implementation(Iourt41TestCase):
         Query the game server for connected players.
         return a dict having players' id for keys and players' data as another dict for values
         """
-        when(self.output_mock).write('status', maxRetries=any()).thenReturn("""\
+        when(self.output_mock).write('status', maxRetries=anything()).thenReturn("""\
 map: ut4_casa
 num score ping name            lastmsg  address              qport rate
 --- ----- ---- --------------- ------- --------------------- ----- -----
@@ -87,7 +88,7 @@ num score ping name            lastmsg  address              qport rate
 12     0   10 superman         0       192.168.1.12:53039     9993 15000
 """)
         result = self.console.getPlayerList()
-        verify(self.output_mock).write('status', maxRetries=any())
+        verify(self.output_mock).write('status', maxRetries=anything())
         self.assertDictEqual({'10': {'ip': '192.168.1.11',
                                      'last': '0',
                                      'name': 'snowwhite',
@@ -120,14 +121,14 @@ num score ping name            lastmsg  address              qport rate
         superman = mock()
         self.console.clients = mock()
         when(self.console.clients).getByCID("12").thenReturn(superman)
-        when(self.output_mock).write('status', maxRetries=any()).thenReturn("""\
+        when(self.output_mock).write('status', maxRetries=anything()).thenReturn("""\
 map: ut4_casa
 num score ping name            lastmsg  address              qport rate
 --- ----- ---- --------------- ------- --------------------- ----- -----
 12     0   10 superman         0       192.168.1.12:53039     9993 15000
 """)
         self.console.authorizeClients()
-        verify(self.output_mock).write('status', maxRetries=any())
+        verify(self.output_mock).write('status', maxRetries=anything())
         verify(superman).auth()
 
 
@@ -142,7 +143,7 @@ num score ping name            lastmsg  address              qport rate
         connects on slot 1.
         """
         self.console.sync()
-        verify(self.output_mock).write('status', maxRetries=any())
+        verify(self.output_mock).write('status', maxRetries=anything())
 
 
     def test_say(self):
@@ -241,7 +242,7 @@ num score ping name            lastmsg  address              qport rate
         """\
         return the available maps/levels name
         """
-        when(self.output_mock).write('fdir *.bsp').thenReturn("""\
+        when(self.output_mock).write('fdir *.bsp', socketTimeout=anything()).thenReturn("""\
 
 ---------------
 maps/ut4_abbey.bsp
@@ -250,7 +251,7 @@ maps/ut4_austria.bsp
 maps/ut4_casa.bsp
 """)
         maps = self.console.getMaps()
-        verify(self.output_mock).write('fdir *.bsp')
+        verify(self.output_mock).write('fdir *.bsp', socketTimeout=anything())
         self.assertSetEqual(set(['ut4_abbey', 'ut4_algiers', 'ut4_austria', 'ut4_casa']), set(maps))
 
 
@@ -269,7 +270,7 @@ maps/ut4_casa.bsp
         load a given map/level
         return a list of suggested map names in cases it fails to recognize the map that was provided
         """
-        when(self.output_mock).write('fdir *.bsp').thenReturn("""\
+        when(self.output_mock).write('fdir *.bsp', socketTimeout=anything()).thenReturn("""\
 
 ---------------
 maps/ut4_abbey.bsp
@@ -293,7 +294,7 @@ maps/ut4_casa.bsp
         """\
         see http://forum.bigbrotherbot.net/urt/!map-x-bug/msg37759/#msg37759
         """
-        when(self.output_mock).write('fdir *.bsp').thenReturn("""\
+        when(self.output_mock).write('fdir *.bsp', socketTimeout=anything()).thenReturn("""\
 ---------------
 maps/ut4_abbey.bsp
 maps/ut4_abbeyctf.bsp
