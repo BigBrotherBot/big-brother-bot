@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/01/28 - 1.41.2 - Fenix           - prevent enabling/disabling of cod7http plugin
 # 2015/01/28 - 1.41.1 - Fenix           - changed some log messages to be verbose only: debug log file was too messy
 #                                       - fixed pluginImport not raising ImportError when B3 is not able to load
 #                                         a plugin from a specific path
@@ -162,7 +163,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.41.1'
+__version__ = '1.41.2'
 
 
 import os
@@ -990,20 +991,20 @@ class Parser(object):
 
     def disablePlugins(self):
         """
-        Disable all plugins except for 'admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail'
+        Disable all plugins except for 'admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail', 'cod7http'
         """
         for k in self._plugins:
-            if k not in ('admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail'):
+            if k not in ('admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail', 'cod7http'):
                 p = self._plugins[k]
                 self.bot('Disabling plugin: %s', k)
                 p.disable()
 
     def enablePlugins(self):
         """
-        Enable all plugins except for 'admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail'
+        Enable all plugins except for 'admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail', 'cod7http
         """
         for k in self._plugins:
-            if k not in ('admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail'):
+            if k not in ('admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail', 'cod7http'):
                 p = self._plugins[k]
                 self.bot('Enabling plugin: %s', k)
                 p.enable()
