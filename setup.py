@@ -195,6 +195,7 @@ setup(cmdclass=cmdclass,
                 "b3.parsers.ravaged",
                 "b3.parsers.frostbite.*",
                 "b3.extplugins.*",
+                "pymysql",
                 ### additional modules for popular/useful 3rd party plugins ###
                 "smtplib", "email.*", "calendar", "email.mime.*", # contact plugin
                 "telnetlib", # teamspeak* plugins
