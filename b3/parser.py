@@ -19,6 +19,7 @@
 # CHANGELOG
 #
 # 2015/01/29 - 1.41.4 - Fenix           - do not let plugins crash B3 by raising an exception within the constructor
+#                                       - fixed KeyError beiung raised in loadPlugins()
 # 2015/01/28 - 1.41.3 - Fenix           - fixed external plugins directory retrieval in loadPlugins()
 # 2015/01/28 - 1.41.2 - Fenix           - prevent enabling/disabling of cod7http plugin
 # 2015/01/28 - 1.41.1 - Fenix           - changed some log messages to be verbose only: debug log file was too messy
@@ -165,7 +166,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.41.3'
+__version__ = '1.41.4'
 
 
 import os
@@ -831,7 +832,7 @@ class Parser(object):
                 try:
                     module = self.pluginImport(name, p['path'])
                     clazz = getattr(module, '%sPlugin' % name.title())
-                    conf = _get_plugin_config(name, clazz, p['config'])
+                    conf = _get_plugin_config(name, clazz, p['conf'])
                     disabled = p['disabled']
                     plugins[name] = {'name': name, 'module': module, 'class': clazz, 'conf': conf, 'disabled': disabled}
                 except Exception, err:
