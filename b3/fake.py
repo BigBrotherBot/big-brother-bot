@@ -37,6 +37,7 @@
 # 1.13 - 2014/08/05 - syntax cleanup
 # 1.14 - 2014/09/06 - adapted FakeConsole to work with the new b3.ini configuration file format
 # 1.15 - 2014/12/27 - new storage module initialization
+# 1.16 - 2015/01/29 - make use of the new b3.config.MainConfig class
 
 """
 This module make plugin testing simple. It provides you
@@ -44,7 +45,7 @@ with fakeConsole and joe which can be used to say commands
 as if it where a player.
 """
 
-__version__ = '1.15'
+__version__ = '1.16'
 
 import b3.events
 import b3.output
@@ -81,12 +82,14 @@ class FakeConsole(b3.parser.Parser):
         self._timeStart = self.time()
         logging.basicConfig(level=b3.output.VERBOSE2, format='%(asctime)s\t%(levelname)s\t%(message)s')
         self.log = logging.getLogger('output')
-
+        self.config = config
 
         if isinstance(config, b3.config.XmlConfigParser) or isinstance(config, b3.config.CfgConfigParser):
+            self.config = b3.config.MainConfig(config)
+        elif isinstance(config, b3.config.MainConfig):
             self.config = config
         else:
-            self.config = b3.config.load(config)
+            self.config = b3.config.MainConfig(b3.config.load(config))
 
         self.storage = SqliteStorage("sqlite://:memory:", splitDSN("sqlite://:memory:"), self)
         self.storage.connect()
