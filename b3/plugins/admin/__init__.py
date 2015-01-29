@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/01/29 - 1.34.1  - Fenix          - fixed external plugin directory retrieval
 # 2015/01/09 - 1.34    - Fenix          - added past bans check cronjob
 #                                       - adjusted b3.sql script path in debug message: make use of the correct protocol
 # 2014/12/15 - 1.33    - Fenix          - unregister !restart command if B3 is not running in auto-restart mode
@@ -129,7 +130,7 @@
 #                                       - added ci command
 #                                       - added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.34'
+__version__ = '1.34.1'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon, Fenix'
 
 import re
@@ -2607,7 +2608,6 @@ class AdminPlugin(b3.plugin.Plugin):
             v = __version__
         else:
             try:
-                # check if it's a standard plugin
                 package = 'b3.plugins.%s' % data
                 module = __import__(package)
                 components = package.split('.')
@@ -2616,16 +2616,7 @@ class AdminPlugin(b3.plugin.Plugin):
             except ImportError:
                 fp = None
                 try:
-                    try:
-                        # old b3.xml configuration file
-                        external_dir = self.console.config.getpath('plugins', 'external_dir')
-                    except NoOptionError:
-                        # new b3.ini configuration file: if this raise again NoOptionError
-                        # then we won't have any information on where the external plugins
-                        # are stored and thus we can't continue with execution
-                        external_dir = self.console.config.getpath('b3', 'external_plugins_dir')
-
-                    # check if it's an external plugin
+                    external_dir = self.console.config.get_external_plugins_dir()
                     fp, path, desc = imp.find_module(data, [external_dir])
                     module = imp.load_module(data, fp, path, desc)
                 except (ImportError, NoOptionError):
