@@ -18,6 +18,8 @@
 #
 # CHANGELOG
 #
+# 2015/01/29 - 1.41.4 - Fenix           - do not let plugins crash B3 by raising an exception within the constructor
+#                                       - fixed KeyError beiung raised in loadPlugins()
 # 2015/01/28 - 1.41.3 - Fenix           - fixed external plugins directory retrieval in loadPlugins()
 # 2015/01/28 - 1.41.2 - Fenix           - prevent enabling/disabling of cod7http plugin
 # 2015/01/28 - 1.41.1 - Fenix           - changed some log messages to be verbose only: debug log file was too messy
@@ -164,7 +166,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.41.3'
+__version__ = '1.41.4'
 
 
 import os
@@ -830,7 +832,7 @@ class Parser(object):
                 try:
                     module = self.pluginImport(name, p['path'])
                     clazz = getattr(module, '%sPlugin' % name.title())
-                    conf = _get_plugin_config(name, clazz, p['config'])
+                    conf = _get_plugin_config(name, clazz, p['conf'])
                     disabled = p['disabled']
                     plugins[name] = {'name': name, 'module': module, 'class': clazz, 'conf': conf, 'disabled': disabled}
                 except Exception, err:
@@ -853,17 +855,24 @@ class Parser(object):
             plugin_name = plugin_dict['name']
             plugin_conf = plugin_dict['conf']
             plugin_conf_path = '--' if plugin_conf is None else plugin_conf.fileName
-            self.bot('Loading plugin #%s %s [%s]', plugin_num, plugin_name, plugin_conf_path)
-            self._plugins[plugin_name] = plugin_dict['class'](self, plugin_conf)
-            if plugin_dict['disabled']:
-                self.info("Disabling plugin %s" % plugin_name)
-                self._plugins[plugin_name].disable()
-            plugin_num += 1
-            version = getattr(plugin_dict['module'], '__version__', 'Unknown Version')
-            author = getattr(plugin_dict['module'], '__author__', 'Unknown Author')
-            self.bot('Plugin %s (%s - %s) loaded', plugin_name, version, author)
-            self.screen.write('.')
-            self.screen.flush()
+
+            try:
+                self.bot('Loading plugin #%s %s [%s]', plugin_num, plugin_name, plugin_conf_path)
+                self._plugins[plugin_name] = plugin_dict['class'](self, plugin_conf)
+            except Exception, err:
+                self.error('Could not load plugin %s' % plugin_name, exc_info=err)
+                self.screen.write('x')
+            else:
+                if plugin_dict['disabled']:
+                    self.info("Disabling plugin %s" % plugin_name)
+                    self._plugins[plugin_name].disable()
+                plugin_num += 1
+                version = getattr(plugin_dict['module'], '__version__', 'Unknown Version')
+                author = getattr(plugin_dict['module'], '__author__', 'Unknown Author')
+                self.bot('Plugin %s (%s - %s) loaded', plugin_name, version, author)
+                self.screen.write('.')
+            finally:
+                self.screen.flush()
 
     def call_plugins_onLoadConfig(self):
         """
