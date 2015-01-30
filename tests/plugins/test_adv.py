@@ -114,7 +114,7 @@ class Test_default_config(AdvTestCase):
         self.init_plugin()
         self.assertEqual('2', self.p._rate)
         self.assertIsNone(self.p._fileName)
-        self.assertEqual(10, len(self.p._msg.items))
+        self.assertEqual(9, len(self.p._msg.items))
         self.assertEqual("http://forum.bigbrotherbot.net/news-2/?type=rss;action=.xml", self.p._feed)
         self.assertEqual("News:", self.p._feedpre)
         self.assertEqual(4, self.p._feedmaxitems)
