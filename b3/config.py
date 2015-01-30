@@ -47,9 +47,12 @@
 #                                  as disabled from main B3 configuration file
 # 22/01/2015 - 1.7.3 - Fenix     - added add_comment method to CfgConfigParser and overridden write() method
 #                                  to properly write comments in a newly generated configuration file
+# 30/01/2015 - 1.7.4 - Fenix     - added get_section_list method to CfgConfigParser: return a section as list of strings
+#                                  ignoring key-value separator (every row of the section will match an entry in the list)
+
 
 __author__  = 'ThorN, Courgette, Fenix'
-__version__ = '1.7.3'
+__version__ = '1.7.4'
 
 import os
 import re
@@ -349,6 +352,23 @@ class CfgConfigParser(B3ConfigParserMixin, ConfigParser.ConfigParser):
         except ConfigParser.NoSectionError:
             # plugins are used to only catch NoOptionError
             raise ConfigParser.NoOptionError(option, section)
+
+    def get_section_list(self, section):
+        """
+        Return all the lines in a given section as list of strings.
+        :param section: The section where we want to lookup values
+        :return:
+        """
+        section_list = []
+        for option in self.options(section):
+            value = ConfigParser.ConfigParser.get(self, section, option)
+            if value is not None:
+                # row was splitted during parsing so join it back
+                section_list.append('%s: %s' % (option, value))
+            else:
+                # row was not splitted during parsing
+                section_list.append(option)
+        return section_list
 
     def load(self, filename):
         """

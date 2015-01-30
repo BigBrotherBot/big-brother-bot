@@ -18,7 +18,9 @@
 #
 # CHANGELOG
 #
-# 03/11/2014 - 1.6.1 - Fenix      - updated plugin to use a default rate vale of 2mins is not specified in the
+# 30/01/2015 - 1.7   - Fenix      - accept both .xml and .ini as configuration file format
+#                                 - minor improvements in advertisement loading
+# 03/11/2014 - 1.6.1 - Fenix      - updated plugin to use a default rate vale of 2mins if not specified in the
 #                                   plugin configuration file (previously plugin was not loading at all)
 # 31/08/2014 - 1.6   - Fenix      - syntax cleanup
 # 03/04/2014 - 1.5   - Fenix      - PEP8 coding standards
@@ -39,7 +41,7 @@
 # 29/08/2005 - 1.1.0 - ThorN      - converted to use XML config
 
 __author__ = 'ThorN'
-__version__ = '1.6.1'
+__version__ = '1.7'
 
 import b3
 import os
@@ -48,10 +50,13 @@ import b3.lib.feedparser as feedparser
 import b3.plugin
 import b3.cron
 
+from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 from ConfigParser import NoOptionError
+from ConfigParser import NoSectionError
 
 
-class MessageLoop:
+class MessageLoop(object):
 
     items = None
 
@@ -165,12 +170,15 @@ class AdvPlugin(b3.plugin.Plugin):
         except NoOptionError:
             self.warning('could not find settings/max_level in config file, using default: 2')
 
-        if self.config.has_option('settings', 'ads'):
-            self._fileName = self.console.getAbsolutePath(self.config.get('settings', 'ads'))
-            self.load_from_file(self._fileName)
-        else:
-            self._fileName = None
-            self.load_from_config()
+        try:
+            if self.config.has_option('settings', 'ads'):
+                self._fileName = self.console.getAbsolutePath(self.config.get('settings', 'ads'))
+                self.load_from_file(self._fileName)
+            else:
+                self._fileName = None
+                self.load_from_config()
+        except Exception, e:
+            self.error('could not load advertisements: %s' % e)
 
         try:
             self._feed = self.config.get('newsfeed', 'url')
@@ -233,10 +241,10 @@ class AdvPlugin(b3.plugin.Plugin):
     def load_from_file(self, filename):
         """
         Load advertisements from a file.
+        :raise IOError: If the advertisement file could not be found
         """
         if not os.path.isfile(filename):
-            self.error('advertisement file %s does not exist', filename)
-            return False
+            raise IOError('advertisement file %s does not exist', filename)
 
         f = file(filename, 'r')
         self.load(f.readlines())
@@ -245,10 +253,26 @@ class AdvPlugin(b3.plugin.Plugin):
     def load_from_config(self):
         """
         Load advertisement from the plugin configuration file.
+        :raise NoSectionError: When it's not possible to parse advertisements
+        :raise NotImplemented: When an invalid configuration file is loaded
         """
         items = []
-        for e in self.config.get('ads/ad'):
-            items.append(e.text)
+        if isinstance(self.config, XmlConfigParser):
+            try:
+                for e in self.config.get('ads/ad'):
+                    items.append(e.text)
+            except NoOptionError:
+                raise NoSectionError("could not find 'ads' section in plugin adv configuration file")
+        elif isinstance(self.config, CfgConfigParser):
+            try:
+                items = self.config.get_section_list('ads')
+            except NoSectionError:
+                raise NoSectionError("could not find 'ads' section in plugin adv configuration file")
+            else:
+                if not items:
+                    raise NoSectionError("section 'ads' found empty in configuration file")
+        else:
+            raise NotImplemented("unexpected config type: %r" % self.config.__class__)
 
         self.load(items)
 
