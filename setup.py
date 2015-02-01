@@ -21,9 +21,11 @@
 # CHANGELOG
 #
 # 2014/09/01 - 2.6 - Fenix - syntax cleanup
+# 2014/12/20 - 2.7 - Thomas LEVEIL - add the `scripts` directory to the builds
+# 2015/02/01 - 2.9 - Thomas LEVEIL - fix py2exe failling to find the plugin modules since 533a2d5d2101f0c9a228cc1e20d3b2683770c9fb
 
 __author__  = 'ThorN, xlr8or, courgette'
-__version__ = '2.7'
+__version__ = '2.8'
 
 
 import re
@@ -190,6 +192,25 @@ setup(cmdclass=cmdclass,
             "includes": [
                 "b3.lib.*",
                 "b3.plugins.*",
+                "b3.plugins.admin",
+                "b3.plugins.adv",
+                "b3.plugins.censor",
+                "b3.plugins.cmdmanager",
+                "b3.plugins.cod7http",
+                "b3.plugins.codam",
+                "b3.plugins.ftpytail",
+                "b3.plugins.httpytail",
+                "b3.plugins.login",
+                "b3.plugins.pingwatch",
+                "b3.plugins.publist",
+                "b3.plugins.punkbuster",
+                "b3.plugins.sftpytail",
+                "b3.plugins.spamcontrol",
+                "b3.plugins.stats",
+                "b3.plugins.status",
+                "b3.plugins.tk",
+                "b3.plugins.updater",
+                "b3.plugins.welcome",
                 "b3.parsers.*",
                 "b3.parsers.homefront",
                 "b3.parsers.ravaged",
