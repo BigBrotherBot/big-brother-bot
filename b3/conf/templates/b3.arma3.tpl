@@ -19,7 +19,7 @@ rcon_password:
 [autodoc]
 type: html
 maxlevel: 100
-@conf/b3_doc.html
+destination: @conf/b3_doc.html
 
 [update]
 channel: stable

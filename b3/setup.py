@@ -516,74 +516,74 @@ class Setup(object):
 
         # in this section we also need to check if we have old version messages! they contain: %s
         if '%s' in self.read_element('messages', 'kicked_by', '%s'):
-            self.add_value(ini=ini, section='autodoc', option="kicked_by",
+            self.add_value(ini=ini, section='messages', option="kicked_by",
                            default="$clientname^7 was kicked by $adminname^7 $reason",
                            allow_blank=False)
         else:
-            self.add_value(ini=ini, section='autodoc', option="kicked_by",
+            self.add_value(ini=ini, section='messages', option="kicked_by",
                            default=self.read_element('messages', 'kicked_by', '$clientname^7 was kicked by $adminname^7 $reason'),
                            allow_blank=False)
 
         if '%s' in self.read_element('messages', 'kicked', '%s'):
-            self.add_value(ini=ini, section='autodoc', option="kicked",
+            self.add_value(ini=ini, section='messages', option="kicked",
                            default="$clientname^7 was kicked $reason",
                            allow_blank=False)
         else:
-            self.add_value(ini=ini, section='autodoc', option="kicked",
+            self.add_value(ini=ini, section='messages', option="kicked",
                            default=self.read_element('messages', 'kicked', '$clientname^7 was kicked $reason'),
                            allow_blank=False)
 
         if '%s' in self.read_element('messages', 'banned_by', '%s'):
-            self.add_value(ini=ini, section='autodoc', option="banned_by",
+            self.add_value(ini=ini, section='messages', option="banned_by",
                            default="$clientname^7 was banned by $adminname^7 $reason",
                            allow_blank=False)
         else:
-            self.add_value(ini=ini, section='autodoc', option="banned_by",
+            self.add_value(ini=ini, section='messages', option="banned_by",
                            default=self.read_element('messages', 'banned_by', '$clientname^7 was banned by $adminname^7 $reason'),
                            allow_blank=False)
 
         if '%s' in self.read_element('messages', 'banned', '%s'):
-            self.add_value(ini=ini, section='autodoc', option="banned",
+            self.add_value(ini=ini, section='messages', option="banned",
                            default="$clientname^7 was banned $reason",
                            allow_blank=False)
         else:
-            self.add_value(ini=ini, section='autodoc', option="banned",
+            self.add_value(ini=ini, section='messages', option="banned",
                            default=self.read_element('messages', 'banned', '$clientname^7 was banned $reason'),
                            allow_blank=False)
 
         if '%s' in self.read_element('messages', 'temp_banned_by', '%s'):
-            self.add_value(ini=ini, section='autodoc', option="temp_banned_by",
+            self.add_value(ini=ini, section='messages', option="temp_banned_by",
                            default="$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason",
                            allow_blank=False)
         else:
-            self.add_value(ini=ini, section='autodoc', option="temp_banned_by",
+            self.add_value(ini=ini, section='messages', option="temp_banned_by",
                            default=self.read_element('messages', 'temp_banned_by', '$clientname^7 was temp banned by $adminname^7 for $banduration^7 $reason'),
                            allow_blank=False)
 
         if '%s' in self.read_element('messages', 'temp_banned', '%s'):
-            self.add_value(ini=ini, section='autodoc', option="temp_banned",
+            self.add_value(ini=ini, section='messages', option="temp_banned",
                            default="$clientname^7 was temp banned for $banduration^7 $reason",
                            allow_blank=False)
         else:
-            self.add_value(ini=ini, section='autodoc', option="temp_banned",
+            self.add_value(ini=ini, section='messages', option="temp_banned",
                            default=self.read_element('messages', 'temp_banned', '$clientname^7 was temp banned for $banduration^7 $reason'),
                            allow_blank=False)
 
         if '%s' in self.read_element('messages', 'unbanned_by', '%s'):
-            self.add_value(ini=ini, section='autodoc', option="unbanned_by",
+            self.add_value(ini=ini, section='messages', option="unbanned_by",
                            default="$clientname^7 was un-banned by $adminname^7 $reason",
                            allow_blank=False)
         else:
-            self.add_value(ini=ini, section='autodoc', option="unbanned_by",
+            self.add_value(ini=ini, section='messages', option="unbanned_by",
                            default=self.read_element('messages', 'unbanned_by', '$clientname^7 was un-banned by $adminname^7 $reason'),
                            allow_blank=False)
 
         if '%s' in self.read_element('messages', 'unbanned', '%s'):
-            self.add_value(ini=ini, section='autodoc', option="unbanned",
+            self.add_value(ini=ini, section='messages', option="unbanned",
                            default="$clientname^7 was un-banned $reason",
                            allow_blank=False)
         else:
-            self.add_value(ini=ini, section='autodoc', option="unbanned",
+            self.add_value(ini=ini, section='messages', option="unbanned",
                            default=self.read_element('messages', 'unbanned', '$clientname^7 was un-banned $reason'),
                            allow_blank=False)
 
