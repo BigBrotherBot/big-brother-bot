@@ -28,9 +28,10 @@
 # 2011/12/03 - 1.4.1 - Courgette - fix crash at bot start in restart mode when installed from egg
 # 2014/07/21 - 1.5   - Fenix     - syntax cleanup
 # 2014/12/15 - 1.5.1 - Fenix     - let the parser know if we are running B3 in auto-restart mode or not
+# 2015/02/02 - 1.5.2 - Fenix     - keep looking for xml configuration files if ini/cfg are not found
 
 __author__  = 'ThorN'
-__version__ = '1.5.1'
+__version__ = '1.5.2'
 
 import b3
 import os
@@ -142,13 +143,13 @@ def run(config=None, nosetup=False, autorestart=False):
     else:
         # search for the config file
         config = None
-        for p in ('b3.ini', 'conf/b3.ini', 'b3/conf/b3.ini', '~/b3.ini',
-                  '~/conf/b3.ini', '~/b3/conf/b3.ini', '@b3/conf/b3.ini'):
-            path = b3.getAbsolutePath(p)
-            print 'Searching for config file: %s' % path
-            if os.path.isfile(path):
-                config = path
-                break
+        for p in ('b3.%s', 'conf/b3.%s', 'b3/conf/b3.%s', '~/b3.%s', '~/conf/b3.%s', '~/b3/conf/b3.%s', '@b3/conf/b3.%s'):
+            for e in ('ini', 'cfg', 'xml'):
+                path = b3.getAbsolutePath(p % e)
+                print 'Searching for config file: %s' % path
+                if os.path.isfile(path):
+                    config = path
+                    break
 
     if not config:
         # This happens when no config was specified on the
@@ -189,9 +190,9 @@ def main():
     Main execution.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', dest='config', default=None, metavar='b3.xml', help='B3 config file. Example: -c b3.xml', type=lambda x: _check_arg_configfile(parser, x))
+    parser.add_argument('-c', '--config', dest='config', default=None, metavar='b3.xml', help='B3 config file. Example: -c b3.ini', type=lambda x: _check_arg_configfile(parser, x))
     parser.add_argument('-r', '--restart', action='store_true', dest='restart', default=False, help='Auto-restart B3 on crash')
-    parser.add_argument('-s', '--setup',  action='store_true', dest='setup', default=False, help='Setup main b3.xml config file')
+    parser.add_argument('-s', '--setup',  action='store_true', dest='setup', default=False, help='Setup main b3.ini config file')
     parser.add_argument('-u', '--update', action='store_true', dest='update', default=False, help='Update B3 database to latest version')
     parser.add_argument('-n', '--nosetup', action="store_true", dest='nosetup', default=False, help='Do not enter setup mode when config is missing')
     parser.add_argument('-v', '--version', action='version', default=False, version=b3.getB3versionString(), help='Show Version and exit')
