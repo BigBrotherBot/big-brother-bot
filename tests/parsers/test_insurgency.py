@@ -30,6 +30,7 @@ from b3 import TEAM_BLUE
 from b3 import TEAM_RED
 from b3 import TEAM_UNKNOWN
 from b3 import TEAM_SPEC
+from b3.clients import Client
 from b3.config import XmlConfigParser
 from b3.config import CfgConfigParser
 from b3.fake import FakeClient
@@ -314,6 +315,45 @@ class FunctionalTest(AdminTestCase):
          superadmin.says("!map district hunt")
          # THEN
          self.parser.output.write.assert_has_calls([call('changelevel district_hunt hunt')])
+
+    def test_say(self):
+        self.parser.msgPrefix = "[Pre]"
+        with patch.object(self.parser.output, 'write') as write_mock:
+            self.parser.say("f00")
+            write_mock.assert_has_calls([call('sm_say [Pre] f00')])
+
+    def test_say_with_color_codes(self):
+        self.parser.msgPrefix = "[Pre]"
+        with patch.object(self.parser.output, 'write') as write_mock:
+            self.parser.say("^7message ^1with ^2color ^8codes")
+            write_mock.assert_has_calls([call('sm_say [Pre] message with color codes')])
+
+    def test_saybig(self):
+        self.parser.msgPrefix = "[Pre]"
+        with patch.object(self.parser.output, 'write') as write_mock:
+            self.parser.saybig("f00")
+            write_mock.assert_has_calls([call('sm_hsay [Pre] f00')])
+
+    def test_saybig_with_color_codes(self):
+        self.parser.msgPrefix = "[Pre]"
+        with patch.object(self.parser.output, 'write') as write_mock:
+            self.parser.saybig("^7message ^1with ^2color ^8codes")
+            write_mock.assert_has_calls([call('sm_hsay [Pre] message with color codes')])
+
+#    @unittest.skipIf(WAS_FROSTBITE_LOADED, "Frostbite(1|2) parsers monkey patch the Client class and make this test fail")
+    def test_message(self):
+        self.parser.msgPrefix = "[Pre]"
+        player = Client(console=self.parser, guid="theGuid")
+        with patch.object(self.parser.output, 'write') as write_mock:
+            player.message("f00")
+            write_mock.assert_has_calls([call('sm_psay #theGuid "[Pre] f00"')])
+
+    def test_message_with_color_codes(self):
+        self.parser.msgPrefix = "[Pre]"
+        player = Client(console=self.parser, guid="theGuid")
+        with patch.object(self.parser.output, 'write') as write_mock:
+            player.message("^7message ^1with ^2color ^8codes")
+            write_mock.assert_has_calls([call('sm_psay #theGuid "[Pre] message with color codes"')])
 
 class Test_getClientOrCreate(InsurgencyTestCase):
 
