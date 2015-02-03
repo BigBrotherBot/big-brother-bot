@@ -209,7 +209,7 @@ class AdminTestCase(unittest.TestCase):
         adminPlugin.onLoadConfig()
         adminPlugin.onStartup()
         when(self.parser).getPlugin('admin').thenReturn(adminPlugin)
-        when(self.parser).getAllAvailableMaps().thenReturn(GAME_MODES_FOR_MAP.keys())
+        when(self.parser).getAllAvailableMaps().thenReturn (['buhriz', 'district', 'sinjar', 'siege', 'uprising', 'ministry', 'revolt', 'heights', 'contact', 'peak', 'panj', 'market'])
         self.parser.startup()
         self.parser.patch_b3_admin_plugin() # seems that without this the test module doesn't patch the admin plugin
 
@@ -253,19 +253,6 @@ class FunctionalTest(AdminTestCase):
         # THEN
         superadmin.says('!baninfo @%s' % bill.id)
         self.assertListEqual(['Banned: bill (@2) has been added to banlist', 'bill has 1 active bans',], superadmin.message_history)
-
-    def test_map_with_no_parameters(self):
-        # GIVEN
-        superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128, team=TEAM_UNKNOWN)
-        superadmin.connects("1")
-        # WHEN
-        superadmin.says("!map")
-        # THEN
-        self.assertListEqual(["Fully supported map names are : " + ', '.join(m for m in GAME_MODES_FOR_MAP.keys()),
-                              "You can use these with the optional '-force' parameter, which will disable map/gamemode "
-                              "pair checking and will need a server restart if an invalid pairing is given:",
-                              "For more help, type !help map"],
-                             superadmin.message_history)
 
     def test_map_with_invalid_map_name(self):
         # GIVEN
