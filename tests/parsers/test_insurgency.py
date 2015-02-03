@@ -35,7 +35,6 @@ from b3.config import XmlConfigParser
 from b3.config import CfgConfigParser
 from b3.fake import FakeClient
 from b3.parsers.insurgency import InsurgencyParser
-from b3.parsers.insurgency import GAME_MODES_FOR_MAP
 from b3.plugins.admin import AdminPlugin
 from b3 import __file__ as b3_module__file__
 
@@ -210,7 +209,7 @@ class AdminTestCase(unittest.TestCase):
         adminPlugin.onLoadConfig()
         adminPlugin.onStartup()
         when(self.parser).getPlugin('admin').thenReturn(adminPlugin)
-        when(self.parser).getAllAvailableMaps().thenReturn(GAME_MODES_FOR_MAP.keys())
+        when(self.parser).getAllAvailableMaps().thenReturn (['buhriz', 'district', 'sinjar', 'siege', 'uprising', 'ministry', 'revolt', 'heights', 'contact', 'peak', 'panj', 'market'])
         self.parser.startup()
         self.parser.patch_b3_admin_plugin() # seems that without this the test module doesn't patch the admin plugin
 
@@ -255,19 +254,6 @@ class FunctionalTest(AdminTestCase):
         superadmin.says('!baninfo @%s' % bill.id)
         self.assertListEqual(['Banned: bill (@2) has been added to banlist', 'bill has 1 active bans',], superadmin.message_history)
 
-    def test_map_with_no_parameters(self):
-        # GIVEN
-        superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128, team=TEAM_UNKNOWN)
-        superadmin.connects("1")
-        # WHEN
-        superadmin.says("!map")
-        # THEN
-        self.assertListEqual(["Fully supported map names are : " + ', '.join(m for m in GAME_MODES_FOR_MAP.keys()),
-                              "You can use these with the optional '-force' parameter, which will disable map/gamemode "
-                              "pair checking and will need a server restart if an invalid pairing is given:",
-                              "For more help, type !help map"],
-                             superadmin.message_history)
-
     def test_map_with_invalid_map_name(self):
         # GIVEN
         superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128, team=TEAM_UNKNOWN)
@@ -286,35 +272,6 @@ class FunctionalTest(AdminTestCase):
          superadmin.says("!map market push")
          # THEN
          self.parser.output.write.assert_has_calls([call('changelevel market push')])
-
-    def test_map_with_invalid_map_gamemode_combo(self):
-         # GIVEN
-         superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128, team=TEAM_UNKNOWN)
-         superadmin.connects("1")
-         # WHEN
-         superadmin.says("!map buhriz ambush")
-         # THEN
-         self.assertListEqual(["buhriz cannot be played with gamemode ambush",
-                               "supported gamemodes are : " + ', '.join(g for g in GAME_MODES_FOR_MAP['buhriz'])],
-                               superadmin.message_history)
-
-    def test_map_with_invalid_map_gamemode_comboand_force(self):
-         # GIVEN
-         superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128, team=TEAM_UNKNOWN)
-         superadmin.connects("1")
-         # WHEN
-         superadmin.says("!map buhriz ambush -force")
-         # THEN
-         self.parser.output.write.assert_has_calls([call('changelevel buhriz ambush')])
-
-    def test_map_with_correct_parameters_and_added_suffix(self):
-         # GIVEN
-         superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128, team=TEAM_UNKNOWN)
-         superadmin.connects("1")
-         # WHEN
-         superadmin.says("!map district hunt")
-         # THEN
-         self.parser.output.write.assert_has_calls([call('changelevel district_hunt hunt')])
 
     def test_say(self):
         self.parser.msgPrefix = "[Pre]"

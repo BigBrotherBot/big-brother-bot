@@ -50,6 +50,9 @@
 #                                     - use suggested map name when only one suggestion is given on map change
 #                                     - show map and gametype being changed to for 5 seconds before change
 #                                     - don't show BOTs in !list for coop games
+# 2014/12/17 - 0.7.3 - 82ndab-Bravo17 - Updated map/gametype list
+# 2014/12/23 - 0.8.0 - 82ndab-Bravo17 - Removed map/gametype pair checking, since game no longer seems to lockup if invalid.
+#                                     - Remove auto adding of _hunt and _coop, since mapmakers are not sticking to this format.
 
 import re
 import time
@@ -71,7 +74,7 @@ from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '0.7.2'
+__version__ = '0.8.0'
 
 
 # GAME SETUP
@@ -111,21 +114,6 @@ RE_CVAR = re.compile(r'''^"(?P<cvar>\S+?)" = "(?P<value>.*?)" \( def. "(?P<defau
 
 ger = GameEventRouter()
 
-# GAME_MODES_BY_MAP_ID = dict('Map name': tuple('Game mode names'))
-GAME_MODES_FOR_MAP = {
-    'buhriz': ('occupy', 'push', 'strike', 'checkpoint', 'outpost'),
-    'contact': ('ambush', 'firefight', 'flashpoint', 'infiltrate', 'skirmish', 'strike', 'hunt', 'checkpoint', 'outpost'),
-    'district': ('firefight', 'infiltrate', 'occupy', 'push', 'skirmish', 'hunt', 'checkpoint', 'outpost'),
-    'heights': ('firefight', 'flashpoint', 'occupy', 'push', 'skirmish', 'strike', 'hunt', 'checkpoint', 'outpost'),
-    'market': ('ambush', 'firefight', 'infiltrate', 'occupy', 'push', 'skirmish', 'strike', 'checkpoint', 'outpost'),
-    'ministry': ('firefight', 'infiltrate', 'occupy', 'skirmish', 'hunt', 'checkpoint', 'outpost'),
-    'panj': ('firefight', 'occupy', 'push', 'skirmish', 'hunt'),
-    'peak': ('firefight', 'flashpoint', 'occupy', 'push', 'skirmish', 'strike'),
-    'revolt': ('ambush', 'firefight', 'flashpoint', 'infiltrate', 'occupy', 'push', 'skirmish', 'strike', 'checkpoint', 'outpost'),
-    'siege': ('ambush', 'firefight', 'occupy', 'push', 'skirmish', 'checkpoint', 'outpost'),
-    'sinjar': ('firefight', 'push', 'strike', 'checkpoint', 'outpost'),
-    'uprising': ('firefight', 'occupy', 'hunt')
-}
 
 class InvalidmapgamecomboError(Exception):
     pass
@@ -172,67 +160,44 @@ class InsurgencyParser(Parser):
         """
         def parse_map_parameters(this, data, client):
             """
-            Method that parses a command parameters of extract map and gamemode.
-            Expecting two parameters separated by a comma.
+            Method that parses a command parameters to extract map and gamemode.
+            Expecting one or two parameters separated by a space.
             <map> <gamemode>
-            Note gamemode is needed since we cannot get the current gamemode from the server, and therefore
-            cannot confirm that a new map/gamemode combination is valid if only mapname is supplied.
             """
             gamemode_data = None
             parts = data.split()
             if len(parts) < 2:
-                client.message("Invalid parameters. 2 parameters are required, name and gametype, "
-                               "with an optional -force parameter if map/gametype pairing is not known. "
-                               "Note that an invalid pairing will require a server restart.")
-                return
-
-            force = False
-            if len(parts) == 3 and parts[2] == '-force':
-                force = True
-
-            gamemode_data = parts[1]
+                gamemode_data = ''
+            else:
+                gamemode_data = parts[1]
             map_data = parts[0]
 
-            return map_data, gamemode_data, force
+            return map_data, gamemode_data
 
         # Monkey patch the cmd_map method of the loaded AdminPlugin instance
         # to require 2nd parameter which is the game mode
         def new_cmd_map(this, data, client, cmd=None):
             """
-            <map> <gamemode> [-force] - switch current map. Specify a gamemode by separating
-            them from the map name with a space(required), optional parameter -force to ignore map/gamemode checking
+            <map> <gamemode> - switch current map. Specify a gamemode by separating
+            them from the map name with a space
             """
             if not data:
-                client.message("Fully supported map names are : " + ', '.join(m for m in GAME_MODES_FOR_MAP.keys()))
                 allavailablemaps = this.console.getAllAvailableMaps()
                 maplist = ''
                 for m in allavailablemaps:
-                    mapshort = m
-                    if m.endswith(('_coop', '_hunt')):
-                        mapshort = m[0:len(m) - 5]
-                    if mapshort not in GAME_MODES_FOR_MAP.keys():
-                        maplist = maplist + ', ' + m
-                client.message("You can use these with the optional '-force' parameter, "
-                               "which will disable map/gamemode pair checking and will need a server "
-                               "restart if an invalid pairing is given:" + maplist)
+                    maplist = maplist + ', ' + m
+                client.message("Full list of maps on the server" + maplist)
+                client.message("PVP Gametypes are: ambush, firefight, flashpoint, infiltrate, occupy, push, skirmish, strike")
+                client.message("Coop Gametypes are: checkpoint, outpost, hunt, survival")
                 client.message('For more help, type !help map')
                 return
 
             parsed_data = this.parse_map_parameters(data, client)
-            if not parsed_data:
-                return
+            map_id, gamemode_id = parsed_data
 
-            map_id, gamemode_id, force = parsed_data
-
-            try:
-                suggestions = this.console.changeMap(map_id, gamemode_id, force)
-                if type(suggestions) == list:
-                    client.message('do you mean : %s ?' % ', '.join(suggestions))
-            except InvalidmapgamecomboError:
-                client.message("%s cannot be played with gamemode %s" % (map_id, gamemode_id))
-                client.message("supported gamemodes are : " + ', '.join(g for g in GAME_MODES_FOR_MAP[map_id]))
-            except:
-                raise
+            suggestions = this.console.changeMap(map_id, gamemode_id)
+            if type(suggestions) == list:
+                client.message('do you mean : %s ?' % ', '.join(suggestions))
 
         adminPlugin = self.getPlugin('admin')
         adminPlugin.parse_map_parameters = new.instancemethod(parse_map_parameters, adminPlugin)
@@ -264,17 +229,6 @@ class InsurgencyParser(Parser):
 
         # keeps the last properties from a killlocation game event
         self.last_killlocation_properties = None
-
-        if self.config.has_section('mapsinfo'):
-            self.info("------ loading custom map details from config file ------")
-            for mapname, gamemodes in self.config.items('mapsinfo'):
-                gamemode_list = ()
-                gamemodes_sep = gamemodes.split(',')
-                for gamemode in gamemodes_sep:
-                    gamemode_list = gamemode_list + (gamemode.strip(),)
-                GAME_MODES_FOR_MAP[mapname] = gamemode_list
-            self.info("-------------- custom map details loaded ----------------")
-        self.debug(GAME_MODES_FOR_MAP)
 
     def pluginsStarted(self):
         """
@@ -845,23 +799,15 @@ class InsurgencyParser(Parser):
             time.sleep(1)
             self.output.write('map %s' % next_map)
 
-    def changeMap(self, map_name, gamemode_name='', force=False):
+    def changeMap(self, map_name, gamemode_name=''):
         """
         Load a given map/level
         Return a list of suggested map names in cases it fails to recognize the map that was provided.
         """
-        map_name = self.getMapsSoundingLike(map_name, force)
+        map_name = self.getMapsSoundingLike(map_name)
         if not isinstance(map_name, basestring):
             return map_name
-        elif force:
-            map_name = self.checkGameMode(map_name, gamemode_name)
-            self.saybig('Changing map to: %s - %s' % (map_name, gamemode_name))
-            time.sleep(5)
-            self.output.write('changelevel %s %s' % (map_name, gamemode_name))
         else:
-            if not map_name in GAME_MODES_FOR_MAP or not gamemode_name in GAME_MODES_FOR_MAP[map_name]:
-                raise InvalidmapgamecomboError
-            map_name = self.checkGameMode(map_name, gamemode_name)
             self.saybig('Changing map to: %s - %s' % (map_name, gamemode_name))
             time.sleep(5)
             self.output.write('changelevel %s %s' % (map_name, gamemode_name))
@@ -1042,13 +988,6 @@ class InsurgencyParser(Parser):
 
             return clients
 
-    def getSafeAvailableMaps(self):
-        """
-        Return the available maps for the server, even if not in the map rotation list
-        Non stock maps must be added to the xml file to be found
-        """
-        return GAME_MODES_FOR_MAP.keys()
-
     def getAllAvailableMaps(self):
         """
         Return the available maps for the server, even if not in the map rotation list
@@ -1173,21 +1112,15 @@ class InsurgencyParser(Parser):
                 response[m.group('name')] = (m.group('index'), m.group('version'), m.group('author'))
         return response
 
-    def getMapsSoundingLike(self, mapname, force):
+    def getMapsSoundingLike(self, mapname):
         """
         Return a valid mapname.
         If no exact match is found, then return close candidates as a list
         """
-        if force:
-            supported_maps = [m.lower() for m in self.getAllAvailableMaps()]
-            wanted_map = mapname.lower()
-            if wanted_map in supported_maps:
-                return wanted_map
-        else:
-            supported_maps = [m.lower() for m in self.getSafeAvailableMaps()]
-            wanted_map = mapname.lower()
-            if wanted_map in supported_maps:
-                return wanted_map
+        supported_maps = [m.lower() for m in self.getAllAvailableMaps()]
+        wanted_map = mapname.lower()
+        if wanted_map in supported_maps:
+            return wanted_map
 
         matches = getStuffSoundingLike(wanted_map, supported_maps)
         if len(matches) == 1:
