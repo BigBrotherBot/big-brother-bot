@@ -861,12 +861,23 @@ class Test_parser_API(CsgoTestCase):
             self.parser.say("f00")
             write_mock.assert_has_calls([call('sm_say [Pre] f00')])
 
+    def test_say_with_color_codes(self):
+        self.parser.msgPrefix = "[Pre]"
+        with patch.object(self.parser.output, 'write') as write_mock:
+            self.parser.say("^7message ^1with ^2color ^8codes")
+            write_mock.assert_has_calls([call('sm_say [Pre] message with color codes')])
 
     def test_saybig(self):
         self.parser.msgPrefix = "[Pre]"
         with patch.object(self.parser.output, 'write') as write_mock:
             self.parser.saybig("f00")
             write_mock.assert_has_calls([call('sm_hsay [Pre] f00')])
+
+    def test_saybig_with_color_codes(self):
+        self.parser.msgPrefix = "[Pre]"
+        with patch.object(self.parser.output, 'write') as write_mock:
+            self.parser.saybig("^7message ^1with ^2color ^8codes")
+            write_mock.assert_has_calls([call('sm_hsay [Pre] message with color codes')])
 
 #    @unittest.skipIf(WAS_FROSTBITE_LOADED, "Frostbite(1|2) parsers monkey patch the Client class and make this test fail")
     def test_message(self):
@@ -876,6 +887,12 @@ class Test_parser_API(CsgoTestCase):
             player.message("f00")
             write_mock.assert_has_calls([call('sm_psay #theGuid "[Pre] f00"')])
 
+    def test_message_with_color_codes(self):
+        self.parser.msgPrefix = "[Pre]"
+        player = Client(console=self.parser, guid="theGuid")
+        with patch.object(self.parser.output, 'write') as write_mock:
+            player.message("^7message ^1with ^2color ^8codes")
+            write_mock.assert_has_calls([call('sm_psay #theGuid "[Pre] message with color codes"')])
 
     def test_kick(self):
         player = Client(console=self.parser, cid="4", guid="theGuid", name="theName")
@@ -1025,8 +1042,6 @@ L 08/28/2012 - 01:16:28: rcon from "11.222.111.222:4107": command "listmaps"
     @unittest.skip("TODO")
     def test_inflictCustomPenalty(self):
         pass
-
-
 
 
 class Test_parser_other(CsgoTestCase):
@@ -1203,7 +1218,6 @@ L 09/13/2012 - 09:06:45: rcon from "78.207.134.100:2212": command "sm plugins li
             "Anti-Flood": ("18", "1.5.0-dev+3635", "AlliedModders LLC"),
             "Fun Votes": ("19", "1.5.0-dev+3635", "AlliedModders LLC"),
         }, rv)
-
 
 
 class Test_getClientOrCreate(CsgoTestCase):
