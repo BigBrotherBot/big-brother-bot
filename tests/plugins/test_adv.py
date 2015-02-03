@@ -107,8 +107,7 @@ class AdvTestCase(B3TestCase):
         self.p.onStartup()
 
 
-class Test_default_config(AdvTestCase):
-    """ test that bad words from the default config are detected """
+class Test_config(AdvTestCase):
 
     def test_default_config(self):
         self.init_plugin()
@@ -169,7 +168,33 @@ class Test_default_config(AdvTestCase):
         self.assertEqual('f00', self.p._rate)
         self.assertIsNone(self.p._cronTab)
 
-
+    def test_ads(self):
+        self.init_plugin(dedent(r"""
+            [ads]
+            # a comment
+            ; another comment
+            ^2Big Brother Bot is watching you... www.BigBrotherBot.net
+            @feed
+            server watched by @admins
+            /spam#rule1
+            @time
+            @admins
+            ^2Do you like B3? Consider donating to the project at www.BigBrotherBot.net
+            @nextmap
+            @topstats
+        """))
+        self.assertEqual(9, len(self.p._msg.items))
+        self.assertListEqual([
+                                 '^2Big Brother Bot is watching you... www.BigBrotherBot.net',
+                                 '@feed',
+                                 'server watched by @admins',
+                                 '^3Rule #1: No racism of any kind',
+                                 '@time',
+                                 '@admins',
+                                 '^2Do you like B3? Consider donating to the project at www.BigBrotherBot.net',
+                                 '@nextmap',
+                                 '@topstats'
+                             ], self.p._msg.items)
 
 class Test_commands(AdvTestCase):
 
