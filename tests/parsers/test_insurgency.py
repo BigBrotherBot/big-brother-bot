@@ -287,35 +287,6 @@ class FunctionalTest(AdminTestCase):
          # THEN
          self.parser.output.write.assert_has_calls([call('changelevel market push')])
 
-    def test_map_with_invalid_map_gamemode_combo(self):
-         # GIVEN
-         superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128, team=TEAM_UNKNOWN)
-         superadmin.connects("1")
-         # WHEN
-         superadmin.says("!map buhriz ambush")
-         # THEN
-         self.assertListEqual(["buhriz cannot be played with gamemode ambush",
-                               "supported gamemodes are : " + ', '.join(g for g in GAME_MODES_FOR_MAP['buhriz'])],
-                               superadmin.message_history)
-
-    def test_map_with_invalid_map_gamemode_comboand_force(self):
-         # GIVEN
-         superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128, team=TEAM_UNKNOWN)
-         superadmin.connects("1")
-         # WHEN
-         superadmin.says("!map buhriz ambush -force")
-         # THEN
-         self.parser.output.write.assert_has_calls([call('changelevel buhriz ambush')])
-
-    def test_map_with_correct_parameters_and_added_suffix(self):
-         # GIVEN
-         superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128, team=TEAM_UNKNOWN)
-         superadmin.connects("1")
-         # WHEN
-         superadmin.says("!map district hunt")
-         # THEN
-         self.parser.output.write.assert_has_calls([call('changelevel district_hunt hunt')])
-
     def test_say(self):
         self.parser.msgPrefix = "[Pre]"
         with patch.object(self.parser.output, 'write') as write_mock:
