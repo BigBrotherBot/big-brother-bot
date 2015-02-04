@@ -75,6 +75,8 @@
 # 2014-08-04 - 1.7.4 - Fenix            - PEP8 coding standards
 #                                       - let getcvar() method make use of the Cvar class
 # 2014-09-01 - 1.7.5 - 82ndab-Bravo17   - Add color code options for new getWrap method
+# 2015-02-02 - 1.7.6 - Thomaxius        - Added new events:  "Rescued_A_Hostage", "Touched_A_Hostage", "Escaped_As_VIP",
+#                                         "Became_VIP", "Killed_A_Hostage"
 
 import re
 import time
@@ -94,7 +96,7 @@ from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '1.7.5'
+__version__ = '1.7.6'
 
 
 # GAME SETUP
@@ -379,7 +381,8 @@ class CsgoParser(Parser):
         client = self.getClientOrCreate(cid, guid, name, team)
         props = self.parseProperties(properties)
         if event_name in ("Got_The_Bomb", "Dropped_The_Bomb", "Planted_The_Bomb", "Begin_Bomb_Defuse_Without_Kit",
-                          "Begin_Bomb_Defuse_With_Kit", "Defused_The_Bomb", "headshot", "round_mvp"):
+                          "Begin_Bomb_Defuse_With_Kit", "Defused_The_Bomb", "headshot", "round_mvp", "Rescued_A_Hostage"
+                          , "Touched_A_Hostage", "Escaped_As_VIP", "Became_VIP", "Killed_A_Hostage"):
             # L 08/26/2012 - 03:22:37: "Pheonix<11><BOT><TERRORIST>" triggered "Got_The_Bomb"
             # L 08/26/2012 - 03:46:46: "Pheonix<22><BOT><TERRORIST>" triggered "Dropped_The_Bomb"
             # L 08/26/2012 - 03:51:41: "Gunner<29><BOT><CT>" triggered "Begin_Bomb_Defuse_Without_Kit"
