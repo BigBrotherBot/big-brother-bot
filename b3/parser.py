@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/02/04 - 1.41.6 - Fenix           - optionally specify a log file size: 'logsize' option in 'b3' section of main cfg
 # 2015/02/02 - 1.41.5 - 82ndab.Bravo17  - Remove color codes at start of getWrap if not valid for game
 # 2015/01/29 - 1.41.4 - Fenix           - do not let plugins crash B3 by raising an exception within the constructor
 #                                       - fixed KeyError beiung raised in loadPlugins()
@@ -201,6 +202,7 @@ from b3.functions import getModule
 from b3.functions import vars2printf
 from b3.functions import main_is_frozen
 from b3.functions import splitDSN
+from b3.functions import getBytes
 from b3.functions import right_cut
 from textwrap import TextWrapper
 
@@ -365,7 +367,12 @@ class Parser(object):
         log2console = self.config.has_option('devmode', 'log2console') and \
             self.config.getboolean('devmode', 'log2console')
 
-        self.log = b3.output.getInstance(logfile, self.config.getint('b3', 'log_level'), log2console)
+        try:
+            logsize = self.config.get('b3', 'logsize')
+        except (TypeError, NoOptionError):
+            logsize = getBytes('10MB')
+
+        self.log = b3.output.getInstance(logfile, self.config.getint('b3', 'log_level'), logsize, log2console)
 
         # save screen output to self.screen
         self.screen = sys.stdout

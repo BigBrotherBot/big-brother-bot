@@ -24,6 +24,7 @@
 # 20/04/2011 - 1.6.1 - Courgette - should get rid of UnicodeDecodeError
 # 20/04/2011 - 1.6.2 - Courgette - again getting rid of UnicodeDecodeError
 # 21/07/2014 - 1.7   - Fenix     - syntax cleanup
+# 04/02/2015 - 1.7.1 - Fenix     - getInstance() now accepts an optional 'logsize' parameter (amount of bytes of the log file)
 
 __author__  = 'ThorN'
 __version__ = '1.7'
@@ -147,11 +148,12 @@ logging.setLoggerClass(OutputHandler)
 
 __output = None
 
-def getInstance(logfile='b3.log', loglevel=21, log2console=False):
+def getInstance(logfile='b3.log', loglevel=21, logsize=10485760, log2console=False):
     """
     Return a Logger instance.
     :param logfile: The logfile name.
     :param loglevel: The logging level.
+    :param logsize: The size of the log file (in bytes)
     :log2console: Whether or not to extend logging to the console.
     """
     global __output
@@ -163,7 +165,7 @@ def getInstance(logfile='b3.log', loglevel=21, log2console=False):
 
         # add the log file handler
         file_formatter = logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)r', '%y%m%d %H:%M:%S')
-        handler = handlers.RotatingFileHandler(logfile, maxBytes=10485760, backupCount=5, encoding="UTF-8")
+        handler = handlers.RotatingFileHandler(logfile, maxBytes=logsize, backupCount=5, encoding="UTF-8")
         handler.doRollover()
         handler.setFormatter(file_formatter)
 
