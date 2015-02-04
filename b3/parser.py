@@ -368,7 +368,7 @@ class Parser(object):
             self.config.getboolean('devmode', 'log2console')
 
         try:
-            logsize = self.config.get('b3', 'logsize')
+            logsize = getBytes(self.config.get('b3', 'logsize'))
         except (TypeError, NoOptionError):
             logsize = getBytes('10MB')
 
