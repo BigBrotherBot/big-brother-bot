@@ -49,7 +49,7 @@ class Test_config(B3TestCase):
             [settings]
             interval: 60
             output_file: ~/status.xml
-            enableDBsvarSaving: no
+            enableDBsvarSaving: yes
             enableDBclientSaving: no
             svar_table: alternate_svar_table
             """))
@@ -83,7 +83,7 @@ class Test_config(B3TestCase):
             interval: 60
             output_file: ~/status.xml
             enableDBsvarSaving: no
-            enableDBclientSaving: no
+            enableDBclientSaving: yes
             client_table: alternate_client_table
             """))
         self.p = StatusPlugin(self.console, conf)
