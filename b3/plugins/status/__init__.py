@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 04/02/2015 - 1.6.1  - Fenix      - fixed exception being generated when not using database to store status information
 # 05/01/2014 - 1.6    - Fenix      - PostgreSQl support
 # 30/08/2014 - 1.5    - Fenix      - syntax cleanup
 #                                  - make use of the new onStop event handler
@@ -229,17 +230,19 @@ class StatusPlugin(b3.plugin.Plugin):
             self.error('could not load settings/enableDBclientSaving config value: %s' % e)
             self.debug('using default value (%s) for settings/enableDBclientSaving' % self._enableDBclientSaving)
 
-        try:
-            self._tables['svars'] = self.config.get('settings', 'svar_table')
-            self.debug('using custom table for saving server svars: %s' % self._tables['svars'])
-        except NoOptionError:
-            self.debug('using default table for saving server svars: %s' % self._tables['svars'])
+        if self._enableDBsvarSaving:
+            try:
+                self._tables['svars'] = self.config.get('settings', 'svar_table')
+                self.debug('using custom table for saving server svars: %s' % self._tables['svars'])
+            except NoOptionError:
+                self.debug('using default table for saving server svars: %s' % self._tables['svars'])
 
-        try:
-            self._tables['cvars'] = self.config.get('settings', 'client_table')
-            self.debug('using custom table for saving current clients: %s' % self._tables['cvars'])
-        except NoOptionError:
-            self.debug('using default table for saving current clients: %s' % self._tables['cvars'])
+        if self._enableDBclientSaving:
+            try:
+                self._tables['cvars'] = self.config.get('settings', 'client_table')
+                self.debug('using custom table for saving current clients: %s' % self._tables['cvars'])
+            except NoOptionError:
+                self.debug('using default table for saving current clients: %s' % self._tables['cvars'])
 
         self.build_schema()
 
@@ -359,24 +362,25 @@ class StatusPlugin(b3.plugin.Plugin):
         game.setAttribute("OnlinePlayers", str(len(clients)))
         b3status.appendChild(game)
 
-        # EMPTY DB SVARS TABLE
-        self.verbose('cleaning database table: %s...' % self._tables['svars'])
-        self.console.storage.truncateTable(self._tables['svars'])
-
         # For DB:
-        self.storeServerinfo("Ip", str(self.console._publicIp))
-        self.storeServerinfo("Port", str(self.console._port))
-        self.storeServerinfo("Name", str(gamename))
-        self.storeServerinfo("Type", str(gametype))
-        self.storeServerinfo("Map", str(mapname))
-        self.storeServerinfo("TimeLimit", str(timelimit))
-        self.storeServerinfo("FragLimit", str(fraglimit))
-        self.storeServerinfo("CaptureLimit",str(capturelimit) )
-        self.storeServerinfo("Rounds", str(rounds))
-        self.storeServerinfo("RoundTime", str(round_time))
-        self.storeServerinfo("MapTime", str(map_time))
-        self.storeServerinfo("OnlinePlayers", str(len(clients)))
-        self.storeServerinfo("lastupdate", str(int(time.time())))
+        if self._enableDBsvarSaving:
+            # EMPTY DB SVARS TABLE
+            self.verbose('cleaning database table: %s...' % self._tables['svars'])
+            self.console.storage.truncateTable(self._tables['svars'])
+            # ADD NEW DATA
+            self.storeServerinfo("Ip", str(self.console._publicIp))
+            self.storeServerinfo("Port", str(self.console._port))
+            self.storeServerinfo("Name", str(gamename))
+            self.storeServerinfo("Type", str(gametype))
+            self.storeServerinfo("Map", str(mapname))
+            self.storeServerinfo("TimeLimit", str(timelimit))
+            self.storeServerinfo("FragLimit", str(fraglimit))
+            self.storeServerinfo("CaptureLimit",str(capturelimit) )
+            self.storeServerinfo("Rounds", str(rounds))
+            self.storeServerinfo("RoundTime", str(round_time))
+            self.storeServerinfo("MapTime", str(map_time))
+            self.storeServerinfo("OnlinePlayers", str(len(clients)))
+            self.storeServerinfo("lastupdate", str(int(time.time())))
 
         for k, v in self.console.game.__dict__.items():
             data = xml.createElement("Data")
@@ -409,9 +413,7 @@ class StatusPlugin(b3.plugin.Plugin):
                 level = c.maxLevel
             else:
                 level = c.maskedLevel
-
             try:
-
                 client = xml.createElement("Client")
                 client.setAttribute("Name", sanitizeMe(c.name))
                 client.setAttribute("ColorName", sanitizeMe(c.exactName))
@@ -454,8 +456,7 @@ class StatusPlugin(b3.plugin.Plugin):
                     builder_value = builder_value[:-1]
 
                     try:
-                        self.console.storage.query("""INSERT INTO %s (%s) VALUES (%s);""" % (self._tables['cvars'],
-                                                                                             builder_key, builder_value))
+                        self.console.storage.query("""INSERT INTO %s (%s) VALUES (%s);""" % (self._tables['cvars'], builder_key, builder_value))
                     except Exception:
                         # exception is already logged, just don't raise it again
                         pass
@@ -542,7 +543,7 @@ class StatusPlugin(b3.plugin.Plugin):
 
 if __name__ == '__main__':
     from b3.fake import fakeConsole
-    p = StatusPlugin(fakeConsole, "@b3/conf/plugin_status.xml")
+    p = StatusPlugin(fakeConsole, "@b3/conf/plugin_status.ini")
     p.onStartup()
     p.update()
     

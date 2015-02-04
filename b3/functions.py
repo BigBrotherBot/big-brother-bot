@@ -44,9 +44,10 @@
 #                                     - added hash_file function: calculate the MD5 digest of the given file
 # 20/12/2014 - 1.15  - Fenix          - fixed hash_file returning None
 # 27/12/2014 - 1.16  - Fenix          - adapted splitDSN to support postgresql databases
+# 04/02/2015 - 1.17  - Fenix          - added getBytes function
 
 __author__    = 'ThorN, xlr8or, courgette'
-__version__   = '1.16'
+__version__   = '1.17'
 
 import collections
 import os
@@ -573,3 +574,45 @@ def unzip(filepath, directory):
         mkdir(directory)
         with zipfile.ZipFile(filepath, 'r') as z:
             z.extractall(directory)
+
+
+def getBytes(size):
+    """
+    Convert the given size in the correspondent amount of bytes.
+    :param size: The size we want to convert in bytes
+    :raise TypeError: If an invalid input is given
+    :return: The given size converted in bytes
+    >>> getBytes(10)
+    10
+    >>> getBytes('10')
+    10
+    >>> getBytes('1KB')
+    1024
+    >>> getBytes('1K')
+    1024
+    >>> getBytes('1MB')
+    1048576
+    >>> getBytes('1M')
+    1048576
+    >>> getBytes('1GB')
+    1073741824
+    >>> getBytes('1G')
+    1073741824
+    """
+    size = str(size).upper()
+    r = re.compile(r'''^(?P<size>\d+)\s*(?P<mult>KB|MB|GB|TB|K|M|G|T?)$''')
+    m = r.match(size)
+    if not m:
+        raise TypeError('invalid input given: %s' % size)
+
+    multipliers = {
+        'K': 1024, 'KB': 1024,
+        'M': 1048576, 'MB': 1048576,
+        'G': 1073741824, 'GB': 1073741824,
+        'T': 1099511627776, 'TB': 1099511627776,
+    }
+
+    try:
+        return int(m.group('size')) * multipliers[m.group('mult')]
+    except KeyError:
+        return int(m.group('size'))
