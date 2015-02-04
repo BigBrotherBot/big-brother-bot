@@ -16,8 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
-import time
-import sys
+
 from b3 import functions
 import unittest2 as unittest
     
@@ -140,6 +139,7 @@ class TestTime2minutes(unittest.TestCase):
         self.assertEqual(functions.time2minutes('90w'), 90*7*24*60)
 
 class Test_misc(unittest.TestCase):
+
     def test_minutesStr(self):
         for test_data, expected in {
             '3s': '3 seconds',
@@ -194,6 +194,17 @@ class Test_misc(unittest.TestCase):
             if expected != result:
                 self.fail("%r, expecting '%s' but got '%s'" % (test_data, expected, result))
 
+    def test_getBytes(self):
+        self.assertEqual(10, functions.getBytes(10))
+        self.assertEqual(10, functions.getBytes('10'))
+        self.assertEqual(1024, functions.getBytes('1KB'))
+        self.assertEqual(1024, functions.getBytes('1k'))
+        self.assertEqual(2048, functions.getBytes('2kb'))
+        self.assertEqual(2048, functions.getBytes('2K'))
+        self.assertEqual(1048576, functions.getBytes('1 m'))
+        self.assertEqual(7340032, functions.getBytes('7 MB'))
+        self.assertEqual(21474836480, functions.getBytes('20GB'))
+        self.assertEqual(2199023255552, functions.getBytes('2T'))
 
 class Test_getStuffSoundingLike(unittest.TestCase):
 
@@ -215,4 +226,3 @@ class Test_getStuffSoundingLike(unittest.TestCase):
 
     def test_fallback(self):
         self.assertListEqual(['bar', 'william', 'joe', 'averell', 'foO', 'jack'], functions.getStuffSoundingLike('xxx', ['bar', 'foO', 'joe', 'jack', 'averell', 'william']))
-
