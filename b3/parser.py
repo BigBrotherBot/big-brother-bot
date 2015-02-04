@@ -168,7 +168,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.41.5'
+__version__ = '1.41.6'
 
 
 import os

@@ -27,7 +27,7 @@
 # 04/02/2015 - 1.7.1 - Fenix     - getInstance() now accepts an optional 'logsize' parameter (amount of bytes of the log file)
 
 __author__  = 'ThorN'
-__version__ = '1.7'
+__version__ = '1.7.1'
 
 import sys
 import logging
