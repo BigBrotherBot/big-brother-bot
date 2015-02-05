@@ -606,6 +606,11 @@ class Test_gamelog_parsing(CsgoTestCase):
         assertEvent("Begin_Bomb_Defuse_With_Kit")
         assertEvent("Planted_The_Bomb")
         assertEvent("headshot")
+        assertEvent("Rescued_A_Hostage")
+        assertEvent("Touched_A_Hostage")
+        assertEvent("Escaped_As_VIP")
+        assertEvent("Became_VIP")
+        assertEvent("Killed_A_Hostage")
 
 
     def test_client_triggered_event__unknown(self):
