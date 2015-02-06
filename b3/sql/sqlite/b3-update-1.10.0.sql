@@ -4,6 +4,9 @@
 -- Add a table field for the xlr_playerstats table
 ALTER TABLE `xlr_playerstats` ADD `id_token` VARCHAR(10) NOT NULL DEFAULT '';
 
+-- Change xlr_actionstats so that one can supply an event of 26 characters
+ALTER TABLE  `xlr_actionstats` CHANGE  `name`  `name` VARCHAR( 26 )
+
 -- Better scalability of the xlrstats tables.
 -- REMOVED: was already declared as INTEGER (default to INTEGER(11) when not specified)
 
