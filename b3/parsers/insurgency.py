@@ -120,6 +120,23 @@ class InvalidmapgamecomboError(Exception):
     pass
 
 
+def parseProperties(properties):
+    """
+    Parse HL log properties as described at https://developer.valvesoftware.com/wiki/HL_Log_Standard#Notes
+    :param properties: string representing HL log properties
+    :return: a dict representing all the property key:value parsed
+    """
+    rv = {}
+    if properties:
+        for match in re.finditer(RE_HL_LOG_PROPERTY, properties):
+            if match.group('data') == '':
+                # Parenthised properties with no explicit value indicate a boolean true value
+                rv[match.group('key')] = True
+            else:
+                rv[match.group('key')] = match.group('value')
+    return rv
+
+
 class InsurgencyParser(Parser):
     """
     The Insurgency B3 parser class
@@ -147,9 +164,9 @@ class InsurgencyParser(Parser):
     }
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  PARSER INITIALIZATION                                                                                         ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #  PARSER INITIALIZATION                                                                                           #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def __new__(cls, *args, **kwargs):
@@ -239,10 +256,10 @@ class InsurgencyParser(Parser):
         self.info('Admin plugin patched')
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  GAME EVENTS HANDLERS                                                                                          ##
-    ##  READ HL LOG STANDARD DOCUMENTATION AT: https://developer.valvesoftware.com/wiki/HL_Log_Standard               ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #  GAME EVENTS HANDLERS                                                                                            #
+    #  READ HL LOG STANDARD DOCUMENTATION AT: https://developer.valvesoftware.com/wiki/HL_Log_Standard                 #
+    #                                                                                                                  #
     ####################################################################################################################
 
     @ger.gameEvent(
@@ -269,7 +286,7 @@ class InsurgencyParser(Parser):
         attacker = self.getClientOrCreate(a_cid, a_guid, a_name, a_team)
         victim = self.getClientOrCreate(v_cid, v_guid, v_name, v_team)
         # victim.state = b3.STATE_DEAD ## do we need that ? is this info used ?
-        props = self.parseProperties(properties)
+        props = parseProperties(properties)
         headshot = props.get('headshot', False)
 
         eventkey = "EVT_CLIENT_KILL"
@@ -284,7 +301,7 @@ class InsurgencyParser(Parser):
         data = [damage_pct, weapon, hit_location, damage_type]
 
         if self.last_killlocation_properties:
-            data.append(self.parseProperties(self.last_killlocation_properties))
+            data.append(parseProperties(self.last_killlocation_properties))
             self.last_killlocation_properties = None
 
         return self.getEvent(eventkey, client=attacker, target=victim, data=tuple(data))
@@ -294,7 +311,7 @@ class InsurgencyParser(Parser):
         # L 08/26/2012 - 03:46:44: "Greg<3946><BOT><CT>" assisted killing "Dennis<3948><BOT><TERRORIST>"
         attacker = self.getClientOrCreate(a_cid, a_guid, a_name, a_team)
         victim = self.getClientOrCreate(v_cid, v_guid, v_name, v_team)
-        #props = self.parseProperties(properties)
+        #props = parseProperties(properties)
         return self.getEvent("EVT_CLIENT_ACTION", client=attacker, target=victim, data="assisted killing")
 
     @ger.gameEvent(r'^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>"(?: \[-?\d+ -?\d+ -?\d+\])? committed suicide with "(?P<weapon>\S*)"$')
@@ -304,7 +321,8 @@ class InsurgencyParser(Parser):
         # victim.state = b3.STATE_DEAD ## do we need that ? is this info used ?
         damage_pct = 100
         damage_type = None
-        return self.getEvent("EVT_CLIENT_SUICIDE", client=client, target=client, data=(damage_pct, weapon, "body", damage_type))
+        return self.getEvent("EVT_CLIENT_SUICIDE", client=client, target=client, data=(damage_pct, weapon, "body",
+                                                                                       damage_type))
 
     @ger.gameEvent(r'^"(?P<cvar_name>\S+)" = "(?P<cvar_value>\S*)"$',
                    r'^server_cvar: "(?P<cvar_name>\S+)" "(?P<cvar_value>\S*)"$')
@@ -406,7 +424,7 @@ class InsurgencyParser(Parser):
     @ger.gameEvent(r'^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" triggered "(?P<event_name>\S+)"(?P<properties>.*)$')
     def on_player_action(self, name, cid, guid, team, event_name, properties):
         client = self.getClientOrCreate(cid, guid, name, team)
-        props = self.parseProperties(properties)
+        props = parseProperties(properties)
         if event_name in ("Got_The_Bomb", "Dropped_The_Bomb", "Planted_The_Bomb", "Begin_Bomb_Defuse_Without_Kit",
                           "Begin_Bomb_Defuse_With_Kit", "Defused_The_Bomb", "headshot", "round_mvp"):
             # L 08/26/2012 - 03:22:37: "Pheonix<11><BOT><TERRORIST>" triggered "Got_The_Bomb"
@@ -497,7 +515,7 @@ class InsurgencyParser(Parser):
     def on_kicked(self, name, cid, guid, team, properties):
         client = self.storage.getClient(Client(guid=guid))
         if client:
-            p = self.parseProperties(properties)
+            p = parseProperties(properties)
             return self.getEvent("EVT_CLIENT_KICK", {'reason': p.get('reason', ''), 'admin': None}, client)
 
     @ger.gameEvent(r'^server_message: "(?P<msg>.*)"(?P<properties>.*)$')
@@ -530,9 +548,9 @@ class InsurgencyParser(Parser):
         self.warning("unhandled log line : %s : please report this on the B3 forums" % data)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #  B3 PARSER INTERFACE IMPLEMENTATION                                                                              #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getPlayerList(self):
@@ -853,9 +871,9 @@ class InsurgencyParser(Parser):
             return 'Not available, Source Mod "nextmap" plugin not loaded'
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  PARSING                                                                                                       ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #  PARSING                                                                                                         #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def parseLine(self, line):
@@ -877,26 +895,10 @@ class InsurgencyParser(Parser):
                     if event:
                         self.queueEvent(event)
 
-    def parseProperties(self, properties):
-        """
-        Parse HL log properties as described at https://developer.valvesoftware.com/wiki/HL_Log_Standard#Notes
-        :param properties: string representing HL log properties
-        :return: a dict representing all the property key:value parsed
-        """
-        rv = {}
-        if properties:
-            for match in re.finditer(RE_HL_LOG_PROPERTY, properties):
-                if match.group('data') == '':
-                    # Parenthised properties with no explicit value indicate a boolean true value
-                    rv[match.group('key')] = True
-                else:
-                    rv[match.group('key')] = match.group('value')
-        return rv
-
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  OTHER METHODS                                                                                                 ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #  OTHER METHODS                                                                                                   #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getClient(self, cid):
