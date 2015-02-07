@@ -25,6 +25,7 @@
 # 2015/02/01 - 2.8   - Thomas LEVEIL - fix py2exe failling to find the plugin modules since 533a2d5d2101f0c9a228cc1e20d3b2683770c9fb
 # 2015/02/07 - 2.9   - Thomas LEVEIL - fix py2exe builds missing mysql files and postgresql files
 # 2015/02/07 - 2.9.1 - Fenix         - fix v2.9 not copying SQL files in py2exe build
+#                                    - fixed xlrstats plugin not being included in py2exe build
 
 __author__  = 'ThorN, xlr8or, courgette'
 __version__ = '2.9.1'
@@ -84,7 +85,8 @@ py2exe_dataFiles = [
     ('conf', listdirectory('b3/conf/')),
     ('conf/templates', listdirectory('b3/conf/templates/')),
     ('extplugins', listdirectory('b3/extplugins/')),
-    ('extplugins/conf', listdirectory('b3/extplugins/conf/')),
+    ('extplugins/xlrstats', listdirectory('b3/extplugins/xlrstats/')),
+    ('extplugins/xlrstats/conf', listdirectory('b3/extplugins/xlrstats/conf/')),
     ('conf/templates/autodoc', listdirectory('b3/conf/templates/autodoc/')),
 ]
 
