@@ -172,7 +172,7 @@ CREATE TABLE IF NOT EXISTS `xlr_weaponusage` (
 
 CREATE TABLE IF NOT EXISTS `xlr_actionstats` (
   `id` tinyint(3) unsigned NOT NULL auto_increment,
-  `name` varchar(25) NOT NULL default '',
+  `name` varchar(26) NOT NULL default '',
   `count` mediumint(8) unsigned NOT NULL default '0',
   PRIMARY KEY  (`id`),
   UNIQUE KEY `name` (`name`)
