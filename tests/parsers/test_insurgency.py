@@ -252,7 +252,7 @@ class FunctionalTest(AdminTestCase):
         superadmin.says("!permban bill rule1")
         # THEN
         superadmin.says('!baninfo @%s' % bill.id)
-        self.assertListEqual(['Banned: bill (@2) has been added to banlist', 'bill has 1 active bans',], superadmin.message_history)
+        self.assertListEqual(['Banned: bill (@3) has been added to banlist', 'bill has 1 active bans',], superadmin.message_history)
 
     def test_map_with_invalid_map_name(self):
         # GIVEN

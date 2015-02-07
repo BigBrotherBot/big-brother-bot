@@ -53,6 +53,7 @@
 # 2014/12/17 - 0.7.3 - 82ndab-Bravo17 - Updated map/gametype list
 # 2014/12/23 - 0.8.0 - 82ndab-Bravo17 - Removed map/gametype pair checking, since game no longer seems to lockup if invalid.
 #                                     - Remove auto adding of _hunt and _coop, since mapmakers are not sticking to this format.
+# 2015/02/05 - 0.9.0 - Fenix          - correctly initialize Server client
 
 import re
 import time
@@ -74,7 +75,7 @@ from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '0.8.0'
+__version__ = '0.9.0'
 
 
 # GAME SETUP
@@ -164,7 +165,6 @@ class InsurgencyParser(Parser):
             Expecting one or two parameters separated by a space.
             <map> <gamemode>
             """
-            gamemode_data = None
             parts = data.split()
             if len(parts) < 2:
                 gamemode_data = ''
@@ -218,8 +218,8 @@ class InsurgencyParser(Parser):
         self.createEvent("EVT_SUPERLOGS_WEAPONSTATS2", "SourceMod SuperLogs weaponstats2")
         self.createEvent("EVT_SERVER_REQUIRES_RESTART", "Source server requires restart")
 
-        # TODO: create the 'Server' client
-        # self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
+        # create the server client
+        self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=TEAM_UNKNOWN)
 
         self.game.cvar = {}
         self.queryServerInfo()
@@ -237,7 +237,6 @@ class InsurgencyParser(Parser):
         """
         self.patch_b3_admin_plugin()
         self.info('Admin plugin patched')
-
 
     ####################################################################################################################
     ##                                                                                                                ##
@@ -295,7 +294,7 @@ class InsurgencyParser(Parser):
         # L 08/26/2012 - 03:46:44: "Greg<3946><BOT><CT>" assisted killing "Dennis<3948><BOT><TERRORIST>"
         attacker = self.getClientOrCreate(a_cid, a_guid, a_name, a_team)
         victim = self.getClientOrCreate(v_cid, v_guid, v_name, v_team)
-        props = self.parseProperties(properties)
+        #props = self.parseProperties(properties)
         return self.getEvent("EVT_CLIENT_ACTION", client=attacker, target=victim, data="assisted killing")
 
     @ger.gameEvent(r'^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>"(?: \[-?\d+ -?\d+ -?\d+\])? committed suicide with "(?P<weapon>\S*)"$')
@@ -530,13 +529,7 @@ class InsurgencyParser(Parser):
         """
         self.warning("unhandled log line : %s : please report this on the B3 forums" % data)
 
-    ###############################################################################################
-    #
-    #    B3 Parser interface implementation
-    #
-    ###############################################################################################
-
-     ####################################################################################################################
+    ####################################################################################################################
     ##                                                                                                                ##
     ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
     ##                                                                                                                ##

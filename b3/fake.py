@@ -38,6 +38,7 @@
 # 1.14 - 2014/09/06 - adapted FakeConsole to work with the new b3.ini configuration file format
 # 1.15 - 2014/12/27 - new storage module initialization
 # 1.16 - 2015/01/29 - make use of the new b3.config.MainConfig class
+# 1.17 - 2015/02/07 - update write method to accept a socketTimeout=None parameter
 
 """
 This module make plugin testing simple. It provides you
@@ -45,7 +46,7 @@ with fakeConsole and joe which can be used to say commands
 as if it where a player.
 """
 
-__version__ = '1.16'
+__version__ = '1.17'
 
 import b3.events
 import b3.output
@@ -195,7 +196,7 @@ class FakeConsole(b3.parser.Parser):
         """
         print "+++ %s" % re.sub(re.compile('\^[0-9]'), '', msg).strip()
     
-    def write(self, msg, maxRetries=0):
+    def write(self, msg, maxRetries=0, socketTimeout=None):
         """
         Send text to the console.
         """
