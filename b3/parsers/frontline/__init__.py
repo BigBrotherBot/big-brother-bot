@@ -77,9 +77,9 @@ class FrontlineParser(b3.parser.Parser):
     }
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  PARSER INITIALIZATION                                                                                         ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #  PARSER INITIALIZATION                                                                                           #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def startup(self):
@@ -114,7 +114,8 @@ class FrontlineParser(b3.parser.Parser):
                     self._pauseNotice = True
             else:
                 if self._serverConnection is None:
-                    self.bot('connecting to Frontline server %s:%s with user %s...', self._rconIp, self._rconPort, self._rconUser)
+                    self.bot('connecting to Frontline server %s:%s with user %s...', self._rconIp, self._rconPort,
+                             self._rconUser)
                     self._serverConnection = protocol.Client(self, self._rconIp, self._rconPort, self._rconUser,
                                                              self._rconPassword, keepalive=True)
 
@@ -142,9 +143,9 @@ class FrontlineParser(b3.parser.Parser):
                 sys.exit(self.exitcode)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  OTHER METHODS                                                                                                 ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #  OTHER METHODS                                                                                                   #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def routePacket(self, packet):
@@ -163,7 +164,7 @@ class FrontlineParser(b3.parser.Parser):
                 self.queueEvent(self.getEvent('EVT_UNKNOWN', packet))
 
     def _handle_connection_close(self):
-        if len(self.clients.getList()): 
+        if len(self.clients.getList()):
             self.debug("Clearing player list")
             self.clients.empty()
         self._original_connection_handle_close_method()
@@ -220,8 +221,8 @@ class FrontlineParser(b3.parser.Parser):
         return result
 
     def queryServerInfo(self):
-        ## read game server info and store as much of it in self.game wich
-        ## is an instance of the b3.game.Game class
+        # read game server info and store as much of it in self.game wich
+        # is an instance of the b3.game.Game class
         sq = SourceQuery.SourceQuery(self._publicIp, self._port, timeout=10)
         try:
             serverinfo = sq.info()
@@ -236,9 +237,9 @@ class FrontlineParser(b3.parser.Parser):
             self.exception(err)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  GAME EVENTS HANDLERS                                                                                          ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #  GAME EVENTS HANDLERS                                                                                            #
+    #                                                                                                                  #
     ####################################################################################################################
 
     @ger.gameEvent(
@@ -254,12 +255,12 @@ class FrontlineParser(b3.parser.Parser):
         Do nothing.
         """
         pass
-    
+
     @ger.gameEvent(r"^WELCOME! Frontlines: Fuel of War \(RCON\) VER=(?P<version>.+) CHALLENGE=(?P<challenge>.*)$")
     def onServerWelcome(self, version, challenge):
         self.info("Connected to Frontline server: RCON version: %s", version)
-       
-    @ger.gameEvent(re.compile(r"^PlayerList: (?P<data>.*)$", re.MULTILINE|re.DOTALL|re.IGNORECASE))
+
+    @ger.gameEvent(re.compile(r"^PlayerList: (?P<data>.*)$", re.MULTILINE | re.DOTALL | re.IGNORECASE))
     def onServerPlayerlist(self, data):
         """
         PlayerList: Map=CQ-Gnaw Time=739 Players=0/32 Tickets=500,500 Round=2/3
@@ -316,11 +317,11 @@ class FrontlineParser(b3.parser.Parser):
     def onServerPlayerLogin(self):
         # DEBUG: RendezVous: Update Gathering 1561500: 7/0
         self.retrievePlayerList()
-        
+
     @ger.gameEvent(r"^(?P<var>ChatLogging) now (?P<data>.*)$", r"^(?P<var>DebugLogging) now (?P<data>.*)$")
     def onServerVarChange(self, var, data):
         self.info("%s is now: %r", var, data)
-        
+
     @ger.gameEvent(r'^CHAT: PlayerName="(?P<playerName>[^"]+)" Channel="(?P<channel>[^"]+)" Message="(?P<text>.*)"$')
     def onServerChat(self, playerName, channel, text):
         client = self.clients.getByExactName(playerName)
@@ -366,7 +367,7 @@ class FrontlineParser(b3.parser.Parser):
             self.error('Cannot find banned client')
         # update banlist
         self.retrieveBanList()
-        
+
     @ger.gameEvent(re.compile(r'^UnBanned Player: PlayerName="(?P<name>.+)" PlayerID=(-1|\d+) ProfileID=(?P<guid>\d+) Hash=(?P<hhash>.*)$'))
     def onServerUnBan(self, name, guid, hhash):
         """
@@ -380,15 +381,15 @@ class FrontlineParser(b3.parser.Parser):
             self.error('Cannot find banned client')
         # update banlist
         self.retrieveBanList()
-        
+
     @ger.gameEvent(r"CurrentMap is: (?P<mapname>.+)")
     def onGetCurrentMapResponse(self, mapname):
         self._async_responses['GetCurrentMap'] = mapname
-        
+
     @ger.gameEvent(r"NextMap is: (?P<mapname>.+)")
     def onGetNextMapResponse(self, mapname):
         self._async_responses['GetNextMap'] = mapname
-        
+
     @ger.gameEvent(re.compile(r"^MapList: (?P<data>.+)", re.MULTILINE|re.DOTALL))
     def onMapListResponse(self, data):
         lines = data.split('\n')
@@ -416,9 +417,9 @@ class FrontlineParser(b3.parser.Parser):
         self.warning("unhandled log line : %s : please report this on the B3 forums" % data)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #  B3 PARSER INTERFACE IMPLEMENTATION                                                                              #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getPlayerList(self):
@@ -433,10 +434,10 @@ class FrontlineParser(b3.parser.Parser):
         the user in the database (usualy guid, or punkbuster id, ip) and call the 
         Client.auth() method 
         """
-        ## in Frontline, there is no synchronous way to obtain a player guid
-        ## the onServerUid event will be the one calling Client.auth()
+        # in Frontline, there is no synchronous way to obtain a player guid
+        # the onServerUid event will be the one calling Client.auth()
         raise NotImplementedError
-    
+
     def sync(self):
         """
         For all connected players returned by self.getPlayerList(), get the matching Client
@@ -447,9 +448,9 @@ class FrontlineParser(b3.parser.Parser):
         occupy. On map change, a player A on slot 1 can leave making room for player B who
         connects on slot 1.
         """
-        ## we are unable to get the exact list of connected players in a synchronous
-        ## way. So we use .last_update_time timestamp to detect player we still
-        ## have in self.clients but that are no longer on the game server
+        # we are unable to get the exact list of connected players in a synchronous
+        # way. So we use .last_update_time timestamp to detect player we still
+        # have in self.clients but that are no longer on the game server
         self.debug("Synchronizing clients")
         mlist = {}
         now = time.time()
@@ -491,7 +492,7 @@ class FrontlineParser(b3.parser.Parser):
         # actually send private messages
         text = self.stripColors(text)
         for line in self.getWrap(text):
-            self.write('PLAYERSAY PlayerID=%(cid)s SayText="%(message)s"' % {'cid':client.cid, 'message':line})
+            self.write('PLAYERSAY PlayerID=%(cid)s SayText="%(message)s"' % {'cid': client.cid, 'message': line})
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         """
@@ -541,7 +542,7 @@ class FrontlineParser(b3.parser.Parser):
 
         if not silent and fullreason != '':
             self.say(fullreason)
-        
+
         if len(reason):
             self.write('BAN ProfileID=%s BanTime=0 Reason="%s"' % (client.guid, reason))
         else:
@@ -563,7 +564,6 @@ class FrontlineParser(b3.parser.Parser):
             admin.message('Unbanned: removed %s from banlist' % client.name)
         self.queueEvent(self.getEvent('EVT_CLIENT_UNBAN', reason, client))
 
-
     def tempban(self, client, reason='', duration=2, admin=None, silent=False, *kwargs):
         """
         Tempban a client.
@@ -582,13 +582,13 @@ class FrontlineParser(b3.parser.Parser):
             banduration = b3.functions.minutesStr(duration)
             variables = self.getMessageVariables(client=client, reason=reason, banduration=banduration)
             fullreason = self.getMessage('temp_banned', variables)
-            
+
         fullreason = self.stripColors(fullreason)
         reason = self.stripColors(reason)
 
         if not silent and fullreason != '':
             self.say(fullreason)
-        
+
         if duration < 1:
             if len(reason):
                 self.write('KICK ProfileID=%s Reason="%s"' % (client.guid, reason))
@@ -600,8 +600,8 @@ class FrontlineParser(b3.parser.Parser):
             else:
                 self.write('BAN ProfileID=%s BanTime=%s' % (client.guid, int(duration)))
 
-        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason, 
-                                                              'duration': duration, 
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason,
+                                                              'duration': duration,
                                                               'admin': admin}, client))
         client.disconnect()
 
@@ -612,7 +612,7 @@ class FrontlineParser(b3.parser.Parser):
         self._async_responses['GetCurrentMap'] = None
         self.write('GetCurrentMap')
         count = 0
-        while self._async_responses['GetCurrentMap'] is None and count < 30: 
+        while self._async_responses['GetCurrentMap'] is None and count < 30:
             time.sleep(.1)
             count += 1
         return self._async_responses['GetCurrentMap']
@@ -624,7 +624,7 @@ class FrontlineParser(b3.parser.Parser):
         self._async_responses['GetNextMap'] = None
         self.write('GetNextMap')
         count = 0
-        while self._async_responses['GetNextMap'] is None and count < 30: 
+        while self._async_responses['GetNextMap'] is None and count < 30:
             time.sleep(.1)
             count += 1
         return self._async_responses['GetNextMap']
@@ -636,7 +636,7 @@ class FrontlineParser(b3.parser.Parser):
         self._async_responses['MapList'] = None
         self.write('MapList')
         count = 0
-        while self._async_responses['MapList'] is None and count < 30: 
+        while self._async_responses['MapList'] is None and count < 30:
             time.sleep(.1)
             count += 1
         return self._async_responses['MapList']
@@ -667,7 +667,7 @@ class FrontlineParser(b3.parser.Parser):
         pings = {}
         clients = self.clients.getList()
         if filter_client_ids:
-             clients = filter(lambda client: client.cid in filter_client_ids, clients)
+            clients = filter(lambda client: client.cid in filter_client_ids, clients)
 
         for c in clients:
             try:
