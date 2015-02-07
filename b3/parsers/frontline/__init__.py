@@ -18,12 +18,13 @@
 #
 # CHANGELOG
 #
-# 2013-01-20 - 0.4.1 - Courgette - improve punkbuster event parsing
-# 2014-05-02 - 0.4.2 - Fenix     - syntax cleanup
-# 2014-07-16 - 0.4.3 - Fenix     - added admin key in EVT_CLIENT_KICK data dict when available
-# 2014-07-18 - 0.4.4 - Fenix     - updated parser to comply with the new get_wrap implementation
-# 2014-08-12 - 0.4.5 - Fenix     - make use of the GameEventRouter decorator
-# 2014-08-29 - 0.4.6 - Fenix     - syntax cleanup
+# 2013-01-20 - 0.4.1 - Courgette     - improve punkbuster event parsing
+# 2014-05-02 - 0.4.2 - Fenix         - syntax cleanup
+# 2014-07-16 - 0.4.3 - Fenix         - added admin key in EVT_CLIENT_KICK data dict when available
+# 2014-07-18 - 0.4.4 - Fenix         - updated parser to comply with the new get_wrap implementation
+# 2014-08-12 - 0.4.5 - Fenix         - make use of the GameEventRouter decorator
+# 2014-08-29 - 0.4.6 - Fenix         - syntax cleanup
+# 2015/02/07 - 0.4.7 - Thomas LEVEIL - correctly initialize Server client
 
 import asyncore
 import b3
@@ -43,7 +44,7 @@ from b3.parser import Parser
 from ConfigParser import NoOptionError
 
 __author__ = 'Courgette'
-__version__ = '0.4.6'
+__version__ = '0.4.7'
 
 ger = GameEventRouter()
 
@@ -87,6 +88,10 @@ class FrontlineParser(b3.parser.Parser):
         Called after the parser is created before run().
         """
         self.debug("startup()")
+
+        # create the server client
+        self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
+
         self.cron.add(b3.cron.CronTab(self.retrievePlayerList, second='*/%s' % self._playerlistInterval))
 
     def run(self):
