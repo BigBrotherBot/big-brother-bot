@@ -22,10 +22,11 @@
 #
 # 2014/09/01 - 2.6 - Fenix - syntax cleanup
 # 2014/12/20 - 2.7 - Thomas LEVEIL - add the `scripts` directory to the builds
-# 2015/02/01 - 2.9 - Thomas LEVEIL - fix py2exe failling to find the plugin modules since 533a2d5d2101f0c9a228cc1e20d3b2683770c9fb
+# 2015/02/01 - 2.8 - Thomas LEVEIL - fix py2exe failling to find the plugin modules since 533a2d5d2101f0c9a228cc1e20d3b2683770c9fb
+# 2015/02/07 - 2.9 - Thomas LEVEIL - fix py2exe builds missing mysql files and postgresql files
 
 __author__  = 'ThorN, xlr8or, courgette'
-__version__ = '2.8'
+__version__ = '2.9'
 
 
 import re
@@ -58,7 +59,7 @@ class my_egg_info(orig_egg_info):
     """
     def run(self):
         orig_egg_info.run(self)
-        shutil.copy ('b3.egg-info/PKG-INFO', 'b3/PKG-INFO')
+        shutil.copy('b3.egg-info/PKG-INFO', 'b3/PKG-INFO')
 
 cmdclass = {
     'egg_info': my_egg_info,
@@ -136,6 +137,8 @@ setup(cmdclass=cmdclass,
                          'extplugins/conf/*.ini',
                          'sql/*.*',
                          'sql/sqlite/*',
+                         'sql/mysql/*',
+                         'sql/postgresql/*',
                          '../scripts/*.*',
                          'docs/*.txt',
                          'docs/*.pdf',
