@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS xlr_weaponusage (
 DROP TABLE IF EXISTS xlr_actionstats;
 CREATE TABLE IF NOT EXISTS xlr_actionstats (
   id SERIAL PRIMARY KEY,
-  name VARCHAR(25) NOT NULL DEFAULT '',
+  name VARCHAR(26) NOT NULL DEFAULT '',
   count INTEGER NOT NULL DEFAULT '0',
   CONSTRAINT xlr_actionstats_name UNIQUE (name)
 );
