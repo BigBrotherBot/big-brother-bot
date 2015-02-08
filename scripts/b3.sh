@@ -2,8 +2,8 @@
 
 # Big Brother Bot (B3) Management - http://www.bigbrotherbot.net
 # Maintainer: Daniele Pantaleone <fenix@bigbrotherbot.net>
-# App Version: 0.5
-# Last Edit: 30/11/2014
+# App Version: 0.6
+# Last Edit: 08/02/2015
 
 ### BEGIN INIT INFO
 # Provides:          b3
@@ -29,6 +29,7 @@
 #                     by subprocess, and the command to actually start the B3 instance inside this new shell), while   #
 #                     a normal B3 startup uses only 2 processes (screen and B3 process running inside the screen)      #
 #  2014-12-20 - 0.5 - fixed b3_clean not restarting all previously running B3 instances                                #
+#  2015-02-08 - 0.6 - fixed change to working directory not working properly when using an alias to execute the script #
 #                                                                                                                      #
 ########################################################################################################################
 
@@ -396,6 +397,10 @@ function b3_usage() {
 ########################################################################################################################
 # MAIN EXECUTION
 
+# change to the directory containing this very script so it can be used
+# from outside this working directory (for example using a soflink)
+cd $(cd -P -- "$(dirname -- "$0")" && pwd -P)
+
 # check that the script is not executed by super user to avoid permission problems
 # we will allow the B3 status check tho since the operation is totally harmless
 if ([ ${UID} -eq 0 ] && [ -n "${1}" ] && [ "${1}" != "status" ]); then
@@ -429,10 +434,6 @@ if [ ! -d $(readlink -f "${PID_PATH}") ]; then
     mkdir $(readlink -f "${PID_PATH}")
 fi
 
-
-# change to the directory containing this very script so it can be used
-# from outside this working directory (for example using a soflink)
-cd $(cd -P -- "$(dirname -- "$0")" && pwd -P)
 
 case "${1}" in
 
