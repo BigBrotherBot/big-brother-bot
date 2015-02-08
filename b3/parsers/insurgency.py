@@ -386,6 +386,12 @@ class InsurgencyParser(Parser):
         client = self.getClientOrCreate(cid, guid, name, team)
         return self.getEvent("EVT_CLIENT_JOIN", client=client)
 
+    @ger.gameEvent(r'^"(?P<old_name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" changed name to "(?P<new_name>.+)"$')
+    def on_client_changed_name(self, old_name, cid, guid, team, new_name):
+        # L 02/07/2015 - 19:36:25: "Jono<252><BOT><#Team_Insurgent>" changed name to "(1)Jono"
+        client = self.getClientOrCreate(cid, guid, old_name, team)
+        client.name = new_name  # Client.name setter will fire EVT_CLIENT_NAME_CHANGE is needed
+
     @ger.gameEvent(r'^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<old_team>\S+)>" joined team "(?P<new_team>\S+)"$',
                    r'^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)>" switched from team <(?P<old_team>\S+)> to <(?P<new_team>\S+)>$')
     def on_client_join_team(self, name, cid, guid, old_team, new_team):

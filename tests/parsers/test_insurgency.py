@@ -231,6 +231,24 @@ class Test_gamelog_parsing(InsurgencyTestCase):
         # THEN
         self.assert_has_event("EVT_CLIENT_SAY", "!pb @531 rule1", player)
 
+    def test_client_changed_name__known_client(self):
+        # GIVEN
+        player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_UNKNOWN)
+        player.connects("3")
+        # WHEN
+        self.clear_events()
+        self.parser.parseLine('L 02/07/2015 - 19:36:25: "courgette<3><STEAM_1:0:1111111><#Team_Security>" changed name to "fooobar"')
+        # THEN
+        self.assert_has_event("EVT_CLIENT_NAME_CHANGE", client=player, data="fooobar")
+
+    def test_client_changed_name__unknown_client(self):
+        # GIVEN
+        # WHEN
+        self.clear_events()
+        self.parser.parseLine('L 02/07/2015 - 19:36:25: "courgette<3><STEAM_1:0:1111111><#Team_Security>" changed name to "fooobar"')
+        # THEN
+        self.assert_has_event("EVT_CLIENT_NAME_CHANGE", data="fooobar")
+
     def test_bot_stuck(self):
         # GIVEN
         # WHEN
