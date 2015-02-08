@@ -49,6 +49,8 @@
 #                                             - make use of the client 'bot' attribute to identify BOT clients: do not
 #                                               mess with GUIDs since that's already done in parsers (where it should be)
 # 23-11-2014 - 3.0.0-beta.11 - Fenix          - added requiresConfigFile = False attribute to Ctime and XlrstatsHistory subplugins
+# 08-02-2014 - 3.0.0-beta.12 - Fenix          - fixed SQL queries quote escaping
+
 
 
 # This section is DoxuGen information. More information on how to comment your code
@@ -58,7 +60,7 @@
 # XLRstats Real Time playerstats plugin
 
 __author__ = 'xlr8or & ttlogic'
-__version__ = '3.0.0-beta.11'
+__version__ = '3.0.0-beta.12'
 
 # Version = major.minor.patches(-development.version)
 
@@ -74,6 +76,7 @@ import thread
 import threading
 import urllib2
 
+from b3.functions import escape
 from b3.functions import getCmd
 from ConfigParser import NoOptionError
 
@@ -2486,19 +2489,19 @@ class PlayerStats(StatObject):
     def _insertquery(self):
         q = """INSERT INTO %s (client_id, kills, deaths, teamkills, teamdeaths, suicides, ratio, skill, assists,
                assistskill, curstreak, winstreak, losestreak, rounds, hide, fixed_name, id_token) VALUES (%s, %s, %s,
-               %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "%s", "%s")""" % (self._table, self.client_id, self.kills,
+               %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, '%s', '%s')""" % (self._table, self.client_id, self.kills,
                self.deaths, self.teamkills, self.teamdeaths, self.suicides, self.ratio, self.skill, self.assists,
-               self.assistskill, self.curstreak, self.winstreak, self.losestreak, self.rounds, self.hide, self.fixed_name,
-               self.id_token)
+               self.assistskill, self.curstreak, self.winstreak, self.losestreak, self.rounds, self.hide,
+               escape(self.fixed_name, "'"), self.id_token)
         return q
 
     def _updatequery(self):
         q = """UPDATE %s SET client_id=%s, kills=%s, deaths=%s, teamkills=%s, teamdeaths=%s, suicides=%s, ratio=%s,
                skill=%s, assists=%s, assistskill=%s, curstreak=%s, winstreak=%s, losestreak=%s, rounds=%s, hide=%s,
-               fixed_name="%s", id_token="%s" WHERE `id`=%s""" % (self._table, self.client_id, self.kills, self.deaths,
+               fixed_name='%s', id_token='%s' WHERE `id`= %s""" % (self._table, self.client_id, self.kills, self.deaths,
                self.teamkills, self.teamdeaths, self.suicides, self.ratio, self.skill, self.assists, self.assistskill,
-               self.curstreak, self.winstreak, self.losestreak, self.rounds, self.hide, self.fixed_name, self.id_token,
-               self.id)
+               self.curstreak, self.winstreak, self.losestreak, self.rounds, self.hide, escape(self.fixed_name, "'"),
+               self.id_token, self.id)
         return q
 
 
@@ -2515,13 +2518,13 @@ class WeaponStats(StatObject):
     teamkills = 0
 
     def _insertquery(self):
-        q = """INSERT INTO %s (`name`, `kills`, `suicides`, `teamkills`) VALUES ("%s", %s, %s, %s)""" % (
-            self._table, self.name, self.kills, self.suicides, self.teamkills)
+        q = """INSERT INTO %s (`name`, `kills`, `suicides`, `teamkills`) VALUES ('%s', %s, %s, %s)""" % (
+            self._table, escape(self.name, "'"), self.kills, self.suicides, self.teamkills)
         return q
 
     def _updatequery(self):
-        q = 'UPDATE %s SET `name`="%s", `kills`=%s, `suicides`=%s, `teamkills`=%s WHERE `id`=%s' % (
-            self._table, self.name, self.kills, self.suicides, self.teamkills, self.id)
+        q = """UPDATE %s SET `name`='%s', `kills`=%s, `suicides`=%s, `teamkills`=%s WHERE `id`=%s""" % (
+            self._table, escape(self.name, "'"), self.kills, self.suicides, self.teamkills, self.id)
         return q
 
 
@@ -2566,13 +2569,13 @@ class Bodyparts(StatObject):
     teamkills = 0
 
     def _insertquery(self):
-        q = """INSERT INTO %s (`name`, `kills`, `suicides`, `teamkills`) VALUES ("%s", %s, %s, %s)""" % (
-            self._table, self.name, self.kills, self.suicides, self.teamkills)
+        q = """INSERT INTO %s (`name`, `kills`, `suicides`, `teamkills`) VALUES ('%s', %s, %s, %s)""" % (
+            self._table, escape(self.name, "'"), self.kills, self.suicides, self.teamkills)
         return q
 
     def _updatequery(self):
-        q = """UPDATE %s SET `name`="%s", `kills`=%s, `suicides`=%s, `teamkills`=%s WHERE `id`=%s""" % (
-            self._table, self.name, self.kills, self.suicides, self.teamkills, self.id)
+        q = """UPDATE %s SET `name`='%s', `kills`=%s, `suicides`=%s, `teamkills`=%s WHERE `id`=%s""" % (
+            self._table, escape(self.name, "'"), self.kills, self.suicides, self.teamkills, self.id)
         return q
 
 
@@ -2590,13 +2593,13 @@ class MapStats(StatObject):
     rounds = 0
 
     def _insertquery(self):
-        q = """INSERT INTO %s (`name`, `kills`, `suicides`, `teamkills`, `rounds`) VALUES ("%s", %s, %s, %s, %s)""" % (
-            self._table, self.name, self.kills, self.suicides, self.teamkills, self.rounds)
+        q = """INSERT INTO %s (`name`, `kills`, `suicides`, `teamkills`, `rounds`) VALUES ('%s', %s, %s, %s, %s)""" % (
+            self._table, escape(self.name, "'"), self.kills, self.suicides, self.teamkills, self.rounds)
         return q
 
     def _updatequery(self):
-        q = """UPDATE %s SET `name`="%s", `kills`=%s, `suicides`=%s, `teamkills`=%s, `rounds`=%s WHERE `id`=%s""" % (
-            self._table, self.name, self.kills, self.suicides, self.teamkills, self.rounds, self.id)
+        q = """UPDATE %s SET `name`='%s', `kills`=%s, `suicides`=%s, `teamkills`=%s, `rounds`=%s WHERE `id`=%s""" % (
+            self._table, escape(self.name, "'"), self.kills, self.suicides, self.teamkills, self.rounds, self.id)
         return q
 
 
@@ -2691,11 +2694,11 @@ class ActionStats(StatObject):
     count = 0
 
     def _insertquery(self):
-        q = """INSERT INTO %s (`name`, `count`) VALUES ("%s", %s)""" % (self._table, self.name, self.count)
+        q = """INSERT INTO %s (`name`, `count`) VALUES ('%s', %s)""" % (self._table, escape(self.name, "'"), self.count)
         return q
 
     def _updatequery(self):
-        q = """UPDATE %s SET `name`="%s", `count`=%s WHERE id=%s""" % (self._table, self.name, self.count, self.id)
+        q = """UPDATE %s SET `name`='%s', `count`=%s WHERE id=%s""" % (self._table, escape(self.name, "'"), self.count, self.id)
         return q
 
 
@@ -2736,13 +2739,13 @@ class BattleStats(StatObject):
 
     def _insertquery(self):
         q = """INSERT INTO %s (`map_id`, `game_type`, `total_players`, `start_time`, `end_time`, `scores`)
-               VALUES ("%s", %s, %s, %s, %s, "%s")""" % (self._table, self.map_id, self.game_type, self.total_players,
+               VALUES ('%s', %s, %s, %s, %s, '%s')""" % (self._table, self.map_id, self.game_type, self.total_players,
                self.start_time, self.end_time, self.scores)
         return q
 
     def _updatequery(self):
-        q = """UPDATE %s SET `map_id`=%s, `game_type`="%s", `total_players`=%s, `start_time`=%s, `end_time`=%s,
-            `scores`="%s" """ % (self._table, self.map_id, self.game_type, self.total_players, self.start_time,
+        q = """UPDATE %s SET `map_id`=%s, `game_type`='%s', `total_players`=%s, `start_time`=%s, `end_time`=%s,
+            `scores`='%s' """ % (self._table, self.map_id, self.game_type, self.total_players, self.start_time,
             self.end_time, self.scores)
         return q
 
