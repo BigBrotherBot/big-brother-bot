@@ -91,9 +91,9 @@ class Cmdmanager_TestCase(B3TestCase):
 class Test_commands(Cmdmanager_TestCase):
 
     ####################################################################################################################
-    ##                                                                                                                ##
+    #                                                                                                                  #
     ## CMD LEVEL NO PARAMETER                                                                                         ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
     ####################################################################################################################
 
     def test_cmdlevel_no_parameter(self):
@@ -127,9 +127,9 @@ class Test_commands(Cmdmanager_TestCase):
         self.assertListEqual(['could not find command fakecommand'], superadmin.message_history)
 
     ####################################################################################################################
-    ##                                                                                                                ##
+    #                                                                                                                  #
     ## CMD LEVEL SINGLE PARAMETER                                                                                     ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
     ####################################################################################################################
 
     def test_cmdlevel_single_valid_minlevel(self):
@@ -157,9 +157,9 @@ class Test_commands(Cmdmanager_TestCase):
         self.assert_cmd_groups("help", "^2guest")
 
     ####################################################################################################################
-    ##                                                                                                                ##
+    #                                                                                                                  #
     ## CMD LEVEL DOUBLE PARAMETER                                                                                     ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
     ####################################################################################################################
 
     def test_cmdlevel_double_valid_minlevel_maxlevel(self):
@@ -199,9 +199,9 @@ class Test_commands(Cmdmanager_TestCase):
         self.assert_cmd_groups("help", "^2guest")
 
     ####################################################################################################################
-    ##                                                                                                                ##
+    #                                                                                                                  #
     ## CMD ALIAS NO PARAMETER                                                                                         ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
     ####################################################################################################################
 
     def test_cmdalias_invalid_command(self):
@@ -245,9 +245,9 @@ class Test_commands(Cmdmanager_TestCase):
         self.assertListEqual(['no sufficient access to die command'], mike.message_history)
 
     ####################################################################################################################
-    ##                                                                                                                ##
+    #                                                                                                                  #
     ## CMD ALIAS WITH PARAMETER                                                                                       ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
     ####################################################################################################################
 
     def test_cmdalias_invalid_alias_specified(self):
@@ -299,9 +299,9 @@ class Test_commands(Cmdmanager_TestCase):
         self.assert_cmd_alias("help", "newhelp")
 
     ####################################################################################################################
-    ##                                                                                                                ##
+    #                                                                                                                  #
     ## CMD GRANT                                                                                                      ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
     ####################################################################################################################
 
     def test_cmdgrant_with_invalid_command(self):
@@ -371,9 +371,9 @@ class Test_commands(Cmdmanager_TestCase):
         self.assertEqual(1, len(grantlist))
 
     ####################################################################################################################
-    ##                                                                                                                ##
+    #                                                                                                                  #
     ## CMD REVOKE                                                                                                     ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
     ####################################################################################################################
 
     def test_cmdrevoke_with_no_grant_given(self):
@@ -438,9 +438,9 @@ class Test_commands(Cmdmanager_TestCase):
         self.assertEqual(0, len(grantlist))
 
     ####################################################################################################################
-    ##                                                                                                                ##
+    #                                                                                                                  #
     ## CMD USE                                                                                                        ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
     ####################################################################################################################
 
     def test_cmduse_no_access(self):

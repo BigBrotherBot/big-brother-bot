@@ -39,9 +39,9 @@ class SqliteStorage(DatabaseStorage):
         super(SqliteStorage, self).__init__(dsn, dsnDict, console)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  CONNECTION INITIALIZATION/TERMINATION/RETRIEVAL                                                               ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   CONNECTION INITIALIZATION/TERMINATION/RETRIEVAL                                                                #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def connect(self):
@@ -81,9 +81,9 @@ class SqliteStorage(DatabaseStorage):
         self.db = None
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  STORAGE INTERFACE                                                                                             ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   STORAGE INTERFACE                                                                                              #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getTables(self):
@@ -121,9 +121,9 @@ class SqliteStorage(DatabaseStorage):
             self.query("DELETE FROM sqlite_sequence WHERE name='%s';" % table)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  UTILITY METHODS                                                                                               ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   UTILITY METHODS                                                                                                #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def status(self):

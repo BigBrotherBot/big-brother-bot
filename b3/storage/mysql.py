@@ -44,9 +44,9 @@ class PymysqlStorage(DatabaseStorage):
         super(PymysqlStorage, self).__init__(dsn, dsnDict, console)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  CONNECTION INITIALIZATION/TERMINATION/RETRIEVAL                                                               ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   CONNECTION INITIALIZATION/TERMINATION/RETRIEVAL                                                                #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getConnection(self):
@@ -69,9 +69,9 @@ class PymysqlStorage(DatabaseStorage):
         self.db = None
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  UTILITY METHODS                                                                                               ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   UTILITY METHODS                                                                                                #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def status(self):
@@ -99,9 +99,9 @@ class MysqlConnectorStorage(DatabaseStorage):
         super(MysqlConnectorStorage, self).__init__(dsn, dsnDict, console)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  CONNECTION INITIALIZATION/TERMINATION/RETRIEVAL                                                               ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   CONNECTION INITIALIZATION/TERMINATION/RETRIEVAL                                                                #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getConnection(self):
@@ -124,9 +124,9 @@ class MysqlConnectorStorage(DatabaseStorage):
         self.db = None
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  UTILITY METHODS                                                                                               ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   UTILITY METHODS                                                                                                #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def status(self):
@@ -154,9 +154,9 @@ class MySQLdbStorage(DatabaseStorage):
         super(MySQLdbStorage, self).__init__(dsn, dsnDict, console)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  CONNECTION INITIALIZATION/TERMINATION/RETRIEVAL                                                               ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   CONNECTION INITIALIZATION/TERMINATION/RETRIEVAL                                                                #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getConnection(self):
@@ -179,9 +179,9 @@ class MySQLdbStorage(DatabaseStorage):
         self.db = None
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  UTILITY METHODS                                                                                               ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   UTILITY METHODS                                                                                                #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def status(self):
@@ -254,9 +254,9 @@ class MysqlStorage(DatabaseStorage):
             raise AttributeError("missing MySQL database name in %(protocol)s://%(user)s:******@%(host)s:%(port)s%(path)s" % self.dsnDict)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  CONNECTION INITIALIZATION/TERMINATION/RETRIEVAL                                                               ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   CONNECTION INITIALIZATION/TERMINATION/RETRIEVAL                                                                #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def connect(self):
@@ -317,9 +317,9 @@ class MysqlStorage(DatabaseStorage):
         return self.db
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  STORAGE INTERFACE                                                                                             ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   STORAGE INTERFACE                                                                                              #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getTables(self):

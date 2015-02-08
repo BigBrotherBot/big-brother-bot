@@ -260,9 +260,9 @@ class Plugin:
             self.working = False
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  LOGGING METHODS                                                                                               ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   LOGGING METHODS                                                                                                #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def error(self, msg, *args, **kwargs):
@@ -314,10 +314,10 @@ class Plugin:
         self.console.critical('%s: %s' % (self.__class__.__name__, msg), *args, **kwargs)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  PLUGIN HOOKS                                                                                                  ##
-    ##  INHERITING CLASSES CAN IMPLEMENT THE FOLLOWING METHODS                                                        ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   PLUGIN HOOKS                                                                                                   #
+    #   INHERITING CLASSES CAN IMPLEMENT THE FOLLOWING METHODS                                                         #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def onLoadConfig(self):
@@ -353,10 +353,10 @@ class Plugin:
         pass
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  EVENT HANDLERS                                                                                                ##
-    ##  THOSE ARE DEFAULT EVENT HANDLERS WHICH MAY BE OVERRIDDEN IN PLUGIN CLASSES                                    ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   EVENT HANDLERS                                                                                                 #
+    #   THOSE ARE DEFAULT EVENT HANDLERS WHICH MAY BE OVERRIDDEN IN PLUGIN CLASSES                                     #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def onExit(self, event):
@@ -374,9 +374,9 @@ class Plugin:
         pass
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  DEPRECATED METHODS                                                                                            ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   DEPRECATED METHODS                                                                                             #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def handle(self, event):

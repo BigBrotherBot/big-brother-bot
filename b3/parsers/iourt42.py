@@ -590,9 +590,9 @@ class Iourt42Parser(Iourt41Parser):
     }   
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  PARSER INITIALIZATION                                                                                         ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   PARSER INITIALIZATION                                                                                          #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def __new__(cls, *args, **kwargs):
@@ -653,9 +653,9 @@ class Iourt42Parser(Iourt41Parser):
             self.patch_spamcontrolPlugin()
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  CONFIG LOADERS                                                                                                ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   CONFIG LOADERS                                                                                                 #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def load_conf_frozensand_ban_settings(self):
@@ -720,9 +720,9 @@ class Iourt42Parser(Iourt41Parser):
         self.info("Send temporary bans to Frozen Sand : %s" % ('yes' if self._tempban_with_frozensand else 'no'))
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  EVENT HANDLERS                                                                                                ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   EVENT HANDLERS                                                                                                 #
+    #                                                                                                                  #
     ####################################################################################################################
     
     def OnClientuserinfo(self, action, data, match=None):
@@ -1032,9 +1032,9 @@ class Iourt42Parser(Iourt41Parser):
         return self.getEvent('EVT_CLIENT_THAWOUT_FINISHED', client=client, target=target)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   B3 PARSER INTERFACE IMPLEMENTATION                                                                             #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def authorizeClients(self):
@@ -1174,25 +1174,25 @@ class Iourt42Parser(Iourt41Parser):
                                                                    'admin': admin}, client=client))
         client.disconnect()
 
-    def inflictCustomPenalty(self, ptype, client, reason=None, duration=None, admin=None, data=None):
+    def inflictCustomPenalty(self, penalty_type, client, reason=None, duration=None, admin=None, data=None):
         """
         Urban Terror specific punishments.
         """
-        if ptype == 'slap' and client:
+        if penalty_type == 'slap' and client:
             cmd = self.getCommand('slap', cid=client.cid)
             self.write(cmd)
             if reason:
                 client.message("%s" % reason)
             return True
 
-        elif ptype == 'nuke' and client:
+        elif penalty_type == 'nuke' and client:
             cmd = self.getCommand('nuke', cid=client.cid)
             self.write(cmd)
             if reason:
                 client.message("%s" % reason)
             return True
 
-        elif ptype == 'mute' and client:
+        elif penalty_type == 'mute' and client:
             if duration is None:
                 seconds = 60
             else:
@@ -1208,7 +1208,7 @@ class Iourt42Parser(Iourt41Parser):
                 client.message("%s" % reason)
             return True
 
-        elif ptype == 'kill' and client:
+        elif penalty_type == 'kill' and client:
             cmd = self.getCommand('kill', cid=client.cid)
             self.write(cmd)
             if reason:
@@ -1216,9 +1216,9 @@ class Iourt42Parser(Iourt41Parser):
             return True
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  OTHER METHODS                                                                                                 ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   OTHER METHODS                                                                                                  #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def queryClientFrozenSandAccount(self, cid):

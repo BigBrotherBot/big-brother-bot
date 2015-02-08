@@ -131,9 +131,9 @@ class HomefrontParser(b3.parser.Parser):
     }
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  PARSER INITIALIZATION                                                                                         ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   PARSER INITIALIZATION                                                                                          #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def startup(self):
@@ -245,9 +245,9 @@ class HomefrontParser(b3.parser.Parser):
                 sys.exit(self.exitcode)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  OTHER METHODS                                                                                                 ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   OTHER METHODS                                                                                                  #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def routePacket(self, packet):
@@ -408,9 +408,9 @@ class HomefrontParser(b3.parser.Parser):
         self.write('RETRIEVE PLAYERLIST')
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  GAME EVENTS HANDLERS                                                                                          ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   GAME EVENTS HANDLERS                                                                                           #
+    #                                                                                                                  #
     ####################################################################################################################
        
     def onServerHello(self, data):
@@ -734,9 +734,9 @@ class HomefrontParser(b3.parser.Parser):
         return self.getEvent('EVT_SERVER_VOTE_END', data={'yesvotes': yesvotes, 'percentfor': percentfor, 'voteresult': voteresult})
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   B3 PARSER INTERFACE IMPLEMENTATION                                                                             #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getPlayerList(self):
@@ -1072,14 +1072,14 @@ class HomefrontParser(b3.parser.Parser):
                 pass
         return scores
 
-    def inflictCustomPenalty(self, type, client, reason=None, duration=None, admin=None, data=None):
+    def inflictCustomPenalty(self, penalty_type, client, reason=None, duration=None, admin=None, data=None):
         """
         Called if b3.admin.penalizeClient() does not know a given penalty type. 
         Overwrite this to add customized penalties for your game like 'slap', 'nuke', 
         'mute' or anything you want.
         /!\ This method must return True if the penalty was inflicted.
         """
-        if type == 'kill' and client:
+        if penalty_type == 'kill' and client:
             self.write('admin kill "%s"' % client.guid)
             if reason:
                 client.message("%s" % reason)

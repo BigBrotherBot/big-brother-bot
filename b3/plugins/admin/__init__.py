@@ -242,9 +242,9 @@ class AdminPlugin(b3.plugin.Plugin):
     }
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##   STARTUP                                                                                                      ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #    STARTUP                                                                                                       #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def onLoadConfig(self):
@@ -641,9 +641,9 @@ class AdminPlugin(b3.plugin.Plugin):
             return False
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##   EVENTS                                                                                                       ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #    EVENTS                                                                                                        #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def OnPrivateSay(self, event):
@@ -837,9 +837,9 @@ class AdminPlugin(b3.plugin.Plugin):
                         event.client.message('^7You do not have sufficient access to use %s%s' % (self.cmdPrefix, cmd))
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##   UTILITIES                                                                                                    ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #    UTILITIES                                                                                                     #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def aquireCmdLock(self, cmd, client, delay, all=True):
@@ -1104,10 +1104,10 @@ class AdminPlugin(b3.plugin.Plugin):
             self.console.say('^%i%s' % (c, msg))
             time.sleep(delay)
 
-    def penalizeClient(self, type, client, reason, keyword=None, duration=0, admin=None, data=''):
+    def penalizeClient(self, penalty_type, client, reason, keyword=None, duration=0, admin=None, data=''):
         """
         Inflict a penalty to the given client.
-        :param type: The penalty type
+        :param penalty_type: The penalty type
         :param client: The client to punish
         :param reason: The reason for this punishment
         :param keyword: The keyword used for this punishment
@@ -1120,18 +1120,18 @@ class AdminPlugin(b3.plugin.Plugin):
 
         duration = functions.time2minutes(duration)
 
-        if type == self.PENALTY_KICK:
+        if penalty_type == self.PENALTY_KICK:
             client.kick(reason, keyword, admin, False, data)
-        elif type == self.PENALTY_TEMPBAN:
+        elif penalty_type == self.PENALTY_TEMPBAN:
             client.tempban(reason, keyword, duration, admin, False, data)
-        elif type == self.PENALTY_BAN:
+        elif penalty_type == self.PENALTY_BAN:
             client.ban(reason, keyword, admin, False, data)
-        elif type == self.PENALTY_WARNING:
+        elif penalty_type == self.PENALTY_WARNING:
             self.warnClient(client, keyword, admin, True, data, duration)
         else:
-            if self.console.inflictCustomPenalty(type, client=client, reason=reason,
+            if self.console.inflictCustomPenalty(penalty_type, client=client, reason=reason,
                                                  duration=duration, admin=admin, data=data) is not True:
-                self.error('penalizeClient(): type %s not found', type)
+                self.error('penalizeClient(): penalty type %s not found', penalty_type)
 
     def warnClient(self, sclient, keyword, admin=None, timer=True, data='', newDuration=None):
         """
@@ -1278,9 +1278,9 @@ class AdminPlugin(b3.plugin.Plugin):
             self.error(err)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##   COMMANDS                                                                                                     ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #    COMMANDS                                                                                                      #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def cmd_die(self, data, client, cmd=None):

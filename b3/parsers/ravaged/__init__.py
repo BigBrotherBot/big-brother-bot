@@ -114,9 +114,9 @@ class RavagedParser(Parser):
     _reColor = re.compile(r'(\^[0-9])')
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  PARSER INITIALIZATION                                                                                         ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   PARSER INITIALIZATION                                                                                          #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def __new__(cls, *args, **kwargs):
@@ -163,10 +163,10 @@ class RavagedParser(Parser):
         pass
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  GAME EVENTS HANDLERS                                                                                          ##
-    ##  Read http://www.2dawn.com/wiki/index.php?title=Ravaged_RCon                                                   ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   GAME EVENTS HANDLERS                                                                                           #
+    #   Read http://www.2dawn.com/wiki/index.php?title=Ravaged_RCon                                                    #
+    #                                                                                                                  #
     ####################################################################################################################
 
     @ger.gameEvent(r'''^"(?P<name>.*?)<(?P<guid>\d+)><(?P<team>.*)>" connected, address "(?P<ip>\S+)"$''')
@@ -268,9 +268,9 @@ class RavagedParser(Parser):
         self.warning("unhandled log line : %s : please report this on the B3 forums" % data)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   B3 PARSER INTERFACE IMPLEMENTATION                                                                             #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getPlayerList(self):
@@ -531,7 +531,7 @@ class RavagedParser(Parser):
                 rv[cid] = data
         return rv
 
-    def inflictCustomPenalty(self, type, client, reason=None, duration=None, admin=None, data=None):
+    def inflictCustomPenalty(self, penalty_type, client, reason=None, duration=None, admin=None, data=None):
         """
         Called if b3.admin.penalizeClient() does not know a given penalty type.
         Overwrite this to add customized penalties for your game like 'slap', 'nuke',
@@ -542,9 +542,9 @@ class RavagedParser(Parser):
         pass
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  OTHER METHODS                                                                                                 ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   OTHER METHODS                                                                                                  #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getClientOrCreate(self, guid, name, team=None):
@@ -678,9 +678,9 @@ class RavagedParser(Parser):
             self.game.gameType = parts[0]
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  B3 PARSER GAME EVENT THREAD STUFF                                                                             ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   B3 PARSER GAME EVENT THREAD STUFF                                                                              #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def run(self):

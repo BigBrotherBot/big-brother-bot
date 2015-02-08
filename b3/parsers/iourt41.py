@@ -422,9 +422,9 @@ class Iourt41Parser(AbstractParser):
     }
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  PARSER INITIALIZATION                                                                                         ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   PARSER INITIALIZATION                                                                                          #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def startup(self):
@@ -522,9 +522,9 @@ class Iourt41Parser(AbstractParser):
         b3.parser.Parser.unpause(self)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  PARSING                                                                                                       ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   PARSING                                                                                                        #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getLineParts(self, line):
@@ -572,9 +572,9 @@ class Iourt41Parser(AbstractParser):
         return data
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  EVENT HANDLERS                                                                                                ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   EVENT HANDLERS                                                                                                 #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def OnClientconnect(self, action, data, match=None):
@@ -1090,9 +1090,9 @@ class Iourt41Parser(AbstractParser):
         return self.getEvent('EVT_GAME_ROUND_START', data=self.game)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   B3 PARSER INTERFACE IMPLEMENTATION                                                                             #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def broadcast(self, text):
@@ -1288,25 +1288,25 @@ class Iourt41Parser(AbstractParser):
 
         return maps
 
-    def inflictCustomPenalty(self, ptype, client, reason=None, duration=None, admin=None, data=None):
+    def inflictCustomPenalty(self, penalty_type, client, reason=None, duration=None, admin=None, data=None):
         """
         Urban Terror specific punishments.
         """
-        if ptype == 'slap' and client:
+        if penalty_type == 'slap' and client:
             cmd = self.getCommand('slap', cid=client.cid)
             self.write(cmd)
             if reason:
                 client.message("%s" % reason)
             return True
 
-        elif ptype == 'nuke' and client:
+        elif penalty_type == 'nuke' and client:
             cmd = self.getCommand('nuke', cid=client.cid)
             self.write(cmd)
             if reason:
                 client.message("%s" % reason)
             return True
 
-        elif ptype == 'mute' and client:
+        elif penalty_type == 'mute' and client:
             if duration is None:
                 seconds = 60
             else:
@@ -1323,9 +1323,9 @@ class Iourt41Parser(AbstractParser):
             return True
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  OTHER METHODS                                                                                                 ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   OTHER METHODS                                                                                                  #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getTeam(self, team):

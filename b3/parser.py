@@ -1529,10 +1529,10 @@ class Parser(object):
             self.info('No user documentation generated: to enable update your configuration file')
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##     INHERITING CLASSES MUST IMPLEMENTS THE FOLLOWING METHODS                                                   ##
-    ##     PLUGINS THAT ARE GAME INDEPENDANT ASSUME THOSE METHODS EXIST                                               ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #      INHERITING CLASSES MUST IMPLEMENTS THE FOLLOWING METHODS                                                    #
+    #      PLUGINS THAT ARE GAME INDEPENDANT ASSUME THOSE METHODS EXIST                                                #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getPlayerList(self):
@@ -1652,7 +1652,7 @@ class Parser(object):
         """
         raise NotImplementedError
         
-    def inflictCustomPenalty(self, type, client, reason=None, duration=None, admin=None, data=None):
+    def inflictCustomPenalty(self, penalty_type, client, reason=None, duration=None, admin=None, data=None):
         """
         Called if b3.admin.penalizeClient() does not know a given penalty type. 
         Overwrite this to add customized penalties for your game like 'slap', 'nuke', 
