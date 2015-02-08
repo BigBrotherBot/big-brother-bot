@@ -467,9 +467,17 @@ class InsurgencyParser(Parser):
     def on_team_action(self, team, event_name, properties):
         # L 08/26/2012 - 03:48:09: Team "CT" triggered "SFUI_Notice_Target_Saved" (CT "3") (T "5")
         # L 08/26/2012 - 03:51:50: Team "TERRORIST" triggered "SFUI_Notice_Target_Bombed" (CT "1") (T "1")
-        if event_name in ("SFUI_Notice_Target_Saved", "SFUI_Notice_Target_Bombed", "SFUI_Notice_Terrorists_Win",
-                          "SFUI_Notice_CTs_Win", "SFUI_Notice_Bomb_Defused"):
-            pass  # TODO should we do anything with that info ?
+        if event_name in ("SFUI_Notice_Target_Saved",
+                          "SFUI_Notice_Target_Bombed",
+                          "SFUI_Notice_Terrorists_Win",
+                          "SFUI_Notice_CTs_Win",
+                          "SFUI_Notice_Bomb_Defused",
+                          "obj_captured",
+                          "obj_destroyed",
+                          "Round_Win"):
+            return self.getEvent('EVT_GAME_ROUND_END', data={"team": self.getTeam(team),
+                                                             "event_name": event_name,
+                                                             "properties": properties})
         else:
             self.warning("unexpected team event : '%s' : please report this on the B3 forums" % event_name)
 

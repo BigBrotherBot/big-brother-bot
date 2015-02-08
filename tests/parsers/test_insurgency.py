@@ -300,7 +300,14 @@ class Test_gamelog_parsing(InsurgencyTestCase):
         # THEN
         self.assertFalse(warning_mock.called)
 
-
+    def test_on_team_action(self):
+        # WHEN
+        self.clear_events()
+        self.parser.parseLine('L 02/07/2015 - 12:53:23: Team "#Team_Insurgent" triggered "Round_Win"')
+        # THEN
+        self.assert_has_event("EVT_GAME_ROUND_END", data={'event_name': 'Round_Win',
+                                                          'properties': '',
+                                                          'team': TEAM_BLUE})
 
 
 class Test_parser_other(InsurgencyTestCase):
