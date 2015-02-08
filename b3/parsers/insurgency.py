@@ -273,7 +273,8 @@ class InsurgencyParser(Parser):
         r'''^\[META\] Loaded \d+ plugins \(\d+ already loaded\)$''',
         r'''^\[META\] Loaded \d+ plugin.$''',
         r'^Log file started.*$',
-        r'^Log file closed.*$'
+        r'^Log file closed.*$',
+        r'^\s*path_goal .*'
     )
     def ignored_line(self):
         # L 09/24/2001 - 18:44:50: // This is a comment in the log file. It should not be parsed.

@@ -293,6 +293,15 @@ class Test_gamelog_parsing(InsurgencyTestCase):
         # THEN
         self.assertFalse(warning_mock.called)
 
+    def test_ignored_line__path_goal(self):
+        # WHEN
+        with patch.object(self.parser, "warning") as warning_mock:
+            self.parser.parseLine('L 02/07/2015 - 14:53:26:    path_goal ( "-162.50 -750.00 182.68" )')
+        # THEN
+        self.assertFalse(warning_mock.called)
+
+
+
 
 class Test_parser_other(InsurgencyTestCase):
 
