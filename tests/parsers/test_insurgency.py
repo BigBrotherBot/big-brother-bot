@@ -221,6 +221,11 @@ class AdminTestCase(unittest.TestCase):
 
 class Test_gamelog_parsing(InsurgencyTestCase):
 
+    def assertLineIsIgnored(self, line):
+        with patch.object(self.parser, "warning") as warning_mock:
+            self.parser.parseLine(line)
+        self.assertFalse(warning_mock.called, line)
+
     def test_client_say(self):
         # GIVEN
         player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_BLUE)
@@ -279,26 +284,11 @@ class Test_gamelog_parsing(InsurgencyTestCase):
         self.parser.parseLine('L 02/07/2015 - 14:48:24: server_cvar: "sv_tags" "cid brutal coop bots hunt unforgiving"')
         self.assertEqual("cid brutal coop bots hunt unforgiving", self.parser.game.cvar["sv_tags"])
 
-    def test_ignored_line__log_file_closed(self):
-        # WHEN
-        with patch.object(self.parser, "warning") as warning_mock:
-            self.parser.parseLine('L 02/07/2015 - 15:15:22: Log file closed')
-        # THEN
-        self.assertFalse(warning_mock.called)
-
-    def test_ignored_line__log_file_started(self):
-        # WHEN
-        with patch.object(self.parser, "warning") as warning_mock:
-            self.parser.parseLine('L 02/07/2015 - 15:15:24: Log file started (file "logs\\L023_081_154_166_23274_201502071515_001.log") (game "C:\\servers\\insurgency") (version "5885")')
-        # THEN
-        self.assertFalse(warning_mock.called)
-
-    def test_ignored_line__path_goal(self):
-        # WHEN
-        with patch.object(self.parser, "warning") as warning_mock:
-            self.parser.parseLine('L 02/07/2015 - 14:53:26:    path_goal ( "-162.50 -750.00 182.68" )')
-        # THEN
-        self.assertFalse(warning_mock.called)
+    def test_ignored_line(self):
+        self.assertLineIsIgnored('L 02/07/2015 - 15:15:22: Log file closed')
+        self.assertLineIsIgnored('L 02/07/2015 - 15:15:24: Log file started (file "logs\\L023_081_154_166_23274_201502071515_001.log") (game "C:\\servers\\insurgency") (version "5885")')
+        self.assertLineIsIgnored('L 02/07/2015 - 14:53:26:    path_goal ( "-162.50 -750.00 182.68" )')
+        self.assertLineIsIgnored('L 02/07/2015 - 19:13:07: Vote succeeded "Kick Based God Allah [U:1:120000090]"')
 
     def test_on_team_action(self):
         # WHEN
@@ -308,6 +298,7 @@ class Test_gamelog_parsing(InsurgencyTestCase):
         self.assert_has_event("EVT_GAME_ROUND_END", data={'event_name': 'Round_Win',
                                                           'properties': '',
                                                           'team': TEAM_BLUE})
+
     def test_on_client_action__obj_captured(self):
         # GIVEN
         player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_BLUE)
