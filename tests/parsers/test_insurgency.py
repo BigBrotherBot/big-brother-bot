@@ -319,6 +319,21 @@ class Test_gamelog_parsing(InsurgencyTestCase):
         # THEN
         self.assert_has_event("EVT_CLIENT_ACTION", data="obj_destroyed")
 
+    def test_gamerules(self):
+        def assertGR(state, event_type):
+            self.parser.parseLine("Gamerules: entering state '%s'" % state)
+            self.assert_has_event(event_type)
+
+        # GIVEN
+        player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_BLUE)
+        player.connects("3")
+        # THEN
+        assertGR("GR_STATE_PREGAME", "EVT_GAME_WARMUP")
+        assertGR("GR_STATE_STARTGAME", "EVT_CLIENT_JOIN")
+        # assertGR("GR_STATE_PREROUND", "xxxxxxxxxxxx")
+        assertGR("GR_STATE_RND_RUNNING", "EVT_GAME_ROUND_START")
+        assertGR("GR_STATE_POSTROUND", "EVT_GAME_ROUND_END")
+        assertGR("GR_STATE_GAME_OVER", "EVT_GAME_EXIT")
 
 class Test_parser_other(InsurgencyTestCase):
 
