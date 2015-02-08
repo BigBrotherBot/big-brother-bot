@@ -51,8 +51,10 @@
 #                                     - show map and gametype being changed to for 5 seconds before change
 #                                     - don't show BOTs in !list for coop games
 # 2014/12/17 - 0.7.3 - 82ndab-Bravo17 - Updated map/gametype list
-# 2014/12/23 - 0.8.0 - 82ndab-Bravo17 - Removed map/gametype pair checking, since game no longer seems to lockup if invalid.
-#                                     - Remove auto adding of _hunt and _coop, since mapmakers are not sticking to this format.
+# 2014/12/23 - 0.8.0 - 82ndab-Bravo17 - Removed map/gametype pair checking, since game no longer seems to lockup if
+#                                       invalid.
+#                                     - Remove auto adding of _hunt and _coop, since mapmakers are not sticking to this
+#                                       format.
 # 2015/02/05 - 0.9.0 - Fenix          - correctly initialize Server client
 
 import re
@@ -204,7 +206,8 @@ class InsurgencyParser(Parser):
                 for m in allavailablemaps:
                     maplist = maplist + ', ' + m
                 client.message("Full list of maps on the server" + maplist)
-                client.message("PVP Gametypes are: ambush, firefight, flashpoint, infiltrate, occupy, push, skirmish, strike")
+                client.message("PVP Gametypes are: ambush, firefight, flashpoint, infiltrate, occupy, push, skirmish, "
+                               "strike")
                 client.message("Coop Gametypes are: checkpoint, outpost, hunt, survival")
                 client.message('For more help, type !help map')
                 return
@@ -528,7 +531,7 @@ class InsurgencyParser(Parser):
             self.warning("unexpected server_message : '%s' : please report this on the B3 forums" % msg)
 
     @ger.gameEvent(r'^Log file started (?P<properties>.*)$')
-    def on_server_message(self, properties):
+    def on_ignored_log_line(self, properties):
         pass
 
     @ger.gameEvent(r'^(?P<data>Your server needs to be restarted.*)$',
@@ -537,6 +540,18 @@ class InsurgencyParser(Parser):
         # L 09/17/2012 - 23:26:45: Your server needs to be restarted in order to receive the latest update.
         # L 09/17/2012 - 23:26:45: Your server is out of date.  Please update and restart.
         return self.getEvent('EVT_SERVER_REQUIRES_RESTART', data)
+
+    @ger.gameEvent(r'''^
+        "(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>\S+)>"
+        \ stuck\
+        \(position\ "(?P<position>.+?)"\)
+        \ \(duration\ "(?P<duration>.+?)"\)
+        \ L\ .+path_goal
+        \ \(\s*"(?P<path_goal>.*?)"\s*\)
+        $''')
+    def on_bot_stuck(self, name, cid, guid, team, position, duration, path_goal):
+        # "Ted<368><BOT><3>" stuck (position "4700.29 -2847.70 150.76") (duration "3.47") L 02/07/2015 - 12:28:49:    path_goal ( "4693.44 -2975.00 151.53" )
+        pass
 
     # ------------------------------------- /!\  this one must be the last /!\ --------------------------------------- #
 

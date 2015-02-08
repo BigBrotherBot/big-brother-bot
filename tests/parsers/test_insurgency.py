@@ -231,6 +231,16 @@ class Test_gamelog_parsing(InsurgencyTestCase):
         # THEN
         self.assert_has_event("EVT_CLIENT_SAY", "!pb @531 rule1", player)
 
+    def test_bot_stuck(self):
+        # GIVEN
+        # WHEN
+        self.clear_events()
+        with patch.object(self.parser, "on_unknown_line") as on_unknown_line_mock:
+            self.parser.parseLine('''L 02/07/2015 - 12:30:01: "Minh<338><BOT><3>" stuck (position "4355.51 -2602.87 143.98") (duration "19.97") L 02/07/2015 - 12:30:01:    path_goal ( "4370.00 -2703.29 148.56" )''')
+        # THEN
+        self.assertEqual(0, len(self.evt_queue))
+        self.assertEqual(0, on_unknown_line_mock.call_count)
+
 
 class Test_parser_other(InsurgencyTestCase):
 
@@ -265,13 +275,13 @@ class FunctionalTest(AdminTestCase):
                               "contact, peak, panj, market ?"], superadmin.message_history)
 
     def test_map_with_correct_parameters(self):
-         # GIVEN
-         superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128, team=TEAM_UNKNOWN)
-         superadmin.connects("1")
-         # WHEN
-         superadmin.says("!map market push")
-         # THEN
-         self.parser.output.write.assert_has_calls([call('changelevel market push')])
+        # GIVEN
+        superadmin = FakeClient(self.parser, name="superadmin", guid="guid_superadmin", groupBits=128, team=TEAM_UNKNOWN)
+        superadmin.connects("1")
+        # WHEN
+        superadmin.says("!map market push")
+        # THEN
+        self.parser.output.write.assert_has_calls([call('changelevel market push')])
 
     def test_say(self):
         self.parser.msgPrefix = "[Pre]"
