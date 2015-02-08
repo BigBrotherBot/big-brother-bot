@@ -191,9 +191,9 @@ class AbstractParser(b3.parser.Parser):
     _reMapNameFromStatus = re.compile(r'^map:\s+(?P<map>.+)$', re.IGNORECASE)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  PARSER INITIALIZATION                                                                                         ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   PARSER INITIALIZATION                                                                                          #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def startup(self):
@@ -213,9 +213,9 @@ class AbstractParser(b3.parser.Parser):
         self._eventMap['shutdowngame'] = self.getEventID('EVT_GAME_ROUND_END')
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  PARSING                                                                                                       ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   PARSING                                                                                                        #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getLineParts(self, line):
@@ -294,9 +294,9 @@ class AbstractParser(b3.parser.Parser):
         return data
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  EVENT HANDLERS                                                                                                ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   EVENT HANDLERS                                                                                                 #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def OnSay(self, action, data, match=None):
@@ -415,9 +415,9 @@ class AbstractParser(b3.parser.Parser):
         return self.getEvent('EVT_GAME_ROUND_START', self.game)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  OTHER METHODS                                                                                                 ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   OTHER METHODS                                                                                                  #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getClient(self, match=None, attacker=None, victim=None):
@@ -451,9 +451,9 @@ class AbstractParser(b3.parser.Parser):
         return b3.TEAM_UNKNOWN
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   B3 PARSER INTERFACE IMPLEMENTATION                                                                             #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def message(self, client, text):
@@ -901,9 +901,9 @@ class AbstractParser(b3.parser.Parser):
                 sp.auth()
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  ALTER THE WAY ADMIN.PY WORKS FOR SOME Q3A BASED GAMES                                                         ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   ALTER THE WAY ADMIN.PY WORKS FOR SOME Q3A BASED GAMES                                                          #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def patch_b3_admin_plugin(self):

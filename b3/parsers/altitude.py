@@ -74,9 +74,9 @@ class AltitudeParser(Parser):
     _last_endround_report = {}
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  PARSER INITIALIZATION                                                                                         ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   PARSER INITIALIZATION                                                                                          #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def startup(self):
@@ -115,9 +115,9 @@ class AltitudeParser(Parser):
         self.output = AltitudeRcon(console=self, commandfile=commandfile_name)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  PARSING                                                                                                       ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   PARSING                                                                                                        #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def parseLine(self, line):
@@ -161,9 +161,9 @@ class AltitudeParser(Parser):
             self.queueEvent(event)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  EVENT HANDLERS                                                                                                ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   EVENT HANDLERS                                                                                                 #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def OnAltitudeServerInit(self, altitude_event):
@@ -499,9 +499,9 @@ class AltitudeParser(Parser):
         return event
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  HANDLE GAME EVENTS FOR CONSOLE COMMANDS                                                                       ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   HANDLE GAME EVENTS FOR CONSOLE COMMANDS                                                                        #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def OnAltitudeCommandVote(self, altitude_event):
@@ -528,9 +528,9 @@ class AltitudeParser(Parser):
         return self.getEvent("EVT_CLIENT_VOTE", data=altitude_event, client=c)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   B3 PARSER INTERFACE IMPLEMENTATION                                                                             #
+    #                                                                                                                  #
     ####################################################################################################################
     
     def getPlayerList(self):
@@ -749,9 +749,9 @@ class AltitudeParser(Parser):
         pass
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  A FEW EVENT LISTENERS                                                                                         ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   A FEW EVENT LISTENERS                                                                                          #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def _OnClientCallVote(self, b3event):
@@ -773,9 +773,9 @@ class AltitudeParser(Parser):
                 vote_caller.tempban(duration="2m", reason="call vote against higher level admin", data=altitude_event)
     
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  OVERWRITING SOME PARSER METHODS                                                                               ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   OVERWRITING SOME PARSER METHODS                                                                                #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def shutdown(self):
@@ -793,9 +793,9 @@ class AltitudeParser(Parser):
             Parser.shutdown(self)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  OTHER METHODS                                                                                                 ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   OTHER METHODS                                                                                                  #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getTeam(self, teamAltitudeId):

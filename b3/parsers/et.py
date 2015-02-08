@@ -93,9 +93,9 @@ class EtParser(AbstractParser):
     )
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  PARSER INITIALIZATION                                                                                         ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   PARSER INITIALIZATION                                                                                          #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def startup(self):
@@ -108,9 +108,9 @@ class EtParser(AbstractParser):
         self._eventMap['restartgame'] = self.getEventID('EVT_GAME_ROUND_END')
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  EVENT HANDLERS                                                                                                ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   EVENT HANDLERS                                                                                                 #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def OnConnectinfo(self, action, data, match=None):
@@ -210,9 +210,9 @@ class EtParser(AbstractParser):
         return self.getEvent('EVT_CLIENT_SAY', match.group('text'), client)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   B3 PARSER INTERFACE IMPLEMENTATION                                                                             #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def message(self, client, text):

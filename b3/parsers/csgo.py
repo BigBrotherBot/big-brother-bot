@@ -177,9 +177,9 @@ class CsgoParser(Parser):
 
     _use_color_codes= False
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  PARSER INITIALIZATION                                                                                         ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   PARSER INITIALIZATION                                                                                          #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def startup(self):
@@ -215,10 +215,10 @@ class CsgoParser(Parser):
         pass
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  GAME EVENTS HANDLERS                                                                                          ##
-    ##  READ HL LOG STANDARD DOCUMENTATION AT: https://developer.valvesoftware.com/wiki/HL_Log_Standard               ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   GAME EVENTS HANDLERS                                                                                           #
+    #   READ HL LOG STANDARD DOCUMENTATION AT: https://developer.valvesoftware.com/wiki/HL_Log_Standard                #
+    #                                                                                                                  #
     ####################################################################################################################
 
     @ger.gameEvent(r'^//',  # comment log line
@@ -506,9 +506,9 @@ class CsgoParser(Parser):
         self.warning("unhandled log line : %s : please report this on the B3 forums" % data)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   B3 PARSER INTERFACE IMPLEMENTATION                                                                             #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getPlayerList(self):
@@ -802,9 +802,9 @@ class CsgoParser(Parser):
         return cvar.value
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  PARSING                                                                                                       ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   PARSING                                                                                                        #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def parseLine(self, line):
@@ -843,9 +843,9 @@ class CsgoParser(Parser):
         return rv
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  OTHER METHODS                                                                                                 ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   OTHER METHODS                                                                                                  #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getClient(self, cid):

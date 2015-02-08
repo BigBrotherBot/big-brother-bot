@@ -502,9 +502,9 @@ class Bf3Parser(AbstractParser):
     _gamePort = None
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  PARSER INITIALIZATION                                                                                         ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   PARSER INITIALIZATION                                                                                          #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def __new__(cls, *args, **kwargs):
@@ -538,9 +538,9 @@ class Bf3Parser(AbstractParser):
                 self.queueEvent(self.getEvent('EVT_CLIENT_JOIN', data=p, client=client))
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  FROSTBITE2 EVENTS HANDLERS                                                                                    ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   FROSTBITE2 EVENTS HANDLERS                                                                                     #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def OnPlayerTeamchange(self, action, data):
@@ -603,9 +603,9 @@ class Bf3Parser(AbstractParser):
                 self.queueEvent(self.getEvent('EVT_GAME_ROUND_START', data=self.game))
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   B3 PARSER INTERFACE IMPLEMENTATION                                                                             #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getPlayerPings(self, filter_client_ids=None):
@@ -628,9 +628,9 @@ class Bf3Parser(AbstractParser):
         return pings
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  OTHER METHODS                                                                                                 ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   OTHER METHODS                                                                                                  #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def checkVersion(self):

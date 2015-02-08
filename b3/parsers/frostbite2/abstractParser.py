@@ -169,9 +169,9 @@ class AbstractParser(b3.parser.Parser):
     )
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  PARSER INITIALIZATION                                                                                         ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   PARSER INITIALIZATION                                                                                          #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def __new__(cls, *args, **kwargs):
@@ -298,9 +298,9 @@ class AbstractParser(b3.parser.Parser):
                 sys.exit(self.exitcode)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  FROSTBITE RELATED METHODS                                                                                     ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   FROSTBITE RELATED METHODS                                                                                      #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def setup_frostbite_connection(self):
@@ -483,9 +483,9 @@ class AbstractParser(b3.parser.Parser):
                 return res
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  FROSTBITE2 EVENTS HANDLERS                                                                                    ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   FROSTBITE2 EVENTS HANDLERS                                                                                     #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def OnPlayerChat(self, action, data):
@@ -840,9 +840,9 @@ class AbstractParser(b3.parser.Parser):
         return self.getEvent('EVT_PUNKBUSTER_SCREENSHOT_RECEIVED', match.groupdict())
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   B3 PARSER INTERFACE IMPLEMENTATION                                                                             #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getPlayerList(self, maxRetries=None):
@@ -1283,9 +1283,9 @@ class AbstractParser(b3.parser.Parser):
         return scores
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  OTHER METHODS                                                                                                 ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   OTHER METHODS                                                                                                  #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getMapIdByName(self, mapname):
@@ -1635,9 +1635,9 @@ class AbstractParser(b3.parser.Parser):
         self._settings['big_msg_repeat'] = _default_value if self._settings['big_b3_private_responses'] else 'off'
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  APPLY PATCHES                                                                                                 ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   APPLY PATCHES                                                                                                  #
+    #                                                                                                                  #
     ####################################################################################################################
 
     @staticmethod

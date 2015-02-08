@@ -97,9 +97,9 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
                             r'(?P<rate>[0-9]+)$', re.IGNORECASE | re.VERBOSE)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  PARSER INITIALIZATION                                                                                         ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   PARSER INITIALIZATION                                                                                          #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def __new__(cls, *args, **kwargs):
@@ -114,9 +114,9 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
         self.debug('Admin plugin has been patched')
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  EVENT HANDLERS                                                                                                ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   EVENT HANDLERS                                                                                                 #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def OnJt(self, action, data, match=None):
@@ -168,9 +168,9 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
         return self.getEvent(eventkey, data=data, client=attacker, target=victim)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  B3 PARSER INTERFACE IMPLEMENTATION                                                                            ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   B3 PARSER INTERFACE IMPLEMENTATION                                                                             #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def unban(self, client, reason='', admin=None, silent=False, *kwargs):

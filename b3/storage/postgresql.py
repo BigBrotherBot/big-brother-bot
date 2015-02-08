@@ -71,9 +71,9 @@ class PostgresqlStorage(DatabaseStorage):
         patch_query_builder(self.console)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  CONNECTION INITIALIZATION/TERMINATION/RETRIEVAL                                                               ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   CONNECTION INITIALIZATION/TERMINATION/RETRIEVAL                                                                #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def connect(self):
@@ -157,9 +157,9 @@ class PostgresqlStorage(DatabaseStorage):
         self.db = None
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  STORAGE INTERFACE                                                                                             ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   STORAGE INTERFACE                                                                                              #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def getTables(self):
@@ -195,9 +195,9 @@ class PostgresqlStorage(DatabaseStorage):
             self.query("TRUNCATE %s RESTART IDENTITY CASCADE;" % table)
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  QUERY PROCESSING                                                                                              ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   QUERY PROCESSING                                                                                               #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def _query(self, query, bindata=None):
@@ -244,9 +244,9 @@ class PostgresqlStorage(DatabaseStorage):
         return dbcursor
 
     ####################################################################################################################
-    ##                                                                                                                ##
-    ##  UTILITY METHODS                                                                                               ##
-    ##                                                                                                                ##
+    #                                                                                                                  #
+    #   UTILITY METHODS                                                                                                #
+    #                                                                                                                  #
     ####################################################################################################################
 
     def status(self):
