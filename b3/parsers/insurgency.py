@@ -441,7 +441,8 @@ class InsurgencyParser(Parser):
         client = self.getClientOrCreate(cid, guid, name, team)
         props = parseProperties(properties)
         if event_name in ("Got_The_Bomb", "Dropped_The_Bomb", "Planted_The_Bomb", "Begin_Bomb_Defuse_Without_Kit",
-                          "Begin_Bomb_Defuse_With_Kit", "Defused_The_Bomb", "headshot", "round_mvp"):
+                          "Begin_Bomb_Defuse_With_Kit", "Defused_The_Bomb", "headshot", "round_mvp", "obj_captured",
+                          "obj_destroyed"):
             # L 08/26/2012 - 03:22:37: "Pheonix<11><BOT><TERRORIST>" triggered "Got_The_Bomb"
             # L 08/26/2012 - 03:46:46: "Pheonix<22><BOT><TERRORIST>" triggered "Dropped_The_Bomb"
             # L 08/26/2012 - 03:51:41: "Gunner<29><BOT><CT>" triggered "Begin_Bomb_Defuse_Without_Kit"

@@ -308,6 +308,25 @@ class Test_gamelog_parsing(InsurgencyTestCase):
         self.assert_has_event("EVT_GAME_ROUND_END", data={'event_name': 'Round_Win',
                                                           'properties': '',
                                                           'team': TEAM_BLUE})
+    def test_on_client_action__obj_captured(self):
+        # GIVEN
+        player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_BLUE)
+        player.connects("3")
+        # WHEN
+        self.clear_events()
+        self.parser.parseLine('L 02/07/2015 - 12:31:34: "courgette<195><STEAM_1:0:1111111><#Team_Security>" triggered "obj_captured" (name "#unknown_controlpoint")')
+        # THEN
+        self.assert_has_event("EVT_CLIENT_ACTION", data="obj_captured")
+
+    def test_on_client_action__obj_destroyed(self):
+        # GIVEN
+        player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_BLUE)
+        player.connects("3")
+        # WHEN
+        self.clear_events()
+        self.parser.parseLine('L 02/07/2015 - 12:55:01: "courgette<195><STEAM_1:0:1111111><#Team_Security>" triggered "obj_destroyed" (name "#unknown_controlpoint")')
+        # THEN
+        self.assert_has_event("EVT_CLIENT_ACTION", data="obj_destroyed")
 
 
 class Test_parser_other(InsurgencyTestCase):
