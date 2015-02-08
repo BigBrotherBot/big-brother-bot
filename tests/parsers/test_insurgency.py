@@ -250,14 +250,18 @@ class Test_gamelog_parsing(InsurgencyTestCase):
         self.assert_has_event("EVT_CLIENT_NAME_CHANGE", data="fooobar")
 
     def test_bot_stuck(self):
-        # GIVEN
         # WHEN
-        self.clear_events()
-        with patch.object(self.parser, "on_unknown_line") as on_unknown_line_mock:
+        with patch.object(self.parser, "warning") as warning_mock:
             self.parser.parseLine('''L 02/07/2015 - 12:30:01: "Minh<338><BOT><3>" stuck (position "4355.51 -2602.87 143.98") (duration "19.97") L 02/07/2015 - 12:30:01:    path_goal ( "4370.00 -2703.29 148.56" )''')
         # THEN
-        self.assertEqual(0, len(self.evt_queue))
-        self.assertEqual(0, on_unknown_line_mock.call_count)
+        self.assertFalse(warning_mock.called)
+
+    def test_on_bot_stuck__no_pathgoal(self):
+        # WHEN
+        with patch.object(self.parser, "warning") as warning_mock:
+            self.parser.parseLine('L 02/07/2015 - 14:53:25: "Abento<616><BOT><3>" stuck (position "-165.03 -705.59 222.38") (duration "1.50")')
+        # THEN
+        self.assertFalse(warning_mock.called)
 
     def test_on_cvar_with_space(self):
         self.parser.parseLine('L 02/07/2015 - 14:48:24: "mp_lobbytime" = "10"')
@@ -275,23 +279,20 @@ class Test_gamelog_parsing(InsurgencyTestCase):
         self.parser.parseLine('L 02/07/2015 - 14:48:24: server_cvar: "sv_tags" "cid brutal coop bots hunt unforgiving"')
         self.assertEqual("cid brutal coop bots hunt unforgiving", self.parser.game.cvar["sv_tags"])
 
-    def test_on_ignored_log_line__log_file_closed(self):
+    def test_ignored_line__log_file_closed(self):
         # WHEN
-        self.clear_events()
-        with patch.object(self.parser, "on_unknown_line") as on_ignored_log_linee_mock:
+        with patch.object(self.parser, "warning") as warning_mock:
             self.parser.parseLine('L 02/07/2015 - 15:15:22: Log file closed')
         # THEN
-        self.assertEqual(0, len(self.evt_queue))
-        self.assertEqual(0, on_ignored_log_linee_mock.call_count)
+        self.assertFalse(warning_mock.called)
 
-    def test_on_ignored_log_line__log_file_started(self):
+    def test_ignored_line__log_file_started(self):
         # WHEN
-        self.clear_events()
-        with patch.object(self.parser, "on_unknown_line") as on_ignored_log_linee_mock:
+        with patch.object(self.parser, "warning") as warning_mock:
             self.parser.parseLine('L 02/07/2015 - 15:15:24: Log file started (file "logs\\L023_081_154_166_23274_201502071515_001.log") (game "C:\\servers\\insurgency") (version "5885")')
         # THEN
-        self.assertEqual(0, len(self.evt_queue))
-        self.assertEqual(0, on_ignored_log_linee_mock.call_count)
+        self.assertFalse(warning_mock.called)
+
 
 class Test_parser_other(InsurgencyTestCase):
 

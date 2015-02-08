@@ -271,13 +271,17 @@ class InsurgencyParser(Parser):
         r'''^server cvars end''',
         r'''^\[basechat\.smx\] .*''',
         r'''^\[META\] Loaded \d+ plugins \(\d+ already loaded\)$''',
-        r'''^Log file closed.$''',
         r'''^\[META\] Loaded \d+ plugin.$''',
+        r'^Log file started.*$',
+        r'^Log file closed.*$'
     )
     def ignored_line(self):
         # L 09/24/2001 - 18:44:50: // This is a comment in the log file. It should not be parsed.
         # L 08/26/2012 - 05:29:47: server cvars start
         # L 08/26/2012 - 05:29:47: server cvars end
+        # L 02/07/2015 - 15:15:24: Log file started (file "logs\\L023_081_154_166_23274_201502071515_001.log") (game "C:\\servers\\insurgency") (version "5885")
+        # L 02/07/2015 - 15:15:22: Log file closed
+        print "ignored"
         pass
 
     @ger.gameEvent(r'^"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" killed "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>" with "(?P<weapon>\S*)"(?P<properties>.*)$',
@@ -537,11 +541,6 @@ class InsurgencyParser(Parser):
         else:
             self.warning("unexpected server_message : '%s' : please report this on the B3 forums" % msg)
 
-    @ger.gameEvent(r'^Log file started (?P<properties>.*)$',
-                   r'^Log file closed$')
-    def on_ignored_log_line(self, properties=None):
-        pass
-
     @ger.gameEvent(r'^(?P<data>Your server needs to be restarted.*)$',
                    r'^(?P<data>Your server is out of date.*)$')
     def on_server_restart_request(self, data):
@@ -549,15 +548,18 @@ class InsurgencyParser(Parser):
         # L 09/17/2012 - 23:26:45: Your server is out of date.  Please update and restart.
         return self.getEvent('EVT_SERVER_REQUIRES_RESTART', data)
 
-    @ger.gameEvent(r'''^
-        "(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>\S+)>"
-        \ stuck\
-        \(position\ "(?P<position>.+?)"\)
-        \ \(duration\ "(?P<duration>.+?)"\)
-        \ L\ .+path_goal
-        \ \(\s*"(?P<path_goal>.*?)"\s*\)
+    @ger.gameEvent(r'''(?x)
+        ^
+            "(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>\S+)>"
+            \ stuck
+            \ \(position\ "(?P<position>.+?)"\)
+            \ \(duration\ "(?P<duration>.+?)"\)
+            (
+                \s+L\ .+path_goal
+                \ \(\s*"(?P<path_goal>.*?)"\s*\)
+            )?
         $''')
-    def on_bot_stuck(self, name, cid, guid, team, position, duration, path_goal):
+    def on_bot_stuck(self, name, cid, guid, team, position, duration, path_goal=None):
         # "Ted<368><BOT><3>" stuck (position "4700.29 -2847.70 150.76") (duration "3.47") L 02/07/2015 - 12:28:49:    path_goal ( "4693.44 -2975.00 151.53" )
         pass
 
