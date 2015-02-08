@@ -327,12 +327,13 @@ class InsurgencyParser(Parser):
         return self.getEvent("EVT_CLIENT_SUICIDE", client=client, target=client, data=(damage_pct, weapon, "body",
                                                                                        damage_type))
 
-    @ger.gameEvent(r'^"(?P<cvar_name>\S+)" = "(?P<cvar_value>\S*)"$',
-                   r'^server_cvar: "(?P<cvar_name>\S+)" "(?P<cvar_value>\S*)"$')
+    @ger.gameEvent(r'^"(?P<cvar_name>\S+)" = "(?P<cvar_value>.*)"$',
+                   r'^server_cvar: "(?P<cvar_name>\S+)" "(?P<cvar_value>.*)"$')
     def on_cvar(self, cvar_name, cvar_value):
         # L 08/26/2012 - 03:49:56: "r_JeepViewZHeight" = "10.0"
         # L 08/26/2012 - 03:49:56: "tv_password" = ""
         # L 08/26/2012 - 03:49:56: "sv_specspeed" = "3"
+        # L 02/07/2015 - 14:48:24: "nextlevel" = "heights_coop checkpoint"
         self.game.cvar[cvar_name] = cvar_value
 
     @ger.gameEvent(r'^-------- Mapchange to (?P<new_map>\S+) --------$')
@@ -536,8 +537,9 @@ class InsurgencyParser(Parser):
         else:
             self.warning("unexpected server_message : '%s' : please report this on the B3 forums" % msg)
 
-    @ger.gameEvent(r'^Log file started (?P<properties>.*)$')
-    def on_ignored_log_line(self, properties):
+    @ger.gameEvent(r'^Log file started (?P<properties>.*)$',
+                   r'^Log file closed$')
+    def on_ignored_log_line(self, properties=None):
         pass
 
     @ger.gameEvent(r'^(?P<data>Your server needs to be restarted.*)$',

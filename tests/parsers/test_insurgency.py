@@ -259,6 +259,39 @@ class Test_gamelog_parsing(InsurgencyTestCase):
         self.assertEqual(0, len(self.evt_queue))
         self.assertEqual(0, on_unknown_line_mock.call_count)
 
+    def test_on_cvar_with_space(self):
+        self.parser.parseLine('L 02/07/2015 - 14:48:24: "mp_lobbytime" = "10"')
+        self.assertEqual("10", self.parser.game.cvar["mp_lobbytime"])
+        # value with space char
+        self.parser.parseLine('L 02/07/2015 - 14:48:24: "nextlevel" = "heights_coop checkpoint"')
+        self.assertEqual("heights_coop checkpoint", self.parser.game.cvar["nextlevel"])
+        # empty value
+        self.parser.parseLine('L 02/07/2015 - 14:48:24: "tv_password" = ""')
+        self.assertEqual("", self.parser.game.cvar["tv_password"])
+        # empty server cvar value
+        self.parser.parseLine('L 02/07/2015 - 14:48:24: server_cvar: "nextlevel" ""')
+        self.assertEqual("", self.parser.game.cvar["nextlevel"])
+        # empty server cvar value
+        self.parser.parseLine('L 02/07/2015 - 14:48:24: server_cvar: "sv_tags" "cid brutal coop bots hunt unforgiving"')
+        self.assertEqual("cid brutal coop bots hunt unforgiving", self.parser.game.cvar["sv_tags"])
+
+    def test_on_ignored_log_line__log_file_closed(self):
+        # WHEN
+        self.clear_events()
+        with patch.object(self.parser, "on_unknown_line") as on_ignored_log_linee_mock:
+            self.parser.parseLine('L 02/07/2015 - 15:15:22: Log file closed')
+        # THEN
+        self.assertEqual(0, len(self.evt_queue))
+        self.assertEqual(0, on_ignored_log_linee_mock.call_count)
+
+    def test_on_ignored_log_line__log_file_started(self):
+        # WHEN
+        self.clear_events()
+        with patch.object(self.parser, "on_unknown_line") as on_ignored_log_linee_mock:
+            self.parser.parseLine('L 02/07/2015 - 15:15:24: Log file started (file "logs\\L023_081_154_166_23274_201502071515_001.log") (game "C:\\servers\\insurgency") (version "5885")')
+        # THEN
+        self.assertEqual(0, len(self.evt_queue))
+        self.assertEqual(0, on_ignored_log_linee_mock.call_count)
 
 class Test_parser_other(InsurgencyTestCase):
 
