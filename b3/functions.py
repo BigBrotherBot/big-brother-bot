@@ -45,9 +45,10 @@
 # 20/12/2014 - 1.15  - Fenix          - fixed hash_file returning None
 # 27/12/2014 - 1.16  - Fenix          - adapted splitDSN to support postgresql databases
 # 04/02/2015 - 1.17  - Fenix          - added getBytes function
+# 08/02/2015 - 1.18  - Fenix          - added escape function
 
 __author__    = 'ThorN, xlr8or, courgette'
-__version__   = '1.17'
+__version__   = '1.18'
 
 import collections
 import os
@@ -248,6 +249,16 @@ def vars2printf(inputstr):
         return re.sub(r'\$([a-zA-Z_]+)', r'%(\1)s', inputstr)
     else:
         return ''
+
+
+def escape(text, esc):
+    """
+    Return a copy of 'text' with 'esc' character escaped
+    :param text: The text where to execute the escape
+    :param esc: The character to escape
+    :return: string
+    """
+    return string.replace(text, esc, '\\%s' % esc)
 
 
 def levenshteinDistance(a, b):
