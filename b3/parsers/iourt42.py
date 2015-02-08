@@ -1174,25 +1174,25 @@ class Iourt42Parser(Iourt41Parser):
                                                                    'admin': admin}, client=client))
         client.disconnect()
 
-    def inflictCustomPenalty(self, ptype, client, reason=None, duration=None, admin=None, data=None):
+    def inflictCustomPenalty(self, penalty_type, client, reason=None, duration=None, admin=None, data=None):
         """
         Urban Terror specific punishments.
         """
-        if ptype == 'slap' and client:
+        if penalty_type == 'slap' and client:
             cmd = self.getCommand('slap', cid=client.cid)
             self.write(cmd)
             if reason:
                 client.message("%s" % reason)
             return True
 
-        elif ptype == 'nuke' and client:
+        elif penalty_type == 'nuke' and client:
             cmd = self.getCommand('nuke', cid=client.cid)
             self.write(cmd)
             if reason:
                 client.message("%s" % reason)
             return True
 
-        elif ptype == 'mute' and client:
+        elif penalty_type == 'mute' and client:
             if duration is None:
                 seconds = 60
             else:
@@ -1208,7 +1208,7 @@ class Iourt42Parser(Iourt41Parser):
                 client.message("%s" % reason)
             return True
 
-        elif ptype == 'kill' and client:
+        elif penalty_type == 'kill' and client:
             cmd = self.getCommand('kill', cid=client.cid)
             self.write(cmd)
             if reason:

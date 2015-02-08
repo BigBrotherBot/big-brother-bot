@@ -531,7 +531,7 @@ class RavagedParser(Parser):
                 rv[cid] = data
         return rv
 
-    def inflictCustomPenalty(self, type, client, reason=None, duration=None, admin=None, data=None):
+    def inflictCustomPenalty(self, penalty_type, client, reason=None, duration=None, admin=None, data=None):
         """
         Called if b3.admin.penalizeClient() does not know a given penalty type.
         Overwrite this to add customized penalties for your game like 'slap', 'nuke',

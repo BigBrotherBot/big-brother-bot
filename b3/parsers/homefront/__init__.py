@@ -1072,14 +1072,14 @@ class HomefrontParser(b3.parser.Parser):
                 pass
         return scores
 
-    def inflictCustomPenalty(self, type, client, reason=None, duration=None, admin=None, data=None):
+    def inflictCustomPenalty(self, penalty_type, client, reason=None, duration=None, admin=None, data=None):
         """
         Called if b3.admin.penalizeClient() does not know a given penalty type. 
         Overwrite this to add customized penalties for your game like 'slap', 'nuke', 
         'mute' or anything you want.
         /!\ This method must return True if the penalty was inflicted.
         """
-        if type == 'kill' and client:
+        if penalty_type == 'kill' and client:
             self.write('admin kill "%s"' % client.guid)
             if reason:
                 client.message("%s" % reason)
