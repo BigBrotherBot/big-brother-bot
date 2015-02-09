@@ -72,7 +72,7 @@ function p_log()  {
         LOG_FILE="$(readlink -f "${LOG_PATH}")"
         if [ -n "${LOG_FILE}" ]; then
             if [ ! -f "${LOG_FILE}" ]; then 
-                if [ ! touch "${LOG_FILE}" 2> /dev/null ]; then
+                if ! touch "${LOG_FILE}" 2> /dev/null; then
                     p_out "^1ERROR^0: could not create log file: no log will be written!"
                     return 1
                 fi
