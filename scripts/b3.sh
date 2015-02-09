@@ -407,10 +407,6 @@ function b3_usage() {
 ########################################################################################################################
 # MAIN EXECUTION
 
-# change to the directory containing this very script so it can be used
-# from outside this working directory (for example using a soflink)
-cd $(cd -P -- "$(dirname -- "${0}")" && pwd -P)
-
 # set some global variables needed in main execution and functions
 SCRIPT_DIR="$(cd -P -- "$(dirname -- "${0}")" && pwd -P)"
 B3_DIR="$(dirname ${SCRIPT_DIR})"
