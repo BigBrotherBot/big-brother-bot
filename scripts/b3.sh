@@ -2,7 +2,7 @@
 
 # Big Brother Bot (B3) Management - http://www.bigbrotherbot.net
 # Maintainer: Daniele Pantaleone <fenix@bigbrotherbot.net>
-# App Version: 0.6
+# App Version: 0.7
 # Last Edit: 08/02/2015
 
 ### BEGIN INIT INFO
@@ -30,6 +30,7 @@
 #                     a normal B3 startup uses only 2 processes (screen and B3 process running inside the screen)      #
 #  2014-12-20 - 0.5 - fixed b3_clean not restarting all previously running B3 instances                                #
 #  2015-02-08 - 0.6 - fixed change to working directory not working properly when using an alias to execute the script #
+#  2015-02-09 - 0.7 - fixed logging not being written to disk                                                          #
 #                                                                                                                      #
 ########################################################################################################################
 
@@ -37,7 +38,6 @@
 AUTO_RESTART="1"
 DATE_FORMAT="%a, %b %d %Y - %r"
 LOG_ENABLED="0"
-LOG_PATH="log/b3_init.log"
 USE_COLORS="1"
 
 ### DO NOT MODIFY!!!
@@ -45,6 +45,7 @@ B3_RUN="../b3_run.py"
 COMMON_PREFIX="b3_"
 CONFIG_PATH="../b3/conf"
 CONFIG_EXT=(".ini" ".xml")
+LOG_PATH="log"
 PID_PATH="pid"
 PID_EXT=".pid"
 
@@ -69,7 +70,11 @@ function p_out() {
 # @description Log messages in the log file.
 function p_log()  {
     if [ ! "${LOG_ENABLED}" -eq 0 ]; then
-        LOG_FILE="$(readlink -f "${LOG_PATH}")"
+        # make sure to have a valid directory for the logfile
+        if [ ! -d $(readlink -f "${LOG_PATH}") ]; then
+            mkdir $(readlink -f "${LOG_PATH}")
+        fi
+        LOG_FILE="$(readlink -f "${LOG_PATH}/b3_init.log")"
         if [ -n "${LOG_FILE}" ]; then
             if [ ! -f "${LOG_FILE}" ]; then 
                 if [ ! touch "${LOG_FILE}" 2> /dev/null ]; then
