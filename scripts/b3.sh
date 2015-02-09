@@ -73,6 +73,7 @@ function p_log()  {
         if [ -n "${LOG_FILE}" ]; then
             if [ ! -f "${LOG_FILE}" ]; then 
                 if ! touch "${LOG_FILE}" 2> /dev/null; then
+                    LOG_ENABLED=0  # prevent infinite loop between p_out and p_log
                     p_out "^1ERROR^0: could not create log file: no log will be written!"
                     return 1
                 fi
