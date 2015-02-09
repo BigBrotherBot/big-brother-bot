@@ -68,11 +68,12 @@ function p_out() {
 # @name p_log
 # @description Log messages in the log file.
 function p_log()  {
-    if [ ! "${LOG_ENABLED}" -eq 0 ]; then
+    if [ "${LOG_ENABLED}" != "0" ]; then
         LOG_FILE="$(readlink -f "${LOG_PATH}")"
         if [ -n "${LOG_FILE}" ]; then
             if [ ! -f "${LOG_FILE}" ]; then 
-                if [ ! touch "${LOG_FILE}" 2> /dev/null ]; then
+                if ! touch "${LOG_FILE}" 2> /dev/null; then
+                    LOG_ENABLED=0  # prevent infinite loop between p_out and p_log
                     p_out "^1ERROR^0: could not create log file: no log will be written!"
                     return 1
                 fi
