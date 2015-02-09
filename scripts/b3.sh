@@ -63,12 +63,12 @@ SCRIPT_DIR=""               # will be set to the directory containing this very 
 #              All given strings are being hand over to p_log after stripping them from color codes.
 function p_out() { 
     if [ "${USE_COLORS}" == "0" ]; then
-        echo -e $(echo "$@" | sed "s/\^\([0-9]\)//g") 
+        echo -e "${@//^[0-9]}"
     else
         echo -e $(echo "$@" | sed "s/\^\([0-9]\)/\\\\033[3\1m/g; s/\\\\033\[30m/\\\\033[0m/g") "\033[0m"
     fi
     # write console output to main log
-    p_log $(echo "$@" | sed "s/\^\([0-9]\)//g")
+    p_log "${@//^[0-9]}"
     return 0
 }
 
