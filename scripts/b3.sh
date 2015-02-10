@@ -40,7 +40,7 @@
 ### SETUP
 AUTO_RESTART="1"                   # will run b3 in auto-restart mode if set to 1
 DATE_FORMAT="%a, %b %d %Y - %r"    # data format to be used when logging console output
-LOG_ENABLED="0"                    # if set to 1, will log console output to file
+LOG_ENABLED="${B3_LOG_ENABLED:-0}" # if set to 1, will log console output to file
 USE_COLORS="1"                     # if set to 1 will make use of bash color codes in the console output
 
 ### DO NOT MODIFY!!!
