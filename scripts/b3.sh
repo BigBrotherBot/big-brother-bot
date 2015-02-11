@@ -2,7 +2,7 @@
 
 # Big Brother Bot (B3) Management - http://www.bigbrotherbot.net
 # Maintainer: Daniele Pantaleone <fenix@bigbrotherbot.net>
-# App Version: 0.8
+# App Version: 0.9
 # Last Edit: 08/02/2015
 
 ### BEGIN INIT INFO
@@ -19,29 +19,32 @@
 #
 #  CHANGELOG
 #
-# --------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #
-#  2014-11-09 - 0.1 - initial version
-#  2014-11-30 - 0.2 - changed some file paths used for PID storage and B3 autodiscover
-#  2014-12-13 - 0.3 - added support for auto-restart mode
-#  2014-12-14 - 0.4 - correctly match number of subprocess in b3_is_running when auto-restart mode is being used
-#                     auto-restart mode uses 4 processes (the screen, the main loop in b3/run.py, a new shell used
-#                     by subprocess, and the command to actually start the B3 instance inside this new shell), while
-#                     a normal B3 startup uses only 2 processes (screen and B3 process running inside the screen)
-#  2014-12-20 - 0.5 - fixed b3_clean not restarting all previously running B3 instances
-#  2015-02-08 - 0.6 - fixed change to working directory not working properly when using an alias to execute the script
-#  2015-02-09 - 0.7 - fixed logging not being written to disk
-#  2015-02-09 - 0.8 - fixed infinite loop between p_out and p_log
-#                   - set ${SCRIPT_DIR} variable upon execution
-#                   - set ${B3_DIR} variable upon execution
-#                   - remove all the readlink commands in favor of ${SCRIPT_DIR} and ${B3_DIR}
-
+#  2014-11-09 - 0.1 - Fenix         - initial version
+#  2014-11-30 - 0.2 - Fenix         - changed some file paths used for PID storage and B3 autodiscover
+#  2014-12-13 - 0.3 - Fenix         - added support for auto-restart mode
+#  2014-12-14 - 0.4 - Fenix         - correctly match number of subprocess in b3_is_running when auto-restart mode is
+#                                     being used auto-restart mode uses 4 processes (the screen, the main loop in
+#                                     b3/run.py, a new shell used by subprocess, and the command to actually start the
+#                                     B3 instance inside this new shell), while a normal B3 startup uses only 2
+#                                     processes (screen and B3 process running inside the screen)
+#  2014-12-20 - 0.5   Fenix         - fixed b3_clean not restarting all previously running B3 instances
+#  2015-02-08 - 0.6   Fenix         - fixed change to current directory not working when using an alias to execute b3.sh
+#  2015-02-09 - 0.7   Fenix         - fixed logging not being written to disk
+#  2015-02-09 - 0.8 - Fenix         - set ${SCRIPT_DIR} variable upon execution
+#                                   - set ${B3_DIR} variable upon execution
+#                                   - remove all the readlink commands in favor of ${SCRIPT_DIR} and ${B3_DIR}
+#  2015-02-10 - 0.9 - Thomas LEVEIL - fixed infinite loop between p_out and p_log
+#                                   - simplify colors stripping
+#                                   - temporarily activate logging using B3_LOG_ENABLED environment variable
+#                                   - fix log failure detection and in case of errors, display the reason why it failed
 
 ### SETUP
 AUTO_RESTART="1"                   # will run b3 in auto-restart mode if set to 1
 DATE_FORMAT="%a, %b %d %Y - %r"    # data format to be used when logging console output
 LOG_ENABLED="${B3_LOG_ENABLED:-0}" # if set to 1, will log console output to file
-USE_COLORS="1"                     # if set to 1 will make use of bash color codes in the console output
+USE_COLORS="1"                     # if set to 1, will make use of bash color codes in the console output
 
 ### DO NOT MODIFY!!!
 B3_DIR=""                   # will be set to the directory containing b3 source code (where we can find b3_run.py)
