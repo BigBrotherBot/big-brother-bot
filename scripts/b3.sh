@@ -82,9 +82,9 @@ function p_log()  {
         fi
         LOG_FILE="${SCRIPT_DIR}/${LOG_DIR}/b3_init${LOG_EXT}"
         if [ ! -f "${LOG_FILE}" ]; then
-            if [ ! touch "${LOG_FILE}" 2> /dev/null ]; then
+            if ! STDERR=$(touch "${LOG_FILE}" 2>&1 > /dev/null); then
                 LOG_ENABLED=0  # prevent infinite loop between p_out and p_log
-                p_out "^1ERROR^0: could not create log file: no log will be written!"
+                p_out "^1ERROR^0: could not create log file: no log will be written! ^3($STDERR)^0"
                 return 1
             fi
         fi
