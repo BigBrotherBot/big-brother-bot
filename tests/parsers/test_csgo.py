@@ -1054,6 +1054,7 @@ class Test_parser_other(CsgoTestCase):
         self.assertEqual(TEAM_RED, self.parser.getTeam('CT'))
         self.assertEqual(TEAM_BLUE, self.parser.getTeam('TERRORIST'))
         self.assertEqual(TEAM_UNKNOWN, self.parser.getTeam('Unassigned'))
+        self.assertEqual(TEAM_SPEC, self.parser.getTeam('Spectator'))
 
 
     def test_getNextMap(self):

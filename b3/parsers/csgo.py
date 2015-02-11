@@ -83,7 +83,7 @@
 import re
 import time
 
-from b3 import TEAM_UNKNOWN
+from b3 import TEAM_UNKNOWN, TEAM_SPEC
 from b3 import TEAM_BLUE
 from b3 import TEAM_RED
 from b3.cvar import Cvar
