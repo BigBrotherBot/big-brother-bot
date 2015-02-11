@@ -78,6 +78,7 @@
 # 2015-02-02 - 1.7.6 - Thomaxius        - Added new events:  "Rescued_A_Hostage", "Touched_A_Hostage", "Escaped_As_VIP",
 #                                         "Became_VIP", "Killed_A_Hostage"
 # 2015-02-05 - 1.7.7 - Fenix            - correctly initialize Server client
+# 2015-02-05 - 1.7.8 - Thomaxius        - Recognize Spectator team correctly
 
 import re
 import time
@@ -97,7 +98,7 @@ from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '1.7.7'
+__version__ = '1.7.8'
 
 
 # GAME SETUP
@@ -891,8 +892,8 @@ class CsgoParser(Parser):
             return TEAM_BLUE
         elif team == "CT":
             return TEAM_RED
-        #elif team = "???": # TODO find out what the spec team is
-        #    return TEAM_SPEC
+        elif team == "Spectator":
+            return TEAM_SPEC
         else:
             self.debug("unexpected team id : %s" % team)
             return TEAM_UNKNOWN
