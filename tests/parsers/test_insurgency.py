@@ -26,7 +26,7 @@ from mock import Mock
 from mock import patch
 from mock import call
 from mockito import when
-from b3 import TEAM_BLUE
+from b3 import TEAM_BLUE, TEAM_FREE
 from b3 import TEAM_RED
 from b3 import TEAM_UNKNOWN
 from b3 import TEAM_SPEC
@@ -224,6 +224,28 @@ class Test_gamelog_parsing(InsurgencyTestCase):
             self.parser.parseLine(line)
         self.assertFalse(warning_mock.called, line)  # because a warning would be produced if the line was unhandled
 
+    def test_teams(self):
+        # GIVEN
+        player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=None)
+        player.connects("3")
+        # WHEN
+        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<3><STEAM_1:0:1111111><#Team_Security>" say "!pb @531 rule1"''')
+        # THEN
+        self.assertEqual(TEAM_RED, player.team)
+        # WHEN
+        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<3><STEAM_1:0:1111111><#Team_Insurgent>" say "!pb @531 rule1"''')
+        # THEN
+        self.assertEqual(TEAM_BLUE, player.team)
+        # WHEN
+        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<3><STEAM_1:0:1111111><#Team_Unassigned>" say "!pb @531 rule1"''')
+        # THEN
+        self.assertEqual(TEAM_UNKNOWN, player.team)
+        # WHEN
+        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<3><STEAM_1:0:1111111><Spectator>" say "!pb @531 rule1"''')
+        # THEN
+        self.assertEqual(TEAM_SPEC, player.team)
+
+
     def test_client_say(self):
         # GIVEN
         player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_BLUE)
@@ -340,8 +362,10 @@ class Test_parser_other(InsurgencyTestCase):
     def test_getTeam(self):
         self.assertEqual(TEAM_RED, self.parser.getTeam('#Team_Security'))
         self.assertEqual(TEAM_BLUE, self.parser.getTeam('#Team_Insurgent'))
-        self.assertEqual(TEAM_SPEC, self.parser.getTeam('#Team_Spectators'))
+        self.assertEqual(TEAM_SPEC, self.parser.getTeam('Spectator'))
         self.assertEqual(TEAM_UNKNOWN, self.parser.getTeam('#Team_Unassigned'))
+        self.assertEqual(None, self.parser.getTeam(''))
+        self.assertEqual(None, self.parser.getTeam(None))
 
 
 class FunctionalTest(AdminTestCase):
@@ -420,8 +444,8 @@ class Test_getClientOrCreate(InsurgencyTestCase):
 
     def test_changing_team(self):
         # GIVEN
-        client = self.parser.getClientOrCreate(cid="2", guid="AAAAAAAAAAAA000000000000000", name="theName", team="#Team_Security")
-        self.assertEqual(TEAM_RED, client.team)
+        client = self.parser.getClientOrCreate(cid="2", guid="AAAAAAAAAAAA000000000000000", name="theName", team=TEAM_UNKNOWN)
+        self.assertEqual(TEAM_UNKNOWN, client.team)
 
         def assertTeam(excepted_team, new_team):
             # WHEN
@@ -429,9 +453,14 @@ class Test_getClientOrCreate(InsurgencyTestCase):
             # THEN
             self.assertEqual(excepted_team, client.team)
 
+        assertTeam(TEAM_UNKNOWN, None)  # unrecognized team id, so we don't change the current team
+        assertTeam(TEAM_UNKNOWN, "")  # unrecognized team id, so we don't change the current team
         assertTeam(TEAM_RED, "#Team_Security")
-        assertTeam(TEAM_RED, None)
-        assertTeam(TEAM_RED, "")
-        assertTeam(TEAM_RED, "f00")
-        assertTeam(TEAM_RED, "#Team_Unassigned")
+        assertTeam(TEAM_RED, "f00")  # unrecognized team id, so we don't change the current team
         assertTeam(TEAM_BLUE, "#Team_Insurgent")
+        assertTeam(TEAM_UNKNOWN, "#Team_Unassigned")
+        assertTeam(TEAM_SPEC, "Spectator")
+        assertTeam(TEAM_SPEC, "f00")  # unrecognized team id, so we don't change the current team
+        assertTeam(TEAM_BLUE, "#Team_Insurgent")
+        assertTeam(TEAM_UNKNOWN, "#Team_Unassigned")
+        assertTeam(TEAM_RED, "#Team_Security")

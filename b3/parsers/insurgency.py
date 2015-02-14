@@ -57,6 +57,7 @@
 #                                       format.
 # 2015/02/05 - 0.9.0 - Fenix          - correctly initialize Server client
 # 2015/02/08 - 0.10  - Thomas LEVEIL  - recognize more log lines + fire events related to rounds
+# 2015/02/14 - 0.11  - Thomas LEVEIL  - fix spectator team recognition
 
 import re
 import time
@@ -78,7 +79,7 @@ from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '0.10'
+__version__ = '0.11'
 
 
 # GAME SETUP
@@ -1001,7 +1002,7 @@ class InsurgencyParser(Parser):
                 client.name = name
         if team:
             parsed_team = self.getTeam(team)
-            if parsed_team and parsed_team != TEAM_UNKNOWN:
+            if parsed_team is not None:
                 client.team = parsed_team
         return client
 
@@ -1009,17 +1010,21 @@ class InsurgencyParser(Parser):
         """
         Convert Insurgency team id to B3 team numbers
         """
-        if not team or team == "#Team_Unassigned":
+        if not team:
+            return None
+        elif team == "#Team_Unassigned":
             return TEAM_UNKNOWN
         elif team == "#Team_Insurgent":
             return TEAM_BLUE
         elif team == "#Team_Security":
             return TEAM_RED
-        elif team == "#Team_Spectators":
+        elif team == "Spectator":
             return TEAM_SPEC
+        # elif team = "???": TODO: find out if there is a special team for game modes with no team like Free For All
+        #     return TEAM_FREE
         else:
-            self.debug("unexpected team id : %s" % team)
-            return TEAM_UNKNOWN
+            self.warning("unexpected team id: %r. Please report this on the B3 forums" % team)
+            return None
 
     def queryServerInfo(self):
         """
