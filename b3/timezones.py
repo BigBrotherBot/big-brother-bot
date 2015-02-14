@@ -19,9 +19,10 @@
 # CHANGELOG
 #
 # 2014/07/21 - 1.1 - Fenix - syntax cleanup
+# 2015/02/14 - 1.2 - Fenix - changed IST to +5.5 (indian standard time)
 
 __author__ = 'ThorN'
-__version__ = '1.1'
+__version__ = '1.2'
 
 timezones = {
     'A': +1,
@@ -71,7 +72,7 @@ timezones = {
     'HNT': -3.5,
     'HNY': -9,
     'I': +9,
-    'IST': +1,
+    'IST': +5.5,
     'K': +10,
     'L': +11,
     'M': +12,
