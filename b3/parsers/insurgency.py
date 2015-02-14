@@ -230,6 +230,16 @@ class InsurgencyParser(Parser):
         """
         Called after the parser is created before run().
         """
+        self.bot("TIP: In order to have a consistent name for the game log file, you need to start the game server "
+                 "with '-condebug' as a command line parameter. The game server log file can then be found in the "
+                 "insurgency folder under the name 'console.log'.")
+        self.bot("TIP: Make sure to avoid conflicts with in-game commands between B3 and SourceMod by choosing "
+                 "different command prefixes. See PublicChatTrigger and SilentChatTrigger in "
+                 "addons/sourcemod/configs/core.cfg")
+        self.bot("TIP: If you have the SourceMod plugin `B3 Say` installed then the messages sent by B3 will better "
+                 "displayed on screen. "
+                 "http://forum.bigbrotherbot.net/counter-strike-global-offensive/sourcemod-plugins-for-b3/")
+
         if not self.is_sourcemod_installed():
             self.critical("You need to have SourceMod installed on your game server")
             raise SystemExit(220)
