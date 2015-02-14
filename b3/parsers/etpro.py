@@ -18,20 +18,21 @@
 #
 # CHANGELOG
 #
-# 05/04/2009 - 0.0.1             - updating so that it works for etpro
-# 31/01/2010 - 0.0.2 - Courgette - get_map() is now inherited from q3a
-# 09/04/2011 - 0.0.3 - Courgette - reflect that cid are not converted to int anymore in the clients module
-# 02/05/2014 - 0.0.4 - Fenix     - rewrote dictionary creation as literal
-#                                - removed some warnings
-#                                - minor syntax changes
-#                                - replaced variable named using python built-in names
-# 18/07/2014 - 0.0.5 - Fenix     - updated parser to comply with the new get_wrap implementation
-#                                - removed _settings dict re-declaration: was the same of the AbstractParser
-#                                - updated rcon command patterns
-# 30/07/2014 - 0.0.6 - Fenix     - fixes for the new getWrap implementation
-# 04/08/2014 - 0.0.7 - Fenix     - make use of self.getEvent when registering events: removes warnings
-# 29/08/2014 - 0.0.8 - Fenix     - syntax cleanup
-# 14/02/2015 - 0.0.9 - Fenix     - display a tip in b3.log at bot start regarding the correct use of b_privatemessages
+# 05/04/2009 - 0.0.1              - updating so that it works for etpro
+# 31/01/2010 - 0.0.2  - Courgette - get_map() is now inherited from q3a
+# 09/04/2011 - 0.0.3  - Courgette - reflect that cid are not converted to int anymore in the clients module
+# 02/05/2014 - 0.0.4  - Fenix     - rewrote dictionary creation as literal
+#                                 - removed some warnings
+#                                 - minor syntax changes
+#                                 - replaced variable named using python built-in names
+# 18/07/2014 - 0.0.5  - Fenix     - updated parser to comply with the new get_wrap implementation
+#                                 - removed _settings dict re-declaration: was the same of the AbstractParser
+#                                 - updated rcon command patterns
+# 30/07/2014 - 0.0.6  - Fenix     - fixes for the new getWrap implementation
+# 04/08/2014 - 0.0.7  - Fenix     - make use of self.getEvent when registering events: removes warnings
+# 29/08/2014 - 0.0.8  - Fenix     - syntax cleanup
+# 14/02/2015 - 0.0.9  - Courgette - display a tip in b3.log at bot start regarding the correct use of b_privatemessages
+# 14/02/2015 - 0.0.10 - Courgette - check the value of b_privatemessages at startup
 #
 # CREDITS
 # Based on the version 0.0.1, thanks ThorN.
@@ -50,7 +51,7 @@
 # - say (chat window, with "console: " in front)
 
 __author__ = 'xlr8or, ailmanki'
-__version__ = '0.0.9'
+__version__ = '0.0.10'
 
 import re
 import string
@@ -253,6 +254,11 @@ class EtproParser(AbstractParser):
         """
         self.bot("TIP: Make sure b_privatemessages isn't set to `0` in your game server config file or B3 won't be able"
                  " to send private messages to players.")
+        b_privatemessages = self.getCvar('b_privatemessages').getString()
+        if b_privatemessages == "0":
+            self.warning("Current b_privatemessages value: %s" % b_privatemessages)
+        else:
+            self.info("Current b_privatemessages value: %s" % b_privatemessages)
         self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
         # get map from the status rcon command
         mapname = self.getMap()
