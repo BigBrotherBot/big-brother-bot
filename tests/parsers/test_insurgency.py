@@ -65,20 +65,18 @@ players : 1 humans, 10 bots (20/20 max) (not hibernating)
 L 08/28/2012 - 01:28:40: rcon from "11.222.111.222:4181": command "status"
 '''
 
+
 def client_equal(client_a, client_b):
     if client_a is None and client_b is not None:
         return False
     if client_a is not None and client_b is None:
         return False
-    #    for p in ('cid', 'guid', 'name', 'ip', 'ping'):
-    #        if client_a.get(p, None) != client_b.get(p, None):
-    #            return False
     return all(
         map(lambda x: getattr(client_a, x, None) == getattr(client_b, x, None), ('cid', 'guid', 'name', 'ip', 'ping')))
 
-    #return True
 
 WHATEVER = object()  # sentinel used in InsurgencyTestCase.assert_has_event
+
 
 class InsurgencyTestCase(unittest.TestCase):
     """
@@ -224,7 +222,7 @@ class Test_gamelog_parsing(InsurgencyTestCase):
     def assertLineIsIgnored(self, line):
         with patch.object(self.parser, "warning") as warning_mock:
             self.parser.parseLine(line)
-        self.assertFalse(warning_mock.called, line)
+        self.assertFalse(warning_mock.called, line)  # because a warning would be produced if the line was unhandled
 
     def test_client_say(self):
         # GIVEN
@@ -289,6 +287,7 @@ class Test_gamelog_parsing(InsurgencyTestCase):
         self.assertLineIsIgnored('L 02/07/2015 - 15:15:24: Log file started (file "logs\\L023_081_154_166_23274_201502071515_001.log") (game "C:\\servers\\insurgency") (version "5885")')
         self.assertLineIsIgnored('L 02/07/2015 - 14:53:26:    path_goal ( "-162.50 -750.00 182.68" )')
         self.assertLineIsIgnored('L 02/07/2015 - 19:13:07: Vote succeeded "Kick Based God Allah [U:1:120000090]"')
+        self.assertLineIsIgnored('L 02/13/2015 - 18:08:52: "courgette<18><STEAM_1:1:1111111><STEAM_1:1:1111111>" STEAM USERID validated')
 
     def test_on_team_action(self):
         # WHEN
@@ -335,6 +334,7 @@ class Test_gamelog_parsing(InsurgencyTestCase):
         assertGR("GR_STATE_POSTROUND", "EVT_GAME_ROUND_END")
         assertGR("GR_STATE_GAME_OVER", "EVT_GAME_EXIT")
 
+
 class Test_parser_other(InsurgencyTestCase):
 
     def test_getTeam(self):
@@ -342,6 +342,7 @@ class Test_parser_other(InsurgencyTestCase):
         self.assertEqual(TEAM_BLUE, self.parser.getTeam('#Team_Insurgent'))
         self.assertEqual(TEAM_SPEC, self.parser.getTeam('#Team_Spectators'))
         self.assertEqual(TEAM_UNKNOWN, self.parser.getTeam('#Team_Unassigned'))
+
 
 class FunctionalTest(AdminTestCase):
 
@@ -400,7 +401,6 @@ class FunctionalTest(AdminTestCase):
             self.parser.saybig("^7message ^1with ^2color ^8codes")
             write_mock.assert_has_calls([call('sm_hsay [Pre] message with color codes')])
 
-#    @unittest.skipIf(WAS_FROSTBITE_LOADED, "Frostbite(1|2) parsers monkey patch the Client class and make this test fail")
     def test_message(self):
         self.parser.msgPrefix = "[Pre]"
         player = Client(console=self.parser, guid="theGuid")
@@ -414,6 +414,7 @@ class FunctionalTest(AdminTestCase):
         with patch.object(self.parser.output, 'write') as write_mock:
             player.message("^7message ^1with ^2color ^8codes")
             write_mock.assert_has_calls([call('sm_psay #theGuid "[Pre] message with color codes"')])
+
 
 class Test_getClientOrCreate(InsurgencyTestCase):
 

@@ -286,7 +286,8 @@ class InsurgencyParser(Parser):
         r'^Log file started.*$',
         r'^Log file closed.*$',
         r'^\s*path_goal .*',
-        r'^Vote succeeded.*'
+        r'^Vote succeeded.*',
+        r'^".+" STEAM USERID validated$'
     )
     def ignored_line(self):
         # L 09/24/2001 - 18:44:50: // This is a comment in the log file. It should not be parsed.
