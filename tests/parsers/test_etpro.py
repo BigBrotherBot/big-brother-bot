@@ -27,6 +27,7 @@ import unittest2 as unittest
 
 from b3.clients import Client
 from b3.config import CfgConfigParser, XmlConfigParser
+from b3.cvar import Cvar
 from b3.fake import FakeClient
 from b3.parsers.etpro import EtproParser
 from b3.parsers.q3a.abstractParser import AbstractParser
@@ -109,6 +110,7 @@ class EtproTestCase(unittest.TestCase):
 
         self.queueEvent_patcher = patch.object(self.parser, "queueEvent", wraps=queue_event)
         self.queueEvent_mock = self.queueEvent_patcher.start()
+        when(self.parser).getCvar('b_privatemessages').thenReturn(Cvar('b_privatemessages', value='1'))
         self.parser.startup()
 
     def tearDown(self):
@@ -222,6 +224,7 @@ class AdminTestCase(unittest.TestCase):
         adminPlugin.onLoadConfig()
         adminPlugin.onStartup()
         when(self.parser).getPlugin('admin').thenReturn(adminPlugin)
+        when(self.parser).getCvar('b_privatemessages').thenReturn(Cvar('b_privatemessages', value='1'))
         self.parser.startup()
 
     def tearDown(self):
