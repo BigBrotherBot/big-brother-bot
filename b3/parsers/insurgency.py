@@ -58,6 +58,7 @@
 # 2015/02/05 - 0.9.0 - Fenix          - correctly initialize Server client
 # 2015/02/08 - 0.10  - Thomas LEVEIL  - recognize more log lines + fire events related to rounds
 # 2015/02/14 - 0.11  - Thomas LEVEIL  - fix spectator team recognition
+#                                     - in the clients manager, identify players by their steamid instead of cid
 
 import re
 import time
@@ -389,6 +390,8 @@ class InsurgencyParser(Parser):
     @ger.gameEvent(r'^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*)>" disconnected \(reason "(?P<reason>.*)"\)$')
     def on_client_disconnected(self, name, cid, guid, team, reason):
         # L 08/26/2012 - 04:45:04: "Kyle<63><BOT><CT>" disconnected (reason "Kicked by Console")
+        # L 02/13/2015 - 18:08:14: "JACKASS NINJA<479><STEAM_1:0:87123453><#Team_Security>" disconnected (reason "to make room for a clan member")
+        # L 02/13/2015 - 18:18:38: "[CiD] Toki<21><STEAM_1:0:27763712><#Team_Security>" disconnected (reason "Disconnected.")
         client = self.getClient(cid)
         event = None
         if client:
@@ -993,9 +996,9 @@ class InsurgencyParser(Parser):
             bot = True
             hide = True
 
-        client = self.clients.getByCID(cid)
+        client = self.clients.getByGUID(guid)
         if client is None:
-            client = self.clients.newClient(cid, guid=guid, name=name, bot=bot, hide=hide, team=TEAM_UNKNOWN)
+            client = self.clients.newClient(guid, guid=guid, name=name, bot=bot, hide=hide, team=TEAM_UNKNOWN)
             client.last_update_time = time.time()
         else:
             if name:
