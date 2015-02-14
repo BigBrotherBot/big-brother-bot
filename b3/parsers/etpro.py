@@ -31,6 +31,7 @@
 # 30/07/2014 - 0.0.6 - Fenix     - fixes for the new getWrap implementation
 # 04/08/2014 - 0.0.7 - Fenix     - make use of self.getEvent when registering events: removes warnings
 # 29/08/2014 - 0.0.8 - Fenix     - syntax cleanup
+# 14/02/2015 - 0.0.9 - Fenix     - display a tip in b3.log at bot start regarding the correct use of b_privatemessages
 #
 # CREDITS
 # Based on the version 0.0.1, thanks ThorN.
@@ -49,7 +50,7 @@
 # - say (chat window, with "console: " in front)
 
 __author__ = 'xlr8or, ailmanki'
-__version__ = '0.0.8'
+__version__ = '0.0.9'
 
 import re
 import string
@@ -250,7 +251,9 @@ class EtproParser(AbstractParser):
         """
         Called after the parser is created before run().
         """
-        client = self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
+        self.bot("TIP: Make sure b_privatemessages isn't set to `0` in your game server config file or B3 won't be able"
+                 " to send private messages to players.")
+        self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
         # get map from the status rcon command
         mapname = self.getMap()
         if mapname:
