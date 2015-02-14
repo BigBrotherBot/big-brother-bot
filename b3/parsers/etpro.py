@@ -63,11 +63,10 @@ from b3.parsers.q3a.abstractParser import AbstractParser
 
 
 class EtproParser(AbstractParser):
-
     gameName = 'etpro'
     PunkBuster = None
-    IpsOnly = False    # Setting True will use ip's only for identification.
-    IpCombi = False    # Setting True will replace last part of the guid with 2 segments of the ip.
+    IpsOnly = False  # Setting True will use ip's only for identification.
+    IpCombi = False  # Setting True will replace last part of the guid with 2 segments of the ip.
 
     _empty_name_default = 'EmptyNameDefault'
 
@@ -256,8 +255,8 @@ class EtproParser(AbstractParser):
         mapname = self.getMap()
         if mapname:
             self.game.mapName = mapname
-            self.info('map is: %s'%self.game.mapName)
-            
+            self.info('map is: %s' % self.game.mapName)
+
         self._eventMap['warmup'] = self.getEventID('EVT_GAME_WARMUP')
         self._eventMap['restartgame'] = self.getEventID('EVT_GAME_ROUND_END')
 
@@ -353,8 +352,8 @@ class EtproParser(AbstractParser):
                 if 'cl_guid' in bclient:
                     guid = bclient['cl_guid']
                 else:
-                    guid = 'unknown' 
-                
+                    guid = 'unknown'
+
                 if not 'name' in bclient:
                     bclient['name'] = self._empty_name_default
 
@@ -363,7 +362,7 @@ class EtproParser(AbstractParser):
                     # infoline was still waiting to be parsed.
                     self.debug('Client disconnected: ignoring...')
                     return None
-                
+
                 nguid = ''
                 # overide the guid... use ip's only if self.console.IpsOnly is set True.
                 if self.IpsOnly:
@@ -381,12 +380,12 @@ class EtproParser(AbstractParser):
                     guid = nguid
 
                 client = self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'],
-                                                state=b3.STATE_ALIVE, guid=guid, data={ 'guid' : guid })
+                                                state=b3.STATE_ALIVE, guid=guid, data={'guid': guid})
 
         return None
 
     def OnKill(self, action, data, match=None):
-        self.debug('OnKill: %s (%s)'%(match.group('aweap'),match.group('text')))
+        self.debug('OnKill: %s (%s)' % (match.group('aweap'), match.group('text')))
         victim = self.clients.getByCID(match.group('cid'))
         if not victim:
             self.debug('No victim')
@@ -401,12 +400,12 @@ class EtproParser(AbstractParser):
         ## Fix attacker
         if match.group('aweap') in self.Suicides:
             # those kills should be considered suicides
-            self.debug('OnKill: fixed attacker, suicide detected: %s' %match.group('text'))
+            self.debug('OnKill: fixed attacker, suicide detected: %s' % match.group('text'))
             attacker = victim
         else:
             attacker = self.clients.getByCID(match.group('acid'))
         ## End fix attacker
-          
+
         if not attacker:
             self.debug('No attacker')
             return None
@@ -433,7 +432,7 @@ class EtproParser(AbstractParser):
         # if not defined we need a general hitloc (for xlrstats)
         if not hasattr(victim, 'hitloc'):
             victim.hitloc = 'body'
-        
+
         victim.state = b3.STATE_DEAD
         return self.getEvent(eventkey, (100, weapon, victim.hitloc, damagetype), attacker, victim)
 
@@ -474,7 +473,7 @@ class EtproParser(AbstractParser):
         try:
             command = match.group('command')
         except:
-            self.debug('Etpro info line: %s' % match.group('data') )
+            self.debug('Etpro info line: %s' % match.group('data'))
             return None
 
         if command == 'privmsg':
@@ -486,9 +485,9 @@ class EtproParser(AbstractParser):
             self.OnPrivMsg(match.group('origin'), match.group('target'), text)
         # an example on how to catch other etpro events:
         elif command == 'event':
-            self.verbose('event: %s' %(match.group('text')))
+            self.verbose('event: %s' % (match.group('text')))
         else:
-            self.verbose('%s: %s' %(command, match.group('text')))
+            self.verbose('%s: %s' % (command, match.group('text')))
 
         return None
 
@@ -507,7 +506,8 @@ class EtproParser(AbstractParser):
             text = text[1:]
 
         #client.name = match.group('name')
-        self.verbose('text: %s, client: %s - %s, tclient: %s - %s' %(text, client.name, client.id, tclient.name, tclient.id))
+        self.verbose(
+            'text: %s, client: %s - %s, tclient: %s - %s' % (text, client.name, client.id, tclient.name, tclient.id))
         self.queueEvent(self.getEvent('EVT_CLIENT_PRIVATE_SAY', text, client, tclient))
 
     ####################################################################################################################
@@ -542,17 +542,17 @@ class EtproParser(AbstractParser):
         """
         gametype = str(gametype_int)
         if gametype_int == '0':
-            gametype = 'sp'        # Single Player
+            gametype = 'sp'  # Single Player
         elif gametype_int == '1':
-            gametype = 'cp'        # Co-Op
+            gametype = 'cp'  # Co-Op
         elif gametype_int == '2':
-            gametype = 'smo'       # Single Map Objective
+            gametype = 'smo'  # Single Map Objective
         elif gametype_int == '3':
-            gametype = 'sw'        # Stopwatch
+            gametype = 'sw'  # Stopwatch
         elif gametype_int == '4':
-            gametype = 'ca'        # Campaign
+            gametype = 'ca'  # Campaign
         elif gametype_int == '5':
-            gametype = 'lms'       # Last Man Standing
+            gametype = 'lms'  # Last Man Standing
 
         return gametype
 
@@ -616,44 +616,47 @@ class EtproParser(AbstractParser):
                 if client.guid and c.has_key('guid'):
                     if client.guid == c['guid']:
                         # player matches
-                        self.debug('in-sync %s == %s (cid: %s - slotid: %s)', client.guid, c['guid'], client.cid, c['cid'] )
+                        self.debug('in-sync %s == %s (cid: %s - slotid: %s)', client.guid, c['guid'], client.cid,
+                                   c['cid'])
                         mlist[str(cid)] = client
                     else:
-                        self.debug('no-sync %s <> %s (disconnecting %s from slot %s)', client.guid, c['guid'], client.name, client.cid)
+                        self.debug('no-sync %s <> %s (disconnecting %s from slot %s)', client.guid, c['guid'],
+                                   client.name, client.cid)
                         client.disconnect()
                 elif client.ip and c.has_key('ip'):
                     if client.ip == c['ip']:
                         # player matches
-                        self.debug('in-sync %s == %s (cid: %s == slotid: %s)', client.ip, c['ip'], client.cid, c['cid'] )
+                        self.debug('in-sync %s == %s (cid: %s == slotid: %s)', client.ip, c['ip'], client.cid, c['cid'])
                         mlist[str(cid)] = client
                     else:
-                        self.debug('no-sync %s <> %s (disconnecting %s from slot %s)', client.ip, c['ip'], client.name, client.cid)
+                        self.debug('no-sync %s <> %s (disconnecting %s from slot %s)', client.ip, c['ip'], client.name,
+                                   client.cid)
                         client.disconnect()
                 else:
                     self.debug('no-sync: no guid or ip found')
-        
+
         return mlist
 
-# ---- Documentation --------------------------------------------------------------------------------
-#
-#//infos clienuserinfochanged
-#//0 = player_ID
-#//n = name
-#//t = team
-#//c = class
-#//r = rank
-#//m = medals
-#//s = skills
-#//dn = disguised name
-#//dr = disguised rank
-#//w = weapon
-#//lw = weapon last used
-#//sw = 2nd weapon (not sure)
-#//mu = muted
-#//ref = referee
-#//lw = latched weapon (weapon on next spawn)
-#//sw = latched secondary weapon (secondary weapon on next spawn)
-#//p = privilege level (peon = 0, referee (vote), referee (password), semiadmin, rconauth) (etpro only)
-#//ss = stats restored by stat saver (etpro only)
-#//sc = shoutcaster status (etpro only)
-#//tv = ETTV slave (etpro only)
+        # ---- Documentation --------------------------------------------------------------------------------
+        #
+        #//infos clienuserinfochanged
+        #//0 = player_ID
+        #//n = name
+        #//t = team
+        #//c = class
+        #//r = rank
+        #//m = medals
+        #//s = skills
+        #//dn = disguised name
+        #//dr = disguised rank
+        #//w = weapon
+        #//lw = weapon last used
+        #//sw = 2nd weapon (not sure)
+        #//mu = muted
+        #//ref = referee
+        #//lw = latched weapon (weapon on next spawn)
+        #//sw = latched secondary weapon (secondary weapon on next spawn)
+        #//p = privilege level (peon = 0, referee (vote), referee (password), semiadmin, rconauth) (etpro only)
+        #//ss = stats restored by stat saver (etpro only)
+        #//sc = shoutcaster status (etpro only)
+        #//tv = ETTV slave (etpro only)
