@@ -70,8 +70,8 @@ class B3version(version.StrictVersion):
 )?
 (?P<daily>                       # 1.2.45b2.daily4-20120901
     \.daily(?P<build_num>\d+?)
-    (?:-20\d\d\d\d\d\d)?
 )?
+(?:-(?P<date>20\d\d\d\d\d\d))?   # 1.10.0dev-20150215
 $''', re.VERBOSE)
     prerelease_order = {'dev': 0, 'a': 1, 'b': 2}
 
