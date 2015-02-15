@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/02/15 - 1.41.7 - Fenix           - make game log reading work properly in osx
 # 2015/02/04 - 1.41.6 - Fenix           - optionally specify a log file size: 'logsize' option in 'b3' section of main cfg
 # 2015/02/02 - 1.41.5 - 82ndab.Bravo17  - Remove color codes at start of getWrap if not valid for game
 # 2015/01/29 - 1.41.4 - Fenix           - do not let plugins crash B3 by raising an exception within the constructor
@@ -168,7 +169,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.41.6'
+__version__ = '1.41.1'
 
 
 import os
@@ -341,6 +342,12 @@ class Parser(object):
 
     exiting = thread.allocate_lock()
     exitcode = None
+
+    def __new__(cls, *args, **kwargs):
+        cls.__read = cls.__read_input
+        if sys.platform == 'darwin':
+            cls.__read = cls.___read_input_darwin
+        return object.__new__(cls)
 
     def __init__(self, conf, autorestart=False):
         """
@@ -1331,6 +1338,22 @@ class Parser(object):
             self.output.flush()
             return res
 
+    @staticmethod
+    def __read_input(game_log):
+        """
+        Read lines from the log file
+        :param game_log: The gamelog file pointer
+        """
+        return game_log.readlines()
+
+    @staticmethod
+    def ___read_input_darwin(game_log):
+        """
+        Read lines from the log file (darwin version)
+        :param game_log: The gamelog file pointer
+        """
+        return [game_log.readline()]
+
     def read(self):
         """
         Read from game server log file
@@ -1349,8 +1372,9 @@ class Parser(object):
             self.debug('Parser: game log is suddenly smaller than it was before (%s bytes, now %s), '
                        'the log was probably either rotated or emptied. B3 will now re-adjust to the new '
                        'size of the log' % (str(self.input.tell()), str(filestats.st_size)))
-            self.input.seek(0, os.SEEK_END)  
-        return self.input.readlines() 
+            self.input.seek(0, os.SEEK_END)
+        # NOTE: __read is defined at runtime in __new__
+        return self.__read(self.input)
 
     def shutdown(self):
         """
