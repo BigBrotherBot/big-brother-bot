@@ -6,7 +6,7 @@ To run test, you need python modules installed :
  - nose: http://pypi.python.org/pypi/nose
  - mockito: http://pypi.python.org/pypi/mockito
 
-and all modules from the pip-requires.txt file
+and all modules from the requirements.txt file
 
 
 # Running the test suite

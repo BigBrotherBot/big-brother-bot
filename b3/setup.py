@@ -61,6 +61,7 @@
 #                                     - make use of the shipped storage module to execute SQL queries in Update class
 #                                     - revamped setup layout
 # 2015/01/22 - 1.11  - Fenix          - generate .ini configuration file instead of .xml
+# 2015/02/14 - 1.12  - Fenix          - do not close cmd window upon SystemExit when running frozen b3
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -80,6 +81,7 @@ import time
 from b3.storage import PROTOCOLS as DB_PROTOCOLS
 from config import CfgConfigParser
 from distutils import version
+from functions import main_is_frozen
 from functions import splitDSN
 from timezones import timezones
 from urlparse import urlsplit
@@ -970,7 +972,16 @@ class Update(Setup):
             cfg = config.load(self._config)
             print 'Using configuration file: %s\n' % self._config
         else:
-            raise SystemExit('Configuration file not found: please start B3 using "python b3_run.py --setup" to create one')
+            if main_is_frozen():
+                if sys.stdout != sys.__stdout__:
+                    # make sure we are not writing to the log:
+                    sys.stdout = sys.__stdout__
+                    sys.stderr = sys.__stderr__
+                print 'Configuration file not found: please run the B3 setup procedure or\ncreate a configuration file manually!'
+                raw_input("Press the [ENTER] key")
+                raise SystemExit()
+            else:
+                raise SystemExit('Configuration file not found: please start B3 using "python b3_run.py --setup" to create one')
 
         dsn = cfg.get('b3', 'database')
         dsndict = splitDSN(dsn)
@@ -1044,7 +1055,16 @@ class Update(Setup):
                     print "WARNING: could not update database to version 1.10.0 properly: %s" % str(msg)
                     self.test_exit("[Enter] to continue update procedure, \'abort\' to quit")
 
-        raise SystemExit('Update finished: restart B3 to continue')
+        if main_is_frozen():
+            if sys.stdout != sys.__stdout__:
+                # make sure we are not writing to the log:
+                sys.stdout = sys.__stdout__
+                sys.stderr = sys.__stderr__
+            print 'Update finished: restart B3 to continue'
+            raw_input("Press the [ENTER] key")
+            raise SystemExit()
+        else:
+            raise SystemExit('Update finished: restart B3 to continue')
 
 
 class StubConsole(object):

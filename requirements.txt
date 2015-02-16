@@ -1,6 +1,10 @@
+# B3 core
 pymysql
 pysqlite
+psycopg2
 paramiko
+
+# tests
 unittest2
 mockito
 nose
@@ -8,4 +12,3 @@ nosexcover
 nose-exclude
 mock>=0.8
 pylint
-psycopg2

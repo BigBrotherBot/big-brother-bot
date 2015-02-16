@@ -13,7 +13,13 @@ addons:
   postgresql: "9.3"
 
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
-install: pip install -r pip-requires.txt --use-mirrors
+install:
+  - pip install -r requirements.txt --use-mirrors
+  - pip install cx_Freeze
+  - pip install paramiko
+  - pip install irc
+  - pip install email
+  - pip install uuid
 
 before_script:
   - psql -c "CREATE DATABASE b3_test WITH OWNER = postgres ENCODING = 'UTF8';" -U postgres
@@ -21,4 +27,4 @@ before_script:
 # command to run tests, e.g. python setup.py test
 script: 
   - nosetests --where=tests --verbosity=3
-  - python setup.py egg_info --tag-build .travis bdist_egg --dist-dir .\releases sdist --dist-dir .\releases
+  - python setup.py build_exe egg_info --tag-build .travis --tag-date sdist bdist_egg

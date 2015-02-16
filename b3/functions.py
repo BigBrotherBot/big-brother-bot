@@ -46,15 +46,15 @@
 # 27/12/2014 - 1.16  - Fenix          - adapted splitDSN to support postgresql databases
 # 04/02/2015 - 1.17  - Fenix          - added getBytes function
 # 08/02/2015 - 1.18  - Fenix          - added escape function
+# 14/02/2015 - 1.19  - Fenix          - changed main_is_frozen() to work with cx_Freeze instead of py2exe
 
 __author__    = 'ThorN, xlr8or, courgette'
-__version__   = '1.18'
+__version__   = '1.19'
 
 import collections
 import os
 import re
 import sys
-import imp
 import shutil
 import string
 import urllib2
@@ -91,11 +91,10 @@ def getCmd(instance, cmd):
 
 def main_is_frozen():
     """
-    Detect if B3 is running from b3_run.exe.
+    Detect if B3 is running from compiled binary.
     """
-    return (hasattr(sys, "frozen") or       # new py2exe
-            hasattr(sys, "importers") or    # old py2exe
-            imp.is_frozen("__main__"))      # tools/freeze
+    return hasattr(sys, "frozen")
+
 
 def splitDSN(url):
     """

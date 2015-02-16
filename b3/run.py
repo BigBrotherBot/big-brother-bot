@@ -29,9 +29,10 @@
 # 2014/07/21 - 1.5   - Fenix     - syntax cleanup
 # 2014/12/15 - 1.5.1 - Fenix     - let the parser know if we are running B3 in auto-restart mode or not
 # 2015/02/02 - 1.5.2 - Fenix     - keep looking for xml configuration files if ini/cfg are not found
+# 2015/02/14 - 1.5.3 - Fenix     - removed _check_arg_configfile in favor of configuration file lookup
 
 __author__  = 'ThorN'
-__version__ = '1.5.2'
+__version__ = '1.5.3'
 
 import b3
 import os
@@ -137,6 +138,7 @@ def run(config=None, nosetup=False, autorestart=False):
     Run B3.
     :param config: The B3 configuration file instance
     :param nosetup: Whether to execute the B3 setup or not
+    :param autorestart: Whether to run B3 in autorestart mode or not
     """
     if config:
         config = b3.getAbsolutePath(config)
@@ -176,21 +178,12 @@ def run_update(config=None):
     Update(config)
 
 
-def _check_arg_configfile(parser, x):
-    """
-    'Type' for argparse - checks that file exists but does not open.
-    """
-    if not os.path.exists(x):
-        parser.error('The file %s does not exist!' % x)
-    return x
-
-
 def main():
     """
     Main execution.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', dest='config', default=None, metavar='b3.xml', help='B3 config file. Example: -c b3.ini', type=lambda x: _check_arg_configfile(parser, x))
+    parser.add_argument('-c', '--config', dest='config', default=None, metavar='b3.ini', help='B3 config file. Example: -c b3.ini')
     parser.add_argument('-r', '--restart', action='store_true', dest='restart', default=False, help='Auto-restart B3 on crash')
     parser.add_argument('-s', '--setup',  action='store_true', dest='setup', default=False, help='Setup main b3.ini config file')
     parser.add_argument('-u', '--update', action='store_true', dest='update', default=False, help='Update B3 database to latest version')
