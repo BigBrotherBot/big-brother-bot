@@ -14,12 +14,8 @@ addons:
 
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install:
-  - pip install -r requirements.txt --use-mirrors
-  - pip install cx_Freeze
-  - pip install paramiko
-  - pip install irc
-  - pip install email
-  - pip install uuid
+  - pip install -r requirements.txt
+  - pip install -r build-requirements.txt
 
 before_script:
   - psql -c "CREATE DATABASE b3_test WITH OWNER = postgres ENCODING = 'UTF8';" -U postgres
