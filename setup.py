@@ -385,7 +385,6 @@ setup(
                 'SocketServer',  # telnet plugin
                 'paramiko',  # sftpytail plugin
                 'fileinput',  # badrcon plugin
-                'irc',  # ircbot plugin
             ],
             'include_files': [
                 ('README.md', 'README.md'),

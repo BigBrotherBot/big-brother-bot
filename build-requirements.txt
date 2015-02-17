@@ -3,4 +3,3 @@ cx_Freeze
 
 # popular 3rd party plugins requirements
 uuid          # metabans ggcstream and telnet plugins
-irc           # ircbot plugin
