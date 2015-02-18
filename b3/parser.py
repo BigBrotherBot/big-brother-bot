@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/02/15 - 1.41.8 - Fenix           - fix broken 1.41.8
 # 2015/02/15 - 1.41.7 - Fenix           - make game log reading work properly in osx
 # 2015/02/04 - 1.41.6 - Fenix           - optionally specify a log file size: 'logsize' option in 'b3' section of main cfg
 # 2015/02/02 - 1.41.5 - 82ndab.Bravo17  - Remove color codes at start of getWrap if not valid for game
@@ -169,7 +170,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.41.7'
+__version__ = '1.41.8'
 
 
 import os
@@ -1338,16 +1339,14 @@ class Parser(object):
             self.output.flush()
             return res
 
-    @staticmethod
-    def __read_input(game_log):
+    def __read_input(self, game_log):
         """
         Read lines from the log file
         :param game_log: The gamelog file pointer
         """
         return game_log.readlines()
 
-    @staticmethod
-    def ___read_input_darwin(game_log):
+    def ___read_input_darwin(self, game_log):
         """
         Read lines from the log file (darwin version)
         :param game_log: The gamelog file pointer
