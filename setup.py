@@ -32,9 +32,10 @@
 #                                    - create the 'installer' directory to isolate InnoSetup files from build directory
 # 2015/02/15 - 3.1.1 - Fenix         - removed some print calls in favor of logging
 #                                    - removed some warnings
+# 2015/02/18 - 3.1.2 - Fenix         - fix cx_Freeze stripping out function documentations
 
 __author__ = 'ThorN, xlr8or, courgette, Fenix'
-__version__ = '3.1.1'
+__version__ = '3.1.2'
 
 import re
 import os
@@ -362,7 +363,7 @@ setup(
             'linux_binary_name': settings[PLATFORM]['binary_name'],
             'build_exe': BUILD_PATH,
             'silent': False,
-            'optimize': 2,
+            'optimize': 1,
             'compressed': True,
             'create_shared_zip': False,
             'append_script_to_exe': True,
