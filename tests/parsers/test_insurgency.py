@@ -245,7 +245,6 @@ class Test_gamelog_parsing(InsurgencyTestCase):
         # THEN
         self.assertEqual(TEAM_SPEC, player.team)
 
-
     def test_client_say(self):
         # GIVEN
         player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_BLUE)
@@ -255,6 +254,16 @@ class Test_gamelog_parsing(InsurgencyTestCase):
         self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<3><STEAM_1:0:1111111><#Team_Security>" say "!pb @531 rule1"''')
         # THEN
         self.assert_has_event("EVT_CLIENT_SAY", "!pb @531 rule1", player)
+
+    def test_client_disconnect(self):
+        # GIVEN
+        player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_BLUE)
+        player.connects("STEAM_1:0:1111111")
+        # WHEN
+        self.clear_events()
+        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<3><STEAM_1:0:1111111><#Team_Security>" disconnected (reason "Disconnected.")''')
+        # THEN
+        self.assert_has_event("EVT_CLIENT_DISCONNECT", "STEAM_1:0:1111111", player)
 
     def test_client_changed_name__known_client(self):
         # GIVEN
