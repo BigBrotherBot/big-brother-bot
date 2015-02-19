@@ -59,6 +59,7 @@
 # 2015/02/08 - 0.10  - Thomas LEVEIL  - recognize more log lines + fire events related to rounds
 # 2015/02/14 - 0.11  - Thomas LEVEIL  - fix spectator team recognition
 #                                     - in the clients manager, identify players by their steamid instead of cid
+# 2015/02/19 - 0.12  - Fenix          - fixed EVT_CLIENT_DISCONNECT not being fired
 
 import re
 import time
@@ -80,7 +81,7 @@ from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '0.11'
+__version__ = '0.12'
 
 
 # GAME SETUP
@@ -393,7 +394,8 @@ class InsurgencyParser(Parser):
         # L 08/26/2012 - 04:45:04: "Kyle<63><BOT><CT>" disconnected (reason "Kicked by Console")
         # L 02/13/2015 - 18:08:14: "JACKASS NINJA<479><STEAM_1:0:87123453><#Team_Security>" disconnected (reason "to make room for a clan member")
         # L 02/13/2015 - 18:18:38: "[CiD] Toki<21><STEAM_1:0:27763712><#Team_Security>" disconnected (reason "Disconnected.")
-        client = self.getClient(cid)
+        # NOTE: clients are indexed by GUID
+        client = self.getClient(cid=guid)
         event = None
         if client:
             if reason == "Kicked by Console":
@@ -424,7 +426,7 @@ class InsurgencyParser(Parser):
         #L 07/19/2013 - 17:18:44: "courgette<194><STEAM_1:0:1111111><CT>" switched from team <TERRORIST> to <Unassigned>
         if new_team == 'Unassigned':
             # The player might have just left the game server, so we must make sure not to recreate the Client object
-            client = self.getClient(cid)
+            client = self.getClient(cid=guid)
         else:
             client = self.getClientOrCreate(cid, guid, name, old_team)
         if client:
