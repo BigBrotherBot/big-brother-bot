@@ -21,6 +21,7 @@
 #
 # 21/07/2014 - Fenix - syntax cleanup
 # 13/12/2014 - Fenix - updated regular expression in getDefaultChannel to correctly match daily builds
+# 20/02/2015 - Fenix - updated regular expression in B3version to match Travis CI build names
 
 import json
 import re
@@ -67,13 +68,15 @@ class B3version(version.StrictVersion):
 (?P<prerelease>                  # 1.2.45b2
   (?P<tag>a|b|dev)
   (?P<tag_num>\d+)?
-)?
-(?P<daily>                       # 1.2.45b2.daily4-20120901
-    \.daily(?P<build_num>\d+?)
+)?                                                                     # 1.2.45b2.devd94d71a-20120901
+((?P<daily>\.daily(?P<build_num>\d+?))|(?P<dev>\.dev(?P<dev_num>\w+?)) # 1.2.45b2.daily4-20120901
 )?
 (?:-(?P<date>20\d\d\d\d\d\d))?   # 1.10.0dev-20150215
 $''', re.VERBOSE)
     prerelease_order = {'dev': 0, 'a': 1, 'b': 2}
+
+
+
 
     def parse (self, vstring):
         """
