@@ -13,9 +13,15 @@ type of behavior is not allowed on your server, and ultimately kick, and or ban 
 * [Documentation](http://wiki.bigbrotherbot.net/)
 * [Wikipedia](http://en.wikipedia.org/wiki/Big_Brother_Bot)
 
-### For developers:
+### For developers
 
-* [Code Reference](http://doc.bigbrotherbot.net/)
+B3 is an extremely extensible software. Support for new online games can be added quite easily by creating new parsers
+(if the game server meets the necessary requirements), and B3 functionalities can be enhanced by means of plugins. You 
+can browse B3 code reference [here](http://doc.bigbrotherbot.net/): it will give you a general idea on the structure of B3 
+core and B3 plugins. If you need some help in developing your plugins or creating new parsers you can make use of our 
+[forums](http://forum.bigbrotherbot.net) or alternatively you can join our chat on gitter:
+
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/BigBrotherBot/big-brother-bot?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 ### Installation, configuration and usage
 
