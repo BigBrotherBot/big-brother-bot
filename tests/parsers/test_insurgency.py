@@ -51,7 +51,7 @@ players : 1 humans, 10 bots (20/20 max) (not hibernating)
 
 # userid name uniqueid connected ping loss state rate adr
 #224 "Moe" BOT active
-# 194 2 "courgette" STEAM_1:0:1111111 33:48 67 0 active 20000 11.222.111.222:27005
+#194 2 "courgette" STEAM_1:0:1111111 33:48 67 0 active 20000 11.222.111.222:27005
 #225 "Quintin" BOT active
 #226 "Kurt" BOT active
 #227 "Arnold" BOT active
@@ -227,51 +227,52 @@ class Test_gamelog_parsing(InsurgencyTestCase):
     def test_teams(self):
         # GIVEN
         player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=None)
-        player.connects("3")
+        player.connects("194")
+        self.clear_events()
         # WHEN
-        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<3><STEAM_1:0:1111111><#Team_Security>" say "!pb @531 rule1"''')
+        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<194><STEAM_1:0:1111111><#Team_Security>" say "!pb @531 rule1"''')
         # THEN
         self.assertEqual(TEAM_RED, player.team)
         # WHEN
-        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<3><STEAM_1:0:1111111><#Team_Insurgent>" say "!pb @531 rule1"''')
+        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<194><STEAM_1:0:1111111><#Team_Insurgent>" say "!pb @531 rule1"''')
         # THEN
         self.assertEqual(TEAM_BLUE, player.team)
         # WHEN
-        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<3><STEAM_1:0:1111111><#Team_Unassigned>" say "!pb @531 rule1"''')
+        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<194><STEAM_1:0:1111111><#Team_Unassigned>" say "!pb @531 rule1"''')
         # THEN
         self.assertEqual(TEAM_UNKNOWN, player.team)
         # WHEN
-        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<3><STEAM_1:0:1111111><Spectator>" say "!pb @531 rule1"''')
+        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<194><STEAM_1:0:1111111><Spectator>" say "!pb @531 rule1"''')
         # THEN
         self.assertEqual(TEAM_SPEC, player.team)
 
     def test_client_say(self):
         # GIVEN
         player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_BLUE)
-        player.connects("3")
+        player.connects("194")
         # WHEN
         self.clear_events()
-        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<3><STEAM_1:0:1111111><#Team_Security>" say "!pb @531 rule1"''')
+        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<194><STEAM_1:0:1111111><#Team_Security>" say "!pb @531 rule1"''')
         # THEN
         self.assert_has_event("EVT_CLIENT_SAY", "!pb @531 rule1", player)
 
     def test_client_disconnect(self):
         # GIVEN
         player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_BLUE)
-        player.connects("STEAM_1:0:1111111")
+        player.connects("194")
         # WHEN
         self.clear_events()
-        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<3><STEAM_1:0:1111111><#Team_Security>" disconnected (reason "Disconnected.")''')
+        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<194><STEAM_1:0:1111111><#Team_Security>" disconnected (reason "Disconnected.")''')
         # THEN
-        self.assert_has_event("EVT_CLIENT_DISCONNECT", "STEAM_1:0:1111111", player)
+        self.assert_has_event("EVT_CLIENT_DISCONNECT", "194", player)
 
     def test_client_changed_name__known_client(self):
         # GIVEN
         player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_UNKNOWN)
-        player.connects("3")
+        player.connects("194")
         # WHEN
         self.clear_events()
-        self.parser.parseLine('L 02/07/2015 - 19:36:25: "courgette<3><STEAM_1:0:1111111><#Team_Security>" changed name to "fooobar"')
+        self.parser.parseLine('L 02/07/2015 - 19:36:25: "courgette<194><STEAM_1:0:1111111><#Team_Security>" changed name to "fooobar"')
         # THEN
         self.assert_has_event("EVT_CLIENT_NAME_CHANGE", client=player, data="fooobar")
 
@@ -279,21 +280,21 @@ class Test_gamelog_parsing(InsurgencyTestCase):
         # GIVEN
         # WHEN
         self.clear_events()
-        self.parser.parseLine('L 02/07/2015 - 19:36:25: "courgette<3><STEAM_1:0:1111111><#Team_Security>" changed name to "fooobar"')
+        self.parser.parseLine('L 02/07/2015 - 19:36:25: "courgette2<4><STEAM_1:0:1111112><#Team_Security>" changed name to "fooobar"')
         # THEN
         self.assert_has_event("EVT_CLIENT_NAME_CHANGE", data="fooobar")
 
     def test_bot_stuck(self):
         # WHEN
         with patch.object(self.parser, "warning") as warning_mock:
-            self.parser.parseLine('''L 02/07/2015 - 12:30:01: "Minh<338><BOT><3>" stuck (position "4355.51 -2602.87 143.98") (duration "19.97") L 02/07/2015 - 12:30:01:    path_goal ( "4370.00 -2703.29 148.56" )''')
+            self.parser.parseLine('''L 02/07/2015 - 12:30:01: "Minh<338><BOT><193>" stuck (position "4355.51 -2602.87 143.98") (duration "19.97") L 02/07/2015 - 12:30:01:    path_goal ( "4370.00 -2703.29 148.56" )''')
         # THEN
         self.assertFalse(warning_mock.called)
 
     def test_on_bot_stuck__no_pathgoal(self):
         # WHEN
         with patch.object(self.parser, "warning") as warning_mock:
-            self.parser.parseLine('L 02/07/2015 - 14:53:25: "Abento<616><BOT><3>" stuck (position "-165.03 -705.59 222.38") (duration "1.50")')
+            self.parser.parseLine('L 02/07/2015 - 14:53:25: "Abento<616><BOT><193>" stuck (position "-165.03 -705.59 222.38") (duration "1.50")')
         # THEN
         self.assertFalse(warning_mock.called)
 
@@ -332,7 +333,7 @@ class Test_gamelog_parsing(InsurgencyTestCase):
     def test_on_client_action__obj_captured(self):
         # GIVEN
         player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_BLUE)
-        player.connects("3")
+        player.connects("194")
         # WHEN
         self.clear_events()
         self.parser.parseLine('L 02/07/2015 - 12:31:34: "courgette<195><STEAM_1:0:1111111><#Team_Security>" triggered "obj_captured" (name "#unknown_controlpoint")')
@@ -342,7 +343,7 @@ class Test_gamelog_parsing(InsurgencyTestCase):
     def test_on_client_action__obj_destroyed(self):
         # GIVEN
         player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_BLUE)
-        player.connects("3")
+        player.connects("194")
         # WHEN
         self.clear_events()
         self.parser.parseLine('L 02/07/2015 - 12:55:01: "courgette<195><STEAM_1:0:1111111><#Team_Security>" triggered "obj_destroyed" (name "#unknown_controlpoint")')
@@ -356,7 +357,7 @@ class Test_gamelog_parsing(InsurgencyTestCase):
 
         # GIVEN
         player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_BLUE)
-        player.connects("3")
+        player.connects("194")
         # THEN
         assertGR("GR_STATE_PREGAME", "EVT_GAME_WARMUP")
         assertGR("GR_STATE_STARTGAME", "EVT_CLIENT_JOIN")

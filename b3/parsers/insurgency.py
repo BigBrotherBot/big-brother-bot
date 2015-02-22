@@ -60,6 +60,9 @@
 # 2015/02/14 - 0.11  - Thomas LEVEIL  - fix spectator team recognition
 #                                     - in the clients manager, identify players by their steamid instead of cid
 # 2015/02/19 - 0.12  - Fenix          - fixed EVT_CLIENT_DISCONNECT not being fired
+# 2015/02/14 - 0.13  - 82ndab-Bravo17 - check both cid and guid when finding clients to avoid duplicate clients or
+#                                     - clients in wrong slots
+#                                     - revert to using cid instead of steamid to id players
 
 import re
 import time
@@ -81,7 +84,7 @@ from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '0.12'
+__version__ = '0.13'
 
 
 # GAME SETUP
@@ -120,10 +123,6 @@ RE_HL_LOG_PROPERTY = re.compile('''\((?P<key>[^\s\(\)]+)(?P<data>| "(?P<value>[^
 RE_CVAR = re.compile(r'''^"(?P<cvar>\S+?)" = "(?P<value>.*?)" \( def. "(?P<default>.*?)".*$''', re.MULTILINE)
 
 ger = GameEventRouter()
-
-
-class InvalidmapgamecomboError(Exception):
-    pass
 
 
 def parseProperties(properties):
@@ -394,8 +393,7 @@ class InsurgencyParser(Parser):
         # L 08/26/2012 - 04:45:04: "Kyle<63><BOT><CT>" disconnected (reason "Kicked by Console")
         # L 02/13/2015 - 18:08:14: "JACKASS NINJA<479><STEAM_1:0:87123453><#Team_Security>" disconnected (reason "to make room for a clan member")
         # L 02/13/2015 - 18:18:38: "[CiD] Toki<21><STEAM_1:0:27763712><#Team_Security>" disconnected (reason "Disconnected.")
-        # NOTE: clients are indexed by GUID
-        client = self.getClient(cid=guid)
+        client = self.getClient(cid, guid)
         event = None
         if client:
             if reason == "Kicked by Console":
@@ -426,7 +424,7 @@ class InsurgencyParser(Parser):
         #L 07/19/2013 - 17:18:44: "courgette<194><STEAM_1:0:1111111><CT>" switched from team <TERRORIST> to <Unassigned>
         if new_team == 'Unassigned':
             # The player might have just left the game server, so we must make sure not to recreate the Client object
-            client = self.getClient(cid=guid)
+            client = self.getClient(cid, guid)
         else:
             client = self.getClientOrCreate(cid, guid, name, old_team)
         if client:
@@ -454,9 +452,10 @@ class InsurgencyParser(Parser):
             return self.getEvent("EVT_GAME_WARMUP")
         elif gamerule_state == 'GR_STATE_STARTGAME':
             self.game.startRound()
+            self.sync()
             clients = self.getPlayerList()
             for cid in clients:
-                client = self.getClient(cid)
+                client = self.clients.getByCID(cid)
                 return self.getEvent("EVT_CLIENT_JOIN", client=client)
         elif gamerule_state == 'GR_STATE_RND_RUNNING':
             self.game.startRound()
@@ -649,12 +648,32 @@ class InsurgencyParser(Parser):
         connects on slot 1.
         """
         plist = self.getPlayerList()
-        mlist = {}
+
         for cid, c in plist.iteritems():
             client = self.clients.getByCID(cid)
             if client:
-                mlist[cid] = client
-        return mlist
+                if client.guid == c.guid:
+                    # player matches
+                    self.debug('in-sync %s == %s', client.guid, c.guid)
+                else:
+                    self.debug('no-sync, disconnect client %s <> %s', client.guid, c.guid)
+                    client.disconnect()
+                    client = self.getClientOrCreate(c.cid, c.guid, c.name)
+            else:
+                client = self.getClientOrCreate(c.cid, c.guid, c.name)
+
+        # now we need to remove any players that have left
+        if self.clients:
+            client_cid_list = []
+
+            for cl in plist.values():
+                client_cid_list.append(cl.cid)
+
+            for client in self.clients.getList():
+                if client.cid not in client_cid_list:
+                    self.debug('Removing %s from list - left server' % client.name)
+                    client.disconnect()
+        return
 
     def say(self, msg):
         """
@@ -977,14 +996,21 @@ class InsurgencyParser(Parser):
     #                                                                                                                  #
     ####################################################################################################################
 
-    def getClient(self, cid):
+    def getClient(self, cid, guid):
         """
         Return an already connected client by searching the clients cid index.
         May return None
         """
+        if guid == 'BOT':
+            guid = self.botGUID(cid, guid)
         client = self.clients.getByCID(cid)
         if client:
-            return client
+            if client.guid != guid:
+                client.disconnect()
+                self.sync()
+                return None
+            else:
+                return client
         return None
 
     def getClientOrCreate(self, cid, guid, name, team=None):
@@ -995,13 +1021,24 @@ class InsurgencyParser(Parser):
         bot = False
         hide = False
         if guid == 'BOT':
-            guid += str(cid)
+            guid = self.botGUID(cid, guid)
             bot = True
             hide = True
 
         client = self.clients.getByGUID(guid)
+        if client and client.cid != cid:
+            self.sync()
+            client = None
+
+        client = self.clients.getByCID(cid)
+        if client and client.guid != guid:
+            self.sync()
+            client = None
+
+        client = self.clients.getByCID(cid)
+
         if client is None:
-            client = self.clients.newClient(guid, guid=guid, name=name, bot=bot, hide=hide, team=TEAM_UNKNOWN)
+            client = self.clients.newClient(cid, guid=guid, name=name, bot=bot, hide=hide, team=TEAM_UNKNOWN)
             client.last_update_time = time.time()
         else:
             if name:
@@ -1040,9 +1077,11 @@ class InsurgencyParser(Parser):
         furthermore, discover connected players, refresh their ping and ip info
         finally return a dict of <cid, client>
         """
-        clients = dict()
+        current_clients = dict()
         rv = self.output.write("status")
+        self.verbose2('Querying Server Status')
         if rv:
+            self.verbose2('Status: %s' % rv)
             re_player = re.compile(r'^#\s*(?P<cid>\d+) (?:\d+) "(?P<name>.+)" (?P<guid>\S+) '
                                    r'(?P<duration>\d+:\d+) (?P<ping>\d+) (?P<loss>\S+) (?P<state>\S+) '
                                    r'(?P<rate>\d+) (?P<ip>\d+\.\d+\.\d+\.\d+):(?P<port>\d+)$')
@@ -1059,9 +1098,9 @@ class InsurgencyParser(Parser):
                         client = self.getClientOrCreate(m.group('cid'), m.group('guid'), m.group('name'))
                         client.ping = m.group('ping')
                         client.ip = m.group('ip')
-                        clients[client.cid] = client
-
-            return clients
+                        current_clients[client.cid] = client
+            self.verbose2('Current Client List: %s' % current_clients)
+            return current_clients
 
     def getAllAvailableMaps(self):
         """
@@ -1204,3 +1243,12 @@ class InsurgencyParser(Parser):
         else:
             # multiple matches, provide suggestions
             return matches
+
+    def botGUID(self, cid, guid):
+        """
+        Return a unique guid for a bot
+        Otherwise all bots g=have guid = BOT
+        """
+        botguid = guid + str(cid)
+        self.verbose2('BOT guid is %s' % botguid)
+        return botguid
