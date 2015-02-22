@@ -26,3 +26,11 @@ script:
   - nosetests --where=tests --verbosity=3
   - python setup.py egg_info --tag-build .dev${TRAVIS_COMMIT:0:7} --tag-date sdist bdist_egg
   - python setup.py build_exe
+
+notifications:
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/489374443a557d989111
+    on_success: always  # options: [always|never|change] default: always
+    on_failure: always  # options: [always|never|change] default: always
+    on_start: false     # default: false
