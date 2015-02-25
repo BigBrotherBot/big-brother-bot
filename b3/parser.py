@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/02/25 - 1.42   - Fenix           - added automatic timezone offset detection
 # 2015/02/15 - 1.41.8 - Fenix           - fix broken 1.41.8
 # 2015/02/15 - 1.41.7 - Fenix           - make game log reading work properly in osx
 # 2015/02/04 - 1.41.6 - Fenix           - optionally specify a log file size: 'logsize' option in 'b3' section of main cfg
@@ -170,7 +171,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.41.8'
+__version__ = '1.42'
 
 
 import os
@@ -179,6 +180,8 @@ import re
 import time
 import thread
 import traceback
+import datetime
+import dateutil.tz
 import Queue
 import imp
 import atexit
@@ -1123,38 +1126,53 @@ class Parser(object):
         group = self.getGroup(data)
         return group.level
 
-    def getTzOffsetFromName(self, tz_name):
-        try:
-            tz_offset = b3.timezones.timezones[tz_name] * 3600
-        except KeyError:
-            try:
-                self.warning("Unknown timezone name [%s]: valid timezone codes can be found on "
-                             "http://wiki.bigbrotherbot.net/doku.php/usage:available_timezones" % tz_name)
-                tz_offset = time.timezone
-                if tz_offset < 0:
-                    tz_name = 'UTC%s' % (tz_offset/3600)
-                else:
-                    tz_name = 'UTC+%s' % (tz_offset/3600)
-                self.info("Using system offset [%s]", tz_offset)
-            except KeyError:
-                self.error("Unknown timezone name [%s]: valid timezone codes can be found on "
-                           "http://wiki.bigbrotherbot.net/doku.php/usage:available_timezones" % tz_name)
-                tz_name = 'UTC'
-                tz_offset = 0
-        return tz_offset, tz_name
+    def getTzOffsetFromName(self, tz_name=None):
+        """
+        Returns the timezone offset given its name.
+        :param tz_name: The timezone name
+        :return: tuple
+        """
+        if tz_name:
+            if not tz_name in b3.timezones.timezones:
+                self.warning("Unknown timezone name [%s]: falling back to auto-detection mode. Valid timezone codes can "
+                             "be found on http://wiki.bigbrotherbot.net/doku.php/usage:available_timezones" % tz_name)
+            else:
+                self.info("Using timezone: %s : %s" % (tz_name, b3.timezones.timezones[tz_name]))
+                return b3.timezones.timezones[tz_name], tz_name
+
+        # AUTO-DETECT TZ NAME/OFFSET
+        self.debug("Auto detecting timezone information...")
+
+        # this will compute the timezone offset from from UTC
+        tz_local = dateutil.tz.tzlocal()
+        tz_info = tz_local.utcoffset(datetime.datetime.now(tz_local)).total_seconds() / 3600, \
+                  tz_local.tzname(datetime.datetime.now(tz_local))
+
+        self.info("Using timezone: %s : %s" % (tz_info[1], tz_info[0]))
+        return tz_info
 
     def formatTime(self, gmttime, tz_name=None):
         """
-        Return a time string formated to local time in the b3 config time_format
+        Return a time string formatted to local time in the b3 config time_format
+        :param gmttime: The current GMT time
+        :param tz_name: The timezone name to be used for time formatting
         """
         if tz_name:
+            # if a timezone name has been specified try to use it to format the given gmttime
             tz_name = str(tz_name).strip().upper()
             try:
+                # used when the user manually specifies the offset (i.e: !time +4)
                 tz_offset = float(tz_name) * 3600
             except ValueError:
+                # treat it as a timezone name (can potentially fallback to autodetection mode)
                 tz_offset, tz_name = self.getTzOffsetFromName(tz_name)
         else:
-            tz_name = self.config.get('b3', 'time_zone').upper()
+            # use the timezone name specified in b3 main configuration file (if specified),
+            # or make use of the timezone offset autodetection implemented in getTzOffsetFromName
+            tz_name = None
+            if self.config.has_option('b3', 'time_zone'):
+                tz_name = self.config.get('b3', 'time_zone').strip().upper()
+                tz_name = tz_name if tz_name and tz_name != 'AUTO' else None
             tz_offset, tz_name = self.getTzOffsetFromName(tz_name)
 
         time_format = self.config.get('b3', 'time_format').replace('%Z', tz_name).replace('%z', tz_name)
