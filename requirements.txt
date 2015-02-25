@@ -3,6 +3,7 @@ pymysql
 pysqlite
 psycopg2
 paramiko
+python-dateutil
 
 # tests
 unittest2
