@@ -84,6 +84,7 @@ class CommonDefaultTestMethodsMixin:
             {'name': 'censor', 'conf': '@conf/plugin_censor.xml', 'disabled': False, 'path': None},
             {'name': 'cmdmanager', 'conf': '@conf/plugin_cmdmanager.ini', 'disabled': False, 'path': None},
             {'name': 'pingwatch', 'conf': '@conf/plugin_pingwatch.ini', 'disabled': False, 'path': None},
+            {'name': 'pluginmanager', 'conf': '@conf/plugin_pluginmanager.ini', 'disabled': False, 'path': None},
             {'name': 'punkbuster', 'conf': '@conf/plugin_punkbuster.ini', 'disabled': False, 'path': None},
             {'name': 'spamcontrol', 'conf': '@conf/plugin_spamcontrol.ini', 'disabled': False, 'path': None},
             {'name': 'stats', 'conf': '@conf/plugin_stats.ini', 'disabled': False, 'path': None},
@@ -104,7 +105,7 @@ class Test_XmlMainConfigParser(CommonDefaultTestMethodsMixin, unittest.TestCase)
         """
         Vefify that the plugins are return in the same order as found in the config file
         """
-        self.assertListEqual(['admin', 'adv', 'censor', 'cmdmanager', 'pingwatch', 'punkbuster', 'spamcontrol', 'stats',
+        self.assertListEqual(['admin', 'adv', 'censor', 'cmdmanager', 'pingwatch', 'pluginmanager', 'punkbuster', 'spamcontrol', 'stats',
                               'status', 'tk', 'welcome'],
                              map(lambda x: x.get('name'), self.conf._config_parser.get('plugins/plugin')))
 
@@ -121,7 +122,7 @@ class Test_CfgMainConfigParser(CommonDefaultTestMethodsMixin, unittest.TestCase)
         """
         Vefify that the plugins are return in the same order as found in the config file
         """
-        self.assertListEqual(['admin', 'adv', 'censor', 'cmdmanager', 'pingwatch', 'punkbuster', 'spamcontrol', 'stats',
+        self.assertListEqual(['admin', 'adv', 'censor', 'cmdmanager', 'pingwatch', 'pluginmanager', 'punkbuster', 'spamcontrol', 'stats',
                               'status', 'tk', 'welcome'], self.conf._config_parser.options('plugins'))
 
 
