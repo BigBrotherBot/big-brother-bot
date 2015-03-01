@@ -14,7 +14,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG:
 #
@@ -24,6 +24,7 @@ __author__ = 'Fenix'
 __version__ = '1.0'
 
 import b3
+import b3.cron
 import b3.plugin
 import b3.plugins.admin
 import b3.events
@@ -177,7 +178,7 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
                 except ImportError:
                     client.message('^7Missing ^1%s ^7plugin python module' % name)
                     client.message('^7Please put the plugin module in ^3@b3/extplugins/')
-                except AttributeError, e:
+                except AttributeError:
                     client.message('^7Plugin ^1%s ^7has an invalid structure: can\'t load' % name)
                     client.message('^7Please inspect your b3 log file for more information')
                     self.error('could not create plugin %s instance: %s' % (name, extract_tb(sys.exc_info()[2])))
@@ -224,12 +225,27 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
                 if plugin.isEnabled():
                     client.message('^7Plugin ^1%s ^7is currently enabled: disable it first' % name)
                 else:
+
+                    # remove all the commands registered by this plugin
+                    for command in self._adminPlugin._commands:
+                        if self._adminPlugin._commands[command].plugin == plugin:
+                            self._adminPlugin.unregisterCommand(name)
+
+                    # unregister the event handler
+                    self.console.unregisterHandler(plugin)
+
+                    # remove all the crontabs bounded to this plugin
+                    for tab_id in self.console.cron._tabs:
+                        if isinstance(self.console.cron._tabs[tab_id], b3.cron.PluginCronTab):
+                            if self.console.cron._tabs[tab_id].plugin == plugin:
+                                self.console.cron.cancel(tab_id)
+
                     del self.console._plugins[name]
                     client.message('^7Plugin ^1%s ^7has been unloaded' % name)
 
     def do_info(self, client, name=None):
         """
-        Display info on a specifid plugin
+        Display info on a specified plugin
         :param client: The client who launched the command
         :param name: The name of the plugin whose info needs to be displayed
         """
