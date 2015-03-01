@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/03/01 - 1.34.2  - Fenix          - added unregisterCommand method
 # 2015/01/29 - 1.34.1  - Fenix          - fixed external plugin directory retrieval
 # 2015/01/09 - 1.34    - Fenix          - added past bans check cronjob
 #                                       - adjusted b3.sql script path in debug message: make use of the correct protocol
@@ -130,7 +131,7 @@
 #                                       - added ci command
 #                                       - added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.34.1'
+__version__ = '1.34.2'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon, Fenix'
 
 import re
@@ -141,7 +142,6 @@ import traceback
 import thread
 import random
 import copy
-import imp
 import b3.cron
 import b3.plugin
 
@@ -639,6 +639,22 @@ class AdminPlugin(b3.plugin.Plugin):
             self.error('command "%s" registration failed: %s' % (command, msg))
             self.exception(msg)
             return False
+
+    def unregisterCommand(self, name):
+        """
+        Unregister a command
+        :param name: The command name
+        :return: True if the command can be unregistered, False otherwise
+        """
+
+        try:
+            command = self._commands[name]
+            self.debug('unregistering command %s (%s) : %s' % (command.command, command.alias, command.func.__name__))
+            if command.alias and command.alias in self._commands:
+                del self._commands[command.alias]
+            del self._commands[command.command]
+        except KeyError:
+            self.debug('command not found: %s' % name)
 
     ####################################################################################################################
     #                                                                                                                  #
