@@ -118,6 +118,7 @@
         <plugin name="censor" config="@conf/plugin_censor.xml" />
         <plugin name="cmdmanager" config="@conf/plugin_cmdmanager.ini" />
         <plugin name="pingwatch" config="@conf/plugin_pingwatch.ini" />
+        <plugin name="pluginmanager" config="@conf/plugin_pluginmanager.ini" />
         <plugin name="punkbuster" config="@conf/plugin_punkbuster.ini" />
         <plugin name="spamcontrol" config="@conf/plugin_spamcontrol.ini" />
         <plugin name="stats" config="@conf/plugin_stats.ini" />

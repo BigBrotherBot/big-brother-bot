@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/04/01 - 1.42.1 - Fenix           - added unregisterHandler method
 # 2015/02/25 - 1.42   - Fenix           - added automatic timezone offset detection
 # 2015/02/15 - 1.41.8 - Fenix           - fix broken 1.41.8
 # 2015/02/15 - 1.41.7 - Fenix           - make game log reading work properly in osx
@@ -171,7 +172,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.42'
+__version__ = '1.42.1'
 
 
 import os
@@ -1264,6 +1265,15 @@ class Parser(object):
             self._handlers[event_name] = []
         if event_handler not in self._handlers[event_name]:
             self._handlers[event_name].append(event_handler)
+
+    def unregisterHandler(self, event_handler):
+        """
+        Unregister an event handler.
+        """
+        for event_name in self._handlers:
+            if event_handler in self._handlers[event_name]:
+                self.debug('%s: unregister event <%s>', event_handler.__class__.__name__, self.Events.getName(event_name))
+                self._handlers[event_name].remove(event_handler)
 
     def queueEvent(self, event, expire=10):
         """

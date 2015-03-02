@@ -40,10 +40,6 @@ from tests import InstantTimer
 from b3.fake import FakeClient
 from b3.config import CfgConfigParser
 from b3.plugins.admin import AdminPlugin
-from b3.plugins.admin import __author__ as admin_author
-from b3.plugins.admin import __version__ as admin_version
-from b3.plugins.adv import __author__ as adv_author
-from b3.plugins.adv import __version__ as adv_version
 
 ADMIN_CONFIG_FILE = os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.ini")
 
@@ -284,31 +280,6 @@ class Cmd_tempban(Admin_functional_test):
         self.mike.tempban.assert_called_with('', None, 5*60, self.joe)
 
 
-class Cmd_pluginfo(Admin_functional_test):
-
-    def setUp(self):
-        Admin_functional_test.setUp(self)
-        self.init()
-        self.joe.message = Mock()
-        self.joe.connects(0)
-
-    def test_invalid_parameters(self):
-        self.joe.says("!pluginfo")
-        self.joe.message.assert_called_with('^7Invalid parameters')
-
-    def test_invalid_plugin(self):
-        self.joe.says('!pluginfo foo')
-        self.joe.message.assert_called_with('^7No plugin named ^1foo ^7loaded')
-
-    def test_admin_plugin(self):
-        self.joe.says('!pluginfo admin')
-        self.joe.message.assert_called_with('^7AdminPlugin ^7v^3%s ^7by ^3%s' % (admin_version, admin_author))
-
-    def test_adv_plugin(self):
-        self.joe.says('!pluginfo adv')
-        self.joe.message.assert_called_with('^7AdvPlugin ^7v^3%s ^7by ^3%s' % (adv_version, adv_author))
-
-
 class Cmd_lastbans(Admin_functional_test):
 
     def setUp(self):
@@ -357,9 +328,9 @@ class Cmd_help(Admin_functional_test):
     def test_no_arg(self):
         self.joe.says('!help')
         self.joe.message.assert_called_with('^7Available commands: admins, admintest, aliases, b3, ban, banall, baninfo'
-                                            ', clear, clientinfo, die, disable, enable, find, help, iamgod, kick, kicka'
+                                            ', clear, clientinfo, die, find, help, iamgod, kick, kicka'
                                             'll, lastbans, leveltest, list, longlist, lookup, makereg, map, maprotate, maps, '
-                                            'mask, nextmap, notice, pause, permban, pluginfo, poke, putgroup, rebuild, reco'
+                                            'mask, nextmap, notice, pause, permban, poke, putgroup, rebuild, reco'
                                             'nfig, regtest, regulars, rules, runas, say, scream, seen, spam, s'
                                             'pams, spank, spankall, status, tempban, time, unban, ungroup, unmask, unre'
                                             'g, warn, warnclear, warninfo, warnremove, warns, warntest')

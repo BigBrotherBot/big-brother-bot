@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/03/01 - 1.34.2  - Fenix          - added unregisterCommand method
 # 2015/01/29 - 1.34.1  - Fenix          - fixed external plugin directory retrieval
 # 2015/01/09 - 1.34    - Fenix          - added past bans check cronjob
 #                                       - adjusted b3.sql script path in debug message: make use of the correct protocol
@@ -130,7 +131,7 @@
 #                                       - added ci command
 #                                       - added data field to warnClient(), warnKick(), and checkWarnKick()
 
-__version__ = '1.34.1'
+__version__ = '1.34.2'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon, Fenix'
 
 import re
@@ -141,7 +142,6 @@ import traceback
 import thread
 import random
 import copy
-import imp
 import b3.cron
 import b3.plugin
 
@@ -639,6 +639,22 @@ class AdminPlugin(b3.plugin.Plugin):
             self.error('command "%s" registration failed: %s' % (command, msg))
             self.exception(msg)
             return False
+
+    def unregisterCommand(self, name):
+        """
+        Unregister a command
+        :param name: The command name
+        :return: True if the command can be unregistered, False otherwise
+        """
+        try:
+            command = self._commands[name]
+            self.debug('unregistering command %s (%s) : %s' % (command.command, command.alias, command.func.__name__))
+            alias = command.alias
+            del self._commands[command.command]
+            if alias and alias in self._commands:
+                del self._commands[alias]
+        except KeyError:
+            self.debug('command not found: %s' % name)
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -1439,52 +1455,6 @@ class AdminPlugin(b3.plugin.Plugin):
         else:
             cmd.sayLoudOrPM(client, '%s ^7- uptime: [^2%s^7]' % (
                 b3.version, functions.minutesStr(self.console.upTime() / 60.0)))
-
-    def cmd_enable(self, data, client, cmd=None):
-        """
-        <plugin> - enable a plugin
-        """
-        data = data.strip().lower()
-
-        if not data:
-            client.message('^7You must supply a plugin name to enable')
-            return
-        elif data == 'admin':
-            client.message('^7You cannot disable/enable the ^1admin ^7plugin')
-            return
-
-        plugin = self.console.getPlugin(data)
-        if plugin:
-            if plugin.isEnabled():
-                client.message('^7Plugin ^3%s ^7is already enabled' % data)
-            else:
-                plugin.enable()
-                cmd.sayLoudOrPM(client, '^7%s is now ^2ON' % plugin.__class__.__name__)
-        else:
-            client.message('^7No plugin named ^1%s ^7loaded' % data)
-
-    def cmd_disable(self, data, client, cmd=None):
-        """
-        <plugin> - disable a plugin
-        """
-        data = data.strip().lower()
-
-        if not data:
-            client.message('^7You must supply a plugin name to disable')
-            return
-        elif data == 'admin':
-            client.message('^7You cannot disable/enable the ^1admin ^7plugin')
-            return
-
-        plugin = self.console.getPlugin(data)
-        if plugin:
-            if not plugin.isEnabled():
-                client.message('^7Plugin ^3%s ^7is already disabled' % data)
-            else:
-                plugin.disable()
-                cmd.sayLoudOrPM(client, '^7%s is now ^1OFF' % plugin.__class__.__name__)
-        else:
-            client.message('^7No plugin named ^1%s ^7loaded' % data)
 
     def cmd_register(self, data, client, cmd=None):
         """
@@ -2592,62 +2562,6 @@ class AdminPlugin(b3.plugin.Plugin):
             if sclient:
                 message = random.choice(('Wake up', '*poke*', 'Attention', 'Get up', 'Go', 'Move out'))
                 self.console.say('^7%s %s^7!' % (message, sclient.exactName))
-
-    def cmd_pluginfo(self, data, client=None, cmd=None):
-        """
-        <plugin> - display information on the specified plugin
-        """
-        if not data:
-            client.message(self.getMessage('invalid_parameters'))
-            return
-
-        # lowercase the input string
-        data = data.strip().lower()
-        if data == 'admin':
-            a = __author__
-            v = __version__
-        else:
-            try:
-                package = 'b3.plugins.%s' % data
-                module = __import__(package)
-                components = package.split('.')
-                for comp in components[1:]:
-                    module = getattr(module, comp)
-            except ImportError:
-                fp = None
-                try:
-                    external_dir = self.console.config.get_external_plugins_dir()
-                    fp, path, desc = imp.find_module(data, [external_dir])
-                    module = imp.load_module(data, fp, path, desc)
-                except (ImportError, NoOptionError):
-                    # plugin doesn't seems to be loaded
-                    module = None
-                    fp = None
-                finally:
-                    if fp:
-                        fp.close()
-
-            if not module:
-                client.message('^7No plugin named ^1%s ^7loaded' % data)
-                return
-
-            a = getattr(module, '__author__', 'unknown')
-            v = getattr(module, '__version__', 'unknown')
-
-        # cleanup a bit the author
-        # some people put also website and/or email address in it
-        cleanregex = [
-            re.compile(r'(?:http[s]?://|www.)[^\s]*'),                      # website
-            re.compile(r'[a-zA-Z0-9._%-+]+@[a-zA-Z0-9._%-]+.[a-zA-Z]{2,6}') # email
-        ]
-
-        for r in cleanregex:
-            a = re.sub(r, '', a)
-            a = re.sub(re.compile(r'-|\|'), '', a)
-
-        a = a.strip()
-        n = '%sPlugin' % data.title()
-        cmd.sayLoudOrPM(client, '^7%s ^7v^3%s ^7by ^3%s' % (n, v, a))
 
 
 class Command:
