@@ -18,6 +18,7 @@
 #
 
 import b3
+import b3.cron
 import os
 import unittest2 as unittest
 
@@ -26,6 +27,7 @@ from mock import Mock
 from mockito import when
 from b3.plugin import Plugin
 from b3.plugins.admin import AdminPlugin
+from b3.plugins.admin import Command
 from b3.plugins.pluginmanager import PluginmanagerPlugin
 from b3.config import CfgConfigParser
 from b3.fake import FakeClient
@@ -392,16 +394,36 @@ class Test_commands(Pluginmanager_TestCase):
 
     def test_cmd_plugin_unload_successful(self):
         # GIVEN
+
+        ###### MOCK PLUGIN
         mock_plugin = Mock(spec=Plugin)
+        mock_plugin.console = self.console
         mock_plugin.isEnabled = Mock(return_value=False)
         when(self.console).getPlugin("mock").thenReturn(mock_plugin)
         self.console._plugins['mock'] = mock_plugin
+        ###### MOCK COMMAND
+        mock_func = Mock()
+        mock_func.__name__ = 'cmd_mockfunc'
+        self.adminPlugin._commands['mockcommand'] = Command(plugin=mock_plugin, cmd='mockcommand', level=100, func=mock_func)
+        ###### MOCK EVENT
+        mock_plugin.onSay = Mock()
+        mock_plugin.registerEvent(self.console.getEventID('EVT_CLIENT_SAY'), mock_plugin.onSay)
+        ###### MOCK CRON
+        mock_plugin.mockCronjob = Mock()
+        mock_plugin.mockCrontab = b3.cron.PluginCronTab(mock_plugin, mock_plugin.mockCronjob, minute='*', second= '*/60')
+        self.console.cron.add(mock_plugin.mockCrontab)
+        self.assertIn(id(mock_plugin.mockCrontab), self.console.cron._tabs)
+
         superadmin = FakeClient(self.console, name="superadmin", guid="superadminguid", groupBits=128)
         superadmin.connects("1")
         # WHEN
         superadmin.clearMessageHistory()
         superadmin.says("!plugin unload mock")
         # THEN
+        self.assertNotIn('mockcommand', self.adminPlugin._commands)
+        self.assertIn(self.console.getEventID('EVT_CLIENT_SAY'), self.console._handlers)
+        self.assertNotIn(mock_plugin, self.console._handlers[self.console.getEventID('EVT_CLIENT_SAY')])
+        self.assertNotIn(id(mock_plugin.mockCrontab), self.console.cron._tabs)
         self.assertListEqual(['Plugin mock has been unloaded'], superadmin.message_history)
 
     ####################################################################################################################

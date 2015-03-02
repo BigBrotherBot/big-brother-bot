@@ -646,13 +646,13 @@ class AdminPlugin(b3.plugin.Plugin):
         :param name: The command name
         :return: True if the command can be unregistered, False otherwise
         """
-
         try:
             command = self._commands[name]
             self.debug('unregistering command %s (%s) : %s' % (command.command, command.alias, command.func.__name__))
-            if command.alias and command.alias in self._commands:
-                del self._commands[command.alias]
+            alias = command.alias
             del self._commands[command.command]
+            if alias and alias in self._commands:
+                del self._commands[alias]
         except KeyError:
             self.debug('command not found: %s' % name)
 

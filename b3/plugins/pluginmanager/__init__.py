@@ -185,7 +185,7 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
                 except b3.config.ConfigFileNotFound:
                     client.message('^7Missing ^1%s ^7plugin configuration file' % name)
                     client.message('^7Please put the plugin configuration file in ^3@b3/conf ^7or ^3@b3/extplugins/%s/conf' % name)
-                except b3.config.ConfigFileNotValid, e:
+                except b3.config.ConfigFileNotValid:
                     client.message('^7Invalid configuration file found for plugin ^1%s' % name)
                     client.message('^7Please inspect your b3 log file for more information')
                     self.error('plugin %s has an invalid configuration file and can\'t be loaded: %s' % (name, extract_tb(sys.exc_info()[2])))
@@ -225,20 +225,20 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
                 if plugin.isEnabled():
                     client.message('^7Plugin ^1%s ^7is currently enabled: disable it first' % name)
                 else:
-
-                    # remove all the commands registered by this plugin
-                    for command in self._adminPlugin._commands:
-                        if self._adminPlugin._commands[command].plugin == plugin:
-                            self._adminPlugin.unregisterCommand(name)
+                    unreg = [x for x in self._adminPlugin._commands if self._adminPlugin._commands[x].plugin == plugin]
+                    for command in unreg:
+                        self._adminPlugin.unregisterCommand(command)
 
                     # unregister the event handler
                     self.console.unregisterHandler(plugin)
 
                     # remove all the crontabs bounded to this plugin
-                    for tab_id in self.console.cron._tabs:
-                        if isinstance(self.console.cron._tabs[tab_id], b3.cron.PluginCronTab):
-                            if self.console.cron._tabs[tab_id].plugin == plugin:
-                                self.console.cron.cancel(tab_id)
+                    unreg = [x for x in self.console.cron._tabs
+                                if isinstance(self.console.cron._tabs[x], b3.cron.PluginCronTab)
+                                    and self.console.cron._tabs[x].plugin == plugin]
+
+                    for tab in unreg:
+                        self.console.cron.cancel(tab)
 
                     del self.console._plugins[name]
                     client.message('^7Plugin ^1%s ^7has been unloaded' % name)
