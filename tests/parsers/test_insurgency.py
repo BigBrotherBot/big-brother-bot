@@ -266,6 +266,17 @@ class Test_gamelog_parsing(InsurgencyTestCase):
         # THEN
         self.assert_has_event("EVT_CLIENT_DISCONNECT", "194", player)
 
+    def test_client_kick_byconsole(self):
+        # GIVEN
+        player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_BLUE)
+        player.connects("194")
+        # WHEN
+        self.clear_events()
+        self.parser.parseLine('''L 04/01/2014 - 12:56:51: "courgette<194><STEAM_1:0:1111111><#Team_Security>" disconnected (reason "Kicked by Console")''')
+        # THEN
+        self.assert_has_event("EVT_CLIENT_DISCONNECT", "194", player)
+        self.assert_has_event("EVT_CLIENT_KICK", data={'reason': "Kicked by Console", 'admin': None}, client=player, target=None)
+
     def test_client_changed_name__known_client(self):
         # GIVEN
         player = FakeClient(self.parser, name="courgette", guid="STEAM_1:0:1111111", team=TEAM_UNKNOWN)
