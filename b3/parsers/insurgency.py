@@ -63,6 +63,8 @@
 # 2015/02/14 - 0.13  - 82ndab-Bravo17 - check both cid and guid when finding clients to avoid duplicate clients or
 #                                     - clients in wrong slots
 #                                     - revert to using cid instead of steamid to id players
+# 2015/13/01 - 0.14  - 82ndab-Bravo17 - don't authorize Console when it says something in game
+#                                     - bots should now stay authed if still on server during sync
 
 import re
 import time
@@ -84,7 +86,7 @@ from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '0.13'
+__version__ = '0.14'
 
 
 # GAME SETUP
@@ -526,8 +528,11 @@ class InsurgencyParser(Parser):
     def on_client_say(self, name, cid, guid, team, text):
         # L 08/26/2012 - 05:09:55: "courgette<2><STEAM_1:0:1487018><CT>" say "!iamgod"
         # L 09/16/2012 - 04:55:17: "Spoon<2><STEAM_1:0:11111111><>" say "!h"
-        client = self.getClientOrCreate(cid, guid, name, team)
-        return self.getEvent("EVT_CLIENT_SAY", client=client, data=text)
+        if guid == 'Console':
+            pass
+        else:
+            client = self.getClientOrCreate(cid, guid, name, team)
+            return self.getEvent("EVT_CLIENT_SAY", client=client, data=text)
 
     @ger.gameEvent(r'^"(?P<name>.+)<(?P<cid>\d+)><(?P<guid>.+)><(?P<team>.*?)>" say_team "(?P<text>.*)"$')
     def on_client_teamsay(self, name, cid, guid, team, text):
@@ -669,7 +674,10 @@ class InsurgencyParser(Parser):
             for cl in plist.values():
                 client_cid_list.append(cl.cid)
 
-            for client in self.clients.getList():
+            #Use clients.items so we get all clients, including bots
+            client_list = self.clients.items()
+            for cid, client in client_list:
+                self.verbose2('Client in Client list %s' % client.name)
                 if client.cid not in client_cid_list:
                     self.debug('Removing %s from list - left server' % client.name)
                     client.disconnect()
