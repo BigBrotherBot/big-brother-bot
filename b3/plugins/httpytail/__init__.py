@@ -29,9 +29,10 @@
 # 2014-08-31 - 1.2   - Fenix          - syntax cleanup
 #                                     - improved plugin configuration file loading
 #                                     - fixed unresolved reference self.webFile: need to reference a local variable
+# 06/03/2015 - 1.3    - Thomas LEVEIL - check Python version to be minimum 2.7
 
 __author__ = 'GrosBedo, 82ndab-Bravo17, Courgette'
-__version__ = '1.2'
+__version__ = '1.3'
 
 import b3
 import threading
@@ -90,9 +91,9 @@ class HttpytailPlugin(b3.plugin.Plugin):
         """
         versionsearch = re.search("^((?P<mainversion>[0-9]).(?P<lowerversion>[0-9]+)?)", sys.version)
         version = int(versionsearch.group(3))
-        if version < 6:
+        if version < 7:
             self.error('python version %s is not supported and may lead to hangs: '
-                       'please update python to 2.6' % versionsearch.group(1))
+                       'please update python to 2.7' % versionsearch.group(1))
             self.console.die()
 
         if self.console.config.has_option('server', 'delay'):

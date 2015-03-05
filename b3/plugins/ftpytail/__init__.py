@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 06/03/2015 - 1.8   - Thomas LEVEIL  - check Python version to be minimum 2.7
 # 18/01/2015 - 1.7.4 - 82ndab.Bravo17 - move windows 2008 fix config settings back to B3 xml file
 # 30/08/2014 - 1.7.3 - Fenix          - syntax cleanup
 #                                     - highly improved plugin configuration file loading
@@ -57,7 +58,7 @@
 # 28/08/2009 - 1.1 - Bakes            - connects with parser.py to provide real remote b3.
 # 17/06/2009 - 1.0 - Bakes            - initial Plugin, basic functionality.
  
-__version__ = '1.7.4'
+__version__ = '1.8'
 __author__ = 'Bakes, Courgette'
 
 import b3
@@ -116,9 +117,9 @@ class FtpytailPlugin(b3.plugin.Plugin):
         """
         versionsearch = re.search("^((?P<mainversion>[0-9]).(?P<lowerversion>[0-9]+)?)", sys.version)
         version = int(versionsearch.group(3))
-        if version < 6:
+        if version < 7:
             self.error('python version %s is not supported and may lead to hangs: '
-                       'please update python to 2.6' % versionsearch.group(1))
+                       'please update python to 2.7' % versionsearch.group(1))
             self.console.die()
 
         if self.console.config.has_option('server', 'delay'):

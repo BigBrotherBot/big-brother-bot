@@ -18,49 +18,50 @@
 #
 # CHANGELOG
 #
-# 15.01.2011 - 1.0.0 - Freelander   - initial release
-# 16.01.2011 - 1.0.1 - Freelander   - added user-agent in the http header
-#                                   - added exceptions for socket timeout, IOError and URLError
-# 17.01.2011 - 1.0.2 - Freelander   - better handling of socket timeout error
-# 17.01.2011 - 1.0.3 - Freelander   - fixed local gamelog option
-# 19.01.2011 - 1.0.4 - Freelander   - increased sleep time to prevent HTTP 403 errors
-#                                   - timeout value falls back to default 10 seconds if timeout value can't be
-#                                     parsed from http://logs.gameservers.com/timeout
-#                                   - added option for manually setting timout value in b3.xml
-# 21.01.2011 - 1.0.5 - Freelander   - refactoring code for better timeout handling and get rid of redundant
-#                                     getRemotelog function
-# 31.01.2011 - 1.0.6 - Freelander   - added range header to limit download size
-# 02.02.2011 - 1.0.7 - Freelander   - added error handling while closing remote file to prevent plugin crash
-#                                   - check Python version to be minimum 2.6
-#                                   - now checking last 3 lines instead of last single line
-#                                   - increase range header if last line is not found in the remote log chunk
-# 03.02.2011 - 1.0.8 - Freelander   - if still unable to find the last line after increasing range header,
-#                                     restart downloading process. That happens if logs are rotated or server restarted.
-#                                     In that case last line will never be found.
-# 05.02.2011 - 1.0.9 - Bravo17      - added log_append config variable to control whether local log is deleted on startup
-#                                   - changed lastlines functionality to being stored in memory rather than getting from
-#                                     local log using Just a baka's lazy cursor
-#                                   - make sure that we have something worth decompressing before we attempt to do so
-#                                   - added user agent to timeout request
-# 08.02.2011 - 1.0.10 - Just a baka - fixed the bug which prevented b3 from parsing while the gzipped remote log is < 500
-# 10.02.2011 - 1.0.11 - Just a baka - rewritten the inter-cycle sleeping mechanism to achieve a nearly-instant thread
-#                                     exit time
-# 25.02.2011 - 1.0.12 - Freelander  - reduced default timeout to 5 seconds
-#                                   - arranged log messages
-#                                   - fixed a minor bug
-# 02.03.2011 - 1.0.13 - Freelander  - added exception for ValueError that may occur on an interrupted internet connection
-# 02.03.2011 - 1.0.14 - Bravo17     - added method to test whether processData thread is still running, for use by parser
-# 22.03.2011 - 1.0.15 - Courgette   - do not fail if http response is not gzipped
-# 27.04.2011 - 1.0.16 - Bravo17     - auto assign of unique local games_mp log file
-# 22/05/2012 - 1.0.17 - Courgette   - local_game_log config option can now use the @conf and @b3 shortcuts
-# 30/08/2014 - 1.0.18 - Fenix       - syntax cleanup
+# 15.01.2011 - 1.0.0 - Freelander     - initial release
+# 16.01.2011 - 1.0.1 - Freelander     - added user-agent in the http header
+#                                     - added exceptions for socket timeout, IOError and URLError
+# 17.01.2011 - 1.0.2 - Freelander     - better handling of socket timeout error
+# 17.01.2011 - 1.0.3 - Freelander     - fixed local gamelog option
+# 19.01.2011 - 1.0.4 - Freelander     - increased sleep time to prevent HTTP 403 errors
+#                                     - timeout value falls back to default 10 seconds if timeout value can't be
+#                                       parsed from http://logs.gameservers.com/timeout
+#                                     - added option for manually setting timout value in b3.xml
+# 21.01.2011 - 1.0.5 - Freelander     - refactoring code for better timeout handling and get rid of redundant
+#                                       getRemotelog function
+# 31.01.2011 - 1.0.6 - Freelander     - added range header to limit download size
+# 02.02.2011 - 1.0.7 - Freelander     - added error handling while closing remote file to prevent plugin crash
+#                                     - check Python version to be minimum 2.6
+#                                     - now checking last 3 lines instead of last single line
+#                                     - increase range header if last line is not found in the remote log chunk
+# 03.02.2011 - 1.0.8 - Freelander     - if still unable to find the last line after increasing range header,
+#                                       restart downloading process. That happens if logs are rotated or server restarted.
+#                                       In that case last line will never be found.
+# 05.02.2011 - 1.0.9 - Bravo17        - added log_append config variable to control whether local log is deleted on startup
+#                                     - changed lastlines functionality to being stored in memory rather than getting from
+#                                       local log using Just a baka's lazy cursor
+#                                     - make sure that we have something worth decompressing before we attempt to do so
+#                                     - added user agent to timeout request
+# 08.02.2011 - 1.0.10 - Just a baka   - fixed the bug which prevented b3 from parsing while the gzipped remote log is < 500
+# 10.02.2011 - 1.0.11 - Just a baka   - rewritten the inter-cycle sleeping mechanism to achieve a nearly-instant thread
+#                                       exit time
+# 25.02.2011 - 1.0.12 - Freelander    - reduced default timeout to 5 seconds
+#                                     - arranged log messages
+#                                     - fixed a minor bug
+# 02.03.2011 - 1.0.13 - Freelander    - added exception for ValueError that may occur on an interrupted internet connection
+# 02.03.2011 - 1.0.14 - Bravo17       - added method to test whether processData thread is still running, for use by parser
+# 22.03.2011 - 1.0.15 - Courgette     - do not fail if http response is not gzipped
+# 27.04.2011 - 1.0.16 - Bravo17       - auto assign of unique local games_mp log file
+# 22/05/2012 - 1.0.17 - Courgette     - local_game_log config option can now use the @conf and @b3 shortcuts
+# 30/08/2014 - 1.0.18 - Fenix         - syntax cleanup
+# 06/03/2015 - 1.1    - Thomas LEVEIL - check Python version to be minimum 2.7
 #
 
 ## @file
 #  This plugin downloads and maintains CoD7 game log file
 
-__author__  = 'Freelander, Bravo17, Just a baka'
-__version__ = '1.0.17'
+__author__ = 'Freelander, Bravo17, Just a baka'
+__version__ = '1.1'
 
 import b3
 import b3.events
@@ -75,7 +76,8 @@ import time
 import threading
 import urllib2
 
-user_agent =  "B3 Cod7Http plugin/%s" % __version__
+user_agent = "B3 Cod7Http plugin/%s" % __version__
+
 
 class Cod7HttpPlugin(b3.plugin.Plugin):
     """
@@ -116,9 +118,9 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         """
         versionsearch = re.search("^((?P<mainversion>[0-9]).(?P<lowerversion>[0-9]+)?)", sys.version)
         version = int(versionsearch.group(3))
-        if version < 6:
+        if version < 7:
             self.error('python version %s is not supported and may lead to hangs: '
-                       'please update python to 2.6' % versionsearch.group(1))
+                       'please update python to 2.7' % versionsearch.group(1))
             self.console.die()
 
         if self.console.config.has_option('server', 'local_game_log'):
@@ -196,8 +198,8 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         or if last line cannot be found in remote chunk
         """
 
-        #pause the bot from parsing, because we don't
-        #want to parse the log from the beginning
+        # pause the bot from parsing, because we don't
+        # want to parse the log from the beginning
         if self.console._paused is False:
             self.console.pause()
             self.debug('Pausing')
@@ -211,7 +213,7 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         # use Just a baka's lazy cursor
         self.lastlines = remotelog[-1000:]
 
-        #create or open the local log file
+        # create or open the local log file
         if self._logAppend:
             output = open(locallog, 'ab')
         else:
@@ -379,5 +381,5 @@ if __name__ == '__main__':
     p = Cod7HttpPlugin(fakeConsole)
     p._url = "http://www.example.com"
     p.timeout = 5
-    p.locallog ='test.log'
+    p.locallog = 'test.log'
     p.processData()
