@@ -59,9 +59,19 @@ try:
 except:
     pass
 
-import pstat
-import glob, re, string, types, os, numpy, struct, copy, time, tempfile, sys
+import glob
+import re
+import string
+import os
+import struct
+import copy
+import time
+import tempfile
 from types import *
+
+from b3.tools.debug.statlib import pstat
+import numpy
+
 N = numpy
 
 __version__ = 0.5

@@ -46,9 +46,9 @@ import b3.run
 import argparse
 
 from b3_run import *
-from b3.tools.functionprofiler import *
-from b3.tools.logdiagnostic import *
-from b3.tools.memoryprofiler import *
+from b3.tools.debug.functionprofiler import *
+from b3.tools.debug.logdiagnostic import *
+from b3.tools.debug.memoryprofiler import *
 
 
 def parse_cmdline_args():

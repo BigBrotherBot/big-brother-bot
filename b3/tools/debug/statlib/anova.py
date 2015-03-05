@@ -1,10 +1,9 @@
 if 1:
     import numpy as N
-    from statlib import pstat, stats
-    from pstat import *
-    from stats import *
+    from b3.tools.debug.statlib.pstat import *
+    from b3.tools.debug.statlib.stats import *
     from numpy import linalg as LA
-    import operator, math
+    import math
 
     def aanova(data,effects=['A','B','C','D','E','F','G','H','I','J','K']):
         """
@@ -541,9 +540,9 @@ if 1:
                 eff.append(item)
             # To the list of level-combos, abut the corresp. means and Ns
             outlist = pstat.abut(outlist,
-                                 map(round4,pstat.colex(collapsed,-3)),
-                                 map(round4,pstat.colex(collapsed,-2)),
-                                 map(round4,pstat.colex(collapsed,-1)))
+                                 map(round4, pstat.colex(collapsed,-3)),
+                                 map(round4, pstat.colex(collapsed,-2)),
+                                 map(round4, pstat.colex(collapsed,-1)))
             outlist = [eff] + outlist # add titles to the top of the list
             pstat.printcc(outlist)    # print it in customized columns
             print

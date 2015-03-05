@@ -254,9 +254,13 @@ For further references see the U{python-statlib homepage
 ##              changed name of skewness and askewness to skew and askew
 ##              fixed (a)histogram (which sometimes counted points <lowerlimit)
 
-import pstat               # required 3rd party module
-import math, string, copy  # required python modules
+import math
+import string
+import copy
 from types import *
+
+from b3.tools.debug.statlib import pstat
+
 
 __version__ = 0.6
 
@@ -815,7 +819,7 @@ def lpaired(x,y):
         print '\nComparing variances ...',
         # USE O'BRIEN'S TEST FOR HOMOGENEITY OF VARIANCE, Maxwell & delaney, p.112
         r = obrientransform(x,y)
-        f,p = F_oneway(pstat.colex(r,0),pstat.colex(r,1))
+        f,p = F_oneway(pstat.colex(r,0), pstat.colex(r,1))
         if p<0.05:
             vartype='unequal, p='+str(round(p,4))
         else:
@@ -3028,7 +3032,7 @@ def apaired(x,y):
         print '\nComparing variances ...',
         # USE O'BRIEN'S TEST FOR HOMOGENEITY OF VARIANCE, Maxwell & delaney, p.112
         r = obrientransform(x,y)
-        f,p = F_oneway(pstat.colex(r,0),pstat.colex(r,1))
+        f,p = F_oneway(pstat.colex(r,0), pstat.colex(r,1))
         if p<0.05:
             vartype='unequal, p='+str(round(p,4))
         else:
@@ -4350,7 +4354,7 @@ def afindwithin(data):
     numfact = len(data[0])-2
     withinvec = [0]*numfact
     for col in range(1,numfact+1):
-        rows = pstat.linexand(data,col,pstat.unique(pstat.colex(data,1))[0])  # get 1 level of this factor
+        rows = pstat.linexand(data,col, pstat.unique(pstat.colex(data,1))[0])  # get 1 level of this factor
         if len(pstat.unique(pstat.colex(rows,0))) < len(rows):   # if fewer subjects than scores on this factor
             withinvec[col-1] = 1
     return withinvec

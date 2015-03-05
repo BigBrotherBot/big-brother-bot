@@ -1,14 +1,17 @@
 #! /usr/bin/python
 """The main script for the RunSnakeRun profile viewer"""
-import wx, sys, os, logging
+import sys
+import os
+import logging
+
+import wx
+
 try:
     from wx.py import editor
 except ImportError, err:
     editor = None
 from gettext import gettext as _
-import pstats
-import squaremap
-import pstatsloader
+from b3.tools.debug.runsnakerun import squaremap, pstatsloader
 
 if sys.platform == 'win32':
     windows = True
