@@ -1,5 +1,6 @@
 # build tools
 cx_Freeze
+pyyaml
 
 # popular 3rd party plugins requirements
 uuid          # metabans ggcstream and telnet plugins

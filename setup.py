@@ -229,7 +229,7 @@ else:
             if sys.platform == 'win32':
                 log.info(">>> InnoSetup")
                 import subprocess
-                from b3.lib import yaml
+                import yaml
 
                 innosetup_dir = 'installer/innosetup'
                 yaml_config_file = os.path.join(innosetup_dir, 'build.yaml')
