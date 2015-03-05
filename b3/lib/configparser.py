@@ -97,7 +97,7 @@ from ConfigParser import MissingSectionHeaderError
 from ConfigParser import NoSectionError
 from ConfigParser import NoOptionError
 from ConfigParser import ParsingError
-from b3.lib.ordereddict import OrderedDict as _default_dict
+from collections import OrderedDict as _default_dict
 
 import re
 

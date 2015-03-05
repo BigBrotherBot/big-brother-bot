@@ -218,10 +218,7 @@ try:
 except ImportError:
     from xml.etree import ElementTree
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    from b3.lib.ordereddict import OrderedDict
+from collections import OrderedDict
 
 
 class Parser(object):
