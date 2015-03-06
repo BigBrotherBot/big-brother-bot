@@ -1,6 +1,5 @@
 # B3 core
 pymysql
-pysqlite
 psycopg2
 paramiko
 python-dateutil

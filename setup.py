@@ -327,7 +327,7 @@ setup(
         'Topic :: System :: Logging',
         'Topic :: Utilities'
     ],
-    #tests_require=['nose>=1.0', 'nose-exclude', 'mockito', 'pysqlite'],
+    #tests_require=['nose>=1.0', 'nose-exclude', 'mockito'],
     packages=setuptools.find_packages(),
     package_data={'': [
         'conf/*.xml',
