@@ -22,7 +22,7 @@ import os
 from mock import patch, call, Mock
 from mockito import when, any as ANY, unstub
 from b3.fake import FakeClient
-from b3.lib import feedparser
+import feedparser
 from b3.plugins.admin import AdminPlugin
 from tests import B3TestCase
 import unittest2 as unittest

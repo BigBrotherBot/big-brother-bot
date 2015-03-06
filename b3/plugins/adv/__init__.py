@@ -44,7 +44,7 @@ __version__ = '1.6.1'
 import b3
 import os
 import time
-import b3.lib.feedparser as feedparser
+import feedparser
 import b3.plugin
 import b3.cron
 

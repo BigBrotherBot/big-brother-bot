@@ -3,6 +3,7 @@ pymysql
 psycopg2
 paramiko
 python-dateutil
+feedparser==4.1
 
 # tests
 unittest2
