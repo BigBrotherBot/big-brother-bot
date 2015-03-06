@@ -47,22 +47,18 @@
 #                                  as disabled from main B3 configuration file
 # 22/01/2015 - 1.7.3 - Fenix     - added add_comment method to CfgConfigParser and overridden write() method
 #                                  to properly write comments in a newly generated configuration file
+# 03/03/2015 - 1.7.4 - Fenix     - removed python 2.6 support
 
 
 __author__  = 'ThorN, Courgette, Fenix'
-__version__ = '1.7.3'
+__version__ = '1.7.4'
 
 import os
 import re
-import sys
 import time
 import b3
 import b3.functions
-
-if sys.version_info < (2,7):
-    import b3.lib.configparser as ConfigParser
-else:
-    import ConfigParser
+import ConfigParser
 
 try:
     from xml.etree import cElementTree as ElementTree
