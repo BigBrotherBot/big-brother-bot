@@ -20,7 +20,7 @@ import StringIO
 import logging
 import os
 from mock import patch, call, Mock
-from mockito import when, any as mockito_any, unstub
+from mockito import when, any as ANY, unstub
 from b3.fake import FakeClient
 from b3.lib import feedparser
 from b3.plugins.admin import AdminPlugin
@@ -38,11 +38,33 @@ default_plugin_file = os.path.normpath(os.path.join(os.path.dirname(__file__), "
 default_plugin_content = None
 
 timer_patcher = None
-feedparser_patcher = None
+
+RSS_FEED_CONTENT = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="0.92" xml:lang="en-US">
+    <channel>
+        <title>Big Brother Bot Forum - News (Read Only)</title>
+        <link>http://forum.bigbrotherbot.net/index.php</link>
+        <description><![CDATA[Live information from Big Brother Bot Forum]]></description>
+        <item>
+            <title>B3 Windows Binaries on sourceforge compromised!</title>
+            <link>http://forum.bigbrotherbot.net/news-2/b3-windows-binaries-on-sourceforge-compromised!/msg45245/#msg45245</link>
+            <description>
+                <![CDATA[From <strong>17 january 2015</strong> until <strong>8 Februari 2015</strong> the windows binary distributions of <strong>version 1.9.2</strong> have been compromised and infected with a <em>RAT (Remote Access Tool)</em> aka <em>trojan virus</em>.<br /><br /><strong><span style="color: #ff3333;" class="bbc_color">It is therefor wise t...</span></strong>]]>
+            </description>
+            <author>xlr8or@xlr8or.com</author>
+            <category><![CDATA[News (Read Only)]]></category>
+            <comments>http://forum.bigbrotherbot.net/news-2/b3-windows-binaries-on-sourceforge-compromised!/?action=post</comments>
+            <pubDate>Sun, 08 Feb 2015 08:53:37 GMT</pubDate>
+            <guid>http://forum.bigbrotherbot.net/news-2/b3-windows-binaries-on-sourceforge-compromised!/msg45245/#msg45245</guid>
+        </item>
+    </channel>
+</rss>
+"""
 
 
 def setUpModule():
-    global default_plugin_content, default_plugin_file, ADMIN_CONFIG, ADMIN_CONFIG_FILE, timer_patcher, feedparser_patcher
+    global default_plugin_content, default_plugin_file, ADMIN_CONFIG, ADMIN_CONFIG_FILE, timer_patcher
     if os.path.exists(default_plugin_file):
         with open(default_plugin_file, 'r') as f:
             default_plugin_content = f.read()
@@ -53,14 +75,11 @@ def setUpModule():
     timer_patcher = patch('threading.Timer')
     timer_patcher.start()
 
-    feedparser_patcher = patch.object(feedparser, 'parse')
-    feedparser_patcher.start()
 
 
 def tearDownModule():
-    global timer_patcher, feedparser_patcher
+    global timer_patcher
     timer_patcher.stop()
-    feedparser_patcher.stop()
 
 
 class AdvTestCase(B3TestCase):
@@ -476,7 +495,7 @@ class Test_keywords(AdvTestCase):
 
     def test_time(self):
         when(self.p._msg).getnext().thenReturn("@time")
-        when(self.console).formatTime(mockito_any()).thenReturn("f00")
+        when(self.console).formatTime(ANY()).thenReturn("f00")
         with patch.object(self.console, "say") as say_mock:
             self.p.adv()
             say_mock.assert_has_calls([call('^2Time: ^3f00')])
@@ -487,6 +506,17 @@ class Test_keywords(AdvTestCase):
         with patch.object(self.console, "say") as say_mock:
             self.p.adv()
             say_mock.assert_has_calls([call('^2Next map: ^3f00')])
+
+    def test_feed(self):
+        # GIVEN
+        self.p._feed = "http://some.feed/rss"
+
+        when(feedparser)._open_resource(self.p._feed, None, None, None, None, [])\
+            .thenReturn(StringIO.StringIO(RSS_FEED_CONTENT))
+        when(self.p._msg).getnext().thenReturn("@feed")
+        with patch.object(self.console, "say") as say_mock:
+            self.p.adv()
+            say_mock.assert_has_calls([call(u'News: B3 Windows Binaries on sourceforge compromised!')])
 
 
 class Test_MessageLoop(unittest.TestCase):
