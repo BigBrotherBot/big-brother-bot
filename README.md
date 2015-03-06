@@ -40,6 +40,7 @@ incidental basis. Without you B3 wouldn't be this intelligent!
 [![Downloads](https://pypip.in/download/b3/badge.svg?style=flat)](https://pypi.python.org/pypi/b3/)
 [![Supported Python versions](https://pypip.in/py_versions/b3/badge.svg?style=flat)](https://pypi.python.org/pypi/b3/)
 [![License](https://pypip.in/license/b3/badge.svg?style=flat)](https://pypi.python.org/pypi/b3/)
+[![Requirements Status](https://requires.io/github/BigBrotherBot/big-brother-bot/requirements.svg?branch=release-1.10)](https://requires.io/github/BigBrotherBot/big-brother-bot/requirements/?branch=release-1.10)
 
 [ThorN]: https://github.com/six8
 [xlr8or]: https://github.com/markweirath
