@@ -201,6 +201,7 @@ import b3.timezones
 
 from ConfigParser import NoOptionError
 from ConfigParser import NoSectionError
+from collections import OrderedDict
 from b3.clients import Clients
 from b3.clients import Group
 from b3.decorators import memoize
@@ -217,8 +218,6 @@ try:
     from xml.etree import cElementTree as ElementTree
 except ImportError:
     from xml.etree import ElementTree
-
-from collections import OrderedDict
 
 
 class Parser(object):

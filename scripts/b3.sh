@@ -21,24 +21,26 @@
 #
 # ----------------------------------------------------------------------------------------------------------------------
 #
-#  2014-11-09 - 0.1 - Fenix         - initial version
-#  2014-11-30 - 0.2 - Fenix         - changed some file paths used for PID storage and B3 autodiscover
-#  2014-12-13 - 0.3 - Fenix         - added support for auto-restart mode
-#  2014-12-14 - 0.4 - Fenix         - correctly match number of subprocess in b3_is_running when auto-restart mode is
-#                                     being used auto-restart mode uses 4 processes (the screen, the main loop in
-#                                     b3/run.py, a new shell used by subprocess, and the command to actually start the
-#                                     B3 instance inside this new shell), while a normal B3 startup uses only 2
-#                                     processes (screen and B3 process running inside the screen)
-#  2014-12-20 - 0.5   Fenix         - fixed b3_clean not restarting all previously running B3 instances
-#  2015-02-08 - 0.6   Fenix         - fixed change to current directory not working when using an alias to execute b3.sh
-#  2015-02-09 - 0.7   Fenix         - fixed logging not being written to disk
-#  2015-02-09 - 0.8 - Fenix         - set ${SCRIPT_DIR} variable upon execution
-#                                   - set ${B3_DIR} variable upon execution
-#                                   - remove all the readlink commands in favor of ${SCRIPT_DIR} and ${B3_DIR}
-#  2015-02-10 - 0.9 - Thomas LEVEIL - fixed infinite loop between p_out and p_log
-#                                   - simplify colors stripping
-#                                   - temporarily activate logging using B3_LOG_ENABLED environment variable
-#                                   - fix log failure detection and in case of errors, display the reason why it failed
+#  2014-11-09 - 0.1  - Fenix         - initial version
+#  2014-11-30 - 0.2  - Fenix         - changed some file paths used for PID storage and B3 autodiscover
+#  2014-12-13 - 0.3  - Fenix         - added support for auto-restart mode
+#  2014-12-14 - 0.4  - Fenix         - correctly match number of subprocess in b3_is_running when auto-restart mode is
+#                                      being used auto-restart mode uses 4 processes (the screen, the main loop in
+#                                      b3/run.py, a new shell used by subprocess, and the command to actually start the
+#                                      B3 instance inside this new shell), while a normal B3 startup uses only 2
+#                                      processes (screen and B3 process running inside the screen)
+#  2014-12-20 - 0.5  - Fenix         - fixed b3_clean not restarting all previously running B3 instances
+#  2015-02-08 - 0.6  - Fenix         - fixed change to current directory not working when using an alias to execute b3.sh
+#  2015-02-09 - 0.7  - Fenix         - fixed logging not being written to disk
+#  2015-02-09 - 0.8  - Fenix         - set ${SCRIPT_DIR} variable upon execution
+#                                    - set ${B3_DIR} variable upon execution
+#                                    - remove all the readlink commands in favor of ${SCRIPT_DIR} and ${B3_DIR}
+#  2015-02-10 - 0.9  - Thomas LEVEIL - fixed infinite loop between p_out and p_log
+#                                    - simplify colors stripping
+#                                    - temporarily activate logging using B3_LOG_ENABLED environment variable
+#                                    - fix log failure detection and in case of errors, display the reason why it failed
+#  2015-03-06 - 0.10 - Fenix         - removed python 2.6 support
+
 
 ### SETUP
 AUTO_RESTART="1"                   # will run b3 in auto-restart mode if set to 1
@@ -424,7 +426,7 @@ fi
 # check for python to be installed in the system
 if [ -z $(which python) ]; then
     p_out "^1ERROR^0: The Python interpreter seems to be missing on your system"
-    p_out "You need either Python ^22.7 ^0or Python ^22.6 ^0to run B3"
+    p_out "You need to install Python ^22.7 ^0to run B3"
     exit 1
 fi
 
@@ -432,13 +434,13 @@ fi
 VERSION=($(python -c 'import sys; print("%s %s" % (sys.version_info.major, sys.version_info.minor));'))
 if [ ${VERSION[0]} -eq 3 ]; then
     p_out "^1ERROR^0: B3 is not yet compatible with Python ^33^0"
-    p_out "You need either Python ^22.7 ^0or Python ^22.6 ^0to run B3"
+    p_out "You need to install Python ^22.7 ^0to run B3"
     exit 1
 fi
 
-if [ ${VERSION[1]} -lt 6 ]; then
+if [ ${VERSION[1]} -lt 7 ]; then
     p_out "^1ERROR^0: B3 can't run under Python ^3${VERSION[0]}.${VERSION[1]}^0"
-    p_out "You need either Python ^22.7 ^0or Python ^22.6 ^0to run B3"
+    p_out "You need to install Python ^22.7 ^0to run B3"
     exit 1
 fi
 

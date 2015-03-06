@@ -11,7 +11,7 @@ The script provides a set of tools that will allow you to:
 * Monitor the status of your B3 instances (and list the available ones)
 * Clean B3 directory from Python compiled sources (in case you need a fresh compile of a python module)
 * Check for the Python interpreter to be installed in your system
-* Check that you have installed the correct Python version to run B3 (either **2.6** or **2.7**)
+* Check that you have installed the correct Python version to run B3 (version **2.7**)
 * Prevent from running B3 instances as super user: **root**
 
 ### Requirements
