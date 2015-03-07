@@ -1,13 +1,4 @@
-# B3 core
+# Python modules needed to run the B3
 pymysql==0.6.6
 python-dateutil==2.4.1
 feedparser==4.1
-
-# tests
-unittest2
-mockito
-nose
-nosexcover
-nose-exclude
-mock>=0.8
-pylint

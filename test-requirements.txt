@@ -1,0 +1,8 @@
+# Python modules needed to run the B3 test suite
+unittest2
+mockito
+nose
+nosexcover
+nose-exclude
+mock>=0.8
+pylint
