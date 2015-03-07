@@ -1,3 +1,5 @@
+# Python modules needed for optional B3 features
+
 # If you want to use a PosgreSQL database
 psycopg2==2.5.4
 
