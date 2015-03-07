@@ -1,0 +1,5 @@
+# If you want to use a PosgreSQL database
+psycopg2==2.5.4
+
+# If you need secure connecteds (SFTP plugin)
+paramiko==1.15.2

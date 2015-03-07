@@ -1,7 +1,5 @@
 # B3 core
 pymysql==0.6.6
-psycopg2==2.5.4
-paramiko==1.15.2
 python-dateutil==2.4.1
 feedparser==4.1
 
