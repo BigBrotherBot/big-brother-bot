@@ -65,6 +65,7 @@
 #                                     - revert to using cid instead of steamid to id players
 # 2015/13/01 - 0.14  - 82ndab-Bravo17 - don't authorize Console when it says something in game
 #                                     - bots should now stay authed if still on server during sync
+# 2015/03/07 - 0.15  - Thomas LEVEIL  - disconnect client after kicking them
 
 import re
 import time
@@ -86,7 +87,7 @@ from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '0.14'
+__version__ = '0.15'
 
 
 # GAME SETUP
@@ -1163,6 +1164,7 @@ class InsurgencyParser(Parser):
                 self.output.write('sm_kick #%s %s' % (client.cid, reason))
             else:
                 self.output.write("sm_kick #%s" % client.cid)
+            client.disconnect()
 
     def do_ban(self, client, reason=None):
         """
