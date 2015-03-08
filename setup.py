@@ -33,9 +33,10 @@
 # 2015/02/15 - 3.1.1 - Fenix         - removed some print calls in favor of logging
 #                                    - removed some warnings
 # 2015/02/18 - 3.1.2 - Fenix         - fix cx_Freeze stripping out function documentations
+# 2015/03/08 - 3.2   - Thomas LEVEIL - build up the list of requirement by reading the requirements.txt file
 
 __author__ = 'ThorN, xlr8or, courgette, Fenix'
-__version__ = '3.1.2'
+__version__ = '3.2'
 
 import re
 import os
@@ -50,7 +51,10 @@ from b3.update import B3version
 from distutils import dir_util, log
 from setuptools.command.egg_info import egg_info as orig_egg_info
 from time import strftime
+from pip.req import parse_requirements as parse_pip_requirements
+from pip.download import PipSession
 
+install_requires_generator = parse_pip_requirements("requirements.txt", session=PipSession())
 
 PLATFORM = sys.platform
 if PLATFORM not in ('win32', 'darwin'):
@@ -327,7 +331,7 @@ setup(
         'Topic :: System :: Logging',
         'Topic :: Utilities'
     ],
-    #tests_require=['nose>=1.0', 'nose-exclude', 'mockito'],
+    install_requires=[str(ir.req) for ir in install_requires_generator],
     packages=setuptools.find_packages(),
     package_data={'': [
         'conf/*.xml',
