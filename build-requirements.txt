@@ -1,9 +1,11 @@
 # Python modules needed when building B3 packages
 
 # build tools
+pip>=1.4
+setuptools>=0.9
+wheel>=0.21
 cx_Freeze
 pyyaml
-pip
 
 # popular 3rd party plugins requirements to be included in the frozen builds
 uuid          # metabans ggcstream and telnet plugins

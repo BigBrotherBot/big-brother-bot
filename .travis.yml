@@ -25,7 +25,7 @@ before_script:
 # command to run tests, e.g. python setup.py test
 script: 
   - nosetests --where=tests --verbosity=3
-  - python setup.py egg_info --tag-build .dev${TRAVIS_COMMIT:0:7} --tag-date sdist bdist_egg
+  - python setup.py egg_info --tag-build .dev${TRAVIS_COMMIT:0:7} --tag-date sdist bdist_wheel
   - python setup.py build_exe
 
 notifications:
