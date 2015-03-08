@@ -18,7 +18,8 @@
 #
 # CHANGELOG
 #
-# 2015/04/01 - 1.42.1 - Fenix           - added unregisterHandler method
+# 2015/03/09 - 1.42.2 - Fenix           - added plugin dependency loading
+# 2015/03/01 - 1.42.1 - Fenix           - added unregisterHandler method
 # 2015/02/25 - 1.42   - Fenix           - added automatic timezone offset detection
 # 2015/02/15 - 1.41.8 - Fenix           - fix broken 1.41.8
 # 2015/02/15 - 1.41.7 - Fenix           - make game log reading work properly in osx
@@ -172,7 +173,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.42.1'
+__version__ = '1.42.2'
 
 
 import os
@@ -193,6 +194,7 @@ import b3
 import b3.config
 import b3.storage
 import b3.events
+import b3.exceptions
 import b3.output
 import b3.game
 import b3.cron
@@ -211,6 +213,8 @@ from b3.functions import main_is_frozen
 from b3.functions import splitDSN
 from b3.functions import getBytes
 from b3.functions import right_cut
+from b3.functions import topological_sort
+from b3.plugin import PluginData
 from textwrap import TextWrapper
 
 
@@ -768,7 +772,7 @@ class Parser(object):
         extplugins_dir = self.config.get_external_plugins_dir()
         self.bot('Loading plugins (external plugin directory: %s)' % extplugins_dir)
 
-        def _get_plugin_config(p_name, p_clazz, p_config_path):
+        def _get_plugin_config(p_name, p_clazz, p_config_path=None):
             """
             Helper that load and return a configuration file for the given Plugin
             :param p_name: The plugin name
@@ -834,58 +838,127 @@ class Parser(object):
                 self.info('NOTE: plugin %s may behave differently from what expected since no user configuration file has been loaded', p_name)
                 return None
 
-        plugins = OrderedDict()
-        plugins_list = []
+        plugin_list = []            # hold an unsorted plugins list used to filter plugins that needs to be excluded
+        plugin_required = []        # hold a list of required plugin names which have not been specified in b3.ini
+        sorted_plugin_list = []     # hold the list of plugins sorted according requirements
+        plugins = OrderedDict()     # no need for OrderedDict anymore but keep for backwards compatibility!
 
         # here below we will parse the plugins section of b3.ini, looking for plugins to be loaded.
         # we will import needed python classes and generate configuration file instances for plugins.
         for p in self.config.get_plugins():
-            name = p['name']
-            if name in [plugins[i]['name'] for i in plugins if plugins[i]['name'] == name]:
+
+            if p['name'] in [plugins[i].name for i in plugins if plugins[i].name == p['name']]:
                 # do not load a plugin multiple times
-                self.warning('Plugin %s already loaded: avoid multiple entries of the same plugin' % name)
-            else:
-                try:
-                    module = self.pluginImport(name, p['path'])
-                    clazz = getattr(module, '%sPlugin' % name.title())
-                    conf = _get_plugin_config(name, clazz, p['conf'])
-                    disabled = p['disabled']
-                    plugins[name] = {'name': name, 'module': module, 'class': clazz, 'conf': conf, 'disabled': disabled}
-                except Exception, err:
-                     self.error('Could not load plugin %s' % name, exc_info=err)
+                self.warning('Plugin %s already loaded: avoid multiple entries of the same plugin' % p['name'])
+                continue
+
+            try:
+                mod = self.pluginImport(p['name'], p['path'])
+                clz = getattr(mod, '%sPlugin' % p['name'].title())
+                cfg = _get_plugin_config(p['name'], clz, p['conf'])
+                plugins[p['name']] = PluginData(name=p['name'], module=mod, clazz=clz, conf=cfg, disabled=p['disabled'])
+            except Exception:
+                self.error('Could not load plugin %s : %s' % (p['name'], traceback.extract_tb(sys.exc_info()[2])))
 
         # check for AdminPlugin
         if not 'admin' in plugins:
             # critical will exit, admin plugin must be loaded!
-            self.critical('AdminPlugin is essential and MUST be loaded! Cannot continue without admin plugin')
+            self.critical('Plugin admin is essential and MUST be loaded! Cannot continue without admin plugin')
 
-        # make sure that the admin plugin is loaded as first plugin
-        # then follow the order specified by the user in B3 configuration file
-        plugins_list.append(plugins.pop('admin'))
-        for plugin in plugins.values():
-            plugins_list.append(plugin)
+        # at this point we have an OrderedDict oof PluginData of plugins listed in b3.ini and which can be loaded correctly:
+        # all the plugins which have not been installed correctly, but are specified in b3.ini, have been already excluded.
+        # next we build a list of PluginData instances and then we will sort it according to plugin order importance:
+        #   - we'll try to load other plugins required by a listed one
+        #   - we'll remove plugin that do not meet requirements
+
+        def _get_plugin_data(p_data):
+            """
+            Return a list of PluginData of plugins needed by the current one
+            :param p_data: A PluginData containing plugin information
+            :return: list[PluginData] a list of PluginData of plugins needed by the current one
+            """
+            if p_data.clazz and p_data.clazz.requiresPlugins:
+                # DFS: look first at the whole requirement tree and try to load from ground up
+                collection = []
+                for r in p_data.requiresPlugins:
+                    if r not in plugins and r not in plugin_required:
+                        try:
+                            # missing requirement, try to load it
+                            self.warning('Plugin %s has unmet dependency : %s : trying to load plugin %s...' % (p_data.name, r, r))
+                            collection += _get_plugin_data(PluginData(name=r))
+                            self.debug('Plugin %s dependency satisfied: %s' % r)
+                        except Exception, e:
+                            raise b3.exceptions.MissingRequirement('missing required plugin: %s' % r, e)
+
+                return collection
+
+            # plugin has not been loaded manually nor a previous automatic load attempt has been done
+            if p_data.name not in plugins and p_data.name not in plugin_required:
+                # we are at the bottom step where we load a new requirement by importing the
+                # plugin module, class and configuration file. If the following generate an exception, recursion
+                # will catch it here above and raise it back so we can exclude the first plugin in the list from load
+                self.debug('Looking for plugin %s module and configuration file...' % p_data.name)
+                p_data.module = self.pluginImport(p_data.name)
+                p_data.clazz = getattr(p_data.module, '%sPlugin' % p_data.name.title())
+                p_data.conf = _get_plugin_config(p_data.name, p_data.clazz)
+                plugin_required.append(p_data.name) # load just once
+
+            return [p_data]
+
+        # construct a list of all the plugins which needs to be loaded
+        for plugin_name, plugin_data in plugins.items():
+            # here below we will discard all the plugin which have unmet dependency
+            try:
+                plugin_list += _get_plugin_data(plugin_data)
+            except b3.exceptions.MissingRequirement:
+                self.error('Could not load plugin %s : %s' % (plugin_name, traceback.extract_tb(sys.exc_info()[2])))
+
+        plugin_dict = {x.name: x for x in plugin_list}      # dict(str, PluginData)
+        plugin_data = plugin_dict.pop('admin')              # remove admin plugin from dict
+        plugin_list.remove(plugin_data)                     # remove admin plugin from unsorted list
+        sorted_plugin_list.append(plugin_data)              # put admin plugin as first and discard from the sorting
+
+        # sort remaining plugins according to their inclusion requirements
+        self.bot('Sorting plugins according to their inclusion requirements...')
+        sorted_list = [y for y in topological_sort([(x.name, set(x.clazz.requiresPlugins)) for x in plugin_list])]
+        for plugin_name in sorted_list:
+            sorted_plugin_list.append(plugin_dict[plugin_name])
+
+        # make sure that required plugins are enabled (both if loaded in b3.ini or loaded automatically)
+        for plugin_data in sorted_plugin_list:
+            if plugin_data.disabled:
+                if plugin_data.name == 'admin':
+                    plugin_data.enabled = True
+                else:
+                    if plugin_data.clazz.requiresPlugins:
+                        for req in plugin_data.clazz.requiresPlugins:
+                            plugin_dict = {x.name: x for x in sorted_plugin_list}
+                            if req in plugin_dict and plugin_dict[req].enabled:
+                                plugin_data.enabled = True
+
+        # notice in log for later inspection
+        self.bot('Ready to create plugin instances: %s' % ', '.join([x.name for x in sorted_plugin_list]))
 
         plugin_num = 1
         self._plugins = OrderedDict()
-        for plugin_dict in plugins_list:
-            plugin_name = plugin_dict['name']
-            plugin_conf = plugin_dict['conf']
-            plugin_conf_path = '--' if plugin_conf is None else plugin_conf.fileName
+        for plugin_data in sorted_plugin_list:
+
+            plugin_conf_path = '--' if plugin_data.conf is None else plugin_data.conf.fileName
 
             try:
-                self.bot('Loading plugin #%s %s [%s]', plugin_num, plugin_name, plugin_conf_path)
-                self._plugins[plugin_name] = plugin_dict['class'](self, plugin_conf)
+                self.bot('Loading plugin #%s %s [%s]', plugin_num, plugin_data.name, plugin_conf_path)
+                self._plugins[plugin_data.name] = plugin_data.clazz(self, plugin_data.conf)
             except Exception, err:
-                self.error('Could not load plugin %s' % plugin_name, exc_info=err)
+                self.error('Could not load plugin %s : %s' % (plugin_data.name, traceback.extract_tb(sys.exc_info()[2])))
                 self.screen.write('x')
             else:
-                if plugin_dict['disabled']:
-                    self.info("Disabling plugin %s" % plugin_name)
-                    self._plugins[plugin_name].disable()
+                if plugin_data.disabled:
+                    self.info("Disabling plugin %s" % plugin_data.name)
+                    self._plugins[plugin_data.name].disable()
                 plugin_num += 1
-                version = getattr(plugin_dict['module'], '__version__', 'Unknown Version')
-                author = getattr(plugin_dict['module'], '__author__', 'Unknown Author')
-                self.bot('Plugin %s (%s - %s) loaded', plugin_name, version, author)
+                version = getattr(plugin_data.module, '__version__', 'Unknown Version')
+                author = getattr(plugin_data.module, '__author__', 'Unknown Author')
+                self.bot('Plugin %s (%s - %s) loaded', plugin_data.name, version, author)
                 self.screen.write('.')
             finally:
                 self.screen.flush()

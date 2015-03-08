@@ -31,9 +31,11 @@
 # 15/04/2014 - 1.5.1 - Fenix        - PEP8 coding standards
 # 21/07/2014 - 1.6   - Fenix        - syntax cleanup
 # 09/08/2014 - 1.7   - Courgette    - define new event EVT_CLIENT_TEAM_CHANGE2
+# 09/03/2014 - 1.8   - Fenix        - added EVT_PLUGIN_ENABLED, EVT_PLUGIN_DISABLED, EVT_PLUGIN_LOADED,
+#                                     EVT_PLUGIN_UNLOADED
 
 __author__ = 'ThorN, xlr8or, Courgette'
-__version__ = '1.7'
+__version__ = '1.8'
 
 import b3
 import re
@@ -59,6 +61,10 @@ class Events:
             ('EVT_STOP', 'Stop Process'),
             ('EVT_UNKNOWN', 'Unknown Event'),
             ('EVT_CUSTOM', 'Custom Event'),
+            ('EVT_PLUGIN_ENABLED', 'Plugin Enabled'),
+            ('EVT_PLUGIN_DISABLED', 'Plugin Disabled'),
+            ('EVT_PLUGIN_LOADED', 'Plugin Loaded'),
+            ('EVT_PLUGIN_UNLOADED', 'Plugin Unloaded'),
             ('EVT_CLIENT_SAY', 'Say'),
             ('EVT_CLIENT_TEAM_SAY', 'Team Say'),
             ('EVT_CLIENT_SQUAD_SAY', 'Squad Say'),

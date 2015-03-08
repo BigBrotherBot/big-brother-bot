@@ -47,9 +47,10 @@
 # 04/02/2015 - 1.17  - Fenix          - added getBytes function
 # 08/02/2015 - 1.18  - Fenix          - added escape function
 # 14/02/2015 - 1.19  - Fenix          - changed main_is_frozen() to work with cx_Freeze instead of py2exe
+# 09/03/2015 - 1.20  - Fenix          - added topological_sort() function: topological sort implementation
 
 __author__    = 'ThorN, xlr8or, courgette'
-__version__   = '1.19'
+__version__   = '1.20'
 
 import collections
 import os
@@ -61,7 +62,7 @@ import urllib2
 import zipfile
 
 from hashlib import md5
-
+from b3.exceptions import ProgrammingError
 
 def getModule(name):
     """
@@ -626,3 +627,29 @@ def getBytes(size):
         return int(m.group('size')) * multipliers[m.group('mult')]
     except KeyError:
         return int(m.group('size'))
+
+
+def topological_sort(source):
+    """
+    Perform topological sort on elements using generators
+    Source: http://stackoverflow.com/questions/11557241/python-sorting-a-dependency-list
+    :param source: list of ``(name, set(names of dependancies))`` pairs
+    """
+    pending = [(name, set(deps)) for name, deps in source] # copy deps so we can modify set in-place
+    emitted = []
+    while pending:
+        next_pending = []
+        next_emitted = []
+        for entry in pending:
+            name, deps = entry
+            deps.difference_update(emitted) # remove deps we emitted last pass
+            if deps: # still has deps? recheck during next pass
+                next_pending.append(entry)
+            else: # no more deps? time to emit
+                yield name
+                emitted.append(name) # <-- not required, but helps preserve original ordering
+                next_emitted.append(name) # remember what we emitted for difference_update() in next pass
+        if not next_emitted: # all entries have unmet deps, one of two things is wrong...
+            raise ProgrammingError("cyclic or missing dependancy detected: %r" % (next_pending,))
+        pending = next_pending
+        emitted = next_emitted
