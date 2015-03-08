@@ -36,7 +36,7 @@ incidental basis. Without you B3 wouldn't be this intelligent!
 
 [![Build Status](https://travis-ci.org/BigBrotherBot/big-brother-bot.svg?branch=release-1.10)](https://travis-ci.org/BigBrotherBot/big-brother-bot) 
 [![Latest Version](https://pypip.in/version/b3/badge.svg?style=flat)](https://pypi.python.org/pypi/b3/)
-[![Egg Status](https://pypip.in/egg/b3/badge.svg?style=flat)](https://pypi.python.org/pypi/b3/)
+[![Wheel Status](https://pypip.in/wheel/b3/badge.svg)](https://pypi.python.org/pypi/b3/)
 [![Downloads](https://pypip.in/download/b3/badge.svg?style=flat)](https://pypi.python.org/pypi/b3/)
 [![Supported Python versions](https://pypip.in/py_versions/b3/badge.svg?style=flat)](https://pypi.python.org/pypi/b3/)
 [![License](https://pypip.in/license/b3/badge.svg?style=flat)](https://pypi.python.org/pypi/b3/)
