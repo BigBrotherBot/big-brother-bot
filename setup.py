@@ -48,19 +48,17 @@ import stat
 import zipfile
 
 import setuptools
-from b3 import __version__ as b3_version
-from b3.update import B3version
 from distutils import dir_util, log
 from setuptools.command.egg_info import egg_info as orig_egg_info
 from time import strftime
 
+b3_version = '1.10.0'
 
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))  # directory where this file is in
 DIST_DIR = os.path.join(PROJECT_DIR, 'dist')  # directory where all the final builds will be found
 BUILD_DIR = os.path.join(PROJECT_DIR, 'build')  # directory where all work will be done
-BUILD_VER = '.'.join(map(str, B3version(b3_version).version))  # current build version (extracted from b3 version)
 BUILD_TIME = strftime('%Y%m%d')  # current build time (for distribution zip name)
-BUILD_PATH = os.path.join(BUILD_DIR, 'b3-%s-%s-%s' % (BUILD_VER, BUILD_TIME, b3.getPlatform()))  # frozen distribution path
+BUILD_PATH = os.path.join(BUILD_DIR, 'b3-%s-%s-%s' % (b3_version, BUILD_TIME, b3.getPlatform()))  # frozen distribution path
 
 settings = {
     'win32': {
@@ -381,10 +379,10 @@ else:
                 """Create the Contents/Info.plist file"""
                 import plistlib
                 contents = {
-                    'CFBundleName': 'BigBrotherBot (B3) %s' % BUILD_VER,
-                    'CFBundleGetInfoString': BUILD_VER,
-                    'CFBundleShortVersionString': BUILD_VER,
-                    'CFBundleVersion': BUILD_VER,
+                    'CFBundleName': 'BigBrotherBot (B3) %s' % b3_version,
+                    'CFBundleGetInfoString': b3_version,
+                    'CFBundleShortVersionString': b3_version,
+                    'CFBundleVersion': b3_version,
                     'CFBundlePackageType': 'APPL',
                     'CFBundleIconFile': 'icon.icns',
                     'CFBundleIdentifier': 'net.bigbrotherbot.www',
@@ -492,7 +490,7 @@ else:
 setup(
     cmdclass=cmdclass,
     name="b3",
-    version=BUILD_VER,
+    version=b3_version,
     author='Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Leveil (Courgette)',
     author_email="info@bigbrotherbot.net",
     description="BigBrotherBot (B3) is a cross-platform, cross-game game administration bot. "
@@ -567,11 +565,11 @@ setup(
         },
         'bdist_mac': {
             'iconfile': settings[b3.getPlatform()]['icon'],
-            'bundle_name': 'BigBrotherBot (B3) %s' % BUILD_VER,
+            'bundle_name': 'BigBrotherBot (B3) %s' % b3_version,
         },
         'bdist_dmg': {
             'dist_dir': DIST_DIR,
-            'volume_label': 'BigBrotherBot (B3) %s' % BUILD_VER,
+            'volume_label': 'BigBrotherBot (B3) %s' % b3_version,
             'applications_shortcut': False,
         },
         'build_exe': {

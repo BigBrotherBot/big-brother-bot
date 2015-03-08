@@ -1,3 +1,0 @@
-[console_scripts]
-b3_run = b3.run:main
-
