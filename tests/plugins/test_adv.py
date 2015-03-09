@@ -511,12 +511,11 @@ class Test_keywords(AdvTestCase):
         # GIVEN
         self.p._feed = "http://some.feed/rss"
 
-        when(feedparser)._open_resource(self.p._feed, None, None, None, None, [])\
-            .thenReturn(StringIO.StringIO(RSS_FEED_CONTENT))
         when(self.p._msg).getnext().thenReturn("@feed")
-        with patch.object(self.console, "say") as say_mock:
-            self.p.adv()
-            say_mock.assert_has_calls([call(u'News: B3 Windows Binaries on sourceforge compromised!')])
+        with patch.object(feedparser, '_open_resource', return_value=StringIO.StringIO(RSS_FEED_CONTENT)):
+            with patch.object(self.console, "say") as say_mock:
+                self.p.adv()
+                say_mock.assert_has_calls([call(u'News: B3 Windows Binaries on sourceforge compromised!')])
 
 
 class Test_MessageLoop(unittest.TestCase):
