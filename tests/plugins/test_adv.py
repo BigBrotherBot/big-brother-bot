@@ -47,16 +47,13 @@ RSS_FEED_CONTENT = """\
         <link>http://forum.bigbrotherbot.net/index.php</link>
         <description><![CDATA[Live information from Big Brother Bot Forum]]></description>
         <item>
-            <title>B3 Windows Binaries on sourceforge compromised!</title>
-            <link>http://forum.bigbrotherbot.net/news-2/b3-windows-binaries-on-sourceforge-compromised!/msg45245/#msg45245</link>
+            <title>f00 bar item title</title>
+            <link>http://forum.bigbrotherbot.net/news-2/f00-item-link</link>
             <description>
-                <![CDATA[From <strong>17 january 2015</strong> until <strong>8 Februari 2015</strong> the windows binary distributions of <strong>version 1.9.2</strong> have been compromised and infected with a <em>RAT (Remote Access Tool)</em> aka <em>trojan virus</em>.<br /><br /><strong><span style="color: #ff3333;" class="bbc_color">It is therefor wise t...</span></strong>]]>
+                <![CDATA[f00 bar item description]]>
             </description>
-            <author>xlr8or@xlr8or.com</author>
-            <category><![CDATA[News (Read Only)]]></category>
-            <comments>http://forum.bigbrotherbot.net/news-2/b3-windows-binaries-on-sourceforge-compromised!/?action=post</comments>
             <pubDate>Sun, 08 Feb 2015 08:53:37 GMT</pubDate>
-            <guid>http://forum.bigbrotherbot.net/news-2/b3-windows-binaries-on-sourceforge-compromised!/msg45245/#msg45245</guid>
+            <guid>http://forum.bigbrotherbot.net/news-2/123456798</guid>
         </item>
     </channel>
 </rss>
@@ -515,7 +512,7 @@ class Test_keywords(AdvTestCase):
         with patch.object(feedparser, '_open_resource', return_value=StringIO.StringIO(RSS_FEED_CONTENT)):
             with patch.object(self.console, "say") as say_mock:
                 self.p.adv()
-                say_mock.assert_has_calls([call(u'News: B3 Windows Binaries on sourceforge compromised!')])
+                say_mock.assert_has_calls([call(u'News: f00 bar item title')])
 
 
 class Test_MessageLoop(unittest.TestCase):
