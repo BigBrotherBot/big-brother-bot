@@ -51,10 +51,6 @@ from b3.update import B3version
 from distutils import dir_util, log
 from setuptools.command.egg_info import egg_info as orig_egg_info
 from time import strftime
-from pip.req import parse_requirements as parse_pip_requirements
-from pip.download import PipSession
-
-install_requires_generator = parse_pip_requirements("requirements.txt", session=PipSession())
 
 PLATFORM = sys.platform
 if PLATFORM not in ('win32', 'darwin'):
@@ -331,7 +327,11 @@ setup(
         'Topic :: System :: Logging',
         'Topic :: Utilities'
     ],
-    install_requires=[str(ir.req) for ir in install_requires_generator],
+    install_requires=[
+        'pymysql>=0.6.6,<2',
+        'python-dateutil>=2.4.1,<3',
+        'feedparser>=4.1,<5',
+    ],
     packages=setuptools.find_packages(),
     package_data={'': [
         'conf/*.xml',
