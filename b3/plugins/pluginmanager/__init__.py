@@ -19,21 +19,25 @@
 # CHANGELOG:
 #
 # 23/02/2015 - 1.0 - Fenix - initial release
+# 10/03/2015 - 1.1 - Fenix - added plugin dependency loading
 
 __author__ = 'Fenix'
-__version__ = '1.0'
+__version__ = '1.1'
 
 import b3
 import b3.cron
 import b3.plugin
 import b3.plugins.admin
 import b3.events
+import b3.exceptions
 import glob
 import os
 import re
 import sys
 
 from b3.functions import getCmd
+from b3.functions import topological_sort
+from b3.plugin import PluginData
 from traceback import extract_tb
 
 class PluginmanagerPlugin(b3.plugin.Plugin):
@@ -166,47 +170,110 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
         name = name.lower()
         if name in self._protected:
             client.message('^7Plugin ^1%s ^7is protected' % name)
+            return
+
+        plugin = self.console.getPlugin(name)
+        if plugin:
+            client.message('^7Plugin ^2%s ^7is already loaded' % name)
+            return
+
+        try:
+            mod = self.console.pluginImport(name)
+            clz = getattr(mod, '%sPlugin' % name.title())
+            cfg = _get_plugin_config(p_name=name, p_clazz=clz)
+            plugin_data = PluginData(name=name, module=mod, clazz=clz, conf=cfg)
+        except ImportError:
+            client.message('^7Missing ^1%s ^7plugin python module' % name)
+            client.message('^7Please put the plugin module in ^3@b3/extplugins/')
+        except AttributeError:
+            client.message('^7Plugin ^1%s ^7has an invalid structure: can\'t load' % name)
+            client.message('^7Please inspect your b3 log file for more information')
+            self.error('could not create plugin %s instance: %s' % (name, extract_tb(sys.exc_info()[2])))
+        except b3.config.ConfigFileNotFound:
+            client.message('^7Missing ^1%s ^7plugin configuration file' % name)
+            client.message('^7Please put the plugin configuration file in ^3@b3/conf ^7or ^3@b3/extplugins/%s/conf' % name)
+        except b3.config.ConfigFileNotValid:
+            client.message('^7Invalid configuration file found for plugin ^1%s' % name)
+            client.message('^7Please inspect your b3 log file for more information')
+            self.error('plugin %s has an invalid configuration file and can\'t be loaded: %s' % (name, extract_tb(sys.exc_info()[2])))
         else:
-            plugin = self.console.getPlugin(name)
-            if plugin:
-                client.message('^7Plugin ^2%s ^7is already loaded' % name)
-            else:
-                try:
-                    module = self.console.pluginImport(name)
-                    clazz = getattr(module, '%sPlugin' % name.title())
-                    config = _get_plugin_config(p_name=name, p_clazz=clazz)
-                except ImportError:
-                    client.message('^7Missing ^1%s ^7plugin python module' % name)
-                    client.message('^7Please put the plugin module in ^3@b3/extplugins/')
-                except AttributeError:
-                    client.message('^7Plugin ^1%s ^7has an invalid structure: can\'t load' % name)
-                    client.message('^7Please inspect your b3 log file for more information')
-                    self.error('could not create plugin %s instance: %s' % (name, extract_tb(sys.exc_info()[2])))
-                except b3.config.ConfigFileNotFound:
-                    client.message('^7Missing ^1%s ^7plugin configuration file' % name)
-                    client.message('^7Please put the plugin configuration file in ^3@b3/conf ^7or ^3@b3/extplugins/%s/conf' % name)
-                except b3.config.ConfigFileNotValid:
-                    client.message('^7Invalid configuration file found for plugin ^1%s' % name)
-                    client.message('^7Please inspect your b3 log file for more information')
-                    self.error('plugin %s has an invalid configuration file and can\'t be loaded: %s' % (name, extract_tb(sys.exc_info()[2])))
-                else:
-                    try:
-                        self.bot('loading plugin %s [%s]', name, '--' if config is None else config.fileName)
-                        plugin_instance = clazz(self.console, config)
-                        plugin_instance.onLoadConfig()
-                        plugin_instance.onStartup()
-                    except Exception, e:
-                        client.message('^7Could not load plugin ^1%s^7: %s' % (name, e))
-                        client.message('^7Please inspect your b3 log file for more information')
-                        self.error('plugin %s could not be loaded: %s' % (name, extract_tb(sys.exc_info()[2])))
-                    else:
-                        self.console._plugins[name] = plugin_instance
-                        self.console._plugins[name].disable()
-                        v = getattr(module, '__version__', 'unknown')
-                        a = getattr(module, '__author__', 'unknown')
-                        self.bot('plugin %s (%s - %s) loaded', name, v, a)
-                        client.message('^7Plugin ^2%s ^7(^3%s ^7- ^3%s^7) loaded', name, v, a)
-                        client.message('^7Type ^3%splugin enable %s ^7to enable it' % (self._adminPlugin.cmdPrefix, name))
+
+            plugin_required = []
+
+            def _get_plugin_data(p_data):
+                """
+                Return a list of PluginData of plugins needed by the current one
+                :param p_data: A PluginData containing plugin information
+                :return: list[PluginData] a list of PluginData of plugins needed by the current one
+                """
+                if p_data.clazz and p_data.clazz.requiresPlugins:
+                    collection = []
+                    for r in p_data.requiresPlugins:
+                        if r not in self.console._plugins and r not in plugin_required:
+                            try:
+                                # missing requirement, try to load it
+                                self.warning('plugin %s has unmet dependency : %s : trying to load plugin %s...' % (p_data.name, r, r))
+                                collection += _get_plugin_data(PluginData(name=r))
+                                self.debug('plugin %s dependency satisfied: %s' % r)
+                            except Exception, err:
+                                raise b3.exceptions.MissingRequirement('missing required plugin: %s' % r, err)
+
+                    return collection
+
+                # plugin has not been loaded manually nor a previous automatic load attempt has been done
+                if p_data.name not in self.console._plugins and p_data.name not in plugin_required:
+                    # we are at the bottom step where we load a new requirement by importing the
+                    # plugin module, class and configuration file. If the following generate an exception, recursion
+                    # will catch it here above and raise it back so we can exclude the first plugin in the list from load
+                    self.debug('looking for plugin %s module and configuration file...' % p_data.name)
+                    p_data.module = self.console.pluginImport(p_data.name)
+                    p_data.clazz = getattr(p_data.module, '%sPlugin' % p_data.name.title())
+                    p_data.conf = _get_plugin_config(p_data.name, p_data.clazz)
+                    plugin_required.append(p_data.name) # load just once
+
+                return [p_data]
+
+            rollback = []
+
+            try:
+
+                plugin_list = _get_plugin_data(plugin_data)         # generate a list of PluginData which will include also requirements
+                plugin_dict = {x.name: x for x in plugin_list}      # dict(str, PluginData)
+                sorted_list = [y for y in topological_sort([(x.name, set(x.clazz.requiresPlugins)) for x in plugin_list])]
+
+                if len(sorted_list) > 1:
+                    client.message('^7Plugin ^3%s ^7relies on other plugins to work: they will be automatically loaded' % name)
+
+                for s in sorted_list:
+                    p = plugin_dict[s]
+                    self.bot('loading plugin %s [%s]', p.name, '--' if p.conf is None else p.conf.fileName)
+                    plugin_instance = p.clazz(self.console, p.conf)
+                    plugin_instance.onLoadConfig()
+                    plugin_instance.onStartup()
+                    self.console._plugins[p.name] = plugin_instance
+                    v = getattr(p.module, '__version__', 'unknown')
+                    a = getattr(p.module, '__author__', 'unknown')
+                    self.bot('plugin %s (%s - %s) loaded', p.name, v, a)
+                    client.message('^7Plugin ^2%s ^7(^3%s ^7- ^3%s^7) loaded', p.name, v, a)
+                    # queue an event so other plugins may react on this change (for example if 2 plugins provide the
+                    # same functionalities, one of them can be disabled not to do duplicated work)
+                    self.console.queueEvent(self.console.getEvent('EVT_PLUGIN_LOADED', data=p.name))
+                    # track down all the plugins that we are enabling so we can rollback
+                    # changes if a plugin in the dependency tree fails to load/start
+                    rollback.append(p.name)
+
+            except b3.exceptions.MissingRequirement:
+                # here we do not have to rollback
+                client.message('^7Plugin ^1%s can\'t be loaded due to unmet dependencies' % name)
+                client.message('^7Please inspect your b3 log file for more information')
+            except Exception, e:
+                # here we rollback all the plugins loaded which are not needed anymore
+                client.message('^7Could not load plugin ^1%s^7: %s' % (name, e))
+                client.message('^7Please inspect your b3 log file for more information')
+                self.error('plugin %s could not be loaded: %s' % (name, extract_tb(sys.exc_info()[2])))
+                if rollback:
+                    for name in rollback:
+                        self.do_unload(client=client, name=name)
 
     def do_unload(self, client, name=None):
         """
@@ -241,6 +308,8 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
                         self.console.cron.cancel(tab)
 
                     del self.console._plugins[name]
+                    # queue an event so other plugins may react on this change
+                    self.console.queueEvent(self.console.getEvent('EVT_PLUGIN_UNLOADED', data=name))
                     client.message('^7Plugin ^1%s ^7has been unloaded' % name)
 
     def do_info(self, client, name=None):

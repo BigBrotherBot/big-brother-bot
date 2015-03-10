@@ -48,22 +48,28 @@
 # 22/01/2015 - 1.7.3 - Fenix     - added add_comment method to CfgConfigParser and overridden write() method
 #                                  to properly write comments in a newly generated configuration file
 # 03/03/2015 - 1.7.4 - Fenix     - removed python 2.6 support
+# 03/03/2015 - 1.7.5 - Fenix     - moved exception classes in a separate module
 
 
 __author__  = 'ThorN, Courgette, Fenix'
-__version__ = '1.7.4'
+__version__ = '1.7.5'
 
 import os
 import re
 import time
 import b3
 import b3.functions
+import b3.exceptions
 import ConfigParser
 
 try:
     from xml.etree import cElementTree as ElementTree
 except ImportError:
     from xml.etree import ElementTree
+
+
+ConfigFileNotFound = b3.exceptions.ConfigFileNotFound
+ConfigFileNotValid = b3.exceptions.ConfigFileNotValid
 
 # list of plugins that cannot be loaded as disabled from configuration file
 MUST_HAVE_PLUGINS = ('admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail')
@@ -423,28 +429,6 @@ def load(filename):
 
     # return the config if it can be loaded
     return config if config.load(filename) else None
-
-
-class ConfigFileNotFound(Exception):
-    """
-    Raised whenever the configuration file can't be found.
-    """
-    def __init__(self, message):
-        Exception.__init__(self, message)
-        
-    def __str__(self):
-        return repr(self.message)
-
-
-class ConfigFileNotValid(Exception):
-    """
-    Raised whenever we are parsing an invalid configuration file.
-    """
-    def __init__(self, message):
-        Exception.__init__(self, message)
-        
-    def __str__(self):
-        return repr(self.message)
 
 
 class MainConfig(B3ConfigParserMixin):

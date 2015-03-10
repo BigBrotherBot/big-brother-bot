@@ -41,9 +41,12 @@
 # 28/07/2014 - 1.9   - Fenix     - syntax cleanup
 #                                - added default event mapping hooks for EVT_EXIT and EVT_STOP
 # 08/01/2015 - 1.9.1 - Fenix     - make sure not to load 'None' object as configuration file
+# 08/03/2015 - 1.9.2 - Fenix     - added requiresPlugins attribute in Plugin class
+#                                - added PluginData class
+#                                - produce EVT_PLUGIN_ENABLED ands EVT_PLUGIN_DISABLED
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.9.1'
+__version__ = '1.9.2'
 
 import b3.config
 import b3.events
@@ -64,6 +67,7 @@ class Plugin:
     eventmap = None
     events = []
     requiresConfigFile = True   # plugin developers : customize this
+    requiresPlugins = []        # plugin developers : customize this
     working = True
 
     def __init__(self, console, config=None):
@@ -96,6 +100,8 @@ class Plugin:
         Enable the plugin.
         """
         self._enabled = True
+        name = b3.functions.right_cut(self.__class__.__name__, 'Plugin').lower()
+        self.console.queueEvent(self.console.getEvent('EVT_PLUGIN_ENABLED', data=name))
         self.onEnable()
 
     def disable(self):
@@ -103,6 +109,8 @@ class Plugin:
         Disable the plugin.
         """
         self._enabled = False
+        name = b3.functions.right_cut(self.__class__.__name__, 'Plugin').lower()
+        self.console.queueEvent(self.console.getEvent('EVT_PLUGIN_DISABLED', data=name))
         self.onDisable()
 
     def isEnabled(self):
@@ -392,3 +400,26 @@ class Plugin:
         """
         self.warning('use of deprecated method: startup()')
         pass
+
+
+class PluginData(object):
+    """
+    Class used to hold plugin data needed for plugin instance initialization.
+    """
+    def __init__(self, name, module=None, clazz=None, conf=None, disabled=False):
+        """
+        Inizialize a new PluginData object instance
+        :param name: The plugin name as string
+        :param module: The reference of the module implementing the plugin
+        :param clazz: The class implementing the plugin
+        :param conf: The configuration file instance of the plugin (if any)
+        :param disabled: Whether this plugin needs to be initialized as disabled
+        """
+        self.name = name.lower()
+        self.module = module
+        self.clazz = clazz
+        self.conf = conf
+        self.disabled = disabled
+
+    def __repr__(self):
+        return 'PluginData<%s>' % self.name
