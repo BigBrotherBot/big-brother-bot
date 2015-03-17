@@ -54,7 +54,7 @@ class MissingRequirement(Exception):
 
     def __str__(self):
         if self.throwable:
-            return '%r - %r' % (repr(self.message), repr(self.throwable))
+            return '%s - %r' % (self.message, repr(self.throwable))
         return repr(self.message)
 
 

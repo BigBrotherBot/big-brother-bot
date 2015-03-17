@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/03/16 - 1.42.3 - Fenix           - minor fixes to plugin dependency loading
 # 2015/03/09 - 1.42.2 - Fenix           - added plugin dependency loading
 # 2015/03/01 - 1.42.1 - Fenix           - added unregisterHandler method
 # 2015/02/25 - 1.42   - Fenix           - added automatic timezone offset detection
@@ -181,7 +182,6 @@ import sys
 import re
 import time
 import thread
-import traceback
 import datetime
 import dateutil.tz
 import Queue
@@ -216,6 +216,7 @@ from b3.functions import right_cut
 from b3.functions import topological_sort
 from b3.plugin import PluginData
 from textwrap import TextWrapper
+from traceback import extract_tb
 
 
 try:
@@ -766,7 +767,7 @@ class Parser(object):
         """
         Load plugins specified in the config
         """
-        self.screen.write('Loading Plugins  : ')
+        self.screen.write('Loading plugins  : ')
         self.screen.flush()
 
         extplugins_dir = self.config.get_external_plugins_dir()
@@ -858,7 +859,7 @@ class Parser(object):
                 cfg = _get_plugin_config(p['name'], clz, p['conf'])
                 plugins[p['name']] = PluginData(name=p['name'], module=mod, clazz=clz, conf=cfg, disabled=p['disabled'])
             except Exception:
-                self.error('Could not load plugin %s : %s' % (p['name'], traceback.extract_tb(sys.exc_info()[2])))
+                self.error('Could not load plugin %s : %s' % (p['name'], extract_tb(sys.exc_info()[2])))
 
         # check for AdminPlugin
         if not 'admin' in plugins:
@@ -879,16 +880,16 @@ class Parser(object):
             """
             if p_data.clazz and p_data.clazz.requiresPlugins:
                 # DFS: look first at the whole requirement tree and try to load from ground up
-                collection = []
-                for r in p_data.requiresPlugins:
+                collection = [p_data]
+                for r in p_data.clazz.requiresPlugins:
                     if r not in plugins and r not in plugin_required:
                         try:
                             # missing requirement, try to load it
                             self.warning('Plugin %s has unmet dependency : %s : trying to load plugin %s...' % (p_data.name, r, r))
                             collection += _get_plugin_data(PluginData(name=r))
-                            self.debug('Plugin %s dependency satisfied: %s' % r)
-                        except Exception, e:
-                            raise b3.exceptions.MissingRequirement('missing required plugin: %s' % r, e)
+                            self.debug('Plugin %s dependency satisfied: %s' % (p_data.name, r))
+                        except Exception, ex:
+                            raise b3.exceptions.MissingRequirement('missing required plugin: %s : %s' % (r, extract_tb(sys.exc_info()[2])), ex)
 
                 return collection
 
@@ -910,8 +911,8 @@ class Parser(object):
             # here below we will discard all the plugin which have unmet dependency
             try:
                 plugin_list += _get_plugin_data(plugin_data)
-            except b3.exceptions.MissingRequirement:
-                self.error('Could not load plugin %s : %s' % (plugin_name, traceback.extract_tb(sys.exc_info()[2])))
+            except b3.exceptions.MissingRequirement, e:
+                self.error('Could not load plugin %s : %s' % (plugin_name, e))
 
         plugin_dict = {x.name: x for x in plugin_list}      # dict(str, PluginData)
         plugin_data = plugin_dict.pop('admin')              # remove admin plugin from dict
@@ -949,7 +950,7 @@ class Parser(object):
                 self.bot('Loading plugin #%s %s [%s]', plugin_num, plugin_data.name, plugin_conf_path)
                 self._plugins[plugin_data.name] = plugin_data.clazz(self, plugin_data.conf)
             except Exception, err:
-                self.error('Could not load plugin %s : %s' % (plugin_data.name, traceback.extract_tb(sys.exc_info()[2])))
+                self.error('Could not load plugin %s : %s' % (plugin_data.name, extract_tb(sys.exc_info()[2])))
                 self.screen.write('x')
             else:
                 if plugin_data.disabled:
@@ -1302,7 +1303,7 @@ class Parser(object):
                             except SystemExit:
                                 raise
                             except Exception, msg:
-                                self.error('Could not parse line %s: %s', msg, traceback.extract_tb(sys.exc_info()[2]))
+                                self.error('Could not parse line %s: %s', msg, extract_tb(sys.exc_info()[2]))
                             
                             time.sleep(self.delay2)
 
@@ -1396,7 +1397,7 @@ class Parser(object):
                         self.exitcode = e.code
                     except Exception, msg:
                         self.error('Handler %s could not handle event %s: %s: %s %s', hfunc.__class__.__name__,
-                                   event_name, msg.__class__.__name__, msg, traceback.extract_tb(sys.exc_info()[2]))
+                                   event_name, msg.__class__.__name__, msg, extract_tb(sys.exc_info()[2]))
                     finally:
                         elapsed = time.clock() - timer_plugin_begin
                         self._eventsStats.add_event_handled(hfunc.__class__.__name__, event_name, elapsed*1000)
