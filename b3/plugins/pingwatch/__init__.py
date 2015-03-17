@@ -100,7 +100,7 @@ class PingwatchPlugin(b3.plugin.Plugin):
             return False
 
         # register events needed
-        self.registerEvent(self.console.getEventID('EVT_GAME_EXIT'), self.onGameExit)
+        self.registerEvent('EVT_GAME_EXIT', self.onGameExit)
         self._ignoreTill = self.console.time() + 120  # dont check pings on startup
 
         # register our commands

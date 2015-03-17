@@ -2,8 +2,8 @@
 
 # Big Brother Bot (B3) Management - http://www.bigbrotherbot.net
 # Maintainer: Daniele Pantaleone <fenix@bigbrotherbot.net>
-# App Version: 0.9
-# Last Edit: 08/02/2015
+# App Version: 0.11
+# Last Edit: 17/03/2015
 
 ### BEGIN INIT INFO
 # Provides:          b3
@@ -40,12 +40,14 @@
 #                                    - temporarily activate logging using B3_LOG_ENABLED environment variable
 #                                    - fix log failure detection and in case of errors, display the reason why it failed
 #  2015-03-06 - 0.10 - Fenix         - removed python 2.6 support
+#  2015-03-17 - 0.11 - Fenix         - added developer mode, temporarily activable with B3_DEV environment variable
 
 
 ### SETUP
 AUTO_RESTART="1"                   # will run b3 in auto-restart mode if set to 1
 DATE_FORMAT="%a, %b %d %Y - %r"    # data format to be used when logging console output
 LOG_ENABLED="${B3_LOG_ENABLED:-0}" # if set to 1, will log console output to file
+DEVELOPER="${B3_DEV:-0}"           # if set to 1, will activate developer mode
 USE_COLORS="1"                     # if set to 1, will make use of bash color codes in the console output
 
 ### DO NOT MODIFY!!!
@@ -418,9 +420,11 @@ B3_DIR="$(dirname ${SCRIPT_DIR})"
 
 # check that the script is not executed by super user to avoid permission problems
 # we will allow the B3 status check tho since the operation is totally harmless
-if ([ ${UID} -eq 0 ] && [ -n "${1}" ] && [ "${1}" != "status" ]); then
-  p_out "^1ERROR^0: do not execute B3 as super user [root]"
-  exit 1
+if [ ! "${DEVELOPER}" -eq 0 ]; then # allow developers to use root to start b3
+    if ([ ${UID} -eq 0 ] && [ -n "${1}" ] && [ "${1}" != "status" ]); then
+      p_out "^1ERROR^0: do not execute B3 as super user [root]"
+      exit 1
+    fi
 fi
 
 # check for python to be installed in the system

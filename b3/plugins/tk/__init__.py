@@ -411,12 +411,12 @@ class TkPlugin(b3.plugin.Plugin):
         """
         Plugin startup
         """
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_DAMAGE_TEAM'))
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_KILL_TEAM'))
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_DISCONNECT'))
-        self.registerEvent(self.console.getEventID('EVT_GAME_EXIT'))
-        self.registerEvent(self.console.getEventID('EVT_GAME_ROUND_END'))
-        self.registerEvent(self.console.getEventID('EVT_GAME_ROUND_START'))
+        self.registerEvent('EVT_CLIENT_DAMAGE_TEAM')
+        self.registerEvent('EVT_CLIENT_KILL_TEAM')
+        self.registerEvent('EVT_CLIENT_DISCONNECT')
+        self.registerEvent('EVT_GAME_EXIT')
+        self.registerEvent('EVT_GAME_ROUND_END')
+        self.registerEvent('EVT_GAME_ROUND_START')
 
         self._adminPlugin = self.console.getPlugin('admin')
         if self._adminPlugin:

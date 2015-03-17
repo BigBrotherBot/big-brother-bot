@@ -50,6 +50,7 @@
 #                                               mess with GUIDs since that's already done in parsers (where it should be)
 # 23-11-2014 - 3.0.0-beta.11 - Fenix          - added requiresConfigFile = False attribute to Ctime and XlrstatsHistory subplugins
 # 08-02-2014 - 3.0.0-beta.12 - Fenix          - fixed SQL queries quote escaping
+# 17-03-2015 - 3.0.0-beta.13 - Fenix          - replaced deprecated startup() with onStartup()
 
 
 
@@ -60,7 +61,7 @@
 # XLRstats Real Time playerstats plugin
 
 __author__ = 'xlr8or & ttlogic'
-__version__ = '3.0.0-beta.12'
+__version__ = '3.0.0-beta.13'
 
 # Version = major.minor.patches(-development.version)
 
@@ -198,7 +199,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         self.query = None                 # shortcut to the storage.query function
         b3.plugin.Plugin.__init__(self, console, config)
 
-    def startup(self):
+    def onStartup(self):
         """
         Initialize plugin.
         """
@@ -238,13 +239,13 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         PlayerActions._table = self.playeractions_table
 
         # register the events we're interested in.
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_JOIN'), self.onJoin)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_KILL'), self.onKill)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_KILL_TEAM'), self.onTeamKill)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_SUICIDE'), self.onSuicide)
-        self.registerEvent(self.console.getEventID('EVT_GAME_ROUND_START'), self.onRoundStart)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_ACTION'), self.onAction)       # for game-events/actions
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_DAMAGE'), self.onDamage)       # for assist recognition
+        self.registerEvent('EVT_CLIENT_JOIN', self.onJoin)
+        self.registerEvent('EVT_CLIENT_KILL', self.onKill)
+        self.registerEvent('EVT_CLIENT_KILL_TEAM', self.onTeamKill)
+        self.registerEvent('EVT_CLIENT_SUICIDE', self.onSuicide)
+        self.registerEvent('EVT_GAME_ROUND_START', self.onRoundStart)
+        self.registerEvent('EVT_CLIENT_ACTION', self.onAction)       # for game-events/actions
+        self.registerEvent('EVT_CLIENT_DAMAGE', self.onDamage)       # for assist recognition
 
         # get the Client.id for the bot itself (guid: WORLD or Server(bfbc2/moh/hf))
         sclient = self.console.clients.getByGUID("WORLD")
@@ -279,7 +280,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 #start the xlrstats history plugin
                 p = XlrstatshistoryPlugin(self.console, self.history_weekly_table,
                                           self.history_monthly_table, self.playerstats_table)
-                p.startup()
+                p.onStartup()
             else:
                 self.keep_history = False
                 self._xlrstatstables = [self.playerstats_table, self.weaponstats_table, self.weaponusage_table,
@@ -317,11 +318,11 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         # start the ctime subplugin
         if self.keep_time:
             p = CtimePlugin(self.console, self.ctime_table)
-            p.startup()
+            p.onStartup()
 
         #start the xlrstats controller
         #p = XlrstatscontrollerPlugin(self.console, self.min_players, self.silent)
-        #p.startup()
+        #p.onStartup()
 
         # get the map we're in, in case this is a new map and we need to create a db record for it.
         mapstats = self.get_MapStats(self.console.game.mapName)
@@ -2016,7 +2017,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 #         self.registerEvent(b3.events.EVT_STOP)
 #         self.registerEvent(b3.events.EVT_EXIT)
 #
-#     def startup(self):
+#     def onStartup(self):
 #         self.console.debug('Starting SubPlugin: XlrstatsControllerPlugin')
 #         #get a reference to the main Xlrstats plugin
 #         self._xlrstatsPlugin = self.console.getPlugin('xlrstats')
@@ -2107,7 +2108,7 @@ class XlrstatshistoryPlugin(b3.plugin.Plugin):
         self._cronTab = b3.cron.PluginCronTab(self, self.purge, 0, self._minutes, hoursGMT, '*', '*', '*')
         self.console.cron + self._cronTab
 
-    def startup(self):
+    def onStartup(self):
         """
         Initialize plugin.
         """
@@ -2259,13 +2260,13 @@ class CtimePlugin(b3.plugin.Plugin):
         self._cronTab = b3.cron.PluginCronTab(self, self.purge, 0, self._minutes, hoursGMT, '*', '*', '*')
         self.console.cron + self._cronTab
 
-    def startup(self):
+    def onStartup(self):
         """
         Initialize plugin.
         """
         self.debug('starting subplugin...')
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.onAuth)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_DISCONNECT'), self.onDisconnect)
+        self.registerEvent('EVT_CLIENT_AUTH', self.onAuth)
+        self.registerEvent('EVT_CLIENT_DISCONNECT', self.onDisconnect)
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -2389,15 +2390,15 @@ class BattlestatsPlugin(b3.plugin.Plugin):
         self.gameLog = None
         self.clientsLog = None
 
-    def startup(self):
+    def onStartup(self):
         """
         Initialize plugin.
         """
         self.console.debug('starting subplugin...')
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.onAuth)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_DISCONNECT'), self.onDisconnect)
-        self.registerEvent(self.console.getEventID('EVT_GAME_ROUND_START'), self.onRoundStart)
-        self.registerEvent(self.console.getEventID('EVT_GAME_ROUND_END'), self.onRoundEnd)
+        self.registerEvent('EVT_CLIENT_AUTH', self.onAuth)
+        self.registerEvent('EVT_CLIENT_DISCONNECT', self.onDisconnect)
+        self.registerEvent('EVT_GAME_ROUND_START', self.onRoundStart)
+        self.registerEvent('EVT_GAME_ROUND_END', self.onRoundEnd)
 
     ####################################################################################################################
     #                                                                                                                  #

@@ -210,13 +210,13 @@ class StatsPlugin(b3.plugin.Plugin):
                 if func:
                     self._adminPlugin.registerCommand(self, cmd, level, func, alias)
 
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_DAMAGE_TEAM'), self.onDamageTeam)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_KILL_TEAM'), self.onTeamKill)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_KILL'), self.onKill)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_DAMAGE'), self.onDamage)
-        self.registerEvent(self.console.getEventID('EVT_GAME_EXIT'), self.onShowAwards)
-        self.registerEvent(self.console.getEventID('EVT_GAME_MAP_CHANGE'), self.onShowAwards)
-        self.registerEvent(self.console.getEventID('EVT_GAME_ROUND_START'), self.onRoundStart)
+        self.registerEvent('EVT_CLIENT_DAMAGE_TEAM', self.onDamageTeam)
+        self.registerEvent('EVT_CLIENT_KILL_TEAM', self.onTeamKill)
+        self.registerEvent('EVT_CLIENT_KILL', self.onKill)
+        self.registerEvent('EVT_CLIENT_DAMAGE', self.onDamage)
+        self.registerEvent('EVT_GAME_EXIT', self.onShowAwards)
+        self.registerEvent('EVT_GAME_MAP_CHANGE', self.onShowAwards)
+        self.registerEvent('EVT_GAME_ROUND_START', self.onRoundStart)
 
     ####################################################################################################################
     #                                                                                                                  #

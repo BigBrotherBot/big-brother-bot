@@ -44,9 +44,11 @@
 # 08/03/2015 - 1.9.2 - Fenix     - added requiresPlugins attribute in Plugin class
 #                                - added PluginData class
 #                                - produce EVT_PLUGIN_ENABLED ands EVT_PLUGIN_DISABLED
+# 17/02/2015 - 1.9.3 - Fenix     - allow plugins to register events using both event key and event id: this allows
+#                                  plugin developers to write less code
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.9.2'
+__version__ = '1.9.3'
 
 import b3.config
 import b3.events
@@ -92,8 +94,8 @@ class Plugin:
                     self.critical("Use a XML editor to modify your config files: it makes easy to spot errors")
                     raise
 
-        self.registerEvent(self.console.getEventID('EVT_STOP'), self.onStop)
-        self.registerEvent(self.console.getEventID('EVT_EXIT'), self.onExit)
+        self.registerEvent('EVT_STOP', self.onStop)
+        self.registerEvent('EVT_EXIT', self.onExit)
 
     def enable(self):
         """
@@ -223,6 +225,9 @@ class Plugin:
         :param name: The event name
         :param args: An optional list of event handlers
         """
+        # if we are given the event key, get the event id instead: this will return
+        # the event id even if we supplied it as input parameter
+        name = self.console.getEventID(name)
         self.events.append(name)
         self.console.registerHandler(name, self)
         if len(args) > 0:

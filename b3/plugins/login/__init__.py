@@ -85,7 +85,7 @@ class LoginPlugin(b3.plugin.Plugin):
             return False
 
         # register the events needed
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.onAuth)
+        self.registerEvent('EVT_CLIENT_AUTH', self.onAuth)
 
         # register our commands
         self._adminPlugin.registerCommand(self, 'login', 2, self.cmd_login, secretLevel=1)

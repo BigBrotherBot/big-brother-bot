@@ -273,7 +273,7 @@ class Test_game_specific_spam(SpamcontrolTestCase):
             this.onChat(new_event)
 
         self.p.onRadio = new.instancemethod(onRadio, self.p, SpamcontrolPlugin)
-        self.p.registerEvent(self.p.console.getEventID('EVT_CLIENT_RADIO'), self.p.onRadio)
+        self.p.registerEvent('EVT_CLIENT_RADIO', self.p.onRadio)
 
         # patch joe to make him able to send radio messages
         def radios(me, text):

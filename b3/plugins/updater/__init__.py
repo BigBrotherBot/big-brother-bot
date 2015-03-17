@@ -104,15 +104,15 @@ class UpdaterPlugin(b3.plugin.Plugin):
 
         # create an events for a proper B3 shutdown: the updating thread fails to shutdown B3 properly when
         # invoking self.console.die() from whithin the thread itself so we need to to handle this from outside
-        self.console.Events.createEvent('EVT_SHUTDOWN_REQUEST', 'Shutdown request')
+        self.console.createEvent('EVT_SHUTDOWN_REQUEST', 'Shutdown request')
 
         # register commands
         self._adminPlugin.registerCommand(self, 'update', 100, self.cmd_update)
         self._adminPlugin.registerCommand(self, 'checkupdate', 100, self.cmd_checkupdate)
 
         # register events needed
-        self.registerEvent(self.console.getEventID('EVT_SHUTDOWN_REQUEST'), self.onShutdownRequest)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.onAuth)
+        self.registerEvent('EVT_SHUTDOWN_REQUEST', self.onShutdownRequest)
+        self.registerEvent('EVT_CLIENT_AUTH', self.onAuth)
 
         # notice plugin started
         self.debug('plugin started')
