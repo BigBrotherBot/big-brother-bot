@@ -407,7 +407,7 @@ class Test_commands(Pluginmanager_TestCase):
         self.adminPlugin._commands['mockcommand'] = Command(plugin=mock_plugin, cmd='mockcommand', level=100, func=mock_func)
         ###### MOCK EVENT
         mock_plugin.onSay = Mock()
-        mock_plugin.registerEvent(self.console.getEventID('EVT_CLIENT_SAY'), mock_plugin.onSay)
+        mock_plugin.registerEvent('EVT_CLIENT_SAY', mock_plugin.onSay)
         ###### MOCK CRON
         mock_plugin.mockCronjob = Mock()
         mock_plugin.mockCrontab = b3.cron.PluginCronTab(mock_plugin, mock_plugin.mockCronjob, minute='*', second= '*/60')

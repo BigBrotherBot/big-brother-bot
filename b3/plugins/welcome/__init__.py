@@ -110,7 +110,7 @@ class WelcomePlugin(b3.plugin.Plugin):
                     self._adminPlugin.registerCommand(self, cmd, level, func, alias)
 
         # register events needed
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.onAuth)
+        self.registerEvent('EVT_CLIENT_AUTH', self.onAuth)
 
     def onLoadConfig(self):
         """

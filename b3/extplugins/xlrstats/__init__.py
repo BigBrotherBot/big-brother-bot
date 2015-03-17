@@ -238,13 +238,13 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         PlayerActions._table = self.playeractions_table
 
         # register the events we're interested in.
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_JOIN'), self.onJoin)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_KILL'), self.onKill)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_KILL_TEAM'), self.onTeamKill)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_SUICIDE'), self.onSuicide)
-        self.registerEvent(self.console.getEventID('EVT_GAME_ROUND_START'), self.onRoundStart)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_ACTION'), self.onAction)       # for game-events/actions
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_DAMAGE'), self.onDamage)       # for assist recognition
+        self.registerEvent('EVT_CLIENT_JOIN', self.onJoin)
+        self.registerEvent('EVT_CLIENT_KILL', self.onKill)
+        self.registerEvent('EVT_CLIENT_KILL_TEAM', self.onTeamKill)
+        self.registerEvent('EVT_CLIENT_SUICIDE', self.onSuicide)
+        self.registerEvent('EVT_GAME_ROUND_START', self.onRoundStart)
+        self.registerEvent('EVT_CLIENT_ACTION', self.onAction)       # for game-events/actions
+        self.registerEvent('EVT_CLIENT_DAMAGE', self.onDamage)       # for assist recognition
 
         # get the Client.id for the bot itself (guid: WORLD or Server(bfbc2/moh/hf))
         sclient = self.console.clients.getByGUID("WORLD")
@@ -2264,8 +2264,8 @@ class CtimePlugin(b3.plugin.Plugin):
         Initialize plugin.
         """
         self.debug('starting subplugin...')
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.onAuth)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_DISCONNECT'), self.onDisconnect)
+        self.registerEvent('EVT_CLIENT_AUTH', self.onAuth)
+        self.registerEvent('EVT_CLIENT_DISCONNECT', self.onDisconnect)
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -2394,10 +2394,10 @@ class BattlestatsPlugin(b3.plugin.Plugin):
         Initialize plugin.
         """
         self.console.debug('starting subplugin...')
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.onAuth)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_DISCONNECT'), self.onDisconnect)
-        self.registerEvent(self.console.getEventID('EVT_GAME_ROUND_START'), self.onRoundStart)
-        self.registerEvent(self.console.getEventID('EVT_GAME_ROUND_END'), self.onRoundEnd)
+        self.registerEvent('EVT_CLIENT_AUTH', self.onAuth)
+        self.registerEvent('EVT_CLIENT_DISCONNECT', self.onDisconnect)
+        self.registerEvent('EVT_GAME_ROUND_START', self.onRoundStart)
+        self.registerEvent('EVT_GAME_ROUND_END', self.onRoundEnd)
 
     ####################################################################################################################
     #                                                                                                                  #

@@ -492,10 +492,10 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         Plugin startup.
         """
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_SAY'), self.OnSay)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_SAY'), self.OnSay)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_SQUAD_SAY'), self.OnSay)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_PRIVATE_SAY'), self.OnPrivateSay)
+        self.registerEvent('EVT_CLIENT_SAY', self.OnSay)
+        self.registerEvent('EVT_CLIENT_TEAM_SAY', self.OnSay)
+        self.registerEvent('EVT_CLIENT_SQUAD_SAY', self.OnSay)
+        self.registerEvent('EVT_CLIENT_PRIVATE_SAY', self.OnPrivateSay)
         self.createEvent('EVT_ADMIN_COMMAND', 'Admin Command')
 
         try:

@@ -109,10 +109,10 @@ class CensorPlugin(b3.plugin.Plugin):
             self.critical('could not start without admin plugin')
             return False
 
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_SAY'))
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_SAY'))
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_NAME_CHANGE'))
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'))
+        self.registerEvent('EVT_CLIENT_SAY')
+        self.registerEvent('EVT_CLIENT_TEAM_SAY')
+        self.registerEvent('EVT_CLIENT_NAME_CHANGE')
+        self.registerEvent('EVT_CLIENT_AUTH')
 
     def onLoadConfig(self):
         """

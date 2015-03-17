@@ -1323,7 +1323,7 @@ class Iourt42Parser(Iourt41Parser):
             this.onChat(new_event)
 
         self.spamcontrolPlugin.onRadio = new.instancemethod(onRadio, self.spamcontrolPlugin, SpamcontrolPlugin)
-        self.spamcontrolPlugin.registerEvent(self.getEventID('EVT_CLIENT_RADIO'), self.spamcontrolPlugin.onRadio)
+        self.spamcontrolPlugin.registerEvent('EVT_CLIENT_RADIO', self.spamcontrolPlugin.onRadio)
 
     @staticmethod
     def patch_Clients():

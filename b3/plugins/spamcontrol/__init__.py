@@ -95,9 +95,9 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
         Initialize the plugin.
         """
         # register the events needed
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_SAY'), self.onChat)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_SAY'), self.onChat)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_PRIVATE_SAY'), self.onChat)
+        self.registerEvent('EVT_CLIENT_SAY', self.onChat)
+        self.registerEvent('EVT_CLIENT_TEAM_SAY', self.onChat)
+        self.registerEvent('EVT_CLIENT_PRIVATE_SAY', self.onChat)
 
         self._adminPlugin = self.console.getPlugin('admin')
         if self._adminPlugin:
