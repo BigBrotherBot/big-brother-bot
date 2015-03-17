@@ -40,9 +40,10 @@
 # 2014/08/02 - 1.9    - Fenix           - syntax cleanup
 #                                       - uniform log message format
 # 2015/01/27 - 1.10   - Thomas LEVEIL   - fix `write` not making any use of its `socketTimeout` optional parameter
+# 2015/03/07 - 1.11   - 82ndab.Bravo17  - replace beaker status caching with built-in caching
 #
 __author__ = 'ThorN'
-__version__ = '1.10'
+__version__ = '1.11'
 
 import re
 import socket
@@ -51,10 +52,6 @@ import time
 import thread
 import threading
 import Queue
-
-from b3.lib.beaker.cache import CacheManager
-from b3.lib.beaker.util import parse_cache_config_options
-
 
 class Rcon(object):
 
@@ -69,18 +66,11 @@ class Rcon(object):
     rconreplystring = '\377\377\377\377print\n'
     qserversendstring = '\377\377\377\377%s\n'
 
-    # caching options
-    cache_opts = {
-        'cache.data_dir': 'b3/cache/data',
-        'cache.lock_dir': 'b3/cache/lock',
-    }
-
-    # create cache
-    cache = CacheManager(**parse_cache_config_options(cache_opts))
-
     # default expiretime for the status cache in seconds and cache type
     status_cache_expire_time = 2
-    status_cache_type = 'memory'
+    status_cache = False
+    status_cache_expired = None
+    status_cache_data = ''
 
     def __init__(self, console, host, password):
         """
@@ -93,17 +83,20 @@ class Rcon(object):
         self.queue = Queue.Queue()
 
         if self.console.config.has_option('caching', 'status_cache_type'):
-            self.status_cache_type = self.console.config.get('caching', 'status_cache_type').lower()
-            if self.status_cache_type not in ['file', 'memory']:
-                self.status_cache_type = 'memory'
+            status_cache_type = self.console.config.get('caching', 'status_cache_type').lower()
+            if status_cache_type == 'memory':
+                self.status_cache = True
+
         if self.console.config.has_option('caching', 'status_cache_expire'):
             self.status_cache_expire_time = abs(self.console.config.getint('caching', 'status_cache_expire'))
             if self.status_cache_expire_time > 5:
                 self.status_cache_expire_time = 5
+        # set the cacche expire time to now, so the first status request will retrieve a status from the server
+        status_cache_expired = time.time()
 
         self.console.bot('Rcon status cache expire time: [%s sec] Type: [%s]' % (self.status_cache_expire_time,
-                                                                                 self.status_cache_type))
-
+                                                                                 self.status_cache))
+        self.console.bot('Game name is: %s' % self.console.gameName)
         self.socket = socket.socket(type=socket.SOCK_DGRAM)
         self.host = host
         self.password = password
@@ -266,7 +259,7 @@ class Rcon(object):
         """
         self.queue.put(lines)
 
-    def write(self, cmd, maxRetries=None, socketTimeout=None, Cached=True):
+    def write(self, cmd, maxRetries=None, socketTimeout=None):
         """
         Write a RCON command.
         :param cmd: The string to be sent
@@ -274,24 +267,26 @@ class Rcon(object):
         :param socketTimeout: The socket timeout value
         """
         # intercept status request for caching construct
-        if cmd == 'status' and Cached:
-            status_cache = self.cache.get_cache('status', type=self.status_cache_type,
-                                                expire=self.status_cache_expire_time)
-
-            return status_cache.get(key='status', createfunc=self._requestStatusCached)
-
+        if (cmd == 'status' or cmd == 'PB_SV_PList') and self.status_cache:
+            if time.time() < self.status_cache_expired:
+                self.console.verbose2('Using Status: Cached %s' % cmd)
+                return self.status_cache_data
+            else:
+                with self.lock:
+                    data = self.sendRcon(cmd, maxRetries=maxRetries, socketTimeout=socketTimeout)
+                    if data:
+                        self.status_cache_data = data
+                        self.status_cache_expired = time.time() + self.status_cache_expire_time
+                        self.console.verbose2('Using Status: Fresh %s' % cmd)
+                    else:
+                        # if no data returned set the cached status to empty, but don't update the expired timer so next attempt will try 
+                        # to read a new value
+                        self.status_cache_data = ''
+                return self.status_cache_data
+        
         with self.lock:
             data = self.sendRcon(cmd, maxRetries=maxRetries, socketTimeout=socketTimeout)
-
         return data if data else ''
-
-    def _requestStatusCached(self):
-        with self.lock:
-            _data = self.sendRcon('status', maxRetries=5)
-        if _data:
-            return _data
-        else:
-            return ''
 
     def flush(self):
         pass
