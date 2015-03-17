@@ -31,8 +31,7 @@ the [man page](http://linux.die.net/man/8/useradd)
 As described above, the script will allow you to launch multiple B3 instances so you can manage multiple game servers.
 In order to do that you need to specify multiple B3 configuration files to be used to start B3 instances: those 
 configuration files needs to be placed in the B3 main configuration directory (namely **b3/conf**). The names of such
-configuration files needs to follow a specific pattern: `b3_[<name>].[.ini|.xml]` (*.ini* format will be introduced soon 
-as B3 main configuration file, but this script is already .ini capable).  
+configuration files needs to follow a specific pattern: `b3_[<name>].[.ini|.xml]`.  
 
 As an example let's assume you are running 2 game servers and you need to start **2** B3 intances: let's call them 
 **tdm** and **ctf**. What you need to do is pretty simple: you need to create **2** configuration files and place them 
