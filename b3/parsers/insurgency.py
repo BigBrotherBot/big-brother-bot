@@ -66,6 +66,7 @@
 # 2015/13/01 - 0.14  - 82ndab-Bravo17 - don't authorize Console when it says something in game
 #                                     - bots should now stay authed if still on server during sync
 # 2015/03/07 - 0.15  - Thomas LEVEIL  - disconnect client after kicking them
+# 2015/13/03 - 0.16  - 82ndab-Bravo17 - Get map name from host_map cvar since it is no longer returned by status
 
 import re
 import time
@@ -87,7 +88,7 @@ from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '0.15'
+__version__ = '0.16'
 
 
 # GAME SETUP
@@ -259,6 +260,10 @@ class InsurgencyParser(Parser):
 
         self.game.cvar = {}
         self.queryServerInfo()
+        self.game.mapName = self.getMap()
+        if self.game.mapName == None:
+            self.game.mapName = ''
+        self.verbose2('Current map name is %s' % self.game.mapName)
 
         # load SM plugins list
         self.sm_plugins = self.get_loaded_sm_plugins()
@@ -877,8 +882,7 @@ class InsurgencyParser(Parser):
         """
         Return the current map/level name.
         """
-        self.queryServerInfo()
-        return self.game.mapName
+        return self.getCvar("host_map")['value'][0:-4]
 
     def getMaps(self):
         """

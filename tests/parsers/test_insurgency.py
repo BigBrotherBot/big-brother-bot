@@ -98,6 +98,7 @@ class InsurgencyTestCase(unittest.TestCase):
         self.parser.output = Mock()
         self.parser.output.write = Mock(wraps=self.output_write)
         when(self.parser).is_sourcemod_installed().thenReturn(True)
+        when(self.parser).getMap().thenReturn('buhriz')
 
         self.evt_queue = []
 
@@ -208,6 +209,7 @@ class AdminTestCase(unittest.TestCase):
         adminPlugin.onStartup()
         when(self.parser).getPlugin('admin').thenReturn(adminPlugin)
         when(self.parser).getAllAvailableMaps().thenReturn (['buhriz', 'district', 'sinjar', 'siege', 'uprising', 'ministry', 'revolt', 'heights', 'contact', 'peak', 'panj', 'market'])
+        when(self.parser).getMap().thenReturn('buhriz')
         self.parser.startup()
         self.parser.patch_b3_admin_plugin() # seems that without this the test module doesn't patch the admin plugin
 
