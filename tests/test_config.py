@@ -91,6 +91,9 @@ class CommonTestMethodsMixin:
     def assert_getboolean_raises(self, expected_error, section, name, conf):
         self._assert_func_raises(self.conf.getboolean, expected_error, section, name, conf)
 
+    def assert_getDuration(self, expected, conf_value):
+        self._assert_func(self.conf.getDuration, expected, conf_value)
+
     def test_get(self):
         self.assert_get('bar', 'bar')
         self.assert_get('', '')
@@ -138,6 +141,12 @@ class CommonTestMethodsMixin:
         self.assert_getboolean_raises(ValueError, 'section_foo', 'foo', self.assert_func_template % "")
         self.assert_getboolean_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', self.assert_func_template % "")
         self.assert_getboolean_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', self.assert_func_template % "")
+
+    def test_getDuration(self):
+        self.assert_getDuration(0, '0')
+        self.assert_getDuration(50, '50')
+        self.assert_getDuration(24*60, '24h')
+        self.assert_getDuration(0.5, '30s')
 
 
 class Test_XmlConfigParser(CommonTestMethodsMixin, B3TestCase):
