@@ -132,6 +132,18 @@ class CronTab(object):
     dow = property(_get_dow, _set_dow)
 
     def _getRate(self, rate, maxrate=None):
+        """
+        >>> o = CronTab(lambda: None)
+        >>> o._getRate('*/5', 60)
+        [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
+        >>> o._getRate('*/5', 10)
+        [0, 5]
+        >>> o._getRate('*/20', 60)
+        [0, 20, 40]
+        >>> o._getRate('*/90', 60)
+        Traceback (most recent call last):
+        ValueError: */90 cannot be over every 59
+        """
         if isinstance(rate, str):
             if ',' in rate:
                 # 10,20,30 = [10, 20, 30]
