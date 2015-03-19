@@ -45,10 +45,7 @@ from b3.functions import main_is_frozen
 from b3.setup import Setup
 from b3.setup import Update
 
-try:
-    import argparse
-except ImportError:
-    import b3.lib.argparse as argparse
+import argparse
 
 modulePath = pkg_handler.resource_directory(__name__)
 
