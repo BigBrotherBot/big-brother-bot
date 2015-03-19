@@ -241,7 +241,7 @@ class Test_cmd_xlrstats(XlrstatsTestCase):
         # WHEN
         self.p1.says("!xlrstats P2")
         # THEN
-        self.assertEqual(['XLR Stats: Could not find stats for P2'], self.p1.message_history)
+        self.assertEqual(['XLR Stats: could not find stats for P2'], self.p1.message_history)
 
     def test_for_other_registered_player(self):
         # GIVEN

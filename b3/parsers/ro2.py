@@ -47,6 +47,8 @@
 #                   - fixed _commands['message'] pattern: was missing %(uid)s placeholder
 # 2014-08-12 - 1.45 - syntax cleanup
 #                   - fixed undefined reference in handle_chat()
+# 2015-03-19 - 1.46 - removed deprecated usage of dict.has_key (us 'in dict' instead)
+#                   - removed several unused variables
 
 import b3
 import b3.cron
@@ -67,7 +69,7 @@ from b3.parser import Parser
 from ftplib import FTP
 
 __author__ = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.45'
+__version__ = '1.46'
 
 
 class Ro2Parser(b3.parser.Parser):
@@ -232,7 +234,6 @@ class Ro2Parser(b3.parser.Parser):
                     chat_data = self._read_queue.pop(0)
                     self.handle_chat(chat_data)
 
-                counter = 0
                 time.sleep(.5)
                 
         self.bot('Stop listening...')
@@ -290,7 +291,7 @@ class Ro2Parser(b3.parser.Parser):
                     text = (text[0:start+1] + '@' + text[start+2:])
 
         team = False
-        if data.has_key('teamnotice'):
+        if 'teamnotice' in data:
             team = True
 
         client = self.clients.getByName(name)
@@ -321,7 +322,7 @@ class Ro2Parser(b3.parser.Parser):
         if not referer:
             referer = data_url
         else:
-            referer = self.url + referer
+            referer += self.url
             
         self.headers['Referer'] = referer
         
@@ -384,7 +385,7 @@ class Ro2Parser(b3.parser.Parser):
             try:
                 self.debug('Login attempt %s' % login_attempt)
                 request_console = urllib2.Request(login_url, data, self.headers)
-                console_read = self.opener.open(request_console)
+                self.opener.open(request_console)
                 self._paused = False
                 return True
             except Exception:
@@ -734,7 +735,7 @@ class Ro2Parser(b3.parser.Parser):
                    "Referer": consoledata_url}
         request_console = urllib2.Request(consoledata_url, data, headers)
         adminconsole_read = self.opener.open(request_console)
-        console_data = adminconsole_read.read()
+        adminconsole_read.read()
 
     def getServerPlayerList(self):
         """
@@ -901,7 +902,7 @@ class Ro2Parser(b3.parser.Parser):
         data = 'action=add&uniqueid=' + banid
         referer = None
         self.debug('Ban data %s' % data)
-        console_data = self.readwriteweb(data, referer, bandata_url)
+        self.readwriteweb(data, referer, bandata_url)
         
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
 
@@ -934,7 +935,7 @@ class Ro2Parser(b3.parser.Parser):
             bandata_url = '/policy/bans'
             referer = None
             data = 'banid=plainid%3A' + ban_no + '&action=delete'
-            banlist_data = self.readwriteweb(data, referer, bandata_url)
+            self.readwriteweb(data, referer, bandata_url)
             if admin:
                 admin.message('Removed %s from server banlist' %client.name)
         
@@ -1014,15 +1015,14 @@ class Ro2Parser(b3.parser.Parser):
         Return a list of suggested map names in cases it fails to recognize the map that was provided
         """
         gametype = mapname[0:2]
-        if self._gametypes.has_key(gametype) and self._maps[gametype].count(mapname) > 0:
+        if gametype in self._gametypes and self._maps[gametype].count(mapname) > 0:
             mapchange_url = '/current/change'
             data = 'gametype=' + self._gametypes[gametype] + \
                    '&map=' + mapname + '&mutatorGroupCount=0&urlextra=&action=change'
             referer = None
-            console_data = self.readwriteweb(data, referer, mapchange_url)
+            self.readwriteweb(data, referer, mapchange_url)
         else:
             self.write(self.getCommand('say',  prefix=self.msgPrefix, message='Incorrect Gametype-Map combination'))
-            return
             
     def getMap(self):
         """
@@ -1047,7 +1047,6 @@ class Ro2Parser(b3.parser.Parser):
         """
         Return the next map/level name to be played.
         """
-        nextmap=''
         map_rotation = self.getMaps()
         no_maps = len(map_rotation)
         currentmap = self.getMap()
@@ -1057,10 +1056,8 @@ class Ro2Parser(b3.parser.Parser):
                 nextmap = map_rotation[i+1]
             else:
                 nextmap = map_rotation[0]
-                
         else:
             nextmap = 'Unknown'
-        
         return nextmap
         
     def getPlayerPings(self, filter_client_ids=None):

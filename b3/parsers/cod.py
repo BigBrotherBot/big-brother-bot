@@ -69,9 +69,10 @@
 # 30/07/2014 - 1.4.32   - Fenix          - fixes for the new getWrap implementation
 # 03/08/2014 - 1.5      - Fenix          - syntax cleanup
 # 15/10/2014 - 1.5.1    - 82ndab.Bravo17 - show current minimum guid length if one that is too short is found
+# 19/03/2015 - 1.5.2    - Fenix          - removed deprecated usage of dict.has_key (us 'in dict' instead)
 
 __author__ = 'ThorN, xlr8or'
-__version__ = '1.5.1'
+__version__ = '1.5.2'
 
 
 import b3
@@ -782,7 +783,7 @@ class CodParser(AbstractParser):
         for cid, c in plist.iteritems():
             client = self.clients.getByCID(cid)
             if client:
-                if client.guid and c.has_key('guid') and not self.IpsOnly:
+                if client.guid and 'guid' in c and not self.IpsOnly:
                     if client.guid == c['guid']:
                         # player matches
                         self.debug('in-sync %s == %s', client.guid, c['guid'])
@@ -790,7 +791,7 @@ class CodParser(AbstractParser):
                     else:
                         self.debug('no-sync %s <> %s', client.guid, c['guid'])
                         client.disconnect()
-                elif client.ip and c.has_key('ip'):
+                elif client.ip and 'ip' in c:
                     if client.ip == c['ip']:
                         # player matches
                         self.debug('in-sync %s == %s', client.ip, c['ip'])

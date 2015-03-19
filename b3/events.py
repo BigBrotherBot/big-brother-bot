@@ -33,6 +33,7 @@
 # 09/08/2014 - 1.7   - Courgette    - define new event EVT_CLIENT_TEAM_CHANGE2
 # 09/03/2014 - 1.8   - Fenix        - added EVT_PLUGIN_ENABLED, EVT_PLUGIN_DISABLED, EVT_PLUGIN_LOADED,
 #                                     EVT_PLUGIN_UNLOADED
+# 19/03/2015 - 1.8.1 - Fenix        - fixed test for membership using 'if not X in Y' (now use 'if X not in Y')
 
 __author__ = 'ThorN, xlr8or, Courgette'
 __version__ = '1.8'
@@ -214,9 +215,9 @@ class EventsStats(object):
         :param event_name: The event name
         :param milliseconds_elapsed: The amount of milliseconds necessary to handle the event
         """
-        if not plugin_name in self._handling_timers.keys():
+        if plugin_name not in self._handling_timers:
             self._handling_timers[plugin_name] = {}
-        if not event_name in self._handling_timers[plugin_name].keys():
+        if event_name not in self._handling_timers[plugin_name]:
             self._handling_timers[plugin_name][event_name] = deque(maxlen=self._max_samples)
         self._handling_timers[plugin_name][event_name].append(milliseconds_elapsed)
         self.console.verbose2("%s event handled by %s in %0.3f ms", event_name, plugin_name, milliseconds_elapsed)

@@ -39,6 +39,7 @@
 # 1.15 - 2014/12/27 - new storage module initialization
 # 1.16 - 2015/01/29 - make use of the new b3.config.MainConfig class
 # 1.17 - 2015/02/07 - update write method to accept a socketTimeout=None parameter
+# 1.18 - 2015/03/19 - removed deprecated usage of dict.has_key (us 'in dict' instead)
 
 """
 This module make plugin testing simple. It provides you
@@ -46,7 +47,7 @@ with fakeConsole and joe which can be used to say commands
 as if it where a player.
 """
 
-__version__ = '1.17'
+__version__ = '1.18'
 
 import b3.events
 import b3.output
@@ -116,7 +117,7 @@ class FakeConsole(b3.parser.Parser):
         """
         if not hasattr(event, 'type'):
             return False
-        elif self._handlers.has_key(event.type):
+        elif event.type in self._handlers:
             self.verbose('Queueing event %s %s', self.Events.getName(event.type), event.data)
             self._handleEvent(event)
             return True

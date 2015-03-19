@@ -51,8 +51,10 @@
 # 23-11-2014 - 3.0.0-beta.11 - Fenix          - added requiresConfigFile = False attribute to Ctime and XlrstatsHistory subplugins
 # 08-02-2014 - 3.0.0-beta.12 - Fenix          - fixed SQL queries quote escaping
 # 17-03-2015 - 3.0.0-beta.13 - Fenix          - replaced deprecated startup() with onStartup()
-
-
+# 19-03-2015 - 3.0.0-beta.14 - Fenix          - fixed test for membership using 'if not X in Y' (now use 'if X not in Y')
+#                                             - fixed instance check using type() instead of isinstance()
+#                                             - removed deprecated usage of dict.has_key (us 'in dict' instead)
+#                                             - remove several unused variables
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -61,7 +63,7 @@
 # XLRstats Real Time playerstats plugin
 
 __author__ = 'xlr8or & ttlogic'
-__version__ = '3.0.0-beta.13'
+__version__ = '3.0.0-beta.14'
 
 # Version = major.minor.patches(-development.version)
 
@@ -1031,7 +1033,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
                     # calculate new skill for the victim
                     oldskill = victimstats.skill
-                    if target.team == assister.team and not self.console.game.gameType in self._ffa:
+                    if target.team == assister.team and self.console.game.gameType not in self._ffa:
                         # assister was a teammate, this should not affect victims skill.
                         pass
                     else:
@@ -1087,8 +1089,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             if victimstats is None:
                 return
 
-        _killer_confrontations = killerstats.kills + killerstats.deaths
-        _victom_confrontations = victimstats.kills + victimstats.deaths
+        #_killer_confrontations = killerstats.kills + killerstats.deaths
+        #_victom_confrontations = victimstats.kills + victimstats.deaths
 
         # calculate winning probabilities for both players
         killer_prob = self.win_prob(killerstats.skill, victimstats.skill)
@@ -1627,7 +1629,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     def showTables(self, xlrstats=False):
         _tables = []
         for table in self.console.storage.getTables():
-            if xlrstats and not table in self._xlrstatstables:
+            if xlrstats and table not in self._xlrstatstables:
                 pass
             else:
                 _tables.append(table)
@@ -1640,7 +1642,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     def optimizeTables(self, t=None):
         if not t:
             t = self.showTables()
-        if type(t) == type(''):
+        if isinstance(t, basestring):
             _tables = str(t)
         else:
             _tables = ', '.join(t)
@@ -1655,7 +1657,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     def repairTables(self, t=None):
         if not t:
             t = self.showTables()
-        if type(t) == type(''):
+        if isinstance(t, basestring):
             _tables = str(t)
         else:
             _tables = ', '.join(t)
@@ -1669,21 +1671,19 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     def calculateKillBonus(self):
         self.debug('calculating kill_bonus')
         # make sure _max and _diff are floating numbers (may be redundant)
-        _max = 0.0
-        _diff = 0.0
         _oldkillbonus = self.kill_bonus
 
         # querymax skill from players active in the last 20 days
         seconds = 20 * 86400
-        q = """SELECT `%s`.time_edit, MAX(`%s`.skill) AS max_skill FROM `%s`, `%s` WHERE %s - `%s`.time_edit <= %s""" % \
-            (self.clients_table, self.playerstats_table, self.clients_table, self.playerstats_table,
-            int(time.time()), self.clients_table, seconds)
-
+        q = """SELECT `%s`.time_edit, MAX(`%s`.skill) AS max_skill FROM `%s`, `%s` WHERE %s - `%s`.time_edit <= %s""" % (
+            self.clients_table, self.playerstats_table, self.clients_table, self.playerstats_table, int(time.time()),
+            self.clients_table, seconds)
         cursor = self.query(q)
         r = cursor.getRow()
         _max = r['max_skill']
         if _max is None:
             _max = self.defaultskill
+        _max = float(_max)
         self.verbose('max skill: %s' % _max)
         _diff = _max - self.defaultskill
         if _diff < 0:
@@ -1761,9 +1761,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         if self.auto_correct and round(_correction_factor, _factor_decimals) < 1:
             self.debug('correcting overall skill with factor %s...' % round(_correction_factor, _factor_decimals))
-            q = """UPDATE `%s` SET `skill`=(SELECT `skill` * %s ) WHERE `%s`.client_id <> %s""" % (
-                self.playerstats_table, _correction_factor, self.playerstats_table, self._world_clientid)
-            cursor = self.query(q)
+            self.query("""UPDATE `%s` SET `skill`=(SELECT `skill` * %s ) WHERE `%s`.client_id <> %s""" % (
+                       self.playerstats_table, _correction_factor, self.playerstats_table, self._world_clientid))
 
     def purgePlayers(self):
         if not self.auto_purge:
@@ -1793,12 +1792,10 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 cursor.moveNext()
 
     def purgePlayerStats(self, _id):
-        _q = """DELETE FROM %s WHERE id = %s""" % (self.playerstats_table, _id)
-        _c = self.query(_q)
+        self.query("""DELETE FROM %s WHERE id = %s""" % (self.playerstats_table, _id))
 
     def purgeAssociated(self, _table, _id):
-        _q = """DELETE FROM %s WHERE player_id = %s""" % (_table, _id)
-        _c = self.query(_q)
+        self.query("""DELETE FROM %s WHERE player_id = %s""" % (_table, _id))
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -1820,7 +1817,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         if stats:
             if stats.hide == 1:
-                client.message('^3XLR Stats: ^7Stats for %s are not available (hidden)' % sclient.exactName)
+                client.message('^3XLR Stats: ^7stats for %s are not available (hidden)' % sclient.exactName)
                 return None
             else:
                 message_vars = {
@@ -1834,7 +1831,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 message = self.getMessage('cmd_xlrstats', message_vars)
                 cmd.sayLoudOrPM(client, message)
         else:
-            client.message('^3XLR Stats: ^7Could not find stats for %s' % sclient.exactName)
+            client.message('^3XLR Stats: ^7could not find stats for %s' % sclient.exactName)
 
         return
 
@@ -2192,7 +2189,7 @@ class XlrstatshistoryPlugin(b3.plugin.Plugin):
         q = """DELETE FROM %s WHERE (month < %s AND year <= %s) OR year < %s""" % (
             self.history_monthly_table, _month, _year, _yearPrev)
         self.debug(u'QUERY: %s ' % q)
-        cursor = self.console.storage.query(q)
+        self.console.storage.query(q)
         # purge the weeks table
         if not self._max_weeks or self._max_weeks == 0:
             self.warning(u'max_weeks is invalid [%s]' % self._max_weeks)
@@ -2209,7 +2206,7 @@ class XlrstatshistoryPlugin(b3.plugin.Plugin):
         q = """DELETE FROM %s WHERE (week < %s AND year <= %s) OR year < %s""" % (
             self.history_weekly_table, _week, _year, _yearPrev)
         self.debug(u'QUERY: %s ' % q)
-        cursor = self.console.storage.query(q)
+        self.console.storage.query(q)
 
 ########################################################################################################################
 ##                                                                                                                    ##
@@ -2306,10 +2303,10 @@ class CtimePlugin(b3.plugin.Plugin):
         self.info(u'purge of connection info older than %s days ...' % self._max_age_in_days)
         q = """DELETE FROM %s WHERE came < %i""" % (self.ctime_table, (self.console.time() - (self._max_age_in_days * 24 * 60 * 60)))
         self.debug(u'CTIME QUERY: %s ' % q)
-        cursor = self.console.storage.query(q)
+        self.console.storage.query(q)
 
     def update_time_stats_connected(self, client):
-        if self._clients.has_key(client.cid):
+        if client.cid in self._clients:
             self.debug(u'CTIME CONNECTED: client exist! : %s' % client.cid)
             tmpts = self._clients[client.cid]
             if tmpts.client.guid == client.guid:
@@ -2324,7 +2321,8 @@ class CtimePlugin(b3.plugin.Plugin):
         self._clients[client.cid] = ts
         self.debug(u'CTIME CONNECTED: player %s started playing at: %s' % (client.exactName, ts.came))
 
-    def formatTD(self, td):
+    @staticmethod
+    def formatTD(td):
         hours = td // 3600
         minutes = (td % 3600) // 60
         seconds = td % 60
@@ -2332,7 +2330,7 @@ class CtimePlugin(b3.plugin.Plugin):
 
     def update_time_stats_exit(self, clientid):
         self.debug(u'CTIME LEFT:')
-        if self._clients.has_key(clientid):
+        if clientid in self._clients:
             ts = self._clients[clientid]
             # Fail: Sometimes PB in cod4 returns 31 character guids, we need to dump them.
             # Lets look ahead and do this for the whole codseries.

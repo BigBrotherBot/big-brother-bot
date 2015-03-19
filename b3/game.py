@@ -22,9 +22,10 @@
 # 21/07/2011 - 1.3.1 - Freelander - prevent status plugin errors during map change
 # 21/07/2014 - 1.4   - Fenix      - syntax cleanup
 #                                 - removed hardcoded test case
+# 19/03/2015 - 1.5   - Fenix      - removed deprecated usage of dict.has_key (us 'in dict' instead)
 
 __author__  = 'ThorN'
-__version__ = '1.4'
+__version__ = '1.5'
 
 
 class Game(object):
@@ -54,7 +55,7 @@ class Game(object):
         self.startRound()
 
     def __getattr__(self, key):
-        if self.__dict__.has_key(key):
+        if key in self.__dict__:
             return self.__dict__[key]
         return None
 

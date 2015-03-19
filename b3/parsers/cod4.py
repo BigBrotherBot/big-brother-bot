@@ -45,16 +45,16 @@
 # 02/05/2014 - 1.4.1 - Fenix          - rewrote dictionary creation as literal
 # 30/07/2014 - 1.4.2 - Fenix          - fixes for the new getWrap implementation
 # 03/08/2014 - 1.5   - Fenix          - syntax cleanup
+# 19/03/2015 - 1.5.1 - Fenix          - removed unused import statemnet (from b3 import functions)
+#                                     - removed deprecated usage of dict.has_key (us 'in dict' instead)
 
 __author__ = 'ThorN, xlr8or'
-__version__ = '1.5'
+__version__ = '1.5.1'
 
 import b3.clients
 import b3.functions
 import b3.parsers.cod2
 import re
-
-from b3 import functions
 
 
 class Cod4Parser(b3.parsers.cod2.Cod2Parser):
@@ -222,15 +222,15 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
             client = self.clients.getByCID(cid)
             if client:
                 self.verbose2('client found: %s' % client.name)
-                if client.guid and c.has_key('guid') and not self.IpsOnly:
-                    if functions.fuzzyGuidMatch(client.guid, c['guid']):
+                if client.guid and 'guid' in c and not self.IpsOnly:
+                    if b3.functions.fuzzyGuidMatch(client.guid, c['guid']):
                         # player matches
                         self.debug('in-sync %s == %s', client.guid, c['guid'])
                         mlist[str(cid)] = client
                     else:
                         self.debug('no-sync %s <> %s', client.guid, c['guid'])
                         client.disconnect()
-                elif client.ip and c.has_key('ip'):
+                elif client.ip and 'ip' in c:
                     if client.ip == c['ip']:
                         # player matches
                         self.debug('in-sync %s == %s', client.ip, c['ip'])

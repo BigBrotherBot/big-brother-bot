@@ -33,6 +33,7 @@
 # 29/08/2014 - 0.0.8  - Fenix     - syntax cleanup
 # 14/02/2015 - 0.0.9  - Courgette - display a tip in b3.log at bot start regarding the correct use of b_privatemessages
 # 14/02/2015 - 0.0.10 - Courgette - check the value of b_privatemessages at startup
+# 19/03/2015 - 0.0.11 - Fenix     - removed deprecated usage of dict.has_key (us 'in dict' instead)
 #
 # CREDITS
 # Based on the version 0.0.1, thanks ThorN.
@@ -51,7 +52,7 @@
 # - say (chat window, with "console: " in front)
 
 __author__ = 'xlr8or, ailmanki'
-__version__ = '0.0.10'
+__version__ = '0.0.11'
 
 import re
 import string
@@ -622,7 +623,7 @@ class EtproParser(AbstractParser):
         for cid, c in plist.iteritems():
             client = self.clients.getByCID(cid)
             if client:
-                if client.guid and c.has_key('guid'):
+                if client.guid and 'guid' in c:
                     if client.guid == c['guid']:
                         # player matches
                         self.debug('in-sync %s == %s (cid: %s - slotid: %s)', client.guid, c['guid'], client.cid,
@@ -632,7 +633,7 @@ class EtproParser(AbstractParser):
                         self.debug('no-sync %s <> %s (disconnecting %s from slot %s)', client.guid, c['guid'],
                                    client.name, client.cid)
                         client.disconnect()
-                elif client.ip and c.has_key('ip'):
+                elif client.ip and 'ip' in c:
                     if client.ip == c['ip']:
                         # player matches
                         self.debug('in-sync %s == %s (cid: %s == slotid: %s)', client.ip, c['ip'], client.cid, c['cid'])

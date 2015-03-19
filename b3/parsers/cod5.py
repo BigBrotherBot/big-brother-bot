@@ -40,15 +40,16 @@
 # 29/08/2014 - 1.3.5 - 82ndab.Bravo17 - reduce min guid length to 8
 # 04/08/2014 - 1.4   - Fenix          - syntax cleanup
 # 15/10/2014 - 1.4.1 - 82ndab.Bravo17 - allow minimum guid length to be set in b3 xml, guid_length in b3 section
+# 19/03/2015 - 1.4.2 - Fenix          - removed unused import statemnet (from b3 import functions)
+#                                     - removed deprecated usage of dict.has_key (us 'in dict' instead)
 
 __author__ = 'xlr8or'
-__version__ = '1.4.1'
+__version__ = '1.4.2'
 
 import b3.functions
 import b3.parsers.cod2
 import string
 
-from b3 import functions
 from b3.events import Event
 
 class Cod5Parser(b3.parsers.cod2.Cod2Parser):
@@ -217,15 +218,15 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
             cid = str(cid)
             client = self.clients.getByCID(cid)
             if client:
-                if client.guid and c.has_key('guid') and not self.IpsOnly:
-                    if functions.fuzzyGuidMatch(client.guid, c['guid']):
+                if client.guid and 'guid' in c and not self.IpsOnly:
+                    if b3.functions.fuzzyGuidMatch(client.guid, c['guid']):
                         # player matches
                         self.debug('in-sync %s == %s', client.guid, c['guid'])
                         mlist[str(cid)] = client
                     else:
                         self.debug('no-sync %s <> %s', client.guid, c['guid'])
                         client.disconnect()
-                elif client.ip and c.has_key('ip'):
+                elif client.ip and 'ip' in c:
                     if client.ip == c['ip']:
                         # player matches
                         self.debug('in-sync %s == %s', client.ip, c['ip'])
