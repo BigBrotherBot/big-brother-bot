@@ -18,7 +18,8 @@
 #
 # CHANGELOG
 #
-# 16/02/2014 - 1.6.2  - 82ndab.Bravo17  - Set default score to zero
+# 17/03/2015 - 1.6.3  - 82ndab.Bravo17  - escape ' characters when updating current_clients table
+# 16/02/2015 - 1.6.2  - 82ndab.Bravo17  - Set default score to zero
 # 04/02/2015 - 1.6.1  - Fenix           - fixed exception being generated when not using database to store status information
 # 05/01/2014 - 1.6    - Fenix           - PostgreSQl support
 # 30/08/2014 - 1.5    - Fenix           - syntax cleanup
@@ -61,7 +62,7 @@
 # 29/08/2005 - 1.2.0 - ThorN            - converted to use new event handlers
 
 __author__ = 'ThorN'
-__version__ = '1.6.2'
+__version__ = '1.6.3'
 
 import b3
 import b3.cron
@@ -451,7 +452,11 @@ class StatusPlugin(b3.plugin.Plugin):
                     for k, v in client.attributes.items():
                         # build the qrystring
                         builder_key = "%s%s," % (builder_key, k)
+                        if isinstance(v, basestring):
+                            if "'" in v:
+                                v = "%s" % v.replace("'", "\\'")
                         builder_value = "%s'%s'," % (builder_value, v)
+
                     # cut last ,
                     builder_key = builder_key[:-1]
                     builder_value = builder_value[:-1]
