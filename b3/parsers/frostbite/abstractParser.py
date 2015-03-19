@@ -44,11 +44,12 @@
 # 2014-07-18 - 1.7.2 - Fenix     - updated abstract parser to comply with the new get_wrap implementation
 # 2014-08-05 - 1.7.3 - Fenix     - make use of self.getEvent when registering events: removes warnings
 #                                - added getEasyName method declaration
-# 2014-08-27 - 1.8 - Fenix       - syntax cleanup
+# 2014-08-27 - 1.8   - Fenix     - syntax cleanup
 #                                - major fixes in B3 parser interface methods
+# 19/03/2015 - 1.8.1 - Fenix     - raise NotImplementedError instead of NotImplemented
 
 __author__  = 'Courgette'
-__version__ = '1.8'
+__version__ = '1.8.1'
 
 
 import sys
@@ -329,10 +330,10 @@ class AbstractParser(b3.parser.Parser):
                 return res
 
     def checkVersion(self):
-        raise NotImplemented('checkVersion must be implemented in concrete classes')
+        raise NotImplementedError('checkVersion must be implemented in concrete classes')
         
     def getServerVars(self):
-        raise NotImplemented('getServerVars must be implemented in concrete classes')
+        raise NotImplementedError('getServerVars must be implemented in concrete classes')
 
     def getServerInfo(self):
         """
@@ -357,19 +358,19 @@ class AbstractParser(b3.parser.Parser):
         B3 CID   <--> ingame character name
         B3 GUID  <--> EA_guid
         """
-        raise NotImplemented('getClient must be implemented in concrete classes')
+        raise NotImplementedError('getClient must be implemented in concrete classes')
     
     def getTeam(self, team):
         """
         Convert frostbite team numbers to B3 team numbers.
         """
-        raise NotImplemented('getTeam must be implemented in concrete classes')
+        raise NotImplementedError('getTeam must be implemented in concrete classes')
 
     def getEasyName(self, mapname):
         """
         Change levelname to real name.
         """
-        raise NotImplemented('get_easy_name must be implemented in concrete classes')
+        raise NotImplementedError('get_easy_name must be implemented in concrete classes')
 
     ####################################################################################################################
     #                                                                                                                  #

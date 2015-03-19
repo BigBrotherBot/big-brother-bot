@@ -206,7 +206,7 @@ def start(configFile, nosetup=False, autorestart=False):
         # necessary if using the functions profiler,
         # because signal.signal cannot be used in threads
         signal.signal(signal.SIGTERM, termSignalHandler)
-    except:
+    except Exception:
         pass
 
     try:

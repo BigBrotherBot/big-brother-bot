@@ -19,6 +19,8 @@
 #
 # CHANGELOG
 #
+# 2015/03/19 - 1.8    - Fenix       - actually catch Exception class in try-except
+#                                   - removed deprecated usage of dict.has_key (us 'in dict' instead)
 # 2014/08/09 - 1.7.1  - Courgette   - fire new event EVT_CLIENT_TEAM_CHANGE2
 # 2014/07/26 - 1.7    - Fenix       - syntax cleanup
 #                                   - reformat changelog
@@ -191,7 +193,7 @@ class Client(object):
         try:
             d = self._pluginData[id(plugin)][key]
             return True
-        except:
+        except Exception:
             return False
 
     def setvar(self, plugin, key, value=None):
@@ -204,12 +206,12 @@ class Client(object):
         """
         try:
             self._pluginData[id(plugin)]
-        except:
+        except Exception:
             self._pluginData[id(plugin)] = {}
 
         try:
             self._pluginData[id(plugin)][key].value = value
-        except:
+        except Exception:
             self._pluginData[id(plugin)][key] = ClientVar(value)
 
         return self._pluginData[id(plugin)][key]
@@ -224,7 +226,7 @@ class Client(object):
         """
         try:
             return self._pluginData[id(plugin)][key]
-        except:
+        except Exception:
             return self.setvar(plugin, key, default)
 
     def varlist(self, plugin, key, default=None):
@@ -245,7 +247,7 @@ class Client(object):
         """
         try:
             del self._pluginData[id(plugin)][key]
-        except:
+        except Exception:
             pass
 
     ####################################################################################################################
@@ -1347,7 +1349,7 @@ class Clients(dict):
         name = name.lower()
         try:
             return self[self._nameIndex[name]]
-        except:
+        except Exception:
             for cid, c in self.items():
                 if c.name and c.name.lower() == name:
                     # self.console.debug('found client by name %s = %s', name, c.name)
@@ -1366,7 +1368,7 @@ class Clients(dict):
             # self.console.debug('found client by exact name in index %s = %s : %s', name, c.exactName,
             #                                                                        c.__class__.__name__)
             return c
-        except:
+        except Exception:
             for cid, c in self.items():
                 if c.exactName and c.exactName.lower() == name:
                     #self.console.debug('Found client by exact name %s = %s', name, c.exactName)
@@ -1465,7 +1467,7 @@ class Clients(dict):
                         break
 
                 return collection
-            except:
+            except Exception:
                 return []
         else:
             return self.lookupByName(client_id)
@@ -1500,7 +1502,7 @@ class Clients(dict):
         guid = guid.upper()
         try:
             return self[self._guidIndex[guid]]
-        except:
+        except Exception:
             for cid,c in self.items():
                 if c.guid and c.guid == guid:
                     self._guidIndex[guid] = c.cid
@@ -1592,7 +1594,7 @@ class Clients(dict):
             return
         
         cid = client.cid
-        if self.has_key(cid):
+        if cid in self:
             self[cid] = None
             del self[cid]
             self.console.queueEvent(self.console.getEvent('EVT_CLIENT_DISCONNECT', data=cid, client=client))

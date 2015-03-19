@@ -32,6 +32,7 @@
 # 1.1.1 - 82ndab-Bravo17 - correct race condition
 # 1.1.2 - 82ndab-Bravo17 - improve UDP reads to avoid dropped packets
 # 1.2   - Fenix          - syntax cleanup
+# 1.2.1 - Fenix          - removed deprecated usage of dict.has_key (us 'in dict' instead)
 
 import binascii
 import logging
@@ -47,7 +48,7 @@ from threading import Event
 from threading import Lock
 
 __author__ = '82ndab-Bravo17, Courgette'
-__version__ = '1.2'
+__version__ = '1.2.1'
 
 ########################################################################################################################
 ##
@@ -460,7 +461,7 @@ class BattleyeServer(Thread):
             # we got all the packets that make a full command response
             data = ''
             for p in range(0, total_num_packets):
-                if self._multi_packet_response.has_key(p):
+                if p in self._multi_packet_response:
                     data = data + self._multi_packet_response[p]
                 else:
                     self.getLogger().debug('part #%s of multi packet response is missing' % p)

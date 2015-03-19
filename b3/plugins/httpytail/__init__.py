@@ -29,10 +29,11 @@
 # 2014-08-31 - 1.2   - Fenix          - syntax cleanup
 #                                     - improved plugin configuration file loading
 #                                     - fixed unresolved reference self.webFile: need to reference a local variable
-# 06/03/2015 - 1.3    - Thomas LEVEIL - check Python version to be minimum 2.7
+# 06/03/2015 - 1.3   - Thomas LEVEIL  - check Python version to be minimum 2.7
+# 19/03/2015 - 1.3.1 - Fenix          - fixed exception catching order (IOError before Exception)
 
 __author__ = 'GrosBedo, 82ndab-Bravo17, Courgette'
-__version__ = '1.3'
+__version__ = '1.3.1'
 
 import b3
 import threading
@@ -304,12 +305,7 @@ class HttpytailPlugin(b3.plugin.Plugin):
 
                 # closing the local temporary file
                 self.file.close()
-            except Exception, e:
-                if hasattr(e, 'reason'):
-                    self.error(str(e.reason))
-                if hasattr(e, 'code'):
-                    self.error(str(e.code))
-                self.debug(str(e))
+
             except IOError, e:
                 if hasattr(e, 'reason'):
                     self.error('failed to reach the server: %s' % str(e.reason))
@@ -346,6 +342,14 @@ class HttpytailPlugin(b3.plugin.Plugin):
                 else:
                     self.debug('too many failures: sleeping %s sec' % self._waitBeforeReconnect)
                     time.sleep(self._waitBeforeReconnect)
+
+            except Exception, e:
+                if hasattr(e, 'reason'):
+                    self.error(str(e.reason))
+                if hasattr(e, 'code'):
+                    self.error(str(e.code))
+                self.debug(str(e))
+
             time.sleep(self._httpdelay)
 
         self.verbose("B3 is down: stopping Httpytail thread")

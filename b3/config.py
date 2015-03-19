@@ -49,10 +49,10 @@
 #                                  to properly write comments in a newly generated configuration file
 # 03/03/2015 - 1.7.4 - Fenix     - removed python 2.6 support
 # 03/03/2015 - 1.7.5 - Fenix     - moved exception classes in a separate module
-
+# 19/03/2015 - 1.7.6 - Fenix     - raise NotImplementedError instead of NotImplemented
 
 __author__  = 'ThorN, Courgette, Fenix'
-__version__ = '1.7.5'
+__version__ = '1.7.6'
 
 import os
 import re
@@ -446,7 +446,7 @@ class MainConfig(B3ConfigParserMixin):
         elif isinstance(self._config_parser, CfgConfigParser):
             self._init_plugins_from_cfg()
         else:
-            raise NotImplemented("unexpected config type: %r" % self._config_parser.__class__)
+            raise NotImplementedError("unexpected config type: %r" % self._config_parser.__class__)
 
     def _init_plugins_from_xml(self):
         self._plugins = []
@@ -505,7 +505,7 @@ class MainConfig(B3ConfigParserMixin):
         elif isinstance(self._config_parser, CfgConfigParser):
             return self._config_parser.getpath("b3", "external_plugins_dir")
         else:
-            raise NotImplemented("unexpected config type: %r" % self._config_parser.__class__)
+            raise NotImplementedError("unexpected config type: %r" % self._config_parser.__class__)
 
     def get(self, *args, **kwargs):
         """

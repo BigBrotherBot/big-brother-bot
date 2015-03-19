@@ -46,9 +46,10 @@
 # 11/08/2014 - 0.9.4 - Fenix     - syntax cleanup
 #                                - make use of self.getEvent() when producing events
 #                                - fixed current mapname retrieval
+# 19/03/2015 - 0.9.5 - Fenix     - removed deprecated usage of dict.has_key (us 'in dict' instead)
 
 __author__ = 'xlr8or, Courgette'
-__version__ = '0.9.4'
+__version__ = '0.9.5'
 
 import re
 import string
@@ -292,9 +293,9 @@ class Smg11Parser(AbstractParser):
             data['name'] = data['n']
 
         t = 0
-        if data.has_key('team'):
+        if 'team' in data:
             t = data['team']
-        elif data.has_key('t'):
+        elif 't' in data:
             t = data['t']
 
         data['team'] = self.getTeam(t)
