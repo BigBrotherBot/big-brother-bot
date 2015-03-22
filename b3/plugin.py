@@ -46,9 +46,12 @@
 #                                - produce EVT_PLUGIN_ENABLED ands EVT_PLUGIN_DISABLED
 # 17/02/2015 - 1.9.3 - Fenix     - allow plugins to register events using both event key and event id: this allows
 #                                  plugin developers to write less code
+# 21/03/2015 - 1.9.4 - Fenix     - added requiresParsers attribute in Plugin class: customizable with a list of game
+#                                  names the plugin will work on (will reduce the amount of code needed to filter out
+#                                  unsupported games inside plugins)
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.9.3'
+__version__ = '1.9.4'
 
 import b3.config
 import b3.events
@@ -70,6 +73,7 @@ class Plugin:
     events = []
     requiresConfigFile = True   # plugin developers : customize this
     requiresPlugins = []        # plugin developers : customize this
+    requiresParsers = []        # plugin developers : customize this
     working = True
 
     def __init__(self, console, config=None):
