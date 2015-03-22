@@ -350,3 +350,21 @@ class Test_Plugin_registerEvent(B3TestCase):
         self.assertEqual(0, p.onEvent_call_count)
         self.assertEqual(1, p.stub_method_call_count)
         self.assertEqual(0, p.stub_method2_call_count)
+
+    def test_register_event_by_name_with_valid_hook(self):
+        # GIVEN
+        evt_name = 'EVT_CLIENT_SAY'
+        k = self.console.getEventID(evt_name)
+        p = MyPlugin(self.console, self.conf)
+        p.registerEvent(evt_name, p.stub_method)
+        # THEN
+        self.assertIn(k, self.console._handlers.keys())
+        self.assertIn(p, self.console._handlers[k])
+        self.assertIn(k, p.eventmap.keys())
+        self.assertIn(p.stub_method, p.eventmap[k])
+        # WHEN
+        self.console.queueEvent(Event(k, None))
+        # THEN
+        self.assertEqual(0, p.onEvent_call_count)
+        self.assertEqual(1, p.stub_method_call_count)
+        self.assertEqual(0, p.stub_method2_call_count)
