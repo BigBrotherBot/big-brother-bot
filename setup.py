@@ -529,6 +529,7 @@ setup(
         'pymysql>=0.6.6,<2',
         'python-dateutil>=2.4.1,<3',
         'feedparser>=4.1,<6',
+        'requests>=2.6.0'
     ],
     packages=setuptools.find_packages(),
     package_data={'': [
