@@ -27,6 +27,7 @@ from b3.plugins.geolocation import GeolocationPlugin
 from b3.plugins.geolocation.location import Location
 from nose.plugins.attrib import attr
 from tests import B3TestCase
+from unittest2 import skip
 
 
 class GeolocationTestCase(B3TestCase):
@@ -59,6 +60,7 @@ class GeolocationTestCase(B3TestCase):
     #                                                                                                                  #
     ####################################################################################################################
 
+    @skip
     @attr('slow')
     def test_event_client_geolocation_success(self):
         # GIVEN
@@ -72,6 +74,7 @@ class GeolocationTestCase(B3TestCase):
         self.assertIsInstance(self.mike.location, Location)
         print >> sys.stderr, "IP: %s : %r" % (self.mike.ip, self.mike.location)
 
+    @skip
     @attr('slow')
     def test_event_client_geolocation_failure(self):
         # GIVEN
@@ -83,6 +86,7 @@ class GeolocationTestCase(B3TestCase):
         self.assertIsNone(self.mike.location)
         print >> sys.stderr, "IP: %s : %r" % (self.mike.ip, self.mike.location)
 
+    @skip
     @attr('slow')
     def test_event_client_geolocation_success_maxmind(self):
         # GIVEN
@@ -99,6 +103,7 @@ class GeolocationTestCase(B3TestCase):
         self.assertIsNone(self.mike.location.isp)
         print >> sys.stderr, "IP: %s : %r" % (self.mike.ip, self.mike.location)
 
+    @skip
     @attr('slow')
     def test_event_client_geolocation_success_maxmind_using_event_client_update(self):
         # GIVEN
