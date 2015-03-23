@@ -17,15 +17,21 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 import logging
+import os
 
 from mock import patch
 from mock import call
 from mock import ANY
 from ConfigParser import NoOptionError
+from mockito import when
 from b3.config import CfgConfigParser
 from b3.plugin import Plugin
 from b3.events import Event
 from tests import B3TestCase
+from tests.fakePlugins import __file__ as external_plugins__file__
+
+external_plugins_dir = os.path.dirname(external_plugins__file__)
+testplugin_config_file = os.path.join(external_plugins_dir, "testplugin/conf/plugin_testplugin.ini")
 
 
 class MyPlugin(Plugin):
@@ -368,3 +374,38 @@ class Test_Plugin_registerEvent(B3TestCase):
         self.assertEqual(0, p.onEvent_call_count)
         self.assertEqual(1, p.stub_method_call_count)
         self.assertEqual(0, p.stub_method2_call_count)
+
+
+class Test_Plugin_requiresParser(B3TestCase):
+
+    def setUp(self):
+        B3TestCase.setUp(self)
+        when(self.console.config).get_external_plugins_dir().thenReturn(external_plugins_dir)
+        self.conf = CfgConfigParser(testplugin_config_file)
+
+        self.plugin_list = [
+            {'name': 'admin', 'conf': '@b3/conf/plugin_admin.ini', 'path': None, 'disabled': False},
+        ]
+        when(self.console.config).get_plugins().thenReturn(self.plugin_list)
+
+    def test_nominal(self):
+        # GIVEN
+        self.plugin_list.append(
+            {'name': 'testplugin1', 'conf': None, 'path': external_plugins_dir, 'disabled': False}
+        )
+        # WHEN
+        with patch.object(self.console, 'error') as error_mock:
+            self.console.loadPlugins()
+        # THEN
+        self.assertListEqual([], error_mock.mock_calls)
+
+    def test_wrong_game(self):
+        # GIVEN
+        self.plugin_list.append(
+            {'name': 'testplugin2', 'conf': None, 'path': external_plugins_dir, 'disabled': False}
+        )
+        # WHEN
+        with patch.object(self.console, 'error') as error_mock:
+            self.console.loadPlugins()
+        # THEN
+        self.assertListEqual([call("Could not load plugin testplugin2 : 'plugin testplugin2 is not compatible with None parser : supported games are : Dummy'")], error_mock.mock_calls)
