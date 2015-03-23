@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/03/21 - 1.42.4 - Fenix           - added support for the new plugin attribute 'requiresParsers'
 # 2015/03/16 - 1.42.3 - Fenix           - minor fixes to plugin dependency loading
 # 2015/03/09 - 1.42.2 - Fenix           - added plugin dependency loading
 # 2015/03/01 - 1.42.1 - Fenix           - added unregisterHandler method
@@ -174,7 +175,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.42.2'
+__version__ = '1.42.4'
 
 
 import os
@@ -194,7 +195,6 @@ import b3
 import b3.config
 import b3.storage
 import b3.events
-import b3.exceptions
 import b3.output
 import b3.game
 import b3.cron
@@ -207,6 +207,7 @@ from collections import OrderedDict
 from b3.clients import Clients
 from b3.clients import Group
 from b3.decorators import memoize
+from b3.exceptions import MissingRequirement
 from b3.functions import getModule
 from b3.functions import vars2printf
 from b3.functions import main_is_frozen
@@ -878,20 +879,29 @@ class Parser(object):
             :param p_data: A PluginData containing plugin information
             :return: list[PluginData] a list of PluginData of plugins needed by the current one
             """
-            if p_data.clazz and p_data.clazz.requiresPlugins:
-                # DFS: look first at the whole requirement tree and try to load from ground up
-                collection = [p_data]
-                for r in p_data.clazz.requiresPlugins:
-                    if r not in plugins and r not in plugin_required:
-                        try:
-                            # missing requirement, try to load it
-                            self.warning('Plugin %s has unmet dependency : %s : trying to load plugin %s...' % (p_data.name, r, r))
-                            collection += _get_plugin_data(PluginData(name=r))
-                            self.debug('Plugin %s dependency satisfied: %s' % (p_data.name, r))
-                        except Exception, ex:
-                            raise b3.exceptions.MissingRequirement('missing required plugin: %s : %s' % (r, extract_tb(sys.exc_info()[2])), ex)
+            if p_data.clazz:
 
-                return collection
+                # check if the current game support this plugin (this may actually exclude more than one plugin
+                # in case a plugin is built on top of an incompatible one, due to plugin dependencies)
+                if p_data.clazz.requiresParsers and self.gameName not in p_data.clazz.requiresParsers:
+                    raise MissingRequirement('plugin %s is not compatible with %s parser : supported games are : %s' % (
+                                             p_data.name, self.gameName, ', '.join(p_data.clazz.requiresParsers)))
+
+                # check for plugin dependency
+                if p_data.clazz.requiresPlugins:
+                    # DFS: look first at the whole requirement tree and try to load from ground up
+                    collection = [p_data]
+                    for r in p_data.clazz.requiresPlugins:
+                        if r not in plugins and r not in plugin_required:
+                            try:
+                                # missing requirement, try to load it
+                                self.warning('Plugin %s has unmet dependency : %s : trying to load plugin %s...' % (p_data.name, r, r))
+                                collection += _get_plugin_data(PluginData(name=r))
+                                self.debug('Plugin %s dependency satisfied: %s' % (p_data.name, r))
+                            except Exception, ex:
+                                raise MissingRequirement('missing required plugin: %s : %s' % (r, extract_tb(sys.exc_info()[2])), ex)
+
+                    return collection
 
             # plugin has not been loaded manually nor a previous automatic load attempt has been done
             if p_data.name not in plugins and p_data.name not in plugin_required:
@@ -907,11 +917,11 @@ class Parser(object):
             return [p_data]
 
         # construct a list of all the plugins which needs to be loaded
+        # here below we will discard all the plugin which have unmet dependency
         for plugin_name, plugin_data in plugins.items():
-            # here below we will discard all the plugin which have unmet dependency
             try:
                 plugin_list += _get_plugin_data(plugin_data)
-            except b3.exceptions.MissingRequirement, e:
+            except MissingRequirement, e:
                 self.error('Could not load plugin %s : %s' % (plugin_name, e))
 
         plugin_dict = {x.name: x for x in plugin_list}      # dict(str, PluginData)
