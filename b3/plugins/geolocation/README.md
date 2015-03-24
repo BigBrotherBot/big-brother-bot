@@ -1,4 +1,4 @@
-Geolocation Plugin for BigBrotherBot [![BigBrotherBot](http://i.imgur.com/7sljo4G.png)][B3]
+Geolocation Plugin for BigBrotherBot
 ====================================
 
 Description

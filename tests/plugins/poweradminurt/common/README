@@ -1,0 +1,30 @@
+Module description
+==================
+
+This module contains unittests on features that are common to both the iourt41 and iourt42 versions of the plugin
+under test.
+
+Typical test module will define a mixin with the actual tests and later define two classes using that mixin, one
+inheriting from test.iourt41.Iourt41TestCase and the other one from test.iourt42.Iourt42TestCase.
+
+
+Example
+-------
+
+class mixin_foo(object):
+    def setUp(self):
+        super(mixin_cmd_nuke, self).setUp()
+
+    def test_foo():
+        self.assertEqual('foo', 'foo')
+
+
+class Test_41(mixin_foo, Iourt41TestCase):
+    """
+    call the mixin tests using the Iourt41TestCase parent class
+    """
+
+class Test_42(mixin_foo, Iourt42TestCase):
+    """
+    call the mixin tests using the Iourt42TestCase parent class
+    """
