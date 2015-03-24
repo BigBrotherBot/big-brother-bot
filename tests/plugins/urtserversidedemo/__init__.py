@@ -15,7 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-import sys
 import unittest
 import logging
 
@@ -63,18 +62,14 @@ class Iourt41TestCase(Iourt41_TestCase_mixin):
 
         self.console.write = Mock(name="write", side_effect=write)
         self.console.startup()
+
         # load the admin plugin
-        if B3version(b3_version) >= B3version("1.10dev"):
-            admin_plugin_conf_file = '@b3/conf/plugin_admin.ini'
-        else:
-            admin_plugin_conf_file = '@b3/conf/plugin_admin.xml'
-        self.adminPlugin = AdminPlugin(self.console, admin_plugin_conf_file)
+        self.adminPlugin = AdminPlugin(self.console, '@b3/conf/plugin_admin.ini')
         self.adminPlugin.onLoadConfig()
         self.adminPlugin.onStartup()
 
         # make sure the admin plugin obtained by other plugins is our admin plugin
         when(self.console).getPlugin('admin').thenReturn(self.adminPlugin)
-
 
     def tearDown(self):
         self.console.working = False
@@ -97,4 +92,3 @@ startserverdemo
 """)
         logger = logging.getLogger('output')
         logger.setLevel(logging.NOTSET)
-
