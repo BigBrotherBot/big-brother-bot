@@ -16,6 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 from mock import Mock
+from mockito import when
 from b3.events import Event
 from tests.plugins.urtserversidedemo import PluginTestCase
 from b3.fake import FakeClient
@@ -34,7 +35,7 @@ stopserverdemo = 20
         self.joe = FakeClient(self.console, name="Joe", guid="01230123012301230123", groupBits=1)
         self.joe.clearMessageHistory()
 
-        self.p.start_recording_player = Mock(return_value="")
+        self.p.start_recording_player = Mock(return_value="startserverdemo: recording ")
         self.p.start_recording_player.reset_mock()
 
     def test_auto_start_demo_of_connecting_players(self):
