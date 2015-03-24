@@ -36,7 +36,7 @@ class Test_default_conf(ConfTestCase):
 
     def setUp(self):
         ConfTestCase.setUp(self)
-        self.conf.load(os.path.join(os.path.dirname(__file__), '../../../b3/plugins/urtserversidedemo//conf/plugin_urtserversidedemo.ini'))
+        self.conf.load(os.path.join(os.path.dirname(__file__), '../../../b3/conf/plugin_urtserversidedemo.ini'))
         self.p.onLoadConfig()
 
 
