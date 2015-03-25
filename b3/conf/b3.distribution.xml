@@ -133,6 +133,9 @@
         <!-- <plugin name="location" config="@conf/plugin_location.ini" /> -->
         <!-- <plugin name="translator" config="@conf/plugin_translator.ini" /> -->
 
+        <!-- BF3 -->
+        <!-- <plugin name="poweradminbf3" config="@conf/plugin_poweradminbf3.ini" /> -->
+
         <!-- UrT 4.2 -->
         <!-- <plugin name="callvote" config="@conf/plugin_callvote.ini" /> -->
         <!-- <plugin name="spawnkill" config="@conf/plugin_spawnkill.ini" /> -->
