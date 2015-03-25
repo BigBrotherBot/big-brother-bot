@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/03/25 - 1.42.5 - Fenix           - added support for the new plugin attribute 'loadAfterPlugins'
 # 2015/03/21 - 1.42.4 - Fenix           - added support for the new plugin attribute 'requiresParsers'
 # 2015/03/16 - 1.42.3 - Fenix           - minor fixes to plugin dependency loading
 # 2015/03/09 - 1.42.2 - Fenix           - added plugin dependency loading
@@ -175,7 +176,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.42.4'
+__version__ = '1.42.5'
 
 
 import os
@@ -867,7 +868,7 @@ class Parser(object):
             # critical will exit, admin plugin must be loaded!
             self.critical('Plugin admin is essential and MUST be loaded! Cannot continue without admin plugin')
 
-        # at this point we have an OrderedDict oof PluginData of plugins listed in b3.ini and which can be loaded correctly:
+        # at this point we have an OrderedDict of PluginData of plugins listed in b3.ini and which can be loaded correctly:
         # all the plugins which have not been installed correctly, but are specified in b3.ini, have been already excluded.
         # next we build a list of PluginData instances and then we will sort it according to plugin order importance:
         #   - we'll try to load other plugins required by a listed one
@@ -931,7 +932,10 @@ class Parser(object):
 
         # sort remaining plugins according to their inclusion requirements
         self.bot('Sorting plugins according to their inclusion requirements...')
-        sorted_list = [y for y in topological_sort([(x.name, set(x.clazz.requiresPlugins)) for x in plugin_list])]
+        sorted_list = [y for y in \
+                        topological_sort([(x.name, set(x.clazz.requiresPlugins + [z for z in \
+                            x.clazz.loadAfterPlugins if z in plugin_dict])) for x in plugin_list])]
+
         for plugin_name in sorted_list:
             sorted_plugin_list.append(plugin_dict[plugin_name])
 

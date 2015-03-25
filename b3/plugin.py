@@ -49,9 +49,11 @@
 # 21/03/2015 - 1.9.4 - Fenix     - added requiresParsers attribute in Plugin class: customizable with a list of game
 #                                  names the plugin will work on (will reduce the amount of code needed to filter out
 #                                  unsupported games inside plugins)
+# 25/03/2015 - 1.9.5 - Fenix     - added loadAfterPlugins attribute: specify a list of plugins which needs to be loaded
+#                                  before the current one
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.9.4'
+__version__ = '1.9.5'
 
 import b3.config
 import b3.events
@@ -62,7 +64,32 @@ from ConfigParser import NoOptionError
 
 class Plugin:
 
-    _default_messages = {}      # plugin developers : customize this
+    ################################## PLUGIN DEVELOPERS: CUSTOMIZE THE FOLLOWING ######################################
+
+    # Whether this plugin requires a configuration file to run. When this is set to False,
+    # a configuration file can still be loaded if specified in B3 main configuration file.
+    requiresConfigFile = True
+
+    # List of parsers the current plugin supports: if no parser is specified the plugin will
+    # be loaded, if listed in B3 main configuraion file, no matter the parser being used.
+    requiresParsers = []
+
+    # List of plugins the current one needs to run: if no plugin is specified then the plugin
+    # is dependency free. If one of the listed plugins is not installed in B3, then the current
+    # plugin, and eventually all the other dependencies needed by this one, won't be loaded.
+    requiresPlugins = []
+
+    # List of plugins which will be loaded before the current one: you can use this when a plugin
+    # is not strictly needed by the current one, but this plugin makes use of some data produced by
+    # the other one (mostly optional events) and thus needs to be loaded after.
+    loadAfterPlugins = []
+
+    # Default messages which can be retrieved using the getMessage method: this dict will be
+    # used in place of a missing 'messages' configuration file section
+    _default_messages = {}
+
+    ################################## PLUGIN DEVELOPERS: END PLUGIN CUSTOMIZATION #####################################
+
     _enabled = True
     _messages = {}
 
@@ -71,9 +98,7 @@ class Plugin:
     eventmanager = None
     eventmap = None
     events = []
-    requiresConfigFile = True   # plugin developers : customize this
-    requiresPlugins = []        # plugin developers : customize this
-    requiresParsers = []        # plugin developers : customize this
+
     working = True
 
     def __init__(self, console, config=None):
