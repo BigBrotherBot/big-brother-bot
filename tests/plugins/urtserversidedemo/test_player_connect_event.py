@@ -16,7 +16,6 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 from mock import Mock
-from mockito import when
 from b3.events import Event
 from tests.plugins.urtserversidedemo import PluginTestCase
 from b3.fake import FakeClient

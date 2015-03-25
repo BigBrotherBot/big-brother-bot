@@ -49,6 +49,8 @@ demo_duration: 2
         # create a fake haxbusterurt plugin
         self.haxbusterurt = HaxbusterurtPlugin(self.p.console)
         when(self.console).getPlugin('haxbusterurt').thenReturn(self.haxbusterurt)
+        self.console.createEvent('EVT_BAD_GUID', 'Bad guid detected')
+        self.console.createEvent('EVT_1337_PORT', '1337 port detected')
 
         self.p.onLoadConfig()
         self.p.onStartup()
@@ -56,11 +58,9 @@ demo_duration: 2
     def tearDown(self):
         PluginTestCase.tearDown(self)
 
-
     def test_register_events(self):
-        self.assertIn(EVT_BAD_GUID, self.p.events)
-        self.assertIn(EVT_1337_PORT, self.p.events)
-
+        self.assertIn(self.console.getEventID('EVT_BAD_GUID'), self.p.events)
+        self.assertIn(self.console.getEventID('EVT_1337_PORT'), self.p.events)
 
     def test_event_EVT_BAD_GUID(self):
         # GIVEN
@@ -71,33 +71,32 @@ demo_duration: 2
         joe.connects("2")
 
         # WHEN the haxbusterurt plugin detects that Joe has a contestable guid
-        self.console.queueEvent(Event(EVT_BAD_GUID, data=joe.guid, client=joe))
+        self.console.queueEvent(Event(self.console.getEventID('EVT_BAD_GUID'), data=joe.guid, client=joe))
 
         # THEN
         self.p.start_recording_player.assert_called_with(joe, None)
 
         # WHEN
-        sleep(.2)
+        sleep(.4)
         # THEN
         self.p.stop_recording_player.assert_called_with(joe)
 
-
     def test_event_EVT_1337_PORT(self):
         # GIVEN
-        self.p._haxbusterurt_demo_duration = (1.0/60)/8 # will make the auto-stop timer end after 125ms
+        self.p._haxbusterurt_demo_duration = (1.0 / 60) / 8 # will make the auto-stop timer end after 125ms
         self.p.start_recording_player = Mock()
         self.p.stop_recording_player = Mock()
         joe = FakeClient(console=self.console, name="Joe", guid="JOE_GUID")
         joe.connects("2")
 
         # WHEN the haxbusterurt plugin detects that Joe has a contestable guid
-        self.console.queueEvent(Event(EVT_1337_PORT, data=joe.guid, client=joe))
+        self.console.queueEvent(Event(self.console.getEventID('EVT_1337_PORT'), data=joe.guid, client=joe))
 
         # THEN
         self.p.start_recording_player.assert_called_with(joe, None)
 
         # WHEN
-        sleep(.2)
+        sleep(.4)
         # THEN
         self.p.stop_recording_player.assert_called_with(joe)
 
