@@ -15,9 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# CHANGElOG
+#
+# 2015/03/25 - 2.1 - Fenix - make sure to load after the countryfilter plugin
 
 __author__ = 'Fenix, Courgette'
-__version__ = '2.0'
+__version__ = '2.1'
+
 
 import b3
 import b3.plugin
@@ -33,8 +38,8 @@ class LocationPlugin(b3.plugin.Plugin):
     _adminPlugin = None
     _announce = True
 
-    # plugin won't start w/o dependencies being satisfied
     requiresPlugins = ['geolocation']
+    loadAfterPlugins = ['countryfilter']
 
     ####################################################################################################################
     #                                                                                                                  #
