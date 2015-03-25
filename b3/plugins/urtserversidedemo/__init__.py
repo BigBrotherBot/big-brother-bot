@@ -32,11 +32,8 @@ __author__ = 'Courgette'
 class UrtserversidedemoPlugin(Plugin):
 
     requiresParsers = ['iourt41', 'iourt42']
+    loadAfterPlugins = ['follow', 'haxbusterurt']
     demo_manager = None
-
-    EVT_BAD_GUID = None
-    EVT_1337_PORT = None
-    EVT_FOLLOW_CONNECTED = None
 
     def __init__(self, console, config=None):
         """
@@ -99,36 +96,16 @@ class UrtserversidedemoPlugin(Plugin):
 
         # http://forum.bigbrotherbot.net/plugins-by-courgette/hax-buster-%28urt%29/
         if self.console.getPlugin('haxbusterurt'):
-
             self.info("HaxBusterUrt plugin found - we will auto record demos for suspected hackers")
-
-            self.EVT_BAD_GUID = self.console.getEventID('EVT_BAD_GUID')
-            if self.EVT_BAD_GUID:
-                self.registerEvent(self.EVT_BAD_GUID, self.onHaxBusterUrTEvent)
-            else:
-                self.error("could not register to HaxBusterUrt EVT_BAD_GUID event. Make sure the HaxBusterUrt plugin "
-                           "is loaded before the UrTServerSideDemo plugin in your b3 configuration file")
-
-            self.EVT_1337_PORT = self.console.getEventID('EVT_1337_PORT')
-            if self.EVT_1337_PORT:
-                self.registerEvent(self.EVT_1337_PORT, self.onHaxBusterUrTEvent)
-            else:
-                self.error("could not register to HaxBusterUrt EVT_1337_PORT event. Make sure the HaxBusterUrt plugin "
-                           "is loaded before the UrTServerSideDemo plugin in your b3 configuration file")
+            self.registerEvent('EVT_BAD_GUID', self.onHaxBusterUrTEvent)
+            self.registerEvent('EVT_1337_PORT', self.onHaxBusterUrTEvent)
         else:
             self.info("HaxBusterUrt plugin not found")
 
         # http://forum.bigbrotherbot.net/releases/follow-users-plugin/
         if self.console.getPlugin('follow'):
-
             self.info("Follow plugin found - we will auto record demos for followed players")
-
-            self.EVT_FOLLOW_CONNECTED = self.console.getEventID('EVT_FOLLOW_CONNECTED')
-            if self.EVT_FOLLOW_CONNECTED:
-                self.registerEvent(self.EVT_FOLLOW_CONNECTED, self.onFollowConnectedEvent)
-            else:
-                self.error("Could not register to Follow plugin EVT_FOLLOW_CONNECTED event. Make sure the Follow plugin "
-                           "is loaded before the UrTServerSideDemo plugin in your b3 configuration file")
+            self.registerEvent('EVT_FOLLOW_CONNECTED', self.onFollowConnectedEvent)
         else:
             self.info("Follow plugin not found")
 

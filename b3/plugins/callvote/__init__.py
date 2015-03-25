@@ -40,6 +40,7 @@ class CallvotePlugin(b3.plugin.Plugin):
 
     adminPlugin = None
     requiresParsers = ['iourt42']
+    loadAfterPlugins = ['poweradminurt']
 
     callvote = None
     callvotespecialmaplist = {}
