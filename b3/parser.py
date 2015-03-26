@@ -24,11 +24,12 @@
 # 2015/05/15 - 1.43   - Fenix           - fixed formatTime not converting timestamp according to timezone offset
 # 2015/05/04 - 1.42.9 - Fenix           - removed reply mode: it's messing up GUI and it's needed only to debug cod4
 #                                       - make sure that the logfile path is actually writable by B3, else it crashes
-# 2015/04/28 - 1.42.8 - Fenix           - code cleanup
-# 2015/04/22 - 1.42.7 - Fenix           - fixed typo in startPlugins: was causing B3 to crash upon startup
-# 2015/04/16 - 1.42.6 - Fenix           - uniform class variables (dict -> variable)
-# 2015/04/14 - 1.42.5 - Fenix           - print more verbose information in log file when a plugin fails in being loaded
+# 2015/04/28 - 1.42.9 - Fenix           - code cleanup
+# 2015/04/22 - 1.42.8 - Fenix           - fixed typo in startPlugins: was causing B3 to crash upon startup
+# 2015/04/16 - 1.42.7 - Fenix           - uniform class variables (dict -> variable)
+#                                       - print more verbose information in log file when a plugin fails in being loaded
 #                                       - simplify exception logging on plugin configuration load and plugin startup
+# 2015/03/26 - 1.42.6 - Fenix           - added isFrostbiteGame method: checks if we are running a Frostbite base game
 # 2015/03/25 - 1.42.5 - Fenix           - added support for the new plugin attribute 'loadAfterPlugins'
 # 2015/03/21 - 1.42.4 - Fenix           - added support for the new plugin attribute 'requiresParsers'
 # 2015/03/16 - 1.42.3 - Fenix           - minor fixes to plugin dependency loading
@@ -302,6 +303,8 @@ class Parser(object):
         "unbanned_by": "$clientname^7 was un-banned by $adminname^7 $reason",
         "unbanned": "$clientname^7 was un-banned $reason",
     }
+
+    _frostBiteGameNames = ['bfbc2', 'moh', 'bf3', 'bf4']
 
     # === Exiting ===
     #
@@ -1623,6 +1626,15 @@ class Parser(object):
 
     def stripColors(self, text):
         return re.sub(self._reColor, '', text).strip()
+
+    def isFrostbiteGame(self, gamename=None):
+        """
+        Tells whether we are running a Frostbite based game.
+        :return: True if we are running a Frostbite game, False otherwise
+        """
+        if not gamename:
+            gamename = self.gameName
+        return gamename in self._frostBiteGameNames
 
     def updateDocumentation(self):
         """
