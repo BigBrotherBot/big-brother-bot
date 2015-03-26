@@ -139,6 +139,7 @@
 
         <!-- UrT 4.2 -->
         <!-- <plugin name="callvote" config="@conf/plugin_callvote.ini" /> -->
+        <!-- <plugin name="jumper" config="@conf/plugin_jumper.ini" /> -->
         <!-- <plugin name="spawnkill" config="@conf/plugin_spawnkill.ini" /> -->
 
         <!-- UrT 4.1 / 4.2 -->
