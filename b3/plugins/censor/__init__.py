@@ -94,6 +94,8 @@ class CensorPlugin(b3.plugin.Plugin):
     _badWords = None
     _badNames = None
 
+    loadAfterPlugins = ['chatlogger']
+
     ####################################################################################################################
     #                                                                                                                  #
     #    STARTUP                                                                                                       #
