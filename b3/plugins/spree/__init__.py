@@ -16,10 +16,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 #
-# 1.2 - committed built-in release
+# 1.2   - committed built-in release
+# 1.2.1 - allow to specify a parameter in !spree command
 
 __author__ = 'Walker, ThorN'
-__version__ = '1.2'
+__version__ = '1.2.1'
 
 
 import b3
@@ -228,12 +229,24 @@ class SpreePlugin(b3.plugin.Plugin):
 
     def cmd_spree(self, data, client, cmd=None):
         """
-        Show a players winning/loosing spree
+        <player> - show a players' winning/loosing spree
         """        
-        spreeStats = self.get_spree_stats(client)
-        if spreeStats.kills > 0:
-            cmd.sayLoudOrPM(client, '^7You have ^2%s^7 kills in a row' % spreeStats.kills)
-        elif spreeStats.deaths > 0:
-            cmd.sayLoudOrPM(client, '^7You have ^1%s^7 deaths in a row' % spreeStats.deaths)
+        targm = '^7You have'
+        targmns = '^7Your are'
+        if not data:
+            sclient = client
         else:
-            cmd.sayLoudOrPM(client, '^7You\'re not having a spree right now')
+            sclient = self._adminPlugin.findClientPrompt(data, client)
+            if not sclient:
+                return
+            targm = '%s has' % sclient.name
+            targmns = '%s is' % sclient.name
+
+        spreeStats = self.get_spree_stats(sclient)
+
+        if spreeStats.kills > 0:
+            cmd.sayLoudOrPM(client, '%s ^2%s^7 kills in a row' % (targm, spreeStats.kills))
+        elif spreeStats.deaths > 0:
+            cmd.sayLoudOrPM(client, '%s ^1%s^7 deaths in a row' % (targm, spreeStats.deaths))
+        else:
+            cmd.sayLoudOrPM(client, '%s not having a spree right now' % targmns)
