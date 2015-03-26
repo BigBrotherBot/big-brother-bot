@@ -39,6 +39,7 @@ class CensorurtPlugin(CensorPlugin):
     _warnafter = 0
 
     requiresParsers = ['iourt41', 'iourt42']
+    loadAfterPlugins = ['chatlogger']
 
     ####################################################################################################################
     #                                                                                                                  #
