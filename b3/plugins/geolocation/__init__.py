@@ -24,9 +24,10 @@
 # 2015/03/20 - 1.3 - Fenix - reworked external module imports
 #                          - renamed Locator class (and all inherited ones) into Geolocator: updated module name
 #                          - moved GeoIP.dat file into lib/geoip/db folder
+# 2015/03/26 - 1.4 - Fenix - make use of EVT_PUNKBUSTER_NEW_CONNECTION if we are running a Frostbite based game
 
 __author__ = 'Fenix'
-__version__ = '1.3'
+__version__ = '1.4'
 
 import b3
 import b3.clients
@@ -64,8 +65,16 @@ class GeolocationPlugin(b3.plugin.Plugin):
         Initialize plugin.
         """
         # register events needed
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.geolocate)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_UPDATE'), self.geolocate)
+        if self.console.isFrostbiteGame():
+            # EVT_PUNKBUSTER_NEW_CONNECTION is raised when the parser fills in
+            # the ip attribute on a already initialized Client object instance
+            self.registerEvent('EVT_PUNKBUSTER_NEW_CONNECTION', self.geolocate)
+        else:
+            # don't use EVT_CLIENT_CONNECT since we need the client group for level exclusion
+            self.registerEvent('EVT_CLIENT_AUTH', self.geolocate)
+
+        self.registerEvent('EVT_CLIENT_UPDATE', self.geolocate)
+
         # create our custom events so other plugins can react when clients are geolocated
         self.console.createEvent('EVT_CLIENT_GEOLOCATION_SUCCESS', 'Event client geolocation success')
         self.console.createEvent('EVT_CLIENT_GEOLOCATION_FAILURE', 'Event client geolocation failure')
