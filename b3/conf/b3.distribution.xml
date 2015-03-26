@@ -132,6 +132,7 @@
         <!-- NON GAME SPECIFIC -->
         <!-- <plugin name="chatlogger" config="@conf/plugin_chatlogger.ini" /> -->
         <!-- <plugin name="countryfilter" config="@conf/plugin_countryfilter.ini" /> -->
+        <!-- <plugin name="ipban" config="@conf/plugin_ipban.ini" /> -->
         <!-- <plugin name="location" config="@conf/plugin_location.ini" /> -->
         <!-- <plugin name="translator" config="@conf/plugin_translator.ini" /> -->
 
