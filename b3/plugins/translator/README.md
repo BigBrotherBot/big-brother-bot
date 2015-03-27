@@ -4,7 +4,7 @@ Translator Plugin for BigBrotherBot
 Description
 -----------
 
-A [BigBrotherBot][B3] plugin which is capable o translating in-game chat messages into a specified language.
+A BigBrotherBot plugin which is capable o translating in-game chat messages into a specified language.
 
 
 Microsoft Translator API configuration
