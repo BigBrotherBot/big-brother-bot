@@ -867,44 +867,44 @@ class Test_patch_b3_admin_plugin(BFHTestCase):
             self.parser.patch_b3_admin_plugin()
             self.joe = FakeClient(self.parser, name="Joe", guid="joeguid", groupBits=128)
             self.joe.connects(cid="joe")
-            self.parser.game.gameType = "Domination0"
+            self.parser.game.gameType = "TurfWarSmall0"
             self.parser.game.serverinfo = {'roundsTotal': 2}
 
     def test_map_known_on_correct_gamemode(self):
         # GIVEN
-        self.parser.game.gameType = "Elimination0"
+        self.parser.game.gameType = "TurfwarLarge0"
         # WHEN
         with patch.object(self.parser, 'changeMap') as changeMap_mock:
-            self.joe.says("!map siege")
+            self.joe.says("!map Downtown")
         # THEN
-        self.assertListEqual([call('MP_Siege', gamemode_id='Elimination0', number_of_rounds=2)],
+        self.assertListEqual([call('mp_downtown', gamemode_id='TurfwarLarge0', number_of_rounds=2)],
                              changeMap_mock.mock_calls)
         self.assertListEqual([], self.joe.message_history)
 
     def test_map_InvalidGameModeOnMap(self):
-        self.parser.game.gameType = "CaptureTheFlag0"
+        self.parser.game.gameType = "Hotwire0"
         # WHEN
-        when(self.parser).changeMap('MP_Siege', gamemode_id="CaptureTheFlag0", number_of_rounds=2).thenRaise(
+        when(self.parser).changeMap('mp_bank', gamemode_id="Hotwire0", number_of_rounds=2).thenRaise(
             CommandFailedError(["InvalidGameModeOnMap"]))
-        self.joe.says("!map siege")
+        self.joe.says("!map bank")
         # THEN
-        self.assertListEqual(['Siege of Shanghai cannot be played with gamemode Capture the Flag',
-                              'supported gamemodes are : Conquest64, Conquest, Defuse, Obliteration, Rush, Team Deathmatch, Squad Deathmatch, Domination'],
-                             self.joe.message_history)
+        self.assertListEqual(
+            ['Bank Job cannot be played with gamemode Hotwire',
+             'supported gamemodes are : Conquest Large, Conquest Small, Heist, Blood Money, Crosshair, Rescue, Team Deathmatch'],
+            self.joe.message_history)
 
     def test_map_InvalidRoundsPerMap(self):
         # WHEN
-        when(self.parser).changeMap('MP_Siege', gamemode_id="Domination0", number_of_rounds=2).thenRaise(
+        when(self.parser).changeMap('mp_bank', gamemode_id="TurfWarSmall0", number_of_rounds=2).thenRaise(
             CommandFailedError(["InvalidRoundsPerMap"]))
-        self.joe.says("!map siege")
+        self.joe.says("!map bank")
         # THEN
         self.assertListEqual(['number of rounds must be 1 or greater'], self.joe.message_history)
 
     def test_map_Full(self):
         # WHEN
-        when(self.parser).changeMap('MP_Siege', gamemode_id="Domination0", number_of_rounds=2).thenRaise(
-            CommandFailedError(["Full"]))
-        self.joe.says("!map siege")
+        with patch.object(self.parser, "changeMap", side_effect=CommandFailedError(["Full"])):
+            self.joe.says("!map bank")
         # THEN
         self.assertListEqual(['map list maximum size has been reached'], self.joe.message_history)
 
