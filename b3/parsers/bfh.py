@@ -125,7 +125,9 @@ TeamDeathMatch0;Team Deathmatch;64
 '''
 
 # Base game modes: dict('Engine name'='Human-readable name')
-GAME_MODES_NAMES = {x['Engine Name']: x['Human-Readable Name'] for x in csv.DictReader(gamemodes_csv.splitlines(), dialect='dice')}
+GAME_MODES_NAMES = dict([(x['Engine Name'], x['Human-Readable Name']) for x in
+                         csv.DictReader(gamemodes_csv.splitlines(), dialect='dice')])
+
 GAMEMODES_IDS_BY_NAME = {name.lower(): x for x, name in GAME_MODES_NAMES.items()}
 
 maps_csv = '''\
@@ -142,9 +144,14 @@ mp_offshore;Riptide;TurfWarLarge0,TurfWarSmall0,Heist0,Hotwire0,Bloodmoney0,Hit0
 '''
 
 # game maps: dict('Engine name'='Human-readable name')
-MAP_NAME_BY_ID = {x['Engine name']: x['Human-readable name'] for x in csv.DictReader(maps_csv.splitlines(), dialect='dice')}
+MAP_NAME_BY_ID = dict([(x['Engine name'], x['Human-readable name']) for x in
+                       csv.DictReader(maps_csv.splitlines(), dialect='dice')])
+
 MAP_ID_BY_NAME = {name.lower(): x for x, name in MAP_NAME_BY_ID.items()}
-GAME_MODES_BY_MAP_ID = {x['Engine name']: x['Game modes,,,,,,,,,'] for x in csv.DictReader(maps_csv.splitlines(), dialect='dice')}
+
+GAME_MODES_BY_MAP_ID = dict([(x['Engine name'], x['Game modes,,,,,,,,,'].split(',')) for x in
+                             csv.DictReader(maps_csv.splitlines(), dialect='dice')])
+
 
 class BfhParser(AbstractParser):
 
