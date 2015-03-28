@@ -62,6 +62,7 @@
 #                                     - revamped setup layout
 # 2015/01/22 - 1.11  - Fenix          - generate .ini configuration file instead of .xml
 # 2015/02/14 - 1.12  - Fenix          - do not close cmd window upon SystemExit when running frozen b3
+# 2015/03/14 - 1.13  - Thomas LEVEIL  - add BattleField Hardline
 
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
@@ -108,10 +109,10 @@ class Setup(object):
 
     _supported_parsers = ['arma2', 'arma3', 'bfbc2', 'bf3', 'bf4', 'moh', 'mohw', 'cod', 'cod2', 'cod4', 'cod5', 'cod6',
                           'cod7', 'cod8', 'iourt41', 'iourt42', 'et', 'etpro', 'altitude', 'oa081', 'smg', 'smg11',
-                          'sof2', 'wop', 'wop15', 'chiv', 'csgo', 'homefront', 'insurgency', 'ravaged', 'ro2']
+                          'sof2', 'wop', 'wop15', 'chiv', 'csgo', 'homefront', 'insurgency', 'ravaged', 'ro2', 'bfh']
 
     _pb_supported_parsers = ['cod', 'cod2', 'cod4', 'cod5', 'cod6', 'cod7', 'cod8']
-    _frostbite = ['bfbc2', 'moh', 'bf3', 'bf4']
+    _frostbite = ['bfbc2', 'moh', 'bf3', 'bf4', 'bfh']
 
     # those will be set later when using 'add_set'
     _set = {}
@@ -154,7 +155,7 @@ class Setup(object):
         self.add_value(ini=ini, section='b3', option='parser', default='',
                        explanation="Define your game:\n"
                                    "arma2/arma3\n"
-                                   "bfbc2/bf3/bf4/moh/mohw\n"
+                                   "bfbc2/bf3/bf4/bfh/moh/mohw\n"
                                    "cod/cod2/cod4/cod5/cod6/cod7/cod8\n"
                                    "iourt41/iourt42\n"
                                    "et/etpro/altitude/oa081/smg/smg11/sof2/sof2pm/wop/wop15\n"
