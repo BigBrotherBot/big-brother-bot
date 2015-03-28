@@ -16,6 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+from textwrap import dedent
 import unittest2 as unittest
 from mock import patch
 from mockito import when
@@ -23,7 +24,8 @@ from b3.clients import Client, Clients
 from b3.fake import FakeClient
 from b3.parsers.frostbite2.util import MapListBlockError
 from b3.parsers.mohw import MohwParser, MAP_NAME_BY_ID, GAME_MODES_BY_MAP_ID, GAME_MODES_NAMES, NewMapListBlock
-from b3.config import XmlConfigParser
+from b3.config import XmlConfigParser, CfgConfigParser
+from tests import logging_disabled
 
 
 sleep_patcher = None
@@ -474,3 +476,90 @@ class Test_MapListBlock_append(unittest.TestCase):
         mlb3.append(data2)
         # check new list length
         self.assertEqual(len(mlb1) + len(mlb2), len(mlb3))
+
+
+class Test_config(MohwTestCase):
+
+    def setUp(self):
+        with logging_disabled():
+            self.conf = CfgConfigParser()
+            self.parser = MohwParser(self.conf)
+
+    def assert_big_b3_private_responses(self, expected, config):
+        self.parser._settings['big_b3_private_responses'] = None
+        self.conf.loadFromString(config)
+        self.parser.load_conf_big_b3_private_responses()
+        self.assertEqual(expected, self.parser._settings['big_b3_private_responses'])
+
+    def test_big_b3_private_responses_on(self):
+        self.assert_big_b3_private_responses(True, dedent("""
+            [mohw]
+            big_b3_private_responses: on"""))
+        self.assert_big_b3_private_responses(False, dedent("""
+            [mohw]
+            big_b3_private_responses: off"""))
+        self.assert_big_b3_private_responses(False, dedent("""
+            [mohw]
+            big_b3_private_responses: f00"""))
+        self.assert_big_b3_private_responses(False, dedent("""
+            [mohw]
+            big_b3_private_responses:"""))
+
+    def assert_big_msg_duration(self, expected, config):
+        self.parser._settings['big_msg_duration'] = None
+        self.conf.loadFromString(config)
+        self.parser.load_conf_big_msg_duration()
+        self.assertEqual(expected, self.parser._settings['big_msg_duration'])
+
+    def test_big_msg_duration(self):
+        default_value = 4
+        self.assert_big_msg_duration(0, dedent("""
+            [mohw]
+            big_msg_duration: 0"""))
+        self.assert_big_msg_duration(5, dedent("""
+            [mohw]
+            big_msg_duration: 5"""))
+        self.assert_big_msg_duration(default_value, dedent("""
+            [mohw]
+            big_msg_duration: 5.6"""))
+        self.assert_big_msg_duration(30, dedent("""
+            [mohw]
+            big_msg_duration: 30"""))
+        self.assert_big_msg_duration(default_value, dedent("""
+            [mohw]
+            big_msg_duration: f00"""))
+        self.assert_big_msg_duration(default_value, dedent("""
+            [mohw]
+            big_msg_duration:"""))
+
+    def assert_big_msg_repeat(self, expected, config):
+        self.parser._settings['big_msg_repeat'] = None
+        self.conf.loadFromString(config)
+        self.parser.load_conf_big_b3_private_responses()
+        self.parser.load_conf_big_msg_repeat()
+        self.assertEqual(expected, self.parser._settings['big_msg_repeat'])
+
+    def test_big_msg_repeat(self):
+        default_value = 'pm'
+        self.assert_big_msg_repeat('all', dedent("""
+            [mohw]
+            big_b3_private_responses: on
+            big_msg_repeat: all"""))
+        self.assert_big_msg_repeat('off', dedent("""
+            [mohw]
+            big_msg_repeat: off"""))
+        self.assert_big_msg_repeat(default_value, dedent("""
+            [mohw]
+            big_b3_private_responses: on
+            big_msg_repeat: pm"""))
+        self.assert_big_msg_repeat(default_value, dedent("""
+            [mohw]
+            big_b3_private_responses: on
+            big_msg_repeat:"""))
+        self.assert_big_msg_repeat('off', dedent("""
+            [mohw]
+            big_msg_repeat: OFF"""))
+        self.assert_big_msg_repeat(default_value, dedent("""
+            [mohw]
+            big_b3_private_responses: on
+            big_msg_repeat: junk"""))

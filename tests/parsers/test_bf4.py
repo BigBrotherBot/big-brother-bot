@@ -17,6 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 import re
+from textwrap import dedent
 import unittest2 as unittest
 from mock import Mock, DEFAULT, patch, call
 from mockito import when, verify
@@ -1012,3 +1013,89 @@ class Test_getClient(BF4TestCase):
         # THEN
         self.assertEqual(b3.TEAM_SPEC, player.team)
 
+
+class Test_config(BF4TestCase):
+
+    def setUp(self):
+        with logging_disabled():
+            self.conf = CfgConfigParser()
+            self.parser = Bf4Parser(self.conf)
+
+    def assert_big_b3_private_responses(self, expected, config):
+        self.parser._settings['big_b3_private_responses'] = None
+        self.conf.loadFromString(config)
+        self.parser.load_conf_big_b3_private_responses()
+        self.assertEqual(expected, self.parser._settings['big_b3_private_responses'])
+
+    def test_big_b3_private_responses_on(self):
+        self.assert_big_b3_private_responses(True, dedent("""
+            [bf4]
+            big_b3_private_responses: on"""))
+        self.assert_big_b3_private_responses(False, dedent("""
+            [bf4]
+            big_b3_private_responses: off"""))
+        self.assert_big_b3_private_responses(False, dedent("""
+            [bf4]
+            big_b3_private_responses: f00"""))
+        self.assert_big_b3_private_responses(False, dedent("""
+            [bf4]
+            big_b3_private_responses:"""))
+
+    def assert_big_msg_duration(self, expected, config):
+        self.parser._settings['big_msg_duration'] = None
+        self.conf.loadFromString(config)
+        self.parser.load_conf_big_msg_duration()
+        self.assertEqual(expected, self.parser._settings['big_msg_duration'])
+
+    def test_big_msg_duration(self):
+        default_value = 4
+        self.assert_big_msg_duration(0, dedent("""
+            [bf4]
+            big_msg_duration: 0"""))
+        self.assert_big_msg_duration(5, dedent("""
+            [bf4]
+            big_msg_duration: 5"""))
+        self.assert_big_msg_duration(default_value, dedent("""
+            [bf4]
+            big_msg_duration: 5.6"""))
+        self.assert_big_msg_duration(30, dedent("""
+            [bf4]
+            big_msg_duration: 30"""))
+        self.assert_big_msg_duration(default_value, dedent("""
+            [bf4]
+            big_msg_duration: f00"""))
+        self.assert_big_msg_duration(default_value, dedent("""
+            [bf4]
+            big_msg_duration:"""))
+
+    def assert_big_msg_repeat(self, expected, config):
+        self.parser._settings['big_msg_repeat'] = None
+        self.conf.loadFromString(config)
+        self.parser.load_conf_big_b3_private_responses()
+        self.parser.load_conf_big_msg_repeat()
+        self.assertEqual(expected, self.parser._settings['big_msg_repeat'])
+
+    def test_big_msg_repeat(self):
+        default_value = 'pm'
+        self.assert_big_msg_repeat('all', dedent("""
+            [bf4]
+            big_b3_private_responses: on
+            big_msg_repeat: all"""))
+        self.assert_big_msg_repeat('off', dedent("""
+            [bf4]
+            big_msg_repeat: off"""))
+        self.assert_big_msg_repeat(default_value, dedent("""
+            [bf4]
+            big_b3_private_responses: on
+            big_msg_repeat: pm"""))
+        self.assert_big_msg_repeat(default_value, dedent("""
+            [bf4]
+            big_b3_private_responses: on
+            big_msg_repeat:"""))
+        self.assert_big_msg_repeat('off', dedent("""
+            [bf4]
+            big_msg_repeat: OFF"""))
+        self.assert_big_msg_repeat(default_value, dedent("""
+            [bf4]
+            big_b3_private_responses: on
+            big_msg_repeat: junk"""))

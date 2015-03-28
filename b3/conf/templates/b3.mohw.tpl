@@ -10,6 +10,17 @@ logfile: @conf/b3.log
 disabled_plugins:
 external_plugins_dir: @b3/extplugins
 
+[mohw]
+# message_delay : the delay (in second) to wait between two messages
+message_delay: 0.8
+# big_b3_private_responses - if on, then all private message sent by B3 will be displayed as a large on-screen message
+big_b3_private_responses: on
+# big_msg_repeat - B3 repeated big displayed messages in the chat.
+# accepted values : all (repeat all) / pm (repeat private messages) / off (disabled)
+big_msg_repeat: pm
+# big_msg_duration : for how many seconds big messages are displayed
+big_msg_duration: 6
+
 [server]
 public_ip: 11.22.33.44
 port: 19567

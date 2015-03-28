@@ -10,7 +10,7 @@ logfile: @conf/b3.log
 disabled_plugins:
 external_plugins_dir: @b3/extplugins
 
-[bf3]
+[bf4]
 # message_delay : the delay (in second) to wait between two messages
 message_delay: 0.8
 # big_b3_private_responses - if on, then all private message sent by B3 will be displayed as a large on-screen message
