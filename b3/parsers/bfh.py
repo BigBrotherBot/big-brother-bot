@@ -41,7 +41,6 @@ BFH_REQUIRED_VERSION = 000000  # TODO: figure out current version
 
 BFH_PLAYER = 0              # normal player
 BFH_SPECTATOR = 1           # spectator which is not visible in the game for other player but visible as player for b3
-BFH_COMMANDER = 2           # commander which is visible for other player and b3  TODO: does bfh have commanders?
 
 SQUAD_NOSQUAD = 0
 SQUAD_ALPHA = 1
@@ -126,9 +125,7 @@ TeamDeathMatch0;Team Deathmatch;64
 '''
 
 # Base game modes: dict('Engine name'='Human-readable name')
-GAME_MODES_NAMES = dict([(x['Engine Name'], x['Human-Readable Name']) for x in
-                         csv.DictReader(gamemodes_csv.splitlines(), dialect='dice')])
-
+GAME_MODES_NAMES = {x['Engine Name']: x['Human-Readable Name'] for x in csv.DictReader(gamemodes_csv.splitlines(), dialect='dice')}
 GAMEMODES_IDS_BY_NAME = {name.lower(): x for x, name in GAME_MODES_NAMES.items()}
 
 maps_csv = '''\
@@ -145,30 +142,9 @@ mp_offshore;Riptide;TurfWarLarge0,TurfWarSmall0,Heist0,Hotwire0,Bloodmoney0,Hit0
 '''
 
 # game maps: dict('Engine name'='Human-readable name')
-MAP_NAME_BY_ID = dict([(x['Engine name'], x['Human-readable name']) for x in
-                       csv.DictReader(maps_csv.splitlines(), dialect='dice')])
-
+MAP_NAME_BY_ID = {x['Engine name']: x['Human-readable name'] for x in csv.DictReader(maps_csv.splitlines(), dialect='dice')}
 MAP_ID_BY_NAME = {name.lower(): x for x, name in MAP_NAME_BY_ID.items()}
-
-GAME_MODES_BY_MAP_ID = dict([(x['Engine name'], x['Game modes,,,,,,,,,'].split(',')) for x in
-                             csv.DictReader(maps_csv.splitlines(), dialect='dice')])
-
-COMROSE_CHAT_NAME_BY_ID = {  # TODO: check values for comrose
-    'ID_CHAT_ATTACK/DEFEND': 'ATTACK/DEFEND',
-    'ID_CHAT_AFFIRMATIVE': 'AFFIRMATIVE',
-    'ID_CHAT_NEGATIVE': 'NEGATIVE',
-    'ID_CHAT_THANKS': 'THANK YOU',
-    'ID_CHAT_GOGOGO': 'GO GO GO',
-    'ID_CHAT_GET_IN': 'GET IN',
-    'ID_CHAT_GET_OUT': 'GET OUT',
-    'ID_CHAT_REQUEST_MEDIC': 'NEED MEDIC',
-    'ID_CHAT_REQUEST_AMMO': 'NEED AMMO',
-    'ID_CHAT_REQUEST_RIDE': 'NEED A RIDE',
-    'ID_CHAT_REQUEST_REPAIRS': 'NEED REPAIRS',
-    'ID_CHAT_REQUEST_ORDER': 'REQUEST ORDER',
-    'ID_CHAT_SORRY': 'SORRY',
-}
-
+GAME_MODES_BY_MAP_ID = {x['Engine name']: x['Game modes,,,,,,,,,'] for x in csv.DictReader(maps_csv.splitlines(), dialect='dice')}
 
 class BfhParser(AbstractParser):
 
@@ -176,55 +152,59 @@ class BfhParser(AbstractParser):
 
     _gamePort = None
 
-    _gameServerVars = (  # TODO: check those vars with bfh
-        '3dSpotting',               # <bool>  Set if spotted targets are visible in the 3d-world
-        '3pCam',                    # <bool>  Set if allowing to toggle to third person vehicle cameras
-        'alwaysAllowSpectators',    # <bool>  Set whether spectators need to be in the spectator list before joining
-        'autoBalance',              # <bool>  Set if the server should autobalance
-        'bulletDamage',             # <modifier: percent>  Set bullet damage scale factor
-        'commander',                # <bool>  Set if commander is allowed or not on the game server
-        'crossHair',                # <bool>  Set if crosshair for all weapons is enabled
-        'forceReloadWholeMags',     # <bool>  Set hardcore reload on or off
-        'friendlyFire',             # <bool>  Set if the server should allow team damage
-        'gameModeCounter',          # <modifier: integer> Set scale factor for number of tickets to end round
-        'gamePassword',             # <password>  Set the game password for the server
-        'hitIndicatorsEnabled',     # <bool>  Set if hit indicators are enabled or not
-        'hud',                      # <bool>  Set if HUD is enabled
-        'idleBanRounds',            # <bool>  Set how many rounds idle timeout should ban (if at all)
-        'idleTimeout',              # <time>  Set idle timeout
-        'killCam',                  # <bool>  Set if killcam is enabled
-        'maxPlayers',               # <numPlayers>  Set desired maximum number of players
-        'maxSpectators',            # <numSpectators>  Set desired maximum number of spectators
-        'miniMap',                  # <bool>  Set if minimap is enabled
-        'miniMapSpotting',          # <bool>  Set if spotted targets are visible on the minimap
-        'mpExperience',             # <experience>  Set the MP Experience of the game server
-        'nameTag',                  # <bool>  Set if nametags should be displayed
-        'onlySquadLeaderSpawn',     # <bool>  Set if players can only spawn on their squad leader
-        'playerRespawnTime',        # <modifier: percent>  Set player respawn time scale factor
-        'regenerateHealth',         # <bool>  Set if health regeneration should be active
-        'roundLockdownCountdown',   # <time>  Set the duration of pre-round
-        'roundRestartPlayerCount',  # <numPlayers> Set minimum numbers of players to go from in-round to warm-up
-        'roundStartPlayerCount',    # <numPlayers>  Set minimum numbers of players to go from warm-up to pre-/inround
-        'roundTimeLimit',           # <modifier: percent>  Set percentage of the default time limit value
-        'serverDescription',        # <description>  Set server description
-        'serverMessage',            # <message>  Set the server welcome message
-        'serverName',               # <name>  Set the server name
-        'serverType',               # <type>  Set the server type: Official, Ranked, Unranked or Private
-        'soldierHealth',            # <modifier: percent>  Set soldier max health scale factor
-        'teamFactionOverride',      # Overwrites team factions
-        'teamKillCountForKick',     # <count>  Set number of teamkills allowed during a round
-        'teamKillKickForBan',       # <count>  Set number of team-kill kicks that will lead to permaban
-        'teamKillValueDecreasePerSecond',   # <count>  Set kill-value decrease per second
-        'teamKillValueForKick',     # <count>  Set max kill-value allowed for a player before he/she is kicked
-        'teamKillValueIncrease',    # <count>  Set kill-value increase for a teamkill
-        'vehicleSpawnAllowed',      # <bool>  Set whether vehicles should spawn in-game
-        'vehicleSpawnDelay',        # <modifier: percent>  Set vehicle spawn delay scale factor
-        'preset',                   # allows you to set the server to either normal, hardcore infantry or custom
-        'unlockMode'                # which set of unlocks is available on an unranked server (all/common/stats/none)
-        'ticketBleedRate'           # controls the rate of tickets drop
-        'roundPlayersReadyBypassTimer'  # <time> amount of seconds after which the ready screen is bypassed
-        'roundPlayersReadyMinCount'     # <count> minimum number of players per team which have to confirm ready state
-        'roundPlayersReadyPercent'  # <modifier:percent>
+    _gameServerVars = (
+        '3dSpotting',                     # <bool>  Set if spotted targets are visible in the 3d-world
+        '3pCam',                          # <bool>  Set if allowing to toggle to third person vehicle cameras
+        'alwaysAllowSpectators',          # <bool>  Set whether spectators need to be in the spectator list before joining
+        'autoBalance',                    # <bool>  Set if the server should autobalance
+        'bulletDamage',                   # <modifier: percent>  Set bullet damage scale factor
+        'Hacker ',                        # <bool>  Set if Hacker is allowed or not on the game server (works after map switch)
+        'crossHair',                      # <bool>  Set if crosshair for all weapons is enabled
+        'forceReloadWholeMags',           # <bool>  Set hardcore reload on or off
+        'friendlyFire',                   # <bool>  Set if the server should allow team damage
+        'gameModeCounter',                # <modifier: integer> Set scale factor for number of tickets to end round
+        'gamePassword',                   # <password>  Set the game password for the server
+        'hitIndicatorsEnabled',           # <bool>  Set if hit indicators are enabled or not
+        'hud',                            # <bool>  Set if HUD is enabled
+        'idleBanRounds',                  # <bool>  Set how many rounds idle timeout should ban (if at all)
+        'idleTimeout',                    # <time>  Set idle timeout
+        'killCam',                        # <bool>  Set if killcam is enabled
+        'maxPlayers',                     # <numPlayers>  Set desired maximum number of players
+        'maxSpectators',                  # <numSpectators>  Set desired maximum number of spectators
+        'miniMap',                        # <bool>  Set if minimap is enabled
+        'miniMapSpotting',                # <bool>  Set if spotted targets are visible on the minimap
+        'mpExperience',                   # <experience>  Set the MP Experience of the game server
+        'nameTag',                        # <bool>  Set if nametags should be displayed
+        'onlySquadLeaderSpawn',           # <bool>  Set if players can only spawn on their squad leader
+        'playerRespawnTime',              # <modifier: percent>  Set player respawn time scale factor
+        'preset',                         # Allows you to set the server to either normal, hardcore infantry or custom
+        'regenerateHealth',               # <bool>  Set if health regeneration should be active
+        'roundLockdownCountdown',         # <time>  Set the duration of pre-round
+        'roundRestartPlayerCount',        # <numPlayers> Set minimum numbers of players to go from in-round to warm-up
+        'roundStartPlayerCount',          # <numPlayers>  Set minimum numbers of players to go from warm-up to pre-/inround
+        'roundWarmupTimeout',             # <time>  Set time to transition in to game round after player requirement has been met
+        'roundTimeLimit',                 # <modifier: percent>  Set percentage of the default time limit value
+        'roundPlayersReadyBypassTimer'    # <time> amount of seconds after which the ready screen is bypassed
+        'roundPlayersReadyMinCount'       # <count> minimum number of players per team which have to confirm ready state
+        'roundPlayersReadyPercent'        # <modifier:percent>
+        'serverDescription',              # <description>  Set server description
+        'serverMessage',                  # <message>  Set the server welcome message
+        'serverName',                     # <name>  Set the server name
+        'serverType',                     # <type>  Set the server type: Official, Ranked, Unranked or Private
+        'soldierHealth',                  # <modifier: percent>  Set soldier max health scale factor
+        'team1FactionOverride',           # <factionId: integer> Set the faction of team 1
+        'team2FactionOverride',           # <factionId: integer> Set the faction of team 2
+        'team3FactionOverride',           # <factionId: integer> Set the faction of team 3
+        'team4FactionOverride',           # <factionId: integer> Set the faction of team 4
+        'teamKillCountForKick',           # <count>  Set number of teamkills allowed during a round
+        'teamKillKickForBan',             # <count>  Set number of team-kill kicks that will lead to permaban
+        'teamKillValueDecreasePerSecond', # <count>  Set kill-value decrease per second
+        'teamKillValueForKick',           # <count>  Set max kill-value allowed for a player before he/she is kicked
+        'teamKillValueIncrease',          # <count>  Set kill-value increase for a teamkill
+        'ticketBleedRate',                # <modifier: percent> Set the percentage of the ticket bleed rate
+        'vehicleSpawnAllowed',            # <bool>  Set whether vehicles should spawn in-game
+        'vehicleSpawnDelay',              # <modifier: percent>  Set vehicle spawn delay scale factor
+        'unlockMode'                      # which set of unlocks is available on an unranked server (all/common/stats/none)
     )
 
     # gamemodes aliases {alias: actual game mode name}
@@ -259,15 +239,7 @@ class BfhParser(AbstractParser):
         Called after the parser is created before run().
         """
         AbstractParser.startup(self)
-
-        # create event for comrose actions
-        self.Events.createEvent('EVT_CLIENT_COMROSE', 'Client Comrose')
-        self.Events.createEvent('EVT_CLIENT_DISCONNECT_REASON', 'Client disconnected')
-
-        # create the 'Server' client
-        self.clients.newClient('Server', guid='Server', name='Server', hide=True,
-                               pbid='Server', team=b3.TEAM_UNKNOWN, squad=None)
-
+        self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN, squad=None)
         self.verbose('Gametype: %s, Map: %s' % (self.game.gameType, self.game.mapName))
 
     def pluginsStarted(self):
@@ -304,9 +276,6 @@ class BfhParser(AbstractParser):
             # ignore chat events for Server
             return
         text = data[1]
-
-        if text in COMROSE_CHAT_NAME_BY_ID:
-            return self.getEvent('EVT_CLIENT_COMROSE', text, client, data[2] + ' ' + data[3])
 
         # existing commands can be prefixed with a '/' instead of usual prefixes
         cmdPrefix = '!'
@@ -371,16 +340,6 @@ class BfhParser(AbstractParser):
         # events like player.onTeamChange or even a event from punkbuster which will create the Client object.
         if self._waiting_for_round_start:
             self._OnServerLevelstarted(action=None, data=None)
-
-    def OnPlayerDisconnect(self, action, data):
-        """
-        player.onDisconnect <soldier name: string> <reason: string>
-        """
-        # We receive this event if a player disconnects from the game. If a player lave the game, the reason is empty.
-        # The "reason" may contain an error id or a kick/ban reason.
-        # Example from server:['player.onDisconnect', 'O2ON', 'PLAYER_CONN_LOST']
-        client = self.getClient(data[0])
-        self.queueEvent(self.getEvent('EVT_CLIENT_DISCONNECT_REASON', data=data[1], client=client))
 
     def _OnServerLevelstarted(self, action, data):
         """
@@ -464,7 +423,6 @@ class BfhParser(AbstractParser):
                 client = self.clients.newClient(cid, guid=guid, name=cid, team=b3.TEAM_UNKNOWN, teamId=None, squad=None)
             else:
                 # must be the first time we see this client
-                # query client info
                 words = self.write(('admin.listPlayers', 'player', cid))
                 pib = PlayerInfoBlock(words)
                 if not len(pib):
@@ -561,7 +519,7 @@ class BfhParser(AbstractParser):
         self.game['alwaysAllowSpectators'] = get_cvar('alwaysAllowSpectators', 'bool')
         self.game['autoBalance'] = get_cvar('autoBalance', 'bool')
         self.game['bulletDamage'] = get_cvar('bulletDamage', 'int')
-        self.game['commander'] = get_cvar('commander', 'bool')
+        self.game['Hacker'] = get_cvar('Hacker', 'hacker')
         self.game['crossHair'] = get_cvar('crossHair', 'bool')
         self.game['forceReloadWholeMags'] = get_cvar('forceReloadWholeMags', 'bool')
         self.game['friendlyFire'] = get_cvar('friendlyFire', 'bool')
@@ -585,12 +543,16 @@ class BfhParser(AbstractParser):
         self.game['roundRestartPlayerCount'] = get_cvar('roundRestartPlayerCount', 'int')
         self.game['roundStartPlayerCount'] = get_cvar('roundStartPlayerCount', 'int')
         self.game['roundTimeLimit'] = get_cvar('roundTimeLimit', 'int')
+        self.game['roundWarmupTimeout'] = get_cvar('roundWarmupTimeout', 'int')
         self.game['serverDescription'] = get_cvar('serverDescription')
         self.game['serverMessage'] = get_cvar('serverMessage')
         self.game['serverName'] = get_cvar('serverName')
         self.game['serverType'] = get_cvar('serverType')
         self.game['soldierHealth'] = get_cvar('soldierHealth', 'int')
-        self.game['teamFactionOverride'] = get_cvar('teamFactionOverride', 'string')
+        self.game['team1FactionOverride'] = get_cvar('team1FactionOverride', 'string')
+        self.game['team2FactionOverride'] = get_cvar('team2FactionOverride', 'string')
+        self.game['team3FactionOverride'] = get_cvar('team3FactionOverride', 'string')
+        self.game['team4FactionOverride'] = get_cvar('team4FactionOverride', 'string')
         self.game['teamKillCountForKick'] = get_cvar('teamKillCountForKick', 'int')
         self.game['teamKillKickForBan'] = get_cvar('teamKillKickForBan', 'int')
         self.game['teamKillValueDecreasePerSecond'] = get_cvar('teamKillValueDecreasePerSecond', 'float')
