@@ -24,8 +24,7 @@ from mockito import when, verify
 import b3
 from b3.clients import Client, Clients
 from b3.fake import FakeClient
-from b3.parsers.bfh import BfhParser, MAP_NAME_BY_ID, GAME_MODES_BY_MAP_ID, GAME_MODES_NAMES, BFH_COMMANDER, BFH_PLAYER, \
-    BFH_SPECTATOR
+from b3.parsers.bfh import BfhParser, MAP_NAME_BY_ID, GAME_MODES_BY_MAP_ID, GAME_MODES_NAMES, BFH_PLAYER, BFH_SPECTATOR
 from b3.config import XmlConfigParser, CfgConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import MapListBlock
@@ -84,7 +83,7 @@ class Test_getServerInfo(unittest.TestCase):
     # 'false', '86400', '60', '1.2.3.4:25501', 'v1.880 | A1390 C2.332', 'true', 'EU', 'ams', 'DE', '0', 'IN_GAME',)
 
     def get_test_data(self, **kwargs):
-        serverName = kwargs.get('serverName', 'BF4 Server')
+        serverName = kwargs.get('serverName', 'BFH Server')
         numPlayers = kwargs.get('numPlayers', '0')
         maxPlayers = kwargs.get('maxPlayers', '16')
         gamemode = kwargs.get('gamemode', 'Domination0')
@@ -134,7 +133,7 @@ class Test_getServerInfo(unittest.TestCase):
 
         # test with given default data
         self.assertDictEqual({
-            'serverName': 'BF4 Server',
+            'serverName': 'BFH Server',
             'numPlayers': '0',
             'maxPlayers': '16',
             'gamemode': 'Domination0',
@@ -165,7 +164,7 @@ class Test_getServerInfo(unittest.TestCase):
 
         # test unranked server
         self.assertDictEqual({
-            'serverName': 'BF4 Server',
+            'serverName': 'BFH Server',
             'numPlayers': '0',
             'maxPlayers': '16',
             'gamemode': 'Domination0',
@@ -196,7 +195,7 @@ class Test_getServerInfo(unittest.TestCase):
 
         # test PB is disabled
         self.assertDictEqual({
-            'serverName': 'BF4 Server',
+            'serverName': 'BFH Server',
             'numPlayers': '0',
             'maxPlayers': '16',
             'gamemode': 'Domination0',
@@ -325,41 +324,6 @@ class Test_bfh_events(BFHTestCase):
         self.assertEqual("Squad Say", self.parser.getEventName(event.type))
         self.assertEquals('test squad', event.data)
         self.assertEqual(self.joe, event.client)
-
-    def test_player_onChat_event_squad_comrose(self):
-        self.parser.getClient = Mock(return_value=self.joe)
-
-        self.parser.routeFrostbitePacket(['player.onChat', 'Cucurbitaceae', 'ID_CHAT_REQUEST_RIDE', 'squad', '1', '1'])
-        self.assertEqual(1, self.parser.queueEvent.call_count)
-
-        event = self.parser.queueEvent.call_args[0][0]
-        self.assertEqual("Client Comrose", self.parser.getEventName(event.type))
-        self.assertEquals('ID_CHAT_REQUEST_RIDE', event.data)
-        self.assertEqual(self.joe, event.client)
-
-    def test_player_onChat_event_team_comrose(self):
-        self.parser.getClient = Mock(return_value=self.joe)
-
-        self.parser.routeFrostbitePacket(['player.onChat', 'Cucurbitaceae', 'ID_CHAT_THANKS', 'team', '1', ])
-        self.assertEqual(1, self.parser.queueEvent.call_count)
-
-        event = self.parser.queueEvent.call_args[0][0]
-        self.assertEqual("Client Comrose", self.parser.getEventName(event.type))
-        self.assertEquals('ID_CHAT_THANKS', event.data)
-        self.assertEqual(self.joe, event.client)
-
-    def test_player_onDisconnect_event(self):
-        self.parser.getClient = Mock(return_value=self.joe)
-
-        self.parser.routeFrostbitePacket(['player.onDisconnect', 'Cucurbitaceae', 'test'])
-        self.assertEqual(1, self.parser.queueEvent.call_count)
-
-        event = self.parser.queueEvent.call_args[0][0]
-        print event.client.name
-        self.assertEqual('Client disconnected', self.parser.getEventName(event.type))
-        self.assertEquals('test', event.data)
-        self.assertEqual(self.joe, event.client)
-
 
 class Test_punkbuster_events(BFHTestCase):
     def setUp(self):
@@ -945,15 +909,6 @@ class Test_Client_player_type(BFHTestCase):
         # THEN
         self.assertEqual(BFH_SPECTATOR, self.foobar.player_type)
 
-    def test_player_type_commander(self):
-        # GIVEN
-        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
-            ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type', '1',
-             'Foobar', 'xxxxy', '1', '0', '0', '0', '0', '71', '65535', '2'])
-        # THEN
-        self.assertEqual(BFH_COMMANDER, self.foobar.player_type)
-
-
 class Test_Client_is_commander(BFHTestCase):
     def setUp(self):
         BFHTestCase.setUp(self)
@@ -964,24 +919,6 @@ class Test_Client_is_commander(BFHTestCase):
             """)
         self.parser = BfhParser(self.conf)
         self.foobar = self.parser.clients.newClient(cid='Foobar', name='Foobar', guid="FoobarGuid")
-
-    def test_player_is_commander(self):
-        # GIVEN
-        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
-            ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type', '1',
-             'Foobar', 'xxxxy', '1', '0', '0', '0', '0', '71', '65535', '2'])
-        # THEN
-        self.assertEqual(BFH_COMMANDER, self.foobar.player_type)
-        self.assertTrue(self.foobar.is_commander)
-
-    def test_player_is_not_commander(self):
-        # GIVEN
-        when(self.parser).write(('admin.listPlayers', 'player', 'Foobar')).thenReturn(
-            ['10', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', 'ping', 'type', '1',
-             'Foobar', 'xxxxy', '1', '0', '0', '0', '0', '71', '65535', '0'])
-        # THEN
-        self.assertNotEqual(BFH_COMMANDER, self.foobar.player_type)
-        self.assertFalse(self.foobar.is_commander)
 
 
 class Test_getClient(BFHTestCase):
