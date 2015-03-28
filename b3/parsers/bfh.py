@@ -133,15 +133,15 @@ GAMEMODES_IDS_BY_NAME = {name.lower(): x for x, name in GAME_MODES_NAMES.items()
 
 maps_csv = '''\
 Engine name;Human-readable name;Game modes,,,,,,,,,
-mp_bank;Bank Job;TurfwarLarge0,TurfWarSmall0,Heist0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
+mp_bank;Bank Job;TurfWarLarge0,TurfWarSmall0,Heist0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
 mp_bloodout;The Block;TurfWarLarge0,TurfWarSmall0,Heist0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
-mp_desert05;Dust Bowl;TurfwarLarge0,TurfWarSmall0,Heist0,Hotwire0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
-mp_downtown;Downtown;TurfwarLarge0,TurfWarSmall0,Heist0,Hotwire0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
-mp_eastside;Derailed;TurfwarLarge0,TurfWarSmall0,Heist0,Hotwire0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
-mp_glades;Everglades;TurfwarLarge0,TurfWarSmall0,Heist0,Hotwire0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
+mp_desert05;Dust Bowl;TurfWarLarge0,TurfWarSmall0,Heist0,Hotwire0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
+mp_downtown;Downtown;TurfWarLarge0,TurfWarSmall0,Heist0,Hotwire0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
+mp_eastside;Derailed;TurfWarLarge0,TurfWarSmall0,Heist0,Hotwire0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
+mp_glades;Everglades;TurfWarLarge0,TurfWarSmall0,Heist0,Hotwire0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
 mp_growhouse;Growhouse;TurfWarSmall0,Heist0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
-mp_hills;Hollywood Heights;TurfwarLarge0,TurfWarSmall0,Heist0,Hotwire0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
-mp_offshore;Riptide;TurfwarLarge0,TurfWarSmall0,Heist0,Hotwire0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
+mp_hills;Hollywood Heights;TurfWarLarge0,TurfWarSmall0,Heist0,Hotwire0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
+mp_offshore;Riptide;TurfWarLarge0,TurfWarSmall0,Heist0,Hotwire0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
 '''
 
 # game maps: dict('Engine name'='Human-readable name')
@@ -229,19 +229,19 @@ class BfhParser(AbstractParser):
 
     # gamemodes aliases {alias: actual game mode name}
     _gamemode_aliases = {
-        'bm': 'Bloodmoney0',
-        'he': 'Heist0',
-        'hw': 'Hotwire0',
-        'hi': 'Hit0',
-        'ch': 'Hit0',  # Crosshair
-        'cr': 'Hit0',  # Crosshair
-        'ho': 'Hostage0',
-        're': 'Hostage0',  # Rescue
-        'tdm': 'TeamDeathMatch0',
-        'tws': 'TurfWarSmall0',
-        'cqs': 'TurfWarSmall0',  # Conquest Small
-        'twl': 'TurfwarLarge0',
-        'cql': 'TurfwarLarge0',  # Conquest Large
+        'bm': 'Blood Money',
+        'he': 'Heist',
+        'hw': 'Hotwire',
+        'ch': 'Crosshair',
+        'cr': 'Crosshair',
+        'hostage': 'Rescue',
+        're': 'Rescue',
+        'resc': 'Rescue',
+        'tdm': 'Team Deathmatch',
+        'tws': 'Conquest Small',  # TurfWarSmall
+        'cqs': 'Conquest Small',
+        'twl': 'Conquest Large',  # TurfWarLarge
+        'cql': 'Conquest Large',
     }
 
     ####################################################################################################################
