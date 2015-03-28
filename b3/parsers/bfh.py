@@ -129,9 +129,7 @@ TeamDeathMatch0;Team Deathmatch;64
 GAME_MODES_NAMES = dict([(x['Engine Name'], x['Human-Readable Name']) for x in
                          csv.DictReader(gamemodes_csv.splitlines(), dialect='dice')])
 
-GAMEMODES_IDS_BY_NAME = dict()
-for _id, name in GAME_MODES_NAMES.items():
-    GAMEMODES_IDS_BY_NAME[name.lower()] = _id
+GAMEMODES_IDS_BY_NAME = {name.lower(): x for x, name in GAME_MODES_NAMES.items()}
 
 maps_csv = '''\
 Engine name;Human-readable name;Game modes,,,,,,,,,
@@ -150,9 +148,7 @@ mp_offshore;Riptide;TurfwarLarge0,TurfWarSmall0,Heist0,Hotwire0,Bloodmoney0,Hit0
 MAP_NAME_BY_ID = dict([(x['Engine name'], x['Human-readable name']) for x in
                        csv.DictReader(maps_csv.splitlines(), dialect='dice')])
 
-MAP_ID_BY_NAME = dict()
-for _id, name in MAP_NAME_BY_ID.items():
-    MAP_ID_BY_NAME[name.lower()] = _id
+MAP_ID_BY_NAME = {name.lower(): x for x, name in MAP_NAME_BY_ID.items()}
 
 GAME_MODES_BY_MAP_ID = dict([(x['Engine name'], x['Game modes,,,,,,,,,'].split(',')) for x in
                              csv.DictReader(maps_csv.splitlines(), dialect='dice')])
