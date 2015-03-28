@@ -35,6 +35,7 @@
 # 1.10.2 - syntax changes
 #        - correctly initialize class attributes
 # 1.11   - syntax cleanup
+# 1.12   - make use of dict comprehension to generate map/gamemode dictionaries
 
 import b3
 import b3.clients
@@ -48,7 +49,7 @@ from b3.parsers.frostbite2.util import PlayerInfoBlock
 
 
 __author__  = 'Courgette'
-__version__ = '1.11'
+__version__ = '1.12'
 
 BF3_REQUIRED_VERSION = 1149977
 
@@ -140,9 +141,7 @@ GAME_MODES_NAMES = {
     "CaptureTheFlag0": "Capture the Flag",
 }
 
-GAMEMODES_IDS_BY_NAME = dict()
-for _id, name in GAME_MODES_NAMES.items():
-    GAMEMODES_IDS_BY_NAME[name.lower()] = _id
+GAMEMODES_IDS_BY_NAME = {name.lower(): x for x, name in GAME_MODES_NAMES.items()}
 
 MAP_NAME_BY_ID = {
     'MP_001': 'Grand Bazaar',
@@ -176,9 +175,7 @@ MAP_NAME_BY_ID = {
     "XP5_004": "Sabalan Pipeline",
 }
 
-MAP_ID_BY_NAME = dict()
-for _id, name in MAP_NAME_BY_ID.items():
-    MAP_ID_BY_NAME[name.lower()] = _id
+MAP_ID_BY_NAME = {name.lower(): x for x, name in MAP_NAME_BY_ID.items()}
 
 GAME_MODES_BY_MAP_ID = {
     "MP_001": (
@@ -440,7 +437,8 @@ GUNMASTER_WEAPONS_PRESET_BY_INDEX = [
          "M320 GL", "Knife"]],
 ]
 
-GUNMASTER_WEAPONS_PRESET_BY_NAME = dict(GUNMASTER_WEAPONS_PRESET_BY_INDEX)
+
+GUNMASTER_WEAPONS_PRESET_BY_NAME = {x[0]: x[1] for x in GUNMASTER_WEAPONS_PRESET_BY_INDEX}
 
 
 class Bf3Parser(AbstractParser):
@@ -543,7 +541,7 @@ class Bf3Parser(AbstractParser):
     #                                                                                                                  #
     ####################################################################################################################
 
-    def OnPlayerTeamchange(self, action, data):
+    def OnPlayerTeamchange(self, _, data):
         """
         player.onTeamChange <soldier name: player name> <team: Team ID> <squad: Squad ID>
         Effect: Player might have changed team
@@ -555,7 +553,7 @@ class Bf3Parser(AbstractParser):
             client.teamId = int(data[1])
             client.team = self.getTeam(data[1]) # .team setter will send team change event
 
-    def OnPlayerSquadchange(self, action, data):
+    def OnPlayerSquadchange(self, _, data):
         """
         player.onSquadChange <soldier name: player name> <team: Team ID> <squad: Squad ID>
         Effect: Player might have changed squad

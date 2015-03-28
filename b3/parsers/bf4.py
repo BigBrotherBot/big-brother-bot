@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 1.1.3 - make use of dict comprehension to generate map/gamemode dictionaries
 # 1.1.2 - update to server version R46
 #       - add DLC4 (Final Stand) map pack
 # 1.1.1 - update to server version R43
@@ -43,7 +44,7 @@ from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 
 __author__ = 'Courgette, ozon, Dwarfer'
-__version__ = '1.1.2'
+__version__ = '1.1.3'
 
 BF4_REQUIRED_VERSION = 155011
 
@@ -137,9 +138,7 @@ GAME_MODES_NAMES = {
     'Chainlink0': 'Chain Link',
 }
 
-GAMEMODES_IDS_BY_NAME = dict()
-for _id, name in GAME_MODES_NAMES.items():
-    GAMEMODES_IDS_BY_NAME[name.lower()] = _id
+GAMEMODES_IDS_BY_NAME = {name.lower(): x for x, name in GAME_MODES_NAMES.items()}
 
 # game maps: dict('Engine name'='Human-readable name')
 MAP_NAME_BY_ID = {
@@ -175,9 +174,7 @@ MAP_NAME_BY_ID = {
     'XP4_WlkrFtry': 'Giants Of Karelia',
 }
 
-MAP_ID_BY_NAME = dict()
-for _id, name in MAP_NAME_BY_ID.items():
-    MAP_ID_BY_NAME[name.lower()] = _id
+MAP_ID_BY_NAME = {name.lower(): x for x, name in MAP_NAME_BY_ID.items()}
 
 GAME_MODES_BY_MAP_ID = {
     'MP_Abandoned': (
@@ -662,7 +659,7 @@ class Bf4Parser(AbstractParser):
 
         return self.getEvent(eventkey, text, client)
 
-    def OnPlayerTeamchange(self, action, data):
+    def OnPlayerTeamchange(self, _, data):
         """
         player.onTeamChange <soldier name: player name> <team: Team ID> <squad: Squad ID>
         Effect: Player might have changed team
@@ -674,7 +671,7 @@ class Bf4Parser(AbstractParser):
             client.teamId = int(data[1])
             client.team = self.getTeam(data[1]) # .team setter will send team change event
 
-    def OnPlayerSquadchange(self, action, data):
+    def OnPlayerSquadchange(self, _, data):
         """
         player.onSquadChange <soldier name: player name> <team: Team ID> <squad: Squad ID>    
         
@@ -702,7 +699,7 @@ class Bf4Parser(AbstractParser):
         if self._waiting_for_round_start:
             self._OnServerLevelstarted(action=None, data=None)
 
-    def OnPlayerDisconnect(self, action, data):
+    def OnPlayerDisconnect(self, _, data):
         """
         player.onDisconnect <soldier name: string> <reason: string>
         """
