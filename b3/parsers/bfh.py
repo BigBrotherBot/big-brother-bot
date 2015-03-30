@@ -403,11 +403,11 @@ class BfhParser(AbstractParser):
     def checkVersion(self):
         version = self.output.write('version')
         self.info('Server version : %s' % version)
-        if version[0] != 'BFH':
-            raise Exception('the BFH parser can only work with Battlefield Hardline')
-        if int(version[1]) < BFH_REQUIRED_VERSION:
-            raise Exception("the BF4 parser can only work with Battlefield 4 server version %s and above. "
-                            "You are trying to connect to %s v%s" % (BFH_REQUIRED_VERSION, version[0], version[1]))
+        # if version[0] != 'BFH':
+        #     raise Exception('the BFH parser can only work with Battlefield Hardline')
+        # if int(version[1]) < BFH_REQUIRED_VERSION:
+        #     raise Exception("the BF4 parser can only work with Battlefield 4 server version %s and above. "
+        #                     "You are trying to connect to %s v%s" % (BFH_REQUIRED_VERSION, version[0], version[1]))
 
     def getClient(self, cid, guid=None):
         """
